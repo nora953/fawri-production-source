@@ -1,0 +1,90 @@
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+
+# System Files
+.DS_Store
+Thumbs.db
+
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+# Replit
+.cache/
+.local/
+
+# Fawri local runtime data — never commit
+/data/
+artifacts/api-server/data/
+artifacts/api-server/api-server.pid
+
+# Local-only Replit placeholders and logs
+Environment
+Secrets
+webhook
+store_id
+*.log
+*~
+
+# One-off local recovery and diagnostic files
+*.bak*
+*.backup*
+*.current.*
+*.stable_*
+rescue-current-*/
+translation-audit-*/
+*-debug.txt
+build-error.txt
+
+# Generated files in workspace packages
+**/node_modules/
+**/dist/
+**/.replit-artifact/
+**/*.tsbuildinfo
+
+# Non-production experiments and migration work
+artifacts/mockup-sandbox/
+artifacts/fawri/fawri-wp-migration-review/
+artifacts/fawri/wp-working-editable-build/
+
+# One-off repair scripts, audits, and WordPress export work
+apply-*.sh
+*.cjs
+artifacts/fawri/*.sh
+artifacts/fawri/*.txt
+fowri-wordpress-theme/
