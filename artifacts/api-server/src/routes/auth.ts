@@ -448,7 +448,7 @@ export function getMerchantIdFromSession(res: Response): string {
 export function merchantSessionAccountExists(merchantId: string): boolean {
   const merchant = findRegularMerchant(ensureDb(), merchantId);
 
-  return merchant?.otp_verified !== false;
+  return merchant !== undefined && merchant.otp_verified !== false;
 }
 
 export function requireMerchantSession(
