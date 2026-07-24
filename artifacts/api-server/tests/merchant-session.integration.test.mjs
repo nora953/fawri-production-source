@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -526,6 +532,20 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
     );
     assert.equal(callback.status, 400);
     assert.equal(await callback.text(), "Invalid or expired Meta state");
+  });
+
+  await t.test("rejects a session after the merchant account is deleted", async () => {
+    const merchantsPath = path.join(dataDir, "merchants.json");
+    const authDb = JSON.parse(await readFile(merchantsPath, "utf8"));
+    authDb.merchants = authDb.merchants.filter(
+      (item) => item.id !== "merchant-b",
+    );
+    await writeFile(merchantsPath, JSON.stringify(authDb));
+
+    const deletedAccount = await apiFetch("/api/auth/me", {
+      headers: { Cookie: cookieB },
+    });
+    assert.equal(deletedAccount.status, 401);
   });
 
   await t.test("clears the browser session cookie on logout", async () => {
