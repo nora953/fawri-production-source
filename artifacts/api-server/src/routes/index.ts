@@ -4,7 +4,13 @@ import path from "node:path";
 import healthRouter from "./health";
 import botTrainingRouter from "./bot-training";
 import { registerMerchantRuntimeDeletion } from "../services/merchantRuntime";
-import authRouter from "./auth";
+import authRouter, {
+  createMerchantOAuthState,
+  getMerchantIdFromSession,
+  merchantSessionAccountExists,
+  requireMerchantSession,
+  verifyMerchantOAuthState,
+} from "./auth";
 import savedAnswersRouter from "./saved-answers";
 const router: IRouter = Router();
 router.use(healthRouter);
@@ -347,28 +353,23 @@ function getParamString(value: unknown): string {
   return "";
 }
 
-function getMerchantIdFromQuery(req: Request): string {
-  return (
-    getQueryString(req.query.merchantId) ||
-    getQueryString(req.query.merchant_id)
-  ).trim();
-}
+function rejectCrossMerchantPath(
+  req: Request,
+  res: Response,
+  merchantId: string,
+): boolean {
+  const requestedMerchantId = getParamString(req.params.merchantId).trim();
 
-function getMerchantIdFromBody(req: Request): string {
-  const body = req.body || {};
-  return String(body.merchant_id || body.merchantId || "").trim();
-}
-
-function encodeState(payload: Record<string, string>) {
-  return Buffer.from(JSON.stringify(payload), "utf8").toString("base64url");
-}
-
-function decodeState(state: string): Record<string, string> {
-  try {
-    return JSON.parse(Buffer.from(state, "base64url").toString("utf8"));
-  } catch {
-    return {};
+  if (requestedMerchantId && requestedMerchantId !== merchantId) {
+    res.status(403).json({
+      ok: false,
+      error: "merchant access is forbidden",
+      code: "MERCHANT_ACCESS_FORBIDDEN",
+    });
+    return true;
   }
+
+  return false;
 }
 
 function resolveMerchantIdForWebhookPage(pageId: string) {
@@ -1991,60 +1992,59 @@ function getOrdersForMerchant(merchantId?: string) {
   return ordersByMerchant.get(merchantId) || [];
 }
 
-router.post("/bot/products/sync", (req: Request, res: Response) => {
-  try {
-    const merchantId = getMerchantIdFromBody(req);
-    const products = req.body?.products;
-    if (!merchantId)
-      return res
-        .status(400)
-        .json({ ok: false, error: "merchant_id is required" });
-    if (!Array.isArray(products))
-      return res
-        .status(400)
-        .json({ ok: false, error: "products must be an array" });
+router.post(
+  "/bot/products/sync",
+  requireMerchantSession,
+  (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const products = req.body?.products;
+      if (!Array.isArray(products))
+        return res
+          .status(400)
+          .json({ ok: false, error: "products must be an array" });
 
-    const cleanProducts = normalizeProducts(products).map((p) => ({
-      ...p,
-      merchant_id: merchantId,
-    }));
-    productsByMerchant.set(merchantId, cleanProducts);
-    lastSyncedMerchantId = merchantId;
-    saveRuntimeDb();
+      const cleanProducts = normalizeProducts(products).map((p) => ({
+        ...p,
+        merchant_id: merchantId,
+      }));
+      productsByMerchant.set(merchantId, cleanProducts);
+      lastSyncedMerchantId = merchantId;
+      saveRuntimeDb();
 
-    return res.status(200).json({
+      return res.status(200).json({
+        ok: true,
+        merchant_id: merchantId,
+        count: cleanProducts.length,
+        product_names: cleanProducts.map((p) => p.name),
+      });
+    } catch (error) {
+      console.error("Products sync error:", error);
+      return res
+        .status(500)
+        .json({ ok: false, error: "Failed to sync products" });
+    }
+  },
+);
+
+router.get(
+  "/bot/products/:merchantId",
+  requireMerchantSession,
+  (req: Request, res: Response) => {
+    const merchantId = getMerchantIdFromSession(res);
+    if (rejectCrossMerchantPath(req, res, merchantId)) return;
+    const products = productsByMerchant.get(merchantId) || [];
+    return res.json({
       ok: true,
       merchant_id: merchantId,
-      count: cleanProducts.length,
-      product_names: cleanProducts.map((p) => p.name),
+      count: products.length,
+      products,
     });
-  } catch (error) {
-    console.error("Products sync error:", error);
-    return res
-      .status(500)
-      .json({ ok: false, error: "Failed to sync products" });
-  }
-});
+  },
+);
 
-router.get("/bot/products/:merchantId", (req: Request, res: Response) => {
-  const merchantId = getParamString(req.params.merchantId);
-  const products = productsByMerchant.get(merchantId) || [];
-  return res.json({
-    ok: true,
-    merchant_id: merchantId,
-    count: products.length,
-    products,
-  });
-});
-
-router.get("/bot/debug", (req: Request, res: Response) => {
-  const merchantId = getMerchantIdFromQuery(req);
-  if (!merchantId) {
-    return res
-      .status(400)
-      .json({ ok: false, error: "merchantId is required for safe debug" });
-  }
-
+router.get("/bot/debug", requireMerchantSession, (req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
   const testText = getQueryString(req.query.text);
   const products = productsByMerchant.get(merchantId) || [];
   const testMatch = testText
@@ -2081,8 +2081,9 @@ router.get("/bot/debug", (req: Request, res: Response) => {
   });
 });
 
-router.get("/bot/conversations/:merchantId", (req: Request, res: Response) => {
-  const merchantId = getParamString(req.params.merchantId);
+router.get("/bot/conversations/:merchantId", requireMerchantSession, (req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  if (rejectCrossMerchantPath(req, res, merchantId)) return;
   const conversations = conversationsByMerchant.get(merchantId) || [];
   return res.json({
     ok: true,
@@ -2092,8 +2093,9 @@ router.get("/bot/conversations/:merchantId", (req: Request, res: Response) => {
   });
 });
 
-router.get("/bot/orders/:merchantId", (req: Request, res: Response) => {
-  const merchantId = getParamString(req.params.merchantId);
+router.get("/bot/orders/:merchantId", requireMerchantSession, (req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  if (rejectCrossMerchantPath(req, res, merchantId)) return;
   const orders = ordersByMerchant.get(merchantId) || [];
   return res.json({
     ok: true,
@@ -2103,10 +2105,8 @@ router.get("/bot/orders/:merchantId", (req: Request, res: Response) => {
   });
 });
 
-router.get("/meta/pages", (req: Request, res: Response) => {
-  const merchantId = getMerchantIdFromQuery(req);
-  if (!merchantId)
-    return res.status(400).json({ ok: false, error: "merchantId is required" });
+router.get("/meta/pages", requireMerchantSession, (_req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
   const pages = Array.from(metaPagesByPageId.values())
     .filter((page) => page.merchant_id === merchantId)
     .map((page) => ({
@@ -2118,12 +2118,8 @@ router.get("/meta/pages", (req: Request, res: Response) => {
   return res.json({ ok: true, merchant_id: merchantId, pages });
 });
 
-router.get("/conversations", (req: Request, res: Response) => {
-  const merchantId = getMerchantIdFromQuery(req);
-  if (!merchantId)
-    return res
-      .status(400)
-      .json({ ok: false, error: "merchantId is required", conversations: [] });
+router.get("/conversations", requireMerchantSession, (_req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
   const conversations = getConversationsForMerchant(merchantId);
   return res.json({
     ok: true,
@@ -2133,8 +2129,9 @@ router.get("/conversations", (req: Request, res: Response) => {
   });
 });
 
-router.get("/conversations/:merchantId", (req: Request, res: Response) => {
-  const merchantId = getParamString(req.params.merchantId);
+router.get("/conversations/:merchantId", requireMerchantSession, (req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  if (rejectCrossMerchantPath(req, res, merchantId)) return;
   const conversations = getConversationsForMerchant(merchantId);
   return res.json({
     ok: true,
@@ -2144,11 +2141,9 @@ router.get("/conversations/:merchantId", (req: Request, res: Response) => {
   });
 });
 
-router.get("/conversation/:conversationId", (req: Request, res: Response) => {
-  const merchantId = getMerchantIdFromQuery(req);
+router.get("/conversation/:conversationId", requireMerchantSession, (req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
   const conversationId = getParamString(req.params.conversationId);
-  if (!merchantId)
-    return res.status(400).json({ ok: false, error: "merchantId is required" });
   const conversation = getConversationsForMerchant(merchantId).find(
     (c) => c.id === conversationId,
   );
@@ -2157,12 +2152,8 @@ router.get("/conversation/:conversationId", (req: Request, res: Response) => {
   return res.json({ ok: true, conversation });
 });
 
-router.get("/orders", (req: Request, res: Response) => {
-  const merchantId = getMerchantIdFromQuery(req);
-  if (!merchantId)
-    return res
-      .status(400)
-      .json({ ok: false, error: "merchantId is required", orders: [] });
+router.get("/orders", requireMerchantSession, (_req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
   const orders = getOrdersForMerchant(merchantId);
   return res.json({
     ok: true,
@@ -2172,8 +2163,9 @@ router.get("/orders", (req: Request, res: Response) => {
   });
 });
 
-router.get("/orders/:merchantId", (req: Request, res: Response) => {
-  const merchantId = getParamString(req.params.merchantId);
+router.get("/orders/:merchantId", requireMerchantSession, (req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  if (rejectCrossMerchantPath(req, res, merchantId)) return;
   const orders = getOrdersForMerchant(merchantId);
   return res.json({
     ok: true,
@@ -2183,12 +2175,8 @@ router.get("/orders/:merchantId", (req: Request, res: Response) => {
   });
 });
 
-router.get("/products", (req: Request, res: Response) => {
-  const merchantId = getMerchantIdFromQuery(req);
-  if (!merchantId)
-    return res
-      .status(400)
-      .json({ ok: false, error: "merchantId is required", products: [] });
+router.get("/products", requireMerchantSession, (_req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
   const products = productsByMerchant.get(merchantId) || [];
   return res.json({
     ok: true,
@@ -2198,14 +2186,10 @@ router.get("/products", (req: Request, res: Response) => {
   });
 });
 
-router.post("/products", (req: Request, res: Response) => {
+router.post("/products", requireMerchantSession, (req: Request, res: Response) => {
   try {
-    const merchantId = getMerchantIdFromBody(req);
+    const merchantId = getMerchantIdFromSession(res);
     const name = String(req.body?.name || "").trim();
-    if (!merchantId)
-      return res
-        .status(400)
-        .json({ ok: false, error: "merchant_id is required" });
     if (!name)
       return res
         .status(400)
@@ -2351,42 +2335,60 @@ router.post("/meta/webhook", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/meta/login", (req: Request, res: Response) => {
-  const appId = process.env.META_APP_ID;
-  const configId = process.env.META_CONFIG_ID;
-  const platform = getQueryString(req.query.platform) || "messenger";
-  const merchantId = getMerchantIdFromQuery(req);
-  if (!merchantId) return res.status(400).send("merchantId is required");
-  if (!appId) return res.status(500).send("META_APP_ID is not configured");
-  if (!configId)
-    return res.status(500).send("META_CONFIG_ID is not configured");
+router.get(
+  "/meta/login",
+  requireMerchantSession,
+  (req: Request, res: Response) => {
+    const appId = process.env.META_APP_ID;
+    const configId = process.env.META_CONFIG_ID;
+    const requestedPlatform =
+      getQueryString(req.query.platform) || "messenger";
+    const merchantId = getMerchantIdFromSession(res);
 
-  const state = encodeState({ merchantId, platform });
-  const loginUrl =
-    `https://www.facebook.com/${GRAPH_VERSION}/dialog/oauth` +
-    `?client_id=${encodeURIComponent(appId)}` +
-    `&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}` +
-    `&config_id=${encodeURIComponent(configId)}` +
-    `&state=${encodeURIComponent(state)}` +
-    `&response_type=code`;
-  return res.redirect(loginUrl);
-});
+    if (
+      requestedPlatform !== "messenger" &&
+      requestedPlatform !== "instagram"
+    ) {
+      return res.status(400).send("Unsupported Meta platform");
+    }
+    if (!appId) return res.status(500).send("META_APP_ID is not configured");
+    if (!configId)
+      return res.status(500).send("META_CONFIG_ID is not configured");
+
+    const state = createMerchantOAuthState(
+      merchantId,
+      requestedPlatform,
+    );
+    const loginUrl =
+      `https://www.facebook.com/${GRAPH_VERSION}/dialog/oauth` +
+      `?client_id=${encodeURIComponent(appId)}` +
+      `&redirect_uri=${encodeURIComponent(META_REDIRECT_URI)}` +
+      `&config_id=${encodeURIComponent(configId)}` +
+      `&state=${encodeURIComponent(state)}` +
+      `&response_type=code`;
+    return res.redirect(loginUrl);
+  },
+);
 
 router.get("/meta/callback", async (req: Request, res: Response) => {
   const code = getQueryString(req.query.code);
   const error = getQueryString(req.query.error);
   const errorDescription = getQueryString(req.query.error_description);
   const rawState = getQueryString(req.query.state);
-  const state = decodeState(rawState);
-  const merchantId = state.merchantId;
-  const platform = state.platform || "messenger";
+  const state = verifyMerchantOAuthState(rawState);
 
   if (error)
     return res
       .status(400)
       .send(`Meta login error: ${errorDescription || error}`);
   if (!code) return res.status(400).send("Missing code from Meta");
-  if (!merchantId) return res.status(400).send("Missing merchantId from state");
+  if (!state) return res.status(400).send("Invalid or expired Meta state");
+  if (!merchantSessionAccountExists(state.merchantId)) {
+    return res.status(401).send("Merchant account is unavailable");
+  }
+
+  const merchantId = state.merchantId;
+  const platform = state.platform || "messenger";
 
   const appId = process.env.META_APP_ID;
   const appSecret = process.env.META_APP_SECRET;

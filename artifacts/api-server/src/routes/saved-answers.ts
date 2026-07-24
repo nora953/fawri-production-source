@@ -2,6 +2,10 @@ import { Router, type Request, type Response } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { registerMerchantSavedAnswersDeletion } from "../services/merchantSavedAnswers";
+import {
+  getMerchantIdFromSession,
+  requireMerchantSession,
+} from "./auth";
 
 type SavedAnswerCategory =
   | "delivery"
@@ -118,16 +122,6 @@ function getStringValue(value: unknown): string {
   return String(value || "").trim();
 }
 
-function getMerchantIdFromRequest(req: Request): string {
-  return (
-    getStringValue(req.query.merchantId) ||
-    getStringValue(req.query.merchant_id) ||
-    getStringValue(req.body?.merchantId) ||
-    getStringValue(req.body?.merchant_id) ||
-    getStringValue(req.header("x-merchant-id"))
-  );
-}
-
 function makeId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random()
     .toString(36)
@@ -158,14 +152,10 @@ function sendError(res: Response, statusCode: number, error: string): void {
   });
 }
 
-router.get("/", (req: Request, res: Response): void => {
-  const merchantId = getMerchantIdFromRequest(req);
+router.use(requireMerchantSession);
 
-  if (!merchantId) {
-    sendError(res, 400, "merchantId is required");
-    return;
-  }
-
+router.get("/", (_req: Request, res: Response): void => {
+  const merchantId = getMerchantIdFromSession(res);
   const db = readDb();
   const answers = db.answers.filter(
     (answer) => answer.merchant_id === merchantId,
@@ -178,12 +168,7 @@ router.get("/", (req: Request, res: Response): void => {
 });
 
 router.post("/", (req: Request, res: Response): void => {
-  const merchantId = getMerchantIdFromRequest(req);
-
-  if (!merchantId) {
-    sendError(res, 400, "merchantId is required");
-    return;
-  }
+  const merchantId = getMerchantIdFromSession(res);
 
   const questionPattern = getStringValue(req.body?.question_pattern);
   const answerText = getStringValue(req.body?.answer_text);
@@ -224,13 +209,8 @@ router.post("/", (req: Request, res: Response): void => {
 });
 
 router.put("/:id", (req: Request, res: Response): void => {
-  const merchantId = getMerchantIdFromRequest(req);
+  const merchantId = getMerchantIdFromSession(res);
   const answerId = getStringValue(req.params.id);
-
-  if (!merchantId) {
-    sendError(res, 400, "merchantId is required");
-    return;
-  }
 
   if (!answerId) {
     sendError(res, 400, "answer id is required");
@@ -301,13 +281,8 @@ router.put("/:id", (req: Request, res: Response): void => {
 });
 
 router.delete("/:id", (req: Request, res: Response): void => {
-  const merchantId = getMerchantIdFromRequest(req);
+  const merchantId = getMerchantIdFromSession(res);
   const answerId = getStringValue(req.params.id);
-
-  if (!merchantId) {
-    sendError(res, 400, "merchantId is required");
-    return;
-  }
 
   if (!answerId) {
     sendError(res, 400, "answer id is required");
