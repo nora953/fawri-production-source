@@ -1,6 +1,11 @@
 import fs from "node:fs";
 import path from "node:path";
-import { Router, type Request, type Response } from "express";
+import {
+  Router,
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
 import crypto from "node:crypto";
 import {
   calculateRetentionStatus,
@@ -141,9 +146,45 @@ const ADMIN_SESSION_SECRET =
 const ADMIN_SESSION_TTL_MS = Number(
   process.env.FAWRI_ADMIN_SESSION_TTL_MS || 8 * 60 * 60 * 1000,
 );
+const CONFIGURED_MERCHANT_SESSION_SECRET =
+  process.env.FAWRI_MERCHANT_SESSION_SECRET ||
+  process.env.FAWRI_ADMIN_SESSION_SECRET ||
+  process.env.FAWRI_PASSWORD_SALT;
+
+if (
+  process.env.NODE_ENV === "production" &&
+  !CONFIGURED_MERCHANT_SESSION_SECRET
+) {
+  throw new Error(
+    "FAWRI_MERCHANT_SESSION_SECRET or an approved fallback secret is required",
+  );
+}
+
+const MERCHANT_SESSION_SECRET =
+  CONFIGURED_MERCHANT_SESSION_SECRET || "fawri-local-dev-salt";
+const MERCHANT_SESSION_TTL_MS = Number(
+  process.env.FAWRI_MERCHANT_SESSION_TTL_MS || 7 * 24 * 60 * 60 * 1000,
+);
+const MERCHANT_OAUTH_STATE_TTL_MS = Number(
+  process.env.FAWRI_MERCHANT_OAUTH_STATE_TTL_MS || 10 * 60 * 1000,
+);
+const MERCHANT_SESSION_COOKIE = "fawri_merchant_session";
 
 type AdminSessionPayload = {
   adminId: string;
+  expiresAt: number;
+};
+
+type MerchantSessionPayload = {
+  kind: "merchant_session";
+  merchantId: string;
+  expiresAt: number;
+};
+
+type MerchantOAuthStatePayload = {
+  kind: "meta_oauth";
+  merchantId: string;
+  platform: "messenger" | "instagram";
   expiresAt: number;
 };
 
@@ -244,6 +285,192 @@ function now(): string {
 
 function makeId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function signMerchantPayload(
+  purpose: "session" | "meta_oauth",
+  encodedPayload: string,
+): string {
+  return crypto
+    .createHmac("sha256", MERCHANT_SESSION_SECRET)
+    .update(`${purpose}.${encodedPayload}`)
+    .digest("base64url");
+}
+
+function createSignedMerchantPayload(
+  purpose: "session" | "meta_oauth",
+  payload: MerchantSessionPayload | MerchantOAuthStatePayload,
+): string {
+  const encodedPayload = Buffer.from(
+    JSON.stringify(payload),
+    "utf8",
+  ).toString("base64url");
+  const signature = signMerchantPayload(purpose, encodedPayload);
+
+  return `${encodedPayload}.${signature}`;
+}
+
+function verifySignedMerchantPayload(
+  purpose: "session" | "meta_oauth",
+  token: string,
+): Record<string, unknown> | null {
+  const [encodedPayload, suppliedSignature, extraPart] = token.split(".");
+
+  if (!encodedPayload || !suppliedSignature || extraPart) {
+    return null;
+  }
+
+  const expectedSignature = signMerchantPayload(purpose, encodedPayload);
+  const suppliedBuffer = Buffer.from(suppliedSignature, "base64url");
+  const expectedBuffer = Buffer.from(expectedSignature, "base64url");
+
+  if (
+    suppliedBuffer.length !== expectedBuffer.length ||
+    !crypto.timingSafeEqual(suppliedBuffer, expectedBuffer)
+  ) {
+    return null;
+  }
+
+  try {
+    const payload = JSON.parse(
+      Buffer.from(encodedPayload, "base64url").toString("utf8"),
+    );
+
+    return payload && typeof payload === "object"
+      ? payload as Record<string, unknown>
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function createMerchantSessionToken(merchantId: string): string {
+  return createSignedMerchantPayload("session", {
+    kind: "merchant_session",
+    merchantId,
+    expiresAt: Date.now() + MERCHANT_SESSION_TTL_MS,
+  });
+}
+
+function verifyMerchantSessionToken(
+  token: string,
+): MerchantSessionPayload | null {
+  const payload = verifySignedMerchantPayload("session", token);
+
+  if (
+    payload?.kind !== "merchant_session" ||
+    typeof payload.merchantId !== "string" ||
+    !payload.merchantId ||
+    typeof payload.expiresAt !== "number" ||
+    !Number.isFinite(payload.expiresAt) ||
+    payload.expiresAt <= Date.now()
+  ) {
+    return null;
+  }
+
+  return {
+    kind: "merchant_session",
+    merchantId: payload.merchantId,
+    expiresAt: payload.expiresAt,
+  };
+}
+
+function setMerchantSessionCookie(
+  res: Response,
+  merchantId: string,
+): void {
+  res.cookie(
+    MERCHANT_SESSION_COOKIE,
+    createMerchantSessionToken(merchantId),
+    {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/api",
+      maxAge: MERCHANT_SESSION_TTL_MS,
+    },
+  );
+}
+
+function clearMerchantSessionCookie(res: Response): void {
+  res.clearCookie(MERCHANT_SESSION_COOKIE, {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/api",
+  });
+}
+
+export function createMerchantOAuthState(
+  merchantId: string,
+  platform: MerchantOAuthStatePayload["platform"],
+): string {
+  return createSignedMerchantPayload("meta_oauth", {
+    kind: "meta_oauth",
+    merchantId,
+    platform,
+    expiresAt: Date.now() + MERCHANT_OAUTH_STATE_TTL_MS,
+  });
+}
+
+export function verifyMerchantOAuthState(
+  token: string,
+): MerchantOAuthStatePayload | null {
+  const payload = verifySignedMerchantPayload("meta_oauth", token);
+
+  if (
+    payload?.kind !== "meta_oauth" ||
+    typeof payload.merchantId !== "string" ||
+    !payload.merchantId ||
+    (payload.platform !== "messenger" &&
+      payload.platform !== "instagram") ||
+    typeof payload.expiresAt !== "number" ||
+    !Number.isFinite(payload.expiresAt) ||
+    payload.expiresAt <= Date.now()
+  ) {
+    return null;
+  }
+
+  return {
+    kind: "meta_oauth",
+    merchantId: payload.merchantId,
+    platform: payload.platform,
+    expiresAt: payload.expiresAt,
+  };
+}
+
+export function getMerchantIdFromSession(res: Response): string {
+  return typeof res.locals.merchantId === "string"
+    ? res.locals.merchantId
+    : "";
+}
+
+export function merchantSessionAccountExists(merchantId: string): boolean {
+  const merchant = findRegularMerchant(ensureDb(), merchantId);
+
+  return merchant?.otp_verified !== false;
+}
+
+export function requireMerchantSession(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  const token = String(
+    req.cookies?.[MERCHANT_SESSION_COOKIE] || "",
+  ).trim();
+  const payload = token ? verifyMerchantSessionToken(token) : null;
+
+  if (!payload || !merchantSessionAccountExists(payload.merchantId)) {
+    sendError(res, 401, "merchant session is missing or expired", {
+      code: "MERCHANT_SESSION_REQUIRED",
+    });
+    return;
+  }
+
+  res.locals.merchantId = payload.merchantId;
+  res.setHeader("Cache-Control", "no-store");
+  next();
 }
 
 function signAdminSessionPayload(encodedPayload: string): string {
@@ -1027,10 +1254,6 @@ function getOtpRetryAfterSeconds(
   );
 }
 
-function getString(req: Request, key: string): string {
-  return String(req.body?.[key] || req.query?.[key] || "").trim();
-}
-
 function sendError(
   res: Response,
   statusCode: number,
@@ -1218,6 +1441,7 @@ router.post("/verify-otp", (req: Request, res: Response) => {
   otp.used = true;
   merchant.otp_verified = true;
   writeDb(db);
+  setMerchantSessionCookie(res, merchant.id);
 
   return res.json({ ok: true, merchant: publicMerchant(merchant) });
 });
@@ -1262,6 +1486,12 @@ router.post("/login", (req: Request, res: Response) => {
     writeDb(db);
   }
 
+  if (merchant.is_admin) {
+    clearMerchantSessionCookie(res);
+  } else {
+    setMerchantSessionCookie(res, merchant.id);
+  }
+
   return res.json({
     ok: true,
     merchant: publicMerchant(merchant),
@@ -1269,6 +1499,11 @@ router.post("/login", (req: Request, res: Response) => {
       ? { admin_token: createAdminSessionToken(merchant.id) }
       : {}),
   });
+});
+
+router.post("/logout", (_req: Request, res: Response) => {
+  clearMerchantSessionCookie(res);
+  return res.json({ ok: true });
 });
 
 router.post("/password-reset/request", async (req: Request, res: Response) => {
@@ -1337,40 +1572,54 @@ router.post("/password-reset/confirm", (req: Request, res: Response) => {
 });
 
 
-router.post("/change-password", (req: Request, res: Response) => {
-  const phone = normalizePhone(String(req.body?.phone || req.body?.merchantPhone || "").trim());
-  const currentPassword = String(req.body?.currentPassword || req.body?.oldPassword || "").trim();
-  const newPassword = String(req.body?.newPassword || req.body?.new_password || "").trim();
-  const confirmPassword = String(req.body?.confirmPassword || req.body?.confirm_password || "").trim();
+router.post(
+  "/change-password",
+  requireMerchantSession,
+  (req: Request, res: Response) => {
+    const merchantId = getMerchantIdFromSession(res);
+    const currentPassword = String(
+      req.body?.currentPassword || req.body?.oldPassword || "",
+    ).trim();
+    const newPassword = String(
+      req.body?.newPassword || req.body?.new_password || "",
+    ).trim();
+    const confirmPassword = String(
+      req.body?.confirmPassword || req.body?.confirm_password || "",
+    ).trim();
 
-  if (phone.length < 1) return sendError(res, 400, "phone is required");
-  if (currentPassword.length < 1) return sendError(res, 400, "current password is required");
-  const passwordError = getPasswordValidationError(newPassword);
-  if (passwordError) {
-    return sendError(res, 400, passwordError.message);
-  }
-  if (newPassword === confirmPassword) {
-    // password confirmation is valid
-  } else {
-    return sendError(res, 400, "new password confirmation does not match");
-  }
+    if (currentPassword.length < 1) {
+      return sendError(res, 400, "current password is required");
+    }
 
+    const passwordError = getPasswordValidationError(newPassword);
+    if (passwordError) {
+      return sendError(res, 400, passwordError.message);
+    }
+    if (newPassword !== confirmPassword) {
+      return sendError(
+        res,
+        400,
+        "new password confirmation does not match",
+      );
+    }
+
+    const db = ensureDb();
+    const merchant = findRegularMerchant(db, merchantId);
+    if (!merchant) return sendError(res, 404, "merchant not found");
+    if (!verifyPassword(currentPassword, merchant.password)) {
+      return sendError(res, 401, "current password is incorrect");
+    }
+
+    merchant.password = hashPassword(newPassword);
+    writeDb(db);
+
+    return res.json({ ok: true, merchant: publicMerchant(merchant) });
+  },
+);
+router.get("/me", requireMerchantSession, (_req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
   const db = ensureDb();
-  const merchant = db.merchants.find((item) => item.is_admin === true ? false : normalizePhone(item.phone) === phone);
-  if (merchant === undefined) return sendError(res, 404, "merchant not found");
-  if (verifyPassword(currentPassword, merchant.password) === false) return sendError(res, 401, "current password is incorrect");
-
-  merchant.password = hashPassword(newPassword);
-  writeDb(db);
-
-  return res.json({ ok: true, merchant: publicMerchant(merchant) });
-});
-router.get("/me", (req: Request, res: Response) => {
-  const merchantId = getString(req, "merchantId") || getString(req, "merchant_id");
-  if (!merchantId) return sendError(res, 400, "merchantId is required");
-
-  const db = ensureDb();
-  const merchant = db.merchants.find((item) => item.id === merchantId);
+  const merchant = findRegularMerchant(db, merchantId);
   if (!merchant) return sendError(res, 404, "merchant not found");
 
   return res.json({ ok: true, merchant: publicMerchant(merchant) });

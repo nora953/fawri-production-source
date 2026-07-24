@@ -2,6 +2,10 @@ import fs from "fs";
 import path from "path";
 import { Router, type Request, type Response } from "express";
 import { registerMerchantBotTrainingDeletion } from "../services/merchantBotTraining";
+import {
+  getMerchantIdFromSession,
+  requireMerchantSession,
+} from "./auth";
 
 type TrainingStatus =
   | "pending_merchant_reply"
@@ -52,14 +56,10 @@ type LearnedAnswersDb = {
 
 const router = Router();
 
-router.get("/requests", (req: Request, res: Response): void => {
-  const merchantId = getMerchantIdFromRequest(req);
+router.use(requireMerchantSession);
 
-  if (!merchantId) {
-    sendError(res, 400, "merchantId is required");
-    return;
-  }
-
+router.get("/requests", (_req: Request, res: Response): void => {
+  const merchantId = getMerchantIdFromSession(res);
   const db = readTrainingRequestsDb();
 
   const requests = db.requests
@@ -87,12 +87,7 @@ router.patch("/requests/:id/reply", (req: Request, res: Response): void => {
 
 router.post("/requests/:id/reject", (req: Request, res: Response): void => {
   const requestId = String(req.params.id || "").trim();
-  const merchantId = getMerchantIdFromRequest(req);
-
-  if (!merchantId) {
-    sendError(res, 400, "merchantId is required");
-    return;
-  }
+  const merchantId = getMerchantIdFromSession(res);
 
   const trainingDb = readTrainingRequestsDb();
   const request = trainingDb.requests.find(
@@ -134,17 +129,12 @@ router.post("/requests/:id/reject", (req: Request, res: Response): void => {
 
 function approveOrUpdateTrainingReply(req: Request, res: Response): void {
   const requestId = String(req.params.id || "").trim();
-  const merchantId = getMerchantIdFromRequest(req);
+  const merchantId = getMerchantIdFromSession(res);
   const idealReply = String(req.body?.idealReply || "").trim();
 
   const keywords = Array.isArray(req.body?.keywords)
     ? req.body.keywords.map(String)
     : [];
-
-  if (!merchantId) {
-    sendError(res, 400, "merchantId is required");
-    return;
-  }
 
   if (!idealReply) {
     sendError(res, 400, "idealReply is required");
@@ -334,24 +324,6 @@ function getDataFilePath(fileName: string): string {
   }
 
   return candidates[0];
-}
-
-function getMerchantIdFromRequest(req: Request): string {
-  return (
-    getStringValue(req.query.merchantId) ||
-    getStringValue(req.query.merchant_id) ||
-    getStringValue(req.body?.merchantId) ||
-    getStringValue(req.body?.merchant_id) ||
-    getStringValue(req.header("x-merchant-id"))
-  );
-}
-
-function getStringValue(value: unknown): string {
-  if (Array.isArray(value)) {
-    return getStringValue(value[0]);
-  }
-
-  return String(value || "").trim();
 }
 
 function sendError(res: Response, statusCode: number, error: string): void {

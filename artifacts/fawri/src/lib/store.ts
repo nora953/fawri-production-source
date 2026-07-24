@@ -42,8 +42,16 @@ export const getAdminAuthHeaders = (): Record<string, string> => {
 };
 
 export const clearSession = () => {
+  const hadSession = Boolean(localStorage.getItem('fawri_session'));
   localStorage.removeItem('fawri_session');
   clearAdminSessionToken();
+
+  if (hadSession) {
+    void fetch('/api/auth/logout', {
+      method: 'POST',
+      keepalive: true,
+    }).catch(() => undefined);
+  }
 };
 
 const currentMerchantId = () => getSession() || '';
@@ -120,9 +128,7 @@ export const refreshCurrentMerchantFromApi = async (): Promise<Merchant | undefi
   const merchantId = getSession();
   if (!merchantId) return undefined;
 
-  const response = await fetch(
-    `/api/auth/me?merchantId=${encodeURIComponent(merchantId)}`
-  );
+  const response = await fetch('/api/auth/me');
   const result = await response.json().catch(() => null);
 
   if (!response.ok || !result?.ok || !result.merchant) {
@@ -130,14 +136,15 @@ export const refreshCurrentMerchantFromApi = async (): Promise<Merchant | undefi
   }
 
   const apiMerchant = result.merchant as Merchant;
+  setSession(apiMerchant.id);
 
   const merchants = getMerchants();
-  const exists = merchants.some(merchant => merchant.id === merchantId);
+  const exists = merchants.some(merchant => merchant.id === apiMerchant.id);
 
   saveMerchants(
     exists
       ? merchants.map(merchant =>
-          merchant.id === merchantId
+          merchant.id === apiMerchant.id
             ? { ...merchant, ...apiMerchant }
             : merchant
         )
