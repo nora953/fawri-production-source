@@ -1031,26 +1031,41 @@ export default function AdministratorsTab({
                   }}
                 />
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={isCreating}
-                  className={
-                    language === "ar"
-                      ? "absolute right-3 top-1/2 h-8 w-8 -translate-y-1/2"
-                      : "absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
-                  }
-                  onClick={() => setShowPassword((current) => !current)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <Eye className="h-4 w-4" aria-hidden="true" />
-                  )}
+                {language === "ar" ? (
+                  <button
+                    type="button"
+                    aria-label={t.passwordLabel}
+                    disabled={isCreating}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    )}
 
-                  <span className="sr-only">{t.passwordLabel}</span>
-                </Button>
+                    <span className="sr-only">{t.passwordLabel}</span>
+                  </button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={isCreating}
+                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                    onClick={() => setShowPassword((current) => !current)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    )}
+
+                    <span className="sr-only">{t.passwordLabel}</span>
+                  </Button>
+                )}
               </div>
             </div>
 
