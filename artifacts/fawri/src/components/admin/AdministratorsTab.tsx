@@ -936,7 +936,7 @@ export default function AdministratorsTab({
         >
           <DialogHeader
             className={
-              language === "ar"
+              language === "ar" || language === "ku"
                 ? "text-right sm:!text-right"
                 : adminText.dir === "rtl"
                   ? "text-right"
@@ -954,10 +954,10 @@ export default function AdministratorsTab({
               void handleCreateAdministrator();
             }}
           >
-            <div className={language === "ar" ? "space-y-2" : "space-y-1.5"}>
+            <div className={language === "ar" || language === "ku" ? "space-y-2" : "space-y-1.5"}>
               <Label
                 htmlFor="administrator-owner-name"
-                className={language === "ar" ? "block min-h-5 leading-5" : undefined}
+                className={language === "ar" || language === "ku" ? "block min-h-5 leading-5" : undefined}
               >
                 {t.nameLabel}
               </Label>
@@ -978,10 +978,10 @@ export default function AdministratorsTab({
               />
             </div>
 
-            <div className={language === "ar" ? "space-y-2" : "space-y-1.5"}>
+            <div className={language === "ar" || language === "ku" ? "space-y-2" : "space-y-1.5"}>
               <Label
                 htmlFor="administrator-phone"
-                className={language === "ar" ? "block min-h-5 leading-5" : undefined}
+                className={language === "ar" || language === "ku" ? "block min-h-5 leading-5" : undefined}
               >
                 {t.phoneInputLabel}
               </Label>
@@ -1005,10 +1005,10 @@ export default function AdministratorsTab({
               />
             </div>
 
-            <div className={language === "ar" ? "space-y-2" : "space-y-1.5"}>
+            <div className={language === "ar" || language === "ku" ? "space-y-2" : "space-y-1.5"}>
               <Label
                 htmlFor="administrator-password"
-                className={language === "ar" ? "block min-h-5 leading-5" : undefined}
+                className={language === "ar" || language === "ku" ? "block min-h-5 leading-5" : undefined}
               >
                 {t.passwordLabel}
               </Label>
@@ -1031,7 +1031,7 @@ export default function AdministratorsTab({
                   }}
                 />
 
-                {language === "ar" ? (
+                {language === "ar" || language === "ku" ? (
                   <button
                     type="button"
                     aria-label={t.passwordLabel}
@@ -1069,10 +1069,10 @@ export default function AdministratorsTab({
               </div>
             </div>
 
-            <div className={language === "ar" ? "space-y-2" : "space-y-1.5"}>
+            <div className={language === "ar" || language === "ku" ? "space-y-2" : "space-y-1.5"}>
               <Label
                 htmlFor="administrator-language"
-                className={language === "ar" ? "block min-h-5 leading-5" : undefined}
+                className={language === "ar" || language === "ku" ? "block min-h-5 leading-5" : undefined}
               >
                 {t.languageInputLabel}
               </Label>
