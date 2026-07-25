@@ -1148,7 +1148,11 @@ export default function AdministratorsTab({
         }}
       >
         <DialogContent
-          className="sm:max-w-lg"
+          className={
+            adminText.dir === "rtl"
+              ? "sm:max-w-lg [&>button]:left-4 [&>button]:right-auto"
+              : "sm:max-w-lg"
+          }
           dir={adminText.dir}
           onEscapeKeyDown={(event) => {
             if (isSavingPermissions) event.preventDefault();
@@ -1158,15 +1162,21 @@ export default function AdministratorsTab({
           }}
         >
           <DialogHeader
-            className={adminText.dir === "rtl" ? "text-right" : "text-left"}
+            className={
+              adminText.dir === "rtl"
+                ? "pl-14 text-right sm:!text-right"
+                : "pr-14 text-left"
+            }
           >
             <DialogTitle>{permissionText.title}</DialogTitle>
 
             <DialogDescription>
-              {permissionText.description}
-              {selectedAdministrator?.owner_name
-                ? ` (${selectedAdministrator.owner_name})`
-                : ""}
+              <span className="block">{permissionText.description}</span>
+              {selectedAdministrator?.owner_name && (
+                <span className="mt-1 block" dir="auto">
+                  ({selectedAdministrator.owner_name})
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
 
