@@ -32,8 +32,8 @@ jobs:
           rm scripts/admin_permissions_v2_migration.py
           rm .github/workflows/admin-permissions-v2.yml
 
-      - name: Enable pnpm
-        run: corepack enable
+      - name: Install pnpm
+        run: npm install --global pnpm@10.26.1
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
