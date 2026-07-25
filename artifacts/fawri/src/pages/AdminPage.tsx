@@ -2634,7 +2634,8 @@ export default function AdminPage() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-5 space-y-4">
         {/* Tabs */}
-        <div className="flex overflow-x-auto border-b no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+        {TABS.length > 0 && (
+          <div className="flex overflow-x-auto border-b no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
           {TABS.map((t) => {
             const count = tabCount(t);
             return (
@@ -2658,9 +2659,21 @@ export default function AdminPage() {
               </button>
             );
           })}
-        </div>
+          </div>
+        )}
 
-        {tab === "logs" ? (
+        {!currentAdmin ? null : TABS.length === 0 ? (
+          <Card className="mx-auto w-full max-w-lg">
+            <CardContent className="px-6 py-12 text-center">
+              <p className="font-semibold text-foreground">
+                {adminText.mainNoPermissionsTitle}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {adminText.mainNoPermissionsDescription}
+              </p>
+            </CardContent>
+          </Card>
+        ) : tab === "logs" ? (
           <LogsTab logs={logs} />
         ) : tab === "administrators" && canManageAdmins ? (
           <AdministratorsTab

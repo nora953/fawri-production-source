@@ -221,4 +221,28 @@ test("admin permissions migrate and remain server-authoritative", async (t) => {
     headers: assistantHeaders,
   });
   assert.equal(revokedMerchantList.status, 403);
+
+  const clearPermissions = await json(await fetch(
+    `${baseUrl}/api/auth/admins/assistant-admin/permissions`,
+    {
+      method: "PATCH",
+      headers: { ...ownerHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ permissions: [] }),
+    },
+  ));
+  assert.equal(clearPermissions.response.status, 200);
+  assert.deepEqual(clearPermissions.body.admin.permissions, []);
+
+  const noPermissionAssistant = await json(await fetch(
+    `${baseUrl}/api/auth/admin/me`,
+    { headers: assistantHeaders },
+  ));
+  assert.equal(noPermissionAssistant.response.status, 200);
+  assert.deepEqual(noPermissionAssistant.body.admin.permissions, []);
+
+  const noPermissionMerchantList = await fetch(
+    `${baseUrl}/api/auth/merchants`,
+    { headers: assistantHeaders },
+  );
+  assert.equal(noPermissionMerchantList.status, 403);
 });

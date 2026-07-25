@@ -315,6 +315,8 @@ const adminTranslations = {
 
     mainResultsCount: "{count} نتيجة",
     mainNoStores: "لا توجد متاجر",
+    mainNoPermissionsTitle: "لا توجد صلاحيات ممنوحة لهذا الحساب.",
+    mainNoPermissionsDescription: "تواصل مع مالك النظام.",
     mainTableStoreOwner: "المتجر / المالك",
     mainTablePhoneActivity: "الهاتف / النشاط",
     mainTableStatus: "الحالة",
@@ -638,6 +640,8 @@ const adminTranslations = {
 
     mainResultsCount: "{count} results",
     mainNoStores: "No stores found",
+    mainNoPermissionsTitle: "No permissions have been granted to this account.",
+    mainNoPermissionsDescription: "Contact the system owner.",
     mainTableStoreOwner: "Store / Owner",
     mainTablePhoneActivity: "Phone / Activity",
     mainTableStatus: "Status",
@@ -910,6 +914,8 @@ const kuTranslations = {
   mainAllActivities: "هەموو چالاکییەکان",
   mainResultsCount: "{count} ئەنجام",
   mainNoStores: "هیچ فرۆشگایەک نەدۆزرایەوە",
+  mainNoPermissionsTitle: "هیچ دەسەڵاتێک بەم هەژمارە نەدراوە.",
+  mainNoPermissionsDescription: "پەیوەندی بە خاوەنی سیستەمەوە بکە.",
   mainTableStoreOwner: "فرۆشگا / خاوەن",
   mainTablePhoneActivity: "ژمارە / چالاکی",
   mainTableStatus: "دۆخ",
