@@ -1,0 +1,63 @@
+name: Apply account approval lifecycle
+
+on:
+  push:
+    branches:
+      - feature/admin-permissions-v2
+    paths:
+      - .github/workflows/apply-account-approval-lifecycle.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/admin-permissions-v2
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Apply lifecycle changes
+        run: node scripts/apply-account-approval-lifecycle.mjs
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify diff safety
+        run: git diff --check
+
+      - name: Typecheck workspace
+        run: pnpm run typecheck
+
+      - name: Build API
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Build frontend
+        run: PORT=3000 BASE_PATH=/ pnpm --filter @workspace/fawri run build
+
+      - name: Test merchant sessions
+        run: pnpm --filter @workspace/api-server run test:merchant-session
+
+      - name: Test admin permissions and approval lifecycle
+        run: pnpm --filter @workspace/api-server run test:admin-permissions
+
+      - name: Commit verified lifecycle changes
+        run: |
+          rm -f scripts/apply-account-approval-lifecycle.mjs
+          rm -f .github/workflows/apply-account-approval-lifecycle.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Separate account approval from plan activation"
+          git push origin HEAD:feature/admin-permissions-v2
