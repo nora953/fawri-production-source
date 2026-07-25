@@ -10,6 +10,7 @@ const adminTranslations = {
   ar: {
     dir: "rtl" as const,
 
+    confirmApproveAccount: "قبول حساب المتجر",
     confirmRejectStore: "رفض المتجر",
     confirmSuspendStore: "إيقاف المتجر",
     confirmUnsuspendStore: "إلغاء الإيقاف",
@@ -38,7 +39,7 @@ const adminTranslations = {
     subscriptionStatusPendingActivation: "بانتظار التفعيل",
 
     merchantStatusPending: "قيد المراجعة",
-    merchantStatusApproved: "مفعّل",
+    merchantStatusApproved: "مقبول",
     merchantStatusSuspended: "موقوف",
     merchantStatusRejected: "مرفوض",
 
@@ -126,8 +127,8 @@ const adminTranslations = {
     logsActionDeletionRequestRejected: "رفض طلب الحذف",
 
     actionViewDetails: "عرض التفاصيل",
-    actionApproveActivate: "موافقة وتفعيل",
-    actionApprove: "موافقة",
+    actionApproveActivate: "قبول الحساب",
+    actionApprove: "قبول الحساب",
     actionReject: "رفض",
     actionFinalReject: "رفض نهائي",
     actionChangePlan: "تغيير الخطة",
@@ -157,9 +158,9 @@ const adminTranslations = {
       "تعذر تحديث حالة التاجر في السيرفر.",
 
     logPlanLabel: "خطة {plan}",
-    logMerchantApproved: "قُبل المتجر — خطة {plan}",
+    logMerchantApproved: "تم قبول حساب المتجر",
     toastMerchantApproved:
-      "تم قبول {store} وتفعيل خطة {plan}",
+      "تم قبول حساب {store}. لديه 10 أيام لربط أول قناة.",
 
     logMerchantRejected: "تم رفض المتجر",
     toastMerchantRejected: "تم رفض {store}",
@@ -249,7 +250,7 @@ const adminTranslations = {
 
     mainTabAll: "الكل",
     mainTabPending: "قيد المراجعة",
-    mainTabApproved: "المفعَّلون",
+    mainTabApproved: "المقبولون",
     mainTabSuspended: "الموقوفون",
     mainTabRejected: "المرفوضون",
     mainTabAdministrators: "المديرون",
@@ -328,6 +329,7 @@ const adminTranslations = {
   en: {
     dir: "ltr" as const,
 
+    confirmApproveAccount: "Approve merchant account",
     confirmRejectStore: "Reject store",
     confirmSuspendStore: "Suspend store",
     confirmUnsuspendStore: "Remove suspension",
@@ -356,7 +358,7 @@ const adminTranslations = {
     subscriptionStatusPendingActivation: "Pending activation",
 
     merchantStatusPending: "Pending review",
-    merchantStatusApproved: "Active",
+    merchantStatusApproved: "Approved",
     merchantStatusSuspended: "Suspended",
     merchantStatusRejected: "Rejected",
 
@@ -444,8 +446,8 @@ const adminTranslations = {
     logsActionDeletionRequestRejected: "Deletion request rejected",
 
     actionViewDetails: "View details",
-    actionApproveActivate: "Approve and activate",
-    actionApprove: "Approve",
+    actionApproveActivate: "Approve account",
+    actionApprove: "Approve account",
     actionReject: "Reject",
     actionFinalReject: "Reject permanently",
     actionChangePlan: "Change plan",
@@ -476,9 +478,9 @@ const adminTranslations = {
       "Could not update the merchant status on the server.",
 
     logPlanLabel: "Plan {plan}",
-    logMerchantApproved: "Store approved — plan {plan}",
+    logMerchantApproved: "Merchant account approved",
     toastMerchantApproved:
-      "{store} was approved and the {plan} plan was activated.",
+      "{store} was approved. The merchant has 10 days to connect the first channel.",
 
     logMerchantRejected: "Store rejected",
     toastMerchantRejected: "{store} was rejected.",
@@ -574,7 +576,7 @@ const adminTranslations = {
 
     mainTabAll: "All",
     mainTabPending: "Pending review",
-    mainTabApproved: "Activated",
+    mainTabApproved: "Approved",
     mainTabSuspended: "Suspended",
     mainTabRejected: "Rejected",
     mainTabAdministrators: "Administrators",
@@ -653,6 +655,7 @@ const adminTranslations = {
 
 const kuTranslations = {
   dir: "rtl" as const,
+  confirmApproveAccount: "پەسەندکردنی هەژماری فرۆشگا",
   confirmRejectStore: "ڕەتکردنەوەی فرۆشگا",
   confirmSuspendStore: "ڕاگرتنی فرۆشگا",
   confirmUnsuspendStore: "هەڵوەشاندنەوەی ڕاگرتن",
@@ -677,7 +680,7 @@ const kuTranslations = {
   subscriptionStatusRepliesExhausted: "وەڵامەکان تەواو بوون",
   subscriptionStatusPendingActivation: "چاوەڕوانی چالاككردن",
   merchantStatusPending: "پێداچوونەوە",
-  merchantStatusApproved: "چالاككراو",
+  merchantStatusApproved: "پەسەندکراو",
   merchantStatusSuspended: "ڕاگیراو",
   merchantStatusRejected: "ڕەتکراوەتەوە",
   currencyIqd: "د.ع",
@@ -754,8 +757,8 @@ const kuTranslations = {
   logsActionDeletionRequested: "داواکاری سڕینەوەی فرۆشگا",
   logsActionDeletionRequestRejected: "ڕەتکردنەوەی داواکاری سڕینەوە",
   actionViewDetails: "بینینی وردەکارییەکان",
-  actionApproveActivate: "پەسەندکردن و چالاككردن",
-  actionApprove: "پەسەندکردن",
+  actionApproveActivate: "پەسەندکردنی هەژمار",
+  actionApprove: "پەسەندکردنی هەژمار",
   actionReject: "ڕەتکردنەوە",
   actionFinalReject: "ڕەتکردنەوەی کۆتایی",
   actionChangePlan: "گۆڕینی پلان",
@@ -781,8 +784,8 @@ const kuTranslations = {
   merchantOtpRequired: "فرۆشگاکە نابێت چالاك بکرێت پێش پشتڕاستکردنەوەی ژمارە بە OTP.",
   merchantStatusUpdateError: "نوێکردنەوەی دۆخی فرۆشگا سەرنەکەوت.",
   logPlanLabel: "پلانی {plan}",
-  logMerchantApproved: "فرۆشگا پەسەندکرا — پلانی {plan}",
-  toastMerchantApproved: "{store} پەسەندکرا و پلانی {plan} چالاككرا",
+  logMerchantApproved: "هەژماری فرۆشگا پەسەندکرا",
+  toastMerchantApproved: "هەژماری {store} پەسەندکرا. 10 ڕۆژی هەیە بۆ بەستنی یەکەم کەناڵ.",
   logMerchantRejected: "فرۆشگا ڕەتکرایەوە",
   toastMerchantRejected: "{store} ڕەتکرایەوە",
   logMerchantSuspended: "فرۆشگا ڕاگیرا",
@@ -852,7 +855,7 @@ const kuTranslations = {
   deletionConnectionError: "پەیوەندی بە سێرڤەرەوە نەکرا.",
   mainTabAll: "هەموو",
   mainTabPending: "پێداچوونەوە",
-  mainTabApproved: "چالاككراو",
+  mainTabApproved: "پەسەندکراو",
   mainTabSuspended: "ڕاگیراو",
   mainTabRejected: "ڕەتکراوەتەوە",
   mainTabAdministrators: "بەڕێوەبەران",

@@ -1,4 +1,19 @@
 export type MerchantStatus = 'pending_activation' | 'approved' | 'rejected' | 'suspended';
+export type AccountStatus = 'pending_review' | 'approved' | 'rejected' | 'suspended';
+export type OnboardingStatus =
+  | 'pending_review'
+  | 'awaiting_channel'
+  | 'channel_connected'
+  | 'activation_expired';
+export type TrialStatus =
+  | 'eligible'
+  | 'not_started'
+  | 'active'
+  | 'expired'
+  | 'already_used'
+  | 'ineligible';
+export type SignupSource = 'landing_trial' | 'landing_plan' | 'login' | 'direct';
+export type RequestedPlan = 'silver' | 'gold' | 'diamond';
 export type AdminRole = 'owner_admin' | 'assistant_admin';
 
 export type AdminPermission =
@@ -71,6 +86,17 @@ export interface Merchant {
   admin_role?: AdminRole;
   permissions?: AdminPermission[];
   admin_enabled?: boolean;
+  otp_verified?: boolean;
+  account_status?: AccountStatus;
+  onboarding_status?: OnboardingStatus;
+  trial_status?: TrialStatus;
+  signup_source?: SignupSource;
+  requested_plan?: RequestedPlan | null;
+  approved_at?: string;
+  channel_activation_deadline?: string;
+  first_channel_connected_at?: string;
+  trial_started_at?: string;
+  trial_expires_at?: string;
 
   subscription_started_at?: string;
   subscription_expires_at?: string;

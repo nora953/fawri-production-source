@@ -34,6 +34,21 @@ import {
 } from "../services/passwordService";
 
 type MerchantStatus = "pending_activation" | "approved" | "rejected" | "suspended";
+type AccountStatus = "pending_review" | "approved" | "rejected" | "suspended";
+type OnboardingStatus =
+  | "pending_review"
+  | "awaiting_channel"
+  | "channel_connected"
+  | "activation_expired";
+type TrialStatus =
+  | "eligible"
+  | "not_started"
+  | "active"
+  | "expired"
+  | "already_used"
+  | "ineligible";
+type SignupSource = "landing_trial" | "landing_plan" | "login" | "direct";
+type RequestedPlan = "silver" | "gold" | "diamond";
 type AdminRole = "owner_admin" | "assistant_admin";
 type AdminPermission =
   | "view_merchants"
@@ -106,6 +121,16 @@ type Merchant = {
   permissions?: AdminPermission[];
   admin_enabled?: boolean;
   otp_verified?: boolean;
+  account_status?: AccountStatus;
+  onboarding_status?: OnboardingStatus;
+  trial_status?: TrialStatus;
+  signup_source?: SignupSource;
+  requested_plan?: RequestedPlan | null;
+  approved_at?: string;
+  channel_activation_deadline?: string;
+  first_channel_connected_at?: string;
+  trial_started_at?: string;
+  trial_expires_at?: string;
   subscription_started_at?: string;
   subscription_expires_at?: string;
   last_subscription_ended_at?: string;
@@ -141,6 +166,9 @@ const OTP_EXPIRE_MINUTES = Number(process.env.AUTH_OTP_EXPIRE_MINUTES || 10);
 const OTP_RESEND_COOLDOWN_SECONDS = Number(
   process.env.AUTH_OTP_RESEND_COOLDOWN_SECONDS || 60,
 );
+const ACCOUNT_CHANNEL_ACTIVATION_DAYS = 10;
+const ACCOUNT_CHANNEL_ACTIVATION_MS =
+  ACCOUNT_CHANNEL_ACTIVATION_DAYS * 24 * 60 * 60 * 1000;
 
 const PASSWORD_SALT = process.env.FAWRI_PASSWORD_SALT || "fawri-local-dev-salt";
 const ADMIN_SESSION_SECRET =
@@ -717,8 +745,92 @@ function normalizeLanguage(value: unknown): Lang {
   return "ar";
 }
 
+function isAccountStatus(value: unknown): value is AccountStatus {
+  return ["pending_review", "approved", "rejected", "suspended"].includes(
+    String(value),
+  );
+}
+
+function isOnboardingStatus(value: unknown): value is OnboardingStatus {
+  return [
+    "pending_review",
+    "awaiting_channel",
+    "channel_connected",
+    "activation_expired",
+  ].includes(String(value));
+}
+
+function isTrialStatus(value: unknown): value is TrialStatus {
+  return [
+    "eligible",
+    "not_started",
+    "active",
+    "expired",
+    "already_used",
+    "ineligible",
+  ].includes(String(value));
+}
+
+function isSignupSource(value: unknown): value is SignupSource {
+  return ["landing_trial", "landing_plan", "login", "direct"].includes(
+    String(value),
+  );
+}
+
+function isRequestedPlan(value: unknown): value is RequestedPlan {
+  return ["silver", "gold", "diamond"].includes(String(value));
+}
+
+function deriveAccountStatus(status: MerchantStatus): AccountStatus {
+  if (status === "pending_activation") return "pending_review";
+  return status;
+}
+
+function normalizeMerchantLifecycle(merchant: Merchant): Merchant {
+  if (merchant.is_admin === true) return merchant;
+
+  const accountStatus = isAccountStatus(merchant.account_status)
+    ? merchant.account_status
+    : deriveAccountStatus(merchant.status);
+  const hasLegacySubscription = Boolean(
+    merchant.subscription_started_at || merchant.subscription_expires_at,
+  );
+  const onboardingStatus = isOnboardingStatus(merchant.onboarding_status)
+    ? merchant.onboarding_status
+    : accountStatus === "approved" && hasLegacySubscription
+      ? "channel_connected"
+      : accountStatus === "approved"
+        ? "awaiting_channel"
+        : "pending_review";
+  const trialStatus = isTrialStatus(merchant.trial_status)
+    ? merchant.trial_status
+    : hasLegacySubscription
+      ? "ineligible"
+      : merchant.trial_started_at
+        ? new Date(merchant.trial_expires_at || 0).getTime() > Date.now()
+          ? "active"
+          : "expired"
+        : accountStatus === "approved"
+          ? "not_started"
+          : "eligible";
+
+  return {
+    ...merchant,
+    account_status: accountStatus,
+    onboarding_status: onboardingStatus,
+    trial_status: trialStatus,
+    signup_source: isSignupSource(merchant.signup_source)
+      ? merchant.signup_source
+      : "direct",
+    requested_plan:
+      merchant.requested_plan === null || isRequestedPlan(merchant.requested_plan)
+        ? merchant.requested_plan ?? null
+        : null,
+  };
+}
+
 function publicMerchant(merchant: Merchant): SafeMerchant {
-  const { password, ...safeMerchant } = merchant;
+  const { password, ...safeMerchant } = normalizeMerchantLifecycle(merchant);
   void password;
   return safeMerchant;
 }
@@ -886,7 +998,7 @@ function ensureDb(): AuthDb {
               )
                 ? merchant.retention_status
                 : MerchantRetentionStatus.Protected,
-          })))
+          }))).map(normalizeMerchantLifecycle)
         : [],
       otps: Array.isArray(parsed.otps) ? removeExpiredOtps(parsed.otps) : [],
       admin_logs: Array.isArray(parsed.admin_logs) ? parsed.admin_logs : [],
@@ -1350,6 +1462,13 @@ router.post("/signup", async (req: Request, res: Response) => {
       existing.telegram_link = normalizeOptionalUrl(req.body?.telegram_link);
       existing.language = language;
       existing.status = "pending_activation";
+      existing.account_status = "pending_review";
+      existing.onboarding_status = "pending_review";
+      existing.trial_status = "eligible";
+      existing.signup_source = "direct";
+      existing.requested_plan = null;
+      existing.approved_at = undefined;
+      existing.channel_activation_deadline = undefined;
 
       const otp = issueOtp(db, phone, "signup");
       const delivery = await deliverOtp(phone, otp.code, "signup");
@@ -1387,6 +1506,11 @@ router.post("/signup", async (req: Request, res: Response) => {
     theme_preference: "auto",
     created_at: now(),
     otp_verified: false,
+    account_status: "pending_review",
+    onboarding_status: "pending_review",
+    trial_status: "eligible",
+    signup_source: "direct",
+    requested_plan: null,
     warning_stage: 0,
     retention_status: MerchantRetentionStatus.Protected,
   };
@@ -1476,6 +1600,9 @@ router.post("/verify-otp", (req: Request, res: Response) => {
   otp.used = true;
   merchant.otp_verified = true;
   merchant.status = "pending_activation";
+  merchant.account_status = "pending_review";
+  merchant.onboarding_status = "pending_review";
+  if (!isTrialStatus(merchant.trial_status)) merchant.trial_status = "eligible";
   writeDb(db);
   setMerchantSessionCookie(res, merchant.id);
 
@@ -2470,7 +2597,41 @@ router.patch("/merchants/:id/status", (req: Request, res: Response) => {
   }
 
   const previousStatus = merchant.status;
+  const transitionAt = now();
   merchant.status = status;
+
+  if (status === "approved") {
+    merchant.account_status = "approved";
+
+    if (previousStatus !== "suspended") {
+      merchant.approved_at = transitionAt;
+      merchant.channel_activation_deadline = new Date(
+        new Date(transitionAt).getTime() + ACCOUNT_CHANNEL_ACTIVATION_MS,
+      ).toISOString();
+
+      if (merchant.onboarding_status !== "channel_connected") {
+        merchant.onboarding_status = "awaiting_channel";
+      }
+      if (merchant.trial_status === "eligible" || !merchant.trial_status) {
+        merchant.trial_status = "not_started";
+      }
+    }
+  } else if (status === "pending_activation") {
+    merchant.account_status = "pending_review";
+    merchant.onboarding_status = "pending_review";
+    merchant.approved_at = undefined;
+    merchant.channel_activation_deadline = undefined;
+    if (merchant.trial_status === "not_started" || !merchant.trial_status) {
+      merchant.trial_status = "eligible";
+    }
+  } else if (status === "rejected") {
+    merchant.account_status = "rejected";
+    merchant.onboarding_status = "pending_review";
+    merchant.channel_activation_deadline = undefined;
+  } else {
+    merchant.account_status = "suspended";
+  }
+
   appendAdminLog(
     db,
     admin,

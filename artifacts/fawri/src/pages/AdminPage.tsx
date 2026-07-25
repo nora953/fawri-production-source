@@ -159,6 +159,7 @@ function SubBadge({
 
 // ── Confirm dialog ─────────────────────────────────────────────────────────────
 type ConfirmType =
+  | "approve"
   | "reject"
   | "suspend"
   | "unsuspend"
@@ -195,6 +196,7 @@ function ConfirmDialog({
   ].includes(state.type);
 
   const labels: Record<ConfirmType, string> = {
+    approve: adminText.confirmApproveAccount,
     reject: adminText.confirmRejectStore,
     suspend: adminText.confirmSuspendStore,
     unsuspend: adminText.confirmUnsuspendStore,
@@ -265,7 +267,7 @@ function ConfirmDialog({
 interface PlanModalState {
   merchantId: string;
   merchantName: string;
-  mode: "activate" | "change" | "renew";
+  mode: "change" | "renew";
 }
 
 function PlanModal({
@@ -283,7 +285,6 @@ function PlanModal({
   const locale = lang === "en" ? "en-US" : "ar-IQ";
 
   const modeLabel: Record<PlanModalState["mode"], string> = {
-    activate: adminText.planActivateTitle,
     change: adminText.planChangeTitle,
     renew: adminText.planRenewTitle,
   };
@@ -1189,17 +1190,15 @@ function ActionsMenu({
 
           {canManageMerchants && status === "pending_activation" && (
             <>
-              {canManageSubscriptions && (
-                <DropdownMenuItem
-                  onClick={onApprove}
-                  className="text-green-600 focus:text-green-600"
-                >
-                  <CheckCircle
-                    className={`h-3.5 w-3.5 ${iconSpacingClass}`}
-                  />
-                  {adminText.actionApproveActivate}
-                </DropdownMenuItem>
-              )}
+              <DropdownMenuItem
+                onClick={onApprove}
+                className="text-green-600 focus:text-green-600"
+              >
+                <CheckCircle
+                  className={`h-3.5 w-3.5 ${iconSpacingClass}`}
+                />
+                {adminText.actionApprove}
+              </DropdownMenuItem>
 
               <DropdownMenuItem
                 onClick={onReject}
@@ -1341,15 +1340,13 @@ function ActionsMenu({
 
       {canManageMerchants && status === "pending_activation" && (
         <>
-          {canManageSubscriptions && (
-            <Button
-              size="sm"
-              className="h-7 bg-green-600 px-2 text-xs text-white hover:bg-green-700"
-              onClick={onApprove}
-            >
-              {adminText.actionApprove}
-            </Button>
-          )}
+          <Button
+            size="sm"
+            className="h-7 bg-green-600 px-2 text-xs text-white hover:bg-green-700"
+            onClick={onApprove}
+          >
+            {adminText.actionApprove}
+          </Button>
 
           <Button
             variant="destructive"
@@ -1932,56 +1929,20 @@ export default function AdminPage() {
   };
 
   // ── Actions ──────────────────────────────────────────────────────────────────
-  const doApprove = async (merchantId: string, plan: PlanKey) => {
+  const doApprove = async (merchantId: string) => {
     const m = merchants.find((x) => x.id === merchantId)!;
 
     try {
-      const previousSubscriptions = getSubscriptions();
       const apiMerchant = await syncMerchantStatusToApi(merchantId, "approved");
       updateMerchant(merchantId, apiMerchant);
-
-      try {
-        const subscription = createSubscriptionForPlan(merchantId, plan);
-        const syncedMerchant = await syncMerchantSubscriptionToApi(
-          merchantId,
-          subscription,
-        );
-        updateMerchant(merchantId, syncedMerchant);
-      } catch (error) {
-        saveSubscriptions(previousSubscriptions);
-
-        const revertedMerchant = await syncMerchantStatusToApi(
-          merchantId,
-          "pending_activation",
-        );
-        updateMerchant(merchantId, revertedMerchant);
-
-        throw error;
-      }
-      logAction(
-        "plan_activated",
-        m,
-        formatAdminMessage(adminText.logPlanLabel, {
-          plan: planNames[plan],
-        }),
-        { plan },
-      );
-      logAction(
-        "approved",
-        m,
-        formatAdminMessage(adminText.logMerchantApproved, {
-          plan: planNames[plan],
-        }),
-        { plan },
-      );
-      refreshData();
+      logAction("approved", m, adminText.logMerchantApproved);
+      await refreshMerchantsFromApi();
       toast.success(
         formatAdminMessage(adminText.toastMerchantApproved, {
           store: m.store_name,
-          plan: planNames[plan],
         }),
       );
-      setPlanModal(null);
+      setConfirmDialog(null);
     } catch (error) {
       console.error("Approve merchant failed:", error);
       const message = getStatusSyncErrorMessage(error);
@@ -2349,7 +2310,8 @@ export default function AdminPage() {
   const handleConfirm = (reason: string) => {
     if (!confirmDialog) return;
     const { type, merchantId } = confirmDialog;
-    if (type === "reject") doReject(merchantId, reason);
+    if (type === "approve") doApprove(merchantId);
+    else if (type === "reject") doReject(merchantId, reason);
     else if (type === "suspend") doSuspend(merchantId, reason);
     else if (type === "unsuspend") doUnsuspend(merchantId);
     else if (type === "reset_replies") doResetReplies(merchantId);
@@ -2807,13 +2769,13 @@ export default function AdminPage() {
                             </div>
                           )}
                           <div className="flex items-center gap-2">
-                            {canManageMerchants && canManageSubscriptions && m.status === "pending_activation" && (
+                            {canManageMerchants && m.status === "pending_activation" && (
                               <Button
                                 size="sm"
                                 className="h-8 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => openPlan("activate", m)}
+                                onClick={() => openConfirm("approve", m)}
                               >
-                                {adminText.actionApproveActivate}
+                                {adminText.actionApprove}
                               </Button>
                             )}
                             {canManageMerchants && m.status === "approved" && (
@@ -2860,7 +2822,7 @@ export default function AdminPage() {
                               merchant={m}
                               sub={sub}
                               onView={() => void openMerchantDetails(m)}
-                              onApprove={() => openPlan("activate", m)}
+                              onApprove={() => openConfirm("approve", m)}
                               onReject={() => openConfirm("reject", m)}
                               onSuspend={() => openConfirm("suspend", m)}
                               onUnsuspend={() => openConfirm("unsuspend", m)}
@@ -2992,7 +2954,7 @@ export default function AdminPage() {
                                 merchant={m}
                                 sub={sub}
                                 onView={() => void openMerchantDetails(m)}
-                                onApprove={() => openPlan("activate", m)}
+                                onApprove={() => openConfirm("approve", m)}
                                 onReject={() => openConfirm("reject", m)}
                                 onSuspend={() => openConfirm("suspend", m)}
                                 onUnsuspend={() => openConfirm("unsuspend", m)}
@@ -3070,9 +3032,7 @@ export default function AdminPage() {
         <PlanModal
           state={planModal}
           onConfirm={(plan) => {
-            if (planModal.mode === "activate")
-              doApprove(planModal.merchantId, plan);
-            else if (planModal.mode === "change")
+            if (planModal.mode === "change")
               doChangePlan(planModal.merchantId, plan);
             else doRenewPlan(planModal.merchantId, plan);
           }}

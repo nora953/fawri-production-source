@@ -215,6 +215,11 @@ test("admin permissions migrate and remain server-authoritative", async (t) => {
     merchantList.body.merchants.map((merchant) => merchant.id),
     ["merchant-a"],
   );
+  assert.equal(merchantList.body.merchants[0].account_status, "pending_review");
+  assert.equal(merchantList.body.merchants[0].onboarding_status, "pending_review");
+  assert.equal(merchantList.body.merchants[0].trial_status, "eligible");
+  assert.equal(merchantList.body.merchants[0].signup_source, "direct");
+  assert.equal(merchantList.body.merchants[0].requested_plan, null);
 
   const unverifiedLogin = await fetch(`${baseUrl}/api/auth/login`, {
     method: "POST",
@@ -284,6 +289,51 @@ test("admin permissions migrate and remain server-authoritative", async (t) => {
       (merchant) => merchant.id === "merchant-unverified",
     ).status,
     "pending_activation",
+  );
+
+  const approval = await json(await fetch(
+    `${baseUrl}/api/auth/merchants/merchant-a/status`,
+    {
+      method: "PATCH",
+      headers: { ...assistantHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "approved" }),
+    },
+  ));
+
+  assert.equal(approval.response.status, 200);
+  assert.equal(approval.body.merchant.status, "approved");
+  assert.equal(approval.body.merchant.account_status, "approved");
+  assert.equal(approval.body.merchant.onboarding_status, "awaiting_channel");
+  assert.equal(approval.body.merchant.trial_status, "not_started");
+
+  assert.equal(
+    approval.body.merchant.subscription_started_at,
+    undefined,
+  );
+  assert.equal(
+    approval.body.merchant.subscription_expires_at,
+    undefined,
+  );
+
+  assert.ok(
+    Number.isFinite(
+      new Date(approval.body.merchant.approved_at).getTime(),
+    ),
+  );
+  assert.ok(
+    Number.isFinite(
+      new Date(
+        approval.body.merchant.channel_activation_deadline,
+      ).getTime(),
+    ),
+  );
+
+  assert.equal(
+    new Date(
+      approval.body.merchant.channel_activation_deadline,
+    ).getTime() -
+      new Date(approval.body.merchant.approved_at).getTime(),
+    10 * 24 * 60 * 60 * 1000,
   );
 
   const statusUpdate = await fetch(`${baseUrl}/api/auth/merchants/merchant-a/status`, {
