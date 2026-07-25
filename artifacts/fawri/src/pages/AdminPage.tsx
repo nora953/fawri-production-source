@@ -207,18 +207,28 @@ function ConfirmDialog({
 
   const isApproval = state.type === "approve";
   const textAlignmentClass =
-    adminText.dir === "rtl" ? "text-right" : "text-left";
+    adminText.dir === "rtl"
+      ? "!text-right sm:!text-right"
+      : "!text-left sm:!text-left";
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent
-        className={isApproval ? "max-w-md gap-4" : "max-w-sm"}
+        className={
+          isApproval
+            ? `max-w-md gap-4 ${
+                adminText.dir === "rtl"
+                  ? "[&>button]:left-4 [&>button]:right-auto"
+                  : "[&>button]:right-4 [&>button]:left-auto"
+              }`
+            : "max-w-sm"
+        }
         dir={adminText.dir}
       >
         <DialogHeader className={textAlignmentClass}>
           <DialogTitle
             className={`${isDestructive ? "text-destructive" : ""} ${
-              isApproval ? "text-lg leading-6" : ""
+              isApproval ? `w-full text-lg leading-6 ${textAlignmentClass}` : ""
             }`}
           >
             {labels[state.type]}
