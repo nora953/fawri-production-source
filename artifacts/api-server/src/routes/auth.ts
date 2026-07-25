@@ -826,7 +826,17 @@ async function deliverOtp(
     return sendOtpViaWhatsApp(phone, code, purpose);
   }
 
-  return { ok: true };
+  if (
+    process.env.NODE_ENV !== "production" &&
+    process.env.AUTH_ALLOW_DEV_OTP_BYPASS === "true"
+  ) {
+    return { ok: true };
+  }
+
+  return {
+    ok: false,
+    error: "إرسال رمز التحقق غير مهيأ على الخادم",
+  };
 }
 
 function removeExpiredOtps(otps: OtpRecord[]): OtpRecord[] {
@@ -1465,6 +1475,7 @@ router.post("/verify-otp", (req: Request, res: Response) => {
 
   otp.used = true;
   merchant.otp_verified = true;
+  merchant.status = "pending_activation";
   writeDb(db);
   setMerchantSessionCookie(res, merchant.id);
 
@@ -1672,7 +1683,10 @@ router.get("/merchants", (req: Request, res: Response) => {
   return res.json({
     ok: true,
     merchants: db.merchants
-      .filter((merchant) => merchant.is_admin !== true)
+      .filter(
+        (merchant) =>
+          merchant.is_admin !== true && merchant.otp_verified === true,
+      )
       .map(publicMerchant),
   });
 });
