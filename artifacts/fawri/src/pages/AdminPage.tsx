@@ -205,59 +205,100 @@ function ConfirmDialog({
     restore_pending: adminText.confirmRestorePending,
   };
 
+  const isApproval = state.type === "approve";
+  const textAlignmentClass =
+    adminText.dir === "rtl" ? "text-right" : "text-left";
+
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent
-        className="max-w-sm"
+        className={isApproval ? "max-w-md gap-4" : "max-w-sm"}
         dir={adminText.dir}
       >
-        <DialogHeader>
+        <DialogHeader className={textAlignmentClass}>
           <DialogTitle
-            className={isDestructive ? "text-destructive" : ""}
+            className={`${isDestructive ? "text-destructive" : ""} ${
+              isApproval ? "text-lg leading-6" : ""
+            }`}
           >
             {labels[state.type]}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            {adminText.storeLabel}:{" "}
-            <span className="font-medium text-foreground">
-              {state.merchantName}
-            </span>
-          </p>
-
-          {needsReason ? (
-            <div className="space-y-1.5">
-              <Label>{adminText.reasonRequired}</Label>
-
-              <Textarea
-                value={reason}
-                onChange={(event) => setReason(event.target.value)}
-                placeholder={adminText.reasonPlaceholder}
-                rows={3}
-              />
+        {isApproval ? (
+          <div className={`space-y-3 ${textAlignmentClass}`}>
+            <div className="rounded-xl border bg-muted/35 px-4 py-3">
+              <p className="text-xs text-muted-foreground">
+                {adminText.approvalAccountFor}
+              </p>
+              <p className="mt-1 text-base font-semibold text-foreground">
+                {state.merchantName}
+              </p>
             </div>
-          ) : (
+
+            <div className="rounded-xl border border-green-200 bg-green-50/70 px-4 py-3 text-sm leading-6 text-green-950 dark:border-green-900/70 dark:bg-green-950/30 dark:text-green-100">
+              <p>{adminText.approvalNoPlan}</p>
+              <p className="mt-1">{adminText.approvalDeadline}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-3">
             <p className="text-sm text-muted-foreground">
-              {adminText.confirmActionQuestion}
+              {adminText.storeLabel}:{" "}
+              <span className="font-medium text-foreground">
+                {state.merchantName}
+              </span>
             </p>
-          )}
-        </div>
 
-        <DialogFooter className="flex gap-2 flex-row-reverse justify-start">
-          <Button
-            variant={isDestructive ? "destructive" : "default"}
-            disabled={needsReason && !reason.trim()}
-            onClick={() => onConfirm(reason)}
+            {needsReason ? (
+              <div className="space-y-1.5">
+                <Label>{adminText.reasonRequired}</Label>
+
+                <Textarea
+                  value={reason}
+                  onChange={(event) => setReason(event.target.value)}
+                  placeholder={adminText.reasonPlaceholder}
+                  rows={3}
+                />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                {adminText.confirmActionQuestion}
+              </p>
+            )}
+          </div>
+        )}
+
+        {isApproval ? (
+          <DialogFooter
+            className="mt-1 flex flex-row justify-end gap-2"
+            dir="ltr"
           >
-            {adminText.confirm}
-          </Button>
+            <Button variant="outline" onClick={onClose} className="min-w-20">
+              {adminText.cancel}
+            </Button>
+            <Button
+              onClick={() => onConfirm(reason)}
+              className="min-w-32 bg-green-600 text-white hover:bg-green-700"
+            >
+              {adminText.confirmApproveAccountButton}
+            </Button>
+          </DialogFooter>
+        ) : (
+          <DialogFooter className="flex gap-2 flex-row-reverse justify-start">
+            <Button
+              variant={isDestructive ? "destructive" : "default"}
+              disabled={needsReason && !reason.trim()}
+              onClick={() => onConfirm(reason)}
+            >
+              {adminText.confirm}
+            </Button>
 
-          <Button variant="outline" onClick={onClose}>
-            {adminText.cancel}
-          </Button>
-        </DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              {adminText.cancel}
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

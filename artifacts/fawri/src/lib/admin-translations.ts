@@ -11,6 +11,11 @@ const adminTranslations = {
     dir: "rtl" as const,
 
     confirmApproveAccount: "قبول حساب المتجر",
+    approvalAccountFor: "سيتم قبول حساب المتجر:",
+    approvalNoPlan: "لن يتم تفعيل أي باقة عند قبول الحساب.",
+    approvalDeadline:
+      "لدى التاجر 10 أيام لربط أول قناة، وتبدأ التجربة المجانية عند نجاح الربط.",
+    confirmApproveAccountButton: "تأكيد قبول الحساب",
     confirmRejectStore: "رفض المتجر",
     confirmSuspendStore: "إيقاف المتجر",
     confirmUnsuspendStore: "إلغاء الإيقاف",
@@ -330,6 +335,11 @@ const adminTranslations = {
     dir: "ltr" as const,
 
     confirmApproveAccount: "Approve merchant account",
+    approvalAccountFor: "The following merchant account will be approved:",
+    approvalNoPlan: "No plan will be activated when the account is approved.",
+    approvalDeadline:
+      "The merchant has 10 days to connect the first channel. The free trial starts after a successful connection.",
+    confirmApproveAccountButton: "Confirm account approval",
     confirmRejectStore: "Reject store",
     confirmSuspendStore: "Suspend store",
     confirmUnsuspendStore: "Remove suspension",
@@ -656,6 +666,11 @@ const adminTranslations = {
 const kuTranslations = {
   dir: "rtl" as const,
   confirmApproveAccount: "پەسەندکردنی هەژماری فرۆشگا",
+  approvalAccountFor: "ئەم هەژمارەی فرۆشگا پەسەند دەکرێت:",
+  approvalNoPlan: "لە کاتی پەسەندکردنی هەژماردا هیچ پلانێک چالاک ناکرێت.",
+  approvalDeadline:
+    "فرۆشیار 10 ڕۆژی هەیە بۆ بەستنی یەکەم کەناڵ، و تاقیکردنەوەی خۆڕایی دوای سەرکەوتنی پەیوەستکردن دەست پێ دەکات.",
+  confirmApproveAccountButton: "پشتڕاستکردنەوەی پەسەندکردنی هەژمار",
   confirmRejectStore: "ڕەتکردنەوەی فرۆشگا",
   confirmSuspendStore: "ڕاگرتنی فرۆشگا",
   confirmUnsuspendStore: "هەڵوەشاندنەوەی ڕاگرتن",
