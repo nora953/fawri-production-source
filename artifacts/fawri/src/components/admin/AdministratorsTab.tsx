@@ -921,7 +921,11 @@ export default function AdministratorsTab({
 
       <Dialog open={isCreateDialogOpen} onOpenChange={handleCreateDialogChange}>
         <DialogContent
-          className="sm:max-w-lg"
+          className={
+            adminText.dir === "rtl"
+              ? "sm:max-w-lg [&>button]:left-4 [&>button]:right-auto"
+              : "sm:max-w-lg"
+          }
           dir={adminText.dir}
           onEscapeKeyDown={(event) => {
             if (isCreating) event.preventDefault();
@@ -938,13 +942,13 @@ export default function AdministratorsTab({
           </DialogHeader>
 
           <form
-            className="space-y-5"
+            className="space-y-4"
             onSubmit={(event) => {
               event.preventDefault();
               void handleCreateAdministrator();
             }}
           >
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="administrator-owner-name">
                 {t.nameLabel}
               </Label>
@@ -965,7 +969,7 @@ export default function AdministratorsTab({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="administrator-phone">
                 {t.phoneInputLabel}
               </Label>
@@ -989,7 +993,7 @@ export default function AdministratorsTab({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="administrator-password">
                 {t.passwordLabel}
               </Label>
@@ -1017,7 +1021,7 @@ export default function AdministratorsTab({
                   variant="ghost"
                   size="icon"
                   disabled={isCreating}
-                  className="absolute end-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                  className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
                   onClick={() => setShowPassword((current) => !current)}
                 >
                   {showPassword ? (
@@ -1031,7 +1035,7 @@ export default function AdministratorsTab({
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label htmlFor="administrator-language">
                 {t.languageInputLabel}
               </Label>
