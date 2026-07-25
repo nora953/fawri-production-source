@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - feature/admin-permissions-v2
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: write
@@ -13,7 +16,7 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Check out branch
+      - name: Check out feature branch
         uses: actions/checkout@v4
         with:
           ref: feature/admin-permissions-v2
