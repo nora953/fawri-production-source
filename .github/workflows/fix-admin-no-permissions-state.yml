@@ -28,8 +28,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Typecheck workspace
-        run: pnpm run typecheck
+      - name: Typecheck API
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Typecheck frontend
+        run: pnpm --filter @workspace/fawri run typecheck
 
       - name: Build API
         run: pnpm --filter @workspace/api-server run build
@@ -43,12 +46,13 @@ jobs:
       - name: Remove temporary migration files
         run: |
           rm -f scripts/fix-admin-no-permissions-state.mjs
+          rm -f scripts/trigger-no-permissions-workflow.txt
           rm -f .github/workflows/fix-admin-no-permissions-state.yml
 
       - name: Commit verified fix
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add artifacts/fawri/src/pages/AdminPage.tsx artifacts/fawri/src/lib/admin-translations.ts artifacts/api-server/tests/admin-permissions.integration.test.mjs scripts/fix-admin-no-permissions-state.mjs .github/workflows/fix-admin-no-permissions-state.yml
+          git add artifacts/fawri/src/pages/AdminPage.tsx artifacts/fawri/src/lib/admin-translations.ts artifacts/api-server/tests/admin-permissions.integration.test.mjs scripts/fix-admin-no-permissions-state.mjs scripts/trigger-no-permissions-workflow.txt .github/workflows/fix-admin-no-permissions-state.yml
           git commit -m "Handle assistant accounts without permissions"
           git push origin HEAD:feature/admin-permissions-v2
