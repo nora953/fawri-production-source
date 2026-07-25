@@ -281,15 +281,19 @@ function ConfirmDialog({
 
         {isApproval ? (
           <DialogFooter
-            className="mt-1 flex flex-row justify-end gap-2"
+            className="mt-1 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
             dir="ltr"
           >
-            <Button variant="outline" onClick={onClose} className="min-w-20">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="h-auto min-h-10 w-full whitespace-normal px-4 py-2 sm:w-auto sm:min-w-20"
+            >
               {adminText.cancel}
             </Button>
             <Button
               onClick={() => onConfirm(reason)}
-              className="min-w-32 bg-green-600 text-white hover:bg-green-700"
+              className="h-auto min-h-10 w-full whitespace-normal bg-green-600 px-4 py-2 text-white hover:bg-green-700 sm:w-auto sm:min-w-32"
             >
               {adminText.confirmApproveAccountButton}
             </Button>
