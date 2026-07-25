@@ -1,9 +1,13 @@
 name: Admin permissions v2 migration
 
 on:
-  push:
+  pull_request:
     branches:
-      - feature/admin-permissions-v2
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: write
