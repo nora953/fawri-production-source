@@ -1,0 +1,48 @@
+name: Admin dialog polish
+
+on:
+  push:
+    branches:
+      - feature/admin-permissions-v2
+
+permissions:
+  contents: write
+
+jobs:
+  polish-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/admin-permissions-v2
+          fetch-depth: 0
+
+      - name: Apply dialog polish
+        run: node scripts/polish-admin-create-dialog.mjs
+
+      - name: Install pnpm
+        run: npm install --global pnpm@10.26.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck frontend
+        run: pnpm --filter @workspace/fawri run typecheck
+
+      - name: Build frontend
+        run: PORT=3000 BASE_PATH=/ pnpm --filter @workspace/fawri run build
+
+      - name: Remove temporary migration files
+        run: |
+          rm -f scripts/polish-admin-create-dialog.mjs
+          rm -f .github/workflows/admin-dialog-polish.yml
+
+      - name: Commit validated dialog polish
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/fawri/src/components/admin/AdministratorsTab.tsx scripts/polish-admin-create-dialog.mjs .github/workflows/admin-dialog-polish.yml
+          git commit -m "Polish assistant admin creation dialog"
+          git push origin HEAD:feature/admin-permissions-v2
