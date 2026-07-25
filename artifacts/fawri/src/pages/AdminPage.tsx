@@ -334,10 +334,14 @@ function PlanModal({
   onConfirm: (plan: PlanKey) => void;
   onClose: () => void;
 }) {
-  const [selected, setSelected] = useState<PlanKey>("gold");
+  const [selected, setSelected] = useState<PlanKey | null>(null);
   const { lang } = useI18n();
   const adminText = getAdminText(lang);
   const locale = lang === "en" ? "en-US" : "ar-IQ";
+  const textAlignmentClass =
+    adminText.dir === "rtl"
+      ? "!text-right sm:!text-right"
+      : "!text-left sm:!text-left";
 
   const modeLabel: Record<PlanModalState["mode"], string> = {
     activate: adminText.planActivateTitle,
@@ -351,14 +355,26 @@ function PlanModal({
     diamond: adminText.planDiamond,
   };
 
+  const submitLabel: Record<PlanModalState["mode"], string> = {
+    activate: adminText.confirmActivateSubscription,
+    change: adminText.confirmChangePlan,
+    renew: adminText.confirmRenewPlan,
+  };
+
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent
-        className="max-w-md"
+        className={`max-w-md ${
+          adminText.dir === "rtl"
+            ? "[&>button]:left-4 [&>button]:right-auto"
+            : "[&>button]:right-4 [&>button]:left-auto"
+        }`}
         dir={adminText.dir}
       >
-        <DialogHeader>
-          <DialogTitle>{modeLabel[state.mode]}</DialogTitle>
+        <DialogHeader className={textAlignmentClass}>
+          <DialogTitle className={`w-full ${textAlignmentClass}`}>
+            {modeLabel[state.mode]}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -374,7 +390,10 @@ function PlanModal({
               key={key}
               type="button"
               onClick={() => setSelected(key)}
-              className={`w-full rounded-lg border-2 p-3 text-start transition-colors ${
+              aria-pressed={selected === key}
+              className={`w-full rounded-lg border-2 p-3 transition-colors ${
+                adminText.dir === "rtl" ? "text-right" : "text-left"
+              } ${
                 selected === key
                   ? "border-primary bg-primary/5"
                   : "border-border hover:border-primary/50"
@@ -382,7 +401,7 @@ function PlanModal({
             >
               <div className="flex items-center justify-between gap-3">
                 <span className="font-semibold">
-                  {planNames[key]} — {PLANS[key].label}
+                  {planNames[key]}
                 </span>
 
                 <span className="font-bold text-primary">
@@ -402,13 +421,24 @@ function PlanModal({
           ))}
         </div>
 
-        <DialogFooter className="flex gap-2 flex-row-reverse justify-start">
-          <Button onClick={() => onConfirm(selected)}>
-            {adminText.confirm}
+        <DialogFooter
+          className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+          dir="ltr"
+        >
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="h-auto min-h-10 w-full whitespace-normal px-4 py-2 sm:w-auto"
+          >
+            {adminText.cancel}
           </Button>
 
-          <Button variant="outline" onClick={onClose}>
-            {adminText.cancel}
+          <Button
+            disabled={!selected}
+            onClick={() => selected && onConfirm(selected)}
+            className="h-auto min-h-10 w-full whitespace-normal px-4 py-2 sm:w-auto"
+          >
+            {submitLabel[state.mode]}
           </Button>
         </DialogFooter>
       </DialogContent>
