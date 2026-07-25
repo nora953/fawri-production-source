@@ -42,12 +42,13 @@ import { toast } from "sonner";
 type AdminRole = "owner_admin" | "assistant_admin";
 
 type AdminPermission =
-  | "manage_admins"
-  | "manage_merchants"
+  | "view_merchants"
+  | "manage_merchant_status"
   | "manage_subscriptions"
   | "manage_channels"
   | "view_logs"
-  | "inspection_sessions";
+  | "inspect_merchant_sessions"
+  | "manage_support";
 
 type SupportedLanguage = "ar" | "en" | "ku";
 
@@ -205,11 +206,12 @@ export default function AdministratorsTab({
   // The old internal dictionary remains temporarily below only as a
   // rollback reference until visual verification is completed.
   const permissionList: readonly AdminPermission[] = [
-    "manage_merchants",
+    "view_merchants",
+    "manage_merchant_status",
     "manage_subscriptions",
     "manage_channels",
     "view_logs",
-    "inspection_sessions",
+    "inspect_merchant_sessions",
   ];
 
   const permissionText = {
@@ -217,12 +219,13 @@ export default function AdministratorsTab({
       button: "إدارة الصلاحيات",
       title: "صلاحيات المسؤول المساعد",
       description: "حدد الأقسام والإجراءات التي يستطيع هذا المسؤول الوصول إليها.",
-      manage_admins: "إدارة المسؤولين",
-      manage_merchants: "إدارة التجار",
+      view_merchants: "عرض التجار",
+      manage_merchant_status: "إدارة حالة التجار",
       manage_subscriptions: "إدارة الاشتراكات",
       manage_channels: "إدارة القنوات",
       view_logs: "عرض سجل النشاط",
-      inspection_sessions: "جلسات الفحص",
+      inspect_merchant_sessions: "جلسات فحص حساب التاجر",
+      manage_support: "إدارة الدعم",
       cancel: "إلغاء",
       save: "حفظ الصلاحيات",
       saving: "جارٍ الحفظ...",
@@ -234,12 +237,13 @@ export default function AdministratorsTab({
       button: "Manage permissions",
       title: "Assistant administrator permissions",
       description: "Select the sections and actions this administrator can access.",
-      manage_admins: "Manage administrators",
-      manage_merchants: "Manage merchants",
+      view_merchants: "View merchants",
+      manage_merchant_status: "Manage merchant status",
       manage_subscriptions: "Manage subscriptions",
       manage_channels: "Manage channels",
       view_logs: "View activity logs",
-      inspection_sessions: "Inspection sessions",
+      inspect_merchant_sessions: "Inspect merchant sessions",
+      manage_support: "Manage support",
       cancel: "Cancel",
       save: "Save permissions",
       saving: "Saving...",
@@ -251,12 +255,13 @@ export default function AdministratorsTab({
       button: "بەڕێوەبردنی دەسەڵاتەکان",
       title: "دەسەڵاتەکانی بەڕێوەبەری یاریدەدەر",
       description: "ئەو بەشانە دیاری بکە کە ئەم بەڕێوەبەرە دەتوانێت دەستی پێیان بگات.",
-      manage_admins: "بەڕێوەبردنی بەڕێوەبەران",
-      manage_merchants: "بەڕێوەبردنی بازرگانان",
+      view_merchants: "بینینی بازرگانان",
+      manage_merchant_status: "بەڕێوەبردنی دۆخی بازرگانان",
       manage_subscriptions: "بەڕێوەبردنی بەشداریکردنەکان",
       manage_channels: "بەڕێوەبردنی کەناڵەکان",
       view_logs: "بینینی تۆماری چالاکی",
-      inspection_sessions: "دانیشتنەکانی پشکنین",
+      inspect_merchant_sessions: "دانیشتنەکانی پشکنینی هەژماری بازرگان",
+      manage_support: "بەڕێوەبردنی پشتگیری",
       cancel: "هەڵوەشاندنەوە",
       save: "پاشەکەوتکردنی دەسەڵاتەکان",
       saving: "پاشەکەوت دەکرێت...",

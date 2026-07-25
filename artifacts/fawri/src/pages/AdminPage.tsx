@@ -16,7 +16,6 @@ import {
   saveMerchants,
   getSubscriptions,
   saveSubscriptions,
-  getCurrentMerchant,
   getAdminAuthHeaders,
   clearSession,
   createSubscriptionForPlan,
@@ -1496,10 +1495,14 @@ export default function AdminPage() {
       template,
     );
 
-  const currentAdmin = getCurrentMerchant();
+  const [currentAdmin, setCurrentAdmin] = useState<Merchant | undefined>();
   const isOwnerAdmin = currentAdmin?.admin_role === "owner_admin";
-  const canManageAdmins = hasAdminPermission(currentAdmin, "manage_admins");
-  const canManageMerchants = hasAdminPermission(currentAdmin, "manage_merchants");
+  const canManageAdmins = isOwnerAdmin;
+  const canViewMerchants = hasAdminPermission(currentAdmin, "view_merchants");
+  const canManageMerchants = hasAdminPermission(
+    currentAdmin,
+    "manage_merchant_status",
+  );
   const canManageSubscriptions = hasAdminPermission(
     currentAdmin,
     "manage_subscriptions",
@@ -1508,9 +1511,10 @@ export default function AdminPage() {
   const canViewLogs = hasAdminPermission(currentAdmin, "view_logs");
   const canInspectSessions = hasAdminPermission(
     currentAdmin,
-    "inspection_sessions",
+    "inspect_merchant_sessions",
   );
   const canViewMerchantData =
+    canViewMerchants ||
     canManageMerchants ||
     canManageSubscriptions ||
     canManageChannels ||
@@ -1542,18 +1546,35 @@ export default function AdminPage() {
     MerchantDeletionRequest[]
   >([]);
 
-  // Guard: admin-only
-  useEffect(() => {
-    const current = getCurrentMerchant();
-    if (!current) {
+  const refreshCurrentAdminFromApi = useCallback(async (): Promise<Merchant | null> => {
+    try {
+      const response = await fetch("/api/auth/admin/me", {
+        headers: getAdminAuthHeaders(),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.ok || !data.admin?.is_admin) {
+        clearSession();
+        setCurrentAdmin(undefined);
+        setLocation("/login");
+        return null;
+      }
+
+      const serverAdmin = data.admin as Merchant;
+      setCurrentAdmin(serverAdmin);
+      return serverAdmin;
+    } catch (error) {
+      console.error("Current admin API refresh failed:", error);
+      clearSession();
+      setCurrentAdmin(undefined);
       setLocation("/login");
-      return;
-    }
-    if (!current.is_admin) {
-      setLocation("/dashboard");
-      return;
+      return null;
     }
   }, [setLocation]);
+
+  useEffect(() => {
+    void refreshCurrentAdminFromApi();
+  }, [refreshCurrentAdminFromApi]);
 
   const refreshData = useCallback(() => {
     setSubscriptions(canManageSubscriptions ? getSubscriptions() : []);
@@ -1580,13 +1601,14 @@ export default function AdminPage() {
       }
 
       if (response.status === 403) {
+        void refreshCurrentAdminFromApi();
         toast.error(adminText.permissionDenied);
         return true;
       }
 
       return false;
     },
-    [adminText.permissionDenied, setLocation],
+    [adminText.permissionDenied, refreshCurrentAdminFromApi, setLocation],
   );
 
   const refreshMerchantsFromApi = useCallback(async () => {

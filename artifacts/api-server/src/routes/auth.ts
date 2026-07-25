@@ -36,21 +36,23 @@ import {
 type MerchantStatus = "pending_activation" | "approved" | "rejected" | "suspended";
 type AdminRole = "owner_admin" | "assistant_admin";
 type AdminPermission =
-  | "manage_admins"
-  | "manage_merchants"
+  | "view_merchants"
+  | "manage_merchant_status"
   | "manage_subscriptions"
   | "manage_channels"
   | "view_logs"
-  | "inspection_sessions";
+  | "inspect_merchant_sessions"
+  | "manage_support";
 type Lang = "ar" | "ku" | "en";
 
 const ALL_ADMIN_PERMISSIONS: readonly AdminPermission[] = [
-  "manage_admins",
-  "manage_merchants",
+  "view_merchants",
+  "manage_merchant_status",
   "manage_subscriptions",
   "manage_channels",
   "view_logs",
-  "inspection_sessions",
+  "inspect_merchant_sessions",
+  "manage_support",
 ];
 type ThemeMode = "light" | "dark" | "auto";
 type ChannelPlatform = "instagram" | "messenger" | "telegram";
@@ -199,23 +201,74 @@ function isAdminPermission(value: unknown): value is AdminPermission {
   );
 }
 
+const LEGACY_ADMIN_PERMISSION_MAP: Readonly<Record<string, readonly AdminPermission[]>> = {
+  manage_merchants: ["view_merchants", "manage_merchant_status"],
+  inspection_sessions: ["inspect_merchant_sessions"],
+  manage_subscriptions: ["manage_subscriptions"],
+  manage_channels: ["manage_channels"],
+  view_logs: ["view_logs"],
+};
+
 function normalizeAssistantPermissions(
   value: unknown,
 ): AdminPermission[] {
   if (!Array.isArray(value)) return [];
 
-  return Array.from(
-    new Set(
-      value.filter(
-        (permission): permission is AdminPermission =>
-          isAdminPermission(permission) && permission !== "manage_admins",
-      ),
-    ),
+  const normalized = new Set<AdminPermission>();
+
+  for (const permission of value) {
+    if (typeof permission !== "string" || permission === "manage_admins") {
+      continue;
+    }
+
+    if (isAdminPermission(permission)) {
+      normalized.add(permission);
+      continue;
+    }
+
+    for (const migratedPermission of LEGACY_ADMIN_PERMISSION_MAP[permission] || []) {
+      normalized.add(migratedPermission);
+    }
+  }
+
+  return ALL_ADMIN_PERMISSIONS.filter((permission) => normalized.has(permission));
+}
+
+function resolveOwnerAdminId(merchants: Merchant[]): string | null {
+  const admins = merchants.filter((merchant) => merchant.is_admin === true);
+  if (admins.length === 0) return null;
+
+  const configuredOwnerPhone = normalizePhone(
+    process.env.FAWRI_ADMIN_PHONE || "",
   );
+
+  if (configuredOwnerPhone) {
+    const configuredOwner = admins.find(
+      (admin) => normalizePhone(admin.phone) === configuredOwnerPhone,
+    );
+
+    if (!configuredOwner) {
+      throw new Error(
+        "FAWRI_ADMIN_PHONE does not match an existing administrator account",
+      );
+    }
+
+    return configuredOwner.id;
+  }
+
+  const explicitOwners = admins.filter(
+    (admin) => admin.admin_role === "owner_admin",
+  );
+
+  if (explicitOwners.length > 1) {
+    throw new Error("multiple owner administrators are configured");
+  }
+
+  return explicitOwners[0]?.id || null;
 }
 
 function normalizeAdminRoles(merchants: Merchant[]): Merchant[] {
-  let ownerAssigned = false;
+  const ownerAdminId = resolveOwnerAdminId(merchants);
 
   return merchants.map((merchant) => {
     if (merchant.is_admin !== true) {
@@ -233,39 +286,11 @@ function normalizeAdminRoles(merchants: Merchant[]): Merchant[] {
       return regularMerchant;
     }
 
-    if (
-      merchant.admin_role === "owner_admin" &&
-      ownerAssigned === false
-    ) {
-      ownerAssigned = true;
-
+    if (merchant.id === ownerAdminId) {
       return {
         ...merchant,
         admin_role: "owner_admin",
-        permissions: [...ALL_ADMIN_PERMISSIONS],
-        admin_enabled: true,
-      };
-    }
-
-    if (
-      merchant.admin_role === "assistant_admin" &&
-      ownerAssigned === true
-    ) {
-      return {
-        ...merchant,
-        admin_role: "assistant_admin",
-        permissions: normalizeAssistantPermissions(merchant.permissions),
-        admin_enabled: merchant.admin_enabled !== false,
-      };
-    }
-
-    if (ownerAssigned === false) {
-      ownerAssigned = true;
-
-      return {
-        ...merchant,
-        admin_role: "owner_admin",
-        permissions: [...ALL_ADMIN_PERMISSIONS],
+        permissions: undefined,
         admin_enabled: true,
       };
     }
@@ -1625,12 +1650,21 @@ router.get("/me", requireMerchantSession, (_req: Request, res: Response) => {
   return res.json({ ok: true, merchant: publicMerchant(merchant) });
 });
 
+router.get("/admin/me", (req: Request, res: Response) => {
+  const admin = requireAdminSession(req, res);
+  if (!admin) return;
+
+  res.setHeader("Cache-Control", "no-store");
+  return res.json({ ok: true, admin: toAdminSummary(admin) });
+});
+
 router.get("/merchants", (req: Request, res: Response) => {
   const admin = requireAnyAdminPermission(req, res, [
-    "manage_merchants",
+    "view_merchants",
+    "manage_merchant_status",
     "manage_subscriptions",
     "manage_channels",
-    "inspection_sessions",
+    "inspect_merchant_sessions",
   ]);
   if (!admin) return;
 
@@ -2002,7 +2036,7 @@ router.patch(
 );
 
 router.get("/merchants/:id/note", (req: Request, res: Response) => {
-  const admin = requireAdminPermission(req, res, "manage_merchants");
+  const admin = requireAdminPermission(req, res, "manage_merchant_status");
   if (!admin) return;
 
   const merchantId = String(req.params.id || "").trim();
@@ -2018,7 +2052,7 @@ router.get("/merchants/:id/note", (req: Request, res: Response) => {
 });
 
 router.put("/merchants/:id/note", (req: Request, res: Response) => {
-  const admin = requireAdminPermission(req, res, "manage_merchants");
+  const admin = requireAdminPermission(req, res, "manage_merchant_status");
   if (!admin) return;
 
   const merchantId = String(req.params.id || "").trim();
@@ -2046,11 +2080,11 @@ router.get("/admin/deletion-requests", (req: Request, res: Response) => {
 
   if (
     !isOwnerAdmin(admin) &&
-    !adminHasPermission(admin, "manage_merchants")
+    !adminHasPermission(admin, "manage_merchant_status")
   ) {
     return sendError(res, 403, "admin permission is required", {
       code: "ADMIN_PERMISSION_REQUIRED",
-      permission: "manage_merchants",
+      permission: "manage_merchant_status",
     });
   }
 
@@ -2068,7 +2102,7 @@ router.get("/admin/deletion-requests", (req: Request, res: Response) => {
 router.post(
   "/merchants/:id/deletion-requests",
   (req: Request, res: Response) => {
-    const admin = requireAdminPermission(req, res, "manage_merchants");
+    const admin = requireAdminPermission(req, res, "manage_merchant_status");
     if (!admin) return;
 
     if (!isAssistantAdmin(admin)) {
@@ -2386,7 +2420,7 @@ router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
 
 
 router.patch("/merchants/:id/status", (req: Request, res: Response) => {
-  const admin = requireAdminPermission(req, res, "manage_merchants");
+  const admin = requireAdminPermission(req, res, "manage_merchant_status");
   if (!admin) return;
 
   const merchantId = String(req.params.id || "").trim();

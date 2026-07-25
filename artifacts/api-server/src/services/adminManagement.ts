@@ -2,12 +2,13 @@ export type AdminLanguage = "ar" | "ku" | "en";
 export type AdminRole = "owner_admin" | "assistant_admin";
 
 export type AdminPermission =
-  | "manage_admins"
-  | "manage_merchants"
+  | "view_merchants"
+  | "manage_merchant_status"
   | "manage_subscriptions"
   | "manage_channels"
   | "view_logs"
-  | "inspection_sessions";
+  | "inspect_merchant_sessions"
+  | "manage_support";
 
 export type AdminSummary = {
   id: string;
