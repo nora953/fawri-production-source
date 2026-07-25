@@ -954,10 +954,10 @@ export default function AdministratorsTab({
               void handleCreateAdministrator();
             }}
           >
-            <div className={language === "ar" || language === "ku" ? "space-y-2" : "space-y-1.5"}>
+            <div className="space-y-2">
               <Label
                 htmlFor="administrator-owner-name"
-                className={language === "ar" || language === "ku" ? "block min-h-5 leading-5" : undefined}
+                className="block min-h-5 leading-5"
               >
                 {t.nameLabel}
               </Label>
@@ -978,10 +978,10 @@ export default function AdministratorsTab({
               />
             </div>
 
-            <div className={language === "ar" || language === "ku" ? "space-y-2" : "space-y-1.5"}>
+            <div className="space-y-2">
               <Label
                 htmlFor="administrator-phone"
-                className={language === "ar" || language === "ku" ? "block min-h-5 leading-5" : undefined}
+                className="block min-h-5 leading-5"
               >
                 {t.phoneInputLabel}
               </Label>
@@ -1005,10 +1005,10 @@ export default function AdministratorsTab({
               />
             </div>
 
-            <div className={language === "ar" || language === "ku" ? "space-y-2" : "space-y-1.5"}>
+            <div className="space-y-2">
               <Label
                 htmlFor="administrator-password"
-                className={language === "ar" || language === "ku" ? "block min-h-5 leading-5" : undefined}
+                className="block min-h-5 leading-5"
               >
                 {t.passwordLabel}
               </Label>
@@ -1049,13 +1049,13 @@ export default function AdministratorsTab({
                     <span className="sr-only">{t.passwordLabel}</span>
                   </button>
                 ) : (
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="icon"
+                    aria-label={t.passwordLabel}
                     disabled={isCreating}
-                    className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+                    onMouseDown={(event) => event.preventDefault()}
                     onClick={() => setShowPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -1064,15 +1064,15 @@ export default function AdministratorsTab({
                     )}
 
                     <span className="sr-only">{t.passwordLabel}</span>
-                  </Button>
+                  </button>
                 )}
               </div>
             </div>
 
-            <div className={language === "ar" || language === "ku" ? "space-y-2" : "space-y-1.5"}>
+            <div className="space-y-2">
               <Label
                 htmlFor="administrator-language"
-                className={language === "ar" || language === "ku" ? "block min-h-5 leading-5" : undefined}
+                className="block min-h-5 leading-5"
               >
                 {t.languageInputLabel}
               </Label>
