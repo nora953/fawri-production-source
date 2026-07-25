@@ -30,7 +30,7 @@ const adminTranslations = {
     confirm: "تأكيد",
     cancel: "إلغاء",
 
-    planActivateTitle: "تفعيل الخطة",
+    planActivateTitle: "تفعيل اشتراك مدفوع",
     planChangeTitle: "تغيير الخطة",
     planRenewTitle: "تجديد الخطة",
     planSilver: "الفضية",
@@ -136,6 +136,8 @@ const adminTranslations = {
     actionApprove: "قبول الحساب",
     actionReject: "رفض",
     actionFinalReject: "رفض نهائي",
+    actionActivatePaidSubscription: "تفعيل اشتراك مدفوع",
+    actionActivatePaidSubscriptionShort: "اشتراك مدفوع",
     actionChangePlan: "تغيير الخطة",
     actionPlanShort: "الخطة",
     actionRenewPlan: "تجديد الخطة",
@@ -196,6 +198,11 @@ const adminTranslations = {
     logAutoReplyDisabled: "إيقاف",
     toastAutoReplyEnabled: "تم تفعيل الردود التلقائية",
     toastAutoReplyDisabled: "تم إيقاف الردود التلقائية",
+
+    logPlanActivated: "تم تفعيل الاشتراك المدفوع — خطة {plan}",
+    toastPlanActivated: "تم تفعيل الاشتراك المدفوع بخطة {plan}",
+    planActivationSaveError:
+      "تعذر تفعيل الاشتراك المدفوع في السيرفر.",
 
     logPlanChanged: "خطة {plan}",
     toastPlanChanged: "تم تغيير الخطة إلى {plan}",
@@ -354,7 +361,7 @@ const adminTranslations = {
     confirm: "Confirm",
     cancel: "Cancel",
 
-    planActivateTitle: "Activate plan",
+    planActivateTitle: "Activate paid subscription",
     planChangeTitle: "Change plan",
     planRenewTitle: "Renew plan",
     planSilver: "Silver",
@@ -460,6 +467,8 @@ const adminTranslations = {
     actionApprove: "Approve account",
     actionReject: "Reject",
     actionFinalReject: "Reject permanently",
+    actionActivatePaidSubscription: "Activate paid subscription",
+    actionActivatePaidSubscriptionShort: "Paid subscription",
     actionChangePlan: "Change plan",
     actionPlanShort: "Plan",
     actionRenewPlan: "Renew plan",
@@ -525,6 +534,11 @@ const adminTranslations = {
       "Automatic replies were enabled.",
     toastAutoReplyDisabled:
       "Automatic replies were disabled.",
+
+    logPlanActivated: "Paid subscription activated — plan {plan}",
+    toastPlanActivated: "The paid {plan} subscription was activated.",
+    planActivationSaveError:
+      "Could not activate the paid subscription on the server.",
 
     logPlanChanged: "Plan {plan}",
     toastPlanChanged:
@@ -683,7 +697,7 @@ const kuTranslations = {
   confirmActionQuestion: "دڵنیای لە ئەنجامدانی ئەم کردارە؟",
   confirm: "پشتڕاستکردنەوە",
   cancel: "هەڵوەشاندنەوە",
-  planActivateTitle: "چالاككردنی پلان",
+  planActivateTitle: "چالاککردنی بەشداریی پارەدراو",
   planChangeTitle: "گۆڕینی پلان",
   planRenewTitle: "نوێکردنەوەی پلان",
   planSilver: "زیو",
@@ -776,6 +790,8 @@ const kuTranslations = {
   actionApprove: "پەسەندکردنی هەژمار",
   actionReject: "ڕەتکردنەوە",
   actionFinalReject: "ڕەتکردنەوەی کۆتایی",
+  actionActivatePaidSubscription: "چالاککردنی بەشداریی پارەدراو",
+  actionActivatePaidSubscriptionShort: "بەشداریی پارەدراو",
   actionChangePlan: "گۆڕینی پلان",
   actionPlanShort: "پلان",
   actionRenewPlan: "نوێکردنەوەی پلان",
@@ -820,6 +836,10 @@ const kuTranslations = {
   logAutoReplyDisabled: "ڕاگرتن",
   toastAutoReplyEnabled: "وەڵامی خۆکار چالاككرا",
   toastAutoReplyDisabled: "وەڵامی خۆکار ڕاگیرا",
+  logPlanActivated: "بەشداریی پارەدراو چالاککرا — پلانی {plan}",
+  toastPlanActivated: "بەشداریی پارەدراو بە پلانی {plan} چالاککرا",
+  planActivationSaveError: "چالاککردنی بەشداریی پارەدراو لە سێرڤەر سەرنەکەوت.",
+
   logPlanChanged: "پلانی {plan}",
   toastPlanChanged: "پلان گۆڕدرا بۆ {plan}",
   planChangeSaveError: "پاشەکەوتکردنی پلانی نوێ سەرنەکەوت.",

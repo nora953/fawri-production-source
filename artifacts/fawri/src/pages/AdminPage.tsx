@@ -322,7 +322,7 @@ function ConfirmDialog({
 interface PlanModalState {
   merchantId: string;
   merchantName: string;
-  mode: "change" | "renew";
+  mode: "activate" | "change" | "renew";
 }
 
 function PlanModal({
@@ -340,6 +340,7 @@ function PlanModal({
   const locale = lang === "en" ? "en-US" : "ar-IQ";
 
   const modeLabel: Record<PlanModalState["mode"], string> = {
+    activate: adminText.planActivateTitle,
     change: adminText.planChangeTitle,
     renew: adminText.planRenewTitle,
   };
@@ -1270,45 +1271,52 @@ function ActionsMenu({
           {status === "approved" && (
             <>
               {canManageSubscriptions && (
-                <>
+                sub ? (
+                  <>
+                    <DropdownMenuItem onClick={onChangePlan}>
+                      <FileText className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
+                      {adminText.actionChangePlan}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onRenewPlan}>
+                      <RefreshCcw className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
+                      {adminText.actionRenewPlan}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onResetReplies}>
+                      <RefreshCcw className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
+                      {adminText.actionResetReplies}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onAddReplies}>
+                      <Plus className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
+                      {adminText.actionAddReplies}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={onDeductReplies}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Minus className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
+                      {adminText.actionDeductReplies}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={onToggleAutoReply}>
+                      {sub.auto_reply_enabled ? (
+                        <>
+                          <PowerOff className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
+                          {adminText.actionDisableAutoReplies}
+                        </>
+                      ) : (
+                        <>
+                          <Power className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
+                          {adminText.actionEnableAutoReplies}
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  </>
+                ) : (
                   <DropdownMenuItem onClick={onChangePlan}>
                     <FileText className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
-                    {adminText.actionChangePlan}
+                    {adminText.actionActivatePaidSubscription}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onRenewPlan}>
-                    <RefreshCcw className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
-                    {adminText.actionRenewPlan}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onResetReplies}>
-                    <RefreshCcw className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
-                    {adminText.actionResetReplies}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={onAddReplies}>
-                    <Plus className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
-                    {adminText.actionAddReplies}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={onDeductReplies}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Minus className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
-                    {adminText.actionDeductReplies}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={onToggleAutoReply}>
-                    {sub?.auto_reply_enabled ? (
-                      <>
-                        <PowerOff className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
-                        {adminText.actionDisableAutoReplies}
-                      </>
-                    ) : (
-                      <>
-                        <Power className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
-                        {adminText.actionEnableAutoReplies}
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                </>
+                )
               )}
 
               {canManageMerchants && (
@@ -1417,22 +1425,33 @@ function ActionsMenu({
       {status === "approved" && (
         <>
           {canManageSubscriptions && (
-            <>
-              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onChangePlan}>
-                {adminText.actionPlanShort}
+            sub ? (
+              <>
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onChangePlan}>
+                  {adminText.actionPlanShort}
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onRenewPlan}>
+                  {adminText.actionRenewShort}
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onResetReplies}>
+                  <RefreshCcw className={`h-3 w-3 ${compactIconSpacingClass}`} />
+                  {adminText.actionRepliesShort}
+                </Button>
+                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onAddReplies}>
+                  <Plus className={`h-3 w-3 ${compactIconSpacingClass}`} />
+                  {adminText.actionAddShort}
+                </Button>
+              </>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={onChangePlan}
+              >
+                {adminText.actionActivatePaidSubscriptionShort}
               </Button>
-              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onRenewPlan}>
-                {adminText.actionRenewShort}
-              </Button>
-              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onResetReplies}>
-                <RefreshCcw className={`h-3 w-3 ${compactIconSpacingClass}`} />
-                {adminText.actionRepliesShort}
-              </Button>
-              <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onAddReplies}>
-                <Plus className={`h-3 w-3 ${compactIconSpacingClass}`} />
-                {adminText.actionAddShort}
-              </Button>
-            </>
+            )
           )}
 
           {canManageMerchants && (
@@ -2202,6 +2221,41 @@ export default function AdminPage() {
     );
   };
 
+  const doActivatePaidSubscription = async (merchantId: string, plan: PlanKey) => {
+    const m = merchants.find((x) => x.id === merchantId)!;
+    const previousSubscriptions = getSubscriptions();
+
+    try {
+      const subscription = createSubscriptionForPlan(merchantId, plan);
+      const apiMerchant = await syncMerchantSubscriptionToApi(
+        merchantId,
+        subscription,
+      );
+
+      updateMerchant(merchantId, apiMerchant);
+      logAction(
+        "plan_activated",
+        m,
+        formatAdminMessage(adminText.logPlanActivated, {
+          plan: planNames[plan],
+        }),
+        { plan },
+      );
+      toast.success(
+        formatAdminMessage(adminText.toastPlanActivated, {
+          plan: planNames[plan],
+        }),
+      );
+      setPlanModal(null);
+      refreshData();
+    } catch (error) {
+      saveSubscriptions(previousSubscriptions);
+      refreshData();
+      console.error("Paid subscription activation failed:", error);
+      toast.error(adminText.planActivationSaveError);
+    }
+  };
+
   const doChangePlan = async (merchantId: string, plan: PlanKey) => {
     const m = merchants.find((x) => x.id === merchantId)!;
     const previousSubscriptions = getSubscriptions();
@@ -2890,7 +2944,7 @@ export default function AdminPage() {
                               onAddReplies={() => openReplies("add", m)}
                               onDeductReplies={() => openReplies("deduct", m)}
                               onToggleAutoReply={() => doToggleAutoReply(m.id)}
-                              onChangePlan={() => openPlan("change", m)}
+                              onChangePlan={() => openPlan(sub ? "change" : "activate", m)}
                               onRenewPlan={() => openPlan("renew", m)}
                               onDelete={() => openDeleteMerchant(m)}
                               canManageMerchants={canManageMerchants}
@@ -3024,7 +3078,7 @@ export default function AdminPage() {
                                 onToggleAutoReply={() =>
                                   doToggleAutoReply(m.id)
                                 }
-                                onChangePlan={() => openPlan("change", m)}
+                                onChangePlan={() => openPlan(sub ? "change" : "activate", m)}
                                 onRenewPlan={() => openPlan("renew", m)}
                                 onDelete={() => openDeleteMerchant(m)}
                                 canManageMerchants={canManageMerchants}
@@ -3087,7 +3141,9 @@ export default function AdminPage() {
         <PlanModal
           state={planModal}
           onConfirm={(plan) => {
-            if (planModal.mode === "change")
+            if (planModal.mode === "activate")
+              doActivatePaidSubscription(planModal.merchantId, plan);
+            else if (planModal.mode === "change")
               doChangePlan(planModal.merchantId, plan);
             else doRenewPlan(planModal.merchantId, plan);
           }}
