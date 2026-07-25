@@ -1,0 +1,54 @@
+name: Fix admin no-permissions state
+
+on:
+  push:
+    branches:
+      - feature/admin-permissions-v2
+
+permissions:
+  contents: write
+
+jobs:
+  fix-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/admin-permissions-v2
+          fetch-depth: 0
+
+      - name: Apply no-permissions state fix
+        run: node scripts/fix-admin-no-permissions-state.mjs
+
+      - name: Install pnpm
+        run: npm install --global pnpm@10.26.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck workspace
+        run: pnpm run typecheck
+
+      - name: Build API
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Build frontend
+        run: PORT=3000 BASE_PATH=/ pnpm --filter @workspace/fawri run build
+
+      - name: Run admin permission integration test
+        run: pnpm --filter @workspace/api-server run test:admin-permissions
+
+      - name: Remove temporary migration files
+        run: |
+          rm -f scripts/fix-admin-no-permissions-state.mjs
+          rm -f .github/workflows/fix-admin-no-permissions-state.yml
+
+      - name: Commit verified fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/fawri/src/pages/AdminPage.tsx artifacts/fawri/src/lib/admin-translations.ts artifacts/api-server/tests/admin-permissions.integration.test.mjs scripts/fix-admin-no-permissions-state.mjs .github/workflows/fix-admin-no-permissions-state.yml
+          git commit -m "Handle assistant accounts without permissions"
+          git push origin HEAD:feature/admin-permissions-v2
