@@ -1,0 +1,46 @@
+name: Revert admin dialog polish
+
+on:
+  push:
+    branches:
+      - feature/admin-permissions-v2
+
+permissions:
+  contents: write
+
+jobs:
+  revert-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/admin-permissions-v2
+          fetch-depth: 0
+
+      - name: Restore previous creation dialog
+        run: git checkout b17bbf408f8c6b3b580c55009f66e524add12057 -- artifacts/fawri/src/components/admin/AdministratorsTab.tsx
+
+      - name: Install pnpm
+        run: npm install --global pnpm@10.26.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck frontend
+        run: pnpm --filter @workspace/fawri run typecheck
+
+      - name: Build frontend
+        run: PORT=3000 BASE_PATH=/ pnpm --filter @workspace/fawri run build
+
+      - name: Remove temporary workflow
+        run: rm -f .github/workflows/revert-admin-dialog-polish.yml
+
+      - name: Commit verified revert
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/fawri/src/components/admin/AdministratorsTab.tsx .github/workflows/revert-admin-dialog-polish.yml
+          git commit -m "Revert assistant admin dialog polish"
+          git push origin HEAD:feature/admin-permissions-v2
