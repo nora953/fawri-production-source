@@ -1,0 +1,48 @@
+name: Refine admin dialog layout
+
+on:
+  push:
+    branches:
+      - feature/admin-permissions-v2
+
+permissions:
+  contents: write
+
+jobs:
+  refine-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/admin-permissions-v2
+          fetch-depth: 0
+
+      - name: Apply targeted layout refinement
+        run: node scripts/refine-admin-create-dialog-layout.mjs
+
+      - name: Install pnpm
+        run: npm install --global pnpm@10.26.1
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck frontend
+        run: pnpm --filter @workspace/fawri run typecheck
+
+      - name: Build frontend
+        run: PORT=3000 BASE_PATH=/ pnpm --filter @workspace/fawri run build
+
+      - name: Remove temporary migration files
+        run: |
+          rm -f scripts/refine-admin-create-dialog-layout.mjs
+          rm -f .github/workflows/refine-admin-create-dialog-layout.yml
+
+      - name: Commit verified layout refinement
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/fawri/src/components/admin/AdministratorsTab.tsx scripts/refine-admin-create-dialog-layout.mjs .github/workflows/refine-admin-create-dialog-layout.yml
+          git commit -m "Refine assistant admin dialog layout"
+          git push origin HEAD:feature/admin-permissions-v2
