@@ -4,11 +4,14 @@ const authPath = "artifacts/api-server/src/routes/auth.ts";
 const testPath = "artifacts/api-server/tests/admin-permissions.integration.test.mjs";
 
 function replaceOnce(source, label, before, after) {
+  if (source.includes(after)) return source;
+
   const first = source.indexOf(before);
   if (first === -1) throw new Error(`Could not find ${label}`);
   if (source.indexOf(before, first + before.length) !== -1) {
     throw new Error(`Found multiple matches for ${label}`);
   }
+
   return source.slice(0, first) + after + source.slice(first + before.length);
 }
 
@@ -165,12 +168,12 @@ testSource = replaceOnce(
 testSource = replaceOnce(
   testSource,
   "merchant visibility assertions",
-  `  const merchantList = await fetch(\`${baseUrl}/api/auth/merchants\`, { headers: assistantHeaders });
+  `  const merchantList = await fetch(\`\${baseUrl}/api/auth/merchants\`, { headers: assistantHeaders });
   assert.equal(merchantList.status, 200);
 
-  const statusUpdate = await fetch(\`${baseUrl}/api/auth/merchants/merchant-a/status\`, {`,
+  const statusUpdate = await fetch(\`\${baseUrl}/api/auth/merchants/merchant-a/status\`, {`,
   `  const merchantList = await json(await fetch(
-    \`${baseUrl}/api/auth/merchants\`,
+    \`\${baseUrl}/api/auth/merchants\`,
     { headers: assistantHeaders },
   ));
   assert.equal(merchantList.response.status, 200);
@@ -179,7 +182,7 @@ testSource = replaceOnce(
     ["merchant-a"],
   );
 
-  const unverifiedLogin = await fetch(\`${baseUrl}/api/auth/login\`, {
+  const unverifiedLogin = await fetch(\`\${baseUrl}/api/auth/login\`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -190,7 +193,7 @@ testSource = replaceOnce(
   assert.equal(unverifiedLogin.status, 401);
 
   const unverifiedApproval = await fetch(
-    \`${baseUrl}/api/auth/merchants/merchant-unverified/status\`,
+    \`\${baseUrl}/api/auth/merchants/merchant-unverified/status\`,
     {
       method: "PATCH",
       headers: { ...assistantHeaders, "Content-Type": "application/json" },
@@ -199,7 +202,7 @@ testSource = replaceOnce(
   );
   assert.equal(unverifiedApproval.status, 409);
 
-  const failedSignup = await fetch(\`${baseUrl}/api/auth/signup\`, {
+  const failedSignup = await fetch(\`\${baseUrl}/api/auth/signup\`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -224,7 +227,7 @@ testSource = replaceOnce(
   );
 
   const verifyUnverifiedMerchant = await fetch(
-    \`${baseUrl}/api/auth/verify-otp\`,
+    \`\${baseUrl}/api/auth/verify-otp\`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -234,7 +237,7 @@ testSource = replaceOnce(
   assert.equal(verifyUnverifiedMerchant.status, 200);
 
   const merchantListAfterVerification = await json(await fetch(
-    \`${baseUrl}/api/auth/merchants\`,
+    \`\${baseUrl}/api/auth/merchants\`,
     { headers: assistantHeaders },
   ));
   assert.equal(merchantListAfterVerification.response.status, 200);
@@ -249,7 +252,7 @@ testSource = replaceOnce(
     "pending_activation",
   );
 
-  const statusUpdate = await fetch(\`${baseUrl}/api/auth/merchants/merchant-a/status\`, {`,
+  const statusUpdate = await fetch(\`\${baseUrl}/api/auth/merchants/merchant-a/status\`, {`,
 );
 
 fs.writeFileSync(testPath, testSource, "utf8");
