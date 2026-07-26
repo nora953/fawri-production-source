@@ -2924,14 +2924,14 @@ export default function AdminPage() {
                                 status={m.status}
                                 label={merchantStatusLabels[m.status] ?? m.status}
                               />
-                              {sub && (
+                              {canManageSubscriptions && sub && (
                                 <span className="text-[10px] text-muted-foreground capitalize">
                                   {planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
                                 </span>
                               )}
                             </div>
                           </div>
-                          {sub && (
+                          {canManageSubscriptions && sub && (
                             <div className="bg-muted/50 rounded-md p-2 text-xs">
                               <div className="flex justify-between mb-1">
                                 <span className="text-muted-foreground">
@@ -3043,7 +3043,9 @@ export default function AdminPage() {
                           adminText.mainTableStoreOwner,
                           adminText.mainTablePhoneActivity,
                           adminText.mainTableStatus,
-                          adminText.mainTablePlanReplies,
+                          ...(canManageSubscriptions
+                            ? [adminText.mainTablePlanReplies]
+                            : []),
                           adminText.mainTableRegistered,
                           adminText.mainTableActions,
                         ].map((h) => (
@@ -3092,7 +3094,7 @@ export default function AdminPage() {
                                 label={merchantStatusLabels[m.status] ?? m.status}
                               />
                               </div>
-                              {sub && (
+                              {canManageSubscriptions && sub && (
                                 <div>
                                   <SubBadge
                                     status={sub.status}
@@ -3104,12 +3106,13 @@ export default function AdminPage() {
                                 </div>
                               )}
                             </td>
-                            <td className="px-4 py-3">
-                              {sub ? (
-                                <div className="space-y-1">
-                                  <span className="text-xs font-medium capitalize">
-                                    {planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
-                                  </span>
+                            {canManageSubscriptions && (
+                              <td className="px-4 py-3">
+                                {sub ? (
+                                  <div className="space-y-1">
+                                    <span className="text-xs font-medium capitalize">
+                                      {planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
+                                    </span>
                                   <p
                                     className="text-xs tabular-nums text-muted-foreground"
                                     dir="ltr"
@@ -3126,12 +3129,13 @@ export default function AdminPage() {
                                     />
                                   </div>
                                 </div>
-                              ) : (
-                                <span className="text-xs text-muted-foreground">
-                                  —
-                                </span>
-                              )}
-                            </td>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">
+                                    —
+                                  </span>
+                                )}
+                              </td>
+                            )}
                             <td className="px-4 py-3 text-xs text-muted-foreground">
                               {new Date(m.created_at).toLocaleDateString(
                                 locale,
