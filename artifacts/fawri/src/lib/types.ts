@@ -321,7 +321,10 @@ export interface AdminLogMeta {
 
 export interface AdminLog {
   id: string;
+  admin_id?: string;
+  admin_name?: string;
   admin_phone: string;
+  admin_role?: AdminRole;
   action_type: string;
   merchant_id: string;
   merchant_name: string;

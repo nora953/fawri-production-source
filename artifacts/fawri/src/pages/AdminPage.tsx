@@ -1232,6 +1232,29 @@ function LogsTab({ logs }: { logs: AdminLog[] }) {
                       {log.reason}
                     </p>
                   )}
+
+                  {(log.admin_role === "owner_admin" ||
+                    log.admin_name ||
+                    log.admin_phone) && (
+                    <p className="mt-2 flex flex-wrap items-center gap-x-1 text-xs font-medium text-foreground">
+                      <span>{adminText.logsPerformedByLabel}:</span>
+                      {log.admin_role === "owner_admin" ? (
+                        <span>{adminText.logsSystemOwner}</span>
+                      ) : (
+                        <>
+                          {log.admin_name && <span>{log.admin_name}</span>}
+                          {log.admin_name && log.admin_phone && (
+                            <span aria-hidden="true">—</span>
+                          )}
+                          {log.admin_phone && (
+                            <span dir="ltr" className="tabular-nums">
+                              {log.admin_phone}
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </p>
+                  )}
                 </div>
 
                 <time className="shrink-0 whitespace-nowrap text-xs text-muted-foreground">

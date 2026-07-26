@@ -76,7 +76,10 @@ type DeletionRequestStatus = "pending" | "rejected" | "completed";
 
 type AdminLogRecord = {
   id: string;
+  admin_id?: string;
+  admin_name?: string;
   admin_phone: string;
+  admin_role?: AdminRole;
   action_type: string;
   merchant_id: string;
   merchant_name: string;
@@ -1048,7 +1051,10 @@ function appendAdminLog(
 ): AdminLogRecord {
   const log: AdminLogRecord = {
     id: makeId("admin-log"),
+    admin_id: admin.id,
+    admin_name: admin.owner_name,
     admin_phone: admin.phone,
+    admin_role: admin.admin_role,
     action_type: actionType,
     merchant_id: merchant.id,
     merchant_name: merchant.store_name,
@@ -2009,12 +2015,20 @@ router.post("/admin/local-data-migration", (req: Request, res: Response) => {
     const merchantName = String(record.merchant_name || "").trim();
     const actionType = String(record.action_type || "").trim();
     const createdAt = String(record.created_at || "").trim();
+    const adminId = String(record.admin_id || "").trim();
+    const adminName = String(record.admin_name || "").trim();
+    const adminRole = isAdminRole(record.admin_role)
+      ? record.admin_role
+      : undefined;
     if (!id || knownLogIds.has(id) || !merchantId || !merchantName || !actionType) continue;
     if (!Number.isFinite(new Date(createdAt).getTime())) continue;
 
     db.admin_logs.push({
       id,
+      ...(adminId ? { admin_id: adminId } : {}),
+      ...(adminName ? { admin_name: adminName } : {}),
       admin_phone: String(record.admin_phone || owner.phone).trim(),
+      ...(adminRole ? { admin_role: adminRole } : {}),
       action_type: actionType,
       merchant_id: merchantId,
       merchant_name: merchantName,

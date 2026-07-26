@@ -343,6 +343,57 @@ test("admin permissions migrate and remain server-authoritative", async (t) => {
   });
   assert.equal(statusUpdate.status, 200);
 
+  const assistantSubscriptionLog = await json(await fetch(
+    `${baseUrl}/api/auth/admin/logs`,
+    {
+      method: "POST",
+      headers: { ...assistantHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action_type: "plan_changed",
+        merchant_id: "merchant-a",
+        details: "subscription audit identity test",
+        meta: { plan: "silver" },
+      }),
+    },
+  ));
+  assert.equal(assistantSubscriptionLog.response.status, 201);
+  assert.equal(assistantSubscriptionLog.body.log.admin_id, "assistant-admin");
+  assert.equal(assistantSubscriptionLog.body.log.admin_name, "Assistant");
+  assert.equal(assistantSubscriptionLog.body.log.admin_phone, "07222222222");
+  assert.equal(assistantSubscriptionLog.body.log.admin_role, "assistant_admin");
+
+  const ownerUnsuspend = await fetch(
+    `${baseUrl}/api/auth/merchants/merchant-a/status`,
+    {
+      method: "PATCH",
+      headers: { ...ownerHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "approved" }),
+    },
+  );
+  assert.equal(ownerUnsuspend.status, 200);
+
+  const auditLogs = await json(await fetch(
+    `${baseUrl}/api/auth/admin/logs`,
+    { headers: ownerHeaders },
+  ));
+  assert.equal(auditLogs.response.status, 200);
+
+  const ownerAuditLog = auditLogs.body.logs.find(
+    (log) => log.action_type === "unsuspended",
+  );
+  assert.equal(ownerAuditLog.admin_id, "owner-admin");
+  assert.equal(ownerAuditLog.admin_name, "Owner");
+  assert.equal(ownerAuditLog.admin_phone, "07111111111");
+  assert.equal(ownerAuditLog.admin_role, "owner_admin");
+
+  const assistantAuditLog = auditLogs.body.logs.find(
+    (log) => log.action_type === "suspended",
+  );
+  assert.equal(assistantAuditLog.admin_id, "assistant-admin");
+  assert.equal(assistantAuditLog.admin_name, "Assistant");
+  assert.equal(assistantAuditLog.admin_phone, "07222222222");
+  assert.equal(assistantAuditLog.admin_role, "assistant_admin");
+
   const forbiddenAdmins = await fetch(`${baseUrl}/api/auth/admins`, { headers: assistantHeaders });
   assert.equal(forbiddenAdmins.status, 403);
 

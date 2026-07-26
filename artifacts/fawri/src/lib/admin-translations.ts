@@ -121,6 +121,8 @@ const adminTranslations = {
     logsAllActions: "كل العمليات",
     logsEmpty: "لا توجد سجلات",
     logsReasonLabel: "السبب",
+    logsPerformedByLabel: "نفّذ بواسطة",
+    logsSystemOwner: "مالك النظام",
 
     logsActionApproved: "موافقة",
     logsActionRejected: "رفض",
@@ -464,6 +466,8 @@ const adminTranslations = {
     logsAllActions: "All actions",
     logsEmpty: "No logs found",
     logsReasonLabel: "Reason",
+    logsPerformedByLabel: "Performed by",
+    logsSystemOwner: "System owner",
 
     logsActionApproved: "Approved",
     logsActionRejected: "Rejected",
@@ -801,6 +805,8 @@ const kuTranslations = {
   logsAllActions: "هەموو کردارەکان",
   logsEmpty: "هیچ تۆمارێک نەدۆزرایەوە",
   logsReasonLabel: "هۆکار",
+  logsPerformedByLabel: "جێبەجێکراوە لەلایەن",
+  logsSystemOwner: "خاوەنی سیستەم",
   logsActionApproved: "پەسەندکردن",
   logsActionRejected: "ڕەتکردنەوە",
   logsActionSuspended: "ڕاگرتن",
