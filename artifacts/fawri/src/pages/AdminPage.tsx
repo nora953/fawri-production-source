@@ -221,21 +221,21 @@ function ConfirmDialog({
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent
-        className={
-          isApproval
-            ? `max-w-md gap-4 ${
-                adminText.dir === "rtl"
-                  ? "[&>button]:left-4 [&>button]:right-auto"
-                  : "[&>button]:right-4 [&>button]:left-auto"
-              }`
-            : "max-w-sm"
-        }
+        className={`${isApproval ? "max-w-md gap-4" : "max-w-sm gap-4"} ${
+          adminText.dir === "rtl"
+            ? "[&>button]:left-4 [&>button]:right-auto"
+            : "[&>button]:right-4 [&>button]:left-auto"
+        }`}
         dir={adminText.dir}
       >
-        <DialogHeader className={textAlignmentClass}>
+        <DialogHeader
+          className={`w-full ${textAlignmentClass} ${
+            adminText.dir === "rtl" ? "pl-12" : "pr-12"
+          }`}
+        >
           <DialogTitle
-            className={`${isDestructive ? "text-destructive" : ""} ${
-              isApproval ? `w-full text-lg leading-6 ${textAlignmentClass}` : ""
+            className={`w-full text-lg leading-6 ${textAlignmentClass} ${
+              isDestructive ? "text-destructive" : ""
             }`}
           >
             {labels[state.type]}
@@ -259,23 +259,28 @@ function ConfirmDialog({
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              {adminText.storeLabel}:{" "}
-              <span className="font-medium text-foreground">
+          <div className={`space-y-3 ${textAlignmentClass}`}>
+            <div className={`rounded-xl border bg-muted/35 px-4 py-3 ${textAlignmentClass}`}>
+              <p className="text-xs text-muted-foreground">
+                {adminText.storeLabel}
+              </p>
+              <p className="mt-1 text-sm font-semibold text-foreground">
                 {state.merchantName}
-              </span>
-            </p>
+              </p>
+            </div>
 
             {needsReason ? (
-              <div className="space-y-1.5">
-                <Label>{adminText.reasonRequired}</Label>
+              <div className={`space-y-1.5 ${textAlignmentClass}`}>
+                <Label className={`block ${textAlignmentClass}`}>
+                  {adminText.reasonRequired}
+                </Label>
 
                 <Textarea
+                  className={`min-h-28 resize-none ${textAlignmentClass}`}
                   value={reason}
                   onChange={(event) => setReason(event.target.value)}
                   placeholder={adminText.reasonPlaceholder}
-                  rows={3}
+                  rows={4}
                 />
               </div>
             ) : (
@@ -306,17 +311,25 @@ function ConfirmDialog({
             </Button>
           </DialogFooter>
         ) : (
-          <DialogFooter className="flex gap-2 flex-row-reverse justify-start">
+          <DialogFooter
+            className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+            dir="ltr"
+          >
+            <Button
+              variant="outline"
+              onClick={onClose}
+              className="h-auto min-h-10 w-full whitespace-normal px-4 py-2 sm:w-auto sm:min-w-20"
+            >
+              {adminText.cancel}
+            </Button>
+
             <Button
               variant={isDestructive ? "destructive" : "default"}
               disabled={needsReason && !reason.trim()}
               onClick={() => onConfirm(reason)}
+              className="h-auto min-h-10 w-full whitespace-normal px-4 py-2 sm:w-auto sm:min-w-24"
             >
               {adminText.confirm}
-            </Button>
-
-            <Button variant="outline" onClick={onClose}>
-              {adminText.cancel}
             </Button>
           </DialogFooter>
         )}
