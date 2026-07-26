@@ -551,7 +551,7 @@ function DetailsModal({
   sub,
   notes,
   channelOverrides,
-  canManageMerchants,
+  canManageNotes,
   canManageSubscriptions,
   canManageChannels,
   onClose,
@@ -562,7 +562,7 @@ function DetailsModal({
   sub?: Subscription;
   notes: string;
   channelOverrides: Record<string, string>;
-  canManageMerchants: boolean;
+  canManageNotes: boolean;
   canManageSubscriptions: boolean;
   canManageChannels: boolean;
   onClose: () => void;
@@ -619,7 +619,7 @@ function DetailsModal({
     ...(canManageChannels
       ? [{ id: "channels" as const, label: adminText.detailsTabChannels }]
       : []),
-    ...(canManageMerchants
+    ...(canManageNotes
       ? [{ id: "notes" as const, label: adminText.detailsTabNotes }]
       : []),
   ];
@@ -3188,7 +3188,7 @@ export default function AdminPage() {
           sub={getSub(detailsMerchant.id)}
           notes={adminNotesMap[detailsMerchant.id] ?? ""}
           channelOverrides={channelOverridesMap[detailsMerchant.id] ?? {}}
-          canManageMerchants={canManageMerchants}
+          canManageNotes={isOwnerAdmin}
           canManageSubscriptions={canManageSubscriptions}
           canManageChannels={canManageChannels}
           onClose={() => setDetailsMerchant(null)}
