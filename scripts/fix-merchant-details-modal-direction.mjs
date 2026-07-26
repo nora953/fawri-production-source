@@ -1,16 +1,33 @@
 import fs from "node:fs";
 
 const filePath = "artifacts/fawri/src/pages/AdminPage.tsx";
-let source = fs.readFileSync(filePath, "utf8");
+const source = fs.readFileSync(filePath, "utf8");
+
+const sectionStartMarker =
+  "// ── Details modal ──────────────────────────────────────────────────────────────";
+const sectionEndMarker =
+  "// ── Admin logs tab ─────────────────────────────────────────────────────────────";
+
+const sectionStart = source.indexOf(sectionStartMarker);
+const sectionEnd = source.indexOf(sectionEndMarker, sectionStart);
+
+if (sectionStart === -1 || sectionEnd === -1 || sectionEnd <= sectionStart) {
+  throw new Error("Could not isolate the merchant details modal section");
+}
+
+let detailsSection = source.slice(sectionStart, sectionEnd);
 
 function replaceOnce(label, before, after) {
-  if (source.includes(after)) return;
-  const first = source.indexOf(before);
+  if (detailsSection.includes(after)) return;
+  const first = detailsSection.indexOf(before);
   if (first === -1) throw new Error(`Could not find ${label}`);
-  if (source.indexOf(before, first + before.length) !== -1) {
-    throw new Error(`Found multiple matches for ${label}`);
+  if (detailsSection.indexOf(before, first + before.length) !== -1) {
+    throw new Error(`Found multiple matches for ${label} inside DetailsModal`);
   }
-  source = source.slice(0, first) + after + source.slice(first + before.length);
+  detailsSection =
+    detailsSection.slice(0, first) +
+    after +
+    detailsSection.slice(first + before.length);
 }
 
 replaceOnce(
@@ -31,19 +48,27 @@ replaceOnce(
   `      <DialogContent\n        className={\`flex max-h-[90vh] w-full max-w-2xl flex-col p-0 \${\n          adminText.dir === "rtl"\n            ? "[&>button]:left-4 [&>button]:right-auto"\n            : "[&>button]:right-4 [&>button]:left-auto"\n        }\`}\n        dir={adminText.dir}\n      >\n        <DialogHeader className={\`px-6 pb-0 pt-5 \${textAlignmentClass}\`}>\n          <DialogTitle className={\`w-full text-base \${textAlignmentClass}\`}>`,
 );
 
-fs.writeFileSync(filePath, source, "utf8");
+const updatedSource =
+  source.slice(0, sectionStart) + detailsSection + source.slice(sectionEnd);
+fs.writeFileSync(filePath, updatedSource, "utf8");
 
 const finalSource = fs.readFileSync(filePath, "utf8");
+const finalSectionStart = finalSource.indexOf(sectionStartMarker);
+const finalSectionEnd = finalSource.indexOf(sectionEndMarker, finalSectionStart);
+const finalDetailsSection = finalSource.slice(finalSectionStart, finalSectionEnd);
+
 for (const marker of [
   `planNames[sub.plan_name as PlanKey] ?? sub.plan_name,`,
   `[&>button]:left-4 [&>button]:right-auto`,
   `<DialogTitle className={\`w-full text-base \${textAlignmentClass}\`}>`,
 ]) {
-  if (!finalSource.includes(marker)) throw new Error(`Missing marker: ${marker}`);
+  if (!finalDetailsSection.includes(marker)) {
+    throw new Error(`Missing marker in DetailsModal: ${marker}`);
+  }
 }
 
-if (finalSource.includes(`PLANS[sub.plan_name as PlanKey]?.label`)) {
-  throw new Error("Duplicate English plan label remains in details modal");
+if (finalDetailsSection.includes(`PLANS[sub.plan_name as PlanKey]?.label`)) {
+  throw new Error("Duplicate English plan label remains in DetailsModal");
 }
 
 console.log("Merchant details modal direction and localized plan name fixed.");
