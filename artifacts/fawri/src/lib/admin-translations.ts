@@ -335,6 +335,7 @@ const adminTranslations = {
     mainAllActivities: "كل الأنشطة",
 
     mainResultsCount: "{count} نتيجة",
+    mainResultCountSingular: "نتيجة واحدة",
     mainNoStores: "لا توجد متاجر",
     mainNoPermissionsTitle: "لا توجد صلاحيات ممنوحة لهذا الحساب.",
     mainNoPermissionsDescription: "تواصل مع مالك النظام.",
@@ -681,6 +682,7 @@ const adminTranslations = {
     mainAllActivities: "All activities",
 
     mainResultsCount: "{count} results",
+    mainResultCountSingular: "1 ئەنجام",
     mainNoStores: "No stores found",
     mainNoPermissionsTitle: "No permissions have been granted to this account.",
     mainNoPermissionsDescription: "Contact the system owner.",
@@ -975,6 +977,7 @@ const kuTranslations = {
   mainActivityPlaceholder: "چالاکی",
   mainAllActivities: "هەموو چالاکییەکان",
   mainResultsCount: "{count} ئەنجام",
+  mainResultCountSingular: "1 result",
   mainNoStores: "هیچ فرۆشگایەک نەدۆزرایەوە",
   mainNoPermissionsTitle: "هیچ دەسەڵاتێک بەم هەژمارە نەدراوە.",
   mainNoPermissionsDescription: "پەیوەندی بە خاوەنی سیستەمەوە بکە.",

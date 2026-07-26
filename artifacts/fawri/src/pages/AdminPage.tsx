@@ -2729,11 +2729,11 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background" dir={adminText.dir}>
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex items-center justify-between h-14 px-4 md:px-6 max-w-7xl mx-auto">
-          <span className="text-lg font-bold text-primary fowri-header-brand-font">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2 sm:min-h-14 sm:flex-row sm:items-center sm:justify-between md:px-6">
+          <span className="text-base font-bold leading-tight text-primary fowri-header-brand-font sm:text-lg">
             {adminText.mainAdminTitle}
           </span>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-3">
             <span className="text-sm text-muted-foreground hidden sm:block">
               {currentAdmin?.phone}
             </span>
@@ -2774,14 +2774,14 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-5 space-y-4">
         {/* Tabs */}
         {TABS.length > 0 && (
-          <div className="flex overflow-x-auto border-b no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="-mx-4 grid grid-cols-2 gap-x-2 border-b px-4 sm:grid-cols-3 md:mx-0 md:grid-cols-4 md:px-0 lg:flex lg:overflow-x-auto">
           {TABS.map((t) => {
             const count = tabCount(t);
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 -mb-px transition-colors ${tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                className={`w-full min-w-0 px-2 py-2.5 text-xs font-medium whitespace-normal leading-4 border-b-2 -mb-px transition-colors lg:w-auto lg:whitespace-nowrap lg:px-4 lg:text-sm ${tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
               >
                 {t.label}
                 {count > 0 && (
@@ -2825,8 +2825,8 @@ export default function AdminPage() {
         ) : (
           <>
             {/* Search + filters */}
-            <div className="flex gap-2 flex-wrap">
-              <div className="relative flex-1 min-w-44">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="relative col-span-2">
                 <Search
                   className={`absolute top-2.5 w-4 h-4 text-muted-foreground pointer-events-none ${
                     adminText.dir === "rtl" ? "right-2.5" : "left-2.5"
@@ -2843,7 +2843,7 @@ export default function AdminPage() {
               </div>
               {canManageSubscriptions && (
                 <Select value={filterPlan} onValueChange={setFilterPlan}>
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={adminText.mainPlanPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
@@ -2863,7 +2863,7 @@ export default function AdminPage() {
                   value={filterActivity}
                   onValueChange={setFilterActivity}
                 >
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder={adminText.mainActivityPlaceholder} />
                   </SelectTrigger>
                   <SelectContent>
@@ -2881,9 +2881,12 @@ export default function AdminPage() {
             </div>
 
             <p className="text-xs text-muted-foreground">
-              {formatAdminMessage(adminText.mainResultsCount, {
-                count: filteredMerchants.length,
-              })}
+              {formatAdminMessage(
+                lang === "en" && filteredMerchants.length === 1
+                  ? adminText.mainResultCountSingular
+                  : adminText.mainResultsCount,
+                { count: filteredMerchants.length },
+              )}
             </p>
 
             {filteredMerchants.length === 0 ? (
@@ -2893,7 +2896,7 @@ export default function AdminPage() {
             ) : (
               <>
                 {/* Mobile cards */}
-                <div className="md:hidden space-y-3">
+                <div className="grid gap-3 md:grid-cols-2 lg:hidden">
                   {filteredMerchants.map((m) => {
                     const sub = getSub(m.id);
                     const pct = sub
@@ -2932,7 +2935,10 @@ export default function AdminPage() {
                                 <span className="text-muted-foreground">
                                   {adminText.actionRepliesShort}
                                 </span>
-                                <span className="font-medium">
+                                <span
+                                  className="font-medium tabular-nums"
+                                  dir="ltr"
+                                >
                                   {sub.replies_used.toLocaleString(locale)} /{" "}
                                   {sub.reply_limit.toLocaleString(locale)} ({pct}%)
                                 </span>
@@ -3027,7 +3033,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* Desktop table */}
-                <div className="hidden md:block rounded-lg border overflow-hidden">
+                <div className="hidden lg:block rounded-lg border overflow-hidden">
                   <table className="w-full text-sm">
                     <thead className="bg-muted/50 border-b">
                       <tr>
@@ -3102,7 +3108,10 @@ export default function AdminPage() {
                                   <span className="text-xs font-medium capitalize">
                                     {planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
                                   </span>
-                                  <p className="text-xs text-muted-foreground">
+                                  <p
+                                    className="text-xs tabular-nums text-muted-foreground"
+                                    dir="ltr"
+                                  >
                                     {sub.replies_used.toLocaleString(locale)} /{" "}
                                     {sub.reply_limit.toLocaleString(locale)} ({pct}%)
                                   </p>
