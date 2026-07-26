@@ -787,15 +787,19 @@ function DetailsModal({
           }`}
         >
           {activeTab === "store" && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {storeDetails.map(([label, value]) => (
                 <div
                   key={label}
-                  className={`flex min-h-20 flex-col justify-center rounded-lg bg-muted/50 p-3 ${textAlignmentClass}`}
+                  className={`flex min-h-28 flex-col justify-between gap-3 rounded-lg border p-3 ${textAlignmentClass}`}
                 >
-                  <p className="text-xs text-muted-foreground">{label}</p>
+                  <p className="text-sm font-medium leading-5">{label}</p>
 
-                  <p className="mt-1 break-all text-sm font-medium">{value}</p>
+                  <span
+                    className={`inline-flex min-h-9 w-full items-center justify-start rounded-md border bg-muted px-2 py-2 text-sm font-medium ${textAlignmentClass}`}
+                  >
+                    {value}
+                  </span>
                 </div>
               ))}
             </div>
@@ -803,15 +807,19 @@ function DetailsModal({
 
           {activeTab === "subscription" &&
             (sub ? (
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                 {subscriptionDetails.map(([label, value]) => (
                   <div
                     key={label}
-                    className={`flex min-h-20 flex-col justify-center rounded-lg bg-muted/50 p-3 ${textAlignmentClass}`}
+                    className={`flex min-h-28 flex-col justify-between gap-3 rounded-lg border p-3 ${textAlignmentClass}`}
                   >
-                    <p className="text-xs text-muted-foreground">{label}</p>
+                    <p className="text-sm font-medium leading-5">{label}</p>
 
-                    <p className="mt-1 text-sm font-medium">{value}</p>
+                    <span
+                      className={`inline-flex min-h-9 w-full items-center justify-start rounded-md border bg-muted px-2 py-2 text-sm font-medium ${textAlignmentClass}`}
+                    >
+                      {value}
+                    </span>
                   </div>
                 ))}
               </div>
