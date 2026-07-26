@@ -628,7 +628,6 @@ function DetailsModal({
     key: string;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
-    link?: string;
     editable: boolean;
     fixedStatus?: string;
   }> = [
@@ -636,14 +635,12 @@ function DetailsModal({
       key: "instagram",
       label: "Instagram",
       icon: FaInstagram,
-      link: merchant.instagram_link,
       editable: true,
     },
     {
       key: "messenger",
-      label: "Messenger",
+      label: "Facebook Messenger",
       icon: FaFacebookMessenger,
-      link: merchant.messenger_link,
       editable: true,
     },
     {
@@ -652,6 +649,13 @@ function DetailsModal({
       icon: FaWhatsapp,
       editable: false,
       fixedStatus: adminText.detailsChannelComingSoon,
+    },
+    {
+      key: "web_chat",
+      label: "Web Chat",
+      icon: MessageSquare,
+      editable: false,
+      fixedStatus: adminText.detailsChannelInDevelopment,
     },
     {
       key: "telegram",
@@ -667,13 +671,6 @@ function DetailsModal({
       editable: false,
       fixedStatus: adminText.detailsChannelInDevelopment,
     },
-    {
-      key: "web_chat",
-      label: "Web Chat",
-      icon: MessageSquare,
-      editable: false,
-      fixedStatus: adminText.detailsChannelInDevelopment,
-    },
   ];
 
   const storeDetails: [string, string][] = [
@@ -685,30 +682,6 @@ function DetailsModal({
     [
       adminText.detailsRegistrationDate,
       new Date(merchant.created_at).toLocaleDateString(locale),
-    ],
-    [
-      adminText.detailsInstagramLink,
-      merchant.instagram_link || adminText.detailsChannelDisconnected,
-    ],
-    [
-      adminText.detailsMessengerLink,
-      merchant.messenger_link || adminText.detailsChannelDisconnected,
-    ],
-    [
-      adminText.detailsWhatsAppChannel,
-      adminText.detailsChannelComingSoon,
-    ],
-    [
-      adminText.detailsTelegramLink,
-      adminText.detailsChannelInDevelopment,
-    ],
-    [
-      adminText.detailsTikTokChannel,
-      adminText.detailsChannelInDevelopment,
-    ],
-    [
-      adminText.detailsWebChatChannel,
-      adminText.detailsChannelInDevelopment,
     ],
   ];
 
@@ -806,21 +779,23 @@ function DetailsModal({
           ))}
         </div>
 
-        <ScrollArea className="flex-1 px-6 py-4">
+        <div
+          className={`px-6 py-4 ${
+            activeTab === "channels"
+              ? "flex-none"
+              : "min-h-0 flex-1 overflow-y-auto"
+          }`}
+        >
           {activeTab === "store" && (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {storeDetails.map(([label, value]) => (
                 <div
                   key={label}
-                  className="rounded-lg bg-muted/50 p-3"
+                  className={`flex min-h-20 flex-col justify-center rounded-lg bg-muted/50 p-3 ${textAlignmentClass}`}
                 >
-                  <p className="text-xs text-muted-foreground">
-                    {label}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{label}</p>
 
-                  <p className="mt-0.5 break-all text-sm font-medium">
-                    {value}
-                  </p>
+                  <p className="mt-1 break-all text-sm font-medium">{value}</p>
                 </div>
               ))}
             </div>
@@ -832,15 +807,11 @@ function DetailsModal({
                 {subscriptionDetails.map(([label, value]) => (
                   <div
                     key={label}
-                    className="rounded-lg bg-muted/50 p-3"
+                    className={`flex min-h-20 flex-col justify-center rounded-lg bg-muted/50 p-3 ${textAlignmentClass}`}
                   >
-                    <p className="text-xs text-muted-foreground">
-                      {label}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{label}</p>
 
-                    <p className="mt-0.5 text-sm font-medium">
-                      {value}
-                    </p>
+                    <p className="mt-1 text-sm font-medium">{value}</p>
                   </div>
                 ))}
               </div>
@@ -851,82 +822,61 @@ function DetailsModal({
             ))}
 
           {activeTab === "channels" && (
-            <div className="space-y-3">
-              <p className="rounded-lg bg-amber-50 p-3 text-xs text-amber-600 dark:bg-amber-900/20 dark:text-amber-400">
-                {adminText.detailsMockChannelNotice}
-              </p>
-
-              {channels.map(
-                ({ key, label, icon: Icon, link, editable, fixedStatus }) => (
-                  <div
-                    key={key}
-                    className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center"
-                  >
-                    <div className="flex min-w-0 flex-1 items-center gap-3">
-                      <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
-
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium">{label}</p>
-
-                        {editable && (
-                          link ? (
-                            <p className="truncate text-xs text-muted-foreground">
-                              {link}
-                            </p>
-                          ) : (
-                            <p className="text-xs text-muted-foreground">
-                              {adminText.detailsNoLink}
-                            </p>
-                          )
-                        )}
-                      </div>
-                    </div>
-
-                    {editable ? (
-                      <Select
-                        value={channelOverrides[key] ?? "disconnected"}
-                        onValueChange={(value) =>
-                          onChannelStatusChange(key, value)
-                        }
-                      >
-                        <SelectTrigger className="h-8 w-full text-xs sm:w-36">
-                          <SelectValue />
-                        </SelectTrigger>
-
-                        <SelectContent>
-                          <SelectItem value="connected">
-                            {adminText.detailsChannelConnected}
-                          </SelectItem>
-
-                          <SelectItem value="disconnected">
-                            {adminText.detailsChannelDisconnected}
-                          </SelectItem>
-
-                          <SelectItem value="pending">
-                            {adminText.detailsChannelPending}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <span className="inline-flex h-8 w-full items-center justify-center rounded-md border bg-muted px-3 text-xs font-medium text-muted-foreground sm:w-auto">
-                        {fixedStatus}
-                      </span>
-                    )}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {channels.map(({ key, label, icon: Icon, editable, fixedStatus }) => (
+                <div
+                  key={key}
+                  className={`flex min-h-28 flex-col justify-between gap-3 rounded-lg border p-3 ${textAlignmentClass}`}
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    <p className="min-w-0 truncate text-sm font-medium">{label}</p>
                   </div>
-                ),
-              )}
+
+                  {editable ? (
+                    <Select
+                      value={channelOverrides[key] ?? "disconnected"}
+                      onValueChange={(value) =>
+                        onChannelStatusChange(key, value)
+                      }
+                    >
+                      <SelectTrigger className="h-9 w-full text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+
+                      <SelectContent>
+                        <SelectItem value="connected">
+                          {adminText.detailsChannelConnected}
+                        </SelectItem>
+
+                        <SelectItem value="disconnected">
+                          {adminText.detailsChannelDisconnected}
+                        </SelectItem>
+
+                        <SelectItem value="pending">
+                          {adminText.detailsChannelPending}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <span className="inline-flex h-9 w-full items-center justify-center rounded-md border bg-muted px-2 text-center text-xs font-medium text-muted-foreground">
+                      {fixedStatus}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
           {activeTab === "notes" && (
-            <div className="space-y-4">
+            <div className={`space-y-4 ${textAlignmentClass}`}>
               <div className="space-y-2">
-                <Label className="block leading-6">
+                <Label className={`block leading-6 ${textAlignmentClass}`}>
                   {adminText.detailsInternalNotes}
                 </Label>
 
                 <Textarea
-                  className="min-h-36"
+                  className={`min-h-36 ${textAlignmentClass}`}
                   rows={6}
                   value={noteText}
                   onChange={(event) =>
@@ -936,20 +886,22 @@ function DetailsModal({
                 />
               </div>
 
-              <Button
-                size="sm"
-                onClick={() => {
-                  onSaveNote(noteText);
-                  toast.success(adminText.detailsNotesSaved);
-                }}
-              >
-                {adminText.detailsSaveNotes}
-              </Button>
+              <div className="flex justify-start">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    onSaveNote(noteText);
+                    toast.success(adminText.detailsNotesSaved);
+                  }}
+                >
+                  {adminText.detailsSaveNotes}
+                </Button>
+              </div>
             </div>
           )}
-        </ScrollArea>
+        </div>
 
-        <div className="flex justify-end border-t px-6 pb-4 pt-4">
+        <div className="flex justify-start border-t px-6 pb-4 pt-4">
           <Button variant="outline" onClick={onClose}>
             {adminText.close}
           </Button>
