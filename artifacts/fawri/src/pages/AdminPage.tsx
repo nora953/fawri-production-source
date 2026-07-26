@@ -75,8 +75,15 @@ import {
   Power,
   PowerOff,
   FileText,
+  MessageSquare,
 } from "lucide-react";
-import { FaInstagram, FaFacebookMessenger, FaTelegram } from "react-icons/fa";
+import {
+  FaInstagram,
+  FaFacebookMessenger,
+  FaTelegram,
+  FaWhatsapp,
+  FaTiktok,
+} from "react-icons/fa";
 
 // ── Plan configuration ─────────────────────────────────────────────────────────
 const PLANS = {
@@ -617,24 +624,55 @@ function DetailsModal({
       : []),
   ];
 
-  const channels = [
+  const channels: Array<{
+    key: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    link?: string;
+    editable: boolean;
+    fixedStatus?: string;
+  }> = [
     {
       key: "instagram",
       label: "Instagram",
       icon: FaInstagram,
       link: merchant.instagram_link,
+      editable: true,
     },
     {
       key: "messenger",
       label: "Messenger",
       icon: FaFacebookMessenger,
       link: merchant.messenger_link,
+      editable: true,
+    },
+    {
+      key: "whatsapp",
+      label: "WhatsApp Business",
+      icon: FaWhatsapp,
+      editable: false,
+      fixedStatus: adminText.detailsChannelComingSoon,
     },
     {
       key: "telegram",
       label: "Telegram",
       icon: FaTelegram,
-      link: merchant.telegram_link,
+      editable: false,
+      fixedStatus: adminText.detailsChannelInDevelopment,
+    },
+    {
+      key: "tiktok",
+      label: "TikTok",
+      icon: FaTiktok,
+      editable: false,
+      fixedStatus: adminText.detailsChannelInDevelopment,
+    },
+    {
+      key: "web_chat",
+      label: "Web Chat",
+      icon: MessageSquare,
+      editable: false,
+      fixedStatus: adminText.detailsChannelInDevelopment,
     },
   ];
 
@@ -650,15 +688,27 @@ function DetailsModal({
     ],
     [
       adminText.detailsInstagramLink,
-      merchant.instagram_link || "—",
+      merchant.instagram_link || adminText.detailsChannelDisconnected,
     ],
     [
       adminText.detailsMessengerLink,
-      merchant.messenger_link || "—",
+      merchant.messenger_link || adminText.detailsChannelDisconnected,
+    ],
+    [
+      adminText.detailsWhatsAppChannel,
+      adminText.detailsChannelComingSoon,
     ],
     [
       adminText.detailsTelegramLink,
-      merchant.telegram_link || "—",
+      adminText.detailsChannelInDevelopment,
+    ],
+    [
+      adminText.detailsTikTokChannel,
+      adminText.detailsChannelInDevelopment,
+    ],
+    [
+      adminText.detailsWebChatChannel,
+      adminText.detailsChannelInDevelopment,
     ],
   ];
 
@@ -807,56 +857,61 @@ function DetailsModal({
               </p>
 
               {channels.map(
-                ({ key, label, icon: Icon, link }) => (
+                ({ key, label, icon: Icon, link, editable, fixedStatus }) => (
                   <div
                     key={key}
-                    className="flex items-center gap-3 rounded-lg border p-3"
+                    className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center"
                   >
-                    <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
+                    <div className="flex min-w-0 flex-1 items-center gap-3">
+                      <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
 
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">
-                        {label}
-                      </p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium">{label}</p>
 
-                      {link ? (
-                        <p className="truncate text-xs text-muted-foreground">
-                          {link}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          {adminText.detailsNoLink}
-                        </p>
-                      )}
+                        {editable && (
+                          link ? (
+                            <p className="truncate text-xs text-muted-foreground">
+                              {link}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              {adminText.detailsNoLink}
+                            </p>
+                          )
+                        )}
+                      </div>
                     </div>
 
-                    <Select
-                      value={
-                        channelOverrides[key] ??
-                        "disconnected"
-                      }
-                      onValueChange={(value) =>
-                        onChannelStatusChange(key, value)
-                      }
-                    >
-                      <SelectTrigger className="h-8 w-36 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
+                    {editable ? (
+                      <Select
+                        value={channelOverrides[key] ?? "disconnected"}
+                        onValueChange={(value) =>
+                          onChannelStatusChange(key, value)
+                        }
+                      >
+                        <SelectTrigger className="h-8 w-full text-xs sm:w-36">
+                          <SelectValue />
+                        </SelectTrigger>
 
-                      <SelectContent>
-                        <SelectItem value="connected">
-                          {adminText.detailsChannelConnected}
-                        </SelectItem>
+                        <SelectContent>
+                          <SelectItem value="connected">
+                            {adminText.detailsChannelConnected}
+                          </SelectItem>
 
-                        <SelectItem value="disconnected">
-                          {adminText.detailsChannelDisconnected}
-                        </SelectItem>
+                          <SelectItem value="disconnected">
+                            {adminText.detailsChannelDisconnected}
+                          </SelectItem>
 
-                        <SelectItem value="pending">
-                          {adminText.detailsChannelPending}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                          <SelectItem value="pending">
+                            {adminText.detailsChannelPending}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className="inline-flex h-8 w-full items-center justify-center rounded-md border bg-muted px-3 text-xs font-medium text-muted-foreground sm:w-auto">
+                        {fixedStatus}
+                      </span>
+                    )}
                   </div>
                 ),
               )}
@@ -864,17 +919,22 @@ function DetailsModal({
           )}
 
           {activeTab === "notes" && (
-            <div className="space-y-3">
-              <Label>{adminText.detailsInternalNotes}</Label>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="block leading-6">
+                  {adminText.detailsInternalNotes}
+                </Label>
 
-              <Textarea
-                rows={6}
-                value={noteText}
-                onChange={(event) =>
-                  setNoteText(event.target.value)
-                }
-                placeholder={adminText.detailsNotesPlaceholder}
-              />
+                <Textarea
+                  className="min-h-36"
+                  rows={6}
+                  value={noteText}
+                  onChange={(event) =>
+                    setNoteText(event.target.value)
+                  }
+                  placeholder={adminText.detailsNotesPlaceholder}
+                />
+              </div>
 
               <Button
                 size="sm"
