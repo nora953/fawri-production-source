@@ -213,6 +213,14 @@ function ConfirmDialog({
   };
 
   const isApproval = state.type === "approve";
+  const confirmationQuestion =
+    state.type === "unsuspend"
+      ? adminText.confirmUnsuspendQuestion
+      : adminText.confirmActionQuestion;
+  const confirmButtonLabel =
+    state.type === "unsuspend"
+      ? adminText.confirmUnsuspendButton
+      : adminText.confirm;
   const textAlignmentClass =
     adminText.dir === "rtl"
       ? "!text-right sm:!text-right"
@@ -285,7 +293,7 @@ function ConfirmDialog({
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                {adminText.confirmActionQuestion}
+                {confirmationQuestion}
               </p>
             )}
           </div>
@@ -329,7 +337,7 @@ function ConfirmDialog({
               onClick={() => onConfirm(reason)}
               className="h-auto min-h-10 w-full whitespace-normal px-4 py-2 sm:w-auto sm:min-w-24"
             >
-              {adminText.confirm}
+              {confirmButtonLabel}
             </Button>
           </DialogFooter>
         )}
