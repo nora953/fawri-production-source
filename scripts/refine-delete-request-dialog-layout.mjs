@@ -45,22 +45,8 @@ source = replaceOnce(
 source = replaceOnce(
   source,
   "scrollable body and merchant card",
-  `        <div className="rounded-xl border bg-muted/40 p-4 text-sm">`,
-  `        <div\n          className={\`min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-2 \${textAlignmentClass}\`}\n        >\n          <div\n            className={\`rounded-xl border bg-muted/40 p-4 text-sm \${textAlignmentClass}\`}\n          >`,
-);
-
-source = replaceOnce(
-  source,
-  "merchant identity direction",
-  `          <p className="mt-1 text-muted-foreground">\n            {merchant.owner_name} · {merchant.phone}\n          </p>\n        </div>`,
-  `            <p className="font-bold">{merchant.store_name}</p>\n            <p className="mt-1 text-muted-foreground">\n              {merchant.owner_name}\n              <span className="mx-1">·</span>\n              <span dir="ltr">{merchant.phone}</span>\n            </p>\n          </div>`,
-);
-
-source = replaceOnce(
-  source,
-  "remove duplicated merchant name after wrapping",
-  `          <p className="font-bold">{merchant.store_name}</p>\n            <p className="font-bold">{merchant.store_name}</p>`,
-  `            <p className="font-bold">{merchant.store_name}</p>`,
+  `        <div className="rounded-xl border bg-muted/40 p-4 text-sm">\n          <p className="font-bold">{merchant.store_name}</p>\n          <p className="mt-1 text-muted-foreground">\n            {merchant.owner_name} · {merchant.phone}\n          </p>\n        </div>`,
+  `        <div\n          className={\`min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-2 \${textAlignmentClass}\`}\n        >\n          <div\n            className={\`rounded-xl border bg-muted/40 p-4 text-sm \${textAlignmentClass}\`}\n          >\n            <p className="font-bold">{merchant.store_name}</p>\n            <p className="mt-1 text-muted-foreground">\n              {merchant.owner_name}\n              <span className="mx-1">·</span>\n              <span dir="ltr">{merchant.phone}</span>\n            </p>\n          </div>`,
 );
 
 source = replaceOnce(
@@ -87,8 +73,8 @@ source = replaceOnce(
 source = replaceOnce(
   source,
   "policy radio styling",
-  `                  className="mt-1"\n                />`,
-  `                  className="mt-1 accent-primary"\n                />`,
+  `                  checked={reason === "policy_violation"}\n                  onChange={() => setReason("policy_violation")}\n                  className="mt-1"`,
+  `                  checked={reason === "policy_violation"}\n                  onChange={() => setReason("policy_violation")}\n                  className="mt-1 accent-primary"`,
 );
 
 source = replaceCount(
@@ -109,8 +95,8 @@ source = replaceOnce(
 source = replaceOnce(
   source,
   "retention radio styling",
-  `                  onChange={() => setReason("retention_expired")}\n                  className="mt-1"`,
-  `                  onChange={() => setReason("retention_expired")}\n                  className="mt-1 accent-primary"`,
+  `                  checked={reason === "retention_expired"}\n                  disabled={!retentionEligible}\n                  onChange={() => setReason("retention_expired")}\n                  className="mt-1"`,
+  `                  checked={reason === "retention_expired"}\n                  disabled={!retentionEligible}\n                  onChange={() => setReason("retention_expired")}\n                  className="mt-1 accent-primary"`,
 );
 
 source = replaceOnce(
