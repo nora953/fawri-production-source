@@ -2774,22 +2774,24 @@ export default function AdminPage() {
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-5 space-y-4">
         {/* Tabs */}
         {TABS.length > 0 && (
-          <div className="-mx-4 grid grid-cols-2 gap-x-2 border-b px-4 sm:grid-cols-3 md:mx-0 md:grid-cols-4 md:px-0 lg:flex lg:overflow-x-auto">
+          <div className="-mx-4 grid grid-cols-2 gap-2 px-4 sm:grid-cols-3 md:mx-0 md:grid-cols-4 md:px-0 lg:flex lg:flex-wrap">
           {TABS.map((t) => {
             const count = tabCount(t);
             return (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`w-full min-w-0 px-2 py-2.5 text-xs font-medium whitespace-normal leading-4 border-b-2 -mb-px transition-colors lg:w-auto lg:whitespace-nowrap lg:px-4 lg:text-sm ${tab === t.id ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+                className={`flex min-h-11 w-full min-w-0 items-center justify-center rounded-xl border px-3 py-2 text-xs font-medium whitespace-normal leading-4 transition-colors lg:w-auto lg:min-w-28 lg:whitespace-nowrap lg:px-4 lg:text-sm ${tab === t.id ? "border-primary bg-primary/10 text-primary shadow-sm" : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:bg-muted/40 hover:text-foreground"}`}
               >
                 {t.label}
                 {count > 0 && (
                   <span
-                    className={`text-xs px-1.5 py-0.5 rounded-full ${
+                    className={`inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
                       adminText.dir === "rtl" ? "mr-1.5" : "ml-1.5"
                     } ${
-                      tab === t.id ? "bg-primary/15" : "bg-muted"
+                      tab === t.id
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {count}
