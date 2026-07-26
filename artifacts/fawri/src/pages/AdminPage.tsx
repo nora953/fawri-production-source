@@ -576,6 +576,10 @@ function DetailsModal({
   }, [merchant.id, notes]);
 
   const locale = lang === "en" ? "en-US" : "ar-IQ";
+  const textAlignmentClass =
+    adminText.dir === "rtl"
+      ? "!text-right sm:!text-right"
+      : "!text-left sm:!text-left";
 
   const planNames: Record<PlanKey, string> = {
     silver: adminText.planSilver,
@@ -662,9 +666,7 @@ function DetailsModal({
     ? [
         [
           adminText.detailsPlan,
-          `${planNames[sub.plan_name as PlanKey] ?? sub.plan_name} — ${
-            PLANS[sub.plan_name as PlanKey]?.label ?? ""
-          }`,
+          planNames[sub.plan_name as PlanKey] ?? sub.plan_name,
         ],
         [
             adminText.detailsSubscriptionStatus,
@@ -724,11 +726,15 @@ function DetailsModal({
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent
-        className="flex max-h-[90vh] w-full max-w-2xl flex-col p-0"
+        className={`flex max-h-[90vh] w-full max-w-2xl flex-col p-0 ${
+          adminText.dir === "rtl"
+            ? "[&>button]:left-4 [&>button]:right-auto"
+            : "[&>button]:right-4 [&>button]:left-auto"
+        }`}
         dir={adminText.dir}
       >
-        <DialogHeader className="px-6 pb-0 pt-5">
-          <DialogTitle className="text-base">
+        <DialogHeader className={`px-6 pb-0 pt-5 ${textAlignmentClass}`}>
+          <DialogTitle className={`w-full text-base ${textAlignmentClass}`}>
             {merchant.store_name}
           </DialogTitle>
         </DialogHeader>
