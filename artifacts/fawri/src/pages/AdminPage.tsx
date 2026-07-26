@@ -1028,11 +1028,7 @@ function LogsTab({ logs }: { logs: AdminLog[] }) {
           : log.details;
 
       case "approved":
-        return plan
-          ? formatAdminMessage(adminText.logMerchantApproved, {
-              plan,
-            })
-          : log.details;
+        return adminText.logMerchantApproved;
 
       case "rejected":
         return adminText.logMerchantRejected;
