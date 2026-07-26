@@ -196,6 +196,8 @@ const adminTranslations = {
       "تم إعادة {store} إلى قيد المراجعة",
 
     noSubscriptionError: "لا يوجد اشتراك",
+    subscriptionOperationError:
+      "تعذر حفظ عملية الاشتراك في السيرفر.",
 
     logRepliesReset:
       "تمت إعادة التعيين — الحد: {limit}",
@@ -543,6 +545,8 @@ const adminTranslations = {
       "{store} was returned to pending review.",
 
     noSubscriptionError: "No subscription found.",
+    subscriptionOperationError:
+      "The subscription operation could not be saved on the server.",
 
     logRepliesReset:
       "Replies reset — limit: {limit}",
@@ -867,6 +871,8 @@ const kuTranslations = {
   logMerchantRestored: "گەڕاندنەوە بۆ پێداچوونەوە",
   toastMerchantRestored: "{store} گەڕاندراوەتەوە بۆ پێداچوونەوە",
   noSubscriptionError: "هیچ بەشدارییەکی چالاک نەدۆزرایەوە",
+  subscriptionOperationError:
+    "نەتوانرا کردارەکەی بەشداری لە سێرڤەر پاشەکەوت بکرێت.",
   logRepliesReset: "وەڵامەکان ڕێکخستنەوەکرا — سنوور: {limit}",
   toastRepliesReset: "ژمێرەری وەڵام ڕێکخستنەوەکرا",
   logRepliesAdded: "{amount} وەڵام زیادکرا",

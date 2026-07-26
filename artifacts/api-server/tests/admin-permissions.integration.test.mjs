@@ -117,6 +117,7 @@ test("admin permissions migrate and remain server-authoritative", async (t) => {
         retention_status: "protected",
       },
     ],
+    subscriptions: [],
     otps: [
       {
         phone: "07444444444",
@@ -314,6 +315,79 @@ test("admin permissions migrate and remain server-authoritative", async (t) => {
     approval.body.merchant.subscription_expires_at,
     undefined,
   );
+
+  const activateSubscription = await json(await fetch(
+    `${baseUrl}/api/auth/merchants/merchant-a/subscription`,
+    {
+      method: "PUT",
+      headers: { ...assistantHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ operation: "activate", plan: "silver" }),
+    },
+  ));
+  assert.equal(activateSubscription.response.status, 200);
+  assert.equal(activateSubscription.body.subscription.plan_name, "silver");
+  assert.equal(activateSubscription.body.subscription.reply_limit, 4000);
+
+  const subscriptionsList = await json(await fetch(
+    `${baseUrl}/api/auth/admin/subscriptions`,
+    { headers: assistantHeaders },
+  ));
+  assert.equal(subscriptionsList.response.status, 200);
+  assert.equal(subscriptionsList.body.subscriptions.length, 1);
+  assert.equal(subscriptionsList.body.subscriptions[0].merchant_id, "merchant-a");
+
+  const addReply = await json(await fetch(
+    `${baseUrl}/api/auth/merchants/merchant-a/subscription`,
+    {
+      method: "PATCH",
+      headers: { ...assistantHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add_replies", amount: 1 }),
+    },
+  ));
+  assert.equal(addReply.response.status, 200);
+  assert.equal(addReply.body.subscription.reply_limit, 4001);
+  assert.equal(addReply.body.subscription.replies_remaining, 4001);
+
+  const deductReply = await json(await fetch(
+    `${baseUrl}/api/auth/merchants/merchant-a/subscription`,
+    {
+      method: "PATCH",
+      headers: { ...assistantHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "deduct_replies", amount: 1 }),
+    },
+  ));
+  assert.equal(deductReply.response.status, 200);
+  assert.equal(deductReply.body.subscription.replies_used, 1);
+  assert.equal(deductReply.body.subscription.replies_remaining, 4000);
+
+  const resetReplies = await json(await fetch(
+    `${baseUrl}/api/auth/merchants/merchant-a/subscription`,
+    {
+      method: "PATCH",
+      headers: { ...assistantHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reset_replies" }),
+    },
+  ));
+  assert.equal(resetReplies.response.status, 200);
+  assert.equal(resetReplies.body.subscription.replies_used, 0);
+  assert.equal(resetReplies.body.subscription.replies_remaining, 4001);
+
+  const disableReplies = await json(await fetch(
+    `${baseUrl}/api/auth/merchants/merchant-a/subscription`,
+    {
+      method: "PATCH",
+      headers: { ...assistantHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "set_auto_reply", enabled: false }),
+    },
+  ));
+  assert.equal(disableReplies.response.status, 200);
+  assert.equal(disableReplies.body.subscription.auto_reply_enabled, false);
+
+  const persistedSubscriptionDb = JSON.parse(
+    await readFile(path.join(dataDir, "merchants.json"), "utf8"),
+  );
+  assert.equal(persistedSubscriptionDb.subscriptions.length, 1);
+  assert.equal(persistedSubscriptionDb.subscriptions[0].plan_name, "silver");
 
   assert.ok(
     Number.isFinite(

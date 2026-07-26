@@ -145,6 +145,41 @@ type Merchant = {
 
 type SafeMerchant = Omit<Merchant, "password">;
 
+type SubscriptionPlan = "silver" | "gold" | "diamond" | "trial";
+type SubscriptionStatus =
+  | "pending_activation"
+  | "active"
+  | "expired"
+  | "replies_exhausted"
+  | "suspended";
+
+type SubscriptionRecord = {
+  id: string;
+  merchant_id: string;
+  plan_name: SubscriptionPlan;
+  price_iqd: number;
+  reply_limit: number;
+  replies_used: number;
+  replies_remaining: number;
+  start_date: string;
+  expires_at: string;
+  status: SubscriptionStatus;
+  auto_reply_enabled: boolean;
+  emergency_credit_used: number;
+  emergency_credit_amount: number;
+  emergency_credit_remaining: number;
+  emergency_credit_activated: boolean;
+  pending_next_cycle_deduction: number;
+};
+
+const SUBSCRIPTION_PLAN_CONFIG = {
+  silver: { price_iqd: 25000, reply_limit: 4000, emergency_credit_amount: 400 },
+  gold: { price_iqd: 49000, reply_limit: 8000, emergency_credit_amount: 800 },
+  diamond: { price_iqd: 75000, reply_limit: 14000, emergency_credit_amount: 1400 },
+} as const;
+
+const SUBSCRIPTION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
+
 type OtpRecord = {
   phone: string;
   code: string;
@@ -156,6 +191,7 @@ type OtpRecord = {
 
 type AuthDb = {
   merchants: Merchant[];
+  subscriptions: SubscriptionRecord[];
   otps: OtpRecord[];
   admin_logs: AdminLogRecord[];
   deletion_requests: MerchantDeletionRequest[];
@@ -784,6 +820,136 @@ function isRequestedPlan(value: unknown): value is RequestedPlan {
   return ["silver", "gold", "diamond"].includes(String(value));
 }
 
+function isSubscriptionPlan(value: unknown): value is SubscriptionPlan {
+  return ["silver", "gold", "diamond", "trial"].includes(String(value));
+}
+
+function isSubscriptionStatus(value: unknown): value is SubscriptionStatus {
+  return [
+    "pending_activation",
+    "active",
+    "expired",
+    "replies_exhausted",
+    "suspended",
+  ].includes(String(value));
+}
+
+function normalizeNonNegativeInteger(value: unknown): number {
+  const numberValue = Number(value);
+  return Number.isInteger(numberValue) && numberValue >= 0 ? numberValue : 0;
+}
+
+function normalizeSubscriptionRecord(value: unknown): SubscriptionRecord | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Partial<SubscriptionRecord>;
+  const merchantId = String(record.merchant_id || "").trim();
+  const id = String(record.id || "").trim();
+  const startDate = new Date(String(record.start_date || ""));
+  const expiresDate = new Date(String(record.expires_at || ""));
+
+  if (
+    !merchantId ||
+    !id ||
+    !isSubscriptionPlan(record.plan_name) ||
+    !isSubscriptionStatus(record.status) ||
+    !Number.isFinite(startDate.getTime()) ||
+    !Number.isFinite(expiresDate.getTime()) ||
+    expiresDate.getTime() <= startDate.getTime()
+  ) {
+    return null;
+  }
+
+  const replyLimit = normalizeNonNegativeInteger(record.reply_limit);
+  const repliesUsed = Math.min(
+    normalizeNonNegativeInteger(record.replies_used),
+    replyLimit,
+  );
+  const emergencyAmount = normalizeNonNegativeInteger(
+    record.emergency_credit_amount,
+  );
+  const emergencyUsed = Math.min(
+    normalizeNonNegativeInteger(record.emergency_credit_used),
+    emergencyAmount,
+  );
+
+  return {
+    id,
+    merchant_id: merchantId,
+    plan_name: record.plan_name,
+    price_iqd: normalizeNonNegativeInteger(record.price_iqd),
+    reply_limit: replyLimit,
+    replies_used: repliesUsed,
+    replies_remaining: Math.max(0, replyLimit - repliesUsed),
+    start_date: startDate.toISOString(),
+    expires_at: expiresDate.toISOString(),
+    status: record.status,
+    auto_reply_enabled: record.auto_reply_enabled === true,
+    emergency_credit_used: emergencyUsed,
+    emergency_credit_amount: emergencyAmount,
+    emergency_credit_remaining: Math.max(0, emergencyAmount - emergencyUsed),
+    emergency_credit_activated: record.emergency_credit_activated === true,
+    pending_next_cycle_deduction: normalizeNonNegativeInteger(
+      record.pending_next_cycle_deduction,
+    ),
+  };
+}
+
+function normalizeSubscriptions(value: unknown): SubscriptionRecord[] {
+  if (!Array.isArray(value)) return [];
+  const byMerchant = new Map<string, SubscriptionRecord>();
+
+  for (const item of value) {
+    const subscription = normalizeSubscriptionRecord(item);
+    if (!subscription) continue;
+    const current = byMerchant.get(subscription.merchant_id);
+    if (
+      !current ||
+      new Date(subscription.start_date).getTime() >=
+        new Date(current.start_date).getTime()
+    ) {
+      byMerchant.set(subscription.merchant_id, subscription);
+    }
+  }
+
+  return [...byMerchant.values()];
+}
+
+function createPaidSubscription(
+  merchantId: string,
+  plan: Exclude<SubscriptionPlan, "trial">,
+  existing?: SubscriptionRecord,
+): SubscriptionRecord {
+  const config = SUBSCRIPTION_PLAN_CONFIG[plan];
+  const startDate = new Date();
+  const emergencyDeduction = Math.min(
+    existing?.pending_next_cycle_deduction || 0,
+    config.reply_limit,
+  );
+
+  return {
+    id: existing?.id || makeId("subscription"),
+    merchant_id: merchantId,
+    plan_name: plan,
+    price_iqd: config.price_iqd,
+    reply_limit: config.reply_limit,
+    replies_used: emergencyDeduction,
+    replies_remaining: config.reply_limit - emergencyDeduction,
+    start_date: startDate.toISOString(),
+    expires_at: new Date(
+      startDate.getTime() + SUBSCRIPTION_DURATION_MS,
+    ).toISOString(),
+    status: emergencyDeduction >= config.reply_limit
+      ? "replies_exhausted"
+      : "active",
+    auto_reply_enabled: emergencyDeduction < config.reply_limit,
+    emergency_credit_used: 0,
+    emergency_credit_amount: config.emergency_credit_amount,
+    emergency_credit_remaining: config.emergency_credit_amount,
+    emergency_credit_activated: false,
+    pending_next_cycle_deduction: 0,
+  };
+}
+
 function deriveAccountStatus(status: MerchantStatus): AccountStatus {
   if (status === "pending_activation") return "pending_review";
   return status;
@@ -962,6 +1128,7 @@ function removeExpiredOtps(otps: OtpRecord[]): OtpRecord[] {
 function buildInitialDb(): AuthDb {
   return {
     merchants: [],
+    subscriptions: [],
     otps: [],
     admin_logs: [],
     deletion_requests: [],
@@ -1003,6 +1170,7 @@ function ensureDb(): AuthDb {
                 : MerchantRetentionStatus.Protected,
           }))).map(normalizeMerchantLifecycle)
         : [],
+      subscriptions: normalizeSubscriptions(parsed.subscriptions),
       otps: Array.isArray(parsed.otps) ? removeExpiredOtps(parsed.otps) : [],
       admin_logs: Array.isArray(parsed.admin_logs) ? parsed.admin_logs : [],
       deletion_requests: Array.isArray(parsed.deletion_requests)
@@ -1283,6 +1451,9 @@ registerMerchantAuthDeletion((merchantId) => {
 
   db.merchants = db.merchants.filter(
     (item) => item.id !== merchantId,
+  );
+  db.subscriptions = db.subscriptions.filter(
+    (subscription) => subscription.merchant_id !== merchantId,
   );
 
   db.otps = db.otps.filter(
@@ -2496,72 +2667,126 @@ router.post("/merchants/:id/delete", (req: Request, res: Response) => {
 });
 
 
-router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
+router.get("/admin/subscriptions", (req: Request, res: Response) => {
+  const admin = requireAdminPermission(req, res, "manage_subscriptions");
+  if (!admin) return;
+
+  const db = ensureDb();
+  return res.json({
+    ok: true,
+    subscriptions: [...db.subscriptions].sort(
+      (left, right) =>
+        new Date(right.start_date).getTime() -
+        new Date(left.start_date).getTime(),
+    ),
+  });
+});
+
+router.post("/admin/subscriptions/migrate", (req: Request, res: Response) => {
+  const owner = requireOwner(req, res);
+  if (!owner) return;
+
+  const candidates = Array.isArray(req.body?.subscriptions)
+    ? req.body.subscriptions
+    : [];
+  if (candidates.length > 1000) {
+    return sendError(res, 400, "too many subscriptions to migrate");
+  }
+
+  const db = ensureDb();
+  let imported = 0;
+
+  for (const candidate of candidates) {
+    const subscription = normalizeSubscriptionRecord(candidate);
+    if (!subscription) continue;
+    const merchant = findRegularMerchant(db, subscription.merchant_id);
+    if (!merchant) continue;
+    if (db.subscriptions.some(
+      (existing) => existing.merchant_id === subscription.merchant_id,
+    )) {
+      continue;
+    }
+
+    db.subscriptions.push(subscription);
+    merchant.subscription_started_at = subscription.start_date;
+    merchant.subscription_expires_at = subscription.expires_at;
+    merchant.warning_stage = 0;
+    merchant.retention_status = MerchantRetentionStatus.Protected;
+    merchant.eligible_for_deletion_at = undefined;
+    merchant.grace_period_ends_at = undefined;
+    imported += 1;
+  }
+
+  if (imported > 0) writeDb(db);
+  return res.json({ ok: true, imported, subscriptions: db.subscriptions });
+});
+
+router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
   const admin = requireAdminPermission(req, res, "manage_subscriptions");
   if (!admin) return;
 
   const merchantId = String(req.params.id || "").trim();
-  const startedAt = String(req.body?.subscription_started_at || "").trim();
-  const expiresAt = String(req.body?.subscription_expires_at || "").trim();
+  const operation = String(req.body?.operation || "").trim();
+  const plan = String(req.body?.plan || "").trim();
 
-  if (!merchantId) {
-    return sendError(res, 400, "merchantId is required");
+  if (!merchantId) return sendError(res, 400, "merchantId is required");
+  if (!["activate", "change", "renew"].includes(operation)) {
+    return sendError(res, 400, "invalid subscription operation");
   }
-
-  const startedDate = new Date(startedAt);
-  const expiresDate = new Date(expiresAt);
-
-  if (
-    !startedAt ||
-    !expiresAt ||
-    !Number.isFinite(startedDate.getTime()) ||
-    !Number.isFinite(expiresDate.getTime())
-  ) {
-    return sendError(res, 400, "valid subscription dates are required");
-  }
-
-  if (expiresDate.getTime() <= startedDate.getTime()) {
-    return sendError(
-      res,
-      400,
-      "subscription expiration must be after start date",
-    );
+  if (!isSubscriptionPlan(plan) || plan === "trial") {
+    return sendError(res, 400, "invalid paid subscription plan");
   }
 
   const db = ensureDb();
-  const merchant = db.merchants.find(
-    (item) => item.id === merchantId && item.is_admin !== true,
-  );
+  const merchant = findRegularMerchant(db, merchantId);
+  if (!merchant) return sendError(res, 404, "merchant not found");
 
-  if (!merchant) {
-    return sendError(res, 404, "merchant not found");
+  const existingIndex = db.subscriptions.findIndex(
+    (subscription) => subscription.merchant_id === merchantId,
+  );
+  const existing = existingIndex >= 0 ? db.subscriptions[existingIndex] : undefined;
+
+  if (operation === "activate" && existing) {
+    return sendError(res, 409, "merchant already has a subscription");
   }
+  if ((operation === "change" || operation === "renew") && !existing) {
+    return sendError(res, 409, "merchant does not have a subscription");
+  }
+
+  const subscription = createPaidSubscription(merchantId, plan, existing);
+  if (existingIndex >= 0) db.subscriptions[existingIndex] = subscription;
+  else db.subscriptions.push(subscription);
 
   if (
     merchant.subscription_expires_at &&
-    merchant.subscription_expires_at !== expiresAt
+    merchant.subscription_expires_at !== subscription.expires_at
   ) {
-    merchant.last_subscription_ended_at =
-      merchant.subscription_expires_at;
+    merchant.last_subscription_ended_at = merchant.subscription_expires_at;
   }
-
-  merchant.subscription_started_at = startedDate.toISOString();
-  merchant.subscription_expires_at = expiresDate.toISOString();
+  merchant.subscription_started_at = subscription.start_date;
+  merchant.subscription_expires_at = subscription.expires_at;
   merchant.warning_stage = 0;
   merchant.retention_status = MerchantRetentionStatus.Protected;
   merchant.eligible_for_deletion_at = undefined;
   merchant.grace_period_ends_at = undefined;
 
+  const actionType = operation === "activate"
+    ? "plan_activated"
+    : operation === "change"
+      ? "plan_changed"
+      : "plan_renewed";
   appendAdminLog(
     db,
     admin,
     merchant,
-    "subscription_updated",
-    "subscription dates updated",
+    actionType,
+    `subscription ${operation}: ${plan}`,
     {
       meta: {
-        subscription_started_at: merchant.subscription_started_at,
-        subscription_expires_at: merchant.subscription_expires_at,
+        plan,
+        ...(operation === "renew" && existing?.pending_next_cycle_deduction
+          ? { emergency_deduction: existing.pending_next_cycle_deduction }
+          : {}),
       },
     },
   );
@@ -2570,9 +2795,83 @@ router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
   return res.json({
     ok: true,
     merchant: publicMerchant(merchant),
+    subscription,
   });
 });
 
+router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
+  const admin = requireAdminPermission(req, res, "manage_subscriptions");
+  if (!admin) return;
+
+  const merchantId = String(req.params.id || "").trim();
+  const action = String(req.body?.action || "").trim();
+  const amount = Number(req.body?.amount);
+  const enabled = req.body?.enabled;
+
+  const db = ensureDb();
+  const merchant = findRegularMerchant(db, merchantId);
+  if (!merchant) return sendError(res, 404, "merchant not found");
+  const subscription = db.subscriptions.find(
+    (item) => item.merchant_id === merchantId,
+  );
+  if (!subscription) return sendError(res, 404, "subscription not found");
+
+  let actionType = "";
+  let details = "";
+  let meta: Record<string, string | number> = {};
+
+  if (action === "add_replies") {
+    if (!Number.isInteger(amount) || amount <= 0) {
+      return sendError(res, 400, "positive integer amount is required");
+    }
+    subscription.reply_limit += amount;
+    subscription.replies_remaining += amount;
+    if (subscription.status === "replies_exhausted") subscription.status = "active";
+    actionType = "replies_added";
+    details = `added ${amount} replies`;
+    meta = { amount };
+  } else if (action === "deduct_replies") {
+    if (!Number.isInteger(amount) || amount <= 0) {
+      return sendError(res, 400, "positive integer amount is required");
+    }
+    subscription.replies_used = Math.min(
+      subscription.reply_limit,
+      subscription.replies_used + amount,
+    );
+    subscription.replies_remaining = Math.max(
+      0,
+      subscription.reply_limit - subscription.replies_used,
+    );
+    if (subscription.replies_remaining === 0) {
+      subscription.status = "replies_exhausted";
+      subscription.auto_reply_enabled = false;
+    }
+    actionType = "replies_deducted";
+    details = `deducted ${amount} replies`;
+    meta = { amount };
+  } else if (action === "reset_replies") {
+    subscription.replies_used = 0;
+    subscription.replies_remaining = subscription.reply_limit;
+    subscription.pending_next_cycle_deduction = 0;
+    subscription.status = "active";
+    actionType = "replies_reset";
+    details = `reply counter reset to ${subscription.reply_limit}`;
+    meta = { limit: subscription.reply_limit };
+  } else if (action === "set_auto_reply") {
+    if (typeof enabled !== "boolean") {
+      return sendError(res, 400, "enabled boolean is required");
+    }
+    subscription.auto_reply_enabled = enabled;
+    actionType = enabled ? "auto_reply_enabled" : "auto_reply_disabled";
+    details = enabled ? "automatic replies enabled" : "automatic replies disabled";
+  } else {
+    return sendError(res, 400, "invalid subscription action");
+  }
+
+  appendAdminLog(db, admin, merchant, actionType, details, { meta });
+  writeDb(db);
+  return res.json({ ok: true, subscription });
+});
 
 router.patch("/merchants/:id/status", (req: Request, res: Response) => {
   const admin = requireAdminPermission(req, res, "manage_merchant_status");
@@ -2644,6 +2943,26 @@ router.patch("/merchants/:id/status", (req: Request, res: Response) => {
     merchant.channel_activation_deadline = undefined;
   } else {
     merchant.account_status = "suspended";
+  }
+
+  const subscription = db.subscriptions.find(
+    (item) => item.merchant_id === merchantId,
+  );
+  if (subscription && status === "suspended") {
+    subscription.status = "suspended";
+    subscription.auto_reply_enabled = false;
+  } else if (
+    subscription &&
+    status === "approved" &&
+    previousStatus === "suspended"
+  ) {
+    const expired = new Date(subscription.expires_at).getTime() <= Date.now();
+    subscription.status = expired
+      ? "expired"
+      : subscription.replies_remaining <= 0
+        ? "replies_exhausted"
+        : "active";
+    subscription.auto_reply_enabled = subscription.status === "active";
   }
 
   appendAdminLog(

@@ -175,10 +175,6 @@ export const createSubscriptionForPlan = (
   };
 
   const selectedPlan = planMap[plan];
-  const subscriptions = getSubscriptions().filter(
-    subscription => subscription.merchant_id !== merchantId
-  );
-
   const newSubscription: Subscription = {
     id: `sub-${merchantId}-${Date.now()}`,
     merchant_id: merchantId,
@@ -198,7 +194,6 @@ export const createSubscriptionForPlan = (
     pending_next_cycle_deduction: 0,
   };
 
-  saveSubscriptions([...subscriptions, newSubscription]);
   return newSubscription;
 };
 

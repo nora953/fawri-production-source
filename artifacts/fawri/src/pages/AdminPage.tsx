@@ -18,7 +18,6 @@ import {
   saveSubscriptions,
   getAdminAuthHeaders,
   clearSession,
-  createSubscriptionForPlan,
   getAdminLogs,
   getAdminNotes,
   getChannelOverrides,
@@ -1825,6 +1824,60 @@ export default function AdminPage() {
     handleUnauthorizedAdminResponse,
   ]);
 
+  const refreshSubscriptionsFromApi = useCallback(async () => {
+    if (!canManageSubscriptions) {
+      setSubscriptions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/auth/admin/subscriptions", {
+        headers: getAdminAuthHeaders(),
+      });
+      const data = await response.json().catch(() => null);
+      if (handleUnauthorizedAdminResponse(response)) return;
+      if (!response.ok || !data?.ok || !Array.isArray(data.subscriptions)) {
+        throw new Error(data?.error || "Could not load subscriptions");
+      }
+      const serverSubscriptions = data.subscriptions as Subscription[];
+      saveSubscriptions(serverSubscriptions);
+      setSubscriptions(serverSubscriptions);
+    } catch (error) {
+      console.error("Admin subscriptions API sync failed:", error);
+      toast.error(adminText.subscriptionOperationError);
+    }
+  }, [
+    adminText.subscriptionOperationError,
+    canManageSubscriptions,
+    handleUnauthorizedAdminResponse,
+  ]);
+
+  const migrateLegacySubscriptions = useCallback(async () => {
+    if (!isOwnerAdmin || !currentAdmin?.id) return;
+    const migrationKey = "fawri_subscriptions_migrated_v1_" + currentAdmin.id;
+    if (localStorage.getItem(migrationKey) === "done") return;
+
+    const localSubscriptions = getSubscriptions();
+    try {
+      const response = await fetch("/api/auth/admin/subscriptions/migrate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAdminAuthHeaders(),
+        },
+        body: JSON.stringify({ subscriptions: localSubscriptions }),
+      });
+      const data = await response.json().catch(() => null);
+      if (handleUnauthorizedAdminResponse(response)) return;
+      if (!response.ok || !data?.ok) {
+        throw new Error(data?.error || "Could not migrate subscriptions");
+      }
+      localStorage.setItem(migrationKey, "done");
+    } catch (error) {
+      console.error("Legacy subscription migration failed:", error);
+    }
+  }, [currentAdmin?.id, handleUnauthorizedAdminResponse, isOwnerAdmin]);
+
   const migrateLegacyAdminData = useCallback(async () => {
     if (!isOwnerAdmin || !currentAdmin?.id) return;
 
@@ -1922,8 +1975,10 @@ export default function AdminPage() {
     refreshData();
     void (async () => {
       await migrateLegacyAdminData();
+      await migrateLegacySubscriptions();
       await Promise.all([
         refreshMerchantsFromApi(),
+        refreshSubscriptionsFromApi(),
         refreshLogsFromApi(),
         refreshChannelsFromApi(),
         refreshDeletionRequestsFromApi(),
@@ -1931,11 +1986,13 @@ export default function AdminPage() {
     })();
   }, [
     migrateLegacyAdminData,
+    migrateLegacySubscriptions,
     refreshChannelsFromApi,
     refreshData,
     refreshDeletionRequestsFromApi,
     refreshLogsFromApi,
     refreshMerchantsFromApi,
+    refreshSubscriptionsFromApi,
   ]);
 
   const getSub = (id: string) =>
@@ -2062,10 +2119,40 @@ export default function AdminPage() {
     return data.merchant as Merchant;
   };
 
-  const syncMerchantSubscriptionToApi = async (
+  const syncSubscriptionPlanToApi = async (
     id: string,
-    subscription: Subscription,
-  ): Promise<Merchant> => {
+    operation: "activate" | "change" | "renew",
+    plan: PlanKey,
+  ): Promise<{ merchant: Merchant; subscription: Subscription }> => {
+    const response = await fetch(
+      `/api/auth/merchants/${encodeURIComponent(id)}/subscription`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAdminAuthHeaders(),
+        },
+        body: JSON.stringify({ operation, plan }),
+      },
+    );
+    const data = await response.json().catch(() => null);
+    if (handleUnauthorizedAdminResponse(response)) {
+      throw new Error("ADMIN_SESSION_UNAUTHORIZED");
+    }
+    if (!response.ok || !data?.ok || !data?.merchant || !data?.subscription) {
+      throw new Error(data?.error || "Could not update subscription");
+    }
+    return {
+      merchant: data.merchant as Merchant,
+      subscription: data.subscription as Subscription,
+    };
+  };
+
+  const syncSubscriptionActionToApi = async (
+    id: string,
+    action: "add_replies" | "deduct_replies" | "reset_replies" | "set_auto_reply",
+    values: { amount?: number; enabled?: boolean } = {},
+  ): Promise<Subscription> => {
     const response = await fetch(
       `/api/auth/merchants/${encodeURIComponent(id)}/subscription`,
       {
@@ -2074,26 +2161,17 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           ...getAdminAuthHeaders(),
         },
-        body: JSON.stringify({
-          subscription_started_at: subscription.start_date,
-          subscription_expires_at: subscription.expires_at,
-        }),
+        body: JSON.stringify({ action, ...values }),
       },
     );
-
     const data = await response.json().catch(() => null);
-
     if (handleUnauthorizedAdminResponse(response)) {
       throw new Error("ADMIN_SESSION_UNAUTHORIZED");
     }
-
-    if (!response.ok || !data?.ok || !data?.merchant) {
-      throw new Error(
-        data?.error || "Could not synchronize subscription with API",
-      );
+    if (!response.ok || !data?.ok || !data?.subscription) {
+      throw new Error(data?.error || "Could not update subscription");
     }
-
-    return data.merchant as Merchant;
+    return data.subscription as Subscription;
   };
 
   const updateMerchant = (id: string, patch: Partial<Merchant>) => {
@@ -2102,12 +2180,15 @@ export default function AdminPage() {
     refreshData();
   };
 
-  const updateSub = (merchantId: string, patch: Partial<Subscription>) => {
-    const all = getSubscriptions();
-    saveSubscriptions(
-      all.map((s) => (s.merchant_id === merchantId ? { ...s, ...patch } : s)),
-    );
-    refreshData();
+  const storeServerSubscription = (subscription: Subscription) => {
+    const nextSubscriptions = [
+      ...getSubscriptions().filter(
+        (item) => item.merchant_id !== subscription.merchant_id,
+      ),
+      subscription,
+    ];
+    saveSubscriptions(nextSubscriptions);
+    setSubscriptions(nextSubscriptions);
   };
 
   // ── Actions ──────────────────────────────────────────────────────────────────
@@ -2173,8 +2254,8 @@ export default function AdminPage() {
         reason,
       );
       updateMerchant(merchantId, apiMerchant);
-      updateSub(merchantId, { status: "suspended", auto_reply_enabled: false });
       await refreshMerchantsFromApi();
+      if (canManageSubscriptions) await refreshSubscriptionsFromApi();
       logAction(
         "suspended",
         m,
@@ -2201,8 +2282,8 @@ export default function AdminPage() {
     try {
       const apiMerchant = await syncMerchantStatusToApi(merchantId, "approved");
       updateMerchant(merchantId, apiMerchant);
-      updateSub(merchantId, { status: "active", auto_reply_enabled: true });
       await refreshMerchantsFromApi();
+      if (canManageSubscriptions) await refreshSubscriptionsFromApi();
       logAction("unsuspended", m, adminText.logMerchantUnsuspended);
       toast.success(
         formatAdminMessage(adminText.toastMerchantUnsuspended, {
@@ -2238,226 +2319,140 @@ export default function AdminPage() {
     }
   };
 
-  const doResetReplies = (merchantId: string) => {
-    const m = merchants.find((x) => x.id === merchantId)!;
-    const s = getSub(merchantId);
-    if (!s) {
-      toast.error(adminText.noSubscriptionError);
-      return;
-    }
-    updateSub(merchantId, {
-      replies_used: 0,
-      replies_remaining: s.reply_limit,
-      status: "active",
-      pending_next_cycle_deduction: 0,
-    });
-    logAction(
-      "replies_reset",
-      m,
-      formatAdminMessage(adminText.logRepliesReset, {
-        limit: s.reply_limit,
-      }),
-      { limit: s.reply_limit },
-    );
-    toast.success(adminText.toastRepliesReset);
-    setConfirmDialog(null);
-  };
-
-  const doAddReplies = (merchantId: string, amount: number) => {
-    const m = merchants.find((x) => x.id === merchantId)!;
-    const s = getSub(merchantId);
-    if (!s) {
-      toast.error(adminText.noSubscriptionError);
-      return;
-    }
-    updateSub(merchantId, {
-      reply_limit: s.reply_limit + amount,
-      replies_remaining: s.replies_remaining + amount,
-    });
-    logAction(
-      "replies_added",
-      m,
-      formatAdminMessage(adminText.logRepliesAdded, { amount }),
-      { amount },
-    );
-    toast.success(
-      formatAdminMessage(adminText.toastRepliesAdded, { amount }),
-    );
-    setRepliesModal(null);
-  };
-
-  const doDeductReplies = (merchantId: string, amount: number) => {
-    const m = merchants.find((x) => x.id === merchantId)!;
-    const s = getSub(merchantId);
-    if (!s) {
-      toast.error(adminText.noSubscriptionError);
-      return;
-    }
-    const newUsed = Math.min(s.replies_used + amount, s.reply_limit);
-    updateSub(merchantId, {
-      replies_used: newUsed,
-      replies_remaining: Math.max(0, s.reply_limit - newUsed),
-    });
-    logAction(
-      "replies_deducted",
-      m,
-      formatAdminMessage(adminText.logRepliesDeducted, { amount }),
-      { amount },
-    );
-    toast.success(
-      formatAdminMessage(adminText.toastRepliesDeducted, { amount }),
-    );
-    setRepliesModal(null);
-  };
-
-  const doToggleAutoReply = (merchantId: string) => {
-    const m = merchants.find((x) => x.id === merchantId)!;
-    const s = getSub(merchantId);
-    if (!s) {
-      toast.error(adminText.noSubscriptionError);
-      return;
-    }
-    const enabled = !s.auto_reply_enabled;
-    updateSub(merchantId, { auto_reply_enabled: enabled });
-    logAction(
-      enabled ? "auto_reply_enabled" : "auto_reply_disabled",
-      m,
-      enabled
-        ? adminText.logAutoReplyEnabled
-        : adminText.logAutoReplyDisabled,
-    );
-    toast.success(
-      enabled
-        ? adminText.toastAutoReplyEnabled
-        : adminText.toastAutoReplyDisabled,
-    );
-  };
-
-  const doActivatePaidSubscription = async (merchantId: string, plan: PlanKey) => {
-    const m = merchants.find((x) => x.id === merchantId)!;
-    const previousSubscriptions = getSubscriptions();
-
+  const doResetReplies = async (merchantId: string) => {
     try {
-      const subscription = createSubscriptionForPlan(merchantId, plan);
-      const apiMerchant = await syncMerchantSubscriptionToApi(
+      const subscription = await syncSubscriptionActionToApi(
         merchantId,
-        subscription,
+        "reset_replies",
       );
-
-      updateMerchant(merchantId, apiMerchant);
-      logAction(
-        "plan_activated",
-        m,
-        formatAdminMessage(adminText.logPlanActivated, {
-          plan: planNames[plan],
-        }),
-        { plan },
-      );
-      toast.success(
-        formatAdminMessage(adminText.toastPlanActivated, {
-          plan: planNames[plan],
-        }),
-      );
-      setPlanModal(null);
-      refreshData();
+      storeServerSubscription(subscription);
+      toast.success(adminText.toastRepliesReset);
+      setConfirmDialog(null);
     } catch (error) {
-      saveSubscriptions(previousSubscriptions);
-      refreshData();
-      console.error("Paid subscription activation failed:", error);
-      toast.error(adminText.planActivationSaveError);
+      console.error("Reset replies failed:", error);
+      toast.error(adminText.subscriptionOperationError);
     }
   };
 
-  const doChangePlan = async (merchantId: string, plan: PlanKey) => {
-    const m = merchants.find((x) => x.id === merchantId)!;
-    const previousSubscriptions = getSubscriptions();
-
+  const doAddReplies = async (merchantId: string, amount: number) => {
     try {
-      const subscription = createSubscriptionForPlan(merchantId, plan);
-      const apiMerchant = await syncMerchantSubscriptionToApi(
+      const subscription = await syncSubscriptionActionToApi(
         merchantId,
-        subscription,
+        "add_replies",
+        { amount },
       );
-
-      updateMerchant(merchantId, apiMerchant);
-      logAction(
-        "plan_changed",
-        m,
-        formatAdminMessage(adminText.logPlanChanged, {
-          plan: planNames[plan],
-        }),
-        { plan },
-      );
+      storeServerSubscription(subscription);
       toast.success(
-        formatAdminMessage(adminText.toastPlanChanged, {
-          plan: planNames[plan],
-        }),
+        formatAdminMessage(adminText.toastRepliesAdded, { amount }),
       );
-      setPlanModal(null);
-      refreshData();
+      setRepliesModal(null);
     } catch (error) {
-      saveSubscriptions(previousSubscriptions);
-      refreshData();
-      console.error("Change plan synchronization failed:", error);
-      toast.error(adminText.planChangeSaveError);
+      console.error("Add replies failed:", error);
+      toast.error(adminText.subscriptionOperationError);
     }
   };
 
-  const doRenewPlan = async (merchantId: string, plan: PlanKey) => {
-    const m = merchants.find((x) => x.id === merchantId)!;
-    const deduct = getSub(merchantId)?.pending_next_cycle_deduction ?? 0;
-    const previousSubscriptions = getSubscriptions();
+  const doDeductReplies = async (merchantId: string, amount: number) => {
+    try {
+      const subscription = await syncSubscriptionActionToApi(
+        merchantId,
+        "deduct_replies",
+        { amount },
+      );
+      storeServerSubscription(subscription);
+      toast.success(
+        formatAdminMessage(adminText.toastRepliesDeducted, { amount }),
+      );
+      setRepliesModal(null);
+    } catch (error) {
+      console.error("Deduct replies failed:", error);
+      toast.error(adminText.subscriptionOperationError);
+    }
+  };
+
+  const doToggleAutoReply = async (merchantId: string) => {
+    const current = getSub(merchantId);
+    if (!current) {
+      toast.error(adminText.noSubscriptionError);
+      return;
+    }
 
     try {
-      const subscription = createSubscriptionForPlan(merchantId, plan);
-      const apiMerchant = await syncMerchantSubscriptionToApi(
+      const enabled = !current.auto_reply_enabled;
+      const subscription = await syncSubscriptionActionToApi(
         merchantId,
-        subscription,
+        "set_auto_reply",
+        { enabled },
       );
-      updateMerchant(merchantId, apiMerchant);
-    if (deduct > 0) {
-      const all = getSubscriptions();
-      saveSubscriptions(
-        all.map((x) =>
-          x.merchant_id === merchantId
-            ? {
-                ...x,
-                replies_used: deduct,
-                replies_remaining: Math.max(0, x.reply_limit - deduct),
-              }
-            : x,
-        ),
+      storeServerSubscription(subscription);
+      toast.success(
+        enabled
+          ? adminText.toastAutoReplyEnabled
+          : adminText.toastAutoReplyDisabled,
       );
+      setConfirmDialog(null);
+    } catch (error) {
+      console.error("Toggle automatic replies failed:", error);
+      toast.error(adminText.subscriptionOperationError);
     }
-    logAction(
-      "plan_renewed",
-      m,
-      `${planNames[plan]}${
-        deduct > 0
-          ? formatAdminMessage(adminText.emergencyDeduction, {
-              amount: deduct,
-            })
-          : ""
-      }`,
-      {
+  };
+
+  const savePlanOperation = async (
+    merchantId: string,
+    plan: PlanKey,
+    operation: "activate" | "change" | "renew",
+  ) => {
+    const m = merchants.find((item) => item.id === merchantId);
+    if (!m) return;
+
+    try {
+      const result = await syncSubscriptionPlanToApi(
+        merchantId,
+        operation,
         plan,
-        emergency_deduction: deduct,
-      },
-    );
-      toast.success(
-        formatAdminMessage(adminText.toastPlanRenewed, {
-          plan: planNames[plan],
-        }),
       );
+      updateMerchant(merchantId, result.merchant);
+      storeServerSubscription(result.subscription);
+      if (operation === "activate") {
+        toast.success(
+          formatAdminMessage(adminText.toastPlanActivated, {
+            plan: planNames[plan],
+          }),
+        );
+      } else if (operation === "change") {
+        toast.success(
+          formatAdminMessage(adminText.toastPlanChanged, {
+            plan: planNames[plan],
+          }),
+        );
+      } else {
+        toast.success(
+          formatAdminMessage(adminText.toastPlanRenewed, {
+            plan: planNames[plan],
+          }),
+        );
+      }
       setPlanModal(null);
-      refreshData();
     } catch (error) {
-      saveSubscriptions(previousSubscriptions);
-      refreshData();
-      console.error("Renew plan synchronization failed:", error);
-      toast.error(adminText.planRenewSaveError);
+      console.error("Subscription plan operation failed:", error);
+      toast.error(
+        operation === "activate"
+          ? adminText.planActivationSaveError
+          : operation === "change"
+            ? adminText.planChangeSaveError
+            : adminText.planRenewSaveError,
+      );
     }
   };
+
+  const doActivatePaidSubscription = (merchantId: string, plan: PlanKey) =>
+    savePlanOperation(merchantId, plan, "activate");
+
+  const doChangePlan = (merchantId: string, plan: PlanKey) =>
+    savePlanOperation(merchantId, plan, "change");
+
+  const doRenewPlan = (merchantId: string, plan: PlanKey) =>
+    savePlanOperation(merchantId, plan, "renew");
 
   const doSaveNote = async (merchantId: string, note: string) => {
     const m = merchants.find((x) => x.id === merchantId)!;
