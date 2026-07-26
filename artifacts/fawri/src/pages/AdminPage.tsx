@@ -762,13 +762,13 @@ function DetailsModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-3 flex gap-0 border-b px-6">
+        <div className="mt-3 grid grid-cols-4 border-b px-3 sm:px-6">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`-mb-px whitespace-nowrap border-b-2 px-4 py-2 text-sm transition-colors ${
+              className={`-mb-px min-w-0 whitespace-nowrap border-b-2 px-0.5 py-2 text-[10px] tracking-tight transition-colors sm:px-4 sm:text-sm sm:tracking-normal ${
                 activeTab === tab.id
                   ? "border-primary font-medium text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -834,11 +834,13 @@ function DetailsModal({
               {channels.map(({ key, label, icon: Icon, editable, fixedStatus }) => (
                 <div
                   key={key}
-                  className={`flex min-h-28 flex-col justify-between gap-3 rounded-lg border p-3 ${textAlignmentClass}`}
+                  className={`flex min-h-28 flex-col justify-between gap-2 rounded-lg border p-2 sm:gap-3 sm:p-3 ${textAlignmentClass}`}
                 >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <Icon className="h-5 w-5 shrink-0 text-muted-foreground" />
-                    <p className="min-w-0 truncate text-sm font-medium">{label}</p>
+                  <div className="flex min-h-10 min-w-0 items-start gap-1.5 sm:items-center sm:gap-2">
+                    <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground sm:mt-0 sm:h-5 sm:w-5" />
+                    <p className="min-w-0 break-words text-[11px] font-medium leading-4 sm:text-sm">
+                      {label}
+                    </p>
                   </div>
 
                   {editable ? (
@@ -848,7 +850,7 @@ function DetailsModal({
                         onChannelStatusChange(key, value)
                       }
                     >
-                      <SelectTrigger className="h-9 w-full text-xs">
+                      <SelectTrigger className="h-auto min-h-9 w-full gap-1 px-2 py-1.5 text-[10px] [&>span]:line-clamp-none [&>span]:whitespace-normal [&>span]:break-words [&>span]:text-center [&>span]:leading-4 sm:text-xs">
                         <SelectValue />
                       </SelectTrigger>
 
@@ -867,7 +869,7 @@ function DetailsModal({
                       </SelectContent>
                     </Select>
                   ) : (
-                    <span className="inline-flex h-9 w-full items-center justify-center rounded-md border bg-muted px-2 text-center text-xs font-medium text-muted-foreground">
+                    <span className="inline-flex min-h-9 w-full items-center justify-center rounded-md border bg-muted px-1.5 py-1.5 text-center text-[10px] font-medium leading-4 text-muted-foreground sm:px-2 sm:text-xs">
                       {fixedStatus}
                     </span>
                   )}
