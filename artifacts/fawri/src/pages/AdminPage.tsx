@@ -2123,6 +2123,7 @@ export default function AdminPage() {
         reason,
       );
       updateMerchant(merchantId, apiMerchant);
+      await refreshMerchantsFromApi();
       logAction(
         "rejected",
         m,
@@ -2154,6 +2155,7 @@ export default function AdminPage() {
       );
       updateMerchant(merchantId, apiMerchant);
       updateSub(merchantId, { status: "suspended", auto_reply_enabled: false });
+      await refreshMerchantsFromApi();
       logAction(
         "suspended",
         m,
@@ -2181,6 +2183,7 @@ export default function AdminPage() {
       const apiMerchant = await syncMerchantStatusToApi(merchantId, "approved");
       updateMerchant(merchantId, apiMerchant);
       updateSub(merchantId, { status: "active", auto_reply_enabled: true });
+      await refreshMerchantsFromApi();
       logAction("unsuspended", m, adminText.logMerchantUnsuspended);
       toast.success(
         formatAdminMessage(adminText.toastMerchantUnsuspended, {
@@ -2201,6 +2204,7 @@ export default function AdminPage() {
     try {
       const apiMerchant = await syncMerchantStatusToApi(merchantId, "pending_activation");
       updateMerchant(merchantId, apiMerchant);
+      await refreshMerchantsFromApi();
       logAction("restore_pending", m, adminText.logMerchantRestored);
       toast.success(
         formatAdminMessage(adminText.toastMerchantRestored, {
