@@ -163,6 +163,15 @@ function SubBadge({
   );
 }
 
+function formatUsagePercentage(used: number, limit: number, locale: string): string {
+  if (limit <= 0 || used <= 0) return "0%";
+
+  const percentage = (used / limit) * 100;
+  if (percentage < 0.1) return "<0.1%";
+
+  return `${percentage.toLocaleString(locale, { maximumFractionDigits: 2 })}%`;
+}
+
 // ── Confirm dialog ─────────────────────────────────────────────────────────────
 type ConfirmType =
   | "approve"
@@ -479,6 +488,7 @@ interface RepliesModalState {
   merchantName: string;
   mode: "add" | "deduct";
   currentUsed?: number;
+  currentRemaining?: number;
   limit?: number;
 }
 
@@ -494,20 +504,60 @@ function RepliesModal({
   const [amount, setAmount] = useState("");
   const { lang } = useI18n();
   const adminText = getAdminText(lang);
+  const locale = lang === "en" ? "en-US" : "ar-IQ";
+  const textAlignmentClass =
+    adminText.dir === "rtl"
+      ? "!text-right sm:!text-right"
+      : "!text-left sm:!text-left";
+
+  const currentUsed = state.currentUsed ?? 0;
+  const limit = state.limit ?? 0;
+  const currentRemaining =
+    state.currentRemaining ?? Math.max(0, limit - currentUsed);
+  const parsedAmount = Number(amount);
+  const isValidInteger =
+    amount.trim() !== "" && Number.isInteger(parsedAmount) && parsedAmount > 0;
+  const exceedsRemaining =
+    state.mode === "deduct" &&
+    isValidInteger &&
+    parsedAmount > currentRemaining;
+  const remainingAfterDeduction =
+    state.mode === "deduct" && isValidInteger && !exceedsRemaining
+      ? currentRemaining - parsedAmount
+      : currentRemaining;
+  const validationMessage =
+    amount.trim() === ""
+      ? ""
+      : !isValidInteger
+        ? adminText.repliesInvalidAmount
+        : exceedsRemaining
+          ? adminText.repliesAmountExceedsRemaining
+          : "";
+
+  const handleSubmit = () => {
+    if (!isValidInteger || exceedsRemaining) return;
+    onConfirm(parsedAmount);
+  };
 
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent
-        className="max-w-sm"
+        className={`max-w-md gap-5 ${
+          adminText.dir === "rtl"
+            ? "[&>button]:left-4 [&>button]:right-auto"
+            : "[&>button]:right-4 [&>button]:left-auto"
+        }`}
         dir={adminText.dir}
       >
-        <DialogHeader>
+        <DialogHeader
+          className={`w-full ${textAlignmentClass} ${
+            adminText.dir === "rtl" ? "pl-12" : "pr-12"
+          }`}
+        >
           <DialogTitle
-            className={
-              state.mode === "deduct"
-                ? "text-destructive"
-                : ""
-            }
+            className={`w-full text-lg leading-6 ${textAlignmentClass} ${
+              state.mode === "deduct" ? "text-destructive" : ""
+            }`}
           >
             {state.mode === "add"
               ? adminText.repliesAddTitle
@@ -515,49 +565,89 @@ function RepliesModal({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">
-            {adminText.storeLabel}:{" "}
-            <span className="font-medium text-foreground">
-              {state.merchantName}
-            </span>
-          </p>
-
-          {state.currentUsed !== undefined && (
+        <div className="space-y-4">
+          <div className={`rounded-xl border bg-muted/35 px-4 py-3 ${textAlignmentClass}`}>
             <p className="text-xs text-muted-foreground">
-              {adminText.repliesUsedLabel}:{" "}
-              {state.currentUsed} / {state.limit}
+              {adminText.storeLabel}
             </p>
-          )}
+            <p className="mt-1 text-base font-semibold text-foreground">
+              {state.merchantName}
+            </p>
+          </div>
 
-          <div className="space-y-1.5">
-            <Label>{adminText.repliesCountLabel}</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              [adminText.detailsReplyLimit, limit],
+              [adminText.detailsUsed, currentUsed],
+              [adminText.detailsRemaining, currentRemaining],
+            ].map(([label, value]) => (
+              <div
+                key={String(label)}
+                className="rounded-lg border bg-card px-2 py-3 text-center"
+              >
+                <p className="text-[11px] leading-4 text-muted-foreground">
+                  {label}
+                </p>
+                <p className="mt-1 text-base font-semibold tabular-nums" dir="ltr">
+                  {Number(value).toLocaleString(locale)}
+                </p>
+              </div>
+            ))}
+          </div>
 
+          <div className="space-y-2">
+            <Label className={`block ${textAlignmentClass}`}>
+              {adminText.repliesCountLabel}
+            </Label>
             <Input
               type="number"
-              min="1"
+              inputMode="numeric"
+              min={1}
+              max={state.mode === "deduct" ? currentRemaining : undefined}
+              step={1}
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
               placeholder={adminText.repliesCountPlaceholder}
+              className={`h-11 text-base tabular-nums ${textAlignmentClass}`}
+              aria-invalid={Boolean(validationMessage)}
             />
+            {validationMessage && (
+              <p className={`text-xs font-medium text-destructive ${textAlignmentClass}`}>
+                {validationMessage}
+              </p>
+            )}
           </div>
+
+          {state.mode === "deduct" && isValidInteger && !exceedsRemaining && (
+            <div className="flex items-center justify-between rounded-xl border border-orange-200 bg-orange-50/70 px-4 py-3 text-sm dark:border-orange-900/70 dark:bg-orange-950/20">
+              <span className="text-muted-foreground">
+                {adminText.repliesRemainingAfterLabel}
+              </span>
+              <span className="font-bold tabular-nums" dir="ltr">
+                {remainingAfterDeduction.toLocaleString(locale)}
+              </span>
+            </div>
+          )}
         </div>
 
-        <DialogFooter className="flex gap-2 flex-row-reverse justify-start">
+        <DialogFooter
+          className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+          dir="ltr"
+        >
           <Button
-            variant={
-              state.mode === "deduct"
-                ? "destructive"
-                : "default"
-            }
-            disabled={!amount || parseInt(amount) < 1}
-            onClick={() => onConfirm(parseInt(amount))}
+            variant="outline"
+            onClick={onClose}
+            className="h-auto min-h-10 w-full px-4 py-2 sm:w-auto"
+          >
+            {adminText.cancel}
+          </Button>
+          <Button
+            variant={state.mode === "deduct" ? "destructive" : "default"}
+            disabled={!isValidInteger || exceedsRemaining}
+            onClick={handleSubmit}
+            className="h-auto min-h-10 w-full px-4 py-2 sm:w-auto"
           >
             {adminText.confirm}
-          </Button>
-
-          <Button variant="outline" onClick={onClose}>
-            {adminText.cancel}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -2479,7 +2569,12 @@ export default function AdminPage() {
       setRepliesModal(null);
     } catch (error) {
       console.error("Deduct replies failed:", error);
-      toast.error(adminText.subscriptionOperationError);
+      const message = error instanceof Error ? error.message : "";
+      toast.error(
+        message.includes("amount exceeds remaining replies")
+          ? adminText.repliesAmountExceedsRemaining
+          : adminText.subscriptionOperationError,
+      );
     }
   };
 
@@ -2659,6 +2754,7 @@ export default function AdminPage() {
       merchantName: m.store_name,
       mode,
       currentUsed: s?.replies_used,
+      currentRemaining: s?.replies_remaining,
       limit: s?.reply_limit,
     });
   };
@@ -3084,23 +3180,42 @@ export default function AdminPage() {
                             </div>
                           </div>
                           {canManageSubscriptions && sub && (
-                            <div className="bg-muted/50 rounded-md p-2 text-xs">
-                              <div className="flex justify-between mb-1">
-                                <span className="text-muted-foreground">
-                                  {adminText.actionRepliesShort}
+                            <div className="space-y-2 rounded-lg border bg-muted/30 p-3 text-xs">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-semibold">
+                                  {planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
                                 </span>
-                                <span
-                                  className="font-medium tabular-nums"
-                                  dir="ltr"
-                                >
-                                  {sub.replies_used.toLocaleString(locale)} /{" "}
-                                  {sub.reply_limit.toLocaleString(locale)} ({pct}%)
+                                <span className="font-medium tabular-nums text-muted-foreground" dir="ltr">
+                                  {formatUsagePercentage(
+                                    sub.replies_used,
+                                    sub.reply_limit,
+                                    locale,
+                                  )}
                                 </span>
                               </div>
-                              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div className="grid grid-cols-3 gap-1.5">
+                                {[
+                                  [adminText.detailsUsed, sub.replies_used],
+                                  [adminText.detailsRemaining, sub.replies_remaining],
+                                  [adminText.detailsReplyLimit, sub.reply_limit],
+                                ].map(([label, value]) => (
+                                  <div key={String(label)} className="rounded-md bg-background px-1.5 py-2 text-center">
+                                    <p className="text-[10px] leading-4 text-muted-foreground">{label}</p>
+                                    <p className="mt-0.5 font-semibold tabular-nums" dir="ltr">
+                                      {Number(value).toLocaleString(locale)}
+                                    </p>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
                                 <div
                                   className={`h-full rounded-full transition-all ${pct >= 90 ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-primary"}`}
-                                  style={{ width: `${Math.min(100, pct)}%` }}
+                                  style={{
+                                    width:
+                                      sub.replies_used > 0
+                                        ? `${Math.max(0.5, Math.min(100, (sub.replies_used / sub.reply_limit) * 100))}%`
+                                        : "0%",
+                                  }}
                                 />
                               </div>
                             </div>
@@ -3261,26 +3376,45 @@ export default function AdminPage() {
                             {canManageSubscriptions && (
                               <td className="px-4 py-3">
                                 {sub ? (
-                                  <div className="space-y-1">
-                                    <span className="text-xs font-medium capitalize">
-                                      {planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
-                                    </span>
-                                  <p
-                                    className="text-xs tabular-nums text-muted-foreground"
-                                    dir="ltr"
-                                  >
-                                    {sub.replies_used.toLocaleString(locale)} /{" "}
-                                    {sub.reply_limit.toLocaleString(locale)} ({pct}%)
-                                  </p>
-                                  <div className="w-20 h-1.5 bg-muted rounded-full overflow-hidden">
-                                    <div
-                                      className={`h-full rounded-full ${pct >= 90 ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-primary"}`}
-                                      style={{
-                                        width: `${Math.min(100, pct)}%`,
-                                      }}
-                                    />
+                                  <div className="min-w-48 space-y-2 rounded-lg border bg-muted/25 p-2.5">
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="text-xs font-semibold capitalize">
+                                        {planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
+                                      </span>
+                                      <span className="text-[11px] font-medium tabular-nums text-muted-foreground" dir="ltr">
+                                        {formatUsagePercentage(
+                                          sub.replies_used,
+                                          sub.reply_limit,
+                                          locale,
+                                        )}
+                                      </span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-1">
+                                      {[
+                                        [adminText.detailsUsed, sub.replies_used],
+                                        [adminText.detailsRemaining, sub.replies_remaining],
+                                        [adminText.detailsReplyLimit, sub.reply_limit],
+                                      ].map(([label, value]) => (
+                                        <div key={String(label)} className="rounded-md bg-background px-1 py-1.5 text-center">
+                                          <p className="text-[9px] leading-3 text-muted-foreground">{label}</p>
+                                          <p className="mt-0.5 text-xs font-semibold tabular-nums" dir="ltr">
+                                            {Number(value).toLocaleString(locale)}
+                                          </p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                                      <div
+                                        className={`h-full rounded-full ${pct >= 90 ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-primary"}`}
+                                        style={{
+                                          width:
+                                            sub.replies_used > 0
+                                              ? `${Math.max(0.5, Math.min(100, (sub.replies_used / sub.reply_limit) * 100))}%`
+                                              : "0%",
+                                        }}
+                                      />
+                                    </div>
                                   </div>
-                                </div>
                                 ) : (
                                   <span className="text-xs text-muted-foreground">
                                     —

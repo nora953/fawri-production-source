@@ -360,6 +360,26 @@ test("admin permissions migrate and remain server-authoritative", async (t) => {
   assert.equal(deductReply.body.subscription.replies_used, 1);
   assert.equal(deductReply.body.subscription.replies_remaining, 4000);
 
+  const overDeductReply = await json(await fetch(
+    `${baseUrl}/api/auth/merchants/merchant-a/subscription`,
+    {
+      method: "PATCH",
+      headers: { ...assistantHeaders, "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "deduct_replies", amount: 4001 }),
+    },
+  ));
+  assert.equal(overDeductReply.response.status, 409);
+  assert.equal(overDeductReply.body.error, "amount exceeds remaining replies");
+  assert.equal(overDeductReply.body.replies_remaining, 4000);
+
+  const subscriptionsAfterRejectedDeduction = await json(await fetch(
+    `${baseUrl}/api/auth/admin/subscriptions`,
+    { headers: assistantHeaders },
+  ));
+  assert.equal(subscriptionsAfterRejectedDeduction.response.status, 200);
+  assert.equal(subscriptionsAfterRejectedDeduction.body.subscriptions[0].replies_used, 1);
+  assert.equal(subscriptionsAfterRejectedDeduction.body.subscriptions[0].replies_remaining, 4000);
+
   const resetReplies = await json(await fetch(
     `${baseUrl}/api/auth/merchants/merchant-a/subscription`,
     {

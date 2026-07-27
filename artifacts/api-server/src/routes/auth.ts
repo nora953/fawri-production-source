@@ -2834,14 +2834,13 @@ router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
     if (!Number.isInteger(amount) || amount <= 0) {
       return sendError(res, 400, "positive integer amount is required");
     }
-    subscription.replies_used = Math.min(
-      subscription.reply_limit,
-      subscription.replies_used + amount,
-    );
-    subscription.replies_remaining = Math.max(
-      0,
-      subscription.reply_limit - subscription.replies_used,
-    );
+    if (amount > subscription.replies_remaining) {
+      return sendError(res, 409, "amount exceeds remaining replies", {
+        replies_remaining: subscription.replies_remaining,
+      });
+    }
+    subscription.replies_used += amount;
+    subscription.replies_remaining -= amount;
     if (subscription.replies_remaining === 0) {
       subscription.status = "replies_exhausted";
       subscription.auto_reply_enabled = false;
