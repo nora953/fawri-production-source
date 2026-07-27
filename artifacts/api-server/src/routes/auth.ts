@@ -153,6 +153,14 @@ type SubscriptionStatus =
   | "replies_exhausted"
   | "suspended";
 
+type AddonReplyBatch = {
+  id: string;
+  purchased_at: string;
+  expires_at: string;
+  amount: number;
+  remaining: number;
+};
+
 type SubscriptionRecord = {
   id: string;
   merchant_id: string;
@@ -161,6 +169,12 @@ type SubscriptionRecord = {
   reply_limit: number;
   replies_used: number;
   replies_remaining: number;
+  base_reply_limit: number;
+  base_replies_used: number;
+  base_replies_remaining: number;
+  addon_replies_remaining: number;
+  addon_reply_batches: AddonReplyBatch[];
+  billing_anchor_day: number;
   start_date: string;
   expires_at: string;
   status: SubscriptionStatus;
@@ -169,6 +183,7 @@ type SubscriptionRecord = {
   emergency_credit_amount: number;
   emergency_credit_remaining: number;
   emergency_credit_activated: boolean;
+  emergency_debt: number;
   pending_next_cycle_deduction: number;
 };
 
@@ -178,7 +193,199 @@ const SUBSCRIPTION_PLAN_CONFIG = {
   diamond: { price_iqd: 75000, reply_limit: 14000, emergency_credit_amount: 1400 },
 } as const;
 
-const SUBSCRIPTION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
+const BAGHDAD_UTC_OFFSET_MS = 3 * 60 * 60 * 1000;
+
+function getBaghdadDateParts(date: Date) {
+  const shifted = new Date(date.getTime() + BAGHDAD_UTC_OFFSET_MS);
+  return {
+    year: shifted.getUTCFullYear(),
+    month: shifted.getUTCMonth(),
+    day: shifted.getUTCDate(),
+    hour: shifted.getUTCHours(),
+    minute: shifted.getUTCMinutes(),
+    second: shifted.getUTCSeconds(),
+    millisecond: shifted.getUTCMilliseconds(),
+  };
+}
+
+function addBaghdadCalendarMonths(
+  source: Date,
+  months: number,
+  anchorDay?: number,
+): Date {
+  const parts = getBaghdadDateParts(source);
+  const targetMonthStart = new Date(
+    Date.UTC(parts.year, parts.month + months, 1, parts.hour, parts.minute, parts.second, parts.millisecond),
+  );
+  const targetYear = targetMonthStart.getUTCFullYear();
+  const targetMonth = targetMonthStart.getUTCMonth();
+  const lastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+  const desiredDay = Math.min(Math.max(1, anchorDay || parts.day), lastDay);
+
+  return new Date(
+    Date.UTC(
+      targetYear,
+      targetMonth,
+      desiredDay,
+      parts.hour,
+      parts.minute,
+      parts.second,
+      parts.millisecond,
+    ) - BAGHDAD_UTC_OFFSET_MS,
+  );
+}
+
+function normalizeAddonReplyBatches(
+  value: unknown,
+  currentDate: Date = new Date(),
+): AddonReplyBatch[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return null;
+      const record = item as Partial<AddonReplyBatch>;
+      const purchasedAt = new Date(String(record.purchased_at || ""));
+      const expiresAt = new Date(String(record.expires_at || ""));
+      const amount = normalizeNonNegativeInteger(record.amount);
+      const remaining = Math.min(normalizeNonNegativeInteger(record.remaining), amount);
+      const id = String(record.id || "").trim();
+
+      if (
+        !id ||
+        amount <= 0 ||
+        remaining <= 0 ||
+        !Number.isFinite(purchasedAt.getTime()) ||
+        !Number.isFinite(expiresAt.getTime()) ||
+        expiresAt.getTime() <= currentDate.getTime()
+      ) {
+        return null;
+      }
+
+      return {
+        id,
+        purchased_at: purchasedAt.toISOString(),
+        expires_at: expiresAt.toISOString(),
+        amount,
+        remaining,
+      };
+    })
+    .filter((item): item is AddonReplyBatch => item !== null)
+    .sort(
+      (left, right) =>
+        new Date(left.expires_at).getTime() - new Date(right.expires_at).getTime(),
+    );
+}
+
+function recalculateSubscriptionTotals(
+  subscription: SubscriptionRecord,
+  currentDate: Date = new Date(),
+): SubscriptionRecord {
+  subscription.addon_reply_batches = normalizeAddonReplyBatches(
+    subscription.addon_reply_batches,
+    currentDate,
+  );
+  subscription.addon_replies_remaining = subscription.addon_reply_batches.reduce(
+    (total, batch) => total + batch.remaining,
+    0,
+  );
+  subscription.base_replies_used = Math.min(
+    subscription.base_reply_limit,
+    Math.max(0, subscription.base_replies_used),
+  );
+  subscription.base_replies_remaining = Math.max(
+    0,
+    subscription.base_reply_limit - subscription.base_replies_used,
+  );
+  subscription.emergency_credit_remaining = subscription.emergency_credit_activated
+    ? Math.min(
+        subscription.emergency_credit_amount,
+        Math.max(0, subscription.emergency_credit_remaining),
+      )
+    : 0;
+  subscription.emergency_credit_used = subscription.emergency_credit_activated
+    ? subscription.emergency_credit_amount - subscription.emergency_credit_remaining
+    : 0;
+  subscription.emergency_debt = Math.max(0, subscription.emergency_debt);
+  subscription.pending_next_cycle_deduction = subscription.emergency_debt;
+  subscription.replies_used =
+    subscription.base_replies_used +
+    subscription.addon_reply_batches.reduce(
+      (total, batch) => total + (batch.amount - batch.remaining),
+      0,
+    ) +
+    subscription.emergency_credit_used;
+  subscription.replies_remaining =
+    subscription.base_replies_remaining +
+    subscription.addon_replies_remaining +
+    subscription.emergency_credit_remaining;
+  subscription.reply_limit = subscription.replies_used + subscription.replies_remaining;
+
+  const expired = new Date(subscription.expires_at).getTime() <= currentDate.getTime();
+  if (subscription.status !== "suspended") {
+    subscription.status = expired
+      ? "expired"
+      : subscription.replies_remaining <= 0
+        ? "replies_exhausted"
+        : "active";
+  }
+  if (subscription.status !== "active") subscription.auto_reply_enabled = false;
+
+  return subscription;
+}
+
+function consumeReplies(subscription: SubscriptionRecord, amount: number): void {
+  let remainingToConsume = amount;
+
+  const fromBase = Math.min(subscription.base_replies_remaining, remainingToConsume);
+  subscription.base_replies_used += fromBase;
+  remainingToConsume -= fromBase;
+
+  for (const batch of subscription.addon_reply_batches) {
+    if (remainingToConsume <= 0) break;
+    const fromBatch = Math.min(batch.remaining, remainingToConsume);
+    batch.remaining -= fromBatch;
+    remainingToConsume -= fromBatch;
+  }
+
+  if (remainingToConsume > 0) {
+    const fromEmergency = Math.min(
+      subscription.emergency_credit_remaining,
+      remainingToConsume,
+    );
+    subscription.emergency_credit_remaining -= fromEmergency;
+    remainingToConsume -= fromEmergency;
+  }
+
+  if (remainingToConsume > 0) {
+    throw new Error("amount exceeds remaining replies");
+  }
+}
+
+function purchaseAdditionalReplies(
+  subscription: SubscriptionRecord,
+  amount: number,
+  purchasedAt: Date = new Date(),
+): { debtPaid: number; addonAdded: number } {
+  const debtPaid = Math.min(subscription.emergency_debt, amount);
+  subscription.emergency_debt -= debtPaid;
+  subscription.pending_next_cycle_deduction = subscription.emergency_debt;
+  const addonAdded = amount - debtPaid;
+
+  if (addonAdded > 0) {
+    const anchorDay = getBaghdadDateParts(purchasedAt).day;
+    subscription.addon_reply_batches.push({
+      id: makeId("addon-replies"),
+      purchased_at: purchasedAt.toISOString(),
+      expires_at: addBaghdadCalendarMonths(purchasedAt, 3, anchorDay).toISOString(),
+      amount: addonAdded,
+      remaining: addonAdded,
+    });
+  }
+
+  recalculateSubscriptionTotals(subscription, purchasedAt);
+  return { debtPaid, addonAdded };
+}
 
 type OtpRecord = {
   phone: string;
@@ -859,39 +1066,64 @@ function normalizeSubscriptionRecord(value: unknown): SubscriptionRecord | null 
     return null;
   }
 
-  const replyLimit = normalizeNonNegativeInteger(record.reply_limit);
-  const repliesUsed = Math.min(
-    normalizeNonNegativeInteger(record.replies_used),
-    replyLimit,
+  const legacyReplyLimit = normalizeNonNegativeInteger(record.reply_limit);
+  const baseReplyLimit =
+    normalizeNonNegativeInteger(record.base_reply_limit) || legacyReplyLimit;
+  const baseRepliesUsed = Math.min(
+    normalizeNonNegativeInteger(
+      record.base_replies_used ?? record.replies_used,
+    ),
+    baseReplyLimit,
   );
   const emergencyAmount = normalizeNonNegativeInteger(
     record.emergency_credit_amount,
   );
-  const emergencyUsed = Math.min(
-    normalizeNonNegativeInteger(record.emergency_credit_used),
-    emergencyAmount,
+  const emergencyActivated = record.emergency_credit_activated === true;
+  const emergencyRemaining = emergencyActivated
+    ? Math.min(
+        normalizeNonNegativeInteger(record.emergency_credit_remaining),
+        emergencyAmount,
+      )
+    : 0;
+  const emergencyDebt = normalizeNonNegativeInteger(
+    record.emergency_debt ?? record.pending_next_cycle_deduction,
+  );
+  const billingAnchorDay = Math.min(
+    31,
+    Math.max(
+      1,
+      normalizeNonNegativeInteger(record.billing_anchor_day) ||
+        getBaghdadDateParts(startDate).day,
+    ),
   );
 
-  return {
+  return recalculateSubscriptionTotals({
     id,
     merchant_id: merchantId,
     plan_name: record.plan_name,
     price_iqd: normalizeNonNegativeInteger(record.price_iqd),
-    reply_limit: replyLimit,
-    replies_used: repliesUsed,
-    replies_remaining: Math.max(0, replyLimit - repliesUsed),
+    reply_limit: legacyReplyLimit,
+    replies_used: normalizeNonNegativeInteger(record.replies_used),
+    replies_remaining: normalizeNonNegativeInteger(record.replies_remaining),
+    base_reply_limit: baseReplyLimit,
+    base_replies_used: baseRepliesUsed,
+    base_replies_remaining: Math.max(0, baseReplyLimit - baseRepliesUsed),
+    addon_replies_remaining: 0,
+    addon_reply_batches: normalizeAddonReplyBatches(record.addon_reply_batches),
+    billing_anchor_day: billingAnchorDay,
     start_date: startDate.toISOString(),
     expires_at: expiresDate.toISOString(),
     status: record.status,
     auto_reply_enabled: record.auto_reply_enabled === true,
-    emergency_credit_used: emergencyUsed,
+    emergency_credit_used: emergencyActivated
+      ? emergencyAmount - emergencyRemaining
+      : 0,
     emergency_credit_amount: emergencyAmount,
-    emergency_credit_remaining: Math.max(0, emergencyAmount - emergencyUsed),
-    emergency_credit_activated: record.emergency_credit_activated === true,
-    pending_next_cycle_deduction: normalizeNonNegativeInteger(
-      record.pending_next_cycle_deduction,
-    ),
-  };
+    emergency_credit_remaining: emergencyRemaining,
+    emergency_credit_activated: emergencyActivated,
+    emergency_debt: emergencyDebt,
+    pending_next_cycle_deduction: emergencyDebt,
+  });
 }
 
 function normalizeSubscriptions(value: unknown): SubscriptionRecord[] {
@@ -917,26 +1149,51 @@ function normalizeSubscriptions(value: unknown): SubscriptionRecord[] {
 function createPaidSubscription(
   merchantId: string,
   plan: Exclude<SubscriptionPlan, "trial">,
-  existing?: SubscriptionRecord,
+  existing: SubscriptionRecord | undefined,
+  operation: "activate" | "change" | "renew",
+  currentDate: Date = new Date(),
 ): SubscriptionRecord {
   const config = SUBSCRIPTION_PLAN_CONFIG[plan];
-  const startDate = new Date();
+  const existingNormalized = existing
+    ? recalculateSubscriptionTotals(existing, currentDate)
+    : undefined;
+  const existingExpired = existingNormalized
+    ? new Date(existingNormalized.expires_at).getTime() <= currentDate.getTime()
+    : true;
+  const isEarlyRenewal = operation === "renew" && existingNormalized && !existingExpired;
+  const billingAnchorDay = isEarlyRenewal
+    ? existingNormalized.billing_anchor_day
+    : getBaghdadDateParts(currentDate).day;
+  const expirationBase = isEarlyRenewal
+    ? new Date(existingNormalized.expires_at)
+    : currentDate;
   const emergencyDeduction = Math.min(
-    existing?.pending_next_cycle_deduction || 0,
+    existingNormalized?.emergency_debt || 0,
     config.reply_limit,
   );
+  const addonBatches = existingNormalized
+    ? normalizeAddonReplyBatches(existingNormalized.addon_reply_batches, currentDate)
+    : [];
 
-  return {
-    id: existing?.id || makeId("subscription"),
+  return recalculateSubscriptionTotals({
+    id: existingNormalized?.id || makeId("subscription"),
     merchant_id: merchantId,
     plan_name: plan,
     price_iqd: config.price_iqd,
     reply_limit: config.reply_limit,
     replies_used: emergencyDeduction,
     replies_remaining: config.reply_limit - emergencyDeduction,
-    start_date: startDate.toISOString(),
-    expires_at: new Date(
-      startDate.getTime() + SUBSCRIPTION_DURATION_MS,
+    base_reply_limit: config.reply_limit,
+    base_replies_used: emergencyDeduction,
+    base_replies_remaining: config.reply_limit - emergencyDeduction,
+    addon_replies_remaining: 0,
+    addon_reply_batches: addonBatches,
+    billing_anchor_day: billingAnchorDay,
+    start_date: currentDate.toISOString(),
+    expires_at: addBaghdadCalendarMonths(
+      expirationBase,
+      1,
+      billingAnchorDay,
     ).toISOString(),
     status: emergencyDeduction >= config.reply_limit
       ? "replies_exhausted"
@@ -944,10 +1201,11 @@ function createPaidSubscription(
     auto_reply_enabled: emergencyDeduction < config.reply_limit,
     emergency_credit_used: 0,
     emergency_credit_amount: config.emergency_credit_amount,
-    emergency_credit_remaining: config.emergency_credit_amount,
+    emergency_credit_remaining: 0,
     emergency_credit_activated: false,
+    emergency_debt: 0,
     pending_next_cycle_deduction: 0,
-  };
+  }, currentDate);
 }
 
 function deriveAccountStatus(status: MerchantStatus): AccountStatus {
@@ -1965,6 +2223,62 @@ router.get("/me", requireMerchantSession, (_req: Request, res: Response) => {
   return res.json({ ok: true, merchant: publicMerchant(merchant) });
 });
 
+router.get("/subscription/current", requireMerchantSession, (_req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  const db = ensureDb();
+  const subscription = db.subscriptions.find(
+    (item) => item.merchant_id === merchantId,
+  );
+  if (!subscription) return sendError(res, 404, "subscription not found");
+
+  recalculateSubscriptionTotals(subscription);
+  writeDb(db);
+  return res.json({ ok: true, subscription });
+});
+
+router.post("/subscription/emergency", requireMerchantSession, (_req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  const db = ensureDb();
+  const merchant = findRegularMerchant(db, merchantId);
+  if (!merchant || merchant.status !== "approved") {
+    return sendError(res, 403, "approved merchant account is required");
+  }
+
+  const subscription = db.subscriptions.find(
+    (item) => item.merchant_id === merchantId,
+  );
+  if (!subscription) return sendError(res, 404, "subscription not found");
+
+  recalculateSubscriptionTotals(subscription);
+  if (new Date(subscription.expires_at).getTime() <= Date.now()) {
+    return sendError(res, 409, "subscription is expired");
+  }
+  if (subscription.replies_remaining > 0) {
+    return sendError(res, 409, "emergency credit requires zero remaining replies");
+  }
+  if (subscription.emergency_credit_activated) {
+    return sendError(res, 409, "emergency credit was already used in this cycle");
+  }
+  if (subscription.emergency_debt > 0) {
+    return sendError(res, 409, "previous emergency debt must be paid first");
+  }
+  if (subscription.emergency_credit_amount <= 0) {
+    return sendError(res, 409, "emergency credit is unavailable");
+  }
+
+  subscription.emergency_credit_activated = true;
+  subscription.emergency_credit_remaining = subscription.emergency_credit_amount;
+  subscription.emergency_credit_used = 0;
+  subscription.emergency_debt = subscription.emergency_credit_amount;
+  subscription.pending_next_cycle_deduction = subscription.emergency_debt;
+  subscription.status = "active";
+  subscription.auto_reply_enabled = true;
+  recalculateSubscriptionTotals(subscription);
+  writeDb(db);
+
+  return res.json({ ok: true, subscription });
+});
+
 router.get("/admin/me", (req: Request, res: Response) => {
   const admin = requireAdminSession(req, res);
   if (!admin) return;
@@ -2726,7 +3040,10 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
   if (!admin) return;
 
   const merchantId = String(req.params.id || "").trim();
-  const operation = String(req.body?.operation || "").trim();
+  const operation = String(req.body?.operation || "").trim() as
+    | "activate"
+    | "change"
+    | "renew";
   const plan = String(req.body?.plan || "").trim();
 
   if (!merchantId) return sendError(res, 400, "merchantId is required");
@@ -2744,7 +3061,12 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
   const existingIndex = db.subscriptions.findIndex(
     (subscription) => subscription.merchant_id === merchantId,
   );
-  const existing = existingIndex >= 0 ? db.subscriptions[existingIndex] : undefined;
+  const existing = existingIndex >= 0
+    ? recalculateSubscriptionTotals(db.subscriptions[existingIndex])
+    : undefined;
+  const existingExpired = existing
+    ? new Date(existing.expires_at).getTime() <= Date.now()
+    : true;
 
   if (operation === "activate" && existing) {
     return sendError(res, 409, "merchant already has a subscription");
@@ -2752,16 +3074,31 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
   if ((operation === "change" || operation === "renew") && !existing) {
     return sendError(res, 409, "merchant does not have a subscription");
   }
+  if (operation === "change" && existing && !existingExpired) {
+    return sendError(res, 409, "active plan cannot be changed before expiration");
+  }
+  if (
+    operation === "renew" &&
+    existing &&
+    !existingExpired &&
+    existing.plan_name !== plan
+  ) {
+    return sendError(res, 409, "early renewal must keep the current plan");
+  }
 
-  const subscription = createPaidSubscription(merchantId, plan, existing);
+  const previousExpiresAt = existing?.expires_at;
+  const emergencyDeduction = existing?.emergency_debt || 0;
+  const subscription = createPaidSubscription(
+    merchantId,
+    plan,
+    existing,
+    operation,
+  );
   if (existingIndex >= 0) db.subscriptions[existingIndex] = subscription;
   else db.subscriptions.push(subscription);
 
-  if (
-    merchant.subscription_expires_at &&
-    merchant.subscription_expires_at !== subscription.expires_at
-  ) {
-    merchant.last_subscription_ended_at = merchant.subscription_expires_at;
+  if (previousExpiresAt && previousExpiresAt !== subscription.expires_at) {
+    merchant.last_subscription_ended_at = previousExpiresAt;
   }
   merchant.subscription_started_at = subscription.start_date;
   merchant.subscription_expires_at = subscription.expires_at;
@@ -2784,8 +3121,8 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
     {
       meta: {
         plan,
-        ...(operation === "renew" && existing?.pending_next_cycle_deduction
-          ? { emergency_deduction: existing.pending_next_cycle_deduction }
+        ...(operation === "renew" && emergencyDeduction > 0
+          ? { emergency_deduction: emergencyDeduction }
           : {}),
       },
     },
@@ -2816,6 +3153,7 @@ router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
   );
   if (!subscription) return sendError(res, 404, "subscription not found");
 
+  recalculateSubscriptionTotals(subscription);
   let actionType = "";
   let details = "";
   let meta: Record<string, string | number> = {};
@@ -2824,12 +3162,18 @@ router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
     if (!Number.isInteger(amount) || amount <= 0) {
       return sendError(res, 400, "positive integer amount is required");
     }
-    subscription.reply_limit += amount;
-    subscription.replies_remaining += amount;
-    if (subscription.status === "replies_exhausted") subscription.status = "active";
+    const purchase = purchaseAdditionalReplies(subscription, amount);
+    if (subscription.status === "replies_exhausted" && subscription.replies_remaining > 0) {
+      subscription.status = "active";
+      subscription.auto_reply_enabled = true;
+    }
     actionType = "replies_added";
-    details = `added ${amount} replies`;
-    meta = { amount };
+    details = `purchased ${amount} replies`;
+    meta = {
+      amount,
+      emergency_debt_paid: purchase.debtPaid,
+      addon_replies_added: purchase.addonAdded,
+    };
   } else if (action === "deduct_replies") {
     if (!Number.isInteger(amount) || amount <= 0) {
       return sendError(res, 400, "positive integer amount is required");
@@ -2839,26 +3183,23 @@ router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
         replies_remaining: subscription.replies_remaining,
       });
     }
-    subscription.replies_used += amount;
-    subscription.replies_remaining -= amount;
-    if (subscription.replies_remaining === 0) {
-      subscription.status = "replies_exhausted";
-      subscription.auto_reply_enabled = false;
-    }
+    consumeReplies(subscription, amount);
+    recalculateSubscriptionTotals(subscription);
     actionType = "replies_deducted";
     details = `deducted ${amount} replies`;
     meta = { amount };
   } else if (action === "reset_replies") {
-    subscription.replies_used = 0;
-    subscription.replies_remaining = subscription.reply_limit;
-    subscription.pending_next_cycle_deduction = 0;
-    subscription.status = "active";
+    subscription.base_replies_used = 0;
+    recalculateSubscriptionTotals(subscription);
     actionType = "replies_reset";
-    details = `reply counter reset to ${subscription.reply_limit}`;
-    meta = { limit: subscription.reply_limit };
+    details = `base reply counter reset to ${subscription.base_reply_limit}`;
+    meta = { limit: subscription.base_reply_limit };
   } else if (action === "set_auto_reply") {
     if (typeof enabled !== "boolean") {
       return sendError(res, 400, "enabled boolean is required");
+    }
+    if (enabled && subscription.status !== "active") {
+      return sendError(res, 409, "automatic replies require an active subscription");
     }
     subscription.auto_reply_enabled = enabled;
     actionType = enabled ? "auto_reply_enabled" : "auto_reply_disabled";

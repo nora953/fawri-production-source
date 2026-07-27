@@ -9,7 +9,8 @@
     "start": "node --enable-source-maps ./dist/index.mjs",
     "test:merchant-session": "node ./build.mjs && node --test ./tests/merchant-session.integration.test.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:admin-permissions": "node ./build.mjs && node --test ./tests/admin-permissions.integration.test.mjs"
+    "test:admin-permissions": "node ./build.mjs && node --test ./tests/admin-permissions.integration.test.mjs",
+    "test:subscription-lifecycle": "node ./build.mjs && node --test ./tests/subscription-lifecycle.integration.test.mjs"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",

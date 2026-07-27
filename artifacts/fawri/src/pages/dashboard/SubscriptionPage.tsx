@@ -46,57 +46,72 @@ export default function SubscriptionPage() {
     useState<Subscription | null>(null);
 
   useEffect(() => {
+    let active = true;
+
     if (!merchantId) {
       setSubscription(null);
-      return;
+      return () => {
+        active = false;
+      };
     }
 
     setSubscription(
       findCurrentSubscription(getSubscriptions(), merchantId),
     );
+
+    fetch('/api/auth/subscription/current')
+      .then(async response => ({
+        response,
+        data: await response.json().catch(() => null),
+      }))
+      .then(({ response, data }) => {
+        if (!active || !response.ok || !data?.ok || !data.subscription) return;
+        const serverSubscription = data.subscription as Subscription;
+        const nextSubscriptions = [
+          ...getSubscriptions().filter(item => item.merchant_id !== merchantId),
+          serverSubscription,
+        ];
+        saveSubscriptions(nextSubscriptions);
+        setSubscription(serverSubscription);
+      })
+      .catch(error => {
+        console.error('Could not load the current subscription:', error);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [merchantId]);
 
-  const handleActivateEmergency = () => {
+  const handleActivateEmergency = async () => {
     if (!merchantId || !subscription) return;
 
-    const subscriptions = getSubscriptions();
-    const storedSubscription = subscriptions.find(
-      item =>
-        item.id === subscription.id &&
-        item.merchant_id === merchantId,
-    );
+    try {
+      const response = await fetch('/api/auth/subscription/emergency', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !data.subscription) {
+        throw new Error(data?.error || 'Could not activate emergency credit');
+      }
 
-    if (
-      !storedSubscription ||
-      storedSubscription.status !== 'active' ||
-      storedSubscription.emergency_credit_activated ||
-      storedSubscription.emergency_credit_amount <= 0
-    ) {
-      return;
+      const updatedSubscription = data.subscription as Subscription;
+      const updatedSubscriptions = [
+        ...getSubscriptions().filter(item => item.merchant_id !== merchantId),
+        updatedSubscription,
+      ];
+      saveSubscriptions(updatedSubscriptions);
+      setSubscription(updatedSubscription);
+      toast.success(t.subscription_emergency_success);
+    } catch (error) {
+      console.error('Emergency credit activation failed:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t.subscription_emergency_unavailable,
+      );
     }
-
-    const updatedSubscription: Subscription = {
-      ...storedSubscription,
-      emergency_credit_activated: true,
-      emergency_credit_used: 0,
-      emergency_credit_remaining:
-        storedSubscription.emergency_credit_amount,
-      replies_remaining:
-        storedSubscription.replies_remaining +
-        storedSubscription.emergency_credit_amount,
-      pending_next_cycle_deduction:
-        storedSubscription.emergency_credit_amount,
-    };
-
-    const updatedSubscriptions = subscriptions.map(item =>
-      item.id === storedSubscription.id
-        ? updatedSubscription
-        : item,
-    );
-
-    saveSubscriptions(updatedSubscriptions);
-    setSubscription(updatedSubscription);
-    toast.success(t.subscription_emergency_success);
   };
 
   if (!merchantId) return null;

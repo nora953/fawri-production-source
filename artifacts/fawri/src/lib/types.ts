@@ -142,6 +142,18 @@ export interface Subscription {
   reply_limit: number;
   replies_used: number;
   replies_remaining: number;
+  base_reply_limit?: number;
+  base_replies_used?: number;
+  base_replies_remaining?: number;
+  addon_replies_remaining?: number;
+  addon_reply_batches?: Array<{
+    id: string;
+    purchased_at: string;
+    expires_at: string;
+    amount: number;
+    remaining: number;
+  }>;
+  billing_anchor_day?: number;
   start_date: string;
   expires_at: string;
   status: 'pending_activation' | 'active' | 'expired' | 'replies_exhausted' | 'suspended';
@@ -150,6 +162,7 @@ export interface Subscription {
   emergency_credit_amount: number;
   emergency_credit_remaining: number;
   emergency_credit_activated: boolean;
+  emergency_debt?: number;
   pending_next_cycle_deduction: number;
 }
 
