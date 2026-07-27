@@ -163,6 +163,203 @@ function SubBadge({
   );
 }
 
+
+function AutoReplyBadge({
+  enabled,
+  enabledLabel,
+  disabledLabel,
+}: {
+  enabled: boolean;
+  enabledLabel: string;
+  disabledLabel: string;
+}) {
+  const Icon = enabled ? Power : PowerOff;
+
+  return (
+    <span
+      className={
+        "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium whitespace-nowrap " +
+        (enabled
+          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200"
+          : "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200")
+      }
+    >
+      <Icon className="h-3 w-3" aria-hidden="true" />
+      {enabled ? enabledLabel : disabledLabel}
+    </span>
+  );
+}
+
+function MerchantStatusSummary({
+  merchant,
+  subscription,
+  accountStatusLabel,
+  subscriptionStatusLabel,
+  autoRepliesLabel,
+  merchantStatusText,
+  subscriptionStatusText,
+  enabledLabel,
+  disabledLabel,
+  compact = false,
+}: {
+  merchant: Merchant;
+  subscription?: Subscription;
+  accountStatusLabel: string;
+  subscriptionStatusLabel: string;
+  autoRepliesLabel: string;
+  merchantStatusText: string;
+  subscriptionStatusText?: string;
+  enabledLabel: string;
+  disabledLabel: string;
+  compact?: boolean;
+}) {
+  const statusItems = [
+    {
+      label: accountStatusLabel,
+      content: <StatusBadge status={merchant.status} label={merchantStatusText} />,
+    },
+    ...(subscription
+      ? [
+          {
+            label: subscriptionStatusLabel,
+            content: (
+              <SubBadge
+                status={subscription.status}
+                label={subscriptionStatusText ?? subscription.status}
+              />
+            ),
+          },
+          {
+            label: autoRepliesLabel,
+            content: (
+              <AutoReplyBadge
+                enabled={subscription.auto_reply_enabled}
+                enabledLabel={enabledLabel}
+                disabledLabel={disabledLabel}
+              />
+            ),
+          },
+        ]
+      : []),
+  ];
+
+  return (
+    <div className={compact ? "space-y-2" : "grid gap-2 sm:grid-cols-3"}>
+      {statusItems.map((item) => (
+        <div
+          key={item.label}
+          className={
+            "rounded-lg border border-border/70 bg-background/80 " +
+            (compact ? "px-2.5 py-2" : "px-3 py-2.5")
+          }
+        >
+          <p className="mb-1.5 text-[10px] font-medium text-muted-foreground">
+            {item.label}
+          </p>
+          {item.content}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SubscriptionUsageSummary({
+  subscription,
+  planName,
+  locale,
+  usedLabel,
+  remainingLabel,
+  limitLabel,
+  compact = false,
+}: {
+  subscription: Subscription;
+  planName: string;
+  locale: string;
+  usedLabel: string;
+  remainingLabel: string;
+  limitLabel: string;
+  compact?: boolean;
+}) {
+  const exactPercentage =
+    subscription.reply_limit > 0
+      ? (subscription.replies_used / subscription.reply_limit) * 100
+      : 0;
+  const percentageText = formatUsagePercentage(
+    subscription.replies_used,
+    subscription.reply_limit,
+    locale,
+  );
+  const progressWidth =
+    subscription.replies_used > 0
+      ? Math.max(0.5, Math.min(100, exactPercentage))
+      : 0;
+  const roundedPercentage = Math.round(exactPercentage);
+
+  return (
+    <div
+      className={
+        "space-y-3 rounded-xl border border-border/80 bg-gradient-to-b from-muted/35 to-background shadow-sm " +
+        (compact ? "min-w-[220px] p-3" : "p-3.5")
+      }
+    >
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-bold capitalize text-foreground">
+          {planName}
+        </span>
+        <span
+          className="rounded-full bg-background px-2 py-1 text-[11px] font-semibold tabular-nums text-muted-foreground shadow-sm"
+          dir="ltr"
+        >
+          {percentageText}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5">
+        {[
+          [usedLabel, subscription.replies_used],
+          [remainingLabel, subscription.replies_remaining],
+          [limitLabel, subscription.reply_limit],
+        ].map(([label, value]) => (
+          <div
+            key={String(label)}
+            className="rounded-lg border border-border/60 bg-background px-1.5 py-2 text-center"
+          >
+            <p className="text-[9px] font-medium leading-3.5 text-muted-foreground">
+              {label}
+            </p>
+            <p
+              className="mt-1 text-xs font-bold tabular-nums text-foreground"
+              dir="ltr"
+            >
+              {Number(value).toLocaleString(locale)}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="h-1.5 overflow-hidden rounded-full bg-muted"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.min(100, roundedPercentage)}
+      >
+        <div
+          className={
+            "h-full rounded-full transition-all " +
+            (roundedPercentage >= 90
+              ? "bg-red-500"
+              : roundedPercentage >= 80
+                ? "bg-yellow-500"
+                : "bg-primary")
+          }
+          style={{ width: String(progressWidth) + "%" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function formatUsagePercentage(used: number, limit: number, locale: string): string {
   if (limit <= 0 || used <= 0) return "0%";
 
@@ -3145,86 +3342,90 @@ export default function AdminPage() {
               </div>
             ) : (
               <>
-                {/* Mobile cards */}
-                <div className="grid gap-3 md:grid-cols-2 lg:hidden">
+                {/* Mobile and tablet cards */}
+                <div className="grid gap-4 md:grid-cols-2 lg:hidden">
                   {filteredMerchants.map((m) => {
                     const sub = getSub(m.id);
-                    const pct = sub
-                      ? Math.round((sub.replies_used / sub.reply_limit) * 100)
-                      : 0;
                     return (
-                      <Card key={m.id}>
-                        <CardContent className="p-4 space-y-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm truncate">
-                                {m.store_name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {m.owner_name} · {m.phone}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {getLocalizedActivity(m.activity_type, lang)}
-                              </p>
+                      <Card
+                        key={m.id}
+                        className="overflow-hidden border-border/80 bg-card shadow-sm transition-shadow hover:shadow-md"
+                      >
+                        <CardContent className="p-0">
+                          <div className="border-b bg-muted/20 p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-base font-bold text-foreground">
+                                  {m.store_name}
+                                </p>
+                                <p className="mt-1 truncate text-sm font-medium text-muted-foreground">
+                                  {m.owner_name}
+                                </p>
+                              </div>
+                              <div className="shrink-0 rounded-lg border bg-background px-2.5 py-2 text-center shadow-sm">
+                                <p className="text-[9px] font-medium text-muted-foreground">
+                                  {adminText.mainTableRegistered}
+                                </p>
+                                <p className="mt-1 text-[11px] font-semibold tabular-nums" dir="ltr">
+                                  {new Date(m.created_at).toLocaleDateString(locale)}
+                                </p>
+                              </div>
                             </div>
-                            <div className="flex flex-col items-end gap-1 shrink-0">
-                              <StatusBadge
-                                status={m.status}
-                                label={merchantStatusLabels[m.status] ?? m.status}
-                              />
-                              {canManageSubscriptions && sub && (
-                                <span className="text-[10px] text-muted-foreground capitalize">
-                                  {planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
-                                </span>
-                              )}
+
+                            <div className="mt-3 grid grid-cols-2 gap-2">
+                              <div className="rounded-lg border bg-background px-3 py-2.5">
+                                <p className="text-[10px] font-medium text-muted-foreground">
+                                  {adminText.detailsPhone}
+                                </p>
+                                <p className="mt-1 font-mono text-xs font-semibold" dir="ltr">
+                                  {m.phone}
+                                </p>
+                              </div>
+                              <div className="rounded-lg border bg-background px-3 py-2.5">
+                                <p className="text-[10px] font-medium text-muted-foreground">
+                                  {adminText.detailsActivityType}
+                                </p>
+                                <p className="mt-1 truncate text-xs font-semibold">
+                                  {getLocalizedActivity(m.activity_type, lang)}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                          {canManageSubscriptions && sub && (
-                            <div className="space-y-2 rounded-lg border bg-muted/30 p-3 text-xs">
-                              <div className="flex items-center justify-between gap-2">
-                                <span className="font-semibold">
-                                  {planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
-                                </span>
-                                <span className="font-medium tabular-nums text-muted-foreground" dir="ltr">
-                                  {formatUsagePercentage(
-                                    sub.replies_used,
-                                    sub.reply_limit,
-                                    locale,
-                                  )}
-                                </span>
-                              </div>
-                              <div className="grid grid-cols-3 gap-1.5">
-                                {[
-                                  [adminText.detailsUsed, sub.replies_used],
-                                  [adminText.detailsRemaining, sub.replies_remaining],
-                                  [adminText.detailsReplyLimit, sub.reply_limit],
-                                ].map(([label, value]) => (
-                                  <div key={String(label)} className="rounded-md bg-background px-1.5 py-2 text-center">
-                                    <p className="text-[10px] leading-4 text-muted-foreground">{label}</p>
-                                    <p className="mt-0.5 font-semibold tabular-nums" dir="ltr">
-                                      {Number(value).toLocaleString(locale)}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                                <div
-                                  className={`h-full rounded-full transition-all ${pct >= 90 ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-primary"}`}
-                                  style={{
-                                    width:
-                                      sub.replies_used > 0
-                                        ? `${Math.max(0.5, Math.min(100, (sub.replies_used / sub.reply_limit) * 100))}%`
-                                        : "0%",
-                                  }}
-                                />
-                              </div>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-2">
+
+                          <div className="space-y-3 p-4">
+                            <MerchantStatusSummary
+                              merchant={m}
+                              subscription={canManageSubscriptions ? sub : undefined}
+                              accountStatusLabel={adminText.mainAccountStatusLabel}
+                              subscriptionStatusLabel={adminText.detailsSubscriptionStatus}
+                              autoRepliesLabel={adminText.detailsAutoReplies}
+                              merchantStatusText={merchantStatusLabels[m.status] ?? m.status}
+                              subscriptionStatusText={
+                                sub
+                                  ? subscriptionStatusLabels[sub.status] ?? sub.status
+                                  : undefined
+                              }
+                              enabledLabel={adminText.detailsEnabled}
+                              disabledLabel={adminText.detailsDisabled}
+                            />
+
+                            {canManageSubscriptions && sub && (
+                              <SubscriptionUsageSummary
+                                subscription={sub}
+                                planName={planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
+                                locale={locale}
+                                usedLabel={adminText.detailsUsed}
+                                remainingLabel={adminText.detailsRemaining}
+                                limitLabel={adminText.detailsReplyLimit}
+                              />
+                            )}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 border-t bg-muted/10 p-3">
                             {canManageMerchants && m.status === "pending_activation" && (
                               <Button
                                 size="sm"
-                                className="h-8 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                className="h-8 flex-1 bg-green-600 text-xs text-white hover:bg-green-700"
                                 onClick={() => openConfirm("approve", m)}
                               >
                                 {adminText.actionApprove}
@@ -3234,7 +3435,7 @@ export default function AdminPage() {
                               <Button
                                 variant="destructive"
                                 size="sm"
-                                className="h-8 text-xs flex-1"
+                                className="h-8 flex-1 text-xs"
                                 onClick={() => openConfirm("suspend", m)}
                               >
                                 {adminText.actionSuspendShort}
@@ -3243,7 +3444,7 @@ export default function AdminPage() {
                             {canManageMerchants && m.status === "suspended" && (
                               <Button
                                 size="sm"
-                                className="h-8 text-xs flex-1 bg-green-600 hover:bg-green-700 text-white"
+                                className="h-8 flex-1 bg-green-600 text-xs text-white hover:bg-green-700"
                                 onClick={() => openConfirm("unsuspend", m)}
                               >
                                 {adminText.actionUnsuspend}
@@ -3253,10 +3454,8 @@ export default function AdminPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-8 text-xs flex-1"
-                                onClick={() =>
-                                  openConfirm("restore_pending", m)
-                                }
+                                className="h-8 flex-1 text-xs"
+                                onClick={() => openConfirm("restore_pending", m)}
                               >
                                 {adminText.actionRestoreReviewShort}
                               </Button>
@@ -3264,10 +3463,11 @@ export default function AdminPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="h-8 px-2"
+                              className="h-8 min-w-9 px-2"
                               onClick={() => void openMerchantDetails(m)}
+                              aria-label={adminText.actionViewDetails}
                             >
-                              <Eye className="w-4 h-4" />
+                              <Eye className="h-4 w-4" />
                             </Button>
                             <ActionsMenu
                               mobile
@@ -3278,12 +3478,8 @@ export default function AdminPage() {
                               onReject={() => openConfirm("reject", m)}
                               onSuspend={() => openConfirm("suspend", m)}
                               onUnsuspend={() => openConfirm("unsuspend", m)}
-                              onRestore={() =>
-                                openConfirm("restore_pending", m)
-                              }
-                              onResetReplies={() =>
-                                openConfirm("reset_replies", m)
-                              }
+                              onRestore={() => openConfirm("restore_pending", m)}
+                              onResetReplies={() => openConfirm("reset_replies", m)}
                               onAddReplies={() => openReplies("add", m)}
                               onDeductReplies={() => openReplies("deduct", m)}
                               onToggleAutoReply={() => doToggleAutoReply(m.id)}
@@ -3300,11 +3496,10 @@ export default function AdminPage() {
                     );
                   })}
                 </div>
-
                 {/* Desktop table */}
-                <div className="hidden lg:block rounded-lg border overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead className="bg-muted/50 border-b">
+                <div className="hidden overflow-x-auto rounded-xl border border-border/80 bg-card shadow-sm lg:block">
+                  <table className="w-full min-w-[1180px] text-sm">
+                    <thead className="border-b bg-muted/40">
                       <tr>
                         {[
                           adminText.mainTableStoreOwner,
@@ -3315,119 +3510,93 @@ export default function AdminPage() {
                             : []),
                           adminText.mainTableRegistered,
                           adminText.mainTableActions,
-                        ].map((h) => (
+                        ].map((heading) => (
                           <th
-                            key={h}
-                            className={`px-4 py-3 font-medium text-muted-foreground text-xs ${
-                              adminText.dir === "rtl"
-                                ? "text-right"
-                                : "text-left"
-                            }`}
+                            key={heading}
+                            className={
+                              "px-4 py-3.5 text-xs font-semibold text-muted-foreground " +
+                              (adminText.dir === "rtl" ? "text-right" : "text-left")
+                            }
                           >
-                            {h}
+                            {heading}
                           </th>
                         ))}
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-border/70">
                       {filteredMerchants.map((m) => {
                         const sub = getSub(m.id);
-                        const pct = sub
-                          ? Math.round(
-                              (sub.replies_used / sub.reply_limit) * 100,
-                            )
-                          : 0;
                         return (
                           <tr
                             key={m.id}
-                            className="hover:bg-muted/25 transition-colors"
+                            className="bg-card transition-colors hover:bg-muted/20"
                           >
-                            <td className="px-4 py-3">
-                              <p className="font-medium">{m.store_name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {m.owner_name}
-                              </p>
-                            </td>
-                            <td className="px-4 py-3">
-                              <p className="font-mono text-xs">{m.phone}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {getLocalizedActivity(m.activity_type, lang)}
-                              </p>
-                            </td>
-                            <td className="px-4 py-3 space-y-1">
-                              <div>
-                                <StatusBadge
-                                status={m.status}
-                                label={merchantStatusLabels[m.status] ?? m.status}
-                              />
+                            <td className="min-w-[175px] px-4 py-4 align-middle">
+                              <div className="space-y-1.5">
+                                <p className="text-sm font-bold text-foreground">
+                                  {m.store_name}
+                                </p>
+                                <p className="text-xs font-medium text-muted-foreground">
+                                  {m.owner_name}
+                                </p>
                               </div>
-                              {canManageSubscriptions && sub && (
-                                <div>
-                                  <SubBadge
-                                    status={sub.status}
-                                    label={
-                                      subscriptionStatusLabels[sub.status] ??
-                                      sub.status
-                                    }
-                                  />
-                                </div>
-                              )}
                             </td>
+
+                            <td className="min-w-[155px] px-4 py-4 align-middle">
+                              <div className="space-y-2">
+                                <p className="font-mono text-xs font-semibold" dir="ltr">
+                                  {m.phone}
+                                </p>
+                                <span className="inline-flex rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                                  {getLocalizedActivity(m.activity_type, lang)}
+                                </span>
+                              </div>
+                            </td>
+
+                            <td className="min-w-[175px] px-4 py-4 align-middle">
+                              <MerchantStatusSummary
+                                compact
+                                merchant={m}
+                                subscription={canManageSubscriptions ? sub : undefined}
+                                accountStatusLabel={adminText.mainAccountStatusLabel}
+                                subscriptionStatusLabel={adminText.detailsSubscriptionStatus}
+                                autoRepliesLabel={adminText.detailsAutoReplies}
+                                merchantStatusText={merchantStatusLabels[m.status] ?? m.status}
+                                subscriptionStatusText={
+                                  sub
+                                    ? subscriptionStatusLabels[sub.status] ?? sub.status
+                                    : undefined
+                                }
+                                enabledLabel={adminText.detailsEnabled}
+                                disabledLabel={adminText.detailsDisabled}
+                              />
+                            </td>
+
                             {canManageSubscriptions && (
-                              <td className="px-4 py-3">
+                              <td className="min-w-[240px] px-4 py-4 align-middle">
                                 {sub ? (
-                                  <div className="min-w-48 space-y-2 rounded-lg border bg-muted/25 p-2.5">
-                                    <div className="flex items-center justify-between gap-2">
-                                      <span className="text-xs font-semibold capitalize">
-                                        {planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
-                                      </span>
-                                      <span className="text-[11px] font-medium tabular-nums text-muted-foreground" dir="ltr">
-                                        {formatUsagePercentage(
-                                          sub.replies_used,
-                                          sub.reply_limit,
-                                          locale,
-                                        )}
-                                      </span>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-1">
-                                      {[
-                                        [adminText.detailsUsed, sub.replies_used],
-                                        [adminText.detailsRemaining, sub.replies_remaining],
-                                        [adminText.detailsReplyLimit, sub.reply_limit],
-                                      ].map(([label, value]) => (
-                                        <div key={String(label)} className="rounded-md bg-background px-1 py-1.5 text-center">
-                                          <p className="text-[9px] leading-3 text-muted-foreground">{label}</p>
-                                          <p className="mt-0.5 text-xs font-semibold tabular-nums" dir="ltr">
-                                            {Number(value).toLocaleString(locale)}
-                                          </p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                    <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                                      <div
-                                        className={`h-full rounded-full ${pct >= 90 ? "bg-red-500" : pct >= 80 ? "bg-yellow-500" : "bg-primary"}`}
-                                        style={{
-                                          width:
-                                            sub.replies_used > 0
-                                              ? `${Math.max(0.5, Math.min(100, (sub.replies_used / sub.reply_limit) * 100))}%`
-                                              : "0%",
-                                        }}
-                                      />
-                                    </div>
-                                  </div>
+                                  <SubscriptionUsageSummary
+                                    compact
+                                    subscription={sub}
+                                    planName={planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
+                                    locale={locale}
+                                    usedLabel={adminText.detailsUsed}
+                                    remainingLabel={adminText.detailsRemaining}
+                                    limitLabel={adminText.detailsReplyLimit}
+                                  />
                                 ) : (
-                                  <span className="text-xs text-muted-foreground">
-                                    —
-                                  </span>
+                                  <span className="text-xs text-muted-foreground">—</span>
                                 )}
                               </td>
                             )}
-                            <td className="px-4 py-3 text-xs text-muted-foreground">
-                              {new Date(m.created_at).toLocaleDateString(
-                                locale,
-                              )}
+
+                            <td className="min-w-[125px] px-4 py-4 align-middle">
+                              <div className="inline-flex rounded-lg border bg-muted/20 px-3 py-2 text-xs font-semibold tabular-nums text-muted-foreground" dir="ltr">
+                                {new Date(m.created_at).toLocaleDateString(locale)}
+                              </div>
                             </td>
-                            <td className="px-4 py-3">
+
+                            <td className="min-w-[350px] px-4 py-4 align-middle">
                               <ActionsMenu
                                 merchant={m}
                                 sub={sub}
@@ -3436,17 +3605,11 @@ export default function AdminPage() {
                                 onReject={() => openConfirm("reject", m)}
                                 onSuspend={() => openConfirm("suspend", m)}
                                 onUnsuspend={() => openConfirm("unsuspend", m)}
-                                onRestore={() =>
-                                  openConfirm("restore_pending", m)
-                                }
-                                onResetReplies={() =>
-                                  openConfirm("reset_replies", m)
-                                }
+                                onRestore={() => openConfirm("restore_pending", m)}
+                                onResetReplies={() => openConfirm("reset_replies", m)}
                                 onAddReplies={() => openReplies("add", m)}
                                 onDeductReplies={() => openReplies("deduct", m)}
-                                onToggleAutoReply={() =>
-                                  doToggleAutoReply(m.id)
-                                }
+                                onToggleAutoReply={() => doToggleAutoReply(m.id)}
                                 onChangePlan={() => openPlan(sub ? "change" : "activate", m)}
                                 onRenewPlan={() => openPlan("renew", m)}
                                 onDelete={() => openDeleteMerchant(m)}
