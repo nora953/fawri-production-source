@@ -5,7 +5,10 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import retentionGuardRouter from "./routes/retention-guard";
 import { logger } from "./lib/logger";
-import { startMerchantRetentionPolicyScheduler } from "./services/merchantRetentionPolicy";
+import {
+  refreshMerchantRetentionPolicy,
+  startMerchantRetentionPolicyScheduler,
+} from "./services/merchantRetentionPolicy";
 
 const app: Express = express();
 
@@ -34,6 +37,14 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 startMerchantRetentionPolicyScheduler();
+app.use((_req, _res, next) => {
+  try {
+    refreshMerchantRetentionPolicy();
+  } catch (error) {
+    logger.error({ err: error }, "Retention policy refresh failed");
+  }
+  next();
+});
 app.use("/api", retentionGuardRouter);
 app.use("/api", router);
 
