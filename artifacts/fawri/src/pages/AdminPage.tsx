@@ -3174,45 +3174,81 @@ export default function AdminPage() {
     <div className="min-h-screen bg-background" dir={adminText.dir}>
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-2 sm:min-h-14 sm:flex-row sm:items-center sm:justify-between md:px-6">
-          <span className="text-base font-bold leading-tight text-primary fowri-header-brand-font sm:text-lg">
-            {adminText.mainAdminTitle}
-          </span>
-          <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end sm:gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:block">
-              {currentAdmin?.phone}
-            </span>
-            <div className="flex items-center border rounded-md overflow-hidden text-xs font-medium">
-              {(["ar", "ku", "en"] as const).map((l) => (
-                <button
-                  key={l}
-                  onClick={() => setLang(l)}
-                  className={`px-2 py-1 transition-colors ${
-                    lang === l
-                      ? "bg-primary text-white"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {l === "ar" ? adminText.langAr : l === "ku" ? adminText.langKu : adminText.langEn}
-                </button>
-              ))}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                clearSession();
-                setLocation("/");
-              }}
-            >
-              <LogOut
-                className={`w-4 h-4 ${
-                  adminText.dir === "rtl" ? "ml-1.5" : "mr-1.5"
-                }`}
+        <div className="mx-auto max-w-7xl px-4 py-2 md:px-6">
+          <div className="relative flex min-h-11 items-center justify-between gap-3">
+            <div className="flex min-w-0 shrink-0 items-center gap-2">
+              <img
+                src="/fawri-logo.svg"
+                alt=""
+                aria-hidden="true"
+                className="h-9 w-auto shrink-0 object-contain sm:h-10"
+                loading="eager"
+                draggable={false}
               />
-              {adminText.mainLogout}
-            </Button>
+              <span className="truncate text-base font-bold leading-tight text-foreground sm:text-lg">
+                {adminText.mainAdminTitle}
+              </span>
+            </div>
+
+            {currentAdmin && (
+              <div className="absolute left-1/2 hidden -translate-x-1/2 items-center gap-2 rounded-full border bg-card/90 px-3 py-1.5 text-sm shadow-sm md:flex">
+                <span className="max-w-44 truncate font-semibold text-foreground">
+                  {currentAdmin.owner_name}
+                </span>
+                <span className="h-4 w-px bg-border" aria-hidden="true" />
+                <span className="font-medium tabular-nums text-muted-foreground" dir="ltr">
+                  {currentAdmin.phone}
+                </span>
+              </div>
+            )}
+
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              <div className="flex items-center overflow-hidden rounded-md border text-xs font-medium">
+                {(["ar", "ku", "en"] as const).map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setLang(l)}
+                    className={`px-2 py-1 transition-colors ${
+                      lang === l
+                        ? "bg-primary text-white"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {l === "ar" ? adminText.langAr : l === "ku" ? adminText.langKu : adminText.langEn}
+                  </button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  clearSession();
+                  setLocation("/");
+                }}
+              >
+                <LogOut
+                  className={`h-4 w-4 ${
+                    adminText.dir === "rtl" ? "ml-1.5" : "mr-1.5"
+                  }`}
+                />
+                <span className="hidden sm:inline">{adminText.mainLogout}</span>
+              </Button>
+            </div>
           </div>
+
+          {currentAdmin && (
+            <div className="mt-2 flex justify-center md:hidden">
+              <div className="inline-flex max-w-full items-center gap-2 rounded-full border bg-card/90 px-3 py-1.5 text-xs shadow-sm">
+                <span className="max-w-40 truncate font-semibold text-foreground">
+                  {currentAdmin.owner_name}
+                </span>
+                <span className="h-3.5 w-px bg-border" aria-hidden="true" />
+                <span className="font-medium tabular-nums text-muted-foreground" dir="ltr">
+                  {currentAdmin.phone}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </header>
 

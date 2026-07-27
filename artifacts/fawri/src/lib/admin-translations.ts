@@ -331,7 +331,7 @@ const adminTranslations = {
   administratorsConnectionError: "تعذّر الاتصال بالسيرفر.",
 
 
-    mainAdminTitle: "لوحة إدارة فوري",
+    mainAdminTitle: "لوحة الإدارة",
     mainLogout: "خروج",
     langAr: "AR",
     langKu: "KU",
@@ -689,7 +689,7 @@ const adminTranslations = {
   administratorsConnectionError: "Could not connect to the server.",
 
 
-    mainAdminTitle: "Fawri Admin Panel",
+    mainAdminTitle: "Admin Panel",
     mainLogout: "Log Out",
     langAr: "AR",
     langKu: "KU",
@@ -998,7 +998,7 @@ const kuTranslations = {
   administratorsCreateError: "دروستکردنی هەژماری بەڕێوەبەر سەرکەوتوو نەبوو.",
   administratorsConnectionError: "پەیوەندی بە سێرڤەرەوە نەکرا.",
 
-  mainAdminTitle: "پانێلی بەڕێوەبردنی فوری",
+  mainAdminTitle: "پانێلی بەڕێوەبردن",
   mainLogout: "چوونەدەرەوە",
   langAr: "AR",
   langKu: "KU",
