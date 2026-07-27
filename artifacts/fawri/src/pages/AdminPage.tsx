@@ -1778,123 +1778,150 @@ function ActionsMenu({
     );
   }
 
+  const desktopActionButtonClass =
+    "h-12 w-full min-w-0 justify-center gap-1.5 whitespace-normal px-2 py-1.5 text-center text-[11px] font-semibold leading-4";
+
   return (
     <div
-      className="flex flex-wrap gap-1.5"
+      className="grid min-w-[336px] grid-cols-3 gap-2 rounded-xl border border-border/80 bg-muted/20 p-2.5 shadow-sm"
       dir={adminText.dir}
     >
       <Button
         variant="outline"
         size="sm"
-        className="h-7 px-2 text-xs"
+        className={desktopActionButtonClass}
         onClick={onView}
+        title={adminText.actionViewDetails}
       >
-        <Eye
-          className={`h-3 w-3 ${compactIconSpacingClass}`}
-        />
-        {adminText.actionDetailsShort}
+        <Eye className="h-3.5 w-3.5 shrink-0" />
+        <span>{adminText.actionViewDetails}</span>
       </Button>
 
       {canManageMerchants && status === "pending_activation" && (
         <>
           <Button
             size="sm"
-            className="h-7 bg-green-600 px-2 text-xs text-white hover:bg-green-700"
+            className={desktopActionButtonClass + " bg-green-600 text-white hover:bg-green-700"}
             onClick={onApprove}
+            title={adminText.actionApprove}
           >
-            {adminText.actionApprove}
+            <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{adminText.actionApprove}</span>
           </Button>
-
           <Button
             variant="destructive"
             size="sm"
-            className="h-7 px-2 text-xs"
+            className={desktopActionButtonClass}
             onClick={onReject}
+            title={adminText.actionReject}
           >
-            {adminText.actionReject}
+            <XCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{adminText.actionReject}</span>
           </Button>
         </>
       )}
 
       {status === "approved" && (
         <>
-          {canManageSubscriptions && (
-            sub ? (
+          {canManageSubscriptions &&
+            (sub ? (
               <>
-                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onChangePlan}>
-                  {adminText.actionPlanShort}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={desktopActionButtonClass}
+                  onClick={onChangePlan}
+                  title={adminText.actionChangePlan}
+                >
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  <span>{adminText.actionChangePlan}</span>
                 </Button>
-                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onRenewPlan}>
-                  {adminText.actionRenewShort}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={desktopActionButtonClass}
+                  onClick={onRenewPlan}
+                  title={adminText.actionRenewPlan}
+                >
+                  <RefreshCcw className="h-3.5 w-3.5 shrink-0" />
+                  <span>{adminText.actionRenewPlan}</span>
                 </Button>
-                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onResetReplies}>
-                  <RefreshCcw className={`h-3 w-3 ${compactIconSpacingClass}`} />
-                  {adminText.actionRepliesShort}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={desktopActionButtonClass}
+                  onClick={onResetReplies}
+                  title={adminText.actionResetReplies}
+                >
+                  <RefreshCcw className="h-3.5 w-3.5 shrink-0" />
+                  <span>{adminText.actionResetReplies}</span>
                 </Button>
-                <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={onAddReplies}>
-                  <Plus className={`h-3 w-3 ${compactIconSpacingClass}`} />
-                  {adminText.actionAddShort}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={desktopActionButtonClass}
+                  onClick={onAddReplies}
+                  title={adminText.actionAddReplies}
+                >
+                  <Plus className="h-3.5 w-3.5 shrink-0" />
+                  <span>{adminText.actionAddReplies}</span>
                 </Button>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-7 w-7 shrink-0 p-0"
-                      aria-label={adminText.mainTableActions}
-                    >
-                      <MoreVertical className="h-3.5 w-3.5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-
-                  <DropdownMenuContent align="end" className="w-52">
-                    <DropdownMenuItem
-                      onClick={onDeductReplies}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Minus className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
-                      {adminText.actionDeductReplies}
-                    </DropdownMenuItem>
-
-                    <DropdownMenuSeparator />
-
-                    <DropdownMenuItem onClick={onToggleAutoReply}>
-                      {sub.auto_reply_enabled ? (
-                        <>
-                          <PowerOff className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
-                          {adminText.actionDisableAutoReplies}
-                        </>
-                      ) : (
-                        <>
-                          <Power className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
-                          {adminText.actionEnableAutoReplies}
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={desktopActionButtonClass + " border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"}
+                  onClick={onDeductReplies}
+                  title={adminText.actionDeductReplies}
+                >
+                  <Minus className="h-3.5 w-3.5 shrink-0" />
+                  <span>{adminText.actionDeductReplies}</span>
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className={desktopActionButtonClass}
+                  onClick={onToggleAutoReply}
+                  title={
+                    sub.auto_reply_enabled
+                      ? adminText.actionDisableAutoReplies
+                      : adminText.actionEnableAutoReplies
+                  }
+                >
+                  {sub.auto_reply_enabled ? (
+                    <PowerOff className="h-3.5 w-3.5 shrink-0" />
+                  ) : (
+                    <Power className="h-3.5 w-3.5 shrink-0" />
+                  )}
+                  <span>
+                    {sub.auto_reply_enabled
+                      ? adminText.actionDisableAutoReplies
+                      : adminText.actionEnableAutoReplies}
+                  </span>
+                </Button>
               </>
             ) : (
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 px-2 text-xs"
+                className={desktopActionButtonClass}
                 onClick={onChangePlan}
+                title={adminText.actionActivatePaidSubscription}
               >
-                {adminText.actionActivatePaidSubscriptionShort}
+                <FileText className="h-3.5 w-3.5 shrink-0" />
+                <span>{adminText.actionActivatePaidSubscription}</span>
               </Button>
-            )
-          )}
+            ))}
 
           {canManageMerchants && (
             <Button
               variant="destructive"
               size="sm"
-              className="h-7 px-2 text-xs"
+              className={desktopActionButtonClass}
               onClick={onSuspend}
+              title={adminText.actionSuspendStore}
             >
-              {adminText.actionSuspendShort}
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+              <span>{adminText.actionSuspendStore}</span>
             </Button>
           )}
         </>
@@ -1904,19 +1931,22 @@ function ActionsMenu({
         <>
           <Button
             size="sm"
-            className="h-7 bg-green-600 px-2 text-xs text-white hover:bg-green-700"
+            className={desktopActionButtonClass + " bg-green-600 text-white hover:bg-green-700"}
             onClick={onUnsuspend}
+            title={adminText.actionUnsuspend}
           >
-            {adminText.actionUnsuspend}
+            <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{adminText.actionUnsuspend}</span>
           </Button>
-
           <Button
             variant="destructive"
             size="sm"
-            className="h-7 px-2 text-xs"
+            className={desktopActionButtonClass}
             onClick={onReject}
+            title={adminText.actionFinalReject}
           >
-            {adminText.actionReject}
+            <XCircle className="h-3.5 w-3.5 shrink-0" />
+            <span>{adminText.actionFinalReject}</span>
           </Button>
         </>
       )}
@@ -1925,10 +1955,12 @@ function ActionsMenu({
         <Button
           variant="outline"
           size="sm"
-          className="h-7 px-2 text-xs"
+          className={desktopActionButtonClass}
           onClick={onRestore}
+          title={adminText.actionRestoreReview}
         >
-          {adminText.actionRestoreReviewShort}
+          <RefreshCcw className="h-3.5 w-3.5 shrink-0" />
+          <span>{adminText.actionRestoreReview}</span>
         </Button>
       )}
 
@@ -1936,11 +1968,12 @@ function ActionsMenu({
         <Button
           variant="destructive"
           size="sm"
-          className="h-7 px-2 text-xs"
+          className={desktopActionButtonClass}
           onClick={onDelete}
           disabled={deletionAction === "pending"}
+          title={deletionActionLabel}
         >
-          {deletionActionLabel}
+          <span>{deletionActionLabel}</span>
         </Button>
       )}
     </div>
@@ -3185,7 +3218,7 @@ export default function AdminPage() {
                 loading="eager"
                 draggable={false}
               />
-              <span className="truncate text-base font-bold leading-tight text-foreground sm:text-lg">
+              <span className="fowri-header-brand-font truncate text-lg font-black leading-tight tracking-tight text-primary sm:text-xl">
                 {adminText.mainAdminTitle}
               </span>
             </div>
@@ -3534,7 +3567,7 @@ export default function AdminPage() {
                 </div>
                 {/* Desktop table */}
                 <div className="hidden overflow-x-auto rounded-xl border border-border/80 bg-card shadow-sm lg:block">
-                  <table className="w-full min-w-[1180px] text-sm">
+                  <table className="w-full min-w-[1140px] text-sm">
                     <thead className="border-b bg-muted/40">
                       <tr>
                         {[
@@ -3567,23 +3600,40 @@ export default function AdminPage() {
                             key={m.id}
                             className="bg-card transition-colors hover:bg-muted/20"
                           >
-                            <td className="min-w-[175px] px-4 py-4 align-middle">
-                              <div className="space-y-1.5">
-                                <p className="text-sm font-bold text-foreground">
+                            <td className="min-w-[165px] px-3 py-4 align-top">
+                              <div className="flex min-h-[154px] flex-col justify-center rounded-xl border border-border/80 bg-gradient-to-b from-muted/30 to-background p-3 shadow-sm">
+                                <p className="text-[10px] font-semibold text-muted-foreground">
+                                  {adminText.detailsStoreName}
+                                </p>
+                                <p className="mt-1.5 break-words text-base font-black leading-6 text-foreground">
                                   {m.store_name}
                                 </p>
-                                <p className="text-xs font-medium text-muted-foreground">
+                                <div className="my-3 h-px bg-border/70" aria-hidden="true" />
+                                <p className="text-[10px] font-semibold text-muted-foreground">
+                                  {adminText.detailsOwnerName}
+                                </p>
+                                <p className="mt-1.5 break-words rounded-lg bg-muted/60 px-2.5 py-2 text-xs font-semibold leading-5 text-foreground">
                                   {m.owner_name}
                                 </p>
                               </div>
                             </td>
 
-                            <td className="min-w-[155px] px-4 py-4 align-middle">
-                              <div className="space-y-2">
-                                <p className="font-mono text-xs font-semibold" dir="ltr">
+                            <td className="min-w-[155px] px-3 py-4 align-top">
+                              <div className="flex min-h-[154px] flex-col justify-center rounded-xl border border-border/80 bg-gradient-to-b from-muted/30 to-background p-3 shadow-sm">
+                                <p className="text-[10px] font-semibold text-muted-foreground">
+                                  {adminText.detailsPhone}
+                                </p>
+                                <p
+                                  className="mt-1.5 rounded-lg bg-background px-2.5 py-2 text-center font-mono text-sm font-bold tabular-nums text-foreground shadow-sm"
+                                  dir="ltr"
+                                >
                                   {m.phone}
                                 </p>
-                                <span className="inline-flex rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                                <div className="my-3 h-px bg-border/70" aria-hidden="true" />
+                                <p className="text-[10px] font-semibold text-muted-foreground">
+                                  {adminText.detailsActivityType}
+                                </p>
+                                <span className="mt-1.5 inline-flex min-h-9 items-center justify-center rounded-lg border border-border/70 bg-muted/60 px-2.5 py-2 text-center text-xs font-semibold leading-5 text-foreground">
                                   {getLocalizedActivity(m.activity_type, lang)}
                                 </span>
                               </div>
@@ -3632,7 +3682,7 @@ export default function AdminPage() {
                               </div>
                             </td>
 
-                            <td className="min-w-[350px] px-4 py-4 align-middle">
+                            <td className="min-w-[360px] px-3 py-4 align-top">
                               <ActionsMenu
                                 merchant={m}
                                 sub={sub}
