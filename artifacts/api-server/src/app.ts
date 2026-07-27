@@ -3,7 +3,9 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
+import retentionGuardRouter from "./routes/retention-guard";
 import { logger } from "./lib/logger";
+import { startMerchantRetentionPolicyScheduler } from "./services/merchantRetentionPolicy";
 
 const app: Express = express();
 
@@ -31,6 +33,8 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+startMerchantRetentionPolicyScheduler();
+app.use("/api", retentionGuardRouter);
 app.use("/api", router);
 
 export default app;
