@@ -1548,6 +1548,45 @@ function ActionsMenu({
                   <Plus className={`h-3 w-3 ${compactIconSpacingClass}`} />
                   {adminText.actionAddShort}
                 </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 w-7 shrink-0 p-0"
+                      aria-label={adminText.mainTableActions}
+                    >
+                      <MoreVertical className="h-3.5 w-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+
+                  <DropdownMenuContent align="end" className="w-52">
+                    <DropdownMenuItem
+                      onClick={onDeductReplies}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Minus className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
+                      {adminText.actionDeductReplies}
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+
+                    <DropdownMenuItem onClick={onToggleAutoReply}>
+                      {sub.auto_reply_enabled ? (
+                        <>
+                          <PowerOff className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
+                          {adminText.actionDisableAutoReplies}
+                        </>
+                      ) : (
+                        <>
+                          <Power className={`h-3.5 w-3.5 ${iconSpacingClass}`} />
+                          {adminText.actionEnableAutoReplies}
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
               <Button
