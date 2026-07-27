@@ -2,7 +2,7 @@
  * AdminPage — Protected admin control panel (MVP).
  * PRODUCTION TODO: Replace localStorage session with secure server-side admin auth.
  */
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "wouter";
 import { useI18n } from "@/lib/i18n";
 import { getAdminText } from "@/lib/admin-translations";
@@ -1723,8 +1723,11 @@ export default function AdminPage() {
   const [deletionRequests, setDeletionRequests] = useState<
     MerchantDeletionRequest[]
   >([]);
+  const permissionRefreshInFlightRef = useRef(false);
 
-  const refreshCurrentAdminFromApi = useCallback(async (): Promise<Merchant | null> => {
+  const refreshCurrentAdminFromApi = useCallback(async (
+    options: { preserveOnTransientError?: boolean } = {},
+  ): Promise<Merchant | null> => {
     try {
       const response = await fetch("/api/auth/admin/me", {
         headers: getAdminAuthHeaders(),
@@ -1732,9 +1735,12 @@ export default function AdminPage() {
       const data = await response.json().catch(() => null);
 
       if (!response.ok || !data?.ok || !data.admin?.is_admin) {
-        clearSession();
-        setCurrentAdmin(undefined);
-        setLocation("/login");
+        const sessionIsInvalid = response.status === 401 || response.status === 403;
+        if (sessionIsInvalid || !options.preserveOnTransientError) {
+          clearSession();
+          setCurrentAdmin(undefined);
+          setLocation("/login");
+        }
         return null;
       }
 
@@ -1743,16 +1749,84 @@ export default function AdminPage() {
       return serverAdmin;
     } catch (error) {
       console.error("Current admin API refresh failed:", error);
-      clearSession();
-      setCurrentAdmin(undefined);
-      setLocation("/login");
+      if (!options.preserveOnTransientError) {
+        clearSession();
+        setCurrentAdmin(undefined);
+        setLocation("/login");
+      }
       return null;
     }
   }, [setLocation]);
 
+  const refreshAdminPermissions = useCallback(async () => {
+    if (permissionRefreshInFlightRef.current) return;
+
+    permissionRefreshInFlightRef.current = true;
+    try {
+      await refreshCurrentAdminFromApi({ preserveOnTransientError: true });
+    } finally {
+      permissionRefreshInFlightRef.current = false;
+    }
+  }, [refreshCurrentAdminFromApi]);
+
   useEffect(() => {
     void refreshCurrentAdminFromApi();
   }, [refreshCurrentAdminFromApi]);
+
+  useEffect(() => {
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") {
+        void refreshAdminPermissions();
+      }
+    };
+
+    const intervalId = window.setInterval(refreshWhenVisible, 15_000);
+    window.addEventListener("focus", refreshWhenVisible);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshWhenVisible);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+    };
+  }, [refreshAdminPermissions]);
+
+  useEffect(() => {
+    const merchantStatusConfirmTypes = new Set<ConfirmType>([
+      "approve",
+      "reject",
+      "suspend",
+      "unsuspend",
+      "restore_pending",
+    ]);
+    const subscriptionConfirmTypes = new Set<ConfirmType>([
+      "reset_replies",
+      "stop_auto_reply",
+    ]);
+
+    setConfirmDialog((current) => {
+      if (!current) return current;
+      if (!canManageMerchants && merchantStatusConfirmTypes.has(current.type)) {
+        return null;
+      }
+      if (!canManageSubscriptions && subscriptionConfirmTypes.has(current.type)) {
+        return null;
+      }
+      return current;
+    });
+
+    if (!canManageSubscriptions) {
+      setPlanModal(null);
+      setRepliesModal(null);
+      setFilterPlan("all");
+    }
+    if (!canManageMerchants) {
+      setDeleteMerchantTarget(null);
+    }
+    if (!canViewMerchantData) {
+      setDetailsMerchant(null);
+    }
+  }, [canManageMerchants, canManageSubscriptions, canViewMerchantData]);
 
   const refreshData = useCallback(() => {
     setSubscriptions(canManageSubscriptions ? getSubscriptions() : []);
