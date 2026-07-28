@@ -3,20 +3,17 @@ import { toast } from 'sonner';
 
 import { SubscriptionCard } from '@/components/SubscriptionCard';
 import { useI18n } from '@/lib/i18n';
-import {
-  getCurrentMerchant,
-  saveSubscriptions,
-} from '@/lib/store';
-import { Subscription } from '@/lib/types';
+import { getCurrentMerchant, saveSubscriptions } from '@/lib/store';
 import { subscriptionStateMessages } from '@/lib/subscriptionStateMessages';
+import { Subscription } from '@/lib/types';
 
 export default function SubscriptionPage() {
   const { t, lang } = useI18n();
   const merchant = getCurrentMerchant();
   const merchantId = merchant?.id ?? null;
+  const messages = subscriptionStateMessages[lang];
 
-  const [subscription, setSubscription] =
-    useState<Subscription | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -71,8 +68,9 @@ export default function SubscriptionPage() {
         headers: { 'Content-Type': 'application/json' },
       });
       const data = await response.json().catch(() => null);
+
       if (!response.ok || !data?.ok || !data.subscription) {
-        throw new Error(data?.error || 'Could not activate emergency credit');
+        throw new Error(data?.error || messages.emergencyUnavailable);
       }
 
       const updatedSubscription = data.subscription as Subscription;
@@ -82,9 +80,7 @@ export default function SubscriptionPage() {
     } catch (error) {
       console.error('Emergency credit activation failed:', error);
       toast.error(
-        error instanceof Error
-          ? error.message
-          : t.subscription_emergency_unavailable,
+        error instanceof Error ? error.message : messages.emergencyUnavailable,
       );
     }
   };
@@ -100,7 +96,6 @@ export default function SubscriptionPage() {
   }
 
   if (!subscription) {
-    const messages = subscriptionStateMessages[lang];
     return (
       <div className="mx-auto max-w-3xl space-y-3 p-8">
         <h1 className="text-2xl font-bold">{messages.noSubscriptionTitle}</h1>
