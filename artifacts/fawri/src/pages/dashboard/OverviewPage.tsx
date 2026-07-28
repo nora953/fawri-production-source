@@ -45,7 +45,7 @@ export default function OverviewPage() {
     });
   }, [merchant?.id]);
 
-  if (!merchant || !sub) {
+  if (!merchant) {
     return (
       <div className="min-h-screen bg-background p-4 pb-28" dir={dir}>
         <div className="rounded-3xl border bg-card p-8 text-center text-muted-foreground">
@@ -55,23 +55,29 @@ export default function OverviewPage() {
     );
   }
 
-  const planName = {
-    silver: t.plan_silver,
-    gold: t.plan_gold,
-    diamond: t.plan_diamond,
-    trial: t.plan_trial,
-  }[sub.plan_name];
+  const planName = sub
+    ? {
+        silver: t.plan_silver,
+        gold: t.plan_gold,
+        diamond: t.plan_diamond,
+        trial: t.plan_trial,
+      }[sub.plan_name]
+    : t.subscription_no_active;
 
   const usagePercent =
-    sub.reply_limit > 0 ? (sub.replies_used / sub.reply_limit) * 100 : 0;
+    sub && sub.reply_limit > 0
+      ? (sub.replies_used / sub.reply_limit) * 100
+      : 0;
 
-  const daysRemaining = Math.max(
-    0,
-    Math.ceil(
-      (new Date(sub.expires_at).getTime() - Date.now()) /
-        (1000 * 60 * 60 * 24)
-    )
-  );
+  const daysRemaining = sub
+    ? Math.max(
+        0,
+        Math.ceil(
+          (new Date(sub.expires_at).getTime() - Date.now()) /
+            (1000 * 60 * 60 * 24)
+        )
+      )
+    : 0;
 
   let progressColor = 'bg-primary';
   if (usagePercent > 90) progressColor = 'bg-red-500';
@@ -88,7 +94,15 @@ export default function OverviewPage() {
           </h1>
         </div>
 
-        {usagePercent >= 100 && (
+        {!sub && (
+          <Alert className="border-orange-500 text-orange-700 dark:text-orange-300">
+            <AlertTriangle className="h-4 w-4 stroke-current" />
+            <AlertTitle>{t.subscription_notice_title}</AlertTitle>
+            <AlertDescription>{t.subscription_no_active}</AlertDescription>
+          </Alert>
+        )}
+
+        {sub && usagePercent >= 100 && (
           <Alert variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <AlertTitle>{t.subscription_alert_title}</AlertTitle>
@@ -96,7 +110,7 @@ export default function OverviewPage() {
           </Alert>
         )}
 
-        {usagePercent >= 90 && usagePercent < 100 && (
+        {sub && usagePercent >= 90 && usagePercent < 100 && (
           <Alert className="border-orange-500 text-orange-600">
             <AlertTriangle className="h-4 w-4 stroke-current" />
             <AlertTitle>{t.subscription_warning_title}</AlertTitle>
@@ -104,7 +118,7 @@ export default function OverviewPage() {
           </Alert>
         )}
 
-        {usagePercent >= 80 && usagePercent < 90 && (
+        {sub && usagePercent >= 80 && usagePercent < 90 && (
           <Alert className="border-yellow-500 text-yellow-600">
             <AlertTriangle className="h-4 w-4 stroke-current" />
             <AlertTitle>{t.subscription_notice_title}</AlertTitle>
@@ -112,7 +126,7 @@ export default function OverviewPage() {
           </Alert>
         )}
 
-        {daysRemaining <= 3 && (
+        {sub && daysRemaining <= 3 && (
           <Alert className="border-orange-500 text-orange-600">
             <Clock className="h-4 w-4 stroke-current" />
             <AlertTitle>{t.subscription_warning_title}</AlertTitle>
@@ -133,9 +147,11 @@ export default function OverviewPage() {
               <div className="text-2xl font-extrabold">
                 {planName}
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t.overview_plan_active}
-              </p>
+              {sub && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t.overview_plan_active}
+                </p>
+              )}
             </CardContent>
           </Card>
 
@@ -179,33 +195,35 @@ export default function OverviewPage() {
           </Card>
         </div>
 
-        <Card className="rounded-3xl">
-          <CardHeader>
-            <CardTitle>{t.reply_limit}</CardTitle>
-          </CardHeader>
+        {sub && (
+          <Card className="rounded-3xl">
+            <CardHeader>
+              <CardTitle>{t.reply_limit}</CardTitle>
+            </CardHeader>
 
-          <CardContent className="space-y-4">
-            <div className="flex justify-between gap-3 text-sm">
-              <span>
-                {sub.replies_used} {t.replies_used}
-              </span>
-              <span className="font-medium">
-                {sub.reply_limit} {t.total}
-              </span>
-            </div>
+            <CardContent className="space-y-4">
+              <div className="flex justify-between gap-3 text-sm">
+                <span>
+                  {sub.replies_used} {t.replies_used}
+                </span>
+                <span className="font-medium">
+                  {sub.reply_limit} {t.total}
+                </span>
+              </div>
 
-            <Progress value={usagePercent} className={`h-2 ${progressColor}`} />
+              <Progress value={usagePercent} className={`h-2 ${progressColor}`} />
 
-            <div className="flex justify-between gap-3 text-sm text-muted-foreground">
-              <span>
-                {sub.replies_remaining} {t.replies_remaining}
-              </span>
-              <span>
-                {daysRemaining} {t.days_remaining}
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="flex justify-between gap-3 text-sm text-muted-foreground">
+                <span>
+                  {sub.replies_remaining} {t.replies_remaining}
+                </span>
+                <span>
+                  {daysRemaining} {t.days_remaining}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
