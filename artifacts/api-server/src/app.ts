@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import retentionGuardRouter from "./routes/retention-guard";
+import { enforceMerchantRetentionAccess } from "./middleware/merchantRetentionAccess";
 import { logger } from "./lib/logger";
 import {
   refreshMerchantRetentionPolicy,
@@ -45,6 +46,7 @@ app.use((_req, _res, next) => {
   }
   next();
 });
+app.use(enforceMerchantRetentionAccess);
 app.use("/api", retentionGuardRouter);
 app.use("/api", router);
 
