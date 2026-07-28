@@ -1157,16 +1157,8 @@ function createPaidSubscription(
   const existingNormalized = existing
     ? recalculateSubscriptionTotals(existing, currentDate)
     : undefined;
-  const existingExpired = existingNormalized
-    ? new Date(existingNormalized.expires_at).getTime() <= currentDate.getTime()
-    : true;
-  const isEarlyRenewal = operation === "renew" && existingNormalized && !existingExpired;
-  const billingAnchorDay = isEarlyRenewal
-    ? existingNormalized.billing_anchor_day
-    : getBaghdadDateParts(currentDate).day;
-  const expirationBase = isEarlyRenewal
-    ? new Date(existingNormalized.expires_at)
-    : currentDate;
+  const billingAnchorDay = getBaghdadDateParts(currentDate).day;
+  const expirationBase = currentDate;
   const emergencyDeduction = Math.min(
     existingNormalized?.emergency_debt || 0,
     config.reply_limit,
@@ -3067,6 +3059,10 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
   const existingExpired = existing
     ? new Date(existing.expires_at).getTime() <= Date.now()
     : true;
+  const existingBaseExhausted = existing
+    ? existing.base_replies_remaining <= 0
+    : false;
+  const canStartNewCycle = existingExpired || existingBaseExhausted;
 
   if (operation === "activate" && existing) {
     return sendError(res, 409, "merchant already has a subscription");
@@ -3074,16 +3070,24 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
   if ((operation === "change" || operation === "renew") && !existing) {
     return sendError(res, 409, "merchant does not have a subscription");
   }
-  if (operation === "change" && existing && !existingExpired) {
-    return sendError(res, 409, "active plan cannot be changed before expiration");
-  }
   if (
-    operation === "renew" &&
+    (operation === "change" || operation === "renew") &&
     existing &&
-    !existingExpired &&
-    existing.plan_name !== plan
+    !canStartNewCycle
   ) {
-    return sendError(res, 409, "early renewal must keep the current plan");
+    return sendError(
+      res,
+      409,
+      "a new subscription cycle requires exhausted base replies or an expired subscription",
+      {
+        code: "SUBSCRIPTION_CYCLE_STILL_ACTIVE",
+        base_replies_remaining: existing.base_replies_remaining,
+        expires_at: existing.expires_at,
+      },
+    );
+  }
+  if (operation === "renew" && existing && existing.plan_name !== plan) {
+    return sendError(res, 409, "renewal must keep the current plan");
   }
 
   const previousExpiresAt = existing?.expires_at;
@@ -3098,7 +3102,9 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
   else db.subscriptions.push(subscription);
 
   if (previousExpiresAt && previousExpiresAt !== subscription.expires_at) {
-    merchant.last_subscription_ended_at = previousExpiresAt;
+    merchant.last_subscription_ended_at = existingExpired
+      ? previousExpiresAt
+      : subscription.start_date;
   }
   merchant.subscription_started_at = subscription.start_date;
   merchant.subscription_expires_at = subscription.expires_at;
@@ -3121,7 +3127,7 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
     {
       meta: {
         plan,
-        ...(operation === "renew" && emergencyDeduction > 0
+        ...(emergencyDeduction > 0
           ? { emergency_deduction: emergencyDeduction }
           : {}),
       },

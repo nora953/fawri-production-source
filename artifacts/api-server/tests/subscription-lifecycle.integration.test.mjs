@@ -54,7 +54,7 @@ function baghdadParts(value) {
   };
 }
 
-test("calendar subscriptions, early renewal, add-ons and emergency debt", async (t) => {
+test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency debt", async (t) => {
   const runtimeDir = await mkdtemp(path.join(os.tmpdir(), "fawri-subscription-lifecycle-"));
   const dataDir = path.join(runtimeDir, "data");
   await mkdir(dataDir, { recursive: true });
@@ -161,6 +161,12 @@ test("calendar subscriptions, early renewal, add-ons and emergency debt", async 
 
   const forbiddenChange = await planOperation("merchant-a", "change", "gold");
   assert.equal(forbiddenChange.response.status, 409);
+  assert.equal(forbiddenChange.body.code, "SUBSCRIPTION_CYCLE_STILL_ACTIVE");
+  assert.equal(forbiddenChange.body.base_replies_remaining, 4000);
+
+  const forbiddenEarlyRenewal = await planOperation("merchant-a", "renew", "silver");
+  assert.equal(forbiddenEarlyRenewal.response.status, 409);
+  assert.equal(forbiddenEarlyRenewal.body.code, "SUBSCRIPTION_CYCLE_STILL_ACTIVE");
 
   const exhaustedA = await subscriptionAction("merchant-a", "deduct_replies", 4000);
   assert.equal(exhaustedA.response.status, 200);
@@ -193,15 +199,16 @@ test("calendar subscriptions, early renewal, add-ons and emergency debt", async 
   assert.equal((addonExpiry.month - purchase.month + 12) % 12, 3);
 
   const oldExpiry = new Date(debtAndAddon.body.subscription.expires_at);
-  const earlyRenewal = await planOperation("merchant-a", "renew", "silver");
-  assert.equal(earlyRenewal.response.status, 200);
-  assert.equal(earlyRenewal.body.subscription.base_replies_remaining, 4000);
-  assert.equal(earlyRenewal.body.subscription.addon_replies_remaining, 200);
-  assert.ok(new Date(earlyRenewal.body.subscription.expires_at) > oldExpiry);
-  const oldExpiryParts = baghdadParts(oldExpiry);
-  const renewedExpiryParts = baghdadParts(earlyRenewal.body.subscription.expires_at);
-  assert.equal(renewedExpiryParts.day, oldExpiryParts.day);
-  assert.equal((renewedExpiryParts.month - oldExpiryParts.month + 12) % 12, 1);
+  const renewedAfterExhaustion = await planOperation("merchant-a", "renew", "silver");
+  assert.equal(renewedAfterExhaustion.response.status, 200);
+  assert.equal(renewedAfterExhaustion.body.subscription.plan_name, "silver");
+  assert.equal(renewedAfterExhaustion.body.subscription.base_replies_remaining, 4000);
+  assert.equal(renewedAfterExhaustion.body.subscription.addon_replies_remaining, 200);
+  assert.ok(new Date(renewedAfterExhaustion.body.subscription.start_date) < oldExpiry);
+  const renewedStartParts = baghdadParts(renewedAfterExhaustion.body.subscription.start_date);
+  const renewedExpiryParts = baghdadParts(renewedAfterExhaustion.body.subscription.expires_at);
+  assert.equal(renewedExpiryParts.day, renewedStartParts.day);
+  assert.equal((renewedExpiryParts.month - renewedStartParts.month + 12) % 12, 1);
 
   const activatedB = await planOperation("merchant-b", "activate", "silver");
   assert.equal(activatedB.response.status, 200);
@@ -210,10 +217,11 @@ test("calendar subscriptions, early renewal, add-ons and emergency debt", async 
     method: "POST", headers: { Cookie: merchantBCookie, "Content-Type": "application/json" },
   }));
   assert.equal(emergencyB.response.status, 200);
-  const renewedWithDebt = await planOperation("merchant-b", "renew", "silver");
-  assert.equal(renewedWithDebt.response.status, 200);
-  assert.equal(renewedWithDebt.body.subscription.emergency_debt, 0);
-  assert.equal(renewedWithDebt.body.subscription.base_replies_used, 400);
-  assert.equal(renewedWithDebt.body.subscription.base_replies_remaining, 3600);
-  assert.equal(renewedWithDebt.body.subscription.emergency_credit_activated, false);
+  const changedWithDebt = await planOperation("merchant-b", "change", "gold");
+  assert.equal(changedWithDebt.response.status, 200);
+  assert.equal(changedWithDebt.body.subscription.plan_name, "gold");
+  assert.equal(changedWithDebt.body.subscription.emergency_debt, 0);
+  assert.equal(changedWithDebt.body.subscription.base_replies_used, 400);
+  assert.equal(changedWithDebt.body.subscription.base_replies_remaining, 7600);
+  assert.equal(changedWithDebt.body.subscription.emergency_credit_activated, false);
 });
