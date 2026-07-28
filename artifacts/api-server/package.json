@@ -10,7 +10,8 @@
     "test:merchant-session": "node ./build.mjs && node --test ./tests/merchant-session.integration.test.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:admin-permissions": "node ./build.mjs && node --test ./tests/admin-permissions.integration.test.mjs",
-    "test:subscription-lifecycle": "node ./build.mjs && node --test ./tests/subscription-lifecycle.integration.test.mjs"
+    "test:subscription-lifecycle": "node ./build.mjs && node --test ./tests/subscription-lifecycle.integration.test.mjs",
+    "test:retention-access": "node ./build.mjs && node --test ./tests/retention-access.integration.test.mjs"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",
