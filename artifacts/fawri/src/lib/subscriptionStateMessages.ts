@@ -11,6 +11,7 @@ type SubscriptionStateMessages = {
   pendingBody: string;
   repliesExhaustedTitle: string;
   repliesExhaustedBody: string;
+  emergencyUnavailable: string;
 };
 
 export const subscriptionStateMessages: Record<Lang, SubscriptionStateMessages> = {
@@ -25,6 +26,7 @@ export const subscriptionStateMessages: Record<Lang, SubscriptionStateMessages> 
     pendingBody: 'الخطة مسجلة، لكنها لن تصبح فعّالة حتى تكتمل عملية التفعيل.',
     repliesExhaustedTitle: 'نفدت الردود',
     repliesExhaustedBody: 'توقفت الردود التلقائية لأن رصيد الردود انتهى، بينما تبقى الخطة مسجلة حتى تاريخ انتهائها.',
+    emergencyUnavailable: 'تعذر تفعيل رصيد الطوارئ. حاول مرة أخرى.',
   },
   ku: {
     noSubscriptionTitle: 'هیچ بەشدارییەک نییە',
@@ -37,6 +39,7 @@ export const subscriptionStateMessages: Record<Lang, SubscriptionStateMessages> 
     pendingBody: 'پلانەکە تۆمارکراوە، بەڵام تا تەواوبوونی چالاککردن چالاک نابێت.',
     repliesExhaustedTitle: 'وەڵامەکان تەواو بوون',
     repliesExhaustedBody: 'وەڵامدانەوەی خۆکار وەستاوە چونکە کرێدیتی وەڵام تەواو بووە، بەڵام پلانەکە تا بەرواری بەسەرچوون تۆمارکراو دەمێنێتەوە.',
+    emergencyUnavailable: 'نەتوانرا کرێدیتی فریاکەوتن چالاک بکرێت. دووبارە هەوڵ بدە.',
   },
   en: {
     noSubscriptionTitle: 'No subscription',
@@ -49,5 +52,6 @@ export const subscriptionStateMessages: Record<Lang, SubscriptionStateMessages> 
     pendingBody: 'The plan is registered but will not become active until activation is completed.',
     repliesExhaustedTitle: 'Replies exhausted',
     repliesExhaustedBody: 'Automatic replies have stopped because the reply balance is exhausted. The plan remains registered until its expiry date.',
+    emergencyUnavailable: 'Emergency credit could not be activated. Please try again.',
   },
 };
