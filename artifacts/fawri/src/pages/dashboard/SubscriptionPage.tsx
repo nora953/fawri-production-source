@@ -5,59 +5,32 @@ import { SubscriptionCard } from '@/components/SubscriptionCard';
 import { useI18n } from '@/lib/i18n';
 import {
   getCurrentMerchant,
-  getSubscriptions,
   saveSubscriptions,
 } from '@/lib/store';
 import { Subscription } from '@/lib/types';
-
-function getSubscriptionTimestamp(subscription: Subscription): number {
-  const startTimestamp = new Date(subscription.start_date).getTime();
-
-  return Number.isFinite(startTimestamp) ? startTimestamp : 0;
-}
-
-function findCurrentSubscription(
-  subscriptions: Subscription[],
-  merchantId: string,
-): Subscription | null {
-  const merchantSubscriptions = subscriptions
-    .filter(subscription => subscription.merchant_id === merchantId)
-    .sort(
-      (first, second) =>
-        getSubscriptionTimestamp(second) -
-        getSubscriptionTimestamp(first),
-    );
-
-  return (
-    merchantSubscriptions.find(
-      subscription => subscription.status === 'active',
-    ) ??
-    merchantSubscriptions[0] ??
-    null
-  );
-}
+import { subscriptionStateMessages } from '@/lib/subscriptionStateMessages';
 
 export default function SubscriptionPage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const merchant = getCurrentMerchant();
   const merchantId = merchant?.id ?? null;
 
   const [subscription, setSubscription] =
     useState<Subscription | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
 
     if (!merchantId) {
       setSubscription(null);
+      setLoading(false);
       return () => {
         active = false;
       };
     }
 
-    setSubscription(
-      findCurrentSubscription(getSubscriptions(), merchantId),
-    );
+    setLoading(true);
 
     fetch('/api/auth/subscription/current')
       .then(async response => ({
@@ -65,17 +38,23 @@ export default function SubscriptionPage() {
         data: await response.json().catch(() => null),
       }))
       .then(({ response, data }) => {
-        if (!active || !response.ok || !data?.ok || !data.subscription) return;
-        const serverSubscription = data.subscription as Subscription;
-        const nextSubscriptions = [
-          ...getSubscriptions().filter(item => item.merchant_id !== merchantId),
-          serverSubscription,
-        ];
-        saveSubscriptions(nextSubscriptions);
-        setSubscription(serverSubscription);
+        if (!active) return;
+
+        if (response.ok && data?.ok && data.subscription) {
+          const serverSubscription = data.subscription as Subscription;
+          saveSubscriptions([serverSubscription]);
+          setSubscription(serverSubscription);
+        } else {
+          saveSubscriptions([]);
+          setSubscription(null);
+        }
       })
       .catch(error => {
         console.error('Could not load the current subscription:', error);
+        if (active) setSubscription(null);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
       });
 
     return () => {
@@ -84,7 +63,7 @@ export default function SubscriptionPage() {
   }, [merchantId]);
 
   const handleActivateEmergency = async () => {
-    if (!merchantId || !subscription) return;
+    if (!merchantId || !subscription || subscription.status !== 'active') return;
 
     try {
       const response = await fetch('/api/auth/subscription/emergency', {
@@ -97,11 +76,7 @@ export default function SubscriptionPage() {
       }
 
       const updatedSubscription = data.subscription as Subscription;
-      const updatedSubscriptions = [
-        ...getSubscriptions().filter(item => item.merchant_id !== merchantId),
-        updatedSubscription,
-      ];
-      saveSubscriptions(updatedSubscriptions);
+      saveSubscriptions([updatedSubscription]);
       setSubscription(updatedSubscription);
       toast.success(t.subscription_emergency_success);
     } catch (error) {
@@ -116,10 +91,20 @@ export default function SubscriptionPage() {
 
   if (!merchantId) return null;
 
-  if (!subscription) {
+  if (loading) {
     return (
-      <div className="mx-auto max-w-3xl p-8">
-        {t.subscription_no_active}
+      <div className="mx-auto max-w-3xl p-8 text-center text-muted-foreground">
+        {t.overview_loading}
+      </div>
+    );
+  }
+
+  if (!subscription) {
+    const messages = subscriptionStateMessages[lang];
+    return (
+      <div className="mx-auto max-w-3xl space-y-3 p-8">
+        <h1 className="text-2xl font-bold">{messages.noSubscriptionTitle}</h1>
+        <p className="text-muted-foreground">{messages.noSubscriptionBody}</p>
       </div>
     );
   }
