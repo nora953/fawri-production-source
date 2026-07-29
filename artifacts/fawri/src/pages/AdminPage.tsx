@@ -3322,7 +3322,13 @@ export default function AdminPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-6 py-5 space-y-4">
+      <main
+        className={`mx-auto max-w-7xl px-4 py-5 md:px-6 ${
+          tab === "support"
+            ? "space-y-3 md:flex md:h-[calc(100dvh-4rem)] md:flex-col md:gap-3 md:space-y-0 md:overflow-hidden"
+            : "space-y-4"
+        }`}
+      >
         {/* Tabs */}
         {TABS.length > 0 && (
           <div className="-mx-4 grid grid-cols-2 gap-2 px-4 sm:grid-cols-3 md:mx-0 md:grid-cols-4 md:px-0 lg:flex lg:flex-wrap">

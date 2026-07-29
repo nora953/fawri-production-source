@@ -385,34 +385,37 @@ export default function AdminSupportTab({
     selectedTicket?.status === 'open' || selectedTicket?.status === 'in_progress';
 
   return (
-    <section className="space-y-3" dir={dir}>
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+    <section
+      className="flex min-h-0 flex-col gap-2 md:flex-1 md:overflow-hidden"
+      dir={dir}
+    >
+      <div className="flex shrink-0 flex-col gap-2 rounded-2xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
             <Headphones className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-black">{text.title}</h2>
+            <h2 className="text-base font-black sm:text-lg">{text.title}</h2>
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">{text.subtitle}</p>
+          <p className="mt-0.5 text-xs leading-5 text-muted-foreground sm:text-sm">{text.subtitle}</p>
         </div>
-        <div className="rounded-xl border bg-muted/30 px-3 py-2 text-center">
+        <div className="rounded-xl border bg-muted/30 px-3 py-1.5 text-center">
           <p className="text-[10px] font-medium text-muted-foreground">{text.activeTickets}</p>
           <p className="mt-0.5 text-lg font-black tabular-nums">{activeCount}</p>
         </div>
       </div>
 
       {isOwner && (
-        <div className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm font-semibold leading-6 text-sky-900 dark:border-sky-900/70 dark:bg-sky-950/30 dark:text-sky-100">
+        <div className="shrink-0 rounded-xl border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold leading-5 text-sky-900 dark:border-sky-900/70 dark:bg-sky-950/30 dark:text-sky-100">
           {text.ownerNotice}
         </div>
       )}
 
       {loading ? (
-        <div className="flex min-h-80 items-center justify-center rounded-2xl border bg-card text-muted-foreground">
+        <div className="flex min-h-80 flex-1 items-center justify-center rounded-2xl border bg-card text-muted-foreground md:min-h-0">
           <Loader2 className="me-2 h-5 w-5 animate-spin" />
           {text.loading}
         </div>
       ) : loadError ? (
-        <div className="flex min-h-80 flex-col items-center justify-center gap-4 rounded-2xl border bg-card p-6 text-center">
+        <div className="flex min-h-80 flex-1 flex-col items-center justify-center gap-4 rounded-2xl border bg-card p-6 text-center md:min-h-0">
           <p className="font-bold">{text.loadError}</p>
           <Button variant="outline" onClick={() => void loadTickets()}>
             <RefreshCw className="me-2 h-4 w-4" />
@@ -420,15 +423,15 @@ export default function AdminSupportTab({
           </Button>
         </div>
       ) : tickets.length === 0 ? (
-        <div className="flex min-h-80 flex-col items-center justify-center rounded-2xl border border-dashed bg-card p-6 text-center">
+        <div className="flex min-h-80 flex-1 flex-col items-center justify-center rounded-2xl border border-dashed bg-card p-6 text-center md:min-h-0">
           <MessageCircle className="h-10 w-10 text-muted-foreground" />
           <h3 className="mt-4 font-black">{text.emptyTitle}</h3>
           <p className="mt-2 text-sm text-muted-foreground">{text.emptyBody}</p>
         </div>
       ) : (
-        <div className="grid min-h-[540px] overflow-hidden rounded-2xl border bg-card shadow-sm lg:grid-cols-[330px_1fr]">
-          <div className="border-b lg:border-b-0 lg:border-e">
-            <div className="max-h-72 space-y-2 overflow-y-auto p-3 lg:max-h-[640px]">
+        <div className="grid min-h-[480px] flex-1 overflow-hidden rounded-2xl border bg-card shadow-sm md:min-h-0 lg:grid-cols-[300px_1fr]">
+          <div className="min-h-0 overflow-hidden border-b lg:border-b-0 lg:border-e">
+            <div className="h-full max-h-72 space-y-2 overflow-y-auto p-3 lg:max-h-none">
               {tickets.map((ticket) => (
                 <button
                   key={ticket.id}
@@ -458,15 +461,15 @@ export default function AdminSupportTab({
 
           {selectedTicket && (
             <div className="flex min-h-0 flex-col">
-              <div className="border-b p-4">
+              <div className="shrink-0 border-b p-3">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <h3 className="font-black">{selectedTicket.subject}</h3>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                    <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                       <span>{text.merchant}: <strong className="text-foreground">{selectedTicket.merchant_name}</strong></span>
                       <span>{text.phone}: <strong dir="ltr" className="text-foreground">{selectedTicket.merchant_phone}</strong></span>
                     </div>
-                    <p className="mt-2 text-xs text-muted-foreground">
+                    <p className="mt-1.5 text-xs text-muted-foreground">
                       {text.assignedTo}: <strong className="text-foreground">{selectedTicket.assigned_admin_name || text.unassigned}</strong>
                     </p>
                   </div>
@@ -498,7 +501,7 @@ export default function AdminSupportTab({
                 )}
               </div>
 
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-muted/20 p-4 lg:max-h-[430px]">
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-muted/20 p-3">
                 {selectedTicket.messages.map((message) => {
                   const merchantMessage = message.sender_type === 'merchant';
                   return (
