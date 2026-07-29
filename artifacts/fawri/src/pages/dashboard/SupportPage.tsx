@@ -74,7 +74,7 @@ export default function SupportPage() {
 
   useLayoutEffect(() => {
     const conversation = conversationRef.current;
-    if (!conversation || !selectedLastMessageId) return;
+    if (loading || !conversation || !selectedLastMessageId) return;
 
     const frameId = window.requestAnimationFrame(() => {
       conversation.scrollTo({
@@ -84,7 +84,7 @@ export default function SupportPage() {
     });
 
     return () => window.cancelAnimationFrame(frameId);
-  }, [selectedId, selectedLastMessageId]);
+  }, [loading, selectedId, selectedLastMessageId]);
 
   const loadTickets = useCallback(async () => {
     setLoading(true);
