@@ -60,7 +60,11 @@ export default function SubscriptionPage() {
   }, [merchantId]);
 
   const handleActivateEmergency = async () => {
-    if (!merchantId || !subscription || subscription.status !== 'active') return;
+    const canRequestEmergency =
+      subscription?.status === 'active' ||
+      subscription?.status === 'replies_exhausted';
+
+    if (!merchantId || !subscription || !canRequestEmergency) return;
 
     try {
       const response = await fetch('/api/auth/subscription/emergency', {

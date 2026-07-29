@@ -29,6 +29,8 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
     : 0;
   const daysRemaining = Math.max(0, Math.ceil((new Date(subscription.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
   const isActive = subscription.status === 'active';
+  const canShowEmergency =
+    isActive || subscription.status === 'replies_exhausted';
 
   const statusLabel = {
     pending_activation: t.subscription_status_pending_activation,
@@ -127,7 +129,7 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
           </div>
         </div>
 
-        {isActive && (
+        {canShowEmergency && (
           <EmergencyCredit subscription={subscription} onActivate={onEmergencyActivate} />
         )}
       </CardContent>

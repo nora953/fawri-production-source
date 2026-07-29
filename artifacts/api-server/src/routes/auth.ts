@@ -2245,8 +2245,18 @@ router.post("/subscription/emergency", requireMerchantSession, (_req: Request, r
   if (new Date(subscription.expires_at).getTime() <= Date.now()) {
     return sendError(res, 409, "subscription is expired");
   }
-  if (subscription.replies_remaining > 0) {
-    return sendError(res, 409, "emergency credit requires zero remaining replies");
+  const emergencyEligibilityThreshold = 500;
+  if (subscription.base_replies_remaining > emergencyEligibilityThreshold) {
+    return sendError(
+      res,
+      409,
+      "emergency credit requires 500 or fewer base replies",
+      {
+        code: "EMERGENCY_BASE_THRESHOLD_NOT_REACHED",
+        base_replies_remaining: subscription.base_replies_remaining,
+        threshold: emergencyEligibilityThreshold,
+      },
+    );
   }
   if (subscription.emergency_credit_activated) {
     return sendError(res, 409, "emergency credit was already used in this cycle");

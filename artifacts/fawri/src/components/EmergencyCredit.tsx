@@ -34,11 +34,16 @@ export function EmergencyCredit({
         ? 'ckb-IQ'
         : 'ar-IQ';
 
+  const baseRepliesRemaining =
+    subscription.base_replies_remaining ?? subscription.replies_remaining;
+  const canRequestEmergency =
+    subscription.status === 'active' ||
+    subscription.status === 'replies_exhausted';
   const isEligible =
-    subscription.status === 'active' &&
+    canRequestEmergency &&
     !subscription.emergency_credit_activated &&
     subscription.emergency_credit_amount > 0 &&
-    subscription.replies_remaining <= subscription.reply_limit * 0.1;
+    baseRepliesRemaining <= 500;
 
   const handleActivate = () => {
     if (!isEligible) return;
