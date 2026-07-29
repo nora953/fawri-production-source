@@ -244,7 +244,13 @@ function MerchantStatusSummary({
   ];
 
   return (
-    <div className={compact ? "space-y-2" : "grid gap-2 sm:grid-cols-3"}>
+    <div
+      className={
+        compact
+          ? "flex min-h-[190px] h-full flex-col justify-center gap-2 rounded-xl border border-border/80 bg-muted/20 p-3 shadow-sm"
+          : "grid gap-2 sm:grid-cols-3"
+      }
+    >
       {statusItems.map((item) => (
         <div
           key={item.label}
@@ -320,8 +326,10 @@ function SubscriptionUsageSummary({
   return (
     <div
       className={
-        "space-y-2.5 rounded-xl border border-border/80 bg-gradient-to-b from-muted/35 to-background shadow-sm " +
-        (compact ? "min-w-[230px] p-3" : "p-3.5")
+        "rounded-xl border border-border/80 bg-gradient-to-b from-muted/35 to-background shadow-sm " +
+        (compact
+          ? "flex min-h-[190px] h-full min-w-0 flex-col justify-center gap-2.5 p-3"
+          : "space-y-2.5 p-3.5")
       }
     >
       <div className="flex items-center justify-between gap-3">
@@ -1816,7 +1824,7 @@ function ActionsMenu({
 
   return (
     <div
-      className="flex min-w-0 flex-col gap-2 rounded-xl border border-border/80 bg-muted/20 p-2.5 shadow-sm"
+      className="flex min-h-[190px] h-full min-w-0 flex-col justify-center gap-2 rounded-xl border border-border/80 bg-muted/20 p-2.5 shadow-sm"
       dir={adminText.dir}
     >
       <Button
@@ -3465,8 +3473,7 @@ export default function AdminPage() {
                           <th
                             key={heading}
                             className={
-                              "px-2.5 py-3.5 text-xs font-semibold text-muted-foreground " +
-                              (adminText.dir === "rtl" ? "text-right" : "text-left")
+                              "px-2.5 py-3.5 text-center text-xs font-semibold text-muted-foreground"
                             }
                           >
                             {heading}
@@ -3482,8 +3489,8 @@ export default function AdminPage() {
                             key={m.id}
                             className="bg-card transition-colors hover:bg-muted/20"
                           >
-                            <td className="w-[16%] px-2 py-3 align-top">
-                              <div className="flex min-h-[154px] flex-col justify-center rounded-xl border border-border/80 bg-gradient-to-b from-muted/30 to-background p-3 shadow-sm">
+                            <td className="w-[16%] px-2 py-3 align-middle">
+                              <div className="flex min-h-[190px] h-full flex-col justify-center rounded-xl border border-border/80 bg-gradient-to-b from-muted/30 to-background p-3 shadow-sm">
                                 <p className="text-[10px] font-semibold text-muted-foreground">
                                   {adminText.detailsStoreName}
                                 </p>
@@ -3506,8 +3513,8 @@ export default function AdminPage() {
                               </div>
                             </td>
 
-                            <td className="w-[16%] px-2 py-3 align-top">
-                              <div className="flex min-h-[154px] flex-col justify-center rounded-xl border border-border/80 bg-gradient-to-b from-muted/30 to-background p-3 shadow-sm">
+                            <td className="w-[16%] px-2 py-3 align-middle">
+                              <div className="flex min-h-[190px] h-full flex-col justify-center rounded-xl border border-border/80 bg-gradient-to-b from-muted/30 to-background p-3 shadow-sm">
                                 <p className="text-[10px] font-semibold text-muted-foreground">
                                   {adminText.detailsPhone}
                                 </p>
@@ -3527,7 +3534,7 @@ export default function AdminPage() {
                               </div>
                             </td>
 
-                            <td className="w-[15%] px-2 py-3 align-middle">
+                            <td className="w-[15%] px-2 py-3 align-middle text-center">
                               <MerchantStatusSummary
                                 compact
                                 merchant={m}
