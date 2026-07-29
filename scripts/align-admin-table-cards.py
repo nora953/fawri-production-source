@@ -10,6 +10,21 @@ def replace_once(text: str, old: str, new: str, label: str) -> str:
     return text.replace(old, new, 1)
 
 
+def replace_exact_count(
+    text: str,
+    old: str,
+    new: str,
+    expected_count: int,
+    label: str,
+) -> str:
+    count = text.count(old)
+    if count != expected_count:
+        raise RuntimeError(
+            f'{label}: expected {expected_count} matches, found {count}'
+        )
+    return text.replace(old, new, expected_count)
+
+
 text = PATH.read_text(encoding='utf-8')
 
 text = replace_once(
@@ -22,23 +37,20 @@ text = replace_once(
     'center desktop table headings',
 )
 
-text = replace_once(
+text = replace_exact_count(
     text,
     '<td className="w-[16%] px-2 py-3 align-top">',
     '<td className="w-[16%] px-2 py-3 align-middle">',
-    'store cell vertical alignment',
-)
-text = replace_once(
-    text,
-    '<td className="w-[16%] px-2 py-3 align-top">',
-    '<td className="w-[16%] px-2 py-3 align-middle">',
-    'phone cell vertical alignment',
+    2,
+    'store and phone cell vertical alignment',
 )
 
-text = text.replace(
+text = replace_exact_count(
+    text,
     'className="flex min-h-[154px] flex-col justify-center rounded-xl border border-border/80 bg-gradient-to-b from-muted/30 to-background p-3 shadow-sm"',
     'className="flex min-h-[190px] h-full flex-col justify-center rounded-xl border border-border/80 bg-gradient-to-b from-muted/30 to-background p-3 shadow-sm"',
     2,
+    'store and phone card heights',
 )
 
 text = replace_once(
@@ -83,18 +95,6 @@ text = replace_once(
     '<td className="w-[15%] px-2 py-3 align-middle">',
     '<td className="w-[15%] px-2 py-3 align-middle text-center">',
     'status cell horizontal alignment',
-)
-text = replace_once(
-    text,
-    '<td className="w-[30%] px-2 py-3 align-middle">',
-    '<td className="w-[30%] px-2 py-3 align-middle">',
-    'subscription cell marker',
-)
-text = replace_once(
-    text,
-    '<td className="w-[23%] px-2 py-3 align-middle">',
-    '<td className="w-[23%] px-2 py-3 align-middle">',
-    'actions cell marker',
 )
 
 PATH.write_text(text, encoding='utf-8')
