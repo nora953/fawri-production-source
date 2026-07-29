@@ -6,6 +6,10 @@ import { useI18n } from '@/lib/i18n';
 import { getCurrentMerchant, saveSubscriptions } from '@/lib/store';
 import { subscriptionStateMessages } from '@/lib/subscriptionStateMessages';
 import { Subscription } from '@/lib/types';
+import {
+  MERCHANT_REALTIME_EVENT,
+  type MerchantRealtimeDetail,
+} from '@/hooks/useMerchantRealtime';
 
 export default function SubscriptionPage() {
   const { t, lang } = useI18n();
@@ -27,35 +31,49 @@ export default function SubscriptionPage() {
       };
     }
 
-    setLoading(true);
+    const applySubscription = (nextSubscription: Subscription | null) => {
+      if (!active) return;
+      if (nextSubscription) saveSubscriptions([nextSubscription]);
+      else saveSubscriptions([]);
+      setSubscription(nextSubscription);
+      setLoading(false);
+    };
 
-    fetch('/api/auth/subscription/current')
-      .then(async response => ({
-        response,
-        data: await response.json().catch(() => null),
-      }))
-      .then(({ response, data }) => {
+    const loadSubscription = async () => {
+      try {
+        const response = await fetch('/api/auth/subscription/current', {
+          cache: 'no-store',
+        });
+        const data = await response.json().catch(() => null);
         if (!active) return;
-
-        if (response.ok && data?.ok && data.subscription) {
-          const serverSubscription = data.subscription as Subscription;
-          saveSubscriptions([serverSubscription]);
-          setSubscription(serverSubscription);
-        } else {
-          saveSubscriptions([]);
-          setSubscription(null);
-        }
-      })
-      .catch(error => {
+        applySubscription(
+          response.ok && data?.ok && data.subscription
+            ? (data.subscription as Subscription)
+            : null,
+        );
+      } catch (error) {
         console.error('Could not load the current subscription:', error);
-        if (active) setSubscription(null);
-      })
-      .finally(() => {
         if (active) setLoading(false);
-      });
+      }
+    };
+
+    const handleFocus = () => void loadSubscription();
+    const handleRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
+      const nextSubscription = detail?.subscription ?? null;
+      if (nextSubscription && nextSubscription.merchant_id !== merchantId) return;
+      applySubscription(nextSubscription);
+    };
+
+    setLoading(true);
+    void loadSubscription();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
 
     return () => {
       active = false;
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     };
   }, [merchantId]);
 

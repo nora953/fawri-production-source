@@ -4,6 +4,7 @@ import { Bell, Check, Loader2, RefreshCw } from 'lucide-react';
 import { useI18n } from '@/lib/i18n';
 import type { MerchantBalanceNotification } from '@/lib/types';
 import { notifyMerchantNotificationsChanged } from '@/hooks/useMerchantNotifications';
+import { MERCHANT_REALTIME_EVENT, type MerchantRealtimeDetail } from '@/hooks/useMerchantRealtime';
 
 function formatNotificationText(
   template: string,
@@ -50,6 +51,24 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     void loadNotifications();
+
+    const handleFocus = () => void loadNotifications();
+    const handleRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
+      if (
+        detail?.event === 'subscription_updated' ||
+        detail?.event === 'notifications_updated'
+      ) {
+        void loadNotifications();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
+    };
   }, [loadNotifications]);
 
   const unreadCount = useMemo(

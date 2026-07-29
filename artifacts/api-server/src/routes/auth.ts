@@ -1554,6 +1554,82 @@ function appendMerchantBalanceNotification(
   return notification;
 }
 
+type MerchantRealtimeEventName =
+  | "snapshot"
+  | "subscription_updated"
+  | "notifications_updated";
+
+type MerchantRealtimePayload = {
+  subscription: SubscriptionRecord | null;
+  unread_notification_count: number;
+  emitted_at: string;
+};
+
+type MerchantRealtimeClient = {
+  id: string;
+  response: Response;
+};
+
+const merchantRealtimeClients = new Map<
+  string,
+  Map<string, MerchantRealtimeClient>
+>();
+
+function buildMerchantRealtimePayload(
+  db: AuthDb,
+  merchantId: string,
+): MerchantRealtimePayload {
+  const subscription = db.subscriptions.find(
+    (item) => item.merchant_id === merchantId,
+  );
+  if (subscription) recalculateSubscriptionTotals(subscription);
+
+  return {
+    subscription: subscription || null,
+    unread_notification_count: db.merchant_notifications.filter(
+      (item) => item.merchant_id === merchantId && !item.read_at,
+    ).length,
+    emitted_at: now(),
+  };
+}
+
+function writeMerchantRealtimeEvent(
+  response: Response,
+  eventName: MerchantRealtimeEventName,
+  payload: MerchantRealtimePayload,
+): boolean {
+  if (response.writableEnded) return false;
+
+  try {
+    response.write(
+      `event: ${eventName}\ndata: ${JSON.stringify(payload)}\n\n`,
+    );
+    const flush = (response as Response & { flush?: () => void }).flush;
+    if (typeof flush === "function") flush.call(response);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function emitMerchantRealtimeState(
+  db: AuthDb,
+  merchantId: string,
+  eventName: Exclude<MerchantRealtimeEventName, "snapshot">,
+): void {
+  const clients = merchantRealtimeClients.get(merchantId);
+  if (!clients || clients.size === 0) return;
+
+  const payload = buildMerchantRealtimePayload(db, merchantId);
+  for (const [clientId, client] of clients) {
+    if (!writeMerchantRealtimeEvent(client.response, eventName, payload)) {
+      clients.delete(clientId);
+    }
+  }
+
+  if (clients.size === 0) merchantRealtimeClients.delete(merchantId);
+}
+
 function isChannelPlatform(value: unknown): value is ChannelPlatform {
   return value === "instagram" || value === "messenger" || value === "telegram";
 }
@@ -2283,6 +2359,61 @@ router.get("/me", requireMerchantSession, (_req: Request, res: Response) => {
   return res.json({ ok: true, merchant: publicMerchant(merchant) });
 });
 
+router.get("/events", requireMerchantSession, (req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  const clientId = makeId("merchant-realtime");
+
+  res.status(200);
+  res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+  res.flushHeaders();
+
+  req.socket.setTimeout(0);
+  req.socket.setKeepAlive(true);
+
+  let clients = merchantRealtimeClients.get(merchantId);
+  if (!clients) {
+    clients = new Map<string, MerchantRealtimeClient>();
+    merchantRealtimeClients.set(merchantId, clients);
+  }
+  clients.set(clientId, { id: clientId, response: res });
+
+  writeMerchantRealtimeEvent(
+    res,
+    "snapshot",
+    buildMerchantRealtimePayload(ensureDb(), merchantId),
+  );
+
+  const heartbeat = setInterval(() => {
+    if (res.writableEnded) return;
+    try {
+      res.write(": heartbeat\n\n");
+      const flush = (res as Response & { flush?: () => void }).flush;
+      if (typeof flush === "function") flush.call(res);
+    } catch {
+      // The close handler removes disconnected clients.
+    }
+  }, 25_000);
+
+  let closed = false;
+  const cleanup = () => {
+    if (closed) return;
+    closed = true;
+    clearInterval(heartbeat);
+    const currentClients = merchantRealtimeClients.get(merchantId);
+    currentClients?.delete(clientId);
+    if (currentClients?.size === 0) {
+      merchantRealtimeClients.delete(merchantId);
+    }
+    if (!res.writableEnded) res.end();
+  };
+
+  req.on("close", cleanup);
+  res.on("close", cleanup);
+});
+
 router.get("/notifications", requireMerchantSession, (req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
   const db = ensureDb();
@@ -2322,6 +2453,7 @@ router.patch(
 
     notification.read_at = notification.read_at || now();
     writeDb(db);
+    emitMerchantRealtimeState(db, merchantId, "notifications_updated");
     return res.json({ ok: true, notification });
   },
 );
@@ -2388,6 +2520,7 @@ router.post("/subscription/emergency", requireMerchantSession, (_req: Request, r
   subscription.auto_reply_enabled = true;
   recalculateSubscriptionTotals(subscription);
   writeDb(db);
+  emitMerchantRealtimeState(db, merchantId, "subscription_updated");
 
   return res.json({ ok: true, subscription });
 });
@@ -3255,6 +3388,7 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
     },
   );
   writeDb(db);
+  emitMerchantRealtimeState(db, merchantId, "subscription_updated");
 
   return res.json({
     ok: true,
@@ -3345,6 +3479,7 @@ router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
 
   appendAdminLog(db, admin, merchant, actionType, details, { meta });
   writeDb(db);
+  emitMerchantRealtimeState(db, merchantId, "subscription_updated");
   return res.json({
     ok: true,
     subscription,

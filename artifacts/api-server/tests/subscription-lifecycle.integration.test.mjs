@@ -42,6 +42,65 @@ async function json(response) {
   return { response, body: await response.json().catch(() => null) };
 }
 
+function createSseEventReader(body) {
+  assert.ok(body);
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  async function readChunk() {
+    let timeout;
+    try {
+      return await Promise.race([
+        reader.read(),
+        new Promise((_, reject) => {
+          timeout = setTimeout(
+            () => reject(new Error("timed out waiting for SSE event")),
+            3_000,
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  return {
+    async next(expectedEvent) {
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        let boundary = buffer.indexOf("\n\n");
+        while (boundary >= 0) {
+          const block = buffer.slice(0, boundary);
+          buffer = buffer.slice(boundary + 2);
+          const lines = block.split("\n");
+          const eventName = lines
+            .find((line) => line.startsWith("event:"))
+            ?.slice("event:".length)
+            .trim();
+          const data = lines
+            .filter((line) => line.startsWith("data:"))
+            .map((line) => line.slice("data:".length).trimStart())
+            .join("\n");
+
+          if (eventName === expectedEvent && data) {
+            return JSON.parse(data);
+          }
+          boundary = buffer.indexOf("\n\n");
+        }
+
+        const { value, done } = await readChunk();
+        if (done) throw new Error("SSE connection closed before expected event");
+        buffer += decoder.decode(value, { stream: true });
+      }
+
+      throw new Error(`SSE event not received: ${expectedEvent}`);
+    },
+    cancel() {
+      return reader.cancel();
+    },
+  };
+}
+
 function baghdadParts(value) {
   const date = new Date(value);
   const shifted = new Date(date.getTime() + 3 * 60 * 60 * 1000);
@@ -186,6 +245,18 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   });
   assert.equal(secondEmergency.status, 409);
 
+  const realtimeController = new AbortController();
+  const realtimeResponse = await fetch(`${baseUrl}/api/auth/events`, {
+    headers: { Cookie: merchantACookie },
+    signal: realtimeController.signal,
+  });
+  assert.equal(realtimeResponse.status, 200);
+  assert.match(realtimeResponse.headers.get("content-type") || "", /text\/event-stream/);
+  const realtimeEvents = createSseEventReader(realtimeResponse.body);
+  const realtimeSnapshot = await realtimeEvents.next("snapshot");
+  assert.equal(realtimeSnapshot.subscription.emergency_debt, 400);
+  assert.equal(realtimeSnapshot.unread_notification_count, 0);
+
   const partialDebtPayment = await subscriptionAction("merchant-a", "add_replies", 100);
   assert.equal(partialDebtPayment.response.status, 200);
   assert.equal(partialDebtPayment.body.subscription.emergency_debt, 300);
@@ -194,6 +265,9 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(partialDebtPayment.body.notification.emergency_debt_paid, 100);
   assert.equal(partialDebtPayment.body.notification.addon_replies_added, 0);
   assert.equal(partialDebtPayment.body.notification.emergency_debt_remaining, 300);
+  const partialRealtime = await realtimeEvents.next("subscription_updated");
+  assert.equal(partialRealtime.subscription.emergency_debt, 300);
+  assert.equal(partialRealtime.unread_notification_count, 1);
 
   const partialNotifications = await json(await fetch(
     `${baseUrl}/api/auth/notifications?unread=1`,
@@ -213,6 +287,9 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(debtAndAddon.body.notification.addon_replies_added, 200);
   assert.equal(debtAndAddon.body.notification.emergency_debt_remaining, 0);
   assert.equal(debtAndAddon.body.notification.total_replies_available, 600);
+  const splitRealtime = await realtimeEvents.next("subscription_updated");
+  assert.equal(splitRealtime.subscription.addon_replies_remaining, 200);
+  assert.equal(splitRealtime.unread_notification_count, 2);
 
   const splitNotifications = await json(await fetch(
     `${baseUrl}/api/auth/notifications?unread=1`,
@@ -228,6 +305,10 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   ));
   assert.equal(markedRead.response.status, 200);
   assert.ok(markedRead.body.notification.read_at);
+  const readRealtime = await realtimeEvents.next("notifications_updated");
+  assert.equal(readRealtime.unread_notification_count, 1);
+  realtimeController.abort();
+  await realtimeEvents.cancel().catch(() => undefined);
 
   const unreadAfterMark = await json(await fetch(
     `${baseUrl}/api/auth/notifications?unread=1`,

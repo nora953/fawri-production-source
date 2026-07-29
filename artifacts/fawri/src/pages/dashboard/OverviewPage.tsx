@@ -20,6 +20,7 @@ import {
 import { Subscription } from '@/lib/types';
 import SubscriptionRetentionCard from '@/components/SubscriptionRetentionCard';
 import { subscriptionStateMessages } from '@/lib/subscriptionStateMessages';
+import { MERCHANT_REALTIME_EVENT, type MerchantRealtimeDetail } from '@/hooks/useMerchantRealtime';
 
 export default function OverviewPage() {
   const { t, dir, lang } = useI18n();
@@ -45,33 +46,48 @@ export default function OverviewPage() {
       prods: getProducts(merchant.id).length,
     });
 
-    fetch('/api/auth/subscription/current')
-      .then(async response => ({
-        response,
-        data: await response.json().catch(() => null),
-      }))
-      .then(({ response, data }) => {
-        if (!active) return;
+    const applySubscription = (subscription: Subscription | null) => {
+      if (!active) return;
+      if (subscription) saveSubscriptions([subscription]);
+      else saveSubscriptions([]);
+      setSub(subscription);
+      setLoadingSubscription(false);
+    };
 
-        if (response.ok && data?.ok && data.subscription) {
-          const serverSubscription = data.subscription as Subscription;
-          saveSubscriptions([serverSubscription]);
-          setSub(serverSubscription);
-        } else {
-          saveSubscriptions([]);
-          setSub(null);
-        }
-      })
-      .catch(error => {
+    const loadSubscription = async () => {
+      try {
+        const response = await fetch('/api/auth/subscription/current', {
+          cache: 'no-store',
+        });
+        const data = await response.json().catch(() => null);
+        if (!active) return;
+        applySubscription(
+          response.ok && data?.ok && data.subscription
+            ? (data.subscription as Subscription)
+            : null,
+        );
+      } catch (error) {
         console.error('Could not load overview subscription:', error);
-        if (active) setSub(null);
-      })
-      .finally(() => {
         if (active) setLoadingSubscription(false);
-      });
+      }
+    };
+
+    const handleFocus = () => void loadSubscription();
+    const handleRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
+      const subscription = detail?.subscription ?? null;
+      if (subscription && subscription.merchant_id !== merchant.id) return;
+      applySubscription(subscription);
+    };
+
+    void loadSubscription();
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
 
     return () => {
       active = false;
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     };
   }, [merchant?.id]);
 

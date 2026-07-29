@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import {
+  MERCHANT_REALTIME_EVENT,
+  type MerchantRealtimeDetail,
+} from '@/hooks/useMerchantRealtime';
+
 export const MERCHANT_NOTIFICATIONS_CHANGED_EVENT =
   'fawri:merchant-notifications-changed';
 
@@ -33,11 +38,19 @@ export function useUnreadMerchantNotificationCount(): number {
     void loadCount();
 
     const handleRefresh = () => void loadCount();
+    const handleRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
+      if (typeof detail?.unread_notification_count === 'number') {
+        setCount(Math.max(0, detail.unread_notification_count));
+      }
+    };
+
     window.addEventListener('focus', handleRefresh);
     window.addEventListener(
       MERCHANT_NOTIFICATIONS_CHANGED_EVENT,
       handleRefresh,
     );
+    window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
 
     return () => {
       window.removeEventListener('focus', handleRefresh);
@@ -45,6 +58,7 @@ export function useUnreadMerchantNotificationCount(): number {
         MERCHANT_NOTIFICATIONS_CHANGED_EVENT,
         handleRefresh,
       );
+      window.removeEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     };
   }, [loadCount]);
 

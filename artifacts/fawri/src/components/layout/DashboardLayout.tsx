@@ -9,6 +9,7 @@ import {
 } from '@/lib/store';
 import { useI18n } from '@/lib/i18n';
 import type { Merchant } from '@/lib/types';
+import { useMerchantRealtimeConnection } from '@/hooks/useMerchantRealtime';
 
 const PRODUCT_READ_ONLY_STATUSES = new Set([
   'warning_2',
@@ -18,6 +19,7 @@ const PRODUCT_READ_ONLY_STATUSES = new Set([
 ]);
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  useMerchantRealtimeConnection();
   const { t, dir } = useI18n();
   const [location, setLocation] = useLocation();
   const [merchant, setMerchant] = useState<Merchant | undefined>(
