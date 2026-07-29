@@ -1008,6 +1008,23 @@ function requireAnyAdminPermission(
 }
 
 
+function requireSupportAssistant(
+  req: Request,
+  res: Response,
+): Merchant | null {
+  const admin = requireAdminPermission(req, res, "manage_support");
+  if (!admin) return null;
+
+  if (!isAssistantAdmin(admin)) {
+    sendError(res, 403, "owner admin has monitor-only support access", {
+      code: "SUPPORT_OWNER_MONITOR_ONLY",
+    });
+    return null;
+  }
+
+  return admin;
+}
+
 function generateOtpCode(): string {
   return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
@@ -2710,6 +2727,178 @@ router.post("/subscription/emergency", requireMerchantSession, (_req: Request, r
 
   return res.json({ ok: true, subscription });
 });
+
+
+router.get("/admin/support/tickets", (req: Request, res: Response) => {
+  const admin = requireAdminPermission(req, res, "manage_support");
+  if (!admin) return;
+
+  const db = ensureDb();
+  const tickets = [...db.support_tickets].sort(
+    (left, right) =>
+      new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
+  );
+  const activeCount = tickets.filter(
+    (ticket) => ticket.status === "open" || ticket.status === "in_progress",
+  ).length;
+
+  res.setHeader("Cache-Control", "no-store");
+  return res.json({
+    ok: true,
+    tickets,
+    active_count: activeCount,
+    viewer_role: admin.admin_role,
+  });
+});
+
+router.post(
+  "/admin/support/tickets/:id/claim",
+  (req: Request, res: Response) => {
+    const admin = requireSupportAssistant(req, res);
+    if (!admin) return;
+
+    const ticketId = String(req.params.id || "").trim();
+    const db = ensureDb();
+    const ticket = db.support_tickets.find((item) => item.id === ticketId);
+    if (!ticket) return sendError(res, 404, "support ticket not found");
+    if (ticket.status === "resolved" || ticket.status === "closed") {
+      return sendError(res, 409, "support ticket is closed");
+    }
+    if (ticket.assigned_admin_id && ticket.assigned_admin_id !== admin.id) {
+      return sendError(res, 409, "support ticket is assigned to another admin", {
+        code: "SUPPORT_TICKET_ALREADY_ASSIGNED",
+      });
+    }
+
+    ticket.assigned_admin_id = admin.id;
+    ticket.assigned_admin_name = admin.owner_name;
+    ticket.status = "in_progress";
+    ticket.updated_at = now();
+
+    appendAdminLog(
+      db,
+      admin,
+      { id: ticket.merchant_id, store_name: ticket.merchant_name },
+      "support_ticket_claimed",
+      ticket.subject,
+      { meta: { ticket_id: ticket.id, subject: ticket.subject } },
+    );
+    writeDb(db);
+    emitMerchantRealtimeState(db, ticket.merchant_id, "support_updated");
+    return res.json({ ok: true, ticket });
+  },
+);
+
+router.post(
+  "/admin/support/tickets/:id/messages",
+  (req: Request, res: Response) => {
+    const admin = requireSupportAssistant(req, res);
+    if (!admin) return;
+
+    const ticketId = String(req.params.id || "").trim();
+    const body = String(req.body?.message || "").trim();
+    const db = ensureDb();
+    const ticket = db.support_tickets.find((item) => item.id === ticketId);
+
+    if (!ticket) return sendError(res, 404, "support ticket not found");
+    if (ticket.status === "resolved" || ticket.status === "closed") {
+      return sendError(res, 409, "support ticket is closed");
+    }
+    if (!ticket.assigned_admin_id) {
+      return sendError(res, 409, "support ticket must be claimed first", {
+        code: "SUPPORT_TICKET_NOT_CLAIMED",
+      });
+    }
+    if (ticket.assigned_admin_id !== admin.id) {
+      return sendError(res, 403, "support ticket is assigned to another admin", {
+        code: "SUPPORT_TICKET_ASSIGNED_TO_ANOTHER_ADMIN",
+      });
+    }
+    if (body.length < 1 || body.length > 4000) {
+      return sendError(res, 400, "invalid support message");
+    }
+
+    const message: SupportTicketMessage = {
+      id: makeId("support-message"),
+      sender_type: "admin",
+      sender_id: admin.id,
+      sender_name: admin.owner_name,
+      body,
+      created_at: now(),
+    };
+    ticket.messages.push(message);
+    ticket.status = "in_progress";
+    ticket.updated_at = message.created_at;
+
+    appendAdminLog(
+      db,
+      admin,
+      { id: ticket.merchant_id, store_name: ticket.merchant_name },
+      "support_ticket_replied",
+      ticket.subject,
+      { meta: { ticket_id: ticket.id, subject: ticket.subject } },
+    );
+    writeDb(db);
+    emitMerchantRealtimeState(db, ticket.merchant_id, "support_updated");
+    return res.status(201).json({ ok: true, ticket, message });
+  },
+);
+
+router.patch(
+  "/admin/support/tickets/:id/status",
+  (req: Request, res: Response) => {
+    const admin = requireSupportAssistant(req, res);
+    if (!admin) return;
+
+    const ticketId = String(req.params.id || "").trim();
+    const status = String(req.body?.status || "").trim() as SupportTicketStatus;
+    const db = ensureDb();
+    const ticket = db.support_tickets.find((item) => item.id === ticketId);
+
+    if (!ticket) return sendError(res, 404, "support ticket not found");
+    if (status !== "in_progress" && status !== "resolved") {
+      return sendError(res, 400, "invalid support ticket status");
+    }
+    if (!ticket.assigned_admin_id) {
+      return sendError(res, 409, "support ticket must be claimed first", {
+        code: "SUPPORT_TICKET_NOT_CLAIMED",
+      });
+    }
+    if (ticket.assigned_admin_id !== admin.id) {
+      return sendError(res, 403, "support ticket is assigned to another admin", {
+        code: "SUPPORT_TICKET_ASSIGNED_TO_ANOTHER_ADMIN",
+      });
+    }
+    if (ticket.status === "closed") {
+      return sendError(res, 409, "support ticket is closed");
+    }
+
+    ticket.status = status;
+    ticket.updated_at = now();
+    if (status === "resolved") ticket.closed_at = ticket.updated_at;
+    else delete ticket.closed_at;
+
+    appendAdminLog(
+      db,
+      admin,
+      { id: ticket.merchant_id, store_name: ticket.merchant_name },
+      status === "resolved"
+        ? "support_ticket_resolved"
+        : "support_ticket_in_progress",
+      ticket.subject,
+      {
+        meta: {
+          ticket_id: ticket.id,
+          subject: ticket.subject,
+          status,
+        },
+      },
+    );
+    writeDb(db);
+    emitMerchantRealtimeState(db, ticket.merchant_id, "support_updated");
+    return res.json({ ok: true, ticket });
+  },
+);
 
 router.get("/admin/me", (req: Request, res: Response) => {
   const admin = requireAdminSession(req, res);

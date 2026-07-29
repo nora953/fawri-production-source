@@ -60,6 +60,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import DeleteMerchantDialog from "@/components/DeleteMerchantDialog";
 import AdministratorsTab from "@/components/admin/AdministratorsTab";
+import AdminSupportTab, { getAdminSupportText } from "@/components/admin/AdminSupportTab";
 import {
   LogOut,
   Search,
@@ -1354,6 +1355,7 @@ function DetailsModal({
 function LogsTab({ logs }: { logs: AdminLog[] }) {
   const { lang } = useI18n();
   const adminText = getAdminText(lang);
+  const supportText = getAdminSupportText(lang);
 
   const [search, setSearch] = useState("");
   const [filterAction, setFilterAction] = useState("all");
@@ -1386,6 +1388,10 @@ function LogsTab({ logs }: { logs: AdminLog[] }) {
     deletion_requested: adminText.logsActionDeletionRequested,
     deletion_request_rejected:
       adminText.logsActionDeletionRequestRejected,
+    support_ticket_claimed: supportText.logClaimed,
+    support_ticket_replied: supportText.logReplied,
+    support_ticket_resolved: supportText.logResolved,
+    support_ticket_in_progress: supportText.logInProgress,
   };
 
   const planNames: Record<
@@ -2006,6 +2012,7 @@ export default function AdminPage() {
     currentAdmin,
     "inspect_merchant_sessions",
   );
+  const canManageSupport = hasAdminPermission(currentAdmin, "manage_support");
   const canViewMerchantData =
     canViewMerchants ||
     canManageMerchants ||
@@ -2016,6 +2023,8 @@ export default function AdminPage() {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [logs, setLogs] = useState<AdminLog[]>([]);
+  const [supportActiveCount, setSupportActiveCount] = useState(0);
+  const latestSupportTicketIdRef = useRef<string | null>(null);
   const [tab, setTab] = useState("pending");
   const [search, setSearch] = useState("");
   const [filterPlan, setFilterPlan] = useState("all");
@@ -2177,6 +2186,65 @@ export default function AdminPage() {
     },
     [adminText.permissionDenied, refreshCurrentAdminFromApi, setLocation],
   );
+
+  const refreshSupportSummary = useCallback(async () => {
+    if (!canManageSupport) {
+      setSupportActiveCount(0);
+      latestSupportTicketIdRef.current = null;
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/auth/admin/support/tickets", {
+        headers: getAdminAuthHeaders(),
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => null);
+      if (response.status === 401) {
+        clearSession();
+        setLocation("/login");
+        return;
+      }
+      if (!response.ok || !data?.ok || !Array.isArray(data.tickets)) return;
+
+      const activeCount = Number.isInteger(data.active_count)
+        ? data.active_count
+        : data.tickets.filter(
+            (ticket: { status?: string }) =>
+              ticket.status === "open" || ticket.status === "in_progress",
+          ).length;
+      const latestTicketId = data.tickets[0]?.id
+        ? String(data.tickets[0].id)
+        : null;
+
+      if (
+        latestSupportTicketIdRef.current &&
+        latestTicketId &&
+        latestTicketId !== latestSupportTicketIdRef.current
+      ) {
+        toast.info(getAdminSupportText(lang).newTicketNotification);
+      }
+
+      latestSupportTicketIdRef.current = latestTicketId;
+      setSupportActiveCount(activeCount);
+    } catch (error) {
+      console.error("Admin support summary refresh failed:", error);
+    }
+  }, [canManageSupport, lang, setLocation]);
+
+  useEffect(() => {
+    void refreshSupportSummary();
+    const intervalId = window.setInterval(
+      () => void refreshSupportSummary(),
+      15_000,
+    );
+    const handleFocus = () => void refreshSupportSummary();
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [refreshSupportSummary]);
 
   const refreshMerchantsFromApi = useCallback(async () => {
     if (!canViewMerchantData) {
@@ -3070,15 +3138,18 @@ export default function AdminPage() {
       (merchantTabs.has(tab) && canViewMerchantData) ||
       (tab === "administrators" && canManageAdmins) ||
       (tab === "deletion_requests" && isOwnerAdmin) ||
+      (tab === "support" && canManageSupport) ||
       (tab === "logs" && canViewLogs);
 
     if (currentTabAllowed) return;
 
     if (canViewMerchantData) setTab("pending");
+    else if (canManageSupport) setTab("support");
     else if (canViewLogs) setTab("logs");
     else if (canManageAdmins) setTab("administrators");
   }, [
     canManageAdmins,
+    canManageSupport,
     canViewLogs,
     canViewMerchantData,
     isOwnerAdmin,
@@ -3114,6 +3185,15 @@ export default function AdminPage() {
       filter: "rejected",
     },
     ] : []),
+    ...(canManageSupport
+      ? [
+          {
+            id: "support",
+            label: getAdminSupportText(lang).tab,
+            filter: "SUPPORT",
+          },
+        ]
+      : []),
     ...(canManageAdmins
       ? [
           {
@@ -3143,7 +3223,7 @@ export default function AdminPage() {
   const filteredMerchants =
     tab === "deletion_requests"
       ? merchants.filter((merchant) => Boolean(getPendingDeletionRequest(merchant.id)))
-      : tab !== "logs" && tab !== "administrators"
+      : tab !== "logs" && tab !== "administrators" && tab !== "support"
         ? getFiltered(currentTab?.filter)
         : [];
   const uniqueActivities = [
@@ -3152,6 +3232,7 @@ export default function AdminPage() {
 
   const tabCount = (t: (typeof TABS)[0]) => {
     if (t.filter === "LOGS") return logs.length;
+    if (t.filter === "SUPPORT") return supportActiveCount;
     if (t.filter === "DELETION_REQUESTS") {
       return deletionRequests.filter((request) => request.status === "pending").length;
     }
@@ -3284,6 +3365,12 @@ export default function AdminPage() {
               </p>
             </CardContent>
           </Card>
+        ) : tab === "support" && canManageSupport && currentAdmin ? (
+          <AdminSupportTab
+            adminId={currentAdmin.id}
+            isOwner={isOwnerAdmin}
+            onActiveCountChange={setSupportActiveCount}
+          />
         ) : tab === "logs" ? (
           <LogsTab logs={logs} />
         ) : tab === "administrators" && canManageAdmins ? (
