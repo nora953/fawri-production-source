@@ -80,7 +80,7 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
       { ...baseMerchant, id: "merchant-b", phone: "07444444444", password: "Merchant2@" },
       { ...baseMerchant, id: "merchant-c", phone: "07555555555", password: "Merchant3@" },
     ],
-    subscriptions: [], otps: [], admin_logs: [], deletion_requests: [], channel_overrides: {}, admin_notes: {},
+    subscriptions: [], otps: [], admin_logs: [], merchant_notifications: [], deletion_requests: [], channel_overrides: {}, admin_notes: {},
   }));
 
   const port = await reservePort();
@@ -190,12 +190,50 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(partialDebtPayment.response.status, 200);
   assert.equal(partialDebtPayment.body.subscription.emergency_debt, 300);
   assert.equal(partialDebtPayment.body.subscription.addon_replies_remaining, 0);
+  assert.equal(partialDebtPayment.body.notification.purchased_replies, 100);
+  assert.equal(partialDebtPayment.body.notification.emergency_debt_paid, 100);
+  assert.equal(partialDebtPayment.body.notification.addon_replies_added, 0);
+  assert.equal(partialDebtPayment.body.notification.emergency_debt_remaining, 300);
+
+  const partialNotifications = await json(await fetch(
+    `${baseUrl}/api/auth/notifications?unread=1`,
+    { headers: { Cookie: merchantACookie } },
+  ));
+  assert.equal(partialNotifications.response.status, 200);
+  assert.equal(partialNotifications.body.notifications.length, 1);
+  assert.equal(partialNotifications.body.notifications[0].merchant_id, "merchant-a");
 
   const debtAndAddon = await subscriptionAction("merchant-a", "add_replies", 500);
   assert.equal(debtAndAddon.response.status, 200);
   assert.equal(debtAndAddon.body.subscription.emergency_debt, 0);
   assert.equal(debtAndAddon.body.subscription.addon_replies_remaining, 200);
   assert.equal(debtAndAddon.body.subscription.addon_reply_batches.length, 1);
+  assert.equal(debtAndAddon.body.notification.purchased_replies, 500);
+  assert.equal(debtAndAddon.body.notification.emergency_debt_paid, 300);
+  assert.equal(debtAndAddon.body.notification.addon_replies_added, 200);
+  assert.equal(debtAndAddon.body.notification.emergency_debt_remaining, 0);
+  assert.equal(debtAndAddon.body.notification.total_replies_available, 600);
+
+  const splitNotifications = await json(await fetch(
+    `${baseUrl}/api/auth/notifications?unread=1`,
+    { headers: { Cookie: merchantACookie } },
+  ));
+  assert.equal(splitNotifications.response.status, 200);
+  assert.equal(splitNotifications.body.notifications.length, 2);
+  assert.equal(splitNotifications.body.notifications[0].id, debtAndAddon.body.notification.id);
+
+  const markedRead = await json(await fetch(
+    `${baseUrl}/api/auth/notifications/${debtAndAddon.body.notification.id}/read`,
+    { method: "PATCH", headers: { Cookie: merchantACookie } },
+  ));
+  assert.equal(markedRead.response.status, 200);
+  assert.ok(markedRead.body.notification.read_at);
+
+  const unreadAfterMark = await json(await fetch(
+    `${baseUrl}/api/auth/notifications?unread=1`,
+    { headers: { Cookie: merchantACookie } },
+  ));
+  assert.equal(unreadAfterMark.body.notifications.length, 1);
   const purchase = baghdadParts(debtAndAddon.body.subscription.addon_reply_batches[0].purchased_at);
   const addonExpiry = baghdadParts(debtAndAddon.body.subscription.addon_reply_batches[0].expires_at);
   assert.equal((addonExpiry.month - purchase.month + 12) % 12, 3);

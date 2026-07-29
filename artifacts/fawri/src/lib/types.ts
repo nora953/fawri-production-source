@@ -166,6 +166,22 @@ export interface Subscription {
   pending_next_cycle_deduction: number;
 }
 
+export interface MerchantBalanceNotification {
+  id: string;
+  merchant_id: string;
+  type: 'subscription_balance_purchase';
+  purchased_replies: number;
+  emergency_debt_paid: number;
+  addon_replies_added: number;
+  emergency_debt_remaining: number;
+  base_replies_remaining: number;
+  emergency_replies_remaining: number;
+  addon_replies_remaining: number;
+  total_replies_available: number;
+  created_at: string;
+  read_at?: string;
+}
+
 export type ProductStatus =
   | 'available'
   | 'low_stock'

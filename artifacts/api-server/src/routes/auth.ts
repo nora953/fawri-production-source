@@ -387,6 +387,22 @@ function purchaseAdditionalReplies(
   return { debtPaid, addonAdded };
 }
 
+type MerchantBalanceNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "subscription_balance_purchase";
+  purchased_replies: number;
+  emergency_debt_paid: number;
+  addon_replies_added: number;
+  emergency_debt_remaining: number;
+  base_replies_remaining: number;
+  emergency_replies_remaining: number;
+  addon_replies_remaining: number;
+  total_replies_available: number;
+  created_at: string;
+  read_at?: string;
+};
+
 type OtpRecord = {
   phone: string;
   code: string;
@@ -401,6 +417,7 @@ type AuthDb = {
   subscriptions: SubscriptionRecord[];
   otps: OtpRecord[];
   admin_logs: AdminLogRecord[];
+  merchant_notifications: MerchantBalanceNotificationRecord[];
   deletion_requests: MerchantDeletionRequest[];
   channel_overrides: Record<string, Partial<Record<ChannelPlatform, ChannelStatus>>>;
   admin_notes: Record<string, string>;
@@ -1381,6 +1398,7 @@ function buildInitialDb(): AuthDb {
     subscriptions: [],
     otps: [],
     admin_logs: [],
+    merchant_notifications: [],
     deletion_requests: [],
     channel_overrides: {},
     admin_notes: {},
@@ -1423,6 +1441,19 @@ function ensureDb(): AuthDb {
       subscriptions: normalizeSubscriptions(parsed.subscriptions),
       otps: Array.isArray(parsed.otps) ? removeExpiredOtps(parsed.otps) : [],
       admin_logs: Array.isArray(parsed.admin_logs) ? parsed.admin_logs : [],
+      merchant_notifications: Array.isArray(parsed.merchant_notifications)
+        ? parsed.merchant_notifications.filter(
+            (item): item is MerchantBalanceNotificationRecord =>
+              Boolean(
+                item &&
+                typeof item === "object" &&
+                !Array.isArray(item) &&
+                typeof item.id === "string" &&
+                typeof item.merchant_id === "string" &&
+                item.type === "subscription_balance_purchase",
+              ),
+          )
+        : [],
       deletion_requests: Array.isArray(parsed.deletion_requests)
         ? parsed.deletion_requests
         : [],
@@ -1484,6 +1515,43 @@ function appendAdminLog(
 
   db.admin_logs.unshift(log);
   return log;
+}
+
+function appendMerchantBalanceNotification(
+  db: AuthDb,
+  merchantId: string,
+  purchasedReplies: number,
+  purchase: { debtPaid: number; addonAdded: number },
+  subscription: SubscriptionRecord,
+): MerchantBalanceNotificationRecord {
+  const notification: MerchantBalanceNotificationRecord = {
+    id: makeId("merchant-notification"),
+    merchant_id: merchantId,
+    type: "subscription_balance_purchase",
+    purchased_replies: purchasedReplies,
+    emergency_debt_paid: purchase.debtPaid,
+    addon_replies_added: purchase.addonAdded,
+    emergency_debt_remaining: subscription.emergency_debt,
+    base_replies_remaining: subscription.base_replies_remaining,
+    emergency_replies_remaining: subscription.emergency_credit_remaining,
+    addon_replies_remaining: subscription.addon_replies_remaining,
+    total_replies_available: subscription.replies_remaining,
+    created_at: now(),
+  };
+
+  db.merchant_notifications.unshift(notification);
+  const merchantNotificationIds = db.merchant_notifications
+    .filter((item) => item.merchant_id === merchantId)
+    .slice(100)
+    .map((item) => item.id);
+  if (merchantNotificationIds.length > 0) {
+    const expiredIds = new Set(merchantNotificationIds);
+    db.merchant_notifications = db.merchant_notifications.filter(
+      (item) => !expiredIds.has(item.id),
+    );
+  }
+
+  return notification;
 }
 
 function isChannelPlatform(value: unknown): value is ChannelPlatform {
@@ -2214,6 +2282,49 @@ router.get("/me", requireMerchantSession, (_req: Request, res: Response) => {
 
   return res.json({ ok: true, merchant: publicMerchant(merchant) });
 });
+
+router.get("/notifications", requireMerchantSession, (req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  const db = ensureDb();
+  const unreadOnly = String(req.query.unread || "") === "1";
+  const requestedLimit = Number(req.query.limit);
+  const limit = Number.isInteger(requestedLimit)
+    ? Math.max(1, Math.min(50, requestedLimit))
+    : 20;
+
+  const notifications = db.merchant_notifications
+    .filter(
+      (item) =>
+        item.merchant_id === merchantId &&
+        (!unreadOnly || !item.read_at),
+    )
+    .sort(
+      (left, right) =>
+        new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
+    )
+    .slice(0, limit);
+
+  res.setHeader("Cache-Control", "no-store");
+  return res.json({ ok: true, notifications });
+});
+
+router.patch(
+  "/notifications/:id/read",
+  requireMerchantSession,
+  (req: Request, res: Response) => {
+    const merchantId = getMerchantIdFromSession(res);
+    const notificationId = String(req.params.id || "").trim();
+    const db = ensureDb();
+    const notification = db.merchant_notifications.find(
+      (item) => item.id === notificationId && item.merchant_id === merchantId,
+    );
+    if (!notification) return sendError(res, 404, "notification not found");
+
+    notification.read_at = notification.read_at || now();
+    writeDb(db);
+    return res.json({ ok: true, notification });
+  },
+);
 
 router.get("/subscription/current", requireMerchantSession, (_req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
@@ -3173,6 +3284,7 @@ router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
   let actionType = "";
   let details = "";
   let meta: Record<string, string | number> = {};
+  let merchantNotification: MerchantBalanceNotificationRecord | undefined;
 
   if (action === "add_replies") {
     if (!Number.isInteger(amount) || amount <= 0) {
@@ -3190,6 +3302,13 @@ router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
       emergency_debt_paid: purchase.debtPaid,
       addon_replies_added: purchase.addonAdded,
     };
+    merchantNotification = appendMerchantBalanceNotification(
+      db,
+      merchant.id,
+      amount,
+      purchase,
+      subscription,
+    );
   } else if (action === "deduct_replies") {
     if (!Number.isInteger(amount) || amount <= 0) {
       return sendError(res, 400, "positive integer amount is required");
@@ -3226,7 +3345,11 @@ router.patch("/merchants/:id/subscription", (req: Request, res: Response) => {
 
   appendAdminLog(db, admin, merchant, actionType, details, { meta });
   writeDb(db);
-  return res.json({ ok: true, subscription });
+  return res.json({
+    ok: true,
+    subscription,
+    ...(merchantNotification ? { notification: merchantNotification } : {}),
+  });
 });
 
 router.patch("/merchants/:id/status", (req: Request, res: Response) => {
