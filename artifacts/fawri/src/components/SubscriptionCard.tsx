@@ -73,6 +73,15 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
   const startDate = new Date(subscription.start_date).toLocaleDateString(locale);
   const expiryDate = new Date(subscription.expires_at).toLocaleDateString(locale);
 
+  const usageNotice =
+    isActive && usagePercent >= 100
+      ? { text: t.usage_100_warning, className: 'border-red-500 text-red-600' }
+      : isActive && usagePercent >= 90
+        ? { text: t.usage_90_warning, className: 'border-orange-500 text-orange-600' }
+        : isActive && usagePercent >= 80
+          ? { text: t.usage_80_warning, className: 'border-yellow-500 text-yellow-700' }
+          : null;
+
   return (
     <Card className="relative w-full overflow-hidden">
       <CardHeader className="space-y-2 pb-3 pt-4">
@@ -120,37 +129,20 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
           </Alert>
         )}
 
-        {isActive && usagePercent >= 100 && (
-          <Alert variant="destructive" className="py-2">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription className="font-medium">
-              {t.usage_100_warning}
-            </AlertDescription>
-          </Alert>
+        {usageNotice && (
+          <div
+            className={`flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2 ${usageNotice.className}`}
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <p className="text-sm font-semibold leading-5">{usageNotice.text}</p>
+          </div>
         )}
-        {isActive && usagePercent >= 90 && usagePercent < 100 && (
-          <Alert className="border-orange-500 py-2 text-orange-600">
-            <AlertTriangle className="h-4 w-4 stroke-current" />
-            <AlertDescription className="font-medium">
-              {t.usage_90_warning}
-            </AlertDescription>
-          </Alert>
-        )}
-        {isActive && usagePercent >= 80 && usagePercent < 90 && (
-          <Alert className="border-yellow-500 py-2 text-yellow-600">
-            <AlertTriangle className="h-4 w-4 stroke-current" />
-            <AlertDescription className="font-medium">
-              {t.usage_80_warning}
-            </AlertDescription>
-          </Alert>
-        )}
+
         {isActive && daysRemaining <= 3 && (
-          <Alert className="border-orange-500 py-2 text-orange-600">
-            <Clock className="h-4 w-4 stroke-current" />
-            <AlertDescription className="font-medium">
-              {t.expiry_warning}
-            </AlertDescription>
-          </Alert>
+          <div className="flex min-h-11 items-center gap-3 rounded-lg border border-orange-500 px-3 py-2 text-orange-600">
+            <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <p className="text-sm font-semibold leading-5">{t.expiry_warning}</p>
+          </div>
         )}
 
         <div className="space-y-2 rounded-xl border border-border/70 bg-muted/15 p-3">
@@ -179,10 +171,12 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
           ].map(([label, value]) => (
             <div
               key={String(label)}
-              className="flex items-center justify-between gap-3 rounded-xl border border-border/70 bg-muted/20 px-3 py-2.5 sm:block"
+              className="flex min-h-[86px] flex-col items-center justify-center rounded-xl border border-border/70 bg-card px-3 py-3 text-center shadow-sm"
             >
-              <p className="text-[11px] leading-4 text-muted-foreground">{label}</p>
-              <p className="text-lg font-bold tabular-nums sm:mt-1" dir="ltr">
+              <p className="flex min-h-8 items-center justify-center text-xs font-medium leading-4 text-muted-foreground">
+                {label}
+              </p>
+              <p className="mt-1 text-xl font-extrabold tabular-nums text-foreground" dir="ltr">
                 {Number(value).toLocaleString(locale)}
               </p>
             </div>
