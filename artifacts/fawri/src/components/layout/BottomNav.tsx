@@ -12,6 +12,7 @@ import {
   Radio,
   CreditCard,
   LogOut,
+  Bell,
 } from "lucide-react";
 import {
   Popover,
@@ -20,12 +21,14 @@ import {
 } from "@/components/ui/popover";
 import { useI18n } from "@/lib/i18n";
 import { clearSession } from "@/lib/store";
+import { useUnreadMerchantNotificationCount } from "@/hooks/useMerchantNotifications";
 
 type NavItem = {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   exact?: boolean;
+  badge?: number;
 };
 
 function isActiveRoute(
@@ -44,11 +47,23 @@ function isActiveRoute(
   return location === href || location.startsWith(`${href}/`);
 }
 
+function NavBadge({ count }: { count?: number }) {
+  if (!count || count <= 0) return null;
+
+  return (
+    <span className="absolute -end-2 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[8px] font-black leading-none text-white shadow-sm ring-2 ring-background">
+      {count >= 50 ? "50+" : count}
+    </span>
+  );
+}
+
 export function BottomNav() {
   const { t, dir } = useI18n();
   const [location, setLocation] = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
-const mainItems: NavItem[] = [
+  const unreadNotifications = useUnreadMerchantNotificationCount();
+
+  const mainItems: NavItem[] = [
     {
       href: "/dashboard",
       label: t.overview,
@@ -73,6 +88,12 @@ const mainItems: NavItem[] = [
   ];
 
   const moreItems: NavItem[] = [
+    {
+      href: "/dashboard/notifications",
+      label: t.notifications_title,
+      icon: Bell,
+      badge: unreadNotifications,
+    },
     {
       href: "/dashboard/saved-answers",
       label: t.saved_answers,
@@ -158,7 +179,10 @@ const mainItems: NavItem[] = [
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <MoreHorizontal className="h-5 w-5" />
+            <span className="relative inline-flex">
+              <MoreHorizontal className="h-5 w-5" />
+              <NavBadge count={unreadNotifications} />
+            </span>
             <span className="text-[10px]">{currentMoreLabel}</span>
           </button>
         </PopoverTrigger>
@@ -185,7 +209,10 @@ const mainItems: NavItem[] = [
                       : "hover:bg-accent"
                   }`}
                 >
-                  <item.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="relative inline-flex shrink-0">
+                    <item.icon className="h-4 w-4 text-muted-foreground" />
+                    <NavBadge count={item.badge} />
+                  </span>
                   <span className="truncate">{item.label}</span>
                 </Link>
               );

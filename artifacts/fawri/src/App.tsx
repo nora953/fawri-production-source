@@ -23,6 +23,9 @@ const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Dashboard Pages - each page loads only when opened
 const OverviewPage = lazy(() => import("@/pages/dashboard/OverviewPage"));
+const NotificationsPage = lazy(
+  () => import("@/pages/dashboard/NotificationsPage"),
+);
 const ConversationsPage = lazy(
   () => import("@/pages/dashboard/ConversationsPage"),
 );
@@ -85,6 +88,10 @@ function AppRouter() {
         <Route path="/admin">{() => <AdminPage />}</Route>
 
         {/* Dashboard */}
+        <Route path="/dashboard/notifications">
+          {() => <DashboardRoute Page={NotificationsPage} />}
+        </Route>
+
         <Route path="/dashboard/conversations">
           {() => <DashboardRoute Page={ConversationsPage} />}
         </Route>
@@ -149,13 +156,13 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-          <TooltipProvider>
-            <WouterRouter base={routerBase}>
-              <AppRouter />
-            </WouterRouter>
+        <TooltipProvider>
+          <WouterRouter base={routerBase}>
+            <AppRouter />
+          </WouterRouter>
 
-            <Toaster position="top-center" richColors offset="12px" />
-          </TooltipProvider>
+          <Toaster position="top-center" richColors offset="12px" />
+        </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

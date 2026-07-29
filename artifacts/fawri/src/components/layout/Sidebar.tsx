@@ -11,9 +11,11 @@ import {
   CreditCard,
   Settings,
   LogOut,
+  Bell,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { clearSession } from "@/lib/store";
+import { useUnreadMerchantNotificationCount } from "@/hooks/useMerchantNotifications";
 
 type SidebarItem = {
   href: string;
@@ -38,9 +40,24 @@ function isActiveRoute(
   return location === href || location.startsWith(`${href}/`);
 }
 
+function NotificationBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+
+  return (
+    <span className="absolute -end-1.5 -top-1.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] font-black leading-none text-white shadow-sm ring-2 ring-sidebar">
+      {count >= 50 ? "50+" : count}
+    </span>
+  );
+}
+
 export function Sidebar() {
   const { t, isRTL } = useI18n();
   const [location, setLocation] = useLocation();
+  const unreadNotifications = useUnreadMerchantNotificationCount();
+  const notificationsActive = isActiveRoute(
+    location,
+    "/dashboard/notifications",
+  );
 
   const navItems: SidebarItem[] = [
     {
@@ -85,12 +102,27 @@ export function Sidebar() {
       className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex"
       dir={isRTL ? "rtl" : "ltr"}
     >
-      <div className="flex h-16 shrink-0 items-center border-b border-sidebar-border px-6">
+      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-sidebar-border px-6">
         <Link
           href="/dashboard"
           className="text-2xl font-bold tracking-tight text-sidebar-primary"
         >
           {t.sidebar_brand}
+        </Link>
+
+        <Link
+          href="/dashboard/notifications"
+          aria-label={t.notifications_title}
+          title={t.notifications_title}
+          aria-current={notificationsActive ? "page" : undefined}
+          className={`relative flex h-9 w-9 items-center justify-center rounded-full border transition-colors ${
+            notificationsActive
+              ? "border-sidebar-primary/50 bg-sidebar-accent text-sidebar-primary"
+              : "border-sidebar-border text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-primary"
+          }`}
+        >
+          <Bell className="h-5 w-5" />
+          <NotificationBadge count={unreadNotifications} />
         </Link>
       </div>
 
