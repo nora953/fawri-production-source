@@ -57,88 +57,95 @@ export function EmergencyCredit({
   };
 
   return (
-    <div className="mt-6 w-full rounded-xl border border-orange-200 bg-orange-50/50 p-5 text-start dark:border-orange-900/50 dark:bg-orange-950/20">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1 text-start">
-          <div className="mb-1 flex items-center gap-2 font-bold text-orange-600 dark:text-orange-500">
-            <ShieldAlert className="h-4 w-4" />
-            {t.emergency_credit}
+    <div className="rounded-xl border border-orange-200 bg-orange-50/50 p-3 text-start dark:border-orange-900/50 dark:bg-orange-950/20">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 font-bold text-orange-600 dark:text-orange-500">
+            <ShieldAlert className="h-4 w-4 shrink-0" />
+            <span>{t.emergency_credit}</span>
+            {subscription.emergency_credit_activated && (
+              <Badge
+                variant="outline"
+                className="border-orange-200 bg-orange-100 text-orange-700"
+              >
+                {t.subscription_emergency_activated}
+              </Badge>
+            )}
           </div>
 
-          <p className="text-sm leading-6 text-muted-foreground">
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
             {t.emergency_subtitle}
           </p>
+        </div>
 
-          <div className="mt-3 rounded-lg border border-orange-200/70 bg-background/70 p-3">
-            <p className="text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          <div className="rounded-lg border border-orange-200/70 bg-background/70 px-3 py-2">
+            <p className="text-[10px] text-muted-foreground">
               {t.subscription_emergency_balance}
             </p>
-            <p className="mt-1 text-2xl font-bold tabular-nums" dir="ltr">
+            <p className="text-lg font-bold tabular-nums" dir="ltr">
               {subscription.emergency_credit_remaining.toLocaleString(locale)}
             </p>
           </div>
-        </div>
 
-        {subscription.emergency_credit_activated ? (
-          <Badge
-            variant="outline"
-            className="w-full shrink-0 justify-center whitespace-normal border-orange-200 bg-orange-100 text-center text-orange-700 sm:w-auto"
-          >
-            {t.subscription_emergency_activated}
-          </Badge>
-        ) : (
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                className="w-full shrink-0 justify-center whitespace-normal border-orange-500 text-center text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 sm:w-auto"
-                disabled={!isEligible}
+          {emergencyDebt > 0 && (
+            <div className="rounded-lg border border-orange-200/70 bg-background/70 px-3 py-2">
+              <p className="text-[10px] text-muted-foreground">
+                {t.subscription_emergency_debt}
+              </p>
+              <p
+                className="text-lg font-bold tabular-nums text-orange-700 dark:text-orange-400"
+                dir="ltr"
               >
-                {t.activate_emergency}
-              </Button>
-            </DialogTrigger>
+                {emergencyDebt.toLocaleString(locale)}
+              </p>
+            </div>
+          )}
 
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>{t.activate_emergency}</DialogTitle>
-
-                <DialogDescription className="pt-4">
-                  {t.emergency_confirm}
-                </DialogDescription>
-              </DialogHeader>
-
-              <DialogFooter className="mt-6">
+          {!subscription.emergency_credit_activated && (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
                 <Button
                   variant="outline"
-                  onClick={() => setOpen(false)}
-                >
-                  {t.cancel}
-                </Button>
-
-                <Button
-                  onClick={handleActivate}
+                  className="shrink-0 border-orange-500 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30"
                   disabled={!isEligible}
                 >
-                  {t.confirm}
+                  {t.activate_emergency}
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
+              </DialogTrigger>
+
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{t.activate_emergency}</DialogTitle>
+                  <DialogDescription className="pt-4">
+                    {t.emergency_confirm}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <DialogFooter className="mt-6">
+                  <Button
+                    variant="outline"
+                    onClick={() => setOpen(false)}
+                  >
+                    {t.cancel}
+                  </Button>
+                  <Button
+                    onClick={handleActivate}
+                    disabled={!isEligible}
+                  >
+                    {t.confirm}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
       </div>
 
       {emergencyDebt > 0 && (
-        <div className="mt-4 rounded-lg border border-orange-200/70 bg-background/70 p-3 text-start">
-          <p className="text-xs text-muted-foreground">
-            {t.subscription_emergency_debt}
-          </p>
-          <p className="mt-1 text-2xl font-bold tabular-nums text-orange-700 dark:text-orange-400" dir="ltr">
-            {emergencyDebt.toLocaleString(locale)}
-          </p>
-          <p className="mt-2 border-t border-orange-200/50 pt-2 text-xs leading-5 text-orange-700/90 dark:border-orange-900/30 dark:text-orange-400/90">
-            {t.subscription_pending_deduction}
-          </p>
-        </div>
+        <p className="mt-2 border-t border-orange-200/50 pt-2 text-xs leading-5 text-orange-700/90 dark:border-orange-900/30 dark:text-orange-400/90">
+          {t.subscription_pending_deduction}
+        </p>
       )}
     </div>
   );
