@@ -212,6 +212,7 @@ export default function AdministratorsTab({
     "manage_channels",
     "view_logs",
     "inspect_merchant_sessions",
+    "manage_support",
   ];
 
   const permissionText = {
