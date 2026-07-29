@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown,
   Headphones,
@@ -62,12 +62,29 @@ export default function SupportPage() {
   const [creating, setCreating] = useState(false);
   const [replying, setReplying] = useState(false);
   const [formError, setFormError] = useState('');
+  const conversationRef = useRef<HTMLDivElement | null>(null);
 
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket.id === selectedId) ?? null,
     [tickets, selectedId],
   );
+  const selectedLastMessageId =
+    selectedTicket?.messages[selectedTicket.messages.length - 1]?.id ?? null;
+
+  useLayoutEffect(() => {
+    const conversation = conversationRef.current;
+    if (!conversation || !selectedLastMessageId) return;
+
+    const frameId = window.requestAnimationFrame(() => {
+      conversation.scrollTo({
+        top: conversation.scrollHeight,
+        behavior: 'smooth',
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [selectedId, selectedLastMessageId]);
 
   const loadTickets = useCallback(async () => {
     setLoading(true);
@@ -399,7 +416,10 @@ export default function SupportPage() {
                 </div>
               </div>
 
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto bg-muted/20 p-3">
+              <div
+                ref={conversationRef}
+                className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-muted/20 p-3"
+              >
                 {selectedTicket.messages.map((message) => {
                   const merchantMessage = message.sender_type === 'merchant';
                   return (

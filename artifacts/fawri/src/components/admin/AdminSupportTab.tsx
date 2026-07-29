@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2,
   Headphones,
@@ -217,11 +217,28 @@ export default function AdminSupportTab({
   const [loadError, setLoadError] = useState(false);
   const [reply, setReply] = useState('');
   const [working, setWorking] = useState<'claim' | 'reply' | 'resolve' | null>(null);
+  const conversationRef = useRef<HTMLDivElement | null>(null);
 
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket.id === selectedId) ?? null,
     [selectedId, tickets],
   );
+  const selectedLastMessageId =
+    selectedTicket?.messages[selectedTicket.messages.length - 1]?.id ?? null;
+
+  useLayoutEffect(() => {
+    const conversation = conversationRef.current;
+    if (!conversation || !selectedLastMessageId) return;
+
+    const frameId = window.requestAnimationFrame(() => {
+      conversation.scrollTo({
+        top: conversation.scrollHeight,
+        behavior: 'smooth',
+      });
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [selectedId, selectedLastMessageId]);
 
   const activeCount = useMemo(
     () =>
@@ -501,7 +518,10 @@ export default function AdminSupportTab({
                 )}
               </div>
 
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-muted/20 p-3">
+              <div
+                ref={conversationRef}
+                className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain bg-muted/20 p-3"
+              >
                 {selectedTicket.messages.map((message) => {
                   const merchantMessage = message.sender_type === 'merchant';
                   return (
