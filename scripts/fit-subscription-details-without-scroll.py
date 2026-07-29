@@ -66,7 +66,6 @@ replacements = [
     ('rounded-xl border border-orange-200 bg-orange-50/50 p-3', 'rounded-xl border border-orange-200 bg-orange-50/50 p-2'),
     ('grid grid-cols-2 gap-2', 'grid grid-cols-2 gap-1.5'),
     ('grid grid-cols-3 gap-2', 'grid grid-cols-3 gap-1.5'),
-    ('grid grid-cols-2 gap-2 sm:grid-cols-4', 'grid grid-cols-2 gap-1.5 sm:grid-cols-4'),
     ('rounded-lg bg-background p-2.5', 'rounded-lg bg-background px-2 py-1.5'),
     ('className="mt-1 text-sm font-bold text-foreground"', 'className="mt-0.5 text-sm font-bold leading-5 text-foreground"'),
     ('className="mt-1 text-xs font-bold text-foreground"', 'className="mt-0.5 text-xs font-bold leading-5 text-foreground"'),
