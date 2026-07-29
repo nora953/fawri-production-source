@@ -107,7 +107,7 @@ const adminTranslations = {
     detailsNotEnabled: "غير مُفعَّل",
     detailsEmergencyCreditAmount: "مبلغ الرصيد الطارئ",
     detailsEmergencyCreditUsed: "رصيد طارئ مُستخدم",
-    detailsNextCycleDeduction: "خصم الدورة القادمة",
+    detailsNextCycleDeduction: "دين الطوارئ المتبقي",
     detailsNoActiveSubscription: "لا يوجد اشتراك فعّال",
 
     detailsMockChannelNotice:
@@ -464,7 +464,7 @@ const adminTranslations = {
     detailsNotEnabled: "Not enabled",
     detailsEmergencyCreditAmount: "Emergency credit amount",
     detailsEmergencyCreditUsed: "Emergency credit used",
-    detailsNextCycleDeduction: "Next-cycle deduction",
+    detailsNextCycleDeduction: "Remaining emergency debt",
     detailsNoActiveSubscription: "No active subscription",
 
     detailsMockChannelNotice:
@@ -819,7 +819,7 @@ const kuTranslations = {
   detailsNotEnabled: "چالاكنەکراو",
   detailsEmergencyCreditAmount: "بڕی کرێدیتی فریاکەوتن",
   detailsEmergencyCreditUsed: "کرێدیتی فریاکەوتنی بەکارهێنراو",
-  detailsNextCycleDeduction: "داڕشتنی دەوری داهاتوو",
+  detailsNextCycleDeduction: "قەرزی فریاکەوتنی ماوە",
   detailsNoActiveSubscription: "هیچ بەشدارییەکی چالاک نییە",
   detailsMockChannelNotice: "تێبینی: دۆخی پەیوەندی داتای نموونەیە. API ی ڕاستەقینە دواتر دەبەستێتەوە.",
   detailsNoLink: "هیچ لینکێک نییە",
