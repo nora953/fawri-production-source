@@ -361,7 +361,7 @@ export const en = {
   overview_loading: "Loading...",
   overview_plan_active: "Active",
   usage_80_warning: "You've used 80% of your reply limit.",
-  usage_90_warning: "You've used 90% of your reply limit. Consider renewing soon.",
+  usage_90_warning: "You have used 90% of your base plan replies.",
   usage_100_warning: "Reply limit reached. Auto-replies are paused.",
   expiry_warning: "Your subscription expires in 3 days. Please renew.",
   
@@ -407,6 +407,8 @@ export const en = {
   subscription_total_available: "Total replies available",
   subscription_emergency_debt: "Emergency debt remaining",
   subscription_emergency_activated: "Activated",
+  subscription_emergency_active_with_debt: "Emergency credit was used for this cycle and cannot be requested again. Part of the debt is still outstanding.",
+  subscription_emergency_active_debt_paid: "Emergency credit was used for this cycle and cannot be requested again. The emergency debt has been paid in full.",
   subscription_pending_deduction: "This emergency debt will be deducted from the first later purchase.",
   subscription_reply_unit: "replies",
   subscription_emergency_success: "Emergency credit activated successfully",
