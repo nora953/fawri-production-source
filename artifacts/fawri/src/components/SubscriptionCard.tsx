@@ -17,6 +17,7 @@ interface SubscriptionCardProps {
 export function SubscriptionCard({ subscription, onEmergencyActivate }: SubscriptionCardProps) {
   const { t, lang } = useI18n();
   const messages = subscriptionStateMessages[lang];
+  const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
   const planName = {
     silver: t.plan_silver,
     gold: t.plan_gold,
@@ -24,8 +25,19 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
     trial: t.plan_trial,
   }[subscription.plan_name];
 
-  const usagePercent = subscription.reply_limit > 0
-    ? (subscription.replies_used / subscription.reply_limit) * 100
+  const baseReplyLimit = subscription.base_reply_limit ?? subscription.reply_limit;
+  const baseRepliesUsed =
+    subscription.base_replies_used ??
+    Math.min(subscription.replies_used, baseReplyLimit);
+  const baseRepliesRemaining =
+    subscription.base_replies_remaining ??
+    Math.max(0, baseReplyLimit - baseRepliesUsed);
+  const emergencyRepliesRemaining = subscription.emergency_credit_remaining ?? 0;
+  const addonRepliesRemaining = subscription.addon_replies_remaining ?? 0;
+  const totalRepliesAvailable =
+    baseRepliesRemaining + emergencyRepliesRemaining + addonRepliesRemaining;
+  const usagePercent = baseReplyLimit > 0
+    ? (baseRepliesUsed / baseReplyLimit) * 100
     : 0;
   const daysRemaining = Math.max(0, Math.ceil((new Date(subscription.expires_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
   const isActive = subscription.status === 'active';
@@ -103,16 +115,43 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
           </Alert>
         )}
 
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>{t.reply_limit}</span>
-            <span className="font-medium">{subscription.reply_limit.toLocaleString()}</span>
+        <div className="space-y-3">
+          <div className="flex justify-between gap-4 text-sm">
+            <span>{t.subscription_base_limit}</span>
+            <span className="font-medium" dir="ltr">
+              {baseReplyLimit.toLocaleString(locale)}
+            </span>
           </div>
           <Progress value={usagePercent} className={`h-2 ${progressColor}`} />
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{subscription.replies_used.toLocaleString()} {t.replies_used}</span>
-            <span>{subscription.replies_remaining.toLocaleString()} {t.replies_remaining}</span>
+          <div className="flex justify-between gap-4 text-xs text-muted-foreground">
+            <span>
+              {baseRepliesUsed.toLocaleString(locale)} {t.subscription_base_used}
+            </span>
+            <span>
+              {baseRepliesRemaining.toLocaleString(locale)} {t.subscription_base_remaining}
+            </span>
           </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {[
+            [t.subscription_base_limit, baseReplyLimit],
+            [t.subscription_base_used, baseRepliesUsed],
+            [t.subscription_base_remaining, baseRepliesRemaining],
+            [t.subscription_emergency_balance, emergencyRepliesRemaining],
+            [t.subscription_addon_balance, addonRepliesRemaining],
+            [t.subscription_total_available, totalRepliesAvailable],
+          ].map(([label, value]) => (
+            <div
+              key={String(label)}
+              className="rounded-xl border border-border/70 bg-muted/20 p-3 text-start"
+            >
+              <p className="text-xs leading-5 text-muted-foreground">{label}</p>
+              <p className="mt-1 text-lg font-bold tabular-nums" dir="ltr">
+                {Number(value).toLocaleString(locale)}
+              </p>
+            </div>
+          ))}
         </div>
 
         <div className="grid grid-cols-2 gap-4 pt-4 border-t">
