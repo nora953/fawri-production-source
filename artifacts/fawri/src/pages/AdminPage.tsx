@@ -1063,20 +1063,20 @@ function DetailsModal({
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent
-        className={`flex max-h-[90vh] w-full max-w-2xl flex-col p-0 ${
+        className={`flex max-h-[92vh] w-full max-w-3xl flex-col p-0 ${
           adminText.dir === "rtl"
             ? "[&>button]:left-4 [&>button]:right-auto"
             : "[&>button]:right-4 [&>button]:left-auto"
         }`}
         dir={adminText.dir}
       >
-        <DialogHeader className={`px-6 pb-0 pt-5 ${textAlignmentClass}`}>
+        <DialogHeader className={`px-5 pb-0 pt-4 ${textAlignmentClass}`}>
           <DialogTitle className={`w-full text-base ${textAlignmentClass}`}>
             {merchant.store_name}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-3 grid grid-cols-4 border-b px-3 sm:px-6">
+        <div className="mt-2 grid grid-cols-4 border-b px-3 sm:px-5">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -1094,10 +1094,12 @@ function DetailsModal({
         </div>
 
         <div
-          className={`px-6 py-4 ${
+          className={`px-4 py-3 sm:px-5 ${
             activeTab === "channels"
               ? "flex-none"
-              : "min-h-0 flex-1 overflow-y-auto"
+              : activeTab === "subscription"
+                ? "min-h-0 flex-1 overflow-y-auto sm:flex-none sm:overflow-visible"
+                : "min-h-0 flex-1 overflow-y-auto"
           }`}
         >
           {activeTab === "store" && (
@@ -1121,9 +1123,9 @@ function DetailsModal({
 
           {activeTab === "subscription" &&
             (sub ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-border/80 bg-muted/15 p-3">
-                  <div className="grid grid-cols-2 gap-2">
+              <div className="grid items-stretch gap-2 sm:grid-cols-2">
+                <div className="rounded-xl border border-border/80 bg-muted/15 p-2">
+                  <div className="grid grid-cols-2 gap-1.5">
                     {[
                       [
                         adminText.detailsPlan,
@@ -1134,16 +1136,16 @@ function DetailsModal({
                         getSubscriptionStatusLabel(sub.status, lang),
                       ],
                     ].map(([label, value]) => (
-                      <div key={label} className={`rounded-lg bg-background p-2.5 ${textAlignmentClass}`}>
+                      <div key={label} className={`rounded-lg bg-background px-2 py-1.5 ${textAlignmentClass}`}>
                         <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
-                        <p className="mt-1 text-sm font-bold text-foreground">{value}</p>
+                        <p className="mt-0.5 text-sm font-bold leading-5 text-foreground">{value}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/80 bg-muted/15 p-3">
-                  <div className="grid grid-cols-3 gap-2">
+                <div className="rounded-xl border border-border/80 bg-muted/15 p-2">
+                  <div className="grid grid-cols-3 gap-1.5">
                     {[
                       [
                         adminText.detailsStartDate,
@@ -1158,16 +1160,16 @@ function DetailsModal({
                         `${daysRemaining.toLocaleString(locale)} ${adminText.detailsDay}`,
                       ],
                     ].map(([label, value]) => (
-                      <div key={label} className={`rounded-lg bg-background p-2.5 ${textAlignmentClass}`}>
+                      <div key={label} className={`rounded-lg bg-background px-2 py-1.5 ${textAlignmentClass}`}>
                         <p className="text-[11px] font-medium leading-4 text-muted-foreground">{label}</p>
-                        <p className="mt-1 text-xs font-bold text-foreground">{value}</p>
+                        <p className="mt-0.5 text-xs font-bold leading-5 text-foreground">{value}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/80 bg-muted/15 p-3 sm:col-span-2">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                <div className="rounded-xl border border-border/80 bg-muted/15 p-2 sm:col-span-2">
+                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
                     {[
                       [
                         adminText.detailsBaseReplyLimit,
@@ -1188,16 +1190,16 @@ function DetailsModal({
                           : adminText.detailsDisabled,
                       ],
                     ].map(([label, value]) => (
-                      <div key={label} className={`rounded-lg bg-background p-2.5 ${textAlignmentClass}`}>
+                      <div key={label} className={`rounded-lg bg-background px-2 py-1.5 ${textAlignmentClass}`}>
                         <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
-                        <p className="mt-1 text-sm font-bold text-foreground">{value}</p>
+                        <p className="mt-0.5 text-sm font-bold leading-5 text-foreground">{value}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-orange-200 bg-orange-50/50 p-3 dark:border-orange-900 dark:bg-orange-950/20">
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-orange-200 bg-orange-50/50 p-2 dark:border-orange-900 dark:bg-orange-950/20">
+                  <div className="grid grid-cols-2 gap-1.5">
                     {[
                       [
                         adminText.detailsEmergencyCredit,
@@ -1218,16 +1220,16 @@ function DetailsModal({
                         emergencyDebtRemaining.toLocaleString(locale),
                       ],
                     ].map(([label, value]) => (
-                      <div key={label} className={`rounded-lg bg-background p-2.5 ${textAlignmentClass}`}>
+                      <div key={label} className={`rounded-lg bg-background px-2 py-1.5 ${textAlignmentClass}`}>
                         <p className="text-[11px] font-medium leading-4 text-muted-foreground">{label}</p>
-                        <p className="mt-1 text-sm font-bold text-foreground">{value}</p>
+                        <p className="mt-0.5 text-sm font-bold leading-5 text-foreground">{value}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="rounded-xl border border-border/80 bg-muted/15 p-3">
-                  <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-border/80 bg-muted/15 p-2">
+                  <div className="grid grid-cols-2 gap-1.5">
                     {[
                       [
                         adminText.detailsAddonBalance,
@@ -1238,9 +1240,9 @@ function DetailsModal({
                         totalRepliesAvailable.toLocaleString(locale),
                       ],
                     ].map(([label, value]) => (
-                      <div key={label} className={`rounded-lg bg-background p-2.5 ${textAlignmentClass}`}>
+                      <div key={label} className={`rounded-lg bg-background px-2 py-1.5 ${textAlignmentClass}`}>
                         <p className="text-[11px] font-medium leading-4 text-muted-foreground">{label}</p>
-                        <p className="mt-1 text-base font-black text-foreground">{value}</p>
+                        <p className="mt-0.5 text-base font-black leading-5 text-foreground">{value}</p>
                       </div>
                     ))}
                   </div>
@@ -1338,8 +1340,8 @@ function DetailsModal({
           )}
         </div>
 
-        <div className="flex justify-start border-t px-6 pb-4 pt-4">
-          <Button variant="outline" onClick={onClose}>
+        <div className="flex justify-start border-t px-5 pb-3 pt-3">
+          <Button variant="outline" size="sm" onClick={onClose}>
             {adminText.close}
           </Button>
         </div>
