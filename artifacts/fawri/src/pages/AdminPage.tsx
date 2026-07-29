@@ -267,39 +267,61 @@ function SubscriptionUsageSummary({
   subscription,
   planName,
   locale,
-  usedLabel,
-  remainingLabel,
-  limitLabel,
+  baseUsedLabel,
+  baseRemainingLabel,
+  baseLimitLabel,
+  emergencyBalanceLabel,
+  addonBalanceLabel,
+  totalAvailableLabel,
   compact = false,
 }: {
   subscription: Subscription;
   planName: string;
   locale: string;
-  usedLabel: string;
-  remainingLabel: string;
-  limitLabel: string;
+  baseUsedLabel: string;
+  baseRemainingLabel: string;
+  baseLimitLabel: string;
+  emergencyBalanceLabel: string;
+  addonBalanceLabel: string;
+  totalAvailableLabel: string;
   compact?: boolean;
 }) {
+  const baseReplyLimit = subscription.base_reply_limit ?? subscription.reply_limit;
+  const baseRepliesUsed =
+    subscription.base_replies_used ??
+    Math.min(subscription.replies_used, baseReplyLimit);
+  const baseRepliesRemaining =
+    subscription.base_replies_remaining ??
+    Math.max(0, baseReplyLimit - baseRepliesUsed);
+  const emergencyRepliesRemaining = subscription.emergency_credit_remaining ?? 0;
+  const addonRepliesRemaining = subscription.addon_replies_remaining ?? 0;
+  const totalRepliesAvailable =
+    baseRepliesRemaining + emergencyRepliesRemaining + addonRepliesRemaining;
+
   const exactPercentage =
-    subscription.reply_limit > 0
-      ? (subscription.replies_used / subscription.reply_limit) * 100
-      : 0;
+    baseReplyLimit > 0 ? (baseRepliesUsed / baseReplyLimit) * 100 : 0;
   const percentageText = formatUsagePercentage(
-    subscription.replies_used,
-    subscription.reply_limit,
+    baseRepliesUsed,
+    baseReplyLimit,
     locale,
   );
   const progressWidth =
-    subscription.replies_used > 0
+    baseRepliesUsed > 0
       ? Math.max(0.5, Math.min(100, exactPercentage))
       : 0;
   const roundedPercentage = Math.round(exactPercentage);
 
+  const balanceItems = [
+    [emergencyBalanceLabel, emergencyRepliesRemaining],
+    [addonBalanceLabel, addonRepliesRemaining],
+    [totalAvailableLabel, totalRepliesAvailable],
+  ] as const;
+
   return (
     <div
       className={
-        "space-y-3 rounded-xl border border-border/80 bg-gradient-to-b from-muted/35 to-background shadow-sm " +
-        (compact ? "min-w-[220px] p-3" : "p-3.5")
+        "space-y-2.5 rounded-xl border border-border/80 bg-gradient-to-b from-muted/35 to-background shadow-sm " +
+        (compact ? "min-w-[230px] p-3" : "p-3.5")
       }
     >
       <div className="flex items-center justify-between gap-3">
@@ -314,47 +336,61 @@ function SubscriptionUsageSummary({
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-1.5">
-        {[
-          [usedLabel, subscription.replies_used],
-          [remainingLabel, subscription.replies_remaining],
-          [limitLabel, subscription.reply_limit],
-        ].map(([label, value]) => (
+      <div className="rounded-lg border border-border/60 bg-background px-2.5 py-2">
+        <div className="flex items-center justify-between gap-3 text-[10px] text-muted-foreground">
+          <span>{baseLimitLabel}</span>
+          <strong className="text-xs font-bold tabular-nums text-foreground" dir="ltr">
+            {baseReplyLimit.toLocaleString(locale)}
+          </strong>
+        </div>
+
+        <div
+          className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.min(100, roundedPercentage)}
+        >
           <div
-            key={String(label)}
-            className="rounded-lg border border-border/60 bg-background px-1.5 py-2 text-center"
+            className={
+              "h-full rounded-full transition-all " +
+              (roundedPercentage >= 90
+                ? "bg-red-500"
+                : roundedPercentage >= 80
+                  ? "bg-yellow-500"
+                  : "bg-primary")
+            }
+            style={{ width: String(progressWidth) + "%" }}
+          />
+        </div>
+
+        <div className="mt-2 flex items-center justify-between gap-3 text-[9px] text-muted-foreground">
+          <span>
+            {baseUsedLabel}: <strong className="tabular-nums text-foreground" dir="ltr">{baseRepliesUsed.toLocaleString(locale)}</strong>
+          </span>
+          <span>
+            {baseRemainingLabel}: <strong className="tabular-nums text-foreground" dir="ltr">{baseRepliesRemaining.toLocaleString(locale)}</strong>
+          </span>
+        </div>
+      </div>
+
+      <div className={compact ? "grid grid-cols-2 gap-1.5" : "grid grid-cols-3 gap-2"}>
+        {balanceItems.map(([label, value], index) => (
+          <div
+            key={label}
+            className={
+              "flex min-h-[54px] flex-col items-center justify-center rounded-lg border border-border/60 bg-background px-1.5 py-2 text-center " +
+              (compact && index === 2 ? "col-span-2" : "")
+            }
           >
             <p className="text-[9px] font-medium leading-3.5 text-muted-foreground">
               {label}
             </p>
-            <p
-              className="mt-1 text-xs font-bold tabular-nums text-foreground"
-              dir="ltr"
-            >
-              {Number(value).toLocaleString(locale)}
+            <p className="mt-1 text-xs font-bold tabular-nums text-foreground" dir="ltr">
+              {value.toLocaleString(locale)}
             </p>
           </div>
         ))}
-      </div>
-
-      <div
-        className="h-1.5 overflow-hidden rounded-full bg-muted"
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.min(100, roundedPercentage)}
-      >
-        <div
-          className={
-            "h-full rounded-full transition-all " +
-            (roundedPercentage >= 90
-              ? "bg-red-500"
-              : roundedPercentage >= 80
-                ? "bg-yellow-500"
-                : "bg-primary")
-          }
-          style={{ width: String(progressWidth) + "%" }}
-        />
       </div>
     </div>
   );
@@ -3483,9 +3519,12 @@ export default function AdminPage() {
                                 subscription={sub}
                                 planName={planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
                                 locale={locale}
-                                usedLabel={adminText.detailsUsed}
-                                remainingLabel={adminText.detailsRemaining}
-                                limitLabel={adminText.detailsReplyLimit}
+                                baseUsedLabel={adminText.detailsBaseUsed}
+                                baseRemainingLabel={adminText.detailsBaseRemaining}
+                                baseLimitLabel={adminText.detailsBaseReplyLimit}
+                                emergencyBalanceLabel={adminText.detailsEmergencyBalance}
+                                addonBalanceLabel={adminText.detailsAddonBalance}
+                                totalAvailableLabel={adminText.detailsTotalAvailable}
                               />
                             )}
                           </div>
@@ -3666,9 +3705,12 @@ export default function AdminPage() {
                                     subscription={sub}
                                     planName={planNames[sub.plan_name as PlanKey] ?? sub.plan_name}
                                     locale={locale}
-                                    usedLabel={adminText.detailsUsed}
-                                    remainingLabel={adminText.detailsRemaining}
-                                    limitLabel={adminText.detailsReplyLimit}
+                                    baseUsedLabel={adminText.detailsBaseUsed}
+                                    baseRemainingLabel={adminText.detailsBaseRemaining}
+                                    baseLimitLabel={adminText.detailsBaseReplyLimit}
+                                    emergencyBalanceLabel={adminText.detailsEmergencyBalance}
+                                    addonBalanceLabel={adminText.detailsAddonBalance}
+                                    totalAvailableLabel={adminText.detailsTotalAvailable}
                                   />
                                 ) : (
                                   <span className="text-xs text-muted-foreground">—</span>
