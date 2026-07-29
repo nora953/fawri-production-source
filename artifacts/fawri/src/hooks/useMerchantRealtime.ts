@@ -8,7 +8,8 @@ export const MERCHANT_REALTIME_EVENT = 'fawri:merchant-realtime';
 export type MerchantRealtimeEventName =
   | 'snapshot'
   | 'subscription_updated'
-  | 'notifications_updated';
+  | 'notifications_updated'
+  | 'support_updated';
 
 export interface MerchantRealtimeDetail {
   event: MerchantRealtimeEventName;
@@ -25,6 +26,7 @@ const REALTIME_EVENT_NAMES: MerchantRealtimeEventName[] = [
   'snapshot',
   'subscription_updated',
   'notifications_updated',
+  'support_updated',
 ];
 
 function closeSharedSource(): void {

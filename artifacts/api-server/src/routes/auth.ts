@@ -403,6 +403,40 @@ type MerchantBalanceNotificationRecord = {
   read_at?: string;
 };
 
+type SupportTicketCategory =
+  | "technical"
+  | "billing"
+  | "channels"
+  | "account"
+  | "other";
+type SupportTicketStatus = "open" | "in_progress" | "resolved" | "closed";
+type SupportMessageSender = "merchant" | "admin" | "system";
+
+type SupportTicketMessage = {
+  id: string;
+  sender_type: SupportMessageSender;
+  sender_id: string;
+  sender_name: string;
+  body: string;
+  created_at: string;
+};
+
+type SupportTicketRecord = {
+  id: string;
+  merchant_id: string;
+  merchant_name: string;
+  merchant_phone: string;
+  subject: string;
+  category: SupportTicketCategory;
+  status: SupportTicketStatus;
+  assigned_admin_id?: string;
+  assigned_admin_name?: string;
+  created_at: string;
+  updated_at: string;
+  closed_at?: string;
+  messages: SupportTicketMessage[];
+};
+
 type OtpRecord = {
   phone: string;
   code: string;
@@ -418,6 +452,7 @@ type AuthDb = {
   otps: OtpRecord[];
   admin_logs: AdminLogRecord[];
   merchant_notifications: MerchantBalanceNotificationRecord[];
+  support_tickets: SupportTicketRecord[];
   deletion_requests: MerchantDeletionRequest[];
   channel_overrides: Record<string, Partial<Record<ChannelPlatform, ChannelStatus>>>;
   admin_notes: Record<string, string>;
@@ -1399,6 +1434,7 @@ function buildInitialDb(): AuthDb {
     otps: [],
     admin_logs: [],
     merchant_notifications: [],
+    support_tickets: [],
     deletion_requests: [],
     channel_overrides: {},
     admin_notes: {},
@@ -1451,6 +1487,20 @@ function ensureDb(): AuthDb {
                 typeof item.id === "string" &&
                 typeof item.merchant_id === "string" &&
                 item.type === "subscription_balance_purchase",
+              ),
+          )
+        : [],
+      support_tickets: Array.isArray(parsed.support_tickets)
+        ? parsed.support_tickets.filter(
+            (ticket): ticket is SupportTicketRecord =>
+              Boolean(
+                ticket &&
+                typeof ticket === "object" &&
+                !Array.isArray(ticket) &&
+                typeof ticket.id === "string" &&
+                typeof ticket.merchant_id === "string" &&
+                typeof ticket.subject === "string" &&
+                Array.isArray(ticket.messages),
               ),
           )
         : [],
@@ -1557,7 +1607,8 @@ function appendMerchantBalanceNotification(
 type MerchantRealtimeEventName =
   | "snapshot"
   | "subscription_updated"
-  | "notifications_updated";
+  | "notifications_updated"
+  | "support_updated";
 
 type MerchantRealtimePayload = {
   subscription: SubscriptionRecord | null;
@@ -2455,6 +2506,141 @@ router.patch(
     writeDb(db);
     emitMerchantRealtimeState(db, merchantId, "notifications_updated");
     return res.json({ ok: true, notification });
+  },
+);
+
+
+router.get("/support/tickets", requireMerchantSession, (_req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  const db = ensureDb();
+  const tickets = db.support_tickets
+    .filter((ticket) => ticket.merchant_id === merchantId)
+    .sort(
+      (left, right) =>
+        new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
+    );
+
+  res.setHeader("Cache-Control", "no-store");
+  return res.json({ ok: true, tickets });
+});
+
+router.post("/support/tickets", requireMerchantSession, (req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  const db = ensureDb();
+  const merchant = findRegularMerchant(db, merchantId);
+  if (!merchant) return sendError(res, 404, "merchant not found");
+
+  const subject = String(req.body?.subject || "").trim();
+  const message = String(req.body?.message || "").trim();
+  const category = String(req.body?.category || "other").trim() as SupportTicketCategory;
+  const allowedCategories: readonly SupportTicketCategory[] = [
+    "technical",
+    "billing",
+    "channels",
+    "account",
+    "other",
+  ];
+
+  if (subject.length < 3 || subject.length > 120) {
+    return sendError(res, 400, "invalid support subject");
+  }
+  if (message.length < 2 || message.length > 4000) {
+    return sendError(res, 400, "invalid support message");
+  }
+  if (!allowedCategories.includes(category)) {
+    return sendError(res, 400, "invalid support category");
+  }
+
+  const activeCount = db.support_tickets.filter(
+    (ticket) =>
+      ticket.merchant_id === merchantId &&
+      (ticket.status === "open" || ticket.status === "in_progress"),
+  ).length;
+  if (activeCount >= 10) {
+    return sendError(res, 409, "too many active support tickets");
+  }
+
+  const createdAt = now();
+  const ticket: SupportTicketRecord = {
+    id: makeId("support-ticket"),
+    merchant_id: merchant.id,
+    merchant_name: merchant.store_name,
+    merchant_phone: merchant.phone,
+    subject,
+    category,
+    status: "open",
+    created_at: createdAt,
+    updated_at: createdAt,
+    messages: [
+      {
+        id: makeId("support-message"),
+        sender_type: "merchant",
+        sender_id: merchant.id,
+        sender_name: merchant.owner_name,
+        body: message,
+        created_at: createdAt,
+      },
+    ],
+  };
+
+  db.support_tickets.unshift(ticket);
+  writeDb(db);
+  emitMerchantRealtimeState(db, merchantId, "support_updated");
+  return res.status(201).json({ ok: true, ticket });
+});
+
+router.get(
+  "/support/tickets/:id",
+  requireMerchantSession,
+  (req: Request, res: Response) => {
+    const merchantId = getMerchantIdFromSession(res);
+    const ticketId = String(req.params.id || "").trim();
+    const db = ensureDb();
+    const ticket = db.support_tickets.find(
+      (item) => item.id === ticketId && item.merchant_id === merchantId,
+    );
+    if (!ticket) return sendError(res, 404, "support ticket not found");
+
+    res.setHeader("Cache-Control", "no-store");
+    return res.json({ ok: true, ticket });
+  },
+);
+
+router.post(
+  "/support/tickets/:id/messages",
+  requireMerchantSession,
+  (req: Request, res: Response) => {
+    const merchantId = getMerchantIdFromSession(res);
+    const ticketId = String(req.params.id || "").trim();
+    const body = String(req.body?.message || "").trim();
+    const db = ensureDb();
+    const merchant = findRegularMerchant(db, merchantId);
+    const ticket = db.support_tickets.find(
+      (item) => item.id === ticketId && item.merchant_id === merchantId,
+    );
+
+    if (!merchant) return sendError(res, 404, "merchant not found");
+    if (!ticket) return sendError(res, 404, "support ticket not found");
+    if (ticket.status === "closed" || ticket.status === "resolved") {
+      return sendError(res, 409, "support ticket is closed");
+    }
+    if (body.length < 1 || body.length > 4000) {
+      return sendError(res, 400, "invalid support message");
+    }
+
+    const supportMessage: SupportTicketMessage = {
+      id: makeId("support-message"),
+      sender_type: "merchant",
+      sender_id: merchant.id,
+      sender_name: merchant.owner_name,
+      body,
+      created_at: now(),
+    };
+    ticket.messages.push(supportMessage);
+    ticket.updated_at = supportMessage.created_at;
+    writeDb(db);
+    emitMerchantRealtimeState(db, merchantId, "support_updated");
+    return res.status(201).json({ ok: true, ticket, message: supportMessage });
   },
 );
 

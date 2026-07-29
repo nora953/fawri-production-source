@@ -12,6 +12,7 @@ import {
   Settings,
   LogOut,
   Bell,
+  Headphones,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { clearSession } from "@/lib/store";
@@ -89,6 +90,7 @@ export function Sidebar() {
       label: t.subscription,
       icon: CreditCard,
     },
+    { href: "/dashboard/support", label: t.support_nav, icon: Headphones },
     { href: "/dashboard/settings", label: t.settings, icon: Settings },
   ];
 

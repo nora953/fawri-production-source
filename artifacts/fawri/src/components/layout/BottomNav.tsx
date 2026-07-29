@@ -13,6 +13,7 @@ import {
   CreditCard,
   LogOut,
   Bell,
+  Headphones,
 } from "lucide-react";
 import {
   Popover,
@@ -113,6 +114,11 @@ export function BottomNav() {
       href: "/dashboard/subscription",
       label: t.subscription,
       icon: CreditCard,
+    },
+    {
+      href: "/dashboard/support",
+      label: t.support_nav,
+      icon: Headphones,
     },
     {
       href: "/dashboard/settings",

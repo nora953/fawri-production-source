@@ -43,6 +43,7 @@ const SubscriptionPage = lazy(
   () => import("@/pages/dashboard/SubscriptionPage"),
 );
 const SettingsPage = lazy(() => import("@/pages/dashboard/SettingsPage"));
+const SupportPage = lazy(() => import("@/pages/dashboard/SupportPage"));
 
 // Admin
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
@@ -126,6 +127,10 @@ function AppRouter() {
 
         <Route path="/dashboard/subscription">
           {() => <DashboardRoute Page={SubscriptionPage} />}
+        </Route>
+
+        <Route path="/dashboard/support">
+          {() => <DashboardRoute Page={SupportPage} />}
         </Route>
 
         <Route path="/dashboard/settings">
