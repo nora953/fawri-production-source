@@ -19,6 +19,10 @@ import { Card, CardContent } from "@/components/ui/card";
 
 type RetentionStatus = NonNullable<Merchant["retention_status"]>;
 
+type SubscriptionRetentionCardProps = {
+  compact?: boolean;
+};
+
 function daysUntil(value?: string): number | undefined {
   if (!value) return undefined;
   const time = new Date(value).getTime();
@@ -26,7 +30,7 @@ function daysUntil(value?: string): number | undefined {
   return Math.max(0, Math.ceil((time - Date.now()) / (24 * 60 * 60 * 1000)));
 }
 
-export default function SubscriptionRetentionCard() {
+export default function SubscriptionRetentionCard({ compact = false }: SubscriptionRetentionCardProps) {
   const { t, lang, dir } = useI18n();
   const [, setLocation] = useLocation();
   const [merchant, setMerchant] = useState<Merchant | undefined>(getCurrentMerchant());
@@ -159,15 +163,19 @@ export default function SubscriptionRetentionCard() {
     : undefined;
 
   return (
-    <Card className={`rounded-3xl ${classes}`} dir={dir}>
-      <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+    <Card className={`${compact ? "rounded-2xl" : "rounded-3xl"} ${classes}`} dir={dir}>
+      <CardContent
+        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between ${
+          compact ? "gap-3 p-4" : "gap-4 p-5"
+        }`}
+      >
         <div className="flex min-w-0 items-start gap-3">
-          <Icon className="mt-0.5 h-6 w-6 shrink-0" />
+          <Icon className={`${compact ? "h-5 w-5" : "h-6 w-6"} mt-0.5 shrink-0`} />
           <div className="min-w-0">
-            <h2 className="text-base font-extrabold">{title}</h2>
-            <p className="mt-1 text-sm leading-6 opacity-85">{body}</p>
+            <h2 className={`${compact ? "text-sm" : "text-base"} font-extrabold`}>{title}</h2>
+            <p className={`${compact ? "mt-0.5 text-xs leading-5" : "mt-1 text-sm leading-6"} opacity-85`}>{body}</p>
             {activeUntil && (
-              <p className="mt-2 text-sm font-bold">
+              <p className={`${compact ? "mt-1 text-xs" : "mt-2 text-sm"} font-bold`}>
                 {t.retention_active_until}: {activeUntil}
               </p>
             )}
@@ -180,7 +188,10 @@ export default function SubscriptionRetentionCard() {
         </div>
 
         {button && (
-          <Button className="shrink-0" onClick={() => setLocation("/dashboard/subscription")}>
+          <Button
+            className={`shrink-0 ${compact ? "h-9 px-4 text-xs" : ""}`}
+            onClick={() => setLocation("/dashboard/subscription")}
+          >
             {button}
           </Button>
         )}

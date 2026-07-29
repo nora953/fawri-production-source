@@ -9,7 +9,6 @@ import {
 } from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
   AlertTriangle,
   Clock,
@@ -106,10 +105,12 @@ export default function OverviewPage() {
       }[sub.status]
     : null;
 
+  const baseReplyLimit = sub?.base_reply_limit ?? sub?.reply_limit ?? 0;
+  const baseRepliesUsed = sub
+    ? sub.base_replies_used ?? Math.min(sub.replies_used, baseReplyLimit)
+    : 0;
   const usagePercent =
-    sub && sub.reply_limit > 0
-      ? (sub.replies_used / sub.reply_limit) * 100
-      : 0;
+    baseReplyLimit > 0 ? (baseRepliesUsed / baseReplyLimit) * 100 : 0;
 
   const daysRemaining = sub
     ? Math.max(
@@ -127,104 +128,97 @@ export default function OverviewPage() {
   if (usagePercent > 90) progressColor = 'bg-red-500';
   else if (usagePercent >= 80) progressColor = 'bg-yellow-500';
 
+  const usageNotice =
+    isActive && usagePercent >= 100
+      ? { text: t.usage_100_warning, className: 'border-red-500 text-red-600' }
+      : isActive && usagePercent >= 90
+        ? { text: t.usage_90_warning, className: 'border-orange-500 text-orange-600' }
+        : isActive && usagePercent >= 80
+          ? { text: t.usage_80_warning, className: 'border-yellow-500 text-yellow-700' }
+          : null;
+
   return (
-    <div className="min-h-screen bg-background p-4 pb-28" dir={dir}>
-      <div className="space-y-6">
-        <SubscriptionRetentionCard />
+    <div className="bg-background" dir={dir}>
+      <div className="space-y-4">
+        <SubscriptionRetentionCard compact />
 
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">{t.overview}</h1>
+          <h1 className="text-2xl font-extrabold tracking-tight">{t.overview}</h1>
         </div>
 
         {loadingSubscription && (
-          <div className="rounded-3xl border bg-card p-5 text-center text-muted-foreground">
+          <div className="rounded-2xl border bg-card p-4 text-center text-sm text-muted-foreground">
             {t.overview_loading}
           </div>
         )}
 
-        {isActive && usagePercent >= 100 && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>{t.subscription_alert_title}</AlertTitle>
-            <AlertDescription>{t.usage_100_warning}</AlertDescription>
-          </Alert>
-        )}
-
-        {isActive && usagePercent >= 90 && usagePercent < 100 && (
-          <Alert className="border-orange-500 text-orange-600">
-            <AlertTriangle className="h-4 w-4 stroke-current" />
-            <AlertTitle>{t.subscription_warning_title}</AlertTitle>
-            <AlertDescription>{t.usage_90_warning}</AlertDescription>
-          </Alert>
-        )}
-
-        {isActive && usagePercent >= 80 && usagePercent < 90 && (
-          <Alert className="border-yellow-500 text-yellow-600">
-            <AlertTriangle className="h-4 w-4 stroke-current" />
-            <AlertTitle>{t.subscription_notice_title}</AlertTitle>
-            <AlertDescription>{t.usage_80_warning}</AlertDescription>
-          </Alert>
+        {usageNotice && (
+          <div
+            className={`flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2 ${usageNotice.className}`}
+          >
+            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <p className="text-sm font-semibold leading-5">{usageNotice.text}</p>
+          </div>
         )}
 
         {isActive && daysRemaining <= 3 && (
-          <Alert className="border-orange-500 text-orange-600">
-            <Clock className="h-4 w-4 stroke-current" />
-            <AlertTitle>{t.subscription_warning_title}</AlertTitle>
-            <AlertDescription>{t.expiry_warning}</AlertDescription>
-          </Alert>
+          <div className="flex min-h-11 items-center gap-3 rounded-lg border border-orange-500 px-3 py-2 text-orange-600">
+            <Clock className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <p className="text-sm font-semibold leading-5">{t.expiry_warning}</p>
+          </div>
         )}
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card className="rounded-3xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-1">
               <CardTitle className="text-sm font-medium">{t.current_plan}</CardTitle>
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-extrabold">{planName}</div>
+            <CardContent className="px-4 pb-4 pt-0">
+              <div className="text-xl font-extrabold">{planName}</div>
               {statusLabel && (
                 <p className="mt-1 text-xs text-muted-foreground">{statusLabel}</p>
               )}
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-1">
               <CardTitle className="text-sm font-medium">{t.conversations_count}</CardTitle>
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-extrabold">{stats.convs}</div>
+            <CardContent className="px-4 pb-4 pt-0">
+              <div className="text-xl font-extrabold">{stats.convs}</div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-1">
               <CardTitle className="text-sm font-medium">{t.orders_count}</CardTitle>
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-extrabold">{stats.orders}</div>
+            <CardContent className="px-4 pb-4 pt-0">
+              <div className="text-xl font-extrabold">{stats.orders}</div>
             </CardContent>
           </Card>
 
-          <Card className="rounded-3xl">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="rounded-2xl">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-1">
               <CardTitle className="text-sm font-medium">{t.products_count}</CardTitle>
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-extrabold">{stats.prods}</div>
+            <CardContent className="px-4 pb-4 pt-0">
+              <div className="text-xl font-extrabold">{stats.prods}</div>
             </CardContent>
           </Card>
         </div>
 
         {isActive && sub && (
-          <Card className="rounded-3xl">
-            <CardHeader>
-              <CardTitle>{t.reply_limit}</CardTitle>
+          <Card className="rounded-2xl">
+            <CardHeader className="px-4 pb-2 pt-4">
+              <CardTitle className="text-base">{t.reply_limit}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-2 px-4 pb-4 pt-0">
               <div className="flex justify-between gap-3 text-sm">
                 <span>{sub.replies_used} {t.replies_used}</span>
                 <span className="font-medium">{sub.reply_limit} {t.total}</span>

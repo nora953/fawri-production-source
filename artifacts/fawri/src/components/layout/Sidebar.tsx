@@ -102,7 +102,7 @@ export function Sidebar() {
       className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex"
       dir={isRTL ? "rtl" : "ltr"}
     >
-      <div className="flex h-16 shrink-0 items-center gap-3 border-b border-sidebar-border px-6">
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-sidebar-border px-6">
         <Link
           href="/dashboard"
           className="text-2xl font-bold tracking-tight text-sidebar-primary"
