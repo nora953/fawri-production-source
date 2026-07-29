@@ -229,10 +229,22 @@ export default function SupportPage() {
             setFormError('');
             setShowCreate((current) => !current);
           }}
-          className="inline-flex h-10 w-fit items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
+          className={
+            showCreate
+              ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-card text-muted-foreground shadow-sm transition hover:bg-muted'
+              : 'inline-flex h-10 w-fit items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground'
+          }
+          aria-label={showCreate ? t.support_cancel : t.support_new_ticket}
+          title={showCreate ? t.support_cancel : t.support_new_ticket}
         >
-          {showCreate ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-          {showCreate ? t.support_cancel : t.support_new_ticket}
+          {showCreate ? (
+            <X className="h-4 w-4" />
+          ) : (
+            <>
+              <Plus className="h-4 w-4" />
+              {t.support_new_ticket}
+            </>
+          )}
         </button>
       </div>
 
@@ -295,12 +307,7 @@ export default function SupportPage() {
             />
           </label>
 
-          <div className="mt-3 flex min-h-10 items-center justify-between gap-3">
-            {formError ? (
-              <p className="text-sm font-bold text-destructive">{formError}</p>
-            ) : (
-              <span />
-            )}
+          <div className="mt-3 flex min-h-10 flex-wrap items-center justify-start gap-3">
             <button
               type="submit"
               disabled={creating}
@@ -309,6 +316,9 @@ export default function SupportPage() {
               {creating && <Loader2 className="h-4 w-4 animate-spin" />}
               {creating ? t.support_sending : t.support_send}
             </button>
+            {formError && (
+              <p className="text-sm font-bold text-destructive">{formError}</p>
+            )}
           </div>
         </form>
       )}

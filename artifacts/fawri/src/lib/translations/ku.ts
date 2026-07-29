@@ -723,7 +723,7 @@ export const ku = {
   retention_manage: "بەڕێوەبردنی بەشداری",
   retention_renew: "نوێکردنەوەی بەشداری",
   support_nav: "پشتگیری",
-  support_title: "پشتگیری و پەیوەندی بە ئێمەوە",
+  support_title: "پشتگیری - پەیوەندی بە ئێمەوە",
   support_subtitle: "پرسیار یان کێشەکەت بنێرە و وەڵامەکان لە گفتوگۆی پشتگیریدا بەدواداچوون بکە.",
   support_new_ticket: "کردنەوەی تیکێتی نوێ",
   support_cancel: "هەڵوەشاندنەوە",

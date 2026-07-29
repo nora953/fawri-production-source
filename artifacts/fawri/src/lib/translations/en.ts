@@ -764,7 +764,7 @@ export const en = {
   retention_manage: "Manage subscription",
   retention_renew: "Renew subscription",
   support_nav: "Support",
-  support_title: "Support and Contact Us",
+  support_title: "Support - Contact Us",
   support_subtitle: "Send your question or issue and follow replies in the support conversation.",
   support_new_ticket: "Open new ticket",
   support_cancel: "Cancel",

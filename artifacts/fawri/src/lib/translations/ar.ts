@@ -730,7 +730,7 @@ export const ar = {
   retention_manage: "إدارة الاشتراك",
   retention_renew: "تجديد الاشتراك",
   support_nav: "الدعم",
-  support_title: "الدعم وتواصل معنا",
+  support_title: "الدعم - تواصل معنا",
   support_subtitle: "أرسل استفسارك أو مشكلتك وتابع الردود داخل محادثة الدعم.",
   support_new_ticket: "فتح تذكرة جديدة",
   support_cancel: "إلغاء",
