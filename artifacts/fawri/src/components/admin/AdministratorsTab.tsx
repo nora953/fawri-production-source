@@ -352,6 +352,13 @@ export default function AdministratorsTab({
   const [selectedPermissions, setSelectedPermissions] =
     useState<AdminPermission[]>([]);
   const [isSavingPermissions, setIsSavingPermissions] = useState(false);
+  const originalPermissions = selectedAdministrator?.permissions ?? [];
+  const hasPermissionChanges =
+    selectedAdministrator?.admin_role === "assistant_admin" &&
+    (selectedPermissions.length !== originalPermissions.length ||
+      selectedPermissions.some(
+        (permission) => !originalPermissions.includes(permission),
+      ));
   const [updatingAdministratorStatusId, setUpdatingAdministratorStatusId] =
     useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -546,6 +553,7 @@ export default function AdministratorsTab({
   const handleSavePermissions = async () => {
     if (
       isSavingPermissions ||
+      !hasPermissionChanges ||
       !selectedAdministrator ||
       selectedAdministrator.admin_role !== "assistant_admin"
     ) {
@@ -1220,7 +1228,11 @@ export default function AdministratorsTab({
 
             <Button
               type="button"
-              disabled={isSavingPermissions || !selectedAdministrator}
+              disabled={
+                isSavingPermissions ||
+                !selectedAdministrator ||
+                !hasPermissionChanges
+              }
               onClick={() => void handleSavePermissions()}
             >
               {isSavingPermissions && (
