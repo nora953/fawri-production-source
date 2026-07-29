@@ -74,22 +74,17 @@ export function EmergencyCredit({
           </div>
 
           <p className="mt-1 text-xs leading-5 text-muted-foreground">
-            {t.emergency_subtitle}
+            {subscription.emergency_credit_activated
+              ? emergencyDebt > 0
+                ? t.subscription_emergency_active_with_debt
+                : t.subscription_emergency_active_debt_paid
+              : t.emergency_subtitle}
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          <div className="rounded-lg border border-orange-200/70 bg-background/70 px-3 py-2">
-            <p className="text-[10px] text-muted-foreground">
-              {t.subscription_emergency_balance}
-            </p>
-            <p className="text-lg font-bold tabular-nums" dir="ltr">
-              {subscription.emergency_credit_remaining.toLocaleString(locale)}
-            </p>
-          </div>
-
           {emergencyDebt > 0 && (
-            <div className="rounded-lg border border-orange-200/70 bg-background/70 px-3 py-2">
+            <div className="rounded-lg border border-orange-200/70 bg-background/70 px-3 py-2 text-center">
               <p className="text-[10px] text-muted-foreground">
                 {t.subscription_emergency_debt}
               </p>
