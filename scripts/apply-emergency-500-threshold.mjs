@@ -79,7 +79,7 @@ testFile = replaceExactly(
   assert.equal(aboveThreshold.response.status, 200);
   assert.equal(aboveThreshold.body.subscription.base_replies_remaining, 501);
 
-  const deniedAboveThreshold = await json(await fetch(`${baseUrl}/api/auth/subscription/emergency`, {
+  const deniedAboveThreshold = await json(await fetch(baseUrl + "/api/auth/subscription/emergency", {
     method: "POST", headers: { Cookie: merchantCCookie, "Content-Type": "application/json" },
   }));
   assert.equal(deniedAboveThreshold.response.status, 409);
@@ -96,7 +96,7 @@ testFile = replaceExactly(
   assert.equal(atThreshold.body.subscription.base_replies_remaining, 500);
   assert.equal(atThreshold.body.subscription.addon_replies_remaining, 200);
 
-  const emergencyC = await json(await fetch(`${baseUrl}/api/auth/subscription/emergency`, {
+  const emergencyC = await json(await fetch(baseUrl + "/api/auth/subscription/emergency", {
     method: "POST", headers: { Cookie: merchantCCookie, "Content-Type": "application/json" },
   }));
   assert.equal(emergencyC.response.status, 200);
