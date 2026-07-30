@@ -1655,6 +1655,11 @@ function refreshInspectionRequestExpirations(db: AuthDb): boolean {
 
   for (const ticket of db.support_tickets) {
     for (const request of ticket.inspection_requests || []) {
+      const ticketInactive =
+        ticket.status === "resolved" || ticket.status === "closed";
+      const activeRequestOnInactiveTicket =
+        ticketInactive &&
+        (request.status === "pending" || request.status === "approved");
       const pendingExpired =
         request.status === "pending" &&
         new Date(request.request_expires_at).getTime() <= timestamp;
@@ -1663,7 +1668,7 @@ function refreshInspectionRequestExpirations(db: AuthDb): boolean {
         Boolean(request.session_expires_at) &&
         new Date(request.session_expires_at || 0).getTime() <= timestamp;
 
-      if (!pendingExpired && !approvedExpired) continue;
+      if (!activeRequestOnInactiveTicket && !pendingExpired && !approvedExpired) continue;
 
       const expiredAt = now();
       request.status = "expired";
@@ -1682,6 +1687,7 @@ function hasActiveInspectionRequest(db: AuthDb, merchantId: string): boolean {
   return db.support_tickets.some(
     (ticket) =>
       ticket.merchant_id === merchantId &&
+      (ticket.status === "open" || ticket.status === "in_progress") &&
       (ticket.inspection_requests || []).some((request) => {
         if (request.status === "pending") {
           return new Date(request.request_expires_at).getTime() > timestamp;
@@ -3166,8 +3172,12 @@ router.patch(
 
     ticket.status = status;
     ticket.updated_at = now();
-    if (status === "resolved") ticket.closed_at = ticket.updated_at;
-    else delete ticket.closed_at;
+    if (status === "resolved") {
+      ticket.closed_at = ticket.updated_at;
+      refreshInspectionRequestExpirations(db);
+    } else {
+      delete ticket.closed_at;
+    }
 
     appendAdminLog(
       db,
