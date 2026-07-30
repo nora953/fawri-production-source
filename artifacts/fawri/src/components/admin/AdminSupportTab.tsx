@@ -385,6 +385,27 @@ export default function AdminSupportTab({
       closed: text.statusClosed,
     })[status];
 
+  const ticketStatusClass = (status: AdminSupportTicketStatus) =>
+    ({
+      open: 'border-border bg-card hover:bg-muted/50',
+      in_progress:
+        'border-yellow-300 bg-yellow-50 hover:bg-yellow-100/70 dark:border-yellow-800 dark:bg-yellow-950/30 dark:hover:bg-yellow-950/45',
+      resolved:
+        'border-green-300 bg-green-50 hover:bg-green-100/70 dark:border-green-800 dark:bg-green-950/30 dark:hover:bg-green-950/45',
+      closed:
+        'border-red-300 bg-red-50 hover:bg-red-100/70 dark:border-red-800 dark:bg-red-950/30 dark:hover:bg-red-950/45',
+    })[status];
+
+  const statusBadgeClass = (status: AdminSupportTicketStatus) =>
+    ({
+      open: 'bg-muted text-foreground',
+      in_progress:
+        'bg-yellow-100 text-yellow-900 dark:bg-yellow-950/70 dark:text-yellow-100',
+      resolved:
+        'bg-green-100 text-green-900 dark:bg-green-950/70 dark:text-green-100',
+      closed: 'bg-red-100 text-red-900 dark:bg-red-950/70 dark:text-red-100',
+    })[status];
+
   const categoryLabel = (category: AdminSupportCategory) =>
     ({
       technical: text.categoryTechnical,
@@ -454,15 +475,21 @@ export default function AdminSupportTab({
                   key={ticket.id}
                   type="button"
                   onClick={() => setSelectedId(ticket.id)}
-                  className={`w-full rounded-xl border p-3 text-start transition ${
+                  className={`w-full rounded-xl border p-3 text-start transition ${ticketStatusClass(
+                    ticket.status,
+                  )} ${
                     selectedId === ticket.id
-                      ? 'border-orange-400 bg-orange-50 dark:bg-orange-950/20'
-                      : 'hover:bg-muted/50'
+                      ? 'ring-2 ring-foreground/20 ring-offset-1 ring-offset-background'
+                      : ''
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <strong className="line-clamp-2 text-sm">{ticket.subject}</strong>
-                    <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-[10px] font-bold">
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-bold ${statusBadgeClass(
+                        ticket.status,
+                      )}`}
+                    >
                       {statusLabel(ticket.status)}
                     </span>
                   </div>
@@ -490,7 +517,11 @@ export default function AdminSupportTab({
                       {text.assignedTo}: <strong className="text-foreground">{selectedTicket.assigned_admin_name || text.unassigned}</strong>
                     </p>
                   </div>
-                  <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold">
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-bold ${statusBadgeClass(
+                      selectedTicket.status,
+                    )}`}
+                  >
                     {statusLabel(selectedTicket.status)}
                   </span>
                 </div>
