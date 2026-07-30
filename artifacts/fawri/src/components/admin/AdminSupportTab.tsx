@@ -94,7 +94,7 @@ const SUPPORT_TEXT = {
   ar: {
     tab: 'الدعم',
     title: 'تذاكر دعم التجار',
-    subtitle: 'متابعة شكاوى التجار ومحادثاتهم مع فريق الدعم.',
+    subtitle: 'متابعة شكاوى ومحادثات التجار.',
     ownerNotice: 'وضع المراقبة فقط: يمكنك مشاهدة سير العمل دون استلام التذاكر أو الرد عليها.',
     newTicketNotification: 'وصلت تذكرة دعم جديدة من أحد التجار.',
     loading: 'جارٍ تحميل تذاكر الدعم...',
@@ -177,7 +177,7 @@ const SUPPORT_TEXT = {
   ku: {
     tab: 'پشتگیری',
     title: 'تیکێتەکانی پشتگیریی بازرگانان',
-    subtitle: 'بەدواداچوونی کێشە و گفتوگۆکانی بازرگانان لەگەڵ تیمی پشتگیری.',
+    subtitle: 'بەدواداچوونی کێشە و گفتوگۆکانی بازرگانان.',
     ownerNotice: 'تەنها چاودێریکردن: دەتوانیت ڕەوتی کار ببینیت بەبێ وەرگرتن یان وەڵامدانەوەی تیکێتەکان.',
     newTicketNotification: 'تیکێتێکی نوێی پشتگیری لە بازرگانێکەوە گەیشت.',
     loading: 'تیکێتەکانی پشتگیری بار دەکرێن...',
@@ -260,7 +260,7 @@ const SUPPORT_TEXT = {
   en: {
     tab: 'Support',
     title: 'Merchant Support Tickets',
-    subtitle: 'Monitor merchant issues and conversations with the support team.',
+    subtitle: 'Monitor merchant issues and conversations.',
     ownerNotice: 'Monitor-only mode: you can review workflow but cannot claim tickets or reply.',
     newTicketNotification: 'A new merchant support ticket has arrived.',
     loading: 'Loading support tickets...',
@@ -711,7 +711,7 @@ export default function AdminSupportTab({
                     <Headphones className="h-4 w-4 shrink-0 text-primary" />
                     <h2 className="truncate text-sm font-black">{text.title}</h2>
                   </div>
-                  <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-muted-foreground">
+                  <p className="mt-1 truncate text-[11px] leading-4 text-muted-foreground" title={text.subtitle}>
                     {text.subtitle}
                   </p>
                 </div>
