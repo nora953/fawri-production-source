@@ -144,6 +144,9 @@ const SUPPORT_TEXT = {
     inspectionStatusExpired: 'انتهت صلاحية الطلب',
     inspectionExpires: 'انتهاء الطلب',
     inspectionDuration: 'المدة عند الموافقة: 30 دقيقة',
+    inspectionHistory: 'سجل طلبات الفحص',
+    inspectionViewHistory: 'عرض السجل',
+    inspectionRequestedAt: 'وقت الطلب',
   },
   ku: {
     tab: 'پشتگیری',
@@ -208,6 +211,9 @@ const SUPPORT_TEXT = {
     inspectionStatusExpired: 'کاتی داواکارییەکە بەسەرچوو',
     inspectionExpires: 'کۆتایی کاتی داواکاری',
     inspectionDuration: 'ماوە لە دوای ڕەزامەندی: 30 خولەک',
+    inspectionHistory: 'تۆماری داواکارییەکانی پشکنین',
+    inspectionViewHistory: 'بینینی تۆمار',
+    inspectionRequestedAt: 'کاتی داواکاری',
   },
   en: {
     tab: 'Support',
@@ -272,6 +278,9 @@ const SUPPORT_TEXT = {
     inspectionStatusExpired: 'Request expired',
     inspectionExpires: 'Request expires',
     inspectionDuration: 'Duration after approval: 30 minutes',
+    inspectionHistory: 'Inspection request history',
+    inspectionViewHistory: 'View history',
+    inspectionRequestedAt: 'Requested at',
   },
 } as const;
 
@@ -307,6 +316,7 @@ export default function AdminSupportTab({
   const [reply, setReply] = useState('');
   const [working, setWorking] = useState<'claim' | 'reply' | 'resolve' | 'inspection' | null>(null);
   const [showInspectionForm, setShowInspectionForm] = useState(false);
+  const [showInspectionHistory, setShowInspectionHistory] = useState(false);
   const [inspectionMode, setInspectionMode] = useState<InspectionSessionMode>('live_observation');
   const [inspectionReason, setInspectionReason] = useState('');
   const conversationRef = useRef<HTMLDivElement | null>(null);
@@ -317,10 +327,12 @@ export default function AdminSupportTab({
   );
   const selectedLastMessageId =
     selectedTicket?.messages[selectedTicket.messages.length - 1]?.id ?? null;
-  const latestInspectionRequest = selectedTicket?.inspection_requests?.[0] ?? null;
+  const inspectionRequests = selectedTicket?.inspection_requests ?? [];
+  const latestInspectionRequest = inspectionRequests[0] ?? null;
 
   useEffect(() => {
     setShowInspectionForm(false);
+    setShowInspectionHistory(false);
     setInspectionMode('live_observation');
     setInspectionReason('');
   }, [selectedId]);
@@ -722,23 +734,27 @@ export default function AdminSupportTab({
               </div>
 
                 {latestInspectionRequest && (
-                  <div className={`shrink-0 border-b px-3 py-2 ${inspectionStatusClass(latestInspectionRequest.status)}`}>
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="text-xs font-black">{text.inspectionTitle}</p>
-                        <p className="mt-1 text-xs font-semibold">{inspectionModeLabel(latestInspectionRequest.mode)}</p>
-                        <p className="mt-1 text-xs leading-5">{latestInspectionRequest.reason}</p>
+                  <div className="shrink-0 border-b bg-background px-3 py-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
+                        <strong>{text.inspectionHistory} ({inspectionRequests.length})</strong>
+                        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black ${inspectionStatusClass(latestInspectionRequest.status)}`}>
+                          {inspectionStatusLabel(latestInspectionRequest.status)}
+                        </span>
+                        <span className="truncate text-muted-foreground">
+                          {inspectionModeLabel(latestInspectionRequest.mode)}
+                        </span>
                       </div>
-                      <span className="rounded-full bg-background/70 px-2.5 py-1 text-[10px] font-black">
-                        {inspectionStatusLabel(latestInspectionRequest.status)}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] opacity-80">
-                      <span>{text.inspectionRequestedBy}: {latestInspectionRequest.admin_name}</span>
-                      <span>{text.inspectionDuration}</span>
-                      {latestInspectionRequest.status === 'pending' && (
-                        <span>{text.inspectionExpires}: {new Date(latestInspectionRequest.request_expires_at).toLocaleString(locale)}</span>
-                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 shrink-0"
+                        onClick={() => setShowInspectionHistory(true)}
+                      >
+                        <Eye className="me-2 h-3.5 w-3.5" />
+                        {text.inspectionViewHistory}
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -883,6 +899,47 @@ export default function AdminSupportTab({
               </Button>
             </div>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showInspectionHistory} onOpenChange={setShowInspectionHistory}>
+        <DialogContent
+          className="max-w-2xl"
+          closeButtonClassName={dir === 'rtl' ? 'left-4 right-auto' : 'left-auto right-4'}
+          dir={dir}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-start">
+              {text.inspectionHistory} ({inspectionRequests.length})
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="max-h-[60vh] space-y-3 overflow-y-auto pe-1">
+            {inspectionRequests.map((request) => (
+              <article
+                key={request.id}
+                className={`rounded-xl border p-3 ${inspectionStatusClass(request.status)}`}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-black">{inspectionModeLabel(request.mode)}</p>
+                    <p className="mt-1 whitespace-pre-wrap text-xs leading-5">{request.reason}</p>
+                  </div>
+                  <span className="rounded-full bg-background/75 px-2.5 py-1 text-[10px] font-black">
+                    {inspectionStatusLabel(request.status)}
+                  </span>
+                </div>
+                <div className="mt-2 grid gap-1 text-[10px] opacity-80 sm:grid-cols-2">
+                  <span>{text.inspectionRequestedBy}: {request.admin_name}</span>
+                  <span>{text.inspectionRequestedAt}: {new Date(request.requested_at).toLocaleString(locale)}</span>
+                  <span>{text.inspectionDuration}</span>
+                  {request.status === 'pending' && (
+                    <span>{text.inspectionExpires}: {new Date(request.request_expires_at).toLocaleString(locale)}</span>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
     </section>

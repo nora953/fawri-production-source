@@ -172,9 +172,11 @@ export default function SupportPage() {
     return () => window.cancelAnimationFrame(frameId);
   }, [loading, selectedId, selectedLastMessageId]);
 
-  const loadTickets = useCallback(async () => {
-    setLoading(true);
-    setLoadError(false);
+  const loadTickets = useCallback(async (silent = false) => {
+    if (!silent) {
+      setLoading(true);
+      setLoadError(false);
+    }
     try {
       const response = await fetch('/api/auth/support/tickets', { cache: 'no-store' });
       const data = await response.json().catch(() => null);
@@ -190,19 +192,19 @@ export default function SupportPage() {
       );
     } catch (error) {
       console.error('Could not load support tickets:', error);
-      setLoadError(true);
+      if (!silent) setLoadError(true);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void loadTickets();
-    const intervalId = window.setInterval(() => void loadTickets(), 10_000);
-    const handleFocus = () => void loadTickets();
+    const intervalId = window.setInterval(() => void loadTickets(true), 10_000);
+    const handleFocus = () => void loadTickets(true);
     const handleRealtime = (event: Event) => {
       const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
-      if (detail?.event === 'support_updated') void loadTickets();
+      if (detail?.event === 'support_updated') void loadTickets(true);
     };
     window.addEventListener('focus', handleFocus);
     window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
