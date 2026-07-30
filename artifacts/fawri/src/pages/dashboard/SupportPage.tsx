@@ -21,6 +21,13 @@ type SupportStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 type SupportSender = 'merchant' | 'admin' | 'system';
 type InspectionSessionMode = 'live_observation' | 'independent_read_only';
 type InspectionSessionRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+type InspectionConsentDecision = 'approved' | 'rejected';
+type InspectionSessionEndReason =
+  | 'request_timeout'
+  | 'approval_window_expired'
+  | 'ticket_resolved'
+  | 'ticket_closed'
+  | 'merchant_terminated';
 
 type InspectionSessionRequest = {
   id: string;
@@ -31,6 +38,9 @@ type InspectionSessionRequest = {
   mode: InspectionSessionMode;
   reason: string;
   status: InspectionSessionRequestStatus;
+  consent_decision?: InspectionConsentDecision;
+  end_reason?: InspectionSessionEndReason;
+  ended_at?: string;
   read_only: true;
   session_duration_minutes: 30;
   requested_at: string;
@@ -82,6 +92,13 @@ const INSPECTION_TEXT = {
     decisionError: 'تعذر حفظ قرارك.',
     requestExpires: 'ينتهي الطلب',
     approvedUntil: 'تنتهي الموافقة',
+    decisionAt: 'وقت القرار',
+    endedAt: 'وقت الانتهاء',
+    requestTimeout: 'انتهى الطلب دون رد',
+    approvalExpired: 'انتهت مدة الموافقة',
+    ticketResolved: 'انتهت بسبب حل التذكرة',
+    ticketClosed: 'انتهت بسبب إغلاق التذكرة',
+    merchantTerminated: 'تم إنهاء الجلسة من قبلك',
   },
   ku: {
     title: 'داواکاری پشکنینی هەژمارەکەت',
@@ -101,6 +118,13 @@ const INSPECTION_TEXT = {
     decisionError: 'پاشەکەوتکردنی بڕیار سەرکەوتوو نەبوو.',
     requestExpires: 'داواکاری کۆتایی دێت',
     approvedUntil: 'ڕەزامەندی کۆتایی دێت',
+    decisionAt: 'کاتی بڕیار',
+    endedAt: 'کاتی کۆتایی',
+    requestTimeout: 'داواکاری بێ وەڵام کۆتایی هات',
+    approvalExpired: 'ماوەی ڕەزامەندی کۆتایی هات',
+    ticketResolved: 'بە چارەسەرکردنی تیکێت کۆتایی هات',
+    ticketClosed: 'بە داخستنی تیکێت کۆتایی هات',
+    merchantTerminated: 'دانیشتنەکەت کۆتایی پێهێنا',
   },
   en: {
     title: 'Account inspection request',
@@ -120,6 +144,13 @@ const INSPECTION_TEXT = {
     decisionError: 'Could not save your decision.',
     requestExpires: 'Request expires',
     approvedUntil: 'Approval expires',
+    decisionAt: 'Decision time',
+    endedAt: 'Ended at',
+    requestTimeout: 'Request expired without a response',
+    approvalExpired: 'Approval period ended',
+    ticketResolved: 'Ended because the ticket was resolved',
+    ticketClosed: 'Ended because the ticket was closed',
+    merchantTerminated: 'You ended the session',
   },
 } as const;
 
@@ -157,6 +188,27 @@ export default function SupportPage() {
   const selectedLastMessageId =
     selectedTicket?.messages[selectedTicket.messages.length - 1]?.id ?? null;
   const latestInspectionRequest = selectedTicket?.inspection_requests?.[0] ?? null;
+  const latestInspectionDecision: InspectionConsentDecision | null = latestInspectionRequest
+    ? latestInspectionRequest.consent_decision ||
+      (latestInspectionRequest.status === 'approved'
+        ? 'approved'
+        : latestInspectionRequest.status === 'rejected'
+          ? 'rejected'
+          : null)
+    : null;
+  const latestInspectionEndLabel = latestInspectionRequest
+    ? latestInspectionRequest.end_reason === 'request_timeout'
+      ? inspectionText.requestTimeout
+      : latestInspectionRequest.end_reason === 'approval_window_expired'
+        ? inspectionText.approvalExpired
+        : latestInspectionRequest.end_reason === 'ticket_resolved'
+          ? inspectionText.ticketResolved
+          : latestInspectionRequest.end_reason === 'ticket_closed'
+            ? inspectionText.ticketClosed
+            : latestInspectionRequest.end_reason === 'merchant_terminated'
+              ? inspectionText.merchantTerminated
+              : null
+    : null;
 
   useLayoutEffect(() => {
     const conversation = conversationRef.current;
@@ -574,12 +626,12 @@ export default function SupportPage() {
 
               {latestInspectionRequest && (
                 <div className={`shrink-0 border-b p-3 ${
-                  latestInspectionRequest.status === 'pending'
-                    ? 'border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30'
-                    : latestInspectionRequest.status === 'approved'
-                      ? 'border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-950/30'
-                      : latestInspectionRequest.status === 'rejected'
-                        ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
+                  latestInspectionDecision === 'approved'
+                    ? 'border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-950/30'
+                    : latestInspectionDecision === 'rejected'
+                      ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
+                      : latestInspectionRequest.status === 'pending'
+                        ? 'border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30'
                         : 'bg-muted/40'
                 }`}>
                   <div className="flex flex-wrap items-start justify-between gap-2">
@@ -590,17 +642,30 @@ export default function SupportPage() {
                       <p className="mt-1 text-xs leading-5"><strong>{inspectionText.reason}:</strong> {latestInspectionRequest.reason}</p>
                     </div>
                     <span className="rounded-full bg-background/80 px-2.5 py-1 text-[10px] font-black">
-                      {latestInspectionRequest.status === 'pending'
-                        ? inspectionText.pending
-                        : latestInspectionRequest.status === 'approved'
-                          ? inspectionText.approved
-                          : latestInspectionRequest.status === 'rejected'
-                            ? inspectionText.rejected
+                      {latestInspectionDecision === 'approved'
+                        ? inspectionText.approved
+                        : latestInspectionDecision === 'rejected'
+                          ? inspectionText.rejected
+                          : latestInspectionRequest.status === 'pending'
+                            ? inspectionText.pending
                             : inspectionText.expired}
                     </span>
                   </div>
                   <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{inspectionText.rules}</p>
-                  {latestInspectionRequest.status === 'pending' && (
+                  {latestInspectionEndLabel && (
+                    <p className="mt-2 rounded-lg border bg-background/70 px-3 py-2 text-xs font-bold text-muted-foreground">
+                      {latestInspectionEndLabel}
+                      {latestInspectionRequest.ended_at && (
+                        <> — {inspectionText.endedAt}: {new Date(latestInspectionRequest.ended_at).toLocaleString(locale)}</>
+                      )}
+                    </p>
+                  )}
+                  {latestInspectionRequest.responded_at && latestInspectionDecision && (
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      {inspectionText.decisionAt}: {new Date(latestInspectionRequest.responded_at).toLocaleString(locale)}
+                    </p>
+                  )}
+                  {latestInspectionRequest.status === 'pending' && !latestInspectionRequest.ended_at && (
                     <>
                       <p className="mt-1 text-[10px] text-muted-foreground">
                         {inspectionText.requestExpires}: {new Date(latestInspectionRequest.request_expires_at).toLocaleString(locale)}
@@ -625,7 +690,7 @@ export default function SupportPage() {
                       </div>
                     </>
                   )}
-                  {latestInspectionRequest.status === 'approved' && latestInspectionRequest.session_expires_at && (
+                  {latestInspectionDecision === 'approved' && latestInspectionRequest.session_expires_at && !latestInspectionRequest.ended_at && (
                     <p className="mt-2 text-[10px] font-semibold text-green-800 dark:text-green-200">
                       {inspectionText.approvedUntil}: {new Date(latestInspectionRequest.session_expires_at).toLocaleString(locale)}
                     </p>

@@ -413,6 +413,13 @@ type SupportTicketStatus = "open" | "in_progress" | "resolved" | "closed";
 type SupportMessageSender = "merchant" | "admin" | "system";
 type InspectionSessionMode = "live_observation" | "independent_read_only";
 type InspectionSessionRequestStatus = "pending" | "approved" | "rejected" | "expired";
+type InspectionConsentDecision = "approved" | "rejected";
+type InspectionSessionEndReason =
+  | "request_timeout"
+  | "approval_window_expired"
+  | "ticket_resolved"
+  | "ticket_closed"
+  | "merchant_terminated";
 
 type InspectionSessionRequestRecord = {
   id: string;
@@ -423,6 +430,9 @@ type InspectionSessionRequestRecord = {
   mode: InspectionSessionMode;
   reason: string;
   status: InspectionSessionRequestStatus;
+  consent_decision?: InspectionConsentDecision;
+  end_reason?: InspectionSessionEndReason;
+  ended_at?: string;
   read_only: true;
   session_duration_minutes: 30;
   requested_at: string;
@@ -1579,7 +1589,10 @@ function ensureDb(): AuthDb {
             )
             .map((ticket) => ({
               ...ticket,
-              inspection_requests: normalizeInspectionRequests(ticket.inspection_requests),
+              inspection_requests: normalizeInspectionRequests(
+                ticket.inspection_requests,
+                ticket.status,
+              ),
             }))
         : [],
       deletion_requests: Array.isArray(parsed.deletion_requests)
@@ -1619,7 +1632,28 @@ function isInspectionSessionRequestStatus(
   return value === "pending" || value === "approved" || value === "rejected" || value === "expired";
 }
 
-function normalizeInspectionRequests(value: unknown): InspectionSessionRequestRecord[] {
+function isInspectionConsentDecision(
+  value: unknown,
+): value is InspectionConsentDecision {
+  return value === "approved" || value === "rejected";
+}
+
+function isInspectionSessionEndReason(
+  value: unknown,
+): value is InspectionSessionEndReason {
+  return (
+    value === "request_timeout" ||
+    value === "approval_window_expired" ||
+    value === "ticket_resolved" ||
+    value === "ticket_closed" ||
+    value === "merchant_terminated"
+  );
+}
+
+function normalizeInspectionRequests(
+  value: unknown,
+  ticketStatus?: SupportTicketStatus,
+): InspectionSessionRequestRecord[] {
   if (!Array.isArray(value)) return [];
 
   return value
@@ -1643,6 +1677,42 @@ function normalizeInspectionRequests(value: unknown): InspectionSessionRequestRe
           typeof item.request_expires_at === "string",
         ),
     )
+    .map((item) => {
+      const consentDecision = isInspectionConsentDecision(item.consent_decision)
+        ? item.consent_decision
+        : item.status === "approved" || Boolean(item.approved_at)
+          ? "approved"
+          : item.status === "rejected" || Boolean(item.rejected_at)
+            ? "rejected"
+            : undefined;
+      const inferredTicketEndReason =
+        ticketStatus === "resolved"
+          ? "ticket_resolved"
+          : ticketStatus === "closed"
+            ? "ticket_closed"
+            : undefined;
+      const endReason = isInspectionSessionEndReason(item.end_reason)
+        ? item.end_reason
+        : item.status === "expired"
+          ? inferredTicketEndReason ||
+            (consentDecision === "approved"
+              ? "approval_window_expired"
+              : "request_timeout")
+          : undefined;
+      const endedAt =
+        typeof item.ended_at === "string"
+          ? item.ended_at
+          : endReason
+            ? item.expired_at || item.responded_at || item.session_expires_at
+            : undefined;
+
+      return {
+        ...item,
+        ...(consentDecision ? { consent_decision: consentDecision } : {}),
+        ...(endReason ? { end_reason: endReason } : {}),
+        ...(endedAt ? { ended_at: endedAt } : {}),
+      };
+    })
     .sort(
       (left, right) =>
         new Date(right.requested_at).getTime() - new Date(left.requested_at).getTime(),
@@ -1654,12 +1724,16 @@ function refreshInspectionRequestExpirations(db: AuthDb): boolean {
   let changed = false;
 
   for (const ticket of db.support_tickets) {
+    const ticketEndReason: InspectionSessionEndReason | undefined =
+      ticket.status === "resolved"
+        ? "ticket_resolved"
+        : ticket.status === "closed"
+          ? "ticket_closed"
+          : undefined;
+
     for (const request of ticket.inspection_requests || []) {
-      const ticketInactive =
-        ticket.status === "resolved" || ticket.status === "closed";
-      const activeRequestOnInactiveTicket =
-        ticketInactive &&
-        (request.status === "pending" || request.status === "approved");
+      if (request.ended_at) continue;
+
       const pendingExpired =
         request.status === "pending" &&
         new Date(request.request_expires_at).getTime() <= timestamp;
@@ -1667,14 +1741,30 @@ function refreshInspectionRequestExpirations(db: AuthDb): boolean {
         request.status === "approved" &&
         Boolean(request.session_expires_at) &&
         new Date(request.session_expires_at || 0).getTime() <= timestamp;
+      const pendingOnInactiveTicket =
+        request.status === "pending" && Boolean(ticketEndReason);
+      const approvedOnInactiveTicket =
+        request.status === "approved" && Boolean(ticketEndReason);
 
-      if (!activeRequestOnInactiveTicket && !pendingExpired && !approvedExpired) continue;
+      if (
+        !pendingExpired &&
+        !approvedExpired &&
+        !pendingOnInactiveTicket &&
+        !approvedOnInactiveTicket
+      ) {
+        continue;
+      }
 
-      const expiredAt = now();
-      request.status = "expired";
-      request.expired_at = expiredAt;
-      request.responded_at = request.responded_at || expiredAt;
-      ticket.updated_at = expiredAt;
+      const endedAt = now();
+      if (request.status === "pending") {
+        request.status = "expired";
+        request.expired_at = endedAt;
+        request.end_reason = ticketEndReason || "request_timeout";
+      } else {
+        request.consent_decision = "approved";
+        request.end_reason = ticketEndReason || "approval_window_expired";
+      }
+      request.ended_at = endedAt;
       changed = true;
     }
   }
@@ -1689,6 +1779,7 @@ function hasActiveInspectionRequest(db: AuthDb, merchantId: string): boolean {
       ticket.merchant_id === merchantId &&
       (ticket.status === "open" || ticket.status === "in_progress") &&
       (ticket.inspection_requests || []).some((request) => {
+        if (request.ended_at) return false;
         if (request.status === "pending") {
           return new Date(request.request_expires_at).getTime() > timestamp;
         }
@@ -2852,15 +2943,22 @@ router.post(
 
     const respondedAt = now();
     inspectionRequest.responded_at = respondedAt;
+    delete inspectionRequest.ended_at;
+    delete inspectionRequest.end_reason;
     if (decision === "approve") {
       inspectionRequest.status = "approved";
+      inspectionRequest.consent_decision = "approved";
       inspectionRequest.approved_at = respondedAt;
+      delete inspectionRequest.rejected_at;
       inspectionRequest.session_expires_at = new Date(
         Date.now() + inspectionRequest.session_duration_minutes * 60 * 1000,
       ).toISOString();
     } else {
       inspectionRequest.status = "rejected";
+      inspectionRequest.consent_decision = "rejected";
       inspectionRequest.rejected_at = respondedAt;
+      delete inspectionRequest.approved_at;
+      delete inspectionRequest.session_expires_at;
     }
     ticket.updated_at = respondedAt;
 

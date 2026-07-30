@@ -33,6 +33,13 @@ type AdminSupportCategory =
 
 type InspectionSessionMode = 'live_observation' | 'independent_read_only';
 type InspectionSessionRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+type InspectionConsentDecision = 'approved' | 'rejected';
+type InspectionSessionEndReason =
+  | 'request_timeout'
+  | 'approval_window_expired'
+  | 'ticket_resolved'
+  | 'ticket_closed'
+  | 'merchant_terminated';
 
 type InspectionSessionRequest = {
   id: string;
@@ -43,6 +50,9 @@ type InspectionSessionRequest = {
   mode: InspectionSessionMode;
   reason: string;
   status: InspectionSessionRequestStatus;
+  consent_decision?: InspectionConsentDecision;
+  end_reason?: InspectionSessionEndReason;
+  ended_at?: string;
   read_only: true;
   session_duration_minutes: 30;
   requested_at: string;
@@ -147,6 +157,21 @@ const SUPPORT_TEXT = {
     inspectionHistory: 'سجل طلبات الفحص',
     inspectionViewHistory: 'عرض السجل',
     inspectionRequestedAt: 'وقت الطلب',
+    inspectionLatestRequest: 'آخر طلب',
+    inspectionDecision: 'قرار التاجر',
+    inspectionSessionState: 'حالة الجلسة',
+    inspectionDecisionPending: 'لم يصدر قرار',
+    inspectionStateWaiting: 'بانتظار القرار',
+    inspectionStateApprovalActive: 'الموافقة فعالة',
+    inspectionStateNotStarted: 'لم تبدأ الجلسة',
+    inspectionEndRequestTimeout: 'انتهى الطلب دون رد',
+    inspectionEndApprovalExpired: 'انتهت مدة الموافقة',
+    inspectionEndTicketResolved: 'انتهت بسبب حل التذكرة',
+    inspectionEndTicketClosed: 'انتهت بسبب إغلاق التذكرة',
+    inspectionEndMerchantTerminated: 'أنهى التاجر الجلسة',
+    inspectionRespondedAt: 'وقت قرار التاجر',
+    inspectionEndedAt: 'وقت الانتهاء',
+    inspectionApprovedUntil: 'الموافقة فعالة حتى',
   },
   ku: {
     tab: 'پشتگیری',
@@ -214,6 +239,21 @@ const SUPPORT_TEXT = {
     inspectionHistory: 'تۆماری داواکارییەکانی پشکنین',
     inspectionViewHistory: 'بینینی تۆمار',
     inspectionRequestedAt: 'کاتی داواکاری',
+    inspectionLatestRequest: 'دوایین داواکاری',
+    inspectionDecision: 'بڕیاری بازرگان',
+    inspectionSessionState: 'دۆخی دانیشتن',
+    inspectionDecisionPending: 'هێشتا بڕیار نەدراوە',
+    inspectionStateWaiting: 'چاوەڕوانی بڕیار',
+    inspectionStateApprovalActive: 'ڕەزامەندی چالاکە',
+    inspectionStateNotStarted: 'دانیشتن دەستی پێنەکردووە',
+    inspectionEndRequestTimeout: 'داواکاری بێ وەڵام کۆتایی هات',
+    inspectionEndApprovalExpired: 'ماوەی ڕەزامەندی کۆتایی هات',
+    inspectionEndTicketResolved: 'بە چارەسەرکردنی تیکێت کۆتایی هات',
+    inspectionEndTicketClosed: 'بە داخستنی تیکێت کۆتایی هات',
+    inspectionEndMerchantTerminated: 'بازرگان دانیشتنەکەی کۆتایی پێهێنا',
+    inspectionRespondedAt: 'کاتی بڕیاری بازرگان',
+    inspectionEndedAt: 'کاتی کۆتایی',
+    inspectionApprovedUntil: 'ڕەزامەندی چالاکە تا',
   },
   en: {
     tab: 'Support',
@@ -281,6 +321,21 @@ const SUPPORT_TEXT = {
     inspectionHistory: 'Inspection request history',
     inspectionViewHistory: 'View history',
     inspectionRequestedAt: 'Requested at',
+    inspectionLatestRequest: 'Latest request',
+    inspectionDecision: 'Merchant decision',
+    inspectionSessionState: 'Session state',
+    inspectionDecisionPending: 'No decision yet',
+    inspectionStateWaiting: 'Waiting for decision',
+    inspectionStateApprovalActive: 'Approval is active',
+    inspectionStateNotStarted: 'Session did not start',
+    inspectionEndRequestTimeout: 'Request expired without a response',
+    inspectionEndApprovalExpired: 'Approval period ended',
+    inspectionEndTicketResolved: 'Ended because the ticket was resolved',
+    inspectionEndTicketClosed: 'Ended because the ticket was closed',
+    inspectionEndMerchantTerminated: 'Merchant ended the session',
+    inspectionRespondedAt: 'Merchant decision time',
+    inspectionEndedAt: 'Ended at',
+    inspectionApprovedUntil: 'Approval active until',
   },
 } as const;
 
@@ -549,24 +604,48 @@ export default function AdminSupportTab({
       closed: 'bg-red-100 text-red-900 dark:bg-red-950/70 dark:text-red-100',
     })[status];
 
-  const inspectionStatusLabel = (status: InspectionSessionRequestStatus) =>
-    ({
-      pending: text.inspectionStatusPending,
-      approved: text.inspectionStatusApproved,
-      rejected: text.inspectionStatusRejected,
-      expired: text.inspectionStatusExpired,
-    })[status];
+  const inspectionConsentDecision = (
+    request: InspectionSessionRequest,
+  ): InspectionConsentDecision | null =>
+    request.consent_decision ||
+    (request.status === 'approved'
+      ? 'approved'
+      : request.status === 'rejected'
+        ? 'rejected'
+        : null);
+
+  const inspectionDecisionLabel = (request: InspectionSessionRequest) => {
+    const decision = inspectionConsentDecision(request);
+    return decision === 'approved'
+      ? text.inspectionStatusApproved
+      : decision === 'rejected'
+        ? text.inspectionStatusRejected
+        : text.inspectionDecisionPending;
+  };
 
   const inspectionModeLabel = (mode: InspectionSessionMode) =>
     mode === 'live_observation' ? text.inspectionLive : text.inspectionReadOnly;
 
-  const inspectionStatusClass = (status: InspectionSessionRequestStatus) =>
-    ({
-      pending: 'border-yellow-300 bg-yellow-50 text-yellow-950 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-100',
-      approved: 'border-green-300 bg-green-50 text-green-950 dark:border-green-800 dark:bg-green-950/30 dark:text-green-100',
-      rejected: 'border-red-300 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950/30 dark:text-red-100',
-      expired: 'border-border bg-muted/40 text-muted-foreground',
-    })[status];
+  const inspectionEndLabel = (request: InspectionSessionRequest) => {
+    if (request.end_reason === 'request_timeout') return text.inspectionEndRequestTimeout;
+    if (request.end_reason === 'approval_window_expired') return text.inspectionEndApprovalExpired;
+    if (request.end_reason === 'ticket_resolved') return text.inspectionEndTicketResolved;
+    if (request.end_reason === 'ticket_closed') return text.inspectionEndTicketClosed;
+    if (request.end_reason === 'merchant_terminated') return text.inspectionEndMerchantTerminated;
+    if (request.status === 'pending') return text.inspectionStateWaiting;
+    if (inspectionConsentDecision(request) === 'approved') return text.inspectionStateApprovalActive;
+    if (inspectionConsentDecision(request) === 'rejected') return text.inspectionStateNotStarted;
+    return text.inspectionStatusExpired;
+  };
+
+  const inspectionDecisionClass = (request: InspectionSessionRequest) => {
+    const decision = inspectionConsentDecision(request);
+    return decision === 'approved'
+      ? 'border-green-300 bg-green-50 text-green-950 dark:border-green-800 dark:bg-green-950/30 dark:text-green-100'
+      : decision === 'rejected'
+        ? 'border-red-300 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950/30 dark:text-red-100'
+        : 'border-yellow-300 bg-yellow-50 text-yellow-950 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-100';
+  };
 
   const categoryLabel = (category: AdminSupportCategory) =>
     ({
@@ -583,8 +662,11 @@ export default function AdminSupportTab({
   );
   const ticketIsActive =
     selectedTicket?.status === 'open' || selectedTicket?.status === 'in_progress';
-  const inspectionRequestIsActive =
-    latestInspectionRequest?.status === 'pending' || latestInspectionRequest?.status === 'approved';
+  const inspectionRequestIsActive = Boolean(
+    latestInspectionRequest &&
+      !latestInspectionRequest.ended_at &&
+      (latestInspectionRequest.status === 'pending' || latestInspectionRequest.status === 'approved'),
+  );
   const canRequestInspection =
     !isOwner &&
     canInspectSessions &&
@@ -738,11 +820,12 @@ export default function AdminSupportTab({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex min-w-0 flex-wrap items-center gap-2 text-xs">
                         <strong>{text.inspectionHistory} ({inspectionRequests.length})</strong>
-                        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black ${inspectionStatusClass(latestInspectionRequest.status)}`}>
-                          {inspectionStatusLabel(latestInspectionRequest.status)}
+                        <span className="text-muted-foreground">{text.inspectionLatestRequest}:</span>
+                        <span className={`rounded-full border px-2.5 py-1 text-[11px] font-black ${inspectionDecisionClass(latestInspectionRequest)}`}>
+                          {inspectionDecisionLabel(latestInspectionRequest)}
                         </span>
-                        <span className="truncate text-muted-foreground">
-                          {inspectionModeLabel(latestInspectionRequest.mode)}
+                        <span className="rounded-full border bg-muted/40 px-2.5 py-1 text-[11px] font-bold text-muted-foreground">
+                          {inspectionEndLabel(latestInspectionRequest)}
                         </span>
                       </div>
                       <Button
@@ -907,6 +990,7 @@ export default function AdminSupportTab({
           className="max-w-2xl"
           closeButtonClassName={dir === 'rtl' ? 'left-4 right-auto' : 'left-auto right-4'}
           dir={dir}
+          onOpenAutoFocus={(event) => event.preventDefault()}
         >
           <DialogHeader>
             <DialogTitle className="text-start">
@@ -915,30 +999,49 @@ export default function AdminSupportTab({
           </DialogHeader>
 
           <div className="max-h-[60vh] space-y-3 overflow-y-auto pe-1">
-            {inspectionRequests.map((request) => (
-              <article
-                key={request.id}
-                className={`rounded-xl border p-3 ${inspectionStatusClass(request.status)}`}
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-black">{inspectionModeLabel(request.mode)}</p>
-                    <p className="mt-1 whitespace-pre-wrap text-xs leading-5">{request.reason}</p>
+            {inspectionRequests.map((request) => {
+              const decision = inspectionConsentDecision(request);
+              return (
+                <article key={request.id} className="rounded-xl border bg-card p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-black">{inspectionModeLabel(request.mode)}</p>
+                      <p className="mt-2 whitespace-pre-wrap rounded-lg bg-muted/35 px-3 py-2 text-sm leading-6">
+                        {request.reason}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <span className={`rounded-full border px-2.5 py-1 text-xs font-black ${inspectionDecisionClass(request)}`}>
+                        {text.inspectionDecision}: {inspectionDecisionLabel(request)}
+                      </span>
+                      <span className="rounded-full border bg-muted/40 px-2.5 py-1 text-xs font-bold text-muted-foreground">
+                        {text.inspectionSessionState}: {inspectionEndLabel(request)}
+                      </span>
+                    </div>
                   </div>
-                  <span className="rounded-full bg-background/75 px-2.5 py-1 text-[10px] font-black">
-                    {inspectionStatusLabel(request.status)}
-                  </span>
-                </div>
-                <div className="mt-2 grid gap-1 text-[10px] opacity-80 sm:grid-cols-2">
-                  <span>{text.inspectionRequestedBy}: {request.admin_name}</span>
-                  <span>{text.inspectionRequestedAt}: {new Date(request.requested_at).toLocaleString(locale)}</span>
-                  <span>{text.inspectionDuration}</span>
-                  {request.status === 'pending' && (
-                    <span>{text.inspectionExpires}: {new Date(request.request_expires_at).toLocaleString(locale)}</span>
-                  )}
-                </div>
-              </article>
-            ))}
+
+                  <div className="mt-3 grid gap-x-5 gap-y-2 border-t pt-3 text-xs leading-5 text-muted-foreground sm:grid-cols-2">
+                    <span><strong className="text-foreground">{text.inspectionRequestedBy}:</strong> {request.admin_name}</span>
+                    <span><strong className="text-foreground">{text.inspectionRequestedAt}:</strong> {new Date(request.requested_at).toLocaleString(locale)}</span>
+                    {request.responded_at && decision && (
+                      <span><strong className="text-foreground">{text.inspectionRespondedAt}:</strong> {new Date(request.responded_at).toLocaleString(locale)}</span>
+                    )}
+                    {request.status === 'pending' && !request.ended_at && (
+                      <span><strong className="text-foreground">{text.inspectionExpires}:</strong> {new Date(request.request_expires_at).toLocaleString(locale)}</span>
+                    )}
+                    {decision === 'approved' && (
+                      <span><strong className="text-foreground">{text.inspectionDuration}:</strong> 30</span>
+                    )}
+                    {decision === 'approved' && request.session_expires_at && !request.ended_at && (
+                      <span><strong className="text-foreground">{text.inspectionApprovedUntil}:</strong> {new Date(request.session_expires_at).toLocaleString(locale)}</span>
+                    )}
+                    {request.ended_at && (
+                      <span><strong className="text-foreground">{text.inspectionEndedAt}:</strong> {new Date(request.ended_at).toLocaleString(locale)}</span>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
