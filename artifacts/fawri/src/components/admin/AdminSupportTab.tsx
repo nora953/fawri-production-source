@@ -153,7 +153,8 @@ const SUPPORT_TEXT = {
     inspectionStatusRejected: 'رفض التاجر',
     inspectionStatusExpired: 'انتهت صلاحية الطلب',
     inspectionExpires: 'انتهاء الطلب',
-    inspectionDuration: 'المدة عند الموافقة: 30 دقيقة',
+    inspectionDuration: 'مدة الموافقة',
+    inspectionMinutes: 'دقيقة',
     inspectionHistory: 'سجل طلبات الفحص',
     inspectionViewHistory: 'عرض السجل',
     inspectionRequestedAt: 'وقت الطلب',
@@ -235,7 +236,8 @@ const SUPPORT_TEXT = {
     inspectionStatusRejected: 'بازرگان ڕەتی کردەوە',
     inspectionStatusExpired: 'کاتی داواکارییەکە بەسەرچوو',
     inspectionExpires: 'کۆتایی کاتی داواکاری',
-    inspectionDuration: 'ماوە لە دوای ڕەزامەندی: 30 خولەک',
+    inspectionDuration: 'ماوەی ڕەزامەندی',
+    inspectionMinutes: 'خولەک',
     inspectionHistory: 'تۆماری داواکارییەکانی پشکنین',
     inspectionViewHistory: 'بینینی تۆمار',
     inspectionRequestedAt: 'کاتی داواکاری',
@@ -317,7 +319,8 @@ const SUPPORT_TEXT = {
     inspectionStatusRejected: 'Merchant rejected',
     inspectionStatusExpired: 'Request expired',
     inspectionExpires: 'Request expires',
-    inspectionDuration: 'Duration after approval: 30 minutes',
+    inspectionDuration: 'Approval duration',
+    inspectionMinutes: 'minutes',
     inspectionHistory: 'Inspection request history',
     inspectionViewHistory: 'View history',
     inspectionRequestedAt: 'Requested at',
@@ -1030,7 +1033,7 @@ export default function AdminSupportTab({
                       <span><strong className="text-foreground">{text.inspectionExpires}:</strong> {new Date(request.request_expires_at).toLocaleString(locale)}</span>
                     )}
                     {decision === 'approved' && (
-                      <span><strong className="text-foreground">{text.inspectionDuration}:</strong> 30</span>
+                      <span><strong className="text-foreground">{text.inspectionDuration}:</strong> {request.session_duration_minutes} {text.inspectionMinutes}</span>
                     )}
                     {decision === 'approved' && request.session_expires_at && !request.ended_at && (
                       <span><strong className="text-foreground">{text.inspectionApprovedUntil}:</strong> {new Date(request.session_expires_at).toLocaleString(locale)}</span>
