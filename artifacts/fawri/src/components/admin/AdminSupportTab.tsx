@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2,
+  ChevronDown,
   Eye,
   Headphones,
   Loader2,
@@ -746,15 +747,21 @@ export default function AdminSupportTab({
                     <div className="grid gap-2 sm:grid-cols-2">
                       <label className="text-xs font-bold">
                         <span className="mb-1 block">{text.inspectionMode}</span>
-                        <select
-                          value={inspectionMode}
-                          disabled={working !== null}
-                          onChange={(event) => setInspectionMode(event.target.value as InspectionSessionMode)}
-                          className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
-                        >
-                          <option value="live_observation">{text.inspectionLive}</option>
-                          <option value="independent_read_only">{text.inspectionReadOnly}</option>
-                        </select>
+                        <div className="relative">
+                          <select
+                            value={inspectionMode}
+                            disabled={working !== null}
+                            onChange={(event) => setInspectionMode(event.target.value as InspectionSessionMode)}
+                            className="h-10 w-full appearance-none rounded-xl border bg-background pe-3 ps-10 text-sm"
+                          >
+                            <option value="live_observation">{text.inspectionLive}</option>
+                            <option value="independent_read_only">{text.inspectionReadOnly}</option>
+                          </select>
+                          <ChevronDown
+                            aria-hidden="true"
+                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                          />
+                        </div>
                       </label>
                       <label className="text-xs font-bold">
                         <span className="mb-1 block">{text.inspectionReason}</span>
