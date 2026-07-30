@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2,
+  Eye,
   Headphones,
   Loader2,
   MessageCircle,
@@ -28,6 +29,29 @@ type AdminSupportCategory =
   | 'account'
   | 'other';
 
+type InspectionSessionMode = 'live_observation' | 'independent_read_only';
+type InspectionSessionRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+
+type InspectionSessionRequest = {
+  id: string;
+  ticket_id: string;
+  merchant_id: string;
+  admin_id: string;
+  admin_name: string;
+  mode: InspectionSessionMode;
+  reason: string;
+  status: InspectionSessionRequestStatus;
+  read_only: true;
+  session_duration_minutes: 30;
+  requested_at: string;
+  request_expires_at: string;
+  responded_at?: string;
+  approved_at?: string;
+  rejected_at?: string;
+  expired_at?: string;
+  session_expires_at?: string;
+};
+
 type AdminSupportMessage = {
   id: string;
   sender_type: 'merchant' | 'admin' | 'system';
@@ -51,6 +75,7 @@ export type AdminSupportTicket = {
   updated_at: string;
   closed_at?: string;
   messages: AdminSupportMessage[];
+  inspection_requests?: InspectionSessionRequest[];
 };
 
 const SUPPORT_TEXT = {
@@ -97,6 +122,26 @@ const SUPPORT_TEXT = {
     logReplied: 'الرد على تذكرة دعم',
     logResolved: 'حل تذكرة دعم',
     logInProgress: 'تذكرة دعم قيد المعالجة',
+    requestInspection: 'طلب جلسة فحص',
+    inspectionTitle: 'طلب فحص حساب التاجر',
+    inspectionMode: 'نوع الجلسة',
+    inspectionLive: 'مشاهدة مباشرة',
+    inspectionReadOnly: 'فحص مستقل للقراءة فقط',
+    inspectionReason: 'سبب طلب الفحص',
+    inspectionReasonPlaceholder: 'اكتب سببًا واضحًا لطلب الجلسة...',
+    inspectionRules: 'الجلسة للقراءة فقط، تتطلب موافقة التاجر، ومدتها 30 دقيقة. ينتهي الطلب بعد 10 دقائق إن لم يُقبل.',
+    inspectionSend: 'إرسال الطلب',
+    inspectionSending: 'جارٍ الإرسال...',
+    inspectionCancel: 'إلغاء',
+    inspectionSuccess: 'تم إرسال طلب جلسة الفحص إلى التاجر.',
+    inspectionError: 'تعذر إرسال طلب جلسة الفحص.',
+    inspectionRequestedBy: 'المسؤول الطالب',
+    inspectionStatusPending: 'بانتظار موافقة التاجر',
+    inspectionStatusApproved: 'وافق التاجر',
+    inspectionStatusRejected: 'رفض التاجر',
+    inspectionStatusExpired: 'انتهت صلاحية الطلب',
+    inspectionExpires: 'انتهاء الطلب',
+    inspectionDuration: 'المدة عند الموافقة: 30 دقيقة',
   },
   ku: {
     tab: 'پشتگیری',
@@ -141,6 +186,26 @@ const SUPPORT_TEXT = {
     logReplied: 'وەڵامدانەوەی تیکێتی پشتگیری',
     logResolved: 'چارەسەرکردنی تیکێتی پشتگیری',
     logInProgress: 'تیکێتی پشتگیری لە ژێر چارەسەرکردندا',
+    requestInspection: 'داواکاری دانیشتنی پشکنین',
+    inspectionTitle: 'داواکاری پشکنینی هەژماری بازرگان',
+    inspectionMode: 'جۆری دانیشتن',
+    inspectionLive: 'بینینی ڕاستەوخۆ',
+    inspectionReadOnly: 'پشکنینی سەربەخۆی تەنها خوێندنەوە',
+    inspectionReason: 'هۆکاری داواکاری پشکنین',
+    inspectionReasonPlaceholder: 'هۆکارێکی ڕوون بنووسە...',
+    inspectionRules: 'دانیشتنەکە تەنها خوێندنەوەیە، پێویستی بە ڕەزامەندی بازرگان هەیە و 30 خولەکە. داواکارییەکە دوای 10 خولەک بەسەر دەچێت.',
+    inspectionSend: 'ناردنی داواکاری',
+    inspectionSending: 'دەنێردرێت...',
+    inspectionCancel: 'هەڵوەشاندنەوە',
+    inspectionSuccess: 'داواکاری دانیشتنی پشکنین بۆ بازرگان نێردرا.',
+    inspectionError: 'ناردنی داواکاری پشکنین سەرکەوتوو نەبوو.',
+    inspectionRequestedBy: 'بەرپرسی داواکار',
+    inspectionStatusPending: 'چاوەڕوانی ڕەزامەندی بازرگان',
+    inspectionStatusApproved: 'بازرگان ڕازی بوو',
+    inspectionStatusRejected: 'بازرگان ڕەتی کردەوە',
+    inspectionStatusExpired: 'کاتی داواکارییەکە بەسەرچوو',
+    inspectionExpires: 'کۆتایی کاتی داواکاری',
+    inspectionDuration: 'ماوە لە دوای ڕەزامەندی: 30 خولەک',
   },
   en: {
     tab: 'Support',
@@ -185,6 +250,26 @@ const SUPPORT_TEXT = {
     logReplied: 'Support ticket replied',
     logResolved: 'Support ticket resolved',
     logInProgress: 'Support ticket in progress',
+    requestInspection: 'Request inspection session',
+    inspectionTitle: 'Merchant account inspection request',
+    inspectionMode: 'Session mode',
+    inspectionLive: 'Live observation',
+    inspectionReadOnly: 'Independent read-only inspection',
+    inspectionReason: 'Reason for inspection',
+    inspectionReasonPlaceholder: 'Write a clear reason for requesting the session...',
+    inspectionRules: 'The session is read-only, requires merchant consent, and lasts 30 minutes. The request expires after 10 minutes if unanswered.',
+    inspectionSend: 'Send request',
+    inspectionSending: 'Sending...',
+    inspectionCancel: 'Cancel',
+    inspectionSuccess: 'The inspection session request was sent to the merchant.',
+    inspectionError: 'Could not send the inspection session request.',
+    inspectionRequestedBy: 'Requested by',
+    inspectionStatusPending: 'Waiting for merchant consent',
+    inspectionStatusApproved: 'Merchant approved',
+    inspectionStatusRejected: 'Merchant rejected',
+    inspectionStatusExpired: 'Request expired',
+    inspectionExpires: 'Request expires',
+    inspectionDuration: 'Duration after approval: 30 minutes',
   },
 } as const;
 
@@ -199,12 +284,14 @@ export function getAdminSupportText(language: string) {
 type AdminSupportTabProps = {
   adminId: string;
   isOwner: boolean;
+  canInspectSessions: boolean;
   onActiveCountChange?: (count: number) => void;
 };
 
 export default function AdminSupportTab({
   adminId,
   isOwner,
+  canInspectSessions,
   onActiveCountChange,
 }: AdminSupportTabProps) {
   const { lang } = useI18n();
@@ -216,7 +303,10 @@ export default function AdminSupportTab({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [reply, setReply] = useState('');
-  const [working, setWorking] = useState<'claim' | 'reply' | 'resolve' | null>(null);
+  const [working, setWorking] = useState<'claim' | 'reply' | 'resolve' | 'inspection' | null>(null);
+  const [showInspectionForm, setShowInspectionForm] = useState(false);
+  const [inspectionMode, setInspectionMode] = useState<InspectionSessionMode>('live_observation');
+  const [inspectionReason, setInspectionReason] = useState('');
   const conversationRef = useRef<HTMLDivElement | null>(null);
 
   const selectedTicket = useMemo(
@@ -225,6 +315,13 @@ export default function AdminSupportTab({
   );
   const selectedLastMessageId =
     selectedTicket?.messages[selectedTicket.messages.length - 1]?.id ?? null;
+  const latestInspectionRequest = selectedTicket?.inspection_requests?.[0] ?? null;
+
+  useEffect(() => {
+    setShowInspectionForm(false);
+    setInspectionMode('live_observation');
+    setInspectionReason('');
+  }, [selectedId]);
 
   useLayoutEffect(() => {
     const conversation = conversationRef.current;
@@ -351,6 +448,38 @@ export default function AdminSupportTab({
     }
   };
 
+
+  const requestInspectionSession = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const reason = inspectionReason.trim();
+    if (!selectedTicket || isOwner || !canInspectSessions || reason.length < 5) return;
+
+    setWorking('inspection');
+    try {
+      const response = await fetch(
+        `/api/auth/admin/support/tickets/${encodeURIComponent(selectedTicket.id)}/inspection-requests`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
+          body: JSON.stringify({ mode: inspectionMode, reason }),
+        },
+      );
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !data.ticket) {
+        throw new Error(data?.error || 'could not request inspection session');
+      }
+      replaceTicket(data.ticket as AdminSupportTicket);
+      setShowInspectionForm(false);
+      setInspectionReason('');
+      toast.success(text.inspectionSuccess);
+    } catch (error) {
+      console.error('Could not request inspection session:', error);
+      toast.error(text.inspectionError);
+    } finally {
+      setWorking(null);
+    }
+  };
+
   const resolveTicket = async () => {
     if (!selectedTicket || isOwner) return;
     setWorking('resolve');
@@ -406,6 +535,25 @@ export default function AdminSupportTab({
       closed: 'bg-red-100 text-red-900 dark:bg-red-950/70 dark:text-red-100',
     })[status];
 
+  const inspectionStatusLabel = (status: InspectionSessionRequestStatus) =>
+    ({
+      pending: text.inspectionStatusPending,
+      approved: text.inspectionStatusApproved,
+      rejected: text.inspectionStatusRejected,
+      expired: text.inspectionStatusExpired,
+    })[status];
+
+  const inspectionModeLabel = (mode: InspectionSessionMode) =>
+    mode === 'live_observation' ? text.inspectionLive : text.inspectionReadOnly;
+
+  const inspectionStatusClass = (status: InspectionSessionRequestStatus) =>
+    ({
+      pending: 'border-yellow-300 bg-yellow-50 text-yellow-950 dark:border-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-100',
+      approved: 'border-green-300 bg-green-50 text-green-950 dark:border-green-800 dark:bg-green-950/30 dark:text-green-100',
+      rejected: 'border-red-300 bg-red-50 text-red-950 dark:border-red-800 dark:bg-red-950/30 dark:text-red-100',
+      expired: 'border-border bg-muted/40 text-muted-foreground',
+    })[status];
+
   const categoryLabel = (category: AdminSupportCategory) =>
     ({
       technical: text.categoryTechnical,
@@ -421,6 +569,14 @@ export default function AdminSupportTab({
   );
   const ticketIsActive =
     selectedTicket?.status === 'open' || selectedTicket?.status === 'in_progress';
+  const inspectionRequestIsActive =
+    latestInspectionRequest?.status === 'pending' || latestInspectionRequest?.status === 'approved';
+  const canRequestInspection =
+    !isOwner &&
+    canInspectSessions &&
+    isAssignedToCurrentAdmin &&
+    ticketIsActive &&
+    !inspectionRequestIsActive;
 
   return (
     <section
@@ -547,7 +703,85 @@ export default function AdminSupportTab({
                     {text.assignedOther}
                   </p>
                 )}
+
+                {canRequestInspection && !showInspectionForm && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    disabled={working !== null}
+                    onClick={() => setShowInspectionForm(true)}
+                  >
+                    <Eye className="me-2 h-4 w-4" />
+                    {text.requestInspection}
+                  </Button>
+                )}
               </div>
+
+                {latestInspectionRequest && (
+                  <div className={`shrink-0 border-b px-3 py-2 ${inspectionStatusClass(latestInspectionRequest.status)}`}>
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="text-xs font-black">{text.inspectionTitle}</p>
+                        <p className="mt-1 text-xs font-semibold">{inspectionModeLabel(latestInspectionRequest.mode)}</p>
+                        <p className="mt-1 text-xs leading-5">{latestInspectionRequest.reason}</p>
+                      </div>
+                      <span className="rounded-full bg-background/70 px-2.5 py-1 text-[10px] font-black">
+                        {inspectionStatusLabel(latestInspectionRequest.status)}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[10px] opacity-80">
+                      <span>{text.inspectionRequestedBy}: {latestInspectionRequest.admin_name}</span>
+                      <span>{text.inspectionDuration}</span>
+                      {latestInspectionRequest.status === 'pending' && (
+                        <span>{text.inspectionExpires}: {new Date(latestInspectionRequest.request_expires_at).toLocaleString(locale)}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {showInspectionForm && canRequestInspection && (
+                  <form onSubmit={requestInspectionSession} className="shrink-0 space-y-2 border-b bg-muted/20 p-3">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <label className="text-xs font-bold">
+                        <span className="mb-1 block">{text.inspectionMode}</span>
+                        <select
+                          value={inspectionMode}
+                          disabled={working !== null}
+                          onChange={(event) => setInspectionMode(event.target.value as InspectionSessionMode)}
+                          className="h-10 w-full rounded-xl border bg-background px-3 text-sm"
+                        >
+                          <option value="live_observation">{text.inspectionLive}</option>
+                          <option value="independent_read_only">{text.inspectionReadOnly}</option>
+                        </select>
+                      </label>
+                      <label className="text-xs font-bold">
+                        <span className="mb-1 block">{text.inspectionReason}</span>
+                        <Textarea
+                          value={inspectionReason}
+                          maxLength={500}
+                          rows={2}
+                          disabled={working !== null}
+                          placeholder={text.inspectionReasonPlaceholder}
+                          onChange={(event) => setInspectionReason(event.target.value)}
+                          className="min-h-10 resize-none"
+                        />
+                      </label>
+                    </div>
+                    <p className="text-[10px] leading-4 text-muted-foreground">{text.inspectionRules}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="submit" size="sm" disabled={working !== null || inspectionReason.trim().length < 5}>
+                        {working === 'inspection' && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                        {working === 'inspection' ? text.inspectionSending : text.inspectionSend}
+                      </Button>
+                      <Button type="button" variant="outline" size="sm" disabled={working !== null} onClick={() => setShowInspectionForm(false)}>
+                        {text.inspectionCancel}
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
 
               <div
                 ref={conversationRef}

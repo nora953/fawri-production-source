@@ -19,6 +19,28 @@ import {
 type SupportCategory = 'technical' | 'billing' | 'channels' | 'account' | 'other';
 type SupportStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
 type SupportSender = 'merchant' | 'admin' | 'system';
+type InspectionSessionMode = 'live_observation' | 'independent_read_only';
+type InspectionSessionRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+
+type InspectionSessionRequest = {
+  id: string;
+  ticket_id: string;
+  merchant_id: string;
+  admin_id: string;
+  admin_name: string;
+  mode: InspectionSessionMode;
+  reason: string;
+  status: InspectionSessionRequestStatus;
+  read_only: true;
+  session_duration_minutes: 30;
+  requested_at: string;
+  request_expires_at: string;
+  responded_at?: string;
+  approved_at?: string;
+  rejected_at?: string;
+  expired_at?: string;
+  session_expires_at?: string;
+};
 
 type SupportMessage = {
   id: string;
@@ -38,7 +60,68 @@ type SupportTicket = {
   created_at: string;
   updated_at: string;
   messages: SupportMessage[];
+  inspection_requests?: InspectionSessionRequest[];
 };
+
+const INSPECTION_TEXT = {
+  ar: {
+    title: 'طلب فحص حسابك',
+    requestedBy: 'المسؤول الطالب',
+    mode: 'نوع الجلسة',
+    live: 'مشاهدة مباشرة أثناء استخدامك للحساب',
+    readOnly: 'فحص مستقل للقراءة فقط',
+    reason: 'سبب الطلب',
+    rules: 'لن يستطيع المسؤول التعديل أو الحفظ أو الإرسال أو التصدير. مدة الجلسة 30 دقيقة، ويمكنك الرفض.',
+    pending: 'بانتظار قرارك',
+    approved: 'تمت الموافقة',
+    rejected: 'تم الرفض',
+    expired: 'انتهت صلاحية الطلب',
+    approve: 'موافقة',
+    reject: 'رفض',
+    deciding: 'جارٍ الحفظ...',
+    decisionError: 'تعذر حفظ قرارك.',
+    requestExpires: 'ينتهي الطلب',
+    approvedUntil: 'تنتهي الموافقة',
+  },
+  ku: {
+    title: 'داواکاری پشکنینی هەژمارەکەت',
+    requestedBy: 'بەرپرسی داواکار',
+    mode: 'جۆری دانیشتن',
+    live: 'بینینی ڕاستەوخۆ لە کاتی بەکارهێنانی هەژمار',
+    readOnly: 'پشکنینی سەربەخۆی تەنها خوێندنەوە',
+    reason: 'هۆکاری داواکاری',
+    rules: 'بەرپرس ناتوانێت دەستکاری، پاشەکەوت، ناردن یان هەناردە بکات. ماوەکە 30 خولەکە و دەتوانیت ڕەتی بکەیتەوە.',
+    pending: 'چاوەڕوانی بڕیارت',
+    approved: 'ڕەزامەندی درا',
+    rejected: 'ڕەت کرایەوە',
+    expired: 'کاتی داواکاری بەسەرچوو',
+    approve: 'ڕەزامەندی',
+    reject: 'ڕەتکردنەوە',
+    deciding: 'پاشەکەوت دەکرێت...',
+    decisionError: 'پاشەکەوتکردنی بڕیار سەرکەوتوو نەبوو.',
+    requestExpires: 'داواکاری کۆتایی دێت',
+    approvedUntil: 'ڕەزامەندی کۆتایی دێت',
+  },
+  en: {
+    title: 'Account inspection request',
+    requestedBy: 'Requested by',
+    mode: 'Session mode',
+    live: 'Live observation while you use the account',
+    readOnly: 'Independent read-only inspection',
+    reason: 'Reason',
+    rules: 'The administrator cannot edit, save, send, or export. The session lasts 30 minutes, and you may reject it.',
+    pending: 'Waiting for your decision',
+    approved: 'Approved',
+    rejected: 'Rejected',
+    expired: 'Request expired',
+    approve: 'Approve',
+    reject: 'Reject',
+    deciding: 'Saving...',
+    decisionError: 'Could not save your decision.',
+    requestExpires: 'Request expires',
+    approvedUntil: 'Approval expires',
+  },
+} as const;
 
 const categoryValues: SupportCategory[] = [
   'technical',
@@ -61,16 +144,19 @@ export default function SupportPage() {
   const [reply, setReply] = useState('');
   const [creating, setCreating] = useState(false);
   const [replying, setReplying] = useState(false);
+  const [inspectionDecision, setInspectionDecision] = useState<'approve' | 'reject' | null>(null);
   const [formError, setFormError] = useState('');
   const conversationRef = useRef<HTMLDivElement | null>(null);
 
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
+  const inspectionText = lang === 'en' ? INSPECTION_TEXT.en : lang === 'ku' ? INSPECTION_TEXT.ku : INSPECTION_TEXT.ar;
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket.id === selectedId) ?? null,
     [tickets, selectedId],
   );
   const selectedLastMessageId =
     selectedTicket?.messages[selectedTicket.messages.length - 1]?.id ?? null;
+  const latestInspectionRequest = selectedTicket?.inspection_requests?.[0] ?? null;
 
   useLayoutEffect(() => {
     const conversation = conversationRef.current;
@@ -112,6 +198,7 @@ export default function SupportPage() {
 
   useEffect(() => {
     void loadTickets();
+    const intervalId = window.setInterval(() => void loadTickets(), 10_000);
     const handleFocus = () => void loadTickets();
     const handleRealtime = (event: Event) => {
       const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
@@ -120,6 +207,7 @@ export default function SupportPage() {
     window.addEventListener('focus', handleFocus);
     window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     return () => {
+      window.clearInterval(intervalId);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     };
@@ -162,6 +250,41 @@ export default function SupportPage() {
         'bg-green-100 text-green-900 dark:bg-green-950/70 dark:text-green-100',
       closed: 'bg-red-100 text-red-900 dark:bg-red-950/70 dark:text-red-100',
     })[value];
+
+
+  const respondToInspectionRequest = async (decision: 'approve' | 'reject') => {
+    if (!selectedTicket || !latestInspectionRequest || latestInspectionRequest.status !== 'pending') return;
+
+    setInspectionDecision(decision);
+    setFormError('');
+    try {
+      const response = await fetch(
+        `/api/auth/support/tickets/${encodeURIComponent(selectedTicket.id)}/inspection-requests/${encodeURIComponent(latestInspectionRequest.id)}/decision`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ decision }),
+        },
+      );
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !data.ticket) {
+        throw new Error(data?.error || 'could not save inspection decision');
+      }
+      const ticket = data.ticket as SupportTicket;
+      setTickets((current) =>
+        [ticket, ...current.filter((item) => item.id !== ticket.id)].sort(
+          (left, right) =>
+            new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
+        ),
+      );
+      setSelectedId(ticket.id);
+    } catch (error) {
+      console.error('Could not save inspection decision:', error);
+      setFormError(inspectionText.decisionError);
+    } finally {
+      setInspectionDecision(null);
+    }
+  };
 
   const createTicket = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -446,6 +569,68 @@ export default function SupportPage() {
                   </span>
                 </div>
               </div>
+
+              {latestInspectionRequest && (
+                <div className={`shrink-0 border-b p-3 ${
+                  latestInspectionRequest.status === 'pending'
+                    ? 'border-yellow-300 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/30'
+                    : latestInspectionRequest.status === 'approved'
+                      ? 'border-green-300 bg-green-50 dark:border-green-800 dark:bg-green-950/30'
+                      : latestInspectionRequest.status === 'rejected'
+                        ? 'border-red-300 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
+                        : 'bg-muted/40'
+                }`}>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-black">{inspectionText.title}</p>
+                      <p className="mt-1 text-xs"><strong>{inspectionText.requestedBy}:</strong> {latestInspectionRequest.admin_name}</p>
+                      <p className="mt-1 text-xs"><strong>{inspectionText.mode}:</strong> {latestInspectionRequest.mode === 'live_observation' ? inspectionText.live : inspectionText.readOnly}</p>
+                      <p className="mt-1 text-xs leading-5"><strong>{inspectionText.reason}:</strong> {latestInspectionRequest.reason}</p>
+                    </div>
+                    <span className="rounded-full bg-background/80 px-2.5 py-1 text-[10px] font-black">
+                      {latestInspectionRequest.status === 'pending'
+                        ? inspectionText.pending
+                        : latestInspectionRequest.status === 'approved'
+                          ? inspectionText.approved
+                          : latestInspectionRequest.status === 'rejected'
+                            ? inspectionText.rejected
+                            : inspectionText.expired}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-[10px] leading-4 text-muted-foreground">{inspectionText.rules}</p>
+                  {latestInspectionRequest.status === 'pending' && (
+                    <>
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        {inspectionText.requestExpires}: {new Date(latestInspectionRequest.request_expires_at).toLocaleString(locale)}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={inspectionDecision !== null}
+                          onClick={() => void respondToInspectionRequest('approve')}
+                          className="rounded-xl bg-green-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+                        >
+                          {inspectionDecision === 'approve' ? inspectionText.deciding : inspectionText.approve}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={inspectionDecision !== null}
+                          onClick={() => void respondToInspectionRequest('reject')}
+                          className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
+                        >
+                          {inspectionDecision === 'reject' ? inspectionText.deciding : inspectionText.reject}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  {latestInspectionRequest.status === 'approved' && latestInspectionRequest.session_expires_at && (
+                    <p className="mt-2 text-[10px] font-semibold text-green-800 dark:text-green-200">
+                      {inspectionText.approvedUntil}: {new Date(latestInspectionRequest.session_expires_at).toLocaleString(locale)}
+                    </p>
+                  )}
+                </div>
+              )}
+
 
               <div
                 ref={conversationRef}

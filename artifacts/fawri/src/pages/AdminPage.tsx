@@ -3375,6 +3375,7 @@ export default function AdminPage() {
           <AdminSupportTab
             adminId={currentAdmin.id}
             isOwner={isOwnerAdmin}
+            canInspectSessions={canInspectSessions}
             onActiveCountChange={setSupportActiveCount}
           />
         ) : tab === "logs" ? (

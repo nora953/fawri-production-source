@@ -411,6 +411,28 @@ type SupportTicketCategory =
   | "other";
 type SupportTicketStatus = "open" | "in_progress" | "resolved" | "closed";
 type SupportMessageSender = "merchant" | "admin" | "system";
+type InspectionSessionMode = "live_observation" | "independent_read_only";
+type InspectionSessionRequestStatus = "pending" | "approved" | "rejected" | "expired";
+
+type InspectionSessionRequestRecord = {
+  id: string;
+  ticket_id: string;
+  merchant_id: string;
+  admin_id: string;
+  admin_name: string;
+  mode: InspectionSessionMode;
+  reason: string;
+  status: InspectionSessionRequestStatus;
+  read_only: true;
+  session_duration_minutes: 30;
+  requested_at: string;
+  request_expires_at: string;
+  responded_at?: string;
+  approved_at?: string;
+  rejected_at?: string;
+  expired_at?: string;
+  session_expires_at?: string;
+};
 
 type SupportTicketMessage = {
   id: string;
@@ -435,6 +457,7 @@ type SupportTicketRecord = {
   updated_at: string;
   closed_at?: string;
   messages: SupportTicketMessage[];
+  inspection_requests: InspectionSessionRequestRecord[];
 };
 
 type OtpRecord = {
@@ -1025,6 +1048,39 @@ function requireSupportAssistant(
   return admin;
 }
 
+function requireInspectionSupportAssistant(
+  req: Request,
+  res: Response,
+): Merchant | null {
+  const admin = requireAdminSession(req, res);
+  if (!admin) return null;
+
+  if (!isAssistantAdmin(admin)) {
+    sendError(res, 403, "owner admin has monitor-only support access", {
+      code: "SUPPORT_OWNER_MONITOR_ONLY",
+    });
+    return null;
+  }
+
+  const requiredPermissions: readonly AdminPermission[] = [
+    "manage_support",
+    "inspect_merchant_sessions",
+  ];
+  const missingPermissions = requiredPermissions.filter(
+    (permission) => !adminHasPermission(admin, permission),
+  );
+  if (missingPermissions.length > 0) {
+    sendError(res, 403, "admin permission is required", {
+      code: "ADMIN_PERMISSION_REQUIRED",
+      permissions: requiredPermissions,
+      missing_permissions: missingPermissions,
+    });
+    return null;
+  }
+
+  return admin;
+}
+
 function generateOtpCode(): string {
   return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
@@ -1508,18 +1564,23 @@ function ensureDb(): AuthDb {
           )
         : [],
       support_tickets: Array.isArray(parsed.support_tickets)
-        ? parsed.support_tickets.filter(
-            (ticket): ticket is SupportTicketRecord =>
-              Boolean(
-                ticket &&
-                typeof ticket === "object" &&
-                !Array.isArray(ticket) &&
-                typeof ticket.id === "string" &&
-                typeof ticket.merchant_id === "string" &&
-                typeof ticket.subject === "string" &&
-                Array.isArray(ticket.messages),
-              ),
-          )
+        ? parsed.support_tickets
+            .filter(
+              (ticket): ticket is SupportTicketRecord =>
+                Boolean(
+                  ticket &&
+                  typeof ticket === "object" &&
+                  !Array.isArray(ticket) &&
+                  typeof ticket.id === "string" &&
+                  typeof ticket.merchant_id === "string" &&
+                  typeof ticket.subject === "string" &&
+                  Array.isArray(ticket.messages),
+                ),
+            )
+            .map((ticket) => ({
+              ...ticket,
+              inspection_requests: normalizeInspectionRequests(ticket.inspection_requests),
+            }))
         : [],
       deletion_requests: Array.isArray(parsed.deletion_requests)
         ? parsed.deletion_requests
@@ -1546,6 +1607,91 @@ function ensureDb(): AuthDb {
 function writeDb(db: AuthDb): void {
   fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
   fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), "utf8");
+}
+
+function isInspectionSessionMode(value: unknown): value is InspectionSessionMode {
+  return value === "live_observation" || value === "independent_read_only";
+}
+
+function isInspectionSessionRequestStatus(
+  value: unknown,
+): value is InspectionSessionRequestStatus {
+  return value === "pending" || value === "approved" || value === "rejected" || value === "expired";
+}
+
+function normalizeInspectionRequests(value: unknown): InspectionSessionRequestRecord[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter(
+      (item): item is InspectionSessionRequestRecord =>
+        Boolean(
+          item &&
+          typeof item === "object" &&
+          !Array.isArray(item) &&
+          typeof item.id === "string" &&
+          typeof item.ticket_id === "string" &&
+          typeof item.merchant_id === "string" &&
+          typeof item.admin_id === "string" &&
+          typeof item.admin_name === "string" &&
+          isInspectionSessionMode(item.mode) &&
+          typeof item.reason === "string" &&
+          isInspectionSessionRequestStatus(item.status) &&
+          item.read_only === true &&
+          item.session_duration_minutes === 30 &&
+          typeof item.requested_at === "string" &&
+          typeof item.request_expires_at === "string",
+        ),
+    )
+    .sort(
+      (left, right) =>
+        new Date(right.requested_at).getTime() - new Date(left.requested_at).getTime(),
+    );
+}
+
+function refreshInspectionRequestExpirations(db: AuthDb): boolean {
+  const timestamp = Date.now();
+  let changed = false;
+
+  for (const ticket of db.support_tickets) {
+    for (const request of ticket.inspection_requests || []) {
+      const pendingExpired =
+        request.status === "pending" &&
+        new Date(request.request_expires_at).getTime() <= timestamp;
+      const approvedExpired =
+        request.status === "approved" &&
+        Boolean(request.session_expires_at) &&
+        new Date(request.session_expires_at || 0).getTime() <= timestamp;
+
+      if (!pendingExpired && !approvedExpired) continue;
+
+      const expiredAt = now();
+      request.status = "expired";
+      request.expired_at = expiredAt;
+      request.responded_at = request.responded_at || expiredAt;
+      ticket.updated_at = expiredAt;
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
+function hasActiveInspectionRequest(db: AuthDb, merchantId: string): boolean {
+  const timestamp = Date.now();
+  return db.support_tickets.some(
+    (ticket) =>
+      ticket.merchant_id === merchantId &&
+      (ticket.inspection_requests || []).some((request) => {
+        if (request.status === "pending") {
+          return new Date(request.request_expires_at).getTime() > timestamp;
+        }
+        if (request.status === "approved") {
+          return new Date(request.session_expires_at || 0).getTime() > timestamp;
+        }
+        return false;
+      }),
+  );
 }
 
 function findRegularMerchant(db: AuthDb, merchantId: string): Merchant | undefined {
@@ -2530,6 +2676,7 @@ router.patch(
 router.get("/support/tickets", requireMerchantSession, (_req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
   const db = ensureDb();
+  if (refreshInspectionRequestExpirations(db)) writeDb(db);
   const tickets = db.support_tickets
     .filter((ticket) => ticket.merchant_id === merchantId)
     .sort(
@@ -2588,6 +2735,7 @@ router.post("/support/tickets", requireMerchantSession, (req: Request, res: Resp
     status: "open",
     created_at: createdAt,
     updated_at: createdAt,
+    inspection_requests: [],
     messages: [
       {
         id: makeId("support-message"),
@@ -2613,6 +2761,7 @@ router.get(
     const merchantId = getMerchantIdFromSession(res);
     const ticketId = String(req.params.id || "").trim();
     const db = ensureDb();
+    if (refreshInspectionRequestExpirations(db)) writeDb(db);
     const ticket = db.support_tickets.find(
       (item) => item.id === ticketId && item.merchant_id === merchantId,
     );
@@ -2658,6 +2807,60 @@ router.post(
     writeDb(db);
     emitMerchantRealtimeState(db, merchantId, "support_updated");
     return res.status(201).json({ ok: true, ticket, message: supportMessage });
+  },
+);
+
+
+router.post(
+  "/support/tickets/:id/inspection-requests/:requestId/decision",
+  requireMerchantSession,
+  (req: Request, res: Response) => {
+    const merchantId = getMerchantIdFromSession(res);
+    const ticketId = String(req.params.id || "").trim();
+    const requestId = String(req.params.requestId || "").trim();
+    const decision = String(req.body?.decision || "").trim();
+    const db = ensureDb();
+    refreshInspectionRequestExpirations(db);
+
+    const ticket = db.support_tickets.find(
+      (item) => item.id === ticketId && item.merchant_id === merchantId,
+    );
+    if (!ticket) return sendError(res, 404, "support ticket not found");
+
+    const inspectionRequest = (ticket.inspection_requests || []).find(
+      (item) => item.id === requestId,
+    );
+    if (!inspectionRequest) {
+      return sendError(res, 404, "inspection session request not found");
+    }
+    if (inspectionRequest.status !== "pending") {
+      writeDb(db);
+      return sendError(res, 409, "inspection session request is no longer pending", {
+        code: "INSPECTION_REQUEST_NOT_PENDING",
+        status: inspectionRequest.status,
+      });
+    }
+    if (decision !== "approve" && decision !== "reject") {
+      return sendError(res, 400, "invalid inspection session decision");
+    }
+
+    const respondedAt = now();
+    inspectionRequest.responded_at = respondedAt;
+    if (decision === "approve") {
+      inspectionRequest.status = "approved";
+      inspectionRequest.approved_at = respondedAt;
+      inspectionRequest.session_expires_at = new Date(
+        Date.now() + inspectionRequest.session_duration_minutes * 60 * 1000,
+      ).toISOString();
+    } else {
+      inspectionRequest.status = "rejected";
+      inspectionRequest.rejected_at = respondedAt;
+    }
+    ticket.updated_at = respondedAt;
+
+    writeDb(db);
+    emitMerchantRealtimeState(db, merchantId, "support_updated");
+    return res.json({ ok: true, ticket, inspection_request: inspectionRequest });
   },
 );
 
@@ -2734,6 +2937,7 @@ router.get("/admin/support/tickets", (req: Request, res: Response) => {
   if (!admin) return;
 
   const db = ensureDb();
+  if (refreshInspectionRequestExpirations(db)) writeDb(db);
   const tickets = [...db.support_tickets].sort(
     (left, right) =>
       new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
@@ -2841,6 +3045,93 @@ router.post(
     writeDb(db);
     emitMerchantRealtimeState(db, ticket.merchant_id, "support_updated");
     return res.status(201).json({ ok: true, ticket, message });
+  },
+);
+
+
+router.post(
+  "/admin/support/tickets/:id/inspection-requests",
+  (req: Request, res: Response) => {
+    const admin = requireInspectionSupportAssistant(req, res);
+    if (!admin) return;
+
+    const ticketId = String(req.params.id || "").trim();
+    const mode = String(req.body?.mode || "").trim() as InspectionSessionMode;
+    const reason = String(req.body?.reason || "").trim();
+    const db = ensureDb();
+    refreshInspectionRequestExpirations(db);
+
+    const ticket = db.support_tickets.find((item) => item.id === ticketId);
+    if (!ticket) return sendError(res, 404, "support ticket not found");
+    if (ticket.status !== "open" && ticket.status !== "in_progress") {
+      return sendError(res, 409, "inspection request requires an active support ticket", {
+        code: "INSPECTION_ACTIVE_TICKET_REQUIRED",
+      });
+    }
+    if (!ticket.assigned_admin_id) {
+      return sendError(res, 409, "support ticket must be claimed first", {
+        code: "SUPPORT_TICKET_NOT_CLAIMED",
+      });
+    }
+    if (ticket.assigned_admin_id !== admin.id) {
+      return sendError(res, 403, "support ticket is assigned to another admin", {
+        code: "SUPPORT_TICKET_ASSIGNED_TO_ANOTHER_ADMIN",
+      });
+    }
+    if (!isInspectionSessionMode(mode)) {
+      return sendError(res, 400, "invalid inspection session mode");
+    }
+    if (reason.length < 5 || reason.length > 500) {
+      return sendError(res, 400, "invalid inspection session reason");
+    }
+    if (hasActiveInspectionRequest(db, ticket.merchant_id)) {
+      return sendError(res, 409, "merchant already has an active inspection request", {
+        code: "INSPECTION_REQUEST_ALREADY_ACTIVE",
+      });
+    }
+
+    const requestedAt = now();
+    const inspectionRequest: InspectionSessionRequestRecord = {
+      id: makeId("inspection-request"),
+      ticket_id: ticket.id,
+      merchant_id: ticket.merchant_id,
+      admin_id: admin.id,
+      admin_name: admin.owner_name,
+      mode,
+      reason,
+      status: "pending",
+      read_only: true,
+      session_duration_minutes: 30,
+      requested_at: requestedAt,
+      request_expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
+    };
+
+    ticket.inspection_requests = ticket.inspection_requests || [];
+    ticket.inspection_requests.unshift(inspectionRequest);
+    ticket.updated_at = requestedAt;
+
+    appendAdminLog(
+      db,
+      admin,
+      { id: ticket.merchant_id, store_name: ticket.merchant_name },
+      "inspection_session_requested",
+      ticket.subject,
+      {
+        meta: {
+          ticket_id: ticket.id,
+          request_id: inspectionRequest.id,
+          mode,
+        },
+        reason,
+      },
+    );
+    writeDb(db);
+    emitMerchantRealtimeState(db, ticket.merchant_id, "support_updated");
+    return res.status(201).json({
+      ok: true,
+      ticket,
+      inspection_request: inspectionRequest,
+    });
   },
 );
 
