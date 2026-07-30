@@ -817,7 +817,11 @@ export default function AdminSupportTab({
           if (working === null) setShowInspectionForm(open);
         }}
       >
-        <DialogContent className="max-w-xl" dir={dir}>
+        <DialogContent
+          className="max-w-xl"
+          closeButtonClassName={dir === 'rtl' ? 'left-4 right-auto' : 'left-auto right-4'}
+          dir={dir}
+        >
           <DialogHeader>
             <DialogTitle className="text-start">{text.inspectionTitle}</DialogTitle>
           </DialogHeader>
@@ -861,7 +865,14 @@ export default function AdminSupportTab({
               {text.inspectionRules}
             </p>
 
-            <div className="flex flex-wrap justify-end gap-2">
+            <div className="flex flex-wrap justify-start gap-2">
+              <Button
+                type="submit"
+                disabled={working !== null || inspectionReason.trim().length < 5}
+              >
+                {working === 'inspection' && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                {working === 'inspection' ? text.inspectionSending : text.inspectionSend}
+              </Button>
               <Button
                 type="button"
                 variant="outline"
@@ -869,13 +880,6 @@ export default function AdminSupportTab({
                 onClick={() => setShowInspectionForm(false)}
               >
                 {text.inspectionCancel}
-              </Button>
-              <Button
-                type="submit"
-                disabled={working !== null || inspectionReason.trim().length < 5}
-              >
-                {working === 'inspection' && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                {working === 'inspection' ? text.inspectionSending : text.inspectionSend}
               </Button>
             </div>
           </form>
