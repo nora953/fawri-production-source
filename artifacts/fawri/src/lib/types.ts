@@ -193,6 +193,17 @@ export interface MerchantInspectionNotification {
   mode: 'live_observation' | 'independent_read_only';
   request_expires_at: string;
   action_url: string;
+  request_status: 'pending' | 'approved' | 'rejected' | 'expired';
+  consent_decision?: 'approved' | 'rejected';
+  responded_at?: string;
+  session_expires_at?: string;
+  ended_at?: string;
+  end_reason?:
+    | 'request_timeout'
+    | 'approval_window_expired'
+    | 'ticket_resolved'
+    | 'ticket_closed'
+    | 'merchant_terminated';
   created_at: string;
   read_at?: string;
 }

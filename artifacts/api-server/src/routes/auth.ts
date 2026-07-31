@@ -2798,6 +2798,7 @@ router.get("/events", requireMerchantSession, (req: Request, res: Response) => {
 router.get("/notifications", requireMerchantSession, (req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
   const db = ensureDb();
+  if (refreshInspectionRequestExpirations(db)) writeDb(db);
   const unreadOnly = String(req.query.unread || "") === "1";
   const requestedLimit = Number(req.query.limit);
   const limit = Number.isInteger(requestedLimit)
@@ -2814,7 +2815,36 @@ router.get("/notifications", requireMerchantSession, (req: Request, res: Respons
       (left, right) =>
         new Date(right.created_at).getTime() - new Date(left.created_at).getTime(),
     )
-    .slice(0, limit);
+    .slice(0, limit)
+    .map((notification) => {
+      if (notification.type !== "inspection_session_request") return notification;
+
+      const ticket = db.support_tickets.find(
+        (item) =>
+          item.id === notification.ticket_id &&
+          item.merchant_id === merchantId,
+      );
+      const inspectionRequest = ticket?.inspection_requests.find(
+        (item) => item.id === notification.inspection_request_id,
+      );
+
+      if (!inspectionRequest) {
+        return {
+          ...notification,
+          request_status: "expired" as InspectionSessionRequestStatus,
+        };
+      }
+
+      return {
+        ...notification,
+        request_status: inspectionRequest.status,
+        consent_decision: inspectionRequest.consent_decision,
+        responded_at: inspectionRequest.responded_at,
+        session_expires_at: inspectionRequest.session_expires_at,
+        ended_at: inspectionRequest.ended_at,
+        end_reason: inspectionRequest.end_reason,
+      };
+    });
 
   res.setHeader("Cache-Control", "no-store");
   return res.json({ ok: true, notifications });
