@@ -23,6 +23,7 @@ export type AdminSupportTicketStatus =
   | 'in_progress'
   | 'resolved'
   | 'closed';
+type AdminSupportWaitingOn = 'admin' | 'merchant';
 
 type AdminSupportCategory =
   | 'technical'
@@ -86,6 +87,13 @@ export type AdminSupportTicket = {
   created_at: string;
   updated_at: string;
   closed_at?: string;
+  waiting_on?: AdminSupportWaitingOn;
+  waiting_since?: string;
+  merchant_reminder_sent_at?: string;
+  assistant_reminder_sent_at?: string;
+  owner_escalated_at?: string;
+  auto_closed_at?: string;
+  auto_closed_reason?: 'merchant_inactivity';
   messages: AdminSupportMessage[];
   inspection_requests?: InspectionSessionRequest[];
 };
@@ -96,6 +104,14 @@ const SUPPORT_TEXT = {
     title: 'تذاكر دعم التجار',
     subtitle: 'متابعة شكاوى ومحادثات التجار.',
     ownerNotice: 'وضع المراقبة فقط: يمكنك مشاهدة سير العمل دون استلام التذاكر أو الرد عليها.',
+    waitingMerchant: 'بانتظار رد التاجر',
+    waitingAdmin: 'بانتظار رد فريق الدعم',
+    assistantReminderBanner: 'تنبيه: التاجر ما زال بانتظار رد من فريق الدعم.',
+    assistantReminderToast: 'توجد تذكرة ما زال التاجر ينتظر الرد عليها.',
+    ownerEscalationBanner: 'تم تصعيد هذه التذكرة للمالك بسبب تأخر رد فريق الدعم.',
+    ownerEscalationToast: 'وصل تصعيد جديد لتذكرة متأخرة في الدعم.',
+    ownerEscalationSummary: 'تذاكر مصعّدة للمتابعة: {count}',
+    autoClosedMerchant: 'أُغلقت تلقائيًا لعدم رد التاجر خلال 72 ساعة.',
     newTicketNotification: 'وصلت تذكرة دعم جديدة من أحد التجار.',
     loading: 'جارٍ تحميل تذاكر الدعم...',
     loadError: 'تعذر تحميل تذاكر الدعم.',
@@ -179,6 +195,14 @@ const SUPPORT_TEXT = {
     title: 'تیکێتەکانی پشتگیریی بازرگانان',
     subtitle: 'بەدواداچوونی کێشە و گفتوگۆکانی بازرگانان.',
     ownerNotice: 'تەنها چاودێریکردن: دەتوانیت ڕەوتی کار ببینیت بەبێ وەرگرتن یان وەڵامدانەوەی تیکێتەکان.',
+    waitingMerchant: 'چاوەڕوانی وەڵامی بازرگان',
+    waitingAdmin: 'چاوەڕوانی وەڵامی تیمی پشتگیری',
+    assistantReminderBanner: 'ئاگاداری: بازرگان هێشتا چاوەڕوانی وەڵامی تیمی پشتگیرییە.',
+    assistantReminderToast: 'تیکێتێک هەیە کە بازرگان هێشتا چاوەڕوانی وەڵامە.',
+    ownerEscalationBanner: 'ئەم تیکێتە بەهۆی دواخستنی وەڵامی پشتگیری بۆ خاوەن سیستەم بەرزکرایەوە.',
+    ownerEscalationToast: 'تیکێتێکی دواخراو بۆ چاودێری بەرزکرایەوە.',
+    ownerEscalationSummary: 'تیکێتی بەرزکراوە بۆ چاودێری: {count}',
+    autoClosedMerchant: 'بەهۆی نەبوونی وەڵامی بازرگان لە ماوەی ٧٢ کاتژمێردا خۆکارانە داخرا.',
     newTicketNotification: 'تیکێتێکی نوێی پشتگیری لە بازرگانێکەوە گەیشت.',
     loading: 'تیکێتەکانی پشتگیری بار دەکرێن...',
     loadError: 'بارکردنی تیکێتەکانی پشتگیری سەرکەوتوو نەبوو.',
@@ -262,6 +286,14 @@ const SUPPORT_TEXT = {
     title: 'Merchant Support Tickets',
     subtitle: 'Monitor merchant issues and conversations.',
     ownerNotice: 'Monitor-only mode: you can review workflow but cannot claim tickets or reply.',
+    waitingMerchant: 'Waiting for merchant reply',
+    waitingAdmin: 'Waiting for support reply',
+    assistantReminderBanner: 'Reminder: the merchant is still waiting for a support reply.',
+    assistantReminderToast: 'A merchant is still waiting for a support reply.',
+    ownerEscalationBanner: 'This ticket was escalated to the owner because support has not replied.',
+    ownerEscalationToast: 'A delayed support ticket was escalated for monitoring.',
+    ownerEscalationSummary: 'Escalated tickets: {count}',
+    autoClosedMerchant: 'Automatically closed after 72 hours without a merchant reply.',
     newTicketNotification: 'A new merchant support ticket has arrived.',
     loading: 'Loading support tickets...',
     loadError: 'Could not load support tickets.',
@@ -378,6 +410,7 @@ export default function AdminSupportTab({
   const [inspectionMode, setInspectionMode] = useState<InspectionSessionMode>('live_observation');
   const [inspectionReason, setInspectionReason] = useState('');
   const conversationRef = useRef<HTMLDivElement | null>(null);
+  const seenLifecycleAlertsRef = useRef<Set<string>>(new Set());
 
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket.id === selectedId) ?? null,
@@ -409,6 +442,17 @@ export default function AdminSupportTab({
     return () => window.cancelAnimationFrame(frameId);
   }, [selectedId, selectedLastMessageId]);
 
+  const ownerEscalationCount = useMemo(
+    () =>
+      tickets.filter(
+        (ticket) =>
+          Boolean(ticket.owner_escalated_at) &&
+          ticket.waiting_on === 'admin' &&
+          (ticket.status === 'open' || ticket.status === 'in_progress'),
+      ).length,
+    [tickets],
+  );
+
   const activeCount = useMemo(
     () =>
       tickets.filter(
@@ -434,6 +478,28 @@ export default function AdminSupportTab({
         throw new Error(data?.error || 'invalid support response');
       }
       const nextTickets = data.tickets as AdminSupportTicket[];
+      for (const ticket of nextTickets) {
+        const active = ticket.status === 'open' || ticket.status === 'in_progress';
+        if (!active || ticket.waiting_on !== 'admin') continue;
+
+        if (isOwner && ticket.owner_escalated_at) {
+          const key = `owner:${ticket.id}:${ticket.owner_escalated_at}`;
+          if (!seenLifecycleAlertsRef.current.has(key)) {
+            seenLifecycleAlertsRef.current.add(key);
+            toast.warning(text.ownerEscalationToast);
+          }
+        } else if (
+          !isOwner &&
+          ticket.assistant_reminder_sent_at &&
+          (!ticket.assigned_admin_id || ticket.assigned_admin_id === adminId)
+        ) {
+          const key = `assistant:${ticket.id}:${ticket.assistant_reminder_sent_at}`;
+          if (!seenLifecycleAlertsRef.current.has(key)) {
+            seenLifecycleAlertsRef.current.add(key);
+            toast.warning(text.assistantReminderToast);
+          }
+        }
+      }
       setTickets(nextTickets);
       setSelectedId((current) =>
         current && nextTickets.some((ticket) => ticket.id === current)
@@ -446,7 +512,7 @@ export default function AdminSupportTab({
     } finally {
       if (!silent) setLoading(false);
     }
-  }, []);
+  }, [adminId, isOwner, text.assistantReminderToast, text.ownerEscalationToast]);
 
   useEffect(() => {
     void loadTickets();
@@ -578,13 +644,22 @@ export default function AdminSupportTab({
     }
   };
 
-  const statusLabel = (status: AdminSupportTicketStatus) =>
-    ({
+  const statusLabel = (ticket: AdminSupportTicket) => {
+    if (ticket.status === 'closed' && ticket.auto_closed_reason === 'merchant_inactivity') {
+      return text.autoClosedMerchant;
+    }
+    if (ticket.status === 'open' || ticket.status === 'in_progress') {
+      return ticket.waiting_on === 'merchant'
+        ? text.waitingMerchant
+        : text.waitingAdmin;
+    }
+    return ({
       open: text.statusOpen,
       in_progress: text.statusInProgress,
       resolved: text.statusResolved,
       closed: text.statusClosed,
-    })[status];
+    })[ticket.status];
+  };
 
   const ticketStatusClass = (status: AdminSupportTicketStatus) =>
     ({
@@ -722,9 +797,16 @@ export default function AdminSupportTab({
               </div>
 
               {isOwner && (
-                <p className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-[10px] font-semibold leading-4 text-sky-900 dark:border-sky-900/70 dark:bg-sky-950/30 dark:text-sky-100">
-                  {text.ownerNotice}
-                </p>
+                <>
+                  <p className="mt-2 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-[10px] font-semibold leading-4 text-sky-900 dark:border-sky-900/70 dark:bg-sky-950/30 dark:text-sky-100">
+                    {text.ownerNotice}
+                  </p>
+                  {ownerEscalationCount > 0 && (
+                    <p className="mt-1.5 rounded-lg border border-red-200 bg-red-50 px-2.5 py-1.5 text-[10px] font-black leading-4 text-red-900 dark:border-red-900/70 dark:bg-red-950/30 dark:text-red-100">
+                      {text.ownerEscalationSummary.replace('{count}', ownerEscalationCount.toLocaleString(locale))}
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
@@ -749,7 +831,7 @@ export default function AdminSupportTab({
                         ticket.status,
                       )}`}
                     >
-                      {statusLabel(ticket.status)}
+                      {statusLabel(ticket)}
                     </span>
                   </div>
                   <p className="mt-2 truncate text-xs font-semibold">{ticket.merchant_name}</p>
@@ -774,7 +856,7 @@ export default function AdminSupportTab({
                           selectedTicket.status,
                         )}`}
                       >
-                        {statusLabel(selectedTicket.status)}
+                        {statusLabel(selectedTicket)}
                       </span>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] leading-4 text-muted-foreground">
@@ -840,6 +922,28 @@ export default function AdminSupportTab({
                       {inspectionEndLabel(latestInspectionRequest)}
                     </span>
                   </div>
+                )}
+
+                {!isOwner &&
+                  selectedTicket.waiting_on === 'admin' &&
+                  selectedTicket.assistant_reminder_sent_at &&
+                  ticketIsActive &&
+                  (!selectedTicket.assigned_admin_id || isAssignedToCurrentAdmin) && (
+                    <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-[11px] font-bold text-amber-900 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-100">
+                      {text.assistantReminderBanner}
+                    </p>
+                  )}
+
+                {isOwner && selectedTicket.owner_escalated_at && ticketIsActive && (
+                  <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-bold text-red-900 dark:border-red-900/70 dark:bg-red-950/30 dark:text-red-100">
+                    {text.ownerEscalationBanner}
+                  </p>
+                )}
+
+                {selectedTicket.auto_closed_reason === 'merchant_inactivity' && (
+                  <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-[11px] font-bold text-red-900 dark:border-red-900/70 dark:bg-red-950/30 dark:text-red-100">
+                    {text.autoClosedMerchant}
+                  </p>
                 )}
 
                 {!isOwner && isAssignedToOther && (

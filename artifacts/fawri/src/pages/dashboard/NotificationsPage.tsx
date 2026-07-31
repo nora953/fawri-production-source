@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bell, Check, ExternalLink, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Bell, Check, ExternalLink, Loader2, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
 
 import { useI18n } from '@/lib/i18n';
 import type {
   MerchantBalanceNotification,
   MerchantInspectionNotification,
   MerchantNotification,
+  MerchantSupportReplyReminderNotification,
 } from '@/lib/types';
 import { notifyMerchantNotificationsChanged } from '@/hooks/useMerchantNotifications';
 import { MERCHANT_REALTIME_EVENT, type MerchantRealtimeDetail } from '@/hooks/useMerchantRealtime';
@@ -89,6 +90,24 @@ const INSPECTION_NOTIFICATION_TEXT = {
   },
 } as const;
 
+const SUPPORT_REPLY_REMINDER_TEXT = {
+  ar: {
+    title: 'تذكير: ننتظر ردك',
+    body: 'فريق الدعم رد على تذكرة «{ticket}» وينتظر ردك. ستُغلق التذكرة تلقائيًا بعد 72 ساعة من آخر رد للدعم إذا لم يصل رد منك.',
+    open: 'فتح التذكرة',
+  },
+  ku: {
+    title: 'بیرهێنانەوە: چاوەڕوانی وەڵامەکەتین',
+    body: 'تیمی پشتگیری وەڵامی تیکێتی «{ticket}»ی داوەتەوە و چاوەڕوانی وەڵامەکەتە. ئەگەر وەڵام نەدەیت، تیکێتەکە دوای ٧٢ کاتژمێر لە دوا وەڵامی پشتگیری خۆکارانە دادەخرێت.',
+    open: 'کردنەوەی تیکێت',
+  },
+  en: {
+    title: 'Reminder: awaiting your reply',
+    body: 'Support replied to the “{ticket}” ticket and is waiting for you. The ticket will close automatically 72 hours after the latest support reply if you do not respond.',
+    open: 'Open ticket',
+  },
+} as const;
+
 export default function NotificationsPage() {
   const { t, lang } = useI18n();
   const [notifications, setNotifications] = useState<MerchantNotification[]>([]);
@@ -103,6 +122,12 @@ export default function NotificationsPage() {
       : lang === 'ku'
         ? INSPECTION_NOTIFICATION_TEXT.ku
         : INSPECTION_NOTIFICATION_TEXT.ar;
+  const supportReminderText =
+    lang === 'en'
+      ? SUPPORT_REPLY_REMINDER_TEXT.en
+      : lang === 'ku'
+        ? SUPPORT_REPLY_REMINDER_TEXT.ku
+        : SUPPORT_REPLY_REMINDER_TEXT.ar;
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -181,8 +206,10 @@ export default function NotificationsPage() {
     }
   };
 
-  const openInspectionRequest = async (
-    notification: MerchantInspectionNotification,
+  const openNotificationAction = async (
+    notification:
+      | MerchantInspectionNotification
+      | MerchantSupportReplyReminderNotification,
   ) => {
     if (!notification.read_at) await markAsRead(notification.id);
     window.location.assign(notification.action_url);
@@ -271,6 +298,52 @@ export default function NotificationsPage() {
           {notifications.map((notification) => {
             const unread = !notification.read_at;
             const marking = markingId === notification.id;
+
+            if (notification.type === 'support_reply_reminder') {
+              const body = formatNotificationText(supportReminderText.body, {
+                ticket: notification.ticket_subject,
+              });
+              return (
+                <article
+                  key={notification.id}
+                  className={`rounded-2xl border p-4 shadow-sm transition-colors sm:p-5 ${
+                    unread
+                      ? 'border-orange-300 bg-orange-50/80 dark:border-orange-800 dark:bg-orange-950/25'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                      unread
+                        ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/60 dark:text-orange-300'
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      <MessageCircle className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <h2 className="font-black text-foreground">{supportReminderText.title}</h2>
+                        <time className="text-[11px] font-medium text-muted-foreground" dateTime={notification.created_at}>
+                          {new Date(notification.created_at).toLocaleString(locale)}
+                        </time>
+                      </div>
+                      <p className="mt-2 text-sm font-medium leading-7 text-foreground/90">{body}</p>
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          disabled={marking}
+                          onClick={() => void openNotificationAction(notification)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {marking ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+                          {supportReminderText.open}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            }
 
             if (notification.type === 'inspection_session_request') {
               const modeLabel =
@@ -385,7 +458,7 @@ export default function NotificationsPage() {
                         <button
                           type="button"
                           disabled={marking}
-                          onClick={() => void openInspectionRequest(notification)}
+                          onClick={() => void openNotificationAction(notification)}
                           className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {marking ? (

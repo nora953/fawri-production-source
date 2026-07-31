@@ -418,9 +418,21 @@ type MerchantInspectionNotificationRecord = {
   read_at?: string;
 };
 
+type MerchantSupportReplyReminderNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "support_reply_reminder";
+  ticket_id: string;
+  ticket_subject: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+};
+
 type MerchantNotificationRecord =
   | MerchantBalanceNotificationRecord
-  | MerchantInspectionNotificationRecord;
+  | MerchantInspectionNotificationRecord
+  | MerchantSupportReplyReminderNotificationRecord;
 
 type SupportTicketCategory =
   | "technical"
@@ -429,6 +441,8 @@ type SupportTicketCategory =
   | "account"
   | "other";
 type SupportTicketStatus = "open" | "in_progress" | "resolved" | "closed";
+type SupportTicketWaitingOn = "admin" | "merchant";
+type SupportAutoCloseReason = "merchant_inactivity";
 type SupportMessageSender = "merchant" | "admin" | "system";
 type InspectionSessionMode = "live_observation" | "independent_read_only";
 type InspectionSessionRequestStatus = "pending" | "approved" | "rejected" | "expired";
@@ -485,6 +499,13 @@ type SupportTicketRecord = {
   created_at: string;
   updated_at: string;
   closed_at?: string;
+  waiting_on?: SupportTicketWaitingOn;
+  waiting_since?: string;
+  merchant_reminder_sent_at?: string;
+  assistant_reminder_sent_at?: string;
+  owner_escalated_at?: string;
+  auto_closed_at?: string;
+  auto_closed_reason?: SupportAutoCloseReason;
   messages: SupportTicketMessage[];
   inspection_requests: InspectionSessionRequestRecord[];
 };
@@ -503,6 +524,14 @@ function isMerchantNotificationRecord(
   }
 
   if (item.type === "subscription_balance_purchase") return true;
+
+  if (item.type === "support_reply_reminder") {
+    return (
+      typeof item.ticket_id === "string" &&
+      typeof item.ticket_subject === "string" &&
+      typeof item.action_url === "string"
+    );
+  }
 
   return (
     item.type === "inspection_session_request" &&
@@ -546,6 +575,34 @@ const OTP_RESEND_COOLDOWN_SECONDS = Number(
 const ACCOUNT_CHANNEL_ACTIVATION_DAYS = 10;
 const ACCOUNT_CHANNEL_ACTIVATION_MS =
   ACCOUNT_CHANNEL_ACTIVATION_DAYS * 24 * 60 * 60 * 1000;
+
+function supportDurationMs(envName: string, fallbackMinutes: number): number {
+  const configuredMinutes = Number(process.env[envName]);
+  const minutes =
+    Number.isFinite(configuredMinutes) && configuredMinutes > 0
+      ? configuredMinutes
+      : fallbackMinutes;
+  return minutes * 60 * 1000;
+}
+
+const SUPPORT_ASSISTANT_REMINDER_MS = supportDurationMs(
+  "SUPPORT_ASSISTANT_REMINDER_MINUTES",
+  24 * 60,
+);
+const SUPPORT_OWNER_ESCALATION_MS = supportDurationMs(
+  "SUPPORT_OWNER_ESCALATION_MINUTES",
+  48 * 60,
+);
+const SUPPORT_MERCHANT_REMINDER_MS = supportDurationMs(
+  "SUPPORT_MERCHANT_REMINDER_MINUTES",
+  24 * 60,
+);
+const SUPPORT_MERCHANT_AUTO_CLOSE_MS = supportDurationMs(
+  "SUPPORT_AUTO_CLOSE_MINUTES",
+  72 * 60,
+);
+const SUPPORT_LIFECYCLE_SWEEP_MS =
+  process.env.NODE_ENV === "production" ? 60_000 : 5_000;
 
 const PASSWORD_SALT = process.env.FAWRI_PASSWORD_SALT || "fawri-local-dev-salt";
 const ADMIN_SESSION_SECRET =
@@ -1623,13 +1680,15 @@ function ensureDb(): AuthDb {
                   Array.isArray(ticket.messages),
                 ),
             )
-            .map((ticket) => ({
-              ...ticket,
-              inspection_requests: normalizeInspectionRequests(
-                ticket.inspection_requests,
-                ticket.status,
-              ),
-            }))
+            .map((ticket) =>
+              normalizeSupportTicketLifecycle({
+                ...ticket,
+                inspection_requests: normalizeInspectionRequests(
+                  ticket.inspection_requests,
+                  ticket.status,
+                ),
+              }),
+            )
         : [],
       deletion_requests: Array.isArray(parsed.deletion_requests)
         ? parsed.deletion_requests
@@ -1755,6 +1814,46 @@ function normalizeInspectionRequests(
     );
 }
 
+function normalizeSupportTicketLifecycle(
+  ticket: SupportTicketRecord,
+): SupportTicketRecord {
+  const lastHumanMessage = [...ticket.messages]
+    .reverse()
+    .find(
+      (message) =>
+        message.sender_type === "merchant" || message.sender_type === "admin",
+    );
+  const waitingOn: SupportTicketWaitingOn =
+    ticket.waiting_on === "merchant" || ticket.waiting_on === "admin"
+      ? ticket.waiting_on
+      : lastHumanMessage?.sender_type === "admin"
+        ? "merchant"
+        : "admin";
+  const waitingSince =
+    typeof ticket.waiting_since === "string" &&
+    Number.isFinite(new Date(ticket.waiting_since).getTime())
+      ? ticket.waiting_since
+      : lastHumanMessage?.created_at || ticket.updated_at || ticket.created_at;
+
+  return {
+    ...ticket,
+    waiting_on: waitingOn,
+    waiting_since: waitingSince,
+  };
+}
+
+function setSupportTicketWaitingOn(
+  ticket: SupportTicketRecord,
+  waitingOn: SupportTicketWaitingOn,
+  waitingSince: string,
+): void {
+  ticket.waiting_on = waitingOn;
+  ticket.waiting_since = waitingSince;
+  delete ticket.merchant_reminder_sent_at;
+  delete ticket.assistant_reminder_sent_at;
+  delete ticket.owner_escalated_at;
+}
+
 function refreshInspectionRequestExpirations(db: AuthDb): boolean {
   const timestamp = Date.now();
   let changed = false;
@@ -1863,6 +1962,30 @@ function appendAdminLog(
   return log;
 }
 
+function appendSystemAdminLog(
+  db: AuthDb,
+  ticket: SupportTicketRecord,
+  actionType: string,
+  details: string,
+): AdminLogRecord {
+  const log: AdminLogRecord = {
+    id: makeId("admin-log"),
+    admin_name: "Fawri System",
+    admin_phone: "system",
+    action_type: actionType,
+    merchant_id: ticket.merchant_id,
+    merchant_name: ticket.merchant_name,
+    details,
+    meta: {
+      ticket_id: ticket.id,
+      subject: ticket.subject,
+    },
+    created_at: now(),
+  };
+  db.admin_logs.unshift(log);
+  return log;
+}
+
 function appendMerchantBalanceNotification(
   db: AuthDb,
   merchantId: string,
@@ -1932,6 +2055,172 @@ function appendMerchantInspectionNotification(
   }
 
   return notification;
+}
+
+function appendMerchantSupportReplyReminderNotification(
+  db: AuthDb,
+  ticket: SupportTicketRecord,
+): MerchantSupportReplyReminderNotificationRecord {
+  const notification: MerchantSupportReplyReminderNotificationRecord = {
+    id: makeId("merchant-notification"),
+    merchant_id: ticket.merchant_id,
+    type: "support_reply_reminder",
+    ticket_id: ticket.id,
+    ticket_subject: ticket.subject,
+    action_url: `/dashboard/support?ticket=${encodeURIComponent(ticket.id)}`,
+    created_at: now(),
+  };
+  db.merchant_notifications.unshift(notification);
+
+  const merchantNotificationIds = db.merchant_notifications
+    .filter((item) => item.merchant_id === ticket.merchant_id)
+    .slice(100)
+    .map((item) => item.id);
+  if (merchantNotificationIds.length > 0) {
+    const expiredIds = new Set(merchantNotificationIds);
+    db.merchant_notifications = db.merchant_notifications.filter(
+      (item) => !expiredIds.has(item.id),
+    );
+  }
+
+  return notification;
+}
+
+type SupportLifecycleRefreshResult = {
+  changed: boolean;
+  merchantIds: Set<string>;
+  notificationMerchantIds: Set<string>;
+};
+
+function supportSystemMessage(
+  language: Lang,
+): { senderName: string; body: string } {
+  if (language === "en") {
+    return {
+      senderName: "Fawri",
+      body: "This ticket was closed automatically because no merchant reply was received for 72 hours. You can open a new ticket if the issue continues.",
+    };
+  }
+  if (language === "ku") {
+    return {
+      senderName: "فورى",
+      body: "ئەم تیکێتە خۆکارانە داخرا، چونکە بۆ ماوەی ٧٢ کاتژمێر هیچ وەڵامێک لە بازرگانەوە نەگەیشت. ئەگەر کێشەکە بەردەوامە دەتوانیت تیکێتێکی نوێ بکەیتەوە.",
+    };
+  }
+  return {
+    senderName: "فوري",
+    body: "تم إغلاق هذه التذكرة تلقائيًا لعدم ورود رد من التاجر خلال 72 ساعة. يمكنك فتح تذكرة جديدة إذا استمرت المشكلة.",
+  };
+}
+
+function refreshSupportTicketLifecycle(
+  db: AuthDb,
+): SupportLifecycleRefreshResult {
+  const timestamp = Date.now();
+  const merchantIds = new Set<string>();
+  const notificationMerchantIds = new Set<string>();
+  let changed = false;
+
+  for (const rawTicket of db.support_tickets) {
+    const ticket = normalizeSupportTicketLifecycle(rawTicket);
+    Object.assign(rawTicket, ticket);
+    if (ticket.status !== "open" && ticket.status !== "in_progress") continue;
+
+    const waitingSince = new Date(ticket.waiting_since || ticket.updated_at).getTime();
+    if (!Number.isFinite(waitingSince)) continue;
+    const elapsed = timestamp - waitingSince;
+
+    if (ticket.waiting_on === "merchant") {
+      if (
+        !ticket.merchant_reminder_sent_at &&
+        elapsed >= SUPPORT_MERCHANT_REMINDER_MS
+      ) {
+        const existingReminder = db.merchant_notifications.find(
+          (notification) =>
+            notification.type === "support_reply_reminder" &&
+            notification.merchant_id === ticket.merchant_id &&
+            notification.ticket_id === ticket.id &&
+            new Date(notification.created_at).getTime() >= waitingSince,
+        );
+        const reminder =
+          existingReminder ||
+          appendMerchantSupportReplyReminderNotification(db, ticket);
+        ticket.merchant_reminder_sent_at = reminder.created_at;
+        merchantIds.add(ticket.merchant_id);
+        notificationMerchantIds.add(ticket.merchant_id);
+        changed = true;
+      }
+
+      if (elapsed >= SUPPORT_MERCHANT_AUTO_CLOSE_MS) {
+        const closedAt = now();
+        ticket.status = "closed";
+        ticket.closed_at = closedAt;
+        ticket.updated_at = closedAt;
+        ticket.auto_closed_at = closedAt;
+        ticket.auto_closed_reason = "merchant_inactivity";
+
+        const merchant = findRegularMerchant(db, ticket.merchant_id);
+        const systemMessageText = supportSystemMessage(
+          merchant?.language || "ar",
+        );
+        ticket.messages.push({
+          id: makeId("support-message"),
+          sender_type: "system",
+          sender_id: "system",
+          sender_name: systemMessageText.senderName,
+          body: systemMessageText.body,
+          created_at: closedAt,
+        });
+
+        for (const notification of db.merchant_notifications) {
+          if (
+            notification.type === "support_reply_reminder" &&
+            notification.merchant_id === ticket.merchant_id &&
+            notification.ticket_id === ticket.id &&
+            !notification.read_at
+          ) {
+            notification.read_at = closedAt;
+            notificationMerchantIds.add(ticket.merchant_id);
+          }
+        }
+
+        appendSystemAdminLog(
+          db,
+          ticket,
+          "support_ticket_auto_closed_merchant_inactivity",
+          "Ticket auto-closed after 72 hours without a merchant reply",
+        );
+        merchantIds.add(ticket.merchant_id);
+        changed = true;
+      }
+      continue;
+    }
+
+    if (
+      !ticket.assistant_reminder_sent_at &&
+      elapsed >= SUPPORT_ASSISTANT_REMINDER_MS
+    ) {
+      ticket.assistant_reminder_sent_at = now();
+      changed = true;
+    }
+
+    if (
+      !ticket.owner_escalated_at &&
+      elapsed >= SUPPORT_OWNER_ESCALATION_MS
+    ) {
+      ticket.owner_escalated_at = now();
+      appendSystemAdminLog(
+        db,
+        ticket,
+        "support_ticket_owner_escalated",
+        "Ticket escalated to the owner because the merchant is still waiting for support",
+      );
+      changed = true;
+    }
+  }
+
+  if (changed) refreshInspectionRequestExpirations(db);
+  return { changed, merchantIds, notificationMerchantIds };
 }
 
 type MerchantRealtimeEventName =
@@ -2010,6 +2299,30 @@ function emitMerchantRealtimeState(
 
   if (clients.size === 0) merchantRealtimeClients.delete(merchantId);
 }
+
+function refreshAndPersistSupportLifecycle(db: AuthDb): boolean {
+  const lifecycle = refreshSupportTicketLifecycle(db);
+  const inspectionChanged = refreshInspectionRequestExpirations(db);
+  if (!lifecycle.changed && !inspectionChanged) return false;
+
+  writeDb(db);
+  for (const merchantId of lifecycle.merchantIds) {
+    emitMerchantRealtimeState(db, merchantId, "support_updated");
+  }
+  for (const merchantId of lifecycle.notificationMerchantIds) {
+    emitMerchantRealtimeState(db, merchantId, "notifications_updated");
+  }
+  return true;
+}
+
+const supportLifecycleTimer = setInterval(() => {
+  try {
+    refreshAndPersistSupportLifecycle(ensureDb());
+  } catch (error) {
+    console.error("Support ticket lifecycle sweep failed:", error);
+  }
+}, SUPPORT_LIFECYCLE_SWEEP_MS);
+supportLifecycleTimer.unref();
 
 function isChannelPlatform(value: unknown): value is ChannelPlatform {
   return value === "instagram" || value === "messenger" || value === "telegram";
@@ -2798,7 +3111,7 @@ router.get("/events", requireMerchantSession, (req: Request, res: Response) => {
 router.get("/notifications", requireMerchantSession, (req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
   const db = ensureDb();
-  if (refreshInspectionRequestExpirations(db)) writeDb(db);
+  refreshAndPersistSupportLifecycle(db);
   const unreadOnly = String(req.query.unread || "") === "1";
   const requestedLimit = Number(req.query.limit);
   const limit = Number.isInteger(requestedLimit)
@@ -2873,7 +3186,7 @@ router.patch(
 router.get("/support/tickets", requireMerchantSession, (_req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
   const db = ensureDb();
-  if (refreshInspectionRequestExpirations(db)) writeDb(db);
+  refreshAndPersistSupportLifecycle(db);
   const tickets = db.support_tickets
     .filter((ticket) => ticket.merchant_id === merchantId)
     .sort(
@@ -2932,6 +3245,8 @@ router.post("/support/tickets", requireMerchantSession, (req: Request, res: Resp
     status: "open",
     created_at: createdAt,
     updated_at: createdAt,
+    waiting_on: "admin",
+    waiting_since: createdAt,
     inspection_requests: [],
     messages: [
       {
@@ -2958,7 +3273,7 @@ router.get(
     const merchantId = getMerchantIdFromSession(res);
     const ticketId = String(req.params.id || "").trim();
     const db = ensureDb();
-    if (refreshInspectionRequestExpirations(db)) writeDb(db);
+    refreshAndPersistSupportLifecycle(db);
     const ticket = db.support_tickets.find(
       (item) => item.id === ticketId && item.merchant_id === merchantId,
     );
@@ -3001,8 +3316,24 @@ router.post(
     };
     ticket.messages.push(supportMessage);
     ticket.updated_at = supportMessage.created_at;
+    setSupportTicketWaitingOn(ticket, "admin", supportMessage.created_at);
+    let notificationChanged = false;
+    for (const notification of db.merchant_notifications) {
+      if (
+        notification.type === "support_reply_reminder" &&
+        notification.merchant_id === merchantId &&
+        notification.ticket_id === ticket.id &&
+        !notification.read_at
+      ) {
+        notification.read_at = supportMessage.created_at;
+        notificationChanged = true;
+      }
+    }
     writeDb(db);
     emitMerchantRealtimeState(db, merchantId, "support_updated");
+    if (notificationChanged) {
+      emitMerchantRealtimeState(db, merchantId, "notifications_updated");
+    }
     return res.status(201).json({ ok: true, ticket, message: supportMessage });
   },
 );
@@ -3207,7 +3538,7 @@ router.get("/admin/support/tickets", (req: Request, res: Response) => {
   if (!admin) return;
 
   const db = ensureDb();
-  if (refreshInspectionRequestExpirations(db)) writeDb(db);
+  refreshAndPersistSupportLifecycle(db);
   const tickets = [...db.support_tickets].sort(
     (left, right) =>
       new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
@@ -3303,6 +3634,7 @@ router.post(
     ticket.messages.push(message);
     ticket.status = "in_progress";
     ticket.updated_at = message.created_at;
+    setSupportTicketWaitingOn(ticket, "merchant", message.created_at);
 
     appendAdminLog(
       db,

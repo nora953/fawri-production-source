@@ -208,9 +208,21 @@ export interface MerchantInspectionNotification {
   read_at?: string;
 }
 
+export interface MerchantSupportReplyReminderNotification {
+  id: string;
+  merchant_id: string;
+  type: 'support_reply_reminder';
+  ticket_id: string;
+  ticket_subject: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+}
+
 export type MerchantNotification =
   | MerchantBalanceNotification
-  | MerchantInspectionNotification;
+  | MerchantInspectionNotification
+  | MerchantSupportReplyReminderNotification;
 
 export type ProductStatus =
   | 'available'

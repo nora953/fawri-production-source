@@ -20,6 +20,7 @@ import {
 
 type SupportCategory = 'technical' | 'billing' | 'channels' | 'account' | 'other';
 type SupportStatus = 'open' | 'in_progress' | 'resolved' | 'closed';
+type SupportWaitingOn = 'admin' | 'merchant';
 type SupportSender = 'merchant' | 'admin' | 'system';
 type InspectionSessionMode = 'live_observation' | 'independent_read_only';
 type InspectionSessionRequestStatus = 'pending' | 'approved' | 'rejected' | 'expired';
@@ -71,6 +72,12 @@ type SupportTicket = {
   assigned_admin_name?: string;
   created_at: string;
   updated_at: string;
+  closed_at?: string;
+  waiting_on?: SupportWaitingOn;
+  waiting_since?: string;
+  merchant_reminder_sent_at?: string;
+  auto_closed_at?: string;
+  auto_closed_reason?: 'merchant_inactivity';
   messages: SupportMessage[];
   inspection_requests?: InspectionSessionRequest[];
 };
@@ -177,6 +184,24 @@ const INSPECTION_TEXT = {
   },
 } as const;
 
+const SUPPORT_LIFECYCLE_TEXT = {
+  ar: {
+    waitingForYou: 'بانتظار ردك',
+    waitingForSupport: 'بانتظار رد فريق الدعم',
+    autoClosed: 'أُغلقت لعدم ورود رد منك خلال 72 ساعة.',
+  },
+  ku: {
+    waitingForYou: 'چاوەڕوانی وەڵامەکەت',
+    waitingForSupport: 'چاوەڕوانی وەڵامی تیمی پشتگیری',
+    autoClosed: 'بەهۆی نەگەیشتنی وەڵامت لە ماوەی ٧٢ کاتژمێردا داخرا.',
+  },
+  en: {
+    waitingForYou: 'Waiting for your reply',
+    waitingForSupport: 'Waiting for support',
+    autoClosed: 'Closed because no reply was received from you for 72 hours.',
+  },
+} as const;
+
 const categoryValues: SupportCategory[] = [
   'technical',
   'billing',
@@ -245,6 +270,12 @@ export default function SupportPage() {
     return `${part('year')}/${part('month')}/${part('day')} — ${part('hour')}:${part('minute')}`;
   };
   const inspectionText = lang === 'en' ? INSPECTION_TEXT.en : lang === 'ku' ? INSPECTION_TEXT.ku : INSPECTION_TEXT.ar;
+  const lifecycleText =
+    lang === 'en'
+      ? SUPPORT_LIFECYCLE_TEXT.en
+      : lang === 'ku'
+        ? SUPPORT_LIFECYCLE_TEXT.ku
+        : SUPPORT_LIFECYCLE_TEXT.ar;
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket.id === selectedId) ?? null,
     [tickets, selectedId],
@@ -374,13 +405,22 @@ export default function SupportPage() {
       other: t.support_category_other,
     })[value];
 
-  const statusLabel = (value: SupportStatus) =>
-    ({
+  const statusLabel = (ticket: SupportTicket) => {
+    if (ticket.status === 'closed' && ticket.auto_closed_reason === 'merchant_inactivity') {
+      return lifecycleText.autoClosed;
+    }
+    if (ticket.status === 'open' || ticket.status === 'in_progress') {
+      return ticket.waiting_on === 'merchant'
+        ? lifecycleText.waitingForYou
+        : lifecycleText.waitingForSupport;
+    }
+    return ({
       open: t.support_status_open,
       in_progress: t.support_status_in_progress,
       resolved: t.support_status_resolved,
       closed: t.support_status_closed,
-    })[value];
+    })[ticket.status];
+  };
 
   const ticketStatusClass = (value: SupportStatus) =>
     ({
@@ -724,7 +764,7 @@ export default function SupportPage() {
                         ticket.status,
                       )}`}
                     >
-                      {statusLabel(ticket.status)}
+                      {statusLabel(ticket)}
                     </span>
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
@@ -756,9 +796,14 @@ export default function SupportPage() {
                       selectedTicket.status,
                     )}`}
                   >
-                    {statusLabel(selectedTicket.status)}
+                    {statusLabel(selectedTicket)}
                   </span>
                 </div>
+                {selectedTicket.auto_closed_reason === 'merchant_inactivity' && (
+                  <p className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-900 dark:border-red-900/70 dark:bg-red-950/30 dark:text-red-100">
+                    {lifecycleText.autoClosed}
+                  </p>
+                )}
               </div>
 
               {latestInspectionRequest && (
