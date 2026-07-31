@@ -357,26 +357,40 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
     method: "POST", headers: { Cookie: merchantCCookie, "Content-Type": "application/json" },
   }));
   assert.equal(deniedAboveThreshold.response.status, 409);
-  assert.equal(deniedAboveThreshold.body.code, "EMERGENCY_BASE_THRESHOLD_NOT_REACHED");
+  assert.equal(deniedAboveThreshold.body.code, "EMERGENCY_COMBINED_THRESHOLD_NOT_REACHED");
   assert.equal(deniedAboveThreshold.body.base_replies_remaining, 501);
+  assert.equal(deniedAboveThreshold.body.addon_replies_remaining, 0);
+  assert.equal(deniedAboveThreshold.body.eligible_balance, 501);
   assert.equal(deniedAboveThreshold.body.threshold, 500);
 
   const addonC = await subscriptionAction("merchant-c", "add_replies", 200);
   assert.equal(addonC.response.status, 200);
   assert.equal(addonC.body.subscription.addon_replies_remaining, 200);
 
-  const atThreshold = await subscriptionAction("merchant-c", "deduct_replies", 1);
-  assert.equal(atThreshold.response.status, 200);
-  assert.equal(atThreshold.body.subscription.base_replies_remaining, 500);
-  assert.equal(atThreshold.body.subscription.addon_replies_remaining, 200);
+  const baseAtThresholdWithAddon = await subscriptionAction("merchant-c", "deduct_replies", 1);
+  assert.equal(baseAtThresholdWithAddon.response.status, 200);
+  assert.equal(baseAtThresholdWithAddon.body.subscription.base_replies_remaining, 500);
+  assert.equal(baseAtThresholdWithAddon.body.subscription.addon_replies_remaining, 200);
+
+  const deniedBecauseAddonRaisesTotal = await json(await fetch(baseUrl + "/api/auth/subscription/emergency", {
+    method: "POST", headers: { Cookie: merchantCCookie, "Content-Type": "application/json" },
+  }));
+  assert.equal(deniedBecauseAddonRaisesTotal.response.status, 409);
+  assert.equal(deniedBecauseAddonRaisesTotal.body.code, "EMERGENCY_COMBINED_THRESHOLD_NOT_REACHED");
+  assert.equal(deniedBecauseAddonRaisesTotal.body.eligible_balance, 700);
+
+  const combinedAtThreshold = await subscriptionAction("merchant-c", "deduct_replies", 200);
+  assert.equal(combinedAtThreshold.response.status, 200);
+  assert.equal(combinedAtThreshold.body.subscription.base_replies_remaining, 300);
+  assert.equal(combinedAtThreshold.body.subscription.addon_replies_remaining, 200);
 
   const emergencyC = await json(await fetch(baseUrl + "/api/auth/subscription/emergency", {
     method: "POST", headers: { Cookie: merchantCCookie, "Content-Type": "application/json" },
   }));
   assert.equal(emergencyC.response.status, 200);
-  assert.equal(emergencyC.body.subscription.base_replies_remaining, 500);
+  assert.equal(emergencyC.body.subscription.base_replies_remaining, 300);
   assert.equal(emergencyC.body.subscription.addon_replies_remaining, 200);
   assert.equal(emergencyC.body.subscription.emergency_credit_remaining, 400);
   assert.equal(emergencyC.body.subscription.emergency_debt, 400);
-  assert.equal(emergencyC.body.subscription.replies_remaining, 1100);
+  assert.equal(emergencyC.body.subscription.replies_remaining, 900);
 });

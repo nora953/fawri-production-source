@@ -361,6 +361,7 @@ export const en = {
   overview_loading: "Loading...",
   overview_plan_active: "Active",
   usage_80_warning: "You've used 80% of your reply limit.",
+  low_balance_purchase_warning: "To avoid auto-replies stopping when your balance runs out, you can now purchase additional replies.",
   usage_90_warning: "You have used 90% of your base plan replies.",
   usage_100_warning: "Reply limit reached. Auto-replies are paused.",
   expiry_warning: "Your subscription expires in 3 days. Please renew.",

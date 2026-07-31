@@ -130,11 +130,7 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
           <div className="flex min-h-11 items-center gap-3 rounded-lg border border-orange-500 px-3 py-2 text-orange-600">
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
             <p className="text-sm font-semibold leading-5">
-              {t.subscription_base_remaining}:{' '}
-              <span className="tabular-nums" dir="ltr">
-                {baseRepliesRemaining.toLocaleString(locale)}
-              </span>{' '}
-              (≤ 15%)
+              {t.low_balance_purchase_warning}
             </p>
           </div>
         )}

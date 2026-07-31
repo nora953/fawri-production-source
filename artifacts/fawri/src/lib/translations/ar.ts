@@ -333,6 +333,7 @@ export const ar = {
   overview_loading: "جاري التحميل...",
   overview_plan_active: "فعّالة",
   usage_80_warning: "استخدمت 80% من حد الردود.",
+  low_balance_purchase_warning: "لتجنب توقف الردود نتيجة نفاد الرصيد، يمكنك الآن شراء رصيد إضافي.",
   usage_90_warning: "استخدمت 90% من رصيد خطتك الأساسي.",
   usage_100_warning: "انتهى رصيد الردود. الردود التلقائية متوقفة.",
   expiry_warning: "اشتراكك ينتهي خلال 3 أيام. يرجى التجديد.",

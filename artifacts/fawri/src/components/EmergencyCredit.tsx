@@ -36,6 +36,8 @@ export function EmergencyCredit({
 
   const baseRepliesRemaining =
     subscription.base_replies_remaining ?? subscription.replies_remaining;
+  const addonRepliesRemaining = subscription.addon_replies_remaining ?? 0;
+  const eligibleBalance = baseRepliesRemaining + addonRepliesRemaining;
   const emergencyDebt =
     subscription.emergency_debt ??
     subscription.pending_next_cycle_deduction ??
@@ -47,7 +49,7 @@ export function EmergencyCredit({
     canRequestEmergency &&
     !subscription.emergency_credit_activated &&
     subscription.emergency_credit_amount > 0 &&
-    baseRepliesRemaining <= 500;
+    eligibleBalance <= 500;
 
   const handleActivate = () => {
     if (!isEligible) return;
