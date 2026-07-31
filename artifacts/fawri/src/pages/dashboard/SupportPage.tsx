@@ -685,7 +685,7 @@ export default function SupportPage() {
                   <Dialog open={showInspectionDetails} onOpenChange={setShowInspectionDetails}>
                     <DialogContent
                       className="max-w-xl"
-                      closeButtonClassName={dir === 'rtl' ? 'left-4 right-auto' : 'left-auto right-4'}
+                      closeButtonClassName={dir === 'rtl' ? 'top-2.5 left-4 right-auto' : 'top-2.5 left-auto right-4'}
                       dir={dir}
                       onOpenAutoFocus={(event) => event.preventDefault()}
                     >
@@ -693,7 +693,7 @@ export default function SupportPage() {
                         <DialogTitle className="text-start">{inspectionText.title}</DialogTitle>
                       </DialogHeader>
 
-                      <div className={`rounded-xl border p-4 ${latestInspectionToneClass}`}>
+                      <div className={`rounded-xl border px-4 pb-4 pt-3 ${latestInspectionToneClass}`}>
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <span className="rounded-full bg-background/80 px-2.5 py-1 text-xs font-black">
                             {latestInspectionStatusLabel}
@@ -716,7 +716,7 @@ export default function SupportPage() {
                         </p>
 
                         {latestInspectionRequest.responded_at && latestInspectionDecision && (
-                          <p className="mt-2 text-xs text-muted-foreground">
+                          <p className="mt-2 pb-1 text-xs text-muted-foreground">
                             {inspectionText.decisionAt}: {new Date(latestInspectionRequest.responded_at).toLocaleString(locale)}
                           </p>
                         )}
