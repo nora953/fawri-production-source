@@ -198,8 +198,28 @@ export default function SupportPage() {
       }),
     [locale],
   );
-  const formatInspectionDateTime = (value: string) =>
-    inspectionDateTimeFormatter.format(new Date(value));
+  const kurdishInspectionDateTimeFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat('en-CA-u-ca-gregory-nu-latn', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+      }),
+    [],
+  );
+  const formatInspectionDateTime = (value: string) => {
+    const date = new Date(value);
+    if (lang !== 'ku') return inspectionDateTimeFormatter.format(date);
+
+    const parts = kurdishInspectionDateTimeFormatter.formatToParts(date);
+    const part = (type: Intl.DateTimeFormatPartTypes) =>
+      parts.find((item) => item.type === type)?.value ?? '';
+
+    return `${part('year')}/${part('month')}/${part('day')} — ${part('hour')}:${part('minute')}`;
+  };
   const inspectionText = lang === 'en' ? INSPECTION_TEXT.en : lang === 'ku' ? INSPECTION_TEXT.ku : INSPECTION_TEXT.ar;
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket.id === selectedId) ?? null,
@@ -731,20 +751,20 @@ export default function SupportPage() {
 
                         {latestInspectionRequest.responded_at && latestInspectionDecision && (
                           <p className="mt-2 pb-1 text-xs text-muted-foreground">
-                            {inspectionText.decisionAt}: {formatInspectionDateTime(latestInspectionRequest.responded_at)}
+                            {inspectionText.decisionAt}: <bdi dir="ltr">{formatInspectionDateTime(latestInspectionRequest.responded_at)}</bdi>
                           </p>
                         )}
 
                         {latestInspectionRequest.ended_at && latestInspectionEndLabel && (
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {inspectionText.endedAt}: {formatInspectionDateTime(latestInspectionRequest.ended_at)}
+                            {inspectionText.endedAt}: <bdi dir="ltr">{formatInspectionDateTime(latestInspectionRequest.ended_at)}</bdi>
                           </p>
                         )}
 
                         {latestInspectionRequest.status === 'pending' && !latestInspectionRequest.ended_at && (
                           <>
                             <p className="mt-2 text-xs text-muted-foreground">
-                              {inspectionText.requestExpires}: {formatInspectionDateTime(latestInspectionRequest.request_expires_at)}
+                              {inspectionText.requestExpires}: <bdi dir="ltr">{formatInspectionDateTime(latestInspectionRequest.request_expires_at)}</bdi>
                             </p>
                             <div className="mt-3 flex flex-wrap gap-2">
                               <button
@@ -769,7 +789,7 @@ export default function SupportPage() {
 
                         {latestInspectionDecision === 'approved' && latestInspectionRequest.session_expires_at && !latestInspectionRequest.ended_at && (
                           <p className="mt-3 text-xs font-semibold text-green-800 dark:text-green-200">
-                            {inspectionText.approvedUntil}: {formatInspectionDateTime(latestInspectionRequest.session_expires_at)}
+                            {inspectionText.approvedUntil}: <bdi dir="ltr">{formatInspectionDateTime(latestInspectionRequest.session_expires_at)}</bdi>
                           </p>
                         )}
                       </div>
