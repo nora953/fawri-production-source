@@ -39,6 +39,7 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
   const usagePercent = baseReplyLimit > 0
     ? (baseRepliesUsed / baseReplyLimit) * 100
     : 0;
+  const lowBaseBalanceThreshold = Math.ceil(baseReplyLimit * 0.15);
   const daysRemaining = Math.max(
     0,
     Math.ceil(
@@ -47,6 +48,11 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
     ),
   );
   const isActive = subscription.status === 'active';
+  const isBaseBalanceLow =
+    isActive &&
+    baseReplyLimit > 0 &&
+    baseRepliesRemaining > 0 &&
+    baseRepliesRemaining <= lowBaseBalanceThreshold;
   const canShowEmergency =
     isActive || subscription.status === 'replies_exhausted';
 
@@ -72,15 +78,6 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
 
   const startDate = new Date(subscription.start_date).toLocaleDateString(locale);
   const expiryDate = new Date(subscription.expires_at).toLocaleDateString(locale);
-
-  const usageNotice =
-    isActive && usagePercent >= 100
-      ? { text: t.usage_100_warning, className: 'border-red-500 text-red-600' }
-      : isActive && usagePercent >= 90
-        ? { text: t.usage_90_warning, className: 'border-orange-500 text-orange-600' }
-        : isActive && usagePercent >= 80
-          ? { text: t.usage_80_warning, className: 'border-yellow-500 text-yellow-700' }
-          : null;
 
   return (
     <Card className="relative w-full overflow-hidden">
@@ -129,12 +126,16 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
           </Alert>
         )}
 
-        {usageNotice && (
-          <div
-            className={`flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2 ${usageNotice.className}`}
-          >
+        {isBaseBalanceLow && (
+          <div className="flex min-h-11 items-center gap-3 rounded-lg border border-orange-500 px-3 py-2 text-orange-600">
             <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <p className="text-sm font-semibold leading-5">{usageNotice.text}</p>
+            <p className="text-sm font-semibold leading-5">
+              {t.subscription_base_remaining}:{' '}
+              <span className="tabular-nums" dir="ltr">
+                {baseRepliesRemaining.toLocaleString(locale)}
+              </span>{' '}
+              (≤ 15%)
+            </p>
           </div>
         )}
 
