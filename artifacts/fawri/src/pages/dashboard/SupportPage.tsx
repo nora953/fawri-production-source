@@ -205,6 +205,9 @@ export default function SupportPage() {
   const [showInspectionDetails, setShowInspectionDetails] = useState(false);
   const [formError, setFormError] = useState('');
   const conversationRef = useRef<HTMLDivElement | null>(null);
+  const requestedTicketIdRef = useRef<string | null>(
+    new URLSearchParams(window.location.search).get('ticket'),
+  );
 
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
   const inspectionDateTimeFormatter = useMemo(
@@ -321,10 +324,21 @@ export default function SupportPage() {
       }
       const nextTickets = data.tickets as SupportTicket[];
       setTickets(nextTickets);
+      const requestedTicketId = requestedTicketIdRef.current;
+      const requestedTicketExists = Boolean(
+        requestedTicketId &&
+          nextTickets.some((ticket) => ticket.id === requestedTicketId),
+      );
+      if (requestedTicketExists) {
+        requestedTicketIdRef.current = null;
+        window.history.replaceState(null, '', window.location.pathname);
+      }
       setSelectedId((current) =>
-        current && nextTickets.some((ticket) => ticket.id === current)
-          ? current
-          : nextTickets[0]?.id ?? null,
+        requestedTicketExists
+          ? requestedTicketId
+          : current && nextTickets.some((ticket) => ticket.id === current)
+            ? current
+            : nextTickets[0]?.id ?? null,
       );
     } catch (error) {
       console.error('Could not load support tickets:', error);

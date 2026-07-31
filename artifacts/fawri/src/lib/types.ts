@@ -182,6 +182,25 @@ export interface MerchantBalanceNotification {
   read_at?: string;
 }
 
+export interface MerchantInspectionNotification {
+  id: string;
+  merchant_id: string;
+  type: 'inspection_session_request';
+  ticket_id: string;
+  inspection_request_id: string;
+  ticket_subject: string;
+  admin_name: string;
+  mode: 'live_observation' | 'independent_read_only';
+  request_expires_at: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export type MerchantNotification =
+  | MerchantBalanceNotification
+  | MerchantInspectionNotification;
+
 export type ProductStatus =
   | 'available'
   | 'low_stock'

@@ -403,6 +403,25 @@ type MerchantBalanceNotificationRecord = {
   read_at?: string;
 };
 
+type MerchantInspectionNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "inspection_session_request";
+  ticket_id: string;
+  inspection_request_id: string;
+  ticket_subject: string;
+  admin_name: string;
+  mode: InspectionSessionMode;
+  request_expires_at: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+};
+
+type MerchantNotificationRecord =
+  | MerchantBalanceNotificationRecord
+  | MerchantInspectionNotificationRecord;
+
 type SupportTicketCategory =
   | "technical"
   | "billing"
@@ -470,6 +489,33 @@ type SupportTicketRecord = {
   inspection_requests: InspectionSessionRequestRecord[];
 };
 
+function isMerchantNotificationRecord(
+  value: unknown,
+): value is MerchantNotificationRecord {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const item = value as Record<string, unknown>;
+  if (
+    typeof item.id !== "string" ||
+    typeof item.merchant_id !== "string" ||
+    typeof item.created_at !== "string"
+  ) {
+    return false;
+  }
+
+  if (item.type === "subscription_balance_purchase") return true;
+
+  return (
+    item.type === "inspection_session_request" &&
+    typeof item.ticket_id === "string" &&
+    typeof item.inspection_request_id === "string" &&
+    typeof item.ticket_subject === "string" &&
+    typeof item.admin_name === "string" &&
+    isInspectionSessionMode(item.mode) &&
+    typeof item.request_expires_at === "string" &&
+    typeof item.action_url === "string"
+  );
+}
+
 type OtpRecord = {
   phone: string;
   code: string;
@@ -484,7 +530,7 @@ type AuthDb = {
   subscriptions: SubscriptionRecord[];
   otps: OtpRecord[];
   admin_logs: AdminLogRecord[];
-  merchant_notifications: MerchantBalanceNotificationRecord[];
+  merchant_notifications: MerchantNotificationRecord[];
   support_tickets: SupportTicketRecord[];
   deletion_requests: MerchantDeletionRequest[];
   channel_overrides: Record<string, Partial<Record<ChannelPlatform, ChannelStatus>>>;
@@ -1561,17 +1607,7 @@ function ensureDb(): AuthDb {
       otps: Array.isArray(parsed.otps) ? removeExpiredOtps(parsed.otps) : [],
       admin_logs: Array.isArray(parsed.admin_logs) ? parsed.admin_logs : [],
       merchant_notifications: Array.isArray(parsed.merchant_notifications)
-        ? parsed.merchant_notifications.filter(
-            (item): item is MerchantBalanceNotificationRecord =>
-              Boolean(
-                item &&
-                typeof item === "object" &&
-                !Array.isArray(item) &&
-                typeof item.id === "string" &&
-                typeof item.merchant_id === "string" &&
-                item.type === "subscription_balance_purchase",
-              ),
-          )
+        ? parsed.merchant_notifications.filter(isMerchantNotificationRecord)
         : [],
       support_tickets: Array.isArray(parsed.support_tickets)
         ? parsed.support_tickets
@@ -1852,6 +1888,40 @@ function appendMerchantBalanceNotification(
   db.merchant_notifications.unshift(notification);
   const merchantNotificationIds = db.merchant_notifications
     .filter((item) => item.merchant_id === merchantId)
+    .slice(100)
+    .map((item) => item.id);
+  if (merchantNotificationIds.length > 0) {
+    const expiredIds = new Set(merchantNotificationIds);
+    db.merchant_notifications = db.merchant_notifications.filter(
+      (item) => !expiredIds.has(item.id),
+    );
+  }
+
+  return notification;
+}
+
+function appendMerchantInspectionNotification(
+  db: AuthDb,
+  ticket: SupportTicketRecord,
+  request: InspectionSessionRequestRecord,
+): MerchantInspectionNotificationRecord {
+  const notification: MerchantInspectionNotificationRecord = {
+    id: makeId("merchant-notification"),
+    merchant_id: ticket.merchant_id,
+    type: "inspection_session_request",
+    ticket_id: ticket.id,
+    inspection_request_id: request.id,
+    ticket_subject: ticket.subject,
+    admin_name: request.admin_name,
+    mode: request.mode,
+    request_expires_at: request.request_expires_at,
+    action_url: `/dashboard/support?ticket=${encodeURIComponent(ticket.id)}`,
+    created_at: request.requested_at,
+  };
+
+  db.merchant_notifications.unshift(notification);
+  const merchantNotificationIds = db.merchant_notifications
+    .filter((item) => item.merchant_id === ticket.merchant_id)
     .slice(100)
     .map((item) => item.id);
   if (merchantNotificationIds.length > 0) {
@@ -2962,8 +3032,19 @@ router.post(
     }
     ticket.updated_at = respondedAt;
 
+    const inspectionNotification = db.merchant_notifications.find(
+      (item) =>
+        item.type === "inspection_session_request" &&
+        item.merchant_id === merchantId &&
+        item.inspection_request_id === inspectionRequest.id,
+    );
+    if (inspectionNotification) {
+      inspectionNotification.read_at = inspectionNotification.read_at || respondedAt;
+    }
+
     writeDb(db);
     emitMerchantRealtimeState(db, merchantId, "support_updated");
+    emitMerchantRealtimeState(db, merchantId, "notifications_updated");
     return res.json({ ok: true, ticket, inspection_request: inspectionRequest });
   },
 );
@@ -3268,6 +3349,7 @@ router.post(
     ticket.inspection_requests = ticket.inspection_requests || [];
     ticket.inspection_requests.unshift(inspectionRequest);
     ticket.updated_at = requestedAt;
+    appendMerchantInspectionNotification(db, ticket, inspectionRequest);
 
     appendAdminLog(
       db,
@@ -3286,6 +3368,7 @@ router.post(
     );
     writeDb(db);
     emitMerchantRealtimeState(db, ticket.merchant_id, "support_updated");
+    emitMerchantRealtimeState(db, ticket.merchant_id, "notifications_updated");
     return res.status(201).json({
       ok: true,
       ticket,

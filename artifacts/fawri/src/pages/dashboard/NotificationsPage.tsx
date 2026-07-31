@@ -1,8 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bell, Check, Loader2, RefreshCw } from 'lucide-react';
+import { Bell, Check, ExternalLink, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 
 import { useI18n } from '@/lib/i18n';
-import type { MerchantBalanceNotification } from '@/lib/types';
+import type {
+  MerchantBalanceNotification,
+  MerchantInspectionNotification,
+  MerchantNotification,
+} from '@/lib/types';
 import { notifyMerchantNotificationsChanged } from '@/hooks/useMerchantNotifications';
 import { MERCHANT_REALTIME_EVENT, type MerchantRealtimeDetail } from '@/hooks/useMerchantRealtime';
 
@@ -16,16 +20,47 @@ function formatNotificationText(
   );
 }
 
+const INSPECTION_NOTIFICATION_TEXT = {
+  ar: {
+    title: 'طلب فحص حسابك',
+    body: 'أرسل {admin} طلب {mode} ضمن تذكرة «{ticket}».',
+    live: 'مشاهدة مباشرة',
+    readOnly: 'فحص مستقل للقراءة فقط',
+    expires: 'ينتهي الطلب',
+    open: 'فتح الطلب',
+  },
+  ku: {
+    title: 'داواکاری پشکنینی هەژمارەکەت',
+    body: '{admin} داواکاری {mode}ی لە تیکێتی «{ticket}» ناردووە.',
+    live: 'بینینی ڕاستەوخۆ',
+    readOnly: 'پشکنینی سەربەخۆی تەنها خوێندنەوە',
+    expires: 'داواکاری کۆتایی دێت',
+    open: 'کردنەوەی داواکاری',
+  },
+  en: {
+    title: 'Account inspection request',
+    body: '{admin} requested {mode} for the “{ticket}” support ticket.',
+    live: 'live observation',
+    readOnly: 'an independent read-only inspection',
+    expires: 'Request expires',
+    open: 'Open request',
+  },
+} as const;
+
 export default function NotificationsPage() {
   const { t, lang } = useI18n();
-  const [notifications, setNotifications] = useState<
-    MerchantBalanceNotification[]
-  >([]);
+  const [notifications, setNotifications] = useState<MerchantNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [markingId, setMarkingId] = useState<string | null>(null);
 
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
+  const inspectionText =
+    lang === 'en'
+      ? INSPECTION_NOTIFICATION_TEXT.en
+      : lang === 'ku'
+        ? INSPECTION_NOTIFICATION_TEXT.ku
+        : INSPECTION_NOTIFICATION_TEXT.ar;
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -40,7 +75,7 @@ export default function NotificationsPage() {
         throw new Error('invalid notification response');
       }
 
-      setNotifications(data.notifications as MerchantBalanceNotification[]);
+      setNotifications(data.notifications as MerchantNotification[]);
     } catch (error) {
       console.error('Could not load merchant notifications:', error);
       setLoadError(true);
@@ -104,7 +139,14 @@ export default function NotificationsPage() {
     }
   };
 
-  const renderMessage = (notification: MerchantBalanceNotification) => {
+  const openInspectionRequest = async (
+    notification: MerchantInspectionNotification,
+  ) => {
+    if (!notification.read_at) await markAsRead(notification.id);
+    window.location.assign(notification.action_url);
+  };
+
+  const renderBalanceMessage = (notification: MerchantBalanceNotification) => {
     const template =
       notification.emergency_debt_paid > 0
         ? notification.addon_replies_added > 0
@@ -120,7 +162,7 @@ export default function NotificationsPage() {
     });
   };
 
-  const renderSummary = (notification: MerchantBalanceNotification) =>
+  const renderBalanceSummary = (notification: MerchantBalanceNotification) =>
     formatNotificationText(t.balance_notification_summary, {
       base: notification.base_replies_remaining.toLocaleString(locale),
       emergency: notification.emergency_replies_remaining.toLocaleString(locale),
@@ -188,6 +230,80 @@ export default function NotificationsPage() {
             const unread = !notification.read_at;
             const marking = markingId === notification.id;
 
+            if (notification.type === 'inspection_session_request') {
+              const modeLabel =
+                notification.mode === 'live_observation'
+                  ? inspectionText.live
+                  : inspectionText.readOnly;
+              const body = formatNotificationText(inspectionText.body, {
+                admin: notification.admin_name,
+                mode: modeLabel,
+                ticket: notification.ticket_subject,
+              });
+
+              return (
+                <article
+                  key={notification.id}
+                  className={`rounded-2xl border p-4 shadow-sm transition-colors sm:p-5 ${
+                    unread
+                      ? 'border-amber-300 bg-amber-50/80 dark:border-amber-700 dark:bg-amber-950/25'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div
+                      className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                        unread
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300'
+                          : 'bg-muted text-muted-foreground'
+                      }`}
+                    >
+                      <ShieldCheck className="h-5 w-5" />
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <h2 className="font-black text-foreground">
+                          {inspectionText.title}
+                        </h2>
+                        <time
+                          className="text-[11px] font-medium text-muted-foreground"
+                          dateTime={notification.created_at}
+                        >
+                          {new Date(notification.created_at).toLocaleString(locale)}
+                        </time>
+                      </div>
+
+                      <p className="mt-2 text-sm font-medium leading-7 text-foreground/90">
+                        {body}
+                      </p>
+
+                      <p className="mt-3 rounded-xl border border-border/70 bg-background/80 px-3 py-2 text-xs font-semibold leading-6 text-foreground">
+                        {inspectionText.expires}:{' '}
+                        {new Date(notification.request_expires_at).toLocaleString(locale)}
+                      </p>
+
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          disabled={marking}
+                          onClick={() => void openInspectionRequest(notification)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {marking ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <ExternalLink className="h-4 w-4" />
+                          )}
+                          {inspectionText.open}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            }
+
             return (
               <article
                 key={notification.id}
@@ -222,11 +338,11 @@ export default function NotificationsPage() {
                     </div>
 
                     <p className="mt-2 text-sm font-medium leading-7 text-foreground/90">
-                      {renderMessage(notification)}
+                      {renderBalanceMessage(notification)}
                     </p>
 
                     <p className="mt-3 rounded-xl border border-border/70 bg-background/80 px-3 py-2 text-xs font-semibold leading-6 text-foreground">
-                      {renderSummary(notification)}
+                      {renderBalanceSummary(notification)}
                     </p>
 
                     <div className="mt-3 flex justify-end">
