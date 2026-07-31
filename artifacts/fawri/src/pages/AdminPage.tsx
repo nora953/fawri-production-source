@@ -601,6 +601,7 @@ interface PlanModalState {
   merchantId: string;
   merchantName: string;
   mode: "activate" | "change" | "renew";
+  currentPlan?: PlanKey;
 }
 
 function PlanModal({
@@ -612,7 +613,9 @@ function PlanModal({
   onConfirm: (plan: PlanKey) => void;
   onClose: () => void;
 }) {
-  const [selected, setSelected] = useState<PlanKey | null>(null);
+  const [selected, setSelected] = useState<PlanKey | null>(
+    state.mode === "renew" ? state.currentPlan ?? null : null,
+  );
   const { lang } = useI18n();
   const adminText = getAdminText(lang);
   const locale = lang === "en" ? "en-US" : "ar-IQ";
@@ -639,6 +642,13 @@ function PlanModal({
     renew: adminText.confirmRenewPlan,
   };
 
+  const visiblePlanKeys: PlanKey[] =
+    state.mode === "renew"
+      ? state.currentPlan
+        ? [state.currentPlan]
+        : []
+      : (Object.keys(PLANS) as PlanKey[]);
+
   return (
     <Dialog open onOpenChange={onClose}>
       <DialogContent
@@ -663,7 +673,7 @@ function PlanModal({
             </span>
           </p>
 
-          {(Object.keys(PLANS) as PlanKey[]).map((key) => (
+          {visiblePlanKeys.map((key) => (
             <button
               key={key}
               type="button"
@@ -2999,8 +3009,20 @@ export default function AdminPage() {
 
   const openConfirm = (type: ConfirmType, m: Merchant) =>
     setConfirmDialog({ type, merchantId: m.id, merchantName: m.store_name });
-  const openPlan = (mode: PlanModalState["mode"], m: Merchant) =>
-    setPlanModal({ merchantId: m.id, merchantName: m.store_name, mode });
+  const openPlan = (mode: PlanModalState["mode"], m: Merchant) => {
+    const currentSubscriptionPlan = getSub(m.id)?.plan_name;
+    const currentPlan =
+      currentSubscriptionPlan && currentSubscriptionPlan in PLANS
+        ? (currentSubscriptionPlan as PlanKey)
+        : undefined;
+
+    setPlanModal({
+      merchantId: m.id,
+      merchantName: m.store_name,
+      mode,
+      currentPlan: mode === "renew" ? currentPlan : undefined,
+    });
+  };
   const openReplies = (mode: RepliesModalState["mode"], m: Merchant) => {
     const s = getSub(m.id);
     setRepliesModal({
