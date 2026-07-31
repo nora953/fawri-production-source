@@ -1,0 +1,60 @@
+name: Apply combined emergency threshold
+
+on:
+  push:
+    branches:
+      - feature/admin-permissions-v2
+    paths:
+      - scripts/apply-combined-emergency-threshold.mjs
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/admin-permissions-v2
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable pnpm
+        run: corepack enable
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply approved emergency balance policy
+        run: node scripts/apply-combined-emergency-threshold.mjs
+
+      - name: Validate API TypeScript
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Build API
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Run subscription lifecycle test
+        run: pnpm --filter @workspace/api-server run test:subscription-lifecycle
+
+      - name: Build frontend
+        run: PORT=3000 BASE_PATH=/ pnpm --filter @workspace/fawri run build
+
+      - name: Remove temporary automation files
+        run: |
+          rm scripts/apply-combined-emergency-threshold.mjs
+          rm .github/workflows/apply-combined-emergency-threshold.yml
+
+      - name: Commit validated changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/api-server/src/routes/auth.ts artifacts/api-server/tests/subscription-lifecycle.integration.test.mjs artifacts/fawri/src/components/EmergencyCredit.tsx artifacts/fawri/src/components/SubscriptionCard.tsx artifacts/fawri/src/pages/dashboard/OverviewPage.tsx artifacts/fawri/src/lib/translations/ar.ts artifacts/fawri/src/lib/translations/en.ts artifacts/fawri/src/lib/translations/ku.ts scripts/apply-combined-emergency-threshold.mjs .github/workflows/apply-combined-emergency-threshold.yml
+          git commit -m "Use combined balance for emergency eligibility"
+          git push origin HEAD:feature/admin-permissions-v2
