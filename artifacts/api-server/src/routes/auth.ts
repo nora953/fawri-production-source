@@ -155,6 +155,7 @@ type SubscriptionStatus =
 
 type AddonReplyBatch = {
   id: string;
+  source: "purchase" | "emergency";
   purchased_at: string;
   expires_at: string;
   amount: number;
@@ -250,6 +251,7 @@ function normalizeAddonReplyBatches(
       const amount = normalizeNonNegativeInteger(record.amount);
       const remaining = Math.min(normalizeNonNegativeInteger(record.remaining), amount);
       const id = String(record.id || "").trim();
+      const source = record.source === "emergency" ? "emergency" : "purchase";
 
       if (
         !id ||
@@ -264,6 +266,7 @@ function normalizeAddonReplyBatches(
 
       return {
         id,
+        source,
         purchased_at: purchasedAt.toISOString(),
         expires_at: expiresAt.toISOString(),
         amount,
@@ -297,14 +300,9 @@ function recalculateSubscriptionTotals(
     0,
     subscription.base_reply_limit - subscription.base_replies_used,
   );
-  subscription.emergency_credit_remaining = subscription.emergency_credit_activated
-    ? Math.min(
-        subscription.emergency_credit_amount,
-        Math.max(0, subscription.emergency_credit_remaining),
-      )
-    : 0;
+  subscription.emergency_credit_remaining = 0;
   subscription.emergency_credit_used = subscription.emergency_credit_activated
-    ? subscription.emergency_credit_amount - subscription.emergency_credit_remaining
+    ? subscription.emergency_credit_amount
     : 0;
   subscription.emergency_debt = Math.max(0, subscription.emergency_debt);
   subscription.pending_next_cycle_deduction = subscription.emergency_debt;
@@ -313,12 +311,10 @@ function recalculateSubscriptionTotals(
     subscription.addon_reply_batches.reduce(
       (total, batch) => total + (batch.amount - batch.remaining),
       0,
-    ) +
-    subscription.emergency_credit_used;
+    );
   subscription.replies_remaining =
     subscription.base_replies_remaining +
-    subscription.addon_replies_remaining +
-    subscription.emergency_credit_remaining;
+    subscription.addon_replies_remaining;
   subscription.reply_limit = subscription.replies_used + subscription.replies_remaining;
 
   const expired = new Date(subscription.expires_at).getTime() <= currentDate.getTime();
@@ -348,14 +344,6 @@ function consumeReplies(subscription: SubscriptionRecord, amount: number): void 
     remainingToConsume -= fromBatch;
   }
 
-  if (remainingToConsume > 0) {
-    const fromEmergency = Math.min(
-      subscription.emergency_credit_remaining,
-      remainingToConsume,
-    );
-    subscription.emergency_credit_remaining -= fromEmergency;
-    remainingToConsume -= fromEmergency;
-  }
 
   if (remainingToConsume > 0) {
     throw new Error("amount exceeds remaining replies");
@@ -376,6 +364,7 @@ function purchaseAdditionalReplies(
     const anchorDay = getBaghdadDateParts(purchasedAt).day;
     subscription.addon_reply_batches.push({
       id: makeId("addon-replies"),
+      source: "purchase",
       purchased_at: purchasedAt.toISOString(),
       expires_at: addBaghdadCalendarMonths(purchasedAt, 3, anchorDay).toISOString(),
       amount: addonAdded,
@@ -1334,6 +1323,27 @@ function normalizeSubscriptionRecord(value: unknown): SubscriptionRecord | null 
         getBaghdadDateParts(startDate).day,
     ),
   );
+  const addonReplyBatches = normalizeAddonReplyBatches(record.addon_reply_batches);
+
+  if (
+    emergencyRemaining > 0 &&
+    !addonReplyBatches.some((batch) => batch.source === "emergency")
+  ) {
+    const migratedAt = new Date();
+    const migratedAnchorDay = getBaghdadDateParts(migratedAt).day;
+    addonReplyBatches.push({
+      id: "legacy-emergency-" + id,
+      source: "emergency",
+      purchased_at: migratedAt.toISOString(),
+      expires_at: addBaghdadCalendarMonths(
+        migratedAt,
+        3,
+        migratedAnchorDay,
+      ).toISOString(),
+      amount: emergencyRemaining,
+      remaining: emergencyRemaining,
+    });
+  }
 
   return recalculateSubscriptionTotals({
     id,
@@ -1347,7 +1357,7 @@ function normalizeSubscriptionRecord(value: unknown): SubscriptionRecord | null 
     base_replies_used: baseRepliesUsed,
     base_replies_remaining: Math.max(0, baseReplyLimit - baseRepliesUsed),
     addon_replies_remaining: 0,
-    addon_reply_batches: normalizeAddonReplyBatches(record.addon_reply_batches),
+    addon_reply_batches: addonReplyBatches,
     billing_anchor_day: billingAnchorDay,
     start_date: startDate.toISOString(),
     expires_at: expiresDate.toISOString(),
@@ -1397,9 +1407,14 @@ function createPaidSubscription(
     : undefined;
   const billingAnchorDay = getBaghdadDateParts(currentDate).day;
   const expirationBase = currentDate;
+  const existingEmergencyDebt = existingNormalized?.emergency_debt || 0;
   const emergencyDeduction = Math.min(
-    existingNormalized?.emergency_debt || 0,
+    existingEmergencyDebt,
     config.reply_limit,
+  );
+  const remainingEmergencyDebt = Math.max(
+    0,
+    existingEmergencyDebt - emergencyDeduction,
   );
   const addonBatches = existingNormalized
     ? normalizeAddonReplyBatches(existingNormalized.addon_reply_batches, currentDate)
@@ -1433,8 +1448,8 @@ function createPaidSubscription(
     emergency_credit_amount: config.emergency_credit_amount,
     emergency_credit_remaining: 0,
     emergency_credit_activated: false,
-    emergency_debt: 0,
-    pending_next_cycle_deduction: 0,
+    emergency_debt: remainingEmergencyDebt,
+    pending_next_cycle_deduction: remainingEmergencyDebt,
   }, currentDate);
 }
 
@@ -3548,14 +3563,29 @@ router.post("/subscription/emergency", requireMerchantSession, (_req: Request, r
     return sendError(res, 409, "emergency credit is unavailable");
   }
 
+  const activatedAt = new Date();
+  const emergencyAmount = subscription.emergency_credit_amount;
+  const anchorDay = getBaghdadDateParts(activatedAt).day;
+  subscription.addon_reply_batches.push({
+    id: makeId("emergency-replies"),
+    source: "emergency",
+    purchased_at: activatedAt.toISOString(),
+    expires_at: addBaghdadCalendarMonths(
+      activatedAt,
+      3,
+      anchorDay,
+    ).toISOString(),
+    amount: emergencyAmount,
+    remaining: emergencyAmount,
+  });
   subscription.emergency_credit_activated = true;
-  subscription.emergency_credit_remaining = subscription.emergency_credit_amount;
-  subscription.emergency_credit_used = 0;
-  subscription.emergency_debt = subscription.emergency_credit_amount;
+  subscription.emergency_credit_remaining = 0;
+  subscription.emergency_credit_used = emergencyAmount;
+  subscription.emergency_debt = emergencyAmount;
   subscription.pending_next_cycle_deduction = subscription.emergency_debt;
   subscription.status = "active";
   subscription.auto_reply_enabled = true;
-  recalculateSubscriptionTotals(subscription);
+  recalculateSubscriptionTotals(subscription, activatedAt);
   writeDb(db);
   emitMerchantRealtimeState(db, merchantId, "subscription_updated");
 

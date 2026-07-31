@@ -129,10 +129,9 @@ export default function OverviewPage() {
   const baseRepliesRemaining = sub
     ? sub.base_replies_remaining ?? Math.max(0, baseReplyLimit - baseRepliesUsed)
     : 0;
-  const emergencyRepliesRemaining = sub?.emergency_credit_remaining ?? 0;
   const addonRepliesRemaining = sub?.addon_replies_remaining ?? 0;
   const totalRepliesAvailable =
-    baseRepliesRemaining + emergencyRepliesRemaining + addonRepliesRemaining;
+    baseRepliesRemaining + addonRepliesRemaining;
   const usagePercent =
     baseReplyLimit > 0 ? (baseRepliesUsed / baseReplyLimit) * 100 : 0;
   const lowBaseBalanceThreshold = Math.ceil(baseReplyLimit * 0.15);
@@ -261,10 +260,9 @@ export default function OverviewPage() {
                 <Progress value={usagePercent} className={`mt-2 h-2 ${progressColor}`} />
               </div>
 
-              <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 {[
                   [t.subscription_base_remaining, baseRepliesRemaining],
-                  [t.subscription_emergency_balance, emergencyRepliesRemaining],
                   [t.subscription_addon_balance, addonRepliesRemaining],
                   [t.subscription_total_available, totalRepliesAvailable],
                 ].map(([label, value]) => (

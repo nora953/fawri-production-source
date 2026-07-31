@@ -238,6 +238,10 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   }));
   assert.equal(emergencyA.response.status, 200);
   assert.equal(emergencyA.body.subscription.emergency_debt, 400);
+  assert.equal(emergencyA.body.subscription.emergency_credit_remaining, 0);
+  assert.equal(emergencyA.body.subscription.addon_replies_remaining, 400);
+  assert.equal(emergencyA.body.subscription.addon_reply_batches.length, 1);
+  assert.equal(emergencyA.body.subscription.addon_reply_batches[0].source, "emergency");
   assert.equal(emergencyA.body.subscription.replies_remaining, 400);
 
   const secondEmergency = await fetch(`${baseUrl}/api/auth/subscription/emergency`, {
@@ -260,7 +264,7 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   const partialDebtPayment = await subscriptionAction("merchant-a", "add_replies", 100);
   assert.equal(partialDebtPayment.response.status, 200);
   assert.equal(partialDebtPayment.body.subscription.emergency_debt, 300);
-  assert.equal(partialDebtPayment.body.subscription.addon_replies_remaining, 0);
+  assert.equal(partialDebtPayment.body.subscription.addon_replies_remaining, 400);
   assert.equal(partialDebtPayment.body.notification.purchased_replies, 100);
   assert.equal(partialDebtPayment.body.notification.emergency_debt_paid, 100);
   assert.equal(partialDebtPayment.body.notification.addon_replies_added, 0);
@@ -280,15 +284,19 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   const debtAndAddon = await subscriptionAction("merchant-a", "add_replies", 500);
   assert.equal(debtAndAddon.response.status, 200);
   assert.equal(debtAndAddon.body.subscription.emergency_debt, 0);
-  assert.equal(debtAndAddon.body.subscription.addon_replies_remaining, 200);
-  assert.equal(debtAndAddon.body.subscription.addon_reply_batches.length, 1);
+  assert.equal(debtAndAddon.body.subscription.addon_replies_remaining, 600);
+  assert.equal(debtAndAddon.body.subscription.addon_reply_batches.length, 2);
+  assert.deepEqual(
+    debtAndAddon.body.subscription.addon_reply_batches.map((batch) => batch.source).sort(),
+    ["emergency", "purchase"],
+  );
   assert.equal(debtAndAddon.body.notification.purchased_replies, 500);
   assert.equal(debtAndAddon.body.notification.emergency_debt_paid, 300);
   assert.equal(debtAndAddon.body.notification.addon_replies_added, 200);
   assert.equal(debtAndAddon.body.notification.emergency_debt_remaining, 0);
   assert.equal(debtAndAddon.body.notification.total_replies_available, 600);
   const splitRealtime = await realtimeEvents.next("subscription_updated");
-  assert.equal(splitRealtime.subscription.addon_replies_remaining, 200);
+  assert.equal(splitRealtime.subscription.addon_replies_remaining, 600);
   assert.equal(splitRealtime.unread_notification_count, 2);
 
   const splitNotifications = await json(await fetch(
@@ -324,7 +332,7 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(renewedAfterExhaustion.response.status, 200);
   assert.equal(renewedAfterExhaustion.body.subscription.plan_name, "silver");
   assert.equal(renewedAfterExhaustion.body.subscription.base_replies_remaining, 4000);
-  assert.equal(renewedAfterExhaustion.body.subscription.addon_replies_remaining, 200);
+  assert.equal(renewedAfterExhaustion.body.subscription.addon_replies_remaining, 600);
   assert.ok(new Date(renewedAfterExhaustion.body.subscription.start_date) < oldExpiry);
   const renewedStartParts = baghdadParts(renewedAfterExhaustion.body.subscription.start_date);
   const renewedExpiryParts = baghdadParts(renewedAfterExhaustion.body.subscription.expires_at);
@@ -344,6 +352,9 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(changedWithDebt.body.subscription.emergency_debt, 0);
   assert.equal(changedWithDebt.body.subscription.base_replies_used, 400);
   assert.equal(changedWithDebt.body.subscription.base_replies_remaining, 7600);
+  assert.equal(changedWithDebt.body.subscription.addon_replies_remaining, 400);
+  assert.equal(changedWithDebt.body.subscription.replies_remaining, 8000);
+  assert.equal(changedWithDebt.body.subscription.addon_reply_batches[0].source, "emergency");
   assert.equal(changedWithDebt.body.subscription.emergency_credit_activated, false);
 
   const activatedC = await planOperation("merchant-c", "activate", "silver");
@@ -389,8 +400,13 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   }));
   assert.equal(emergencyC.response.status, 200);
   assert.equal(emergencyC.body.subscription.base_replies_remaining, 300);
-  assert.equal(emergencyC.body.subscription.addon_replies_remaining, 200);
-  assert.equal(emergencyC.body.subscription.emergency_credit_remaining, 400);
+  assert.equal(emergencyC.body.subscription.addon_replies_remaining, 600);
+  assert.equal(emergencyC.body.subscription.emergency_credit_remaining, 0);
   assert.equal(emergencyC.body.subscription.emergency_debt, 400);
+  assert.equal(emergencyC.body.subscription.addon_reply_batches.length, 2);
+  assert.equal(
+    emergencyC.body.subscription.addon_reply_batches.filter((batch) => batch.source === "emergency").length,
+    1,
+  );
   assert.equal(emergencyC.body.subscription.replies_remaining, 900);
 });

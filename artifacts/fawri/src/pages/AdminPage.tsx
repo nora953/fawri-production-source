@@ -277,7 +277,6 @@ function SubscriptionUsageSummary({
   baseUsedLabel,
   baseRemainingLabel,
   baseLimitLabel,
-  emergencyBalanceLabel,
   addonBalanceLabel,
   totalAvailableLabel,
   compact = false,
@@ -288,7 +287,6 @@ function SubscriptionUsageSummary({
   baseUsedLabel: string;
   baseRemainingLabel: string;
   baseLimitLabel: string;
-  emergencyBalanceLabel: string;
   addonBalanceLabel: string;
   totalAvailableLabel: string;
   compact?: boolean;
@@ -300,10 +298,9 @@ function SubscriptionUsageSummary({
   const baseRepliesRemaining =
     subscription.base_replies_remaining ??
     Math.max(0, baseReplyLimit - baseRepliesUsed);
-  const emergencyRepliesRemaining = subscription.emergency_credit_remaining ?? 0;
   const addonRepliesRemaining = subscription.addon_replies_remaining ?? 0;
   const totalRepliesAvailable =
-    baseRepliesRemaining + emergencyRepliesRemaining + addonRepliesRemaining;
+    baseRepliesRemaining + addonRepliesRemaining;
 
   const exactPercentage =
     baseReplyLimit > 0 ? (baseRepliesUsed / baseReplyLimit) * 100 : 0;
@@ -319,7 +316,6 @@ function SubscriptionUsageSummary({
   const roundedPercentage = Math.round(exactPercentage);
 
   const balanceItems = [
-    [emergencyBalanceLabel, emergencyRepliesRemaining],
     [addonBalanceLabel, addonRepliesRemaining],
     [totalAvailableLabel, totalRepliesAvailable],
   ] as const;
@@ -383,14 +379,11 @@ function SubscriptionUsageSummary({
         </div>
       </div>
 
-      <div className={compact ? "grid grid-cols-2 gap-1.5" : "grid grid-cols-3 gap-2"}>
-        {balanceItems.map(([label, value], index) => (
+      <div className="grid grid-cols-2 gap-1.5">
+        {balanceItems.map(([label, value]) => (
           <div
             key={label}
-            className={
-              "flex min-h-[54px] flex-col items-center justify-center rounded-lg border border-border/60 bg-background px-1.5 py-2 text-center " +
-              (compact && index === 2 ? "col-span-2" : "")
-            }
+            className="flex min-h-[54px] flex-col items-center justify-center rounded-lg border border-border/60 bg-background px-1.5 py-2 text-center"
           >
             <p className="text-[9px] font-medium leading-3.5 text-muted-foreground">
               {label}
@@ -973,13 +966,9 @@ function DetailsModal({
   const baseRepliesRemaining = sub
     ? sub.base_replies_remaining ?? Math.max(0, baseReplyLimit - baseRepliesUsed)
     : 0;
-  const emergencyRepliesRemaining = sub
-    ? sub.emergency_credit_remaining ??
-      Math.max(0, sub.emergency_credit_amount - sub.emergency_credit_used)
-    : 0;
   const addonRepliesRemaining = sub?.addon_replies_remaining ?? 0;
   const totalRepliesAvailable =
-    baseRepliesRemaining + emergencyRepliesRemaining + addonRepliesRemaining;
+    baseRepliesRemaining + addonRepliesRemaining;
   const emergencyDebtRemaining =
     sub?.emergency_debt ?? sub?.pending_next_cycle_deduction ?? 0;
   const usedPct =
@@ -1217,14 +1206,6 @@ function DetailsModal({
                         sub.emergency_credit_activated
                           ? adminText.detailsEnabled
                           : adminText.detailsNotEnabled,
-                      ],
-                      [
-                        adminText.detailsEmergencyBalance,
-                        emergencyRepliesRemaining.toLocaleString(locale),
-                      ],
-                      [
-                        adminText.detailsEmergencyCreditUsed,
-                        sub.emergency_credit_used.toLocaleString(locale),
                       ],
                       [
                         adminText.detailsNextCycleDeduction,
@@ -3558,7 +3539,6 @@ export default function AdminPage() {
                                 baseUsedLabel={adminText.detailsBaseUsed}
                                 baseRemainingLabel={adminText.detailsBaseRemaining}
                                 baseLimitLabel={adminText.detailsBaseReplyLimit}
-                                emergencyBalanceLabel={adminText.detailsEmergencyBalance}
                                 addonBalanceLabel={adminText.detailsAddonBalance}
                                 totalAvailableLabel={adminText.detailsTotalAvailable}
                               />
@@ -3756,8 +3736,7 @@ export default function AdminPage() {
                                   baseUsedLabel={adminText.detailsBaseUsed}
                                   baseRemainingLabel={adminText.detailsBaseRemaining}
                                   baseLimitLabel={adminText.detailsBaseReplyLimit}
-                                  emergencyBalanceLabel={adminText.detailsEmergencyBalance}
-                                  addonBalanceLabel={adminText.detailsAddonBalance}
+                                    addonBalanceLabel={adminText.detailsAddonBalance}
                                   totalAvailableLabel={adminText.detailsTotalAvailable}
                                 />
                               ) : (

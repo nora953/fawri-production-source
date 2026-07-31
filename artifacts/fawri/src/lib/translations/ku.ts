@@ -348,7 +348,7 @@ export const ku = {
   balance_notification_debt_only: "{purchased} وەڵام بۆ دانەوەی بەشێک لە قەرزی فریاکەوتن بەکارهات. {debtPaid} وەڵام درایەوە و {debtRemaining} وەڵام لە قەرزەکە ماوە. هیچ وەڵامێکی بەکارهێنان زیاد نەکرا.",
   balance_notification_debt_and_addon: "قەرزی فریاکەوتنی ماوە بە بڕی {debtPaid} وەڵام بە تەواوی درایەوە و {addonAdded} وەڵام زیادکرایە سەر کرێدیتی زیادە.",
   balance_notification_addon_only: "{addonAdded} وەڵام زیادکرایە سەر کرێدیتی زیادە.",
-  balance_notification_summary: "کرێدیتی ئێستات: {base} سەرەکی + {emergency} فریاکەوتن + {addon} زیادە = {total} وەڵامی بەردەست.",
+  balance_notification_summary: "کرێدیتی ئێستات: {base} سەرەکی + {addon} زیادە = {total} وەڵامی بەردەست.",
   balance_notification_dismiss: "نیشانکردنی ئاگادارکردنەوە وەک خوێندراو",
   notifications_title: "ئاگادارکردنەوەکان",
   notifications_subtitle: "نوێکارییەکانی کرێدیتی وەڵام و کردارە گرنگەکانی هەژمارەکەت ببینە.",

@@ -234,7 +234,6 @@ export default function NotificationsPage() {
   const renderBalanceSummary = (notification: MerchantBalanceNotification) =>
     formatNotificationText(t.balance_notification_summary, {
       base: notification.base_replies_remaining.toLocaleString(locale),
-      emergency: notification.emergency_replies_remaining.toLocaleString(locale),
       addon: notification.addon_replies_remaining.toLocaleString(locale),
       total: notification.total_replies_available.toLocaleString(locale),
     });

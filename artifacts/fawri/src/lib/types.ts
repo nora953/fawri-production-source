@@ -148,6 +148,7 @@ export interface Subscription {
   addon_replies_remaining?: number;
   addon_reply_batches?: Array<{
     id: string;
+    source?: 'purchase' | 'emergency';
     purchased_at: string;
     expires_at: string;
     amount: number;

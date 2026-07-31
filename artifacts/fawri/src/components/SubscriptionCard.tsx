@@ -32,10 +32,9 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
   const baseRepliesRemaining =
     subscription.base_replies_remaining ??
     Math.max(0, baseReplyLimit - baseRepliesUsed);
-  const emergencyRepliesRemaining = subscription.emergency_credit_remaining ?? 0;
   const addonRepliesRemaining = subscription.addon_replies_remaining ?? 0;
   const totalRepliesAvailable =
-    baseRepliesRemaining + emergencyRepliesRemaining + addonRepliesRemaining;
+    baseRepliesRemaining + addonRepliesRemaining;
   const usagePercent = baseReplyLimit > 0
     ? (baseRepliesUsed / baseReplyLimit) * 100
     : 0;
@@ -160,9 +159,8 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {[
-            [t.subscription_emergency_balance, emergencyRepliesRemaining],
             [t.subscription_addon_balance, addonRepliesRemaining],
             [t.subscription_total_available, totalRepliesAvailable],
           ].map(([label, value]) => (

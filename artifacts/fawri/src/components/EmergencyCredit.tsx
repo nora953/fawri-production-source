@@ -49,6 +49,7 @@ export function EmergencyCredit({
     canRequestEmergency &&
     !subscription.emergency_credit_activated &&
     subscription.emergency_credit_amount > 0 &&
+    emergencyDebt <= 0 &&
     eligibleBalance <= 500;
 
   const handleActivate = () => {

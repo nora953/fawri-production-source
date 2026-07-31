@@ -417,7 +417,7 @@ export const en = {
   balance_notification_debt_only: "{purchased} replies were applied to emergency debt. {debtPaid} replies were paid, with {debtRemaining} replies of debt remaining. No usable replies were added in this transaction.",
   balance_notification_debt_and_addon: "The remaining emergency debt of {debtPaid} replies was paid in full, and {addonAdded} replies were added to your add-on balance.",
   balance_notification_addon_only: "{addonAdded} replies were added to your add-on balance.",
-  balance_notification_summary: "Current balance: {base} base + {emergency} emergency + {addon} add-on = {total} replies available.",
+  balance_notification_summary: "Current balance: {base} base + {addon} add-on = {total} replies available.",
   balance_notification_dismiss: "Mark notification as read",
   notifications_title: "Notifications",
   notifications_subtitle: "Review reply-balance updates and important account activity.",

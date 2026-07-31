@@ -383,7 +383,7 @@ export const ar = {
   balance_notification_debt_only: "تم استخدام {purchased} رد لتسديد جزء من دين الطوارئ. تم تسديد {debtPaid} رد، والمتبقي من الدين {debtRemaining} رد. لم يُضف رصيد قابل للاستخدام في هذه العملية.",
   balance_notification_debt_and_addon: "تم تسديد {debtPaid} رد من دين الطوارئ بالكامل، وأضيفت {addonAdded} ردود إلى رصيدك الإضافي.",
   balance_notification_addon_only: "تمت إضافة {addonAdded} ردود إلى رصيدك الإضافي.",
-  balance_notification_summary: "رصيدك الحالي: {base} أساسي + {emergency} طوارئ + {addon} إضافي = {total} رد متاح.",
+  balance_notification_summary: "رصيدك الحالي: {base} أساسي + {addon} إضافي = {total} رد متاح.",
   balance_notification_dismiss: "تحديد الإشعار كمقروء",
   notifications_title: "الإشعارات",
   notifications_subtitle: "تابع تحديثات رصيد الردود والعمليات المهمة في حسابك.",
