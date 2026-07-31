@@ -765,14 +765,54 @@ export default function SupportPage() {
                           </span>
                         )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowInspectionDetails(true)}
-                        className="inline-flex h-8 shrink-0 items-center gap-2 rounded-xl border bg-background px-3 text-xs font-bold shadow-sm"
-                      >
-                        <Eye className="h-3.5 w-3.5" />
-                        {inspectionText.viewDetails}
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setShowInspectionDetails(true)}
+                          className="inline-flex h-8 shrink-0 items-center gap-2 rounded-xl border bg-background px-3 text-xs font-bold shadow-sm"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          {inspectionText.viewDetails}
+                        </button>
+
+                        {latestInspectionRequest.status === 'pending' && !latestInspectionRequest.ended_at && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={inspectionDecision !== null}
+                              onClick={() => void respondToInspectionRequest('approve')}
+                              className="inline-flex h-8 shrink-0 items-center justify-center rounded-xl bg-green-600 px-3 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-60"
+                            >
+                              {inspectionDecision === 'approve' ? inspectionText.deciding : inspectionText.approve}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={inspectionDecision !== null}
+                              onClick={() => void respondToInspectionRequest('reject')}
+                              className="inline-flex h-8 shrink-0 items-center justify-center rounded-xl bg-red-600 px-3 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                            >
+                              {inspectionDecision === 'reject' ? inspectionText.deciding : inspectionText.reject}
+                            </button>
+                          </>
+                        )}
+
+                        {latestInspectionDecision === 'approved' &&
+                          latestInspectionRequest.session_expires_at &&
+                          !latestInspectionRequest.ended_at && (
+                            <button
+                              type="button"
+                              disabled={terminatingInspection}
+                              onClick={() => {
+                                setInspectionTerminationError('');
+                                setConfirmInspectionTermination(true);
+                                setShowInspectionDetails(true);
+                              }}
+                              className="inline-flex h-8 shrink-0 items-center justify-center rounded-xl bg-red-600 px-3 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                            >
+                              {inspectionText.terminate}
+                            </button>
+                          )}
+                      </div>
                     </div>
                   </div>
 
@@ -831,29 +871,9 @@ export default function SupportPage() {
                         )}
 
                         {latestInspectionRequest.status === 'pending' && !latestInspectionRequest.ended_at && (
-                          <>
-                            <p className="mt-2 text-xs text-muted-foreground">
-                              {inspectionText.requestExpires}: <bdi dir="ltr">{formatInspectionDateTime(latestInspectionRequest.request_expires_at)}</bdi>
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              <button
-                                type="button"
-                                disabled={inspectionDecision !== null}
-                                onClick={() => void respondToInspectionRequest('approve')}
-                                className="rounded-xl bg-green-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
-                              >
-                                {inspectionDecision === 'approve' ? inspectionText.deciding : inspectionText.approve}
-                              </button>
-                              <button
-                                type="button"
-                                disabled={inspectionDecision !== null}
-                                onClick={() => void respondToInspectionRequest('reject')}
-                                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-60"
-                              >
-                                {inspectionDecision === 'reject' ? inspectionText.deciding : inspectionText.reject}
-                              </button>
-                            </div>
-                          </>
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            {inspectionText.requestExpires}: <bdi dir="ltr">{formatInspectionDateTime(latestInspectionRequest.request_expires_at)}</bdi>
+                          </p>
                         )}
 
                         {latestInspectionDecision === 'approved' && latestInspectionRequest.session_expires_at && !latestInspectionRequest.ended_at && (
@@ -862,19 +882,7 @@ export default function SupportPage() {
                               {inspectionText.approvedUntil}: <bdi dir="ltr">{formatInspectionDateTime(latestInspectionRequest.session_expires_at)}</bdi>
                             </p>
 
-                            {!confirmInspectionTermination ? (
-                              <button
-                                type="button"
-                                disabled={terminatingInspection}
-                                onClick={() => {
-                                  setInspectionTerminationError('');
-                                  setConfirmInspectionTermination(true);
-                                }}
-                                className="inline-flex h-9 items-center justify-center rounded-xl bg-red-600 px-4 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
-                              >
-                                {inspectionText.terminate}
-                              </button>
-                            ) : (
+                            {confirmInspectionTermination && (
                               <div className="rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/30">
                                 <p className="text-xs font-semibold leading-5 text-red-900 dark:text-red-100">
                                   {inspectionText.terminateConfirm}
