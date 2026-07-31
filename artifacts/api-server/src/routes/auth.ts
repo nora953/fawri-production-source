@@ -2968,6 +2968,61 @@ router.post(
   },
 );
 
+router.post(
+  "/support/tickets/:id/inspection-requests/:requestId/terminate",
+  requireMerchantSession,
+  (req: Request, res: Response) => {
+    const merchantId = getMerchantIdFromSession(res);
+    const ticketId = String(req.params.id || "").trim();
+    const requestId = String(req.params.requestId || "").trim();
+    const db = ensureDb();
+    if (refreshInspectionRequestExpirations(db)) writeDb(db);
+
+    const ticket = db.support_tickets.find(
+      (item) => item.id === ticketId && item.merchant_id === merchantId,
+    );
+    if (!ticket) return sendError(res, 404, "support ticket not found");
+
+    const inspectionRequest = (ticket.inspection_requests || []).find(
+      (item) => item.id === requestId,
+    );
+    if (!inspectionRequest) {
+      return sendError(res, 404, "inspection session request not found");
+    }
+
+    const sessionExpiresAt = new Date(
+      inspectionRequest.session_expires_at || 0,
+    ).getTime();
+    const activeApprovedSession =
+      inspectionRequest.status === "approved" &&
+      inspectionRequest.consent_decision === "approved" &&
+      !inspectionRequest.ended_at &&
+      Number.isFinite(sessionExpiresAt) &&
+      sessionExpiresAt > Date.now();
+
+    if (!activeApprovedSession) {
+      return sendError(res, 409, "inspection session is not active", {
+        code: "INSPECTION_SESSION_NOT_ACTIVE",
+        status: inspectionRequest.status,
+        end_reason: inspectionRequest.end_reason || "",
+      });
+    }
+
+    const endedAt = now();
+    inspectionRequest.end_reason = "merchant_terminated";
+    inspectionRequest.ended_at = endedAt;
+    ticket.updated_at = endedAt;
+
+    writeDb(db);
+    emitMerchantRealtimeState(db, merchantId, "support_updated");
+    return res.json({
+      ok: true,
+      ticket,
+      inspection_request: inspectionRequest,
+    });
+  },
+);
+
 router.get("/subscription/current", requireMerchantSession, (_req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
   const db = ensureDb();

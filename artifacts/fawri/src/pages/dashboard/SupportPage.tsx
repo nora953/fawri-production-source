@@ -102,6 +102,12 @@ const INSPECTION_TEXT = {
     ticketResolved: 'انتهت بسبب حل التذكرة',
     ticketClosed: 'انتهت بسبب إغلاق التذكرة',
     merchantTerminated: 'تم إنهاء الجلسة من قبلك',
+    terminate: 'إنهاء الجلسة',
+    terminateConfirm: 'هل أنت متأكد من إنهاء جلسة الفحص؟ ستتوقف صلاحية الفحص فورًا.',
+    confirmTerminate: 'تأكيد الإنهاء',
+    cancelTerminate: 'تراجع',
+    terminating: 'جارٍ الإنهاء...',
+    terminateError: 'تعذر إنهاء الجلسة.',
   },
   ku: {
     title: 'داواکاری پشکنینی هەژمارەکەت',
@@ -129,6 +135,12 @@ const INSPECTION_TEXT = {
     ticketResolved: 'بە چارەسەرکردنی تیکێت کۆتایی هات',
     ticketClosed: 'بە داخستنی تیکێت کۆتایی هات',
     merchantTerminated: 'دانیشتنەکەت کۆتایی پێهێنا',
+    terminate: 'کۆتاییهێنان بە دانیشتن',
+    terminateConfirm: 'دڵنیایت دەتەوێت دانیشتنی پشکنین کۆتایی پێبهێنیت؟ دەسەڵاتی پشکنین دەستبەجێ دەوەستێت.',
+    confirmTerminate: 'پشتڕاستکردنەوەی کۆتاییهێنان',
+    cancelTerminate: 'پاشگەزبوونەوە',
+    terminating: 'کۆتایی پێدەهێنرێت...',
+    terminateError: 'کۆتاییهێنان بە دانیشتن سەرکەوتوو نەبوو.',
   },
   en: {
     title: 'Account inspection request',
@@ -156,6 +168,12 @@ const INSPECTION_TEXT = {
     ticketResolved: 'Ended because the ticket was resolved',
     ticketClosed: 'Ended because the ticket was closed',
     merchantTerminated: 'You ended the session',
+    terminate: 'End session',
+    terminateConfirm: 'Are you sure you want to end the inspection session? Inspection access will stop immediately.',
+    confirmTerminate: 'Confirm end',
+    cancelTerminate: 'Cancel',
+    terminating: 'Ending...',
+    terminateError: 'Could not end the session.',
   },
 } as const;
 
@@ -181,6 +199,9 @@ export default function SupportPage() {
   const [creating, setCreating] = useState(false);
   const [replying, setReplying] = useState(false);
   const [inspectionDecision, setInspectionDecision] = useState<'approve' | 'reject' | null>(null);
+  const [confirmInspectionTermination, setConfirmInspectionTermination] = useState(false);
+  const [terminatingInspection, setTerminatingInspection] = useState(false);
+  const [inspectionTerminationError, setInspectionTerminationError] = useState('');
   const [showInspectionDetails, setShowInspectionDetails] = useState(false);
   const [formError, setFormError] = useState('');
   const conversationRef = useRef<HTMLDivElement | null>(null);
@@ -400,6 +421,45 @@ export default function SupportPage() {
       setFormError(inspectionText.decisionError);
     } finally {
       setInspectionDecision(null);
+    }
+  };
+
+  const terminateInspectionRequest = async () => {
+    if (
+      !selectedTicket ||
+      !latestInspectionRequest ||
+      latestInspectionDecision !== 'approved' ||
+      latestInspectionRequest.ended_at
+    ) {
+      return;
+    }
+
+    setTerminatingInspection(true);
+    setInspectionTerminationError('');
+    try {
+      const response = await fetch(
+        `/api/auth/support/tickets/${encodeURIComponent(selectedTicket.id)}/inspection-requests/${encodeURIComponent(latestInspectionRequest.id)}/terminate`,
+        { method: 'POST' },
+      );
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !data.ticket) {
+        throw new Error(data?.error || 'could not terminate inspection session');
+      }
+
+      const ticket = data.ticket as SupportTicket;
+      setTickets((current) =>
+        [ticket, ...current.filter((item) => item.id !== ticket.id)].sort(
+          (left, right) =>
+            new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
+        ),
+      );
+      setSelectedId(ticket.id);
+      setConfirmInspectionTermination(false);
+    } catch (error) {
+      console.error('Could not terminate inspection session:', error);
+      setInspectionTerminationError(inspectionText.terminateError);
+    } finally {
+      setTerminatingInspection(false);
     }
   };
 
@@ -716,7 +776,16 @@ export default function SupportPage() {
                     </div>
                   </div>
 
-                  <Dialog open={showInspectionDetails} onOpenChange={setShowInspectionDetails}>
+                  <Dialog
+                    open={showInspectionDetails}
+                    onOpenChange={(open) => {
+                      setShowInspectionDetails(open);
+                      if (!open) {
+                        setConfirmInspectionTermination(false);
+                        setInspectionTerminationError('');
+                      }
+                    }}
+                  >
                     <DialogContent
                       className="max-w-xl"
                       closeButtonClassName={dir === 'rtl' ? 'left-4 right-auto top-3' : 'left-auto right-4 top-3'}
@@ -788,9 +857,60 @@ export default function SupportPage() {
                         )}
 
                         {latestInspectionDecision === 'approved' && latestInspectionRequest.session_expires_at && !latestInspectionRequest.ended_at && (
-                          <p className="mt-3 text-xs font-semibold text-green-800 dark:text-green-200">
-                            {inspectionText.approvedUntil}: <bdi dir="ltr">{formatInspectionDateTime(latestInspectionRequest.session_expires_at)}</bdi>
-                          </p>
+                          <div className="mt-3 space-y-3">
+                            <p className="text-xs font-semibold text-green-800 dark:text-green-200">
+                              {inspectionText.approvedUntil}: <bdi dir="ltr">{formatInspectionDateTime(latestInspectionRequest.session_expires_at)}</bdi>
+                            </p>
+
+                            {!confirmInspectionTermination ? (
+                              <button
+                                type="button"
+                                disabled={terminatingInspection}
+                                onClick={() => {
+                                  setInspectionTerminationError('');
+                                  setConfirmInspectionTermination(true);
+                                }}
+                                className="inline-flex h-9 items-center justify-center rounded-xl bg-red-600 px-4 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                              >
+                                {inspectionText.terminate}
+                              </button>
+                            ) : (
+                              <div className="rounded-xl border border-red-300 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950/30">
+                                <p className="text-xs font-semibold leading-5 text-red-900 dark:text-red-100">
+                                  {inspectionText.terminateConfirm}
+                                </p>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                  <button
+                                    type="button"
+                                    disabled={terminatingInspection}
+                                    onClick={() => void terminateInspectionRequest()}
+                                    className="inline-flex h-9 items-center justify-center rounded-xl bg-red-600 px-4 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                                  >
+                                    {terminatingInspection
+                                      ? inspectionText.terminating
+                                      : inspectionText.confirmTerminate}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    disabled={terminatingInspection}
+                                    onClick={() => {
+                                      setConfirmInspectionTermination(false);
+                                      setInspectionTerminationError('');
+                                    }}
+                                    className="inline-flex h-9 items-center justify-center rounded-xl border bg-background px-4 text-xs font-bold disabled:opacity-60"
+                                  >
+                                    {inspectionText.cancelTerminate}
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {inspectionTerminationError && (
+                              <p className="text-xs font-bold text-red-700 dark:text-red-300">
+                                {inspectionTerminationError}
+                              </p>
+                            )}
+                          </div>
                         )}
                       </div>
                     </DialogContent>
