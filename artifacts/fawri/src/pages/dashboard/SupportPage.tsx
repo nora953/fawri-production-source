@@ -186,6 +186,20 @@ export default function SupportPage() {
   const conversationRef = useRef<HTMLDivElement | null>(null);
 
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
+  const inspectionDateTimeFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }),
+    [locale],
+  );
+  const formatInspectionDateTime = (value: string) =>
+    inspectionDateTimeFormatter.format(new Date(value));
   const inspectionText = lang === 'en' ? INSPECTION_TEXT.en : lang === 'ku' ? INSPECTION_TEXT.ku : INSPECTION_TEXT.ar;
   const selectedTicket = useMemo(
     () => tickets.find((ticket) => ticket.id === selectedId) ?? null,
@@ -685,12 +699,12 @@ export default function SupportPage() {
                   <Dialog open={showInspectionDetails} onOpenChange={setShowInspectionDetails}>
                     <DialogContent
                       className="max-w-xl"
-                      closeButtonClassName={dir === 'rtl' ? 'top-2.5 left-4 right-auto' : 'top-2.5 left-auto right-4'}
+                      closeButtonClassName={dir === 'rtl' ? 'left-4 right-auto top-3' : 'left-auto right-4 top-3'}
                       dir={dir}
                       onOpenAutoFocus={(event) => event.preventDefault()}
                     >
-                      <DialogHeader>
-                        <DialogTitle className="text-start">{inspectionText.title}</DialogTitle>
+                      <DialogHeader className="min-h-10 justify-center">
+                        <DialogTitle className="pe-12 text-start">{inspectionText.title}</DialogTitle>
                       </DialogHeader>
 
                       <div className={`rounded-xl border px-4 pb-4 pt-3 ${latestInspectionToneClass}`}>
@@ -717,20 +731,20 @@ export default function SupportPage() {
 
                         {latestInspectionRequest.responded_at && latestInspectionDecision && (
                           <p className="mt-2 pb-1 text-xs text-muted-foreground">
-                            {inspectionText.decisionAt}: {new Date(latestInspectionRequest.responded_at).toLocaleString(locale)}
+                            {inspectionText.decisionAt}: {formatInspectionDateTime(latestInspectionRequest.responded_at)}
                           </p>
                         )}
 
                         {latestInspectionRequest.ended_at && latestInspectionEndLabel && (
                           <p className="mt-1 text-xs text-muted-foreground">
-                            {inspectionText.endedAt}: {new Date(latestInspectionRequest.ended_at).toLocaleString(locale)}
+                            {inspectionText.endedAt}: {formatInspectionDateTime(latestInspectionRequest.ended_at)}
                           </p>
                         )}
 
                         {latestInspectionRequest.status === 'pending' && !latestInspectionRequest.ended_at && (
                           <>
                             <p className="mt-2 text-xs text-muted-foreground">
-                              {inspectionText.requestExpires}: {new Date(latestInspectionRequest.request_expires_at).toLocaleString(locale)}
+                              {inspectionText.requestExpires}: {formatInspectionDateTime(latestInspectionRequest.request_expires_at)}
                             </p>
                             <div className="mt-3 flex flex-wrap gap-2">
                               <button
@@ -755,7 +769,7 @@ export default function SupportPage() {
 
                         {latestInspectionDecision === 'approved' && latestInspectionRequest.session_expires_at && !latestInspectionRequest.ended_at && (
                           <p className="mt-3 text-xs font-semibold text-green-800 dark:text-green-200">
-                            {inspectionText.approvedUntil}: {new Date(latestInspectionRequest.session_expires_at).toLocaleString(locale)}
+                            {inspectionText.approvedUntil}: {formatInspectionDateTime(latestInspectionRequest.session_expires_at)}
                           </p>
                         )}
                       </div>
