@@ -30,6 +30,20 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --no-frozen-lockfile
+      - name: Make subscription renderer marker unique
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("scripts/apply_fawri_subscription_notifications.py")
+          text = path.read_text()
+          old = "insert_before(NOTIFICATIONS,\n'''  return (''',"
+          new = "insert_before(NOTIFICATIONS,\n'''  const renderBalanceSummary = (notification: MerchantBalanceNotification) =>''',"
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f"subscription renderer helper: expected 1 match, found {count}")
+          path.write_text(text.replace(old, new, 1))
+          PY
       - run: python3 scripts/apply_fawri_subscription_notifications.py
       - run: pnpm --filter @workspace/api-server run typecheck
       - run: pnpm --filter @workspace/api-server run build
