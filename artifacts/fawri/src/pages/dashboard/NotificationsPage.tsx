@@ -21,6 +21,16 @@ function formatNotificationText(
   );
 }
 
+function getArabicReplyUnit(count: number): 'رد' | 'ردود' {
+  const value = Math.abs(Math.trunc(count));
+  return value >= 3 && value <= 10 ? 'ردود' : 'رد';
+}
+
+function getArabicAvailabilityWord(count: number): 'متاح' | 'متاحة' {
+  const value = Math.abs(Math.trunc(count));
+  return value >= 3 && value <= 10 ? 'متاحة' : 'متاح';
+}
+
 const INSPECTION_NOTIFICATION_TEXT = {
   ar: {
     pendingTitle: 'طلب فحص حسابك',
@@ -225,9 +235,13 @@ export default function NotificationsPage() {
 
     return formatNotificationText(template, {
       purchased: notification.purchased_replies.toLocaleString(locale),
+      purchasedUnit: lang === 'ar' ? getArabicReplyUnit(notification.purchased_replies) : '',
       debtPaid: notification.emergency_debt_paid.toLocaleString(locale),
+      debtPaidUnit: lang === 'ar' ? getArabicReplyUnit(notification.emergency_debt_paid) : '',
       debtRemaining: notification.emergency_debt_remaining.toLocaleString(locale),
+      debtRemainingUnit: lang === 'ar' ? getArabicReplyUnit(notification.emergency_debt_remaining) : '',
       addonAdded: notification.addon_replies_added.toLocaleString(locale),
+      addonAddedUnit: lang === 'ar' ? getArabicReplyUnit(notification.addon_replies_added) : '',
     });
   };
 
@@ -236,6 +250,8 @@ export default function NotificationsPage() {
       base: notification.base_replies_remaining.toLocaleString(locale),
       addon: notification.addon_replies_remaining.toLocaleString(locale),
       total: notification.total_replies_available.toLocaleString(locale),
+      totalUnit: lang === 'ar' ? getArabicReplyUnit(notification.total_replies_available) : '',
+      availabilityWord: lang === 'ar' ? getArabicAvailabilityWord(notification.total_replies_available) : '',
     });
 
   return (
