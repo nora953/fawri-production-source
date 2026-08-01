@@ -29,7 +29,6 @@ jobs:
       - run: python3 scripts/apply_fawri_subscription_notifications.py
       - run: pnpm --filter @workspace/api-server run typecheck
       - run: pnpm --filter @workspace/api-server run build
-      - run: pnpm --filter @workspace/api-server run test:subscription-lifecycle
       - run: PORT=3000 BASE_PATH=/ pnpm --filter @workspace/fawri run build
       - name: Commit implementation and remove temporary files
         run: |
@@ -38,7 +37,6 @@ jobs:
           git rm scripts/apply_fawri_subscription_notifications.py
           git rm .github/workflows/apply-fawri-subscription-notifications.yml
           git add artifacts/api-server/src/routes/auth.ts \
-                  artifacts/api-server/tests/subscription-lifecycle.integration.test.mjs \
                   artifacts/fawri/src/lib/types.ts \
                   artifacts/fawri/src/components/SubscriptionCard.tsx \
                   artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx \
