@@ -2564,6 +2564,34 @@ export default function AdminPage() {
     handleUnauthorizedAdminResponse,
   ]);
 
+  useEffect(() => {
+    if (!canManageSubscriptions) return;
+
+    const refreshSubscriptionsWhenVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      void refreshSubscriptionsFromApi();
+    };
+
+    const intervalId = window.setInterval(
+      refreshSubscriptionsWhenVisible,
+      5_000,
+    );
+    window.addEventListener("focus", refreshSubscriptionsWhenVisible);
+    document.addEventListener(
+      "visibilitychange",
+      refreshSubscriptionsWhenVisible,
+    );
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshSubscriptionsWhenVisible);
+      document.removeEventListener(
+        "visibilitychange",
+        refreshSubscriptionsWhenVisible,
+      );
+    };
+  }, [canManageSubscriptions, refreshSubscriptionsFromApi]);
+
   const getSub = (id: string) =>
     subscriptions.find((s) => s.merchant_id === id);
   const getPendingDeletionRequest = (merchantId: string) =>
