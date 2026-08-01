@@ -1,11 +1,13 @@
 name: Apply Fawri subscription notifications
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - feature/admin-permissions-v2
     paths:
       - scripts/apply_fawri_subscription_notifications.py
+      - .github/workflows/apply-fawri-subscription-notifications.yml
 
 permissions:
   contents: write
@@ -29,6 +31,7 @@ jobs:
       - run: python3 scripts/apply_fawri_subscription_notifications.py
       - run: pnpm --filter @workspace/api-server run typecheck
       - run: pnpm --filter @workspace/api-server run build
+      - run: pnpm --filter @workspace/api-server run test:subscription-lifecycle
       - run: PORT=3000 BASE_PATH=/ pnpm --filter @workspace/fawri run build
       - name: Commit implementation and remove temporary files
         run: |
