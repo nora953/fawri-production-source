@@ -45,6 +45,7 @@ jobs:
           path.write_text(text.replace(old, new, 1))
           PY
       - run: python3 scripts/apply_fawri_subscription_notifications.py
+      - run: pnpm run typecheck:libs
       - run: pnpm --filter @workspace/api-server run typecheck
       - run: pnpm --filter @workspace/api-server run build
       - run: pnpm --filter @workspace/api-server run test:subscription-lifecycle
