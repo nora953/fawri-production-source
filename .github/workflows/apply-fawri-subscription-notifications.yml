@@ -7,6 +7,8 @@ on:
       - feature/admin-permissions-v2
     paths:
       - scripts/apply_fawri_subscription_notifications.py
+      - artifacts/api-server/package.json
+      - pnpm-lock.yaml
       - .github/workflows/apply-fawri-subscription-notifications.yml
 
 permissions:
@@ -40,6 +42,7 @@ jobs:
           git rm scripts/apply_fawri_subscription_notifications.py
           git rm .github/workflows/apply-fawri-subscription-notifications.yml
           git add pnpm-lock.yaml \
+                  artifacts/api-server/package.json \
                   artifacts/api-server/src/routes/auth.ts \
                   artifacts/fawri/src/lib/types.ts \
                   artifacts/fawri/src/components/SubscriptionCard.tsx \
