@@ -219,6 +219,9 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(expiry.minute, start.minute);
   assert.equal((expiry.month - start.month + 12) % 12, 1);
   assert.equal(activated.body.subscription.base_reply_limit, 4000);
+  assert.equal(activated.body.notification.type, "subscription_plan_event");
+  assert.equal(activated.body.notification.operation, "activate");
+  assert.equal(activated.body.notification.plan_name, "silver");
 
   const forbiddenChange = await planOperation("merchant-a", "change", "gold");
   assert.equal(forbiddenChange.response.status, 409);
@@ -264,6 +267,11 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(emergencyA.body.subscription.addon_reply_batches.length, 1);
   assert.equal(emergencyA.body.subscription.addon_reply_batches[0].source, "emergency");
   assert.equal(emergencyA.body.subscription.replies_remaining, 400);
+  assert.equal(
+    emergencyA.body.notification.type,
+    "subscription_emergency_activated",
+  );
+  assert.equal(emergencyA.body.notification.emergency_replies_added, 400);
 
   const adminEmergencyUpdate = await adminRealtimeEvents.next(
     "subscription_updated",
@@ -290,7 +298,20 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   const realtimeEvents = createSseEventReader(realtimeResponse.body);
   const realtimeSnapshot = await realtimeEvents.next("snapshot");
   assert.equal(realtimeSnapshot.subscription.emergency_debt, 400);
-  assert.equal(realtimeSnapshot.unread_notification_count, 0);
+  assert.equal(realtimeSnapshot.unread_notification_count, 2);
+
+  const initialNotifications = await json(await fetch(
+    `${baseUrl}/api/auth/notifications?unread=1`,
+    { headers: { Cookie: merchantACookie } },
+  ));
+  assert.equal(initialNotifications.response.status, 200);
+  assert.equal(initialNotifications.body.notifications.length, 2);
+  assert.deepEqual(
+    initialNotifications.body.notifications
+      .map((notification) => notification.type)
+      .sort(),
+    ["subscription_emergency_activated", "subscription_plan_event"].sort(),
+  );
 
   const partialDebtPayment = await subscriptionAction("merchant-a", "add_replies", 100);
   assert.equal(partialDebtPayment.response.status, 200);
@@ -302,15 +323,19 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(partialDebtPayment.body.notification.emergency_debt_remaining, 300);
   const partialRealtime = await realtimeEvents.next("subscription_updated");
   assert.equal(partialRealtime.subscription.emergency_debt, 300);
-  assert.equal(partialRealtime.unread_notification_count, 1);
+  assert.equal(partialRealtime.unread_notification_count, 3);
 
   const partialNotifications = await json(await fetch(
     `${baseUrl}/api/auth/notifications?unread=1`,
     { headers: { Cookie: merchantACookie } },
   ));
   assert.equal(partialNotifications.response.status, 200);
-  assert.equal(partialNotifications.body.notifications.length, 1);
+  assert.equal(partialNotifications.body.notifications.length, 3);
   assert.equal(partialNotifications.body.notifications[0].merchant_id, "merchant-a");
+  assert.equal(
+    partialNotifications.body.notifications[0].id,
+    partialDebtPayment.body.notification.id,
+  );
 
   const debtAndAddon = await subscriptionAction("merchant-a", "add_replies", 500);
   assert.equal(debtAndAddon.response.status, 200);
@@ -328,14 +353,14 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(debtAndAddon.body.notification.total_replies_available, 600);
   const splitRealtime = await realtimeEvents.next("subscription_updated");
   assert.equal(splitRealtime.subscription.addon_replies_remaining, 600);
-  assert.equal(splitRealtime.unread_notification_count, 2);
+  assert.equal(splitRealtime.unread_notification_count, 4);
 
   const splitNotifications = await json(await fetch(
     `${baseUrl}/api/auth/notifications?unread=1`,
     { headers: { Cookie: merchantACookie } },
   ));
   assert.equal(splitNotifications.response.status, 200);
-  assert.equal(splitNotifications.body.notifications.length, 2);
+  assert.equal(splitNotifications.body.notifications.length, 4);
   assert.equal(splitNotifications.body.notifications[0].id, debtAndAddon.body.notification.id);
 
   const markedRead = await json(await fetch(
@@ -345,7 +370,7 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(markedRead.response.status, 200);
   assert.ok(markedRead.body.notification.read_at);
   const readRealtime = await realtimeEvents.next("notifications_updated");
-  assert.equal(readRealtime.unread_notification_count, 1);
+  assert.equal(readRealtime.unread_notification_count, 3);
   realtimeController.abort();
   await realtimeEvents.cancel().catch(() => undefined);
 
@@ -353,7 +378,7 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
     `${baseUrl}/api/auth/notifications?unread=1`,
     { headers: { Cookie: merchantACookie } },
   ));
-  assert.equal(unreadAfterMark.body.notifications.length, 1);
+  assert.equal(unreadAfterMark.body.notifications.length, 3);
   const purchase = baghdadParts(debtAndAddon.body.subscription.addon_reply_batches[0].purchased_at);
   const addonExpiry = baghdadParts(debtAndAddon.body.subscription.addon_reply_batches[0].expires_at);
   assert.equal((addonExpiry.month - purchase.month + 12) % 12, 3);

@@ -153,6 +153,7 @@ export interface Subscription {
     expires_at: string;
     amount: number;
     remaining: number;
+    expiry_reminder_sent_at?: string;
   }>;
   billing_anchor_day?: number;
   start_date: string;
@@ -165,6 +166,8 @@ export interface Subscription {
   emergency_credit_activated: boolean;
   emergency_debt?: number;
   pending_next_cycle_deduction: number;
+  expiry_reminder_sent_at?: string;
+  expired_notification_sent_at?: string;
 }
 
 export interface MerchantBalanceNotification {
@@ -179,9 +182,83 @@ export interface MerchantBalanceNotification {
   emergency_replies_remaining: number;
   addon_replies_remaining: number;
   total_replies_available: number;
+  addon_batch_id?: string;
+  addon_batch_expires_at?: string;
   created_at: string;
   read_at?: string;
 }
+
+export interface MerchantSubscriptionPlanNotification {
+  id: string;
+  merchant_id: string;
+  type: 'subscription_plan_event';
+  operation: 'activate' | 'change' | 'renew';
+  plan_name: Subscription['plan_name'];
+  previous_plan_name?: Subscription['plan_name'];
+  start_date: string;
+  expires_at: string;
+  emergency_debt_paid: number;
+  emergency_debt_remaining: number;
+  base_replies_remaining: number;
+  addon_replies_remaining: number;
+  total_replies_available: number;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantEmergencyActivationNotification {
+  id: string;
+  merchant_id: string;
+  type: 'subscription_emergency_activated';
+  addon_batch_id: string;
+  emergency_replies_added: number;
+  emergency_debt: number;
+  expires_at: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantSubscriptionExpiryReminderNotification {
+  id: string;
+  merchant_id: string;
+  type: 'subscription_expiry_reminder';
+  plan_name: Subscription['plan_name'];
+  expires_at: string;
+  days_remaining: number;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantSubscriptionExpiredNotification {
+  id: string;
+  merchant_id: string;
+  type: 'subscription_expired';
+  plan_name: Subscription['plan_name'];
+  expired_at: string;
+  addon_replies_remaining: number;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantAddonExpiryReminderNotification {
+  id: string;
+  merchant_id: string;
+  type: 'addon_expiry_reminder';
+  addon_batch_id: string;
+  source: 'purchase' | 'emergency';
+  remaining_replies: number;
+  expires_at: string;
+  days_remaining: number;
+  created_at: string;
+  read_at?: string;
+}
+
+export type MerchantSubscriptionNotification =
+  | MerchantSubscriptionPlanNotification
+  | MerchantEmergencyActivationNotification
+  | MerchantSubscriptionExpiryReminderNotification
+  | MerchantSubscriptionExpiredNotification
+  | MerchantAddonExpiryReminderNotification;
 
 export interface MerchantInspectionNotification {
   id: string;
@@ -222,6 +299,7 @@ export interface MerchantSupportReplyReminderNotification {
 
 export type MerchantNotification =
   | MerchantBalanceNotification
+  | MerchantSubscriptionNotification
   | MerchantInspectionNotification
   | MerchantSupportReplyReminderNotification;
 

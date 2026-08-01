@@ -77,6 +77,13 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
 
   const startDate = new Date(subscription.start_date).toLocaleDateString(locale);
   const expiryDate = new Date(subscription.expires_at).toLocaleDateString(locale);
+  const addonReplyBatches = [...(subscription.addon_reply_batches ?? [])]
+    .filter((batch) => batch.remaining > 0)
+    .sort(
+      (left, right) =>
+        new Date(left.expires_at).getTime() -
+        new Date(right.expires_at).getTime(),
+    );
 
   return (
     <Card className="relative w-full overflow-hidden">
@@ -177,6 +184,42 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
             </div>
           ))}
         </div>
+
+        {addonReplyBatches.length > 0 && (
+          <div className="space-y-2 rounded-xl border border-border/70 bg-muted/15 p-3">
+            <h3 className="text-sm font-bold text-foreground">
+              {t.subscription_addon_batches_title}
+            </h3>
+            <div className="space-y-2">
+              {addonReplyBatches.map((batch) => (
+                <div
+                  key={batch.id}
+                  className="flex flex-col gap-2 rounded-lg border border-border/70 bg-background px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div>
+                    <p className="text-xs font-bold text-foreground">
+                      {batch.source === 'emergency'
+                        ? t.subscription_addon_batch_emergency
+                        : t.subscription_addon_batch_purchase}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {t.subscription_addon_batch_expires}:{' '}
+                      <strong className="text-foreground">
+                        {new Date(batch.expires_at).toLocaleDateString(locale)}
+                      </strong>
+                    </p>
+                  </div>
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    {t.subscription_addon_batch_remaining}:{' '}
+                    <strong className="text-base font-extrabold text-foreground" dir="ltr">
+                      {batch.remaining.toLocaleString(locale)}
+                    </strong>
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {canShowEmergency && (
           <EmergencyCredit subscription={subscription} onActivate={onEmergencyActivate} />

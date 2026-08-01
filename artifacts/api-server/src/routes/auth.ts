@@ -160,6 +160,7 @@ type AddonReplyBatch = {
   expires_at: string;
   amount: number;
   remaining: number;
+  expiry_reminder_sent_at?: string;
 };
 
 type SubscriptionRecord = {
@@ -186,6 +187,8 @@ type SubscriptionRecord = {
   emergency_credit_activated: boolean;
   emergency_debt: number;
   pending_next_cycle_deduction: number;
+  expiry_reminder_sent_at?: string;
+  expired_notification_sent_at?: string;
 };
 
 const SUBSCRIPTION_PLAN_CONFIG = {
@@ -252,6 +255,11 @@ function normalizeAddonReplyBatches(
       const remaining = Math.min(normalizeNonNegativeInteger(record.remaining), amount);
       const id = String(record.id || "").trim();
       const source = record.source === "emergency" ? "emergency" : "purchase";
+      const expiryReminderSentAt =
+        typeof record.expiry_reminder_sent_at === "string" &&
+        record.expiry_reminder_sent_at.trim()
+          ? record.expiry_reminder_sent_at
+          : undefined;
 
       if (
         !id ||
@@ -271,6 +279,9 @@ function normalizeAddonReplyBatches(
         expires_at: expiresAt.toISOString(),
         amount,
         remaining,
+        ...(expiryReminderSentAt
+          ? { expiry_reminder_sent_at: expiryReminderSentAt }
+          : {}),
       };
     })
     .filter((item): item is AddonReplyBatch => item !== null)
@@ -354,26 +365,36 @@ function purchaseAdditionalReplies(
   subscription: SubscriptionRecord,
   amount: number,
   purchasedAt: Date = new Date(),
-): { debtPaid: number; addonAdded: number } {
+): {
+  debtPaid: number;
+  addonAdded: number;
+  addonBatch?: AddonReplyBatch;
+} {
   const debtPaid = Math.min(subscription.emergency_debt, amount);
   subscription.emergency_debt -= debtPaid;
   subscription.pending_next_cycle_deduction = subscription.emergency_debt;
   const addonAdded = amount - debtPaid;
+  let addonBatch: AddonReplyBatch | undefined;
 
   if (addonAdded > 0) {
     const anchorDay = getBaghdadDateParts(purchasedAt).day;
-    subscription.addon_reply_batches.push({
+    addonBatch = {
       id: makeId("addon-replies"),
       source: "purchase",
       purchased_at: purchasedAt.toISOString(),
-      expires_at: addBaghdadCalendarMonths(purchasedAt, 3, anchorDay).toISOString(),
+      expires_at: addBaghdadCalendarMonths(
+        purchasedAt,
+        3,
+        anchorDay,
+      ).toISOString(),
       amount: addonAdded,
       remaining: addonAdded,
-    });
+    };
+    subscription.addon_reply_batches.push(addonBatch);
   }
 
   recalculateSubscriptionTotals(subscription, purchasedAt);
-  return { debtPaid, addonAdded };
+  return { debtPaid, addonAdded, addonBatch };
 }
 
 type MerchantBalanceNotificationRecord = {
@@ -388,6 +409,73 @@ type MerchantBalanceNotificationRecord = {
   emergency_replies_remaining: number;
   addon_replies_remaining: number;
   total_replies_available: number;
+  addon_batch_id?: string;
+  addon_batch_expires_at?: string;
+  created_at: string;
+  read_at?: string;
+};
+
+type MerchantSubscriptionPlanNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "subscription_plan_event";
+  operation: "activate" | "change" | "renew";
+  plan_name: SubscriptionPlan;
+  previous_plan_name?: SubscriptionPlan;
+  start_date: string;
+  expires_at: string;
+  emergency_debt_paid: number;
+  emergency_debt_remaining: number;
+  base_replies_remaining: number;
+  addon_replies_remaining: number;
+  total_replies_available: number;
+  created_at: string;
+  read_at?: string;
+};
+
+type MerchantEmergencyActivationNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "subscription_emergency_activated";
+  addon_batch_id: string;
+  emergency_replies_added: number;
+  emergency_debt: number;
+  expires_at: string;
+  created_at: string;
+  read_at?: string;
+};
+
+type MerchantSubscriptionExpiryReminderNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "subscription_expiry_reminder";
+  plan_name: SubscriptionPlan;
+  expires_at: string;
+  days_remaining: number;
+  created_at: string;
+  read_at?: string;
+};
+
+type MerchantSubscriptionExpiredNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "subscription_expired";
+  plan_name: SubscriptionPlan;
+  expired_at: string;
+  addon_replies_remaining: number;
+  created_at: string;
+  read_at?: string;
+};
+
+type MerchantAddonExpiryReminderNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "addon_expiry_reminder";
+  addon_batch_id: string;
+  source: "purchase" | "emergency";
+  remaining_replies: number;
+  expires_at: string;
+  days_remaining: number;
   created_at: string;
   read_at?: string;
 };
@@ -420,6 +508,11 @@ type MerchantSupportReplyReminderNotificationRecord = {
 
 type MerchantNotificationRecord =
   | MerchantBalanceNotificationRecord
+  | MerchantSubscriptionPlanNotificationRecord
+  | MerchantEmergencyActivationNotificationRecord
+  | MerchantSubscriptionExpiryReminderNotificationRecord
+  | MerchantSubscriptionExpiredNotificationRecord
+  | MerchantAddonExpiryReminderNotificationRecord
   | MerchantInspectionNotificationRecord
   | MerchantSupportReplyReminderNotificationRecord;
 
@@ -513,6 +606,26 @@ function isMerchantNotificationRecord(
   }
 
   if (item.type === "subscription_balance_purchase") return true;
+  if (item.type === "subscription_plan_event") {
+    return (
+      (item.operation === "activate" || item.operation === "change" || item.operation === "renew") &&
+      isSubscriptionPlan(item.plan_name) &&
+      typeof item.start_date === "string" &&
+      typeof item.expires_at === "string"
+    );
+  }
+  if (item.type === "subscription_emergency_activated") {
+    return typeof item.addon_batch_id === "string" && typeof item.expires_at === "string";
+  }
+  if (item.type === "subscription_expiry_reminder") {
+    return isSubscriptionPlan(item.plan_name) && typeof item.expires_at === "string";
+  }
+  if (item.type === "subscription_expired") {
+    return isSubscriptionPlan(item.plan_name) && typeof item.expired_at === "string";
+  }
+  if (item.type === "addon_expiry_reminder") {
+    return typeof item.addon_batch_id === "string" && typeof item.expires_at === "string";
+  }
 
   if (item.type === "support_reply_reminder") {
     return (
@@ -592,6 +705,11 @@ const SUPPORT_MERCHANT_AUTO_CLOSE_MS = supportDurationMs(
 );
 const SUPPORT_LIFECYCLE_SWEEP_MS =
   process.env.NODE_ENV === "production" ? 60_000 : 5_000;
+const SUBSCRIPTION_LIFECYCLE_SWEEP_MS =
+  process.env.NODE_ENV === "production" ? 60_000 : 5_000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const SUBSCRIPTION_EXPIRY_REMINDER_DAYS = 7;
+const ADDON_EXPIRY_REMINDER_DAYS = 10;
 
 const PASSWORD_SALT = process.env.FAWRI_PASSWORD_SALT || "fawri-local-dev-salt";
 const ADMIN_SESSION_SECRET =
@@ -1371,6 +1489,12 @@ function normalizeSubscriptionRecord(value: unknown): SubscriptionRecord | null 
     emergency_credit_activated: emergencyActivated,
     emergency_debt: emergencyDebt,
     pending_next_cycle_deduction: emergencyDebt,
+    ...(typeof record.expiry_reminder_sent_at === "string" && record.expiry_reminder_sent_at.trim()
+      ? { expiry_reminder_sent_at: record.expiry_reminder_sent_at }
+      : {}),
+    ...(typeof record.expired_notification_sent_at === "string" && record.expired_notification_sent_at.trim()
+      ? { expired_notification_sent_at: record.expired_notification_sent_at }
+      : {}),
   });
 }
 
@@ -2001,11 +2125,33 @@ function appendSystemAdminLog(
   return log;
 }
 
+function appendMerchantNotificationRecord<T extends MerchantNotificationRecord>(
+  db: AuthDb,
+  notification: T,
+): T {
+  db.merchant_notifications.unshift(notification);
+  const merchantNotificationIds = db.merchant_notifications
+    .filter((item) => item.merchant_id === notification.merchant_id)
+    .slice(100)
+    .map((item) => item.id);
+  if (merchantNotificationIds.length > 0) {
+    const expiredIds = new Set(merchantNotificationIds);
+    db.merchant_notifications = db.merchant_notifications.filter(
+      (item) => !expiredIds.has(item.id),
+    );
+  }
+  return notification;
+}
+
 function appendMerchantBalanceNotification(
   db: AuthDb,
   merchantId: string,
   purchasedReplies: number,
-  purchase: { debtPaid: number; addonAdded: number },
+  purchase: {
+    debtPaid: number;
+    addonAdded: number;
+    addonBatch?: AddonReplyBatch;
+  },
   subscription: SubscriptionRecord,
 ): MerchantBalanceNotificationRecord {
   const notification: MerchantBalanceNotificationRecord = {
@@ -2020,6 +2166,12 @@ function appendMerchantBalanceNotification(
     emergency_replies_remaining: subscription.emergency_credit_remaining,
     addon_replies_remaining: subscription.addon_replies_remaining,
     total_replies_available: subscription.replies_remaining,
+    ...(purchase.addonBatch
+      ? {
+          addon_batch_id: purchase.addonBatch.id,
+          addon_batch_expires_at: purchase.addonBatch.expires_at,
+        }
+      : {}),
     created_at: now(),
   };
 
@@ -2036,6 +2188,52 @@ function appendMerchantBalanceNotification(
   }
 
   return notification;
+}
+
+function appendMerchantSubscriptionPlanNotification(
+  db: AuthDb,
+  merchantId: string,
+  operation: "activate" | "change" | "renew",
+  subscription: SubscriptionRecord,
+  previousPlanName: SubscriptionPlan | undefined,
+  emergencyDebtPaid: number,
+): MerchantSubscriptionPlanNotificationRecord {
+  return appendMerchantNotificationRecord(db, {
+    id: makeId("merchant-notification"),
+    merchant_id: merchantId,
+    type: "subscription_plan_event",
+    operation,
+    plan_name: subscription.plan_name,
+    ...(operation === "change" && previousPlanName
+      ? { previous_plan_name: previousPlanName }
+      : {}),
+    start_date: subscription.start_date,
+    expires_at: subscription.expires_at,
+    emergency_debt_paid: emergencyDebtPaid,
+    emergency_debt_remaining: subscription.emergency_debt,
+    base_replies_remaining: subscription.base_replies_remaining,
+    addon_replies_remaining: subscription.addon_replies_remaining,
+    total_replies_available: subscription.replies_remaining,
+    created_at: now(),
+  });
+}
+
+function appendMerchantEmergencyActivationNotification(
+  db: AuthDb,
+  merchantId: string,
+  batch: AddonReplyBatch,
+  subscription: SubscriptionRecord,
+): MerchantEmergencyActivationNotificationRecord {
+  return appendMerchantNotificationRecord(db, {
+    id: makeId("merchant-notification"),
+    merchant_id: merchantId,
+    type: "subscription_emergency_activated",
+    addon_batch_id: batch.id,
+    emergency_replies_added: batch.amount,
+    emergency_debt: subscription.emergency_debt,
+    expires_at: batch.expires_at,
+    created_at: now(),
+  });
 }
 
 function appendMerchantInspectionNotification(
@@ -2476,6 +2674,100 @@ const supportLifecycleTimer = setInterval(() => {
   }
 }, SUPPORT_LIFECYCLE_SWEEP_MS);
 supportLifecycleTimer.unref();
+
+function refreshAndPersistSubscriptionLifecycle(db: AuthDb): boolean {
+  const currentDate = new Date();
+  const timestamp = currentDate.getTime();
+  const createdAt = currentDate.toISOString();
+  const changedMerchants = new Set<string>();
+  const notificationMerchants = new Set<string>();
+  let changed = false;
+
+  for (const subscription of db.subscriptions) {
+    recalculateSubscriptionTotals(subscription, currentDate);
+    const expiresAt = new Date(subscription.expires_at).getTime();
+    const timeUntilExpiry = expiresAt - timestamp;
+
+    if (
+      timeUntilExpiry > 0 &&
+      timeUntilExpiry <= SUBSCRIPTION_EXPIRY_REMINDER_DAYS * DAY_MS &&
+      !subscription.expiry_reminder_sent_at
+    ) {
+      appendMerchantNotificationRecord(db, {
+        id: makeId("merchant-notification"),
+        merchant_id: subscription.merchant_id,
+        type: "subscription_expiry_reminder",
+        plan_name: subscription.plan_name,
+        expires_at: subscription.expires_at,
+        days_remaining: Math.max(1, Math.ceil(timeUntilExpiry / DAY_MS)),
+        created_at: createdAt,
+      });
+      subscription.expiry_reminder_sent_at = createdAt;
+      notificationMerchants.add(subscription.merchant_id);
+      changed = true;
+    }
+
+    if (timeUntilExpiry <= 0 && !subscription.expired_notification_sent_at) {
+      appendMerchantNotificationRecord(db, {
+        id: makeId("merchant-notification"),
+        merchant_id: subscription.merchant_id,
+        type: "subscription_expired",
+        plan_name: subscription.plan_name,
+        expired_at: subscription.expires_at,
+        addon_replies_remaining: subscription.addon_replies_remaining,
+        created_at: createdAt,
+      });
+      subscription.expired_notification_sent_at = createdAt;
+      notificationMerchants.add(subscription.merchant_id);
+      changedMerchants.add(subscription.merchant_id);
+      changed = true;
+    }
+
+    for (const batch of subscription.addon_reply_batches) {
+      const batchExpiresAt = new Date(batch.expires_at).getTime();
+      const timeUntilBatchExpiry = batchExpiresAt - timestamp;
+      if (
+        timeUntilBatchExpiry > 0 &&
+        timeUntilBatchExpiry <= ADDON_EXPIRY_REMINDER_DAYS * DAY_MS &&
+        !batch.expiry_reminder_sent_at
+      ) {
+        appendMerchantNotificationRecord(db, {
+          id: makeId("merchant-notification"),
+          merchant_id: subscription.merchant_id,
+          type: "addon_expiry_reminder",
+          addon_batch_id: batch.id,
+          source: batch.source,
+          remaining_replies: batch.remaining,
+          expires_at: batch.expires_at,
+          days_remaining: Math.max(1, Math.ceil(timeUntilBatchExpiry / DAY_MS)),
+          created_at: createdAt,
+        });
+        batch.expiry_reminder_sent_at = createdAt;
+        notificationMerchants.add(subscription.merchant_id);
+        changed = true;
+      }
+    }
+  }
+
+  if (!changed) return false;
+  writeDb(db);
+  for (const merchantId of changedMerchants) {
+    emitMerchantRealtimeState(db, merchantId, "subscription_updated");
+  }
+  for (const merchantId of notificationMerchants) {
+    emitMerchantRealtimeState(db, merchantId, "notifications_updated");
+  }
+  return true;
+}
+
+const subscriptionLifecycleTimer = setInterval(() => {
+  try {
+    refreshAndPersistSubscriptionLifecycle(ensureDb());
+  } catch (error) {
+    console.error("Subscription notification lifecycle sweep failed:", error);
+  }
+}, SUBSCRIPTION_LIFECYCLE_SWEEP_MS);
+subscriptionLifecycleTimer.unref();
 
 function isChannelPlatform(value: unknown): value is ChannelPlatform {
   return value === "instagram" || value === "messenger" || value === "telegram";
@@ -3320,6 +3612,7 @@ router.get("/notifications", requireMerchantSession, (req: Request, res: Respons
   const merchantId = getMerchantIdFromSession(res);
   const db = ensureDb();
   refreshAndPersistSupportLifecycle(db);
+  refreshAndPersistSubscriptionLifecycle(db);
   const unreadOnly = String(req.query.unread || "") === "1";
   const requestedLimit = Number(req.query.limit);
   const limit = Number.isInteger(requestedLimit)
@@ -3734,7 +4027,7 @@ router.post("/subscription/emergency", requireMerchantSession, (_req: Request, r
   const activatedAt = new Date();
   const emergencyAmount = subscription.emergency_credit_amount;
   const anchorDay = getBaghdadDateParts(activatedAt).day;
-  subscription.addon_reply_batches.push({
+  const emergencyBatch: AddonReplyBatch = {
     id: makeId("emergency-replies"),
     source: "emergency",
     purchased_at: activatedAt.toISOString(),
@@ -3745,7 +4038,8 @@ router.post("/subscription/emergency", requireMerchantSession, (_req: Request, r
     ).toISOString(),
     amount: emergencyAmount,
     remaining: emergencyAmount,
-  });
+  };
+  subscription.addon_reply_batches.push(emergencyBatch);
   subscription.emergency_credit_activated = true;
   subscription.emergency_credit_remaining = 0;
   subscription.emergency_credit_used = emergencyAmount;
@@ -3754,10 +4048,20 @@ router.post("/subscription/emergency", requireMerchantSession, (_req: Request, r
   subscription.status = "active";
   subscription.auto_reply_enabled = true;
   recalculateSubscriptionTotals(subscription, activatedAt);
+  const merchantNotification = appendMerchantEmergencyActivationNotification(
+    db,
+    merchantId,
+    emergencyBatch,
+    subscription,
+  );
   writeDb(db);
   emitMerchantRealtimeState(db, merchantId, "subscription_updated");
 
-  return res.json({ ok: true, subscription });
+  return res.json({
+    ok: true,
+    subscription,
+    notification: merchantNotification,
+  });
 });
 
 
@@ -4847,6 +5151,7 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
   }
 
   const previousExpiresAt = existing?.expires_at;
+  const previousPlanName = existing?.plan_name;
   const emergencyDeduction = existing?.emergency_debt || 0;
   const subscription = createPaidSubscription(
     merchantId,
@@ -4889,6 +5194,14 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
       },
     },
   );
+  const merchantNotification = appendMerchantSubscriptionPlanNotification(
+    db,
+    merchantId,
+    operation,
+    subscription,
+    previousPlanName,
+    Math.max(0, emergencyDeduction - subscription.emergency_debt),
+  );
   writeDb(db);
   emitMerchantRealtimeState(db, merchantId, "subscription_updated");
 
@@ -4896,6 +5209,7 @@ router.put("/merchants/:id/subscription", (req: Request, res: Response) => {
     ok: true,
     merchant: publicMerchant(merchant),
     subscription,
+    notification: merchantNotification,
   });
 });
 

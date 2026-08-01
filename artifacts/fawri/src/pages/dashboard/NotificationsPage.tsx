@@ -6,6 +6,7 @@ import type {
   MerchantBalanceNotification,
   MerchantInspectionNotification,
   MerchantNotification,
+  MerchantSubscriptionNotification,
   MerchantSupportReplyReminderNotification,
 } from '@/lib/types';
 import { notifyMerchantNotificationsChanged } from '@/hooks/useMerchantNotifications';
@@ -29,6 +30,18 @@ function getArabicReplyUnit(count: number): 'رد' | 'ردود' {
 function getArabicAvailabilityWord(count: number): 'متاح' | 'متاحة' {
   const value = Math.abs(Math.trunc(count));
   return value >= 3 && value <= 10 ? 'متاحة' : 'متاح';
+}
+
+function isSubscriptionNotification(
+  notification: MerchantNotification,
+): notification is MerchantSubscriptionNotification {
+  return (
+    notification.type === 'subscription_plan_event' ||
+    notification.type === 'subscription_emergency_activated' ||
+    notification.type === 'subscription_expiry_reminder' ||
+    notification.type === 'subscription_expired' ||
+    notification.type === 'addon_expiry_reminder'
+  );
 }
 
 const INSPECTION_NOTIFICATION_TEXT = {
@@ -245,6 +258,77 @@ export default function NotificationsPage() {
     });
   };
 
+  const getPlanLabel = (plan: 'silver' | 'gold' | 'diamond' | 'trial') =>
+    ({ silver: t.plan_silver, gold: t.plan_gold, diamond: t.plan_diamond, trial: t.plan_trial })[plan];
+
+  const renderSubscriptionNotification = (notification: MerchantSubscriptionNotification) => {
+    const formatDate = (value: string) => new Date(value).toLocaleDateString(locale);
+    if (notification.type === 'subscription_plan_event') {
+      const title = notification.operation === 'activate'
+        ? t.notification_plan_activated_title
+        : notification.operation === 'renew'
+          ? t.notification_plan_renewed_title
+          : t.notification_plan_changed_title;
+      const template = notification.operation === 'activate'
+        ? t.notification_plan_activated_body
+        : notification.operation === 'renew'
+          ? t.notification_plan_renewed_body
+          : t.notification_plan_changed_body;
+      return {
+        title,
+        body: formatNotificationText(template, {
+          plan: getPlanLabel(notification.plan_name),
+          previousPlan: notification.previous_plan_name
+            ? getPlanLabel(notification.previous_plan_name)
+            : getPlanLabel(notification.plan_name),
+          start: formatDate(notification.start_date),
+          expiry: formatDate(notification.expires_at),
+        }),
+      };
+    }
+    if (notification.type === 'subscription_emergency_activated') {
+      return {
+        title: t.notification_emergency_activated_title,
+        body: formatNotificationText(t.notification_emergency_activated_body, {
+          amount: notification.emergency_replies_added.toLocaleString(locale),
+          debt: notification.emergency_debt.toLocaleString(locale),
+          expiry: formatDate(notification.expires_at),
+        }),
+      };
+    }
+    if (notification.type === 'subscription_expiry_reminder') {
+      return {
+        title: t.notification_subscription_expiry_reminder_title,
+        body: formatNotificationText(t.notification_subscription_expiry_reminder_body, {
+          plan: getPlanLabel(notification.plan_name),
+          days: notification.days_remaining.toLocaleString(locale),
+          expiry: formatDate(notification.expires_at),
+        }),
+      };
+    }
+    if (notification.type === 'subscription_expired') {
+      return {
+        title: t.notification_subscription_expired_title,
+        body: formatNotificationText(t.notification_subscription_expired_body, {
+          plan: getPlanLabel(notification.plan_name),
+          expired: formatDate(notification.expired_at),
+          addon: notification.addon_replies_remaining.toLocaleString(locale),
+        }),
+      };
+    }
+    return {
+      title: t.notification_addon_expiry_reminder_title,
+      body: formatNotificationText(t.notification_addon_expiry_reminder_body, {
+        source: notification.source === 'emergency'
+          ? t.subscription_addon_batch_emergency
+          : t.subscription_addon_batch_purchase,
+        remaining: notification.remaining_replies.toLocaleString(locale),
+        days: notification.days_remaining.toLocaleString(locale),
+        expiry: formatDate(notification.expires_at),
+      }),
+    };
+  };
+
   const renderBalanceSummary = (notification: MerchantBalanceNotification) =>
     formatNotificationText(t.balance_notification_summary, {
       base: notification.base_replies_remaining.toLocaleString(locale),
@@ -313,6 +397,53 @@ export default function NotificationsPage() {
           {notifications.map((notification) => {
             const unread = !notification.read_at;
             const marking = markingId === notification.id;
+
+            if (isSubscriptionNotification(notification)) {
+              const content = renderSubscriptionNotification(notification);
+              return (
+                <article
+                  key={notification.id}
+                  className={`rounded-2xl border p-4 shadow-sm transition-colors sm:p-5 ${
+                    unread
+                      ? 'border-violet-300 bg-violet-50/80 dark:border-violet-700 dark:bg-violet-950/25'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-900/60 dark:text-violet-300">
+                      <Bell className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <h2 className="font-black text-foreground">{content.title}</h2>
+                        <time className="text-[11px] font-medium text-muted-foreground" dateTime={notification.created_at}>
+                          {new Date(notification.created_at).toLocaleString(locale)}
+                        </time>
+                      </div>
+                      <p className="mt-2 text-sm font-medium leading-7 text-foreground/90">{content.body}</p>
+                      <div className="mt-3 flex justify-end">
+                        {unread ? (
+                          <button
+                            type="button"
+                            disabled={marking}
+                            onClick={() => void markAsRead(notification.id)}
+                            className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-60"
+                          >
+                            {marking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                            {t.notifications_mark_read}
+                          </button>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                            <Check className="h-4 w-4" />
+                            {t.notifications_read}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            }
 
             if (notification.type === 'support_reply_reminder') {
               const body = formatNotificationText(supportReminderText.body, {
@@ -528,6 +659,14 @@ export default function NotificationsPage() {
                     <p className="mt-2 text-sm font-medium leading-7 text-foreground/90">
                       {renderBalanceMessage(notification)}
                     </p>
+
+                    {notification.addon_batch_expires_at && (
+                      <p className="mt-3 rounded-xl border border-border/70 bg-background/80 px-3 py-2 text-xs font-semibold leading-6 text-foreground">
+                        {formatNotificationText(t.balance_notification_addon_expiry, {
+                          expiry: new Date(notification.addon_batch_expires_at).toLocaleDateString(locale),
+                        })}
+                      </p>
+                    )}
 
                     <p className="mt-3 rounded-xl border border-border/70 bg-background/80 px-3 py-2 text-xs font-semibold leading-6 text-foreground">
                       {renderBalanceSummary(notification)}
