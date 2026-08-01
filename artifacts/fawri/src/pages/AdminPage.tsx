@@ -2443,6 +2443,127 @@ export default function AdminPage() {
     refreshSubscriptionsFromApi,
   ]);
 
+  useEffect(() => {
+    if (!canManageSubscriptions) return;
+
+    let active = true;
+    let reconnectTimer: number | undefined;
+    let controller: AbortController | null = null;
+
+    const applySnapshot = (serverSubscriptions: Subscription[]) => {
+      saveSubscriptions(serverSubscriptions);
+      setSubscriptions(serverSubscriptions);
+    };
+
+    const applyUpdate = (
+      merchantId: string,
+      subscription: Subscription | null,
+    ) => {
+      setSubscriptions((current) => {
+        const next = current.filter(
+          (item) => item.merchant_id !== merchantId,
+        );
+        if (subscription) next.push(subscription);
+        saveSubscriptions(next);
+        return next;
+      });
+    };
+
+    const connect = async (): Promise<void> => {
+      controller = new AbortController();
+
+      try {
+        const response = await fetch(
+          "/api/auth/admin/subscriptions/events",
+          {
+            headers: getAdminAuthHeaders(),
+            cache: "no-store",
+            signal: controller.signal,
+          },
+        );
+
+        if (handleUnauthorizedAdminResponse(response)) return;
+        if (!response.ok || !response.body) {
+          throw new Error("Could not connect to admin subscription updates");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        while (active) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+
+          let boundary = buffer.indexOf("\n\n");
+          while (boundary >= 0) {
+            const block = buffer.slice(0, boundary);
+            buffer = buffer.slice(boundary + 2);
+            boundary = buffer.indexOf("\n\n");
+
+            if (!block || block.startsWith(":")) continue;
+            const lines = block.split("\n");
+            const eventName = lines
+              .find((line) => line.startsWith("event:"))
+              ?.slice("event:".length)
+              .trim();
+            const data = lines
+              .filter((line) => line.startsWith("data:"))
+              .map((line) => line.slice("data:".length).trimStart())
+              .join("\n");
+            if (!eventName || !data) continue;
+
+            const payload = JSON.parse(data) as {
+              merchant_id?: string | null;
+              subscription?: Subscription | null;
+              subscriptions?: Subscription[];
+            };
+
+            if (
+              eventName === "snapshot" &&
+              Array.isArray(payload.subscriptions)
+            ) {
+              applySnapshot(payload.subscriptions);
+            } else if (
+              eventName === "subscription_updated" &&
+              typeof payload.merchant_id === "string"
+            ) {
+              applyUpdate(
+                payload.merchant_id,
+                payload.subscription || null,
+              );
+            }
+          }
+        }
+      } catch (error) {
+        if (
+          active &&
+          !(error instanceof DOMException && error.name === "AbortError")
+        ) {
+          console.error("Admin subscription realtime connection failed:", error);
+        }
+      }
+
+      if (active) {
+        reconnectTimer = window.setTimeout(() => void connect(), 1_500);
+      }
+    };
+
+    void connect();
+
+    return () => {
+      active = false;
+      controller?.abort();
+      if (reconnectTimer !== undefined) {
+        window.clearTimeout(reconnectTimer);
+      }
+    };
+  }, [
+    canManageSubscriptions,
+    handleUnauthorizedAdminResponse,
+  ]);
+
   const getSub = (id: string) =>
     subscriptions.find((s) => s.merchant_id === id);
   const getPendingDeletionRequest = (merchantId: string) =>

@@ -2285,6 +2285,115 @@ const merchantRealtimeClients = new Map<
   Map<string, MerchantRealtimeClient>
 >();
 
+type AdminSubscriptionRealtimeEventName =
+  | "snapshot"
+  | "subscription_updated";
+
+type AdminSubscriptionRealtimePayload = {
+  merchant_id: string | null;
+  subscription?: SubscriptionRecord | null;
+  subscriptions?: SubscriptionRecord[];
+  emitted_at: string;
+};
+
+type AdminSubscriptionRealtimeClient = {
+  id: string;
+  admin_id: string;
+  response: Response;
+};
+
+const adminSubscriptionRealtimeClients = new Map<
+  string,
+  AdminSubscriptionRealtimeClient
+>();
+
+function buildAdminSubscriptionSnapshot(
+  db: AuthDb,
+): AdminSubscriptionRealtimePayload {
+  const subscriptions = db.subscriptions
+    .map((subscription) => recalculateSubscriptionTotals(subscription))
+    .sort(
+      (left, right) =>
+        new Date(right.start_date).getTime() -
+        new Date(left.start_date).getTime(),
+    );
+
+  return {
+    merchant_id: null,
+    subscriptions,
+    emitted_at: now(),
+  };
+}
+
+function buildAdminSubscriptionUpdate(
+  db: AuthDb,
+  merchantId: string,
+): AdminSubscriptionRealtimePayload {
+  const subscription = db.subscriptions.find(
+    (item) => item.merchant_id === merchantId,
+  );
+  if (subscription) recalculateSubscriptionTotals(subscription);
+
+  return {
+    merchant_id: merchantId,
+    subscription: subscription || null,
+    emitted_at: now(),
+  };
+}
+
+function writeAdminSubscriptionRealtimeEvent(
+  response: Response,
+  eventName: AdminSubscriptionRealtimeEventName,
+  payload: AdminSubscriptionRealtimePayload,
+): boolean {
+  if (response.writableEnded) return false;
+
+  try {
+    response.write(
+      `event: ${eventName}
+data: ${JSON.stringify(payload)}
+
+`,
+    );
+    const flush = (response as Response & { flush?: () => void }).flush;
+    if (typeof flush === "function") flush.call(response);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function emitAdminSubscriptionRealtimeState(
+  db: AuthDb,
+  merchantId: string,
+): void {
+  if (adminSubscriptionRealtimeClients.size === 0) return;
+
+  const payload = buildAdminSubscriptionUpdate(db, merchantId);
+  for (const [clientId, client] of adminSubscriptionRealtimeClients) {
+    const admin = db.merchants.find(
+      (item) =>
+        item.id === client.admin_id &&
+        item.is_admin === true &&
+        item.status === "approved" &&
+        item.admin_enabled !== false,
+    );
+    if (
+      !admin ||
+      !isAdminRole(admin.admin_role) ||
+      !adminHasPermission(admin, "manage_subscriptions") ||
+      !writeAdminSubscriptionRealtimeEvent(
+        client.response,
+        "subscription_updated",
+        payload,
+      )
+    ) {
+      adminSubscriptionRealtimeClients.delete(clientId);
+      if (!client.response.writableEnded) client.response.end();
+    }
+  }
+}
+
 function buildMerchantRealtimePayload(
   db: AuthDb,
   merchantId: string,
@@ -2327,6 +2436,10 @@ function emitMerchantRealtimeState(
   merchantId: string,
   eventName: Exclude<MerchantRealtimeEventName, "snapshot">,
 ): void {
+  if (eventName === "subscription_updated") {
+    emitAdminSubscriptionRealtimeState(db, merchantId);
+  }
+
   const clients = merchantRealtimeClients.get(merchantId);
   if (!clients || clients.size === 0) return;
 
@@ -3147,6 +3260,61 @@ router.get("/events", requireMerchantSession, (req: Request, res: Response) => {
   req.on("close", cleanup);
   res.on("close", cleanup);
 });
+
+router.get(
+  "/admin/subscriptions/events",
+  (req: Request, res: Response) => {
+    const admin = requireAdminPermission(req, res, "manage_subscriptions");
+    if (!admin) return;
+
+    const clientId = makeId("admin-subscription-realtime");
+
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+
+    req.socket.setTimeout(0);
+    req.socket.setKeepAlive(true);
+
+    adminSubscriptionRealtimeClients.set(clientId, {
+      id: clientId,
+      admin_id: admin.id,
+      response: res,
+    });
+
+    writeAdminSubscriptionRealtimeEvent(
+      res,
+      "snapshot",
+      buildAdminSubscriptionSnapshot(ensureDb()),
+    );
+
+    const heartbeat = setInterval(() => {
+      if (res.writableEnded) return;
+      try {
+        res.write(": heartbeat\\n\\n");
+        const flush = (res as Response & { flush?: () => void }).flush;
+        if (typeof flush === "function") flush.call(res);
+      } catch {
+        // The close handler removes disconnected clients.
+      }
+    }, 25_000);
+
+    let closed = false;
+    const cleanup = () => {
+      if (closed) return;
+      closed = true;
+      clearInterval(heartbeat);
+      adminSubscriptionRealtimeClients.delete(clientId);
+      if (!res.writableEnded) res.end();
+    };
+
+    req.on("close", cleanup);
+    res.on("close", cleanup);
+  },
+);
 
 router.get("/notifications", requireMerchantSession, (req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);

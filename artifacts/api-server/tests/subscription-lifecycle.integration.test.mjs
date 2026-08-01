@@ -233,6 +233,27 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(exhaustedA.response.status, 200);
   assert.equal(exhaustedA.body.subscription.replies_remaining, 0);
 
+  const adminRealtimeController = new AbortController();
+  const adminRealtimeResponse = await fetch(
+    `${baseUrl}/api/auth/admin/subscriptions/events`,
+    {
+      headers: adminHeaders,
+      signal: adminRealtimeController.signal,
+    },
+  );
+  assert.equal(adminRealtimeResponse.status, 200);
+  assert.match(
+    adminRealtimeResponse.headers.get("content-type") || "",
+    /text\/event-stream/,
+  );
+  const adminRealtimeEvents = createSseEventReader(adminRealtimeResponse.body);
+  const adminRealtimeSnapshot = await adminRealtimeEvents.next("snapshot");
+  const snapshotMerchantA = adminRealtimeSnapshot.subscriptions.find(
+    (subscription) => subscription.merchant_id === "merchant-a",
+  );
+  assert.ok(snapshotMerchantA);
+  assert.equal(snapshotMerchantA.replies_remaining, 0);
+
   const emergencyA = await json(await fetch(`${baseUrl}/api/auth/subscription/emergency`, {
     method: "POST", headers: { Cookie: merchantACookie, "Content-Type": "application/json" },
   }));
@@ -243,6 +264,16 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(emergencyA.body.subscription.addon_reply_batches.length, 1);
   assert.equal(emergencyA.body.subscription.addon_reply_batches[0].source, "emergency");
   assert.equal(emergencyA.body.subscription.replies_remaining, 400);
+
+  const adminEmergencyUpdate = await adminRealtimeEvents.next(
+    "subscription_updated",
+  );
+  assert.equal(adminEmergencyUpdate.merchant_id, "merchant-a");
+  assert.equal(adminEmergencyUpdate.subscription.merchant_id, "merchant-a");
+  assert.equal(adminEmergencyUpdate.subscription.addon_replies_remaining, 400);
+  assert.equal(adminEmergencyUpdate.subscription.emergency_debt, 400);
+  adminRealtimeController.abort();
+  await adminRealtimeEvents.cancel().catch(() => undefined);
 
   const secondEmergency = await fetch(`${baseUrl}/api/auth/subscription/emergency`, {
     method: "POST", headers: { Cookie: merchantACookie, "Content-Type": "application/json" },
