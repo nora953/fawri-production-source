@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --no-frozen-lockfile
       - run: python3 scripts/apply_fawri_subscription_notifications.py
       - run: pnpm --filter @workspace/api-server run typecheck
       - run: pnpm --filter @workspace/api-server run build
@@ -39,7 +39,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git rm scripts/apply_fawri_subscription_notifications.py
           git rm .github/workflows/apply-fawri-subscription-notifications.yml
-          git add artifacts/api-server/src/routes/auth.ts \
+          git add pnpm-lock.yaml \
+                  artifacts/api-server/src/routes/auth.ts \
                   artifacts/fawri/src/lib/types.ts \
                   artifacts/fawri/src/components/SubscriptionCard.tsx \
                   artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx \
