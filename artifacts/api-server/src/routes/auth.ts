@@ -163,6 +163,23 @@ type AddonReplyBatch = {
   expiry_reminder_sent_at?: string;
 };
 
+function compareAddonReplyBatches(
+  left: AddonReplyBatch,
+  right: AddonReplyBatch,
+): number {
+  const expiryDifference =
+    new Date(left.expires_at).getTime() -
+    new Date(right.expires_at).getTime();
+  if (expiryDifference !== 0) return expiryDifference;
+
+  const purchaseDifference =
+    new Date(left.purchased_at).getTime() -
+    new Date(right.purchased_at).getTime();
+  if (purchaseDifference !== 0) return purchaseDifference;
+
+  return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+}
+
 type SubscriptionRecord = {
   id: string;
   merchant_id: string;
@@ -285,10 +302,7 @@ function normalizeAddonReplyBatches(
       };
     })
     .filter((item): item is AddonReplyBatch => item !== null)
-    .sort(
-      (left, right) =>
-        new Date(left.expires_at).getTime() - new Date(right.expires_at).getTime(),
-    );
+    .sort(compareAddonReplyBatches);
 }
 
 function recalculateSubscriptionTotals(
@@ -343,6 +357,8 @@ function recalculateSubscriptionTotals(
 
 function consumeReplies(subscription: SubscriptionRecord, amount: number): void {
   let remainingToConsume = amount;
+
+  subscription.addon_reply_batches.sort(compareAddonReplyBatches);
 
   const fromBase = Math.min(subscription.base_replies_remaining, remainingToConsume);
   subscription.base_replies_used += fromBase;

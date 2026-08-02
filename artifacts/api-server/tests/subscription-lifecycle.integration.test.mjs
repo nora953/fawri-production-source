@@ -465,4 +465,25 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
     1,
   );
   assert.equal(emergencyC.body.subscription.replies_remaining, 900);
+
+  const oldestExpiryFirst = await subscriptionAction(
+    "merchant-c",
+    "deduct_replies",
+    450,
+  );
+  assert.equal(oldestExpiryFirst.response.status, 200);
+  assert.equal(oldestExpiryFirst.body.subscription.base_replies_remaining, 0);
+  assert.equal(oldestExpiryFirst.body.subscription.addon_replies_remaining, 450);
+  assert.equal(oldestExpiryFirst.body.subscription.replies_remaining, 450);
+
+  const [olderPurchaseBatch, newerEmergencyBatch] =
+    oldestExpiryFirst.body.subscription.addon_reply_batches;
+  assert.equal(olderPurchaseBatch.source, "purchase");
+  assert.equal(olderPurchaseBatch.remaining, 50);
+  assert.equal(newerEmergencyBatch.source, "emergency");
+  assert.equal(newerEmergencyBatch.remaining, 400);
+  assert.ok(
+    new Date(olderPurchaseBatch.expires_at).getTime() <=
+      new Date(newerEmergencyBatch.expires_at).getTime(),
+  );
 });

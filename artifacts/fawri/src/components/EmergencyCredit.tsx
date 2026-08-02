@@ -26,6 +26,8 @@ export function EmergencyCredit({
 }: EmergencyCreditProps) {
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
+  const isRtl = lang !== 'en';
+  const emergencyAmount = subscription.emergency_credit_amount;
 
   const locale =
     lang === 'en'
@@ -112,22 +114,68 @@ export function EmergencyCredit({
                 </Button>
               </DialogTrigger>
 
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{t.activate_emergency}</DialogTitle>
-                  <DialogDescription className="pt-4">
-                    {t.emergency_confirm}
-                  </DialogDescription>
-                </DialogHeader>
+              <DialogContent
+                dir={isRtl ? 'rtl' : 'ltr'}
+                className="max-w-md overflow-hidden p-0"
+                closeButtonClassName={
+                  isRtl ? 'left-4 right-auto' : 'right-4 left-auto'
+                }
+              >
+                <div className="border-b border-orange-100 bg-orange-50/70 px-5 pb-5 pt-6 dark:border-orange-900/40 dark:bg-orange-950/20">
+                  <DialogHeader className="space-y-3 text-start sm:text-start">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400">
+                        <ShieldAlert className="h-5 w-5" aria-hidden="true" />
+                      </div>
+                      <DialogTitle className="text-xl leading-7">
+                        {t.activate_emergency}
+                      </DialogTitle>
+                    </div>
+                    <DialogDescription className="text-start text-sm leading-6">
+                      {t.emergency_confirm}
+                    </DialogDescription>
+                  </DialogHeader>
+                </div>
 
-                <DialogFooter className="mt-6">
+                <div className="grid grid-cols-1 gap-3 px-5 py-5 sm:grid-cols-2">
+                  <div className="rounded-xl border border-orange-200 bg-orange-50/60 px-4 py-3 text-center dark:border-orange-900/50 dark:bg-orange-950/20">
+                    <p className="text-xs font-medium leading-5 text-muted-foreground">
+                      {t.emergency_modal_credit_label}
+                    </p>
+                    <p
+                      className="mt-1 text-2xl font-extrabold tabular-nums text-orange-600 dark:text-orange-400"
+                      dir="ltr"
+                    >
+                      {emergencyAmount.toLocaleString(locale)}
+                    </p>
+                  </div>
+
+                  <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-center">
+                    <p className="text-xs font-medium leading-5 text-muted-foreground">
+                      {t.emergency_modal_debt_label}
+                    </p>
+                    <p
+                      className="mt-1 text-2xl font-extrabold tabular-nums text-foreground"
+                      dir="ltr"
+                    >
+                      {emergencyAmount.toLocaleString(locale)}
+                    </p>
+                  </div>
+                </div>
+
+                <DialogFooter
+                  dir="ltr"
+                  className="mt-0 flex-row justify-end gap-2 space-x-0 border-t px-5 py-4"
+                >
                   <Button
                     variant="outline"
+                    className="min-w-24"
                     onClick={() => setOpen(false)}
                   >
                     {t.cancel}
                   </Button>
                   <Button
+                    className="min-w-24"
                     onClick={handleActivate}
                     disabled={!isEligible}
                   >

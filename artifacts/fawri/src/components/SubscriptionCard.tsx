@@ -80,11 +80,19 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
   const expiryDate = new Date(subscription.expires_at).toLocaleDateString(locale);
   const addonReplyBatches = [...(subscription.addon_reply_batches ?? [])]
     .filter((batch) => batch.remaining > 0)
-    .sort(
-      (left, right) =>
+    .sort((left, right) => {
+      const expiryDifference =
         new Date(left.expires_at).getTime() -
-        new Date(right.expires_at).getTime(),
-    );
+        new Date(right.expires_at).getTime();
+      if (expiryDifference !== 0) return expiryDifference;
+
+      const purchaseDifference =
+        new Date(left.purchased_at).getTime() -
+        new Date(right.purchased_at).getTime();
+      if (purchaseDifference !== 0) return purchaseDifference;
+
+      return left.id < right.id ? -1 : left.id > right.id ? 1 : 0;
+    });
   const hasAddonReplyBatches = addonReplyBatches.length > 0;
 
   return (
