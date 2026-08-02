@@ -164,8 +164,8 @@ export default function RequiredAdminPasswordChangeDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="required-admin-new-password">{text.password}</Label>
+          <div className={lang === "ar" ? "space-y-1" : "space-y-2"}>
+            <Label htmlFor="required-admin-new-password" className={lang === "ar" ? "block leading-6" : undefined}>{text.password}</Label>
             <PasswordInput
               id="required-admin-new-password"
               value={password}
@@ -179,8 +179,8 @@ export default function RequiredAdminPasswordChangeDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="required-admin-confirm-password">{text.confirm}</Label>
+          <div className={lang === "ar" ? "space-y-1" : "space-y-2"}>
+            <Label htmlFor="required-admin-confirm-password" className={lang === "ar" ? "block leading-6" : undefined}>{text.confirm}</Label>
             <PasswordInput
               id="required-admin-confirm-password"
               value={confirmPassword}
