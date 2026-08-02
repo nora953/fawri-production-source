@@ -204,8 +204,8 @@ export default function AssistantPasswordResetDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="owner-confirm-password">{text.ownerPassword}</Label>
+          <div className={lang === "ar" ? "space-y-3" : "space-y-2"}>
+            <Label htmlFor="owner-confirm-password" className={lang === "ar" ? "block leading-6" : undefined}>{text.ownerPassword}</Label>
             <PasswordInput
               id="owner-confirm-password"
               value={ownerPassword}
@@ -219,8 +219,8 @@ export default function AssistantPasswordResetDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="assistant-temporary-password">{text.temporaryPassword}</Label>
+          <div className={lang === "ar" ? "space-y-3" : "space-y-2"}>
+            <Label htmlFor="assistant-temporary-password" className={lang === "ar" ? "block leading-6" : undefined}>{text.temporaryPassword}</Label>
             <PasswordInput
               id="assistant-temporary-password"
               value={temporaryPassword}
@@ -234,8 +234,8 @@ export default function AssistantPasswordResetDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="assistant-temporary-password-confirm">{text.confirmPassword}</Label>
+          <div className={lang === "ar" ? "space-y-3" : "space-y-2"}>
+            <Label htmlFor="assistant-temporary-password-confirm" className={lang === "ar" ? "block leading-6" : undefined}>{text.confirmPassword}</Label>
             <PasswordInput
               id="assistant-temporary-password-confirm"
               value={confirmPassword}
