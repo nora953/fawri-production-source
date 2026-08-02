@@ -127,7 +127,13 @@ export function EmergencyCredit({
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400">
                         <ShieldAlert className="h-5 w-5" aria-hidden="true" />
                       </div>
-                      <DialogTitle className="text-xl leading-7">
+                      <DialogTitle
+                        className={
+                          isRtl
+                            ? 'text-xl leading-7'
+                            : 'min-w-0 flex-1 whitespace-normal break-words pr-10 text-xl leading-7'
+                        }
+                      >
                         {t.activate_emergency}
                       </DialogTitle>
                     </div>
