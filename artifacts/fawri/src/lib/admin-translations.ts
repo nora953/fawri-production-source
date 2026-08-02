@@ -103,7 +103,7 @@ const adminTranslations = {
     detailsAutoReplies: "الردود التلقائية",
     detailsEnabled: "مُفعَّل",
     detailsDisabled: "موقوف",
-    detailsEmergencyCredit: "رصيد طارئ",
+    detailsEmergencyCredit: "رصيد الطوارئ",
     detailsNotEnabled: "غير مُفعَّل",
     detailsEmergencyCreditAmount: "مبلغ الرصيد الطارئ",
     detailsEmergencyCreditUsed: "رصيد طارئ مُستخدم",
