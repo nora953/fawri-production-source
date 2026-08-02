@@ -432,6 +432,7 @@ export const en = {
   notification_plan_renewed_body: "The {plan} plan was renewed. The new cycle starts on {start} and expires on {expiry}.",
   notification_plan_changed_title: "Plan changed",
   notification_plan_changed_body: "Your plan changed from {previousPlan} to {plan}. The new cycle starts on {start} and expires on {expiry}.",
+  notification_plan_emergency_debt_paid: "{debtPaid} replies were deducted from the new plan balance to settle the emergency debt. Current balance: {base} base + {addon} add-on = {total} replies available.",
   notification_emergency_activated_title: "Emergency balance activated",
   notification_emergency_activated_body: "{amount} emergency replies were added and {debt} replies were recorded as emergency debt. This batch expires on {expiry}.",
   notification_subscription_expiry_reminder_title: "Subscription expiry reminder",

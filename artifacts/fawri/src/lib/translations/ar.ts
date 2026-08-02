@@ -398,6 +398,7 @@ export const ar = {
   notification_plan_renewed_body: "تم تجديد باقة {plan}. تبدأ الدورة الجديدة في {start} وتنتهي في {expiry}.",
   notification_plan_changed_title: "تم تغيير الباقة",
   notification_plan_changed_body: "تم تغيير باقتك من {previousPlan} إلى {plan}. تبدأ الدورة الجديدة في {start} وتنتهي في {expiry}.",
+  notification_plan_emergency_debt_paid: "تم خصم {debtPaid} رد من رصيد الخطة الجديدة لتسديد دين الطوارئ. رصيدك الآن: {base} أساسي + {addon} إضافي = {total} رد متاح.",
   notification_emergency_activated_title: "تم تفعيل رصيد الطوارئ",
   notification_emergency_activated_body: "أُضيف {amount} رد طوارئ إلى رصيدك وسُجل دين بقيمة {debt} رد. تنتهي صلاحية هذه الدفعة في {expiry}.",
   notification_subscription_expiry_reminder_title: "اقترب انتهاء اشتراكك",

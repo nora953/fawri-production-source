@@ -363,6 +363,7 @@ export const ku = {
   notification_plan_renewed_body: "پاکێجی {plan} نوێکرایەوە. خولی نوێ لە {start} دەست پێدەکات و لە {expiry} کۆتایی دێت.",
   notification_plan_changed_title: "پاکێج گۆڕدرا",
   notification_plan_changed_body: "پاکێجەکەت لە {previousPlan} بۆ {plan} گۆڕدرا. خولی نوێ لە {start} دەست پێدەکات و لە {expiry} کۆتایی دێت.",
+  notification_plan_emergency_debt_paid: "{debtPaid} وەڵام لە باڵانسی پلانی نوێ کەمکرایەوە بۆ دانەوەی قەرزی فریاکەوتن. باڵانسی ئێستات: {base} سەرەکی + {addon} زیادە = {total} وەڵامی بەردەست.",
   notification_emergency_activated_title: "کرێدیتی فریاکەوتن چالاک کرا",
   notification_emergency_activated_body: "{amount} وەڵامی فریاکەوتن زیادکرا و {debt} وەڵام وەک قەرز تۆمار کرا. ئەم کۆمەڵەیە لە {expiry} کۆتایی دێت.",
   notification_subscription_expiry_reminder_title: "بەشداریکردنەکەت نزیکە کۆتایی بێت",

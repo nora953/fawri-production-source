@@ -412,6 +412,13 @@ test("calendar subscriptions, exhausted-cycle replacement, add-ons and emergency
   assert.equal(changedWithDebt.body.subscription.replies_remaining, 8000);
   assert.equal(changedWithDebt.body.subscription.addon_reply_batches[0].source, "emergency");
   assert.equal(changedWithDebt.body.subscription.emergency_credit_activated, false);
+  assert.equal(changedWithDebt.body.notification.type, "subscription_plan_event");
+  assert.equal(changedWithDebt.body.notification.operation, "change");
+  assert.equal(changedWithDebt.body.notification.emergency_debt_paid, 400);
+  assert.equal(changedWithDebt.body.notification.emergency_debt_remaining, 0);
+  assert.equal(changedWithDebt.body.notification.base_replies_remaining, 7600);
+  assert.equal(changedWithDebt.body.notification.addon_replies_remaining, 400);
+  assert.equal(changedWithDebt.body.notification.total_replies_available, 8000);
 
   const activatedC = await planOperation("merchant-c", "activate", "silver");
   assert.equal(activatedC.response.status, 200);

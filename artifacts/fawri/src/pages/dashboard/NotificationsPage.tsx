@@ -274,16 +274,26 @@ export default function NotificationsPage() {
         : notification.operation === 'renew'
           ? t.notification_plan_renewed_body
           : t.notification_plan_changed_body;
+      const planBody = formatNotificationText(template, {
+        plan: getPlanLabel(notification.plan_name),
+        previousPlan: notification.previous_plan_name
+          ? getPlanLabel(notification.previous_plan_name)
+          : getPlanLabel(notification.plan_name),
+        start: formatDate(notification.start_date),
+        expiry: formatDate(notification.expires_at),
+      });
+      const debtBody = notification.emergency_debt_paid > 0
+        ? formatNotificationText(t.notification_plan_emergency_debt_paid, {
+            debtPaid: notification.emergency_debt_paid.toLocaleString(locale),
+            base: notification.base_replies_remaining.toLocaleString(locale),
+            addon: notification.addon_replies_remaining.toLocaleString(locale),
+            total: notification.total_replies_available.toLocaleString(locale),
+          })
+        : '';
+
       return {
         title,
-        body: formatNotificationText(template, {
-          plan: getPlanLabel(notification.plan_name),
-          previousPlan: notification.previous_plan_name
-            ? getPlanLabel(notification.previous_plan_name)
-            : getPlanLabel(notification.plan_name),
-          start: formatDate(notification.start_date),
-          expiry: formatDate(notification.expires_at),
-        }),
+        body: debtBody ? `${planBody} ${debtBody}` : planBody,
       };
     }
     if (notification.type === 'subscription_emergency_activated') {
