@@ -87,6 +87,7 @@ export interface Merchant {
   permissions?: AdminPermission[];
   admin_enabled?: boolean;
   otp_verified?: boolean;
+  must_change_password?: boolean;
   account_status?: AccountStatus;
   onboarding_status?: OnboardingStatus;
   trial_status?: TrialStatus;

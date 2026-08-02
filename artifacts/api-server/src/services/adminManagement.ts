@@ -24,6 +24,7 @@ export type AdminSummary = {
   permissions: AdminPermission[];
   admin_enabled: boolean;
   otp_verified: boolean;
+  must_change_password: boolean;
 };
 
 export type CreateAssistantAdminInput = {

@@ -124,6 +124,8 @@ type Merchant = {
   permissions?: AdminPermission[];
   admin_enabled?: boolean;
   otp_verified?: boolean;
+  must_change_password?: boolean;
+  admin_session_version?: number;
   account_status?: AccountStatus;
   onboarding_status?: OnboardingStatus;
   trial_status?: TrialStatus;
@@ -143,7 +145,7 @@ type Merchant = {
   grace_period_ends_at?: string;
 };
 
-type SafeMerchant = Omit<Merchant, "password">;
+type SafeMerchant = Omit<Merchant, "password" | "admin_session_version">;
 
 type SubscriptionPlan = "silver" | "gold" | "diamond" | "trial";
 type SubscriptionStatus =
@@ -759,6 +761,7 @@ const MERCHANT_SESSION_COOKIE = "fawri_merchant_session";
 
 type AdminSessionPayload = {
   adminId: string;
+  sessionVersion: number;
   expiresAt: number;
 };
 
@@ -861,12 +864,16 @@ function normalizeAdminRoles(merchants: Merchant[]): Merchant[] {
         admin_role: _adminRole,
         permissions: _permissions,
         admin_enabled: _adminEnabled,
+        must_change_password: _mustChangePassword,
+        admin_session_version: _adminSessionVersion,
         ...regularMerchant
       } = merchant;
 
       void _adminRole;
       void _permissions;
       void _adminEnabled;
+      void _mustChangePassword;
+      void _adminSessionVersion;
 
       return regularMerchant;
     }
@@ -877,6 +884,10 @@ function normalizeAdminRoles(merchants: Merchant[]): Merchant[] {
         admin_role: "owner_admin",
         permissions: undefined,
         admin_enabled: true,
+        must_change_password: false,
+        admin_session_version: normalizeAdminSessionVersion(
+          merchant.admin_session_version,
+        ),
       };
     }
 
@@ -885,6 +896,10 @@ function normalizeAdminRoles(merchants: Merchant[]): Merchant[] {
       admin_role: "assistant_admin",
       permissions: normalizeAssistantPermissions(merchant.permissions),
       admin_enabled: merchant.admin_enabled !== false,
+      must_change_password: merchant.must_change_password === true,
+      admin_session_version: normalizeAdminSessionVersion(
+        merchant.admin_session_version,
+      ),
     };
   });
 }
@@ -895,6 +910,17 @@ function now(): string {
 
 function makeId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function normalizeAdminSessionVersion(value: unknown): number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0
+    ? value
+    : 0;
+}
+
+function revokeAdminSessions(admin: Merchant): void {
+  admin.admin_session_version =
+    normalizeAdminSessionVersion(admin.admin_session_version) + 1;
 }
 
 function signMerchantPayload(
@@ -1090,9 +1116,12 @@ function signAdminSessionPayload(encodedPayload: string): string {
     .digest("base64url");
 }
 
-function createAdminSessionToken(adminId: string): string {
+function createAdminSessionToken(admin: Merchant): string {
   const payload: AdminSessionPayload = {
-    adminId,
+    adminId: admin.id,
+    sessionVersion: normalizeAdminSessionVersion(
+      admin.admin_session_version,
+    ),
     expiresAt: Date.now() + ADMIN_SESSION_TTL_MS,
   };
 
@@ -1145,6 +1174,12 @@ function verifyAdminSessionToken(
 
     return {
       adminId: payload.adminId,
+      sessionVersion:
+        typeof payload.sessionVersion === "number" &&
+        Number.isInteger(payload.sessionVersion) &&
+        payload.sessionVersion >= 0
+          ? payload.sessionVersion
+          : 0,
       expiresAt: payload.expiresAt,
     };
   } catch {
@@ -1161,6 +1196,7 @@ function getBearerToken(req: Request): string {
 function requireAdminSession(
   req: Request,
   res: Response,
+  options: { allowPasswordChangeRequired?: boolean } = {},
 ): Merchant | null {
   const token = getBearerToken(req);
   const payload = token
@@ -1184,6 +1220,26 @@ function requireAdminSession(
 
   if (!admin) {
     sendError(res, 401, "admin session is invalid");
+    return null;
+  }
+
+  if (
+    payload.sessionVersion !==
+    normalizeAdminSessionVersion(admin.admin_session_version)
+  ) {
+    sendError(res, 401, "admin session was revoked", {
+      code: "ADMIN_SESSION_REVOKED",
+    });
+    return null;
+  }
+
+  if (
+    admin.must_change_password === true &&
+    options.allowPasswordChangeRequired !== true
+  ) {
+    sendError(res, 403, "administrator password change is required", {
+      code: "ADMIN_PASSWORD_CHANGE_REQUIRED",
+    });
     return null;
   }
 
@@ -1642,8 +1698,13 @@ function normalizeMerchantLifecycle(merchant: Merchant): Merchant {
 }
 
 function publicMerchant(merchant: Merchant): SafeMerchant {
-  const { password, ...safeMerchant } = normalizeMerchantLifecycle(merchant);
+  const {
+    password,
+    admin_session_version: adminSessionVersion,
+    ...safeMerchant
+  } = normalizeMerchantLifecycle(merchant);
   void password;
+  void adminSessionVersion;
   return safeMerchant;
 }
 
@@ -2827,6 +2888,7 @@ function toAdminSummary(admin: Merchant): AdminSummary {
         : normalizeAssistantPermissions(admin.permissions),
     admin_enabled: admin.admin_enabled !== false,
     otp_verified: admin.otp_verified === true,
+    must_change_password: admin.must_change_password === true,
   };
 }
 
@@ -2914,6 +2976,8 @@ registerAdminManagement({
       permissions: [],
       admin_enabled: true,
       otp_verified: true,
+      must_change_password: false,
+      admin_session_version: 0,
       warning_stage: 0,
       retention_status: MerchantRetentionStatus.Protected,
     };
@@ -3385,7 +3449,7 @@ router.post("/login", (req: Request, res: Response) => {
     ok: true,
     merchant: publicMerchant(merchant),
     ...(merchant.is_admin
-      ? { admin_token: createAdminSessionToken(merchant.id) }
+      ? { admin_token: createAdminSessionToken(merchant) }
       : {}),
   });
 });
@@ -4348,12 +4412,78 @@ router.patch(
 );
 
 router.get("/admin/me", (req: Request, res: Response) => {
-  const admin = requireAdminSession(req, res);
+  const admin = requireAdminSession(req, res, {
+    allowPasswordChangeRequired: true,
+  });
   if (!admin) return;
 
   res.setHeader("Cache-Control", "no-store");
   return res.json({ ok: true, admin: toAdminSummary(admin) });
 });
+
+
+router.patch(
+  "/admin/password/change-required",
+  (req: Request, res: Response) => {
+    const admin = requireAdminSession(req, res, {
+      allowPasswordChangeRequired: true,
+    });
+    if (!admin) return;
+
+    if (!isAssistantAdmin(admin)) {
+      return sendError(res, 403, "assistant admin account is required", {
+        code: "ASSISTANT_ADMIN_REQUIRED",
+      });
+    }
+    if (admin.must_change_password !== true) {
+      return sendError(res, 409, "password change is not required", {
+        code: "ADMIN_PASSWORD_CHANGE_NOT_REQUIRED",
+      });
+    }
+
+    const newPassword = String(req.body?.new_password || "").trim();
+    const confirmPassword = String(
+      req.body?.confirm_password || "",
+    ).trim();
+    const passwordError = getPasswordValidationError(newPassword);
+    if (passwordError) {
+      return sendError(res, 400, passwordError.message, {
+        code: passwordError.code,
+      });
+    }
+    if (newPassword !== confirmPassword) {
+      return sendError(res, 400, "password confirmation does not match", {
+        code: "PASSWORD_CONFIRMATION_MISMATCH",
+      });
+    }
+    if (verifyPassword(newPassword, admin.password)) {
+      return sendError(res, 409, "new password must differ from temporary password", {
+        code: "PASSWORD_UNCHANGED",
+      });
+    }
+
+    const db = ensureDb();
+    const persistedAdmin = db.merchants.find(
+      (item) => item.id === admin.id && item.is_admin === true,
+    );
+    if (!persistedAdmin || !isAssistantAdmin(persistedAdmin)) {
+      return sendError(res, 404, "assistant admin account not found", {
+        code: "ADMIN_NOT_FOUND",
+      });
+    }
+
+    persistedAdmin.password = hashPassword(newPassword);
+    persistedAdmin.must_change_password = false;
+    revokeAdminSessions(persistedAdmin);
+    writeDb(db);
+
+    return res.json({
+      ok: true,
+      admin: toAdminSummary(persistedAdmin),
+      admin_token: createAdminSessionToken(persistedAdmin),
+    });
+  },
+);
 
 router.get("/merchants", (req: Request, res: Response) => {
   const admin = requireAnyAdminPermission(req, res, [
@@ -4537,6 +4667,93 @@ router.patch(
     }
   },
 );
+
+
+
+router.patch("/admins/:adminId/password", (req: Request, res: Response) => {
+  const owner = requireOwner(req, res);
+  if (!owner) return;
+
+  const adminId = String(req.params.adminId || "").trim();
+  const ownerPassword = String(req.body?.owner_password || "");
+  const temporaryPassword = String(
+    req.body?.temporary_password || "",
+  ).trim();
+  const confirmTemporaryPassword = String(
+    req.body?.confirm_temporary_password || "",
+  ).trim();
+
+  if (!adminId) {
+    return sendError(res, 400, "adminId is required", {
+      code: "ADMIN_ID_REQUIRED",
+    });
+  }
+  if (!ownerPassword) {
+    return sendError(res, 400, "owner password is required", {
+      code: "OWNER_PASSWORD_REQUIRED",
+    });
+  }
+  if (!verifyPassword(ownerPassword, owner.password)) {
+    return sendError(res, 401, "owner password is incorrect", {
+      code: "OWNER_PASSWORD_INCORRECT",
+    });
+  }
+
+  const passwordError = getPasswordValidationError(temporaryPassword);
+  if (passwordError) {
+    return sendError(res, 400, passwordError.message, {
+      code: passwordError.code,
+    });
+  }
+  if (temporaryPassword !== confirmTemporaryPassword) {
+    return sendError(res, 400, "temporary password confirmation does not match", {
+      code: "PASSWORD_CONFIRMATION_MISMATCH",
+    });
+  }
+
+  const db = ensureDb();
+  const assistant = db.merchants.find(
+    (item) => item.id === adminId && item.is_admin === true,
+  );
+  if (!assistant) {
+    return sendError(res, 404, "assistant admin account not found", {
+      code: "ADMIN_NOT_FOUND",
+    });
+  }
+  if (!isAssistantAdmin(assistant)) {
+    return sendError(res, 400, "owner admin password cannot be reset here", {
+      code: "OWNER_ADMIN_PASSWORD_CANNOT_BE_RESET",
+    });
+  }
+  if (verifyPassword(temporaryPassword, assistant.password)) {
+    return sendError(res, 409, "temporary password must differ from current password", {
+      code: "PASSWORD_UNCHANGED",
+    });
+  }
+
+  assistant.password = hashPassword(temporaryPassword);
+  assistant.must_change_password = true;
+  revokeAdminSessions(assistant);
+  appendAdminLog(
+    db,
+    owner,
+    { id: assistant.id, store_name: assistant.owner_name },
+    "assistant_admin_password_reset",
+    "assistant administrator temporary password issued",
+    {
+      meta: {
+        assistant_admin_id: assistant.id,
+        assistant_admin_phone: assistant.phone,
+      },
+    },
+  );
+  writeDb(db);
+
+  return res.json({
+    ok: true,
+    admin: toAdminSummary(assistant),
+  });
+});
 
 router.post("/admin/local-data-migration", (req: Request, res: Response) => {
   const owner = requireOwner(req, res);

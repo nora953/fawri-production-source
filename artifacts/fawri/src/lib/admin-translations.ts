@@ -152,6 +152,7 @@ const adminTranslations = {
     logsActionSubscriptionUpdated: "تحديث الاشتراك",
     logsActionDeletionRequested: "طلب حذف تاجر",
     logsActionDeletionRequestRejected: "رفض طلب الحذف",
+    logsActionAssistantPasswordReset: "تغيير كلمة مرور مسؤول مساعد",
 
     actionViewDetails: "عرض التفاصيل",
     actionApproveActivate: "قبول الحساب",
@@ -242,6 +243,8 @@ const adminTranslations = {
       "تعذر حفظ تجديد الاشتراك في السيرفر.",
 
     logInternalNoteSaved: "ملاحظة داخلية محفوظة",
+    logAssistantAdminPasswordReset:
+      "تم تعيين كلمة مرور مؤقتة للمسؤول المساعد وإلغاء جلساته القديمة",
     adminSessionVerificationError:
       "تعذر التحقق من جلسة الإدارة.",
     logMerchantDeleted:
@@ -511,6 +514,7 @@ const adminTranslations = {
     logsActionSubscriptionUpdated: "Subscription updated",
     logsActionDeletionRequested: "Merchant deletion requested",
     logsActionDeletionRequestRejected: "Deletion request rejected",
+    logsActionAssistantPasswordReset: "Assistant password changed",
 
     actionViewDetails: "View details",
     actionApproveActivate: "Approve account",
@@ -608,6 +612,8 @@ const adminTranslations = {
       "Could not save the subscription renewal on the server.",
 
     logInternalNoteSaved: "Internal note saved",
+    logAssistantAdminPasswordReset:
+      "A temporary password was issued and the assistant administrator sessions were revoked.",
     adminSessionVerificationError:
       "Unable to verify the administrator session.",
     logMerchantDeleted:
@@ -863,6 +869,7 @@ const kuTranslations = {
   logsActionSubscriptionUpdated: "نوێکردنەوەی بەشداری",
   logsActionDeletionRequested: "داواکاری سڕینەوەی فرۆشگا",
   logsActionDeletionRequestRejected: "ڕەتکردنەوەی داواکاری سڕینەوە",
+  logsActionAssistantPasswordReset: "گۆڕینی وشەی نهێنی بەڕێوەبەری یاریدەدەر",
   actionViewDetails: "بینینی وردەکارییەکان",
   actionApproveActivate: "پەسەندکردنی هەژمار",
   actionApprove: "پەسەندکردنی هەژمار",
@@ -929,6 +936,8 @@ const kuTranslations = {
   toastPlanRenewed: "پلانی {plan} نوێکرایەوە",
   planRenewSaveError: "پاشەکەوتکردنی نوێکردنەوەی بەشداری سەرنەکەوت.",
   logInternalNoteSaved: "تێبینیی ناوەکی پاشەکەوتکرا",
+  logAssistantAdminPasswordReset:
+    "وشەی نهێنی کاتی دانرا و دانیشتنە کۆنەکانی بەڕێوەبەری یاریدەدەر هەڵوەشێنرانەوە",
   adminSessionVerificationError: "پشتڕاستکردنەوەی دانیشتنی ئەدمین سەرنەکەوت.",
   logMerchantDeleted: "حسابی فرۆشگا و هەموو داتاکانی بەهەمیشەیی سڕایەوە",
   permissionDenied: "دەسەڵاتی ئەنجامدانی ئەم کردارەت نییە.",

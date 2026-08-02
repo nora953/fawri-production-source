@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   CalendarDays,
   CheckCircle2,
+  KeyRound,
   Eye,
   EyeOff,
   Loader2,
@@ -39,6 +40,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
+import AssistantPasswordResetDialog from "@/components/admin/AssistantPasswordResetDialog";
+
 type AdminRole = "owner_admin" | "assistant_admin";
 
 type AdminPermission =
@@ -66,6 +69,7 @@ interface AdminAccount {
   permissions: AdminPermission[];
   admin_enabled: boolean;
   otp_verified: boolean;
+  must_change_password: boolean;
 }
 
 interface AdministratorsApiResponse {
@@ -305,6 +309,12 @@ export default function AdministratorsTab({
     },
   }[language];
 
+  const administratorPasswordText = {
+    ar: { button: "تغيير كلمة المرور", required: "بانتظار تغيير كلمة المرور" },
+    en: { button: "Change password", required: "Password change pending" },
+    ku: { button: "گۆڕینی وشەی نهێنی", required: "چاوەڕوانی گۆڕینی وشەی نهێنی" },
+  }[language];
+
   const t = {
     loading: adminText.administratorsLoading,
     loadError: adminText.administratorsLoadError,
@@ -361,6 +371,8 @@ export default function AdministratorsTab({
       ));
   const [updatingAdministratorStatusId, setUpdatingAdministratorStatusId] =
     useState<string | null>(null);
+  const [passwordResetAdministrator, setPasswordResetAdministrator] =
+    useState<AdminAccount | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -860,7 +872,7 @@ export default function AdministratorsTab({
                     </div>
 
                     {!isOwner && (
-                      <div className="grid gap-2 border-t pt-3 sm:grid-cols-2">
+                      <div className="grid gap-2 border-t pt-3 sm:grid-cols-3">
                         <Button
                           type="button"
                           variant="outline"
@@ -868,6 +880,16 @@ export default function AdministratorsTab({
                           onClick={() => openPermissionDialog(administrator)}
                         >
                           {permissionText.button}
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full gap-2"
+                          onClick={() => setPasswordResetAdministrator(administrator)}
+                        >
+                          <KeyRound className="h-4 w-4" aria-hidden="true" />
+                          {administratorPasswordText.button}
                         </Button>
 
                         <Button
@@ -901,6 +923,12 @@ export default function AdministratorsTab({
                       </div>
                     )}
 
+                    {administrator.must_change_password && !isOwner && (
+                      <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700">
+                        {administratorPasswordText.required}
+                      </Badge>
+                    )}
+
                     <div className="flex items-center gap-2 border-t pt-3 text-xs">
                       {administrator.otp_verified ? (
                         <>
@@ -929,6 +957,19 @@ export default function AdministratorsTab({
           })}
         </div>
       )}
+
+      <AssistantPasswordResetDialog
+        open={passwordResetAdministrator !== null}
+        administratorId={passwordResetAdministrator?.id || ""}
+        administratorName={passwordResetAdministrator?.owner_name || ""}
+        onOpenChange={(open) => {
+          if (!open) setPasswordResetAdministrator(null);
+        }}
+        onSuccess={() => {
+          setPasswordResetAdministrator(null);
+          void loadAdministrators();
+        }}
+      />
 
       <Dialog open={isCreateDialogOpen} onOpenChange={handleCreateDialogChange}>
         <DialogContent

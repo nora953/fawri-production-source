@@ -60,6 +60,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import DeleteMerchantDialog from "@/components/DeleteMerchantDialog";
 import AdministratorsTab from "@/components/admin/AdministratorsTab";
+import RequiredAdminPasswordChangeDialog from "@/components/admin/RequiredAdminPasswordChangeDialog";
 import AdminSupportTab, { getAdminSupportText } from "@/components/admin/AdminSupportTab";
 import {
   LogOut,
@@ -1379,6 +1380,8 @@ function LogsTab({ logs }: { logs: AdminLog[] }) {
     deletion_requested: adminText.logsActionDeletionRequested,
     deletion_request_rejected:
       adminText.logsActionDeletionRequestRejected,
+    assistant_admin_password_reset:
+      adminText.logsActionAssistantPasswordReset,
     support_ticket_claimed: supportText.logClaimed,
     support_ticket_replied: supportText.logReplied,
     support_ticket_resolved: supportText.logResolved,
@@ -1490,6 +1493,9 @@ function LogsTab({ logs }: { logs: AdminLog[] }) {
 
       case "note_saved":
         return adminText.logInternalNoteSaved;
+
+      case "assistant_admin_password_reset":
+        return adminText.logAssistantAdminPasswordReset;
 
       case "channel_status_changed": {
         const platform = meta.platform ?? "";
@@ -1986,24 +1992,30 @@ export default function AdminPage() {
     );
 
   const [currentAdmin, setCurrentAdmin] = useState<Merchant | undefined>();
+  const passwordChangeRequired = currentAdmin?.must_change_password === true;
   const isOwnerAdmin = currentAdmin?.admin_role === "owner_admin";
-  const canManageAdmins = isOwnerAdmin;
-  const canViewMerchants = hasAdminPermission(currentAdmin, "view_merchants");
-  const canManageMerchants = hasAdminPermission(
-    currentAdmin,
-    "manage_merchant_status",
-  );
-  const canManageSubscriptions = hasAdminPermission(
-    currentAdmin,
-    "manage_subscriptions",
-  );
-  const canManageChannels = hasAdminPermission(currentAdmin, "manage_channels");
-  const canViewLogs = hasAdminPermission(currentAdmin, "view_logs");
-  const canInspectSessions = hasAdminPermission(
-    currentAdmin,
-    "inspect_merchant_sessions",
-  );
-  const canManageSupport = hasAdminPermission(currentAdmin, "manage_support");
+  const canManageAdmins = isOwnerAdmin && !passwordChangeRequired;
+  const canViewMerchants =
+    !passwordChangeRequired &&
+    hasAdminPermission(currentAdmin, "view_merchants");
+  const canManageMerchants =
+    !passwordChangeRequired &&
+    hasAdminPermission(currentAdmin, "manage_merchant_status");
+  const canManageSubscriptions =
+    !passwordChangeRequired &&
+    hasAdminPermission(currentAdmin, "manage_subscriptions");
+  const canManageChannels =
+    !passwordChangeRequired &&
+    hasAdminPermission(currentAdmin, "manage_channels");
+  const canViewLogs =
+    !passwordChangeRequired &&
+    hasAdminPermission(currentAdmin, "view_logs");
+  const canInspectSessions =
+    !passwordChangeRequired &&
+    hasAdminPermission(currentAdmin, "inspect_merchant_sessions");
+  const canManageSupport =
+    !passwordChangeRequired &&
+    hasAdminPermission(currentAdmin, "manage_support");
   const canViewMerchantData =
     canViewMerchants ||
     canManageMerchants ||
@@ -3425,6 +3437,12 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background" dir={adminText.dir}>
+      {currentAdmin?.must_change_password === true && (
+        <RequiredAdminPasswordChangeDialog
+          admin={currentAdmin}
+          onChanged={setCurrentAdmin}
+        />
+      )}
       {/* Header */}
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto max-w-7xl px-4 py-2 md:px-6">

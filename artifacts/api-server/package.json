@@ -12,7 +12,8 @@
     "test:admin-permissions": "node ./build.mjs && node --test ./tests/admin-permissions.integration.test.mjs",
     "test:subscription-lifecycle": "node ./build.mjs && node --test ./tests/subscription-lifecycle.integration.test.mjs",
     "test:retention-access": "node ./build.mjs && node --test ./tests/retention-access.integration.test.mjs",
-    "test:retention-boundaries": "node ./build.mjs && node --test ./tests/retention-boundaries.integration.test.mjs"
+    "test:retention-boundaries": "node ./build.mjs && node --test ./tests/retention-boundaries.integration.test.mjs",
+    "test:admin-password-reset": "node ./build.mjs && node --test ./tests/admin-password-reset.integration.test.mjs"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",
