@@ -41,18 +41,29 @@ function isActiveRoute(
   return location === href || location.startsWith(`${href}/`);
 }
 
-function NotificationBadge({ count }: { count: number }) {
+function NotificationBadge({
+  count,
+  isKurdish,
+}: {
+  count: number;
+  isKurdish: boolean;
+}) {
   if (count <= 0) return null;
 
   return (
-    <span className="absolute -end-1.5 -top-1.5 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] font-black leading-none text-white shadow-sm ring-2 ring-sidebar">
+    <span
+      dir="ltr"
+      className={`absolute -end-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] leading-none tabular-nums text-white shadow-sm ring-2 ring-sidebar ${
+        isKurdish ? "font-sans font-bold" : "font-black"
+      }`}
+    >
       {count >= 50 ? "50+" : count}
     </span>
   );
 }
 
 export function Sidebar() {
-  const { t, isRTL } = useI18n();
+  const { t, isRTL, lang } = useI18n();
   const [location, setLocation] = useLocation();
   const unreadNotifications = useUnreadMerchantNotificationCount();
   const notificationsActive = isActiveRoute(
@@ -124,7 +135,10 @@ export function Sidebar() {
           }`}
         >
           <Bell className="h-5 w-5" />
-          <NotificationBadge count={unreadNotifications} />
+          <NotificationBadge
+            count={unreadNotifications}
+            isKurdish={lang === "ku"}
+          />
         </Link>
       </div>
 

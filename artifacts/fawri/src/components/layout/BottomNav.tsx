@@ -48,18 +48,29 @@ function isActiveRoute(
   return location === href || location.startsWith(`${href}/`);
 }
 
-function NavBadge({ count }: { count?: number }) {
+function NavBadge({
+  count,
+  isKurdish,
+}: {
+  count?: number;
+  isKurdish: boolean;
+}) {
   if (!count || count <= 0) return null;
 
   return (
-    <span className="absolute -end-2 -top-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[8px] font-black leading-none text-white shadow-sm ring-2 ring-background">
+    <span
+      dir="ltr"
+      className={`absolute -end-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[8px] leading-none tabular-nums text-white shadow-sm ring-2 ring-background ${
+        isKurdish ? "font-sans font-bold" : "font-black"
+      }`}
+    >
       {count >= 50 ? "50+" : count}
     </span>
   );
 }
 
 export function BottomNav() {
-  const { t, dir } = useI18n();
+  const { t, dir, lang } = useI18n();
   const [location, setLocation] = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
   const unreadNotifications = useUnreadMerchantNotificationCount();
@@ -187,7 +198,10 @@ export function BottomNav() {
           >
             <span className="relative inline-flex">
               <MoreHorizontal className="h-5 w-5" />
-              <NavBadge count={unreadNotifications} />
+              <NavBadge
+                count={unreadNotifications}
+                isKurdish={lang === "ku"}
+              />
             </span>
             <span className="text-[10px]">{currentMoreLabel}</span>
           </button>
@@ -217,7 +231,10 @@ export function BottomNav() {
                 >
                   <span className="relative inline-flex shrink-0">
                     <item.icon className="h-4 w-4 text-muted-foreground" />
-                    <NavBadge count={item.badge} />
+                    <NavBadge
+                      count={item.badge}
+                      isKurdish={lang === "ku"}
+                    />
                   </span>
                   <span className="truncate">{item.label}</span>
                 </Link>
