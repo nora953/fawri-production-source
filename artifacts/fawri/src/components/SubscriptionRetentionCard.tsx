@@ -16,6 +16,10 @@ import { Merchant, Subscription } from "@/lib/types";
 import { subscriptionStateMessages } from "@/lib/subscriptionStateMessages";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  MERCHANT_REALTIME_EVENT,
+  type MerchantRealtimeDetail,
+} from "@/hooks/useMerchantRealtime";
 
 type RetentionStatus = NonNullable<Merchant["retention_status"]>;
 
@@ -40,41 +44,65 @@ export default function SubscriptionRetentionCard({ compact = false }: Subscript
   useEffect(() => {
     let active = true;
 
-    Promise.all([
-      refreshCurrentMerchantFromApi(),
-      fetch('/api/auth/subscription/current').then(async response => ({
-        response,
-        data: await response.json().catch(() => null),
-      })),
-    ])
-      .then(([updatedMerchant, subscriptionResult]) => {
+    const applySubscription = (nextSubscription: Subscription | null) => {
+      if (!active) return;
+      if (nextSubscription) saveSubscriptions([nextSubscription]);
+      else saveSubscriptions([]);
+      setSubscription(nextSubscription);
+      setLoading(false);
+    };
+
+    const loadState = async () => {
+      try {
+        const [updatedMerchant, subscriptionResult] = await Promise.all([
+          refreshCurrentMerchantFromApi(),
+          fetch('/api/auth/subscription/current', { cache: 'no-store' }).then(
+            async response => ({
+              response,
+              data: await response.json().catch(() => null),
+            }),
+          ),
+        ]);
         if (!active) return;
         if (updatedMerchant) setMerchant(updatedMerchant);
 
-        if (
+        applySubscription(
           subscriptionResult.response.ok &&
-          subscriptionResult.data?.ok &&
-          subscriptionResult.data.subscription
-        ) {
-          const serverSubscription = subscriptionResult.data.subscription as Subscription;
-          saveSubscriptions([serverSubscription]);
-          setSubscription(serverSubscription);
-        } else {
-          setSubscription(null);
-        }
-      })
-      .catch(error => {
+            subscriptionResult.data?.ok &&
+            subscriptionResult.data.subscription
+            ? (subscriptionResult.data.subscription as Subscription)
+            : null,
+        );
+      } catch (error) {
         console.error("Merchant subscription state refresh failed:", error);
-        if (active) setSubscription(null);
-      })
-      .finally(() => {
         if (active) setLoading(false);
-      });
+      }
+    };
+
+    const handleFocus = () => void loadState();
+    const handleRealtime = (event: Event) => {
+      const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
+      const nextSubscription = detail?.subscription ?? null;
+      if (
+        nextSubscription &&
+        merchant?.id &&
+        nextSubscription.merchant_id !== merchant.id
+      ) {
+        return;
+      }
+      applySubscription(nextSubscription);
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
+    void loadState();
 
     return () => {
       active = false;
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     };
-  }, []);
+  }, [merchant?.id]);
 
   if (!merchant || loading) return null;
 

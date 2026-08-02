@@ -207,6 +207,8 @@ const adminTranslations = {
     noSubscriptionError: "لا يوجد اشتراك",
     subscriptionOperationError:
       "تعذر حفظ عملية الاشتراك في السيرفر.",
+    planCycleStartBlocked:
+      "لا يمكن تجديد أو تغيير الخطة قبل نفاد الرصيد الأساسي أو انتهاء صلاحية الاشتراك.",
 
     logRepliesReset:
       "تمت إعادة التعيين — الحد: {limit}",
@@ -566,6 +568,8 @@ const adminTranslations = {
     noSubscriptionError: "No subscription found.",
     subscriptionOperationError:
       "The subscription operation could not be saved on the server.",
+    planCycleStartBlocked:
+      "The plan can only be renewed or changed after the base balance is exhausted or the subscription expires.",
 
     logRepliesReset:
       "Replies reset — limit: {limit}",
@@ -902,6 +906,8 @@ const kuTranslations = {
   noSubscriptionError: "هیچ بەشدارییەکی چالاک نەدۆزرایەوە",
   subscriptionOperationError:
     "نەتوانرا کردارەکەی بەشداری لە سێرڤەر پاشەکەوت بکرێت.",
+  planCycleStartBlocked:
+    "نوێکردنەوە یان گۆڕینی پلان تەنها دوای بەتاڵبوونی باڵانسی سەرەکی یان بەسەرچوونی بەشداری دەکرێت.",
   logRepliesReset: "وەڵامەکان ڕێکخستنەوەکرا — سنوور: {limit}",
   toastRepliesReset: "ژمێرەری وەڵام ڕێکخستنەوەکرا",
   logRepliesAdded: "{amount} وەڵام زیادکرا",

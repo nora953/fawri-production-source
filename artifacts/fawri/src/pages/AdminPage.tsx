@@ -3037,12 +3037,18 @@ export default function AdminPage() {
       setPlanModal(null);
     } catch (error) {
       console.error("Subscription plan operation failed:", error);
+      const message = error instanceof Error ? error.message : "";
+      const cycleStillActive = message.includes(
+        "a new subscription cycle requires exhausted base replies or an expired subscription",
+      );
       toast.error(
-        operation === "activate"
-          ? adminText.planActivationSaveError
-          : operation === "change"
-            ? adminText.planChangeSaveError
-            : adminText.planRenewSaveError,
+        cycleStillActive
+          ? adminText.planCycleStartBlocked
+          : operation === "activate"
+            ? adminText.planActivationSaveError
+            : operation === "change"
+              ? adminText.planChangeSaveError
+              : adminText.planRenewSaveError,
       );
     }
   };
