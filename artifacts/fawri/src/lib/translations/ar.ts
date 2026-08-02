@@ -325,7 +325,7 @@ export const ar = {
   connected: "متصل",
   disconnected: "غير متصل",
   pending_connection: "قيد الانتظار",
-  emergency_credit: "رصيد طوارئ",
+  emergency_credit: "رصيد الطوارئ",
   emergency_subtitle: "رصيد مؤقت يُخصم دينه من أول عملية شراء لاحقة",
   activate_emergency: "تفعيل رصيد الطوارئ",
   emergency_confirm: "سيُضاف الرصيد الآن ويُسجل دين بالقيمة نفسها. يُخصم الدين مرة واحدة من أول تجديد أو تغيير للخطة أو شراء رصيد إضافي لاحق.",

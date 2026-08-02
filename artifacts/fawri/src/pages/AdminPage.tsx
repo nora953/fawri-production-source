@@ -2039,6 +2039,7 @@ export default function AdminPage() {
     MerchantDeletionRequest[]
   >([]);
   const permissionRefreshInFlightRef = useRef(false);
+  const adminLogRefreshInFlightRef = useRef(false);
 
   const refreshCurrentAdminFromApi = useCallback(async (
     options: { preserveOnTransientError?: boolean } = {},
@@ -2361,10 +2362,13 @@ export default function AdminPage() {
       setLogs([]);
       return;
     }
+    if (adminLogRefreshInFlightRef.current) return;
 
+    adminLogRefreshInFlightRef.current = true;
     try {
       const response = await fetch("/api/auth/admin/logs", {
         headers: getAdminAuthHeaders(),
+        cache: "no-store",
       });
       const data = await response.json().catch(() => null);
       if (handleUnauthorizedAdminResponse(response)) return;
@@ -2374,8 +2378,29 @@ export default function AdminPage() {
       setLogs(data.logs as AdminLog[]);
     } catch (error) {
       console.error("Admin logs API sync failed:", error);
+    } finally {
+      adminLogRefreshInFlightRef.current = false;
     }
   }, [canViewLogs, handleUnauthorizedAdminResponse]);
+
+  useEffect(() => {
+    if (!canViewLogs) return;
+
+    const refreshLogsWhenVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      void refreshLogsFromApi();
+    };
+
+    const intervalId = window.setInterval(refreshLogsWhenVisible, 3_000);
+    window.addEventListener("focus", refreshLogsWhenVisible);
+    document.addEventListener("visibilitychange", refreshLogsWhenVisible);
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", refreshLogsWhenVisible);
+      document.removeEventListener("visibilitychange", refreshLogsWhenVisible);
+    };
+  }, [canViewLogs, refreshLogsFromApi]);
 
   const refreshChannelsFromApi = useCallback(async () => {
     if (!canManageChannels) {
