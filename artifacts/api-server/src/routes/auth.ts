@@ -32,6 +32,24 @@ import {
   hashPassword,
   verifyPassword,
 } from "../services/passwordService";
+import {
+  AdminWorkMonitorError,
+  adminDeviceSecurityEnforced,
+  approveAdminTrustedDevice,
+  createAdminTrackedSession,
+  getAdminCardSecuritySummary,
+  getAdminWorkMonitor,
+  isAdminDeviceTrusted,
+  normalizeAdminDeviceId,
+  recordAdminFailedLogin,
+  registerAdminDeviceAttempt,
+  revokeAdminTrackedSession,
+  revokeAdminTrustedDevice,
+  revokeAllAdminTrackedSessions,
+  touchAdminTrackedSession,
+  validateAdminTrackedSession,
+  type AdminTrackedSession,
+} from "../services/adminWorkMonitor";
 
 type MerchantStatus = "pending_activation" | "approved" | "rejected" | "suspended";
 type AccountStatus = "pending_review" | "approved" | "rejected" | "suspended";
@@ -762,6 +780,8 @@ const MERCHANT_SESSION_COOKIE = "fawri_merchant_session";
 type AdminSessionPayload = {
   adminId: string;
   sessionVersion: number;
+  sessionId?: string;
+  deviceId?: string;
   expiresAt: number;
 };
 
@@ -921,6 +941,7 @@ function normalizeAdminSessionVersion(value: unknown): number {
 function revokeAdminSessions(admin: Merchant): void {
   admin.admin_session_version =
     normalizeAdminSessionVersion(admin.admin_session_version) + 1;
+  revokeAllAdminTrackedSessions(admin.id, "security_version_revoked");
 }
 
 function signMerchantPayload(
@@ -1116,13 +1137,24 @@ function signAdminSessionPayload(encodedPayload: string): string {
     .digest("base64url");
 }
 
-function createAdminSessionToken(admin: Merchant): string {
+function createAdminSessionToken(
+  admin: Merchant,
+  trackedSession?: AdminTrackedSession,
+): string {
   const payload: AdminSessionPayload = {
     adminId: admin.id,
     sessionVersion: normalizeAdminSessionVersion(
       admin.admin_session_version,
     ),
-    expiresAt: Date.now() + ADMIN_SESSION_TTL_MS,
+    ...(trackedSession
+      ? {
+          sessionId: trackedSession.id,
+          deviceId: trackedSession.device_id,
+        }
+      : {}),
+    expiresAt: trackedSession
+      ? new Date(trackedSession.expires_at).getTime()
+      : Date.now() + ADMIN_SESSION_TTL_MS,
   };
 
   const encodedPayload = Buffer.from(
@@ -1180,6 +1212,12 @@ function verifyAdminSessionToken(
         payload.sessionVersion >= 0
           ? payload.sessionVersion
           : 0,
+      ...(typeof payload.sessionId === "string" && payload.sessionId
+        ? { sessionId: payload.sessionId }
+        : {}),
+      ...(typeof payload.deviceId === "string" && payload.deviceId
+        ? { deviceId: payload.deviceId }
+        : {}),
       expiresAt: payload.expiresAt,
     };
   } catch {
@@ -1196,7 +1234,10 @@ function getBearerToken(req: Request): string {
 function requireAdminSession(
   req: Request,
   res: Response,
-  options: { allowPasswordChangeRequired?: boolean } = {},
+  options: {
+    allowPasswordChangeRequired?: boolean;
+    recordActivity?: boolean;
+  } = {},
 ): Merchant | null {
   const token = getBearerToken(req);
   const payload = token
@@ -1233,6 +1274,30 @@ function requireAdminSession(
     return null;
   }
 
+  if (payload.sessionId) {
+    const requestDeviceId = normalizeAdminDeviceId(
+      req.headers["x-fawri-device-id"],
+    );
+    if (
+      !requestDeviceId ||
+      payload.deviceId !== requestDeviceId ||
+      !validateAdminTrackedSession({
+        adminId: admin.id,
+        sessionId: payload.sessionId,
+        deviceId: requestDeviceId,
+      })
+    ) {
+      sendError(res, 401, "administrator session or device is no longer trusted", {
+        code: "ADMIN_TRACKED_SESSION_REVOKED",
+      });
+      return null;
+    }
+    touchAdminTrackedSession(
+      payload.sessionId,
+      options.recordActivity !== false,
+    );
+  }
+
   if (
     admin.must_change_password === true &&
     options.allowPasswordChangeRequired !== true
@@ -1246,6 +1311,86 @@ function requireAdminSession(
   return admin;
 }
 
+
+function getAdminDeviceContext(req: Request): {
+  deviceId: string;
+  deviceLabel: string;
+  userAgent: string;
+} {
+  return {
+    deviceId: normalizeAdminDeviceId(
+      req.body?.device_id || req.headers["x-fawri-device-id"],
+    ),
+    deviceLabel: String(req.body?.device_label || "").trim(),
+    userAgent: String(req.headers["user-agent"] || "").trim(),
+  };
+}
+
+function createAssistantTrackedSession(
+  admin: Merchant,
+  req: Request,
+): AdminTrackedSession | undefined {
+  if (!isAssistantAdmin(admin) || !adminDeviceSecurityEnforced()) {
+    return undefined;
+  }
+  const device = getAdminDeviceContext(req);
+  const attemptedDevice = registerAdminDeviceAttempt({
+    adminId: admin.id,
+    deviceId: device.deviceId,
+    deviceLabel: device.deviceLabel,
+    userAgent: device.userAgent,
+  });
+  if (!isAdminDeviceTrusted(admin.id, device.deviceId)) {
+    throw new AdminWorkMonitorError(
+      403,
+      "ADMIN_DEVICE_APPROVAL_REQUIRED",
+      "administrator device approval is required",
+      {
+        device_id: attemptedDevice.device_id,
+        trusted_device_limit: 2,
+      },
+    );
+  }
+  return createAdminTrackedSession({
+    adminId: admin.id,
+    deviceId: device.deviceId,
+    deviceLabel: device.deviceLabel,
+    userAgent: device.userAgent,
+    expiresAt: Date.now() + ADMIN_SESSION_TTL_MS,
+  });
+}
+
+function sendAdminWorkMonitorError(
+  res: Response,
+  error: unknown,
+): Response | null {
+  if (!(error instanceof AdminWorkMonitorError)) return null;
+  return sendError(res, error.statusCode, error.message, {
+    code: error.code,
+    ...(error.details || {}),
+  });
+}
+
+function requireOwnerPassword(
+  owner: Merchant,
+  req: Request,
+  res: Response,
+): boolean {
+  const ownerPassword = String(req.body?.owner_password || "");
+  if (!ownerPassword) {
+    sendError(res, 400, "owner password is required", {
+      code: "OWNER_PASSWORD_REQUIRED",
+    });
+    return false;
+  }
+  if (!verifyPassword(ownerPassword, owner.password)) {
+    sendError(res, 401, "owner password is incorrect", {
+      code: "OWNER_PASSWORD_INCORRECT",
+    });
+    return false;
+  }
+  return true;
+}
 
 function isOwnerAdmin(admin: Merchant): boolean {
   return admin.is_admin === true && admin.admin_role === "owner_admin";
@@ -3406,13 +3551,25 @@ router.post("/login", (req: Request, res: Response) => {
   if (!phone || !password) return sendError(res, 400, "اكتب رقم الهاتف وكلمة المرور");
 
   const db = ensureDb();
-  const merchant = db.merchants.find(
-    (item) =>
-      normalizePhone(item.phone) === phone &&
-      verifyPassword(password, item.password),
+  const matchingAccount = db.merchants.find(
+    (item) => normalizePhone(item.phone) === phone,
   );
+  const merchant =
+    matchingAccount && verifyPassword(password, matchingAccount.password)
+      ? matchingAccount
+      : undefined;
 
   if (!merchant) {
+    if (matchingAccount?.is_admin === true) {
+      const device = getAdminDeviceContext(req);
+      recordAdminFailedLogin({
+        adminId: matchingAccount.id,
+        phone,
+        deviceId: device.deviceId,
+        deviceLabel: device.deviceLabel,
+        reason: "invalid_credentials",
+      });
+    }
     return sendError(res, 401, "رقم الهاتف أو كلمة المرور غير صحيحة");
   }
 
@@ -3439,6 +3596,15 @@ router.post("/login", (req: Request, res: Response) => {
     writeDb(db);
   }
 
+  let trackedSession: AdminTrackedSession | undefined;
+  try {
+    trackedSession = createAssistantTrackedSession(merchant, req);
+  } catch (error) {
+    const response = sendAdminWorkMonitorError(res, error);
+    if (response) return response;
+    throw error;
+  }
+
   if (merchant.is_admin) {
     clearMerchantSessionCookie(res);
   } else {
@@ -3449,7 +3615,7 @@ router.post("/login", (req: Request, res: Response) => {
     ok: true,
     merchant: publicMerchant(merchant),
     ...(merchant.is_admin
-      ? { admin_token: createAdminSessionToken(merchant) }
+      ? { admin_token: createAdminSessionToken(merchant, trackedSession) }
       : {}),
   });
 });
@@ -4490,10 +4656,19 @@ router.patch(
     );
     writeDb(db);
 
+    let trackedSession: AdminTrackedSession | undefined;
+    try {
+      trackedSession = createAssistantTrackedSession(persistedAdmin, req);
+    } catch (error) {
+      const response = sendAdminWorkMonitorError(res, error);
+      if (response) return response;
+      throw error;
+    }
+
     return res.json({
       ok: true,
       admin: toAdminSummary(persistedAdmin),
-      admin_token: createAdminSessionToken(persistedAdmin),
+      admin_token: createAdminSessionToken(persistedAdmin, trackedSession),
     });
   },
 );
@@ -4527,9 +4702,228 @@ router.get("/admins", (req: Request, res: Response) => {
 
   return res.json({
     ok: true,
-    admins: listAdmins(),
+    admins: listAdmins().map((admin) => ({
+      ...admin,
+      ...getAdminCardSecuritySummary(admin.id),
+    })),
   });
 });
+
+
+
+router.post("/admin/session/heartbeat", (req: Request, res: Response) => {
+  const admin = requireAdminSession(req, res, {
+    allowPasswordChangeRequired: true,
+    recordActivity: false,
+  });
+  if (!admin) return;
+  const payload = verifyAdminSessionToken(getBearerToken(req));
+  if (payload?.sessionId) {
+    touchAdminTrackedSession(payload.sessionId, req.body?.activity === true);
+  }
+  return res.json({ ok: true });
+});
+
+router.post("/admin/session/logout", (req: Request, res: Response) => {
+  const payload = verifyAdminSessionToken(getBearerToken(req));
+  if (payload?.sessionId) {
+    try {
+      revokeAdminTrackedSession({
+        adminId: payload.adminId,
+        sessionId: payload.sessionId,
+        reason: "administrator_logout",
+      });
+    } catch (error) {
+      if (!(error instanceof AdminWorkMonitorError) || error.code !== "ADMIN_SESSION_NOT_FOUND") {
+        throw error;
+      }
+    }
+  }
+  return res.json({ ok: true });
+});
+
+router.get("/admins/:adminId/work-monitor", (req: Request, res: Response) => {
+  const owner = requireOwner(req, res);
+  if (!owner) return;
+  const adminId = String(req.params.adminId || "").trim();
+  const db = ensureDb();
+  const assistant = db.merchants.find(
+    (item) => item.id === adminId && isAssistantAdmin(item),
+  );
+  if (!assistant) {
+    return sendError(res, 404, "assistant admin account not found", {
+      code: "ADMIN_NOT_FOUND",
+    });
+  }
+  const monitor = getAdminWorkMonitor(adminId);
+  const recentLogs = db.admin_logs
+    .filter((log) => log.admin_id === adminId)
+    .sort(
+      (left, right) =>
+        new Date(right.created_at).getTime() -
+        new Date(left.created_at).getTime(),
+    )
+    .slice(0, 50);
+  res.setHeader("Cache-Control", "no-store");
+  return res.json({
+    ok: true,
+    admin: toAdminSummary(assistant),
+    ...monitor,
+    recent_logs: recentLogs,
+  });
+});
+
+router.post(
+  "/admins/:adminId/devices/:deviceId/trust",
+  (req: Request, res: Response) => {
+    const owner = requireOwner(req, res);
+    if (!owner || !requireOwnerPassword(owner, req, res)) return;
+    const adminId = String(req.params.adminId || "").trim();
+    const deviceId = normalizeAdminDeviceId(req.params.deviceId);
+    const db = ensureDb();
+    const assistant = db.merchants.find(
+      (item) => item.id === adminId && isAssistantAdmin(item),
+    );
+    if (!assistant) {
+      return sendError(res, 404, "assistant admin account not found", {
+        code: "ADMIN_NOT_FOUND",
+      });
+    }
+    try {
+      const device = approveAdminTrustedDevice({
+        adminId,
+        deviceId,
+        ownerId: owner.id,
+      });
+      appendAdminLog(
+        db,
+        owner,
+        { id: assistant.id, store_name: assistant.owner_name },
+        "assistant_device_trusted",
+        "assistant administrator device was trusted",
+        { meta: { device_id: device.device_id, device_label: device.device_label } },
+      );
+      writeDb(db);
+      return res.json({ ok: true, device });
+    } catch (error) {
+      const response = sendAdminWorkMonitorError(res, error);
+      if (response) return response;
+      throw error;
+    }
+  },
+);
+
+router.post(
+  "/admins/:adminId/devices/:deviceId/revoke",
+  (req: Request, res: Response) => {
+    const owner = requireOwner(req, res);
+    if (!owner || !requireOwnerPassword(owner, req, res)) return;
+    const adminId = String(req.params.adminId || "").trim();
+    const deviceId = normalizeAdminDeviceId(req.params.deviceId);
+    const db = ensureDb();
+    const assistant = db.merchants.find(
+      (item) => item.id === adminId && isAssistantAdmin(item),
+    );
+    if (!assistant) {
+      return sendError(res, 404, "assistant admin account not found", {
+        code: "ADMIN_NOT_FOUND",
+      });
+    }
+    try {
+      const device = revokeAdminTrustedDevice({
+        adminId,
+        deviceId,
+        ownerId: owner.id,
+      });
+      appendAdminLog(
+        db,
+        owner,
+        { id: assistant.id, store_name: assistant.owner_name },
+        "assistant_device_trust_revoked",
+        "assistant administrator device trust was revoked",
+        { meta: { device_id: device.device_id, device_label: device.device_label } },
+      );
+      writeDb(db);
+      return res.json({ ok: true, device });
+    } catch (error) {
+      const response = sendAdminWorkMonitorError(res, error);
+      if (response) return response;
+      throw error;
+    }
+  },
+);
+
+router.post(
+  "/admins/:adminId/sessions/:sessionId/revoke",
+  (req: Request, res: Response) => {
+    const owner = requireOwner(req, res);
+    if (!owner || !requireOwnerPassword(owner, req, res)) return;
+    const adminId = String(req.params.adminId || "").trim();
+    const sessionId = String(req.params.sessionId || "").trim();
+    const db = ensureDb();
+    const assistant = db.merchants.find(
+      (item) => item.id === adminId && isAssistantAdmin(item),
+    );
+    if (!assistant) {
+      return sendError(res, 404, "assistant admin account not found", {
+        code: "ADMIN_NOT_FOUND",
+      });
+    }
+    try {
+      const session = revokeAdminTrackedSession({
+        adminId,
+        sessionId,
+        reason: "owner_terminated_session",
+      });
+      appendAdminLog(
+        db,
+        owner,
+        { id: assistant.id, store_name: assistant.owner_name },
+        "assistant_session_revoked",
+        "assistant administrator session was terminated",
+        { meta: { session_id: session.id, device_label: session.device_label } },
+      );
+      writeDb(db);
+      return res.json({ ok: true, session });
+    } catch (error) {
+      const response = sendAdminWorkMonitorError(res, error);
+      if (response) return response;
+      throw error;
+    }
+  },
+);
+
+router.post(
+  "/admins/:adminId/sessions/revoke-all",
+  (req: Request, res: Response) => {
+    const owner = requireOwner(req, res);
+    if (!owner || !requireOwnerPassword(owner, req, res)) return;
+    const adminId = String(req.params.adminId || "").trim();
+    const db = ensureDb();
+    const assistant = db.merchants.find(
+      (item) => item.id === adminId && isAssistantAdmin(item),
+    );
+    if (!assistant) {
+      return sendError(res, 404, "assistant admin account not found", {
+        code: "ADMIN_NOT_FOUND",
+      });
+    }
+    const revokedCount = revokeAllAdminTrackedSessions(
+      adminId,
+      "owner_terminated_all_sessions",
+    );
+    appendAdminLog(
+      db,
+      owner,
+      { id: assistant.id, store_name: assistant.owner_name },
+      "assistant_sessions_revoked",
+      "all assistant administrator sessions were terminated",
+      { meta: { revoked_count: revokedCount } },
+    );
+    writeDb(db);
+    return res.json({ ok: true, revoked_count: revokedCount });
+  },
+);
 
 router.post("/admins", (req: Request, res: Response) => {
   const owner = requireOwner(req, res);
