@@ -23,6 +23,49 @@ export const setSession = (id: string) =>
   localStorage.setItem('fawri_session', id);
 
 const ADMIN_SESSION_TOKEN_KEY = 'fawri_admin_session_token';
+const ADMIN_DEVICE_ID_KEY = 'fawri_admin_device_id';
+
+function createDeviceId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `device-${crypto.randomUUID()}`;
+  }
+
+  return `device-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
+export const getAdminDeviceId = (): string => {
+  let deviceId = localStorage.getItem(ADMIN_DEVICE_ID_KEY) || '';
+  if (!/^[A-Za-z0-9._:-]{16,128}$/.test(deviceId)) {
+    deviceId = createDeviceId().slice(0, 128);
+    localStorage.setItem(ADMIN_DEVICE_ID_KEY, deviceId);
+  }
+  return deviceId;
+};
+
+export const getAdminDeviceLabel = (): string => {
+  const userAgent = navigator.userAgent;
+  const platform = /Android/i.test(userAgent)
+    ? 'Android phone'
+    : /iPhone|iPad|iPod/i.test(userAgent)
+      ? 'Apple mobile device'
+      : /Windows/i.test(userAgent)
+        ? 'Windows computer'
+        : /Macintosh|Mac OS X/i.test(userAgent)
+          ? 'Mac computer'
+          : /Linux/i.test(userAgent)
+            ? 'Linux computer'
+            : 'Browser device';
+  const browser = /Edg\//i.test(userAgent)
+    ? 'Edge'
+    : /Firefox\//i.test(userAgent)
+      ? 'Firefox'
+      : /Chrome\//i.test(userAgent)
+        ? 'Chrome'
+        : /Safari\//i.test(userAgent)
+          ? 'Safari'
+          : 'Browser';
+  return `${platform} / ${browser}`;
+};
 
 export const getAdminSessionToken = (): string | null =>
   sessionStorage.getItem(ADMIN_SESSION_TOKEN_KEY);
@@ -37,16 +80,28 @@ export const getAdminAuthHeaders = (): Record<string, string> => {
   const token = getAdminSessionToken();
 
   return token
-    ? { Authorization: `Bearer ${token}` }
+    ? {
+        Authorization: `Bearer ${token}`,
+        'X-Fawri-Device-Id': getAdminDeviceId(),
+      }
     : {};
 };
 
 export const clearSession = () => {
   const hadSession = Boolean(localStorage.getItem('fawri_session'));
+  const adminToken = getAdminSessionToken();
+  const adminHeaders = adminToken ? getAdminAuthHeaders() : {};
+
   localStorage.removeItem('fawri_session');
   clearAdminSessionToken();
 
-  if (hadSession) {
+  if (adminToken) {
+    void fetch('/api/auth/admin/session/logout', {
+      method: 'POST',
+      headers: adminHeaders,
+      keepalive: true,
+    }).catch(() => undefined);
+  } else if (hadSession) {
     void fetch('/api/auth/logout', {
       method: 'POST',
       keepalive: true,

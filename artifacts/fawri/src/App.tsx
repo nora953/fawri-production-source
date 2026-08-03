@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { initStore } from "@/lib/store";
+import { clearSession, getAdminAuthHeaders, getAdminSessionToken, initStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 
 // Layouts
@@ -47,6 +47,7 @@ const SupportPage = lazy(() => import("@/pages/dashboard/SupportPage"));
 
 // Admin
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
+const AdminWorkMonitorPage = lazy(() => import("@/pages/AdminWorkMonitorPage"));
 
 const queryClient = new QueryClient();
 
@@ -86,6 +87,9 @@ function AppRouter() {
         <Route path="/terms">{() => <TermsPage />}</Route>
 
         {/* Admin */}
+        <Route path="/admin/work-monitor/:adminId">
+          {(params) => <AdminWorkMonitorPage adminId={params.adminId} />}
+        </Route>
         <Route path="/admin">{() => <AdminPage />}</Route>
 
         {/* Dashboard */}
@@ -151,6 +155,58 @@ function AppRouter() {
   );
 }
 
+function AdminActivityHeartbeat() {
+  useEffect(() => {
+    let activityPending = true;
+    let stopped = false;
+
+    const markActivity = () => {
+      activityPending = true;
+    };
+
+    const sendHeartbeat = async () => {
+      if (stopped || !getAdminSessionToken()) return;
+      const activity = activityPending;
+      activityPending = false;
+
+      try {
+        const response = await fetch('/api/auth/admin/session/heartbeat', {
+          method: 'POST',
+          headers: {
+            ...getAdminAuthHeaders(),
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ activity }),
+        });
+        if (response.status === 401) {
+          clearSession();
+          window.location.href = '/login';
+        }
+      } catch {
+        // A temporary connection interruption must not destroy a valid session.
+      }
+    };
+
+    window.addEventListener('pointerdown', markActivity, { passive: true });
+    window.addEventListener('keydown', markActivity);
+    window.addEventListener('focus', markActivity);
+    document.addEventListener('visibilitychange', markActivity);
+    void sendHeartbeat();
+    const timer = window.setInterval(() => void sendHeartbeat(), 30_000);
+
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+      window.removeEventListener('pointerdown', markActivity);
+      window.removeEventListener('keydown', markActivity);
+      window.removeEventListener('focus', markActivity);
+      document.removeEventListener('visibilitychange', markActivity);
+    };
+  }, []);
+
+  return null;
+}
+
 function App() {
   useEffect(() => {
     initStore();
@@ -162,6 +218,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
+          <AdminActivityHeartbeat />
           <WouterRouter base={routerBase}>
             <AppRouter />
           </WouterRouter>

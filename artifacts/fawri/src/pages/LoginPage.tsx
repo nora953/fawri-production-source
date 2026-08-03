@@ -3,6 +3,8 @@ import { useI18n } from '@/lib/i18n';
 import { Link, useLocation } from 'wouter';
 import {
   clearAdminSessionToken,
+  getAdminDeviceId,
+  getAdminDeviceLabel,
   getMerchants,
   saveMerchants,
   setAdminSessionToken,
@@ -34,6 +36,23 @@ export default function LoginPage() {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyTab, setPolicyTab] = useState<PolicyTab>('privacy');
+  const securityText = {
+    ar: {
+      approval: 'تم إرسال طلب اعتماد هذا الجهاز إلى المالك. لن يمكن الدخول حتى يمنح المالك الثقة للجهاز من صفحة مراقب العمل.',
+      sessionLimit: 'تم بلوغ الحد الأقصى: جلستان مفتوحتان. يجب على المالك إنهاء إحدى الجلسات أولًا.',
+      deviceRequired: 'تعذر التحقق من هوية الجهاز. أعد فتح المتصفح وحاول مرة أخرى.',
+    },
+    en: {
+      approval: 'A device approval request was sent to the owner. Sign-in remains blocked until the owner trusts this device from Work Monitor.',
+      sessionLimit: 'The two-session limit has been reached. The owner must terminate an existing session first.',
+      deviceRequired: 'The device identity could not be verified. Reopen the browser and try again.',
+    },
+    ku: {
+      approval: 'داواکاری متمانەپێکردنی ئەم ئامێرە بۆ خاوەنەکە نێردرا. تا خاوەنەکە لە چاودێری کار متمانەی پێ نەدات چوونەژوورەوە ڕێگەپێنەدراوە.',
+      sessionLimit: 'سنووری دوو دانیشتن پڕ بووە. خاوەنەکە دەبێت یەکێک لە دانیشتنەکان کۆتایی پێبهێنێت.',
+      deviceRequired: 'ناسنامەی ئامێرەکە پشتڕاست نەکرایەوە. وێبگەڕەکە دووبارە بکەرەوە.',
+    },
+  }[lang];
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -52,13 +71,26 @@ export default function LoginPage() {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: cleanPhone, password: cleanPassword }),
+        body: JSON.stringify({
+          phone: cleanPhone,
+          password: cleanPassword,
+          device_id: getAdminDeviceId(),
+          device_label: getAdminDeviceLabel(),
+        }),
       });
 
       const result = await response.json().catch(() => null);
 
       if (!response.ok || !result?.ok || !result?.merchant) {
-        toast.error(t.login_error_invalid);
+        if (result?.code === 'ADMIN_DEVICE_APPROVAL_REQUIRED') {
+          toast.error(securityText.approval, { duration: 9000 });
+        } else if (result?.code === 'ADMIN_SESSION_LIMIT_REACHED') {
+          toast.error(securityText.sessionLimit, { duration: 8000 });
+        } else if (result?.code === 'ADMIN_DEVICE_ID_REQUIRED') {
+          toast.error(securityText.deviceRequired);
+        } else {
+          toast.error(t.login_error_invalid);
+        }
         return;
       }
 

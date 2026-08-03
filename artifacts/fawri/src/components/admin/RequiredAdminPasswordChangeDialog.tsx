@@ -3,7 +3,7 @@ import { KeyRound, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
-import { setAdminSessionToken } from "@/lib/store";
+import { getAdminAuthHeaders, setAdminSessionToken } from "@/lib/store";
 import type { Merchant } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -107,7 +107,7 @@ export default function RequiredAdminPasswordChangeDialog({
       const response = await fetch("/api/auth/admin/password/change-required", {
         method: "PATCH",
         headers: {
-          Authorization: `Bearer ${sessionStorage.getItem("fawri_admin_session_token") || ""}`,
+          ...getAdminAuthHeaders(),
           "Content-Type": "application/json",
         },
         body: JSON.stringify({

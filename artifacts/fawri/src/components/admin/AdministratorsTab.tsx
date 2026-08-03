@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import {
+  Activity,
   CalendarDays,
   CheckCircle2,
   KeyRound,
@@ -70,6 +72,10 @@ interface AdminAccount {
   admin_enabled: boolean;
   otp_verified: boolean;
   must_change_password: boolean;
+  work_status?: "active" | "idle" | "offline";
+  open_session_count?: number;
+  last_activity_at?: string | null;
+  pending_device_count?: number;
 }
 
 interface AdministratorsApiResponse {
@@ -205,6 +211,7 @@ export default function AdministratorsTab({
   adminText,
 }: AdministratorsTabProps) {
   const language = getInterfaceLanguage();
+  const [, setLocation] = useLocation();
 
   // The official administration dictionary is now the primary source.
   // The old internal dictionary remains temporarily below only as a
@@ -315,6 +322,36 @@ export default function AdministratorsTab({
     ku: { button: "گۆڕینی وشەی نهێنی", required: "چاوەڕوانی گۆڕینی وشەی نهێنی" },
   }[language];
 
+  const workMonitorText = {
+    ar: {
+      active: "نشط الآن",
+      idle: "متصل لكنه خامل",
+      offline: "غير متصل",
+      button: "مراقب العمل",
+      sessions: "الجلسات المفتوحة",
+      pendingDevice: "جهاز بانتظار الموافقة",
+      pendingDevices: "أجهزة بانتظار الموافقة",
+    },
+    en: {
+      active: "Active now",
+      idle: "Connected but idle",
+      offline: "Offline",
+      button: "Work Monitor",
+      sessions: "Open sessions",
+      pendingDevice: "device awaiting approval",
+      pendingDevices: "devices awaiting approval",
+    },
+    ku: {
+      active: "ئێستا چالاکە",
+      idle: "پەیوەستە بەڵام ناچالاکە",
+      offline: "پەیوەست نییە",
+      button: "چاودێری کار",
+      sessions: "دانیشتنە کراوەکان",
+      pendingDevice: "ئامێرێک چاوەڕوانی پەسەندکردنە",
+      pendingDevices: "ئامێر چاوەڕوانی پەسەندکردنن",
+    },
+  }[language];
+
   const t = {
     loading: adminText.administratorsLoading,
     loadError: adminText.administratorsLoadError,
@@ -386,9 +423,11 @@ export default function AdministratorsTab({
     language,
   });
 
-  const loadAdministrators = useCallback(async () => {
-    setIsLoading(true);
-    setLoadError(false);
+  const loadAdministrators = useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoading(true);
+      setLoadError(false);
+    }
 
     try {
       const response = await fetch("/api/auth/admins", {
@@ -406,15 +445,22 @@ export default function AdministratorsTab({
       setAdministrators(data.admins);
     } catch (error) {
       console.error("Administrators API load failed:", error);
-      setAdministrators([]);
-      setLoadError(true);
+      if (!silent) {
+        setAdministrators([]);
+        setLoadError(true);
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void loadAdministrators();
+    const timer = window.setInterval(
+      () => void loadAdministrators(true),
+      30_000,
+    );
+    return () => window.clearInterval(timer);
   }, [loadAdministrators]);
 
   const resetCreateForm = () => {
@@ -870,6 +916,59 @@ export default function AdministratorsTab({
                         </div>
                       </div>
                     </div>
+
+                    {!isOwner && (
+                      <div className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-sm font-semibold">
+                            <span
+                              className={
+                                "h-3 w-3 shrink-0 rounded-full " +
+                                (administrator.work_status === "active"
+                                  ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.14)]"
+                                  : administrator.work_status === "idle"
+                                    ? "bg-amber-500"
+                                    : "bg-slate-400")
+                              }
+                              aria-hidden="true"
+                            />
+                            <span>
+                              {administrator.work_status === "active"
+                                ? workMonitorText.active
+                                : administrator.work_status === "idle"
+                                  ? workMonitorText.idle
+                                  : workMonitorText.offline}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {workMonitorText.sessions}: {administrator.open_session_count ?? 0}
+                          </p>
+                          {(administrator.pending_device_count ?? 0) > 0 && (
+                            <p className="mt-1 text-xs font-semibold text-orange-600">
+                              {administrator.pending_device_count}{" "}
+                              {(administrator.pending_device_count ?? 0) === 1
+                                ? workMonitorText.pendingDevice
+                                : workMonitorText.pendingDevices}
+                            </p>
+                          )}
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full gap-2 sm:w-auto"
+                          onClick={() =>
+                            setLocation(`/admin/work-monitor/${administrator.id}`)
+                          }
+                        >
+                          <Activity className="h-4 w-4" aria-hidden="true" />
+                          {workMonitorText.button}
+                          <Badge variant="secondary" className="ms-1 px-1.5 py-0">
+                            {administrator.open_session_count ?? 0}
+                          </Badge>
+                        </Button>
+                      </div>
+                    )}
 
                     {!isOwner && (
                       <div className="grid gap-2 border-t pt-3 sm:grid-cols-3">
