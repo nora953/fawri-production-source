@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import fs from "node:fs";
 import path from "node:path";
+import { getFawriDataFilePath } from "../lib/dataPaths";
 import { registerMerchantSavedAnswersDeletion } from "../services/merchantSavedAnswers";
 import {
   getMerchantIdFromSession,
@@ -47,29 +48,10 @@ const VALID_CATEGORIES = new Set<SavedAnswerCategory>([
 
 const VALID_LANGUAGES = new Set<Lang>(["ar", "ku", "en"]);
 
-function getDataDir(): string {
-  const cwd = process.cwd();
-
-  const candidates = [
-    path.resolve(cwd, "data"),
-    path.resolve(cwd, "../../data"),
-    path.resolve(cwd, "../data"),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) return candidate;
-  }
-
-  fs.mkdirSync(candidates[0], { recursive: true });
-  return candidates[0];
-}
-
-function getDbPath(): string {
-  return path.join(getDataDir(), "saved-answers.json");
-}
+const DB_PATH = getFawriDataFilePath("saved-answers.json");
 
 function readDb(): SavedAnswersDb {
-  const filePath = getDbPath();
+  const filePath = DB_PATH
 
   if (!fs.existsSync(filePath)) {
     return { answers: [] };
@@ -92,7 +74,7 @@ function readDb(): SavedAnswersDb {
 }
 
 function writeDb(db: SavedAnswersDb): void {
-  const filePath = getDbPath();
+  const filePath = DB_PATH
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(db, null, 2), "utf8");
 }

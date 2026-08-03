@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getFawriDataFilePath } from "../lib/dataPaths";
 import {
   Router,
   type NextFunction,
@@ -1522,22 +1523,7 @@ function generateOtpCode(): string {
   return crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
 }
 
-function getDataFilePath(fileName: string): string {
-  const candidates = [
-    path.resolve(process.cwd(), "data", fileName),
-    path.resolve(process.cwd(), "..", "data", fileName),
-    path.resolve(process.cwd(), "..", "..", "data", fileName),
-    path.resolve("/home/runner/workspace", "data", fileName),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) return candidate;
-  }
-
-  return candidates[0];
-}
-
-const DB_PATH = getDataFilePath("merchants.json");
+const DB_PATH = getFawriDataFilePath("merchants.json");
 
 function normalizePhone(value: unknown): string {
   return String(value || "").replace(/\s+/g, "").trim();

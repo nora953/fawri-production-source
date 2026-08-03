@@ -1,5 +1,5 @@
 import fs from "node:fs";
-import path from "node:path";
+import { getFawriDataFilePath } from "../lib/dataPaths";
 import type { NextFunction, Request, Response } from "express";
 import {
   getMerchantIdFromSession,
@@ -9,21 +9,6 @@ import { getMerchantRetentionAccess } from "../services/merchantRetentionPolicy"
 
 const MERCHANT_SESSION_COOKIE = "fawri_merchant_session";
 
-function getDataFilePath(fileName: string): string {
-  const candidates = [
-    path.resolve(process.cwd(), "data", fileName),
-    path.resolve(process.cwd(), "..", "data", fileName),
-    path.resolve(process.cwd(), "..", "..", "data", fileName),
-    path.resolve("/home/runner/workspace", "data", fileName),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) return candidate;
-  }
-
-  return candidates[0];
-}
-
 function normalizePhone(value: unknown): string {
   return String(value || "").replace(/\s+/g, "").trim();
 }
@@ -32,7 +17,7 @@ function isRetentionSuspendedPhone(phone: string): boolean {
   const normalizedPhone = normalizePhone(phone);
   if (!normalizedPhone) return false;
 
-  const dbPath = getDataFilePath("merchants.json");
+  const dbPath = getFawriDataFilePath("merchants.json");
   if (!fs.existsSync(dbPath)) return false;
 
   try {

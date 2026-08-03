@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
 import fs from "node:fs";
-import path from "node:path";
+import { getFawriDataDir, getFawriDataFilePath } from "../lib/dataPaths";
 import healthRouter from "./health";
 import botTrainingRouter from "./bot-training";
 import { registerMerchantRuntimeDeletion } from "../services/merchantRuntime";
@@ -20,8 +20,8 @@ const META_REDIRECT_URI =
   process.env.META_REDIRECT_URI ||
   "https://7420821c-790f-40d9-9ded-46b56a9c6cba-00-1v3w7iufkjvhe.sisko.replit.dev/api/meta/callback";
 
-const DB_DIR = path.join(process.cwd(), "data");
-const DB_PATH = path.join(DB_DIR, "fawri-runtime-db.json");
+const DB_DIR = getFawriDataDir();
+const DB_PATH = getFawriDataFilePath("fawri-runtime-db.json");
 const DRAFT_TTL_MINUTES = Number(process.env.BOT_DRAFT_TTL_MINUTES || 60);
 const INTENT_MIN_CONFIDENCE = Number(
   process.env.BOT_INTENT_CONFIDENCE_MIN || 0.72,

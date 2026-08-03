@@ -14,7 +14,8 @@
     "test:retention-access": "node ./build.mjs && node --test ./tests/retention-access.integration.test.mjs",
     "test:retention-boundaries": "node ./build.mjs && node --test ./tests/retention-boundaries.integration.test.mjs",
     "test:admin-password-reset": "node ./build.mjs && node --test ./tests/admin-password-reset.integration.test.mjs",
-    "test:admin-work-monitor": "node ./build.mjs && node --test ./tests/admin-work-monitor.integration.test.mjs"
+    "test:admin-work-monitor": "node ./build.mjs && node --test ./tests/admin-work-monitor.integration.test.mjs",
+    "test:data-path": "node ./build.mjs && node --test ./tests/data-path.integration.test.mjs"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",

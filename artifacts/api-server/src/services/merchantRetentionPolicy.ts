@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getFawriDataFilePath } from "../lib/dataPaths";
 import { calculateRetentionStatus } from "./merchantLifecycle";
 
 const RETENTION_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
@@ -33,22 +34,7 @@ export type MerchantRetentionAccess = {
   retentionStatus: string;
 };
 
-function getDataFilePath(fileName: string): string {
-  const candidates = [
-    path.resolve(process.cwd(), "data", fileName),
-    path.resolve(process.cwd(), "..", "data", fileName),
-    path.resolve(process.cwd(), "..", "..", "data", fileName),
-    path.resolve("/home/runner/workspace", "data", fileName),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) return candidate;
-  }
-
-  return candidates[0];
-}
-
-const DB_PATH = getDataFilePath("merchants.json");
+const DB_PATH = getFawriDataFilePath("merchants.json");
 
 function readDb(): AuthDb {
   if (!fs.existsSync(DB_PATH)) return { merchants: [], subscriptions: [] };

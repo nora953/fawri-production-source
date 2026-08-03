@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
+import { getFawriDataFilePath } from "../lib/dataPaths";
 
 export const ADMIN_MAX_OPEN_SESSIONS = 2;
 export const ADMIN_MAX_TRUSTED_DEVICES = 2;
@@ -76,23 +77,7 @@ export class AdminWorkMonitorError extends Error {
   }
 }
 
-function getSecurityFilePath(): string {
-  const merchantCandidates = [
-    path.resolve(process.cwd(), "data", "merchants.json"),
-    path.resolve(process.cwd(), "..", "data", "merchants.json"),
-    path.resolve(process.cwd(), "..", "..", "data", "merchants.json"),
-    path.resolve("/home/runner/workspace", "data", "merchants.json"),
-  ];
-  const existingMerchantDb = merchantCandidates.find((candidate) =>
-    fs.existsSync(candidate),
-  );
-  const dataDir = existingMerchantDb
-    ? path.dirname(existingMerchantDb)
-    : path.dirname(merchantCandidates[0]);
-  return path.join(dataDir, "admin-work-monitor.json");
-}
-
-const SECURITY_PATH = getSecurityFilePath();
+const SECURITY_PATH = getFawriDataFilePath("admin-work-monitor.json");
 
 function emptyStore(): AdminSecurityStore {
   return { version: 1, sessions: [], devices: [], failed_logins: [] };
