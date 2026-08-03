@@ -228,6 +228,19 @@ function logLabel(log: LogRecord, lang: InterfaceLanguage): string {
   return lang === "ku" ? "کردارێکی بەڕێوەبردن تۆمار کرا" : "تم تسجيل عملية إدارية";
 }
 
+function formatLimitCount(
+  current: number,
+  limit: number,
+  lang: InterfaceLanguage,
+): string {
+  const currentNumber = `\u2066${current}\u2069`;
+  const limitNumber = `\u2066${limit}\u2069`;
+
+  if (lang === "en") return `${currentNumber} of ${limitNumber}`;
+  if (lang === "ku") return `${currentNumber} لە ${limitNumber}`;
+  return `${currentNumber} من ${limitNumber}`;
+}
+
 export default function AdminWorkMonitorPage({ adminId }: { adminId: string }) {
   const { lang } = useI18n();
   const [, setLocation] = useLocation();
@@ -542,8 +555,24 @@ export default function AdminWorkMonitorPage({ adminId }: { adminId: string }) {
               <h2 className="mb-3 text-lg font-bold">{text.securitySummary}</h2>
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 {[
-                  [Activity, text.sessions, `${data.summary.open_session_count} / ${data.summary.session_limit}`],
-                  [ShieldCheck, text.trustedDevices, `${data.summary.trusted_device_count} / ${data.summary.trusted_device_limit}`],
+                  [
+                    Activity,
+                    text.sessions,
+                    formatLimitCount(
+                      data.summary.open_session_count,
+                      data.summary.session_limit,
+                      lang,
+                    ),
+                  ],
+                  [
+                    ShieldCheck,
+                    text.trustedDevices,
+                    formatLimitCount(
+                      data.summary.trusted_device_count,
+                      data.summary.trusted_device_limit,
+                      lang,
+                    ),
+                  ],
                   [Clock3, text.lastActivity, formatDate(data.summary.last_activity_at, lang)],
                   [AlertTriangle, text.pendingDevices, String(data.summary.pending_device_count)],
                   [ShieldOff, text.failed24h, String(data.summary.failed_login_count_24h)],
