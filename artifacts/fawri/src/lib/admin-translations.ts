@@ -153,6 +153,7 @@ const adminTranslations = {
     logsActionDeletionRequested: "طلب حذف تاجر",
     logsActionDeletionRequestRejected: "رفض طلب الحذف",
     logsActionAssistantPasswordReset: "تغيير كلمة مرور مسؤول مساعد",
+    logsActionAssistantPasswordChanged: "إكمال تغيير كلمة مرور المسؤول المساعد",
 
     actionViewDetails: "عرض التفاصيل",
     actionApproveActivate: "قبول الحساب",
@@ -245,6 +246,8 @@ const adminTranslations = {
     logInternalNoteSaved: "ملاحظة داخلية محفوظة",
     logAssistantAdminPasswordReset:
       "تم تعيين كلمة مرور مؤقتة للمسؤول المساعد وإلغاء جلساته القديمة",
+    logAssistantAdminPasswordChanged:
+      "تم استبدال كلمة المرور المؤقتة بكلمة مرور دائمة وإلغاء الجلسة المؤقتة",
     adminSessionVerificationError:
       "تعذر التحقق من جلسة الإدارة.",
     logMerchantDeleted:
@@ -515,6 +518,7 @@ const adminTranslations = {
     logsActionDeletionRequested: "Merchant deletion requested",
     logsActionDeletionRequestRejected: "Deletion request rejected",
     logsActionAssistantPasswordReset: "Assistant password changed",
+    logsActionAssistantPasswordChanged: "Assistant permanent password completed",
 
     actionViewDetails: "View details",
     actionApproveActivate: "Approve account",
@@ -614,6 +618,8 @@ const adminTranslations = {
     logInternalNoteSaved: "Internal note saved",
     logAssistantAdminPasswordReset:
       "A temporary password was issued and the assistant administrator sessions were revoked.",
+    logAssistantAdminPasswordChanged:
+      "The temporary password was replaced with a permanent password and the temporary session was revoked.",
     adminSessionVerificationError:
       "Unable to verify the administrator session.",
     logMerchantDeleted:
@@ -870,6 +876,7 @@ const kuTranslations = {
   logsActionDeletionRequested: "داواکاری سڕینەوەی فرۆشگا",
   logsActionDeletionRequestRejected: "ڕەتکردنەوەی داواکاری سڕینەوە",
   logsActionAssistantPasswordReset: "گۆڕینی وشەی نهێنی بەڕێوەبەری یاریدەدەر",
+  logsActionAssistantPasswordChanged: "تەواوکردنی گۆڕینی وشەی نهێنی بەڕێوەبەری یاریدەدەر",
   actionViewDetails: "بینینی وردەکارییەکان",
   actionApproveActivate: "پەسەندکردنی هەژمار",
   actionApprove: "پەسەندکردنی هەژمار",
@@ -938,6 +945,8 @@ const kuTranslations = {
   logInternalNoteSaved: "تێبینیی ناوەکی پاشەکەوتکرا",
   logAssistantAdminPasswordReset:
     "وشەی نهێنی کاتی دانرا و دانیشتنە کۆنەکانی بەڕێوەبەری یاریدەدەر هەڵوەشێنرانەوە",
+  logAssistantAdminPasswordChanged:
+    "وشەی نهێنی کاتی بە وشەی نهێنی هەمیشەیی گۆڕدرا و دانیشتنی کاتی هەڵوەشێنرایەوە",
   adminSessionVerificationError: "پشتڕاستکردنەوەی دانیشتنی ئەدمین سەرنەکەوت.",
   logMerchantDeleted: "حسابی فرۆشگا و هەموو داتاکانی بەهەمیشەیی سڕایەوە",
   permissionDenied: "دەسەڵاتی ئەنجامدانی ئەم کردارەت نییە.",

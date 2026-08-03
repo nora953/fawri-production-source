@@ -270,6 +270,25 @@ test("owner resets assistant password, revokes sessions, and forces first-login 
   assert.equal(JSON.stringify(resetLog).includes("Temporary2@"), false);
   assert.equal(JSON.stringify(resetLog).includes("OwnerPass1@"), false);
 
+  const permanentPasswordLog = ownerLogs.body.logs.find(
+    (log) => log.action_type === "assistant_admin_password_changed",
+  );
+  assert.ok(permanentPasswordLog);
+  assert.equal(permanentPasswordLog.admin_id, "assistant-admin");
+  assert.equal(permanentPasswordLog.merchant_id, "assistant-admin");
+  assert.equal(
+    JSON.stringify(permanentPasswordLog).includes("Temporary2@"),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(permanentPasswordLog).includes("Permanent3@"),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(permanentPasswordLog).includes("OwnerPass1@"),
+    false,
+  );
+
   const persisted = JSON.parse(
     await readFile(path.join(dataDir, "merchants.json"), "utf8"),
   );

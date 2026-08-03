@@ -1382,6 +1382,8 @@ function LogsTab({ logs }: { logs: AdminLog[] }) {
       adminText.logsActionDeletionRequestRejected,
     assistant_admin_password_reset:
       adminText.logsActionAssistantPasswordReset,
+    assistant_admin_password_changed:
+      adminText.logsActionAssistantPasswordChanged,
     support_ticket_claimed: supportText.logClaimed,
     support_ticket_replied: supportText.logReplied,
     support_ticket_resolved: supportText.logResolved,
@@ -1496,6 +1498,9 @@ function LogsTab({ logs }: { logs: AdminLog[] }) {
 
       case "assistant_admin_password_reset":
         return adminText.logAssistantAdminPasswordReset;
+
+      case "assistant_admin_password_changed":
+        return adminText.logAssistantAdminPasswordChanged;
 
       case "channel_status_changed": {
         const platform = meta.platform ?? "";

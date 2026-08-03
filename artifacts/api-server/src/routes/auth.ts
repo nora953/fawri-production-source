@@ -4475,6 +4475,19 @@ router.patch(
     persistedAdmin.password = hashPassword(newPassword);
     persistedAdmin.must_change_password = false;
     revokeAdminSessions(persistedAdmin);
+    appendAdminLog(
+      db,
+      persistedAdmin,
+      { id: persistedAdmin.id, store_name: persistedAdmin.owner_name },
+      "assistant_admin_password_changed",
+      "assistant administrator replaced temporary password with a permanent password",
+      {
+        meta: {
+          assistant_admin_id: persistedAdmin.id,
+          assistant_admin_phone: persistedAdmin.phone,
+        },
+      },
+    );
     writeDb(db);
 
     return res.json({
