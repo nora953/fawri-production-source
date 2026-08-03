@@ -55,15 +55,17 @@ export const getAdminDeviceLabel = (): string => {
           : /Linux/i.test(userAgent)
             ? 'Linux computer'
             : 'Browser device';
-  const browser = /Edg\//i.test(userAgent)
-    ? 'Edge'
-    : /Firefox\//i.test(userAgent)
-      ? 'Firefox'
-      : /Chrome\//i.test(userAgent)
-        ? 'Chrome'
-        : /Safari\//i.test(userAgent)
-          ? 'Safari'
-          : 'Browser';
+  const browser = /OPR\/|Opera\//i.test(userAgent)
+    ? 'Opera'
+    : /Edg\//i.test(userAgent)
+      ? 'Edge'
+      : /Firefox\//i.test(userAgent)
+        ? 'Firefox'
+        : /Chrome\//i.test(userAgent)
+          ? 'Chrome'
+          : /Safari\//i.test(userAgent)
+            ? 'Safari'
+            : 'Browser';
   return `${platform} / ${browser}`;
 };
 
