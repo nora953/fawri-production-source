@@ -3551,19 +3551,21 @@ router.post("/login", (req: Request, res: Response) => {
   if (!phone || !password) return sendError(res, 400, "اكتب رقم الهاتف وكلمة المرور");
 
   const db = ensureDb();
-  const matchingAccount = db.merchants.find(
+  const matchingAccounts = db.merchants.filter(
     (item) => normalizePhone(item.phone) === phone,
   );
-  const merchant =
-    matchingAccount && verifyPassword(password, matchingAccount.password)
-      ? matchingAccount
-      : undefined;
+  const merchant = matchingAccounts.find((item) =>
+    verifyPassword(password, item.password),
+  );
 
   if (!merchant) {
-    if (matchingAccount?.is_admin === true) {
+    const matchingAdmin = matchingAccounts.find(
+      (item) => item.is_admin === true,
+    );
+    if (matchingAdmin) {
       const device = getAdminDeviceContext(req);
       recordAdminFailedLogin({
-        adminId: matchingAccount.id,
+        adminId: matchingAdmin.id,
         phone,
         deviceId: device.deviceId,
         deviceLabel: device.deviceLabel,

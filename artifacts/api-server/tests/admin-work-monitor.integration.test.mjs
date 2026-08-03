@@ -70,6 +70,21 @@ test("owner controls trusted devices and assistant is limited to two sessions", 
     JSON.stringify({
       merchants: [
         {
+          id: "duplicate-merchant",
+          owner_name: "Duplicate phone merchant",
+          store_name: "Duplicate Store",
+          phone: "07111111111",
+          password: "DifferentPass1@",
+          activity_type: "retail",
+          status: "approved",
+          language: "en",
+          theme_preference: "auto",
+          created_at: "2026-08-02T00:00:00.000Z",
+          otp_verified: true,
+          warning_stage: 0,
+          retention_status: "protected",
+        },
+        {
           ...baseAdmin,
           id: "owner-admin",
           owner_name: "Owner",
@@ -138,6 +153,8 @@ test("owner controls trusted devices and assistant is limited to two sessions", 
 
   const ownerLogin = await login("07111111111", "OwnerPass1@");
   assert.equal(ownerLogin.response.status, 200);
+  assert.equal(ownerLogin.body.merchant.id, "owner-admin");
+  assert.equal(ownerLogin.body.merchant.admin_role, "owner_admin");
   const ownerHeaders = {
     Authorization: `Bearer ${ownerLogin.body.admin_token}`,
     "Content-Type": "application/json",
