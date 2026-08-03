@@ -1,0 +1,172 @@
+from pathlib import Path
+
+p = Path("artifacts/fawri/src/pages/AdminWorkMonitorPage.tsx")
+s = p.read_text(encoding="utf-8")
+
+def rep(a, b, label):
+    global s
+    n = s.count(a)
+    if n != 1:
+        raise SystemExit(f"{label}: expected 1 match, found {n}")
+    s = s.replace(a, b, 1)
+
+rep(
+'''type LogRecord = {
+  id: string;
+  action_type: string;
+  details: string;
+  created_at: string;
+};
+''',
+'''type LogRecord = {
+  id: string;
+  action_type: string;
+  details: string;
+  merchant_name?: string;
+  created_at: string;
+};
+''',
+"log type",
+)
+
+rep(
+'''function deviceIcon(label: string) {
+  return /phone|mobile|android|iphone|ipad/i.test(label) ? Smartphone : Laptop;
+}
+
+export default function AdminWorkMonitorPage({ adminId }: { adminId: string }) {
+''',
+'''function deviceIcon(label: string) {
+  return /phone|mobile|android|iphone|ipad/i.test(label) ? Smartphone : Laptop;
+}
+
+type InterfaceLanguage = "ar" | "ku" | "en";
+
+const LOG_LABELS: Record<InterfaceLanguage, Record<string, string>> = {
+  ar: {
+    approved: "تم قبول حساب التاجر",
+    rejected: "تم رفض حساب التاجر",
+    suspended: "تم إيقاف حساب التاجر",
+    unsuspended: "تم رفع إيقاف حساب التاجر",
+    restore_pending: "تمت إعادة الحساب إلى قيد المراجعة",
+    plan_activated: "تم تفعيل خطة الاشتراك",
+    plan_changed: "تم تغيير خطة الاشتراك",
+    plan_renewed: "تم تجديد خطة الاشتراك",
+    subscription_updated: "تم تحديث الاشتراك",
+    replies_reset: "تمت إعادة تعيين الردود",
+    replies_added: "تمت إضافة ردود",
+    replies_deducted: "تم خصم ردود",
+    auto_reply_enabled: "تم تفعيل الردود التلقائية",
+    auto_reply_disabled: "تم إيقاف الردود التلقائية",
+    channel_status_changed: "تم تغيير حالة القناة",
+    note_saved: "تم حفظ ملاحظة داخلية",
+    deletion_requested: "تم إرسال طلب حذف حساب التاجر",
+    deletion_request_rejected: "تم رفض طلب حذف حساب التاجر",
+    merchant_deleted: "تم حذف حساب التاجر نهائيًا",
+    support_ticket_claimed: "تم استلام تذكرة الدعم",
+    support_ticket_replied: "تم الرد على تذكرة الدعم",
+    support_ticket_resolved: "تم حل تذكرة الدعم",
+    support_ticket_reopened: "تمت إعادة فتح تذكرة الدعم",
+    inspection_session_requested: "تم طلب جلسة فحص",
+    assistant_admin_password_reset: "تم تعيين كلمة مرور مؤقتة للمسؤول المساعد",
+    assistant_admin_password_changed: "تم تغيير كلمة مرور المسؤول المساعد",
+    assistant_device_trusted: "تم منح الثقة لجهاز المسؤول المساعد",
+    assistant_device_trust_revoked: "تم سحب الثقة من جهاز المسؤول المساعد",
+    assistant_session_revoked: "تم إنهاء جلسة المسؤول المساعد",
+    assistant_sessions_revoked: "تم إنهاء جميع جلسات المسؤول المساعد",
+  },
+  ku: {
+    approved: "هەژماری فرۆشیار پەسەند کرا",
+    rejected: "هەژماری فرۆشیار ڕەت کرایەوە",
+    suspended: "هەژماری فرۆشیار ڕاگیرا",
+    unsuspended: "ڕاگرتنی هەژماری فرۆشیار هەڵگیرایەوە",
+    restore_pending: "هەژمار گەڕێندرایەوە بۆ پێداچوونەوە",
+    plan_activated: "پلانی بەشداریکردن چالاک کرا",
+    plan_changed: "پلانی بەشداریکردن گۆڕدرا",
+    plan_renewed: "پلانی بەشداریکردن نوێ کرایەوە",
+    subscription_updated: "بەشداریکردن نوێ کرایەوە",
+    replies_reset: "وەڵامەکان ڕێکخرانەوە",
+    replies_added: "وەڵام زیاد کرا",
+    replies_deducted: "وەڵام کەم کرایەوە",
+    auto_reply_enabled: "وەڵامی خۆکار چالاک کرا",
+    auto_reply_disabled: "وەڵامی خۆکار ناچالاک کرا",
+    channel_status_changed: "دۆخی کەناڵ گۆڕدرا",
+    note_saved: "تێبینی ناوخۆیی پاشەکەوت کرا",
+    deletion_requested: "داواکاری سڕینەوەی هەژماری فرۆشیار نێردرا",
+    deletion_request_rejected: "داواکاری سڕینەوە ڕەت کرایەوە",
+    merchant_deleted: "هەژماری فرۆشیار بە هەمیشەیی سڕایەوە",
+    support_ticket_claimed: "تیکەتی پشتگیری وەرگیرا",
+    support_ticket_replied: "وەڵامی تیکەتی پشتگیری درایەوە",
+    support_ticket_resolved: "تیکەتی پشتگیری چارەسەر کرا",
+    support_ticket_reopened: "تیکەتی پشتگیری کرایەوە",
+    inspection_session_requested: "دانیشتنی پشکنین داوا کرا",
+    assistant_admin_password_reset: "وشەی نهێنی کاتی دانرا",
+    assistant_admin_password_changed: "وشەی نهێنی گۆڕدرا",
+    assistant_device_trusted: "متمانە بە ئامێر درا",
+    assistant_device_trust_revoked: "متمانە لە ئامێر سەندرایەوە",
+    assistant_session_revoked: "دانیشتن کۆتایی پێ هات",
+    assistant_sessions_revoked: "هەموو دانیشتنەکان کۆتاییان پێ هات",
+  },
+  en: {
+    approved: "Merchant account approved",
+    rejected: "Merchant account rejected",
+    suspended: "Merchant account suspended",
+    unsuspended: "Merchant account suspension lifted",
+    restore_pending: "Merchant account returned to review",
+    plan_activated: "Subscription plan activated",
+    plan_changed: "Subscription plan changed",
+    plan_renewed: "Subscription plan renewed",
+    subscription_updated: "Subscription updated",
+    replies_reset: "Replies reset",
+    replies_added: "Replies added",
+    replies_deducted: "Replies deducted",
+    auto_reply_enabled: "Automatic replies enabled",
+    auto_reply_disabled: "Automatic replies disabled",
+    channel_status_changed: "Channel status changed",
+    note_saved: "Internal note saved",
+    deletion_requested: "Merchant deletion requested",
+    deletion_request_rejected: "Merchant deletion request rejected",
+    merchant_deleted: "Merchant account permanently deleted",
+    support_ticket_claimed: "Support ticket claimed",
+    support_ticket_replied: "Support ticket replied to",
+    support_ticket_resolved: "Support ticket resolved",
+    support_ticket_reopened: "Support ticket reopened",
+    inspection_session_requested: "Inspection session requested",
+    assistant_admin_password_reset: "Assistant temporary password issued",
+    assistant_admin_password_changed: "Assistant password changed",
+    assistant_device_trusted: "Assistant device trusted",
+    assistant_device_trust_revoked: "Assistant device trust revoked",
+    assistant_session_revoked: "Assistant session terminated",
+    assistant_sessions_revoked: "All assistant sessions terminated",
+  },
+};
+
+function logLabel(log: LogRecord, lang: InterfaceLanguage): string {
+  const known = LOG_LABELS[lang][log.action_type];
+  if (known) return known;
+  if (lang === "en") return log.details || log.action_type.replace(/_/g, " ");
+  return lang === "ku" ? "کردارێکی بەڕێوەبردن تۆمار کرا" : "تم تسجيل عملية إدارية";
+}
+
+export default function AdminWorkMonitorPage({ adminId }: { adminId: string }) {
+''',
+"label map",
+)
+
+rep(
+'''                    <div key={log.id} className="rounded-lg border px-3 py-2 text-sm">
+                      <p className="font-semibold">{log.details || log.action_type}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{formatDate(log.created_at, lang)}</p>
+                    </div>
+''',
+'''                    <div key={log.id} className="rounded-lg border px-3 py-2 text-sm">
+                      <p className="font-semibold">{logLabel(log, lang)}</p>
+                      {log.merchant_name && <p className="mt-1 text-xs text-muted-foreground">{log.merchant_name}</p>}
+                      <p className="mt-1 text-xs text-muted-foreground">{formatDate(log.created_at, lang)}</p>
+                    </div>
+''',
+"log render",
+)
+
+p.write_text(s, encoding="utf-8")
+print("Work Monitor logs localized.")
