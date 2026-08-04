@@ -3593,18 +3593,23 @@ router.post("/login", (req: Request, res: Response) => {
     throw error;
   }
 
+  res.setHeader("Cache-Control", "no-store");
+  const safeAccount = publicMerchant(merchant);
+
   if (merchant.is_admin) {
-    clearMerchantSessionCookie(res);
-  } else {
-    setMerchantSessionCookie(res, merchant.id);
+    return res.json({
+      ok: true,
+      account_type: "admin",
+      merchant: safeAccount,
+      admin_token: createAdminSessionToken(merchant, trackedSession),
+    });
   }
 
+  setMerchantSessionCookie(res, merchant.id);
   return res.json({
     ok: true,
-    merchant: publicMerchant(merchant),
-    ...(merchant.is_admin
-      ? { admin_token: createAdminSessionToken(merchant, trackedSession) }
-      : {}),
+    account_type: "merchant",
+    merchant: safeAccount,
   });
 });
 

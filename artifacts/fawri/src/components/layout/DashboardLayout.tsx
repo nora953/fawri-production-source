@@ -4,6 +4,8 @@ import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
 import { useLocation } from 'wouter';
 import {
+  clearMerchantTabSession,
+  getAdminSessionToken,
   getCurrentMerchant,
   refreshCurrentMerchantFromApi,
 } from '@/lib/store';
@@ -18,40 +20,19 @@ const PRODUCT_READ_ONLY_STATUSES = new Set([
   'eligible_for_deletion',
 ]);
 
-export function DashboardLayout({ children }: { children: React.ReactNode }) {
+function AuthorizedDashboard({
+  children,
+  merchant,
+}: {
+  children: React.ReactNode;
+  merchant: Merchant;
+}) {
   useMerchantRealtimeConnection();
   const { t, dir } = useI18n();
-  const [location, setLocation] = useLocation();
-  const [merchant, setMerchant] = useState<Merchant | undefined>(
-    getCurrentMerchant(),
-  );
-
-  useEffect(() => {
-    let active = true;
-
-    refreshCurrentMerchantFromApi()
-      .then((updated) => {
-        if (!active) return;
-        if (updated) setMerchant(updated);
-        if (!updated || updated.status !== 'approved') {
-          setLocation('/login');
-        }
-      })
-      .catch(() => {
-        const current = getCurrentMerchant();
-        if (!current || current.status !== 'approved') {
-          setLocation('/login');
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [setLocation]);
-
+  const [location] = useLocation();
   const productsReadOnly =
     location.startsWith('/dashboard/products') &&
-    PRODUCT_READ_ONLY_STATUSES.has(merchant?.retention_status || '');
+    PRODUCT_READ_ONLY_STATUSES.has(merchant.retention_status || '');
 
   return (
     <div className="flex min-h-[100dvh] bg-background">
@@ -80,4 +61,69 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <BottomNav />
     </div>
   );
+}
+
+export function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const { lang } = useI18n();
+  const [, setLocation] = useLocation();
+  const [merchant, setMerchant] = useState<Merchant | undefined>(
+    getCurrentMerchant(),
+  );
+  const [checkingAccess, setCheckingAccess] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    if (getAdminSessionToken()) {
+      clearMerchantTabSession();
+      setLocation('/admin');
+      setCheckingAccess(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    refreshCurrentMerchantFromApi()
+      .then((updated) => {
+        if (!active) return;
+        if (
+          !updated ||
+          updated.is_admin === true ||
+          updated.status !== 'approved'
+        ) {
+          clearMerchantTabSession();
+          setMerchant(undefined);
+          setLocation('/login');
+          return;
+        }
+        setMerchant(updated);
+      })
+      .catch(() => {
+        if (!active) return;
+        clearMerchantTabSession();
+        setMerchant(undefined);
+        setLocation('/login');
+      })
+      .finally(() => {
+        if (active) setCheckingAccess(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [setLocation]);
+
+  if (checkingAccess) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 text-center text-sm font-semibold text-muted-foreground">
+        {lang === 'en' ? 'Checking account access…' : lang === 'ku' ? 'پشکنینی دەستگەیشتن بە هەژمار…' : 'جارٍ التحقق من صلاحية الدخول…'}
+      </div>
+    );
+  }
+
+  if (!merchant || merchant.is_admin === true || merchant.status !== 'approved') {
+    return null;
+  }
+
+  return <AuthorizedDashboard merchant={merchant}>{children}</AuthorizedDashboard>;
 }

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { Link, useLocation } from 'wouter';
 import {
-  clearAdminSessionToken,
+  clearAdminSession,
+  clearMerchantTabSession,
   getAdminDeviceId,
   getAdminDeviceLabel,
   getMerchants,
@@ -95,26 +96,34 @@ export default function LoginPage() {
       }
 
       const user = result.merchant;
+      const accountType =
+        result.account_type === 'admin' || result.account_type === 'merchant'
+          ? result.account_type
+          : user.is_admin
+            ? 'admin'
+            : 'merchant';
 
-      if (
-        user.is_admin &&
-        typeof result.admin_token !== 'string'
-      ) {
-        toast.error(t.login_error_connection);
-        return;
-      }
+      if (accountType === 'admin') {
+        if (!user.is_admin || typeof result.admin_token !== 'string') {
+          toast.error(t.login_error_connection);
+          return;
+        }
 
-      cacheMerchantLocally(user);
-      setSession(user.id);
-
-      if (user.is_admin) {
+        clearMerchantTabSession();
         setAdminSessionToken(result.admin_token);
         toast.success(t.login_success_admin);
         setLocation('/admin');
         return;
       }
 
-      clearAdminSessionToken();
+      if (user.is_admin || typeof result.admin_token === 'string') {
+        toast.error(t.login_error_connection);
+        return;
+      }
+
+      clearAdminSession();
+      cacheMerchantLocally(user);
+      setSession(user.id);
 
       if (user.status === 'approved') {
         toast.success(t.login_success);

@@ -16,14 +16,19 @@ const save = (key: string, value: unknown) => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
-export const getSession = (): string | null =>
-  localStorage.getItem('fawri_session');
-
-export const setSession = (id: string) =>
-  localStorage.setItem('fawri_session', id);
-
+const MERCHANT_SESSION_ID_KEY = 'fawri_merchant_session_id';
+const LEGACY_MERCHANT_SESSION_ID_KEY = 'fawri_session';
 const ADMIN_SESSION_TOKEN_KEY = 'fawri_admin_session_token';
 const ADMIN_DEVICE_ID_KEY = 'fawri_admin_device_id';
+
+export const getSession = (): string | null =>
+  sessionStorage.getItem(MERCHANT_SESSION_ID_KEY);
+
+export const setSession = (id: string) =>
+  sessionStorage.setItem(MERCHANT_SESSION_ID_KEY, id);
+
+export const clearMerchantTabSession = () =>
+  sessionStorage.removeItem(MERCHANT_SESSION_ID_KEY);
 
 function createDeviceId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -89,21 +94,31 @@ export const getAdminAuthHeaders = (): Record<string, string> => {
     : {};
 };
 
-export const clearSession = () => {
-  const hadSession = Boolean(localStorage.getItem('fawri_session'));
+export const clearAdminSession = () => {
   const adminToken = getAdminSessionToken();
-  const adminHeaders = adminToken ? getAdminAuthHeaders() : {};
+  if (!adminToken) return;
 
-  localStorage.removeItem('fawri_session');
+  const adminHeaders = getAdminAuthHeaders();
   clearAdminSessionToken();
 
-  if (adminToken) {
-    void fetch('/api/auth/admin/session/logout', {
-      method: 'POST',
-      headers: adminHeaders,
-      keepalive: true,
-    }).catch(() => undefined);
-  } else if (hadSession) {
+  void fetch('/api/auth/admin/session/logout', {
+    method: 'POST',
+    headers: adminHeaders,
+    keepalive: true,
+  }).catch(() => undefined);
+};
+
+export const clearSession = () => {
+  if (getAdminSessionToken()) {
+    clearMerchantTabSession();
+    clearAdminSession();
+    return;
+  }
+
+  const hadMerchantSession = Boolean(getSession());
+  clearMerchantTabSession();
+
+  if (hadMerchantSession) {
     void fetch('/api/auth/logout', {
       method: 'POST',
       keepalive: true,
@@ -134,10 +149,19 @@ const syncProductsWithBotServer = (merchantId: string, products: Product[]) => {
 export const initStore = () => {
   const merchants = safeParse<Merchant[]>('fawri_merchants', []);
   const cleanedMerchants = merchants.filter(
-    merchant =>
-      merchant.id !== 'merchant-demo' &&
-      !(merchant.is_admin === true && merchant.phone === '07800000001')
+    merchant => merchant.id !== 'merchant-demo' && merchant.is_admin !== true
   );
+
+  const legacySessionId = localStorage.getItem(LEGACY_MERCHANT_SESSION_ID_KEY);
+  if (
+    !getSession() &&
+    !getAdminSessionToken() &&
+    legacySessionId &&
+    cleanedMerchants.some(merchant => merchant.id === legacySessionId)
+  ) {
+    setSession(legacySessionId);
+  }
+  localStorage.removeItem(LEGACY_MERCHANT_SESSION_ID_KEY);
 
   if (
     !localStorage.getItem('fawri_merchants') ||
@@ -173,18 +197,20 @@ export const getMerchants = (): Merchant[] =>
   safeParse<Merchant[]>('fawri_merchants', []);
 
 export const saveMerchants = (merchants: Merchant[]) =>
-  save('fawri_merchants', merchants);
+  save(
+    'fawri_merchants',
+    merchants.filter(merchant => merchant.is_admin !== true),
+  );
 
 export const getCurrentMerchant = (): Merchant | undefined => {
   const id = getSession();
   if (!id) return undefined;
-  return getMerchants().find(merchant => merchant.id === id);
+  return getMerchants().find(
+    merchant => merchant.id === id && merchant.is_admin !== true,
+  );
 };
 
 export const refreshCurrentMerchantFromApi = async (): Promise<Merchant | undefined> => {
-  const merchantId = getSession();
-  if (!merchantId) return undefined;
-
   const response = await fetch('/api/auth/me');
   const result = await response.json().catch(() => null);
 
@@ -193,6 +219,9 @@ export const refreshCurrentMerchantFromApi = async (): Promise<Merchant | undefi
   }
 
   const apiMerchant = result.merchant as Merchant;
+  if (apiMerchant.is_admin === true) {
+    throw new Error('Administrator accounts cannot use the merchant dashboard');
+  }
   setSession(apiMerchant.id);
 
   const merchants = getMerchants();
