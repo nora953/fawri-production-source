@@ -36,6 +36,27 @@ function safeMerchant(merchant: Record<string, unknown>) {
   return Object.fromEntries(allowed.map((key) => [key, merchant[key]]));
 }
 
+function safeSubscription(subscription: Record<string, unknown> | null) {
+  if (!subscription) return null;
+  const allowed = [
+    "plan_name",
+    "status",
+    "price_iqd",
+    "start_date",
+    "expires_at",
+    "reply_limit",
+    "replies_used",
+    "replies_remaining",
+    "base_reply_limit",
+    "base_replies_used",
+    "base_replies_remaining",
+    "addon_replies_remaining",
+    "emergency_debt",
+    "auto_reply_enabled",
+  ];
+  return Object.fromEntries(allowed.map((key) => [key, subscription[key]]));
+}
+
 function buildSnapshot(context: NonNullable<ReturnType<typeof resolveContext>>) {
   const runtime = readJson<Record<string, unknown>>(runtimePath, {});
   const byMerchant = (key: string) => {
@@ -68,9 +89,12 @@ function buildSnapshot(context: NonNullable<ReturnType<typeof resolveContext>>) 
   const savedAnswers = saved.filter((item) => item.merchant_id === context.merchant.id);
   const trainingRequests = training.filter((item) => item.merchantId === context.merchant.id);
   const learnedAnswers = learned.filter((item) => item.merchantId === context.merchant.id);
-  const subscription = context.authDb.subscriptions.find(
+  const subscriptionRecord = context.authDb.subscriptions.find(
     (item) => item.merchant_id === context.merchant.id,
   ) || null;
+  const subscription = safeSubscription(
+    subscriptionRecord as unknown as Record<string, unknown> | null,
+  );
 
   return {
     session: context.session,
