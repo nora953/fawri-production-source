@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   CheckCircle2,
-  ChevronDown,
   Eye,
   Headphones,
   Loader2,
@@ -153,7 +152,7 @@ const SUPPORT_TEXT = {
     requestInspection: 'طلب جلسة فحص',
     inspectionTitle: 'طلب فحص حساب التاجر',
     inspectionMode: 'نوع الجلسة',
-    inspectionLive: 'مشاهدة مباشرة',
+    inspectionLive: 'مشاهدة مباشرة قديمة (متوقفة)',
     inspectionReadOnly: 'فحص مستقل للقراءة فقط',
     inspectionReason: 'سبب طلب الفحص',
     inspectionReasonPlaceholder: 'اكتب سببًا واضحًا لطلب الجلسة...',
@@ -244,7 +243,7 @@ const SUPPORT_TEXT = {
     requestInspection: 'داواکاری دانیشتنی پشکنین',
     inspectionTitle: 'داواکاری پشکنینی هەژماری بازرگان',
     inspectionMode: 'جۆری دانیشتن',
-    inspectionLive: 'بینینی ڕاستەوخۆ',
+    inspectionLive: 'بینینی ڕاستەوخۆی کۆن (وەستێنراو)',
     inspectionReadOnly: 'پشکنینی سەربەخۆی تەنها خوێندنەوە',
     inspectionReason: 'هۆکاری داواکاری پشکنین',
     inspectionReasonPlaceholder: 'هۆکارێکی ڕوون بنووسە...',
@@ -335,7 +334,7 @@ const SUPPORT_TEXT = {
     requestInspection: 'Request inspection session',
     inspectionTitle: 'Merchant account inspection request',
     inspectionMode: 'Session mode',
-    inspectionLive: 'Live observation',
+    inspectionLive: 'Legacy live observation (disabled)',
     inspectionReadOnly: 'Independent read-only inspection',
     inspectionReason: 'Reason for inspection',
     inspectionReasonPlaceholder: 'Write a clear reason for requesting the session...',
@@ -407,7 +406,6 @@ export default function AdminSupportTab({
   const [working, setWorking] = useState<'claim' | 'reply' | 'resolve' | 'inspection' | null>(null);
   const [showInspectionForm, setShowInspectionForm] = useState(false);
   const [showInspectionHistory, setShowInspectionHistory] = useState(false);
-  const [inspectionMode, setInspectionMode] = useState<InspectionSessionMode>('live_observation');
   const [inspectionReason, setInspectionReason] = useState('');
   const conversationRef = useRef<HTMLDivElement | null>(null);
   const seenLifecycleAlertsRef = useRef<Set<string>>(new Set());
@@ -424,7 +422,6 @@ export default function AdminSupportTab({
   useEffect(() => {
     setShowInspectionForm(false);
     setShowInspectionHistory(false);
-    setInspectionMode('live_observation');
     setInspectionReason('');
   }, [selectedId]);
 
@@ -586,7 +583,6 @@ export default function AdminSupportTab({
     }
   };
 
-
   const requestInspectionSession = async (event: React.FormEvent) => {
     event.preventDefault();
     const reason = inspectionReason.trim();
@@ -599,7 +595,7 @@ export default function AdminSupportTab({
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', ...getAdminAuthHeaders() },
-          body: JSON.stringify({ mode: inspectionMode, reason }),
+          body: JSON.stringify({ mode: 'independent_read_only', reason }),
         },
       );
       const data = await response.json().catch(() => null);
@@ -1036,26 +1032,10 @@ export default function AdminSupportTab({
           </DialogHeader>
 
           <form onSubmit={requestInspectionSession} className="space-y-4">
-            <label className="block text-xs font-bold">
-              <span className="mb-1.5 block">{text.inspectionMode}</span>
-              <div className="relative">
-                <select
-                  value={inspectionMode}
-                  disabled={working !== null}
-                  onChange={(event) => setInspectionMode(event.target.value as InspectionSessionMode)}
-                  className="h-11 w-full appearance-none rounded-xl border bg-background ps-3 pe-10 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                >
-                  <option value="live_observation">{text.inspectionLive}</option>
-                  <option value="independent_read_only">{text.inspectionReadOnly}</option>
-                </select>
-                <ChevronDown
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ${
-                    dir === 'rtl' ? 'left-4' : 'right-4'
-                  }`}
-                />
-              </div>
-            </label>
+            <div className="rounded-xl border bg-muted/30 px-3 py-2">
+              <p className="text-xs font-bold text-muted-foreground">{text.inspectionMode}</p>
+              <p className="mt-1 text-sm font-black">{text.inspectionReadOnly}</p>
+            </div>
 
             <label className="block text-xs font-bold">
               <span className="mb-1.5 block">{text.inspectionReason}</span>
