@@ -16,7 +16,8 @@
     "test:admin-password-reset": "node ./build.mjs && node --test ./tests/admin-password-reset.integration.test.mjs",
     "test:admin-work-monitor": "node ./build.mjs && node --test ./tests/admin-work-monitor.integration.test.mjs",
     "test:data-path": "node ./build.mjs && node --test ./tests/data-path.integration.test.mjs",
-    "test:role-session-isolation": "node ./build.mjs && node --test ./tests/role-session-isolation.integration.test.mjs"
+    "test:role-session-isolation": "node ./build.mjs && node --test ./tests/role-session-isolation.integration.test.mjs",
+    "test:support-preview": "node ./build.mjs && node --test ./tests/support-preview.integration.test.mjs"
   },
   "dependencies": {
     "@workspace/api-zod": "workspace:*",
