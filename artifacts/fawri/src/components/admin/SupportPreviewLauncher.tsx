@@ -34,6 +34,8 @@ const TEXT = {
     open: "بدء جلسة القراءة",
     opening: "جارٍ فتح الجلسة...",
     error: "تعذر بدء جلسة القراءة.",
+    ended: "انتهت جلسة القراءة وتم إيقاف الوصول.",
+    endedByMerchant: "أنهى التاجر جلسة القراءة. تم إيقاف الوصول فورًا.",
   },
   ku: {
     title: "دانیشتنی خوێندنەوە پەسەند کرا",
@@ -41,6 +43,8 @@ const TEXT = {
     open: "دەستپێکردنی دانیشتنی خوێندنەوە",
     opening: "دانیشتن دەکرێتەوە...",
     error: "دەستپێکردنی دانیشتن سەرکەوتوو نەبوو.",
+    ended: "دانیشتنی خوێندنەوە کۆتایی هات و دەستگەیشتن وەستێنرا.",
+    endedByMerchant: "بازرگان دانیشتنی خوێندنەوەی کۆتایی پێهێنا. دەستگەیشتن دەستبەجێ وەستێنرا.",
   },
   en: {
     title: "Approved read-only session",
@@ -48,6 +52,8 @@ const TEXT = {
     open: "Start read-only session",
     opening: "Opening session...",
     error: "Could not start the read-only session.",
+    ended: "The read-only session ended and access was stopped.",
+    endedByMerchant: "The merchant ended the read-only session. Access was stopped immediately.",
   },
 } as const;
 
@@ -61,7 +67,61 @@ export default function SupportPreviewLauncher() {
 
   useEffect(() => {
     if (!getAdminSessionToken() || !location.startsWith("/admin")) return;
-    if (location.startsWith("/admin/support-preview/")) return;
+
+    if (location.startsWith("/admin/support-preview/")) {
+      let active = true;
+      let redirecting = false;
+      const sessionId = decodeURIComponent(
+        location
+          .slice("/admin/support-preview/".length)
+          .split(/[/?#]/, 1)[0] || "",
+      );
+
+      const verifyPreview = async () => {
+        if (!sessionId || redirecting) return;
+        try {
+          const response = await fetch(
+            `/api/auth/admin/support-preview/${encodeURIComponent(sessionId)}/snapshot`,
+            {
+              headers: getAdminAuthHeaders(),
+              cache: "no-store",
+            },
+          );
+          if (!active || response.ok) return;
+          const data = await response.json().catch(() => null);
+          if (response.status !== 410) return;
+
+          redirecting = true;
+          toast.error(
+            data?.end_reason === "merchant_terminated"
+              ? text.endedByMerchant
+              : text.ended,
+            { duration: 5_000 },
+          );
+          setLocation("/admin");
+        } catch {
+          // A temporary connection failure must not end an otherwise valid session.
+        }
+      };
+
+      const verifyWhenVisible = () => {
+        if (document.visibilityState === "visible") {
+          void verifyPreview();
+        }
+      };
+
+      void verifyPreview();
+      const intervalId = window.setInterval(() => void verifyPreview(), 2_000);
+      window.addEventListener("focus", verifyWhenVisible);
+      document.addEventListener("visibilitychange", verifyWhenVisible);
+
+      return () => {
+        active = false;
+        window.clearInterval(intervalId);
+        window.removeEventListener("focus", verifyWhenVisible);
+        document.removeEventListener("visibilitychange", verifyWhenVisible);
+      };
+    }
 
     let active = true;
     const load = async () => {
@@ -96,7 +156,7 @@ export default function SupportPreviewLauncher() {
       active = false;
       window.clearInterval(intervalId);
     };
-  }, [location]);
+  }, [lang, location, setLocation, text.ended, text.endedByMerchant]);
 
   const approved = useMemo(() => {
     if (!admin) return [];
