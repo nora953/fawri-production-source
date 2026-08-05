@@ -39,12 +39,37 @@ const TEXT = {
   },
 } as const;
 
+function findLanguageSwitcher(): HTMLElement | null {
+  const candidates = Array.from(document.querySelectorAll<HTMLElement>('header div'));
+
+  for (const candidate of candidates) {
+    if (candidate.children.length !== 3) continue;
+
+    const buttons = Array.from(candidate.children).filter(
+      (child): child is HTMLButtonElement => child instanceof HTMLButtonElement,
+    );
+
+    if (buttons.length !== 3) continue;
+
+    const labels = new Set(
+      buttons.map((button) => button.textContent?.trim().toUpperCase() || ''),
+    );
+
+    if (labels.has('AR') && labels.has('KU') && labels.has('EN')) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
+
 export default function EmergencyReadAccessLauncher() {
   const { lang } = useI18n();
   const text = TEXT[lang];
   const [location, setLocation] = useLocation();
   const [visible, setVisible] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
   const previousPendingCountRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -121,19 +146,54 @@ export default function EmergencyReadAccessLauncher() {
     };
   }, [location, text.newRequest]);
 
-  if (!visible || typeof document === 'undefined') return null;
+  useEffect(() => {
+    if (
+      !location.startsWith('/admin') ||
+      location.startsWith('/admin/support-preview/') ||
+      location === '/admin/emergency-access'
+    ) {
+      setPortalHost(null);
+      return;
+    }
+
+    let host: HTMLSpanElement | null = null;
+
+    const mountHost = () => {
+      if (host?.isConnected) return;
+
+      const languageSwitcher = findLanguageSwitcher();
+      if (!languageSwitcher?.parentElement) return;
+
+      host = document.createElement('span');
+      host.dataset.emergencyAccessHost = 'true';
+      host.className = 'inline-flex shrink-0';
+      languageSwitcher.insertAdjacentElement('afterend', host);
+      setPortalHost(host);
+    };
+
+    mountHost();
+
+    const observer = new MutationObserver(() => {
+      if (!host?.isConnected) mountHost();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      observer.disconnect();
+      setPortalHost(null);
+      host?.remove();
+    };
+  }, [lang, location]);
+
+  if (!visible || !portalHost) return null;
 
   return createPortal(
     <Button
       type="button"
       variant="outline"
+      size="sm"
       onClick={() => setLocation('/admin/emergency-access')}
-      className="fixed top-4 z-40 h-8 min-h-0 gap-1.5 whitespace-nowrap rounded-md border-sky-300 bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700 shadow-sm hover:border-sky-400 hover:bg-sky-200 hover:text-sky-800 dark:border-sky-700 dark:bg-sky-950 dark:text-sky-300 dark:hover:bg-sky-900"
-      style={
-        lang === 'en'
-          ? { right: 'clamp(9rem, 19vw, 16.25rem)' }
-          : { left: 'clamp(9rem, 19vw, 16.25rem)' }
-      }
+      className="h-8 min-h-0 gap-1.5 whitespace-nowrap rounded-md border-sky-300 bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700 shadow-sm hover:border-sky-400 hover:bg-sky-200 hover:text-sky-800 dark:border-sky-700 dark:bg-sky-950 dark:text-sky-300 dark:hover:bg-sky-900"
       aria-label={text.label}
       title={text.label}
     >
@@ -145,6 +205,6 @@ export default function EmergencyReadAccessLauncher() {
         </span>
       )}
     </Button>,
-    document.body,
+    portalHost,
   );
 }
