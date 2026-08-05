@@ -311,6 +311,19 @@ test("support preview is consent-bound, secret-safe, and read-only", async (t) =
   assert.equal(ended.response.status, 200);
   assert.equal(ended.body.session.status, "ended");
 
+  const restartAttempt = await json(
+    await fetch(`${baseUrl}/api/auth/admin/support-preview/start`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        ticket_id: "ticket-one",
+        request_id: "inspection-one",
+      }),
+    }),
+  );
+  assert.equal(restartAttempt.response.status, 409);
+  assert.equal(restartAttempt.body.code, "INSPECTION_APPROVAL_REQUIRED");
+
   const afterEnd = await json(
     await fetch(
       `${baseUrl}/api/auth/admin/support-preview/${sessionId}/snapshot`,
@@ -323,6 +336,10 @@ test("support preview is consent-bound, secret-safe, and read-only", async (t) =
   const authDb = JSON.parse(
     await readFile(path.join(dataDir, "merchants.json"), "utf8"),
   );
+  const request = authDb.support_tickets[0].inspection_requests[0];
+  assert.equal(request.status, "expired");
+  assert.equal(request.end_reason, "admin_terminated");
+  assert.ok(request.ended_at);
   const actions = authDb.admin_logs.map((item) => item.action_type);
   assert.ok(actions.includes("support_preview_session_started"));
   assert.ok(actions.includes("support_preview_section_viewed"));
