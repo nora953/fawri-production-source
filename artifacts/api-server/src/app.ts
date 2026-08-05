@@ -38,6 +38,23 @@ app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use((req, res, next) => {
+  const inspectionRequestPath =
+    /^\/api\/auth\/admin\/support\/tickets\/[^/]+\/inspection-requests$/;
+  if (
+    req.method === "POST" &&
+    inspectionRequestPath.test(req.path) &&
+    req.body?.mode !== "independent_read_only"
+  ) {
+    return res.status(400).json({
+      ok: false,
+      error: "only independent read-only inspection sessions are supported",
+      code: "INSPECTION_MODE_UNSUPPORTED",
+    });
+  }
+  return next();
+});
+
 startMerchantRetentionPolicyScheduler();
 app.use((_req, _res, next) => {
   try {
