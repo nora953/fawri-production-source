@@ -666,7 +666,7 @@ export default function AdminSupportPreviewPage({
                       className="min-w-0 rounded-xl bg-muted/35 px-3 py-2"
                     >
                       <p className="text-xs text-muted-foreground">{String(label)}</p>
-                      <p className="mt-1 break-words text-sm font-bold" dir="auto">
+                      <p className="mt-1 break-words text-start text-sm font-bold" dir={dir}>
                         {String(value)}
                       </p>
                     </div>
