@@ -126,20 +126,21 @@ export default function EmergencyReadAccessLauncher() {
   return createPortal(
     <Button
       type="button"
+      variant="outline"
       onClick={() => setLocation('/admin/emergency-access')}
-      className="fixed z-40 h-auto min-h-11 max-w-[calc(100vw-2.5rem)] gap-2 rounded-full px-3.5 py-2.5 shadow-lg"
-      style={{
-        bottom: 'max(5.25rem, calc(env(safe-area-inset-bottom) + 1.25rem))',
-        ...(lang === 'en'
-          ? { right: '1.25rem', left: 'auto' }
-          : { left: '1.25rem', right: 'auto' }),
-      }}
+      className="fixed top-4 z-40 h-8 min-h-0 gap-1.5 whitespace-nowrap rounded-md border-sky-300 bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700 shadow-sm hover:border-sky-400 hover:bg-sky-200 hover:text-sky-800 dark:border-sky-700 dark:bg-sky-950 dark:text-sky-300 dark:hover:bg-sky-900"
+      style={
+        lang === 'en'
+          ? { right: 'clamp(9rem, 19vw, 16.25rem)' }
+          : { left: 'clamp(9rem, 19vw, 16.25rem)' }
+      }
       aria-label={text.label}
+      title={text.label}
     >
-      <ShieldAlert className="h-5 w-5" aria-hidden="true" />
-      <span className="hidden font-semibold sm:inline">{text.label}</span>
+      <ShieldAlert className="h-4 w-4" aria-hidden="true" />
+      <span className="hidden lg:inline">{text.label}</span>
       {pendingCount > 0 && (
-        <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 py-0.5 text-[10px] font-bold text-destructive-foreground">
+        <span className="inline-flex min-w-4 items-center justify-center rounded-full bg-red-500 px-1 py-0.5 text-[9px] font-bold leading-none text-white">
           {pendingCount}
         </span>
       )}
