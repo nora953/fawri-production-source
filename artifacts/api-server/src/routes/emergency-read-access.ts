@@ -72,14 +72,13 @@ function findAssistantAdmin(
   authenticated: AuthenticatedAdmin,
   adminId: string,
 ): AdminRecord | null {
-  return (
-    authenticated.authDb.merchants.find(
-      (record): record is AdminRecord =>
-        record.id === adminId &&
-        record.is_admin === true &&
-        record.admin_role === "assistant_admin",
-    ) || null
+  const record = authenticated.authDb.merchants.find(
+    (candidate) =>
+      candidate.id === adminId &&
+      candidate.is_admin === true &&
+      (candidate as AdminRecord).admin_role === "assistant_admin",
   );
+  return record ? (record as AdminRecord) : null;
 }
 
 function activeOrPendingDuplicate(
