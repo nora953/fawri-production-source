@@ -8,6 +8,7 @@ import supportPreviewRouter from "./routes/support-preview";
 import supportImagesRouter from "./routes/support-images";
 import emergencyReadAccessRouter from "./routes/emergency-read-access";
 import emergencyReadDirectoryRouter from "./routes/emergency-read-directory";
+import emergencyMerchantNoticesRouter from "./routes/emergency-merchant-notices";
 import { enforceMerchantRetentionAccess } from "./middleware/merchantRetentionAccess";
 import { logger } from "./lib/logger";
 import {
@@ -77,6 +78,10 @@ app.use(
 app.use(
   "/api/auth/admin/emergency-read-access",
   emergencyReadAccessRouter,
+);
+app.use(
+  "/api/auth/emergency-read-access",
+  emergencyMerchantNoticesRouter,
 );
 app.use("/api/auth/admin/support-preview", supportPreviewRouter);
 app.use("/api", router);
