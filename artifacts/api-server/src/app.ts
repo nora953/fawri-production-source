@@ -7,6 +7,7 @@ import retentionGuardRouter from "./routes/retention-guard";
 import supportPreviewRouter from "./routes/support-preview";
 import supportImagesRouter from "./routes/support-images";
 import emergencyReadAccessRouter from "./routes/emergency-read-access";
+import emergencyReadDirectoryRouter from "./routes/emergency-read-directory";
 import { enforceMerchantRetentionAccess } from "./middleware/merchantRetentionAccess";
 import { logger } from "./lib/logger";
 import {
@@ -69,6 +70,10 @@ app.use((_req, _res, next) => {
 });
 app.use(enforceMerchantRetentionAccess);
 app.use("/api", retentionGuardRouter);
+app.use(
+  "/api/auth/admin/emergency-read-access",
+  emergencyReadDirectoryRouter,
+);
 app.use(
   "/api/auth/admin/emergency-read-access",
   emergencyReadAccessRouter,
