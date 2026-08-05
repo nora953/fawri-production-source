@@ -224,6 +224,11 @@ router.all("/:sessionId/snapshot", (req: Request, res: Response) =>
 router.post("/:sessionId/end", (req: Request, res: Response) => {
   const context = resolveContext(req, res);
   if (!context) return;
+  const endedAt = now();
+  context.inspectionRequest.status = "expired";
+  context.inspectionRequest.ended_at = endedAt;
+  context.inspectionRequest.expired_at = endedAt;
+  context.inspectionRequest.end_reason = "admin_terminated";
   endSession(context, "admin_terminated");
   return res.json({ ok: true, session: context.session });
 });
