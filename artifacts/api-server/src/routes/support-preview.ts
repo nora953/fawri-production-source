@@ -140,6 +140,7 @@ router.post("/start", (req: Request, res: Response) => {
   if (existing) return res.json({ ok: true, session: existing, resumed: true });
 
   const startedAt = now();
+  const sessionExpiresAt = new Date(Date.now() + PREVIEW_DURATION_MS).toISOString();
   const session: PreviewSessionRecord = {
     id: makeId("support-preview"),
     request_id: inspectionRequest.id,
@@ -153,12 +154,13 @@ router.post("/start", (req: Request, res: Response) => {
     mode: "independent_read_only",
     status: "active",
     started_at: startedAt,
-    expires_at: new Date(Math.min(Date.now() + PREVIEW_DURATION_MS, approvalExpiresAt)).toISOString(),
+    expires_at: sessionExpiresAt,
     last_seen_at: startedAt,
     viewed_sections: [],
   };
   previewDb.sessions.unshift(session);
   inspectionRequest.started_at = startedAt;
+  inspectionRequest.session_expires_at = sessionExpiresAt;
   inspectionRequest.preview_session_id = session.id;
   audit(authenticated.authDb, authenticated.admin, merchant, "support_preview_session_started", "read-only support preview session started", {
     preview_session_id: session.id,
