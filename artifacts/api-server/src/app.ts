@@ -5,6 +5,7 @@ import pinoHttp from "pino-http";
 import router from "./routes";
 import retentionGuardRouter from "./routes/retention-guard";
 import supportPreviewRouter from "./routes/support-preview";
+import supportImagesRouter from "./routes/support-images";
 import { enforceMerchantRetentionAccess } from "./middleware/merchantRetentionAccess";
 import { logger } from "./lib/logger";
 import {
@@ -35,6 +36,7 @@ app.use(
 );
 app.use(cors());
 app.use(cookieParser());
+app.use("/api/auth/support-images", supportImagesRouter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
