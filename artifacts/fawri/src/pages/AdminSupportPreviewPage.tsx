@@ -633,48 +633,32 @@ export default function AdminSupportPreviewPage({
         </div>
 
         {tab === "overview" ? (
-          <div className="grid min-w-0 gap-4 lg:grid-cols-3 lg:items-start">
-            <div className="min-w-0 space-y-4 lg:col-span-2">
-              <section className="min-w-0 rounded-2xl border bg-card p-5 shadow-sm">
-                <h2 className="font-black">{text.store}</h2>
-                <div className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
-                  {[
-                    [text.store, merchant.store_name],
-                    [text.owner, merchant.owner_name],
-                    [text.phone, merchant.phone],
-                    [text.activity, merchant.activity_type],
-                    [
-                      text.account,
-                      localizedValue(merchant.status, STATUS_LABELS[uiLang]),
-                    ],
-                    [text.ticket, snapshot.ticket.subject],
-                  ].map(([label, value]) => (
-                    <div key={String(label)} className="min-w-0 rounded-xl bg-muted/35 p-3">
-                      <p className="text-xs text-muted-foreground">{String(label)}</p>
-                      <p className="mt-1 break-words font-bold">{valueText(value)}</p>
-                    </div>
-                  ))}
-                </div>
-              </section>
-
-              <section className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {Object.entries(snapshot.counts).map(([key, value]) => (
-                  <div
-                    key={key}
-                    className="min-w-0 rounded-2xl border bg-card p-4 text-center shadow-sm"
-                  >
-                    <p className="text-2xl font-black tabular-nums">{value}</p>
-                    <p className="mt-1 break-words text-xs text-muted-foreground">
-                      {COUNT_LABELS[uiLang][key] || key.replaceAll("_", " ")}
-                    </p>
+          <div className="min-w-0 space-y-4">
+            <section className="min-w-0 rounded-2xl border bg-card p-5 shadow-sm">
+              <h2 className="font-black">{text.store}</h2>
+              <div className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  [text.store, merchant.store_name],
+                  [text.owner, merchant.owner_name],
+                  [text.phone, merchant.phone],
+                  [text.activity, merchant.activity_type],
+                  [
+                    text.account,
+                    localizedValue(merchant.status, STATUS_LABELS[uiLang]),
+                  ],
+                  [text.ticket, snapshot.ticket.subject],
+                ].map(([label, value]) => (
+                  <div key={String(label)} className="min-w-0 rounded-xl bg-muted/35 p-3">
+                    <p className="text-xs text-muted-foreground">{String(label)}</p>
+                    <p className="mt-1 break-words font-bold">{valueText(value)}</p>
                   </div>
                 ))}
-              </section>
-            </div>
+              </div>
+            </section>
 
             <section className="min-w-0 overflow-hidden rounded-2xl border bg-card p-5 shadow-sm">
               <h2 className="font-black">{text.subscription}</h2>
-              <div className="mt-4 grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="mt-4 grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {subscription ? (
                   subscriptionFields.map(([label, value]) => (
                     <div
@@ -691,6 +675,20 @@ export default function AdminSupportPreviewPage({
                   <p className="text-sm text-muted-foreground">{text.empty}</p>
                 )}
               </div>
+            </section>
+
+            <section className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {Object.entries(snapshot.counts).map(([key, value]) => (
+                <div
+                  key={key}
+                  className="min-w-0 rounded-2xl border bg-card p-4 text-center shadow-sm"
+                >
+                  <p className="text-2xl font-black tabular-nums">{value}</p>
+                  <p className="mt-1 break-words text-xs text-muted-foreground">
+                    {COUNT_LABELS[uiLang][key] || key.replaceAll("_", " ")}
+                  </p>
+                </div>
+              ))}
             </section>
           </div>
         ) : (
