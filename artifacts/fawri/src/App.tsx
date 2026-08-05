@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/contexts/ThemeContext";
 import { clearSession, getAdminAuthHeaders, getAdminSessionToken, initStore } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import SupportPreviewLauncher from "@/components/admin/SupportPreviewLauncher";
+import EmergencyReadAccessLauncher from "@/components/admin/EmergencyReadAccessLauncher";
 
 // Layouts
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -52,6 +53,9 @@ const AdminWorkMonitorPage = lazy(() => import("@/pages/AdminWorkMonitorPage"));
 const AdminSupportPreviewPage = lazy(
   () => import("@/pages/AdminSupportPreviewPage"),
 );
+const AdminEmergencyAccessPage = lazy(
+  () => import("@/pages/AdminEmergencyAccessPage"),
+);
 
 const queryClient = new QueryClient();
 
@@ -93,6 +97,9 @@ function AppRouter() {
         {/* Admin */}
         <Route path="/admin/support-preview/:sessionId">
           {(params) => <AdminSupportPreviewPage sessionId={params.sessionId} />}
+        </Route>
+        <Route path="/admin/emergency-access">
+          {() => <AdminEmergencyAccessPage />}
         </Route>
         <Route path="/admin/work-monitor/:adminId">
           {(params) => <AdminWorkMonitorPage adminId={params.adminId} />}
@@ -229,6 +236,7 @@ function App() {
           <WouterRouter base={routerBase}>
             <AppRouter />
             <SupportPreviewLauncher />
+            <EmergencyReadAccessLauncher />
           </WouterRouter>
 
           <Toaster position="top-center" richColors offset="12px" />
