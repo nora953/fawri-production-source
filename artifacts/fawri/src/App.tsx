@@ -9,6 +9,7 @@ import { clearSession, getAdminAuthHeaders, getAdminSessionToken, initStore } fr
 import { useI18n } from "@/lib/i18n";
 import SupportPreviewLauncher from "@/components/admin/SupportPreviewLauncher";
 import EmergencyReadAccessLauncher from "@/components/admin/EmergencyReadAccessLauncher";
+import EmergencyIncidentNoticeBanner from "@/components/EmergencyIncidentNoticeBanner";
 
 // Layouts
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -237,6 +238,7 @@ function App() {
             <AppRouter />
             <SupportPreviewLauncher />
             <EmergencyReadAccessLauncher />
+            <EmergencyIncidentNoticeBanner />
           </WouterRouter>
 
           <Toaster position="top-center" richColors offset="12px" />
