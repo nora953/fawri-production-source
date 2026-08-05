@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ShieldAlert } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { toast } from 'sonner';
@@ -120,15 +121,19 @@ export default function EmergencyReadAccessLauncher() {
     };
   }, [location, text.newRequest]);
 
-  if (!visible) return null;
+  if (!visible || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <Button
       type="button"
       onClick={() => setLocation('/admin/emergency-access')}
-      className={`fixed bottom-5 z-50 h-auto min-h-12 gap-2 rounded-full px-4 py-3 shadow-xl ${
-        lang === 'en' ? 'right-5' : 'left-5'
-      }`}
+      className="fixed z-40 h-auto min-h-11 max-w-[calc(100vw-2.5rem)] gap-2 rounded-full px-3.5 py-2.5 shadow-lg"
+      style={{
+        bottom: 'max(5.25rem, calc(env(safe-area-inset-bottom) + 1.25rem))',
+        ...(lang === 'en'
+          ? { right: '1.25rem', left: 'auto' }
+          : { left: '1.25rem', right: 'auto' }),
+      }}
       aria-label={text.label}
     >
       <ShieldAlert className="h-5 w-5" aria-hidden="true" />
@@ -138,6 +143,7 @@ export default function EmergencyReadAccessLauncher() {
           {pendingCount}
         </span>
       )}
-    </Button>
+    </Button>,
+    document.body,
   );
 }
