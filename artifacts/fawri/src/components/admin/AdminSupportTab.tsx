@@ -16,6 +16,10 @@ import { getAdminAuthHeaders } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import AdminSupportImageButton from '@/components/support/AdminSupportImageButton';
+import PrivateSupportImage, {
+  type SupportImageAttachment,
+} from '@/components/support/PrivateSupportImage';
 
 export type AdminSupportTicketStatus =
   | 'open'
@@ -71,6 +75,7 @@ type AdminSupportMessage = {
   sender_name: string;
   body: string;
   created_at: string;
+  attachments?: SupportImageAttachment[];
 };
 
 export type AdminSupportTicket = {
@@ -398,6 +403,7 @@ export default function AdminSupportTab({
   const text = getAdminSupportText(lang);
   const dir = lang === 'en' ? 'ltr' : 'rtl';
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
+  const adminAuthHeaders = useMemo(() => getAdminAuthHeaders(), []);
   const [tickets, setTickets] = useState<AdminSupportTicket[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -962,7 +968,17 @@ export default function AdminSupportTab({
                           <strong>{message.sender_name}</strong>
                           <time dateTime={message.created_at}>{new Date(message.created_at).toLocaleString(locale)}</time>
                         </div>
-                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{message.body}</p>
+                        {message.body && (
+                          <p className="mt-2 whitespace-pre-wrap text-sm leading-6">{message.body}</p>
+                        )}
+                        {message.attachments?.map((attachment) => (
+                          <PrivateSupportImage
+                            key={attachment.id}
+                            attachment={attachment}
+                            authHeaders={adminAuthHeaders}
+                            className="mt-2"
+                          />
+                        ))}
                       </div>
                     </article>
                   );
@@ -972,6 +988,16 @@ export default function AdminSupportTab({
               {!isOwner && isAssignedToCurrentAdmin && ticketIsActive && (
                 <div className="shrink-0 border-t bg-background p-2.5">
                   <form onSubmit={sendReply} className="flex items-end gap-2">
+                    <AdminSupportImageButton<AdminSupportTicket>
+                      ticketId={selectedTicket.id}
+                      lang={lang}
+                      authHeaders={adminAuthHeaders}
+                      disabled={working !== null}
+                      onUploaded={(ticket) => replaceTicket(ticket)}
+                      onError={(message) => {
+                        if (message) toast.error(message);
+                      }}
+                    />
                     <Textarea
                       value={reply}
                       rows={1}
