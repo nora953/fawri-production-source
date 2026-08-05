@@ -79,6 +79,23 @@ const TEXT = {
     ticket: "التذكرة",
     subscription: "الاشتراك",
     readOnly: "محمي من الخادم للقراءة فقط",
+    plan: "الخطة",
+    subscriptionStatus: "حالة الاشتراك",
+    price: "السعر",
+    startDate: "تاريخ البداية",
+    endDate: "تاريخ الانتهاء",
+    replyLimit: "إجمالي حد الردود",
+    repliesUsed: "الردود المستخدمة",
+    repliesRemaining: "الردود المتبقية",
+    baseReplyLimit: "حد الردود الأساسية",
+    baseRepliesUsed: "الأساسية المستخدمة",
+    baseRepliesRemaining: "الأساسية المتبقية",
+    addonRepliesRemaining: "الردود الإضافية المتبقية",
+    emergencyDebt: "دين ردود الطوارئ",
+    autoReply: "الرد التلقائي",
+    enabled: "مفعّل",
+    disabled: "متوقف",
+    iqd: "د.ع",
   },
   ku: {
     title: "دانیشتنی تەنها خوێندنەوە",
@@ -107,6 +124,23 @@ const TEXT = {
     ticket: "تیکێت",
     subscription: "بەشداریکردن",
     readOnly: "لە سێرڤەرەوە تەنها بۆ خوێندنەوە پارێزراوە",
+    plan: "پلان",
+    subscriptionStatus: "دۆخی بەشداریکردن",
+    price: "نرخ",
+    startDate: "بەرواری دەستپێک",
+    endDate: "بەرواری کۆتایی",
+    replyLimit: "کۆی سنووری وەڵامەکان",
+    repliesUsed: "وەڵامە بەکارهاتووەکان",
+    repliesRemaining: "وەڵامە ماوەکان",
+    baseReplyLimit: "سنووری وەڵامە بنەڕەتییەکان",
+    baseRepliesUsed: "بنەڕەتییە بەکارهاتووەکان",
+    baseRepliesRemaining: "بنەڕەتییە ماوەکان",
+    addonRepliesRemaining: "وەڵامە زیادکراوە ماوەکان",
+    emergencyDebt: "قەرزی وەڵامی فریاکەوتن",
+    autoReply: "وەڵامی خۆکار",
+    enabled: "چالاکە",
+    disabled: "ناچالاکە",
+    iqd: "د.ع",
   },
   en: {
     title: "Read-only support session",
@@ -135,14 +169,48 @@ const TEXT = {
     ticket: "Ticket",
     subscription: "Subscription",
     readOnly: "Server-enforced read-only access",
+    plan: "Plan",
+    subscriptionStatus: "Subscription status",
+    price: "Price",
+    startDate: "Start date",
+    endDate: "Expiry date",
+    replyLimit: "Total reply limit",
+    repliesUsed: "Replies used",
+    repliesRemaining: "Replies remaining",
+    baseReplyLimit: "Base reply limit",
+    baseRepliesUsed: "Base replies used",
+    baseRepliesRemaining: "Base replies remaining",
+    addonRepliesRemaining: "Add-on replies remaining",
+    emergencyDebt: "Emergency reply debt",
+    autoReply: "Auto reply",
+    enabled: "Enabled",
+    disabled: "Disabled",
+    iqd: "IQD",
   },
 } as const;
 
 function valueText(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "✓" : "—";
-  if (typeof value === "object") return JSON.stringify(value);
+  if (typeof value === "object") return "—";
   return String(value);
+}
+
+function formatNumber(value: unknown, locale: string): string {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "—";
+  return new Intl.NumberFormat(locale).format(number);
+}
+
+function formatDate(value: unknown, locale: string): string {
+  if (typeof value !== "string" || !value) return "—";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "—";
+  return new Intl.DateTimeFormat(locale, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  }).format(date);
 }
 
 function RecordList({
@@ -165,9 +233,9 @@ function RecordList({
       {records.map((record, index) => (
         <article
           key={String(record.id || record.page_id || index)}
-          className="rounded-2xl border bg-card p-4 shadow-sm"
+          className="min-w-0 overflow-hidden rounded-2xl border bg-card p-4 shadow-sm"
         >
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {Object.entries(record)
               .filter(
                 ([key]) =>
@@ -181,11 +249,11 @@ function RecordList({
               )
               .slice(0, 18)
               .map(([key, value]) => (
-                <div key={key} className="rounded-xl bg-muted/35 px-3 py-2">
+                <div key={key} className="min-w-0 rounded-xl bg-muted/35 px-3 py-2">
                   <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                     {key.replaceAll("_", " ")}
                   </p>
-                  <p className="mt-1 break-words text-sm">{valueText(value)}</p>
+                  <p className="mt-1 break-all text-sm">{valueText(value)}</p>
                 </div>
               ))}
           </div>
@@ -209,6 +277,7 @@ export default function AdminSupportPreviewPage({
   const [nowMs, setNowMs] = useState(Date.now());
   const [tab, setTab] = useState<Tab>("overview");
   const text = lang === "en" ? TEXT.en : lang === "ku" ? TEXT.ku : TEXT.ar;
+  const locale = lang === "en" ? "en-US" : lang === "ku" ? "ckb-IQ" : "ar-IQ";
 
   const load = useCallback(
     async (silent = false) => {
@@ -352,6 +421,30 @@ export default function AdminSupportPreviewPage({
   }
 
   const merchant = snapshot.merchant;
+  const subscription = snapshot.subscription;
+  const subscriptionFields = subscription
+    ? [
+        [text.plan, valueText(subscription.plan_name)],
+        [text.subscriptionStatus, valueText(subscription.status)],
+        [text.price, `${formatNumber(subscription.price_iqd, locale)} ${text.iqd}`],
+        [text.startDate, formatDate(subscription.start_date, locale)],
+        [text.endDate, formatDate(subscription.expires_at, locale)],
+        [text.replyLimit, formatNumber(subscription.reply_limit, locale)],
+        [text.repliesUsed, formatNumber(subscription.replies_used, locale)],
+        [text.repliesRemaining, formatNumber(subscription.replies_remaining, locale)],
+        [text.baseReplyLimit, formatNumber(subscription.base_reply_limit, locale)],
+        [text.baseRepliesUsed, formatNumber(subscription.base_replies_used, locale)],
+        [text.baseRepliesRemaining, formatNumber(subscription.base_replies_remaining, locale)],
+        [text.addonRepliesRemaining, formatNumber(subscription.addon_replies_remaining, locale)],
+        ...(Number(subscription.emergency_debt) > 0
+          ? [[text.emergencyDebt, formatNumber(subscription.emergency_debt, locale)]]
+          : []),
+        [
+          text.autoReply,
+          subscription.auto_reply_enabled === true ? text.enabled : text.disabled,
+        ],
+      ]
+    : [];
   const sectionRecords =
     tab === "products"
       ? snapshot.products
@@ -368,7 +461,7 @@ export default function AdminSupportPreviewPage({
                 : [];
 
   return (
-    <div className="min-h-screen bg-muted/20" dir={dir}>
+    <div className="min-h-screen overflow-x-hidden bg-muted/20" dir={dir}>
       <header className="sticky top-0 z-40 border-b border-emerald-300 bg-background/95 shadow-sm backdrop-blur dark:border-emerald-900">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 py-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
@@ -404,8 +497,8 @@ export default function AdminSupportPreviewPage({
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl p-4 md:p-6">
-        <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+      <main className="mx-auto min-w-0 max-w-7xl p-4 md:p-6">
+        <div className="mb-4 flex max-w-full gap-2 overflow-x-auto pb-1">
           {tabs.map(({ id, label, icon: Icon, count }) => (
             <button
               key={id}
@@ -427,10 +520,10 @@ export default function AdminSupportPreviewPage({
         </div>
 
         {tab === "overview" ? (
-          <div className="grid gap-4 lg:grid-cols-3">
-            <section className="rounded-2xl border bg-card p-5 shadow-sm lg:col-span-2">
+          <div className="grid min-w-0 gap-4 lg:grid-cols-3">
+            <section className="min-w-0 rounded-2xl border bg-card p-5 shadow-sm lg:col-span-2">
               <h2 className="font-black">{text.store}</h2>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
                 {[
                   [text.store, merchant.store_name],
                   [text.owner, merchant.owner_name],
@@ -439,46 +532,43 @@ export default function AdminSupportPreviewPage({
                   [text.account, merchant.status],
                   [text.ticket, snapshot.ticket.id],
                 ].map(([label, value]) => (
-                  <div key={String(label)} className="rounded-xl bg-muted/35 p-3">
+                  <div key={String(label)} className="min-w-0 rounded-xl bg-muted/35 p-3">
                     <p className="text-xs text-muted-foreground">{String(label)}</p>
-                    <p className="mt-1 break-words font-bold">{valueText(value)}</p>
+                    <p className="mt-1 break-all font-bold">{valueText(value)}</p>
                   </div>
                 ))}
               </div>
             </section>
 
-            <section className="rounded-2xl border bg-card p-5 shadow-sm">
+            <section className="min-w-0 overflow-hidden rounded-2xl border bg-card p-5 shadow-sm">
               <h2 className="font-black">{text.subscription}</h2>
-              <div className="mt-4 space-y-2">
-                {snapshot.subscription ? (
-                  Object.entries(snapshot.subscription)
-                    .filter(([key]) => !key.includes("token"))
-                    .slice(0, 12)
-                    .map(([key, value]) => (
-                      <div
-                        key={key}
-                        className="flex items-start justify-between gap-3 border-b pb-2 text-sm"
-                      >
-                        <span className="text-muted-foreground">
-                          {key.replaceAll("_", " ")}
-                        </span>
-                        <strong className="text-end">{valueText(value)}</strong>
-                      </div>
-                    ))
+              <div className="mt-4 grid min-w-0 gap-2 sm:grid-cols-2 lg:grid-cols-1">
+                {subscription ? (
+                  subscriptionFields.map(([label, value]) => (
+                    <div
+                      key={String(label)}
+                      className="min-w-0 rounded-xl bg-muted/35 px-3 py-2"
+                    >
+                      <p className="text-xs text-muted-foreground">{String(label)}</p>
+                      <p className="mt-1 break-words text-sm font-bold" dir="auto">
+                        {String(value)}
+                      </p>
+                    </div>
+                  ))
                 ) : (
                   <p className="text-sm text-muted-foreground">{text.empty}</p>
                 )}
               </div>
             </section>
 
-            <section className="grid gap-3 sm:grid-cols-2 lg:col-span-3 lg:grid-cols-4">
+            <section className="grid min-w-0 gap-3 sm:grid-cols-2 lg:col-span-3 lg:grid-cols-4">
               {Object.entries(snapshot.counts).map(([key, value]) => (
                 <div
                   key={key}
-                  className="rounded-2xl border bg-card p-4 text-center shadow-sm"
+                  className="min-w-0 rounded-2xl border bg-card p-4 text-center shadow-sm"
                 >
                   <p className="text-2xl font-black tabular-nums">{value}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
+                  <p className="mt-1 break-words text-xs text-muted-foreground">
                     {key.replaceAll("_", " ")}
                   </p>
                 </div>
