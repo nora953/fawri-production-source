@@ -163,6 +163,23 @@ router.post("/start", (req: Request, res: Response) => {
   );
   if (existing) return res.json({ ok: true, session: existing, resumed: true });
 
+  const endedSession = previewDb.sessions.find((item) =>
+    item.request_id === inspectionRequest.id &&
+    item.admin_id === authenticated.admin.id &&
+    item.status === "ended",
+  );
+  if (endedSession) {
+    const endedAt = endedSession.ended_at || now();
+    inspectionRequest.status = "expired";
+    inspectionRequest.ended_at = endedAt;
+    inspectionRequest.expired_at = endedAt;
+    inspectionRequest.end_reason = endedSession.end_reason || "admin_terminated";
+    writeJson(AUTH_DB_PATH, authenticated.authDb);
+    return sendError(res, 409, "inspection approval has already been consumed", {
+      code: "INSPECTION_APPROVAL_CONSUMED",
+    });
+  }
+
   const startedAt = now();
   const sessionExpiresAt = new Date(Date.now() + PREVIEW_DURATION_MS).toISOString();
   const session: PreviewSessionRecord = {
