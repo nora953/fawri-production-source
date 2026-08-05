@@ -13,6 +13,10 @@ import {
 
 import { useI18n } from '@/lib/i18n';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import MerchantSupportImageButton from '@/components/support/MerchantSupportImageButton';
+import PrivateSupportImage, {
+  type SupportImageAttachment,
+} from '@/components/support/PrivateSupportImage';
 import {
   MERCHANT_REALTIME_EVENT,
   type MerchantRealtimeDetail,
@@ -62,6 +66,7 @@ type SupportMessage = {
   sender_name: string;
   body: string;
   created_at: string;
+  attachments?: SupportImageAttachment[];
 };
 
 type SupportTicket = {
@@ -443,6 +448,16 @@ export default function SupportPage() {
       closed: 'bg-red-100 text-red-900 dark:bg-red-950/70 dark:text-red-100',
     })[value];
 
+  const replaceTicket = (ticket: SupportTicket) => {
+    setTickets((current) =>
+      [ticket, ...current.filter((item) => item.id !== ticket.id)].sort(
+        (left, right) =>
+          new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
+      ),
+    );
+    setSelectedId(ticket.id);
+  };
+
   const respondToInspectionRequest = async (decision: 'approve' | 'reject') => {
     if (!selectedTicket || !latestInspectionRequest || latestInspectionRequest.status !== 'pending') return;
 
@@ -461,14 +476,7 @@ export default function SupportPage() {
       if (!response.ok || !data?.ok || !data.ticket) {
         throw new Error(data?.error || 'could not save inspection decision');
       }
-      const ticket = data.ticket as SupportTicket;
-      setTickets((current) =>
-        [ticket, ...current.filter((item) => item.id !== ticket.id)].sort(
-          (left, right) =>
-            new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
-        ),
-      );
-      setSelectedId(ticket.id);
+      replaceTicket(data.ticket as SupportTicket);
     } catch (error) {
       console.error('Could not save inspection decision:', error);
       setFormError(inspectionText.decisionError);
@@ -499,14 +507,7 @@ export default function SupportPage() {
         throw new Error(data?.error || 'could not terminate inspection session');
       }
 
-      const ticket = data.ticket as SupportTicket;
-      setTickets((current) =>
-        [ticket, ...current.filter((item) => item.id !== ticket.id)].sort(
-          (left, right) =>
-            new Date(right.updated_at).getTime() - new Date(left.updated_at).getTime(),
-        ),
-      );
-      setSelectedId(ticket.id);
+      replaceTicket(data.ticket as SupportTicket);
       setConfirmInspectionTermination(false);
     } catch (error) {
       console.error('Could not terminate inspection session:', error);
@@ -577,14 +578,7 @@ export default function SupportPage() {
       if (!response.ok || !data?.ok || !data.ticket) {
         throw new Error('could not send support reply');
       }
-      const ticket = data.ticket as SupportTicket;
-      setTickets((current) =>
-        [ticket, ...current.filter((item) => item.id !== ticket.id)].sort(
-          (left, right) =>
-            new Date(right.updated_at).getTime() -
-            new Date(left.updated_at).getTime(),
-        ),
-      );
+      replaceTicket(data.ticket as SupportTicket);
       setReply('');
       setFormError('');
     } catch (error) {
@@ -1010,9 +1004,18 @@ export default function SupportPage() {
                             {new Date(message.created_at).toLocaleString(locale)}
                           </time>
                         </div>
-                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6">
-                          {message.body}
-                        </p>
+                        {message.body && (
+                          <p className="mt-2 whitespace-pre-wrap text-sm leading-6">
+                            {message.body}
+                          </p>
+                        )}
+                        {message.attachments?.map((attachment) => (
+                          <PrivateSupportImage
+                            key={attachment.id}
+                            attachment={attachment}
+                            className="mt-2"
+                          />
+                        ))}
                       </div>
                     </article>
                   );
@@ -1022,6 +1025,16 @@ export default function SupportPage() {
               {selectedTicket.status !== 'closed' &&
                 selectedTicket.status !== 'resolved' && (
                   <form onSubmit={sendReply} className="flex shrink-0 gap-2 border-t p-3">
+                    <MerchantSupportImageButton<SupportTicket>
+                      ticketId={selectedTicket.id}
+                      lang={lang}
+                      disabled={replying}
+                      onUploaded={(ticket) => {
+                        replaceTicket(ticket);
+                        setFormError('');
+                      }}
+                      onError={setFormError}
+                    />
                     <textarea
                       value={reply}
                       rows={2}
