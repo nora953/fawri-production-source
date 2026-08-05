@@ -51,6 +51,8 @@ type Tab =
   | "training"
   | "channels";
 
+type UiLang = "ar" | "ku" | "en";
+
 const TEXT = {
   ar: {
     title: "جلسة قراءة فقط",
@@ -189,11 +191,118 @@ const TEXT = {
   },
 } as const;
 
+const PLAN_LABELS: Record<UiLang, Record<string, string>> = {
+  ar: {
+    silver: "الفضية",
+    gold: "الذهبية",
+    diamond: "الماسية",
+  },
+  ku: {
+    silver: "زیوی",
+    gold: "زێڕین",
+    diamond: "ئەڵماسی",
+  },
+  en: {
+    silver: "Silver",
+    gold: "Gold",
+    diamond: "Diamond",
+  },
+};
+
+const STATUS_LABELS: Record<UiLang, Record<string, string>> = {
+  ar: {
+    active: "نشط",
+    approved: "موافق عليه",
+    pending: "قيد الانتظار",
+    pending_activation: "بانتظار التفعيل",
+    expired: "منتهي",
+    suspended: "موقوف",
+    retention_suspended: "موقوف بسبب الاحتفاظ",
+    replies_exhausted: "نفدت الردود",
+    rejected: "مرفوض",
+    inactive: "غير نشط",
+    open: "مفتوح",
+    in_progress: "قيد المعالجة",
+    resolved: "تم الحل",
+    closed: "مغلق",
+  },
+  ku: {
+    active: "چالاک",
+    approved: "پەسەندکراو",
+    pending: "چاوەڕوان",
+    pending_activation: "چاوەڕوانی چالاککردن",
+    expired: "بەسەرچوو",
+    suspended: "ڕاگیراو",
+    retention_suspended: "بەهۆی پاراستنەوە ڕاگیراو",
+    replies_exhausted: "وەڵامەکان تەواوبوون",
+    rejected: "ڕەتکراوە",
+    inactive: "ناچالاک",
+    open: "کراوە",
+    in_progress: "لە ژێر چارەسەرکردندایە",
+    resolved: "چارەسەرکرا",
+    closed: "داخراو",
+  },
+  en: {
+    active: "Active",
+    approved: "Approved",
+    pending: "Pending",
+    pending_activation: "Pending activation",
+    expired: "Expired",
+    suspended: "Suspended",
+    retention_suspended: "Retention suspended",
+    replies_exhausted: "Replies exhausted",
+    rejected: "Rejected",
+    inactive: "Inactive",
+    open: "Open",
+    in_progress: "In progress",
+    resolved: "Resolved",
+    closed: "Closed",
+  },
+};
+
+const COUNT_LABELS: Record<UiLang, Record<string, string>> = {
+  ar: {
+    products: "المنتجات",
+    orders: "الطلبات",
+    conversations: "المحادثات",
+    saved_answers: "الردود المحفوظة",
+    training_requests: "طلبات التدريب",
+    learned_answers: "الردود المتعلّمة",
+    channels: "القنوات",
+  },
+  ku: {
+    products: "بەرهەمەکان",
+    orders: "داواکارییەکان",
+    conversations: "گفتوگۆکان",
+    saved_answers: "وەڵامە پاشەکەوتکراوەکان",
+    training_requests: "داواکارییەکانی ڕاهێنان",
+    learned_answers: "وەڵامە فێربووەکان",
+    channels: "کەناڵەکان",
+  },
+  en: {
+    products: "Products",
+    orders: "Orders",
+    conversations: "Conversations",
+    saved_answers: "Saved answers",
+    training_requests: "Training requests",
+    learned_answers: "Learned answers",
+    channels: "Channels",
+  },
+};
+
 function valueText(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "✓" : "—";
   if (typeof value === "object") return "—";
   return String(value);
+}
+
+function localizedValue(
+  value: unknown,
+  labels: Record<string, string>,
+): string {
+  const raw = valueText(value);
+  return labels[raw.toLowerCase()] || raw;
 }
 
 function formatNumber(value: unknown, locale: string): string {
@@ -276,8 +385,9 @@ export default function AdminSupportPreviewPage({
   const [ending, setEnding] = useState(false);
   const [nowMs, setNowMs] = useState(Date.now());
   const [tab, setTab] = useState<Tab>("overview");
-  const text = lang === "en" ? TEXT.en : lang === "ku" ? TEXT.ku : TEXT.ar;
-  const locale = lang === "en" ? "en-US" : lang === "ku" ? "ckb-IQ" : "ar-IQ";
+  const uiLang: UiLang = lang === "en" ? "en" : lang === "ku" ? "ku" : "ar";
+  const text = TEXT[uiLang];
+  const locale = uiLang === "en" ? "en-US" : uiLang === "ku" ? "ckb-IQ" : "ar-IQ";
 
   const load = useCallback(
     async (silent = false) => {
@@ -424,8 +534,11 @@ export default function AdminSupportPreviewPage({
   const subscription = snapshot.subscription;
   const subscriptionFields = subscription
     ? [
-        [text.plan, valueText(subscription.plan_name)],
-        [text.subscriptionStatus, valueText(subscription.status)],
+        [text.plan, localizedValue(subscription.plan_name, PLAN_LABELS[uiLang])],
+        [
+          text.subscriptionStatus,
+          localizedValue(subscription.status, STATUS_LABELS[uiLang]),
+        ],
         [text.price, `${formatNumber(subscription.price_iqd, locale)} ${text.iqd}`],
         [text.startDate, formatDate(subscription.start_date, locale)],
         [text.endDate, formatDate(subscription.expires_at, locale)],
@@ -529,7 +642,10 @@ export default function AdminSupportPreviewPage({
                   [text.owner, merchant.owner_name],
                   [text.phone, merchant.phone],
                   [text.activity, merchant.activity_type],
-                  [text.account, merchant.status],
+                  [
+                    text.account,
+                    localizedValue(merchant.status, STATUS_LABELS[uiLang]),
+                  ],
                   [text.ticket, snapshot.ticket.id],
                 ].map(([label, value]) => (
                   <div key={String(label)} className="min-w-0 rounded-xl bg-muted/35 p-3">
@@ -569,7 +685,7 @@ export default function AdminSupportPreviewPage({
                 >
                   <p className="text-2xl font-black tabular-nums">{value}</p>
                   <p className="mt-1 break-words text-xs text-muted-foreground">
-                    {key.replaceAll("_", " ")}
+                    {COUNT_LABELS[uiLang][key] || key.replaceAll("_", " ")}
                   </p>
                 </div>
               ))}
