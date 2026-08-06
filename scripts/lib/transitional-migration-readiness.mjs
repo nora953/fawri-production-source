@@ -65,17 +65,70 @@ function channelIdForPage(pageId) {
   return `legacy-meta-page:${pageId}`;
 }
 
-function redactPageMetadata(page) {
-  const safe = { ...asRecord(page) };
-  for (const key of [
-    "page_access_token",
-    "access_token",
-    "token",
-    "token_ciphertext",
-  ]) {
-    delete safe[key];
+function normalizedSecretKey(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_");
+}
+
+function isCredentialKey(key) {
+  const normalized = normalizedSecretKey(key);
+  return (
+    normalized === "token" ||
+    normalized.endsWith("_token") ||
+    normalized.includes("access_token") ||
+    normalized === "secret" ||
+    normalized.endsWith("_secret") ||
+    normalized === "password" ||
+    normalized.endsWith("_password")
+  );
+}
+
+function isSensitiveMetadataKey(key) {
+  const normalized = normalizedSecretKey(key);
+  return (
+    isCredentialKey(normalized) ||
+    normalized === "token_ciphertext" ||
+    normalized.endsWith("_ciphertext") ||
+    normalized === "private_key" ||
+    normalized.endsWith("_private_key")
+  );
+}
+
+function containsCredential(value, seen = new Set()) {
+  if (!value || typeof value !== "object") return false;
+  if (seen.has(value)) return false;
+  seen.add(value);
+  if (Array.isArray(value)) {
+    return value.some((item) => containsCredential(item, seen));
   }
-  return safe;
+  for (const [key, item] of Object.entries(value)) {
+    if (isCredentialKey(key) && text(item)) return true;
+    if (containsCredential(item, seen)) return true;
+  }
+  return false;
+}
+
+function redactSensitiveMetadata(value, seen = new Map()) {
+  if (Array.isArray(value)) {
+    if (seen.has(value)) return "[Circular]";
+    const result = [];
+    seen.set(value, result);
+    for (const item of value) {
+      result.push(redactSensitiveMetadata(item, seen));
+    }
+    return result;
+  }
+  if (!value || typeof value !== "object") return value;
+  if (seen.has(value)) return "[Circular]";
+  const result = {};
+  seen.set(value, result);
+  for (const [key, item] of Object.entries(value)) {
+    if (isSensitiveMetadataKey(key)) continue;
+    result[key] = redactSensitiveMetadata(item, seen);
+  }
+  return result;
 }
 
 function runtimePageEntries(runtime) {
@@ -141,9 +194,7 @@ function buildIndexes(sources, issues, targetRows) {
       continue;
     }
 
-    const hasPlaintextToken = Boolean(
-      text(page.page_access_token || page.access_token || page.token),
-    );
+    const hasPlaintextToken = containsCredential(page);
     if (hasPlaintextToken) {
       issues.push(
         issue("warning", "META_PAGE_TOKEN_REQUIRES_ENCRYPTED_MIGRATION", {
@@ -181,7 +232,7 @@ function buildIndexes(sources, issues, targetRows) {
       connected_at: page.connected_at || null,
       disconnected_at: page.disconnected_at || null,
       metadata: {
-        legacy: redactPageMetadata(page),
+        legacy: redactSensitiveMetadata(page),
         plaintext_token_present: hasPlaintextToken,
         token_migration_required: hasPlaintextToken,
       },
