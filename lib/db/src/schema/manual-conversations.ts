@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  foreignKey,
   index,
   pgEnum,
   pgTable,
@@ -23,17 +24,13 @@ export const manualReplyRequests = pgTable(
     merchantId: text("merchant_id")
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
-    conversationId: text("conversation_id")
-      .notNull()
-      .references(() => conversations.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").notNull(),
     idempotencyKey: text("idempotency_key").notNull(),
     textSha256: text("text_sha256").notNull(),
     status: manualReplyRequestStatusEnum("status")
       .notNull()
       .default("pending"),
-    messageId: text("message_id").references(() => messages.id, {
-      onDelete: "set null",
-    }),
+    messageId: text("message_id"),
     externalMessageId: text("external_message_id"),
     errorCode: text("error_code"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -44,6 +41,16 @@ export const manualReplyRequests = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    conversationTenantForeignKey: foreignKey({
+      name: "manual_reply_requests_conversation_merchant_fk",
+      columns: [table.conversationId, table.merchantId],
+      foreignColumns: [conversations.id, conversations.merchantId],
+    }).onDelete("cascade"),
+    messageTenantForeignKey: foreignKey({
+      name: "manual_reply_requests_message_conversation_merchant_fk",
+      columns: [table.messageId, table.conversationId, table.merchantId],
+      foreignColumns: [messages.id, messages.conversationId, messages.merchantId],
+    }).onDelete("restrict"),
     merchantIdempotencyUnique: uniqueIndex(
       "manual_reply_requests_merchant_idempotency_unique",
     ).on(table.merchantId, table.idempotencyKey),
