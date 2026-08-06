@@ -1,13 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { getCurrentMerchant, getConversations, saveConversations } from '@/lib/store';
-import { Conversation, Message } from '@/lib/types';
+import { getCurrentMerchant } from '@/lib/store';
+import { Conversation } from '@/lib/types';
 import { PlatformIcon } from '@/components/PlatformIcon';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, UserIcon, Bot, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+
+function makeIdempotencyKey() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `manual-reply:${crypto.randomUUID()}`;
+  }
+  return `manual-reply:${Date.now()}:${Math.random().toString(36).slice(2)}:${Math.random().toString(36).slice(2)}`;
+}
 
 export default function ConversationsPage() {
   const { t, dir, isRTL } = useI18n();
@@ -18,6 +25,8 @@ export default function ConversationsPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
 
   const getStatusLabel = (status: Conversation['status']) => {
     const statusLabels: Record<Conversation['status'], string> = {
@@ -35,43 +44,40 @@ export default function ConversationsPage() {
     if (!merchantId) return;
 
     try {
-      const response = await fetch(
-        `/api/conversations?merchantId=${encodeURIComponent(merchantId)}`
-      );
-
+      const response = await fetch('/api/conversations', {
+        headers: { Accept: 'application/json' },
+      });
       const data = await response.json().catch(() => null);
 
-      if (data?.ok && Array.isArray(data.conversations)) {
-        const apiConversations = data.conversations as Conversation[];
-
-        setConversations(apiConversations);
-
-        setActiveConvId(currentActiveId => {
-          if (
-            currentActiveId &&
-            apiConversations.some(conversation => conversation.id === currentActiveId)
-          ) {
-            return currentActiveId;
-          }
-
-          return null;
-        });
-
-        return;
+      if (!response.ok || !data?.ok || !Array.isArray(data.conversations)) {
+        throw new Error(data?.error || 'Could not load conversations');
       }
 
-      setConversations(getConversations(merchantId));
+      const apiConversations = data.conversations as Conversation[];
+      setConversations(apiConversations);
+      setLoadError('');
+      setActiveConvId(currentActiveId => {
+        if (
+          currentActiveId &&
+          apiConversations.some(conversation => conversation.id === currentActiveId)
+        ) {
+          return currentActiveId;
+        }
+        return null;
+      });
     } catch (error) {
       console.error('Failed to load conversations:', error);
-      setConversations(getConversations(merchantId));
+      setLoadError(
+        error instanceof Error ? error.message : 'Could not load conversations'
+      );
     }
   };
 
   useEffect(() => {
-    loadConversations();
+    void loadConversations();
 
     const interval = window.setInterval(() => {
-      loadConversations();
+      void loadConversations();
     }, 5000);
 
     return () => window.clearInterval(interval);
@@ -84,72 +90,85 @@ export default function ConversationsPage() {
 
   if (!merchant) return null;
 
-  const handleTakeOver = () => {
-    if (!activeConv) return;
-
-    const updated = conversations.map(conversation =>
-      conversation.id === activeConv.id
-        ? { ...conversation, assigned_to_human: true, status: 'manual' as const }
-        : conversation
+  const replaceConversation = (conversation: Conversation) => {
+    setConversations(current =>
+      current.map(item => (item.id === conversation.id ? conversation : item))
     );
-
-    setConversations(updated);
-    saveConversations(updated);
   };
 
-  const handleReturnToFawri = () => {
-    if (!activeConv) return;
-
-    const updated = conversations.map(conversation =>
-      conversation.id === activeConv.id
-        ? {
-            ...conversation,
-            assigned_to_human: false,
-            status: 'auto_replying' as const,
-          }
-        : conversation
-    );
-
-    setConversations(updated);
-    saveConversations(updated);
+  const runConversationAction = async (
+    action: 'takeover' | 'return-to-fawri'
+  ) => {
+    if (!activeConv || pendingAction) return;
+    const actionKey = `${action}:${activeConv.id}`;
+    setPendingAction(actionKey);
+    try {
+      const response = await fetch(
+        `/api/conversations/${encodeURIComponent(activeConv.id)}/${action}`,
+        { method: 'POST', headers: { Accept: 'application/json' } }
+      );
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !data.conversation) {
+        throw new Error(data?.error || 'Conversation update failed');
+      }
+      replaceConversation(data.conversation as Conversation);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Conversation update failed'
+      );
+    } finally {
+      setPendingAction(null);
+    }
   };
 
-  const handleSend = (event: React.FormEvent) => {
+  const handleTakeOver = () => void runConversationAction('takeover');
+
+  const handleReturnToFawri = () =>
+    void runConversationAction('return-to-fawri');
+
+  const handleSend = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!activeConv || !replyText.trim()) return;
+    const text = replyText.trim();
+    if (!activeConv || !text || pendingAction) return;
 
-    const newMessage: Message = {
-      id: `m-${Date.now()}`,
-      conversation_id: activeConv.id,
-      sender: 'merchant',
-      text: replyText.trim(),
-      created_at: new Date().toISOString(),
-      counted_as_auto_reply: false,
-    };
-
-    const updated = conversations.map(conversation => {
-      if (conversation.id === activeConv.id) {
-        return {
-          ...conversation,
-          messages: [...conversation.messages, newMessage],
-          updated_at: new Date().toISOString(),
-        };
+    const actionKey = `send:${activeConv.id}`;
+    setPendingAction(actionKey);
+    try {
+      const response = await fetch(
+        `/api/conversations/${encodeURIComponent(activeConv.id)}/messages`,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            'Idempotency-Key': makeIdempotencyKey(),
+          },
+          body: JSON.stringify({ text }),
+        }
+      );
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !data.conversation || !data.message) {
+        throw new Error(data?.error || 'Manual reply delivery failed');
       }
 
-      return conversation;
-    });
-
-    setConversations(updated);
-    saveConversations(updated);
-    setReplyText('');
-
-    toast.info(t.conversations_manualReplySaved);
+      replaceConversation(data.conversation as Conversation);
+      setReplyText('');
+      toast.success(t.conversations_manualReplySaved);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Manual reply delivery failed'
+      );
+    } finally {
+      setPendingAction(null);
+    }
   };
 
   const handleSaveAsAnswer = () => {
     toast.success(t.conversations_comingSoon);
   };
+
+  const actionPending = Boolean(pendingAction);
 
   return (
     <div className="min-h-screen bg-background p-4 pb-28" dir={dir}>
@@ -163,6 +182,11 @@ export default function ConversationsPage() {
             <h1 className="text-2xl font-extrabold tracking-tight">
               {t.conversations_title}
             </h1>
+            {loadError ? (
+              <p className="mt-2 text-xs font-medium text-destructive">
+                {loadError}
+              </p>
+            ) : null}
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto">
@@ -264,11 +288,20 @@ export default function ConversationsPage() {
 
                 <div className="shrink-0">
                   {activeConv.assigned_to_human ? (
-                    <Button variant="outline" size="sm" onClick={handleReturnToFawri}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleReturnToFawri}
+                      disabled={actionPending}
+                    >
                       {t.return_to_fawri}
                     </Button>
                   ) : (
-                    <Button size="sm" onClick={handleTakeOver}>
+                    <Button
+                      size="sm"
+                      onClick={handleTakeOver}
+                      disabled={actionPending}
+                    >
                       {t.take_over}
                     </Button>
                   )}
@@ -337,12 +370,14 @@ export default function ConversationsPage() {
                       onChange={event => setReplyText(event.target.value)}
                       placeholder={t.conversations_typeMessage}
                       className="h-12 flex-1 rounded-xl"
+                      disabled={actionPending}
                     />
 
                     <Button
                       type="submit"
                       size="icon"
                       className="h-12 w-12 shrink-0 rounded-xl"
+                      disabled={actionPending || !replyText.trim()}
                     >
                       <Send className="h-5 w-5" />
                     </Button>
