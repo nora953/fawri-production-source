@@ -68,6 +68,7 @@ function mapAccount(record, index) {
 function mapMerchant(record, accountId) {
   return {
     id: accountId,
+    account_id: accountId,
     owner_name: text(record?.owner_name),
     store_name: text(record?.store_name),
     activity_type: text(record?.activity_type),
@@ -93,7 +94,11 @@ function mapMerchant(record, accountId) {
 
 function mapAdminProfile(record, accountId) {
   return {
+    id: accountId,
     account_id: accountId,
+    display_name:
+      text(record?.display_name || record?.owner_name || record?.store_name) ||
+      accountId,
     role: text(record?.admin_role) || "assistant_admin",
     enabled: record?.admin_enabled !== false,
     must_change_password: record?.must_change_password === true,
@@ -147,8 +152,12 @@ function planMigration() {
       errors.push({ code: "DUPLICATE_ACCOUNT_ID", id: account.id });
       return;
     }
-    if (!account.phone) warnings.push({ code: "ACCOUNT_PHONE_MISSING", id: account.id });
-    if (!account.password_hash) warnings.push({ code: "PASSWORD_HASH_MISSING", id: account.id });
+    if (!account.phone) {
+      warnings.push({ code: "ACCOUNT_PHONE_MISSING", id: account.id });
+    }
+    if (!account.password_hash) {
+      warnings.push({ code: "PASSWORD_HASH_MISSING", id: account.id });
+    }
     accountIds.add(account.id);
     rows.accounts.push(account);
 
@@ -181,7 +190,9 @@ function planMigration() {
       price_iqd: Number(item?.price_iqd || 0),
       billing_anchor_day: Number(item?.billing_anchor_day || 1),
       base_reply_limit: Number(item?.base_reply_limit || item?.reply_limit || 0),
-      base_replies_used: Number(item?.base_replies_used || item?.replies_used || 0),
+      base_replies_used: Number(
+        item?.base_replies_used || item?.replies_used || 0,
+      ),
       base_replies_remaining: Number(item?.base_replies_remaining || 0),
       addon_replies_remaining: Number(item?.addon_replies_remaining || 0),
       emergency_credit_amount: Number(item?.emergency_credit_amount || 0),
@@ -199,29 +210,107 @@ function planMigration() {
     asArray(source).forEach((item, index) => {
       const merchantId = text(item?.merchant_id || item?.merchantId);
       if (merchantId && !merchantIds.has(merchantId)) {
-        errors.push({ code: "ORPHAN_MERCHANT_REFERENCE", table: target, merchant_id: merchantId, id: item?.id });
+        errors.push({
+          code: "ORPHAN_MERCHANT_REFERENCE",
+          table: target,
+          merchant_id: merchantId,
+          id: item?.id,
+        });
       }
       rows[target].push(mapper(item, index, merchantId));
     });
   };
 
-  mapMerchantScoped(runtime.products, "products", (item, index, merchantId) => ({
-    id: rowId("product", item?.id, index), merchant_id: merchantId,
-    name: text(item?.name), description: text(item?.description) || null,
-    price_iqd: Number(item?.price_iqd || item?.price || 0), active: item?.active !== false,
-    metadata: { legacy: item },
-  }));
-  mapMerchantScoped(runtime.conversations, "conversations", (item, index, merchantId) => ({
-    id: rowId("conversation", item?.id, index), merchant_id: merchantId,
-    external_conversation_id: text(item?.external_conversation_id) || null,
-    customer_external_id: text(item?.customer_external_id || item?.customerId),
-    customer_name: text(item?.customer_name) || null,
-    status: text(item?.status) || "auto_replying", metadata: { legacy: item },
-  }));
+  mapMerchantScoped(
+    runtime.products,
+    "products",
+    (item, index, merchantId) => ({
+      id: rowId("product", item?.id, index),
+      merchant_id: merchantId,
+      name: text(item?.name),
+      description: text(item?.description) || null,
+      original_price_iqd: Number(
+        item?.original_price_iqd ?? item?.price_iqd ?? item?.price ?? 0,
+      ),
+      current_price_iqd: Number(
+        item?.current_price_iqd ??
+          item?.sale_price_iqd ??
+          item?.price_iqd ??
+          item?.price ??
+          0,
+      ),
+      quantity: Number(item?.quantity ?? item?.stock ?? 0),
+      status:
+        text(item?.status) ||
+        (item?.active === false ? "inactive" : "available"),
+      allow_fawri_reply: item?.allow_fawri_reply !== false,
+      metadata: { legacy: item },
+    }),
+  );
+
+  mapMerchantScoped(
+    runtime.metaPages || runtime.meta_pages,
+    "merchant_channels",
+    (item, index, merchantId) => ({
+      id: rowId("channel", item?.id, index),
+      merchant_id: merchantId,
+      platform: text(item?.platform) || "messenger",
+      status: text(item?.status) || "connected",
+      external_account_id:
+        text(item?.external_account_id || item?.page_id) || null,
+      external_account_name:
+        text(
+          item?.external_account_name || item?.page_name || item?.display_name,
+        ) || null,
+      page_id: text(item?.page_id) || null,
+      page_name: text(item?.page_name || item?.display_name) || null,
+      metadata: { legacy: item },
+    }),
+  );
+
+  const resolveConversationChannelId = (item, merchantId) => {
+    const explicitId = text(item?.channel_id || item?.channelId);
+    if (explicitId) return explicitId;
+
+    const platform = text(
+      item?.platform || item?.channel || item?.source_channel,
+    );
+    const merchantChannels = rows.merchant_channels.filter(
+      (channel) => channel.merchant_id === merchantId,
+    );
+    if (platform) {
+      const platformMatch = merchantChannels.find(
+        (channel) => channel.platform === platform,
+      );
+      if (platformMatch) return platformMatch.id;
+    }
+    return merchantChannels.length === 1 ? merchantChannels[0].id : "";
+  };
+
+  mapMerchantScoped(
+    runtime.conversations,
+    "conversations",
+    (item, index, merchantId) => ({
+      id: rowId("conversation", item?.id, index),
+      merchant_id: merchantId,
+      channel_id: resolveConversationChannelId(item, merchantId),
+      external_conversation_id:
+        text(item?.external_conversation_id) || null,
+      customer_external_id: text(
+        item?.customer_external_id || item?.customerId,
+      ),
+      customer_name: text(item?.customer_name) || null,
+      status: text(item?.status) || "auto_replying",
+      metadata: { legacy: item },
+    }),
+  );
+
   mapMerchantScoped(runtime.orders, "orders", (item, index, merchantId) => ({
-    id: rowId("order", item?.id, index), merchant_id: merchantId,
+    id: rowId("order", item?.id, index),
+    merchant_id: merchantId,
     conversation_id: text(item?.conversation_id) || null,
-    customer_name: text(item?.customer_name), customer_phone: text(item?.customer_phone) || null,
+    customer_name: text(item?.customer_name),
+    customer_phone: text(item?.customer_phone) || null,
     customer_address: text(item?.customer_address) || null,
     status: text(item?.status) || "pending_confirmation",
     payment_method: text(item?.payment_method) || "cash_on_delivery",
@@ -230,119 +319,246 @@ function planMigration() {
     source_channel: text(item?.source_channel || item?.channel) || "unknown",
     metadata: { legacy: item },
   }));
-  mapMerchantScoped(runtime.orderDrafts || runtime.order_drafts, "order_drafts", (item, index, merchantId) => ({
-    id: rowId("order-draft", item?.id, index), merchant_id: merchantId,
-    conversation_id: text(item?.conversation_id), customer_external_id: text(item?.customer_external_id),
-    awaiting_field: text(item?.awaiting_field), draft_data: item?.draft_data || item,
-    expires_at: item?.expires_at || null,
-  }));
-  mapMerchantScoped(runtime.metaPages || runtime.meta_pages, "merchant_channels", (item, index, merchantId) => ({
-    id: rowId("channel", item?.id, index), merchant_id: merchantId,
-    platform: text(item?.platform) || "messenger", status: text(item?.status) || "connected",
-    external_account_id: text(item?.page_id || item?.external_account_id),
-    display_name: text(item?.page_name || item?.display_name) || null,
-    metadata: { legacy: item },
-  }));
 
-  mapMerchantScoped(sources.savedAnswers.value?.answers, "saved_answers", (item, index, merchantId) => ({
-    id: rowId("saved-answer", item?.id, index), merchant_id: merchantId,
-    category: text(item?.category) || "custom", question_pattern: text(item?.question_pattern),
-    normalized_question_pattern: text(item?.question_pattern).toLowerCase(),
-    answer_text: text(item?.answer_text), product_id: text(item?.product_id) || null,
-    language: normalizeLanguage(item?.language), approved: item?.approved !== false, active: item?.active !== false,
-    metadata: { legacy: item },
-  }));
-  mapMerchantScoped(sources.trainingRequests.value?.requests, "training_requests", (item, index, merchantId) => ({
-    id: rowId("training", item?.id, index), merchant_id: merchantId,
-    customer_external_id: text(item?.customerId) || null, customer_message: text(item?.customerMessage),
-    normalized_message: text(item?.normalizedMessage), detected_intent: text(item?.detectedIntent),
-    detected_language: text(item?.detectedLanguage), reason_code: text(item?.reason),
-    suggested_reply: item?.suggestedReply || null, status: text(item?.status) || "pending_merchant_reply",
-    metadata: { legacy: item },
-  }));
-  mapMerchantScoped(sources.learnedAnswers.value?.answers, "learned_answers", (item, index, merchantId) => ({
-    id: rowId("learned", item?.id, index), merchant_id: merchantId,
-    training_request_id: text(item?.trainingRequestId) || null, intent: text(item?.intent),
-    language: text(item?.language), examples: asArray(item?.examples), keywords: asArray(item?.keywords),
-    reply: text(item?.reply), source: text(item?.source) || "merchant_approved",
-    confidence: Number(item?.confidence || 0), safe_to_auto_reply: item?.safeToAutoReply === true,
-    requires_human_approval: item?.requiresHumanApproval !== false, conditions: item?.conditions || {},
-  }));
+  mapMerchantScoped(
+    runtime.orderDrafts || runtime.order_drafts,
+    "order_drafts",
+    (item, index, merchantId) => ({
+      id: rowId("order-draft", item?.id, index),
+      merchant_id: merchantId,
+      conversation_id: text(item?.conversation_id),
+      customer_external_id: text(item?.customer_external_id),
+      awaiting_field: text(item?.awaiting_field),
+      draft_data: item?.draft_data || item,
+      expires_at: item?.expires_at || null,
+    }),
+  );
+
+  mapMerchantScoped(
+    sources.savedAnswers.value?.answers,
+    "saved_answers",
+    (item, index, merchantId) => ({
+      id: rowId("saved-answer", item?.id, index),
+      merchant_id: merchantId,
+      category: text(item?.category) || "custom",
+      question_pattern: text(item?.question_pattern),
+      normalized_question_pattern: text(item?.question_pattern).toLowerCase(),
+      answer_text: text(item?.answer_text),
+      product_id: text(item?.product_id) || null,
+      language: normalizeLanguage(item?.language),
+      approved: item?.approved !== false,
+      active: item?.active !== false,
+      metadata: { legacy: item },
+    }),
+  );
+
+  mapMerchantScoped(
+    sources.trainingRequests.value?.requests,
+    "training_requests",
+    (item, index, merchantId) => ({
+      id: rowId("training", item?.id, index),
+      merchant_id: merchantId,
+      customer_external_id: text(item?.customerId) || null,
+      customer_message: text(item?.customerMessage),
+      normalized_message: text(item?.normalizedMessage),
+      detected_intent: text(item?.detectedIntent),
+      detected_language: text(item?.detectedLanguage),
+      reason_code: text(item?.reason),
+      suggested_reply: item?.suggestedReply || null,
+      status: text(item?.status) || "pending_merchant_reply",
+      metadata: { legacy: item },
+    }),
+  );
+
+  mapMerchantScoped(
+    sources.learnedAnswers.value?.answers,
+    "learned_answers",
+    (item, index, merchantId) => ({
+      id: rowId("learned", item?.id, index),
+      merchant_id: merchantId,
+      training_request_id: text(item?.trainingRequestId) || null,
+      intent: text(item?.intent),
+      language: text(item?.language),
+      examples: asArray(item?.examples),
+      keywords: asArray(item?.keywords),
+      reply: text(item?.reply),
+      source: text(item?.source) || "merchant_approved",
+      confidence: Number(item?.confidence || 0),
+      safe_to_auto_reply: item?.safeToAutoReply === true,
+      requires_human_approval: item?.requiresHumanApproval !== false,
+      conditions: item?.conditions || {},
+    }),
+  );
 
   asArray(auth.support_tickets).forEach((ticket, ticketIndex) => {
     const merchantId = text(ticket?.merchant_id);
+    const ticketId = rowId("support-ticket", ticket?.id, ticketIndex);
     rows.support_tickets.push({
-      id: rowId("support-ticket", ticket?.id, ticketIndex), merchant_id: merchantId,
-      subject: text(ticket?.subject), category: text(ticket?.category),
-      status: text(ticket?.status) || "open", assigned_admin_account_id: text(ticket?.assigned_admin_id) || null,
-      waiting_on: text(ticket?.waiting_on) || null, metadata: { legacy: ticket },
+      id: ticketId,
+      merchant_id: merchantId,
+      subject: text(ticket?.subject),
+      category: text(ticket?.category),
+      status: text(ticket?.status) || "open",
+      assigned_admin_account_id: text(ticket?.assigned_admin_id) || null,
+      waiting_on: text(ticket?.waiting_on) || null,
+      metadata: { legacy: ticket },
     });
+
     asArray(ticket?.messages).forEach((message, messageIndex) => {
       rows.support_messages.push({
-        id: rowId(`support-message-${ticketIndex + 1}`, message?.id, messageIndex),
-        ticket_id: rowId("support-ticket", ticket?.id, ticketIndex), merchant_id: merchantId,
-        sender_type: text(message?.sender_type) || "system", sender_account_id: text(message?.sender_id) || null,
-        sender_name_snapshot: text(message?.sender_name), body: text(message?.body), created_at: message?.created_at || null,
+        id: rowId(
+          `support-message-${ticketIndex + 1}`,
+          message?.id,
+          messageIndex,
+        ),
+        ticket_id: ticketId,
+        merchant_id: merchantId,
+        sender_type: text(message?.sender_type) || "system",
+        sender_account_id: text(message?.sender_id) || null,
+        sender_name_snapshot: text(message?.sender_name),
+        body: text(message?.body),
+        created_at: message?.created_at || null,
       });
     });
+
     asArray(ticket?.inspection_requests).forEach((request, requestIndex) => {
       rows.support_inspection_requests.push({
-        id: rowId(`inspection-${ticketIndex + 1}`, request?.id, requestIndex),
-        ticket_id: rowId("support-ticket", ticket?.id, ticketIndex), merchant_id: merchantId,
-        admin_account_id: text(request?.admin_id), mode: text(request?.mode) || "independent_read_only",
-        reason: text(request?.reason), status: text(request?.status) || "pending",
+        id: rowId(
+          `inspection-${ticketIndex + 1}`,
+          request?.id,
+          requestIndex,
+        ),
+        ticket_id: ticketId,
+        merchant_id: merchantId,
+        admin_account_id: text(request?.admin_id),
+        mode: text(request?.mode) || "independent_read_only",
+        reason: text(request?.reason),
+        status: text(request?.status) || "pending",
         consent_decision: text(request?.consent_decision) || null,
-        request_expires_at: request?.request_expires_at || null, metadata: { legacy: request },
+        request_expires_at: request?.request_expires_at || null,
+        metadata: { legacy: request },
       });
     });
   });
 
   asArray(sources.supportPreview.value?.sessions).forEach((item, index) => {
     rows.support_preview_sessions.push({
-      id: rowId("support-preview", item?.id, index), request_id: text(item?.request_id),
-      ticket_id: text(item?.ticket_id), merchant_id: text(item?.merchant_id),
-      admin_account_id: text(item?.admin_id), status: text(item?.status) || "active",
-      started_at: item?.started_at || null, expires_at: item?.expires_at || null,
-      last_seen_at: item?.last_seen_at || null, ended_at: item?.ended_at || null,
-      end_reason: text(item?.end_reason) || null, viewed_sections: asArray(item?.viewed_sections),
+      id: rowId("support-preview", item?.id, index),
+      request_id: text(item?.request_id),
+      ticket_id: text(item?.ticket_id),
+      merchant_id: text(item?.merchant_id),
+      admin_account_id: text(item?.admin_id),
+      status: text(item?.status) || "active",
+      started_at: item?.started_at || null,
+      expires_at: item?.expires_at || null,
+      last_seen_at: item?.last_seen_at || null,
+      ended_at: item?.ended_at || null,
+      end_reason: text(item?.end_reason) || null,
+      viewed_sections: asArray(item?.viewed_sections),
     });
   });
 
   const emergency = sources.emergency.value || {};
-  asArray(emergency.authorizations).forEach((item) => rows.emergency_authorizations.push({
-    admin_account_id: text(item?.admin_id), can_request: item?.can_request === true,
-    can_critical_self_activate: item?.can_critical_self_activate === true,
-    granted_by_owner_account_id: text(item?.granted_by_owner_id),
-    granted_at: item?.granted_at || null, updated_at: item?.updated_at || null, revoked_at: item?.revoked_at || null,
-  }));
-  mapMerchantScoped(emergency.requests, "emergency_access_requests", (item, index, merchantId) => ({
-    id: rowId("emergency-request", item?.id, index), merchant_id: merchantId,
-    requested_by_admin_account_id: text(item?.requested_by_admin_id), incident_reference: text(item?.incident_reference),
-    severity: text(item?.severity), reason: text(item?.reason), duration_minutes: Number(item?.duration_minutes || 15),
-    status: text(item?.status) || "pending", activation_mode: text(item?.activation_mode) || "owner_approval",
-    metadata: { legacy: item },
-  }));
-  asArray(emergency.owner_alerts).forEach((item, index) => rows.emergency_owner_alerts.push({
-    id: rowId("emergency-alert", item?.id, index), request_id: text(item?.request_id), type: text(item?.type),
-    title_key: "emergency.owner_alert", details: { legacy_title: item?.title, legacy_details: item?.details },
-    read_at: item?.read_at || null, created_at: item?.created_at || null,
-  }));
-  mapMerchantScoped(emergency.merchant_notices, "emergency_merchant_notices", (item, index, merchantId) => ({
-    id: rowId("emergency-notice", item?.id, index), request_id: text(item?.request_id), merchant_id: merchantId,
-    incident_reference: text(item?.incident_reference), activation_mode: text(item?.activation_mode),
-    started_at: item?.started_at || null, ended_at: item?.ended_at || null,
-    read_at: item?.read_at || null, created_at: item?.created_at || null,
-  }));
-  asArray(emergency.audit_events).forEach((item, index) => rows.audit_events.push({
-    id: rowId("audit", item?.id, index), actor_kind: item?.actor_admin_id ? "account" : "system",
-    actor_account_id: text(item?.actor_admin_id) || null, merchant_id: text(item?.merchant_id) || null,
-    action_type: text(item?.event_type), entity_type: "emergency_access_request",
-    entity_id: text(item?.request_id) || null, metadata: item?.metadata || {},
-    previous_hash: text(item?.previous_hash) || null, event_hash: text(item?.hash) || null,
-    created_at: item?.created_at || null,
-  }));
+  asArray(emergency.authorizations).forEach((item) => {
+    rows.emergency_authorizations.push({
+      admin_account_id: text(item?.admin_id),
+      can_request: item?.can_request === true,
+      can_critical_self_activate: item?.can_critical_self_activate === true,
+      granted_by_owner_account_id: text(item?.granted_by_owner_id),
+      granted_at: item?.granted_at || null,
+      updated_at: item?.updated_at || null,
+      revoked_at: item?.revoked_at || null,
+    });
+  });
 
-  const tableCounts = Object.fromEntries(Object.entries(rows).map(([name, values]) => [name, values.length]));
+  mapMerchantScoped(
+    emergency.requests,
+    "emergency_access_requests",
+    (item, index, merchantId) => ({
+      id: rowId("emergency-request", item?.id, index),
+      merchant_id: merchantId,
+      requested_by_admin_account_id: text(item?.requested_by_admin_id),
+      incident_reference: text(item?.incident_reference),
+      severity: text(item?.severity),
+      reason: text(item?.reason),
+      duration_minutes: Number(item?.duration_minutes || 15),
+      read_only: item?.read_only !== false,
+      status: text(item?.status) || "pending",
+      activation_mode:
+        text(item?.activation_mode) || "owner_approval",
+      reviewed_by_owner_account_id:
+        text(item?.reviewed_by_owner_id) || null,
+      admin_session_id: text(item?.admin_session_id) || null,
+      request_expires_at: item?.request_expires_at || null,
+      reviewed_at: item?.reviewed_at || null,
+      started_at: item?.started_at || null,
+      expires_at: item?.expires_at || null,
+      ended_at: item?.ended_at || null,
+      end_reason: text(item?.end_reason) || null,
+      first_viewed_at: item?.first_viewed_at || null,
+      viewed_sections: asArray(item?.viewed_sections),
+      created_at: item?.requested_at || item?.created_at || null,
+      updated_at:
+        item?.ended_at ||
+        item?.reviewed_at ||
+        item?.requested_at ||
+        item?.created_at ||
+        null,
+    }),
+  );
+
+  asArray(emergency.owner_alerts).forEach((item, index) => {
+    rows.emergency_owner_alerts.push({
+      id: rowId("emergency-alert", item?.id, index),
+      request_id: text(item?.request_id),
+      type: text(item?.type),
+      title_key: "emergency.owner_alert",
+      details: {
+        legacy_title: item?.title,
+        legacy_details: item?.details,
+      },
+      read_at: item?.read_at || null,
+      created_at: item?.created_at || null,
+    });
+  });
+
+  mapMerchantScoped(
+    emergency.merchant_notices,
+    "emergency_merchant_notices",
+    (item, index, merchantId) => ({
+      id: rowId("emergency-notice", item?.id, index),
+      request_id: text(item?.request_id),
+      merchant_id: merchantId,
+      accessed_by_admin_account_id:
+        text(item?.accessed_by_admin_id) || null,
+      incident_reference: text(item?.incident_reference),
+      activation_mode: text(item?.activation_mode),
+      started_at: item?.started_at || null,
+      ended_at: item?.ended_at || null,
+      read_at: item?.read_at || null,
+      created_at: item?.created_at || null,
+    }),
+  );
+
+  asArray(emergency.audit_events).forEach((item, index) => {
+    rows.audit_events.push({
+      id: rowId("audit", item?.id, index),
+      actor_kind: item?.actor_admin_id ? "account" : "system",
+      actor_account_id: text(item?.actor_admin_id) || null,
+      merchant_id: text(item?.merchant_id) || null,
+      action_type: text(item?.event_type),
+      entity_type: "emergency_access_request",
+      entity_id: text(item?.request_id) || null,
+      metadata: item?.metadata || {},
+      previous_hash: text(item?.previous_hash) || null,
+      event_hash: text(item?.hash) || null,
+      created_at: item?.created_at || null,
+    });
+  });
+
+  const tableCounts = Object.fromEntries(
+    Object.entries(rows).map(([name, values]) => [name, values.length]),
+  );
   return {
     ok: errors.length === 0,
     mode: "dry_run",
@@ -351,11 +567,25 @@ function planMigration() {
     generated_at: now(),
     data_dir: dataDir,
     source_files: Object.fromEntries(
-      Object.entries(sources).map(([key, source]) => [key, {
-        file: FILES[key], exists: source.exists, bytes: source.bytes || 0, sha256: source.sha256 || null,
-      }]),
+      Object.entries(sources).map(([key, source]) => [
+        key,
+        {
+          file: FILES[key],
+          exists: source.exists,
+          bytes: source.bytes || 0,
+          sha256: source.sha256 || null,
+        },
+      ]),
     ),
-    summary: { tables: Object.keys(rows).length, planned_rows: Object.values(tableCounts).reduce((a, b) => a + b, 0), errors: errors.length, warnings: warnings.length },
+    summary: {
+      tables: Object.keys(rows).length,
+      planned_rows: Object.values(tableCounts).reduce(
+        (total, count) => total + count,
+        0,
+      ),
+      errors: errors.length,
+      warnings: warnings.length,
+    },
     table_counts: tableCounts,
     errors,
     warnings,
@@ -367,6 +597,17 @@ try {
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   process.exitCode = report.ok ? 0 : 2;
 } catch (error) {
-  process.stderr.write(`${JSON.stringify({ ok: false, mode: "dry_run", writes_performed: false, fatal_error: String(error) }, null, 2)}\n`);
+  process.stderr.write(
+    `${JSON.stringify(
+      {
+        ok: false,
+        mode: "dry_run",
+        writes_performed: false,
+        fatal_error: String(error),
+      },
+      null,
+      2,
+    )}\n`,
+  );
   process.exitCode = 1;
 }
