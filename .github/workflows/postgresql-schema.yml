@@ -92,6 +92,7 @@ jobs:
           node --check ./scripts/tests/plan-postgresql-contract.test.mjs
           node --check ./scripts/tests/validated-migration-transitional-gate.test.mjs
           node --check ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs
+          node --check ./scripts/tests/fixtures/create-transitional-migration-fixture.mjs
           node --check ./lib/db/scripts/lib/migration-write.mjs
           node --check ./lib/db/scripts/smoke-migration.mjs
           node --check ./lib/db/scripts/rollback-migration.mjs
@@ -124,6 +125,7 @@ jobs:
           fixture_dir="$(mktemp -d)"
           trap 'rm -rf "$fixture_dir"' EXIT
           node ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs "$fixture_dir"
+          node ./scripts/tests/fixtures/create-transitional-migration-fixture.mjs "$fixture_dir"
           node ./lib/db/scripts/rollback-migration.mjs "$fixture_dir"
 
       - name: Commit validated plan, reconcile values, and clean up
@@ -133,6 +135,7 @@ jobs:
           fixture_dir="$(mktemp -d)"
           trap 'rm -rf "$fixture_dir"' EXIT
           node ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs "$fixture_dir"
+          node ./scripts/tests/fixtures/create-transitional-migration-fixture.mjs "$fixture_dir"
           node ./lib/db/scripts/commit-migration.mjs "$fixture_dir"
 
       - name: Upload generated migration
