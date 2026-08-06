@@ -5,6 +5,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
+import conversationOperationsRouter from "./routes/conversation-operations";
 import retentionGuardRouter from "./routes/retention-guard";
 import supportPreviewRouter from "./routes/support-preview";
 import supportImagesRouter from "./routes/support-images";
@@ -18,6 +19,7 @@ import {
   enforceMerchantOperationalAccess,
 } from "./middleware/merchantOperationalAccess";
 import { enforceMerchantWebhookOperationalAccess } from "./middleware/merchantWebhookAccess";
+import { enforceManualConversationWebhookAccess } from "./middleware/manualConversationWebhookAccess";
 import { enforceMerchantWebhookSubscriptionAccess } from "./middleware/merchantWebhookSubscriptionAccess";
 import { enqueueMetaWebhookEvents } from "./middleware/metaWebhookQueueIngress";
 import {
@@ -69,6 +71,7 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(enforceMetaWebhookSecurity);
 app.use(enforceMerchantWebhookOperationalAccess);
+app.use(enforceManualConversationWebhookAccess);
 app.use(enqueueMetaWebhookEvents);
 app.use(enforceMerchantWebhookSubscriptionAccess);
 
@@ -119,6 +122,7 @@ app.use(
   emergencyMerchantNoticesRouter,
 );
 app.use("/api/auth/admin/support-preview", supportPreviewRouter);
+app.use("/api", conversationOperationsRouter);
 app.use("/api", router);
 
 const configuredWebDistDir = process.env["FAWRI_WEB_DIST_DIR"]?.trim();
