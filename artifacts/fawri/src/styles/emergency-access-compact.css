@@ -17,6 +17,56 @@ html[lang='ar']
   top: -0.125rem;
 }
 
+/*
+ * Keep Arabic labels RTL while isolating date/time values as one LTR run.
+ * This prevents slashes, colons, Arabic digits, and ص/م from being visually
+ * reordered by the surrounding request-card direction.
+ */
+html[lang='ar']
+  .emergency-access-route
+  main
+  > div.grid:nth-child(2)
+  > div:last-child
+  .mt-3.grid
+  > span:nth-child(2),
+html[lang='ar']
+  .emergency-access-route
+  main
+  > div.grid:nth-child(2)
+  > div:last-child
+  .mt-3.grid
+  > span:nth-child(4) {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  direction: rtl;
+  flex-wrap: wrap;
+}
+
+html[lang='ar']
+  .emergency-access-route
+  main
+  > div.grid:nth-child(2)
+  > div:last-child
+  .mt-3.grid
+  > span:nth-child(2)
+  > strong,
+html[lang='ar']
+  .emergency-access-route
+  main
+  > div.grid:nth-child(2)
+  > div:last-child
+  .mt-3.grid
+  > span:nth-child(4)
+  > strong {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
 @media (min-width: 1024px) and (min-height: 640px) {
   /* Shared compact spacing for the assistant and owner request forms. */
   .emergency-access-route header > div {
