@@ -89,6 +89,18 @@
     margin-top: 0.625rem !important;
   }
 
+  html[lang='ar']
+    .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div:first-child
+    > div:last-child
+    .space-y-2
+    > label {
+    position: relative;
+    top: -0.125rem;
+  }
+
   .emergency-access-route:has(main > div.grid:last-child) textarea {
     height: 5rem;
     min-height: 5rem;
