@@ -8,6 +8,8 @@ import {
   getServerConversation,
   ManualConversationError,
   prepareManualReply,
+  recordManualInboundMessage,
+  returnConversationToFawri,
   takeOverConversation,
 } from "../src/services/manualConversationRuntime";
 import {
@@ -136,7 +138,49 @@ test("explicit conversation page permits takeover across multiple pages", () => 
   }
 });
 
-test("uncertain manual delivery is never automatically retried", () => {
+test("customer messages during takeover are persisted and deduplicated", () => {
+  const directory = makeDirectory();
+  const restore = withDataDirectory(directory);
+  try {
+    writeJson(
+      directory,
+      "fawri-runtime-db.json",
+      runtimeDatabase({ explicitPageId: "page-1" }),
+    );
+    takeOverConversation("merchant-1", "messenger-customer-1");
+    const first = recordManualInboundMessage({
+      merchantId: "merchant-1",
+      conversationId: "messenger-customer-1",
+      externalMessageId: "meta-inbound-1",
+      messageText: "Customer message during takeover",
+      createdAt: 1786039200000,
+    });
+    const duplicate = recordManualInboundMessage({
+      merchantId: "merchant-1",
+      conversationId: "messenger-customer-1",
+      externalMessageId: "meta-inbound-1",
+      messageText: "Customer message during takeover",
+      createdAt: 1786039200000,
+    });
+    assert.equal(duplicate.id, first.id);
+
+    const conversation = getServerConversation(
+      "merchant-1",
+      "messenger-customer-1",
+    );
+    const customerMessages = conversation.messages.filter(
+      (message) => message.sender === "customer",
+    );
+    assert.equal(customerMessages.length, 1);
+    assert.equal(customerMessages[0].external_message_id, "meta-inbound-1");
+    assert.equal(customerMessages[0].text, "Customer message during takeover");
+  } finally {
+    restore();
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("uncertain manual delivery is never retried or returned to automation", () => {
   const directory = makeDirectory();
   const restore = withDataDirectory(directory);
   try {
@@ -174,6 +218,10 @@ test("uncertain manual delivery is never automatically retried", () => {
         }),
       "MANUAL_REPLY_OUTCOME_UNCERTAIN",
     );
+    assertManualError(
+      () => returnConversationToFawri("merchant-1", "messenger-customer-1"),
+      "MANUAL_REPLY_RECONCILIATION_REQUIRED",
+    );
     const conversation = getServerConversation(
       "merchant-1",
       "messenger-customer-1",
@@ -182,6 +230,7 @@ test("uncertain manual delivery is never automatically retried", () => {
       conversation.messages.filter((message) => message.sender === "merchant"),
       [],
     );
+    assert.equal(conversation.status, "manual");
   } finally {
     restore();
     fs.rmSync(directory, { recursive: true, force: true });
@@ -204,6 +253,18 @@ test("merchant deletion aggregates stores and removes manual overlay", () => {
               assigned_to_human: true,
               page_id: "page-1",
               updated_at: "2026-08-06T12:00:00.000Z",
+              inbound_messages: [
+                {
+                  id: "customer-message-1",
+                  external_message_id: "meta-inbound-1",
+                  conversation_id: "messenger-customer-1",
+                  sender: "customer",
+                  text: "incoming",
+                  created_at: "2026-08-06T11:59:00.000Z",
+                  counted_as_auto_reply: false,
+                  status: "received",
+                },
+              ],
               manual_messages: [
                 {
                   id: "message-1",
@@ -235,6 +296,7 @@ test("merchant deletion aggregates stores and removes manual overlay", () => {
               assigned_to_human: true,
               page_id: "page-2",
               updated_at: "2026-08-06T12:00:00.000Z",
+              inbound_messages: [],
               manual_messages: [],
               requests: {},
             },
@@ -254,6 +316,7 @@ test("merchant deletion aggregates stores and removes manual overlay", () => {
     assert.equal(summary.products, 2);
     assert.equal(summary.conversations, 3);
     assert.equal(summary.manualConversations, 1);
+    assert.equal(summary.manualInboundMessages, 1);
     assert.equal(summary.manualMessages, 1);
     assert.equal(summary.manualReplyRequests, 1);
 
