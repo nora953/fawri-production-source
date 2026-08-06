@@ -36,5 +36,9 @@ writeJson("fawri-runtime-db.json", {
 writeJson("processed-meta-events.json", { events: {} });
 writeJson("reply-reservations.json", { reservations: {} });
 writeJson("background-jobs.json", { version: 1, jobs: [] });
+writeJson("manual-conversation-operations.json", {
+  version: 1,
+  conversations: {},
+});
 
 process.stdout.write(`${outputDirectory}\n`);
