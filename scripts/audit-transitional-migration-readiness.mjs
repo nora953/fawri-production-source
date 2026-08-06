@@ -1,8 +1,11 @@
 import path from "node:path";
 import { buildTransitionalMigrationReadiness } from "./lib/transitional-migration-readiness.mjs";
 
+const dataArgument = process.argv.find(
+  (value, index) => index > 1 && !value.startsWith("--"),
+);
 const dataDirectory = path.resolve(
-  process.argv[2] ||
+  dataArgument ||
     process.env.FAWRI_DATA_DIR ||
     path.join("artifacts", "api-server", "data"),
 );
