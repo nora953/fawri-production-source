@@ -37,8 +37,8 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Type-check database package
         run: pnpm --filter @workspace/db run typecheck
