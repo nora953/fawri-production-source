@@ -1,0 +1,50 @@
+name: PostgreSQL schema validation
+
+on:
+  pull_request:
+    paths:
+      - "lib/db/**"
+      - ".github/workflows/postgresql-schema.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postgresql-schema-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check database package
+        run: pnpm --filter @workspace/db run typecheck
+
+      - name: Generate Drizzle migration
+        run: pnpm --filter @workspace/db run schema:generate
+
+      - name: Verify generated migration exists
+        run: test -n "$(find lib/db/drizzle -maxdepth 1 -type f -name '*.sql' -print -quit)"
