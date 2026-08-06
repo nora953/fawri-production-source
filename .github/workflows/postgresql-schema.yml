@@ -1,8 +1,21 @@
-# Retrigger marker for a stale GitHub-hosted runner queue.
 name: PostgreSQL schema validation
 
 on:
   pull_request:
+    paths:
+      - "lib/db/**"
+      - "scripts/audit-fawri-json-data.mjs"
+      - "scripts/plan-postgresql-migration.mjs"
+      - "scripts/run-postgresql-migration-plan.mjs"
+      - "scripts/lib/**"
+      - "scripts/tests/**"
+      - ".github/workflows/postgresql-schema.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+  push:
+    branches:
+      - "hardening/**"
     paths:
       - "lib/db/**"
       - "scripts/audit-fawri-json-data.mjs"
