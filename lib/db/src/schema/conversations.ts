@@ -8,13 +8,14 @@ import {
   timestamp,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { accounts } from "./accounts";
+import { merchantChannels } from "./channels";
 import {
   conversationStatusEnum,
   messageSenderEnum,
   messageStatusEnum,
   replyTypeEnum,
 } from "./enums";
-import { merchantChannels } from "./channels";
 import { merchants } from "./merchants";
 
 export const conversations = pgTable(
@@ -24,9 +25,9 @@ export const conversations = pgTable(
     merchantId: text("merchant_id")
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
-    channelId: text("channel_id").references(() => merchantChannels.id, {
-      onDelete: "set null",
-    }),
+    channelId: text("channel_id")
+      .notNull()
+      .references(() => merchantChannels.id, { onDelete: "restrict" }),
     externalConversationId: text("external_conversation_id"),
     customerExternalId: text("customer_external_id").notNull(),
     customerName: text("customer_name"),
@@ -35,7 +36,9 @@ export const conversations = pgTable(
       .notNull()
       .default("auto_replying"),
     assignedToHuman: boolean("assigned_to_human").notNull().default(false),
-    assignedAccountId: text("assigned_account_id"),
+    assignedAccountId: text("assigned_account_id").references(() => accounts.id, {
+      onDelete: "set null",
+    }),
     needsTraining: boolean("needs_training").notNull().default(false),
     lastMessageAt: timestamp("last_message_at", { withTimezone: true }),
     closedAt: timestamp("closed_at", { withTimezone: true }),
@@ -96,11 +99,11 @@ export const messages = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    externalMessageUnique: uniqueIndex("messages_external_message_unique")
-      .on(table.externalMessageId)
+    externalMessageUnique: uniqueIndex("messages_merchant_external_message_unique")
+      .on(table.merchantId, table.externalMessageId)
       .where(sql`${table.externalMessageId} is not null`),
-    externalEventUnique: uniqueIndex("messages_external_event_unique")
-      .on(table.externalEventId)
+    externalEventUnique: uniqueIndex("messages_merchant_external_event_unique")
+      .on(table.merchantId, table.externalEventId)
       .where(sql`${table.externalEventId} is not null`),
     conversationCreatedIndex: index("messages_conversation_created_idx").on(
       table.conversationId,
@@ -117,12 +120,12 @@ export const processedChannelEvents = pgTable(
   "processed_channel_events",
   {
     id: text("id").primaryKey(),
-    merchantId: text("merchant_id").references(() => merchants.id, {
-      onDelete: "cascade",
-    }),
-    channelId: text("channel_id").references(() => merchantChannels.id, {
-      onDelete: "cascade",
-    }),
+    merchantId: text("merchant_id")
+      .notNull()
+      .references(() => merchants.id, { onDelete: "cascade" }),
+    channelId: text("channel_id")
+      .notNull()
+      .references(() => merchantChannels.id, { onDelete: "cascade" }),
     externalEventId: text("external_event_id").notNull(),
     eventType: text("event_type").notNull(),
     payloadHash: text("payload_hash").notNull(),
@@ -135,8 +138,8 @@ export const processedChannelEvents = pgTable(
   },
   (table) => ({
     externalEventUnique: uniqueIndex(
-      "processed_channel_events_external_event_unique",
-    ).on(table.externalEventId),
+      "processed_channel_events_channel_external_unique",
+    ).on(table.channelId, table.externalEventId),
     statusReceivedIndex: index("processed_channel_events_status_received_idx").on(
       table.processingStatus,
       table.receivedAt,
