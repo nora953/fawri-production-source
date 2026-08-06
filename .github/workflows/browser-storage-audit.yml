@@ -1,0 +1,60 @@
+name: Browser storage authority audit
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/fawri/src/**"
+      - "artifacts/fawri-admin/src/**"
+      - "scripts/audit-browser-operational-storage.mjs"
+      - "scripts/tests/audit-browser-operational-storage.test.mjs"
+      - ".github/workflows/browser-storage-audit.yml"
+  push:
+    branches:
+      - "hardening/**"
+    paths:
+      - "artifacts/fawri/src/**"
+      - "artifacts/fawri-admin/src/**"
+      - "scripts/audit-browser-operational-storage.mjs"
+      - "scripts/tests/audit-browser-operational-storage.test.mjs"
+      - ".github/workflows/browser-storage-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: browser-storage-audit-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check audit syntax
+        run: |
+          node --check scripts/audit-browser-operational-storage.mjs
+          node --check scripts/tests/audit-browser-operational-storage.test.mjs
+
+      - name: Test storage audit behavior
+        run: node --test scripts/tests/audit-browser-operational-storage.test.mjs
+
+      - name: Generate repository storage report
+        run: node scripts/audit-browser-operational-storage.mjs . > browser-storage-audit.json
+
+      - name: Upload storage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-storage-audit-${{ github.sha }}
+          path: browser-storage-audit.json
+          if-no-files-found: error
+          retention-days: 14
