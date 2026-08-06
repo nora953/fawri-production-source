@@ -6,6 +6,7 @@ on:
       - "lib/db/**"
       - "scripts/audit-fawri-json-data.mjs"
       - "scripts/audit-fawri-background-jobs.mjs"
+      - "scripts/audit-manual-conversation-operations.mjs"
       - "scripts/audit-transitional-migration-readiness.mjs"
       - "scripts/plan-postgresql-migration.mjs"
       - "scripts/run-postgresql-migration-plan.mjs"
@@ -22,6 +23,7 @@ on:
       - "lib/db/**"
       - "scripts/audit-fawri-json-data.mjs"
       - "scripts/audit-fawri-background-jobs.mjs"
+      - "scripts/audit-manual-conversation-operations.mjs"
       - "scripts/audit-transitional-migration-readiness.mjs"
       - "scripts/plan-postgresql-migration.mjs"
       - "scripts/run-postgresql-migration-plan.mjs"
@@ -81,12 +83,14 @@ jobs:
         run: |
           node --check ./scripts/audit-fawri-json-data.mjs
           node --check ./scripts/audit-fawri-background-jobs.mjs
+          node --check ./scripts/audit-manual-conversation-operations.mjs
           node --check ./scripts/audit-transitional-migration-readiness.mjs
           node --check ./scripts/plan-postgresql-migration.mjs
           node --check ./scripts/run-postgresql-migration-plan.mjs
           node --check ./scripts/lib/postgresql-migration-plan.mjs
           node --check ./scripts/lib/transitional-migration-readiness.mjs
           node --check ./scripts/tests/audit-background-jobs.test.mjs
+          node --check ./scripts/tests/audit-manual-conversation-operations.test.mjs
           node --check ./scripts/tests/audit-transitional-migration-readiness.test.mjs
           node --check ./scripts/tests/plan-postgresql-migration.test.mjs
           node --check ./scripts/tests/plan-postgresql-contract.test.mjs
