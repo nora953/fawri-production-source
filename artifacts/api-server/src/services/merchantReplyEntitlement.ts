@@ -45,6 +45,7 @@ type MerchantDatabase = {
 
 type ReservationRecord = {
   merchant_id: string;
+  subscription_id: string;
   event_id: string;
   amount: number;
   reserved_at: string;
@@ -151,18 +152,18 @@ function normalizeBatches(value: unknown, now: Date): AddonReplyBatch[] {
     .sort(compareBatches);
 }
 
-function writeJsonAtomically(filePath: string, value: unknown): void {
+function writeTextAtomically(filePath: string, text: string): void {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
-  fs.writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, {
+  fs.writeFileSync(temporaryPath, text, {
     encoding: "utf8",
     mode: 0o600,
   });
   fs.renameSync(temporaryPath, filePath);
 }
 
-function readMerchantDatabase(filePath: string): MerchantDatabase {
-  return JSON.parse(fs.readFileSync(filePath, "utf8")) as MerchantDatabase;
+function writeJsonAtomically(filePath: string, value: unknown): void {
+  writeTextAtomically(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
 function readReservationDatabase(filePath: string): ReservationDatabase {
@@ -308,6 +309,31 @@ function denied(
   return { allowed: false, code, error };
 }
 
+function restoreFilesAfterFailedCommit(
+  merchantDatabasePath: string,
+  originalMerchantDatabaseText: string,
+  reservationPath: string,
+  originalReservations: ReservationDatabase,
+): void {
+  const restoreErrors: unknown[] = [];
+
+  try {
+    writeTextAtomically(merchantDatabasePath, originalMerchantDatabaseText);
+  } catch (error) {
+    restoreErrors.push(error);
+  }
+
+  try {
+    writeJsonAtomically(reservationPath, originalReservations);
+  } catch (error) {
+    restoreErrors.push(error);
+  }
+
+  if (restoreErrors.length > 0) {
+    console.error("Reply entitlement rollback was incomplete:", restoreErrors);
+  }
+}
+
 export function reserveMerchantAutoReply(
   merchantId: string,
   eventId: string,
@@ -327,6 +353,7 @@ export function reserveMerchantAutoReply(
 
   try {
     const reservationsDatabase = readReservationDatabase(reservationPath);
+    const originalReservations = structuredClone(reservationsDatabase);
     reservationsDatabase.reservations = pruneReservations(
       reservationsDatabase.reservations,
       now,
@@ -340,18 +367,31 @@ export function reserveMerchantAutoReply(
           "reply event identity collision detected",
         );
       }
+      if (existingReservation.status !== "consumed") {
+        return denied(
+          "MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE",
+          "reply reservation is incomplete",
+        );
+      }
       return {
         allowed: true,
         duplicate: true,
         repliesRemaining: nonNegativeInteger(
           existingReservation.replies_remaining_after,
         ),
-        subscriptionId: "existing-reservation",
+        subscriptionId: String(
+          existingReservation.subscription_id || "",
+        ).trim(),
       };
     }
 
-    const rawMerchantDatabase = fs.readFileSync(merchantDatabasePath, "utf8");
-    const merchantDatabase = JSON.parse(rawMerchantDatabase) as MerchantDatabase;
+    const originalMerchantDatabaseText = fs.readFileSync(
+      merchantDatabasePath,
+      "utf8",
+    );
+    const merchantDatabase = JSON.parse(
+      originalMerchantDatabaseText,
+    ) as MerchantDatabase;
     const subscriptions = subscriptionsArray(merchantDatabase);
     merchantDatabase.subscriptions = subscriptions;
     const subscription = findCurrentSubscription(
@@ -412,6 +452,7 @@ export function reserveMerchantAutoReply(
 
     const pendingReservation: ReservationRecord = {
       merchant_id: normalizedMerchantId,
+      subscription_id: subscriptionId,
       event_id: normalizedEventId,
       amount: 1,
       reserved_at: now.toISOString(),
@@ -428,8 +469,7 @@ export function reserveMerchantAutoReply(
         (item) => nonNegativeInteger(item.remaining) > 0,
       );
       if (!batch) {
-        delete reservationsDatabase.reservations[normalizedEventId];
-        writeJsonAtomically(reservationPath, reservationsDatabase);
+        writeJsonAtomically(reservationPath, originalReservations);
         return denied(
           "MERCHANT_REPLIES_EXHAUSTED",
           "merchant reply balance is exhausted",
@@ -439,11 +479,21 @@ export function reserveMerchantAutoReply(
     }
 
     const finalState = recalculateSubscription(subscription, now);
-    writeJsonAtomically(merchantDatabasePath, merchantDatabase);
 
-    pendingReservation.status = "consumed";
-    pendingReservation.replies_remaining_after = finalState.totalRemaining;
-    writeJsonAtomically(reservationPath, reservationsDatabase);
+    try {
+      writeJsonAtomically(merchantDatabasePath, merchantDatabase);
+      pendingReservation.status = "consumed";
+      pendingReservation.replies_remaining_after = finalState.totalRemaining;
+      writeJsonAtomically(reservationPath, reservationsDatabase);
+    } catch (commitError) {
+      restoreFilesAfterFailedCommit(
+        merchantDatabasePath,
+        originalMerchantDatabaseText,
+        reservationPath,
+        originalReservations,
+      );
+      throw commitError;
+    }
 
     return {
       allowed: true,
