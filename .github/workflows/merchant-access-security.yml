@@ -6,6 +6,8 @@ on:
       - "artifacts/api-server/src/app.ts"
       - "artifacts/api-server/src/middleware/**"
       - "artifacts/api-server/src/services/merchantOperationalAccess.ts"
+      - "artifacts/api-server/src/services/metaPageDirectory.ts"
+      - "artifacts/api-server/src/services/merchantReplyEntitlement.ts"
       - "artifacts/api-server/src/routes/auth.ts"
       - "artifacts/api-server/src/routes/index.ts"
       - "artifacts/api-server/src/routes/bot-training.ts"
@@ -13,6 +15,7 @@ on:
       - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
       - "artifacts/api-server/tests/meta-webhook-security.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
       - "artifacts/api-server/package.json"
       - ".github/workflows/merchant-access-security.yml"
       - "pnpm-lock.yaml"
@@ -24,6 +27,8 @@ on:
       - "artifacts/api-server/src/app.ts"
       - "artifacts/api-server/src/middleware/**"
       - "artifacts/api-server/src/services/merchantOperationalAccess.ts"
+      - "artifacts/api-server/src/services/metaPageDirectory.ts"
+      - "artifacts/api-server/src/services/merchantReplyEntitlement.ts"
       - "artifacts/api-server/src/routes/auth.ts"
       - "artifacts/api-server/src/routes/index.ts"
       - "artifacts/api-server/src/routes/bot-training.ts"
@@ -31,6 +36,7 @@ on:
       - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
       - "artifacts/api-server/tests/meta-webhook-security.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
       - "artifacts/api-server/package.json"
       - ".github/workflows/merchant-access-security.yml"
       - "pnpm-lock.yaml"
@@ -65,7 +71,7 @@ jobs:
       - name: Install dependencies without package build scripts
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Check test syntax
+      - name: Check JavaScript test syntax
         run: |
           node --check artifacts/api-server/tests/merchant-session.integration.test.mjs
           node --check artifacts/api-server/tests/merchant-status-access.integration.test.mjs
@@ -73,6 +79,9 @@ jobs:
 
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Test reply entitlement service
+        run: pnpm --filter @workspace/api-server run test:reply-entitlement
 
       - name: Build API server
         run: pnpm --filter @workspace/api-server run build
