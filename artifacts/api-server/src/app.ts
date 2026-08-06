@@ -6,6 +6,7 @@ import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import conversationOperationsRouter from "./routes/conversation-operations";
+import orderOperationsRouter from "./routes/order-operations";
 import retentionGuardRouter from "./routes/retention-guard";
 import supportPreviewRouter from "./routes/support-preview";
 import supportImagesRouter from "./routes/support-images";
@@ -124,6 +125,7 @@ app.use(
 );
 app.use("/api/auth/admin/support-preview", supportPreviewRouter);
 app.use("/api", conversationOperationsRouter);
+app.use("/api", orderOperationsRouter);
 app.use("/api", router);
 
 const configuredWebDistDir = process.env["FAWRI_WEB_DIST_DIR"]?.trim();
