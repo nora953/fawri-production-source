@@ -10,6 +10,7 @@ import {
 } from "./metaWebhookOutcome";
 import { getMetaWebhookInternalReplayHeaders } from "./metaWebhookInternalReplay";
 import { refundMerchantAutoReply } from "./merchantReplyRefund";
+import { merchantAllowsAutoReply } from "./merchantSettingsRuntime";
 
 const META_REPLY_JOB_TYPE = "meta.webhook.reply";
 const INTERNAL_REQUEST_TIMEOUT_MS = 30_000;
@@ -69,6 +70,22 @@ async function processMetaReplyJob(
   internalWebhookUrl: string,
 ): Promise<Record<string, unknown>> {
   const { eventId, merchantId, externalMessageId, webhookBody } = validateJob(job);
+
+  try {
+    if (!merchantAllowsAutoReply(merchantId)) {
+      return {
+        event_id: eventId,
+        delivery_status: "suppressed",
+        suppression_code: "MERCHANT_AUTO_REPLY_DISABLED",
+      };
+    }
+  } catch (error) {
+    throw jobError(
+      "MERCHANT_SETTINGS_UNAVAILABLE",
+      `merchant auto-reply setting is unavailable: ${String(error)}`,
+      true,
+    );
+  }
 
   const before = inspectOutcome(merchantId, externalMessageId);
   if (before.status === "sent") {
