@@ -6,6 +6,7 @@ on:
       - "lib/db/**"
       - "scripts/audit-fawri-json-data.mjs"
       - "scripts/plan-postgresql-migration.mjs"
+      - "scripts/run-postgresql-migration-plan.mjs"
       - "scripts/tests/**"
       - ".github/workflows/postgresql-schema.yml"
       - "pnpm-lock.yaml"
@@ -61,6 +62,7 @@ jobs:
         run: |
           node --check ./scripts/audit-fawri-json-data.mjs
           node --check ./scripts/plan-postgresql-migration.mjs
+          node --check ./scripts/run-postgresql-migration-plan.mjs
           node --check ./scripts/tests/plan-postgresql-migration.test.mjs
           node --check ./scripts/tests/plan-postgresql-contract.test.mjs
           node --check ./lib/db/scripts/smoke-migration.mjs
