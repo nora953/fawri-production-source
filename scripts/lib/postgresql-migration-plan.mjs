@@ -1,7 +1,8 @@
+import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -12,6 +13,27 @@ const plannerPath = path.join(
   "plan-postgresql-migration.mjs",
 );
 const metaDirectory = path.join(repositoryRoot, "lib", "db", "drizzle", "meta");
+export const migrationPlanVersion = "1";
+
+function sha256Text(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
+function canonicalize(value) {
+  if (Array.isArray(value)) return value.map(canonicalize);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.keys(value)
+        .sort()
+        .map((key) => [key, canonicalize(value[key])]),
+    );
+  }
+  return value;
+}
+
+export function canonicalJson(value) {
+  return JSON.stringify(canonicalize(value));
+}
 
 export function loadLatestSnapshot() {
   const journal = JSON.parse(
@@ -25,9 +47,11 @@ export function loadLatestSnapshot() {
 
   const snapshotName = `${String(latest.idx).padStart(4, "0")}_snapshot.json`;
   const snapshotPath = path.join(metaDirectory, snapshotName);
+  const rawSnapshot = fs.readFileSync(snapshotPath, "utf8");
   return {
     name: snapshotName,
-    value: JSON.parse(fs.readFileSync(snapshotPath, "utf8")),
+    sha256: sha256Text(rawSnapshot),
+    value: JSON.parse(rawSnapshot),
   };
 }
 
@@ -81,9 +105,12 @@ function compositeKey(row, columns) {
 
 export function validateAgainstSnapshot(
   report,
-  snapshot,
+  snapshotDescriptor,
   { removeRows = true } = {},
 ) {
+  const snapshot = snapshotDescriptor?.value || snapshotDescriptor;
+  const snapshotName = snapshotDescriptor?.name || null;
+  const snapshotSha256 = snapshotDescriptor?.sha256 || null;
   const errors = Array.isArray(report.errors) ? report.errors : [];
   const warnings = Array.isArray(report.warnings) ? report.warnings : [];
   const rows = report.rows && typeof report.rows === "object" ? report.rows : {};
@@ -251,7 +278,8 @@ export function validateAgainstSnapshot(
     warnings: warnings.length,
   };
   report.schema_validation = {
-    snapshot: snapshot.name,
+    snapshot: snapshotName,
+    snapshot_sha256: snapshotSha256,
     validated_rows: validatedRows,
     database_connection_used: false,
     rows_removed_from_output: removeRows,
@@ -274,8 +302,12 @@ export function buildValidatedMigrationPlan({
   }
 
   const report = JSON.parse(result.stdout);
+  report.tool_version = migrationPlanVersion;
+  report.source_manifest_sha256 = sha256Text(
+    canonicalJson(report.source_files || {}),
+  );
   const snapshot = loadLatestSnapshot();
-  validateAgainstSnapshot(report, snapshot.value, {
+  validateAgainstSnapshot(report, snapshot, {
     removeRows: !includeRows,
   });
   return { report, snapshot };
