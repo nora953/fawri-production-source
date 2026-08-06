@@ -44,6 +44,7 @@ function acquireLock(): number {
 
 function writeAtomically(value: unknown): void {
   const target = overlayPath();
+  fs.mkdirSync(path.dirname(target), { recursive: true });
   const temporary = `${target}.${process.pid}.${Date.now()}.tmp`;
   fs.writeFileSync(temporary, `${JSON.stringify(value, null, 2)}\n`, {
     encoding: "utf8",
@@ -57,6 +58,7 @@ registerMerchantRuntimeDeletion((merchantId) => {
   if (!fs.existsSync(target)) {
     return {
       manualConversations: 0,
+      manualInboundMessages: 0,
       manualMessages: 0,
       manualReplyRequests: 0,
     };
@@ -73,10 +75,14 @@ registerMerchantRuntimeDeletion((merchantId) => {
     }
     const conversationsByMerchant = asRecord(database.conversations);
     const merchantConversations = asRecord(conversationsByMerchant[merchantId]);
+    let manualInboundMessages = 0;
     let manualMessages = 0;
     let manualReplyRequests = 0;
     for (const conversation of Object.values(merchantConversations)) {
       const record = asRecord(conversation);
+      manualInboundMessages += Array.isArray(record.inbound_messages)
+        ? record.inbound_messages.length
+        : 0;
       manualMessages += Array.isArray(record.manual_messages)
         ? record.manual_messages.length
         : 0;
@@ -88,6 +94,7 @@ registerMerchantRuntimeDeletion((merchantId) => {
     writeAtomically(database);
     return {
       manualConversations: Object.keys(merchantConversations).length,
+      manualInboundMessages,
       manualMessages,
       manualReplyRequests,
     };
