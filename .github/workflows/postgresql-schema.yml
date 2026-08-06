@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "lib/db/**"
+      - "scripts/audit-fawri-json-data.mjs"
       - ".github/workflows/postgresql-schema.yml"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -39,6 +40,9 @@ jobs:
 
       - name: Install dependencies without package build scripts
         run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Check JSON audit script syntax
+        run: node --check ./scripts/audit-fawri-json-data.mjs
 
       - name: Type-check database package
         run: pnpm --filter @workspace/db run typecheck
