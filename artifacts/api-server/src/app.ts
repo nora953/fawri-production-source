@@ -31,6 +31,7 @@ import {
   refreshMerchantRetentionPolicy,
   startMerchantRetentionPolicyScheduler,
 } from "./services/merchantRetentionPolicy";
+import "./services/manualConversationDeletion";
 
 const app: Express = express();
 
