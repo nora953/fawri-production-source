@@ -1,0 +1,693 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { useI18n } from '@/lib/i18n';
+import type { Order, OrderStatus, PaymentStatus } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  CheckCircle2,
+  CreditCard,
+  Loader2,
+  Package,
+  RefreshCw,
+  Search,
+  XCircle,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+type ServerOrder = Order & {
+  version: number;
+  updated_at: string;
+  source_channel?: string;
+  total_price?: number;
+};
+
+type LanguageCode = 'ar' | 'ku' | 'en';
+
+type Labels = {
+  title: string;
+  subtitle: string;
+  search: string;
+  refresh: string;
+  loading: string;
+  noOrders: string;
+  selectOrder: string;
+  customer: string;
+  phone: string;
+  address: string;
+  items: string;
+  total: string;
+  orderStatus: string;
+  paymentStatus: string;
+  paymentMethod: string;
+  notes: string;
+  confirmPayment: string;
+  rejectPayment: string;
+  rejectionReason: string;
+  rejectionPlaceholder: string;
+  updatedElsewhere: string;
+  loadFailed: string;
+  updateFailed: string;
+  updated: string;
+  noPhone: string;
+  noAddress: string;
+  noNotes: string;
+  quantity: string;
+  version: string;
+  statuses: Record<OrderStatus, string>;
+  paymentStatuses: Record<PaymentStatus, string>;
+  paymentMethods: Record<Order['payment_method'], string>;
+};
+
+const LABELS: Record<LanguageCode, Labels> = {
+  ar: {
+    title: 'الطلبات',
+    subtitle: 'إدارة حالة الطلب والدفع من السيرفر مباشرة',
+    search: 'ابحث بالاسم أو الهاتف أو رقم الطلب',
+    refresh: 'تحديث',
+    loading: 'جاري تحميل الطلبات…',
+    noOrders: 'لا توجد طلبات حالياً',
+    selectOrder: 'اختر طلباً لعرض التفاصيل',
+    customer: 'الزبون',
+    phone: 'الهاتف',
+    address: 'العنوان',
+    items: 'المنتجات',
+    total: 'المجموع',
+    orderStatus: 'حالة الطلب',
+    paymentStatus: 'حالة الدفع',
+    paymentMethod: 'طريقة الدفع',
+    notes: 'ملاحظات',
+    confirmPayment: 'تأكيد استلام الدفع',
+    rejectPayment: 'رفض الدفع',
+    rejectionReason: 'سبب الرفض',
+    rejectionPlaceholder: 'اكتب سبباً واضحاً قبل رفض الدفع',
+    updatedElsewhere: 'تم تعديل الطلب من جهاز آخر. تم تحميل النسخة الأحدث.',
+    loadFailed: 'تعذر تحميل الطلبات من السيرفر',
+    updateFailed: 'تعذر تحديث الطلب',
+    updated: 'تم تحديث الطلب',
+    noPhone: 'غير متوفر',
+    noAddress: 'غير متوفر',
+    noNotes: 'لا توجد ملاحظات',
+    quantity: 'الكمية',
+    version: 'نسخة',
+    statuses: {
+      pending_confirmation: 'بانتظار التأكيد',
+      confirmed: 'مؤكد',
+      preparing: 'قيد التجهيز',
+      shipped: 'تم الشحن',
+      delivered: 'تم التسليم',
+      cancelled: 'ملغي',
+      out_of_stock: 'غير متوفر',
+      waiting_customer_approval: 'بانتظار موافقة الزبون',
+    },
+    paymentStatuses: {
+      cash_on_delivery: 'الدفع عند الاستلام',
+      electronic_pending: 'دفع إلكتروني معلق',
+      paid: 'مدفوع',
+      failed: 'فشل الدفع',
+      manual_review: 'مراجعة يدوية',
+    },
+    paymentMethods: {
+      cash_on_delivery: 'الدفع عند الاستلام',
+      superqi: 'SuperQi',
+      fastpay: 'FastPay',
+      zaincash: 'ZainCash',
+      other: 'أخرى',
+    },
+  },
+  ku: {
+    title: 'داواکارییەکان',
+    subtitle: 'بەڕێوەبردنی دۆخی داواکاری و پارەدان لە ڕاژەکارەوە',
+    search: 'بە ناو، تەلەفۆن یان ژمارەی داواکاری بگەڕێ',
+    refresh: 'نوێکردنەوە',
+    loading: 'داواکارییەکان بار دەکرێن…',
+    noOrders: 'هیچ داواکارییەک نییە',
+    selectOrder: 'داواکارییەک هەڵبژێرە بۆ بینینی وردەکاری',
+    customer: 'کڕیار',
+    phone: 'تەلەفۆن',
+    address: 'ناونیشان',
+    items: 'بەرهەمەکان',
+    total: 'کۆی گشتی',
+    orderStatus: 'دۆخی داواکاری',
+    paymentStatus: 'دۆخی پارەدان',
+    paymentMethod: 'شێوازی پارەدان',
+    notes: 'تێبینی',
+    confirmPayment: 'پشتڕاستکردنەوەی پارەدان',
+    rejectPayment: 'ڕەتکردنەوەی پارەدان',
+    rejectionReason: 'هۆکاری ڕەتکردنەوە',
+    rejectionPlaceholder: 'پێش ڕەتکردنەوە هۆکارێکی ڕوون بنووسە',
+    updatedElsewhere: 'داواکارییەکە لە ئامێرێکی تر گۆڕدرا. نوێترین وەشان بارکرا.',
+    loadFailed: 'نەتوانرا داواکارییەکان لە ڕاژەکارەوە باربکرێن',
+    updateFailed: 'نەتوانرا داواکارییەکە نوێبکرێتەوە',
+    updated: 'داواکارییەکە نوێکرایەوە',
+    noPhone: 'بەردەست نییە',
+    noAddress: 'بەردەست نییە',
+    noNotes: 'هیچ تێبینییەک نییە',
+    quantity: 'بڕ',
+    version: 'وەشان',
+    statuses: {
+      pending_confirmation: 'چاوەڕوانی پشتڕاستکردنەوە',
+      confirmed: 'پشتڕاستکراو',
+      preparing: 'لە ئامادەکردندایە',
+      shipped: 'نێردراوە',
+      delivered: 'گەیەنراوە',
+      cancelled: 'هەڵوەشاوە',
+      out_of_stock: 'بەردەست نییە',
+      waiting_customer_approval: 'چاوەڕوانی ڕەزامەندی کڕیار',
+    },
+    paymentStatuses: {
+      cash_on_delivery: 'پارەدان لە کاتی گەیاندن',
+      electronic_pending: 'پارەدانی ئەلیکترۆنی چاوەڕوانە',
+      paid: 'پارەدراوە',
+      failed: 'پارەدان سەرکەوتوو نەبوو',
+      manual_review: 'پشکنینی دەستی',
+    },
+    paymentMethods: {
+      cash_on_delivery: 'پارەدان لە کاتی گەیاندن',
+      superqi: 'SuperQi',
+      fastpay: 'FastPay',
+      zaincash: 'ZainCash',
+      other: 'هی تر',
+    },
+  },
+  en: {
+    title: 'Orders',
+    subtitle: 'Manage order and payment state directly on the server',
+    search: 'Search by customer, phone, or order ID',
+    refresh: 'Refresh',
+    loading: 'Loading orders…',
+    noOrders: 'No orders yet',
+    selectOrder: 'Select an order to view its details',
+    customer: 'Customer',
+    phone: 'Phone',
+    address: 'Address',
+    items: 'Items',
+    total: 'Total',
+    orderStatus: 'Order status',
+    paymentStatus: 'Payment status',
+    paymentMethod: 'Payment method',
+    notes: 'Notes',
+    confirmPayment: 'Confirm payment',
+    rejectPayment: 'Reject payment',
+    rejectionReason: 'Rejection reason',
+    rejectionPlaceholder: 'Enter a clear reason before rejecting payment',
+    updatedElsewhere: 'This order changed on another device. The latest version was loaded.',
+    loadFailed: 'Could not load orders from the server',
+    updateFailed: 'Could not update the order',
+    updated: 'Order updated',
+    noPhone: 'Unavailable',
+    noAddress: 'Unavailable',
+    noNotes: 'No notes',
+    quantity: 'Qty',
+    version: 'Version',
+    statuses: {
+      pending_confirmation: 'Pending confirmation',
+      confirmed: 'Confirmed',
+      preparing: 'Preparing',
+      shipped: 'Shipped',
+      delivered: 'Delivered',
+      cancelled: 'Cancelled',
+      out_of_stock: 'Out of stock',
+      waiting_customer_approval: 'Waiting for customer approval',
+    },
+    paymentStatuses: {
+      cash_on_delivery: 'Cash on delivery',
+      electronic_pending: 'Electronic payment pending',
+      paid: 'Paid',
+      failed: 'Payment failed',
+      manual_review: 'Manual review',
+    },
+    paymentMethods: {
+      cash_on_delivery: 'Cash on delivery',
+      superqi: 'SuperQi',
+      fastpay: 'FastPay',
+      zaincash: 'ZainCash',
+      other: 'Other',
+    },
+  },
+};
+
+const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending_confirmation: [
+    'pending_confirmation',
+    'confirmed',
+    'cancelled',
+    'out_of_stock',
+    'waiting_customer_approval',
+  ],
+  confirmed: ['confirmed', 'preparing', 'cancelled'],
+  preparing: ['preparing', 'shipped', 'cancelled'],
+  shipped: ['shipped', 'delivered'],
+  delivered: ['delivered'],
+  cancelled: ['cancelled'],
+  out_of_stock: [
+    'out_of_stock',
+    'pending_confirmation',
+    'waiting_customer_approval',
+    'cancelled',
+  ],
+  waiting_customer_approval: [
+    'waiting_customer_approval',
+    'pending_confirmation',
+    'confirmed',
+    'out_of_stock',
+    'cancelled',
+  ],
+};
+
+const ELECTRONIC_PAYMENT_OPTIONS: PaymentStatus[] = [
+  'electronic_pending',
+  'manual_review',
+  'paid',
+  'failed',
+];
+
+function languageFromI18n(i18n: ReturnType<typeof useI18n>): LanguageCode {
+  const language = String(
+    (i18n as unknown as { language?: string }).language || '',
+  ).trim();
+  if (language === 'ku' || language === 'en' || language === 'ar') return language;
+  return i18n.isRTL ? 'ar' : 'en';
+}
+
+function orderTotal(order: ServerOrder): number {
+  if (Number.isFinite(order.total_price)) return Number(order.total_price);
+  return order.items.reduce(
+    (total, item) => total + Number(item.price || 0) * Number(item.quantity || 0),
+    0,
+  );
+}
+
+function formatMoney(value: number, language: LanguageCode): string {
+  return `${new Intl.NumberFormat(language === 'en' ? 'en-US' : 'ar-IQ').format(value)} IQD`;
+}
+
+function statusVariant(status: OrderStatus) {
+  if (status === 'delivered' || status === 'confirmed') return 'default' as const;
+  if (status === 'cancelled' || status === 'out_of_stock') return 'destructive' as const;
+  return 'secondary' as const;
+}
+
+export default function ServerOrdersPage() {
+  const i18n = useI18n();
+  const language = languageFromI18n(i18n);
+  const labels = LABELS[language];
+  const [orders, setOrders] = useState<ServerOrder[]>([]);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+
+  const replaceOrder = (order: ServerOrder) => {
+    setOrders(current =>
+      current.map(item => (item.id === order.id ? order : item)),
+    );
+  };
+
+  const loadOrders = async (silent = false) => {
+    if (!silent) setLoading(true);
+    try {
+      const response = await fetch('/api/orders', {
+        headers: { Accept: 'application/json' },
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !Array.isArray(data.orders)) {
+        throw new Error(data?.error || labels.loadFailed);
+      }
+      const nextOrders = data.orders as ServerOrder[];
+      setOrders(nextOrders);
+      setLoadError('');
+      setSelectedOrderId(current => {
+        if (current && nextOrders.some(order => order.id === current)) return current;
+        return nextOrders[0]?.id || null;
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : labels.loadFailed;
+      setLoadError(message);
+      if (!silent) toast.error(message);
+    } finally {
+      if (!silent) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void loadOrders();
+    const interval = window.setInterval(() => {
+      if (!pendingOrderId) void loadOrders(true);
+    }, 10000);
+    return () => window.clearInterval(interval);
+  }, [pendingOrderId, language]);
+
+  const filteredOrders = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return orders;
+    return orders.filter(order =>
+      [order.id, order.customer_name, order.phone]
+        .join(' ')
+        .toLowerCase()
+        .includes(query),
+    );
+  }, [orders, search]);
+
+  const selectedOrder = useMemo(
+    () => orders.find(order => order.id === selectedOrderId) || null,
+    [orders, selectedOrderId],
+  );
+
+  const mutateOrder = async (
+    order: ServerOrder,
+    endpoint: string,
+    body: Record<string, unknown>,
+    method: 'PATCH' | 'POST',
+  ) => {
+    if (pendingOrderId) return;
+    setPendingOrderId(order.id);
+    try {
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          expected_version: order.version || 1,
+          ...body,
+        }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !data.order) {
+        if (data?.code === 'ORDER_VERSION_CONFLICT' && data.current_order) {
+          replaceOrder(data.current_order as ServerOrder);
+          toast.error(labels.updatedElsewhere);
+          return;
+        }
+        throw new Error(data?.error || labels.updateFailed);
+      }
+      replaceOrder(data.order as ServerOrder);
+      setRejectionReason('');
+      toast.success(labels.updated);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : labels.updateFailed);
+      await loadOrders(true);
+    } finally {
+      setPendingOrderId(null);
+    }
+  };
+
+  const updateStatus = (order: ServerOrder, status: OrderStatus) =>
+    void mutateOrder(
+      order,
+      `/api/orders/${encodeURIComponent(order.id)}/status`,
+      { status },
+      'PATCH',
+    );
+
+  const updatePaymentStatus = (order: ServerOrder, paymentStatus: PaymentStatus) =>
+    void mutateOrder(
+      order,
+      `/api/orders/${encodeURIComponent(order.id)}/payment-status`,
+      {
+        payment_status: paymentStatus,
+        ...(paymentStatus === 'failed'
+          ? { rejection_reason: rejectionReason.trim() || 'merchant_rejected' }
+          : {}),
+      },
+      'PATCH',
+    );
+
+  const confirmPayment = (order: ServerOrder) =>
+    void mutateOrder(
+      order,
+      `/api/orders/${encodeURIComponent(order.id)}/payment/confirm`,
+      {},
+      'POST',
+    );
+
+  const rejectPayment = (order: ServerOrder) => {
+    const reason = rejectionReason.trim();
+    if (!reason) {
+      toast.error(labels.rejectionPlaceholder);
+      return;
+    }
+    void mutateOrder(
+      order,
+      `/api/orders/${encodeURIComponent(order.id)}/payment/reject`,
+      { reason },
+      'POST',
+    );
+  };
+
+  const busy = selectedOrder ? pendingOrderId === selectedOrder.id : false;
+
+  return (
+    <div className="min-h-screen bg-background p-4 pb-28" dir={i18n.dir}>
+      <div className="mx-auto max-w-7xl space-y-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight">{labels.title}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{labels.subtitle}</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => void loadOrders()}
+            disabled={loading || Boolean(pendingOrderId)}
+          >
+            {loading ? (
+              <Loader2 className="me-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="me-2 h-4 w-4" />
+            )}
+            {labels.refresh}
+          </Button>
+        </div>
+
+        {loadError ? (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            {loadError}
+          </div>
+        ) : null}
+
+        <div className="grid min-h-[65vh] gap-4 lg:grid-cols-[22rem_minmax(0,1fr)]">
+          <Card className="overflow-hidden">
+            <CardHeader className="space-y-3 border-b p-4">
+              <CardTitle className="text-base">{labels.title}</CardTitle>
+              <div className="relative">
+                <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={event => setSearch(event.target.value)}
+                  placeholder={labels.search}
+                  className="ps-9"
+                />
+              </div>
+            </CardHeader>
+            <CardContent className="max-h-[68vh] overflow-y-auto p-0">
+              {loading && orders.length === 0 ? (
+                <div className="flex items-center justify-center gap-2 p-8 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {labels.loading}
+                </div>
+              ) : filteredOrders.length === 0 ? (
+                <div className="flex flex-col items-center p-8 text-center text-muted-foreground">
+                  <Package className="mb-3 h-10 w-10 opacity-30" />
+                  <span className="text-sm">{labels.noOrders}</span>
+                </div>
+              ) : (
+                filteredOrders.map(order => (
+                  <button
+                    key={order.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedOrderId(order.id);
+                      setRejectionReason('');
+                    }}
+                    className={`w-full border-b p-4 text-start transition-colors hover:bg-accent ${
+                      selectedOrderId === order.id ? 'bg-accent' : ''
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="truncate font-semibold">{order.customer_name}</p>
+                        <p className="truncate text-xs text-muted-foreground">#{order.id}</p>
+                      </div>
+                      <Badge variant={statusVariant(order.status)}>
+                        {labels.statuses[order.status]}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        {labels.paymentStatuses[order.payment_status]}
+                      </span>
+                      <span className="font-bold">{formatMoney(orderTotal(order), language)}</span>
+                    </div>
+                  </button>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {selectedOrder ? (
+            <Card>
+              <CardHeader className="border-b">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <CardTitle>{selectedOrder.customer_name}</CardTitle>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      #{selectedOrder.id} · {labels.version} {selectedOrder.version || 1}
+                    </p>
+                  </div>
+                  <Badge variant={statusVariant(selectedOrder.status)}>
+                    {labels.statuses[selectedOrder.status]}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6 p-5">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <div className="rounded-xl bg-muted/40 p-3">
+                    <p className="text-xs text-muted-foreground">{labels.phone}</p>
+                    <p className="mt-1 font-medium">{selectedOrder.phone || labels.noPhone}</p>
+                  </div>
+                  <div className="rounded-xl bg-muted/40 p-3 sm:col-span-2">
+                    <p className="text-xs text-muted-foreground">{labels.address}</p>
+                    <p className="mt-1 font-medium">{selectedOrder.address || labels.noAddress}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="mb-3 font-bold">{labels.items}</h2>
+                  <div className="space-y-2">
+                    {selectedOrder.items.map((item, index) => (
+                      <div
+                        key={`${item.product_id || item.product_name}-${index}`}
+                        className="flex items-center justify-between rounded-xl border p-3"
+                      >
+                        <div>
+                          <p className="font-medium">{item.product_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {labels.quantity}: {item.quantity}
+                          </p>
+                        </div>
+                        <p className="font-bold">
+                          {formatMoney(Number(item.price || 0) * Number(item.quantity || 0), language)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 flex justify-between rounded-xl bg-primary/5 p-4 text-lg font-extrabold">
+                    <span>{labels.total}</span>
+                    <span>{formatMoney(orderTotal(selectedOrder), language)}</span>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="space-y-2 text-sm font-medium">
+                    <span>{labels.orderStatus}</span>
+                    <select
+                      value={selectedOrder.status}
+                      onChange={event =>
+                        updateStatus(selectedOrder, event.target.value as OrderStatus)
+                      }
+                      disabled={busy}
+                      className="h-11 w-full rounded-md border bg-background px-3"
+                    >
+                      {ORDER_TRANSITIONS[selectedOrder.status].map(status => (
+                        <option key={status} value={status}>
+                          {labels.statuses[status]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="space-y-2 text-sm font-medium">
+                    <span>{labels.paymentStatus}</span>
+                    <select
+                      value={selectedOrder.payment_status}
+                      onChange={event =>
+                        updatePaymentStatus(
+                          selectedOrder,
+                          event.target.value as PaymentStatus,
+                        )
+                      }
+                      disabled={busy || selectedOrder.payment_status === 'paid'}
+                      className="h-11 w-full rounded-md border bg-background px-3"
+                    >
+                      {(selectedOrder.payment_method === 'cash_on_delivery'
+                        ? (['cash_on_delivery', 'paid'] as PaymentStatus[])
+                        : ELECTRONIC_PAYMENT_OPTIONS
+                      ).map(status => (
+                        <option key={status} value={status}>
+                          {labels.paymentStatuses[status]}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+
+                <div className="rounded-xl border p-4">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-primary" />
+                    <span className="font-bold">{labels.paymentMethod}</span>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {labels.paymentMethods[selectedOrder.payment_method]}
+                  </p>
+
+                  {(selectedOrder.payment_status === 'electronic_pending' ||
+                    selectedOrder.payment_status === 'manual_review') && (
+                    <div className="mt-4 space-y-3">
+                      <Input
+                        value={rejectionReason}
+                        onChange={event => setRejectionReason(event.target.value)}
+                        placeholder={labels.rejectionPlaceholder}
+                        maxLength={500}
+                        disabled={busy}
+                      />
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <Button
+                          onClick={() => confirmPayment(selectedOrder)}
+                          disabled={busy}
+                        >
+                          {busy ? (
+                            <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="me-2 h-4 w-4" />
+                          )}
+                          {labels.confirmPayment}
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={() => rejectPayment(selectedOrder)}
+                          disabled={busy || !rejectionReason.trim()}
+                        >
+                          <XCircle className="me-2 h-4 w-4" />
+                          {labels.rejectPayment}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-xl bg-muted/40 p-4">
+                  <p className="text-xs text-muted-foreground">{labels.notes}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm">
+                    {selectedOrder.notes || labels.noNotes}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="flex min-h-[28rem] items-center justify-center">
+              <CardContent className="flex flex-col items-center p-8 text-center text-muted-foreground">
+                <Package className="mb-3 h-12 w-12 opacity-30" />
+                <p>{labels.selectOrder}</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
