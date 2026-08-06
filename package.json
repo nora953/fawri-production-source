@@ -8,6 +8,7 @@
     "preview:replit": "node ./scripts/run-fawri-preview.mjs",
     "audit:data": "node ./scripts/audit-fawri-json-data.mjs",
     "migration:plan": "node ./scripts/plan-postgresql-migration.mjs",
+    "migration:test": "node --test ./scripts/tests/plan-postgresql-migration.test.mjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
