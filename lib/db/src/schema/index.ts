@@ -6,6 +6,7 @@ export * from "./subscriptions";
 export * from "./catalog";
 export * from "./channels";
 export * from "./conversations";
+export * from "./manual-conversations";
 export * from "./orders";
 export * from "./knowledge";
 export * from "./support";
