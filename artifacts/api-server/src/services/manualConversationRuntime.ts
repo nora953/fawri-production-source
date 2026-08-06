@@ -58,6 +58,7 @@ type ManualConversationOverlay = {
   status: "manual" | "auto_replying";
   assigned_to_human: boolean;
   page_id?: string;
+  inbound_messages: RuntimeMessage[];
   manual_messages: RuntimeMessage[];
   requests: Record<string, ManualReplyRequest>;
   updated_at: string;
@@ -113,6 +114,10 @@ function objectRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+function requestMap(value: unknown): Record<string, ManualReplyRequest> {
+  return objectRecord(value) as Record<string, ManualReplyRequest>;
+}
+
 function messageArray(value: unknown): RuntimeMessage[] {
   return Array.isArray(value)
     ? value.filter(
@@ -126,12 +131,17 @@ function now(): string {
   return new Date().toISOString();
 }
 
+function normalizedTimestamp(value: unknown): string {
+  const parsed = new Date(String(value || ""));
+  return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : now();
+}
+
 function sha256(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-function makeMessageId(): string {
-  return `msg-merchant-${Date.now()}-${crypto.randomBytes(8).toString("hex")}`;
+function makeMessageId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${crypto.randomBytes(8).toString("hex")}`;
 }
 
 function writeJsonAtomically(filePath: string, value: unknown): void {
@@ -350,6 +360,7 @@ function mergeConversation(
   }
   const messages = [
     ...messageArray(base.messages),
+    ...messageArray(overlay.inbound_messages),
     ...messageArray(overlay.manual_messages),
   ].sort((left, right) =>
     text(left.created_at).localeCompare(text(right.created_at)),
@@ -362,6 +373,14 @@ function mergeConversation(
     updated_at: overlay.updated_at || base.updated_at,
     messages,
   };
+}
+
+function unresolvedManualRequest(
+  overlay: ManualConversationOverlay | undefined,
+): ManualReplyRequest | undefined {
+  return Object.values(requestMap(overlay?.requests)).find(
+    (request) => request.status === "pending" || request.status === "uncertain",
+  );
 }
 
 export function listServerConversations(merchantId: string): RuntimeConversation[] {
@@ -403,11 +422,9 @@ export function takeOverConversation(
       status: "manual",
       assigned_to_human: true,
       page_id: pageId,
+      inbound_messages: messageArray(current?.inbound_messages),
       manual_messages: messageArray(current?.manual_messages),
-      requests: objectRecord(current?.requests) as Record<
-        string,
-        ManualReplyRequest
-      >,
+      requests: requestMap(current?.requests),
       updated_at: now(),
     };
     return mergeConversation(base, overlays[conversationId]);
@@ -423,6 +440,13 @@ export function returnConversationToFawri(
     const base = requireBaseConversation(runtime, merchantId, conversationId);
     const overlays = merchantOverlay(database, merchantId, true);
     const current = overlays[conversationId];
+    const unresolved = unresolvedManualRequest(current);
+    if (unresolved) {
+      throw new ManualConversationError(
+        "MANUAL_REPLY_RECONCILIATION_REQUIRED",
+        "manual reply delivery must be reconciled before returning to Fawri",
+      );
+    }
     const { pageId } = resolveConversationPage(
       runtime,
       merchantId,
@@ -433,11 +457,9 @@ export function returnConversationToFawri(
       status: "auto_replying",
       assigned_to_human: false,
       page_id: pageId,
+      inbound_messages: messageArray(current?.inbound_messages),
       manual_messages: messageArray(current?.manual_messages),
-      requests: objectRecord(current?.requests) as Record<
-        string,
-        ManualReplyRequest
-      >,
+      requests: requestMap(current?.requests),
       updated_at: now(),
     };
     return mergeConversation(base, overlays[conversationId]);
@@ -454,6 +476,62 @@ export function isConversationUnderManualControl(
     conversationId,
   );
   return overlay?.status === "manual" && overlay.assigned_to_human === true;
+}
+
+export function recordManualInboundMessage(input: {
+  merchantId: string;
+  conversationId: string;
+  externalMessageId: string;
+  messageText: string;
+  createdAt?: unknown;
+}): RuntimeMessage {
+  const merchantId = text(input.merchantId);
+  const conversationId = text(input.conversationId);
+  const externalMessageId = text(input.externalMessageId);
+  const messageText = text(input.messageText);
+  if (!externalMessageId || !messageText) {
+    throw new ManualConversationError(
+      "MANUAL_INBOUND_MESSAGE_INVALID",
+      "manual inbound message identity and text are required",
+      400,
+    );
+  }
+
+  return withOverlayLock((database) => {
+    const runtime = readRuntimeDatabase();
+    const base = requireBaseConversation(runtime, merchantId, conversationId);
+    const overlay = conversationOverlay(database, merchantId, conversationId);
+    if (!overlay || overlay.status !== "manual" || !overlay.assigned_to_human) {
+      throw new ManualConversationError(
+        "MANUAL_TAKEOVER_REQUIRED",
+        "conversation is not under manual control",
+      );
+    }
+
+    const existing = [
+      ...messageArray(base.messages),
+      ...messageArray(overlay.inbound_messages),
+    ].find((message) => text(message.external_message_id) === externalMessageId);
+    if (existing) return existing;
+
+    const createdAt = normalizedTimestamp(input.createdAt);
+    const message: RuntimeMessage = {
+      id: makeMessageId("msg-customer-manual"),
+      external_message_id: externalMessageId,
+      conversation_id: conversationId,
+      sender: "customer",
+      text: messageText,
+      created_at: createdAt,
+      counted_as_auto_reply: false,
+      status: "received",
+    };
+    overlay.inbound_messages = [
+      ...messageArray(overlay.inbound_messages),
+      message,
+    ];
+    overlay.updated_at = createdAt;
+    return message;
+  });
 }
 
 export function prepareManualReply(input: {
@@ -493,7 +571,7 @@ export function prepareManualReply(input: {
     }
 
     const hash = sha256(messageText);
-    const existing = overlay.requests[idempotencyKey];
+    const existing = requestMap(overlay.requests)[idempotencyKey];
     if (existing) {
       if (existing.text_sha256 !== hash) {
         throw new ManualConversationError(
@@ -502,7 +580,7 @@ export function prepareManualReply(input: {
         );
       }
       if (existing.status === "sent" && existing.message_id) {
-        const message = overlay.manual_messages.find(
+        const message = messageArray(overlay.manual_messages).find(
           (item) => item.id === existing.message_id,
         );
         if (message) return { deduplicated: true, existingMessage: message };
@@ -543,6 +621,7 @@ export function prepareManualReply(input: {
     const timestamp = now();
     overlay.page_id = pageId;
     overlay.updated_at = timestamp;
+    overlay.requests = requestMap(overlay.requests);
     overlay.requests[idempotencyKey] = {
       idempotency_key: idempotencyKey,
       text_sha256: hash,
@@ -572,8 +651,14 @@ export function completeManualReply(input: {
       text(input.merchantId),
       text(input.conversationId),
     );
-    const request = overlay?.requests[text(input.idempotencyKey)];
-    if (!overlay || !request || request.status !== "pending") {
+    const request = requestMap(overlay?.requests)[text(input.idempotencyKey)];
+    const messageText = text(input.messageText);
+    if (
+      !overlay ||
+      !request ||
+      request.status !== "pending" ||
+      request.text_sha256 !== sha256(messageText)
+    ) {
       throw new ManualConversationError(
         "MANUAL_REPLY_STATE_INVALID",
         "manual reply completion state is invalid",
@@ -582,17 +667,20 @@ export function completeManualReply(input: {
     }
     const timestamp = now();
     const message: RuntimeMessage = {
-      id: makeMessageId(),
+      id: makeMessageId("msg-merchant"),
       external_message_id: text(input.externalMessageId) || undefined,
       conversation_id: text(input.conversationId),
       sender: "merchant",
-      text: text(input.messageText),
+      text: messageText,
       created_at: timestamp,
       counted_as_auto_reply: false,
       reply_type: "manual",
       status: "sent",
     };
-    overlay.manual_messages.push(message);
+    overlay.manual_messages = [
+      ...messageArray(overlay.manual_messages),
+      message,
+    ];
     overlay.updated_at = timestamp;
     request.status = "sent";
     request.updated_at = timestamp;
@@ -615,7 +703,7 @@ export function failManualReply(input: {
       text(input.merchantId),
       text(input.conversationId),
     );
-    const request = overlay?.requests[text(input.idempotencyKey)];
+    const request = requestMap(overlay?.requests)[text(input.idempotencyKey)];
     if (!request || request.status !== "pending") return;
     request.status = input.uncertain ? "uncertain" : "failed";
     request.error_code = text(input.errorCode) || "MANUAL_REPLY_FAILED";
