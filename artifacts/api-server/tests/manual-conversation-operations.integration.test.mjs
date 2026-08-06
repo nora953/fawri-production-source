@@ -264,7 +264,7 @@ test("manual conversation operations are server-authoritative and idempotent", a
       META_CONFIG_ID: "test-meta-config",
       META_REDIRECT_URI: `${baseUrl}/api/meta/callback`,
       META_GRAPH_BASE_URL: fakeMeta.baseUrl,
-      FAWRI_DISABLE_META_WORKER: "1",
+      FAWRI_DISABLE_JOB_WORKERS: "1",
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
