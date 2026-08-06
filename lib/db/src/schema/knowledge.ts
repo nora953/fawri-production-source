@@ -15,6 +15,7 @@ import {
   savedAnswerCategoryEnum,
   trainingStatusEnum,
 } from "./enums";
+import { accounts } from "./accounts";
 import { merchants } from "./merchants";
 import { products } from "./catalog";
 import { conversations } from "./conversations";
@@ -81,7 +82,10 @@ export const trainingRequests = pgTable(
     status: trainingStatusEnum("status")
       .notNull()
       .default("pending_merchant_reply"),
-    reviewedByAccountId: text("reviewed_by_account_id"),
+    reviewedByAccountId: text("reviewed_by_account_id").references(
+      () => accounts.id,
+      { onDelete: "set null" },
+    ),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     metadata: jsonb("metadata")
       .$type<Record<string, unknown>>()
