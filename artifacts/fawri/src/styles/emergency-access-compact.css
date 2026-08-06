@@ -1,0 +1,115 @@
+/*
+ * Compact the assistant emergency-access request screen on desktop.
+ * The fixed-height treatment applies only when the request/session grid is the
+ * final section. Owner tools and an opened safe snapshot keep normal scrolling.
+ */
+@media (min-width: 1024px) and (min-height: 640px) {
+  .emergency-access-route:has(main > div.grid:last-child) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child) > div {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child) header > div {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child) main {
+    display: flex;
+    height: calc(100dvh - 4.25rem);
+    min-height: 0;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow: hidden;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child) main > * + * {
+    margin-top: 0 !important;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div:first-child
+    > div {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child {
+    min-height: 0;
+    flex: 1 1 auto;
+    gap: 0.75rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div
+    > div:first-child {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div
+    > div:last-child {
+    min-height: 0;
+    flex: 1 1 auto;
+    padding: 0.5rem 1rem 0.75rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div:first-child
+    > div:last-child
+    > *
+    + * {
+    margin-top: 0.625rem !important;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child) textarea {
+    height: 5rem;
+    min-height: 5rem;
+    resize: none;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div:last-child
+    > div:last-child {
+    overflow-y: auto;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div:last-child
+    > div:last-child
+    > p {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}
