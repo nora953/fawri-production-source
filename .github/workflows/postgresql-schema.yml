@@ -24,6 +24,20 @@ jobs:
   validate-schema:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     env:
       DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
 
@@ -43,11 +57,12 @@ jobs:
       - name: Install dependencies without package build scripts
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Check JSON data tools syntax
+      - name: Check JSON and migration tools syntax
         run: |
           node --check ./scripts/audit-fawri-json-data.mjs
           node --check ./scripts/plan-postgresql-migration.mjs
           node --check ./scripts/tests/plan-postgresql-migration.test.mjs
+          node --check ./lib/db/scripts/smoke-migration.mjs
 
       - name: Test migration dry-run safety
         run: pnpm run migration:test
@@ -63,6 +78,11 @@ jobs:
           test -n "$(find lib/db/drizzle -maxdepth 1 -type f -name '*.sql' -print -quit)"
           test -f lib/db/drizzle/meta/_journal.json
           git diff --exit-code -- lib/db/drizzle
+
+      - name: Apply migration to disposable PostgreSQL
+        env:
+          FAWRI_ALLOW_MIGRATION_SMOKE: "1"
+        run: pnpm --filter @workspace/db run schema:smoke
 
       - name: Upload generated migration
         uses: actions/upload-artifact@v4
