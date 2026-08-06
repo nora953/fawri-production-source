@@ -7,6 +7,7 @@ on:
       - "scripts/audit-fawri-json-data.mjs"
       - "scripts/plan-postgresql-migration.mjs"
       - "scripts/run-postgresql-migration-plan.mjs"
+      - "scripts/lib/**"
       - "scripts/tests/**"
       - ".github/workflows/postgresql-schema.yml"
       - "pnpm-lock.yaml"
@@ -63,9 +64,12 @@ jobs:
           node --check ./scripts/audit-fawri-json-data.mjs
           node --check ./scripts/plan-postgresql-migration.mjs
           node --check ./scripts/run-postgresql-migration-plan.mjs
+          node --check ./scripts/lib/postgresql-migration-plan.mjs
           node --check ./scripts/tests/plan-postgresql-migration.test.mjs
           node --check ./scripts/tests/plan-postgresql-contract.test.mjs
+          node --check ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs
           node --check ./lib/db/scripts/smoke-migration.mjs
+          node --check ./lib/db/scripts/rollback-migration.mjs
 
       - name: Test migration dry-run safety
         run: pnpm run migration:test
@@ -86,6 +90,15 @@ jobs:
         env:
           FAWRI_ALLOW_MIGRATION_SMOKE: "1"
         run: pnpm --filter @workspace/db run schema:smoke
+
+      - name: Insert validated plan and always roll it back
+        env:
+          FAWRI_ALLOW_MIGRATION_ROLLBACK_TEST: "1"
+        run: |
+          fixture_dir="$(mktemp -d)"
+          trap 'rm -rf "$fixture_dir"' EXIT
+          node ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs "$fixture_dir"
+          pnpm --filter @workspace/db run migration:rollback-test -- "$fixture_dir"
 
       - name: Upload generated migration
         uses: actions/upload-artifact@v4
