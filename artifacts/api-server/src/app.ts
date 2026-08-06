@@ -8,6 +8,7 @@ import router from "./routes";
 import retentionGuardRouter from "./routes/retention-guard";
 import supportPreviewRouter from "./routes/support-preview";
 import supportImagesRouter from "./routes/support-images";
+import emergencyOwnerSnapshotRouter from "./routes/emergency-owner-snapshot";
 import emergencyReadAccessRouter from "./routes/emergency-read-access";
 import emergencyReadDirectoryRouter from "./routes/emergency-read-directory";
 import emergencyMerchantNoticesRouter from "./routes/emergency-merchant-notices";
@@ -79,6 +80,10 @@ app.use("/api", retentionGuardRouter);
 app.use(
   "/api/auth/admin/emergency-read-access",
   emergencyReadDirectoryRouter,
+);
+app.use(
+  "/api/auth/admin/emergency-read-access",
+  emergencyOwnerSnapshotRouter,
 );
 app.use(
   "/api/auth/admin/emergency-read-access",
