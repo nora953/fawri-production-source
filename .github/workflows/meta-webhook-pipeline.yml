@@ -7,11 +7,15 @@ on:
       - "artifacts/api-server/src/index.ts"
       - "artifacts/api-server/src/middleware/metaWebhook*.ts"
       - "artifacts/api-server/src/middleware/merchantWebhook*.ts"
+      - "artifacts/api-server/src/middleware/manualConversation*.ts"
+      - "artifacts/api-server/src/routes/conversation-operations.ts"
       - "artifacts/api-server/src/services/durableJobQueue.ts"
       - "artifacts/api-server/src/services/metaWebhook*.ts"
       - "artifacts/api-server/src/services/merchantReply*.ts"
       - "artifacts/api-server/src/services/metaPageDirectory.ts"
+      - "artifacts/api-server/src/services/manualConversationRuntime.ts"
       - "artifacts/api-server/tests/meta-webhook-*.test.*"
+      - "artifacts/api-server/tests/manual-conversation-*.test.*"
       - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
       - "artifacts/api-server/tests/durable-job-*.test.ts"
       - "artifacts/api-server/package.json"
@@ -26,11 +30,15 @@ on:
       - "artifacts/api-server/src/index.ts"
       - "artifacts/api-server/src/middleware/metaWebhook*.ts"
       - "artifacts/api-server/src/middleware/merchantWebhook*.ts"
+      - "artifacts/api-server/src/middleware/manualConversation*.ts"
+      - "artifacts/api-server/src/routes/conversation-operations.ts"
       - "artifacts/api-server/src/services/durableJobQueue.ts"
       - "artifacts/api-server/src/services/metaWebhook*.ts"
       - "artifacts/api-server/src/services/merchantReply*.ts"
       - "artifacts/api-server/src/services/metaPageDirectory.ts"
+      - "artifacts/api-server/src/services/manualConversationRuntime.ts"
       - "artifacts/api-server/tests/meta-webhook-*.test.*"
+      - "artifacts/api-server/tests/manual-conversation-*.test.*"
       - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
       - "artifacts/api-server/tests/durable-job-*.test.ts"
       - "artifacts/api-server/package.json"
@@ -71,6 +79,7 @@ jobs:
         run: |
           node --check artifacts/api-server/tests/meta-webhook-security.integration.test.mjs
           node --check artifacts/api-server/tests/meta-webhook-queue.integration.test.mjs
+          node --check artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs
 
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
@@ -87,8 +96,9 @@ jobs:
       - name: Build API server
         run: pnpm --filter @workspace/api-server run build
 
-      - name: Test signed durable ingress
+      - name: Test signed ingress and manual conversation operations
         run: >-
           node --test
           artifacts/api-server/tests/meta-webhook-security.integration.test.mjs
           artifacts/api-server/tests/meta-webhook-queue.integration.test.mjs
+          artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs
