@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  foreignKey,
   index,
   jsonb,
   pgTable,
@@ -54,6 +55,10 @@ export const conversations = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    idMerchantUnique: uniqueIndex("conversations_id_merchant_unique").on(
+      table.id,
+      table.merchantId,
+    ),
     merchantCustomerUnique: uniqueIndex(
       "conversations_merchant_channel_customer_unique",
     ).on(table.merchantId, table.channelId, table.customerExternalId),
@@ -75,9 +80,7 @@ export const messages = pgTable(
     merchantId: text("merchant_id")
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
-    conversationId: text("conversation_id")
-      .notNull()
-      .references(() => conversations.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").notNull(),
     externalMessageId: text("external_message_id"),
     externalEventId: text("external_event_id"),
     sender: messageSenderEnum("sender").notNull(),
@@ -99,6 +102,14 @@ export const messages = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    conversationTenantForeignKey: foreignKey({
+      name: "messages_conversation_merchant_fk",
+      columns: [table.conversationId, table.merchantId],
+      foreignColumns: [conversations.id, conversations.merchantId],
+    }).onDelete("cascade"),
+    idConversationMerchantUnique: uniqueIndex(
+      "messages_id_conversation_merchant_unique",
+    ).on(table.id, table.conversationId, table.merchantId),
     externalMessageUnique: uniqueIndex("messages_merchant_external_message_unique")
       .on(table.merchantId, table.externalMessageId)
       .where(sql`${table.externalMessageId} is not null`),
