@@ -19,6 +19,7 @@ import {
 } from "./middleware/merchantOperationalAccess";
 import { enforceMerchantWebhookOperationalAccess } from "./middleware/merchantWebhookAccess";
 import { enforceMerchantWebhookSubscriptionAccess } from "./middleware/merchantWebhookSubscriptionAccess";
+import { enqueueMetaWebhookEvents } from "./middleware/metaWebhookQueueIngress";
 import {
   enforceMetaWebhookSecurity,
   type MetaRawBodyRequest,
@@ -68,6 +69,7 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(enforceMetaWebhookSecurity);
 app.use(enforceMerchantWebhookOperationalAccess);
+app.use(enqueueMetaWebhookEvents);
 app.use(enforceMerchantWebhookSubscriptionAccess);
 
 app.use((req, res, next) => {
