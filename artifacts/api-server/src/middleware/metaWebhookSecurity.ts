@@ -92,7 +92,10 @@ function pruneProcessedEvents(
   return Object.fromEntries(retained);
 }
 
-function stableEventId(pageId: string, event: unknown): string {
+export function getMetaWebhookEventId(
+  pageId: string,
+  event: unknown,
+): string {
   const record =
     event && typeof event === "object"
       ? (event as Record<string, unknown>)
@@ -142,7 +145,7 @@ function filterDuplicateEvents(body: Record<string, unknown>): {
       ? entryRecord.messaging
       : [];
     const filteredMessaging = messaging.filter((event) => {
-      const eventId = stableEventId(pageId, event);
+      const eventId = getMetaWebhookEventId(pageId, event);
       if (events[eventId]) {
         duplicates += 1;
         return false;
