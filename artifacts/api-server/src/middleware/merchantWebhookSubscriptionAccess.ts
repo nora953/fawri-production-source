@@ -24,6 +24,16 @@ function isReplyEligibleEvent(event: unknown): boolean {
   );
 }
 
+function sendInternalDecision(
+  res: Response,
+  code: string,
+  error: string,
+): void {
+  const unavailable = code === "MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE";
+  res.setHeader("Cache-Control", "no-store");
+  res.status(unavailable ? 503 : 409).json({ ok: false, code, error });
+}
+
 export function enforceMerchantWebhookSubscriptionAccess(
   req: Request,
   res: Response,
@@ -46,7 +56,8 @@ export function enforceMerchantWebhookSubscriptionAccess(
     let reservedReplies = 0;
     let blockedReplies = 0;
 
-    const filteredEntries = entries.map((entry) => {
+    const filteredEntries = [];
+    for (const entry of entries) {
       const entryRecord =
         entry && typeof entry === "object"
           ? (entry as Record<string, unknown>)
@@ -56,19 +67,32 @@ export function enforceMerchantWebhookSubscriptionAccess(
       const messaging = Array.isArray(entryRecord.messaging)
         ? entryRecord.messaging
         : [];
+      const filteredMessaging = [];
 
-      const filteredMessaging = messaging.filter((event) => {
-        if (!isReplyEligibleEvent(event)) return true;
+      for (const event of messaging) {
+        if (!isReplyEligibleEvent(event)) {
+          filteredMessaging.push(event);
+          continue;
+        }
         if (!merchantId) {
           blockedReplies += 1;
-          return false;
+          if (res.locals.metaWebhookInternalReplay === true) {
+            sendInternalDecision(
+              res,
+              "META_PAGE_NOT_CONNECTED",
+              "Meta page is not connected to a merchant",
+            );
+            return;
+          }
+          continue;
         }
 
         const eventId = getMetaWebhookEventId(pageId, event);
         const decision = reserveMerchantAutoReply(merchantId, eventId);
         if (decision.allowed) {
           if (!decision.duplicate) reservedReplies += 1;
-          return true;
+          filteredMessaging.push(event);
+          continue;
         }
 
         blockedReplies += 1;
@@ -78,11 +102,14 @@ export function enforceMerchantWebhookSubscriptionAccess(
           event_id: eventId,
           code: decision.code,
         });
-        return false;
-      });
+        if (res.locals.metaWebhookInternalReplay === true) {
+          sendInternalDecision(res, decision.code, decision.error);
+          return;
+        }
+      }
 
-      return { ...entryRecord, messaging: filteredMessaging };
-    });
+      filteredEntries.push({ ...entryRecord, messaging: filteredMessaging });
+    }
 
     req.body = { ...body, entry: filteredEntries };
     res.locals.metaWebhookReservedReplies = reservedReplies;
@@ -90,6 +117,14 @@ export function enforceMerchantWebhookSubscriptionAccess(
     next();
   } catch (error) {
     console.error("Meta webhook subscription enforcement failed:", error);
+    if (res.locals.metaWebhookInternalReplay === true) {
+      sendInternalDecision(
+        res,
+        "MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE",
+        "merchant reply entitlement is unavailable",
+      );
+      return;
+    }
     req.body = { ...body, entry: [] };
     res.locals.metaWebhookSubscriptionUnavailable = true;
     next();
