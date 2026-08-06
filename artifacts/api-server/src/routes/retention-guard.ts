@@ -3,6 +3,7 @@ import {
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "./auth";
+import merchantSettingsRouter from "./merchant-settings";
 import { getMerchantRetentionAccess } from "../services/merchantRetentionPolicy";
 
 const router = Router();
@@ -27,6 +28,8 @@ function blockReadOnlyProductWrites(
 
   next();
 }
+
+router.use(merchantSettingsRouter);
 
 router.post(
   "/products",
