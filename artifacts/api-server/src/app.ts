@@ -18,6 +18,7 @@ import {
   enforceMerchantOperationalAccess,
 } from "./middleware/merchantOperationalAccess";
 import { enforceMerchantWebhookOperationalAccess } from "./middleware/merchantWebhookAccess";
+import { enforceMerchantWebhookSubscriptionAccess } from "./middleware/merchantWebhookSubscriptionAccess";
 import {
   enforceMetaWebhookSecurity,
   type MetaRawBodyRequest,
@@ -67,6 +68,7 @@ app.use(
 app.use(express.urlencoded({ extended: true }));
 app.use(enforceMetaWebhookSecurity);
 app.use(enforceMerchantWebhookOperationalAccess);
+app.use(enforceMerchantWebhookSubscriptionAccess);
 
 app.use((req, res, next) => {
   const inspectionRequestPath =
