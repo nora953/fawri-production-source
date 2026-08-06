@@ -95,6 +95,15 @@ function baseFixture(directory) {
         payload: {
           event_id: "meta:page-1:message-1",
           external_message_id: "message-1",
+          webhook_body: {
+            entry: [
+              {
+                messaging: [
+                  { message: { text: "private customer message" } },
+                ],
+              },
+            ],
+          },
         },
         priority: 10,
         status: "completed",
@@ -130,11 +139,19 @@ function baseFixture(directory) {
   });
 }
 
-function runAudit(directory) {
-  return spawnSync(process.execPath, [auditPath, directory], {
-    cwd: repositoryRoot,
-    encoding: "utf8",
-  });
+function runAudit(directory, { includeRows = true } = {}) {
+  return spawnSync(
+    process.execPath,
+    [auditPath, directory, ...(includeRows ? ["--include-rows"] : [])],
+    {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        FAWRI_INCLUDE_MIGRATION_ROWS: includeRows ? "1" : "0",
+      },
+    },
+  );
 }
 
 test("transitional migration preflight is read-only and emits target rows", () => {
@@ -150,6 +167,7 @@ test("transitional migration preflight is read-only and emits target rows", () =
     const report = JSON.parse(result.stdout);
     assert.equal(report.ok, true);
     assert.equal(report.mode, "read_only_migration_preflight");
+    assert.equal(report.rows_included, true);
     assert.deepEqual(report.summary.row_counts, {
       processed_channel_events: 1,
       reply_ledger: 1,
@@ -204,6 +222,24 @@ test("transitional migration preflight is read-only and emits target rows", () =
       false,
       "plaintext Meta token leaked into preflight output",
     );
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("default preflight output hides row data and customer payloads", () => {
+  const directory = makeDirectory();
+  try {
+    baseFixture(directory);
+    const result = runAudit(directory, { includeRows: false });
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.rows_included, false);
+    assert.equal(Object.hasOwn(report, "rows"), false);
+    assert.equal(Object.hasOwn(report, "target_rows"), false);
+    assert.equal(result.stdout.includes("private customer message"), false);
+    assert.equal(result.stdout.includes("external_message_id"), false);
+    assert.equal(result.stdout.includes("plaintext-secret-must-not-leak"), false);
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
@@ -286,6 +322,7 @@ test("malformed source JSON fails safely", () => {
     const report = JSON.parse(result.stderr);
     assert.equal(report.ok, false);
     assert.equal(report.mode, "read_only_migration_preflight");
+    assert.equal(report.rows_included, false);
     assert.match(report.fatal_error, /SyntaxError/);
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
