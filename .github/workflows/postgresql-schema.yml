@@ -85,10 +85,12 @@ jobs:
           node --check ./scripts/plan-postgresql-migration.mjs
           node --check ./scripts/run-postgresql-migration-plan.mjs
           node --check ./scripts/lib/postgresql-migration-plan.mjs
+          node --check ./scripts/lib/transitional-migration-readiness.mjs
           node --check ./scripts/tests/audit-background-jobs.test.mjs
           node --check ./scripts/tests/audit-transitional-migration-readiness.test.mjs
           node --check ./scripts/tests/plan-postgresql-migration.test.mjs
           node --check ./scripts/tests/plan-postgresql-contract.test.mjs
+          node --check ./scripts/tests/validated-migration-transitional-gate.test.mjs
           node --check ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs
           node --check ./lib/db/scripts/lib/migration-write.mjs
           node --check ./lib/db/scripts/smoke-migration.mjs
