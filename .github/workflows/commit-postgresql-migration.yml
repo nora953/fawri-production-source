@@ -1,0 +1,64 @@
+name: Commit PostgreSQL migration
+
+on:
+  push:
+    branches:
+      - "hardening/postgresql-foundation"
+    paths:
+      - "lib/db/src/schema/**"
+      - ".github/workflows/commit-postgresql-migration.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: commit-postgresql-migration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  generate-and-commit:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout hardening branch
+        uses: actions/checkout@v4
+        with:
+          ref: hardening/postgresql-foundation
+          fetch-depth: 0
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Generate Drizzle migration
+        env:
+          DATABASE_URL: postgresql://migration_generation_only.invalid/fawri
+        run: pnpm --filter @workspace/db run schema:generate
+
+      - name: Verify generated changes are scoped to Drizzle migration files
+        run: |
+          test -n "$(git status --porcelain -- lib/db/drizzle)"
+          unexpected="$(git status --porcelain | grep -vE '^.. lib/db/drizzle/' || true)"
+          if [ -n "$unexpected" ]; then
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+
+      - name: Commit generated migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib/db/drizzle
+          git commit -m "Generate migration tracking schema"
+          git push origin HEAD:hardening/postgresql-foundation
