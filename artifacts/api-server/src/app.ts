@@ -13,6 +13,7 @@ import emergencyReadAccessRouter from "./routes/emergency-read-access";
 import emergencyReadDirectoryRouter from "./routes/emergency-read-directory";
 import emergencyMerchantNoticesRouter from "./routes/emergency-merchant-notices";
 import { enforceMerchantRetentionAccess } from "./middleware/merchantRetentionAccess";
+import { enforceMerchantOperationalAccess } from "./middleware/merchantOperationalAccess";
 import { logger } from "./lib/logger";
 import {
   refreshMerchantRetentionPolicy,
@@ -76,6 +77,7 @@ app.use((_req, _res, next) => {
   next();
 });
 app.use(enforceMerchantRetentionAccess);
+app.use(enforceMerchantOperationalAccess);
 app.use("/api", retentionGuardRouter);
 app.use(
   "/api/auth/admin/emergency-read-access",
