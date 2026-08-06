@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
 import { getFawriDataFilePath } from "../lib/dataPaths";
+import { isTrustedMetaWebhookInternalReplay } from "../services/metaWebhookInternalReplay";
 
 export type MetaRawBodyRequest = Request & { rawBody?: Buffer };
 
@@ -121,17 +122,40 @@ export function getMetaWebhookEventId(
   return `meta:${pageId}:sha256:${digest}`;
 }
 
+export function markMetaWebhookEventsProcessed(
+  eventIds: string[],
+  now: Date = new Date(),
+): void {
+  const normalizedIds = [...new Set(eventIds.map(String).map((id) => id.trim()))]
+    .filter(Boolean);
+  if (normalizedIds.length === 0) return;
+
+  const storePath = getFawriDataFilePath("processed-meta-events.json");
+  const store = readProcessedEventsStore(storePath);
+  const events = pruneProcessedEvents(store.events, now.getTime());
+  const timestamp = now.toISOString();
+  for (const eventId of normalizedIds) events[eventId] = timestamp;
+  writeProcessedEventsStore(storePath, { events });
+}
+
 function filterDuplicateEvents(body: Record<string, unknown>): {
   body: Record<string, unknown>;
   accepted: number;
   duplicates: number;
+  acceptedEventIds: string[];
 } {
   const storePath = getFawriDataFilePath("processed-meta-events.json");
   const nowMs = Date.now();
-  const nowIso = new Date(nowMs).toISOString();
   const store = readProcessedEventsStore(storePath);
   const events = pruneProcessedEvents(store.events, nowMs);
+  const originalEventCount = Object.keys(store.events).length;
+  if (Object.keys(events).length !== originalEventCount) {
+    writeProcessedEventsStore(storePath, { events });
+  }
+
   const entries = Array.isArray(body.entry) ? body.entry : [];
+  const seenThisRequest = new Set(Object.keys(events));
+  const acceptedEventIds: string[] = [];
   let accepted = 0;
   let duplicates = 0;
 
@@ -146,12 +170,13 @@ function filterDuplicateEvents(body: Record<string, unknown>): {
       : [];
     const filteredMessaging = messaging.filter((event) => {
       const eventId = getMetaWebhookEventId(pageId, event);
-      if (events[eventId]) {
+      if (seenThisRequest.has(eventId)) {
         duplicates += 1;
         return false;
       }
 
-      events[eventId] = nowIso;
+      seenThisRequest.add(eventId);
+      acceptedEventIds.push(eventId);
       accepted += 1;
       return true;
     });
@@ -159,14 +184,11 @@ function filterDuplicateEvents(body: Record<string, unknown>): {
     return { ...entryRecord, messaging: filteredMessaging };
   });
 
-  if (accepted > 0 || Object.keys(events).length !== Object.keys(store.events).length) {
-    writeProcessedEventsStore(storePath, { events });
-  }
-
   return {
     body: { ...body, entry: filteredEntries },
     accepted,
     duplicates,
+    acceptedEventIds,
   };
 }
 
@@ -176,6 +198,12 @@ export function enforceMetaWebhookSecurity(
   next: NextFunction,
 ): void {
   if (req.method !== "POST" || req.path !== "/api/meta/webhook") {
+    next();
+    return;
+  }
+
+  if (isTrustedMetaWebhookInternalReplay(req)) {
+    res.locals.metaWebhookInternalReplay = true;
     next();
     return;
   }
@@ -193,32 +221,30 @@ export function enforceMetaWebhookSecurity(
     }
 
     console.warn("META_APP_SECRET is not configured; webhook signature check skipped");
-    next();
-    return;
-  }
+  } else {
+    const rawBody = (req as MetaRawBodyRequest).rawBody;
+    const suppliedSignature = String(
+      req.headers["x-hub-signature-256"] || "",
+    ).trim();
+    if (!rawBody || !/^sha256=[a-f0-9]{64}$/i.test(suppliedSignature)) {
+      sendWebhookError(
+        res,
+        401,
+        "META_WEBHOOK_SIGNATURE_REQUIRED",
+        "valid Meta webhook signature is required",
+      );
+      return;
+    }
 
-  const rawBody = (req as MetaRawBodyRequest).rawBody;
-  const suppliedSignature = String(
-    req.headers["x-hub-signature-256"] || "",
-  ).trim();
-  if (!rawBody || !/^sha256=[a-f0-9]{64}$/i.test(suppliedSignature)) {
-    sendWebhookError(
-      res,
-      401,
-      "META_WEBHOOK_SIGNATURE_REQUIRED",
-      "valid Meta webhook signature is required",
-    );
-    return;
-  }
-
-  if (!signatureMatches(rawBody, suppliedSignature)) {
-    sendWebhookError(
-      res,
-      401,
-      "META_WEBHOOK_SIGNATURE_INVALID",
-      "Meta webhook signature is invalid",
-    );
-    return;
+    if (!signatureMatches(rawBody, suppliedSignature)) {
+      sendWebhookError(
+        res,
+        401,
+        "META_WEBHOOK_SIGNATURE_INVALID",
+        "Meta webhook signature is invalid",
+      );
+      return;
+    }
   }
 
   const body =
@@ -231,6 +257,7 @@ export function enforceMetaWebhookSecurity(
     req.body = result.body;
     res.locals.metaWebhookAcceptedEvents = result.accepted;
     res.locals.metaWebhookDuplicateEvents = result.duplicates;
+    res.locals.metaWebhookAcceptedEventIds = result.acceptedEventIds;
     next();
   } catch (error) {
     console.error("Meta webhook idempotency check failed:", error);
