@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   jsonb,
   pgTable,
@@ -100,7 +101,7 @@ export const loginAttempts = pgTable(
     }),
     phone: text("phone"),
     kind: sessionKindEnum("kind").notNull(),
-    success: text("success").notNull(),
+    success: boolean("success").notNull(),
     reasonCode: text("reason_code"),
     deviceId: text("device_id"),
     deviceLabel: text("device_label"),
