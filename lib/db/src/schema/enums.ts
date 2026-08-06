@@ -6,6 +6,17 @@ export const interfaceLanguageEnum = pgEnum("interface_language", [
   "en",
 ]);
 
+export const accountKindEnum = pgEnum("account_kind", [
+  "merchant",
+  "admin",
+]);
+
+export const accountStateEnum = pgEnum("account_state", [
+  "active",
+  "suspended",
+  "closed",
+]);
+
 export const merchantStatusEnum = pgEnum("merchant_status", [
   "pending_activation",
   "approved",
@@ -13,7 +24,7 @@ export const merchantStatusEnum = pgEnum("merchant_status", [
   "suspended",
 ]);
 
-export const accountStatusEnum = pgEnum("account_status", [
+export const accountStatusEnum = pgEnum("merchant_account_status", [
   "pending_review",
   "approved",
   "rejected",
@@ -93,4 +104,78 @@ export const deviceTrustStatusEnum = pgEnum("device_trust_status", [
   "pending",
   "trusted",
   "revoked",
+]);
+
+export const channelPlatformEnum = pgEnum("channel_platform", [
+  "messenger",
+  "instagram",
+  "whatsapp",
+  "telegram",
+  "tiktok",
+  "web_chat",
+]);
+
+export const channelStatusEnum = pgEnum("channel_status", [
+  "connected",
+  "disconnected",
+  "pending",
+  "error",
+  "revoked",
+]);
+
+export const conversationStatusEnum = pgEnum("conversation_status", [
+  "auto_replying",
+  "needs_reply",
+  "manual",
+  "closed",
+]);
+
+export const messageSenderEnum = pgEnum("message_sender", [
+  "customer",
+  "fawri",
+  "merchant",
+  "system",
+]);
+
+export const messageStatusEnum = pgEnum("message_status", [
+  "received",
+  "queued",
+  "sent",
+  "failed",
+]);
+
+export const replyTypeEnum = pgEnum("reply_type", [
+  "ai",
+  "database",
+  "fallback",
+  "manual",
+  "system",
+]);
+
+export const orderStatusEnum = pgEnum("order_status", [
+  "new",
+  "pending_confirmation",
+  "confirmed",
+  "preparing",
+  "shipped",
+  "delivered",
+  "cancelled",
+  "out_of_stock",
+  "waiting_customer_approval",
+]);
+
+export const paymentStatusEnum = pgEnum("payment_status", [
+  "cash_on_delivery",
+  "electronic_pending",
+  "manual_review",
+  "paid",
+  "failed",
+]);
+
+export const paymentMethodEnum = pgEnum("payment_method", [
+  "cash_on_delivery",
+  "superqi",
+  "fastpay",
+  "zaincash",
+  "other",
 ]);
