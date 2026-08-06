@@ -55,8 +55,11 @@ const AdminWorkMonitorPage = lazy(() => import("@/pages/AdminWorkMonitorPage"));
 const AdminSupportPreviewPage = lazy(
   () => import("@/pages/AdminSupportPreviewPage"),
 );
-const AdminEmergencyAccessPage = lazy(
-  () => import("@/pages/AdminEmergencyAccessPage"),
+const AdminEmergencyAccessRouterPage = lazy(
+  () => import("@/pages/AdminEmergencyAccessRouterPage"),
+);
+const AdminEmergencySnapshotPage = lazy(
+  () => import("@/pages/AdminEmergencySnapshotPage"),
 );
 
 const queryClient = new QueryClient();
@@ -100,10 +103,15 @@ function AppRouter() {
         <Route path="/admin/support-preview/:sessionId">
           {(params) => <AdminSupportPreviewPage sessionId={params.sessionId} />}
         </Route>
+        <Route path="/admin/emergency-access/:requestId/snapshot">
+          {(params) => (
+            <AdminEmergencySnapshotPage requestId={params.requestId} />
+          )}
+        </Route>
         <Route path="/admin/emergency-access">
           {() => (
             <div className="emergency-access-route">
-              <AdminEmergencyAccessPage />
+              <AdminEmergencyAccessRouterPage />
             </div>
           )}
         </Route>
