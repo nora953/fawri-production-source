@@ -83,6 +83,7 @@ test("reply reservations enforce subscription status, balance, and idempotency",
     if (first.allowed) {
       assert.equal(first.duplicate, false);
       assert.equal(first.repliesRemaining, 1);
+      assert.equal(first.subscriptionId, "subscription-merchant-active");
     }
 
     const duplicate = reserveMerchantAutoReply(
@@ -94,6 +95,7 @@ test("reply reservations enforce subscription status, balance, and idempotency",
     if (duplicate.allowed) {
       assert.equal(duplicate.duplicate, true);
       assert.equal(duplicate.repliesRemaining, 1);
+      assert.equal(duplicate.subscriptionId, "subscription-merchant-active");
     }
 
     const second = reserveMerchantAutoReply(
@@ -105,6 +107,7 @@ test("reply reservations enforce subscription status, balance, and idempotency",
     if (second.allowed) {
       assert.equal(second.duplicate, false);
       assert.equal(second.repliesRemaining, 0);
+      assert.equal(second.subscriptionId, "subscription-merchant-active");
     }
 
     const exhaustedAfterConsumption = reserveMerchantAutoReply(
@@ -167,6 +170,72 @@ test("reply reservations enforce subscription status, balance, and idempotency",
     assert.equal(
       reservations.reservations["meta:page-1:message-1"].status,
       "consumed",
+    );
+    assert.equal(
+      reservations.reservations["meta:page-1:message-1"].subscription_id,
+      "subscription-merchant-active",
+    );
+  } finally {
+    if (previousDataDirectory === undefined) {
+      delete process.env.FAWRI_DATA_DIR;
+    } else {
+      process.env.FAWRI_DATA_DIR = previousDataDirectory;
+    }
+    await rm(dataDirectory, { recursive: true, force: true });
+  }
+});
+
+test("incomplete pending reservation blocks reply without changing balance", async () => {
+  const dataDirectory = await mkdtemp(
+    path.join(os.tmpdir(), "fawri-pending-reply-reservation-"),
+  );
+  const previousDataDirectory = process.env.FAWRI_DATA_DIR;
+  process.env.FAWRI_DATA_DIR = dataDirectory;
+
+  const now = new Date("2026-08-06T12:00:00.000Z");
+  const merchantsPath = path.join(dataDirectory, "merchants.json");
+  const reservationPath = path.join(dataDirectory, "reply-reservations.json");
+  const merchantDatabase = {
+    merchants: [],
+    subscriptions: [subscription("merchant-active", "active", { replies: 2 })],
+  };
+
+  try {
+    await writeFile(merchantsPath, JSON.stringify(merchantDatabase));
+    await writeFile(
+      reservationPath,
+      JSON.stringify({
+        reservations: {
+          "meta:page-1:pending-message": {
+            merchant_id: "merchant-active",
+            subscription_id: "subscription-merchant-active",
+            event_id: "meta:page-1:pending-message",
+            amount: 1,
+            reserved_at: now.toISOString(),
+            status: "pending",
+          },
+        },
+      }),
+    );
+
+    const before = JSON.parse(await readFile(merchantsPath, "utf8"));
+    const decision = reserveMerchantAutoReply(
+      "merchant-active",
+      "meta:page-1:pending-message",
+      now,
+    );
+    assert.equal(decision.allowed, false);
+    if (!decision.allowed) {
+      assert.equal(decision.code, "MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE");
+      assert.match(decision.error, /incomplete/);
+    }
+
+    const after = JSON.parse(await readFile(merchantsPath, "utf8"));
+    assert.deepEqual(after, before, "pending reservation changed reply balance");
+    const reservations = JSON.parse(await readFile(reservationPath, "utf8"));
+    assert.equal(
+      reservations.reservations["meta:page-1:pending-message"].status,
+      "pending",
     );
   } finally {
     if (previousDataDirectory === undefined) {
