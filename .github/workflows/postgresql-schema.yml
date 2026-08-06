@@ -6,6 +6,7 @@ on:
       - "lib/db/**"
       - "scripts/audit-fawri-json-data.mjs"
       - "scripts/plan-postgresql-migration.mjs"
+      - "scripts/tests/**"
       - ".github/workflows/postgresql-schema.yml"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -46,6 +47,10 @@ jobs:
         run: |
           node --check ./scripts/audit-fawri-json-data.mjs
           node --check ./scripts/plan-postgresql-migration.mjs
+          node --check ./scripts/tests/plan-postgresql-migration.test.mjs
+
+      - name: Test migration dry-run safety
+        run: pnpm run migration:test
 
       - name: Type-check database package
         run: pnpm --filter @workspace/db run typecheck
