@@ -1,6 +1,7 @@
 import {
   boolean,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -12,7 +13,7 @@ import {
   sessionKindEnum,
   sessionStatusEnum,
 } from "./enums";
-import { merchants } from "./merchants";
+import { accounts } from "./accounts";
 
 export const accountSessions = pgTable(
   "account_sessions",
@@ -20,7 +21,7 @@ export const accountSessions = pgTable(
     id: text("id").primaryKey(),
     accountId: text("account_id")
       .notNull()
-      .references(() => merchants.id, { onDelete: "cascade" }),
+      .references(() => accounts.id, { onDelete: "cascade" }),
     kind: sessionKindEnum("kind").notNull(),
     status: sessionStatusEnum("status").notNull().default("active"),
     tokenHash: text("token_hash").notNull(),
@@ -28,7 +29,7 @@ export const accountSessions = pgTable(
     deviceLabel: text("device_label"),
     userAgent: text("user_agent"),
     ipAddress: text("ip_address"),
-    sessionVersion: text("session_version"),
+    sessionVersion: integer("session_version").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -39,11 +40,14 @@ export const accountSessions = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
     revokedByAccountId: text("revoked_by_account_id").references(
-      () => merchants.id,
+      () => accounts.id,
       { onDelete: "set null" },
     ),
     revokeReason: text("revoke_reason"),
-    metadata: jsonb("metadata").$type<Record<string, unknown>>().notNull().default({}),
+    metadata: jsonb("metadata")
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .default({}),
   },
   (table) => ({
     tokenHashUnique: uniqueIndex("account_sessions_token_hash_unique").on(
@@ -63,7 +67,7 @@ export const trustedDevices = pgTable(
     id: text("id").primaryKey(),
     accountId: text("account_id")
       .notNull()
-      .references(() => merchants.id, { onDelete: "cascade" }),
+      .references(() => accounts.id, { onDelete: "cascade" }),
     deviceId: text("device_id").notNull(),
     label: text("label"),
     userAgent: text("user_agent"),
@@ -75,9 +79,10 @@ export const trustedDevices = pgTable(
       .notNull()
       .defaultNow(),
     trustedAt: timestamp("trusted_at", { withTimezone: true }),
-    trustedByAdminId: text("trusted_by_admin_id").references(() => merchants.id, {
-      onDelete: "set null",
-    }),
+    trustedByAccountId: text("trusted_by_account_id").references(
+      () => accounts.id,
+      { onDelete: "set null" },
+    ),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
   },
   (table) => ({
@@ -96,7 +101,7 @@ export const loginAttempts = pgTable(
   "login_attempts",
   {
     id: text("id").primaryKey(),
-    accountId: text("account_id").references(() => merchants.id, {
+    accountId: text("account_id").references(() => accounts.id, {
       onDelete: "set null",
     }),
     phone: text("phone"),
