@@ -4,6 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { buildTransitionalMigrationReadiness } from "./transitional-migration-readiness.mjs";
 
 const moduleDirectory = path.dirname(fileURLToPath(import.meta.url));
 export const repositoryRoot = path.resolve(moduleDirectory, "../..");
@@ -13,7 +14,7 @@ const plannerPath = path.join(
   "plan-postgresql-migration.mjs",
 );
 const metaDirectory = path.join(repositoryRoot, "lib", "db", "drizzle", "meta");
-export const migrationPlanVersion = "1";
+export const migrationPlanVersion = "2";
 
 function sha256Text(value) {
   return createHash("sha256").update(value).digest("hex");
@@ -89,6 +90,60 @@ function runInstrumentedPlanner(dataDirectory) {
   } finally {
     fs.rmSync(temporaryDirectory, { recursive: true, force: true });
   }
+}
+
+function normalizeIssue(issue, source) {
+  const details =
+    issue?.details && typeof issue.details === "object" ? issue.details : {};
+  return {
+    code: String(issue?.code || "TRANSITIONAL_MIGRATION_ISSUE"),
+    source,
+    ...details,
+  };
+}
+
+function mergeTransitionalReadiness(report, transitionalReport) {
+  const errors = Array.isArray(report.errors) ? report.errors : [];
+  const warnings = Array.isArray(report.warnings) ? report.warnings : [];
+  const issues = Array.isArray(transitionalReport.issues)
+    ? transitionalReport.issues
+    : [];
+
+  for (const item of issues) {
+    const normalized = normalizeIssue(
+      item,
+      "transitional_migration_preflight",
+    );
+    if (item?.severity === "error") errors.push(normalized);
+    else warnings.push(normalized);
+  }
+
+  report.errors = errors;
+  report.warnings = warnings;
+  report.source_files = {
+    ...(report.source_files || {}),
+    ...Object.fromEntries(
+      Object.entries(transitionalReport.source_files || {}).map(
+        ([key, descriptor]) => [`transitional_${key}`, descriptor],
+      ),
+    ),
+  };
+  report.transitional_migration = {
+    ok: transitionalReport.ok === true,
+    mode: transitionalReport.mode,
+    rows_included: false,
+    summary: transitionalReport.summary || {},
+    source_files: transitionalReport.source_files || {},
+    issues,
+  };
+  report.summary = {
+    ...(report.summary || {}),
+    transitional_errors: issues.filter((item) => item?.severity === "error")
+      .length,
+    transitional_warnings: issues.filter(
+      (item) => item?.severity !== "error",
+    ).length,
+  };
 }
 
 export function hasDefault(column) {
@@ -302,6 +357,10 @@ export function buildValidatedMigrationPlan({
   }
 
   const report = JSON.parse(result.stdout);
+  const { report: transitionalReport } = buildTransitionalMigrationReadiness({
+    dataDirectory: resolvedDataDirectory,
+  });
+  mergeTransitionalReadiness(report, transitionalReport);
   report.tool_version = migrationPlanVersion;
   report.source_manifest_sha256 = sha256Text(
     canonicalJson(report.source_files || {}),
