@@ -68,8 +68,10 @@ jobs:
           node --check ./scripts/tests/plan-postgresql-migration.test.mjs
           node --check ./scripts/tests/plan-postgresql-contract.test.mjs
           node --check ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs
+          node --check ./lib/db/scripts/lib/migration-write.mjs
           node --check ./lib/db/scripts/smoke-migration.mjs
           node --check ./lib/db/scripts/rollback-migration.mjs
+          node --check ./lib/db/scripts/commit-migration.mjs
 
       - name: Test migration dry-run safety
         run: pnpm run migration:test
@@ -99,6 +101,15 @@ jobs:
           trap 'rm -rf "$fixture_dir"' EXIT
           node ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs "$fixture_dir"
           node ./lib/db/scripts/rollback-migration.mjs "$fixture_dir"
+
+      - name: Commit validated plan, reconcile values, and clean up
+        env:
+          FAWRI_ALLOW_MIGRATION_COMMIT_TEST: "1"
+        run: |
+          fixture_dir="$(mktemp -d)"
+          trap 'rm -rf "$fixture_dir"' EXIT
+          node ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs "$fixture_dir"
+          node ./lib/db/scripts/commit-migration.mjs "$fixture_dir"
 
       - name: Upload generated migration
         uses: actions/upload-artifact@v4
