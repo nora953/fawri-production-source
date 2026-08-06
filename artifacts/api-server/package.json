@@ -10,6 +10,7 @@
     "test:merchant-session": "node ./build.mjs && node --test ./tests/merchant-session.integration.test.mjs",
     "test:merchant-status-access": "node ./build.mjs && node --test ./tests/merchant-status-access.integration.test.mjs",
     "test:meta-webhook-security": "node ./build.mjs && node --test ./tests/meta-webhook-security.integration.test.mjs",
+    "test:manual-conversations": "node ./build.mjs && node --test ./tests/manual-conversation-operations.integration.test.mjs",
     "test:reply-entitlement": "pnpm exec tsx --test ./tests/merchant-reply-entitlement.test.ts",
     "test:durable-queue": "pnpm exec tsx --test ./tests/durable-job-queue.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -35,7 +36,7 @@
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
-    "@types/cors": "^2.8.19",
+    "@types/cors": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/node": "catalog:",
     "esbuild": "0.27.3",
