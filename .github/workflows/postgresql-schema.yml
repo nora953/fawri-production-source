@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "lib/db/**"
+      - "scripts/audit-fawri-data.mjs"
       - "scripts/audit-fawri-json-data.mjs"
       - "scripts/audit-fawri-background-jobs.mjs"
       - "scripts/audit-manual-conversation-operations.mjs"
@@ -21,6 +22,7 @@ on:
       - "hardening/**"
     paths:
       - "lib/db/**"
+      - "scripts/audit-fawri-data.mjs"
       - "scripts/audit-fawri-json-data.mjs"
       - "scripts/audit-fawri-background-jobs.mjs"
       - "scripts/audit-manual-conversation-operations.mjs"
@@ -45,7 +47,7 @@ concurrency:
 jobs:
   validate-schema:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     services:
       postgres:
         image: postgres:16-alpine
@@ -81,6 +83,7 @@ jobs:
 
       - name: Check JSON and migration tools syntax
         run: |
+          node --check ./scripts/audit-fawri-data.mjs
           node --check ./scripts/audit-fawri-json-data.mjs
           node --check ./scripts/audit-fawri-background-jobs.mjs
           node --check ./scripts/audit-manual-conversation-operations.mjs
@@ -89,11 +92,13 @@ jobs:
           node --check ./scripts/run-postgresql-migration-plan.mjs
           node --check ./scripts/lib/postgresql-migration-plan.mjs
           node --check ./scripts/lib/transitional-migration-readiness.mjs
+          node --check ./scripts/tests/audit-fawri-data.test.mjs
           node --check ./scripts/tests/audit-background-jobs.test.mjs
           node --check ./scripts/tests/audit-manual-conversation-operations.test.mjs
           node --check ./scripts/tests/audit-transitional-migration-readiness.test.mjs
           node --check ./scripts/tests/plan-postgresql-migration.test.mjs
           node --check ./scripts/tests/plan-postgresql-contract.test.mjs
+          node --check ./scripts/tests/transitional-secret-redaction.test.mjs
           node --check ./scripts/tests/validated-migration-transitional-gate.test.mjs
           node --check ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs
           node --check ./scripts/tests/fixtures/create-transitional-migration-fixture.mjs
