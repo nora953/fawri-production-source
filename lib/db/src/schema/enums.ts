@@ -273,3 +273,35 @@ export const auditActorKindEnum = pgEnum("audit_actor_kind", [
   "system",
   "external",
 ]);
+
+export const migrationModeEnum = pgEnum("migration_mode", [
+  "dry_run",
+  "rollback_test",
+  "commit_test",
+  "write",
+]);
+
+export const migrationRunStatusEnum = pgEnum("migration_run_status", [
+  "planned",
+  "running",
+  "reconciling",
+  "committed",
+  "rolled_back",
+  "cleaned_up",
+  "failed",
+]);
+
+export const migrationSourceFileStatusEnum = pgEnum(
+  "migration_source_file_status",
+  ["missing", "parsed", "invalid", "skipped"],
+);
+
+export const migrationRecordDispositionEnum = pgEnum(
+  "migration_record_disposition",
+  ["planned", "inserted", "reconciled", "skipped", "failed"],
+);
+
+export const migrationReconciliationStatusEnum = pgEnum(
+  "migration_reconciliation_status",
+  ["matched", "mismatch", "warning", "skipped"],
+);
