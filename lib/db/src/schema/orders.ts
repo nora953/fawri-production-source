@@ -5,7 +5,10 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
+import { accounts } from "./accounts";
+import { products, productVariants } from "./catalog";
 import { conversations } from "./conversations";
 import {
   orderStatusEnum,
@@ -13,7 +16,6 @@ import {
   paymentStatusEnum,
 } from "./enums";
 import { merchants } from "./merchants";
-import { products, productVariants } from "./catalog";
 
 export const orders = pgTable(
   "orders",
@@ -45,7 +47,10 @@ export const orders = pgTable(
     sourceChannel: text("source_channel").notNull(),
     notes: text("notes"),
     paymentVerifiedAt: timestamp("payment_verified_at", { withTimezone: true }),
-    paymentVerifiedByAccountId: text("payment_verified_by_account_id"),
+    paymentVerifiedByAccountId: text("payment_verified_by_account_id").references(
+      () => accounts.id,
+      { onDelete: "set null" },
+    ),
     paymentRejectionReason: text("payment_rejection_reason"),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
@@ -139,7 +144,7 @@ export const orderDrafts = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    conversationIndex: index("order_drafts_conversation_idx").on(
+    conversationUnique: uniqueIndex("order_drafts_conversation_unique").on(
       table.conversationId,
     ),
     expiryIndex: index("order_drafts_expiry_idx").on(table.expiresAt),
