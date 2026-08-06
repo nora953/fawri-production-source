@@ -9,12 +9,15 @@ const DEFAULT_DATA_DIR = path.resolve(
 const KNOWN_FILES = [
   "merchants.json",
   "bot-runtime.json",
+  "fawri-runtime-db.json",
   "saved-answers.json",
   "training-requests.json",
   "learned-answers.json",
   "support-preview-sessions.json",
   "emergency-read-access.json",
   "admin-work-monitor.json",
+  "processed-meta-events.json",
+  "reply-reservations.json",
 ];
 
 const runtimeCollections = [
@@ -25,6 +28,12 @@ const runtimeCollections = [
   "order_drafts",
   "metaPages",
   "meta_pages",
+];
+
+const runtimeMapCollections = [
+  "productsByMerchant",
+  "conversationsByMerchant",
+  "ordersByMerchant",
 ];
 
 function readJsonFile(filePath) {
@@ -38,6 +47,12 @@ function readJsonFile(filePath) {
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
+}
+
+function asRecord(value) {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value
+    : {};
 }
 
 function collectIds(items) {
@@ -69,6 +84,18 @@ function countObjectArrays(value) {
   );
 }
 
+function countObjectMaps(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(
+        ([, candidate]) =>
+          candidate && typeof candidate === "object" && !Array.isArray(candidate),
+      )
+      .map(([key, candidate]) => [key, Object.keys(candidate).length]),
+  );
+}
+
 function issue(severity, code, details) {
   return { severity, code, details };
 }
@@ -81,6 +108,15 @@ function auditMerchants(value, issues) {
     merchants.filter((record) => record?.is_admin !== true),
   );
   const accountIds = collectIds(merchants);
+  const subscriptionIds = collectIds(subscriptions);
+  const subscriptionMerchantById = new Map(
+    subscriptions
+      .map((subscription) => [
+        String(subscription?.id || "").trim(),
+        String(subscription?.merchant_id || "").trim(),
+      ])
+      .filter(([subscriptionId]) => Boolean(subscriptionId)),
+  );
 
   for (const duplicate of duplicateValues(merchants, (item) => item?.id)) {
     issues.push(issue("error", "DUPLICATE_ACCOUNT_ID", duplicate));
@@ -128,7 +164,13 @@ function auditMerchants(value, issues) {
     }
   }
 
-  return { merchants, merchantIds, accountIds };
+  return {
+    merchants,
+    merchantIds,
+    accountIds,
+    subscriptionIds,
+    subscriptionMerchantById,
+  };
 }
 
 function auditRuntime(value, merchantIds, issues) {
@@ -159,6 +201,71 @@ function auditRuntime(value, merchantIds, issues) {
   }
 }
 
+function auditRuntimeMaps(value, merchantIds, issues) {
+  for (const key of runtimeMapCollections) {
+    const collectionMap = asRecord(value?.[key]);
+    for (const [merchantId, collectionValue] of Object.entries(collectionMap)) {
+      if (!merchantIds.has(merchantId)) {
+        issues.push(
+          issue("error", "ORPHAN_RUNTIME_MAP_MERCHANT", {
+            collection: key,
+            merchant_id: merchantId,
+          }),
+        );
+      }
+      const collection = asArray(collectionValue);
+      for (const duplicate of duplicateValues(collection, (item) => item?.id)) {
+        issues.push(
+          issue("error", "DUPLICATE_RUNTIME_MAP_ID", {
+            collection: key,
+            merchant_id: merchantId,
+            ...duplicate,
+          }),
+        );
+      }
+      for (const item of collection) {
+        const rowMerchantId = String(item?.merchant_id || merchantId).trim();
+        if (rowMerchantId !== merchantId) {
+          issues.push(
+            issue("error", "RUNTIME_MAP_MERCHANT_MISMATCH", {
+              collection: key,
+              map_merchant_id: merchantId,
+              record_id: item?.id,
+              row_merchant_id: rowMerchantId,
+            }),
+          );
+        }
+      }
+    }
+  }
+
+  const pages = asRecord(value?.metaPagesByPageId);
+  for (const [pageId, page] of Object.entries(pages)) {
+    const merchantId = String(page?.merchant_id || "").trim();
+    if (!merchantId || !merchantIds.has(merchantId)) {
+      issues.push(
+        issue("error", "ORPHAN_META_PAGE_MERCHANT", {
+          page_id: pageId,
+          merchant_id: merchantId || null,
+        }),
+      );
+    }
+  }
+
+  const drafts = asRecord(value?.orderDraftsByConversation);
+  for (const [conversationId, draft] of Object.entries(drafts)) {
+    const merchantId = String(draft?.merchant_id || "").trim();
+    if (merchantId && !merchantIds.has(merchantId)) {
+      issues.push(
+        issue("error", "ORPHAN_ORDER_DRAFT_MERCHANT", {
+          conversation_id: conversationId,
+          merchant_id: merchantId,
+        }),
+      );
+    }
+  }
+}
+
 function auditMerchantScopedCollection(value, collectionKey, merchantIds, issues) {
   const collection = asArray(value?.[collectionKey]);
   for (const duplicate of duplicateValues(collection, (item) => item?.id)) {
@@ -185,6 +292,128 @@ function auditMerchantScopedCollection(value, collectionKey, merchantIds, issues
   }
 }
 
+function auditProcessedMetaEvents(value, issues) {
+  const events = asRecord(value?.events);
+  for (const [eventId, timestamp] of Object.entries(events)) {
+    if (!eventId.startsWith("meta:")) {
+      issues.push(
+        issue("error", "INVALID_META_EVENT_ID", { event_id: eventId }),
+      );
+    }
+    if (!Number.isFinite(new Date(String(timestamp || "")).getTime())) {
+      issues.push(
+        issue("error", "INVALID_META_EVENT_TIMESTAMP", {
+          event_id: eventId,
+          timestamp,
+        }),
+      );
+    }
+  }
+}
+
+function auditReplyReservations(
+  value,
+  merchantIds,
+  subscriptionIds,
+  subscriptionMerchantById,
+  issues,
+) {
+  const reservations = asRecord(value?.reservations);
+  const now = Date.now();
+
+  for (const [eventId, reservation] of Object.entries(reservations)) {
+    const record = asRecord(reservation);
+    const recordEventId = String(record.event_id || "").trim();
+    const merchantId = String(record.merchant_id || "").trim();
+    const subscriptionId = String(record.subscription_id || "").trim();
+    const status = String(record.status || "").trim();
+    const amount = Number(record.amount);
+    const reservedAt = new Date(String(record.reserved_at || ""));
+
+    if (!eventId.startsWith("meta:") || recordEventId !== eventId) {
+      issues.push(
+        issue("error", "REPLY_RESERVATION_EVENT_ID_MISMATCH", {
+          map_event_id: eventId,
+          record_event_id: recordEventId,
+        }),
+      );
+    }
+    if (!merchantIds.has(merchantId)) {
+      issues.push(
+        issue("error", "ORPHAN_REPLY_RESERVATION_MERCHANT", {
+          event_id: eventId,
+          merchant_id: merchantId || null,
+        }),
+      );
+    }
+    if (!subscriptionIds.has(subscriptionId)) {
+      issues.push(
+        issue("error", "ORPHAN_REPLY_RESERVATION_SUBSCRIPTION", {
+          event_id: eventId,
+          subscription_id: subscriptionId || null,
+        }),
+      );
+    } else if (subscriptionMerchantById.get(subscriptionId) !== merchantId) {
+      issues.push(
+        issue("error", "REPLY_RESERVATION_SUBSCRIPTION_MERCHANT_MISMATCH", {
+          event_id: eventId,
+          merchant_id: merchantId,
+          subscription_id: subscriptionId,
+          subscription_merchant_id: subscriptionMerchantById.get(subscriptionId),
+        }),
+      );
+    }
+    if (!Number.isInteger(amount) || amount <= 0) {
+      issues.push(
+        issue("error", "INVALID_REPLY_RESERVATION_AMOUNT", {
+          event_id: eventId,
+          amount: record.amount,
+        }),
+      );
+    }
+    if (!Number.isFinite(reservedAt.getTime())) {
+      issues.push(
+        issue("error", "INVALID_REPLY_RESERVATION_TIMESTAMP", {
+          event_id: eventId,
+          reserved_at: record.reserved_at,
+        }),
+      );
+    }
+    if (status !== "pending" && status !== "consumed") {
+      issues.push(
+        issue("error", "INVALID_REPLY_RESERVATION_STATUS", {
+          event_id: eventId,
+          status,
+        }),
+      );
+    }
+    if (status === "pending" && Number.isFinite(reservedAt.getTime())) {
+      const ageMs = now - reservedAt.getTime();
+      issues.push(
+        issue(
+          ageMs > 5 * 60 * 1000 ? "error" : "warning",
+          ageMs > 5 * 60 * 1000
+            ? "STALE_PENDING_REPLY_RESERVATION"
+            : "PENDING_REPLY_RESERVATION",
+          { event_id: eventId, age_ms: ageMs },
+        ),
+      );
+    }
+    if (
+      status === "consumed" &&
+      (!Number.isInteger(Number(record.replies_remaining_after)) ||
+        Number(record.replies_remaining_after) < 0)
+    ) {
+      issues.push(
+        issue("error", "INVALID_REPLY_RESERVATION_REMAINING", {
+          event_id: eventId,
+          replies_remaining_after: record.replies_remaining_after,
+        }),
+      );
+    }
+  }
+}
+
 function buildReport(dataDir) {
   const issues = [];
   const files = {};
@@ -205,6 +434,7 @@ function buildReport(dataDir) {
         bytes: result.bytes,
         sha256: result.sha256,
         collections: countObjectArrays(result.value),
+        maps: countObjectMaps(result.value),
       };
     } catch (error) {
       files[fileName] = { exists: true, parse_error: String(error) };
@@ -218,9 +448,18 @@ function buildReport(dataDir) {
   }
 
   const merchantsDb = parsed["merchants.json"] || {};
-  const { merchantIds } = auditMerchants(merchantsDb, issues);
+  const {
+    merchantIds,
+    subscriptionIds,
+    subscriptionMerchantById,
+  } = auditMerchants(merchantsDb, issues);
 
   auditRuntime(parsed["bot-runtime.json"] || {}, merchantIds, issues);
+  auditRuntimeMaps(
+    parsed["fawri-runtime-db.json"] || {},
+    merchantIds,
+    issues,
+  );
   auditMerchantScopedCollection(
     parsed["saved-answers.json"] || {},
     "answers",
@@ -251,6 +490,15 @@ function buildReport(dataDir) {
     emergencyDb,
     "merchant_notices",
     merchantIds,
+    issues,
+  );
+
+  auditProcessedMetaEvents(parsed["processed-meta-events.json"] || {}, issues);
+  auditReplyReservations(
+    parsed["reply-reservations.json"] || {},
+    merchantIds,
+    subscriptionIds,
+    subscriptionMerchantById,
     issues,
   );
 
