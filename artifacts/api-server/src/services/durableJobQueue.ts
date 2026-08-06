@@ -201,12 +201,7 @@ function recoverExpiredClaims(
   for (const job of store.jobs) {
     if (job.status !== "processing") continue;
     const lockedAt = validDate(job.locked_at)?.getTime();
-    if (
-      lockedAt &&
-      now.getTime() - lockedAt < visibilityTimeoutMs
-    ) {
-      continue;
-    }
+    if (lockedAt && now.getTime() - lockedAt < visibilityTimeoutMs) continue;
 
     job.locked_at = undefined;
     job.locked_by = undefined;
@@ -226,7 +221,11 @@ function recoverExpiredClaims(
   }
 }
 
-function safeError(error: unknown): { code: string; message: string } {
+function safeError(error: unknown): {
+  code: string;
+  message: string;
+  retryable: boolean;
+} {
   if (error && typeof error === "object") {
     const record = error as Record<string, unknown>;
     return {
@@ -235,11 +234,13 @@ function safeError(error: unknown): { code: string; message: string } {
         normalizedText(record.message) ||
         normalizedText(error) ||
         "job handler failed",
+      retryable: record.retryable !== false,
     };
   }
   return {
     code: "JOB_HANDLER_FAILED",
     message: normalizedText(error) || "job handler failed",
+    retryable: true,
   };
 }
 
@@ -277,10 +278,7 @@ export function enqueueDurableJob(
       priority: Number.isInteger(input.priority) ? Number(input.priority) : 0,
       status: "queued",
       attempts: 0,
-      max_attempts: positiveInteger(
-        input.maxAttempts,
-        DEFAULT_MAX_ATTEMPTS,
-      ),
+      max_attempts: positiveInteger(input.maxAttempts, DEFAULT_MAX_ATTEMPTS),
       available_at: (input.availableAt || now).toISOString(),
       created_at: timestamp,
       updated_at: timestamp,
@@ -384,7 +382,7 @@ export function failDurableJob(
     job.locked_at = undefined;
     job.locked_by = undefined;
 
-    if (job.attempts >= job.max_attempts) {
+    if (!failure.retryable || job.attempts >= job.max_attempts) {
       job.status = "dead_letter";
       job.dead_lettered_at = now.toISOString();
     } else {
@@ -461,6 +459,7 @@ export function startDurableJobWorker(options: {
           workerId,
           Object.assign(new Error("durable job handler is unavailable"), {
             code: "JOB_HANDLER_UNAVAILABLE",
+            retryable: false,
           }),
         );
         if (failed.status === "dead_letter") {
