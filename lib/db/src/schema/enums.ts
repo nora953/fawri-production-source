@@ -305,3 +305,18 @@ export const migrationReconciliationStatusEnum = pgEnum(
   "migration_reconciliation_status",
   ["matched", "mismatch", "warning", "skipped"],
 );
+
+export const backgroundJobStatusEnum = pgEnum("background_job_status", [
+  "queued",
+  "processing",
+  "retry",
+  "completed",
+  "dead_letter",
+]);
+
+export const jobAttemptStatusEnum = pgEnum("job_attempt_status", [
+  "processing",
+  "succeeded",
+  "failed",
+  "timed_out",
+]);
