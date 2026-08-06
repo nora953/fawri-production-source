@@ -12,6 +12,7 @@ on:
       - "artifacts/api-server/src/routes/saved-answers.ts"
       - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
+      - "artifacts/api-server/tests/meta-webhook-security.integration.test.mjs"
       - "artifacts/api-server/package.json"
       - ".github/workflows/merchant-access-security.yml"
       - "pnpm-lock.yaml"
@@ -29,6 +30,7 @@ on:
       - "artifacts/api-server/src/routes/saved-answers.ts"
       - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
+      - "artifacts/api-server/tests/meta-webhook-security.integration.test.mjs"
       - "artifacts/api-server/package.json"
       - ".github/workflows/merchant-access-security.yml"
       - "pnpm-lock.yaml"
@@ -67,6 +69,7 @@ jobs:
         run: |
           node --check artifacts/api-server/tests/merchant-session.integration.test.mjs
           node --check artifacts/api-server/tests/merchant-status-access.integration.test.mjs
+          node --check artifacts/api-server/tests/meta-webhook-security.integration.test.mjs
 
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
@@ -74,8 +77,9 @@ jobs:
       - name: Build API server
         run: pnpm --filter @workspace/api-server run build
 
-      - name: Test merchant session and status enforcement
+      - name: Test merchant session, status, and webhook enforcement
         run: >-
           node --test
           artifacts/api-server/tests/merchant-session.integration.test.mjs
           artifacts/api-server/tests/merchant-status-access.integration.test.mjs
+          artifacts/api-server/tests/meta-webhook-security.integration.test.mjs
