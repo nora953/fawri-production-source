@@ -1,3 +1,4 @@
+# Retrigger marker for a stale GitHub-hosted runner queue.
 name: PostgreSQL schema validation
 
 on:
