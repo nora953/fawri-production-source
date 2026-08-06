@@ -16,6 +16,9 @@ import {
 
 const router = Router();
 const GRAPH_VERSION = "v22.0";
+const GRAPH_BASE_URL = String(
+  process.env.META_GRAPH_BASE_URL || "https://graph.facebook.com",
+).replace(/\/$/, "");
 
 function param(value: unknown): string {
   if (Array.isArray(value)) return String(value[0] || "").trim();
@@ -177,7 +180,7 @@ router.post(
       let response: globalThis.Response;
       try {
         response = await fetch(
-          `https://graph.facebook.com/${GRAPH_VERSION}/me/messages?access_token=${encodeURIComponent(prepared.pageAccessToken || "")}`,
+          `${GRAPH_BASE_URL}/${GRAPH_VERSION}/me/messages?access_token=${encodeURIComponent(prepared.pageAccessToken || "")}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
