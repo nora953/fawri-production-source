@@ -98,7 +98,7 @@ jobs:
           fixture_dir="$(mktemp -d)"
           trap 'rm -rf "$fixture_dir"' EXIT
           node ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs "$fixture_dir"
-          pnpm --filter @workspace/db run migration:rollback-test -- "$fixture_dir"
+          node ./lib/db/scripts/rollback-migration.mjs "$fixture_dir"
 
       - name: Upload generated migration
         uses: actions/upload-artifact@v4
