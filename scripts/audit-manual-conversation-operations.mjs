@@ -41,6 +41,42 @@ function validTimestamp(value) {
   return Number.isFinite(parsed.getTime()) ? parsed : null;
 }
 
+function addMessageIdentityIssues({
+  issues,
+  seenMessageIds,
+  seenExternalIds,
+  merchantId,
+  conversationId,
+  message,
+  kind,
+}) {
+  const messageId = text(message?.id);
+  const externalMessageId = text(message?.external_message_id);
+  if (!messageId || seenMessageIds.has(messageId)) {
+    issues.push(
+      issue("error", `${kind}_MESSAGE_ID_INVALID`, {
+        merchant_id: merchantId,
+        conversation_id: conversationId,
+        message_id: messageId || null,
+      }),
+    );
+  }
+  seenMessageIds.add(messageId);
+  if (externalMessageId) {
+    if (seenExternalIds.has(externalMessageId)) {
+      issues.push(
+        issue("error", `${kind}_MESSAGE_EXTERNAL_ID_DUPLICATE`, {
+          merchant_id: merchantId,
+          conversation_id: conversationId,
+          external_message_id: externalMessageId,
+        }),
+      );
+    }
+    seenExternalIds.add(externalMessageId);
+  }
+  return { messageId, externalMessageId };
+}
+
 function buildReport() {
   const merchantSource = readOptional("merchants.json", { merchants: [] });
   const runtimeSource = readOptional("fawri-runtime-db.json", {
@@ -70,6 +106,7 @@ function buildReport() {
   );
   const issues = [];
   let conversations = 0;
+  let inboundMessages = 0;
   let manualMessages = 0;
   let requests = 0;
 
@@ -113,7 +150,7 @@ function buildReport() {
 
       const status = text(overlay.status);
       const assigned = overlay.assigned_to_human === true;
-      if (!['manual', 'auto_replying'].includes(status)) {
+      if (!["manual", "auto_replying"].includes(status)) {
         issues.push(
           issue("error", "MANUAL_OVERLAY_STATUS_INVALID", {
             merchant_id: merchantId,
@@ -156,44 +193,61 @@ function buildReport() {
 
       const seenMessageIds = new Set();
       const seenExternalIds = new Set();
-      const messageIds = new Set();
-      for (const message of asArray(overlay.manual_messages)) {
-        manualMessages += 1;
-        const messageId = text(message?.id);
-        const externalMessageId = text(message?.external_message_id);
-        if (!messageId || seenMessageIds.has(messageId)) {
+      const manualMessageIds = new Set();
+
+      for (const message of asArray(overlay.inbound_messages)) {
+        inboundMessages += 1;
+        const { messageId, externalMessageId } = addMessageIdentityIssues({
+          issues,
+          seenMessageIds,
+          seenExternalIds,
+          merchantId,
+          conversationId,
+          message,
+          kind: "MANUAL_INBOUND",
+        });
+        if (
+          !externalMessageId ||
+          text(message?.conversation_id) !== conversationId ||
+          text(message?.sender) !== "customer" ||
+          text(message?.status) !== "received" ||
+          message?.counted_as_auto_reply !== false ||
+          !text(message?.text) ||
+          !validTimestamp(message?.created_at)
+        ) {
           issues.push(
-            issue("error", "MANUAL_MESSAGE_ID_INVALID", {
+            issue("error", "MANUAL_INBOUND_MESSAGE_SHAPE_INVALID", {
               merchant_id: merchantId,
               conversation_id: conversationId,
               message_id: messageId || null,
             }),
           );
         }
-        seenMessageIds.add(messageId);
-        messageIds.add(messageId);
-        if (externalMessageId) {
-          if (seenExternalIds.has(externalMessageId)) {
-            issues.push(
-              issue("error", "MANUAL_MESSAGE_EXTERNAL_ID_DUPLICATE", {
-                merchant_id: merchantId,
-                conversation_id: conversationId,
-                external_message_id: externalMessageId,
-              }),
-            );
-          }
-          seenExternalIds.add(externalMessageId);
-        }
+      }
+
+      for (const message of asArray(overlay.manual_messages)) {
+        manualMessages += 1;
+        const { messageId } = addMessageIdentityIssues({
+          issues,
+          seenMessageIds,
+          seenExternalIds,
+          merchantId,
+          conversationId,
+          message,
+          kind: "MANUAL_OUTBOUND",
+        });
+        manualMessageIds.add(messageId);
         if (
           text(message?.conversation_id) !== conversationId ||
           text(message?.sender) !== "merchant" ||
           text(message?.status) !== "sent" ||
           message?.counted_as_auto_reply !== false ||
+          text(message?.reply_type) !== "manual" ||
           !text(message?.text) ||
           !validTimestamp(message?.created_at)
         ) {
           issues.push(
-            issue("error", "MANUAL_MESSAGE_SHAPE_INVALID", {
+            issue("error", "MANUAL_OUTBOUND_MESSAGE_SHAPE_INVALID", {
               merchant_id: merchantId,
               conversation_id: conversationId,
               message_id: messageId || null,
@@ -230,7 +284,7 @@ function buildReport() {
             }),
           );
         }
-        if (!['pending', 'sent', 'failed', 'uncertain'].includes(statusValue)) {
+        if (!["pending", "sent", "failed", "uncertain"].includes(statusValue)) {
           issues.push(
             issue("error", "MANUAL_REQUEST_STATUS_INVALID", {
               merchant_id: merchantId,
@@ -249,7 +303,10 @@ function buildReport() {
             }),
           );
         }
-        if (statusValue === "sent" && !messageIds.has(text(request.message_id))) {
+        if (
+          statusValue === "sent" &&
+          !manualMessageIds.has(text(request.message_id))
+        ) {
           issues.push(
             issue("error", "MANUAL_REQUEST_SENT_MESSAGE_MISSING", {
               merchant_id: merchantId,
@@ -314,6 +371,7 @@ function buildReport() {
     },
     summary: {
       conversations,
+      inbound_messages: inboundMessages,
       manual_messages: manualMessages,
       requests,
       issues: issues.length,
