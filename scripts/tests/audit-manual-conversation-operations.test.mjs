@@ -52,6 +52,18 @@ function baseFixture(directory) {
           assigned_to_human: true,
           page_id: "page-1",
           updated_at: "2026-08-06T12:00:03.000Z",
+          inbound_messages: [
+            {
+              id: "inbound-message-1",
+              external_message_id: "meta-inbound-1",
+              conversation_id: "messenger-customer-1",
+              sender: "customer",
+              text: "private customer message",
+              created_at: "2026-08-06T12:00:00.000Z",
+              counted_as_auto_reply: false,
+              status: "received",
+            },
+          ],
           manual_messages: [
             {
               id: "message-1",
@@ -110,12 +122,43 @@ test("valid manual conversation overlay passes without leaking message text", ()
     assert.equal(report.ok, true);
     assert.deepEqual(report.summary, {
       conversations: 1,
+      inbound_messages: 1,
       manual_messages: 1,
       requests: 1,
       issues: 0,
       severity_counts: {},
     });
     assert.equal(result.stdout.includes("private manual reply"), false);
+    assert.equal(result.stdout.includes("private customer message"), false);
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("invalid inbound message is rejected", () => {
+  const directory = makeDirectory();
+  try {
+    baseFixture(directory);
+    const filePath = path.join(
+      directory,
+      "manual-conversation-operations.json",
+    );
+    const overlay = JSON.parse(fs.readFileSync(filePath, "utf8"));
+    const inbound =
+      overlay.conversations["merchant-1"]["messenger-customer-1"]
+        .inbound_messages[0];
+    inbound.sender = "merchant";
+    delete inbound.external_message_id;
+    writeJson(directory, "manual-conversation-operations.json", overlay);
+
+    const result = runAudit(directory);
+    assert.equal(result.status, 2, result.stderr || result.stdout);
+    const report = JSON.parse(result.stdout);
+    assert.ok(
+      report.issues.some(
+        (item) => item.code === "MANUAL_INBOUND_MESSAGE_SHAPE_INVALID",
+      ),
+    );
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
