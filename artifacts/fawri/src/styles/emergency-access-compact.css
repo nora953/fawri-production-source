@@ -1,9 +1,117 @@
 /*
- * Compact the assistant emergency-access request screen on desktop.
- * The fixed-height treatment applies only when the request/session grid is the
- * final section. Owner tools and an opened safe snapshot keep normal scrolling.
+ * Emergency-access desktop layout refinements.
+ * Assistant screens may use a fixed viewport when the request/session grid is
+ * the final section. Owner screens keep normal page scrolling because they
+ * include authorization, alert, notice, and audit sections below the grid.
  */
+
+html[lang='ar']
+  .emergency-access-route
+  main
+  > div.grid:nth-child(2)
+  > div:first-child
+  > div:last-child
+  .space-y-2
+  > label {
+  position: relative;
+  top: -0.125rem;
+}
+
 @media (min-width: 1024px) and (min-height: 640px) {
+  /* Shared compact spacing for the assistant and owner request forms. */
+  .emergency-access-route header > div {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .emergency-access-route main {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .emergency-access-route main > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  .emergency-access-route main > div:first-child > div {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  .emergency-access-route main > div.grid:nth-child(2) {
+    gap: 0.75rem;
+  }
+
+  .emergency-access-route
+    main
+    > div.grid:nth-child(2)
+    > div
+    > div:first-child {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .emergency-access-route
+    main
+    > div.grid:nth-child(2)
+    > div
+    > div:last-child {
+    padding: 0.5rem 1rem 0.75rem;
+  }
+
+  .emergency-access-route
+    main
+    > div.grid:nth-child(2)
+    > div:first-child
+    > div:last-child
+    > *
+    + * {
+    margin-top: 0.625rem !important;
+  }
+
+  .emergency-access-route textarea {
+    height: 5rem;
+    min-height: 5rem;
+    resize: none;
+  }
+
+  /* Owner-only sections stay scrollable but use denser card spacing. */
+  .emergency-access-route:has(main > div.grid:nth-child(2) + div)
+    main
+    > div:nth-child(3)
+    > div:first-child {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:nth-child(2) + div)
+    main
+    > div:nth-child(3)
+    > div:last-child {
+    padding: 0.5rem 1rem 0.75rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:nth-child(2) + div)
+    main
+    > div.grid:nth-child(4) {
+    gap: 0.75rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:nth-child(2) + div)
+    main
+    > div.grid:nth-child(4)
+    > div
+    > div:first-child {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:nth-child(2) + div)
+    main
+    > div.grid:nth-child(4)
+    > div
+    > div:last-child {
+    padding: 0.5rem 1rem 0.75rem;
+  }
+
+  /* Assistant-only fixed-height layout. */
   .emergency-access-route:has(main > div.grid:last-child) {
     height: 100dvh;
     overflow: hidden;
@@ -15,11 +123,6 @@
     overflow: hidden;
   }
 
-  .emergency-access-route:has(main > div.grid:last-child) header > div {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
-  }
-
   .emergency-access-route:has(main > div.grid:last-child) main {
     display: flex;
     height: calc(100dvh - 4.25rem);
@@ -27,8 +130,6 @@
     flex-direction: column;
     gap: 0.75rem;
     overflow: hidden;
-    padding-top: 0.75rem;
-    padding-bottom: 0.75rem;
   }
 
   .emergency-access-route:has(main > div.grid:last-child) main > * + * {
@@ -37,18 +138,9 @@
 
   .emergency-access-route:has(main > div.grid:last-child)
     main
-    > div:first-child
-    > div {
-    padding-top: 0.625rem;
-    padding-bottom: 0.625rem;
-  }
-
-  .emergency-access-route:has(main > div.grid:last-child)
-    main
     > div.grid:last-child {
     min-height: 0;
     flex: 1 1 auto;
-    gap: 0.75rem;
   }
 
   .emergency-access-route:has(main > div.grid:last-child)
@@ -59,14 +151,6 @@
     min-height: 0;
     flex-direction: column;
     overflow: hidden;
-  }
-
-  .emergency-access-route:has(main > div.grid:last-child)
-    main
-    > div.grid:last-child
-    > div
-    > div:first-child {
-    padding: 0.75rem 1rem 0.5rem;
   }
 
   .emergency-access-route:has(main > div.grid:last-child)
@@ -76,35 +160,6 @@
     > div:last-child {
     min-height: 0;
     flex: 1 1 auto;
-    padding: 0.5rem 1rem 0.75rem;
-  }
-
-  .emergency-access-route:has(main > div.grid:last-child)
-    main
-    > div.grid:last-child
-    > div:first-child
-    > div:last-child
-    > *
-    + * {
-    margin-top: 0.625rem !important;
-  }
-
-  html[lang='ar']
-    .emergency-access-route:has(main > div.grid:last-child)
-    main
-    > div.grid:last-child
-    > div:first-child
-    > div:last-child
-    .space-y-2
-    > label {
-    position: relative;
-    top: -0.125rem;
-  }
-
-  .emergency-access-route:has(main > div.grid:last-child) textarea {
-    height: 5rem;
-    min-height: 5rem;
-    resize: none;
   }
 
   .emergency-access-route:has(main > div.grid:last-child)
