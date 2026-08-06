@@ -18,6 +18,10 @@ import {
   enforceMerchantOperationalAccess,
 } from "./middleware/merchantOperationalAccess";
 import { enforceMerchantWebhookOperationalAccess } from "./middleware/merchantWebhookAccess";
+import {
+  enforceMetaWebhookSecurity,
+  type MetaRawBodyRequest,
+} from "./middleware/metaWebhookSecurity";
 import { logger } from "./lib/logger";
 import {
   refreshMerchantRetentionPolicy,
@@ -51,8 +55,18 @@ app.get("/healthz", (_req, res) => {
   res.status(200).json({ ok: true, service: "fawri" });
 });
 app.use("/api/auth/support-images", supportImagesRouter);
-app.use(express.json());
+app.use(
+  express.json({
+    verify(req, _res, buffer) {
+      if (req.originalUrl?.startsWith("/api/meta/webhook")) {
+        (req as MetaRawBodyRequest).rawBody = Buffer.from(buffer);
+      }
+    },
+  }),
+);
 app.use(express.urlencoded({ extended: true }));
+app.use(enforceMetaWebhookSecurity);
+app.use(enforceMerchantWebhookOperationalAccess);
 
 app.use((req, res, next) => {
   const inspectionRequestPath =
@@ -81,7 +95,6 @@ app.use((_req, _res, next) => {
   next();
 });
 app.use(enforceMerchantRetentionAccess);
-app.use(enforceMerchantWebhookOperationalAccess);
 app.use(enforceMerchantOAuthCallbackOperationalAccess);
 app.use(enforceMerchantOperationalAccess);
 app.use("/api", retentionGuardRouter);
