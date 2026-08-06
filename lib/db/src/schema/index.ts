@@ -7,3 +7,8 @@ export * from "./catalog";
 export * from "./channels";
 export * from "./conversations";
 export * from "./orders";
+export * from "./knowledge";
+export * from "./support";
+export * from "./notifications";
+export * from "./audit";
+export * from "./emergency";
