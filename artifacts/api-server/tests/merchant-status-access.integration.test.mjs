@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
 import path from "node:path";
@@ -89,6 +89,11 @@ test("merchant operational APIs require server-side approved status", async (t) 
   const dataDirectory = path.join(runtimeDirectory, "data");
   await mkdir(dataDirectory, { recursive: true });
 
+  const merchantsPath = path.join(dataDirectory, "merchants.json");
+  const runtimeDatabasePath = path.join(
+    dataDirectory,
+    "fawri-runtime-db.json",
+  );
   const merchants = [
     merchant("merchant-approved", "07111111111", "approved", "approved"),
     merchant(
@@ -102,7 +107,7 @@ test("merchant operational APIs require server-side approved status", async (t) 
   ];
 
   await writeFile(
-    path.join(dataDirectory, "merchants.json"),
+    merchantsPath,
     JSON.stringify({
       merchants,
       subscriptions: [],
@@ -116,7 +121,7 @@ test("merchant operational APIs require server-side approved status", async (t) 
     }),
   );
   await writeFile(
-    path.join(dataDirectory, "fawri-runtime-db.json"),
+    runtimeDatabasePath,
     JSON.stringify({
       productsByMerchant: {
         "merchant-approved": [
@@ -129,7 +134,16 @@ test("merchant operational APIs require server-side approved status", async (t) 
         ],
       },
       conversationsByMerchant: {},
-      metaPagesByPageId: {},
+      metaPagesByPageId: {
+        "suspended-page": {
+          merchant_id: "merchant-suspended",
+          page_id: "suspended-page",
+          page_name: "Suspended page",
+          page_access_token: "must-not-be-used",
+          connected_at: "2026-08-01T00:00:00.000Z",
+          platform: "messenger",
+        },
+      },
       ordersByMerchant: {},
       orderDraftsByConversation: {},
       lastSyncedMerchantId: null,
@@ -206,11 +220,10 @@ test("merchant operational APIs require server-side approved status", async (t) 
     return cookiePair(getSetCookie(result.response));
   }
 
-  const cookies = Object.fromEntries(
-    await Promise.all(
-      merchants.map(async (record) => [record.id, await login(record)]),
-    ),
-  );
+  const cookies = {};
+  for (const record of merchants) {
+    cookies[record.id] = await login(record);
+  }
 
   for (const record of merchants) {
     await t.test(`${record.status} account can read its account state`, async () => {
@@ -273,6 +286,67 @@ test("merchant operational APIs require server-side approved status", async (t) 
       });
     }
   }
+
+  const suspendedWebhook = await apiFetch("/api/meta/webhook", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      object: "page",
+      entry: [
+        {
+          id: "suspended-page",
+          messaging: [
+            {
+              sender: { id: "customer-1" },
+              message: { mid: "message-1", text: "hello" },
+            },
+          ],
+        },
+      ],
+    }),
+  });
+  assert.equal(suspendedWebhook.status, 200);
+  const runtimeAfterWebhook = JSON.parse(
+    await readFile(runtimeDatabasePath, "utf8"),
+  );
+  assert.deepEqual(
+    runtimeAfterWebhook.conversationsByMerchant["merchant-suspended"] || [],
+    [],
+    "suspended merchant webhook created a conversation",
+  );
+
+  const metaLogin = await apiFetch("/api/meta/login?platform=messenger", {
+    headers: { Cookie: cookies["merchant-approved"] },
+    redirect: "manual",
+  });
+  assert.equal(metaLogin.status, 302);
+  const location = metaLogin.headers.get("location");
+  assert.ok(location);
+  const oauthState = new URL(location).searchParams.get("state");
+  assert.ok(oauthState);
+
+  const currentMerchantDatabase = JSON.parse(
+    await readFile(merchantsPath, "utf8"),
+  );
+  const approvedMerchant = currentMerchantDatabase.merchants.find(
+    (item) => item.id === "merchant-approved",
+  );
+  assert.ok(approvedMerchant);
+  approvedMerchant.status = "suspended";
+  approvedMerchant.account_status = "suspended";
+  await writeFile(merchantsPath, JSON.stringify(currentMerchantDatabase));
+
+  const suspendedCallback = await responseJson(
+    await apiFetch(
+      `/api/meta/callback?code=must-not-be-exchanged&state=${encodeURIComponent(oauthState)}`,
+    ),
+  );
+  assert.equal(suspendedCallback.response.status, 403);
+  assert.equal(suspendedCallback.body.code, "MERCHANT_SUSPENDED");
+
+  approvedMerchant.status = "approved";
+  approvedMerchant.account_status = "approved";
+  await writeFile(merchantsPath, JSON.stringify(currentMerchantDatabase));
 
   const webhookVerification = await apiFetch(
     "/api/meta/webhook?hub.mode=subscribe&hub.verify_token=test-meta-verify-token&hub.challenge=challenge-ok",
