@@ -124,6 +124,34 @@ html[lang='ar']
     resize: none;
   }
 
+  /*
+   * Keep the request/session card at a stable desktop height for both roles.
+   * Historical and active requests scroll inside the card instead of pushing
+   * owner-only authorization, alert, notice, and audit sections downward.
+   */
+  .emergency-access-route
+    main
+    > div.grid:nth-child(2)
+    > div:last-child {
+    display: flex;
+    min-height: 0;
+    max-height: clamp(22rem, 56vh, 31rem);
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .emergency-access-route
+    main
+    > div.grid:nth-child(2)
+    > div:last-child
+    > div:last-child {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
   /* Owner-only sections stay scrollable but use denser card spacing. */
   .emergency-access-route:has(main > div.grid:nth-child(2) + div)
     main
