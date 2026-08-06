@@ -484,7 +484,12 @@ export function startDurableJobWorker(options: {
   };
 
   const interval = setInterval(() => {
-    void runOnce();
+    void runOnce().catch((error) => {
+      console.error("Durable job worker polling failed", {
+        worker_id: workerId,
+        error,
+      });
+    });
   }, positiveInteger(options.pollIntervalMs, DEFAULT_POLL_INTERVAL_MS));
   interval.unref();
 
