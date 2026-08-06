@@ -5,6 +5,7 @@ on:
     paths:
       - "artifacts/api-server/src/app.ts"
       - "artifacts/api-server/src/middleware/**"
+      - "artifacts/api-server/src/services/merchantOperationalAccess.ts"
       - "artifacts/api-server/src/routes/auth.ts"
       - "artifacts/api-server/src/routes/index.ts"
       - "artifacts/api-server/src/routes/bot-training.ts"
@@ -21,6 +22,7 @@ on:
     paths:
       - "artifacts/api-server/src/app.ts"
       - "artifacts/api-server/src/middleware/**"
+      - "artifacts/api-server/src/services/merchantOperationalAccess.ts"
       - "artifacts/api-server/src/routes/auth.ts"
       - "artifacts/api-server/src/routes/index.ts"
       - "artifacts/api-server/src/routes/bot-training.ts"
