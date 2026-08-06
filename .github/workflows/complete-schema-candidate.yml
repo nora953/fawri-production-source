@@ -1,0 +1,100 @@
+name: Complete schema candidate
+
+on:
+  pull_request:
+    paths:
+      - "lib/db/src/schema/**"
+      - "lib/db/drizzle.complete.config.ts"
+      - ".github/workflows/complete-schema-candidate.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  push:
+    branches:
+      - "hardening/**"
+    paths:
+      - "lib/db/src/schema/**"
+      - "lib/db/drizzle.complete.config.ts"
+      - ".github/workflows/complete-schema-candidate.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: complete-schema-candidate-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-and-apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_complete_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_complete_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_complete_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check database package
+        run: pnpm --filter @workspace/db run typecheck
+
+      - name: Generate complete schema candidate
+        working-directory: lib/db
+        run: |
+          rm -rf drizzle-complete-candidate
+          pnpm exec drizzle-kit generate --config=drizzle.complete.config.ts
+          test -n "$(find drizzle-complete-candidate -maxdepth 1 -type f -name '*.sql' -print -quit)"
+          test -f drizzle-complete-candidate/meta/_journal.json
+
+      - name: Apply complete candidate to disposable PostgreSQL
+        working-directory: lib/db
+        run: |
+          while IFS= read -r sql_file; do
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$sql_file"
+          done < <(find drizzle-complete-candidate -maxdepth 1 -type f -name '*.sql' | sort)
+
+      - name: Verify critical complete-schema tables
+        run: |
+          for table in merchant_settings manual_reply_requests background_jobs job_dead_letters migration_runs; do
+            test "$(psql "$DATABASE_URL" -Atqc "select to_regclass('public.$table') is not null")" = "t"
+          done
+
+      - name: Verify critical tenant and state constraints
+        run: |
+          test "$(psql "$DATABASE_URL" -Atqc "select count(*) from pg_constraint where conname in ('messages_conversation_merchant_fk','manual_reply_requests_conversation_merchant_fk','manual_reply_requests_message_conversation_merchant_fk','merchant_settings_delivery_days_check','merchant_settings_payment_availability_check')")" = "5"
+
+      - name: Upload complete schema candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: complete-postgresql-schema-candidate
+          path: lib/db/drizzle-complete-candidate
+          if-no-files-found: error
+          retention-days: 7
