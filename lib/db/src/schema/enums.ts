@@ -179,3 +179,97 @@ export const paymentMethodEnum = pgEnum("payment_method", [
   "zaincash",
   "other",
 ]);
+
+export const savedAnswerCategoryEnum = pgEnum("saved_answer_category", [
+  "delivery",
+  "payment",
+  "return_exchange",
+  "product",
+  "warranty",
+  "custom",
+]);
+
+export const trainingStatusEnum = pgEnum("training_status", [
+  "pending_merchant_reply",
+  "pending_review",
+  "approved",
+  "rejected",
+]);
+
+export const learnedAnswerSourceEnum = pgEnum("learned_answer_source", [
+  "merchant_approved",
+  "openai_generated",
+]);
+
+export const supportTicketStatusEnum = pgEnum("support_ticket_status", [
+  "open",
+  "in_progress",
+  "resolved",
+  "closed",
+]);
+
+export const supportWaitingOnEnum = pgEnum("support_waiting_on", [
+  "admin",
+  "merchant",
+]);
+
+export const supportSenderTypeEnum = pgEnum("support_sender_type", [
+  "merchant",
+  "admin",
+  "system",
+]);
+
+export const inspectionModeEnum = pgEnum("inspection_mode", [
+  "live_observation",
+  "independent_read_only",
+]);
+
+export const inspectionStatusEnum = pgEnum("inspection_status", [
+  "pending",
+  "approved",
+  "rejected",
+  "expired",
+]);
+
+export const consentDecisionEnum = pgEnum("consent_decision", [
+  "approved",
+  "rejected",
+]);
+
+export const previewSessionStatusEnum = pgEnum("preview_session_status", [
+  "active",
+  "ended",
+]);
+
+export const notificationAudienceEnum = pgEnum("notification_audience", [
+  "merchant",
+  "admin",
+]);
+
+export const emergencySeverityEnum = pgEnum("emergency_severity", [
+  "high",
+  "critical",
+]);
+
+export const emergencyAccessStatusEnum = pgEnum("emergency_access_status", [
+  "pending",
+  "active",
+  "rejected",
+  "expired",
+  "ended",
+]);
+
+export const emergencyActivationModeEnum = pgEnum(
+  "emergency_activation_mode",
+  [
+    "owner_approval",
+    "critical_self_activation",
+    "owner_direct_activation",
+  ],
+);
+
+export const auditActorKindEnum = pgEnum("audit_actor_kind", [
+  "account",
+  "system",
+  "external",
+]);
