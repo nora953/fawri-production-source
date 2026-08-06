@@ -13,11 +13,20 @@ const plannerPath = path.join(
   "scripts",
   "plan-postgresql-migration.mjs",
 );
+const manualConversationAuditPath = path.join(
+  repositoryRoot,
+  "scripts",
+  "audit-manual-conversation-operations.mjs",
+);
 const metaDirectory = path.join(repositoryRoot, "lib", "db", "drizzle", "meta");
-export const migrationPlanVersion = "2";
+export const migrationPlanVersion = "3";
+
+function sha256Buffer(value) {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 function sha256Text(value) {
-  return createHash("sha256").update(value).digest("hex");
+  return sha256Buffer(value);
 }
 
 function canonicalize(value) {
@@ -92,34 +101,78 @@ function runInstrumentedPlanner(dataDirectory) {
   }
 }
 
-function normalizeIssue(issue, source) {
+function runManualConversationAudit(dataDirectory) {
+  const result = spawnSync(
+    process.execPath,
+    [manualConversationAuditPath, dataDirectory],
+    {
+      cwd: repositoryRoot,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        DATABASE_URL: "postgresql://must-not-be-used.invalid/fawri",
+      },
+    },
+  );
+  if (result.error) throw result.error;
+  if (result.status === 1) {
+    throw new Error(
+      result.stderr || result.stdout || "manual conversation audit failed",
+    );
+  }
+  if (!result.stdout) {
+    throw new Error("manual conversation audit returned no JSON output");
+  }
+  return JSON.parse(result.stdout);
+}
+
+function fileDescriptor(dataDirectory, fileName) {
+  const filePath = path.join(dataDirectory, fileName);
+  if (!fs.existsSync(filePath)) {
+    return { file: fileName, exists: false, bytes: 0, sha256: null };
+  }
+  const content = fs.readFileSync(filePath);
+  return {
+    file: fileName,
+    exists: true,
+    bytes: content.length,
+    sha256: sha256Buffer(content),
+  };
+}
+
+function normalizeIssue(issue, source, fallbackCode) {
   const details =
     issue?.details && typeof issue.details === "object" ? issue.details : {};
   return {
-    code: String(issue?.code || "TRANSITIONAL_MIGRATION_ISSUE"),
+    code: String(issue?.code || fallbackCode),
     source,
     ...details,
   };
 }
 
-function mergeTransitionalReadiness(report, transitionalReport) {
+function mergeIssues(report, issues, source, fallbackCode) {
   const errors = Array.isArray(report.errors) ? report.errors : [];
   const warnings = Array.isArray(report.warnings) ? report.warnings : [];
-  const issues = Array.isArray(transitionalReport.issues)
-    ? transitionalReport.issues
-    : [];
-
   for (const item of issues) {
-    const normalized = normalizeIssue(
-      item,
-      "transitional_migration_preflight",
-    );
+    const normalized = normalizeIssue(item, source, fallbackCode);
     if (item?.severity === "error") errors.push(normalized);
     else warnings.push(normalized);
   }
-
   report.errors = errors;
   report.warnings = warnings;
+}
+
+function mergeTransitionalReadiness(report, transitionalReport) {
+  const issues = Array.isArray(transitionalReport.issues)
+    ? transitionalReport.issues
+    : [];
+  mergeIssues(
+    report,
+    issues,
+    "transitional_migration_preflight",
+    "TRANSITIONAL_MIGRATION_ISSUE",
+  );
+
   report.source_files = {
     ...(report.source_files || {}),
     ...Object.fromEntries(
@@ -141,6 +194,45 @@ function mergeTransitionalReadiness(report, transitionalReport) {
     transitional_errors: issues.filter((item) => item?.severity === "error")
       .length,
     transitional_warnings: issues.filter(
+      (item) => item?.severity !== "error",
+    ).length,
+  };
+}
+
+function mergeManualConversationReadiness(
+  report,
+  manualReport,
+  dataDirectory,
+) {
+  const issues = Array.isArray(manualReport.issues) ? manualReport.issues : [];
+  mergeIssues(
+    report,
+    issues,
+    "manual_conversation_preflight",
+    "MANUAL_CONVERSATION_MIGRATION_ISSUE",
+  );
+  const source = fileDescriptor(
+    dataDirectory,
+    "manual-conversation-operations.json",
+  );
+  report.source_files = {
+    ...(report.source_files || {}),
+    manualConversationOperations: source,
+  };
+  report.manual_conversation_migration = {
+    ok: manualReport.ok === true,
+    mode: manualReport.mode,
+    rows_included: false,
+    summary: manualReport.summary || {},
+    source_file: source,
+    issues,
+  };
+  report.summary = {
+    ...(report.summary || {}),
+    manual_conversation_errors: issues.filter(
+      (item) => item?.severity === "error",
+    ).length,
+    manual_conversation_warnings: issues.filter(
       (item) => item?.severity !== "error",
     ).length,
   };
@@ -361,6 +453,14 @@ export function buildValidatedMigrationPlan({
     dataDirectory: resolvedDataDirectory,
   });
   mergeTransitionalReadiness(report, transitionalReport);
+  const manualConversationReport = runManualConversationAudit(
+    resolvedDataDirectory,
+  );
+  mergeManualConversationReadiness(
+    report,
+    manualConversationReport,
+    resolvedDataDirectory,
+  );
   report.tool_version = migrationPlanVersion;
   report.source_manifest_sha256 = sha256Text(
     canonicalJson(report.source_files || {}),
