@@ -13,7 +13,8 @@ on:
       - "artifacts/api-server/src/services/metaWebhook*.ts"
       - "artifacts/api-server/src/services/merchantReply*.ts"
       - "artifacts/api-server/src/services/metaPageDirectory.ts"
-      - "artifacts/api-server/src/services/manualConversationRuntime.ts"
+      - "artifacts/api-server/src/services/manualConversation*.ts"
+      - "artifacts/api-server/src/services/merchantRuntime.ts"
       - "artifacts/api-server/tests/meta-webhook-*.test.*"
       - "artifacts/api-server/tests/manual-conversation-*.test.*"
       - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
@@ -36,7 +37,8 @@ on:
       - "artifacts/api-server/src/services/metaWebhook*.ts"
       - "artifacts/api-server/src/services/merchantReply*.ts"
       - "artifacts/api-server/src/services/metaPageDirectory.ts"
-      - "artifacts/api-server/src/services/manualConversationRuntime.ts"
+      - "artifacts/api-server/src/services/manualConversation*.ts"
+      - "artifacts/api-server/src/services/merchantRuntime.ts"
       - "artifacts/api-server/tests/meta-webhook-*.test.*"
       - "artifacts/api-server/tests/manual-conversation-*.test.*"
       - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
@@ -84,7 +86,7 @@ jobs:
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
 
-      - name: Test reply entitlement, queue, worker, outcome, and refund
+      - name: Test reply entitlement, queue, worker, outcome, refund, and manual runtime
         run: >-
           pnpm exec tsx --test
           artifacts/api-server/tests/merchant-reply-entitlement.test.ts
@@ -92,6 +94,7 @@ jobs:
           artifacts/api-server/tests/durable-job-nonretryable.test.ts
           artifacts/api-server/tests/meta-webhook-outcome-refund.test.ts
           artifacts/api-server/tests/meta-webhook-worker-core.test.ts
+          artifacts/api-server/tests/manual-conversation-runtime.test.ts
 
       - name: Build API server
         run: pnpm --filter @workspace/api-server run build
