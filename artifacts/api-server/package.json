@@ -10,6 +10,7 @@
     "test:merchant-session": "node ./build.mjs && node --test ./tests/merchant-session.integration.test.mjs",
     "test:merchant-status-access": "node ./build.mjs && node --test ./tests/merchant-status-access.integration.test.mjs",
     "test:meta-webhook-security": "node ./build.mjs && node --test ./tests/meta-webhook-security.integration.test.mjs",
+    "test:reply-entitlement": "pnpm exec tsx --test ./tests/merchant-reply-entitlement.test.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:admin-permissions": "node ./build.mjs && node --test ./tests/admin-permissions.integration.test.mjs",
     "test:subscription-lifecycle": "node ./build.mjs && node --test ./tests/subscription-lifecycle.integration.test.mjs",
