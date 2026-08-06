@@ -7,7 +7,7 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "preview:replit": "node ./scripts/run-fawri-preview.mjs",
     "audit:data": "node ./scripts/audit-fawri-json-data.mjs",
-    "migration:plan": "node ./scripts/plan-postgresql-migration.mjs",
+    "migration:plan": "node ./scripts/run-postgresql-migration-plan.mjs",
     "migration:test": "node --test ./scripts/tests/*.test.mjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
