@@ -8,6 +8,7 @@
     "preview:replit": "node ./scripts/run-fawri-preview.mjs",
     "audit:data": "node ./scripts/audit-fawri-json-data.mjs",
     "audit:jobs": "node ./scripts/audit-fawri-background-jobs.mjs",
+    "migration:preflight": "node ./scripts/audit-transitional-migration-readiness.mjs",
     "migration:plan": "node ./scripts/run-postgresql-migration-plan.mjs",
     "migration:test": "node --test ./scripts/tests/*.test.mjs",
     "typecheck:libs": "tsc --build",
