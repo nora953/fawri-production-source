@@ -2,7 +2,10 @@ import type { NextFunction, Request, Response } from "express";
 import { getMetaWebhookEventId } from "./metaWebhookSecurity";
 import { isTrustedMetaWebhookInternalReplay } from "../services/metaWebhookInternalReplay";
 import { readMetaPageMerchantMap } from "../services/metaPageDirectory";
-import { isConversationUnderManualControl } from "../services/manualConversationRuntime";
+import {
+  isConversationUnderManualControl,
+  recordManualInboundMessage,
+} from "../services/manualConversationRuntime";
 
 function eventRecord(event: unknown): Record<string, unknown> {
   return event && typeof event === "object" && !Array.isArray(event)
@@ -17,13 +20,24 @@ function senderId(event: unknown): string {
     : "";
 }
 
-function isCustomerMessage(event: unknown): boolean {
-  const message = eventRecord(event).message;
+function customerMessage(event: unknown): {
+  text: string;
+  externalMessageId: string;
+  createdAt?: unknown;
+} | null {
+  const record = eventRecord(event);
+  const message = record.message;
   if (!message || typeof message !== "object" || Array.isArray(message)) {
-    return false;
+    return null;
   }
-  const record = message as Record<string, unknown>;
-  return record.is_echo !== true && Boolean(String(record.text || "").trim());
+  const messageRecord = message as Record<string, unknown>;
+  const messageText = String(messageRecord.text || "").trim();
+  if (messageRecord.is_echo === true || !messageText) return null;
+  return {
+    text: messageText,
+    externalMessageId: String(messageRecord.mid || "").trim(),
+    createdAt: record.timestamp,
+  };
 }
 
 function existingTerminalEventIds(res: Response): string[] {
@@ -69,7 +83,8 @@ export function enforceManualConversationWebhookAccess(
       const filteredMessaging: unknown[] = [];
       for (const event of Array.isArray(entry.messaging) ? entry.messaging : []) {
         const customerId = senderId(event);
-        if (!customerId || !isCustomerMessage(event)) {
+        const message = customerMessage(event);
+        if (!customerId || !message) {
           filteredMessaging.push(event);
           continue;
         }
@@ -81,6 +96,14 @@ export function enforceManualConversationWebhookAccess(
         }
 
         const eventId = getMetaWebhookEventId(pageId, event);
+        recordManualInboundMessage({
+          merchantId,
+          conversationId,
+          externalMessageId: message.externalMessageId || eventId,
+          messageText: message.text,
+          createdAt: message.createdAt,
+        });
+
         if (internalReplay) {
           res.setHeader("Cache-Control", "no-store");
           res.status(409).json({
@@ -94,7 +117,7 @@ export function enforceManualConversationWebhookAccess(
         }
 
         terminalEventIds.add(eventId);
-        console.info("Meta customer message suppressed during manual takeover", {
+        console.info("Meta customer message persisted during manual takeover", {
           page_id: pageId,
           merchant_id: merchantId,
           conversation_id: conversationId,
