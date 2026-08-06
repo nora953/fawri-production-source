@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n";
 import SupportPreviewLauncher from "@/components/admin/SupportPreviewLauncher";
 import EmergencyReadAccessLauncher from "@/components/admin/EmergencyReadAccessLauncher";
 import EmergencyIncidentNoticeBanner from "@/components/EmergencyIncidentNoticeBanner";
+import "@/styles/emergency-access-compact.css";
 
 // Layouts
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -100,7 +101,11 @@ function AppRouter() {
           {(params) => <AdminSupportPreviewPage sessionId={params.sessionId} />}
         </Route>
         <Route path="/admin/emergency-access">
-          {() => <AdminEmergencyAccessPage />}
+          {() => (
+            <div className="emergency-access-route">
+              <AdminEmergencyAccessPage />
+            </div>
+          )}
         </Route>
         <Route path="/admin/work-monitor/:adminId">
           {(params) => <AdminWorkMonitorPage adminId={params.adminId} />}
