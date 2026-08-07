@@ -4,6 +4,7 @@ import {
   KnowledgeNotFoundError,
   KnowledgeTransitionError,
 } from "../services/knowledge/knowledgeRepository.js";
+import { KnowledgeRuntimeGateError } from "../services/knowledge/postgresKnowledgeRuntime.js";
 import type { KnowledgeLanguage } from "../services/knowledge/types.js";
 
 export function readExpectedVersion(req: Request): number | null {
@@ -29,6 +30,15 @@ export function readString(value: unknown, maxLength = 2_000): string {
 }
 
 export function sendKnowledgeError(res: Response, error: unknown): void {
+  if (error instanceof KnowledgeRuntimeGateError) {
+    res.setHeader("Cache-Control", "no-store");
+    res.status(error.status).json({
+      ok: false,
+      code: error.code,
+      error: error.message,
+    });
+    return;
+  }
   if (error instanceof KnowledgeConflictError) {
     res.status(409).json({
       ok: false,
