@@ -5,8 +5,17 @@
 - Repository: `nora953/fawri-production-source`
 - Branch: `parallel/orders-settings-finalization`
 - Starting remote HEAD: `b08c854f177953d3690c5dffde905fdb0c93eb09`
-- Final implementation SHA before this handoff commit: `b855cf4c776a27017348275125c85a00b61a47df`.
+- Final implementation SHA before the documentation scope correction: `7275fe816f6950c31204c2dd5a99809f19e67877`.
+- Documentation scope-correction SHA before this handoff update: `7dae1bc7ba9da871d602591b97c73bc212ad923d`.
 - Merge performed: no
+- Force push used: no
+
+## Documentation scope correction
+
+- Moved `docs/architecture/orders-settings-server-authority.md` to the lane-owned path `docs/order-settings-server-authority.md`.
+- Removed the old out-of-allowlist path.
+- Updated this handoff to reference only the new path.
+- No runtime feature, shared file, package file, workflow, database schema, Meta, auth, catalog, `app.ts`, `index.ts`, legacy LocalStorage `.tsx` page, shared store/type/translation file, or another branch was modified as part of this correction.
 
 ## Completed implementation
 
@@ -17,12 +26,12 @@
 - Kept mandatory `expected_version` compare-and-swap semantics and current-server-state conflict responses.
 - Enforced the order state machine on the server.
 - Restricted the generic payment-status endpoint to non-terminal states.
-- Generic attempts to set `paid` or `failed` now return `ORDER_PAYMENT_TERMINAL_OPERATION_REQUIRED`.
+- Generic attempts to set `paid` or `failed` return `ORDER_PAYMENT_TERMINAL_OPERATION_REQUIRED`.
 - Electronic `paid` and `failed` can only be produced by the dedicated confirm/reject operations.
 - Cash-on-delivery `paid` can only be produced by the dedicated confirm operation after `delivered`.
 - Upgraded the order operation store to version 2 while retaining read migration from version 1.
 - Added append-only payment decision audit records and linked each terminal order overlay to its last decision.
-- Unified paid/failed metadata and wrote the terminal state plus audit decision under the same lock/atomic replacement.
+- Unified paid/failed metadata and wrote terminal state plus audit decision under the same lock/atomic replacement.
 - Deletion removes order overlays and payment decision records for the merchant.
 
 ### Server-authoritative merchant settings
@@ -47,7 +56,7 @@
 
 - Order audit validates store version, tenant boundaries, duplicate IDs, terminal decision provenance, decision-to-overlay linkage, versions, payment metadata, and PostgreSQL migration blockers.
 - Settings audit validates settings shape, tenant ownership, disabled-merchant waiting jobs, suppression metadata, credit flags, orphan jobs, and PostgreSQL migration blockers.
-- Added architecture documentation at `docs/architecture/orders-settings-server-authority.md`.
+- Architecture/runtime contract documentation is at `docs/order-settings-server-authority.md`.
 
 ## Tests added
 
@@ -73,20 +82,25 @@
 - Static contracts: `artifacts/api-server/tests/orders-settings-static-contract.test.mjs`
 - Audit fixture test: `scripts/tests/orders-settings-audits.test.mjs`
 
-## Validation performed in the work environment
+## Verification rerun after documentation correction
+
+The correction changed documentation paths only. The same lane verification set requested by review was rerun from a verification snapshot sourced from the current GitHub branch files.
 
 Passed:
 
-- strict TypeScript check for both runtime services;
-- TypeScript/JSX parse/type check for `ServerOrdersPage.tsx` using local module shims;
-- 5 runtime unit tests;
-- 4 static contract tests;
-- 1 audit fixture test;
-- syntax check for the new HTTP integration test.
+- strict TypeScript check for `orderOperationsRuntime.ts`, `merchantSettingsRuntime.ts`, their direct runtime dependencies, and `orders-settings-runtime.test.ts`: PASS;
+- runtime suite `orders-settings-runtime.test.ts`: **5/5 PASS**;
+- static contract suite `orders-settings-static-contract.test.mjs`: **4/4 PASS**;
+- audit fixture suite `orders-settings-audits.test.mjs`: **1/1 PASS**;
+- `ServerOrdersPage.tsx` TypeScript/JSX parse/type check using local module shims: PASS.
 
-Not run locally:
+Not run / not claimed:
 
-- the repository's bundled API build and spawned-server integration suites, because this execution environment did not contain a full dependency-installed checkout. The exact CI/script requests are listed below.
+- Full Workspace Build: **not run**.
+- Bundled API full build and spawned-server integration suites: **not rerun in this correction environment**.
+- GitHub Actions / GitHub CI for the correction commits: **not run**; no workflow run was present for the correction SHA when checked.
+
+No production database, Replit database, Meta endpoint, customer data, or other real external service was contacted by these verification checks.
 
 ## Shared-file requests (not modified)
 
@@ -101,7 +115,7 @@ app.use("/api", orderOperationsRouter);
 app.use("/api", merchantSettingsRouter);
 ```
 
-This is required for `/api/settings` and the existing merchant settings HTTP integration test. The lane did not modify `app.ts` by instruction.
+This is required for `/api/settings` and the existing merchant settings HTTP integration test. The lane did not modify `app.ts`.
 
 ### `artifacts/api-server/package.json`
 
@@ -270,6 +284,12 @@ Enable RLS for settings, orders, payment decisions, and background jobs. Merchan
 - JSON file locks are single-host coordination only. Production multi-instance deployment requires PostgreSQL row locks/transactions.
 - Version-1 terminal order overlays have no trustworthy decision provenance; the audit reports migration required and PostgreSQL import must mark them as `legacy_import`.
 
+## Rollback notes
+
+- The documentation-only correction can be rolled back by restoring the previous path, but that would reintroduce the reviewed allowlist violation and therefore is not recommended.
+- Runtime rollback remains a branch-level revert of this lane before integration; no production data or schema was changed.
+- The lane did not merge into `main` or `hardening/postgresql-foundation`.
+
 ## Files changed in this lane
 
 - `artifacts/api-server/src/routes/order-operations.ts`
@@ -284,5 +304,5 @@ Enable RLS for settings, orders, payment decisions, and background jobs. Merchan
 - `scripts/audit-order-operations.mjs`
 - `scripts/audit-merchant-settings.mjs`
 - `scripts/tests/orders-settings-audits.test.mjs`
-- `docs/architecture/orders-settings-server-authority.md`
+- `docs/order-settings-server-authority.md`
 - `docs/coordination/handoffs/orders-settings-finalization.md`
