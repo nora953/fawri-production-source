@@ -7,10 +7,11 @@ import {
   inspectPromptInjection,
   KNOWLEDGE_SYSTEM_RULES,
 } from "../knowledge/promptInjection.js";
-import { getKnowledgeRepository, type KnowledgeRepository } from "../knowledge/knowledgeRepository.js";
+import type { KnowledgeRepository } from "../knowledge/knowledgeRepository.js";
 import { retrieveSemanticMatch } from "../knowledge/semanticRetriever.js";
 import {
   isAuthoritativeFactQuestion,
+  KnowledgeRuntimeGateError,
   PostgresKnowledgeFactResolver,
   PostgresKnowledgeRuntime,
   PostgresMerchantKnowledgePolicyResolver,
@@ -252,7 +253,10 @@ export class KnowledgeDecisionEngine {
     if (this.policyResolver) {
       const policyResolution = await this.policyResolver.resolve(merchantId);
       if (policyResolution.merchantId !== merchantId) {
-        throw new Error("merchant knowledge policy tenant mismatch");
+        throw new KnowledgeRuntimeGateError(
+          "KNOWLEDGE_TENANT_VIOLATION",
+          "knowledge tenant boundary violation",
+        );
       }
       merchantPolicy = policyResolution.policy;
       if (!policyResolution.allowKnowledgeUse) {
@@ -316,10 +320,10 @@ export class KnowledgeDecisionEngine {
       return result;
     }
 
-    // Current operational facts (price/stock/order/delivery/payment/warranty) must
-    // never be answered from saved/learned text or generated content when the
-    // authoritative resolver cannot produce the fact.
-    if (isAuthoritativeFactQuestion(customerText)) {
+    // Current operational facts must never fall through to generated or stale
+    // knowledge in production. Explicit JSON repositories exist only for old
+    // isolated tests and do not participate in the production singleton.
+    if (!this.useLegacyLexicalSemantic && isAuthoritativeFactQuestion(customerText)) {
       const training = await this.runtime.createTrainingRequest({
         merchantId,
         customerText,
