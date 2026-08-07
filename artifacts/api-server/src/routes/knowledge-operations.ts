@@ -4,7 +4,7 @@ import trainingOperationsRouter from "./training-operations.js";
 import {
   getMerchantIdFromSession,
   requireMerchantSession,
-} from "./auth.js";
+} from "../middleware/authSession.js";
 import { getKnowledgeDecisionEngine } from "../services/ai/knowledgeDecisionEngine.js";
 import { getKnowledgeRepository } from "../services/knowledge/knowledgeRepository.js";
 import type { MerchantPolicyContext } from "../services/knowledge/types.js";
