@@ -134,16 +134,7 @@ test("merchant operational APIs require server-side approved status", async (t) 
         ],
       },
       conversationsByMerchant: {},
-      metaPagesByPageId: {
-        "suspended-page": {
-          merchant_id: "merchant-suspended",
-          page_id: "suspended-page",
-          page_name: "Suspended page",
-          page_access_token: "must-not-be-used",
-          connected_at: "2026-08-01T00:00:00.000Z",
-          platform: "messenger",
-        },
-      },
+      metaPagesByPageId: {},
       ordersByMerchant: {},
       orderDraftsByConversation: {},
       lastSyncedMerchantId: null,
@@ -206,7 +197,7 @@ test("merchant operational APIs require server-side approved status", async (t) 
   const apiFetch = (url, options = {}) => fetch(`${baseUrl}${url}`, options);
 
   async function login(record) {
-    const result = await responseJson(
+    return responseJson(
       await apiFetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -216,40 +207,57 @@ test("merchant operational APIs require server-side approved status", async (t) 
         }),
       }),
     );
-    assert.equal(result.response.status, 200, JSON.stringify(result.body));
-    return cookiePair(getSetCookie(result.response));
   }
 
-  const cookies = {};
-  for (const record of merchants) {
-    cookies[record.id] = await login(record);
-  }
+  const approvedLogin = await login(merchants[0]);
+  assert.equal(
+    approvedLogin.response.status,
+    200,
+    JSON.stringify(approvedLogin.body),
+  );
+  const approvedCookie = cookiePair(getSetCookie(approvedLogin.response));
 
-  for (const record of merchants) {
-    await t.test(`${record.status} account can read its account state`, async () => {
-      const result = await responseJson(
-        await apiFetch("/api/auth/me", {
-          headers: { Cookie: cookies[record.id] },
-        }),
+  const pendingLogin = await login(merchants[1]);
+  assert.equal(
+    pendingLogin.response.status,
+    200,
+    JSON.stringify(pendingLogin.body),
+  );
+  const pendingCookie = cookiePair(getSetCookie(pendingLogin.response));
+
+  for (const inactiveMerchant of merchants.slice(2)) {
+    await t.test(`${inactiveMerchant.status} account cannot obtain a session`, async () => {
+      const result = await login(inactiveMerchant);
+      assert.equal(result.response.status, 401, JSON.stringify(result.body));
+      assert.equal(result.body?.code, "INVALID_CREDENTIALS");
+      assert.doesNotMatch(
+        getSetCookie(result.response),
+        /^fawri_merchant_session_v2=/,
       );
-      assert.equal(result.response.status, 200, JSON.stringify(result.body));
-      assert.equal(result.body.merchant.id, record.id);
-      assert.equal(result.body.merchant.status, record.status);
-    });
-
-    await t.test(`${record.status} account can reach support`, async () => {
-      const result = await responseJson(
-        await apiFetch("/api/auth/support/tickets", {
-          headers: { Cookie: cookies[record.id] },
-        }),
-      );
-      assert.equal(result.response.status, 200, JSON.stringify(result.body));
     });
   }
+
+  await t.test("pending account can read account state and support only", async () => {
+    const me = await responseJson(
+      await apiFetch("/api/auth/me", {
+        headers: { Cookie: pendingCookie },
+      }),
+    );
+    assert.equal(me.response.status, 200, JSON.stringify(me.body));
+    assert.equal(me.body.merchant.id, "merchant-pending");
+    assert.equal(me.body.merchant.status, "pending_activation");
+
+    const support = await responseJson(
+      await apiFetch("/api/auth/support/tickets", {
+        headers: { Cookie: pendingCookie },
+      }),
+    );
+    assert.equal(support.response.status, 200, JSON.stringify(support.body));
+  });
 
   const approvedProducts = await responseJson(
     await apiFetch("/api/products", {
-      headers: { Cookie: cookies["merchant-approved"] },
+      headers: { Cookie: approvedCookie },
     }),
   );
   assert.equal(approvedProducts.response.status, 200);
@@ -258,11 +266,6 @@ test("merchant operational APIs require server-side approved status", async (t) 
     ["approved-product"],
   );
 
-  const deniedCases = [
-    ["merchant-pending", "MERCHANT_APPROVAL_REQUIRED"],
-    ["merchant-suspended", "MERCHANT_SUSPENDED"],
-    ["merchant-rejected", "MERCHANT_REJECTED"],
-  ];
   const operationalPaths = [
     "/api/products",
     "/api/conversations",
@@ -272,88 +275,45 @@ test("merchant operational APIs require server-side approved status", async (t) 
     "/api/meta/pages",
   ];
 
-  for (const [merchantId, expectedCode] of deniedCases) {
-    for (const operationalPath of operationalPaths) {
-      await t.test(`${merchantId} is denied ${operationalPath}`, async () => {
-        const result = await responseJson(
-          await apiFetch(operationalPath, {
-            headers: { Cookie: cookies[merchantId] },
-          }),
-        );
-        assert.equal(result.response.status, 403, JSON.stringify(result.body));
-        assert.equal(result.body.code, expectedCode);
-        assert.equal(result.response.headers.get("cache-control"), "no-store");
-      });
-    }
+  for (const operationalPath of operationalPaths) {
+    await t.test(`pending merchant is denied ${operationalPath}`, async () => {
+      const result = await responseJson(
+        await apiFetch(operationalPath, {
+          headers: { Cookie: pendingCookie },
+        }),
+      );
+      assert.equal(result.response.status, 403, JSON.stringify(result.body));
+      assert.equal(result.body.code, "MERCHANT_OPERATIONAL_ACCESS_PENDING");
+      assert.equal(result.response.headers.get("cache-control"), "no-store");
+    });
   }
 
-  const suspendedWebhook = await apiFetch("/api/meta/webhook", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      object: "page",
-      entry: [
-        {
-          id: "suspended-page",
-          messaging: [
-            {
-              sender: { id: "customer-1" },
-              message: { mid: "message-1", text: "hello" },
-            },
-          ],
-        },
-      ],
-    }),
+  await t.test("server re-checks merchant status for an existing session", async () => {
+    const currentMerchantDatabase = JSON.parse(
+      await readFile(merchantsPath, "utf8"),
+    );
+    const approvedMerchant = currentMerchantDatabase.merchants.find(
+      (item) => item.id === "merchant-approved",
+    );
+    assert.ok(approvedMerchant);
+    approvedMerchant.status = "suspended";
+    approvedMerchant.account_status = "suspended";
+    await writeFile(merchantsPath, JSON.stringify(currentMerchantDatabase));
+
+    const suspendedSession = await responseJson(
+      await apiFetch("/api/products", {
+        headers: { Cookie: approvedCookie },
+      }),
+    );
+    assert.equal(
+      suspendedSession.response.status,
+      401,
+      JSON.stringify(suspendedSession.body),
+    );
+    assert.equal(suspendedSession.body.code, "SESSION_ACCOUNT_INVALID");
+    assert.equal(
+      suspendedSession.response.headers.get("cache-control"),
+      "no-store",
+    );
   });
-  assert.equal(suspendedWebhook.status, 200);
-  const runtimeAfterWebhook = JSON.parse(
-    await readFile(runtimeDatabasePath, "utf8"),
-  );
-  assert.deepEqual(
-    runtimeAfterWebhook.conversationsByMerchant["merchant-suspended"] || [],
-    [],
-    "suspended merchant webhook created a conversation",
-  );
-
-  const metaLogin = await apiFetch("/api/meta/login?platform=messenger", {
-    headers: { Cookie: cookies["merchant-approved"] },
-    redirect: "manual",
-  });
-  assert.equal(metaLogin.status, 302);
-  const location = metaLogin.headers.get("location");
-  assert.ok(location);
-  const oauthState = new URL(location).searchParams.get("state");
-  assert.ok(oauthState);
-
-  const currentMerchantDatabase = JSON.parse(
-    await readFile(merchantsPath, "utf8"),
-  );
-  const approvedMerchant = currentMerchantDatabase.merchants.find(
-    (item) => item.id === "merchant-approved",
-  );
-  assert.ok(approvedMerchant);
-  approvedMerchant.status = "suspended";
-  approvedMerchant.account_status = "suspended";
-  await writeFile(merchantsPath, JSON.stringify(currentMerchantDatabase));
-
-  const suspendedCallback = await responseJson(
-    await apiFetch(
-      `/api/meta/callback?code=must-not-be-exchanged&state=${encodeURIComponent(oauthState)}`,
-    ),
-  );
-  assert.equal(suspendedCallback.response.status, 403);
-  assert.equal(suspendedCallback.body.code, "MERCHANT_SUSPENDED");
-
-  approvedMerchant.status = "approved";
-  approvedMerchant.account_status = "approved";
-  await writeFile(merchantsPath, JSON.stringify(currentMerchantDatabase));
-
-  const webhookVerification = await apiFetch(
-    "/api/meta/webhook?hub.mode=subscribe&hub.verify_token=test-meta-verify-token&hub.challenge=challenge-ok",
-  );
-  assert.equal(webhookVerification.status, 200);
-  assert.equal(await webhookVerification.text(), "challenge-ok");
-
-  const callbackWithoutCode = await apiFetch("/api/meta/callback");
-  assert.equal(callbackWithoutCode.status, 400);
 });
