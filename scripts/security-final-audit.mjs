@@ -81,7 +81,7 @@ export function validateRepositoryPolicy(root, files) {
     if (/(?:\|\|\s*true|--force\b|force:\s*true)/.test(content)) {
       violations.push(`${workflow}: bypass/force construct is forbidden`);
     }
-    for (const match of content.matchAll(/^\s*uses:\s*([^\s#]+)\s*$/gm)) {
+    for (const match of content.matchAll(/^\s*(?:-\s*)?uses:\s*([^\s#]+)\s*$/gm)) {
       const action = match[1];
       if (!/@[0-9a-f]{40}$/i.test(action)) {
         violations.push(`${workflow}: action must be pinned to an immutable SHA: ${action}`);
