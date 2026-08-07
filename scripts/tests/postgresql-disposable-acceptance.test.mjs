@@ -43,105 +43,77 @@ function safeDisposableDatabase(connectionString) {
   }
 }
 
-function normalizeSnapshot(snapshot) {
-  return {
-    ...snapshot,
-    id: "<generated-id>",
-  };
-}
-
-function parseJsonOutput(output, label) {
+function parseJsonOutput(stdout, label) {
+  const trimmed = String(stdout || "").trim();
+  const start = trimmed.lastIndexOf("\n{");
+  const jsonText = start >= 0 ? trimmed.slice(start + 1) : trimmed;
   try {
-    return JSON.parse(output.trim());
+    return JSON.parse(jsonText);
   } catch (error) {
-    throw new Error(`${label} did not return JSON: ${output}`, { cause: error });
+    throw new Error(`${label} did not return final JSON: ${error.message}\n${stdout}`);
   }
 }
 
-test("committed Drizzle 0001 is reproducible from the committed 0000 baseline", () => {
+function assertSameBytes(left, right, label) {
+  assert.deepEqual(
+    fs.readFileSync(left),
+    fs.readFileSync(right),
+    `${label} is not byte-for-byte reproducible`,
+  );
+}
+
+test("committed dual-stage Drizzle chain is reproducible from the committed 0001 baseline", () => {
   const generatedDirectory = fs.mkdtempSync(
-    path.join(databaseDirectory, ".drizzle-repro-output-"),
+    path.join(databaseDirectory, ".fawri-reproducibility-"),
   );
-  const generatedDirectoryName = path.basename(generatedDirectory);
-  const generatedMetaDirectory = path.join(generatedDirectory, "meta");
-  const configPath = path.join(
-    databaseDirectory,
-    `.drizzle-repro-${process.pid}-${Date.now()}.config.ts`,
-  );
-
   try {
-    fs.mkdirSync(generatedMetaDirectory, { recursive: true });
-    fs.copyFileSync(
-      path.join(committedDrizzleDirectory, "0000_even_kulan_gath.sql"),
-      path.join(generatedDirectory, "0000_even_kulan_gath.sql"),
+    const generator = run(
+      process.execPath,
+      [path.join(databaseDirectory, "scripts", "generate-migration.mjs")],
+      {
+        cwd: databaseDirectory,
+        env: {
+          CI: "1",
+          FAWRI_MIGRATION_OUTPUT_DIR: generatedDirectory,
+        },
+      },
     );
-    fs.copyFileSync(
-      path.join(committedDrizzleDirectory, "meta", "0000_snapshot.json"),
-      path.join(generatedMetaDirectory, "0000_snapshot.json"),
-    );
+    const report = parseJsonOutput(generator.stdout, "dual-stage generator");
+    assert.equal(report.ok, true);
+    assert.equal(report.mode, "verify_committed");
+    assert.equal(report.committed_reproducible, true);
+    assert.equal(report.generated_entries, 4);
 
-    const committedJournal = JSON.parse(
+    for (const relativePath of [
+      "0002_cross_lane_stage.sql",
+      "0003_cross_lane_cleanup.sql",
+      "meta/0002_snapshot.json",
+      "meta/0003_snapshot.json",
+    ]) {
+      assertSameBytes(
+        path.join(generatedDirectory, relativePath),
+        path.join(committedDrizzleDirectory, relativePath),
+        relativePath,
+      );
+    }
+
+    const journal = JSON.parse(
       fs.readFileSync(
-        path.join(committedDrizzleDirectory, "meta", "_journal.json"),
+        path.join(generatedDirectory, "meta", "_journal.json"),
         "utf8",
       ),
     );
-    assert.equal(committedJournal.entries?.length, 2);
-    fs.writeFileSync(
-      path.join(generatedMetaDirectory, "_journal.json"),
-      `${JSON.stringify(
-        { ...committedJournal, entries: [committedJournal.entries[0]] },
-        null,
-        2,
-      )}\n`,
-      "utf8",
-    );
-
-    fs.writeFileSync(
-      configPath,
-      `import { defineConfig } from "drizzle-kit";\nexport default defineConfig({ schema: "./src/schema/*.ts", out: "./${generatedDirectoryName}", dialect: "postgresql" });\n`,
-      "utf8",
-    );
-
-    run("pnpm", ["exec", "drizzle-kit", "generate", "--config", configPath], {
-      cwd: databaseDirectory,
-    });
-
-    const generatedSqlFiles = fs
-      .readdirSync(generatedDirectory)
-      .filter((name) => /^0001_.*\.sql$/.test(name));
-    assert.equal(
-      generatedSqlFiles.length,
-      1,
-      "expected exactly one generated 0001 SQL",
-    );
+    assert.equal(journal.entries?.length, 4);
     assert.deepEqual(
-      fs.readFileSync(path.join(generatedDirectory, generatedSqlFiles[0])),
-      fs.readFileSync(
-        path.join(committedDrizzleDirectory, "0001_military_proteus.sql"),
-      ),
-      "generated 0001 SQL differs from committed migration",
-    );
-
-    const generatedSnapshot = JSON.parse(
-      fs.readFileSync(
-        path.join(generatedMetaDirectory, "0001_snapshot.json"),
-        "utf8",
-      ),
-    );
-    const committedSnapshot = JSON.parse(
-      fs.readFileSync(
-        path.join(committedDrizzleDirectory, "meta", "0001_snapshot.json"),
-        "utf8",
-      ),
-    );
-    assert.deepEqual(
-      normalizeSnapshot(generatedSnapshot),
-      normalizeSnapshot(committedSnapshot),
-      "generated 0001 snapshot schema differs from committed snapshot",
+      journal.entries.map(({ idx, tag }) => [idx, tag]),
+      [
+        [0, "0000_even_kulan_gath"],
+        [1, "0001_military_proteus"],
+        [2, "0002_cross_lane_stage"],
+        [3, "0003_cross_lane_cleanup"],
+      ],
     );
   } finally {
-    fs.rmSync(configPath, { force: true });
     fs.rmSync(generatedDirectory, { recursive: true, force: true });
   }
 });
@@ -165,9 +137,9 @@ test(
       );
       const smokeReport = parseJsonOutput(smoke.stdout, "migration smoke");
       assert.equal(smokeReport.ok, true);
-      assert.equal(smokeReport.snapshot, "0001_snapshot.json");
-      assert.equal(smokeReport.tables, 42);
-      assert.equal(smokeReport.migrations, 2);
+      assert.equal(smokeReport.snapshot, "0003_snapshot.json");
+      assert.equal(smokeReport.tables, 59);
+      assert.equal(smokeReport.migrations, 4);
       assert.equal(smokeReport.applied_twice_without_changes, true);
       assert.equal(smokeReport.dependency_order_stabilized, true);
       assert.ok(smokeReport.composite_foreign_keys > 0);

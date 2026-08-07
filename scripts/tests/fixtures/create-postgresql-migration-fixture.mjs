@@ -187,6 +187,7 @@ writeJson("training-requests.json", {
       detectedLanguage: "en",
       reason: "low_confidence",
       suggestedReply: "Yes, it is available.",
+      suggestedReplySource: "merchant_draft",
       status: "approved",
     },
   ],
