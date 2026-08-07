@@ -179,7 +179,7 @@ export function handleMetaDeadLetter(job: DurableJob): void {
 
   if (job.last_error_code === "META_REPLY_FAILED" && eventId) {
     try {
-      const refund = refundMerchantAutoReply(eventId);
+      const refund = refundMerchantAutoReply(eventId, "META_REPLY_FAILED");
       if (refund.refunded && merchantId && externalMessageId) {
         removeFailedMetaWebhookAttempt({ merchantId, externalMessageId });
       }
