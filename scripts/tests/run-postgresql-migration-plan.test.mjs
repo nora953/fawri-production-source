@@ -100,7 +100,7 @@ test("validated migration plan matches schema and removes row payloads", () => {
     const report = JSON.parse(result.stdout);
     assert.equal(report.ok, true);
     assert.equal(report.mode, "dry_run");
-    assert.equal(report.tool_version, "1");
+    assert.equal(report.tool_version, "3");
     assert.match(report.source_manifest_sha256, sha256Pattern);
     assert.equal(report.writes_performed, false);
     assert.equal(report.database_connection_used, false);
