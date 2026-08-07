@@ -4,6 +4,10 @@ import { getFawriDataDir, getFawriDataFilePath } from "../lib/dataPaths";
 import healthRouter from "./health";
 import botTrainingRouter from "./bot-training";
 import { registerMerchantRuntimeDeletion } from "../services/merchantRuntime";
+import {
+  connectMetaChannel,
+  readMetaChannelCredential,
+} from "../services/metaChannelRuntime";
 import authRouter, {
   createMerchantOAuthState,
   getMerchantIdFromSession,
@@ -75,9 +79,8 @@ type MetaPageConnection = {
   merchant_id: string;
   page_id: string;
   page_name: string;
-  page_access_token: string;
   connected_at: string;
-  platform: "messenger";
+  platform: "messenger" | "instagram";
   webhook_subscribed?: boolean;
   webhook_subscription_error?: string;
   instagram_account_id?: string;
@@ -233,6 +236,53 @@ function normalizeProducts(products: Product[]) {
     }));
 }
 
+const META_PAGE_METADATA_KEYS = new Set([
+  "merchant_id",
+  "page_id",
+  "page_name",
+  "connected_at",
+  "platform",
+  "webhook_subscribed",
+  "webhook_subscription_error",
+  "instagram_account_id",
+  "instagram_username",
+  "instagram_name",
+]);
+
+function normalizeMetaPageConnection(
+  pageId: string,
+  value: unknown,
+): MetaPageConnection | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const merchantId = String(record.merchant_id || "").trim();
+  const normalizedPageId = String(record.page_id || pageId).trim();
+  if (!merchantId || !normalizedPageId) return null;
+  const normalized: MetaPageConnection = {
+    merchant_id: merchantId,
+    page_id: normalizedPageId,
+    page_name: String(record.page_name || "Facebook Page"),
+    connected_at: String(record.connected_at || ""),
+    platform: record.platform === "instagram" ? "instagram" : "messenger",
+  };
+  if (typeof record.webhook_subscribed === "boolean") {
+    normalized.webhook_subscribed = record.webhook_subscribed;
+  }
+  if (typeof record.webhook_subscription_error === "string") {
+    normalized.webhook_subscription_error = record.webhook_subscription_error;
+  }
+  if (typeof record.instagram_account_id === "string") {
+    normalized.instagram_account_id = record.instagram_account_id;
+  }
+  if (typeof record.instagram_username === "string") {
+    normalized.instagram_username = record.instagram_username;
+  }
+  if (typeof record.instagram_name === "string") {
+    normalized.instagram_name = record.instagram_name;
+  }
+  return normalized;
+}
+
 function loadRuntimeDb() {
   try {
     ensureDbFile();
@@ -255,9 +305,22 @@ function loadRuntimeDb() {
     )) {
       conversationsByMerchant.set(merchantId, conversations);
     }
-    for (const [pageId, connection] of Object.entries(
+    let rewriteMetaPageMetadata = false;
+    for (const [pageId, rawConnection] of Object.entries(
       db.metaPagesByPageId || {},
     )) {
+      const connection = normalizeMetaPageConnection(pageId, rawConnection);
+      if (!connection) {
+        rewriteMetaPageMetadata = true;
+        continue;
+      }
+      const rawKeys =
+        rawConnection && typeof rawConnection === "object" && !Array.isArray(rawConnection)
+          ? Object.keys(rawConnection as Record<string, unknown>)
+          : [];
+      if (rawKeys.some((key) => !META_PAGE_METADATA_KEYS.has(key))) {
+        rewriteMetaPageMetadata = true;
+      }
       metaPagesByPageId.set(pageId, connection);
     }
     for (const [merchantId, orders] of Object.entries(
@@ -271,6 +334,7 @@ function loadRuntimeDb() {
       orderDraftsByConversation.set(conversationId, draft);
     }
     lastSyncedMerchantId = db.lastSyncedMerchantId || null;
+    if (rewriteMetaPageMetadata) saveRuntimeDb();
   } catch (error) {
     console.error("Failed to load runtime DB:", error);
   }
@@ -405,19 +469,38 @@ async function getBusinessContextForPage(
   };
 }
 
+function safeErrorCode(error: unknown, fallback: string): string {
+  if (error && typeof error === "object" && "code" in error) {
+    const code = String((error as { code?: unknown }).code || "").trim();
+    if (code) return code;
+  }
+  return fallback;
+}
+
 async function getPageAccessTokenForPage(
   pageId: string,
 ): Promise<string | null> {
   const connection = metaPagesByPageId.get(pageId);
-  if (connection?.page_access_token) return connection.page_access_token;
-  if (
-    process.env.NODE_ENV !== "production" &&
-    process.env.META_PAGE_ACCESS_TOKEN
-  ) {
-    return process.env.META_PAGE_ACCESS_TOKEN;
+  if (!connection) {
+    console.error("Meta credential lookup failed:", {
+      pageId,
+      code: "META_PAGE_NOT_CONNECTED",
+    });
+    return null;
   }
-  console.error("No page access token found for page:", pageId);
-  return null;
+  try {
+    return readMetaChannelCredential({
+      merchantId: connection.merchant_id,
+      platform: connection.platform,
+      pageId: connection.page_id,
+    });
+  } catch (error) {
+    console.error("Meta credential lookup failed:", {
+      pageId,
+      code: safeErrorCode(error, "META_CHANNEL_CREDENTIAL_UNAVAILABLE"),
+    });
+    return null;
+  }
 }
 
 async function sendMessengerText(
@@ -438,8 +521,13 @@ async function sendMessengerText(
   );
   const result = await response.json().catch(() => null);
   if (!response.ok) {
-    console.error("Failed to send Messenger message:", result);
-    throw new Error("Failed to send Messenger message");
+    console.error("Meta Messenger send failed:", {
+      status: response.status,
+      code: String((result as any)?.error?.code || "") || undefined,
+    });
+    throw Object.assign(new Error("Failed to send Messenger message"), {
+      code: "META_SEND_FAILED",
+    });
   }
   return result;
 }
@@ -2312,8 +2400,11 @@ router.post("/meta/webhook", async (req: Request, res: Response) => {
             needsTraining: trainedReply.needsTraining,
             assignedToHuman: trainedReply.assignedToHuman,
           });
-        } catch (sendError) {
-          console.error("Failed to send reply:", sendError);
+        } catch {
+          console.error("Meta reply send failed", {
+            pageId,
+            code: "META_SEND_FAILED",
+          });
           saveMessengerConversation({
             merchantId: businessContext.merchantId,
             customerId: senderId,
@@ -2407,7 +2498,10 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
     const tokenResponse = await fetch(tokenUrl);
     const tokenData: any = await tokenResponse.json().catch(() => null);
     if (!tokenResponse.ok || !tokenData?.access_token) {
-      console.error("Meta token exchange failed:", tokenData);
+      console.error("Meta token exchange failed:", {
+        status: tokenResponse.status,
+        code: String(tokenData?.error?.code || "") || undefined,
+      });
       return res.status(400).send("Failed to exchange Meta OAuth code");
     }
 
@@ -2418,7 +2512,10 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
     const accountsResponse = await fetch(accountsUrl);
     const accountsData: any = await accountsResponse.json().catch(() => null);
     if (!accountsResponse.ok || !Array.isArray(accountsData?.data)) {
-      console.error("Failed to fetch Meta pages:", accountsData);
+      console.error("Failed to fetch Meta pages:", {
+        status: accountsResponse.status,
+        code: String(accountsData?.error?.code || "") || undefined,
+      });
       return res.status(400).send("Failed to fetch Meta pages");
     }
 
@@ -2434,9 +2531,8 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
         merchant_id: merchantId,
         page_id: pageId,
         page_name: String(page.name || "Facebook Page"),
-        page_access_token: pageAccessToken,
         connected_at: new Date().toISOString(),
-        platform: "messenger",
+        platform: platform === "instagram" ? "instagram" : "messenger",
       };
 
       // Install the app on this Page so Meta can deliver Page events
@@ -2480,20 +2576,17 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
           console.error("Meta Page webhook subscription failed:", {
             pageId,
             status: subscribeResponse.status,
-            error: connection.webhook_subscription_error,
+            code: String(subscribeData?.error?.code || "") || undefined,
           });
         }
       } catch (subscriptionError) {
         connection.webhook_subscribed = false;
         connection.webhook_subscription_error =
-          subscriptionError instanceof Error
-            ? subscriptionError.message
-            : "Unknown Page webhook subscription error";
-
-        console.error(
-          "Meta Page webhook subscription request failed:",
-          subscriptionError,
-        );
+          "Meta Page webhook subscription request failed";
+        console.error("Meta Page webhook subscription request failed:", {
+          pageId,
+          code: safeErrorCode(subscriptionError, "META_SUBSCRIPTION_FAILED"),
+        });
       }
 
       // Discover the Instagram professional account connected to this Page.
@@ -2534,16 +2627,27 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
               pageId,
               instagramAccountId,
               status: instagramDetailsResponse.status,
-              error: instagramDetails?.error?.message,
+              code: String(instagramDetails?.error?.code || "") || undefined,
             });
           }
         }
       } catch (instagramError) {
-        console.error(
-          "Connected Instagram account discovery failed:",
-          instagramError,
-        );
+        console.error("Connected Instagram account discovery failed:", {
+          pageId,
+          code: safeErrorCode(instagramError, "META_INSTAGRAM_DISCOVERY_FAILED"),
+        });
       }
+
+      connectMetaChannel({
+        merchantId,
+        platform: connection.platform,
+        pageId: connection.page_id,
+        pageName: connection.page_name,
+        accessToken: pageAccessToken,
+        webhookSubscribed: connection.webhook_subscribed,
+        instagramAccountId: connection.instagram_account_id,
+        instagramUsername: connection.instagram_username,
+      });
 
       connectedPages.push(connection);
       metaPagesByPageId.set(connection.page_id, connection);
@@ -2565,7 +2669,9 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
       </html>
     `);
   } catch (callbackError) {
-    console.error("Meta callback failed:", callbackError);
+    console.error("Meta callback failed:", {
+      code: safeErrorCode(callbackError, "META_CALLBACK_FAILED"),
+    });
     return res.status(500).send("Meta callback failed");
   }
 });
