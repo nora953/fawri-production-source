@@ -2,8 +2,8 @@ import { Router } from "express";
 import { authAccountRepository } from "../services/authAccountRepository";
 import { authSecurityStore } from "../services/authSecurityStore";
 import { clearAuthSessionCookie, getAuthContext, getSessionToken, requireSecureAdminSession, requireSecureMerchantSession } from "../middleware/authSession";
-import { payload } from "./authRouteCommon";
-import { changePassword } from "./authPasswordRouteSupport";
+import { payload } from "./auth-route-common";
+import { changePassword } from "./auth-password-route-support";
 
 const router = Router();
 router.post("/logout", (req, res) => { const token = getSessionToken(req, "merchant"); if (token) authSecurityStore.revokeSession(token, "logout"); clearAuthSessionCookie(res, "merchant"); res.json({ ok: true }); });

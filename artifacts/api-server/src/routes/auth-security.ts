@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { enforceAuthOrigin } from "../middleware/authSession";
-import publicRoutes from "./authPublicRoutes";
-import sessionRoutes from "./authSessionRoutes";
-import adminRoutes from "./authAdminRoutes";
+import publicRoutes from "./auth-public-routes";
+import sessionRoutes from "./auth-session-routes";
+import adminRoutes from "./auth-admin-routes";
 const router = Router();
 router.use(enforceAuthOrigin);
 router.use(publicRoutes as any);

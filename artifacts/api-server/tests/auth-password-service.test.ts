@@ -6,7 +6,7 @@ import {
   hashPassword,
   passwordNeedsRehash,
   verifyPassword,
-} from "../src/services/passwordService";
+} from "../src/services/authPasswordService";
 
 test("new passwords use randomized scrypt and verify without deterministic hashes", () => {
   const first = hashPassword("SecurePass1");

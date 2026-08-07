@@ -4,43 +4,42 @@
 
 - Repository: `nora953/fawri-production-source`
 - Branch: `parallel/auth-session-hardening`
-- Coordination base / starting remote SHA: `b08c854f177953d3690c5dffde905fdb0c93eb09`
+- Coordination base: `b08c854f177953d3690c5dffde905fdb0c93eb09`
 - Final remote SHA: recorded in the delivery message because a commit cannot contain its own SHA.
-- Worker: `GPT-5.6 Thinking — auth/session/admin security lane`
+- Scope owner: auth/session/admin security lane.
 
 ## Scope completed
 
-Implemented an isolated auth/session/admin security layer:
+Implemented an isolated auth/session/admin hardening layer without mounting it into shared bootstrap files:
 
-- account identity is projected separately from merchant/admin profiles and every lookup requires the expected account kind;
-- separate merchant and admin login endpoints/cookies;
-- opaque server-side sessions with HMAC token fingerprints, idle and absolute expiry, session-ID rotation, immediate logout/logout-all/per-session revocation, session caps, and account security versions;
-- trusted admin devices with owner approval/revocation, device-bound sessions, and a two-device cap;
-- OTP challenge IDs, HMAC-only persistence, single use, replay/supersession/expiry/attempt protection, resend and target/IP throttling, and delivery rollback;
-- generic password-reset responses that do not expose account existence;
-- randomized `scrypt` password hashes and successful-login migration of legacy SHA-256/plaintext values;
-- server-side role, permission, tenant, and pending/suspended/rejected merchant controls;
-- owner-only assistant-admin creation/status/permission/password/session/device actions and forced replacement of temporary passwords;
-- sanitized login/sensitive-event audit records; no password, OTP, token, cookie, secret, or hash values are logged;
-- fail-closed behavior when the security store is malformed;
-- focused tests and security/cutover documentation.
+- account identity separated from merchant/admin profile projection;
+- separate merchant/admin login endpoints and cookies;
+- server-side opaque sessions with HMAC fingerprints, idle/absolute expiry, rotation, logout/logout-all, per-session revocation, caps, and security versions;
+- trusted admin devices with owner trust/revoke and a two-device cap;
+- OTP replay/supersession/expiry/attempt/flood protection;
+- generic password-reset responses that avoid account enumeration;
+- randomized scrypt password storage for the new auth flow, with successful-login migration support for legacy SHA-256/plaintext values;
+- server-side role, tenant, permission, and merchant lifecycle enforcement;
+- owner-only assistant-admin management and forced temporary-password replacement;
+- sanitized security audit records;
+- focused tests and cutover documentation.
 
-**Integration state:** the secure router is not mounted because `routes/index.ts` is outside this lane. Legacy auth remains active until the coordinator completes the shared cutover below. This branch must not be deployed alone or described as production-active.
+**Integration state:** `routes/index.ts` is outside this lane, so the secure router is intentionally not mounted here. Legacy auth remains active until the integration coordinator performs the atomic cutover. This branch must not be deployed alone as if the new auth path were production-active.
 
-## Files changed
+## Final allowlisted files
 
 - `artifacts/api-server/src/middleware/authSession.ts`
 - `artifacts/api-server/src/routes/auth-security.ts`
-- `artifacts/api-server/src/routes/authRouteCommon.ts`
-- `artifacts/api-server/src/routes/authLoginRouteSupport.ts`
-- `artifacts/api-server/src/routes/authPasswordRouteSupport.ts`
-- `artifacts/api-server/src/routes/authPublicRoutes.ts`
-- `artifacts/api-server/src/routes/authSessionRoutes.ts`
-- `artifacts/api-server/src/routes/authAdminRoutes.ts`
+- `artifacts/api-server/src/routes/auth-admin-routes.ts`
+- `artifacts/api-server/src/routes/auth-login-route-support.ts`
+- `artifacts/api-server/src/routes/auth-password-route-support.ts`
+- `artifacts/api-server/src/routes/auth-public-routes.ts`
+- `artifacts/api-server/src/routes/auth-route-common.ts`
+- `artifacts/api-server/src/routes/auth-session-routes.ts`
 - `artifacts/api-server/src/services/authAccountRepository.ts`
 - `artifacts/api-server/src/services/authPolicy.ts`
 - `artifacts/api-server/src/services/authOtpDelivery.ts`
-- `artifacts/api-server/src/services/passwordService.ts`
+- `artifacts/api-server/src/services/authPasswordService.ts`
 - `artifacts/api-server/src/services/authSecurityTypes.ts`
 - `artifacts/api-server/src/services/authSecurityDataStore.ts`
 - `artifacts/api-server/src/services/authSessionSecurity.ts`
@@ -51,82 +50,84 @@ Implemented an isolated auth/session/admin security layer:
 - `artifacts/api-server/tests/auth-password-service.test.ts`
 - `artifacts/api-server/tests/auth-policy.test.ts`
 - `artifacts/api-server/tests/auth-security-store.test.ts`
-- `docs/security/auth-session-hardening.md`
+- `docs/security-auth-session-hardening.md`
 - `docs/coordination/handoffs/auth-session-hardening.md`
 
-No forbidden file was modified: no `app.ts`, `index.ts`, package/lockfile, workflow, `lib/db/**`, frontend, Meta, queue, orders, settings, other branch, or `main` change.
+### Legacy `passwordService.ts`
 
-## Behavior and security boundaries
+`artifacts/api-server/src/services/passwordService.ts` is **not modified by this lane in the final base-to-head diff**. It is restored byte-for-byte to the coordination-base blob `82e9cf02cf719dcf89b2152511dd58141a271855`. The scrypt hardening previously placed there was moved into the lane-owned `artifacts/api-server/src/services/authPasswordService.ts`, and all new auth routes/tests import that service instead.
 
-- Merchant/admin credentials are never interchangeable. Current account kind, enabled state, role, permissions, tenant, session version, expiry, revocation, and trusted-device state are re-read server-side.
-- Pending merchants may use `/me`, session/password security, onboarding, and support only. Operational APIs fail with `MERCHANT_OPERATIONAL_ACCESS_PENDING`. Suspended/rejected merchants fail closed.
-- Tenant identity comes from the authenticated merchant profile; a different supplied tenant is rejected with `CROSS_TENANT_ACCESS_FORBIDDEN`.
-- Rotation creates a new token/session ID and revokes the predecessor while preserving absolute expiry. Revocation is checked on the next request.
-- The transitional JSON store uses mode `0600`, atomic rename, bounded retention, and refuses to reset corrupt state. It is single-process only; PostgreSQL transactions are mandatory before multi-instance production.
+No shared contract change is required in the legacy password service for this isolated implementation. If the coordinator later wants legacy endpoints to use the new password service, that must happen explicitly during the atomic auth cutover rather than through this lane.
 
-## Tests and checks
+No forbidden file is modified: no `app.ts`, `routes/index.ts`, package/lockfile, workflow, `lib/db/**`, frontend, Meta/queue/orders/settings file, other branch, `main`, or `hardening/postgresql-foundation` change.
+
+## Behavior/security boundaries
+
+- Merchant/admin credentials and sessions are not interchangeable.
+- Pending merchants are limited to auth security, onboarding, `/me`, and support; operational APIs are denied.
+- Suspended/rejected merchants fail closed.
+- Tenant identity is server-derived and cross-tenant input is rejected.
+- Assistant admins cannot target owner-admin accounts or grant synthetic permissions.
+- Password/permission/device/account security changes revoke sessions server-side.
+- OTPs are single-use and rate limited; reset request shape is generic.
+- Audit sanitization removes password/OTP/token/secret/hash/cookie/authorization keys.
+
+## Tests and checks — final naming correction
 
 ### TypeScript static check
 
 - Command: `npx tsc -p tsconfig.json`
-- Result: exit `0`, no diagnostics.
-- Environment: isolated Node.js `v22.16.0`, TypeScript `5.8.3`; temporary uncommitted Express declarations and unchanged `dataPaths.ts` copy were used because the full dependency tree was unavailable.
+- Result: exit `0`, no TypeScript diagnostics.
+- Environment: isolated Node.js `v22.16.0`, TypeScript `5.8.3`, using a temporary local tsconfig/type-root setup only; no package or repository config file was committed.
 
-### Focused security suite
+### Focused auth security suite
 
 - Command: `NODE_ENV=test FAWRI_PASSWORD_SALT=test-password-salt node --experimental-specifier-resolution=node --loader /opt/nvm/versions/node/v22.16.0/lib/node_modules/ts-node/esm.mjs --test artifacts/api-server/tests/auth-*.test.ts`
-- Result: `15` passed, `0` failed, `0` skipped; `2.546s`.
-- Covered: account/profile separation, cross-login denial, security-version persistence, scrypt/legacy migration, password policy, pending and suspended/rejected access, cross-tenant denial, assistant escalation/unknown permission denial, generic reset response, expired/revoked/rotated/wrong-role/stolen-device sessions, logout-all, trusted-device revoke/cap, OTP supersession/replay/single-use/lock/flooding, login flooding, audit redaction, and corrupt-store fail-closed.
-- Ephemeral log: `/tmp/fawri-auth-final-test.log` (not committed).
+- Result: `15` passed, `0` failed, `0` skipped; approximately `3.27s`.
+- Coverage includes account/profile separation, merchant/admin cross-login denial, session-version persistence, scrypt/legacy migration, password policy, pending/suspended/rejected access, cross-tenant denial, assistant escalation denial, generic reset responses, expired/revoked/rotated/wrong-role/stolen-device sessions, logout-all, trusted-device revocation/cap, OTP replay/supersession/single-use/lock/flood controls, login flooding, audit redaction, and corrupt-store fail-closed behavior.
+
+### Rename/import static checks
+
+- All route files owned by the lane use the required `auth-*.ts` naming convention.
+- `auth-security.ts` imports `./auth-public-routes`, `./auth-session-routes`, and `./auth-admin-routes`.
+- Internal route imports use `./auth-route-common`, `./auth-login-route-support`, and `./auth-password-route-support`.
+- New auth password imports use `../services/authPasswordService`.
+- The focused password test imports `../src/services/authPasswordService`.
+- Old camel-case route filenames and `docs/security/auth-session-hardening.md` are removed from the candidate tree.
+- Final base-to-head comparison is required before push to prove no out-of-allowlist path remains.
 
 ### Not executed
 
-- Full repository build or existing HTTP integration suite: complete dependencies/router mount unavailable and package/shared route files were forbidden.
-- Real WhatsApp delivery, real PostgreSQL migrations/concurrency, browser E2E, and real customer data: not executed.
+- Full mounted HTTP integration/browser suite, because shared router mounting is intentionally outside this lane.
+- Real WhatsApp OTP delivery, PostgreSQL migrations/concurrency, Replit Agent, real customer data, or external credentials.
 
 ## Shared integration requests
 
-1. **Mount secure router:** in `artifacts/api-server/src/routes/index.ts`, import `authSecurityRouter` from `./auth-security` and mount `router.use("/auth", authSecurityRouter)` before legacy `authRouter`.
-2. **Atomic guard cutover:** change protected merchant/admin routes to import secure middleware/context from `middleware/authSession.ts`; derive tenant from `res.locals.auth`, not request input. Replace legacy admin bearer guards, including SSE/reconnect checks.
-3. **Remove duplicates in the same release:** remove/disable legacy signup, OTP, combined login, merchant/admin session/logout, reset/change-password, `/me`, trusted-device, and assistant-admin management endpoints. Do not expose old and new auth systems concurrently.
-4. **Frontend cutover:** admin uses `/api/auth/admin/login`, stable `X-Fawri-Device-Id`, cookies/credentials, and no stored bearer token; handle device approval, forced password change, generic recovery, rotation, and logout-all.
-5. **Deletion hook:** account deletion must revoke/delete sessions, devices, active OTPs, login-attempt target records, and anonymize audit references under retention policy.
+1. In `artifacts/api-server/src/routes/index.ts`, import the secure router from `./auth-security` and mount it at `/auth` before legacy auth during the atomic cutover.
+2. Cut protected merchant/admin routes to `middleware/authSession.ts` and server-derived tenant context; remove legacy admin bearer-token authorization including reconnect/SSE paths.
+3. Disable duplicate legacy signup/OTP/login/logout/session/reset/change-password/device/admin-management endpoints in the same release. Never expose old and new auth systems concurrently.
+4. Update the admin frontend to `/api/auth/admin/login`, cookie credentials, stable `X-Fawri-Device-Id`, device approval, forced password change, generic recovery, rotation, and logout-all.
+5. Add account-deletion security cleanup/anonymization hooks.
 
-Required proof after integration: secure cookies only; no legacy bearer/cookie accepted; pending allowlist and operational denial; same-tenant success/cross-tenant denial; assistant denied owner/escalation targets; session/device/permission/password revocation effective on next request; duplicate legacy endpoints unavailable.
+## PostgreSQL/schema requests
 
-No `app.ts` or package change is required by this implementation.
+Before horizontal production scale, implement transactional equivalents for `auth_accounts`, exclusive merchant/admin profiles, `auth_sessions`, `auth_trusted_devices`, `auth_otp_challenges`, bounded login attempts, and sanitized audit events. Migration must abort on duplicate phone/ambiguous role, invalidate legacy sessions rather than migrate weak credentials, and use transactions/locking for session rotation/revoke-all, OTP verification, reset, permission, and device changes.
 
-## Database/schema requests
+## Workflow request
 
-PostgreSQL lane/coordinator must implement transactional equivalents before production scale:
+After shared integration, the quality lane/coordinator should add a merge-blocking backend auth/security CI job with repository-native typecheck/build, focused tests, HTTP abuse tests, and PostgreSQL migration/concurrency tests. No `continue-on-error`; bounded timeout; sanitized artifacts.
 
-- `auth_accounts`: normalized unique phone, password hash, account kind, enabled/OTP state, monotonic session version;
-- exclusive `merchant_profiles` and `admin_profiles`, with tenant composite constraints, role/permission checks, forced-password flag, and one enabled owner constraint;
-- `auth_sessions`: unique token hash, account/kind/tenant/version/device, idle/absolute expiry, revoke reason/timestamp, replacement FK and account/expiry indexes;
-- `auth_trusted_devices`: unique account/device hash and serializable enforcement of max two trusted devices;
-- `auth_otp_challenges`: target/code/IP hashes, purpose, expiry, attempts, used/revoked state and one-active-challenge transaction;
-- bounded `auth_login_attempts` and sanitized `auth_audit_events` with retention/anonymization policy.
+## Known risks
 
-Migration order: create constraints; abort on duplicate phones/ambiguous roles; backfill one account plus exactly one profile; copy security versions; invalidate all legacy sessions rather than migrate them; switch repository atomically; validate counts/constraints; then remove legacy identity/profile fields. Session issue/rotation/revoke-all, OTP verify, reset, permission/device changes require DB transactions and row locking/serializable semantics.
-
-## Workflow requests
-
-After shared integration, add a merge-blocking backend security job for auth/session/admin source/tests/docs, route mount, and DB migrations. Run repository-native typecheck/build, focused tests, HTTP abuse/integration tests, and PostgreSQL migration/concurrency tests. No `continue-on-error`; bounded 15-minute timeout; artifacts must be sanitized.
-
-## Known risks and deferred work
-
-- Critical: secure router is not mounted and legacy auth remains active until the atomic coordinator cutover.
-- Transitional JSON state is not safe for horizontal scaling.
-- Identity/profile separation is currently repository projection, not DB constraints.
-- Admin bearer clients must change atomically; bearer fallback would bypass revocation.
-- `FAWRI_OWNER_BOOTSTRAP_DEVICE_ID` is temporary and must be removed after initial owner-device bootstrap.
-- Legacy passwords remain readable only for first successful rehash; report remaining legacy counts without identifiers/hashes.
-- Full HTTP/browser/PostgreSQL tests are merge blockers after integration.
-
-## Rollback
-Before cutover, revert this lane and any coordinator mount commit. After cutover, never restore legacy cookies/bearer tokens; pause new login issuance, preserve session/audit rows, force global reauthentication if rollback is required, and retain PostgreSQL security history. Secret rotation intentionally invalidates all sessions.
+- Secure router remains unmounted until coordinator cutover.
+- Transitional JSON security state is single-process only.
+- Identity/profile separation is currently a repository projection, not DB constraints.
+- Any legacy bearer fallback would bypass immediate session revocation.
+- `FAWRI_OWNER_BOOTSTRAP_DEVICE_ID` must be temporary.
+- Full mounted HTTP/browser/PostgreSQL proof remains an integration merge blocker.
 
 ## External systems and real data
+
 - Real database contacted: `no`
 - Replit Agent used: `no`
 - Real Meta/WhatsApp API called: `no`
@@ -134,10 +135,11 @@ Before cutover, revert this lane and any coordinator mount commit. After cutover
 - Credentials accessed: `no`
 
 ## Ready for coordinator review
-- [x] Remote HEAD rechecked before final push.
+
+- [x] Route/document naming corrected to the lane allowlist.
+- [x] Legacy `passwordService.ts` restored to coordination base and excluded from final diff.
+- [x] Focused auth tests: 15 passed / 0 failed / 0 skipped.
+- [x] TypeScript focused static check: exit 0.
 - [x] No force push.
-- [x] No forbidden file modified.
-- [x] Actual tests/checks documented.
+- [x] No merge.
 - [x] Shared integration/schema/workflow requests explicit.
-- [x] No secrets/customer payloads in commits or artifacts.
-- [x] Branch not merged into `main`.

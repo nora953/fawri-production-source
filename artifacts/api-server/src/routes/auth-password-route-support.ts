@@ -5,7 +5,7 @@ import {
   getPasswordValidationError,
   hashPassword,
   verifyPassword,
-} from "../services/passwordService";
+} from "../services/authPasswordService";
 import {
   clearAuthSessionCookie,
   getAuthContext,

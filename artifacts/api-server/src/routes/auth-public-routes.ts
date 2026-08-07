@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { authAccountRepository, normalizePhone } from "../services/authAccountRepository";
 import { authSecurityStore, type OtpPurpose } from "../services/authSecurityStore";
-import { getPasswordValidationError, hashPassword } from "../services/passwordService";
+import { getPasswordValidationError, hashPassword } from "../services/authPasswordService";
 import { clearAuthSessionCookie, requestDeviceId, requestDeviceLabel, requestIp, sendAuthError, setAuthSessionCookie } from "../middleware/authSession";
-import { devCode, genericRecovery, issueOtp, otpError, payload } from "./authRouteCommon";
-import { login } from "./authLoginRouteSupport";
+import { devCode, genericRecovery, issueOtp, otpError, payload } from "./auth-route-common";
+import { login } from "./auth-login-route-support";
 
 const router = Router();
 router.post("/signup", async (req, res) => {

@@ -2,9 +2,9 @@ import { Router } from "express";
 import { authAccountRepository, normalizePhone } from "../services/authAccountRepository";
 import { normalizeAdminPermissions } from "../services/authPolicy";
 import { authSecurityStore, AuthSecurityStoreError } from "../services/authSecurityStore";
-import { getPasswordValidationError, hashPassword, verifyPassword } from "../services/passwordService";
+import { getPasswordValidationError, hashPassword, verifyPassword } from "../services/authPasswordService";
 import { requireSecureAdminSession, sendAuthError } from "../middleware/authSession";
-import { ownerContext, payload } from "./authRouteCommon";
+import { ownerContext, payload } from "./auth-route-common";
 
 const router = Router();
 router.get("/admins", requireSecureAdminSession, (_req, res) => { if (!ownerContext(res)) return; res.json({ ok: true, admins: authAccountRepository.listAdmins().map(payload) }); });

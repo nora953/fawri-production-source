@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { authAccountRepository, normalizePhone } from "../services/authAccountRepository";
 import { authSecurityStore } from "../services/authSecurityStore";
-import { hashPassword, passwordNeedsRehash, verifyPassword } from "../services/passwordService";
+import { hashPassword, passwordNeedsRehash, verifyPassword } from "../services/authPasswordService";
 import {
   requestDeviceId,
   requestDeviceLabel,
@@ -9,7 +9,7 @@ import {
   sendAuthError,
   setAuthSessionCookie,
 } from "../middleware/authSession";
-import { payload } from "./authRouteCommon";
+import { payload } from "./auth-route-common";
 
 export async function login(
   req: Request,
