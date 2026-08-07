@@ -4,6 +4,8 @@ import http from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
+import "./meta-credential-vault.test";
+import "./meta-channel-runtime.test";
 import type { DurableJob } from "../src/services/durableJobQueue";
 import { processMetaReplyJob } from "../src/services/metaWebhookWorkerCore";
 
