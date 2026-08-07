@@ -57,6 +57,7 @@ jobs:
           node --check scripts/security-scan-output.mjs
           node --check scripts/ci-run-redacted.mjs
           node --check scripts/quality-run-tests.mjs
+          node --check scripts/quality-run-gate.mjs
           node --check scripts/quality-workflow-policy.mjs
 
       - name: Test quality and redaction tools
@@ -108,3 +109,28 @@ jobs:
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
+
+  dependency-audit-fallback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependency graph without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Audit installed dependency graph for high severity advisories
+        run: pnpm audit --audit-level=high

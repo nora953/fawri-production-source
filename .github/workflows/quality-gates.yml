@@ -46,28 +46,12 @@ jobs:
       fail-fast: false
       max-parallel: 3
       matrix:
-        include:
-          - area: server
-            command: >-
-              pnpm --filter @workspace/api-server run typecheck &&
-              pnpm --filter @workspace/api-server run build &&
-              node scripts/quality-run-tests.mjs server-unit &&
-              node scripts/quality-run-tests.mjs server-integration
-          - area: frontend
-            command: >-
-              pnpm --filter ./artifacts/fawri run typecheck &&
-              pnpm --filter ./artifacts/fawri run build &&
-              node scripts/quality-run-tests.mjs frontend
-          - area: browser-storage
-            command: >-
-              node --check scripts/audit-browser-operational-storage.mjs &&
-              node scripts/quality-run-tests.mjs browser-storage &&
-              mkdir -p ci-artifacts/browser-storage &&
-              node scripts/audit-browser-operational-storage.mjs . > ci-artifacts/browser-storage/report.json
-          - area: contracts
-            command: node scripts/quality-run-tests.mjs contracts
-          - area: observability
-            command: node scripts/quality-run-tests.mjs observability
+        area:
+          - server
+          - frontend
+          - browser-storage
+          - contracts
+          - observability
 
     steps:
       - name: Checkout repository
@@ -88,11 +72,11 @@ jobs:
       - name: Install dependencies without package build scripts
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Run ${{ matrix.area }} checks through redacted log guard
+      - name: Run every ${{ matrix.area }} check and aggregate failures
         run: >-
-          node scripts/ci-run-redacted.mjs
-          --label "${{ matrix.area }}"
-          -- bash -lc "${{ matrix.command }}"
+          node scripts/quality-run-gate.mjs
+          "${{ matrix.area }}"
+          --report "ci-artifacts/${{ matrix.area }}/gate-report.json"
 
       - name: Write safe job summary artifact
         if: always()
@@ -122,20 +106,9 @@ jobs:
       fail-fast: false
       max-parallel: 2
       matrix:
-        include:
-          - area: database
-            command: >-
-              pnpm --filter @workspace/db run typecheck &&
-              pnpm --filter @workspace/db run schema:generate &&
-              git diff --exit-code -- lib/db/drizzle &&
-              FAWRI_ALLOW_MIGRATION_SMOKE=1 pnpm --filter @workspace/db run schema:smoke
-          - area: migration
-            command: >-
-              node scripts/quality-run-tests.mjs migration &&
-              rm -rf lib/db/drizzle-complete-candidate &&
-              pnpm --dir lib/db exec drizzle-kit generate --config=drizzle.complete.config.ts &&
-              test -n "$(find lib/db/drizzle-complete-candidate -maxdepth 1 -type f -name '*.sql' -print -quit)" &&
-              while IFS= read -r sql_file; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$sql_file"; done < <(find lib/db/drizzle-complete-candidate -maxdepth 1 -type f -name '*.sql' | sort)
+        area:
+          - database
+          - migration
     services:
       postgres:
         image: postgres:16-alpine
@@ -172,11 +145,11 @@ jobs:
       - name: Install dependencies without package build scripts
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Run ${{ matrix.area }} checks through redacted log guard
+      - name: Run every ${{ matrix.area }} check and aggregate failures
         run: >-
-          node scripts/ci-run-redacted.mjs
-          --label "${{ matrix.area }}"
-          -- bash -lc "${{ matrix.command }}"
+          node scripts/quality-run-gate.mjs
+          "${{ matrix.area }}"
+          --report "ci-artifacts/${{ matrix.area }}/gate-report.json"
 
       - name: Write safe job summary artifact
         if: always()

@@ -60,3 +60,15 @@ test("CI wrapper never prints raw sensitive output", () => {
   assert.equal(`${result.stdout}${result.stderr}`.includes(fakeToken), false);
   assert.match(result.stdout, /REDACTED/);
 });
+
+
+test("repository mode ignores generic code assignments but keeps token fingerprints", () => {
+  const codeAssignment = "const password = normalizeCredential(inputValueThatIsLongEnough);";
+  assert.equal(
+    findSensitiveText(codeAssignment, { includePii: false, includeAssignments: false }).length,
+    0,
+  );
+  assert.ok(
+    findSensitiveText(fakeToken, { includePii: false, includeAssignments: false }).length >= 1,
+  );
+});

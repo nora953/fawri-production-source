@@ -55,7 +55,7 @@ function main() {
 
     scanned += 1;
     const text = buffer.toString("utf8");
-    const fileFindings = findSensitiveText(text, { includePii: false });
+    const fileFindings = findSensitiveText(text, { includePii: false, includeAssignments: false });
     for (const finding of fileFindings) {
       const line = text.slice(0, finding.index).split("\n").length;
       findings.push({ file, line, rule: finding.rule });

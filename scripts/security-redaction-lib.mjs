@@ -1,6 +1,6 @@
 const PLACEHOLDER_VALUE = /^(?:example|sample|test|testing|dummy|placeholder|redacted|masked|changeme|not[-_ ]?set|fawri_ci|candidate|localhost)$/i;
 
-const SECRET_RULES = [
+const HIGH_CONFIDENCE_SECRET_RULES = [
   {
     id: "private-key",
     pattern: new RegExp("-{5}BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-{5}", "g"),
@@ -34,12 +34,17 @@ const SECRET_RULES = [
       return !PLACEHOLDER_VALUE.test(password) && !/^(?:127\.0\.0\.1|localhost)$/i.test(host);
     },
   },
+];
+
+const ASSIGNMENT_SECRET_RULES = [
   {
     id: "named-secret",
     pattern: /\b(?:access[_-]?token|refresh[_-]?token|client[_-]?secret|webhook[_-]?secret|api[_-]?key|password|authorization)\b\s*(?:=|:)\s*["']?([^\s,"'\]}]{20,})/gi,
     validate(match) {
       const value = match[1] ?? "";
-      return !PLACEHOLDER_VALUE.test(value) && !/(?:test|example|dummy|placeholder|redacted|sample|fake|local|fixture)/i.test(value) && !/^\$\{?[A-Z0-9_]+\}?$/i.test(value);
+      return !PLACEHOLDER_VALUE.test(value) &&
+        !/(?:test|example|dummy|placeholder|redacted|sample|fake|local|fixture)/i.test(value) &&
+        !/^\$\{?[A-Z0-9_]+\}?$/i.test(value);
     },
   },
 ];
@@ -72,9 +77,16 @@ function cloneGlobalRegex(pattern) {
   return new RegExp(pattern.source, flags);
 }
 
-export function findSensitiveText(text, { includePii = false } = {}) {
+export function findSensitiveText(
+  text,
+  { includePii = false, includeAssignments = true } = {},
+) {
   const findings = [];
-  const rules = includePii ? [...SECRET_RULES, ...OUTPUT_PII_RULES] : SECRET_RULES;
+  const rules = [
+    ...HIGH_CONFIDENCE_SECRET_RULES,
+    ...(includeAssignments ? ASSIGNMENT_SECRET_RULES : []),
+    ...(includePii ? OUTPUT_PII_RULES : []),
+  ];
 
   for (const rule of rules) {
     const pattern = cloneGlobalRegex(rule.pattern);
@@ -91,8 +103,11 @@ export function findSensitiveText(text, { includePii = false } = {}) {
   return findings.sort((left, right) => left.index - right.index || right.length - left.length);
 }
 
-export function redactSensitiveText(text, { includePii = true } = {}) {
-  const findings = findSensitiveText(text, { includePii });
+export function redactSensitiveText(
+  text,
+  { includePii = true, includeAssignments = true } = {},
+) {
+  const findings = findSensitiveText(text, { includePii, includeAssignments });
   if (findings.length === 0) return { text, findings };
 
   let cursor = 0;
