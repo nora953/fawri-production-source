@@ -22,6 +22,20 @@ function writeJson(directory: string, fileName: string, value: unknown): void {
   );
 }
 
+function writeApprovedMerchant(directory: string): void {
+  writeJson(directory, "merchants.json", {
+    merchants: [
+      {
+        id: "merchant-1",
+        is_admin: false,
+        otp_verified: true,
+        status: "approved",
+        account_status: "approved",
+      },
+    ],
+  });
+}
+
 function withDataDirectory(directory: string): () => void {
   const previous = process.env.FAWRI_DATA_DIR;
   process.env.FAWRI_DATA_DIR = directory;
@@ -92,6 +106,7 @@ test("disabled auto reply completes queued job without contacting Meta", async (
   const restore = withDataDirectory(directory);
   const server = await reserveServer();
   try {
+    writeApprovedMerchant(directory);
     writeJson(directory, "merchant-settings.json", {
       version: 1,
       settings: {
@@ -154,6 +169,7 @@ test("unreadable settings keep the job retryable", async () => {
   const restore = withDataDirectory(directory);
   const server = await reserveServer();
   try {
+    writeApprovedMerchant(directory);
     fs.writeFileSync(
       path.join(directory, "merchant-settings.json"),
       "{ invalid-json",
