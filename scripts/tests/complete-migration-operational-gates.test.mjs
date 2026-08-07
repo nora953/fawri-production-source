@@ -62,7 +62,7 @@ test("complete plan includes operational overlays and deterministic lineage", ()
     const order = report.rows.orders.find((item) => item.id === "order-1");
     assert.equal(order.version, 2);
     assert.equal(order.payment_status, "paid");
-    assert.equal(order.payment_verified_by_account_id, "admin-1");
+    assert.equal(order.payment_verified_by_account_id, "merchant-1");
     const conversation = report.rows.conversations.find(
       (item) => item.id === "conversation-1",
     );
