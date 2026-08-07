@@ -14,6 +14,7 @@ import authSecurityRouter from "./routes/auth-security";
 import channelOperationsRouter from "./routes/channel-operations";
 import { createChannelDurableJobAdminRouter } from "./routes/channel-durable-job-admin";
 import catalogOperationsRouter from "./routes/catalog-operations";
+import knowledgeOperationsRouter from "./routes/knowledge-operations";
 import conversationOperationsRouter from "./routes/conversation-operations";
 import orderOperationsRouter from "./routes/order-operations";
 import merchantSettingsRouter from "./routes/merchant-settings";
@@ -118,6 +119,30 @@ function enforceMetaConnectionActivationGate(
     ok: false,
     code: "META_CHANNEL_CONNECTION_CUTOVER_PENDING",
     error: "Meta channel connection is disabled until encrypted OAuth cutover is complete",
+  });
+}
+
+function enforceLegacyKnowledgeCutoverGate(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  const isLegacyKnowledgePath =
+    req.path === "/api/saved-answers" ||
+    req.path.startsWith("/api/saved-answers/") ||
+    req.path === "/api/bot-training" ||
+    req.path.startsWith("/api/bot-training/");
+
+  if (!isLegacyKnowledgePath) {
+    next();
+    return;
+  }
+
+  res.setHeader("Cache-Control", "no-store");
+  res.status(410).json({
+    ok: false,
+    code: "LEGACY_KNOWLEDGE_AUTHORITY_DISABLED",
+    error: "legacy knowledge authority is disabled; use /api/knowledge",
   });
 }
 
@@ -242,11 +267,17 @@ app.use("/api", merchantSettingsRouter);
 app.use("/api", channelOperationsRouter);
 app.use("/api", channelDurableJobAdminRouter);
 app.use("/api", catalogOperationsRouter);
+app.use("/api/knowledge", knowledgeOperationsRouter);
 
 // Do not allow a new plaintext Meta connection to be created while the
 // encrypted OAuth/send-path cutover and PostgreSQL/KMS dependencies are still
 // pending. Existing legacy handlers remain unreachable for these paths.
 app.use(enforceMetaConnectionActivationGate);
+
+// The corrected Knowledge/AI router is now the sole merchant-facing knowledge
+// authority. Legacy saved-answer/training routes are blocked before the shared
+// legacy router so two authorities cannot remain active at once.
+app.use(enforceLegacyKnowledgeCutoverGate);
 
 app.use("/api", router);
 
