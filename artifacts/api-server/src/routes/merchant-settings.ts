@@ -6,14 +6,14 @@ import {
 import {
   getMerchantOperationalSettings,
   MerchantSettingsError,
-  updateMerchantOperationalSettings,
+  updateMerchantOperationalSettingsWithEffects,
 } from "../services/merchantSettingsRuntime";
 
 const router = Router();
 
 function sendError(res: Response, error: unknown): void {
+  res.setHeader("Cache-Control", "no-store");
   if (error instanceof MerchantSettingsError) {
-    res.setHeader("Cache-Control", "no-store");
     res.status(error.status).json({
       ok: false,
       code: error.code,
@@ -22,8 +22,9 @@ function sendError(res: Response, error: unknown): void {
     });
     return;
   }
-  console.error("Merchant settings operation failed:", error);
-  res.setHeader("Cache-Control", "no-store");
+  console.error("Merchant settings operation failed", {
+    name: error instanceof Error ? error.name : "UnknownError",
+  });
   res.status(500).json({
     ok: false,
     code: "MERCHANT_SETTINGS_OPERATION_FAILED",
@@ -31,20 +32,16 @@ function sendError(res: Response, error: unknown): void {
   });
 }
 
-router.get(
-  "/settings",
-  requireMerchantSession,
-  (_req: Request, res: Response) => {
-    try {
-      const merchantId = getMerchantIdFromSession(res);
-      const settings = getMerchantOperationalSettings(merchantId);
-      res.setHeader("Cache-Control", "no-store");
-      res.json({ ok: true, settings });
-    } catch (error) {
-      sendError(res, error);
-    }
-  },
-);
+router.get("/settings", requireMerchantSession, (_req: Request, res: Response) => {
+  try {
+    const merchantId = getMerchantIdFromSession(res);
+    const settings = getMerchantOperationalSettings(merchantId);
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, settings });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
 
 router.patch(
   "/settings",
@@ -52,13 +49,13 @@ router.patch(
   (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const settings = updateMerchantOperationalSettings({
+      const result = updateMerchantOperationalSettingsWithEffects({
         merchantId,
         expectedVersion: req.body?.expected_version,
         patch: req.body?.settings,
       });
       res.setHeader("Cache-Control", "no-store");
-      res.json({ ok: true, settings });
+      res.json({ ok: true, settings: result.settings, effects: result.effects });
     } catch (error) {
       sendError(res, error);
     }
