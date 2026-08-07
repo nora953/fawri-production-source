@@ -198,6 +198,26 @@ test("legacy productsByMerchant JSON is ignored even when it conflicts with the 
   assert.equal(products.some((product) => product.sku === "LEGACY-SKU"), false);
 });
 
+test("missing server catalog returns no products and never falls back to legacy JSON", () => {
+  fs.writeFileSync(
+    path.join(dataDir, "fawri-runtime-db.json"),
+    JSON.stringify({
+      productsByMerchant: {
+        "merchant-a": [
+          {
+            name: "Legacy Only Product",
+            current_price: 500,
+            quantity: 4,
+          },
+        ],
+      },
+    }),
+    "utf8",
+  );
+
+  assert.deepEqual(readBotCatalogProducts("merchant-a"), []);
+});
+
 test("unavailable or invalid server catalog fails closed without legacy fallback", () => {
   fs.writeFileSync(
     path.join(dataDir, "fawri-runtime-db.json"),
@@ -229,4 +249,17 @@ test("unavailable or invalid server catalog fails closed without legacy fallback
       return true;
     },
   );
+});
+
+test("generic bot router cannot read or write the legacy productsByMerchant map", () => {
+  const routeSource = fs.readFileSync(
+    new URL("../src/routes/index.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(routeSource, /readBotCatalogProducts\(merchantId\)/);
+  assert.match(routeSource, /LEGACY_PRODUCT_AUTHORITY_DISABLED/);
+  assert.match(routeSource, /quarantinedLegacyProductsByMerchant/);
+  assert.doesNotMatch(routeSource, /\bproductsByMerchant\.(?:get|set|delete|clear)\b/);
+  assert.doesNotMatch(routeSource, /\bnormalizeProducts\b/);
 });
