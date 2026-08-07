@@ -15,15 +15,14 @@ const PAYMENT_METHODS = new Set([
   "zaincash",
   "other",
 ]);
+const REPLY_JOB_TYPE = "meta.webhook.reply";
 
 function text(value) {
   return String(value || "").trim();
 }
 
 function asRecord(value) {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? value
-    : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {};
 }
 
 function asArray(value) {
@@ -33,10 +32,7 @@ function asArray(value) {
 function readOptional(fileName, fallback) {
   const filePath = path.join(dataDirectory, fileName);
   if (!fs.existsSync(filePath)) return { exists: false, value: fallback };
-  return {
-    exists: true,
-    value: JSON.parse(fs.readFileSync(filePath, "utf8")),
-  };
+  return { exists: true, value: JSON.parse(fs.readFileSync(filePath, "utf8")) };
 }
 
 function issue(severity, code, details) {
@@ -62,11 +58,19 @@ function normalizedUniqueStrings(value) {
   return asArray(value).map(text).filter(Boolean);
 }
 
+function jobMerchantId(job) {
+  return text(job.merchant_id) || text(asRecord(job.payload).merchant_id);
+}
+
 function buildReport() {
   const merchantSource = readOptional("merchants.json", { merchants: [] });
   const settingsSource = readOptional("merchant-settings.json", {
     version: 1,
     settings: {},
+  });
+  const jobsSource = readOptional("background-jobs.json", {
+    version: 1,
+    jobs: [],
   });
   const merchantIds = new Set(
     asArray(merchantSource.value?.merchants)
@@ -75,6 +79,7 @@ function buildReport() {
       .filter(Boolean),
   );
   const issues = [];
+  const settingsByMerchant = asRecord(settingsSource.value?.settings);
   let settingsCount = 0;
 
   if (settingsSource.exists && settingsSource.value?.version !== 1) {
@@ -84,10 +89,15 @@ function buildReport() {
       }),
     );
   }
+  if (jobsSource.exists && jobsSource.value?.version !== 1) {
+    issues.push(
+      issue("error", "MERCHANT_SETTINGS_JOB_STORE_VERSION_UNSUPPORTED", {
+        version: jobsSource.value?.version ?? null,
+      }),
+    );
+  }
 
-  for (const [merchantId, value] of Object.entries(
-    asRecord(settingsSource.value?.settings),
-  )) {
+  for (const [merchantId, value] of Object.entries(settingsByMerchant)) {
     settingsCount += 1;
     const settings = asRecord(value);
     if (!merchantIds.has(merchantId)) {
@@ -105,7 +115,6 @@ function buildReport() {
         }),
       );
     }
-
     const version = Number(settings.version);
     if (!Number.isInteger(version) || version < 2) {
       issues.push(
@@ -126,7 +135,6 @@ function buildReport() {
       issues.push(
         issue("error", "MERCHANT_SETTINGS_REPLY_LANGUAGE_INVALID", {
           merchant_id: merchantId,
-          reply_language: text(settings.reply_language) || null,
         }),
       );
     }
@@ -217,7 +225,6 @@ function buildReport() {
         }),
       );
     }
-
     const createdAt = validTimestamp(settings.created_at);
     const updatedAt = validTimestamp(settings.updated_at);
     if (!createdAt || !updatedAt || updatedAt < createdAt) {
@@ -229,26 +236,90 @@ function buildReport() {
     }
   }
 
+  let replyJobs = 0;
+  let suppressedJobs = 0;
+  let waitingWhileDisabled = 0;
+  for (const rawJob of asArray(jobsSource.value?.jobs)) {
+    const job = asRecord(rawJob);
+    if (text(job.type) !== REPLY_JOB_TYPE) continue;
+    replyJobs += 1;
+    const merchantId = jobMerchantId(job);
+    if (!merchantId || !merchantIds.has(merchantId)) {
+      issues.push(
+        issue("error", "MERCHANT_AUTO_REPLY_JOB_ORPHANED", {
+          job_id: text(job.id) || null,
+          merchant_id: merchantId || null,
+        }),
+      );
+      continue;
+    }
+    const settings = asRecord(settingsByMerchant[merchantId]);
+    const disabled = settings.auto_reply_enabled === false;
+    const status = text(job.status);
+    if (disabled && ["queued", "retry"].includes(status)) {
+      waitingWhileDisabled += 1;
+      issues.push(
+        issue("error", "MERCHANT_AUTO_REPLY_DISABLED_JOB_WAITING", {
+          merchant_id: merchantId,
+          job_id: text(job.id) || null,
+          status,
+        }),
+      );
+    }
+    const result = asRecord(job.result);
+    if (
+      status === "completed" &&
+      text(result.suppression_code) === "MERCHANT_AUTO_REPLY_DISABLED"
+    ) {
+      suppressedJobs += 1;
+      if (
+        text(result.delivery_status) !== "suppressed" ||
+        result.credit_consumed !== false ||
+        !positiveInteger(result.settings_version)
+      ) {
+        issues.push(
+          issue("error", "MERCHANT_AUTO_REPLY_SUPPRESSION_RESULT_INVALID", {
+            merchant_id: merchantId,
+            job_id: text(job.id) || null,
+          }),
+        );
+      }
+    }
+  }
+
   const severityCounts = issues.reduce((result, item) => {
     result[item.severity] = (result[item.severity] || 0) + 1;
     return result;
   }, {});
+  const errorCount = severityCounts.error || 0;
   return {
-    ok: !issues.some((item) => item.severity === "error"),
+    ok: errorCount === 0,
     mode: "read_only",
     generated_at: new Date().toISOString(),
     data_dir: dataDirectory,
     files: {
       merchants: { file: "merchants.json", exists: merchantSource.exists },
-      settings: {
-        file: "merchant-settings.json",
-        exists: settingsSource.exists,
+      settings: { file: "merchant-settings.json", exists: settingsSource.exists },
+      background_jobs: {
+        file: "background-jobs.json",
+        exists: jobsSource.exists,
       },
     },
     summary: {
       settings: settingsCount,
+      auto_reply_jobs: replyJobs,
+      auto_reply_jobs_suppressed: suppressedJobs,
+      auto_reply_jobs_waiting_while_disabled: waitingWhileDisabled,
       issues: issues.length,
       severity_counts: severityCounts,
+    },
+    migration_readiness: {
+      ready: errorCount === 0,
+      target_contract:
+        "merchant_settings + background_jobs with tenant keys, version CAS, and suppression metadata",
+      blockers: issues
+        .filter((item) => item.severity === "error")
+        .map((item) => item.code),
     },
     issues,
   };

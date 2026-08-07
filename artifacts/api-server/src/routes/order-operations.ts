@@ -20,9 +20,13 @@ function parameter(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function requestId(req: Request): string {
+  return String(req.headers["x-request-id"] || req.id || "").trim().slice(0, 200);
+}
+
 function sendError(res: Response, error: unknown): void {
+  res.setHeader("Cache-Control", "no-store");
   if (error instanceof OrderOperationError) {
-    res.setHeader("Cache-Control", "no-store");
     res.status(error.status).json({
       ok: false,
       code: error.code,
@@ -31,8 +35,9 @@ function sendError(res: Response, error: unknown): void {
     });
     return;
   }
-  console.error("Order operation failed:", error);
-  res.setHeader("Cache-Control", "no-store");
+  console.error("Order operation failed", {
+    name: error instanceof Error ? error.name : "UnknownError",
+  });
   res.status(500).json({
     ok: false,
     code: "ORDER_OPERATION_FAILED",
@@ -40,25 +45,16 @@ function sendError(res: Response, error: unknown): void {
   });
 }
 
-router.get(
-  "/orders",
-  requireMerchantSession,
-  (_req: Request, res: Response) => {
-    try {
-      const merchantId = getMerchantIdFromSession(res);
-      const orders = listServerOrders(merchantId);
-      res.setHeader("Cache-Control", "no-store");
-      res.json({
-        ok: true,
-        merchant_id: merchantId,
-        count: orders.length,
-        orders,
-      });
-    } catch (error) {
-      sendError(res, error);
-    }
-  },
-);
+router.get("/orders", requireMerchantSession, (_req: Request, res: Response) => {
+  try {
+    const merchantId = getMerchantIdFromSession(res);
+    const orders = listServerOrders(merchantId);
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, merchant_id: merchantId, count: orders.length, orders });
+  } catch (error) {
+    sendError(res, error);
+  }
+});
 
 router.get(
   "/orders/:merchantId",
@@ -67,6 +63,7 @@ router.get(
     try {
       const merchantId = getMerchantIdFromSession(res);
       if (parameter(req.params.merchantId) !== merchantId) {
+        res.setHeader("Cache-Control", "no-store");
         res.status(403).json({
           ok: false,
           code: "MERCHANT_ACCESS_FORBIDDEN",
@@ -76,12 +73,7 @@ router.get(
       }
       const orders = listServerOrders(merchantId);
       res.setHeader("Cache-Control", "no-store");
-      res.json({
-        ok: true,
-        merchant_id: merchantId,
-        count: orders.length,
-        orders,
-      });
+      res.json({ ok: true, merchant_id: merchantId, count: orders.length, orders });
     } catch (error) {
       sendError(res, error);
     }
@@ -134,7 +126,6 @@ router.patch(
         orderId: parameter(req.params.orderId),
         expectedVersion: req.body?.expected_version,
         paymentStatus: req.body?.payment_status,
-        rejectionReason: req.body?.rejection_reason,
       });
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, order });
@@ -154,6 +145,8 @@ router.post(
         merchantId,
         orderId: parameter(req.params.orderId),
         expectedVersion: req.body?.expected_version,
+        actorId: merchantId,
+        requestId: requestId(req),
       });
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, order });
@@ -174,6 +167,8 @@ router.post(
         orderId: parameter(req.params.orderId),
         expectedVersion: req.body?.expected_version,
         reason: req.body?.reason,
+        actorId: merchantId,
+        requestId: requestId(req),
       });
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, order });
