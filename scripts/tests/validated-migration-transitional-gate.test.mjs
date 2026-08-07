@@ -35,7 +35,23 @@ function queuedJob() {
 
 function writeManualFixture(directory, requestStatus = null) {
   writeJson(directory, "merchants.json", {
-    merchants: [{ id: "merchant-1", is_admin: false }],
+    merchants: [
+      {
+        id: "merchant-1",
+        is_admin: false,
+        phone: "07111111111",
+        password: "legacy-password-hash",
+        owner_name: "Owner",
+        store_name: "Store",
+        activity_type: "retail",
+        status: "approved",
+        account_status: "approved",
+        onboarding_status: "channel_connected",
+        trial_status: "active",
+        signup_source: "direct",
+        created_at: "2026-08-01T00:00:00.000Z",
+      },
+    ],
     subscriptions: [],
   });
   writeJson(directory, "fawri-runtime-db.json", {
