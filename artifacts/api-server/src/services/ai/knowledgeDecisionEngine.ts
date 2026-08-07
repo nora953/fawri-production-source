@@ -9,10 +9,10 @@ import {
 } from "../knowledge/promptInjection.js";
 import type { KnowledgeRepository } from "../knowledge/knowledgeRepository.js";
 import { retrieveSemanticMatch } from "../knowledge/semanticRetriever.js";
+import { PostgresOperationalFactResolver } from "../knowledge/postgresOperationalFactResolver.js";
 import {
   isAuthoritativeFactQuestion,
   KnowledgeRuntimeGateError,
-  PostgresKnowledgeFactResolver,
   PostgresKnowledgeRuntime,
   PostgresMerchantKnowledgePolicyResolver,
   type MerchantKnowledgePolicyResolver,
@@ -136,7 +136,7 @@ export class KnowledgeDecisionEngine {
       options.factResolver ||
       (explicitLegacyRepository
         ? new NoopFactResolver()
-        : new PostgresKnowledgeFactResolver());
+        : new PostgresOperationalFactResolver());
     this.policyResolver =
       options.policyResolver === undefined
         ? explicitLegacyRepository
