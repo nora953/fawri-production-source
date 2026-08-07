@@ -19,6 +19,7 @@ on:
   push:
     branches:
       - "hardening/**"
+      - "parallel/final-observability-backup"
     paths:
       - "artifacts/api-server/src/observability/**"
       - "artifacts/api-server/tests/observability-components.test.ts"
