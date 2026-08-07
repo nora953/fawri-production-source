@@ -123,7 +123,7 @@ writeJson("manual-conversation-operations.json", {
 });
 
 writeJson("order-operations.json", {
-  version: 1,
+  version: 2,
   orders: {
     "merchant-1": {
       "order-1": {
@@ -131,12 +131,34 @@ writeJson("order-operations.json", {
         status: "confirmed",
         payment_status: "paid",
         payment_verified_at: "2026-08-06T12:05:00.000Z",
-        payment_verified_by: "admin-1",
+        payment_verified_by: "merchant-1",
         payment_rejection_reason: null,
+        last_payment_decision_id: "payment-decision-1",
         updated_at: "2026-08-06T12:05:00.000Z",
       },
     },
   },
+  payment_decisions: [
+    {
+      id: "payment-decision-1",
+      merchant_id: "merchant-1",
+      order_id: "order-1",
+      operation: "confirm",
+      payment_channel: "cash_on_delivery",
+      outcome: "paid",
+      previous_order_status: "confirmed",
+      resulting_order_status: "confirmed",
+      previous_payment_status: "cash_on_delivery",
+      resulting_payment_status: "paid",
+      actor_type: "merchant",
+      actor_id: "merchant-1",
+      expected_version: 1,
+      resulting_version: 2,
+      request_id: "fixture-payment-confirm-1",
+      reason: null,
+      decided_at: "2026-08-06T12:05:00.000Z",
+    },
+  ],
 });
 
 writeJson("merchant-settings.json", {
