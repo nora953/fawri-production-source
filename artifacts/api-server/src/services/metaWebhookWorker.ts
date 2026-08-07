@@ -8,12 +8,10 @@ import {
   type DurableJobWorker,
   type ExpiredJobResolution,
 } from "./durableJobQueue";
-import {
-  getMetaWebhookReplyOutcome,
-  removeFailedMetaWebhookAttempt,
-} from "./metaWebhookOutcome";
+import { removeFailedMetaWebhookAttempt } from "./metaWebhookOutcome";
 import { refundMerchantAutoReply } from "./merchantReplyRefund";
 import { createMetaChannelDisconnectHandler } from "./metaChannelJobs";
+import { merchantAllowsAutoReply } from "./merchantSettingsRuntime";
 import {
   processMetaReplyJob,
   reconcileMetaReplyJob,
@@ -109,6 +107,41 @@ function processMetaReplyRefundJob(job: DurableJob): Record<string, unknown> {
   );
 }
 
+async function processClaimedMetaReplyJob(
+  job: DurableJob,
+  replyTransport: MetaWebhookReplyTransport,
+  hooks?: MetaReplyLifecycleHooks,
+): Promise<Record<string, unknown>> {
+  const merchantId = text(job.payload?.merchant_id || job.merchant_id);
+  const eventId = text(job.payload?.event_id || job.dedupe_key);
+  if (merchantId) {
+    let enabled: boolean;
+    try {
+      // Preserve the existing worker/server-authoritative settings contract.
+      // The core then performs versioned reads before reservation and send.
+      enabled = merchantAllowsAutoReply(merchantId);
+    } catch {
+      throw jobError(
+        "MERCHANT_SETTINGS_UNAVAILABLE",
+        "merchant settings are unavailable",
+        true,
+        true,
+      );
+    }
+    if (!enabled) {
+      return {
+        event_id: eventId,
+        delivery_status: "suppressed",
+        suppression_code: "MERCHANT_AUTO_REPLY_DISABLED",
+      };
+    }
+  }
+  return processMetaReplyJob(job, {
+    transport: replyTransport,
+    hooks,
+  });
+}
+
 function reconcileExpiredMetaJob(
   job: DurableJob,
   replyTransport: MetaWebhookReplyTransport,
@@ -192,8 +225,6 @@ function handleMetaDeadLetter(job: DurableJob): void {
     try {
       enqueueConfirmedFailureRefund(job);
       if (merchantId && externalMessageId) {
-        // This legacy outcome cleanup is metadata-only. The fake reply
-        // transport is the send authority for this worker path.
         removeFailedMetaWebhookAttempt({ merchantId, externalMessageId });
       }
       console.error("Meta reply moved to DLQ after confirmed failure", {
@@ -245,10 +276,7 @@ export function startMetaWebhookWorker(
     ),
     handlers: {
       [META_REPLY_JOB_TYPE]: (job) =>
-        processMetaReplyJob(job, {
-          transport: replyTransport,
-          hooks: options.replyHooks,
-        }),
+        processClaimedMetaReplyJob(job, replyTransport, options.replyHooks),
       [META_EVENT_JOB_TYPE]: async (job) => ({
         event_id: text(job.payload?.event_id || job.dedupe_key),
         delivery_status: "ignored_non_reply_event",
@@ -265,7 +293,3 @@ export function startMetaWebhookWorker(
     onDeadLetter: handleMetaDeadLetter,
   });
 }
-
-// Keep the legacy outcome reader reachable only for compatibility diagnostics;
-// it is deliberately not consulted before fake Meta reply delivery.
-void getMetaWebhookReplyOutcome;
