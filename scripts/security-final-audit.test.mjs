@@ -10,22 +10,41 @@ function makeToken(prefix, length = 40) {
   return `${prefix}${"A".repeat(length)}`;
 }
 
-test("redaction detects Meta token and customer payload without preserving values", () => {
+test("redaction detects Meta token, customer message, and webhook payload without preserving values", () => {
   const metaToken = makeToken("EAA", 45);
   const customerMessage = "please deliver this private order tomorrow";
-  const input = `page_access_token=${metaToken}\ncustomer_message=${customerMessage}`;
+  const webhookPayload = '{"sender":"customer-123","message":"private payload"}';
+  const input = `page_access_token=${metaToken}\ncustomer_message=${customerMessage}\nwebhook_payload=${webhookPayload}`;
   const findings = findSensitiveText(input, { includePrivateData: true });
   assert.ok(findings.some((item) => item.rule === "meta-access-token" || item.rule === "named-secret"));
   assert.ok(findings.some((item) => item.rule === "customer-content-field"));
+  assert.ok(findings.some((item) => item.rule === "webhook-payload"));
   const redacted = redactSensitiveText(input, { includePrivateData: true }).text;
   assert.equal(redacted.includes(metaToken), false);
   assert.equal(redacted.includes(customerMessage), false);
+  assert.equal(redacted.includes(webhookPayload), false);
   assert.match(redacted, /\[REDACTED:/);
 });
 
 test("placeholder credentials are not treated as production secrets", () => {
   const input = "POSTGRES_PASSWORD: fawri_ci\naccess_token=${META_ACCESS_TOKEN}\nemail=test@example.com";
   assert.deepEqual(findSensitiveText(input, { includePrivateData: true }), []);
+});
+
+test("secret rules ignore runtime expressions and still catch hardcoded literals", () => {
+  const runtimeSource = [
+    'const appSecret = String(process.env.META_APP_SECRET || "").trim();',
+    'const password = String(req.body?.password || "");',
+    'password: "merchant-hash",',
+  ].join("\n");
+  assert.deepEqual(findSensitiveText(runtimeSource, { includeAssignments: true }), []);
+
+  const literal = "Sup3rS3cretValue!";
+  const hardcoded = `META_APP_SECRET=${literal}\npassword=\"${literal}\"`;
+  const findings = findSensitiveText(hardcoded, { includeAssignments: true });
+  assert.ok(findings.some((item) => item.rule === "env-secret-literal"));
+  assert.ok(findings.some((item) => item.rule === "named-secret"));
+  assert.equal(redactSensitiveText(hardcoded).text.includes(literal), false);
 });
 
 test("dependency audit parser returns exact severity counts", () => {
