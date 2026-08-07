@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   mkdtemp,
   mkdir,
@@ -104,6 +104,39 @@ function catalogProduct(id, merchantId, name, stockQuantity) {
     version: 1,
   };
 }
+
+function runCatalogSuite(command, args) {
+  const result = spawnSync(command, args, {
+    cwd: apiRoot,
+    env: { ...process.env, NODE_ENV: "test" },
+    encoding: "utf8",
+  });
+  assert.equal(
+    result.status,
+    0,
+    [result.stdout, result.stderr].filter(Boolean).join("\n"),
+  );
+}
+
+test("catalog runtime, server contract, and bot authority adapter suites pass", () => {
+  const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+  runCatalogSuite(pnpm, [
+    "exec",
+    "tsx",
+    "--test",
+    "./tests/catalog-inventory.test.ts",
+  ]);
+  runCatalogSuite(process.execPath, [
+    "--test",
+    "./tests/catalog-server-contract.test.mjs",
+  ]);
+  runCatalogSuite(pnpm, [
+    "exec",
+    "tsx",
+    "--test",
+    "./tests/bot-catalog-authority.test.ts",
+  ]);
+});
 
 async function reservePort() {
   const server = net.createServer();
