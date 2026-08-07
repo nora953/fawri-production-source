@@ -46,7 +46,7 @@ function tenantOrAuditedAdmin(merchantColumn: any) {
 
 function tenantPolicy(name: string, table: any) {
   const boundary = tenantOrAuditedAdmin(table.merchantId);
-  return pgPolicy(name, { as: "restrictive", for: "all", to: "public", using: boundary, withCheck: boundary }).link(table);
+  return pgPolicy(name, { as: "permissive", for: "all", to: "public", using: boundary, withCheck: boundary }).link(table);
 }
 
 export const merchantSettingsTenantPolicy = tenantPolicy("merchant_settings_tenant_boundary", merchantSettings);
