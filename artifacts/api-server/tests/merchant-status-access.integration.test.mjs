@@ -34,6 +34,24 @@ function merchant(id, phone, status, accountStatus) {
   };
 }
 
+function catalogProduct(id, merchantId, name) {
+  return {
+    id,
+    merchant_id: merchantId,
+    name,
+    price_iqd: 1000,
+    stock_quantity: 2,
+    low_stock_threshold: 1,
+    status: "available",
+    allow_fawri_reply: true,
+    image_refs: [],
+    variants: [],
+    created_at: "2026-08-01T00:00:00.000Z",
+    updated_at: "2026-08-01T00:00:00.000Z",
+    version: 1,
+  };
+}
+
 async function reservePort() {
   const server = net.createServer();
   await new Promise((resolve, reject) => {
@@ -126,10 +144,10 @@ test("merchant operational APIs require server-side approved status", async (t) 
       productsByMerchant: {
         "merchant-approved": [
           {
-            id: "approved-product",
+            id: "legacy-approved-product",
             merchant_id: "merchant-approved",
-            name: "Approved product",
-            quantity: 1,
+            name: "Legacy approved product",
+            quantity: 99,
           },
         ],
       },
@@ -138,6 +156,24 @@ test("merchant operational APIs require server-side approved status", async (t) 
       ordersByMerchant: {},
       orderDraftsByConversation: {},
       lastSyncedMerchantId: null,
+    }),
+  );
+  await writeFile(
+    path.join(dataDirectory, "catalog-inventory.json"),
+    JSON.stringify({
+      version: 1,
+      merchants: {
+        "merchant-approved": {
+          products: {
+            "approved-product": catalogProduct(
+              "approved-product",
+              "merchant-approved",
+              "Approved product",
+            ),
+          },
+          idempotency: {},
+        },
+      },
     }),
   );
   await writeFile(
@@ -261,9 +297,16 @@ test("merchant operational APIs require server-side approved status", async (t) 
     }),
   );
   assert.equal(approvedProducts.response.status, 200);
+  assert.equal(approvedProducts.body.authority, "server_catalog");
   assert.deepEqual(
     approvedProducts.body.products.map((item) => item.id),
     ["approved-product"],
+  );
+  assert.equal(
+    approvedProducts.body.products.some(
+      (item) => item.id === "legacy-approved-product",
+    ),
+    false,
   );
 
   const operationalPaths = [
