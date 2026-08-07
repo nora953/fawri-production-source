@@ -7,7 +7,6 @@ import {
 } from "../middleware/authSession.js";
 import { getKnowledgeDecisionEngine } from "../services/ai/knowledgeDecisionEngine.js";
 import { getKnowledgeRepository } from "../services/knowledge/knowledgeRepository.js";
-import type { MerchantPolicyContext } from "../services/knowledge/types.js";
 import { readLanguage, readString, sendKnowledgeError } from "./knowledge-route-utils.js";
 import "../services/knowledge/knowledgeLifecycle.js";
 
@@ -15,10 +14,15 @@ const router = Router();
 router.use(requireMerchantSession);
 
 router.get("/runtime", (_req: Request, res: Response): void => {
+  const engine = getKnowledgeDecisionEngine();
+  res.setHeader("Cache-Control", "no-store");
   res.json({
     ok: true,
     engine: {
-      id: getKnowledgeDecisionEngine().engineId,
+      id: engine.engineId,
+      authority: engine.authorityId,
+      legacyFallbackEnabled: engine.legacyFallbackEnabled,
+      liveAiTransportEnabled: engine.liveAiTransportEnabled,
       precedence: [
         "database_fact",
         "approved_saved_answer",
@@ -28,6 +32,8 @@ router.get("/runtime", (_req: Request, res: Response): void => {
       ],
       supportedLanguages: ["ar", "ku", "en"],
       generatedKnowledgeRequiresApproval: true,
+      merchantPolicyAuthority: "postgresql_server_only",
+      semanticAuthority: "postgresql_tenant_filtered_vectors",
       customerContentLogging: "digest_and_length_only",
     },
   });
@@ -49,20 +55,16 @@ router.post("/decision", async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // Merchant policy must be supplied by a trusted server-side settings resolver.
-  // Browser input is intentionally ignored so it cannot relax system constraints.
-  const policy: MerchantPolicyContext = {
-    allowGeneratedAutoReply: false,
-  };
-
   try {
     const decision = await getKnowledgeDecisionEngine().decide({
       merchantId,
       customerText,
       languageHint: languageHint || undefined,
-      merchantPolicy: policy,
+      // No browser-supplied merchant policy is accepted here. The engine resolves
+      // policy from PostgreSQL before any fact/retrieval/model stage.
       requestId: readString(req.body?.requestId, 160) || undefined,
     });
+    res.setHeader("Cache-Control", "no-store");
     res.json({ ok: true, decision });
   } catch (error) {
     sendKnowledgeError(res, error);
