@@ -3,7 +3,7 @@ import { runCompleteLockedMigration } from "../lib/db/scripts/run-complete-migra
 import {
   assertCompleteMigrationWritable,
   buildValidatedMigrationPlan,
-} from "./lib/postgresql-migration-plan-complete.mjs";
+} from "./lib/postgresql-cross-lane-reconciliation.mjs";
 
 const dataArgument = process.argv.find(
   (value, index) => index > 1 && !value.startsWith("--"),
