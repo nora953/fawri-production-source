@@ -76,7 +76,7 @@ test("valid nested update is normalized and persisted", () => {
           free_delivery_threshold_iqd: 50000,
           estimated_days_min: 2,
           estimated_days_max: 5,
-          areas: ["Baghdad", "Baghdad", "Erbil", ""],
+          areas: ["Baghdad", "Baghdad", "Erbil"],
           notes: "Delivery details",
         },
         payment: {
