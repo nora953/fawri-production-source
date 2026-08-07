@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
   index,
   jsonb,
   pgTable,
@@ -47,11 +49,13 @@ export const merchantChannels = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    merchantPlatformUnique: uniqueIndex("merchant_channels_merchant_platform_unique").on(
+    idMerchantUnique: uniqueIndex("merchant_channels_id_merchant_unique").on(
+      table.id,
       table.merchantId,
-      table.platform,
-      table.externalAccountId,
     ),
+    merchantPlatformUnique: uniqueIndex(
+      "merchant_channels_merchant_platform_unique",
+    ).on(table.merchantId, table.platform, table.externalAccountId),
     pageUnique: uniqueIndex("merchant_channels_page_unique").on(table.pageId),
     merchantStatusIndex: index("merchant_channels_merchant_status_idx").on(
       table.merchantId,
@@ -59,6 +63,18 @@ export const merchantChannels = pgTable(
     ),
     tokenExpiryIndex: index("merchant_channels_token_expiry_idx").on(
       table.tokenExpiresAt,
+    ),
+    tokenPairCheck: check(
+      "merchant_channels_token_pair_check",
+      sql`(${table.tokenCiphertext} IS NULL) = (${table.tokenKeyVersion} IS NULL)`,
+    ),
+    timestampOrderCheck: check(
+      "merchant_channels_timestamp_order_check",
+      sql`${table.updatedAt} >= ${table.createdAt}`,
+    ),
+    disconnectedTimestampCheck: check(
+      "merchant_channels_disconnected_timestamp_check",
+      sql`${table.disconnectedAt} IS NULL OR ${table.connectedAt} IS NULL OR ${table.disconnectedAt} >= ${table.connectedAt}`,
     ),
   }),
 );

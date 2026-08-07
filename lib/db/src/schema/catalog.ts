@@ -1,5 +1,8 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -42,6 +45,10 @@ export const products = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
+    idMerchantUnique: uniqueIndex("products_id_merchant_unique").on(
+      table.id,
+      table.merchantId,
+    ),
     merchantNameIndex: index("products_merchant_name_idx").on(
       table.merchantId,
       table.name,
@@ -58,6 +65,15 @@ export const products = pgTable(
       table.merchantId,
       table.status,
     ),
+    priceCheck: check(
+      "products_price_check",
+      sql`${table.originalPriceIqd} >= 0 AND ${table.currentPriceIqd} >= 0`,
+    ),
+    quantityCheck: check("products_quantity_check", sql`${table.quantity} >= 0`),
+    timestampOrderCheck: check(
+      "products_timestamp_order_check",
+      sql`${table.updatedAt} >= ${table.createdAt}`,
+    ),
   }),
 );
 
@@ -65,9 +81,7 @@ export const productVariants = pgTable(
   "product_variants",
   {
     id: text("id").primaryKey(),
-    productId: text("product_id")
-      .notNull()
-      .references(() => products.id, { onDelete: "cascade" }),
+    productId: text("product_id").notNull(),
     merchantId: text("merchant_id")
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
@@ -88,10 +102,27 @@ export const productVariants = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    productTenantForeignKey: foreignKey({
+      name: "product_variants_product_merchant_fk",
+      columns: [table.productId, table.merchantId],
+      foreignColumns: [products.id, products.merchantId],
+    }).onDelete("cascade"),
+    idMerchantUnique: uniqueIndex("product_variants_id_merchant_unique").on(
+      table.id,
+      table.merchantId,
+    ),
     productIndex: index("product_variants_product_idx").on(table.productId),
     merchantSkuUnique: uniqueIndex("product_variants_merchant_sku_unique").on(
       table.merchantId,
       table.sku,
+    ),
+    quantityCheck: check(
+      "product_variants_quantity_check",
+      sql`${table.quantity} >= 0`,
+    ),
+    timestampOrderCheck: check(
+      "product_variants_timestamp_order_check",
+      sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
 );

@@ -1,4 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
+  check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -24,9 +27,7 @@ export const orders = pgTable(
     merchantId: text("merchant_id")
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
-    conversationId: text("conversation_id").references(() => conversations.id, {
-      onDelete: "set null",
-    }),
+    conversationId: text("conversation_id"),
     customerExternalId: text("customer_external_id"),
     customerName: text("customer_name").notNull(),
     customerPhone: text("customer_phone"),
@@ -45,6 +46,7 @@ export const orders = pgTable(
     deliveryFeeIqd: integer("delivery_fee_iqd").notNull().default(0),
     totalIqd: integer("total_iqd").notNull().default(0),
     sourceChannel: text("source_channel").notNull(),
+    version: integer("version").notNull().default(1),
     notes: text("notes"),
     paymentVerifiedAt: timestamp("payment_verified_at", { withTimezone: true }),
     paymentVerifiedByAccountId: text("payment_verified_by_account_id").references(
@@ -67,6 +69,15 @@ export const orders = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    conversationTenantForeignKey: foreignKey({
+      name: "orders_conversation_merchant_fk",
+      columns: [table.conversationId, table.merchantId],
+      foreignColumns: [conversations.id, conversations.merchantId],
+    }).onDelete("set null"),
+    idMerchantUnique: uniqueIndex("orders_id_merchant_unique").on(
+      table.id,
+      table.merchantId,
+    ),
     merchantCreatedIndex: index("orders_merchant_created_idx").on(
       table.merchantId,
       table.createdAt,
@@ -75,8 +86,23 @@ export const orders = pgTable(
       table.merchantId,
       table.status,
     ),
-    conversationIndex: index("orders_conversation_idx").on(
-      table.conversationId,
+    conversationIndex: index("orders_conversation_idx").on(table.conversationId),
+    versionCheck: check("orders_version_check", sql`${table.version} > 0`),
+    totalsCheck: check(
+      "orders_totals_check",
+      sql`${table.subtotalIqd} >= 0 AND ${table.deliveryFeeIqd} >= 0 AND ${table.totalIqd} = ${table.subtotalIqd} + ${table.deliveryFeeIqd}`,
+    ),
+    paymentMethodStatusCheck: check(
+      "orders_payment_method_status_check",
+      sql`(${table.paymentMethod} = 'cash_on_delivery' AND ${table.paymentStatus} IN ('cash_on_delivery', 'paid')) OR (${table.paymentMethod} <> 'cash_on_delivery' AND ${table.paymentStatus} <> 'cash_on_delivery')`,
+    ),
+    paymentMetadataCheck: check(
+      "orders_payment_metadata_check",
+      sql`(${table.paymentStatus} = 'paid' AND ${table.paymentVerifiedAt} IS NOT NULL AND ${table.paymentVerifiedByAccountId} IS NOT NULL AND ${table.paymentRejectionReason} IS NULL) OR (${table.paymentStatus} = 'failed' AND ${table.paymentVerifiedAt} IS NULL AND ${table.paymentVerifiedByAccountId} IS NULL AND ${table.paymentRejectionReason} IS NOT NULL) OR (${table.paymentStatus} NOT IN ('paid', 'failed') AND ${table.paymentVerifiedAt} IS NULL AND ${table.paymentVerifiedByAccountId} IS NULL AND ${table.paymentRejectionReason} IS NULL)`,
+    ),
+    lifecycleTimestampCheck: check(
+      "orders_lifecycle_timestamp_check",
+      sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
 );
@@ -85,19 +111,12 @@ export const orderItems = pgTable(
   "order_items",
   {
     id: text("id").primaryKey(),
-    orderId: text("order_id")
-      .notNull()
-      .references(() => orders.id, { onDelete: "cascade" }),
+    orderId: text("order_id").notNull(),
     merchantId: text("merchant_id")
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
-    productId: text("product_id").references(() => products.id, {
-      onDelete: "set null",
-    }),
-    productVariantId: text("product_variant_id").references(
-      () => productVariants.id,
-      { onDelete: "set null" },
-    ),
+    productId: text("product_id"),
+    productVariantId: text("product_variant_id"),
     productNameSnapshot: text("product_name_snapshot").notNull(),
     variantSnapshot: jsonb("variant_snapshot")
       .$type<Record<string, unknown>>()
@@ -111,10 +130,29 @@ export const orderItems = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    orderTenantForeignKey: foreignKey({
+      name: "order_items_order_merchant_fk",
+      columns: [table.orderId, table.merchantId],
+      foreignColumns: [orders.id, orders.merchantId],
+    }).onDelete("cascade"),
+    productTenantForeignKey: foreignKey({
+      name: "order_items_product_merchant_fk",
+      columns: [table.productId, table.merchantId],
+      foreignColumns: [products.id, products.merchantId],
+    }).onDelete("set null"),
+    variantTenantForeignKey: foreignKey({
+      name: "order_items_variant_merchant_fk",
+      columns: [table.productVariantId, table.merchantId],
+      foreignColumns: [productVariants.id, productVariants.merchantId],
+    }).onDelete("set null"),
     orderIndex: index("order_items_order_idx").on(table.orderId),
     merchantProductIndex: index("order_items_merchant_product_idx").on(
       table.merchantId,
       table.productId,
+    ),
+    quantityPriceCheck: check(
+      "order_items_quantity_price_check",
+      sql`${table.quantity} > 0 AND ${table.unitPriceIqd} >= 0 AND ${table.lineTotalIqd} = ${table.quantity} * ${table.unitPriceIqd}`,
     ),
   }),
 );
@@ -126,9 +164,7 @@ export const orderDrafts = pgTable(
     merchantId: text("merchant_id")
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
-    conversationId: text("conversation_id")
-      .notNull()
-      .references(() => conversations.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id").notNull(),
     customerExternalId: text("customer_external_id").notNull(),
     awaitingField: text("awaiting_field").notNull(),
     draftData: jsonb("draft_data")
@@ -144,10 +180,19 @@ export const orderDrafts = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    conversationTenantForeignKey: foreignKey({
+      name: "order_drafts_conversation_merchant_fk",
+      columns: [table.conversationId, table.merchantId],
+      foreignColumns: [conversations.id, conversations.merchantId],
+    }).onDelete("cascade"),
     conversationUnique: uniqueIndex("order_drafts_conversation_unique").on(
       table.conversationId,
     ),
     expiryIndex: index("order_drafts_expiry_idx").on(table.expiresAt),
+    timeCheck: check(
+      "order_drafts_time_check",
+      sql`${table.updatedAt} >= ${table.createdAt} AND ${table.expiresAt} > ${table.createdAt}`,
+    ),
   }),
 );
 

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   foreignKey,
   index,
   jsonb,
@@ -26,9 +27,7 @@ export const conversations = pgTable(
     merchantId: text("merchant_id")
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
-    channelId: text("channel_id")
-      .notNull()
-      .references(() => merchantChannels.id, { onDelete: "restrict" }),
+    channelId: text("channel_id").notNull(),
     externalConversationId: text("external_conversation_id"),
     customerExternalId: text("customer_external_id").notNull(),
     customerName: text("customer_name"),
@@ -55,6 +54,11 @@ export const conversations = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    channelTenantForeignKey: foreignKey({
+      name: "conversations_channel_merchant_fk",
+      columns: [table.channelId, table.merchantId],
+      foreignColumns: [merchantChannels.id, merchantChannels.merchantId],
+    }).onDelete("restrict"),
     idMerchantUnique: uniqueIndex("conversations_id_merchant_unique").on(
       table.id,
       table.merchantId,
@@ -69,6 +73,18 @@ export const conversations = pgTable(
     merchantStatusIndex: index("conversations_merchant_status_idx").on(
       table.merchantId,
       table.status,
+    ),
+    manualAssignmentCheck: check(
+      "conversations_manual_assignment_check",
+      sql`(${table.status} = 'manual') = ${table.assignedToHuman}`,
+    ),
+    closedTimestampCheck: check(
+      "conversations_closed_timestamp_check",
+      sql`(${table.status} <> 'closed') OR ${table.closedAt} IS NOT NULL`,
+    ),
+    timestampOrderCheck: check(
+      "conversations_timestamp_order_check",
+      sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
 );
@@ -124,6 +140,10 @@ export const messages = pgTable(
       table.merchantId,
       table.createdAt,
     ),
+    statusTimestampCheck: check(
+      "messages_status_timestamp_check",
+      sql`${table.status} <> 'failed' OR (${table.failedAt} IS NOT NULL AND ${table.failureCode} IS NOT NULL)`,
+    ),
   }),
 );
 
@@ -134,9 +154,7 @@ export const processedChannelEvents = pgTable(
     merchantId: text("merchant_id")
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
-    channelId: text("channel_id")
-      .notNull()
-      .references(() => merchantChannels.id, { onDelete: "cascade" }),
+    channelId: text("channel_id").notNull(),
     externalEventId: text("external_event_id").notNull(),
     eventType: text("event_type").notNull(),
     payloadHash: text("payload_hash").notNull(),
@@ -148,12 +166,21 @@ export const processedChannelEvents = pgTable(
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (table) => ({
+    channelTenantForeignKey: foreignKey({
+      name: "processed_channel_events_channel_merchant_fk",
+      columns: [table.channelId, table.merchantId],
+      foreignColumns: [merchantChannels.id, merchantChannels.merchantId],
+    }).onDelete("cascade"),
     externalEventUnique: uniqueIndex(
       "processed_channel_events_channel_external_unique",
     ).on(table.channelId, table.externalEventId),
     statusReceivedIndex: index("processed_channel_events_status_received_idx").on(
       table.processingStatus,
       table.receivedAt,
+    ),
+    completedTimeCheck: check(
+      "processed_channel_events_completed_time_check",
+      sql`${table.completedAt} IS NULL OR ${table.completedAt} >= ${table.receivedAt}`,
     ),
   }),
 );
