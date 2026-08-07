@@ -1,6 +1,6 @@
 // @ts-nocheck
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -24,6 +24,77 @@ async function withRepository(t) {
     filePath: path.join(directory, "knowledge-runtime.json"),
     importLegacyOnCreate: false,
   });
+}
+
+function emptyRuntime() {
+  return {
+    schemaVersion: 1,
+    savedAnswers: [],
+    trainingRequests: [],
+    learnedAnswers: [],
+    auditEvents: [],
+  };
+}
+
+function validSavedAnswer(overrides = {}) {
+  const now = "2026-08-07T12:00:00.000Z";
+  return {
+    id: "saved_valid",
+    merchantId: "merchant-a",
+    category: "delivery",
+    questionPattern: "كم مدة التوصيل؟",
+    answerText: "يومان",
+    language: "ar",
+    source: "merchant_approved",
+    active: true,
+    version: 1,
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
+}
+
+function validTrainingRequest(overrides = {}) {
+  const now = "2026-08-07T12:00:00.000Z";
+  return {
+    id: "training_valid",
+    merchantId: "merchant-a",
+    customerTextPreview: "سؤال",
+    customerTextHash: "a".repeat(64),
+    detectedIntent: "delivery",
+    detectedLanguage: "ar",
+    reason: "knowledge_gap",
+    suggestedReply: null,
+    suggestedReplySource: null,
+    status: "pending_merchant_reply",
+    rejectionReason: null,
+    version: 1,
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
+}
+
+function validLearnedAnswer(overrides = {}) {
+  const now = "2026-08-07T12:00:00.000Z";
+  return {
+    id: "learned_valid",
+    merchantId: "merchant-a",
+    intent: "delivery",
+    language: "ar",
+    examples: ["سؤال"],
+    keywords: ["توصيل"],
+    answerText: "يومان",
+    source: "openai_generated",
+    approvalStatus: "pending_review",
+    confidence: 0.8,
+    safeToAutoReply: false,
+    trainingRequestId: null,
+    version: 1,
+    createdAt: now,
+    updatedAt: now,
+    ...overrides,
+  };
 }
 
 const nullProvider = {
@@ -181,9 +252,216 @@ test("corrupted runtime fails closed instead of overwriting knowledge", async (t
   const directory = await mkdtemp(path.join(os.tmpdir(), "fawri-knowledge-corrupt-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const filePath = path.join(directory, "knowledge-runtime.json");
-  await import("node:fs/promises").then(({ writeFile }) => writeFile(filePath, "{broken-json"));
+  await writeFile(filePath, "{broken-json");
   const repository = new KnowledgeRepository({ filePath, importLegacyOnCreate: false });
-  assert.throws(() => repository.listSavedAnswers("merchant-a"), (error) => error?.code === "KNOWLEDGE_RUNTIME_UNREADABLE");
+  assert.throws(
+    () => repository.listSavedAnswers("merchant-a"),
+    (error) =>
+      error?.code === "KNOWLEDGE_RUNTIME_UNREADABLE" &&
+      error?.message === "knowledge runtime is unreadable",
+  );
   const raw = await readFile(filePath, "utf8");
   assert.equal(raw, "{broken-json");
+});
+
+test("parseable-invalid roots, schema versions, and collections fail closed", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "fawri-knowledge-structure-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const cases = [
+    [],
+    { ...emptyRuntime(), schemaVersion: 2 },
+    {
+      schemaVersion: 1,
+      savedAnswers: [],
+      trainingRequests: [],
+      learnedAnswers: [],
+    },
+    { ...emptyRuntime(), savedAnswers: {} },
+  ];
+
+  for (let index = 0; index < cases.length; index += 1) {
+    const filePath = path.join(directory, `runtime-${index}.json`);
+    const original = JSON.stringify(cases[index]);
+    await writeFile(filePath, original);
+    const repository = new KnowledgeRepository({
+      filePath,
+      importLegacyOnCreate: false,
+    });
+    assert.throws(
+      () => repository.listSavedAnswers("merchant-a"),
+      (error) =>
+        error?.code === "KNOWLEDGE_RUNTIME_INVALID" &&
+        error?.message === "knowledge runtime state is invalid",
+    );
+    assert.equal(await readFile(filePath, "utf8"), original);
+  }
+});
+
+test("invalid nested record fails closed without dropping it", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "fawri-knowledge-nested-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const filePath = path.join(directory, "knowledge-runtime.json");
+  const state = emptyRuntime();
+  state.savedAnswers = [validSavedAnswer({ version: "1" })];
+  const original = JSON.stringify(state, null, 2);
+  await writeFile(filePath, original);
+
+  const repository = new KnowledgeRepository({
+    filePath,
+    importLegacyOnCreate: false,
+  });
+  assert.throws(
+    () => repository.listSavedAnswers("merchant-a"),
+    (error) => error?.code === "KNOWLEDGE_RUNTIME_INVALID",
+  );
+  assert.equal(await readFile(filePath, "utf8"), original);
+});
+
+test("mixed valid and invalid records refuse read and mutation byte-for-byte", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "fawri-knowledge-mixed-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const filePath = path.join(directory, "knowledge-runtime.json");
+  const state = emptyRuntime();
+  state.savedAnswers = [
+    validSavedAnswer(),
+    validSavedAnswer({ id: "saved_bad", source: "openai_generated" }),
+  ];
+  const original = `${JSON.stringify(state, null, 2)}\n`;
+  await writeFile(filePath, original);
+
+  const repository = new KnowledgeRepository({
+    filePath,
+    importLegacyOnCreate: false,
+  });
+  assert.throws(
+    () => repository.listSavedAnswers("merchant-a"),
+    (error) => error?.code === "KNOWLEDGE_RUNTIME_INVALID",
+  );
+  assert.throws(
+    () => repository.createSavedAnswer({
+      merchantId: "merchant-a",
+      category: "new",
+      questionPattern: "سؤال جديد",
+      answerText: "جواب",
+      language: "ar",
+    }),
+    (error) => error?.code === "KNOWLEDGE_RUNTIME_INVALID",
+  );
+  assert.equal(await readFile(filePath, "utf8"), original);
+});
+
+test("invalid or ambiguous approval provenance is rejected instead of normalized", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "fawri-knowledge-provenance-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+
+  const invalidRecords = [
+    validLearnedAnswer({
+      source: "openai_generated",
+      approvalStatus: "approved",
+      safeToAutoReply: true,
+    }),
+    validLearnedAnswer({
+      id: "learned_unknown",
+      source: "unknown_source",
+    }),
+  ];
+
+  for (let index = 0; index < invalidRecords.length; index += 1) {
+    const filePath = path.join(directory, `runtime-${index}.json`);
+    const state = emptyRuntime();
+    state.learnedAnswers = [invalidRecords[index]];
+    const original = JSON.stringify(state);
+    await writeFile(filePath, original);
+
+    const repository = new KnowledgeRepository({
+      filePath,
+      importLegacyOnCreate: false,
+    });
+    assert.throws(
+      () => repository.listLearnedAnswers("merchant-a"),
+      (error) => error?.code === "KNOWLEDGE_RUNTIME_INVALID",
+    );
+    assert.equal(await readFile(filePath, "utf8"), original);
+  }
+});
+
+test("ambiguous legacy suggestions remain untrusted and generated provenance is not promoted", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "fawri-knowledge-legacy-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+
+  await writeFile(
+    path.join(directory, "training-requests.json"),
+    JSON.stringify({
+      requests: [{
+        id: "legacy-training",
+        merchantId: "merchant-a",
+        customerMessage: "هل يوجد توصيل؟",
+        suggestedReply: "قد يوجد توصيل",
+        status: "approved",
+        detectedLanguage: "ar",
+      }],
+    }),
+  );
+  await writeFile(
+    path.join(directory, "learned-answers.json"),
+    JSON.stringify({
+      answers: [{
+        id: "legacy-learned",
+        merchantId: "merchant-a",
+        reply: "قد يوجد ضمان",
+        intent: "warranty",
+        source: "openai_generated",
+        safeToAutoReply: true,
+        requiresHumanApproval: false,
+        confidence: 0.9,
+      }],
+    }),
+  );
+
+  const repository = new KnowledgeRepository({
+    filePath: path.join(directory, "knowledge-runtime.json"),
+    importLegacyOnCreate: true,
+  });
+  const training = repository
+    .listTrainingRequests("merchant-a")
+    .find((item) => item.id === "legacy-training");
+  assert.equal(training?.suggestedReplySource, "openai_generated");
+  assert.equal(training?.status, "pending_review");
+
+  const learned = repository
+    .listLearnedAnswers("merchant-a")
+    .find((item) => item.id === "legacy-learned");
+  assert.equal(learned?.source, "openai_generated");
+  assert.equal(learned?.approvalStatus, "pending_review");
+  assert.equal(learned?.safeToAutoReply, false);
+});
+
+test("structural errors and runtime refusal never expose raw customer text", async (t) => {
+  const directory = await mkdtemp(path.join(os.tmpdir(), "fawri-knowledge-safe-error-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const filePath = path.join(directory, "knowledge-runtime.json");
+  const secret = "customer-secret-07701234567@example.invalid";
+  const state = emptyRuntime();
+  state.trainingRequests = [{
+    ...validTrainingRequest(),
+    customerText: secret,
+  }];
+  const original = JSON.stringify(state);
+  await writeFile(filePath, original);
+
+  const repository = new KnowledgeRepository({
+    filePath,
+    importLegacyOnCreate: false,
+  });
+  let caught;
+  try {
+    repository.listTrainingRequests("merchant-a");
+  } catch (error) {
+    caught = error;
+  }
+
+  assert.equal(caught?.code, "KNOWLEDGE_RUNTIME_INVALID");
+  assert.equal(caught?.message, "knowledge runtime state is invalid");
+  assert.equal(String(caught).includes(secret), false);
+  assert.equal(await readFile(filePath, "utf8"), original);
 });
