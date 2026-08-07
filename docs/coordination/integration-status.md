@@ -4,302 +4,244 @@
 
 - Coordination base: `b08c854f177953d3690c5dffde905fdb0c93eb09`
 - Integration branch: `parallel/integration-coordinator`
-- Coordinator remote HEAD before this update: `7e54dfc80fab235d95c76874f5c10a787811e2d0`
+- Coordinator remote HEAD before this update: `2b0fa90d83a180661506372cc67188b4e6680aa4`
 - Validated target after ordered integration: `hardening/postgresql-foundation`
 - Direct modification of `main`: **not allowed**
 - Replit Agent: **not allowed**
-- Latest lane review: `2026-08-07 05:13 +03:00`
+- Latest lane review/integration: `2026-08-07 05:52 +03:00`
 - Current project release decision: **NO-GO**
 
 ## Ordered integration queue
 
-1. `parallel/auth-session-hardening`
-2. `parallel/channels-messaging`
-3. `parallel/orders-settings-finalization`
-4. `parallel/catalog-inventory`
-5. `parallel/knowledge-ai`
-6. `parallel/db-migration-cutover` after all domain schema requests are reconciled
-7. `parallel/quality-observability` after all domains and PostgreSQL
-8. Shared wiring, full validation, final migration, and release-candidate checks
+1. `parallel/auth-session-hardening` — **reviewed and merged into coordinator**
+2. `parallel/channels-messaging` — reviewed; next eligible lane
+3. `parallel/orders-settings-finalization` — reviewed; queued after channels
+4. `parallel/catalog-inventory` — reviewed; queued after orders/settings
+5. `parallel/knowledge-ai` — waiting
+6. `parallel/db-migration-cutover` — after all domain schema requests are reconciled
+7. `parallel/quality-observability` — reviewed; integrate after domains and PostgreSQL
+8. Final shared wiring, full validation, migration candidate, backup/restore, and release-candidate checks
 
-No execution lane has been merged into `parallel/integration-coordinator` yet.
+No merge to `main` or `hardening/postgresql-foundation` is authorized or performed by this coordinator.
 
 ## Lane status
 
 | Lane | Branch | Status | Reviewed SHA | Integrated SHA | Notes |
 |---|---|---|---|---|---|
-| Auth/session/admin security | `parallel/auth-session-hardening` | waiting for implementation and handoff | — | — | First lane in integration order; must also resolve auth source/compiled-output drift reported by CI |
-| Channels/messaging | `parallel/channels-messaging` | reviewed; queued after auth/session | `22857159593aebeea0a12e6782581da6358080b3` | — | Allowlist compliant; 13 documented tests passed; activation blocked pending shared routes, plaintext-token migration, key management, PostgreSQL, and CI |
-| Orders/settings finalization | `parallel/orders-settings-finalization` | reviewed; queued after channels/messaging | `bde53f403f63d680fd96c1d8b8a5e264010d9b41` | — | Allowlist compliant; 5 runtime + 4 static-contract + 1 audit test passed; service and isolated page TypeScript checks passed; full workspace build/CI not run; shared queue/race/type wiring mandatory before production sign-off |
+| Auth/session/admin security | `parallel/auth-session-hardening` | reviewed; first lane merged into coordinator; shared auth cutover implemented but validation still pending | `d4f4ce2e3bd3cb1e27deb28a30249ce87bb0d25b` | `dc57eb52a4cae97730248897ebd314317f252b75` | 24 allowlisted files; documented TypeScript PASS and 15/15 focused tests; no CI on lane SHA; cookie/session v2 cutover now coordinator-owned; not release-green until integrated build/HTTP/PostgreSQL proof |
+| Channels/messaging | `parallel/channels-messaging` | reviewed; next in ordered integration | `22857159593aebeea0a12e6782581da6358080b3` | — | Allowlist compliant; 13 documented tests passed; activation blocked pending shared plaintext-token migration, key management, PostgreSQL, CI, and fake transport |
+| Orders/settings finalization | `parallel/orders-settings-finalization` | reviewed; queued after channels | `bde53f403f63d680fd96c1d8b8a5e264010d9b41` | — | Allowlist compliant; 5 runtime + 4 static-contract + 1 audit tests passed; shared queue/race/type/router integration mandatory |
 | Catalog/inventory | `parallel/catalog-inventory` | reviewed; queued after orders/settings | `ce363f7105f33e942c6c47ef8907dfb9b59658f6` | — | Allowlist compliant; 16 documented tests passed; full workspace validation pending |
-| Knowledge/AI | `parallel/knowledge-ai` | waiting for implementation and handoff | — | — | Integrate after catalog/inventory |
-| PostgreSQL migration/cutover | `parallel/db-migration-cutover` | waiting for implementation and handoff; blockers and domain requests assigned | — | — | Must resolve quality-discovered schema blockers plus final orders/settings, channels, catalog, and knowledge schema requests |
-| Quality/observability | `parallel/quality-observability` | reviewed; accepted as final queued lane | `b473fb8397814aa7bd91e0e323dc6003f6ba96f6` | — | PR #4 open/draft/unmerged; allowlist compliant; red gates are real project blockers discovered by the lane, not a lane implementation failure |
+| Knowledge/AI | `parallel/knowledge-ai` | waiting for implementation/handoff review | — | — | Integrate after catalog/inventory |
+| PostgreSQL migration/cutover | `parallel/db-migration-cutover` | waiting; schema requests/blockers assigned | — | — | Must reconcile auth + channels + orders/settings + catalog + knowledge requests and quality-discovered schema failures |
+| Quality/observability | `parallel/quality-observability` | reviewed; accepted as final queued lane | `b473fb8397814aa7bd91e0e323dc6003f6ba96f6` | — | PR #4 open/draft/unmerged; quality/security red runs are real blockers; restore drill green |
 
-## Review ledger
+## Auth/session review and first integration
 
-### 2026-08-07 03:15 +03:00 — initial scan
+### Lane review
 
-- All execution branches were at the coordination base and all handoffs were absent.
-- No branch was eligible for review or merge.
+- Submitted and rechecked final remote head: `d4f4ce2e3bd3cb1e27deb28a30249ce87bb0d25b`.
+- Branch ancestry: 2 commits ahead of coordination base, zero behind, coordination base as merge base.
+- Base-to-final diff: 24 paths, all inside the auth/session/admin-security allowlist.
+- `artifacts/api-server/src/services/passwordService.ts` is absent from the final diff and matches the coordination-base blob; the new scrypt implementation is isolated in lane-owned `authPasswordService.ts`.
+- No `app.ts`, `routes/index.ts`, frontend, package/lockfile, workflow, database, Meta, orders/settings, catalog, target branch, or `main` file was modified by the execution lane.
+- Handoff reviewed: `docs/coordination/handoffs/auth-session-hardening.md`.
+- Documented lane evidence:
+  - `npx tsc -p tsconfig.json`: PASS / exit 0 in the documented isolated environment;
+  - focused auth suite: 15 passed / 0 failed / 0 skipped;
+  - naming/import/allowlist checks: PASS;
+  - GitHub Actions/combined statuses on final lane SHA: none; no CI-green claim.
+- Static review confirmed separate merchant/admin accounts and cookies, opaque server sessions, expiry/rotation/revocation, account/session version checks, pending/suspended/rejected policy, cross-role/cross-tenant fail-closed behavior, owner-only assistant administration, trusted-device controls, OTP abuse controls, generic recovery, scrypt migration, and audit redaction.
 
-### 2026-08-07 03:55 +03:00 — catalog/inventory
+### Ordered merge
 
-- Reviewed `parallel/catalog-inventory` at `ce363f7105f33e942c6c47ef8907dfb9b59658f6`.
-- Branch ancestry: 10 commits ahead, zero behind, coordination base as merge base.
-- All 10 changed paths were inside the catalog/inventory allowlist.
-- No shared file, workflow, package/lockfile, database, auth, Meta, orders/settings, or legacy `ProductsPage.tsx` file was changed.
-- Handoff reviewed: `docs/coordination/handoffs/catalog-inventory.md`.
-- Static review confirmed session-derived tenant authority, optimistic versioning, idempotency, non-negative stock, image-reference-only persistence, server-authoritative UI, and read-only migration auditing.
-- Documented evidence: 16 tests passed, 0 failed; isolated TypeScript checks passed; no GitHub Actions run existed.
-- Decision: accepted into the ordered queue, not merged.
+- Internal integration PR: `#6`, head `parallel/auth-session-hardening`, base `parallel/integration-coordinator`.
+- Exact reviewed head used: `d4f4ce2e3bd3cb1e27deb28a30249ce87bb0d25b`.
+- Merge commit on coordinator: `dc57eb52a4cae97730248897ebd314317f252b75`.
+- No merge to `main` or `hardening/postgresql-foundation` occurred.
 
-### 2026-08-07 04:20 +03:00 — channels/messaging
+## Auth shared cutover — implemented, validation pending
 
-- Reviewed current remote tree at `22857159593aebeea0a12e6782581da6358080b3`.
-- Branch ancestry: 6 commits ahead, zero behind, coordination base as merge base.
-- Initial implementation: `baa3f2ab74b6fd308b6631d0dc0a94d2c7e230e7`.
-- Operational allowlist correction: `ef6296de2fbbebc872c5b1822d3466180103c957`.
-- The previously reported `f9cef32e25d0bb4e44f67d254633534173a6715d` is not an ancestor of the current tip. Current documentation lineage is recorded without rejecting the reviewed operational tree.
-- All final 29 paths were inside the channels/messaging allowlist; the root `scripts/manage-durable-jobs.ts` was removed and the API-server CLI plus channel-specific admin route names were corrected.
-- Static review confirmed raw-body HMAC, fail-closed transient handling, enqueue-before-ack, layered idempotency, durable leases/reconciliation, blocked uncertain DLQ replay, one-time refunds, tenant/session authority, token-envelope encryption, and payload-free default inspection.
-- Documented evidence: 13 tests passed, 0 failed; targeted TypeScript, audit, syntax, and relocated CLI checks passed; no GitHub Actions run existed.
-- Decision: accepted immediately after auth/session, not merged and not activated.
+The coordinator performed the auth activation as a shared atomic cutover after merging the lane. Presence of the lane files alone was not treated as activation.
 
-### 2026-08-07 04:29 +03:00 — quality/observability
+### Server authority
 
-#### Branch, PR, and ancestry
+- `authSecurityRouter` is mounted centrally in `artifacts/api-server/src/app.ts` before directly-mounted operational/domain routers and before the legacy root router.
+- Structural deviation from the handoff request is intentional: mounting only inside `routes/index.ts` would occur too late for routers already mounted directly in `app.ts`. The app-level mount preserves the required atomic ordering.
+- `merchantOperationalAccess.ts` now imports merchant session authority from `middleware/authSession.ts`; operational merchant identity is derived from the validated server auth context.
+- Production now requires an explicit `FAWRI_PASSWORD_SALT` of at least 32 characters for the new password service.
 
-- Reviewed branch: `parallel/quality-observability`.
-- Rechecked remote HEAD: `b473fb8397814aa7bd91e0e323dc6003f6ba96f6`.
-- Ancestry: 6 commits ahead of the coordination base, zero behind, coordination base as merge base.
-- Draft PR #4 is open, draft, mergeable, unmerged, and targets `hardening/postgresql-foundation`.
-- PR #4 contains 44 changed files, 2,771 additions, and 852 deletions.
-- All 44 paths are inside the quality/observability ownership boundary; no domain logic, `app.ts`, `index.ts`, package/lockfile, `lib/db/**`, shared frontend code, another lane, or `main` was modified.
-- Nine overlapping workflows were replaced by `quality-gates.yml`, `security-supply-chain.yml`, and `backup-restore-drill.yml` with least privilege, non-persistent checkout credentials, bounded timeouts, cancellation/concurrency, artifact scanning, disposable PostgreSQL, and synthetic object fixtures.
-- The observability router remains isolated and unmounted.
-- Handoff historical evidence and PR #4 final-head evidence are intentionally recorded together; no documentation-only commit is required merely to copy run IDs.
-- Final-head GitHub Actions:
-  - quality gates `31137063434`: **FAILURE**;
-  - security/supply chain `31137063654`: **FAILURE**;
-  - backup/restore `31137063594`: **SUCCESS**.
-- Red quality/security results are real project blockers and must not be weakened to manufacture green.
-- Decision: accepted into the final queue position after all domains and PostgreSQL; current release decision remains **NO-GO**.
+### Legacy authority shutdown / compatibility boundary
 
-### 2026-08-07 05:13 +03:00 — orders/settings finalization
+- Client-provided legacy merchant cookie `fawri_merchant_session` is discarded/cleared before legacy business handlers.
+- Client-provided admin `Authorization: Bearer ...` is rejected for `/api/auth` traffic with `LEGACY_ADMIN_BEARER_DISABLED`.
+- Duplicate legacy security/session/device endpoints are blocked from falling through to the old auth implementation.
+- Remaining legacy business handlers in the large `routes/auth.ts` can execute only after a v2 session is validated; a short-lived server-generated compatibility credential is injected in-process and is never accepted from the client or returned to it.
+- Merchant/admin v2 cookies present together fail with `ROLE_SESSION_CONFUSION`.
+- Existing merchant/admin SSE compatibility paths are forced to reconnect periodically (default 30 seconds, bounded 5–60 seconds) so revocation is revalidated instead of allowing an indefinite legacy bearer/cookie stream.
 
-#### Branch and allowlist
+### Frontend cutover
 
-- Reviewed branch: `parallel/orders-settings-finalization`.
-- Submitted and rechecked remote HEAD: `bde53f403f63d680fd96c1d8b8a5e264010d9b41`; the branch ref was identical immediately before the coordinator update.
-- Ancestry: 18 commits ahead of `b08c854f177953d3690c5dffde905fdb0c93eb09`, zero behind, coordination base as merge base.
-- Final diff contains 14 changed paths, all inside the lane allowlist:
-  - `artifacts/api-server/src/routes/merchant-settings.ts`
-  - `artifacts/api-server/src/routes/order-operations.ts`
-  - `artifacts/api-server/src/services/merchantSettingsRuntime.ts`
-  - `artifacts/api-server/src/services/orderOperationsRuntime.ts`
-  - `artifacts/api-server/tests/order-payment-hardening.integration.test.mjs`
-  - `artifacts/api-server/tests/orders-settings-runtime.test.ts`
-  - `artifacts/api-server/tests/orders-settings-static-contract.test.mjs`
-  - `artifacts/fawri/src/pages/dashboard/OrdersPage.ts`
-  - `artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx`
-  - `docs/coordination/handoffs/orders-settings-finalization.md`
-  - `docs/order-settings-server-authority.md`
-  - `scripts/audit-merchant-settings.mjs`
-  - `scripts/audit-order-operations.mjs`
-  - `scripts/tests/orders-settings-audits.test.mjs`
-- The former out-of-allowlist documentation path `docs/architecture/orders-settings-server-authority.md` is absent at the final SHA. The final commit `bde53f403f63d680fd96c1d8b8a5e264010d9b41` is documentation-only and removes the stale path reference from the handoff.
-- No legacy order/settings `.tsx` page, shared store/type/translation file, `app.ts`, `index.ts`, package/lockfile, workflow, `lib/db/**`, Meta implementation file, auth implementation file, catalog/knowledge file, target branch, or `main` was changed.
-- Handoff reviewed: `docs/coordination/handoffs/orders-settings-finalization.md`.
+- Active login uses `/api/auth/login` for merchants and `/api/auth/admin/login` for administrators.
+- Login no longer receives or stores `admin_token`.
+- `authClientCutover.ts` removes the historical admin-token storage entry at startup, strips any historical Bearer header before same-origin API traffic leaves the browser, uses HttpOnly cookie credentials, and adds stable non-secret `X-Fawri-Device-Id` for auth/admin requests.
+- `App.tsx` no longer uses token-based admin heartbeat; it revalidates `/api/auth/admin/me` with cookie + device ID.
+- Leaving the admin area for login triggers secure `/api/auth/admin/logout`.
+- Secure auth responses provide token-free compatibility profile shapes for existing UI consumers without exposing passwords or credentials.
+- Forced administrator password change now uses `/api/auth/admin/change-password`; when `must_change_password=true`, the authenticated temporary-password session may replace the password without re-entering the temporary password, but the new password must differ. The change revokes every admin session, clears the cookie, and requires fresh login.
 
-#### Static behavior review
+### Work Monitor/device/session cutover
 
-- Order routes derive merchant identity from the authenticated merchant session; the legacy merchant-ID route explicitly rejects a mismatched path merchant.
-- Runtime order buckets and order records fail closed on missing/duplicate/cross-tenant identity.
-- Every mutation requires a positive `expected_version`; stale writes return `ORDER_VERSION_CONFLICT` with current server state.
-- Server-side order transition rules are explicit.
-- Generic payment-state mutation rejects terminal `paid`/`failed`; terminal electronic outcomes require dedicated confirm/reject operations, and cash-on-delivery confirmation requires delivered state.
-- Terminal order overlay plus payment-decision audit are written under the same order-operations lock/atomic replacement. Merchant deletion removes overlays and payment decisions.
-- Merchant settings validate tenant key, patch shape, allowed fields, types, ranges, payment consistency, and optimistic version.
-- Disabling auto reply suppresses queued/retry Meta reply jobs before the settings write returns, records `credit_consumed: false` and the resulting settings version, and observes rather than stealing processing leases.
-- Active `OrdersPage.ts` points to `ServerOrdersPage`; the static contract verifies active order/settings modules contain no LocalStorage/SessionStorage authority.
-- Added audits cover tenant/version/payment provenance and migration readiness for orders plus settings ownership/suppression/orphan-job conditions.
+- Existing Work Monitor UI paths are now served by secure v2 routes before the legacy router.
+- Work Monitor reads `authSecurityStore` sessions/devices only; it does not consult the legacy session/device stores.
+- Owner-only trust/revoke-device and revoke-session/revoke-all actions require the secure owner session and re-check the owner password for the legacy Work Monitor UI action flow.
+- Device trust cap remains enforced; revoking device trust immediately revokes sessions tied to that device.
+- Owner-authorized single target-session revocation was added to the secure session store for this flow.
+- Work Monitor response does not expose session tokens or device hashes.
 
-#### Mandatory cross-lane integration findings
+### Cutover tests added but not yet executed
 
-These findings do not reject the lane because the affected files are reserved/shared and the handoff explicitly requests their coordinator-owned integration. They are mandatory before production sign-off:
+- `artifacts/api-server/tests/auth-cutover-contract.test.mjs` now statically covers:
+  - secure router ordering;
+  - legacy cookie/Bearer rejection;
+  - secure tenant context;
+  - production password-pepper requirement;
+  - cookie-only frontend transport and no active login token storage;
+  - forced password revoke-all/reauthentication;
+  - Work Monitor use of the v2 security store.
+- These new coordinator-side cutover tests have not been executed by GitHub Actions because the quality workflow lane is not integrated yet. They must not be recorded as passing merely because the source exists.
 
-1. **Queue store/API compatibility:** the reviewed channels lane defines durable queue store version 2, while this isolated settings runtime currently reads/writes `background-jobs.json` directly with a version-1-only shape. Because channels is integrated before orders/settings, direct queue-file coordination must be removed at the orders/settings integration turn. Add `suppressMerchantJobs(...)` and `deleteMerchantJobs(...)` to the final `durableJobQueue.ts` using its existing lock and make `merchantSettingsRuntime` consume those APIs.
-2. **Claimed-reply disable race:** queued/retry suppression cannot stop an already-processing worker. The final Meta worker must re-read settings/version immediately before reply-credit reservation and again immediately before external Meta delivery. If disabled/version-invalidated, suppress, avoid new credit consumption, roll back same-attempt reservation if needed, and report `MERCHANT_AUTO_REPLY_DISABLED` with `credit_consumed: false`.
-3. **Shared frontend payment type:** `ServerOrdersPage.tsx` imports `PaymentStatus` from shared `lib/types.ts`, but the current shared contract exports `OrderPaymentStatus`. This matches the existing Quality Gates `PaymentStatus` blocker. Resolve the shared type/import consistently during integration; do not change the shared file on the domain branch.
-4. **Router mount/order:** `merchant-settings` is not mounted in the current shared `app.ts`. At integration, mount it beside `orderOperationsRouter`, after merchant retention/OAuth/operational guards and before the legacy root router, preserving the current protection chain.
+## Auth PostgreSQL request ledger — forwarded to `parallel/db-migration-cutover`
 
-#### Verification evidence
+Implement transactional PostgreSQL equivalents for the following before horizontal/production activation:
 
-- Documented strict TypeScript check for services/direct dependencies/runtime test: **PASS**.
-- Runtime tests: **5/5 PASS**.
-- Static contracts: **4/4 PASS**.
-- Audit fixture tests: **1/1 PASS**.
-- Isolated `ServerOrdersPage.tsx` TypeScript/JSX check with local module shims: **PASS**.
-- Full Workspace Build: **not run**.
-- Bundled API build/spawned-server integration suite: **not rerun on the final correction environment**; the integration test source is present and must be executed after shared wiring.
-- Independent GitHub review found no combined commit statuses and no GitHub Actions workflow runs for `bde53f403f63d680fd96c1d8b8a5e264010d9b41`; no CI green claim is recorded.
-- Handoff states no production/Replit database, real Meta endpoint, customer data, or other real external service was contacted.
+- `auth_accounts` with globally unique normalized phone, password hash/version/security version, enabled/OTP state, and timestamps;
+- mutually exclusive merchant and administrator profile tables/relations so one account cannot own both profiles;
+- `auth_sessions` with opaque token fingerprints, account kind, tenant/account version, role/permission snapshot where required, device binding, idle/absolute expiry, rotation replacement linkage, revocation reason/time, and indexes for active-session enforcement;
+- `auth_trusted_devices` with unique account/device fingerprint, pending/trusted/revoked state, owner approval provenance, timestamps, and trusted-device cap enforcement;
+- `auth_otp_challenges` with hashed target/code/IP, purpose, expiry, resend cooldown, attempts/max attempts, used/revoked state, single-use/supersession constraints;
+- bounded `auth_login_attempts` for account-kind/target/IP abuse controls;
+- sanitized `auth_audit_events` that cannot contain password, OTP, token, secret, hash, cookie, authorization, customer payload, or credential material.
 
-#### Review decision
+Migration/cutover requirements:
 
-- Accepted into the ordered integration queue at position 3, after auth/session and channels/messaging.
-- Not merged during this review.
-- Shared queue APIs, Meta-worker race closure, shared payment type, router mount, package/workflow scripts, PostgreSQL requests, and full integrated validation remain mandatory.
-- No routine owner decision is required for accepting the lane into the queue.
-- Current release decision remains **NO-GO**.
+- abort on duplicate phone or ambiguous merchant/admin role;
+- never create both merchant and admin profile for one account;
+- do not migrate weak legacy sessions; invalidate them at cutover;
+- migrate only account/profile/password identity with deterministic provenance and source hashes;
+- use transactions and row/advisory locking for session issue/rotation/revoke-all, password/security-version changes, OTP verification/reset, device trust/revoke, and permission/account-role changes;
+- prove revoked session fails on the immediately following request and rotation cannot create two concurrently valid successors;
+- add concurrency tests on disposable PostgreSQL.
 
-## Blocker ownership and routing
+## Other reviewed lane shared integration requests
 
-| Blocker | Assigned owner | Required resolution |
-|---|---|---|
-| Generated PostgreSQL schema drift | `parallel/db-migration-cutover` | Reconcile generated schema and committed artifacts against the final integrated domain model |
-| Composite foreign-key failure for `manual_reply_requests` to `conversations(id, merchant_id)` | `parallel/db-migration-cutover` | Add/reconcile the required tenant-safe unique target and prove apply/smoke behavior |
-| Migration candidate apply failure and 3 migration test failures | `parallel/db-migration-cutover` | Correct migration ordering/contracts and pass disposable PostgreSQL apply/tests |
-| Orders/settings PostgreSQL contract | `parallel/db-migration-cutover` | Implement tenant-safe orders/settings/payment-decision/background-job contracts, optimistic versions, composite keys/FKs, RLS, migration provenance, and legacy-import rules after all domain requests are reconciled |
-| Auth source/compiled-output drift | `parallel/auth-session-hardening` | Reconcile source and compiled/runtime output without weakening auth checks |
-| Orders/settings queue v1 direct coordination vs channels queue v2 | Integration coordinator at shared wiring | Add central queue suppression/deletion APIs using the final queue lock; remove direct queue-file ownership from settings runtime |
-| Auto-reply disable race for already-processing Meta reply | Integration coordinator using channels + orders/settings contracts | Recheck settings/version before credit reservation and before Meta send; suppress/rollback without new credit consumption when disabled |
-| `PaymentStatus` contract/export failure | Integration coordinator plus orders/frontend contract owner | Resolve `PaymentStatus` vs `OrderPaymentStatus` consistently and update consumers without creating duplicate authority |
-| Frontend build `PORT` contract | Integration coordinator plus frontend owner | Restore the documented build environment contract and prove workspace build |
-| Public schema docs, browser-storage count/path drift, database source-hash drift, nested frontend package missing `build` | Integration coordinator plus each owning lane | Correct shared contracts and generated expectations after ordered integration |
-| 22 dependency vulnerabilities, including 14 high | Integration coordinator | Review and update reserved package manifests/lockfiles; document unavoidable transitive risk; do not lower `pnpm audit --audit-level=high` |
-| Native dependency review unavailable | Repository owner | Enable Dependency Graph/Advanced Security/native dependency review as appropriate and make the check operational |
-| Observability router, readiness, metrics, dashboards, alerts, on-call routing | Shared wiring by integration coordinator; external settings by owner | Mount internally with access control, register real checks/metrics, test-fire alerts, assign ownership/escalation |
-| Production backup schedule, encryption, retention, WAL/PITR, object versioning, credentials, and restore evidence | Repository/system owner with integration coordinator | Configure approved production services and verify a release-candidate restore drill without customer-data leakage |
-| Privacy, consent, legal, retention, deletion, subprocessor, and support approvals | Owner/legal/support | Record named approvals before launch; CI cannot substitute for them |
+### Channels/messaging — next integration turn
 
-## Shared-file decisions
+- Mount merchant channel routes after secure auth ordering.
+- Bind DLQ admin operations to method/path-sensitive v2 admin permissions.
+- Replace plaintext OAuth token persistence/send-path reads/logging with encrypted channel storage.
+- Require production KMS/HSM-style key provider, rotation, PostgreSQL queue/refund contracts, CI, and fake Meta transport before activation.
 
-### Orders/settings — received and mandatory at integration turn
+### Orders/settings — queued after channels
 
-| Shared path/area | Decision | Validation required |
-|---|---|---|
-| `artifacts/api-server/src/app.ts` | Mount `merchantSettingsRouter` beside `orderOperationsRouter` behind the existing merchant retention/OAuth/operational guards and before the legacy root router. | Authenticated settings GET/PATCH, suspended/rejected merchant, route-order, and tenant tests |
-| `artifacts/api-server/src/services/durableJobQueue.ts` | Add `suppressMerchantJobs({ merchantId, type, statuses, result })` and `deleteMerchantJobs(merchantId)` using the final queue lock/store contract; return exact changed/processing counts. Replace settings direct queue-file coordination. | Queue v2 compatibility, cross-tenant isolation, processing lease preservation, deletion, crash/lock tests |
-| `artifacts/api-server/src/services/metaWebhookWorker.ts` and entitlement/refund boundary | Re-read settings/version before credit reservation and immediately before external Meta delivery; if disabled/version-invalidated, suppress and do not consume new credit; roll back same-attempt reservation where necessary. | Claimed-job disable race, no-send, no-new-charge, rollback, `credit_consumed:false`, retry/crash tests |
-| `artifacts/fawri/src/lib/types.ts` / `ServerOrdersPage.tsx` | Resolve shared payment status naming (`PaymentStatus` vs `OrderPaymentStatus`) once, using the existing canonical shared type rather than creating a competing contract. | Full frontend typecheck/build and payment-state UI tests |
-| API/root package scripts | Add lane-requested unit, static-contract, spawned-server integration, and audit scripts without weakening tests. | Frozen install, exact scripts, full server build/typecheck/tests |
-| `.github/workflows/**` | Quality lane owns final workflow integration. Run all four orders/settings script groups and preserve safe audit artifacts. | Quality Gates on exact integrated SHA; no real external services; artifact secret/PII scan |
-
-### Catalog/inventory — deferred
-
-- Mount `catalogOperationsRouter` only after final auth/session wiring.
-- Replace legacy bot product authority with the tenant-scoped catalog adapter and remove dual authority.
-- Add scripts/workflow coverage through final workspace conventions.
-- Carry catalog backup and PostgreSQL requirements into quality/database integration.
-
-### Channels/messaging — deferred and activation-blocked
-
-- Mount merchant channel routes only after auth integration and correct route ordering.
-- Bind the DLQ admin router to method/path-sensitive admin permissions.
-- Replace plaintext OAuth token persistence and send-path token reads/logging with encrypted channel storage.
-- Require production key management, rotation, PostgreSQL queue/refund contracts, CI, and fake-transport validation before activation.
-
-### Quality/observability — deferred until final shared wiring
-
-- Keep `createObservabilityRouter` unmounted until internal access control is defined.
-- Add real readiness checks for PostgreSQL, durable queue persistence, object-storage metadata, migration state, and key-management readiness.
-- Instrument authoritative queue/DLQ, webhook-signature, login-abuse, migration, and HTTP outcomes using bounded labels only.
-- Configure dashboards, alert destinations, primary/backup on-call, incident channel, and escalation timers.
-- Preserve strict security, dependency, migration, artifact, and release gates.
-- Re-run all three workflows on the exact integrated SHA after domain/database merges and shared wiring.
-
-## Database/schema request ledger
-
-### Orders/settings
-
-Forward the full handoff contract to `parallel/db-migration-cutover` and reconcile it with the final integrated domain model. Minimum required scope:
-
-- `merchant_operational_settings` keyed by merchant with positive optimistic `version`, auto-reply/reply-language, bounded delivery/payment settings, timestamps, and `ON DELETE CASCADE` ownership;
-- tenant-safe effective orders with unique/primary `(merchant_id, id)`, positive version, constrained order/payment states, terminal payment metadata consistency, and all mutation predicates including tenant/id/version;
-- `order_payment_decisions` with composite tenant FK, immutable actor/provenance, confirm/reject/`legacy_import`, resulting-version constraint, request idempotency, and atomic linkage to the terminal order mutation;
-- `background_jobs` settings-version contract, tenant ownership, dedupe/status/lease fields, result metadata, and indexed merchant/type/status/availability access;
-- transactional auto-reply disable suppression for queued/retry jobs; claimed jobs rely on the worker-side recheck above;
-- RLS for settings, orders, payment decisions, and background jobs with transaction-local merchant context and a separate audited administrative role;
-- frozen JSON audits before migration, idempotent settings defaults, materialization of effective orders from base plus overlays, v2 decision import, and legacy terminal rows represented as `legacy_import` with `actor_type='system'`, source hash/file and migration batch ID rather than invented merchant actors;
-- tenant counts/hashes before cutover, SQL-equivalent post-cutover audits, deterministic source manifests/hashes, and a frozen write window or transactional outbox/idempotency if dual-write is unavoidable.
+- Mount `merchantSettingsRouter` beside order routes behind secure merchant operational guards.
+- Replace direct queue-file coordination with `suppressMerchantJobs(...)` and `deleteMerchantJobs(...)` on the final queue v2 lock/store.
+- Re-read settings/version before credit reservation and before Meta send; suppress/rollback without new credit if auto reply is disabled.
+- Resolve shared `PaymentStatus` vs `OrderPaymentStatus` once in coordinator-owned shared types/consumer code.
+- Add lane unit/static/spawned-server/audit scripts and quality workflow coverage.
 
 ### Catalog/inventory
 
-Require tenant-safe catalog products/variants/options/identifiers/images, durable idempotency keys, transactional inventory mutations, composite tenant foreign keys, deterministic manifests/source hashes, reviewed cascade/retention, and aggregate variant-stock reconciliation.
+- Mount catalog router only after secure auth ordering.
+- Replace legacy bot product authority with the tenant-scoped catalog adapter and remove dual authority.
+- Carry schema, backup, audit, and workflow requests into DB/quality integration.
+
+### Quality/observability
+
+- Keep observability router unmounted until final secure shared wiring.
+- Preserve strict quality/security/dependency/migration/artifact gates.
+- Re-run all matrices on the exact integrated release SHA.
+
+## Database/schema request ledger beyond auth
+
+### Orders/settings
+
+Require `merchant_operational_settings`, tenant-safe/versioned orders, `order_payment_decisions`, background-job settings-version contract, transactional suppression, composite tenant keys/FKs, RLS, deterministic migration provenance, and `legacy_import` rather than invented actors.
+
+### Catalog/inventory
+
+Require tenant-safe products/variants/options/identifiers/images, durable idempotency, transactional inventory, composite tenant FKs, source manifests/hashes, cascade/retention review, and variant-stock reconciliation.
 
 ### Channels/messaging
 
-Require transactional durable jobs, channel connections with encrypted credential envelope/key ID, inbound-event dedupe plus enqueue, reply reservations/refunds, outbound delivery outcomes, tenant-safe constraints, database-time leases, `FOR UPDATE SKIP LOCKED`, and payload-free default administration.
+Require transactional durable jobs, encrypted channel connections, inbound-event dedupe+enqueue, reply reservations/refunds, outbound outcomes, database-time leases, `FOR UPDATE SKIP LOCKED`, tenant-safe constraints, and payload-free default administration.
 
 ### Quality-discovered PostgreSQL blockers
 
-The database lane must also resolve and evidence:
-
 - generated schema drift;
-- missing unique target for the composite `conversations(id, merchant_id)` reference;
-- PostgreSQL `42830` during migration candidate apply;
-- all migration test failures;
+- missing unique target for `conversations(id, merchant_id)` composite reference;
+- PostgreSQL `42830` candidate-apply failure;
+- migration test failures;
 - database source-hash/contract drift;
-- deterministic generation and clean-tree validation on the final integrated model.
+- deterministic generation and clean-tree proof.
 
-No database request is complete until the database handoff, generated migration, disposable PostgreSQL tests, backup/restore prerequisites, and final source-manifest reconciliation are reviewed.
+## Blocker ownership and routing
 
-## Conflict and deviation ledger
-
-- No unresolved product-behavior conflict was introduced by the quality lane.
-- Quality handoff final-run metadata intentionally trails the PR head. PR #4 and GitHub Actions are authoritative for `b473fb8397814aa7bd91e0e323dc6003f6ba96f6`.
-- Red CI results remain blocking and must not be waived, suppressed, marked optional, or converted to green by reducing coverage/severity.
-- Orders/settings final tree is allowlist compliant after documentation-path correction.
-- Orders/settings has an expected integration incompatibility with channels queue storage: isolated settings runtime assumes queue store v1 while reviewed channels queue authority is v2. This must be eliminated through central queue APIs before the lane is considered integrated.
-- `ServerOrdersPage.tsx` currently depends on a non-existent shared `PaymentStatus` export; the repository currently exports `OrderPaymentStatus`. This is a shared integration blocker already visible in Quality Gates, not grounds to let the domain branch edit reserved shared types.
-- Processing Meta replies remain subject to the documented disablement race until the coordinator wires the two settings/version rechecks and same-attempt reservation rollback contract.
-- The successful synthetic restore drill proves script behavior only; it does not prove production scheduling, credentials, encryption, retention, PITR, provider versioning, or legal approval.
-- Observability components are inactive until secure shared wiring is completed.
-- No Force Push or merge to `main` is authorized.
+| Blocker | Owner | Required resolution |
+|---|---|---|
+| Auth repository-native/full build and source/compiled-output drift | Integration coordinator after ordered shared merges; quality workflow | Run repository-native typecheck/build and generated-output contract on exact integrated SHA; do not hand-edit compiled output to fake parity |
+| Auth mounted HTTP/session/OTP/tenant/role tests | Integration coordinator + quality | Prove legacy bearer/cookies rejected, revocation next-request, pending merchant operational denial, cross-tenant fail, assistant no escalation, logout-all/device/password/permission invalidation |
+| Auth PostgreSQL transactions/concurrency | `parallel/db-migration-cutover` | Implement the auth schema/locking requests above and pass disposable PostgreSQL migration/concurrency tests |
+| Historical frontend admin-token helpers still present in shared `store.ts` source | Integration coordinator/browser-storage audit | Active login/transport no longer stores or sends a token, but final cleanup/audit must remove or prove inactive historical token/session-storage authority before release |
+| Channels plaintext token migration/key management | Integration coordinator at channels integration | Remove legacy plaintext authority/logging and prove encrypted fail-closed flow |
+| Orders/settings queue v1 vs channels queue v2 | Integration coordinator at orders integration | Central queue APIs; no direct settings ownership of queue file |
+| Claimed Meta reply disable race | Integration coordinator | Two settings/version checks plus same-attempt reservation rollback |
+| `PaymentStatus` shared frontend contract | Integration coordinator | Reconcile with canonical `OrderPaymentStatus`; full frontend build |
+| PostgreSQL schema drift/composite FK/migration failures | `parallel/db-migration-cutover` | Fix schema/migration and pass disposable PostgreSQL |
+| 22 dependency vulnerabilities including 14 high | Integration coordinator | Update reserved manifests/lockfiles or explicitly risk-review unavoidable transitives; never lower `pnpm audit --audit-level=high` |
+| Native dependency review unavailable | Repository owner | Enable Dependency Graph/Advanced Security/native review as appropriate |
+| Production observability/backups/legal readiness | Coordinator + repository/system owner + legal/support | Configure/test external production controls and record approvals |
 
 ## Validation ledger
 
-- Catalog review: 16 documented tests passed, 0 failed; isolated TypeScript checks passed; no CI run.
-- Channels review: 13 documented tests passed, 0 failed; targeted TypeScript/audit/syntax/CLI checks passed; no CI run.
-- Orders/settings review: 5 runtime + 4 static-contract + 1 audit test passed; service and isolated page TypeScript checks passed; full workspace build and GitHub Actions did not run on final SHA; spawned-server integration source exists and remains mandatory after shared wiring.
-- Quality local/static evidence: 12 quality/security tool tests passed, workflow policy found 3 workflows and 0 violations, and high-confidence repository scanning found no secrets.
-- Quality final CI:
-  - `31137063434` quality gates: failure with browser-storage/observability and artifact safety passing;
-  - `31137063654` security/supply chain: failure with static-security/lockfile integrity passing;
-  - `31137063594` backup/restore: success.
-- Full integrated workspace typecheck/build/tests, spawned-server orders/settings integration, tenant/auth/idempotency/payment/queue/refund tests, claimed-reply disable race tests, fake Meta transport, final PostgreSQL migration, production-like backup/restore, logs/artifact review, and owner/legal readiness remain pending.
+- Auth lane: documented isolated TypeScript PASS; focused auth tests 15/15; no Actions/combined status on `d4f4ce2e...`.
+- Auth integration: lane merge commit `dc57eb52...`; backend/frontend/shared cutover commits applied through coordinator head before this status update; new cutover contract tests added but not executed by CI.
+- Channels: 13 documented tests passed; targeted checks passed; no CI.
+- Orders/settings: 5 runtime + 4 static + 1 audit passed; isolated TypeScript checks passed; no final-SHA CI/full build.
+- Catalog: 16 documented tests passed; isolated TypeScript passed; no CI.
+- Quality final-head CI:
+  - Quality gates `31137063434`: **FAILURE**;
+  - Security/supply chain `31137063654`: **FAILURE**;
+  - Backup/restore `31137063594`: **SUCCESS**.
+- Full integrated server/frontend/database/contracts validation remains pending and is mandatory before any release decision can become GO.
 
 ## Owner requirements before release
 
-- Enable and verify Dependency Graph/Advanced Security/native dependency review as appropriate.
+- Enable/verify Dependency Graph/Advanced Security/native dependency review as appropriate.
 - Verify branch protection, required checks, secret scanning/push protection, artifact access policy, and controlled dependency updates.
-- Approve production backup destinations, encryption, retention, PITR, object versioning, credentials, RPO/RTO, and restore procedure.
-- Provide named privacy, legal, consent, retention/deletion, subprocessor, and support approvals.
-- Approve any future merge to `main` explicitly.
+- Approve production credential key management, backup destinations/encryption/retention/PITR/object versioning/RPO/RTO and restore procedure.
+- Record named privacy, consent, legal, retention/deletion, subprocessor, and support approvals.
+- Explicitly approve any future merge to `main`.
 
 ## Final go/no-go checklist
 
-- [ ] All lane handoffs reviewed.
-- [ ] Allowlist compliance verified for every lane.
-- [ ] Domains integrated in the mandated order.
-- [ ] Orders/settings central queue APIs and claimed-reply disable race are resolved.
-- [ ] Shared payment-status contract compiles across the frontend.
-- [ ] Plaintext Meta token persistence/fallback/logging removed.
-- [ ] Production credential key management and rotation verified.
-- [ ] PostgreSQL blockers and all schema requests resolved.
-- [ ] Final migration generated and applied successfully to disposable PostgreSQL.
-- [ ] Shared routes, observability, readiness, metrics, and alerts securely wired.
-- [ ] Dependency vulnerabilities remediated or explicitly risk-reviewed without weakening gates.
+- [x] Auth lane reviewed and merged first into coordinator.
+- [ ] Auth integrated typecheck/full build/mounted HTTP/abuse/tenant-role/PostgreSQL tests pass.
+- [ ] Historical browser token/session authority cleanup passes browser-storage enforcement.
+- [ ] Channels integrated second with plaintext-token/key-management gates closed.
+- [ ] Orders/settings integrated third with central queue APIs and claimed-reply race closed.
+- [ ] Catalog integrated fourth.
+- [ ] Knowledge/AI reviewed and integrated fifth.
+- [ ] PostgreSQL lane reconciles every domain/auth request and quality blocker.
+- [ ] Quality lane integrated after DB/domain work.
+- [ ] Shared payment-status/frontend build contracts pass.
+- [ ] Dependency vulnerabilities remediated/risk-reviewed without weakening gates.
 - [ ] Dependency Graph/native review operational.
-- [ ] Full server/frontend/database/contracts matrices pass on the exact integrated SHA.
-- [ ] Browser operational-storage audit passes.
-- [ ] Tenant/auth/idempotency/payment/queue/refund tests pass.
-- [ ] Production backup/restore/rollback evidence verified.
-- [ ] Logs and artifacts checked for secrets/PII/payloads.
+- [ ] Observability/readiness/metrics/alerts securely wired.
+- [ ] Full matrices pass on the exact final integrated SHA.
+- [ ] Backup/restore/rollback evidence passes on release candidate.
+- [ ] Logs/artifacts checked for secrets/PII/payloads.
 - [ ] Legal/privacy/support approvals recorded.
-- [ ] Draft PR status and release documentation updated accurately.
 - [ ] Owner explicitly approved any merge to `main`.
 
 **Current release decision: NO-GO.**
