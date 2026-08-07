@@ -13,6 +13,7 @@ import router from "./routes";
 import authSecurityRouter from "./routes/auth-security";
 import channelOperationsRouter from "./routes/channel-operations";
 import { createChannelDurableJobAdminRouter } from "./routes/channel-durable-job-admin";
+import catalogOperationsRouter from "./routes/catalog-operations";
 import conversationOperationsRouter from "./routes/conversation-operations";
 import orderOperationsRouter from "./routes/order-operations";
 import merchantSettingsRouter from "./routes/merchant-settings";
@@ -28,6 +29,7 @@ import {
   enforceAuthOrigin,
   getAuthContext,
   requireSecureAdminSession,
+  requireSecureMerchantSession,
   sendAuthError,
 } from "./middleware/authSession";
 import { enforceMerchantRetentionAccess } from "./middleware/merchantRetentionAccess";
@@ -119,6 +121,25 @@ function enforceMetaConnectionActivationGate(
   });
 }
 
+function enforceCatalogSecureSession(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  const catalogPath =
+    req.path === "/api/catalog" ||
+    req.path.startsWith("/api/catalog/") ||
+    req.path === "/api/inventory" ||
+    req.path.startsWith("/api/inventory/");
+
+  if (!catalogPath) {
+    next();
+    return;
+  }
+
+  requireSecureMerchantSession(req, res, next);
+}
+
 app.use(
   pinoHttp({
     logger,
@@ -196,6 +217,7 @@ app.use((_req, _res, next) => {
 app.use(enforceMerchantRetentionAccess);
 app.use(enforceMerchantOAuthCallbackOperationalAccess);
 app.use(enforceMerchantOperationalAccess);
+app.use(enforceCatalogSecureSession);
 app.use("/api", retentionGuardRouter);
 app.use(
   "/api/auth/admin/emergency-read-access",
@@ -219,6 +241,7 @@ app.use("/api", orderOperationsRouter);
 app.use("/api", merchantSettingsRouter);
 app.use("/api", channelOperationsRouter);
 app.use("/api", channelDurableJobAdminRouter);
+app.use("/api", catalogOperationsRouter);
 
 // Do not allow a new plaintext Meta connection to be created while the
 // encrypted OAuth/send-path cutover and PostgreSQL/KMS dependencies are still
