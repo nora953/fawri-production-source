@@ -1,11 +1,58 @@
 import type { Request, Response } from "express";
 import type { AuthAccount } from "../services/authAccountRepository";
 import { buildGenericOtpResponse } from "../services/authPolicy";
-import { authSecurityStore, AuthSecurityStoreError, type OtpPurpose } from "../services/authSecurityStore";
+import {
+  authSecurityStore,
+  AuthSecurityStoreError,
+  type OtpPurpose,
+} from "../services/authSecurityStore";
 import { deliverAuthOtp } from "../services/authOtpDelivery";
 import { getAuthContext, requestIp, sendAuthError } from "../middleware/authSession";
 
+function legacySafeProfile(account: AuthAccount) {
+  if (account.merchantProfile) {
+    const profile = account.merchantProfile;
+    return {
+      id: account.account.id,
+      owner_name: profile.ownerName,
+      store_name: profile.storeName,
+      phone: account.account.phone,
+      activity_type: profile.activityType,
+      status:
+        profile.accountStatus === "pending_review"
+          ? "pending_activation"
+          : profile.accountStatus,
+      language: profile.language,
+      created_at: profile.createdAt,
+      is_admin: false,
+      otp_verified: account.account.otpVerified,
+      account_status: profile.accountStatus,
+      onboarding_status: profile.onboardingStatus,
+      requested_plan: profile.requestedPlan,
+    };
+  }
+
+  const profile = account.adminProfile!;
+  return {
+    id: account.account.id,
+    owner_name: profile.displayName,
+    store_name: "Fawri Admin",
+    phone: account.account.phone,
+    activity_type: "admin",
+    status: account.account.enabled ? "approved" : "suspended",
+    language: profile.language,
+    created_at: profile.createdAt,
+    is_admin: true,
+    admin_role: profile.role,
+    permissions: profile.permissions,
+    admin_enabled: account.account.enabled,
+    otp_verified: account.account.otpVerified,
+    must_change_password: profile.mustChangePassword,
+  };
+}
+
 export function payload(account: AuthAccount) {
+  const compatibilityProfile = legacySafeProfile(account);
   return {
     account: {
       id: account.account.id,
@@ -14,8 +61,19 @@ export function payload(account: AuthAccount) {
       enabled: account.account.enabled,
       otp_verified: account.account.otpVerified,
     },
-    ...(account.merchantProfile ? { merchant_profile: account.merchantProfile } : {}),
-    ...(account.adminProfile ? { admin_profile: account.adminProfile } : {}),
+    account_type: account.account.kind,
+    ...(account.merchantProfile
+      ? {
+          merchant_profile: account.merchantProfile,
+          merchant: compatibilityProfile,
+        }
+      : {}),
+    ...(account.adminProfile
+      ? {
+          admin_profile: account.adminProfile,
+          admin: compatibilityProfile,
+        }
+      : {}),
   };
 }
 
@@ -55,7 +113,9 @@ export function otpError(res: Response, error: unknown, generic = false): void {
     }
     sendAuthError(
       res,
-      error.code.includes("RATE_LIMIT") || error.code.includes("COOLDOWN") ? 429 : 502,
+      error.code.includes("RATE_LIMIT") || error.code.includes("COOLDOWN")
+        ? 429
+        : 502,
       error.code,
       error.message,
       error.retryAfterSeconds
