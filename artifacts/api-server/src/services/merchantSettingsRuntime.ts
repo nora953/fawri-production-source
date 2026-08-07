@@ -35,9 +35,36 @@ export type MerchantOperationalSettings = {
   updated_at: string;
 };
 
+export type MerchantSettingsEffects = {
+  queued_auto_reply_jobs_suppressed: number;
+  processing_auto_reply_jobs_observed: number;
+  credit_consumed: false;
+};
+
 type SettingsDatabase = {
   version: 1;
   settings: Record<string, MerchantOperationalSettings>;
+};
+
+type DurableJob = {
+  id?: unknown;
+  type?: unknown;
+  merchant_id?: unknown;
+  status?: unknown;
+  payload?: unknown;
+  result?: unknown;
+  locked_at?: unknown;
+  locked_by?: unknown;
+  last_error_code?: unknown;
+  last_error_message?: unknown;
+  completed_at?: unknown;
+  updated_at?: unknown;
+  [key: string]: unknown;
+};
+
+type DurableJobStore = {
+  version: 1;
+  jobs: DurableJob[];
 };
 
 export class MerchantSettingsError extends Error {
@@ -61,6 +88,7 @@ export class MerchantSettingsError extends Error {
 
 const STORE_VERSION = 1 as const;
 const LOCK_STALE_MS = 30_000;
+const REPLY_JOB_TYPE = "meta.webhook.reply";
 const REPLY_LANGUAGES = new Set<MerchantReplyLanguage>([
   "auto",
   "ar",
@@ -74,17 +102,58 @@ const PAYMENT_METHODS = new Set<MerchantPaymentMethod>([
   "zaincash",
   "other",
 ]);
+const ROOT_PATCH_KEYS = new Set([
+  "auto_reply_enabled",
+  "reply_language",
+  "delivery",
+  "payment",
+]);
+const DELIVERY_PATCH_KEYS = new Set([
+  "enabled",
+  "fee_iqd",
+  "free_delivery_threshold_iqd",
+  "estimated_days_min",
+  "estimated_days_max",
+  "areas",
+  "notes",
+]);
+const PAYMENT_PATCH_KEYS = new Set([
+  "cash_on_delivery_enabled",
+  "electronic_payment_enabled",
+  "methods",
+  "instructions",
+]);
 
 function settingsPath(): string {
   return getFawriDataFilePath("merchant-settings.json");
 }
 
-function lockPath(): string {
+function settingsLockPath(): string {
   return `${settingsPath()}.lock`;
+}
+
+function queuePath(): string {
+  return getFawriDataFilePath("background-jobs.json");
+}
+
+function queueLockPath(): string {
+  return `${queuePath()}.lock`;
 }
 
 function text(value: unknown): string {
   return String(value || "").trim();
+}
+
+function requireMerchantId(value: unknown): string {
+  const merchantId = text(value);
+  if (!merchantId || merchantId.length > 200) {
+    throw new MerchantSettingsError(
+      "MERCHANT_SETTINGS_ID_INVALID",
+      "merchant identifier is required",
+      400,
+    );
+  }
+  return merchantId;
 }
 
 function objectRecord(value: unknown): Record<string, unknown> {
@@ -93,15 +162,36 @@ function objectRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+function assertAllowedKeys(
+  record: Record<string, unknown>,
+  allowed: Set<string>,
+  code: string,
+): void {
+  const unknownKeys = Object.keys(record).filter((key) => !allowed.has(key));
+  if (unknownKeys.length > 0) {
+    throw new MerchantSettingsError(
+      code,
+      `unsupported settings fields: ${unknownKeys.join(", ")}`,
+      400,
+    );
+  }
+}
+
 function nonNegativeInteger(
   value: unknown,
   fallback: number,
   maximum = 100_000_000,
 ): number {
+  if (value === undefined) return fallback;
   const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed >= 0 && parsed <= maximum
-    ? parsed
-    : fallback;
+  if (!Number.isInteger(parsed) || parsed < 0 || parsed > maximum) {
+    throw new MerchantSettingsError(
+      "MERCHANT_SETTINGS_NUMBER_INVALID",
+      "settings number is outside the accepted range",
+      400,
+    );
+  }
+  return parsed;
 }
 
 function positiveInteger(
@@ -109,25 +199,50 @@ function positiveInteger(
   fallback: number,
   maximum = 365,
 ): number {
+  if (value === undefined) return fallback;
   const parsed = Number(value);
-  return Number.isInteger(parsed) && parsed > 0 && parsed <= maximum
-    ? parsed
-    : fallback;
+  if (!Number.isInteger(parsed) || parsed <= 0 || parsed > maximum) {
+    throw new MerchantSettingsError(
+      "MERCHANT_SETTINGS_NUMBER_INVALID",
+      "settings number is outside the accepted range",
+      400,
+    );
+  }
+  return parsed;
 }
 
 function normalizedStringList(
   value: unknown,
   { maximumItems = 100, maximumLength = 100 } = {},
 ): string[] {
-  if (!Array.isArray(value)) return [];
+  if (!Array.isArray(value)) {
+    throw new MerchantSettingsError(
+      "MERCHANT_SETTINGS_LIST_INVALID",
+      "settings list must be an array",
+      400,
+    );
+  }
   const result: string[] = [];
   const seen = new Set<string>();
   for (const item of value) {
-    const normalized = text(item).slice(0, maximumLength);
-    if (!normalized || seen.has(normalized)) continue;
+    const normalized = text(item);
+    if (!normalized || normalized.length > maximumLength) {
+      throw new MerchantSettingsError(
+        "MERCHANT_SETTINGS_LIST_INVALID",
+        "settings list contains an invalid value",
+        400,
+      );
+    }
+    if (seen.has(normalized)) continue;
     seen.add(normalized);
     result.push(normalized);
-    if (result.length >= maximumItems) break;
+    if (result.length > maximumItems) {
+      throw new MerchantSettingsError(
+        "MERCHANT_SETTINGS_LIST_INVALID",
+        "settings list contains too many values",
+        400,
+      );
+    }
   }
   return result;
 }
@@ -136,9 +251,16 @@ function normalizedPaymentMethods(value: unknown): MerchantPaymentMethod[] {
   return normalizedStringList(value, {
     maximumItems: PAYMENT_METHODS.size,
     maximumLength: 40,
-  }).filter((item): item is MerchantPaymentMethod =>
-    PAYMENT_METHODS.has(item as MerchantPaymentMethod),
-  );
+  }).filter((item): item is MerchantPaymentMethod => {
+    if (!PAYMENT_METHODS.has(item as MerchantPaymentMethod)) {
+      throw new MerchantSettingsError(
+        "MERCHANT_PAYMENT_METHOD_INVALID",
+        "payment method is invalid",
+        400,
+      );
+    }
+    return true;
+  });
 }
 
 function writeJsonAtomically(filePath: string, value: unknown): void {
@@ -173,11 +295,32 @@ function readDatabase(): SettingsDatabase {
   }
 }
 
-function acquireLock(): number {
-  fs.mkdirSync(path.dirname(lockPath()), { recursive: true });
+function readQueueStore(): DurableJobStore {
+  try {
+    const parsed = JSON.parse(
+      fs.readFileSync(queuePath(), "utf8"),
+    ) as Partial<DurableJobStore>;
+    if (parsed.version !== 1 || !Array.isArray(parsed.jobs)) {
+      throw new Error("durable job queue store has an unsupported shape");
+    }
+    return { version: 1, jobs: parsed.jobs };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return { version: 1, jobs: [] };
+    }
+    throw error;
+  }
+}
+
+function acquireFileLock(
+  filePath: string,
+  busyCode: string,
+  busyMessage: string,
+): number {
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      const descriptor = fs.openSync(lockPath(), "wx", 0o600);
+      const descriptor = fs.openSync(filePath, "wx", 0o600);
       fs.writeFileSync(
         descriptor,
         JSON.stringify({ pid: process.pid, acquired_at: new Date().toISOString() }),
@@ -186,46 +329,130 @@ function acquireLock(): number {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
       try {
-        const statistics = fs.statSync(lockPath());
+        const statistics = fs.statSync(filePath);
         if (Date.now() - statistics.mtimeMs > LOCK_STALE_MS) {
-          fs.unlinkSync(lockPath());
+          fs.unlinkSync(filePath);
           continue;
         }
       } catch (statError) {
         if ((statError as NodeJS.ErrnoException).code === "ENOENT") continue;
         throw statError;
       }
-      throw new MerchantSettingsError(
-        "MERCHANT_SETTINGS_BUSY",
-        "merchant settings are busy",
-        503,
-      );
+      throw new MerchantSettingsError(busyCode, busyMessage, 503);
     }
   }
-  throw new MerchantSettingsError(
+  throw new MerchantSettingsError(busyCode, busyMessage, 503);
+}
+
+function releaseFileLock(descriptor: number, filePath: string): void {
+  try {
+    fs.closeSync(descriptor);
+  } finally {
+    try {
+      fs.unlinkSync(filePath);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    }
+  }
+}
+
+function acquireSettingsLock(): number {
+  return acquireFileLock(
+    settingsLockPath(),
     "MERCHANT_SETTINGS_BUSY",
     "merchant settings are busy",
-    503,
   );
 }
 
 function withDatabaseLock<T>(callback: (database: SettingsDatabase) => T): T {
-  const descriptor = acquireLock();
+  const descriptor = acquireSettingsLock();
   try {
     const database = readDatabase();
     const result = callback(database);
     writeJsonAtomically(settingsPath(), database);
     return result;
   } finally {
-    try {
-      fs.closeSync(descriptor);
-    } finally {
-      try {
-        fs.unlinkSync(lockPath());
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    releaseFileLock(descriptor, settingsLockPath());
+  }
+}
+
+function durableJobMerchantId(job: DurableJob): string {
+  const direct = text(job.merchant_id);
+  if (direct) return direct;
+  return text(objectRecord(job.payload).merchant_id);
+}
+
+function suppressQueuedAutoReplyJobs(
+  merchantId: string,
+  settingsVersion: number,
+): MerchantSettingsEffects {
+  const descriptor = acquireFileLock(
+    queueLockPath(),
+    "MERCHANT_SETTINGS_QUEUE_BUSY",
+    "automatic reply queue is busy",
+  );
+  try {
+    const store = readQueueStore();
+    const now = new Date().toISOString();
+    let suppressed = 0;
+    let processing = 0;
+    for (const job of store.jobs) {
+      if (
+        text(job.type) !== REPLY_JOB_TYPE ||
+        durableJobMerchantId(job) !== merchantId
+      ) {
+        continue;
       }
+      const status = text(job.status);
+      if (status === "processing") {
+        processing += 1;
+        continue;
+      }
+      if (status !== "queued" && status !== "retry") continue;
+      job.status = "completed";
+      job.result = {
+        delivery_status: "suppressed",
+        suppression_code: "MERCHANT_AUTO_REPLY_DISABLED",
+        credit_consumed: false,
+        settings_version: settingsVersion,
+      };
+      job.completed_at = now;
+      job.updated_at = now;
+      job.locked_at = undefined;
+      job.locked_by = undefined;
+      job.last_error_code = undefined;
+      job.last_error_message = undefined;
+      suppressed += 1;
     }
+    if (suppressed > 0) writeJsonAtomically(queuePath(), store);
+    return {
+      queued_auto_reply_jobs_suppressed: suppressed,
+      processing_auto_reply_jobs_observed: processing,
+      credit_consumed: false,
+    };
+  } finally {
+    releaseFileLock(descriptor, queueLockPath());
+  }
+}
+
+function deleteMerchantAutoReplyJobs(merchantId: string): number {
+  if (!fs.existsSync(queuePath())) return 0;
+  const descriptor = acquireFileLock(
+    queueLockPath(),
+    "MERCHANT_SETTINGS_QUEUE_BUSY",
+    "automatic reply queue is busy",
+  );
+  try {
+    const store = readQueueStore();
+    const previousLength = store.jobs.length;
+    store.jobs = store.jobs.filter(
+      (job) => durableJobMerchantId(job) !== merchantId,
+    );
+    const removed = previousLength - store.jobs.length;
+    if (removed > 0) writeJsonAtomically(queuePath(), store);
+    return removed;
+  } finally {
+    releaseFileLock(descriptor, queueLockPath());
   }
 }
 
@@ -278,14 +505,70 @@ function normalizePatch(
   current: MerchantOperationalSettings,
   patchValue: unknown,
 ): MerchantOperationalSettings {
-  const patch = objectRecord(patchValue);
+  if (!patchValue || typeof patchValue !== "object" || Array.isArray(patchValue)) {
+    throw new MerchantSettingsError(
+      "MERCHANT_SETTINGS_PATCH_INVALID",
+      "settings patch must be an object",
+      400,
+    );
+  }
+  const patch = patchValue as Record<string, unknown>;
+  assertAllowedKeys(patch, ROOT_PATCH_KEYS, "MERCHANT_SETTINGS_FIELD_UNSUPPORTED");
+  if (
+    Object.prototype.hasOwnProperty.call(patch, "delivery") &&
+    (!patch.delivery ||
+      typeof patch.delivery !== "object" ||
+      Array.isArray(patch.delivery))
+  ) {
+    throw new MerchantSettingsError(
+      "MERCHANT_DELIVERY_PATCH_INVALID",
+      "delivery settings patch must be an object",
+      400,
+    );
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(patch, "payment") &&
+    (!patch.payment ||
+      typeof patch.payment !== "object" ||
+      Array.isArray(patch.payment))
+  ) {
+    throw new MerchantSettingsError(
+      "MERCHANT_PAYMENT_PATCH_INVALID",
+      "payment settings patch must be an object",
+      400,
+    );
+  }
   const deliveryPatch = objectRecord(patch.delivery);
   const paymentPatch = objectRecord(patch.payment);
+  assertAllowedKeys(
+    deliveryPatch,
+    DELIVERY_PATCH_KEYS,
+    "MERCHANT_DELIVERY_FIELD_UNSUPPORTED",
+  );
+  assertAllowedKeys(
+    paymentPatch,
+    PAYMENT_PATCH_KEYS,
+    "MERCHANT_PAYMENT_FIELD_UNSUPPORTED",
+  );
+
   const replyLanguage = text(patch.reply_language);
-  if (replyLanguage && !REPLY_LANGUAGES.has(replyLanguage as MerchantReplyLanguage)) {
+  if (
+    Object.prototype.hasOwnProperty.call(patch, "reply_language") &&
+    !REPLY_LANGUAGES.has(replyLanguage as MerchantReplyLanguage)
+  ) {
     throw new MerchantSettingsError(
       "MERCHANT_REPLY_LANGUAGE_INVALID",
       "reply language is invalid",
+      400,
+    );
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(patch, "auto_reply_enabled") &&
+    typeof patch.auto_reply_enabled !== "boolean"
+  ) {
+    throw new MerchantSettingsError(
+      "MERCHANT_AUTO_REPLY_INVALID",
+      "automatic reply setting must be boolean",
       400,
     );
   }
@@ -294,20 +577,32 @@ function normalizePatch(
     typeof deliveryPatch.enabled === "boolean"
       ? deliveryPatch.enabled
       : current.delivery.enabled;
+  if (
+    Object.prototype.hasOwnProperty.call(deliveryPatch, "enabled") &&
+    typeof deliveryPatch.enabled !== "boolean"
+  ) {
+    throw new MerchantSettingsError(
+      "MERCHANT_DELIVERY_ENABLED_INVALID",
+      "delivery enabled setting must be boolean",
+      400,
+    );
+  }
   const deliveryFee = nonNegativeInteger(
     deliveryPatch.fee_iqd,
     current.delivery.fee_iqd,
   );
   let freeThreshold = current.delivery.free_delivery_threshold_iqd;
-  if (Object.prototype.hasOwnProperty.call(deliveryPatch, "free_delivery_threshold_iqd")) {
+  if (
+    Object.prototype.hasOwnProperty.call(
+      deliveryPatch,
+      "free_delivery_threshold_iqd",
+    )
+  ) {
     freeThreshold =
       deliveryPatch.free_delivery_threshold_iqd === null ||
       deliveryPatch.free_delivery_threshold_iqd === ""
         ? null
-        : nonNegativeInteger(
-            deliveryPatch.free_delivery_threshold_iqd,
-            current.delivery.free_delivery_threshold_iqd || 0,
-          );
+        : nonNegativeInteger(deliveryPatch.free_delivery_threshold_iqd, 0);
   }
   const estimatedMin = positiveInteger(
     deliveryPatch.estimated_days_min,
@@ -333,6 +628,31 @@ function normalizePatch(
     typeof paymentPatch.electronic_payment_enabled === "boolean"
       ? paymentPatch.electronic_payment_enabled
       : current.payment.electronic_payment_enabled;
+  if (
+    Object.prototype.hasOwnProperty.call(
+      paymentPatch,
+      "cash_on_delivery_enabled",
+    ) && typeof paymentPatch.cash_on_delivery_enabled !== "boolean"
+  ) {
+    throw new MerchantSettingsError(
+      "MERCHANT_PAYMENT_ENABLED_INVALID",
+      "cash on delivery setting must be boolean",
+      400,
+    );
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(
+      paymentPatch,
+      "electronic_payment_enabled",
+    ) && typeof paymentPatch.electronic_payment_enabled !== "boolean"
+  ) {
+    throw new MerchantSettingsError(
+      "MERCHANT_PAYMENT_ENABLED_INVALID",
+      "electronic payment setting must be boolean",
+      400,
+    );
+  }
+
   let methods = Object.prototype.hasOwnProperty.call(paymentPatch, "methods")
     ? normalizedPaymentMethods(paymentPatch.methods)
     : [...current.payment.methods];
@@ -349,7 +669,10 @@ function normalizePatch(
       400,
     );
   }
-  if (electronicEnabled && !methods.some((method) => method !== "cash_on_delivery")) {
+  if (
+    electronicEnabled &&
+    !methods.some((method) => method !== "cash_on_delivery")
+  ) {
     throw new MerchantSettingsError(
       "MERCHANT_ELECTRONIC_PAYMENT_METHOD_REQUIRED",
       "an electronic payment method is required when electronic payments are enabled",
@@ -385,7 +708,10 @@ function normalizePatch(
       cash_on_delivery_enabled: cashEnabled,
       electronic_payment_enabled: electronicEnabled,
       methods,
-      instructions: Object.prototype.hasOwnProperty.call(paymentPatch, "instructions")
+      instructions: Object.prototype.hasOwnProperty.call(
+        paymentPatch,
+        "instructions",
+      )
         ? text(paymentPatch.instructions).slice(0, 2000)
         : current.payment.instructions,
     },
@@ -395,33 +721,41 @@ function normalizePatch(
 }
 
 export function getMerchantOperationalSettings(
-  merchantId: string,
+  merchantIdValue: string,
 ): MerchantOperationalSettings {
-  const normalizedMerchantId = text(merchantId);
-  if (!normalizedMerchantId) {
+  const merchantId = requireMerchantId(merchantIdValue);
+  const database = readDatabase();
+  const stored = database.settings[merchantId];
+  if (stored && stored.merchant_id !== merchantId) {
     throw new MerchantSettingsError(
-      "MERCHANT_SETTINGS_ID_INVALID",
-      "merchant identifier is required",
-      400,
+      "MERCHANT_SETTINGS_TENANT_MISMATCH",
+      "merchant settings tenant boundary is invalid",
+      503,
     );
   }
-  const database = readDatabase();
-  return cloneSettings(
-    database.settings[normalizedMerchantId] ||
-      defaultSettings(normalizedMerchantId),
-  );
+  return cloneSettings(stored || defaultSettings(merchantId));
 }
 
-export function updateMerchantOperationalSettings(input: {
+export function updateMerchantOperationalSettingsWithEffects(input: {
   merchantId: string;
   expectedVersion: unknown;
   patch: unknown;
-}): MerchantOperationalSettings {
-  const merchantId = text(input.merchantId);
+}): {
+  settings: MerchantOperationalSettings;
+  effects: MerchantSettingsEffects;
+} {
+  const merchantId = requireMerchantId(input.merchantId);
   const expectedVersion = requireExpectedVersion(input.expectedVersion);
   return withDatabaseLock((database) => {
-    const current =
-      database.settings[merchantId] || defaultSettings(merchantId);
+    const stored = database.settings[merchantId];
+    if (stored && stored.merchant_id !== merchantId) {
+      throw new MerchantSettingsError(
+        "MERCHANT_SETTINGS_TENANT_MISMATCH",
+        "merchant settings tenant boundary is invalid",
+        503,
+      );
+    }
+    const current = stored || defaultSettings(merchantId);
     if (current.version !== expectedVersion) {
       throw new MerchantSettingsError(
         "MERCHANT_SETTINGS_VERSION_CONFLICT",
@@ -435,37 +769,49 @@ export function updateMerchantOperationalSettings(input: {
       );
     }
     const updated = normalizePatch(current, input.patch);
+    const effects =
+      current.auto_reply_enabled && !updated.auto_reply_enabled
+        ? suppressQueuedAutoReplyJobs(merchantId, updated.version)
+        : {
+            queued_auto_reply_jobs_suppressed: 0,
+            processing_auto_reply_jobs_observed: 0,
+            credit_consumed: false as const,
+          };
     database.settings[merchantId] = updated;
-    return cloneSettings(updated);
+    return { settings: cloneSettings(updated), effects };
   });
+}
+
+export function updateMerchantOperationalSettings(input: {
+  merchantId: string;
+  expectedVersion: unknown;
+  patch: unknown;
+}): MerchantOperationalSettings {
+  return updateMerchantOperationalSettingsWithEffects(input).settings;
 }
 
 export function merchantAllowsAutoReply(merchantId: string): boolean {
   return getMerchantOperationalSettings(merchantId).auto_reply_enabled;
 }
 
-registerMerchantRuntimeDeletion((merchantId) => {
-  const filePath = settingsPath();
-  if (!fs.existsSync(filePath)) return { merchantSettings: 0 };
-  const descriptor = acquireLock();
-  try {
-    const database = readDatabase();
-    const existed = Object.prototype.hasOwnProperty.call(
-      database.settings,
-      merchantId,
-    );
-    delete database.settings[merchantId];
-    writeJsonAtomically(filePath, database);
-    return { merchantSettings: existed ? 1 : 0 };
-  } finally {
+registerMerchantRuntimeDeletion((merchantIdValue) => {
+  const merchantId = requireMerchantId(merchantIdValue);
+  let merchantSettings = 0;
+  if (fs.existsSync(settingsPath())) {
+    const descriptor = acquireSettingsLock();
     try {
-      fs.closeSync(descriptor);
+      const database = readDatabase();
+      const existed = Object.prototype.hasOwnProperty.call(
+        database.settings,
+        merchantId,
+      );
+      delete database.settings[merchantId];
+      if (existed) writeJsonAtomically(settingsPath(), database);
+      merchantSettings = existed ? 1 : 0;
     } finally {
-      try {
-        fs.unlinkSync(lockPath());
-      } catch (error) {
-        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-      }
+      releaseFileLock(descriptor, settingsLockPath());
     }
   }
+  const autoReplyJobs = deleteMerchantAutoReplyJobs(merchantId);
+  return { merchantSettings, autoReplyJobs };
 });
