@@ -1,6 +1,19 @@
 const PLACEHOLDER_VALUE = /^(?:example|sample|test|testing|dummy|placeholder|redacted|masked|changeme|not[-_ ]?set|fawri_ci|candidate|localhost|null|undefined|none)$/i;
 const ENV_REFERENCE = /^(?:\$\{?[A-Z0-9_]+\}?|process\.env\.[A-Z0-9_]+)$/i;
 
+function isPlaceholder(value) {
+  const normalized = String(value ?? "").replace(/^['"]|['"]$/g, "").trim();
+  return PLACEHOLDER_VALUE.test(normalized) || ENV_REFERENCE.test(normalized);
+}
+
+function isFixtureLiteral(value) {
+  const normalized = String(value ?? "").trim();
+  return (
+    /(?:test|example|dummy|placeholder|redacted|sample|fake|fixture|mock|merchant-hash|admin-hash|owner-hash)/i.test(normalized) ||
+    /^[A-Z][A-Z0-9_]+$/.test(normalized)
+  );
+}
+
 const HIGH_CONFIDENCE_SECRET_RULES = [
   { id: "private-key", pattern: /-{5}BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-{5}/g },
   { id: "github-token", pattern: /\bgh(?:p|o|u|s|r)_[A-Za-z0-9]{30,}\b/g },
@@ -20,15 +33,31 @@ const HIGH_CONFIDENCE_SECRET_RULES = [
       return !isPlaceholder(password) && !/^(?:127\.0\.0\.1|localhost)$/i.test(host);
     },
   },
+  {
+    id: "env-secret-literal",
+    pattern: /^(?:export\s+)?[A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|API_KEY|ACCESS_KEY|CREDENTIAL)[A-Z0-9_]*\s*=\s*["']?([A-Za-z0-9+\/_=@!#$%^&*~.-]{16,})["']?\s*$/gm,
+    validate(match) {
+      const value = match[1] ?? "";
+      return !isPlaceholder(value) && !isFixtureLiteral(value);
+    },
+  },
 ];
 
 const ASSIGNMENT_SECRET_RULES = [
   {
     id: "named-secret",
-    pattern: /\b(?:access[_-]?token|page[_-]?access[_-]?token|refresh[_-]?token|client[_-]?secret|webhook[_-]?secret|app[_-]?secret|api[_-]?key|password|authorization|bearer[_-]?token)\b\s*(?:=|:)\s*["']?([^\s,"'\]}]{12,})/gi,
+    pattern: /\b(?:access[_-]?token|page[_-]?access[_-]?token|refresh[_-]?token|client[_-]?secret|webhook[_-]?secret|app[_-]?secret|api[_-]?key|password|authorization|bearer[_-]?token)\b\s*(?:=|:)\s*(["'])([^"'\\\r\n]{12,})\1/gi,
+    validate(match) {
+      const value = (match[2] ?? "").trim();
+      return !isPlaceholder(value) && !isFixtureLiteral(value);
+    },
+  },
+  {
+    id: "named-secret",
+    pattern: /\b(?:access[_-]?token|page[_-]?access[_-]?token|refresh[_-]?token|client[_-]?secret|webhook[_-]?secret|app[_-]?secret|api[_-]?key|password|authorization|bearer[_-]?token)\b\s*(?:=|:)\s*([A-Za-z0-9+\/_=@!#$%^&*~-]{16,})(?=\s|$|[,}\]])/gi,
     validate(match) {
       const value = (match[1] ?? "").trim();
-      return !isPlaceholder(value) && !/(?:test|example|dummy|placeholder|redacted|sample|fake|fixture)/i.test(value);
+      return !isPlaceholder(value) && !isFixtureLiteral(value);
     },
   },
 ];
@@ -63,11 +92,6 @@ const OUTPUT_PRIVATE_DATA_RULES = [
     },
   },
 ];
-
-function isPlaceholder(value) {
-  const normalized = String(value ?? "").replace(/^['"]|['"]$/g, "").trim();
-  return PLACEHOLDER_VALUE.test(normalized) || ENV_REFERENCE.test(normalized);
-}
 
 function cloneGlobalRegex(pattern) {
   const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
