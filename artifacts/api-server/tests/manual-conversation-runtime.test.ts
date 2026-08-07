@@ -12,11 +12,15 @@ import {
   returnConversationToFawri,
   takeOverConversation,
 } from "../src/services/manualConversationRuntime";
+import { connectMetaChannel } from "../src/services/metaChannelRuntime";
 import {
   deleteMerchantRuntimeData,
   registerMerchantRuntimeDeletion,
 } from "../src/services/merchantRuntime";
 import "../src/services/manualConversationDeletion";
+
+const TEST_META_KEY_ID = "manual-runtime-test-key";
+const TEST_META_KEY_BASE64 = Buffer.alloc(32, 7).toString("base64");
 
 function makeDirectory(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), "fawri-manual-runtime-"));
@@ -56,13 +60,11 @@ function runtimeDatabase(options: { explicitPageId?: string } = {}) {
       "page-1": {
         merchant_id: "merchant-1",
         page_id: "page-1",
-        page_access_token: "token-1",
         platform: "messenger",
       },
       "page-2": {
         merchant_id: "merchant-1",
         page_id: "page-2",
-        page_access_token: "token-2",
         platform: "messenger",
       },
     },
@@ -73,11 +75,35 @@ function runtimeDatabase(options: { explicitPageId?: string } = {}) {
 }
 
 function withDataDirectory(directory: string): () => void {
-  const previous = process.env.FAWRI_DATA_DIR;
+  const previousDirectory = process.env.FAWRI_DATA_DIR;
+  const previousKeyId = process.env.FAWRI_META_TOKEN_KEY_ID;
+  const previousKey = process.env.FAWRI_META_TOKEN_KEY_BASE64;
   process.env.FAWRI_DATA_DIR = directory;
+  process.env.FAWRI_META_TOKEN_KEY_ID = TEST_META_KEY_ID;
+  process.env.FAWRI_META_TOKEN_KEY_BASE64 = TEST_META_KEY_BASE64;
+  connectMetaChannel({
+    merchantId: "merchant-1",
+    platform: "messenger",
+    pageId: "page-1",
+    pageName: "Page One",
+    accessToken: "token-1",
+    webhookSubscribed: true,
+  });
+  connectMetaChannel({
+    merchantId: "merchant-1",
+    platform: "messenger",
+    pageId: "page-2",
+    pageName: "Page Two",
+    accessToken: "token-2",
+    webhookSubscribed: true,
+  });
   return () => {
-    if (previous === undefined) delete process.env.FAWRI_DATA_DIR;
-    else process.env.FAWRI_DATA_DIR = previous;
+    if (previousDirectory === undefined) delete process.env.FAWRI_DATA_DIR;
+    else process.env.FAWRI_DATA_DIR = previousDirectory;
+    if (previousKeyId === undefined) delete process.env.FAWRI_META_TOKEN_KEY_ID;
+    else process.env.FAWRI_META_TOKEN_KEY_ID = previousKeyId;
+    if (previousKey === undefined) delete process.env.FAWRI_META_TOKEN_KEY_BASE64;
+    else process.env.FAWRI_META_TOKEN_KEY_BASE64 = previousKey;
   };
 }
 
@@ -199,6 +225,7 @@ test("uncertain manual delivery is never retried or returned to automation", () 
     });
     assert.equal(prepared.deduplicated, false);
     assert.equal(prepared.pageId, "page-1");
+    assert.equal(prepared.pageAccessToken, "token-1");
 
     failManualReply({
       merchantId: "merchant-1",
