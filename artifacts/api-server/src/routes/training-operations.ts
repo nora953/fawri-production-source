@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from "express";
 import {
   getMerchantIdFromSession,
   requireMerchantSession,
-} from "./auth.js";
+} from "../middleware/authSession.js";
 import {
   approveMerchantTrainingRequest,
   createMerchantTrainingRequest,
