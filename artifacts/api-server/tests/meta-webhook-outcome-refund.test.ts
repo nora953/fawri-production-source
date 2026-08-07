@@ -173,6 +173,7 @@ test("confirmed failed DLQ refund restores one reply exactly once", async () => 
 
     const first = refundMerchantAutoReply(
       eventId,
+      "META_REPLY_FAILED",
       new Date("2026-08-06T13:00:00.000Z"),
     );
     assert.deepEqual(first, {
@@ -195,7 +196,7 @@ test("confirmed failed DLQ refund restores one reply exactly once", async () => 
     );
     assert.deepEqual(reservationDatabase.reservations, {});
 
-    assert.deepEqual(refundMerchantAutoReply(eventId), {
+    assert.deepEqual(refundMerchantAutoReply(eventId, "META_REPLY_FAILED"), {
       refunded: false,
       reason: "reservation_not_found",
     });
@@ -268,7 +269,10 @@ test("addon debit refund restores an addon batch when base balance is exhausted"
       }),
     );
 
-    assert.equal(refundMerchantAutoReply(eventId).refunded, true);
+    assert.equal(
+      refundMerchantAutoReply(eventId, "META_REPLY_FAILED").refunded,
+      true,
+    );
     const database = JSON.parse(
       await readFile(path.join(dataDirectory, "merchants.json"), "utf8"),
     );
