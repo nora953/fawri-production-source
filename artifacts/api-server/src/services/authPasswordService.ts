@@ -1,7 +1,15 @@
 import crypto from "node:crypto";
 
-const PASSWORD_SALT =
-  process.env.FAWRI_PASSWORD_SALT || "fawri-local-dev-salt";
+const CONFIGURED_PASSWORD_SALT = String(process.env.FAWRI_PASSWORD_SALT || "").trim();
+if (
+  process.env.NODE_ENV === "production" &&
+  CONFIGURED_PASSWORD_SALT.length < 32
+) {
+  throw new Error(
+    "FAWRI_PASSWORD_SALT must be explicitly configured with at least 32 characters in production",
+  );
+}
+const PASSWORD_SALT = CONFIGURED_PASSWORD_SALT || "fawri-local-dev-salt";
 const SCRYPT_N = 16_384;
 const SCRYPT_R = 8;
 const SCRYPT_P = 1;
