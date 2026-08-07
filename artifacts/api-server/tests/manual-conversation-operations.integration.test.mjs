@@ -74,7 +74,7 @@ function getSetCookie(response) {
 }
 
 function cookiePair(setCookie) {
-  assert.match(setCookie, /^fawri_merchant_session=/);
+  assert.match(setCookie, /^fawri_merchant_session_v2=/);
   return setCookie.split(";", 1)[0];
 }
 
@@ -336,6 +336,7 @@ test("manual conversation operations are server-authoritative and idempotent", a
   assert.equal(takeover.body.conversation.assigned_to_human, true);
   assert.equal(takeover.body.conversation.page_id, "page-a");
 
+  const suppressedEventId = "meta:page-a:incoming-during-manual";
   const suppressedBody = {
     object: "page",
     entry: [
@@ -363,10 +364,38 @@ test("manual conversation operations are server-authoritative and idempotent", a
     body: signed.rawBody,
   });
   assert.equal(suppressed.status, 200);
+  assert.equal(
+    fakeMeta.requests.length,
+    0,
+    "manual takeover allowed an automated Meta reply",
+  );
+
   const queueAfterSuppression = JSON.parse(
     await readFile(path.join(dataDirectory, "background-jobs.json"), "utf8"),
   );
-  assert.deepEqual(queueAfterSuppression.jobs, []);
+  const suppressedReplyJobs = queueAfterSuppression.jobs.filter(
+    (job) =>
+      job.type === "meta.webhook.reply" &&
+      job.dedupe_key === suppressedEventId,
+  );
+  assert.equal(
+    suppressedReplyJobs.length,
+    0,
+    "manual takeover enqueued an automated reply job",
+  );
+  const suppressedTerminalJobs = queueAfterSuppression.jobs.filter(
+    (job) =>
+      job.type === "meta.webhook.terminal" &&
+      job.dedupe_key === suppressedEventId,
+  );
+  assert.equal(suppressedTerminalJobs.length, 1);
+  const [suppressedTerminalJob] = suppressedTerminalJobs;
+  assert.equal(suppressedTerminalJob.type, "meta.webhook.terminal");
+  assert.equal(suppressedTerminalJob.status, "queued");
+  assert.equal(suppressedTerminalJob.attempts, 0);
+  assert.equal(suppressedTerminalJob.priority, 20);
+  assert.equal(suppressedTerminalJob.max_attempts, 1);
+
   const processedAfterSuppression = JSON.parse(
     await readFile(
       path.join(dataDirectory, "processed-meta-events.json"),
@@ -374,11 +403,24 @@ test("manual conversation operations are server-authoritative and idempotent", a
     ),
   );
   assert.ok(
-    Object.hasOwn(
-      processedAfterSuppression.events,
-      "meta:page-a:incoming-during-manual",
+    Object.hasOwn(processedAfterSuppression.events, suppressedEventId),
+  );
+
+  const overlayAfterSuppression = JSON.parse(
+    await readFile(
+      path.join(dataDirectory, "manual-conversation-operations.json"),
+      "utf8",
     ),
   );
+  const suppressedInboundMessages =
+    overlayAfterSuppression.conversations["merchant-a"][
+      "messenger-customer-a"
+    ].inbound_messages.filter(
+      (message) => message.external_message_id === "incoming-during-manual",
+    );
+  assert.equal(suppressedInboundMessages.length, 1);
+  assert.equal(suppressedInboundMessages[0].counted_as_auto_reply, false);
+  assert.equal(suppressedInboundMessages[0].status, "received");
 
   const requestKey = "manual-success-request-0001";
   const sent = await jsonResponse(
