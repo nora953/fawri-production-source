@@ -5,9 +5,113 @@
 - Repository: `nora953/fawri-production-source`
 - Lane branch: `parallel/knowledge-ai`
 - Required starting SHA: `b08c854f177953d3690c5dffde905fdb0c93eb09`
-- Implementation commit: `f87607d5a25c49a9baf4df6e42a4baea487330b5`
+- Original implementation commit: `f87607d5a25c49a9baf4df6e42a4baea487330b5`
+- Original reviewed/frozen HEAD before blocker correction: `a09f1a3b1b72d9dd7834db8ae6a4c0e971e38744`
+- Structural fail-closed implementation commit: `c92406023469b87c942e4b664d03cee62fc2fe28`
+- Structural regression-test commit: `99966e9b5fa2550f82bfbea490b10dfa372f87b3`
+- Final Remote HEAD: the branch tip produced by this handoff metadata commit; the exact SHA is recorded in the completion report after the push because a commit cannot contain its own final SHA.
 - Integration status: **not merged**
 - Scope respected: no edits to `app.ts`, shared `index.ts`, packages, workflows, `lib/db/**`, shared store/types/translations, Meta queue/worker, auth, orders/settings, or catalog.
+
+## Blocker closure: structural runtime fail-closed validation
+
+The Integration Coordinator identified one release blocker in `KnowledgeStateStore.validateState()`.
+
+### Root cause
+
+The previous validator was a sanitizing loader rather than a strict authoritative-state validator:
+
+- a non-object root returned `emptyState()`;
+- malformed records were removed with `filter()` while valid siblings continued loading;
+- malformed/missing collections could silently become empty collections;
+- learned-answer safety was normalized with `map()` instead of rejecting invalid provenance/approval combinations.
+
+That meant a parseable but structurally corrupted `knowledge-runtime.json` could be partially loaded and a later mutation could atomically rewrite only the surviving subset, turning corruption into an apparently valid but incomplete state.
+
+### Corrected fail-closed behavior
+
+Runtime state is now accepted only when the complete document satisfies schema version `1` and the exact root/collection/record contracts. Validation now rejects the whole runtime when any of the following is present:
+
+- invalid or unexpected root structure;
+- unknown schema version;
+- missing, extra, or incorrectly typed required collections;
+- missing, extra, or incorrectly typed record fields;
+- unknown language/status/source/approval provenance;
+- invalid `suggestedReply` / `suggestedReplySource` / training-status combinations;
+- `openai_generated` learned knowledge marked approved or safe;
+- `merchant_approved` learned knowledge not both approved and safe;
+- invalid versions/timestamps/confidence/digests;
+- duplicate IDs within a collection;
+- missing or cross-tenant learned-answer training references;
+- raw customer-content fields or unsupported nested values in runtime audit metadata.
+
+No invalid record is filtered, dropped, normalized, repaired, or silently downgraded while loading an existing runtime.
+
+A parseable but structurally invalid runtime now throws the fixed safe error:
+
+```text
+code: KNOWLEDGE_RUNTIME_INVALID
+message: knowledge runtime state is invalid
+```
+
+Unreadable/non-JSON data throws the fixed safe error:
+
+```text
+code: KNOWLEDGE_RUNTIME_UNREADABLE
+message: knowledge runtime is unreadable
+```
+
+Neither error includes customer text or record contents.
+
+`mutate()` reads and validates the authoritative runtime before executing the mutation, so mutation is refused when disk state is invalid. `writeState()` also validates the complete in-memory state before creating the temporary output file. Therefore an invalid/corrupted authoritative runtime is not rewritten, auto-repaired, or replaced; regression tests assert the original file remains byte-for-byte identical after refusal.
+
+### Legacy provenance hardening
+
+Legacy import remains a one-time migration path only when no authoritative runtime exists. It is intentionally conservative:
+
+- a legacy training suggestion is considered `merchant_draft` only when that provenance is explicit;
+- a suggestion with missing/unknown provenance is treated as `openai_generated` and remains `pending_review`, even when the legacy status claimed approval;
+- a legacy learned answer becomes `merchant_approved` only when merchant provenance and safe/approval signals are explicit;
+- `openai_generated` legacy content is never promoted implicitly to `merchant_approved` or safe;
+- dangling/cross-tenant legacy training references are not imported as trusted links.
+
+This legacy handling does **not** repair an existing `knowledge-runtime.json`; existing invalid runtime state always fails closed.
+
+### Regression and targeted verification
+
+Re-run after the blocker correction:
+
+```text
+Knowledge/AI focused tests: 19 passed, 0 failed
+Audit executable tests: 3 passed, 0 failed
+Static tenant/browser-authority contract checks on current remote files: PASS
+Targeted TypeScript knowledge services/state: PASS
+Targeted TypeScript knowledge routes: PASS
+Targeted frontend TypeScript wrappers/component: PASS
+```
+
+The new regression coverage explicitly proves:
+
+- parseable-invalid root/schema/collection fails closed;
+- malformed nested record fails closed;
+- mixed valid + invalid records refuse the entire runtime rather than dropping the bad record;
+- a mutation attempted over invalid runtime is refused;
+- refused runtime remains byte-for-byte unchanged;
+- unknown/ambiguous provenance is rejected for authoritative runtime;
+- ambiguous legacy suggestion provenance remains untrusted;
+- `openai_generated` is never implicitly converted to `merchant_approved`;
+- structural errors expose only stable safe messages and no raw customer text;
+- the existing audit test continues to reject raw customer-content logging.
+
+### Files changed for this blocker only
+
+- `artifacts/api-server/src/services/knowledge/knowledgeStateStore.ts`
+- `artifacts/api-server/tests/knowledge-ai-runtime.test.ts`
+- `docs/coordination/handoffs/knowledge-ai.md`
+
+### Database contract impact
+
+**No PostgreSQL/DB schema contract changed.** No `lib/db/**` file was edited. The previously requested DB constraints around tenant isolation, provenance, approval state, safe-to-auto-reply, and audit privacy remain unchanged.
 
 ## Delivered implementation
 
@@ -20,7 +124,7 @@ The only knowledge answer orchestration contract added by this lane is:
 - provider: `ConstrainedOpenAiProvider`
 - provider ID: `openai_responses_constrained_v1`
 
-The deterministic non-malicious decision order is:
+The deterministic non-malicious decision order remains unchanged:
 
 1. tenant-scoped database facts through `KnowledgeFactResolver`;
 2. active `merchant_approved` saved answers;
@@ -95,12 +199,13 @@ The implementation uses an atomic mode-0600 `knowledge-runtime.json` adapter onl
 - imports legacy knowledge once;
 - writes atomically through temporary file rename;
 - caps audit retention;
-- fails closed if JSON is unreadable instead of overwriting corruption;
+- fails closed for unreadable **or structurally invalid** authoritative runtime state;
+- never drops malformed authoritative records and then rewrites a partial runtime;
 - keeps all repository reads and mutations tenant-scoped.
 
 This is not safe as the final multi-process production repository and must be replaced by the requested PostgreSQL implementation below before production cutover.
 
-## Files added
+## Files delivered by the lane
 
 ### API routes
 
@@ -233,6 +338,8 @@ Add DB checks/triggers so `safe_to_auto_reply=true` is possible only when source
 
 For audit storage, persist only digest/length/signal codes/decision metadata. Do not create a raw customer-message column in the knowledge audit table.
 
+**Blocker closure note:** these database requirements were not changed by the structural JSON validation fix.
+
 ### 4. Vector/search owner: production semantic adapter
 
 Add a pgvector-backed document table or equivalent:
@@ -300,7 +407,7 @@ node --test scripts/tests/audit-knowledge-operations.test.mjs
 node scripts/audit-knowledge-operations.mjs
 ```
 
-Use the repository's TypeScript test runner/build convention if raw `.ts` tests are not directly executable. Run the audit against a seeded valid runtime and include malicious-prompt and cross-tenant suites in CI.
+Use the repository's TypeScript test runner/build convention if raw `.ts` tests are not directly executable. Run the audit against a seeded valid runtime and include malicious-prompt, structural-invalid-runtime, and cross-tenant suites in CI.
 
 ### 10. Meta worker owner
 
@@ -314,7 +421,7 @@ After router, DB, vector, fact, and policy integration, call the single decision
 
 ## Validation completed
 
-Local focused verification after the final code split:
+Original focused verification before the blocker review:
 
 ```text
 TypeScript service compile: PASS
@@ -324,6 +431,17 @@ Knowledge route typecheck: PASS
 Knowledge frontend typecheck: PASS
 ```
 
+Blocker-correction re-run:
+
+```text
+Knowledge/AI focused tests: 19 passed, 0 failed
+Audit executable tests: 3 passed, 0 failed
+Static tenant/browser-authority contract checks on current remote files: PASS
+Targeted TypeScript knowledge services/state: PASS
+Targeted TypeScript knowledge routes: PASS
+Targeted frontend TypeScript wrappers/component: PASS
+```
+
 Coverage includes:
 
 - Arabic/Kurdish/English normalization and injection prompts;
@@ -331,7 +449,12 @@ Coverage includes:
 - separated OpenAI trust zones, `store:false`, strict JSON schema;
 - approval state machine and stale-version conflicts;
 - duplicate approved-answer conflicts;
-- corrupted runtime fail-closed behavior;
+- unreadable JSON fail-closed behavior;
+- parseable-but-structurally-invalid runtime fail-closed behavior;
+- no partial-record dropping or automatic structural repair;
+- byte-for-byte preservation of refused runtime files;
+- unknown/ambiguous provenance rejection;
+- conservative legacy provenance handling;
 - generated-answer non-trust;
 - decision precedence;
 - malicious prompt blocking before provider invocation;
@@ -351,4 +474,4 @@ Coverage includes:
 
 ## Rollback
 
-Before shared integration, rollback is simply reverting the knowledge implementation commit and this handoff commit on `parallel/knowledge-ai`. After integration, first unmount `/api/knowledge` and restore the previous message-engine route, then revert schema/vector adapters using the database lane's migration rollback. Do not delete merchant knowledge before exporting/migrating it.
+Before shared integration, rollback the blocker correction by reverting the blocker implementation/test/handoff commits on `parallel/knowledge-ai`; do not rewrite or force-update the branch. After shared integration, first unmount `/api/knowledge` and restore the previous message-engine route, then revert schema/vector adapters using the database lane's migration rollback. Do not delete merchant knowledge before exporting/migrating it.
