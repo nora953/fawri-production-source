@@ -7,7 +7,6 @@ import {
   detectKnowledgeLanguage,
   digestCustomerText,
   makeKnowledgeId,
-  normalizeKnowledgeText,
   uniqueNormalizedList,
 } from "./normalization.js";
 import { customerTextPreview } from "./redaction.js";
@@ -16,14 +15,16 @@ import type {
   KnowledgeLanguage,
   KnowledgeRuntimeState,
   LearnedAnswerRecord,
-  SavedAnswerRecord,
-  SemanticDocument,
   SuggestedReplySource,
   TrainingRequestRecord,
 } from "./types.js";
 
 const MAX_AUDIT_EVENTS = 2_000;
 const DEFAULT_RUNTIME_FILE = "knowledge-runtime.json";
+const INVALID_RUNTIME_CODE = "KNOWLEDGE_RUNTIME_INVALID";
+const INVALID_RUNTIME_MESSAGE = "knowledge runtime state is invalid";
+const UNREADABLE_RUNTIME_CODE = "KNOWLEDGE_RUNTIME_UNREADABLE";
+const UNREADABLE_RUNTIME_MESSAGE = "knowledge runtime is unreadable";
 
 function emptyState(): KnowledgeRuntimeState {
   return {
@@ -33,101 +34,6 @@ function emptyState(): KnowledgeRuntimeState {
     learnedAnswers: [],
     auditEvents: [],
   };
-}
-
-function isLanguage(value: unknown): value is KnowledgeLanguage {
-  return value === "ar" || value === "ku" || value === "en";
-}
-
-function safeLanguage(value: unknown, fallbackText = ""): KnowledgeLanguage {
-  return isLanguage(value) ? value : detectKnowledgeLanguage(fallbackText);
-}
-
-function safeDate(value: unknown): string {
-  const candidate = String(value ?? "");
-  return Number.isFinite(Date.parse(candidate)) ? candidate : new Date().toISOString();
-}
-
-function safeVersion(value: unknown): number {
-  const version = Number(value);
-  return Number.isInteger(version) && version > 0 ? version : 1;
-}
-
-function validateState(value: unknown): KnowledgeRuntimeState {
-  if (!value || typeof value !== "object") return emptyState();
-  const input = value as Partial<KnowledgeRuntimeState>;
-  const state = emptyState();
-
-  if (Array.isArray(input.savedAnswers)) {
-    state.savedAnswers = input.savedAnswers.filter((item): item is SavedAnswerRecord =>
-      Boolean(
-        item &&
-          typeof item.id === "string" &&
-          typeof item.merchantId === "string" &&
-          typeof item.questionPattern === "string" &&
-          typeof item.answerText === "string" &&
-          isLanguage(item.language) &&
-          item.source === "merchant_approved" &&
-          typeof item.active === "boolean" &&
-          Number.isInteger(item.version),
-      ),
-    );
-  }
-
-  if (Array.isArray(input.trainingRequests)) {
-    state.trainingRequests = input.trainingRequests.filter((item): item is TrainingRequestRecord =>
-      Boolean(
-        item &&
-          typeof item.id === "string" &&
-          typeof item.merchantId === "string" &&
-          typeof item.customerTextPreview === "string" &&
-          typeof item.customerTextHash === "string" &&
-          typeof item.detectedIntent === "string" &&
-          isLanguage(item.detectedLanguage) &&
-          ["pending_merchant_reply", "pending_review", "approved", "rejected"].includes(item.status) &&
-          Number.isInteger(item.version),
-      ),
-    );
-  }
-
-  if (Array.isArray(input.learnedAnswers)) {
-    state.learnedAnswers = input.learnedAnswers
-      .filter((item): item is LearnedAnswerRecord =>
-        Boolean(
-          item &&
-            typeof item.id === "string" &&
-            typeof item.merchantId === "string" &&
-            typeof item.answerText === "string" &&
-            isLanguage(item.language) &&
-            ["merchant_approved", "openai_generated"].includes(item.source) &&
-            ["pending_review", "approved", "rejected"].includes(item.approvalStatus) &&
-            Number.isInteger(item.version),
-        ),
-      )
-      .map((item) => ({
-        ...item,
-        safeToAutoReply:
-          item.source === "merchant_approved" &&
-          item.approvalStatus === "approved" &&
-          item.safeToAutoReply === true,
-      }));
-  }
-
-  if (Array.isArray(input.auditEvents)) {
-    state.auditEvents = input.auditEvents
-      .filter((item): item is KnowledgeAuditEvent =>
-        Boolean(
-          item &&
-            typeof item.id === "string" &&
-            typeof item.merchantId === "string" &&
-            typeof item.action === "string" &&
-            typeof item.createdAt === "string",
-        ),
-      )
-      .slice(-MAX_AUDIT_EVENTS);
-  }
-
-  return state;
 }
 
 export class KnowledgeConflictError<T> extends Error {
@@ -157,6 +63,394 @@ export class KnowledgeTransitionError extends Error {
   }
 }
 
+function invalidRuntime(): never {
+  throw new KnowledgeTransitionError(INVALID_RUNTIME_CODE, INVALID_RUNTIME_MESSAGE);
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasExactKeys(
+  value: Record<string, unknown>,
+  required: readonly string[],
+  optional: readonly string[] = [],
+): boolean {
+  const keys = Object.keys(value);
+  const allowed = new Set([...required, ...optional]);
+  return (
+    required.every((key) => Object.prototype.hasOwnProperty.call(value, key)) &&
+    keys.every((key) => allowed.has(key))
+  );
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === "string";
+}
+
+function isLanguage(value: unknown): value is KnowledgeLanguage {
+  return value === "ar" || value === "ku" || value === "en";
+}
+
+function isTimestamp(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.length > 0 &&
+    Number.isFinite(Date.parse(value))
+  );
+}
+
+function isPositiveVersion(value: unknown): value is number {
+  return Number.isInteger(value) && Number(value) > 0;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isSha256(value: unknown): value is string {
+  return typeof value === "string" && /^[a-f0-9]{64}$/i.test(value);
+}
+
+function isSuggestedReplySource(value: unknown): value is SuggestedReplySource {
+  return value === "merchant_draft" || value === "openai_generated";
+}
+
+function validateSavedAnswer(value: unknown): void {
+  if (
+    !isPlainObject(value) ||
+    !hasExactKeys(value, [
+      "id",
+      "merchantId",
+      "category",
+      "questionPattern",
+      "answerText",
+      "language",
+      "source",
+      "active",
+      "version",
+      "createdAt",
+      "updatedAt",
+    ])
+  ) {
+    invalidRuntime();
+  }
+
+  if (
+    !isNonEmptyString(value.id) ||
+    !isNonEmptyString(value.merchantId) ||
+    !isNonEmptyString(value.category) ||
+    !isNonEmptyString(value.questionPattern) ||
+    !isNonEmptyString(value.answerText) ||
+    !isLanguage(value.language) ||
+    value.source !== "merchant_approved" ||
+    typeof value.active !== "boolean" ||
+    !isPositiveVersion(value.version) ||
+    !isTimestamp(value.createdAt) ||
+    !isTimestamp(value.updatedAt)
+  ) {
+    invalidRuntime();
+  }
+}
+
+function validateTrainingRequest(value: unknown): void {
+  if (
+    !isPlainObject(value) ||
+    !hasExactKeys(value, [
+      "id",
+      "merchantId",
+      "customerTextPreview",
+      "customerTextHash",
+      "detectedIntent",
+      "detectedLanguage",
+      "reason",
+      "suggestedReply",
+      "suggestedReplySource",
+      "status",
+      "rejectionReason",
+      "version",
+      "createdAt",
+      "updatedAt",
+    ])
+  ) {
+    invalidRuntime();
+  }
+
+  const status = value.status;
+  const suggestedReply = value.suggestedReply;
+  const source = value.suggestedReplySource;
+  const rejectionReason = value.rejectionReason;
+
+  if (
+    !isNonEmptyString(value.id) ||
+    !isNonEmptyString(value.merchantId) ||
+    typeof value.customerTextPreview !== "string" ||
+    !isSha256(value.customerTextHash) ||
+    !isNonEmptyString(value.detectedIntent) ||
+    !isLanguage(value.detectedLanguage) ||
+    !isNonEmptyString(value.reason) ||
+    !isNullableString(suggestedReply) ||
+    !(source === null || isSuggestedReplySource(source)) ||
+    !(
+      status === "pending_merchant_reply" ||
+      status === "pending_review" ||
+      status === "approved" ||
+      status === "rejected"
+    ) ||
+    !isNullableString(rejectionReason) ||
+    !isPositiveVersion(value.version) ||
+    !isTimestamp(value.createdAt) ||
+    !isTimestamp(value.updatedAt)
+  ) {
+    invalidRuntime();
+  }
+
+  const hasSuggestion =
+    typeof suggestedReply === "string" && suggestedReply.trim().length > 0;
+
+  if ((suggestedReply === null) !== (source === null)) invalidRuntime();
+  if (typeof suggestedReply === "string" && !hasSuggestion) invalidRuntime();
+
+  if (status === "pending_merchant_reply") {
+    if (suggestedReply !== null || source !== null || rejectionReason !== null) {
+      invalidRuntime();
+    }
+  } else if (status === "pending_review") {
+    if (!hasSuggestion || source === null || rejectionReason !== null) {
+      invalidRuntime();
+    }
+  } else if (status === "approved") {
+    if (!hasSuggestion || source !== "merchant_draft" || rejectionReason !== null) {
+      invalidRuntime();
+    }
+  } else if (!isNonEmptyString(rejectionReason)) {
+    invalidRuntime();
+  }
+}
+
+function validateLearnedAnswer(value: unknown): void {
+  if (
+    !isPlainObject(value) ||
+    !hasExactKeys(value, [
+      "id",
+      "merchantId",
+      "intent",
+      "language",
+      "examples",
+      "keywords",
+      "answerText",
+      "source",
+      "approvalStatus",
+      "confidence",
+      "safeToAutoReply",
+      "trainingRequestId",
+      "version",
+      "createdAt",
+      "updatedAt",
+    ])
+  ) {
+    invalidRuntime();
+  }
+
+  if (
+    !isNonEmptyString(value.id) ||
+    !isNonEmptyString(value.merchantId) ||
+    !isNonEmptyString(value.intent) ||
+    !isLanguage(value.language) ||
+    !isStringArray(value.examples) ||
+    !isStringArray(value.keywords) ||
+    !isNonEmptyString(value.answerText) ||
+    !(value.source === "merchant_approved" || value.source === "openai_generated") ||
+    !(
+      value.approvalStatus === "pending_review" ||
+      value.approvalStatus === "approved" ||
+      value.approvalStatus === "rejected"
+    ) ||
+    typeof value.confidence !== "number" ||
+    !Number.isFinite(value.confidence) ||
+    value.confidence < 0 ||
+    value.confidence > 1 ||
+    typeof value.safeToAutoReply !== "boolean" ||
+    !(value.trainingRequestId === null || isNonEmptyString(value.trainingRequestId)) ||
+    !isPositiveVersion(value.version) ||
+    !isTimestamp(value.createdAt) ||
+    !isTimestamp(value.updatedAt)
+  ) {
+    invalidRuntime();
+  }
+
+  if (value.source === "merchant_approved") {
+    if (value.approvalStatus !== "approved" || value.safeToAutoReply !== true) {
+      invalidRuntime();
+    }
+  } else if (
+    value.approvalStatus === "approved" ||
+    value.safeToAutoReply !== false
+  ) {
+    invalidRuntime();
+  }
+}
+
+function validateAuditEvent(value: unknown): void {
+  if (
+    !isPlainObject(value) ||
+    !hasExactKeys(
+      value,
+      [
+        "id",
+        "merchantId",
+        "action",
+        "entityType",
+        "entityId",
+        "actor",
+        "outcome",
+        "createdAt",
+      ],
+      ["customerTextHash", "customerTextLength", "injectionSignals", "metadata"],
+    )
+  ) {
+    invalidRuntime();
+  }
+
+  if (
+    !isNonEmptyString(value.id) ||
+    !isNonEmptyString(value.merchantId) ||
+    !isNonEmptyString(value.action) ||
+    !(
+      value.entityType === "saved_answer" ||
+      value.entityType === "training_request" ||
+      value.entityType === "learned_answer" ||
+      value.entityType === "decision"
+    ) ||
+    !(value.entityId === null || isNonEmptyString(value.entityId)) ||
+    !(
+      value.actor === "merchant" ||
+      value.actor === "system" ||
+      value.actor === "ai_provider"
+    ) ||
+    !(
+      value.outcome === "success" ||
+      value.outcome === "conflict" ||
+      value.outcome === "rejected" ||
+      value.outcome === "handoff"
+    ) ||
+    !isTimestamp(value.createdAt)
+  ) {
+    invalidRuntime();
+  }
+
+  if (
+    Object.prototype.hasOwnProperty.call(value, "customerTextHash") &&
+    !isSha256(value.customerTextHash)
+  ) {
+    invalidRuntime();
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(value, "customerTextLength") &&
+    (!Number.isInteger(value.customerTextLength) || Number(value.customerTextLength) < 0)
+  ) {
+    invalidRuntime();
+  }
+  if (
+    Object.prototype.hasOwnProperty.call(value, "injectionSignals") &&
+    !isStringArray(value.injectionSignals)
+  ) {
+    invalidRuntime();
+  }
+  if (Object.prototype.hasOwnProperty.call(value, "metadata")) {
+    if (!isPlainObject(value.metadata)) invalidRuntime();
+    const forbidden = new Set([
+      "customertext",
+      "customermessage",
+      "rawcustomertext",
+      "rawmessage",
+      "conversationcontent",
+    ]);
+    for (const [key, metadataValue] of Object.entries(value.metadata)) {
+      if (forbidden.has(key.toLowerCase())) invalidRuntime();
+      if (
+        !(
+          metadataValue === null ||
+          typeof metadataValue === "string" ||
+          typeof metadataValue === "boolean" ||
+          (typeof metadataValue === "number" && Number.isFinite(metadataValue))
+        )
+      ) {
+        invalidRuntime();
+      }
+    }
+  }
+}
+
+function assertUniqueIds(items: Array<{ id: string }>): void {
+  const seen = new Set<string>();
+  for (const item of items) {
+    if (seen.has(item.id)) invalidRuntime();
+    seen.add(item.id);
+  }
+}
+
+function validateState(value: unknown): KnowledgeRuntimeState {
+  if (
+    !isPlainObject(value) ||
+    !hasExactKeys(value, [
+      "schemaVersion",
+      "savedAnswers",
+      "trainingRequests",
+      "learnedAnswers",
+      "auditEvents",
+    ])
+  ) {
+    invalidRuntime();
+  }
+  if (value.schemaVersion !== 1) invalidRuntime();
+  if (
+    !Array.isArray(value.savedAnswers) ||
+    !Array.isArray(value.trainingRequests) ||
+    !Array.isArray(value.learnedAnswers) ||
+    !Array.isArray(value.auditEvents)
+  ) {
+    invalidRuntime();
+  }
+
+  value.savedAnswers.forEach(validateSavedAnswer);
+  value.trainingRequests.forEach(validateTrainingRequest);
+  value.learnedAnswers.forEach(validateLearnedAnswer);
+  value.auditEvents.forEach(validateAuditEvent);
+
+  const state = value as KnowledgeRuntimeState;
+  assertUniqueIds(state.savedAnswers);
+  assertUniqueIds(state.trainingRequests);
+  assertUniqueIds(state.learnedAnswers);
+  assertUniqueIds(state.auditEvents);
+
+  const trainingById = new Map(
+    state.trainingRequests.map((item) => [item.id, item]),
+  );
+  for (const learned of state.learnedAnswers) {
+    if (!learned.trainingRequestId) continue;
+    const request = trainingById.get(learned.trainingRequestId);
+    if (!request || request.merchantId !== learned.merchantId) invalidRuntime();
+  }
+
+  return state;
+}
+
+function safeLanguage(value: unknown, fallbackText = ""): KnowledgeLanguage {
+  return isLanguage(value) ? value : detectKnowledgeLanguage(fallbackText);
+}
+
+function safeDate(value: unknown): string {
+  const candidate = String(value ?? "");
+  return Number.isFinite(Date.parse(candidate))
+    ? candidate
+    : new Date().toISOString();
+}
+
 export type KnowledgeRepositoryOptions = {
   filePath?: string;
   importLegacyOnCreate?: boolean;
@@ -175,7 +469,9 @@ export class KnowledgeStateStore {
   private ensureStateFile(): void {
     if (fs.existsSync(this.filePath)) return;
     fs.mkdirSync(path.dirname(this.filePath), { recursive: true });
-    const initial = this.importLegacyOnCreate ? this.buildLegacyImportState() : emptyState();
+    const initial = this.importLegacyOnCreate
+      ? this.buildLegacyImportState()
+      : emptyState();
     this.writeState(initial);
   }
 
@@ -244,11 +540,22 @@ export class KnowledgeStateStore {
       const merchantId = boundedText(raw.merchantId, 120);
       const customerText = boundedText(raw.customerMessage, 2_000);
       if (!merchantId || !customerText) continue;
-      const status = ["pending_merchant_reply", "pending_review", "approved", "rejected"].includes(
-        String(raw.status),
-      )
-        ? (String(raw.status) as TrainingRequestRecord["status"])
-        : "pending_merchant_reply";
+
+      const suggestedReply = boundedText(raw.suggestedReply, 2_000) || null;
+      const suggestedReplySource: SuggestedReplySource | null = suggestedReply
+        ? raw.suggestedReplySource === "merchant_draft"
+          ? "merchant_draft"
+          : "openai_generated"
+        : null;
+      const rawStatus = String(raw.status ?? "");
+      const status: TrainingRequestRecord["status"] =
+        rawStatus === "rejected"
+          ? "rejected"
+          : rawStatus === "approved" && suggestedReplySource === "merchant_draft"
+            ? "approved"
+            : suggestedReply
+              ? "pending_review"
+              : "pending_merchant_reply";
 
       state.trainingRequests.push({
         id: boundedText(raw.id, 160) || makeKnowledgeId("training"),
@@ -258,10 +565,13 @@ export class KnowledgeStateStore {
         detectedIntent: boundedText(raw.detectedIntent, 100) || "unknown",
         detectedLanguage: safeLanguage(raw.detectedLanguage, customerText),
         reason: boundedText(raw.reason, 300) || "legacy_import",
-        suggestedReply: boundedText(raw.suggestedReply, 2_000) || null,
-        suggestedReplySource: raw.suggestedReply ? "merchant_draft" : null,
+        suggestedReply,
+        suggestedReplySource,
         status,
-        rejectionReason: null,
+        rejectionReason:
+          status === "rejected"
+            ? boundedText(raw.rejectionReason, 300) || "legacy_rejected"
+            : null,
         version: 1,
         createdAt: safeDate(raw.createdAt),
         updatedAt: safeDate(raw.updatedAt),
@@ -275,29 +585,66 @@ export class KnowledgeStateStore {
       const merchantId = boundedText(raw.merchantId, 120);
       const answerText = boundedText(raw.reply, 2_000);
       if (!merchantId || !answerText) continue;
-      const source = raw.source === "merchant_approved" ? "merchant_approved" : "openai_generated";
-      const approved = source === "merchant_approved" && raw.safeToAutoReply === true && raw.requiresHumanApproval !== true;
+
+      const explicitlyMerchantApproved =
+        raw.source === "merchant_approved" &&
+        raw.safeToAutoReply === true &&
+        raw.requiresHumanApproval !== true;
+      const source: LearnedAnswerRecord["source"] = explicitlyMerchantApproved
+        ? "merchant_approved"
+        : "openai_generated";
+      const approvalStatus: LearnedAnswerRecord["approvalStatus"] =
+        explicitlyMerchantApproved
+          ? "approved"
+          : raw.approvalStatus === "rejected"
+            ? "rejected"
+            : "pending_review";
+      const requestedTrainingId = boundedText(raw.trainingRequestId, 160) || null;
+      const trainingRequestId =
+        requestedTrainingId &&
+        state.trainingRequests.some(
+          (request) =>
+            request.id === requestedTrainingId &&
+            request.merchantId === merchantId,
+        )
+          ? requestedTrainingId
+          : null;
 
       state.learnedAnswers.push({
         id: boundedText(raw.id, 160) || makeKnowledgeId("learned"),
         merchantId,
         intent: boundedText(raw.intent, 100) || "unknown",
-        language: safeLanguage(raw.language, String((Array.isArray(raw.examples) ? raw.examples[0] : "") ?? "")),
-        examples: uniqueNormalizedList(Array.isArray(raw.examples) ? raw.examples : [], 20),
-        keywords: uniqueNormalizedList(Array.isArray(raw.keywords) ? raw.keywords : [], 24),
+        language: safeLanguage(
+          raw.language,
+          String(
+            (Array.isArray(raw.examples) ? raw.examples[0] : "") ?? "",
+          ),
+        ),
+        examples: uniqueNormalizedList(
+          Array.isArray(raw.examples) ? raw.examples : [],
+          20,
+        ),
+        keywords: uniqueNormalizedList(
+          Array.isArray(raw.keywords) ? raw.keywords : [],
+          24,
+        ),
         answerText,
         source,
-        approvalStatus: approved ? "approved" : "pending_review",
+        approvalStatus,
         confidence: clampConfidence(raw.confidence),
-        safeToAutoReply: approved,
-        trainingRequestId: boundedText(raw.trainingRequestId, 160) || null,
+        safeToAutoReply: explicitlyMerchantApproved,
+        trainingRequestId,
         version: 1,
         createdAt: safeDate(raw.createdAt),
         updatedAt: safeDate(raw.updatedAt),
       });
     }
 
-    if (state.savedAnswers.length || state.trainingRequests.length || state.learnedAnswers.length) {
+    if (
+      state.savedAnswers.length ||
+      state.trainingRequests.length ||
+      state.learnedAnswers.length
+    ) {
       state.auditEvents.push({
         id: makeKnowledgeId("audit"),
         merchantId: "system",
@@ -319,25 +666,31 @@ export class KnowledgeStateStore {
   }
 
   readState(): KnowledgeRuntimeState {
+    let parsed: unknown;
     try {
-      return validateState(JSON.parse(fs.readFileSync(this.filePath, "utf8")));
-    } catch (error) {
+      parsed = JSON.parse(fs.readFileSync(this.filePath, "utf8"));
+    } catch {
       throw new KnowledgeTransitionError(
-        "KNOWLEDGE_RUNTIME_UNREADABLE",
-        error instanceof Error ? error.message : "knowledge runtime is unreadable",
+        UNREADABLE_RUNTIME_CODE,
+        UNREADABLE_RUNTIME_MESSAGE,
       );
     }
+    return validateState(parsed);
   }
 
   private writeState(state: KnowledgeRuntimeState): void {
+    const validated = validateState(state);
     const directory = path.dirname(this.filePath);
     fs.mkdirSync(directory, { recursive: true });
     const temporaryPath = `${this.filePath}.${process.pid}.${Date.now()}.tmp`;
-    fs.writeFileSync(temporaryPath, `${JSON.stringify(state, null, 2)}
-`, {
-      encoding: "utf8",
-      mode: 0o600,
-    });
+    fs.writeFileSync(
+      temporaryPath,
+      `${JSON.stringify(validated, null, 2)}\n`,
+      {
+        encoding: "utf8",
+        mode: 0o600,
+      },
+    );
     fs.renameSync(temporaryPath, this.filePath);
   }
 
@@ -349,7 +702,9 @@ export class KnowledgeStateStore {
     return result;
   }
 
-  appendAudit(event: Omit<KnowledgeAuditEvent, "id" | "createdAt">): KnowledgeAuditEvent {
+  appendAudit(
+    event: Omit<KnowledgeAuditEvent, "id" | "createdAt">,
+  ): KnowledgeAuditEvent {
     return this.mutate((state) => {
       const auditEvent: KnowledgeAuditEvent = {
         ...event,
@@ -367,5 +722,4 @@ export class KnowledgeStateStore {
       .slice(-Math.min(Math.max(limit, 1), 250))
       .reverse();
   }
-
 }
