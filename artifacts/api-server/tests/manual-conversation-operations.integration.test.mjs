@@ -138,6 +138,24 @@ function signedWebhook(secret, body) {
   };
 }
 
+function encryptedCredential(token, keyId, key, associatedData) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  cipher.setAAD(Buffer.from(associatedData, "utf8"));
+  const ciphertext = Buffer.concat([
+    cipher.update(token, "utf8"),
+    cipher.final(),
+  ]);
+  return {
+    version: 1,
+    algorithm: "aes-256-gcm",
+    key_id: keyId,
+    iv: iv.toString("base64"),
+    ciphertext: ciphertext.toString("base64"),
+    auth_tag: cipher.getAuthTag().toString("base64"),
+  };
+}
+
 test("manual conversation operations are server-authoritative and idempotent", async (t) => {
   const runtimeDirectory = await mkdtemp(
     path.join(os.tmpdir(), "fawri-manual-conversation-"),
@@ -211,7 +229,6 @@ test("manual conversation operations are server-authoritative and idempotent", a
           merchant_id: "merchant-a",
           page_id: "page-a",
           page_name: "Page A",
-          page_access_token: "token-a",
           connected_at: "2026-08-01T00:00:00.000Z",
           platform: "messenger",
         },
@@ -219,7 +236,6 @@ test("manual conversation operations are server-authoritative and idempotent", a
           merchant_id: "merchant-b",
           page_id: "page-b",
           page_name: "Page B",
-          page_access_token: "token-b",
           connected_at: "2026-08-01T00:00:00.000Z",
           platform: "messenger",
         },
@@ -227,6 +243,56 @@ test("manual conversation operations are server-authoritative and idempotent", a
       ordersByMerchant: {},
       orderDraftsByConversation: {},
       lastSyncedMerchantId: null,
+    }),
+  );
+
+  const metaCredentialKeyId = "manual-integration-key";
+  const metaCredentialKey = crypto.randomBytes(32);
+  const channelTimestamp = "2026-08-01T00:00:00.000Z";
+  await writeFile(
+    path.join(dataDirectory, "meta-channels.json"),
+    JSON.stringify({
+      version: 1,
+      channels: [
+        {
+          id: "channel-a",
+          merchant_id: "merchant-a",
+          platform: "messenger",
+          page_id: "page-a",
+          page_name: "Page A",
+          status: "active",
+          credential: encryptedCredential(
+            "token-a",
+            metaCredentialKeyId,
+            metaCredentialKey,
+            "fawri:meta:merchant-a:messenger:page-a",
+          ),
+          webhook_subscribed: true,
+          connection_version: 1,
+          connected_at: channelTimestamp,
+          created_at: channelTimestamp,
+          updated_at: channelTimestamp,
+        },
+        {
+          id: "channel-b",
+          merchant_id: "merchant-b",
+          platform: "messenger",
+          page_id: "page-b",
+          page_name: "Page B",
+          status: "active",
+          credential: encryptedCredential(
+            "token-b",
+            metaCredentialKeyId,
+            metaCredentialKey,
+            "fawri:meta:merchant-b:messenger:page-b",
+          ),
+          webhook_subscribed: true,
+          connection_version: 1,
+          connected_at: channelTimestamp,
+          created_at: channelTimestamp,
+          updated_at: channelTimestamp,
+        },
+      ],
     }),
   );
   await writeFile(
@@ -258,6 +324,8 @@ test("manual conversation operations are server-authoritative and idempotent", a
       FAWRI_PASSWORD_SALT: "test-password-salt",
       FAWRI_ADMIN_SESSION_SECRET: "test-admin-session-secret",
       FAWRI_MERCHANT_SESSION_SECRET: "test-merchant-session-secret",
+      FAWRI_META_TOKEN_KEY_ID: metaCredentialKeyId,
+      FAWRI_META_TOKEN_KEY_BASE64: metaCredentialKey.toString("base64"),
       META_VERIFY_TOKEN: "test-meta-verify-token",
       META_APP_ID: "test-meta-app",
       META_APP_SECRET: metaAppSecret,
@@ -548,6 +616,19 @@ test("manual conversation operations are server-authoritative and idempotent", a
     1,
     "manual operations modified the legacy bot runtime conversation",
   );
+  assert.equal(
+    Object.hasOwn(baseRuntime.metaPagesByPageId["page-a"], "page_access_token"),
+    false,
+  );
+  const encryptedStore = await readFile(
+    path.join(dataDirectory, "meta-channels.json"),
+    "utf8",
+  );
+  assert.equal(encryptedStore.includes("token-a"), false);
+  assert.equal(encryptedStore.includes("token-b"), false);
+  assert.equal(serverOutput.includes("token-a"), false);
+  assert.equal(serverOutput.includes("token-b"), false);
+
   const overlay = JSON.parse(
     await readFile(
       path.join(dataDirectory, "manual-conversation-operations.json"),
