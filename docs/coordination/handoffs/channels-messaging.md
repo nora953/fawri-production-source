@@ -4,9 +4,24 @@
 
 - Branch: `parallel/channels-messaging`
 - Starting SHA: `b08c854f177953d3690c5dffde905fdb0c93eb09`
-- Final implementation SHA: `baa3f2ab74b6fd308b6631d0dc0a94d2c7e230e7`
+- Initial implementation SHA: `baa3f2ab74b6fd308b6631d0dc0a94d2c7e230e7`
+- Scope-compliance correction SHA: `ef6296de2fbbebc872c5b1822d3466180103c957`
 - Shared files modified: none
 - Real Meta calls in tests: none
+
+## Scope-compliance correction
+
+- Removed the out-of-scope root file `scripts/manage-durable-jobs.ts`.
+- Replaced the existing API-server CLI at
+  `artifacts/api-server/scripts/manage-durable-jobs.ts` with the hardened,
+  payload-free DLQ summary/requeue interface and corrected its relative import.
+- Renamed `artifacts/api-server/src/routes/durable-job-admin.ts` to
+  `artifacts/api-server/src/routes/channel-durable-job-admin.ts`.
+- Renamed its public factory/type exports to
+  `createChannelDurableJobAdminRouter` and
+  `ChannelDurableJobAdminAuthorize`.
+- No feature behavior, shared file, schema, workflow, package file, or production
+  integration was added in this correction.
 
 ## Completed implementation
 
@@ -48,7 +63,7 @@
 - `artifacts/api-server/src/services/metaChannelRuntime.ts`
 - `artifacts/api-server/src/services/metaChannelJobs.ts`
 - `artifacts/api-server/src/routes/channel-operations.ts`
-- `artifacts/api-server/src/routes/durable-job-admin.ts`
+- `artifacts/api-server/src/routes/channel-durable-job-admin.ts`
 
 ### Frontend, tests, audit, and documentation
 
@@ -63,15 +78,20 @@
 - `artifacts/api-server/tests/meta-credential-vault.test.ts`
 - `artifacts/api-server/tests/meta-channel-runtime.test.ts`
 - `artifacts/api-server/tests/meta-channel-jobs.test.ts`
-- `scripts/manage-durable-jobs.ts`
+- `artifacts/api-server/scripts/manage-durable-jobs.ts`
 - `scripts/audit-fawri-background-jobs.mjs`
 - `docs/meta-webhook-hardening.md`
 - `docs/channel-lifecycle.md`
 
 ## Verification performed
 
-- Targeted TypeScript strict typecheck with temporary declarations: PASS.
-- Targeted Node/ts-node test run: 13 tests, 13 passed, 0 failed.
+Re-run after the scope-compliance correction:
+
+- Targeted TypeScript strict typecheck with temporary declarations/stubs outside
+  the commit: PASS.
+- Targeted Node/ts-node test run: 13 tests, 13 passed, 0 failed. The synthetic
+  Express request used by the local runner supplied `req.socket.remoteAddress`;
+  the repository test file was restored unchanged before commit creation.
   - durable dedupe/priority/retry/redaction/summary;
   - heartbeat and explicit expired-claim reconciliation;
   - blocked requeue for uncertain outcomes;
@@ -85,8 +105,13 @@
   - 200 only after durable enqueue and 503 on queue failure;
   - unknown page returns retryable 503;
   - active entitlement lock fails closed without charging.
-- `node scripts/audit-fawri-background-jobs.mjs <tree>`: PASS.
+- `node scripts/audit-fawri-background-jobs.mjs <tree>`: PASS (`ok: true`,
+  5 checked files, 0 failures, payloads excluded).
 - `node --check scripts/audit-fawri-background-jobs.mjs`: PASS.
+- Relocated CLI strict TypeScript check: PASS.
+- Branch diff from the coordination base: PASS; every remaining changed file is
+  inside the channels/messaging allowlist, including the explicitly approved
+  `artifacts/api-server/scripts/manage-durable-jobs.ts` path.
 
 Package scripts were not changed because `package.json` is shared/reserved.
 
@@ -100,7 +125,7 @@ These changes are intentionally not made on this branch.
      merchant middleware and before the legacy root router.
 
 2. **Mount administrative DLQ router with real authorization**
-   - Bind `createDurableJobAdminRouter` to existing admin session middleware.
+   - Bind `createChannelDurableJobAdminRouter` to existing admin session middleware.
    - GET summary should require `view_logs` or `manage_channels`.
    - Requeue should require `manage_channels` (owner or explicitly permitted
      assistant). Do not expose a payload query option.
