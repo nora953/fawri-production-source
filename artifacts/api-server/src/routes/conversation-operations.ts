@@ -40,7 +40,9 @@ function sendError(res: Response, error: unknown): void {
     });
     return;
   }
-  console.error("Conversation operation failed:", error);
+  console.error("Conversation operation failed", {
+    code: "CONVERSATION_OPERATION_FAILED",
+  });
   res.setHeader("Cache-Control", "no-store");
   res.status(500).json({
     ok: false,
@@ -195,7 +197,7 @@ router.post(
             }),
           },
         );
-      } catch (error) {
+      } catch {
         failManualReply({
           merchantId,
           conversationId,
@@ -205,7 +207,7 @@ router.post(
         });
         throw new ManualConversationError(
           "MANUAL_REPLY_OUTCOME_UNCERTAIN",
-          `manual reply delivery outcome is uncertain: ${String(error)}`,
+          "manual reply delivery outcome is uncertain",
           502,
         );
       }
@@ -225,7 +227,7 @@ router.post(
         });
         throw new ManualConversationError(
           "MANUAL_REPLY_DELIVERY_FAILED",
-          String(result?.error?.message || "Meta rejected the manual reply"),
+          "Meta rejected the manual reply",
           502,
         );
       }
@@ -239,7 +241,7 @@ router.post(
           messageText,
           externalMessageId: String(result?.message_id || "").trim(),
         });
-      } catch (error) {
+      } catch {
         try {
           failManualReply({
             merchantId,
@@ -248,12 +250,14 @@ router.post(
             errorCode: "MANUAL_REPLY_COMMIT_UNCERTAIN",
             uncertain: true,
           });
-        } catch (markError) {
-          console.error("Could not mark manual reply as uncertain:", markError);
+        } catch {
+          console.error("Could not mark manual reply as uncertain", {
+            code: "MANUAL_REPLY_COMMIT_UNCERTAIN",
+          });
         }
         throw new ManualConversationError(
           "MANUAL_REPLY_OUTCOME_UNCERTAIN",
-          `Meta accepted the reply but local confirmation failed: ${String(error)}`,
+          "Meta accepted the reply but local confirmation failed",
           502,
         );
       }
