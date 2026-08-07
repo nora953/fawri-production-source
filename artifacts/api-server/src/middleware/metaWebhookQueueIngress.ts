@@ -7,47 +7,29 @@ import { enqueueDurableJob } from "../services/durableJobQueue";
 import { isTrustedMetaWebhookInternalReplay } from "../services/metaWebhookInternalReplay";
 import { readMetaPageMerchantMap } from "../services/metaPageDirectory";
 
-function eventRecord(event: unknown): Record<string, unknown> {
-  return event && typeof event === "object" && !Array.isArray(event)
-    ? (event as Record<string, unknown>)
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
     : {};
 }
 
 function replyEligible(event: unknown): boolean {
-  const record = eventRecord(event);
-  const message =
-    record.message && typeof record.message === "object"
-      ? (record.message as Record<string, unknown>)
-      : null;
-  const sender =
-    record.sender && typeof record.sender === "object"
-      ? (record.sender as Record<string, unknown>)
-      : null;
+  const eventRecord = record(event);
+  const message = record(eventRecord.message);
+  const sender = record(eventRecord.sender);
   return Boolean(
-    message &&
-      message.is_echo !== true &&
+    message.is_echo !== true &&
       String(message.text || "").trim() &&
-      sender &&
       String(sender.id || "").trim(),
   );
 }
 
-function eventExternalMessageId(event: unknown): string {
-  const record = eventRecord(event);
-  const message =
-    record.message && typeof record.message === "object"
-      ? (record.message as Record<string, unknown>)
-      : {};
-  return String(message.mid || "").trim();
+function externalMessageId(event: unknown): string {
+  return String(record(record(event).message).mid || "").trim();
 }
 
-function eventSenderId(event: unknown): string {
-  const record = eventRecord(event);
-  const sender =
-    record.sender && typeof record.sender === "object"
-      ? (record.sender as Record<string, unknown>)
-      : {};
-  return String(sender.id || "").trim();
+function senderId(event: unknown): string {
+  return String(record(record(event).sender).id || "").trim();
 }
 
 function terminalIds(res: Response): string[] {
@@ -65,89 +47,102 @@ export function enqueueMetaWebhookEvents(
     next();
     return;
   }
-
   if (isTrustedMetaWebhookInternalReplay(req)) {
     next();
     return;
   }
 
-  const body =
-    req.body && typeof req.body === "object" && !Array.isArray(req.body)
-      ? (req.body as Record<string, unknown>)
-      : {};
+  const body = record(req.body);
   if (body.object !== "page") {
-    res.sendStatus(200);
+    res.setHeader("Cache-Control", "no-store");
+    res.status(400).json({
+      ok: false,
+      code: "META_WEBHOOK_OBJECT_UNSUPPORTED",
+      error: "unsupported Meta webhook object",
+    });
     return;
   }
 
   try {
     const pageMerchantMap = readMetaPageMerchantMap();
-    const entries = Array.isArray(body.entry) ? body.entry : [];
-    const processedEventIds = new Set(terminalIds(res));
+    const processed = new Set<string>();
     let enqueued = 0;
-    let deduplicated = 0;
-    let ignored = 0;
+    let deduplicated = Number(res.locals.metaWebhookDuplicateEvents || 0);
 
-    for (const entry of entries) {
-      const entryRecord =
-        entry && typeof entry === "object" && !Array.isArray(entry)
-          ? (entry as Record<string, unknown>)
-          : {};
-      const pageId = String(entryRecord.id || "").trim();
+    for (const entryValue of Array.isArray(body.entry) ? body.entry : []) {
+      const entry = record(entryValue);
+      const pageId = String(entry.id || "").trim();
       const merchantId = pageMerchantMap.get(pageId);
       if (!merchantId) {
-        throw Object.assign(new Error("Meta page merchant mapping is unavailable"), {
-          code: "META_PAGE_MERCHANT_UNAVAILABLE",
-        });
+        const error = new Error("Meta page merchant mapping is unavailable");
+        (error as NodeJS.ErrnoException).code = "META_PAGE_DIRECTORY_UNAVAILABLE";
+        throw error;
       }
 
-      const messaging = Array.isArray(entryRecord.messaging)
-        ? entryRecord.messaging
-        : [];
-      for (const event of messaging) {
+      for (const event of Array.isArray(entry.messaging) ? entry.messaging : []) {
         const eventId = getMetaWebhookEventId(pageId, event);
-        processedEventIds.add(eventId);
-
-        if (!replyEligible(event)) {
-          ignored += 1;
-          continue;
-        }
-
+        processed.add(eventId);
+        const isReply = replyEligible(event);
         const result = enqueueDurableJob({
-          type: "meta.webhook.reply",
+          type: isReply ? "meta.webhook.reply" : "meta.webhook.event",
           dedupeKey: eventId,
           merchantId,
-          priority: 10,
+          priority: isReply ? 10 : 0,
           maxAttempts: 5,
-          payload: {
-            event_id: eventId,
-            page_id: pageId,
-            merchant_id: merchantId,
-            external_message_id: eventExternalMessageId(event),
-            sender_id: eventSenderId(event),
-            webhook_body: {
-              object: "page",
-              entry: [
-                {
-                  ...entryRecord,
-                  messaging: [event],
+          payload: isReply
+            ? {
+                event_id: eventId,
+                page_id: pageId,
+                merchant_id: merchantId,
+                external_message_id: externalMessageId(event),
+                sender_id: senderId(event),
+                webhook_body: {
+                  object: "page",
+                  entry: [{ ...entry, messaging: [event] }],
                 },
-              ],
-            },
-          },
+              }
+            : {
+                event_id: eventId,
+                page_id: pageId,
+                merchant_id: merchantId,
+                event_kind: "non_reply",
+              },
         });
-        if (result.deduplicated) deduplicated += 1;
-        else enqueued += 1;
+        result.deduplicated ? (deduplicated += 1) : (enqueued += 1);
       }
     }
 
-    markMetaWebhookEventsProcessed([...processedEventIds]);
-    res.locals.metaWebhookEnqueuedJobs = enqueued;
-    res.locals.metaWebhookDeduplicatedJobs = deduplicated;
-    res.locals.metaWebhookIgnoredEvents = ignored;
-    res.sendStatus(200);
-  } catch (error) {
-    console.error("Meta webhook durable enqueue failed:", error);
+    for (const eventId of terminalIds(res)) {
+      processed.add(eventId);
+      const result = enqueueDurableJob({
+        type: "meta.webhook.terminal",
+        dedupeKey: eventId,
+        payload: { event_id: eventId, event_kind: "terminal" },
+        priority: 20,
+        maxAttempts: 1,
+      });
+      result.deduplicated ? (deduplicated += 1) : (enqueued += 1);
+    }
+
+    if (processed.size === 0 && deduplicated === 0) {
+      res.setHeader("Cache-Control", "no-store");
+      res.status(400).json({
+        ok: false,
+        code: "META_WEBHOOK_EVENT_REQUIRED",
+        error: "Meta webhook contains no processable event",
+      });
+      return;
+    }
+
+    markMetaWebhookEventsProcessed([...processed]);
+    res.setHeader("Cache-Control", "no-store");
+    res.status(200).json({
+      ok: true,
+      enqueued,
+      deduplicated,
+      accepted: processed.size,
+    });
+  } catch {
     res.setHeader("Cache-Control", "no-store");
     res.status(503).json({
       ok: false,
