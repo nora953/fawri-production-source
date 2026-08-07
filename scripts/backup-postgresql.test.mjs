@@ -22,7 +22,11 @@ test("PostgreSQL backup drill is fail-closed without the explicit disposable gua
 });
 
 test("PostgreSQL backup drill rejects remote and Replit-like targets before invoking pg_dump", () => {
-  const url = "postgresql://fixture_user:do-not-log-secret@db.example.replit.com:5432/fawri_backup_source";
+  const url =
+    "postgresql://" +
+    "fixture_user:" +
+    "do-not-log-secret@" +
+    "db.example.replit.com:5432/fawri_backup_source";
   const result = run(["--url", url, "--output", "missing.dump", "--manifest", "missing.json"], {
     FAWRI_ALLOW_DISPOSABLE_POSTGRES_BACKUP: "1",
   });

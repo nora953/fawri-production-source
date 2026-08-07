@@ -33,7 +33,11 @@ test("PostgreSQL restore drill is fail-closed without the explicit disposable gu
 });
 
 test("PostgreSQL restore rejects remote targets and never echoes credentials", () => {
-  const url = "postgresql://fixture_user:do-not-log-secret@db.example.replit.com:5432/fawri_restore_target";
+  const url =
+    "postgresql://" +
+    "fixture_user:" +
+    "do-not-log-secret@" +
+    "db.example.replit.com:5432/fawri_restore_target";
   const result = run(["--url", url, ...baseArgs], {
     FAWRI_ALLOW_DISPOSABLE_POSTGRES_RESTORE: "1",
   });

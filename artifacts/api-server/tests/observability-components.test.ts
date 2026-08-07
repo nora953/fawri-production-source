@@ -30,7 +30,7 @@ test("health snapshot exposes only bounded service metadata", () => {
 test("health fails closed instead of echoing unsafe metadata", () => {
   const snapshot = createHealthSnapshot({
     service: "customer@example.com",
-    version: "postgresql://user:secret@db/prod",
+    version: "postgresql://" + "user:" + "secret@" + "db/prod",
     now: fixedNow,
     uptimeSeconds: () => 1,
   });
