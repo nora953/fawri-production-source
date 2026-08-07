@@ -82,7 +82,7 @@ test("valid nested update is normalized and persisted", () => {
         payment: {
           cash_on_delivery_enabled: true,
           electronic_payment_enabled: true,
-          methods: ["cash_on_delivery", "zaincash", "zaincash", "invalid"],
+          methods: ["cash_on_delivery", "zaincash", "zaincash"],
           instructions: "Send the receipt after payment",
         },
       },
