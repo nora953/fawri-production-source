@@ -47,6 +47,7 @@ export const orders = pgTable(
     deliveryFeeIqd: integer("delivery_fee_iqd").notNull().default(0),
     totalIqd: integer("total_iqd").notNull().default(0),
     sourceChannel: text("source_channel").notNull(),
+    // Keep optimistic concurrency metadata in the committed Drizzle snapshot.
     version: integer("version").notNull().default(1),
     notes: text("notes"),
     paymentVerifiedAt: timestamp("payment_verified_at", { withTimezone: true }),
