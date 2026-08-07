@@ -77,6 +77,9 @@ test("valid merchant settings pass without revealing instructions", () => {
     assert.equal(report.ok, true);
     assert.deepEqual(report.summary, {
       settings: 1,
+      auto_reply_jobs: 0,
+      auto_reply_jobs_suppressed: 0,
+      auto_reply_jobs_waiting_while_disabled: 0,
       issues: 0,
       severity_counts: {},
     });
