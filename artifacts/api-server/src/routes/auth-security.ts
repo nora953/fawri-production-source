@@ -1,0 +1,11 @@
+import { Router } from "express";
+import { enforceAuthOrigin } from "../middleware/authSession";
+import publicRoutes from "./authPublicRoutes";
+import sessionRoutes from "./authSessionRoutes";
+import adminRoutes from "./authAdminRoutes";
+const router = Router();
+router.use(enforceAuthOrigin);
+router.use(publicRoutes as any);
+router.use(sessionRoutes as any);
+router.use(adminRoutes as any);
+export default router;
