@@ -185,3 +185,13 @@ No force push was used.
 - final handoff: **present (this file)**.
 
 Do not mark the database lane complete or merge PR #5 until the exact generated migration metadata is committed and the disposable rollback/commit/reconciliation/cleanup path is rerun successfully after required cross-lane integration.
+
+## Post-promotion validation restart
+
+Approved migration promotion commit `ede947f260ffa4f0196cdba0c742d2d3a805a984` was inspected against parent `d3c6ccff64815228bca5188f8dabf61db360de09` and changes only the expected Drizzle files:
+
+- `lib/db/drizzle/0001_military_proteus.sql`
+- `lib/db/drizzle/meta/0001_snapshot.json`
+- `lib/db/drizzle/meta/_journal.json`
+
+The promoted Git blob SHAs are expected to be `0631349cad0075d927bfcf67a96180111555a5a4`, `23c23f8572482893b7b474311917b71f7869db64`, and `f17f63465bb4e680b80a556d206ed54beb685a4b` respectively. Validation of all PostgreSQL-owned completion gates is being rerun after this promotion; no completion status is claimed by this interim note.
