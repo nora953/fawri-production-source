@@ -1,11 +1,16 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import type { ComponentType, LazyExoticComponent } from "react";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { clearSession, getAdminAuthHeaders, getAdminSessionToken, initStore } from "@/lib/store";
+import { initStore } from "@/lib/store";
+import {
+  getStableAuthDeviceId,
+  installAuthClientCutover,
+  secureAdminLogout,
+} from "@/lib/authClientCutover";
 import { useI18n } from "@/lib/i18n";
 import SupportPreviewLauncher from "@/components/admin/SupportPreviewLauncher";
 import EmergencyReadAccessLauncher from "@/components/admin/EmergencyReadAccessLauncher";
@@ -183,59 +188,51 @@ function AppRouter() {
   );
 }
 
-function AdminActivityHeartbeat() {
+function AdminSessionRevalidator() {
+  const [location] = useLocation();
+  const previousLocation = useRef(location);
+
   useEffect(() => {
-    let activityPending = true;
+    const previous = previousLocation.current;
+    previousLocation.current = location;
+    if (previous.startsWith('/admin') && location === '/login') {
+      void secureAdminLogout();
+    }
+  }, [location]);
+
+  useEffect(() => {
+    if (!location.startsWith('/admin')) return;
     let stopped = false;
 
-    const markActivity = () => {
-      activityPending = true;
-    };
-
-    const sendHeartbeat = async () => {
-      if (stopped || !getAdminSessionToken()) return;
-      const activity = activityPending;
-      activityPending = false;
-
+    const validate = async () => {
       try {
-        const response = await fetch('/api/auth/admin/session/heartbeat', {
-          method: 'POST',
-          headers: {
-            ...getAdminAuthHeaders(),
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ activity }),
+        const response = await fetch('/api/auth/admin/me', {
+          credentials: 'same-origin',
+          headers: { 'X-Fawri-Device-Id': getStableAuthDeviceId() },
+          cache: 'no-store',
         });
-        if (response.status === 401) {
-          clearSession();
+        if (!stopped && response.status === 401) {
           window.location.href = '/login';
         }
       } catch {
-        // A temporary connection interruption must not destroy a valid session.
+        // Temporary connectivity failures do not manufacture a local session decision.
       }
     };
 
-    window.addEventListener('pointerdown', markActivity, { passive: true });
-    window.addEventListener('keydown', markActivity);
-    window.addEventListener('focus', markActivity);
-    document.addEventListener('visibilitychange', markActivity);
-    void sendHeartbeat();
-    const timer = window.setInterval(() => void sendHeartbeat(), 30_000);
-
+    void validate();
+    const timer = window.setInterval(() => void validate(), 30_000);
     return () => {
       stopped = true;
       window.clearInterval(timer);
-      window.removeEventListener('pointerdown', markActivity);
-      window.removeEventListener('keydown', markActivity);
-      window.removeEventListener('focus', markActivity);
-      document.removeEventListener('visibilitychange', markActivity);
     };
-  }, []);
+  }, [location]);
 
   return null;
 }
 
 function App() {
+  installAuthClientCutover();
+
   useEffect(() => {
     initStore();
   }, []);
@@ -246,8 +243,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <AdminActivityHeartbeat />
           <WouterRouter base={routerBase}>
+            <AdminSessionRevalidator />
             <AppRouter />
             <SupportPreviewLauncher />
             <EmergencyReadAccessLauncher />
