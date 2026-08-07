@@ -12,7 +12,7 @@
     "audit:manual-conversations": "node ./scripts/audit-manual-conversation-operations.mjs",
     "migration:preflight": "node ./scripts/audit-transitional-migration-readiness.mjs",
     "migration:plan": "node ./scripts/run-postgresql-migration-plan.mjs",
-    "migration:test": "node --test ./scripts/tests/*.test.mjs",
+    "migration:test": "node --test --test-concurrency=1 ./scripts/tests/*.test.mjs",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
