@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { Link, useLocation } from 'wouter';
 import {
-  clearAdminSession,
   clearMerchantTabSession,
-  getAdminDeviceId,
-  getAdminDeviceLabel,
   getMerchants,
   saveMerchants,
-  setAdminSessionToken,
   setSession,
 } from '@/lib/store';
+import {
+  authDeviceLabel,
+  getStableAuthDeviceId,
+  secureAdminLogout,
+  secureMerchantLogout,
+} from '@/lib/authClientCutover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
@@ -19,12 +21,37 @@ import { toast } from 'sonner';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 import { PolicyModal, type PolicyTab, getPolicyReadLabel } from '@/components/PolicyModal';
 
-
 function cacheMerchantLocally(merchant: any) {
   if (!merchant?.id) return;
   const merchants = getMerchants();
   const cleaned = merchants.filter(item => item.id !== merchant.id && item.phone !== merchant.phone);
   saveMerchants([merchant, ...cleaned]);
+}
+
+async function loginRequest(
+  endpoint: '/api/auth/login' | '/api/auth/admin/login',
+  phone: string,
+  password: string,
+) {
+  const deviceId = getStableAuthDeviceId();
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Fawri-Device-Id': deviceId,
+    },
+    body: JSON.stringify({
+      phone,
+      password,
+      device_id: deviceId,
+      device_label: authDeviceLabel(),
+    }),
+  });
+  return {
+    response,
+    result: await response.json().catch(() => null),
+  };
 }
 
 export default function LoginPage() {
@@ -40,20 +67,32 @@ export default function LoginPage() {
   const securityText = {
     ar: {
       approval: 'تم إرسال طلب اعتماد هذا الجهاز إلى المالك. لن يمكن الدخول حتى يمنح المالك الثقة للجهاز من صفحة مراقب العمل.',
-      sessionLimit: 'تم بلوغ الحد الأقصى: جلستان مفتوحتان. يجب على المالك إنهاء إحدى الجلسات أولًا.',
+      sessionLimit: 'تم بلوغ الحد الأقصى للجلسات المفتوحة. يجب إنهاء إحدى الجلسات أولًا.',
       deviceRequired: 'تعذر التحقق من هوية الجهاز. أعد فتح المتصفح وحاول مرة أخرى.',
     },
     en: {
       approval: 'A device approval request was sent to the owner. Sign-in remains blocked until the owner trusts this device from Work Monitor.',
-      sessionLimit: 'The two-session limit has been reached. The owner must terminate an existing session first.',
+      sessionLimit: 'The open-session limit has been reached. An existing session must be terminated first.',
       deviceRequired: 'The device identity could not be verified. Reopen the browser and try again.',
     },
     ku: {
       approval: 'داواکاری متمانەپێکردنی ئەم ئامێرە بۆ خاوەنەکە نێردرا. تا خاوەنەکە لە چاودێری کار متمانەی پێ نەدات چوونەژوورەوە ڕێگەپێنەدراوە.',
-      sessionLimit: 'سنووری دوو دانیشتن پڕ بووە. خاوەنەکە دەبێت یەکێک لە دانیشتنەکان کۆتایی پێبهێنێت.',
+      sessionLimit: 'سنووری دانیشتنە کراوەکان پڕ بووە. دەبێت یەک دانیشتن کۆتایی پێبهێنرێت.',
       deviceRequired: 'ناسنامەی ئامێرەکە پشتڕاست نەکرایەوە. وێبگەڕەکە دووبارە بکەرەوە.',
     },
   }[lang];
+
+  const showAuthError = (result: any) => {
+    if (result?.code === 'ADMIN_DEVICE_APPROVAL_REQUIRED') {
+      toast.error(securityText.approval, { duration: 9000 });
+    } else if (result?.code === 'ADMIN_SESSION_LIMIT_REACHED') {
+      toast.error(securityText.sessionLimit, { duration: 8000 });
+    } else if (result?.code === 'ADMIN_DEVICE_ID_REQUIRED') {
+      toast.error(securityText.deviceRequired);
+    } else {
+      toast.error(t.login_error_invalid);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -69,74 +108,68 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: cleanPhone,
-          password: cleanPassword,
-          device_id: getAdminDeviceId(),
-          device_label: getAdminDeviceLabel(),
-        }),
-      });
+      const merchantAttempt = await loginRequest(
+        '/api/auth/login',
+        cleanPhone,
+        cleanPassword,
+      );
 
-      const result = await response.json().catch(() => null);
+      if (
+        merchantAttempt.response.ok &&
+        merchantAttempt.result?.ok &&
+        merchantAttempt.result?.merchant_profile &&
+        merchantAttempt.result?.merchant
+      ) {
+        await secureAdminLogout();
+        const user = merchantAttempt.result.merchant;
+        clearMerchantTabSession();
+        cacheMerchantLocally(user);
+        setSession(user.id);
 
-      if (!response.ok || !result?.ok || !result?.merchant) {
-        if (result?.code === 'ADMIN_DEVICE_APPROVAL_REQUIRED') {
-          toast.error(securityText.approval, { duration: 9000 });
-        } else if (result?.code === 'ADMIN_SESSION_LIMIT_REACHED') {
-          toast.error(securityText.sessionLimit, { duration: 8000 });
-        } else if (result?.code === 'ADMIN_DEVICE_ID_REQUIRED') {
-          toast.error(securityText.deviceRequired);
-        } else {
-          toast.error(t.login_error_invalid);
+        if (user.status === 'approved') {
+          toast.success(t.login_success);
+          setLocation('/dashboard');
+          return;
         }
+        if (user.status === 'pending_activation') {
+          setLocation('/pending');
+          return;
+        }
+        toast.error(
+          user.status === 'suspended'
+            ? t.login_account_suspended
+            : t.login_account_rejected,
+        );
         return;
       }
 
-      const user = result.merchant;
-      const accountType =
-        result.account_type === 'admin' || result.account_type === 'merchant'
-          ? result.account_type
-          : user.is_admin
-            ? 'admin'
-            : 'merchant';
+      const mayBeAdmin =
+        merchantAttempt.response.status === 401 &&
+        merchantAttempt.result?.code === 'INVALID_CREDENTIALS';
+      if (!mayBeAdmin) {
+        showAuthError(merchantAttempt.result);
+        return;
+      }
 
-      if (accountType === 'admin') {
-        if (!user.is_admin || typeof result.admin_token !== 'string') {
-          toast.error(t.login_error_connection);
-          return;
-        }
-
+      const adminAttempt = await loginRequest(
+        '/api/auth/admin/login',
+        cleanPhone,
+        cleanPassword,
+      );
+      if (
+        adminAttempt.response.ok &&
+        adminAttempt.result?.ok &&
+        adminAttempt.result?.admin_profile &&
+        adminAttempt.result?.admin?.is_admin === true
+      ) {
+        await secureMerchantLogout();
         clearMerchantTabSession();
-        setAdminSessionToken(result.admin_token);
         toast.success(t.login_success_admin);
         setLocation('/admin');
         return;
       }
 
-      if (user.is_admin || typeof result.admin_token === 'string') {
-        toast.error(t.login_error_connection);
-        return;
-      }
-
-      clearAdminSession();
-      cacheMerchantLocally(user);
-      setSession(user.id);
-
-      if (user.status === 'approved') {
-        toast.success(t.login_success);
-        setLocation('/dashboard');
-        return;
-      }
-
-      if (user.status === 'pending_activation') {
-        setLocation('/pending');
-        return;
-      }
-
-      toast.error(user.status === 'suspended' ? t.login_account_suspended : t.login_account_rejected);
+      showAuthError(adminAttempt.result);
     } catch (error) {
       console.error('Login request failed:', error);
       toast.error(t.login_error_connection);
