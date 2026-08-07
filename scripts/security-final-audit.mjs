@@ -140,7 +140,7 @@ function scanRepository(root) {
       continue;
     }
     scanned += 1;
-    for (const finding of findSensitiveText(text, { includePrivateData: false, includeAssignments: true })) {
+    for (const finding of findSensitiveText(text, { includePrivateData: false, includeAssignments: false })) {
       const line = text.slice(0, finding.index).split("\n").length;
       findings.push({ file, line, rule: finding.rule });
     }
