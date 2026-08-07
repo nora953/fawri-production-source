@@ -161,7 +161,7 @@ test(
       await expectReject(
         () =>
           client.query(
-            "INSERT INTO admin_profiles(id,account_id,profile_kind,display_name,role,enabled,created_at,updated_at) VALUES('ambiguous-m1','m1','admin','Wrong','assistant_admin',true,clock_timestamp(),clock_timestamp())",
+            "INSERT INTO admin_profiles(id,account_id,profile_kind,display_name,role,enabled,created_at,updated_at) VALUES('m1','m1','admin','Wrong','assistant_admin',true,clock_timestamp(),clock_timestamp())",
           ),
         /admin_profiles_account_kind_fk|foreign key/i,
       );
