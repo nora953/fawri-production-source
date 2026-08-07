@@ -188,8 +188,8 @@ export const replyLedger = pgTable(
       columns: [table.replyBatchId, table.merchantId],
       foreignColumns: [subscriptionReplyBatches.id, subscriptionReplyBatches.merchantId],
     }).onDelete("restrict"),
-    eventUnique: uniqueIndex("reply_ledger_external_event_unique")
-      .on(table.externalEventId)
+    eventDirectionUnique: uniqueIndex("reply_ledger_external_event_direction_unique")
+      .on(table.externalEventId, table.direction)
       .where(sql`${table.externalEventId} is not null`),
     merchantCreatedIndex: index("reply_ledger_merchant_created_idx").on(
       table.merchantId,
