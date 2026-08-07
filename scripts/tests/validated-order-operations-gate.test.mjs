@@ -27,6 +27,7 @@ function createBaseFixture(directory) {
         password: "legacy-password-hash",
         owner_name: "Owner",
         store_name: "Store",
+        activity_type: "retail",
         status: "approved",
         account_status: "approved",
         onboarding_status: "channel_connected",
