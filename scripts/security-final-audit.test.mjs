@@ -58,7 +58,7 @@ test("dependency audit parser fails closed on malformed output", () => {
   assert.throws(() => parseAuditSeverityCounts({ metadata: {} }), /does not contain vulnerability counts/);
 });
 
-test("repository policy requires protected workflows and pnpm hardening", () => {
+test("repository policy requires protected workflows, immutable action pins, and pnpm hardening", () => {
   const root = mkdtempSync(path.join(os.tmpdir(), "fawri-policy-"));
   try {
     const workflowDir = path.join(root, ".github", "workflows");
@@ -75,7 +75,8 @@ test("repository policy requires protected workflows and pnpm hardening", () => 
       "browser-storage-audit.yml",
     ];
     for (const name of protectedNames) writeFileSync(path.join(workflowDir, name), "name: existing\n");
-    const safeWorkflow = "permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@v4\n    with:\n      persist-credentials: false\n";
+    const checkoutSha = "11d5960a326750d5838078e36cf38b85af677262";
+    const safeWorkflow = `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n`;
     writeFileSync(path.join(workflowDir, "quality-gates.yml"), safeWorkflow);
     writeFileSync(path.join(workflowDir, "security-supply-chain.yml"), safeWorkflow);
     writeFileSync(path.join(root, "pnpm-workspace.yaml"), "autoInstallPeers: false\nminimumReleaseAge: 1440\n");
@@ -89,6 +90,14 @@ test("repository policy requires protected workflows and pnpm hardening", () => 
     const unsafe = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
     assert.equal(unsafe.status, "fail");
     assert.ok(unsafe.violations.some((item) => item.includes("continue-on-error")));
+
+    writeFileSync(
+      path.join(workflowDir, "quality-gates.yml"),
+      "permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@v4\n    with:\n      persist-credentials: false\n",
+    );
+    const mutableAction = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
+    assert.equal(mutableAction.status, "fail");
+    assert.ok(mutableAction.violations.some((item) => item.includes("immutable SHA")));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
