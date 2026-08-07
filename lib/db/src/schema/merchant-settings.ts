@@ -72,15 +72,35 @@ export const merchantSettings = pgTable(
     ),
     freeDeliveryThresholdCheck: check(
       "merchant_settings_free_delivery_threshold_check",
-      sql`${table.freeDeliveryThresholdIqd} is null or ${table.freeDeliveryThresholdIqd} >= 0`,
+      sql`${table.freeDeliveryThresholdIqd} IS NULL OR ${table.freeDeliveryThresholdIqd} >= 0`,
     ),
     deliveryDaysCheck: check(
       "merchant_settings_delivery_days_check",
-      sql`${table.deliveryEstimatedDaysMin} > 0 and ${table.deliveryEstimatedDaysMax} >= ${table.deliveryEstimatedDaysMin}`,
+      sql`${table.deliveryEstimatedDaysMin} > 0 AND ${table.deliveryEstimatedDaysMax} >= ${table.deliveryEstimatedDaysMin} AND ${table.deliveryEstimatedDaysMax} <= 30`,
+    ),
+    deliveryAreasCheck: check(
+      "merchant_settings_delivery_areas_check",
+      sql`jsonb_typeof(${table.deliveryAreas}) = 'array' AND jsonb_array_length(${table.deliveryAreas}) <= 100`,
+    ),
+    deliveryNotesCheck: check(
+      "merchant_settings_delivery_notes_check",
+      sql`char_length(${table.deliveryNotes}) <= 1000`,
+    ),
+    paymentMethodsShapeCheck: check(
+      "merchant_settings_payment_methods_shape_check",
+      sql`jsonb_typeof(${table.paymentMethods}) = 'array' AND jsonb_array_length(${table.paymentMethods}) BETWEEN 1 AND 5 AND ${table.paymentMethods} <@ '["cash_on_delivery","superqi","fastpay","zaincash","other"]'::jsonb`,
     ),
     paymentAvailabilityCheck: check(
       "merchant_settings_payment_availability_check",
-      sql`${table.cashOnDeliveryEnabled} or ${table.electronicPaymentEnabled}`,
+      sql`${table.cashOnDeliveryEnabled} OR ${table.electronicPaymentEnabled}`,
+    ),
+    paymentMethodConsistencyCheck: check(
+      "merchant_settings_payment_method_consistency_check",
+      sql`${table.cashOnDeliveryEnabled} = (${table.paymentMethods} @> '["cash_on_delivery"]'::jsonb) AND ${table.electronicPaymentEnabled} = ((${table.paymentMethods} @> '["superqi"]'::jsonb) OR (${table.paymentMethods} @> '["fastpay"]'::jsonb) OR (${table.paymentMethods} @> '["zaincash"]'::jsonb) OR (${table.paymentMethods} @> '["other"]'::jsonb))`,
+    ),
+    paymentInstructionsCheck: check(
+      "merchant_settings_payment_instructions_check",
+      sql`char_length(${table.paymentInstructions}) <= 2000`,
     ),
     timestampOrderCheck: check(
       "merchant_settings_timestamp_order_check",

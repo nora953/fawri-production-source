@@ -100,12 +100,12 @@ test("validated migration plan matches schema and removes row payloads", () => {
     const report = JSON.parse(result.stdout);
     assert.equal(report.ok, true);
     assert.equal(report.mode, "dry_run");
-    assert.equal(report.tool_version, "1");
+    assert.equal(report.tool_version, "3");
     assert.match(report.source_manifest_sha256, sha256Pattern);
     assert.equal(report.writes_performed, false);
     assert.equal(report.database_connection_used, false);
     assert.equal(report.summary.errors, 0);
-    assert.equal(report.schema_validation.snapshot, "0000_snapshot.json");
+    assert.equal(report.schema_validation.snapshot, "0003_snapshot.json");
     assert.match(report.schema_validation.snapshot_sha256, sha256Pattern);
     assert.equal(report.schema_validation.database_connection_used, false);
     assert.equal(report.schema_validation.rows_removed_from_output, true);
@@ -114,6 +114,60 @@ test("validated migration plan matches schema and removes row payloads", () => {
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("committed latest Drizzle snapshot exposes current migration targets", () => {
+  const journal = JSON.parse(
+    fs.readFileSync(
+      path.join(repositoryRoot, "lib", "db", "drizzle", "meta", "_journal.json"),
+      "utf8",
+    ),
+  );
+  const latest = journal.entries?.at(-1);
+  assert.equal(latest?.idx, 3, "latest committed Drizzle migration is not 0003");
+  assert.equal(latest?.tag, "0003_cross_lane_cleanup");
+
+  const snapshot = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        repositoryRoot,
+        "lib",
+        "db",
+        "drizzle",
+        "meta",
+        "0003_snapshot.json",
+      ),
+      "utf8",
+    ),
+  );
+
+  assert.ok(snapshot.tables?.["public.orders"], "orders table missing from 0003");
+  assert.ok(
+    snapshot.tables["public.orders"].columns?.version,
+    "orders.version missing from 0003",
+  );
+  for (const table of [
+    "manual_reply_requests",
+    "merchant_settings",
+    "auth_otp_challenges",
+    "reply_reservations",
+    "order_payment_decisions",
+    "catalog_identifiers",
+    "knowledge_audit_events",
+    "knowledge_embeddings",
+    "database_admin_access_audits",
+  ]) {
+    assert.ok(snapshot.tables?.[`public.${table}`], `${table} missing from 0003`);
+  }
+  assert.equal(
+    snapshot.tables["public.training_requests"].columns?.customer_message,
+    undefined,
+    "raw training customer_message authority survived 0003",
+  );
+  assert.ok(
+    snapshot.tables["public.training_requests"].columns?.customer_text_hash,
+    "training customer_text_hash missing from 0003",
+  );
 });
 
 test("source manifest hash is deterministic and changes with source data", () => {

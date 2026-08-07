@@ -115,14 +115,16 @@ test("valid but unsupported order overlays block the child writer", () => {
   const directory = makeDirectory();
   try {
     createFixture(directory, {
-      "merchant-1": {
-        "order-1": {
-          version: 2,
-          status: "confirmed",
-          payment_status: "paid",
-          payment_verified_at: "2026-08-06T12:00:00.000Z",
-          payment_verified_by: "merchant-1",
-          updated_at: "2026-08-06T12:00:00.000Z",
+      orderOperations: {
+        "merchant-1": {
+          "order-1": {
+            version: 2,
+            status: "confirmed",
+            payment_status: "paid",
+            payment_verified_at: "2026-08-06T12:00:00.000Z",
+            payment_verified_by: "merchant-1",
+            updated_at: "2026-08-06T12:00:00.000Z",
+          },
         },
       },
     });

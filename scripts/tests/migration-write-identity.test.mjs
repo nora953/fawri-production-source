@@ -1,12 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { assertPlanIdentity } from "../../lib/db/scripts/lib/migration-write.mjs";
+import {
+  assertPlanIdentity,
+  resolveInsertOrder,
+} from "../../lib/db/scripts/lib/migration-write.mjs";
 
 function report(overrides = {}) {
   return {
     ok: true,
-    tool_version: "1",
+    tool_version: "6",
     source_manifest_sha256: "a".repeat(64),
+    source_lineage_sha256: "f".repeat(64),
     source_files: {
       merchants: {
         file: "merchants.json",
@@ -55,6 +59,20 @@ test("migration write identity rejects changed source data", () => {
   );
 });
 
+test("migration write identity rejects changed source lineage", () => {
+  assert.throws(
+    () =>
+      assertPlanIdentity(
+        report(),
+        snapshot(),
+        report({ source_lineage_sha256: "e".repeat(64) }),
+        snapshot(),
+        "before_commit",
+      ),
+    /source lineage changed after validation/,
+  );
+});
+
 test("migration write identity rejects changed Drizzle schema", () => {
   assert.throws(
     () =>
@@ -69,16 +87,32 @@ test("migration write identity rejects changed Drizzle schema", () => {
   );
 });
 
-test("migration write identity rejects changed planned counts", () => {
-  assert.throws(
-    () =>
-      assertPlanIdentity(
-        report(),
-        snapshot(),
-        report({ table_counts: { accounts: 1, merchants: 2 } }),
-        snapshot(),
-        "before_write",
-      ),
-    /planned table counts changed after validation/,
+test("foreign-key order is derived from snapshot dependencies", () => {
+  const synthetic = {
+    tables: {
+      "public.accounts": { foreignKeys: {} },
+      "public.merchants": {
+        foreignKeys: {
+          merchants_account_fk: { tableTo: "accounts" },
+        },
+      },
+      "public.orders": {
+        foreignKeys: {
+          orders_merchant_fk: { tableTo: "merchants" },
+        },
+      },
+      "public.order_items": {
+        foreignKeys: {
+          order_items_order_fk: { tableTo: "orders" },
+        },
+      },
+    },
+  };
+  assert.deepEqual(
+    resolveInsertOrder(
+      ["order_items", "orders", "merchants", "accounts"],
+      synthetic,
+    ),
+    ["accounts", "merchants", "orders", "order_items"],
   );
 });

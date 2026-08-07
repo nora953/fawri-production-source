@@ -6,7 +6,9 @@ if (!process.env.DATABASE_URL) {
 }
 
 export default defineConfig({
-  schema: path.join(__dirname, "./src/schema/index.ts"),
+  // Keep generation anchored to every schema module so committed migrations
+  // cannot silently omit tables that are not re-exported by schema/index.ts.
+  schema: path.join(__dirname, "./src/schema/*.ts"),
   dialect: "postgresql",
   dbCredentials: {
     url: process.env.DATABASE_URL,

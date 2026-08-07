@@ -155,7 +155,7 @@ writeJson("bot-runtime.json", {
       customer_external_id: "customer-1",
       awaiting_field: "address",
       draft_data: { product_id: "product-1" },
-      expires_at: "2026-08-03T01:00:00.000Z",
+      expires_at: "2099-08-03T01:00:00.000Z",
     },
   ],
 });
@@ -187,6 +187,7 @@ writeJson("training-requests.json", {
       detectedLanguage: "en",
       reason: "low_confidence",
       suggestedReply: "Yes, it is available.",
+      suggestedReplySource: "merchant_draft",
       status: "approved",
     },
   ],
