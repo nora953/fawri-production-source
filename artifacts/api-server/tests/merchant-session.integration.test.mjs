@@ -134,7 +134,7 @@ function getSetCookie(response) {
 }
 
 function cookiePair(setCookie) {
-  assert.match(setCookie, /^fawri_merchant_session=/);
+  assert.match(setCookie, /^fawri_merchant_session_v2=/);
   return setCookie.split(";", 1)[0];
 }
 
@@ -320,6 +320,21 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
   const loginB = await login("07222222222", "MerchantB1@");
   assert.equal(loginB.response.status, 200);
   const cookieB = cookiePair(loginB.setCookie);
+
+  await t.test("rejects bearer and legacy cookie fallbacks", async () => {
+    const separator = cookieA.indexOf("=");
+    const sessionValue = cookieA.slice(separator + 1);
+
+    const bearerOnly = await apiFetch("/api/auth/me", {
+      headers: { Authorization: `Bearer ${sessionValue}` },
+    });
+    assert.equal(bearerOnly.status, 401);
+
+    const legacyCookieOnly = await apiFetch("/api/auth/me", {
+      headers: { Cookie: `fawri_merchant_session=${sessionValue}` },
+    });
+    assert.equal(legacyCookieOnly.status, 401);
+  });
 
   await t.test("derives identity from the signed session", async () => {
     const me = await parseJson(await apiFetch(
@@ -555,7 +570,7 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
     });
     assert.equal(logout.status, 200);
     const clearedCookie = getSetCookie(logout);
-    assert.match(clearedCookie, /^fawri_merchant_session=/);
+    assert.match(clearedCookie, /^fawri_merchant_session_v2=/);
     assert.match(clearedCookie, /Expires=Thu, 01 Jan 1970 00:00:00 GMT/i);
   });
 });
