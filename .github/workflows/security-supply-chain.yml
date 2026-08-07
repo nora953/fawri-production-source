@@ -56,6 +56,7 @@ jobs:
           node --check scripts/security-scan-output.mjs
           node --check scripts/ci-run-redacted.mjs
           node --check scripts/quality-run-tests.mjs
+          node --check scripts/quality-run-audits.mjs
           node --check scripts/quality-run-gate.mjs
           node --check scripts/quality-workflow-policy.mjs
 
@@ -126,11 +127,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: pnpm
+          cache: pnm
 
       - name: Install frozen dependency graph without lifecycle scripts
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Audit installed dependency graph for high severity advisories
         run: pnpm audit --audit-level=high
-

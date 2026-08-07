@@ -41,6 +41,11 @@ function suites() {
     ],
     contracts: [
       command("contract-tests", process.execPath, ["scripts/quality-run-tests.mjs", "contracts"]),
+      command("domain-audits", process.execPath, [
+        "scripts/quality-run-audits.mjs",
+        "--output-dir",
+        "ci-artifacts/contracts/domain-audits",
+      ]),
     ],
     observability: [
       command("observability-tests", process.execPath, ["scripts/quality-run-tests.mjs", "observability"]),
