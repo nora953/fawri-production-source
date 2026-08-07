@@ -380,20 +380,13 @@ export function validateAgainstSnapshot(
 
       tableRows.forEach((row, index) => {
         const values = foreignKey.columnsFrom.map((column) => row[column]);
-        if (values.every(isMissing)) return;
+
+        // PostgreSQL composite foreign keys use MATCH SIMPLE by default:
+        // if any referencing column is null, the FK check is not enforced.
+        // Required/not-null columns are still validated above.
+        if (values.some(isMissing)) return;
 
         const recordId = row?.id || row?.account_id || `row-${index + 1}`;
-        if (values.some(isMissing)) {
-          errors.push({
-            code: "INCOMPLETE_TARGET_REFERENCE",
-            table: tableName,
-            record_id: recordId,
-            foreign_key: foreignKey.name,
-            columns: foreignKey.columnsFrom,
-          });
-          return;
-        }
-
         const targetSet = targetKeys.get(cacheKey);
         if (!targetSet.has(compositeKey(row, foreignKey.columnsFrom))) {
           errors.push({
