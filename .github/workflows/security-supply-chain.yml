@@ -17,7 +17,6 @@ on:
   push:
     branches:
       - "hardening/**"
-      - "parallel/quality-observability"
     paths:
       - "artifacts/**"
       - "lib/**"
@@ -134,3 +133,4 @@ jobs:
 
       - name: Audit installed dependency graph for high severity advisories
         run: pnpm audit --audit-level=high
+

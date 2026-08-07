@@ -29,6 +29,10 @@ The GitHub Actions restore drill uses disposable PostgreSQL databases and synthe
 6. Confirm the restored target contains no unexpected users/privileges and rotate credentials before any cutover.
 7. Destroy disposable drill targets and retain only the sanitized report.
 
+## Transitional local operational stores
+
+Until the catalog lane is cut over to PostgreSQL, include `catalog-inventory.json` under the configured `FAWRI_DATA_DIR` in the encrypted operational backup inventory. Restore it only into an isolated target, run `scripts/audit-catalog-operations.mjs --json`, and compare its source SHA-256 and proposed row counts before activation. A file copy without a clean catalog audit is not accepted as a verified restore.
+
 ## Object-storage backup and restore
 
 1. Build a deterministic inventory with relative object path, size, and SHA-256. Symlinks and traversal paths are rejected.

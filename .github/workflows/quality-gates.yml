@@ -16,7 +16,6 @@ on:
   push:
     branches:
       - "hardening/**"
-      - "parallel/quality-observability"
     paths:
       - "artifacts/api-server/**"
       - "artifacts/fawri/**"

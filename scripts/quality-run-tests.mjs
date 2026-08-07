@@ -29,7 +29,7 @@ function classify(group) {
     return {
       runner: ["node", ["--test", "--test-concurrency=1"]],
       files: relative(walk("artifacts/api-server/tests")).filter((file) =>
-        file.endsWith(".integration.test.mjs"),
+        file.endsWith(".test.mjs"),
       ),
     };
   }
