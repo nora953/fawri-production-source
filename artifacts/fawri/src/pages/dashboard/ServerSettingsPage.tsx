@@ -1,17 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import {
-  Bot,
-  CreditCard,
-  Languages,
-  Loader2,
-  RefreshCw,
-  Save,
-  Truck,
-} from 'lucide-react';
+import { Loader2, RefreshCw, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 type ReplyLanguage = 'auto' | 'ar' | 'ku' | 'en';
@@ -48,173 +40,123 @@ type MerchantSettings = {
 
 type LanguageCode = 'ar' | 'ku' | 'en';
 
-type Labels = {
+type Copy = {
   title: string;
   subtitle: string;
-  loading: string;
   refresh: string;
-  save: string;
-  saved: string;
+  persist: string;
+  persisted: string;
+  loading: string;
   loadFailed: string;
-  saveFailed: string;
+  persistFailed: string;
   conflict: string;
+  version: string;
   autoReply: string;
-  autoReplyHelp: string;
   replyLanguage: string;
-  languageAuto: string;
-  languageArabic: string;
-  languageKurdish: string;
-  languageEnglish: string;
   delivery: string;
   deliveryEnabled: string;
   deliveryFee: string;
-  freeDeliveryThreshold: string;
+  freeThreshold: string;
   minDays: string;
   maxDays: string;
-  deliveryAreas: string;
-  deliveryAreasHelp: string;
-  deliveryNotes: string;
+  areas: string;
+  notes: string;
   payment: string;
-  cashOnDelivery: string;
-  electronicPayment: string;
-  methods: string;
-  paymentInstructions: string;
-  atLeastOnePayment: string;
-  electronicMethodRequired: string;
-  invalidDeliveryRange: string;
-  version: string;
-  paymentMethods: Record<PaymentMethod, string>;
+  cash: string;
+  electronic: string;
+  instructions: string;
+  invalidDelivery: string;
+  paymentRequired: string;
+  electronicRequired: string;
 };
 
-const LABELS: Record<LanguageCode, Labels> = {
+const COPY: Record<LanguageCode, Copy> = {
   ar: {
     title: 'الإعدادات',
     subtitle: 'إعدادات الرد والتوصيل والدفع محفوظة على السيرفر',
-    loading: 'جاري تحميل الإعدادات…',
     refresh: 'تحديث',
-    save: 'حفظ الإعدادات',
-    saved: 'تم حفظ الإعدادات',
+    persist: 'حفظ الإعدادات',
+    persisted: 'تم حفظ الإعدادات',
+    loading: 'جاري تحميل الإعدادات…',
     loadFailed: 'تعذر تحميل الإعدادات من السيرفر',
-    saveFailed: 'تعذر حفظ الإعدادات',
+    persistFailed: 'تعذر حفظ الإعدادات',
     conflict: 'تم تعديل الإعدادات من جهاز آخر. تم تحميل النسخة الأحدث.',
+    version: 'نسخة',
     autoReply: 'الرد التلقائي',
-    autoReplyHelp: 'إطفاؤه يوقف الرسائل المنتظرة أيضاً قبل إرسالها إلى العميل.',
     replyLanguage: 'لغة الرد',
-    languageAuto: 'تلقائي حسب لغة العميل',
-    languageArabic: 'العربية',
-    languageKurdish: 'الكردية',
-    languageEnglish: 'الإنجليزية',
     delivery: 'التوصيل',
     deliveryEnabled: 'التوصيل متاح',
     deliveryFee: 'أجرة التوصيل (دينار)',
-    freeDeliveryThreshold: 'توصيل مجاني فوق مبلغ (اختياري)',
+    freeThreshold: 'التوصيل المجاني فوق مبلغ',
     minDays: 'أقل مدة بالأيام',
     maxDays: 'أقصى مدة بالأيام',
-    deliveryAreas: 'مناطق التوصيل',
-    deliveryAreasHelp: 'اكتب كل منطقة بسطر مستقل أو افصل بينها بفاصلة.',
-    deliveryNotes: 'ملاحظات التوصيل',
+    areas: 'مناطق التوصيل',
+    notes: 'ملاحظات التوصيل',
     payment: 'الدفع',
-    cashOnDelivery: 'الدفع عند الاستلام',
-    electronicPayment: 'الدفع الإلكتروني',
-    methods: 'طرق الدفع',
-    paymentInstructions: 'تعليمات الدفع',
-    atLeastOnePayment: 'يجب إبقاء طريقة دفع واحدة على الأقل.',
-    electronicMethodRequired: 'اختر طريقة إلكترونية عند تشغيل الدفع الإلكتروني.',
-    invalidDeliveryRange: 'أقصى مدة للتوصيل يجب ألا تقل عن أقل مدة.',
-    version: 'نسخة',
-    paymentMethods: {
-      cash_on_delivery: 'الدفع عند الاستلام',
-      superqi: 'SuperQi',
-      fastpay: 'FastPay',
-      zaincash: 'ZainCash',
-      other: 'أخرى',
-    },
+    cash: 'الدفع عند الاستلام',
+    electronic: 'الدفع الإلكتروني',
+    instructions: 'تعليمات الدفع',
+    invalidDelivery: 'أقصى مدة للتوصيل يجب ألا تقل عن أقل مدة.',
+    paymentRequired: 'يجب إبقاء طريقة دفع واحدة على الأقل.',
+    electronicRequired: 'اختر طريقة إلكترونية عند تشغيل الدفع الإلكتروني.',
   },
   ku: {
     title: 'ڕێکخستنەکان',
-    subtitle: 'ڕێکخستنەکانی وەڵام، گەیاندن و پارەدان لە ڕاژەکار هەڵدەگیرێن',
-    loading: 'ڕێکخستنەکان بار دەکرێن…',
+    subtitle: 'ڕێکخستنەکانی وەڵام و گەیاندن و پارەدان لە ڕاژەکار هەڵدەگیرێن',
     refresh: 'نوێکردنەوە',
-    save: 'پاشەکەوتکردن',
-    saved: 'ڕێکخستنەکان پاشەکەوت کران',
-    loadFailed: 'نەتوانرا ڕێکخستنەکان لە ڕاژەکارەوە باربکرێن',
-    saveFailed: 'نەتوانرا ڕێکخستنەکان پاشەکەوت بکرێن',
+    persist: 'پاشەکەوتکردن',
+    persisted: 'ڕێکخستنەکان پاشەکەوت کران',
+    loading: 'ڕێکخستنەکان بار دەکرێن…',
+    loadFailed: 'نەتوانرا ڕێکخستنەکان بار بکرێن',
+    persistFailed: 'نەتوانرا ڕێکخستنەکان پاشەکەوت بکرێن',
     conflict: 'ڕێکخستنەکان لە ئامێرێکی تر گۆڕدران. نوێترین وەشان بارکرا.',
+    version: 'وەشان',
     autoReply: 'وەڵامی خۆکار',
-    autoReplyHelp: 'کوژاندنەوەی، پەیامە چاوەڕوانەکانیش پێش ناردن دەوەستێنێت.',
     replyLanguage: 'زمانی وەڵام',
-    languageAuto: 'خۆکار بەپێی زمانی کڕیار',
-    languageArabic: 'عەرەبی',
-    languageKurdish: 'کوردی',
-    languageEnglish: 'ئینگلیزی',
     delivery: 'گەیاندن',
     deliveryEnabled: 'گەیاندن بەردەستە',
-    deliveryFee: 'کرێی گەیاندن (دینار)',
-    freeDeliveryThreshold: 'گەیاندنی بەخۆڕایی لە سەرووی بڕێک',
+    deliveryFee: 'کرێی گەیاندن',
+    freeThreshold: 'گەیاندنی بەخۆڕایی لە سەرووی',
     minDays: 'کەمترین ڕۆژ',
     maxDays: 'زۆرترین ڕۆژ',
-    deliveryAreas: 'ناوچەکانی گەیاندن',
-    deliveryAreasHelp: 'هەر ناوچەیەک لە هێڵێک یان بە کۆما جیا بکەوە.',
-    deliveryNotes: 'تێبینی گەیاندن',
+    areas: 'ناوچەکانی گەیاندن',
+    notes: 'تێبینی گەیاندن',
     payment: 'پارەدان',
-    cashOnDelivery: 'پارەدان لە کاتی گەیاندن',
-    electronicPayment: 'پارەدانی ئەلیکترۆنی',
-    methods: 'شێوازەکانی پارەدان',
-    paymentInstructions: 'ڕێنمایی پارەدان',
-    atLeastOnePayment: 'دەبێت لانیکەم یەک شێوازی پارەدان بمێنێتەوە.',
-    electronicMethodRequired: 'کاتێک پارەدانی ئەلیکترۆنی چالاکە شێوازێکی ئەلیکترۆنی هەڵبژێرە.',
-    invalidDeliveryRange: 'زۆرترین ماوە نابێت لە کەمترین ماوە کەمتر بێت.',
-    version: 'وەشان',
-    paymentMethods: {
-      cash_on_delivery: 'پارەدان لە کاتی گەیاندن',
-      superqi: 'SuperQi',
-      fastpay: 'FastPay',
-      zaincash: 'ZainCash',
-      other: 'هی تر',
-    },
+    cash: 'پارەدان لە کاتی گەیاندن',
+    electronic: 'پارەدانی ئەلیکترۆنی',
+    instructions: 'ڕێنمایی پارەدان',
+    invalidDelivery: 'زۆرترین ماوە نابێت لە کەمترین ماوە کەمتر بێت.',
+    paymentRequired: 'دەبێت لانیکەم یەک شێوازی پارەدان بمێنێتەوە.',
+    electronicRequired: 'شێوازێکی ئەلیکترۆنی هەڵبژێرە.',
   },
   en: {
     title: 'Settings',
     subtitle: 'Reply, delivery, and payment settings are stored on the server',
-    loading: 'Loading settings…',
     refresh: 'Refresh',
-    save: 'Save settings',
-    saved: 'Settings saved',
+    persist: 'Save settings',
+    persisted: 'Settings saved',
+    loading: 'Loading settings…',
     loadFailed: 'Could not load settings from the server',
-    saveFailed: 'Could not save settings',
+    persistFailed: 'Could not save settings',
     conflict: 'Settings changed on another device. The latest version was loaded.',
+    version: 'Version',
     autoReply: 'Automatic replies',
-    autoReplyHelp: 'Turning this off also suppresses queued replies before delivery.',
     replyLanguage: 'Reply language',
-    languageAuto: 'Automatic based on customer language',
-    languageArabic: 'Arabic',
-    languageKurdish: 'Kurdish',
-    languageEnglish: 'English',
     delivery: 'Delivery',
     deliveryEnabled: 'Delivery available',
     deliveryFee: 'Delivery fee (IQD)',
-    freeDeliveryThreshold: 'Free delivery above (optional)',
+    freeThreshold: 'Free delivery above',
     minDays: 'Minimum days',
     maxDays: 'Maximum days',
-    deliveryAreas: 'Delivery areas',
-    deliveryAreasHelp: 'Enter one area per line or separate areas with commas.',
-    deliveryNotes: 'Delivery notes',
+    areas: 'Delivery areas',
+    notes: 'Delivery notes',
     payment: 'Payment',
-    cashOnDelivery: 'Cash on delivery',
-    electronicPayment: 'Electronic payment',
-    methods: 'Payment methods',
-    paymentInstructions: 'Payment instructions',
-    atLeastOnePayment: 'At least one payment method must remain enabled.',
-    electronicMethodRequired: 'Select an electronic method when electronic payment is enabled.',
-    invalidDeliveryRange: 'Maximum delivery days cannot be less than minimum days.',
-    version: 'Version',
-    paymentMethods: {
-      cash_on_delivery: 'Cash on delivery',
-      superqi: 'SuperQi',
-      fastpay: 'FastPay',
-      zaincash: 'ZainCash',
-      other: 'Other',
-    },
+    cash: 'Cash on delivery',
+    electronic: 'Electronic payment',
+    instructions: 'Payment instructions',
+    invalidDelivery: 'Maximum delivery days cannot be less than minimum days.',
+    paymentRequired: 'At least one payment method must remain enabled.',
+    electronicRequired: 'Select an electronic method when electronic payment is enabled.',
   },
 };
 
@@ -233,7 +175,7 @@ function languageCode(i18n: ReturnType<typeof useI18n>): LanguageCode {
   return i18n.isRTL ? 'ar' : 'en';
 }
 
-function uniqueAreas(value: string): string[] {
+function normalizeAreas(value: string): string[] {
   const seen = new Set<string>();
   const result: string[] = [];
   for (const item of value.split(/[\n,]/)) {
@@ -249,7 +191,7 @@ function uniqueAreas(value: string): string[] {
 export default function ServerSettingsPage() {
   const i18n = useI18n();
   const language = languageCode(i18n);
-  const labels = LABELS[language];
+  const copy = COPY[language];
   const [settings, setSettings] = useState<MerchantSettings | null>(null);
   const [draft, setDraft] = useState<MerchantSettings | null>(null);
   const [areasText, setAreasText] = useState('');
@@ -257,12 +199,12 @@ export default function ServerSettingsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const dirty = useMemo(() => {
-    if (!settings || !draft) return false;
-    return JSON.stringify(settings) !== JSON.stringify(draft);
-  }, [settings, draft]);
+  const dirty = useMemo(
+    () => Boolean(settings && draft && JSON.stringify(settings) !== JSON.stringify(draft)),
+    [settings, draft],
+  );
 
-  const applySettings = (next: MerchantSettings) => {
+  const applyServerState = (next: MerchantSettings) => {
     setSettings(next);
     setDraft(structuredClone(next));
     setAreasText(next.delivery.areas.join('\n'));
@@ -273,15 +215,16 @@ export default function ServerSettingsPage() {
     try {
       const response = await fetch('/api/settings', {
         headers: { Accept: 'application/json' },
+        cache: 'no-store',
       });
       const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.ok || !data.settings) {
-        throw new Error(data?.error || labels.loadFailed);
+      if (!response.ok || data?.ok !== true || !data.settings) {
+        throw new Error(data?.error || copy.loadFailed);
       }
-      applySettings(data.settings as MerchantSettings);
+      applyServerState(data.settings as MerchantSettings);
       setError('');
     } catch (loadError) {
-      const message = loadError instanceof Error ? loadError.message : labels.loadFailed;
+      const message = loadError instanceof Error ? loadError.message : copy.loadFailed;
       setError(message);
       if (!silent) toast.error(message);
     } finally {
@@ -300,42 +243,17 @@ export default function ServerSettingsPage() {
   const toggleMethod = (method: PaymentMethod, enabled: boolean) => {
     updateDraft(current => {
       const methods = new Set(current.payment.methods);
-      if (enabled) methods.add(method);
-      else methods.delete(method);
-      return {
-        ...current,
-        payment: { ...current.payment, methods: [...methods] },
-      };
+      enabled ? methods.add(method) : methods.delete(method);
+      return { ...current, payment: { ...current.payment, methods: [...methods] } };
     });
   };
 
-  const validate = (current: MerchantSettings): string | null => {
-    if (current.delivery.estimated_days_max < current.delivery.estimated_days_min) {
-      return labels.invalidDeliveryRange;
-    }
-    if (
-      !current.payment.cash_on_delivery_enabled &&
-      !current.payment.electronic_payment_enabled
-    ) {
-      return labels.atLeastOnePayment;
-    }
-    if (
-      current.payment.electronic_payment_enabled &&
-      !current.payment.methods.some(method => method !== 'cash_on_delivery')
-    ) {
-      return labels.electronicMethodRequired;
-    }
-    return null;
-  };
+  const persistSettings = async () => {
+    if (!settings || !draft || saving) return;
 
-  const saveSettings = async () => {
-    if (!draft || !settings || saving) return;
     const normalized: MerchantSettings = {
       ...draft,
-      delivery: {
-        ...draft.delivery,
-        areas: uniqueAreas(areasText),
-      },
+      delivery: { ...draft.delivery, areas: normalizeAreas(areasText) },
       payment: {
         ...draft.payment,
         methods: draft.payment.methods.filter(method =>
@@ -345,15 +263,29 @@ export default function ServerSettingsPage() {
         ),
       },
     };
+
     if (
       normalized.payment.cash_on_delivery_enabled &&
       !normalized.payment.methods.includes('cash_on_delivery')
     ) {
       normalized.payment.methods.unshift('cash_on_delivery');
     }
-    const validationError = validate(normalized);
-    if (validationError) {
-      toast.error(validationError);
+    if (normalized.delivery.estimated_days_max < normalized.delivery.estimated_days_min) {
+      toast.error(copy.invalidDelivery);
+      return;
+    }
+    if (
+      !normalized.payment.cash_on_delivery_enabled &&
+      !normalized.payment.electronic_payment_enabled
+    ) {
+      toast.error(copy.paymentRequired);
+      return;
+    }
+    if (
+      normalized.payment.electronic_payment_enabled &&
+      !normalized.payment.methods.some(method => method !== 'cash_on_delivery')
+    ) {
+      toast.error(copy.electronicRequired);
       return;
     }
 
@@ -376,22 +308,24 @@ export default function ServerSettingsPage() {
         }),
       });
       const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.ok || !data.settings) {
+      if (!response.ok || data?.ok !== true || !data.settings) {
         if (
           data?.code === 'MERCHANT_SETTINGS_VERSION_CONFLICT' &&
           data.current_settings
         ) {
-          applySettings(data.current_settings as MerchantSettings);
-          toast.error(labels.conflict);
+          applyServerState(data.current_settings as MerchantSettings);
+          toast.error(copy.conflict);
           return;
         }
-        throw new Error(data?.error || labels.saveFailed);
+        throw new Error(data?.error || copy.persistFailed);
       }
-      applySettings(data.settings as MerchantSettings);
+      applyServerState(data.settings as MerchantSettings);
       setError('');
-      toast.success(labels.saved);
-    } catch (saveError) {
-      const message = saveError instanceof Error ? saveError.message : labels.saveFailed;
+      toast.success(copy.persisted);
+    } catch (persistError) {
+      const message =
+        persistError instanceof Error ? persistError.message : copy.persistFailed;
+      setError(message);
       toast.error(message);
       await loadSettings(true);
     } finally {
@@ -403,7 +337,7 @@ export default function ServerSettingsPage() {
     return (
       <div className="flex min-h-[60vh] items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
-        {labels.loading}
+        {copy.loading}
       </div>
     );
   }
@@ -412,42 +346,47 @@ export default function ServerSettingsPage() {
     return (
       <div className="min-h-screen bg-background p-4" dir={i18n.dir}>
         <div className="mx-auto max-w-3xl rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive">
-          {error || labels.loadFailed}
+          {error || copy.loadFailed}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background p-4 pb-28" dir={i18n.dir}>
+    <main className="min-h-screen bg-background p-4 pb-28" dir={i18n.dir}>
       <div className="mx-auto max-w-5xl space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-extrabold tracking-tight">{labels.title}</h1>
-            <p className="mt-1 text-sm text-muted-foreground">{labels.subtitle}</p>
+            <h1 className="text-2xl font-extrabold tracking-tight">{copy.title}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{copy.subtitle}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {labels.version} {settings?.version || draft.version}
+              {copy.version} {settings?.version ?? draft.version}
             </p>
           </div>
           <div className="flex gap-2">
             <Button
+              type="button"
               variant="outline"
               onClick={() => void loadSettings()}
               disabled={loading || saving}
             >
               <RefreshCw className="me-2 h-4 w-4" />
-              {labels.refresh}
+              {copy.refresh}
             </Button>
-            <Button onClick={() => void saveSettings()} disabled={!dirty || saving}>
+            <Button
+              type="button"
+              onClick={() => void persistSettings()}
+              disabled={!dirty || saving}
+            >
               {saving ? (
                 <Loader2 className="me-2 h-4 w-4 animate-spin" />
               ) : (
                 <Save className="me-2 h-4 w-4" />
               )}
-              {labels.save}
+              {copy.persist}
             </Button>
           </div>
-        </div>
+        </header>
 
         {error ? (
           <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -457,19 +396,11 @@ export default function ServerSettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-primary" />
-              {labels.autoReply}
-            </CardTitle>
+            <CardTitle>{copy.autoReply}</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-5 md:grid-cols-2">
-            <label className="flex items-start justify-between gap-4 rounded-xl border p-4">
-              <span>
-                <span className="block font-semibold">{labels.autoReply}</span>
-                <span className="mt-1 block text-xs text-muted-foreground">
-                  {labels.autoReplyHelp}
-                </span>
-              </span>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
+              {copy.autoReply}
               <input
                 type="checkbox"
                 checked={draft.auto_reply_enabled}
@@ -479,15 +410,11 @@ export default function ServerSettingsPage() {
                     auto_reply_enabled: event.target.checked,
                   }))
                 }
-                className="mt-1 h-5 w-5 accent-primary"
+                className="h-5 w-5 accent-primary"
               />
             </label>
-
-            <label className="space-y-2 rounded-xl border p-4">
-              <span className="flex items-center gap-2 font-semibold">
-                <Languages className="h-4 w-4 text-primary" />
-                {labels.replyLanguage}
-              </span>
+            <label className="space-y-2 rounded-xl border p-4 font-semibold">
+              <span>{copy.replyLanguage}</span>
               <select
                 value={draft.reply_language}
                 onChange={event =>
@@ -498,10 +425,10 @@ export default function ServerSettingsPage() {
                 }
                 className="h-11 w-full rounded-md border bg-background px-3"
               >
-                <option value="auto">{labels.languageAuto}</option>
-                <option value="ar">{labels.languageArabic}</option>
-                <option value="ku">{labels.languageKurdish}</option>
-                <option value="en">{labels.languageEnglish}</option>
+                <option value="auto">Auto</option>
+                <option value="ar">العربية</option>
+                <option value="ku">کوردی</option>
+                <option value="en">English</option>
               </select>
             </label>
           </CardContent>
@@ -509,33 +436,26 @@ export default function ServerSettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5 text-primary" />
-              {labels.delivery}
-            </CardTitle>
+            <CardTitle>{copy.delivery}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-4">
             <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
-              {labels.deliveryEnabled}
+              {copy.deliveryEnabled}
               <input
                 type="checkbox"
                 checked={draft.delivery.enabled}
                 onChange={event =>
                   updateDraft(current => ({
                     ...current,
-                    delivery: {
-                      ...current.delivery,
-                      enabled: event.target.checked,
-                    },
+                    delivery: { ...current.delivery, enabled: event.target.checked },
                   }))
                 }
                 className="h-5 w-5 accent-primary"
               />
             </label>
-
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <label className="space-y-2 text-sm font-medium">
-                <span>{labels.deliveryFee}</span>
+                <span>{copy.deliveryFee}</span>
                 <Input
                   type="number"
                   min={0}
@@ -552,7 +472,7 @@ export default function ServerSettingsPage() {
                 />
               </label>
               <label className="space-y-2 text-sm font-medium">
-                <span>{labels.freeDeliveryThreshold}</span>
+                <span>{copy.freeThreshold}</span>
                 <Input
                   type="number"
                   min={0}
@@ -571,7 +491,7 @@ export default function ServerSettingsPage() {
                 />
               </label>
               <label className="space-y-2 text-sm font-medium">
-                <span>{labels.minDays}</span>
+                <span>{copy.minDays}</span>
                 <Input
                   type="number"
                   min={1}
@@ -589,7 +509,7 @@ export default function ServerSettingsPage() {
                 />
               </label>
               <label className="space-y-2 text-sm font-medium">
-                <span>{labels.maxDays}</span>
+                <span>{copy.maxDays}</span>
                 <Input
                   type="number"
                   min={1}
@@ -607,9 +527,8 @@ export default function ServerSettingsPage() {
                 />
               </label>
             </div>
-
             <label className="block space-y-2 text-sm font-medium">
-              <span>{labels.deliveryAreas}</span>
+              <span>{copy.areas}</span>
               <textarea
                 value={areasText}
                 onChange={event => setAreasText(event.target.value)}
@@ -617,13 +536,9 @@ export default function ServerSettingsPage() {
                 maxLength={10000}
                 className="w-full rounded-md border bg-background p-3 text-sm"
               />
-              <span className="block text-xs font-normal text-muted-foreground">
-                {labels.deliveryAreasHelp}
-              </span>
             </label>
-
             <label className="block space-y-2 text-sm font-medium">
-              <span>{labels.deliveryNotes}</span>
+              <span>{copy.notes}</span>
               <textarea
                 value={draft.delivery.notes}
                 onChange={event =>
@@ -645,15 +560,12 @@ export default function ServerSettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-primary" />
-              {labels.payment}
-            </CardTitle>
+            <CardTitle>{copy.payment}</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-4">
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
-                {labels.cashOnDelivery}
+                {copy.cash}
                 <input
                   type="checkbox"
                   checked={draft.payment.cash_on_delivery_enabled}
@@ -661,8 +573,7 @@ export default function ServerSettingsPage() {
                     const enabled = event.target.checked;
                     updateDraft(current => {
                       const methods = new Set(current.payment.methods);
-                      if (enabled) methods.add('cash_on_delivery');
-                      else methods.delete('cash_on_delivery');
+                      enabled ? methods.add('cash_on_delivery') : methods.delete('cash_on_delivery');
                       return {
                         ...current,
                         payment: {
@@ -677,7 +588,7 @@ export default function ServerSettingsPage() {
                 />
               </label>
               <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
-                {labels.electronicPayment}
+                {copy.electronic}
                 <input
                   type="checkbox"
                   checked={draft.payment.electronic_payment_enabled}
@@ -700,36 +611,22 @@ export default function ServerSettingsPage() {
                 />
               </label>
             </div>
-
-            <div>
-              <p className="mb-3 text-sm font-semibold">{labels.methods}</p>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {ELECTRONIC_METHODS.map(method => (
-                  <label
-                    key={method}
-                    className={`flex items-center gap-3 rounded-xl border p-3 ${
-                      draft.payment.electronic_payment_enabled
-                        ? ''
-                        : 'opacity-50'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={draft.payment.methods.includes(method)}
-                      disabled={!draft.payment.electronic_payment_enabled}
-                      onChange={event => toggleMethod(method, event.target.checked)}
-                      className="h-4 w-4 accent-primary"
-                    />
-                    <span className="text-sm font-medium">
-                      {labels.paymentMethods[method]}
-                    </span>
-                  </label>
-                ))}
-              </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {ELECTRONIC_METHODS.map(method => (
+                <label key={method} className="flex items-center gap-3 rounded-xl border p-3">
+                  <input
+                    type="checkbox"
+                    checked={draft.payment.methods.includes(method)}
+                    disabled={!draft.payment.electronic_payment_enabled}
+                    onChange={event => toggleMethod(method, event.target.checked)}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <span className="text-sm font-medium">{method}</span>
+                </label>
+              ))}
             </div>
-
             <label className="block space-y-2 text-sm font-medium">
-              <span>{labels.paymentInstructions}</span>
+              <span>{copy.instructions}</span>
               <textarea
                 value={draft.payment.instructions}
                 onChange={event =>
@@ -749,6 +646,6 @@ export default function ServerSettingsPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   );
 }
