@@ -2,8 +2,8 @@ import type { NextFunction, Request, Response } from "express";
 import {
   getMerchantIdFromSession,
   requireMerchantSession,
-  verifyMerchantOAuthState,
-} from "../routes/auth";
+} from "./authSession";
+import { verifyMerchantOAuthState } from "../routes/auth";
 import {
   getMerchantOperationalDecision,
   type MerchantOperationalDecision,
