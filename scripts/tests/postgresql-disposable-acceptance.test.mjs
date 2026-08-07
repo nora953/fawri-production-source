@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
@@ -9,6 +10,8 @@ const testDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(testDirectory, "../..");
 const databaseDirectory = path.join(repositoryRoot, "lib", "db");
 const committedDrizzleDirectory = path.join(databaseDirectory, "drizzle");
+const dbRequire = createRequire(path.join(databaseDirectory, "package.json"));
+const { Client } = dbRequire("pg");
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
@@ -60,6 +63,17 @@ function assertSameBytes(left, right, label) {
     fs.readFileSync(right),
     `${label} is not byte-for-byte reproducible`,
   );
+}
+
+async function resetDisposableSchema(connectionString) {
+  const client = new Client({ connectionString });
+  await client.connect();
+  try {
+    await client.query("DROP SCHEMA IF EXISTS public CASCADE");
+    await client.query("CREATE SCHEMA public");
+  } finally {
+    await client.end();
+  }
 }
 
 test("committed dual-stage Drizzle chain is reproducible from the committed 0001 baseline", () => {
@@ -123,7 +137,7 @@ const disposableDatabaseAvailable = safeDisposableDatabase(process.env.DATABASE_
 test(
   "disposable PostgreSQL applies migrations and completes rollback commit reconciliation and cleanup",
   { skip: !disposableDatabaseAvailable },
-  () => {
+  async () => {
     const fixtureDirectory = fs.mkdtempSync(
       path.join(process.env.RUNNER_TEMP || "/tmp", "fawri-postgresql-acceptance-"),
     );
@@ -229,6 +243,9 @@ test(
       assert.equal(commitReport.database_restored_to_empty, true);
     } finally {
       fs.rmSync(fixtureDirectory, { recursive: true, force: true });
+      if (disposableDatabaseAvailable) {
+        await resetDisposableSchema(process.env.DATABASE_URL);
+      }
     }
   },
 );
