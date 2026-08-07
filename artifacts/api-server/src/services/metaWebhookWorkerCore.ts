@@ -1,12 +1,36 @@
-import type { DurableJob } from "./durableJobQueue";
+import type { DurableJob, ExpiredJobResolution } from "./durableJobQueue";
+import { getMerchantOperationalDecision } from "./merchantOperationalAccess";
 import {
-  getMetaWebhookReplyOutcome,
-  removeFailedMetaWebhookAttempt,
-} from "./metaWebhookOutcome";
-import { getMetaWebhookInternalReplayHeaders } from "./metaWebhookInternalReplay";
-import { refundMerchantAutoReply } from "./merchantReplyRefund";
+  getMerchantOperationalSettings,
+  type MerchantOperationalSettings,
+} from "./merchantSettingsRuntime";
+import { reserveMerchantAutoReply } from "./merchantReplyEntitlement";
+import {
+  releaseMerchantAutoReplyReservation,
+  type MerchantReplyReleaseCode,
+} from "./merchantReplyReservationRelease";
+import type {
+  MetaWebhookReplyTransport,
+  MetaWebhookReplyTransportState,
+} from "./metaWebhookFakeTransport";
 
-const INTERNAL_REQUEST_TIMEOUT_MS = 30_000;
+export type MetaReplyLifecycleHooks = {
+  afterClaimSettingsRead?: (input: {
+    job: DurableJob;
+    settings: MerchantOperationalSettings;
+  }) => Promise<void> | void;
+  afterReservation?: (input: {
+    job: DurableJob;
+    settings: MerchantOperationalSettings;
+  }) => Promise<void> | void;
+};
+
+type JobFailure = Error & {
+  code: string;
+  retryable: boolean;
+  requeueSafe: boolean;
+  safeMessage: string;
+};
 
 function text(value: unknown): string {
   return String(value || "").trim();
@@ -14,200 +38,451 @@ function text(value: unknown): string {
 
 function jobError(
   code: string,
-  message: string,
+  safeMessage: string,
   retryable: boolean,
-): Error & { code: string; retryable: boolean } {
-  return Object.assign(new Error(message), { code, retryable });
-}
-
-function payloadRecord(job: DurableJob): Record<string, unknown> {
-  if (!job.payload || typeof job.payload !== "object") {
-    throw jobError("META_JOB_PAYLOAD_INVALID", "Meta job payload is invalid", false);
-  }
-  return job.payload;
+  requeueSafe = retryable,
+): JobFailure {
+  return Object.assign(new Error(safeMessage), {
+    code,
+    retryable,
+    requeueSafe,
+    safeMessage,
+  });
 }
 
 function validateJob(job: DurableJob): {
   eventId: string;
   merchantId: string;
   externalMessageId: string;
-  webhookBody: Record<string, unknown>;
 } {
-  const payload = payloadRecord(job);
+  const payload = job.payload || {};
   const eventId = text(payload.event_id);
   const merchantId = text(payload.merchant_id || job.merchant_id);
   const externalMessageId = text(payload.external_message_id);
-  const webhookBody =
-    payload.webhook_body &&
-    typeof payload.webhook_body === "object" &&
-    !Array.isArray(payload.webhook_body)
-      ? (payload.webhook_body as Record<string, unknown>)
-      : null;
-
-  if (!eventId || !merchantId || !externalMessageId || !webhookBody) {
+  if (!eventId || !merchantId || !externalMessageId) {
     throw jobError(
       "META_JOB_PAYLOAD_INVALID",
-      "Meta job identity or webhook body is missing",
+      "Meta job identity is invalid",
+      false,
       false,
     );
   }
-  return { eventId, merchantId, externalMessageId, webhookBody };
+  return { eventId, merchantId, externalMessageId };
 }
 
-function inspectOutcome(merchantId: string, externalMessageId: string) {
-  return getMetaWebhookReplyOutcome({ merchantId, externalMessageId });
+function readSettings(merchantId: string): MerchantOperationalSettings {
+  try {
+    return getMerchantOperationalSettings(merchantId);
+  } catch {
+    throw jobError(
+      "MERCHANT_SETTINGS_UNAVAILABLE",
+      "merchant settings are unavailable",
+      true,
+      true,
+    );
+  }
+}
+
+function settingsSuppressionCode(
+  expectedVersion: number,
+  settings: MerchantOperationalSettings,
+): MerchantReplyReleaseCode | null {
+  if (!settings.auto_reply_enabled) return "MERCHANT_AUTO_REPLY_DISABLED";
+  if (settings.version !== expectedVersion) {
+    return "MERCHANT_SETTINGS_VERSION_CHANGED";
+  }
+  return null;
+}
+
+function completedSuppression(eventId: string, code: string) {
+  return {
+    event_id: eventId,
+    delivery_status: "suppressed",
+    suppression_code: code,
+    credit_consumed: false,
+  };
+}
+
+function existingTerminalResult(
+  eventId: string,
+  state: MetaWebhookReplyTransportState | null,
+): Record<string, unknown> | null {
+  if (!state) return null;
+  if (state.status === "sent") {
+    return {
+      event_id: eventId,
+      delivery_status: "sent",
+      transport_message_id: text(state.transport_message_id),
+      recovered_from_existing_result: true,
+    };
+  }
+  if (state.status === "suppressed") {
+    return completedSuppression(
+      eventId,
+      text(state.code) || "META_REPLY_SUPPRESSED",
+    );
+  }
+  return null;
+}
+
+function throwIfOutcomeUncertain(state: MetaWebhookReplyTransportState | null): void {
+  if (state?.status === "sending" || state?.status === "uncertain") {
+    throw jobError(
+      "META_REPLY_OUTCOME_UNCERTAIN",
+      "Meta reply outcome is uncertain and cannot be retried automatically",
+      false,
+      false,
+    );
+  }
+}
+
+function releaseAndSuppress(input: {
+  eventId: string;
+  merchantId: string;
+  settingsVersion: number;
+  code: MerchantReplyReleaseCode;
+  transport: MetaWebhookReplyTransport;
+}): Record<string, unknown> {
+  const released = releaseMerchantAutoReplyReservation(input.eventId, input.code);
+  if (
+    !released.released &&
+    released.reason !== "already_released"
+  ) {
+    throw jobError(
+      "META_REPLY_RELEASE_RECONCILIATION_REQUIRED",
+      "reply reservation could not be released safely",
+      false,
+      false,
+    );
+  }
+  const state = input.transport.markSuppressed({
+    eventId: input.eventId,
+    merchantId: input.merchantId,
+    settingsVersion: input.settingsVersion,
+    code: input.code,
+  });
+  if (state.status === "sending" || state.status === "uncertain") {
+    throw jobError(
+      "META_REPLY_OUTCOME_UNCERTAIN",
+      "Meta reply outcome became uncertain before suppression was persisted",
+      false,
+      false,
+    );
+  }
+  if (state.status === "sent") {
+    throw jobError(
+      "META_REPLY_ALREADY_SENT",
+      "Meta reply was already sent before suppression could be applied",
+      false,
+      false,
+    );
+  }
+  return completedSuppression(input.eventId, input.code);
 }
 
 export async function processMetaReplyJob(
   job: DurableJob,
-  internalWebhookUrl: string,
+  options: {
+    transport: MetaWebhookReplyTransport;
+    hooks?: MetaReplyLifecycleHooks;
+  },
 ): Promise<Record<string, unknown>> {
-  const { eventId, merchantId, externalMessageId, webhookBody } = validateJob(job);
+  const { eventId, merchantId } = validateJob(job);
+  const transport = options.transport;
 
-  const before = inspectOutcome(merchantId, externalMessageId);
-  if (before.status === "sent") {
-    return {
-      event_id: eventId,
-      delivery_status: "sent",
-      conversation_id: before.conversationId,
-      recovered_from_existing_result: true,
-    };
-  }
-  if (before.status === "failed") {
-    removeFailedMetaWebhookAttempt({ merchantId, externalMessageId });
+  const existingState = transport.read(eventId);
+  const terminal = existingTerminalResult(eventId, existingState);
+  if (terminal) return terminal;
+  throwIfOutcomeUncertain(existingState);
+
+  const access = getMerchantOperationalDecision(merchantId);
+  if (!access.allowed) {
+    if (access.code === "MERCHANT_ACCESS_STATE_UNAVAILABLE") {
+      throw jobError(access.code, access.error, true, true);
+    }
+    transport.markSuppressed({
+      eventId,
+      merchantId,
+      settingsVersion: existingState?.settings_version || 1,
+      code: access.code,
+    });
+    return completedSuppression(eventId, access.code);
   }
 
-  const controller = new AbortController();
-  const timeout = setTimeout(
-    () => controller.abort(),
-    INTERNAL_REQUEST_TIMEOUT_MS,
+  const claimedSettings = readSettings(merchantId);
+  if (!claimedSettings.auto_reply_enabled) {
+    transport.markSuppressed({
+      eventId,
+      merchantId,
+      settingsVersion: claimedSettings.version,
+      code: "MERCHANT_AUTO_REPLY_DISABLED",
+    });
+    return completedSuppression(eventId, "MERCHANT_AUTO_REPLY_DISABLED");
+  }
+
+  if (
+    existingState &&
+    existingState.settings_version !== claimedSettings.version
+  ) {
+    if (existingState.status === "reserved" || existingState.status === "failed") {
+      return releaseAndSuppress({
+        eventId,
+        merchantId,
+        settingsVersion: existingState.settings_version,
+        code: "MERCHANT_SETTINGS_VERSION_CHANGED",
+        transport,
+      });
+    }
+    throw jobError(
+      "MERCHANT_SETTINGS_VERSION_CHANGED",
+      "merchant settings changed after reply claim",
+      false,
+      false,
+    );
+  }
+
+  await options.hooks?.afterClaimSettingsRead?.({
+    job,
+    settings: claimedSettings,
+  });
+
+  const beforeReservation = readSettings(merchantId);
+  const beforeReservationCode = settingsSuppressionCode(
+    claimedSettings.version,
+    beforeReservation,
   );
-  timeout.unref();
+  if (beforeReservationCode) {
+    transport.markSuppressed({
+      eventId,
+      merchantId,
+      settingsVersion: claimedSettings.version,
+      code: beforeReservationCode,
+    });
+    return completedSuppression(eventId, beforeReservationCode);
+  }
 
-  let response: Response;
+  let reservation;
   try {
-    response = await fetch(internalWebhookUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...getMetaWebhookInternalReplayHeaders(),
+    reservation = reserveMerchantAutoReply(merchantId, eventId);
+  } catch {
+    throw jobError(
+      "MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE",
+      "merchant reply entitlement is unavailable",
+      true,
+      true,
+    );
+  }
+  if (!reservation.allowed) {
+    if (reservation.code === "MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE") {
+      throw jobError(reservation.code, reservation.error, true, true);
+    }
+    transport.markSuppressed({
+      eventId,
+      merchantId,
+      settingsVersion: claimedSettings.version,
+      code: reservation.code,
+    });
+    return completedSuppression(eventId, reservation.code);
+  }
+
+  if (reservation.duplicate && !existingState) {
+    throw jobError(
+      "META_REPLY_LEGACY_RESERVATION_UNCERTAIN",
+      "reply reservation predates the fake transport lifecycle and cannot be sent safely",
+      false,
+      false,
+    );
+  }
+
+  let reservedState: MetaWebhookReplyTransportState;
+  try {
+    reservedState = transport.markReserved({
+      eventId,
+      merchantId,
+      settingsVersion: claimedSettings.version,
+    });
+  } catch {
+    return releaseAndSuppress({
+      eventId,
+      merchantId,
+      settingsVersion: claimedSettings.version,
+      code: "MERCHANT_SETTINGS_UNAVAILABLE",
+      transport,
+    });
+  }
+
+  if (reservedState.settings_version !== claimedSettings.version) {
+    return releaseAndSuppress({
+      eventId,
+      merchantId,
+      settingsVersion: reservedState.settings_version,
+      code: "MERCHANT_SETTINGS_VERSION_CHANGED",
+      transport,
+    });
+  }
+
+  await options.hooks?.afterReservation?.({
+    job,
+    settings: claimedSettings,
+  });
+
+  let result;
+  try {
+    result = await transport.send({
+      eventId,
+      merchantId,
+      settingsVersion: claimedSettings.version,
+      beforeSend: () => {
+        const immediatelyBeforeSend = readSettings(merchantId);
+        const code = settingsSuppressionCode(
+          claimedSettings.version,
+          immediatelyBeforeSend,
+        );
+        if (code) {
+          throw jobError(
+            code,
+            code === "MERCHANT_AUTO_REPLY_DISABLED"
+              ? "merchant automatic replies were disabled before send"
+              : "merchant settings changed before send",
+            false,
+            false,
+          );
+        }
       },
-      body: JSON.stringify(webhookBody),
-      signal: controller.signal,
     });
   } catch (error) {
-    const afterFailure = inspectOutcome(merchantId, externalMessageId);
-    if (afterFailure.status === "sent") {
+    const state = transport.read(eventId);
+    if (state?.status === "sent") {
       return {
         event_id: eventId,
         delivery_status: "sent",
-        conversation_id: afterFailure.conversationId,
+        transport_message_id: text(state.transport_message_id),
         recovered_after_transport_error: true,
       };
     }
-    if (afterFailure.status === "failed") {
+    if (state?.status === "failed") {
+      throw jobError("META_REPLY_FAILED", "Meta reply failed", true, true);
+    }
+    if (state?.status === "sending" || state?.status === "uncertain") {
       throw jobError(
-        "META_REPLY_FAILED",
-        "Messenger reply failed and can be retried safely",
-        true,
+        "META_REPLY_OUTCOME_UNCERTAIN",
+        "Meta reply outcome is uncertain and cannot be retried automatically",
+        false,
+        false,
       );
     }
+    const code = text((error as { code?: unknown }).code);
+    if (
+      code === "MERCHANT_AUTO_REPLY_DISABLED" ||
+      code === "MERCHANT_SETTINGS_VERSION_CHANGED" ||
+      code === "MERCHANT_SETTINGS_UNAVAILABLE"
+    ) {
+      return releaseAndSuppress({
+        eventId,
+        merchantId,
+        settingsVersion: claimedSettings.version,
+        code: code as MerchantReplyReleaseCode,
+        transport,
+      });
+    }
     throw jobError(
-      "META_REPLY_OUTCOME_UNCERTAIN",
-      `Meta internal replay outcome is uncertain: ${String(error)}`,
-      false,
-    );
-  } finally {
-    clearTimeout(timeout);
-  }
-
-  const responseBody = await response.json().catch(() => null);
-  const outcome = inspectOutcome(merchantId, externalMessageId);
-  if (outcome.status === "sent") {
-    return {
-      event_id: eventId,
-      delivery_status: "sent",
-      conversation_id: outcome.conversationId,
-      internal_status: response.status,
-    };
-  }
-  if (outcome.status === "failed") {
-    throw jobError(
-      "META_REPLY_FAILED",
-      "Messenger reply failed and can be retried safely",
+      code || "META_FAKE_TRANSPORT_UNAVAILABLE",
+      "fake Meta transport is unavailable",
+      true,
       true,
     );
   }
 
-  if (!response.ok) {
-    const responseCode = text(
-      responseBody && typeof responseBody === "object"
-        ? (responseBody as Record<string, unknown>).code
-        : "",
-    );
-    const responseError = text(
-      responseBody && typeof responseBody === "object"
-        ? (responseBody as Record<string, unknown>).error
-        : "",
-    );
-    if (response.status >= 500) {
-      throw jobError(
-        responseCode || "META_INTERNAL_REPLAY_UNAVAILABLE",
-        responseError || `Meta internal replay returned ${response.status}`,
-        true,
-      );
-    }
+  if (result.status === "sent") {
+    return {
+      event_id: eventId,
+      delivery_status: "sent",
+      transport_message_id: result.transportMessageId,
+      deduplicated_send: result.deduplicated,
+    };
+  }
+  if (result.status === "failed") {
+    throw jobError("META_REPLY_FAILED", "Meta reply failed", true, true);
+  }
+  if (result.status === "uncertain") {
     throw jobError(
-      responseCode || "META_INTERNAL_REPLAY_REJECTED",
-      responseError || `Meta internal replay returned ${response.status}`,
+      "META_REPLY_OUTCOME_UNCERTAIN",
+      "Meta reply outcome is uncertain and cannot be retried automatically",
+      false,
       false,
     );
   }
 
-  throw jobError(
-    "META_REPLY_OUTCOME_UNCERTAIN",
-    "Meta internal replay completed without a confirmed reply outcome",
-    false,
-  );
+  return releaseAndSuppress({
+    eventId,
+    merchantId,
+    settingsVersion: claimedSettings.version,
+    code:
+      result.code === "MERCHANT_SETTINGS_VERSION_CHANGED"
+        ? "MERCHANT_SETTINGS_VERSION_CHANGED"
+        : "META_FAKE_TRANSPORT_ONLY",
+    transport,
+  });
 }
 
-export function handleMetaDeadLetter(job: DurableJob): void {
-  const payload = job.payload || {};
-  const eventId = text(payload.event_id || job.dedupe_key);
-  const merchantId = text(payload.merchant_id || job.merchant_id);
-  const externalMessageId = text(payload.external_message_id);
-
-  if (job.last_error_code === "META_REPLY_FAILED" && eventId) {
-    try {
-      const refund = refundMerchantAutoReply(eventId, "META_REPLY_FAILED");
-      if (refund.refunded && merchantId && externalMessageId) {
-        removeFailedMetaWebhookAttempt({ merchantId, externalMessageId });
-      }
-      console.error("Meta reply moved to DLQ after confirmed failures", {
-        job_id: job.id,
-        event_id: eventId,
-        merchant_id: merchantId,
-        attempts: job.attempts,
-        refund,
-      });
-      return;
-    } catch (error) {
-      console.error("Meta reply DLQ refund failed", {
-        job_id: job.id,
-        event_id: eventId,
-        merchant_id: merchantId,
-        error,
-      });
-      return;
+export function reconcileMetaReplyJob(
+  job: DurableJob,
+  transport: MetaWebhookReplyTransport,
+): ExpiredJobResolution {
+  try {
+    const { eventId } = validateJob(job);
+    const state = transport.read(eventId);
+    if (!state) {
+      return {
+        action: "dead_letter",
+        code: "META_REPLY_OUTCOME_UNCERTAIN",
+        message: "expired claimed reply has no fake transport lifecycle record",
+      };
     }
+    if (state.status === "sent") {
+      return {
+        action: "complete",
+        result: {
+          event_id: eventId,
+          delivery_status: "sent",
+          transport_message_id: text(state.transport_message_id),
+          recovered_after_worker_restart: true,
+        },
+      };
+    }
+    if (state.status === "suppressed") {
+      return {
+        action: "complete",
+        result: completedSuppression(
+          eventId,
+          text(state.code) || "META_REPLY_SUPPRESSED",
+        ),
+      };
+    }
+    if (state.status === "failed") {
+      return {
+        action: "retry",
+        code: "META_REPLY_FAILED",
+        message: "confirmed failed fake Meta reply can be retried safely",
+      };
+    }
+    if (state.status === "reserved") {
+      return {
+        action: "retry",
+        code: "META_REPLY_NOT_STARTED",
+        message: "reply reservation exists but fake Meta send was not started",
+      };
+    }
+    return {
+      action: "dead_letter",
+      code: "META_REPLY_OUTCOME_UNCERTAIN",
+      message: "fake Meta send may have started before worker restart",
+    };
+  } catch {
+    return {
+      action: "dead_letter",
+      code: "META_JOB_RECONCILIATION_INVALID",
+      message: "expired Meta reply job could not be reconciled safely",
+    };
   }
-
-  console.error("Meta reply moved to DLQ without automatic refund", {
-    job_id: job.id,
-    event_id: eventId,
-    merchant_id: merchantId,
-    attempts: job.attempts,
-    error_code: job.last_error_code,
-    reason: "delivery outcome was not a confirmed safe failure",
-  });
 }
