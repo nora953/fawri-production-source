@@ -5,7 +5,7 @@
 - Branch: `parallel/channels-messaging`
 - Starting SHA: `b08c854f177953d3690c5dffde905fdb0c93eb09`
 - Initial implementation SHA: `baa3f2ab74b6fd308b6631d0dc0a94d2c7e230e7`
-- Scope-compliance correction SHA: `f9cef32e25d0bb4e44f67d254633534173a6715d`
+- Scope-compliance correction SHA: `498e956a1dfeb8f7f0fa7b24a6818d4dc4ffde0d`
 - Shared files modified: none
 - Real Meta calls in tests: none
 
