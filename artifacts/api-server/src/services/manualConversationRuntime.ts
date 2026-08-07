@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { getFawriDataFilePath } from "../lib/dataPaths";
+import { readMetaChannelCredential } from "./metaChannelRuntime";
 
 export type RuntimeMessage = {
   id: string;
@@ -32,7 +33,6 @@ export type RuntimeConversation = {
 type MetaPageConnection = {
   merchant_id?: unknown;
   page_id?: unknown;
-  page_access_token?: unknown;
   platform?: unknown;
 };
 
@@ -603,8 +603,16 @@ export function prepareManualReply(input: {
       base,
       overlay,
     );
-    const pageAccessToken = text(connection.page_access_token);
-    if (!pageAccessToken) {
+    const platform =
+      text(connection.platform) === "instagram" ? "instagram" : "messenger";
+    let pageAccessToken: string;
+    try {
+      pageAccessToken = readMetaChannelCredential({
+        merchantId,
+        platform,
+        pageId,
+      });
+    } catch {
       throw new ManualConversationError(
         "META_PAGE_TOKEN_UNAVAILABLE",
         "Meta page access token is unavailable",
