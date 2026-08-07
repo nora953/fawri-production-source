@@ -194,14 +194,35 @@ test("confirmed failed DLQ refund restores one reply exactly once", async () => 
     const reservationDatabase = JSON.parse(
       await readFile(reservationsPath, "utf8"),
     );
-    assert.deepEqual(reservationDatabase.reservations, {});
+    const refundedReservation = reservationDatabase.reservations[eventId];
+    assert.equal(refundedReservation.status, "consumed");
+    assert.equal(refundedReservation.refund_status, "refunded");
+    assert.equal(refundedReservation.refund_failure_code, "META_REPLY_FAILED");
+    assert.equal(refundedReservation.refunded_at, "2026-08-06T13:00:00.000Z");
+    for (const forbiddenField of [
+      "payload",
+      "raw_payload",
+      "customer_text",
+      "text",
+      "secret",
+      "access_token",
+    ]) {
+      assert.equal(forbiddenField in refundedReservation, false);
+    }
 
     assert.deepEqual(refundMerchantAutoReply(eventId, "META_REPLY_FAILED"), {
       refunded: false,
-      reason: "reservation_not_found",
+      reason: "already_refunded",
     });
     const afterSecondRefund = JSON.parse(await readFile(merchantsPath, "utf8"));
     assert.equal(afterSecondRefund.subscriptions[0].replies_remaining, 1);
+    const reservationAfterSecondRefund = JSON.parse(
+      await readFile(reservationsPath, "utf8"),
+    );
+    assert.deepEqual(
+      reservationAfterSecondRefund.reservations[eventId],
+      refundedReservation,
+    );
   } finally {
     if (previousDataDirectory === undefined) {
       delete process.env.FAWRI_DATA_DIR;
