@@ -15,6 +15,20 @@
       "when": 1786100550622,
       "tag": "0001_military_proteus",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786120375361,
+      "tag": "0002_cross_lane_stage",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786120376886,
+      "tag": "0003_cross_lane_cleanup",
+      "breakpoints": true
     }
   ]
 }
