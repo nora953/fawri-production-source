@@ -1,0 +1,110 @@
+name: Security and supply chain
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/**"
+      - "lib/**"
+      - "scripts/security-*"
+      - "scripts/quality-*"
+      - "scripts/ci-*"
+      - "package.json"
+      - "**/package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - ".github/workflows/**"
+  push:
+    branches:
+      - "hardening/**"
+      - "parallel/quality-observability"
+    paths:
+      - "artifacts/**"
+      - "lib/**"
+      - "scripts/security-*"
+      - "scripts/quality-*"
+      - "scripts/ci-*"
+      - "package.json"
+      - "**/package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: security-supply-chain-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  static-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Check quality and security tool syntax
+        run: |
+          node --check scripts/security-redaction-lib.mjs
+          node --check scripts/security-scan-repository.mjs
+          node --check scripts/security-scan-output.mjs
+          node --check scripts/ci-run-redacted.mjs
+          node --check scripts/quality-run-tests.mjs
+          node --check scripts/quality-workflow-policy.mjs
+
+      - name: Test quality and redaction tools
+        run: node scripts/quality-run-tests.mjs quality-tools
+
+      - name: Enforce workflow permissions and concurrency policy
+        run: node scripts/quality-workflow-policy.mjs
+
+      - name: Scan tracked repository content for high-confidence secrets
+        run: node scripts/security-scan-repository.mjs
+
+  lockfile-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Verify frozen lockfile installation without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Verify install did not rewrite dependency state
+        run: git diff --exit-code -- pnpm-lock.yaml pnpm-workspace.yaml package.json "**/package.json"
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Review dependency changes
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

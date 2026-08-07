@@ -1,0 +1,147 @@
+name: Backup and restore drill
+
+on:
+  pull_request:
+    paths:
+      - "scripts/backup-*"
+      - "scripts/restore-*"
+      - "scripts/security-scan-output.mjs"
+      - "scripts/security-redaction-lib.mjs"
+      - "docs/backup-*"
+      - "docs/operations-*"
+      - "docs/release-*"
+      - ".github/workflows/backup-restore-drill.yml"
+  push:
+    branches:
+      - "hardening/**"
+      - "parallel/quality-observability"
+    paths:
+      - "scripts/backup-*"
+      - "scripts/restore-*"
+      - "scripts/security-scan-output.mjs"
+      - "scripts/security-redaction-lib.mjs"
+      - "docs/backup-*"
+      - "docs/operations-*"
+      - "docs/release-*"
+      - ".github/workflows/backup-restore-drill.yml"
+  schedule:
+    - cron: "17 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-restore-drill-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  disposable-restore-drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_backup_source
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_backup_source"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SOURCE_DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_backup_source
+      RESTORE_DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_restore_target
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Verify PostgreSQL client tools
+        run: |
+          pg_dump --version
+          pg_restore --version
+          psql --version
+
+      - name: Create disposable source and restore targets
+        run: |
+          psql "$SOURCE_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          create table restore_drill_records (
+            id integer primary key,
+            value text not null
+          );
+          insert into restore_drill_records (id, value) values
+            (1, 'safe-fixture-one'),
+            (2, 'safe-fixture-two'),
+            (3, 'safe-fixture-three');
+          SQL
+          psql "postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 -c 'create database fawri_restore_target'
+
+      - name: Back up disposable PostgreSQL source
+        run: >-
+          node scripts/ci-run-redacted.mjs --label postgresql-backup --
+          node scripts/backup-postgresql.mjs
+          --url "$SOURCE_DATABASE_URL"
+          --output "$RUNNER_TEMP/postgresql/backup.dump"
+          --manifest "$RUNNER_TEMP/postgresql/manifest.json"
+
+      - name: Restore and verify disposable PostgreSQL target
+        env:
+          FAWRI_ALLOW_POSTGRES_RESTORE: "1"
+        run: >-
+          node scripts/ci-run-redacted.mjs --label postgresql-restore --
+          node scripts/restore-postgresql.mjs
+          --url "$RESTORE_DATABASE_URL"
+          --backup "$RUNNER_TEMP/postgresql/backup.dump"
+          --manifest "$RUNNER_TEMP/postgresql/manifest.json"
+          --verify-sql "select count(*) from restore_drill_records"
+          --expect "3"
+
+      - name: Create disposable object-storage fixture
+        run: |
+          mkdir -p "$RUNNER_TEMP/object-source/merchant-assets/nested"
+          printf '%s' 'safe-fixture-logo' > "$RUNNER_TEMP/object-source/merchant-assets/logo.txt"
+          printf '%s' 'safe-fixture-image' > "$RUNNER_TEMP/object-source/merchant-assets/nested/image.txt"
+
+      - name: Back up, restore, and verify object storage
+        env:
+          FAWRI_ALLOW_OBJECT_RESTORE: "1"
+        run: |
+          node scripts/ci-run-redacted.mjs --label object-backup -- node scripts/backup-object-storage.mjs --source "$RUNNER_TEMP/object-source" --output "$RUNNER_TEMP/object-backup"
+          node scripts/ci-run-redacted.mjs --label object-restore -- node scripts/restore-object-storage.mjs --backup "$RUNNER_TEMP/object-backup" --target "$RUNNER_TEMP/object-restored"
+          diff -r "$RUNNER_TEMP/object-source" "$RUNNER_TEMP/object-restored"
+
+      - name: Write restore drill report
+        run: |
+          mkdir -p restore-drill-artifact
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const pg = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/postgresql/manifest.json', 'utf8'));
+          const objects = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/object-backup/manifest.json', 'utf8'));
+          fs.writeFileSync('restore-drill-artifact/report.json', JSON.stringify({
+            workflow: 'backup-restore-drill',
+            commit: process.env.GITHUB_SHA,
+            postgresql: { restored: true, verified_rows: 3, backup_sha256: pg.sha256, backup_bytes: pg.size },
+            object_storage: { restored: true, verified_objects: objects.object_count, total_bytes: objects.total_bytes },
+          }, null, 2) + '\n');
+          NODE
+
+      - name: Scan drill report for tokens and PII
+        id: artifact_scan
+        run: node scripts/security-scan-output.mjs restore-drill-artifact
+
+      - name: Upload safe restore drill report
+        if: ${{ steps.artifact_scan.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-drill-${{ github.sha }}
+          path: restore-drill-artifact
+          if-no-files-found: error
+          retention-days: 14
