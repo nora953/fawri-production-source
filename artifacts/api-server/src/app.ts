@@ -1,11 +1,18 @@
 import fs from "node:fs";
 import path from "node:path";
-import express, { type Express } from "express";
+import express, {
+  type Express,
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import authSecurityRouter from "./routes/auth-security";
+import channelOperationsRouter from "./routes/channel-operations";
+import { createChannelDurableJobAdminRouter } from "./routes/channel-durable-job-admin";
 import conversationOperationsRouter from "./routes/conversation-operations";
 import orderOperationsRouter from "./routes/order-operations";
 import retentionGuardRouter from "./routes/retention-guard";
@@ -16,7 +23,12 @@ import emergencyReadAccessRouter from "./routes/emergency-read-access";
 import emergencyReadDirectoryRouter from "./routes/emergency-read-directory";
 import emergencyMerchantNoticesRouter from "./routes/emergency-merchant-notices";
 import { enforceAuthCutoverCompatibility } from "./middleware/authCutoverCompatibility";
-import { enforceAuthOrigin } from "./middleware/authSession";
+import {
+  enforceAuthOrigin,
+  getAuthContext,
+  requireSecureAdminSession,
+  sendAuthError,
+} from "./middleware/authSession";
 import { enforceMerchantRetentionAccess } from "./middleware/merchantRetentionAccess";
 import {
   enforceMerchantOAuthCallbackOperationalAccess,
@@ -31,6 +43,7 @@ import {
   type MetaRawBodyRequest,
 } from "./middleware/metaWebhookSecurity";
 import { logger } from "./lib/logger";
+import { hasAdminPermission } from "./services/authPolicy";
 import {
   refreshMerchantRetentionPolicy,
   startMerchantRetentionPolicyScheduler,
@@ -38,6 +51,72 @@ import {
 import "./services/manualConversationDeletion";
 
 const app: Express = express();
+
+function authorizeChannelDurableJobAdmin(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  requireSecureAdminSession(req, res, () => {
+    const profile = getAuthContext(res)?.adminProfile;
+    if (!profile) {
+      sendAuthError(res, 403, "ADMIN_PERMISSION_REQUIRED", "admin permission is required");
+      return;
+    }
+
+    const canManage = hasAdminPermission(
+      profile.role,
+      profile.permissions,
+      "manage_channels",
+    );
+    const canView = canManage || hasAdminPermission(
+      profile.role,
+      profile.permissions,
+      "view_logs",
+    );
+    const allowed = req.method === "GET" ? canView : canManage;
+
+    if (!allowed) {
+      sendAuthError(
+        res,
+        403,
+        "ADMIN_PERMISSION_REQUIRED",
+        req.method === "GET"
+          ? "view_logs or manage_channels permission is required"
+          : "manage_channels permission is required",
+      );
+      return;
+    }
+
+    next();
+  });
+}
+
+const channelDurableJobAdminRouter = createChannelDurableJobAdminRouter(
+  authorizeChannelDurableJobAdmin,
+);
+
+function enforceMetaConnectionActivationGate(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  const isLegacyConnectionPath =
+    req.method === "GET" &&
+    (req.path === "/api/meta/login" || req.path === "/api/meta/callback");
+
+  if (!isLegacyConnectionPath) {
+    next();
+    return;
+  }
+
+  res.setHeader("Cache-Control", "no-store");
+  res.status(503).json({
+    ok: false,
+    code: "META_CHANNEL_CONNECTION_CUTOVER_PENDING",
+    error: "Meta channel connection is disabled until encrypted OAuth cutover is complete",
+  });
+}
 
 app.use(
   pinoHttp({
@@ -136,6 +215,14 @@ app.use(
 app.use("/api/auth/admin/support-preview", supportPreviewRouter);
 app.use("/api", conversationOperationsRouter);
 app.use("/api", orderOperationsRouter);
+app.use("/api", channelOperationsRouter);
+app.use("/api", channelDurableJobAdminRouter);
+
+// Do not allow a new plaintext Meta connection to be created while the
+// encrypted OAuth/send-path cutover and PostgreSQL/KMS dependencies are still
+// pending. Existing legacy handlers remain unreachable for these paths.
+app.use(enforceMetaConnectionActivationGate);
+
 app.use("/api", router);
 
 const configuredWebDistDir = process.env["FAWRI_WEB_DIST_DIR"]?.trim();
