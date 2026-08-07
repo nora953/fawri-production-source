@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
-export default defineConfig(({ command }) => {
+export default defineConfig(async ({ command }) => {
   const isServe = command === "serve";
   const rawPort = process.env.PORT;
 
