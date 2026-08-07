@@ -227,6 +227,51 @@ function syntheticMessageId(eventId: string, attempt: number): string {
     .slice(0, 24)}`;
 }
 
+function markSuppressedState(
+  input: {
+    eventId: string;
+    merchantId: string;
+    settingsVersion: number;
+    code: string;
+    now?: Date;
+  },
+  allowKnownFakeSendingTransition: boolean,
+): MetaWebhookReplyTransportState {
+  const { eventId, merchantId, settingsVersion } = requireIdentity(input);
+  const code = text(input.code) || "META_REPLY_SUPPRESSED";
+  const now = input.now || new Date();
+  return withStoreLock((store) => {
+    const existing = store.deliveries[eventId];
+    if (existing) {
+      assertSameMerchant(existing, merchantId);
+      if (
+        existing.status === "sent" ||
+        existing.status === "uncertain" ||
+        (existing.status === "sending" && !allowKnownFakeSendingTransition)
+      ) {
+        return structuredClone(existing);
+      }
+      existing.status = "suppressed";
+      existing.code = code;
+      existing.completed_at = now.toISOString();
+      existing.updated_at = now.toISOString();
+      return structuredClone(existing);
+    }
+    const state: MetaWebhookReplyTransportState = {
+      event_id: eventId,
+      merchant_id: merchantId,
+      settings_version: settingsVersion,
+      status: "suppressed",
+      attempts: 0,
+      code,
+      completed_at: now.toISOString(),
+      updated_at: now.toISOString(),
+    };
+    store.deliveries[eventId] = state;
+    return structuredClone(state);
+  });
+}
+
 export function createFakeMetaWebhookReplyTransport(
   options: {
     outcomeFor?: (input: {
@@ -237,8 +282,7 @@ export function createFakeMetaWebhookReplyTransport(
     }) => FakeMetaReplyOutcome | Promise<FakeMetaReplyOutcome>;
   } = {},
 ): MetaWebhookReplyTransport {
-  const outcomeFor =
-    options.outcomeFor || (() => "blocked" as const);
+  const outcomeFor = options.outcomeFor || (() => "blocked" as const);
 
   return {
     read(eventIdValue) {
@@ -272,46 +316,14 @@ export function createFakeMetaWebhookReplyTransport(
     },
 
     markSuppressed(input) {
-      const { eventId, merchantId, settingsVersion } = requireIdentity(input);
-      const code = text(input.code) || "META_REPLY_SUPPRESSED";
-      const now = input.now || new Date();
-      return withStoreLock((store) => {
-        const existing = store.deliveries[eventId];
-        if (existing) {
-          assertSameMerchant(existing, merchantId);
-          if (
-            existing.status === "sent" ||
-            existing.status === "sending" ||
-            existing.status === "uncertain"
-          ) {
-            return structuredClone(existing);
-          }
-          existing.status = "suppressed";
-          existing.code = code;
-          existing.completed_at = now.toISOString();
-          existing.updated_at = now.toISOString();
-          return structuredClone(existing);
-        }
-        const state: MetaWebhookReplyTransportState = {
-          event_id: eventId,
-          merchant_id: merchantId,
-          settings_version: settingsVersion,
-          status: "suppressed",
-          attempts: 0,
-          code,
-          completed_at: now.toISOString(),
-          updated_at: now.toISOString(),
-        };
-        store.deliveries[eventId] = state;
-        return structuredClone(state);
-      });
+      return markSuppressedState(input, false);
     },
 
     async send(input) {
       const { eventId, merchantId, settingsVersion } = requireIdentity(input);
       const now = input.now || new Date();
-
       const preexisting = readStore().deliveries[eventId];
+
       if (preexisting) {
         assertSameMerchant(preexisting, merchantId);
         if (preexisting.status === "sent") {
@@ -325,10 +337,7 @@ export function createFakeMetaWebhookReplyTransport(
           preexisting.status === "sending" ||
           preexisting.status === "uncertain"
         ) {
-          return {
-            status: "uncertain",
-            code: "META_FAKE_DELIVERY_UNCERTAIN",
-          };
+          return { status: "uncertain", code: "META_FAKE_DELIVERY_UNCERTAIN" };
         }
         if (preexisting.status === "suppressed") {
           return {
@@ -344,8 +353,8 @@ export function createFakeMetaWebhookReplyTransport(
         }
       }
 
-      // The caller's settings/version check runs immediately before the
-      // durable "sending" marker. No external network operation exists here.
+      // This is deliberately the last gate before the durable send-start marker.
+      // The fake transport never performs a network request or reads a credential.
       await input.beforeSend();
 
       const started = withStoreLock((store) => {
@@ -394,10 +403,7 @@ export function createFakeMetaWebhookReplyTransport(
           };
         }
         if (state.status === "sending" || state.status === "uncertain") {
-          return {
-            status: "uncertain",
-            code: "META_FAKE_DELIVERY_UNCERTAIN",
-          };
+          return { status: "uncertain", code: "META_FAKE_DELIVERY_UNCERTAIN" };
         }
         if (state.status === "suppressed") {
           return {
@@ -427,13 +433,16 @@ export function createFakeMetaWebhookReplyTransport(
       }
 
       if (outcome === "blocked") {
-        const suppressed = this.markSuppressed({
-          eventId,
-          merchantId,
-          settingsVersion,
-          code: "META_FAKE_TRANSPORT_ONLY",
-          now,
-        });
+        const suppressed = markSuppressedState(
+          {
+            eventId,
+            merchantId,
+            settingsVersion,
+            code: "META_FAKE_TRANSPORT_ONLY",
+            now,
+          },
+          true,
+        );
         return {
           status: "blocked",
           code: text(suppressed.code) || "META_FAKE_TRANSPORT_ONLY",
