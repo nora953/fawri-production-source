@@ -72,7 +72,7 @@ function getSetCookie(response) {
 }
 
 function cookiePair(setCookie) {
-  assert.match(setCookie, /^fawri_merchant_session=/);
+  assert.match(setCookie, /^fawri_merchant_session_v2=/);
   return setCookie.split(";", 1)[0];
 }
 
