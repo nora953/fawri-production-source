@@ -1,0 +1,364 @@
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { Brain, CheckCircle2, RefreshCw, Search, ShieldAlert, XCircle } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { KnowledgeStatusBadge } from "@/components/knowledge/KnowledgeStatusBadge";
+
+type Language = "ar" | "ku" | "en";
+type TrainingStatus = "pending_merchant_reply" | "pending_review" | "approved" | "rejected";
+
+type TrainingRequest = {
+  id: string;
+  customerTextPreview: string;
+  customerTextHash: string;
+  detectedIntent: string;
+  detectedLanguage: Language;
+  reason: string;
+  suggestedReply: string | null;
+  suggestedReplySource: "merchant_draft" | "openai_generated" | null;
+  status: TrainingStatus;
+  rejectionReason: string | null;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ApiError = {
+  code?: string;
+  error?: string;
+  current?: TrainingRequest;
+};
+
+type Copy = {
+  title: string;
+  subtitle: string;
+  refresh: string;
+  search: string;
+  loading: string;
+  empty: string;
+  customer: string;
+  intent: string;
+  language: string;
+  reason: string;
+  generated: string;
+  merchantDraft: string;
+  reply: string;
+  replyPlaceholder: string;
+  propose: string;
+  approve: string;
+  reject: string;
+  saving: string;
+  loadFailed: string;
+  actionFailed: string;
+  conflict: string;
+  replyRequired: string;
+  approvalNote: string;
+  statuses: Record<TrainingStatus, string>;
+};
+
+const COPY: Record<Language, Copy> = {
+  ar: {
+    title: "تدريب فوري",
+    subtitle: "راجع فجوات المعرفة. الإجابة المولدة لا تصبح معتمدة إلا بعد موافقتك الصريحة.",
+    refresh: "تحديث",
+    search: "ابحث في الطلبات",
+    loading: "جارٍ تحميل طلبات التدريب…",
+    empty: "لا توجد طلبات تدريب مطابقة.",
+    customer: "نص العميل المنقح",
+    intent: "النية",
+    language: "اللغة",
+    reason: "سبب التحويل",
+    generated: "مقترح مولد — غير معتمد",
+    merchantDraft: "مسودة التاجر",
+    reply: "الإجابة المقترحة",
+    replyPlaceholder: "اكتب الإجابة الصحيحة التي يمكن اعتمادها…",
+    propose: "حفظ للمراجعة",
+    approve: "اعتماد الإجابة",
+    reject: "رفض",
+    saving: "جارٍ الحفظ…",
+    loadFailed: "تعذر تحميل طلبات التدريب.",
+    actionFailed: "تعذر تنفيذ العملية.",
+    conflict: "تغير الطلب على جهاز آخر. تم تحميل النسخة الحالية.",
+    replyRequired: "اكتب إجابة قبل الحفظ أو الاعتماد.",
+    approvalNote: "الاعتماد يحول المصدر إلى merchant_approved ويسمح بالاسترجاع الآمن.",
+    statuses: {
+      pending_merchant_reply: "بانتظار رد التاجر",
+      pending_review: "بانتظار المراجعة",
+      approved: "معتمد",
+      rejected: "مرفوض",
+    },
+  },
+  ku: {
+    title: "ڕاهێنانی فەوری",
+    subtitle: "کەلێنی زانیاری بپشکنە. وەڵامی دروستکراو تەنها دوای پەسەندی ڕوونی تۆ متمانەپێکراو دەبێت.",
+    refresh: "نوێکردنەوە",
+    search: "گەڕان لە داواکارییەکان",
+    loading: "داواکارییەکانی ڕاهێنان بار دەکرێن…",
+    empty: "هیچ داواکارییەکی گونجاو نییە.",
+    customer: "دەقی پاککراوەی کڕیار",
+    intent: "مەبەست",
+    language: "زمان",
+    reason: "هۆکاری گواستنەوە",
+    generated: "پێشنیاری دروستکراو — پەسەند نەکراو",
+    merchantDraft: "ڕەشنووسی بازرگان",
+    reply: "وەڵامی پێشنیارکراو",
+    replyPlaceholder: "وەڵامی دروست بنووسە کە دەتوانرێت پەسەند بکرێت…",
+    propose: "پاشەکەوت بۆ پشکنین",
+    approve: "پەسەندکردنی وەڵام",
+    reject: "ڕەتکردنەوە",
+    saving: "پاشەکەوت دەکرێت…",
+    loadFailed: "بارکردنی داواکارییەکان سەرکەوتوو نەبوو.",
+    actionFailed: "کردارەکە سەرکەوتوو نەبوو.",
+    conflict: "داواکارییەکە لە ئامێرێکی تر گۆڕاوە. وەشانی ئێستا بارکرا.",
+    replyRequired: "پێش پاشەکەوتکردن یان پەسەندکردن وەڵامێک بنووسە.",
+    approvalNote: "پەسەندکردن سەرچاوەکە دەگۆڕێت بۆ merchant_approved و گەڕانەوەی پارێزراو چالاک دەکات.",
+    statuses: {
+      pending_merchant_reply: "چاوەڕوانی وەڵامی بازرگان",
+      pending_review: "چاوەڕوانی پشکنین",
+      approved: "پەسەندکراو",
+      rejected: "ڕەتکراو",
+    },
+  },
+  en: {
+    title: "Fawri training",
+    subtitle: "Review knowledge gaps. Generated text is never trusted without your explicit approval.",
+    refresh: "Refresh",
+    search: "Search training requests",
+    loading: "Loading training requests…",
+    empty: "No matching training requests.",
+    customer: "Redacted customer text",
+    intent: "Intent",
+    language: "Language",
+    reason: "Handoff reason",
+    generated: "Generated suggestion — unapproved",
+    merchantDraft: "Merchant draft",
+    reply: "Suggested answer",
+    replyPlaceholder: "Write the correct answer that may be approved…",
+    propose: "Save for review",
+    approve: "Approve answer",
+    reject: "Reject",
+    saving: "Saving…",
+    loadFailed: "Could not load training requests.",
+    actionFailed: "The action could not be completed.",
+    conflict: "This request changed on another device. The current version was loaded.",
+    replyRequired: "Write an answer before saving or approving.",
+    approvalNote: "Approval changes provenance to merchant_approved and enables safe retrieval.",
+    statuses: {
+      pending_merchant_reply: "Awaiting merchant reply",
+      pending_review: "Awaiting review",
+      approved: "Approved",
+      rejected: "Rejected",
+    },
+  },
+};
+
+function statusTone(status: TrainingStatus) {
+  if (status === "approved") return "success" as const;
+  if (status === "rejected") return "danger" as const;
+  if (status === "pending_review") return "info" as const;
+  return "warning" as const;
+}
+
+async function readJson<T>(response: Response): Promise<T> {
+  const body = (await response.json().catch(() => ({}))) as T & ApiError;
+  if (!response.ok) throw Object.assign(new Error(body.error || "Request failed"), body);
+  return body;
+}
+
+export default function ServerTrainingPage() {
+  const { lang, dir } = useI18n();
+  const language: Language = lang === "ku" || lang === "en" ? lang : "ar";
+  const copy = COPY[language];
+  const [requests, setRequests] = useState<TrainingRequest[]>([]);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<TrainingStatus | "all">("all");
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setNotice("");
+    try {
+      const result = await readJson<{ requests: TrainingRequest[] }>(
+        await fetch("/api/knowledge/training-requests", { credentials: "same-origin" }),
+      );
+      const list = Array.isArray(result.requests) ? result.requests : [];
+      setRequests(list);
+      setDrafts(Object.fromEntries(list.map((item) => [item.id, item.suggestedReply || ""])));
+    } catch {
+      setNotice(copy.loadFailed);
+    } finally {
+      setLoading(false);
+    }
+  }, [copy.loadFailed]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return requests.filter((item) => {
+      if (filter !== "all" && item.status !== filter) return false;
+      if (!normalized) return true;
+      return [item.customerTextPreview, item.detectedIntent, item.reason, item.suggestedReply || ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(normalized);
+    });
+  }, [filter, query, requests]);
+
+  function replaceCurrent(current: TrainingRequest) {
+    setRequests((items) => items.map((item) => (item.id === current.id ? current : item)));
+    setDrafts((items) => ({ ...items, [current.id]: current.suggestedReply || "" }));
+  }
+
+  async function act(
+    request: TrainingRequest,
+    action: "propose" | "approve" | "reject",
+  ) {
+    const reply = (drafts[request.id] || "").trim();
+    if (action !== "reject" && !reply) {
+      setNotice(copy.replyRequired);
+      return;
+    }
+    setSavingId(request.id);
+    setNotice("");
+    try {
+      const result = await readJson<{ request: TrainingRequest }>(
+        await fetch(
+          `/api/knowledge/training-requests/${encodeURIComponent(request.id)}/${action}`,
+          {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              expectedVersion: request.version,
+              suggestedReply: action === "propose" ? reply : undefined,
+              approvedAnswer: action === "approve" ? reply : undefined,
+              reason: action === "reject" ? "merchant_rejected" : undefined,
+            }),
+          },
+        ),
+      );
+      replaceCurrent(result.request);
+    } catch (error) {
+      const apiError = error as ApiError;
+      if (apiError.code === "VERSION_CONFLICT" && apiError.current) {
+        replaceCurrent(apiError.current);
+        setNotice(copy.conflict);
+      } else {
+        setNotice(copy.actionFailed);
+      }
+    } finally {
+      setSavingId(null);
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-background p-4 pb-24 md:p-6" dir={dir}>
+      <section className="mx-auto max-w-6xl space-y-5">
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">{copy.title}</h1>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{copy.subtitle}</p>
+          </div>
+          <Button variant="outline" onClick={() => void load()} disabled={loading || Boolean(savingId)}>
+            <RefreshCw className="me-2 h-4 w-4" />{copy.refresh}
+          </Button>
+        </header>
+
+        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+          <div className="relative">
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input value={query} onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)} placeholder={copy.search} className="ps-10" />
+          </div>
+          <select className="h-10 rounded-md border bg-background px-3 text-sm" value={filter} onChange={(event: ChangeEvent<HTMLSelectElement>) => setFilter(event.target.value as TrainingStatus | "all")}>
+            <option value="all">All</option>
+            {Object.entries(copy.statuses).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+          </select>
+        </div>
+
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+          <ShieldAlert className="me-2 inline h-4 w-4" />{copy.approvalNote}
+        </div>
+        {notice ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{notice}</div> : null}
+
+        {loading ? (
+          <div className="rounded-3xl border bg-card p-12 text-center text-muted-foreground">{copy.loading}</div>
+        ) : filtered.length === 0 ? (
+          <div className="rounded-3xl border bg-card p-12 text-center">
+            <Brain className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
+            <p className="font-semibold text-muted-foreground">{copy.empty}</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filtered.map((request) => {
+              const busy = savingId === request.id;
+              const isApproved = request.status === "approved";
+              const canReview = request.status === "pending_review" || request.status === "pending_merchant_reply";
+              return (
+                <article key={request.id} className="rounded-3xl border bg-card p-5 shadow-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <KnowledgeStatusBadge tone={statusTone(request.status)}>{copy.statuses[request.status]}</KnowledgeStatusBadge>
+                    {request.suggestedReplySource ? (
+                      <KnowledgeStatusBadge tone={request.suggestedReplySource === "openai_generated" ? "warning" : "neutral"}>
+                        {request.suggestedReplySource === "openai_generated" ? copy.generated : copy.merchantDraft}
+                      </KnowledgeStatusBadge>
+                    ) : null}
+                    <KnowledgeStatusBadge>{request.detectedLanguage.toUpperCase()}</KnowledgeStatusBadge>
+                  </div>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-3">
+                    <div className="md:col-span-2">
+                      <p className="text-xs font-semibold text-muted-foreground">{copy.customer}</p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{request.customerTextPreview}</p>
+                    </div>
+                    <dl className="grid grid-cols-2 gap-3 text-sm md:grid-cols-1">
+                      <div><dt className="text-xs font-semibold text-muted-foreground">{copy.intent}</dt><dd>{request.detectedIntent}</dd></div>
+                      <div><dt className="text-xs font-semibold text-muted-foreground">{copy.reason}</dt><dd>{request.reason}</dd></div>
+                    </dl>
+                  </div>
+
+                  <label className="mt-4 block text-sm font-semibold">
+                    {copy.reply}
+                    <Textarea
+                      className="mt-1 min-h-28"
+                      value={drafts[request.id] || ""}
+                      onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setDrafts((current) => ({ ...current, [request.id]: event.target.value }))}
+                      placeholder={copy.replyPlaceholder}
+                      maxLength={2000}
+                      disabled={isApproved}
+                    />
+                  </label>
+
+                  <div className="mt-4 flex flex-wrap gap-2 border-t pt-4">
+                    {!isApproved ? (
+                      <Button variant="outline" onClick={() => void act(request, "propose")} disabled={busy}>
+                        {busy ? copy.saving : copy.propose}
+                      </Button>
+                    ) : null}
+                    {canReview ? (
+                      <Button onClick={() => void act(request, "approve")} disabled={busy} className="bg-emerald-600 text-white hover:bg-emerald-700">
+                        <CheckCircle2 className="me-2 h-4 w-4" />{copy.approve}
+                      </Button>
+                    ) : null}
+                    {canReview ? (
+                      <Button variant="outline" onClick={() => void act(request, "reject")} disabled={busy}>
+                        <XCircle className="me-2 h-4 w-4" />{copy.reject}
+                      </Button>
+                    ) : null}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </main>
+  );
+}
