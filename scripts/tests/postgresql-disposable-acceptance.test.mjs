@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import test from "node:test";
@@ -60,10 +59,10 @@ function parseJsonOutput(output, label) {
 }
 
 test("committed Drizzle 0001 is reproducible from the committed 0000 baseline", () => {
-  const temporaryDirectory = fs.mkdtempSync(
-    path.join(os.tmpdir(), "fawri-drizzle-reproducibility-"),
+  const generatedDirectory = fs.mkdtempSync(
+    path.join(databaseDirectory, ".drizzle-repro-output-"),
   );
-  const generatedDirectory = path.join(temporaryDirectory, "drizzle");
+  const generatedDirectoryName = path.basename(generatedDirectory);
   const generatedMetaDirectory = path.join(generatedDirectory, "meta");
   const configPath = path.join(
     databaseDirectory,
@@ -100,9 +99,7 @@ test("committed Drizzle 0001 is reproducible from the committed 0000 baseline", 
 
     fs.writeFileSync(
       configPath,
-      `import { defineConfig } from "drizzle-kit";\nexport default defineConfig({ schema: "./src/schema/*.ts", out: ${JSON.stringify(
-        generatedDirectory,
-      )}, dialect: "postgresql" });\n`,
+      `import { defineConfig } from "drizzle-kit";\nexport default defineConfig({ schema: "./src/schema/*.ts", out: "./${generatedDirectoryName}", dialect: "postgresql" });\n`,
       "utf8",
     );
 
@@ -113,7 +110,11 @@ test("committed Drizzle 0001 is reproducible from the committed 0000 baseline", 
     const generatedSqlFiles = fs
       .readdirSync(generatedDirectory)
       .filter((name) => /^0001_.*\.sql$/.test(name));
-    assert.equal(generatedSqlFiles.length, 1, "expected exactly one generated 0001 SQL");
+    assert.equal(
+      generatedSqlFiles.length,
+      1,
+      "expected exactly one generated 0001 SQL",
+    );
     assert.deepEqual(
       fs.readFileSync(path.join(generatedDirectory, generatedSqlFiles[0])),
       fs.readFileSync(
@@ -141,7 +142,7 @@ test("committed Drizzle 0001 is reproducible from the committed 0000 baseline", 
     );
   } finally {
     fs.rmSync(configPath, { force: true });
-    fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+    fs.rmSync(generatedDirectory, { recursive: true, force: true });
   }
 });
 
@@ -152,7 +153,7 @@ test(
   { skip: !disposableDatabaseAvailable },
   () => {
     const fixtureDirectory = fs.mkdtempSync(
-      path.join(os.tmpdir(), "fawri-postgresql-acceptance-"),
+      path.join(process.env.RUNNER_TEMP || "/tmp", "fawri-postgresql-acceptance-"),
     );
     try {
       const smoke = run(
@@ -168,6 +169,7 @@ test(
       assert.equal(smokeReport.tables, 42);
       assert.equal(smokeReport.migrations, 2);
       assert.equal(smokeReport.applied_twice_without_changes, true);
+      assert.equal(smokeReport.dependency_order_stabilized, true);
       assert.ok(smokeReport.composite_foreign_keys > 0);
 
       run(
@@ -200,7 +202,11 @@ test(
       const rollback = run(
         process.execPath,
         [
-          path.join(repositoryRoot, "scripts", "run-postgresql-migration-cutover.mjs"),
+          path.join(
+            repositoryRoot,
+            "scripts",
+            "run-postgresql-migration-cutover.mjs",
+          ),
           fixtureDirectory,
           "--rollback-test",
         ],
@@ -222,7 +228,11 @@ test(
       const commit = run(
         process.execPath,
         [
-          path.join(repositoryRoot, "scripts", "run-postgresql-migration-cutover.mjs"),
+          path.join(
+            repositoryRoot,
+            "scripts",
+            "run-postgresql-migration-cutover.mjs",
+          ),
           fixtureDirectory,
           "--commit-test",
         ],
@@ -236,7 +246,10 @@ test(
         "commit child rehearsal",
       );
       assert.equal(commitReport.idempotency_second_pass_inserted, 0);
-      assert.equal(commitReport.source_revalidated_immediately_before_each_commit, true);
+      assert.equal(
+        commitReport.source_revalidated_immediately_before_each_commit,
+        true,
+      );
       assert.equal(commitReport.row_counts_matched, true);
       assert.equal(commitReport.row_values_matched, true);
       assert.equal(commitReport.migration_metadata_reconciled, true);
