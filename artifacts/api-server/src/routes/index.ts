@@ -4,6 +4,11 @@ import { getFawriDataDir, getFawriDataFilePath } from "../lib/dataPaths";
 import healthRouter from "./health";
 import botTrainingRouter from "./bot-training";
 import { registerMerchantRuntimeDeletion } from "../services/merchantRuntime";
+import {
+  BotCatalogAuthorityError,
+  readBotCatalogProducts,
+  type BotCatalogProduct,
+} from "../services/botCatalogAuthority";
 import authRouter, {
   createMerchantOAuthState,
   getMerchantIdFromSession,
@@ -29,7 +34,9 @@ const INTENT_MIN_CONFIDENCE = Number(
 const BOT_DEBUG =
   process.env.BOT_DEBUG === "true" || process.env.NODE_ENV !== "production";
 
-type Product = {
+type Product = BotCatalogProduct;
+
+type LegacyProduct = {
   id?: string;
   merchant_id?: string;
   code?: string;
@@ -127,7 +134,7 @@ type OrderDraft = {
 };
 
 type RuntimeDb = {
-  productsByMerchant: Record<string, Product[]>;
+  productsByMerchant: Record<string, LegacyProduct[]>;
   conversationsByMerchant: Record<string, BotConversation[]>;
   metaPagesByPageId: Record<string, MetaPageConnection>;
   ordersByMerchant: Record<string, Order[]>;
@@ -185,7 +192,7 @@ type BotReplyResult = {
   };
 };
 
-const productsByMerchant = new Map<string, Product[]>();
+const quarantinedLegacyProductsByMerchant = new Map<string, LegacyProduct[]>();
 const conversationsByMerchant = new Map<string, BotConversation[]>();
 const metaPagesByPageId = new Map<string, MetaPageConnection>();
 const ordersByMerchant = new Map<string, Order[]>();
@@ -211,7 +218,7 @@ function makeId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function normalizeProducts(products: Product[]) {
+function normalizeQuarantinedLegacyProducts(products: LegacyProduct[]) {
   return products
     .filter((p) => p && p.name)
     .filter((p) => p.allow_fawri_reply !== false)
@@ -239,7 +246,7 @@ function loadRuntimeDb() {
     const raw = fs.readFileSync(DB_PATH, "utf8");
     const db = JSON.parse(raw) as Partial<RuntimeDb>;
 
-    productsByMerchant.clear();
+    quarantinedLegacyProductsByMerchant.clear();
     conversationsByMerchant.clear();
     metaPagesByPageId.clear();
     ordersByMerchant.clear();
@@ -248,7 +255,10 @@ function loadRuntimeDb() {
     for (const [merchantId, products] of Object.entries(
       db.productsByMerchant || {},
     )) {
-      productsByMerchant.set(merchantId, normalizeProducts(products || []));
+      quarantinedLegacyProductsByMerchant.set(
+        merchantId,
+        normalizeQuarantinedLegacyProducts(products || []),
+      );
     }
     for (const [merchantId, conversations] of Object.entries(
       db.conversationsByMerchant || {},
@@ -280,7 +290,9 @@ function saveRuntimeDb() {
   try {
     ensureDbFile();
     const db: RuntimeDb = {
-      productsByMerchant: Object.fromEntries(productsByMerchant.entries()),
+      productsByMerchant: Object.fromEntries(
+        quarantinedLegacyProductsByMerchant.entries(),
+      ),
       conversationsByMerchant: Object.fromEntries(
         conversationsByMerchant.entries(),
       ),
@@ -298,7 +310,8 @@ function saveRuntimeDb() {
 }
 
 registerMerchantRuntimeDeletion((merchantId) => {
-  const products = productsByMerchant.get(merchantId)?.length || 0;
+  const products =
+    quarantinedLegacyProductsByMerchant.get(merchantId)?.length || 0;
   const conversations =
     conversationsByMerchant.get(merchantId)?.length || 0;
   const orders = ordersByMerchant.get(merchantId)?.length || 0;
@@ -311,7 +324,7 @@ registerMerchantRuntimeDeletion((merchantId) => {
     ([, connection]) => connection.merchant_id === merchantId,
   );
 
-  productsByMerchant.delete(merchantId);
+  quarantinedLegacyProductsByMerchant.delete(merchantId);
   conversationsByMerchant.delete(merchantId);
   ordersByMerchant.delete(merchantId);
 
@@ -372,6 +385,40 @@ function rejectCrossMerchantPath(
   return false;
 }
 
+function readBotProductsForHttp(
+  res: Response,
+  merchantId: string,
+): Product[] | null {
+  try {
+    return readBotCatalogProducts(merchantId);
+  } catch (error) {
+    const authorityError =
+      error instanceof BotCatalogAuthorityError
+        ? error
+        : new BotCatalogAuthorityError(error);
+    res.setHeader("Cache-Control", "no-store");
+    res.status(authorityError.status).json({
+      ok: false,
+      code: authorityError.code,
+      error: authorityError.message,
+    });
+    return null;
+  }
+}
+
+function sendLegacyProductAuthorityDisabled(
+  res: Response,
+  merchantId: string,
+) {
+  res.setHeader("Cache-Control", "no-store");
+  return res.status(410).json({
+    ok: false,
+    merchant_id: merchantId,
+    code: "LEGACY_PRODUCT_AUTHORITY_DISABLED",
+    error: "legacy product writes are disabled; use the server catalog API",
+  });
+}
+
 function resolveMerchantIdForWebhookPage(pageId: string) {
   const connection = metaPagesByPageId.get(pageId);
   if (connection?.merchant_id) return connection.merchant_id;
@@ -390,9 +437,9 @@ async function getBusinessContextForPage(
   const merchantId = resolveMerchantIdForWebhookPage(pageId);
   if (!merchantId) return null;
 
-  // عزل بيانات العملاء: كل صفحة Meta تقرأ منتجات التاجر المرتبط بها فقط.
-  // لا يوجد fallback إلى آخر تاجر ولا بحث داخل تجار آخرين، حتى في وضع التطوير.
-  const products = productsByMerchant.get(merchantId) || [];
+  // عزل بيانات العملاء: كل صفحة Meta تقرأ server catalog للتاجر المرتبط بها فقط.
+  // لا يوجد fallback إلى legacy JSON أو آخر تاجر ولا بحث داخل تجار آخرين.
+  const products = readBotCatalogProducts(merchantId);
   const resolvedBy = metaPagesByPageId.has(pageId)
     ? "meta_page_mapping"
     : "fallback_merchant";
@@ -897,6 +944,7 @@ function getProductSearchText(product: Product) {
       product.barcode,
       product.category,
       product.description,
+      ...product.catalog_search_terms,
     ]
       .filter(Boolean)
       .join(" "),
@@ -912,11 +960,13 @@ function findMatchedProduct(text: string, products: Product[]) {
     const code = normalizeArabicText(product.code || "");
     const sku = normalizeArabicText(product.sku || "");
     const barcode = normalizeArabicText(product.barcode || "");
+    const catalogTerms = product.catalog_search_terms.map(normalizeArabicText);
     return (
       (!!name && normalizedText.includes(name)) ||
       (!!code && normalizedText.includes(code)) ||
       (!!sku && normalizedText.includes(sku)) ||
-      (!!barcode && normalizedText.includes(barcode))
+      (!!barcode && normalizedText.includes(barcode)) ||
+      catalogTerms.some((term) => !!term && normalizedText.includes(term))
     );
   });
   if (directMatch) return directMatch;
@@ -996,9 +1046,12 @@ function scoreProductMatch(text: string, product: Product) {
   const code = normalizeArabicText(product.code || "");
   const sku = normalizeArabicText(product.sku || "");
   const barcode = normalizeArabicText(product.barcode || "");
+  const catalogTerms = product.catalog_search_terms.map(normalizeArabicText);
   if (code && normalizedText.includes(code)) score += 60;
   if (sku && normalizedText.includes(sku)) score += 60;
   if (barcode && normalizedText.includes(barcode)) score += 60;
+  if (catalogTerms.some((term) => !!term && normalizedText.includes(term)))
+    score += 60;
 
   return score;
 }
@@ -1995,35 +2048,9 @@ function getOrdersForMerchant(merchantId?: string) {
 router.post(
   "/bot/products/sync",
   requireMerchantSession,
-  (req: Request, res: Response) => {
-    try {
-      const merchantId = getMerchantIdFromSession(res);
-      const products = req.body?.products;
-      if (!Array.isArray(products))
-        return res
-          .status(400)
-          .json({ ok: false, error: "products must be an array" });
-
-      const cleanProducts = normalizeProducts(products).map((p) => ({
-        ...p,
-        merchant_id: merchantId,
-      }));
-      productsByMerchant.set(merchantId, cleanProducts);
-      lastSyncedMerchantId = merchantId;
-      saveRuntimeDb();
-
-      return res.status(200).json({
-        ok: true,
-        merchant_id: merchantId,
-        count: cleanProducts.length,
-        product_names: cleanProducts.map((p) => p.name),
-      });
-    } catch (error) {
-      console.error("Products sync error:", error);
-      return res
-        .status(500)
-        .json({ ok: false, error: "Failed to sync products" });
-    }
+  (_req: Request, res: Response) => {
+    const merchantId = getMerchantIdFromSession(res);
+    return sendLegacyProductAuthorityDisabled(res, merchantId);
   },
 );
 
@@ -2033,9 +2060,11 @@ router.get(
   (req: Request, res: Response) => {
     const merchantId = getMerchantIdFromSession(res);
     if (rejectCrossMerchantPath(req, res, merchantId)) return;
-    const products = productsByMerchant.get(merchantId) || [];
+    const products = readBotProductsForHttp(res, merchantId);
+    if (!products) return;
     return res.json({
       ok: true,
+      authority: "server_catalog",
       merchant_id: merchantId,
       count: products.length,
       products,
@@ -2046,7 +2075,8 @@ router.get(
 router.get("/bot/debug", requireMerchantSession, (req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
   const testText = getQueryString(req.query.text);
-  const products = productsByMerchant.get(merchantId) || [];
+  const products = readBotProductsForHttp(res, merchantId);
+  if (!products) return;
   const testMatch = testText
     ? findBestProductMatch(testText, products)
     : undefined;
@@ -2055,6 +2085,7 @@ router.get("/bot/debug", requireMerchantSession, (req: Request, res: Response) =
   return res.json({
     ok: true,
     db_path: DB_PATH,
+    product_authority: "server_catalog",
     merchant_id: merchantId,
     products_count: products.length,
     product_names: products.map((p) => p.name),
@@ -2177,55 +2208,20 @@ router.get("/orders/:merchantId", requireMerchantSession, (req: Request, res: Re
 
 router.get("/products", requireMerchantSession, (_req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
-  const products = productsByMerchant.get(merchantId) || [];
+  const products = readBotProductsForHttp(res, merchantId);
+  if (!products) return;
   return res.json({
     ok: true,
+    authority: "server_catalog",
     merchant_id: merchantId,
     count: products.length,
     products,
   });
 });
 
-router.post("/products", requireMerchantSession, (req: Request, res: Response) => {
-  try {
-    const merchantId = getMerchantIdFromSession(res);
-    const name = String(req.body?.name || "").trim();
-    if (!name)
-      return res
-        .status(400)
-        .json({ ok: false, error: "Product name is required" });
-
-    const currentProducts = productsByMerchant.get(merchantId) || [];
-    const product: Product = {
-      id: makeId("product"),
-      merchant_id: merchantId,
-      code: `B${currentProducts.length + 1001}`,
-      name,
-      sku: String(req.body?.sku || ""),
-      barcode: String(req.body?.barcode || ""),
-      category: String(req.body?.category || ""),
-      description: String(req.body?.description || ""),
-      original_price: Number(req.body?.original_price || req.body?.price || 0),
-      current_price: Number(req.body?.current_price || req.body?.price || 0),
-      quantity: Number(req.body?.quantity || 0),
-      status: String(req.body?.status || "available"),
-      allow_fawri_reply: req.body?.allow_fawri_reply !== false,
-      variants: Array.isArray(req.body?.variants) ? req.body.variants : [],
-    };
-
-    const updatedProducts = [product, ...currentProducts];
-    productsByMerchant.set(merchantId, updatedProducts);
-    lastSyncedMerchantId = merchantId;
-    saveRuntimeDb();
-    return res
-      .status(201)
-      .json({ ok: true, product, count: updatedProducts.length });
-  } catch (error) {
-    console.error("Create product error:", error);
-    return res
-      .status(500)
-      .json({ ok: false, error: "Failed to create product" });
-  }
+router.post("/products", requireMerchantSession, (_req: Request, res: Response) => {
+  const merchantId = getMerchantIdFromSession(res);
+  return sendLegacyProductAuthorityDisabled(res, merchantId);
 });
 
 router.get("/meta/webhook", (req: Request, res: Response) => {
@@ -2330,6 +2326,15 @@ router.post("/meta/webhook", async (req: Request, res: Response) => {
     }
     return res.sendStatus(200);
   } catch (error) {
+    if (error instanceof BotCatalogAuthorityError) {
+      console.error("Bot catalog authority unavailable:", error.code);
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(error.status).json({
+        ok: false,
+        code: error.code,
+        error: error.message,
+      });
+    }
     console.error("Webhook error:", error);
     return res.sendStatus(200);
   }
