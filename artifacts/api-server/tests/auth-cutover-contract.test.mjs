@@ -48,3 +48,51 @@ test("production password pepper fails closed", async () => {
   assert.match(passwordService, /CONFIGURED_PASSWORD_SALT\.length < 32/);
   assert.match(passwordService, /FAWRI_PASSWORD_SALT must be explicitly configured/);
 });
+
+test("frontend login and transport no longer use a bearer credential", async () => {
+  const login = await source("../fawri/src/pages/LoginPage.tsx");
+  const client = await source("../fawri/src/lib/authClientCutover.ts");
+  const app = await source("../fawri/src/App.tsx");
+
+  assert.match(login, /\/api\/auth\/admin\/login/);
+  assert.match(login, /credentials:\s*'same-origin'/);
+  assert.doesNotMatch(login, /admin_token|setAdminSessionToken/);
+
+  assert.match(client, /sessionStorage\.removeItem\(LEGACY_ADMIN_TOKEN_KEY\)/);
+  assert.match(client, /headers\.delete\('Authorization'\)/);
+  assert.match(client, /X-Fawri-Device-Id/);
+  assert.match(client, /credentials:\s*'same-origin'/);
+
+  assert.match(app, /installAuthClientCutover\(\)/);
+  assert.match(app, /\/api\/auth\/admin\/me/);
+  assert.doesNotMatch(app, /getAdminSessionToken|Authorization:\s*`Bearer/);
+});
+
+test("forced administrator password change revokes sessions and requires reauthentication", async () => {
+  const helper = await source("src/routes/auth-password-route-support.ts");
+  const dialog = await source(
+    "../fawri/src/components/admin/RequiredAdminPasswordChangeDialog.tsx",
+  );
+
+  assert.match(helper, /forcedAdminChange/);
+  assert.match(helper, /reason:\s*"password_changed"/);
+  assert.match(helper, /clearAuthSessionCookie\(res, kind\)/);
+  assert.match(dialog, /\/api\/auth\/admin\/change-password/);
+  assert.match(dialog, /reauthentication_required/);
+  assert.doesNotMatch(dialog, /admin_token|setAdminSessionToken/);
+});
+
+test("work monitor security actions are served by the v2 auth store", async () => {
+  const adminRoutes = await source("src/routes/auth-admin-routes.ts");
+  const store = await source("src/services/authSecurityStore.ts");
+  const sessionStore = await source("src/services/authSessionSecurity.ts");
+
+  assert.match(adminRoutes, /\/admins\/:adminId\/work-monitor/);
+  assert.match(adminRoutes, /authSecurityStore\.listDevices\(id\)/);
+  assert.match(adminRoutes, /authSecurityStore\.listActiveSessions\(id, "admin"\)/);
+  assert.match(adminRoutes, /requireOwnerPassword/);
+  assert.match(adminRoutes, /assistant_device_trusted/);
+  assert.match(adminRoutes, /assistant_session_revoked/);
+  assert.match(store, /revokeSessionForAccount/);
+  assert.match(sessionStore, /revokeForAccount/);
+});
