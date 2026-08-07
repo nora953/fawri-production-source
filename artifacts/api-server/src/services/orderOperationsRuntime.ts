@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { getFawriDataFilePath } from "../lib/dataPaths";
@@ -34,6 +35,26 @@ export type ServerOrderItem = {
   price: number;
 };
 
+export type PaymentDecisionAudit = {
+  id: string;
+  merchant_id: string;
+  order_id: string;
+  operation: "confirm" | "reject";
+  payment_channel: "cash_on_delivery" | "electronic";
+  outcome: "paid" | "failed";
+  previous_payment_status: ServerPaymentStatus;
+  resulting_payment_status: ServerPaymentStatus;
+  previous_order_status: ServerOrderStatus;
+  resulting_order_status: ServerOrderStatus;
+  actor_type: "merchant";
+  actor_id: string;
+  request_id?: string;
+  reason?: string;
+  expected_version: number;
+  resulting_version: number;
+  decided_at: string;
+};
+
 export type ServerOrder = {
   id: string;
   merchant_id: string;
@@ -51,6 +72,7 @@ export type ServerOrder = {
   payment_verified_at?: string;
   payment_verified_by?: string;
   payment_rejection_reason?: string;
+  last_payment_decision?: PaymentDecisionAudit;
   source_channel: string;
   total_price: number;
   created_at: string;
@@ -68,12 +90,32 @@ type OrderOperation = {
   payment_verified_at?: string;
   payment_verified_by?: string;
   payment_rejection_reason?: string;
+  last_payment_decision_id?: string;
   updated_at: string;
 };
 
-type OrderOperationsDatabase = {
+type OrderOperationsDatabaseV1 = {
   version: 1;
   orders: Record<string, Record<string, OrderOperation>>;
+};
+
+type OrderOperationsDatabase = {
+  version: 2;
+  orders: Record<string, Record<string, OrderOperation>>;
+  payment_decisions: PaymentDecisionAudit[];
+};
+
+type OrderMutation = {
+  order: Partial<OrderOperation>;
+  paymentDecision?: Omit<
+    PaymentDecisionAudit,
+    | "id"
+    | "merchant_id"
+    | "order_id"
+    | "expected_version"
+    | "resulting_version"
+    | "decided_at"
+  >;
 };
 
 export class OrderOperationError extends Error {
@@ -95,8 +137,9 @@ export class OrderOperationError extends Error {
   }
 }
 
-const STORE_VERSION = 1 as const;
+const STORE_VERSION = 2 as const;
 const LOCK_STALE_MS = 30_000;
+const MAX_PAYMENT_DECISIONS = 100_000;
 const ORDER_STATUSES = new Set<ServerOrderStatus>([
   "pending_confirmation",
   "confirmed",
@@ -150,23 +193,13 @@ const ORDER_TRANSITIONS: Record<ServerOrderStatus, Set<ServerOrderStatus>> = {
   ]),
 };
 
-const PAYMENT_TRANSITIONS: Record<
+const NON_TERMINAL_PAYMENT_TRANSITIONS: Record<
   ServerPaymentStatus,
   Set<ServerPaymentStatus>
 > = {
-  cash_on_delivery: new Set(["cash_on_delivery", "paid"]),
-  electronic_pending: new Set([
-    "electronic_pending",
-    "manual_review",
-    "paid",
-    "failed",
-  ]),
-  manual_review: new Set([
-    "manual_review",
-    "electronic_pending",
-    "paid",
-    "failed",
-  ]),
+  cash_on_delivery: new Set(["cash_on_delivery"]),
+  electronic_pending: new Set(["electronic_pending", "manual_review"]),
+  manual_review: new Set(["manual_review", "electronic_pending"]),
   paid: new Set(["paid"]),
   failed: new Set(["failed", "electronic_pending", "manual_review"]),
 };
@@ -185,6 +218,14 @@ function lockPath(): string {
 
 function text(value: unknown): string {
   return String(value || "").trim();
+}
+
+function requireIdentifier(value: unknown, code: string, label: string): string {
+  const normalized = text(value);
+  if (!normalized || normalized.length > 200) {
+    throw new OrderOperationError(code, `${label} is required`, 400);
+  }
+  return normalized;
 }
 
 function objectRecord(value: unknown): Record<string, unknown> {
@@ -221,7 +262,11 @@ function writeJsonAtomically(filePath: string, value: unknown): void {
 
 function readRuntimeDatabase(): RuntimeDatabase {
   try {
-    return JSON.parse(fs.readFileSync(runtimePath(), "utf8")) as RuntimeDatabase;
+    const parsed = JSON.parse(fs.readFileSync(runtimePath(), "utf8"));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("order runtime has an unsupported shape");
+    }
+    return parsed as RuntimeDatabase;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
       throw new OrderOperationError(
@@ -234,23 +279,96 @@ function readRuntimeDatabase(): RuntimeDatabase {
   }
 }
 
+function normalizePaymentDecision(value: unknown): PaymentDecisionAudit | null {
+  const record = objectRecord(value);
+  const operation = text(record.operation);
+  const outcome = text(record.outcome);
+  const paymentChannel = text(record.payment_channel);
+  const previousPayment = text(record.previous_payment_status);
+  const resultingPayment = text(record.resulting_payment_status);
+  const previousOrder = text(record.previous_order_status);
+  const resultingOrder = text(record.resulting_order_status);
+  const expectedVersion = Number(record.expected_version);
+  const resultingVersion = Number(record.resulting_version);
+  if (
+    !text(record.id) ||
+    !text(record.merchant_id) ||
+    !text(record.order_id) ||
+    (operation !== "confirm" && operation !== "reject") ||
+    (outcome !== "paid" && outcome !== "failed") ||
+    (paymentChannel !== "cash_on_delivery" && paymentChannel !== "electronic") ||
+    !PAYMENT_STATUSES.has(previousPayment as ServerPaymentStatus) ||
+    !PAYMENT_STATUSES.has(resultingPayment as ServerPaymentStatus) ||
+    !ORDER_STATUSES.has(previousOrder as ServerOrderStatus) ||
+    !ORDER_STATUSES.has(resultingOrder as ServerOrderStatus) ||
+    text(record.actor_type) !== "merchant" ||
+    !text(record.actor_id) ||
+    !Number.isInteger(expectedVersion) ||
+    expectedVersion <= 0 ||
+    !Number.isInteger(resultingVersion) ||
+    resultingVersion <= expectedVersion ||
+    !Number.isFinite(new Date(text(record.decided_at)).getTime())
+  ) {
+    return null;
+  }
+  return {
+    id: text(record.id),
+    merchant_id: text(record.merchant_id),
+    order_id: text(record.order_id),
+    operation,
+    payment_channel: paymentChannel,
+    outcome,
+    previous_payment_status: previousPayment as ServerPaymentStatus,
+    resulting_payment_status: resultingPayment as ServerPaymentStatus,
+    previous_order_status: previousOrder as ServerOrderStatus,
+    resulting_order_status: resultingOrder as ServerOrderStatus,
+    actor_type: "merchant",
+    actor_id: text(record.actor_id),
+    ...(text(record.request_id) ? { request_id: text(record.request_id) } : {}),
+    ...(text(record.reason) ? { reason: text(record.reason) } : {}),
+    expected_version: expectedVersion,
+    resulting_version: resultingVersion,
+    decided_at: timestamp(record.decided_at),
+  };
+}
+
 function readOperationsDatabase(): OrderOperationsDatabase {
   try {
-    const parsed = JSON.parse(
-      fs.readFileSync(operationsPath(), "utf8"),
-    ) as Partial<OrderOperationsDatabase>;
+    const parsed = JSON.parse(fs.readFileSync(operationsPath(), "utf8")) as
+      | Partial<OrderOperationsDatabase>
+      | Partial<OrderOperationsDatabaseV1>;
     if (
-      parsed.version !== STORE_VERSION ||
       !parsed.orders ||
       typeof parsed.orders !== "object" ||
       Array.isArray(parsed.orders)
     ) {
       throw new Error("order operations store has an unsupported shape");
     }
-    return parsed as OrderOperationsDatabase;
+    if (parsed.version === 1) {
+      return {
+        version: STORE_VERSION,
+        orders: parsed.orders as Record<string, Record<string, OrderOperation>>,
+        payment_decisions: [],
+      };
+    }
+    if (
+      parsed.version !== STORE_VERSION ||
+      !Array.isArray(parsed.payment_decisions)
+    ) {
+      throw new Error("order operations store has an unsupported version");
+    }
+    const decisions = parsed.payment_decisions.map(normalizePaymentDecision);
+    if (decisions.some((decision) => decision === null)) {
+      throw new Error("order operations payment audit is invalid");
+    }
+    return {
+      version: STORE_VERSION,
+      orders: parsed.orders as Record<string, Record<string, OrderOperation>>,
+      payment_decisions: decisions as PaymentDecisionAudit[],
+    };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return { version: STORE_VERSION, orders: {} };
+      return { version: STORE_VERSION, orders: {}, payment_decisions: [] };
     }
     throw error;
   }
@@ -263,10 +381,7 @@ function acquireLock(): number {
       const descriptor = fs.openSync(lockPath(), "wx", 0o600);
       fs.writeFileSync(
         descriptor,
-        JSON.stringify({
-          pid: process.pid,
-          acquired_at: new Date().toISOString(),
-        }),
+        JSON.stringify({ pid: process.pid, acquired_at: new Date().toISOString() }),
       );
       return descriptor;
     } catch (error) {
@@ -317,18 +432,45 @@ function withOperationsLock<T>(
   }
 }
 
-function runtimeOrders(
-  runtime: RuntimeDatabase,
-  merchantId: string,
-): RuntimeOrder[] {
+function runtimeOrders(runtime: RuntimeDatabase, merchantId: string): RuntimeOrder[] {
   const byMerchant = objectRecord(runtime.ordersByMerchant);
   const values = byMerchant[merchantId];
-  return Array.isArray(values)
-    ? values.filter(
-        (item): item is RuntimeOrder =>
-          Boolean(item) && typeof item === "object" && !Array.isArray(item),
-      )
-    : [];
+  if (values === undefined) return [];
+  if (!Array.isArray(values)) {
+    throw new OrderOperationError(
+      "ORDER_RUNTIME_TENANT_DATA_INVALID",
+      "merchant order runtime is invalid",
+      503,
+    );
+  }
+  const seen = new Set<string>();
+  return values.map((value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) {
+      throw new OrderOperationError(
+        "ORDER_RUNTIME_RECORD_INVALID",
+        "order runtime record is invalid",
+        503,
+      );
+    }
+    const order = value as RuntimeOrder;
+    const orderId = text(order.id);
+    if (!orderId || seen.has(orderId)) {
+      throw new OrderOperationError(
+        "ORDER_RUNTIME_ID_INVALID",
+        "order runtime identifier is missing or duplicated",
+        503,
+      );
+    }
+    seen.add(orderId);
+    if (text(order.merchant_id) !== merchantId) {
+      throw new OrderOperationError(
+        "ORDER_RUNTIME_TENANT_MISMATCH",
+        "order runtime tenant boundary is invalid",
+        503,
+      );
+    }
+    return order;
+  });
 }
 
 function merchantOperations(
@@ -385,7 +527,6 @@ function normalizeItems(order: RuntimeOrder): ServerOrderItem[] {
         price: Math.max(0, finiteNumber(item.price ?? item.unit_price)),
       }));
   }
-
   const productName = text(order.product_name);
   if (!productName) return [];
   return [
@@ -418,24 +559,27 @@ function requireRuntimeOrder(
     (item) => text(item.id) === orderId,
   );
   if (!order) {
-    throw new OrderOperationError(
-      "ORDER_NOT_FOUND",
-      "order was not found",
-      404,
-    );
+    throw new OrderOperationError("ORDER_NOT_FOUND", "order was not found", 404);
   }
   return order;
 }
 
+function decisionById(
+  database: OrderOperationsDatabase,
+  decisionId: string | undefined,
+): PaymentDecisionAudit | undefined {
+  if (!decisionId) return undefined;
+  return database.payment_decisions.find((decision) => decision.id === decisionId);
+}
+
 function mergeOrder(
+  merchantId: string,
   base: RuntimeOrder,
   operation?: OrderOperation,
+  decision?: PaymentDecisionAudit,
 ): ServerOrder {
   const paymentMethod = normalizePaymentMethod(base.payment_method);
-  const basePaymentStatus = normalizePaymentStatus(
-    base.payment_status,
-    paymentMethod,
-  );
+  const basePaymentStatus = normalizePaymentStatus(base.payment_status, paymentMethod);
   const baseStatus = normalizeOrderStatus(base.status);
   const createdAt = timestamp(base.created_at);
   const updatedAt = operation?.updated_at
@@ -446,17 +590,14 @@ function mergeOrder(
     (total, item) => total + item.quantity * item.price,
     0,
   );
-
   return {
     id: text(base.id),
-    merchant_id: text(base.merchant_id),
+    merchant_id: merchantId,
     conversation_id: text(base.conversation_id) || undefined,
     customer_id: text(base.customer_id || base.customer_external_id) || undefined,
     customer_name: text(base.customer_name) || "Messenger Customer",
     phone: text(base.customer_phone || base.phone),
-    address: text(
-      base.customer_address || base.customer_area || base.address,
-    ),
+    address: text(base.customer_address || base.customer_area || base.address),
     items,
     payment_method: paymentMethod,
     payment_status: operation?.payment_status || basePaymentStatus,
@@ -464,14 +605,14 @@ function mergeOrder(
     notes: text(base.notes) || undefined,
     payment_screenshot: text(base.payment_screenshot) || undefined,
     payment_verified_at:
-      operation?.payment_verified_at ||
-      (text(base.payment_verified_at) || undefined),
+      operation?.payment_verified_at || text(base.payment_verified_at) || undefined,
     payment_verified_by:
-      operation?.payment_verified_by ||
-      (text(base.payment_verified_by) || undefined),
+      operation?.payment_verified_by || text(base.payment_verified_by) || undefined,
     payment_rejection_reason:
       operation?.payment_rejection_reason ||
-      (text(base.payment_rejection_reason) || undefined),
+      text(base.payment_rejection_reason) ||
+      undefined,
+    ...(decision ? { last_payment_decision: structuredClone(decision) } : {}),
     source_channel: text(base.source_channel) || "messenger",
     total_price: Math.max(
       0,
@@ -522,31 +663,30 @@ function assertOrderTransition(
   }
 }
 
-function assertPaymentTransition(
+function assertNonTerminalPaymentTransition(
   method: ServerPaymentMethod,
   current: ServerPaymentStatus,
   next: ServerPaymentStatus,
 ): void {
-  if (
-    method === "cash_on_delivery" &&
-    next !== "cash_on_delivery" &&
-    next !== "paid"
-  ) {
+  if (next === "paid" || next === "failed") {
+    throw new OrderOperationError(
+      "ORDER_PAYMENT_TERMINAL_OPERATION_REQUIRED",
+      "paid and failed require the dedicated payment confirmation or rejection operation",
+    );
+  }
+  if (method === "cash_on_delivery" && next !== "cash_on_delivery") {
     throw new OrderOperationError(
       "ORDER_PAYMENT_METHOD_MISMATCH",
       "cash on delivery orders cannot use an electronic payment state",
     );
   }
-  if (
-    method !== "cash_on_delivery" &&
-    next === "cash_on_delivery"
-  ) {
+  if (method !== "cash_on_delivery" && next === "cash_on_delivery") {
     throw new OrderOperationError(
       "ORDER_PAYMENT_METHOD_MISMATCH",
       "electronic payment orders cannot use cash on delivery state",
     );
   }
-  if (!PAYMENT_TRANSITIONS[current].has(next)) {
+  if (!NON_TERMINAL_PAYMENT_TRANSITIONS[current].has(next)) {
     throw new OrderOperationError(
       "ORDER_PAYMENT_TRANSITION_INVALID",
       `payment status cannot change from ${current} to ${next}`,
@@ -554,7 +694,10 @@ function assertPaymentTransition(
   }
 }
 
-function operationFromOrder(order: ServerOrder): OrderOperation {
+function operationFromOrder(
+  order: ServerOrder,
+  decisionId?: string,
+): OrderOperation {
   return {
     version: order.version,
     status: order.status,
@@ -568,33 +711,46 @@ function operationFromOrder(order: ServerOrder): OrderOperation {
     ...(order.payment_rejection_reason
       ? { payment_rejection_reason: order.payment_rejection_reason }
       : {}),
+    ...(decisionId ? { last_payment_decision_id: decisionId } : {}),
     updated_at: order.updated_at,
   };
 }
 
 function mutateOrder(
-  merchantId: string,
-  orderId: string,
+  merchantIdValue: string,
+  orderIdValue: string,
   expectedVersionValue: unknown,
-  mutation: (current: ServerOrder) => Partial<OrderOperation>,
+  mutation: (current: ServerOrder) => OrderMutation,
 ): ServerOrder {
+  const merchantId = requireIdentifier(
+    merchantIdValue,
+    "ORDER_MERCHANT_ID_INVALID",
+    "merchant identifier",
+  );
+  const orderId = requireIdentifier(
+    orderIdValue,
+    "ORDER_ID_INVALID",
+    "order identifier",
+  );
   const expectedVersion = requireExpectedVersion(expectedVersionValue);
   return withOperationsLock((database) => {
     const runtime = readRuntimeDatabase();
     const base = requireRuntimeOrder(runtime, merchantId, orderId);
+    const existingOperation = currentOperation(database, merchantId, orderId);
     const current = mergeOrder(
+      merchantId,
       base,
-      currentOperation(database, merchantId, orderId),
+      existingOperation,
+      decisionById(database, existingOperation?.last_payment_decision_id),
     );
     assertVersion(current, expectedVersion);
-    const patch = mutation(current);
+    const mutationResult = mutation(current);
     const candidate: ServerOrder = {
       ...current,
-      ...patch,
+      ...mutationResult.order,
       version: current.version + 1,
       updated_at: new Date().toISOString(),
     };
-
     const unchanged =
       candidate.status === current.status &&
       candidate.payment_status === current.payment_status &&
@@ -603,30 +759,74 @@ function mutateOrder(
       candidate.payment_rejection_reason === current.payment_rejection_reason;
     if (unchanged) return current;
 
+    let decision: PaymentDecisionAudit | undefined;
+    if (mutationResult.paymentDecision) {
+      decision = {
+        id: crypto.randomUUID(),
+        merchant_id: merchantId,
+        order_id: orderId,
+        ...mutationResult.paymentDecision,
+        expected_version: expectedVersion,
+        resulting_version: candidate.version,
+        decided_at: candidate.updated_at,
+      };
+      database.payment_decisions.push(decision);
+      if (database.payment_decisions.length > MAX_PAYMENT_DECISIONS) {
+        database.payment_decisions.splice(
+          0,
+          database.payment_decisions.length - MAX_PAYMENT_DECISIONS,
+        );
+      }
+    }
     const operations = merchantOperations(database, merchantId, true);
-    operations[orderId] = operationFromOrder(candidate);
-    return mergeOrder(base, operations[orderId]);
+    operations[orderId] = operationFromOrder(candidate, decision?.id);
+    return mergeOrder(merchantId, base, operations[orderId], decision);
   });
 }
 
-export function listServerOrders(merchantId: string): ServerOrder[] {
+export function listServerOrders(merchantIdValue: string): ServerOrder[] {
+  const merchantId = requireIdentifier(
+    merchantIdValue,
+    "ORDER_MERCHANT_ID_INVALID",
+    "merchant identifier",
+  );
   const runtime = readRuntimeDatabase();
   const database = readOperationsDatabase();
   const operations = merchantOperations(database, merchantId);
-  return runtimeOrders(runtime, merchantId).map((order) =>
-    mergeOrder(order, operations[text(order.id)]),
-  );
+  return runtimeOrders(runtime, merchantId).map((order) => {
+    const operation = operations[text(order.id)];
+    return mergeOrder(
+      merchantId,
+      order,
+      operation,
+      decisionById(database, operation?.last_payment_decision_id),
+    );
+  });
 }
 
 export function getServerOrder(
-  merchantId: string,
-  orderId: string,
+  merchantIdValue: string,
+  orderIdValue: string,
 ): ServerOrder {
+  const merchantId = requireIdentifier(
+    merchantIdValue,
+    "ORDER_MERCHANT_ID_INVALID",
+    "merchant identifier",
+  );
+  const orderId = requireIdentifier(
+    orderIdValue,
+    "ORDER_ID_INVALID",
+    "order identifier",
+  );
   const runtime = readRuntimeDatabase();
   const base = requireRuntimeOrder(runtime, merchantId, orderId);
+  const database = readOperationsDatabase();
+  const operation = currentOperation(database, merchantId, orderId);
   return mergeOrder(
+    merchantId,
     base,
-    currentOperation(readOperationsDatabase(), merchantId, orderId),
+    operation,
+    decisionById(database, operation?.last_payment_decision_id),
   );
 }
 
@@ -650,7 +850,7 @@ export function updateServerOrderStatus(input: {
     input.expectedVersion,
     (current) => {
       assertOrderTransition(current.status, nextStatus);
-      return { status: nextStatus };
+      return { order: { status: nextStatus } };
     },
   );
 }
@@ -660,7 +860,6 @@ export function updateServerPaymentStatus(input: {
   orderId: string;
   expectedVersion: unknown;
   paymentStatus: unknown;
-  rejectionReason?: unknown;
 }): ServerOrder {
   const nextStatus = text(input.paymentStatus) as ServerPaymentStatus;
   if (!PAYMENT_STATUSES.has(nextStatus)) {
@@ -670,46 +869,23 @@ export function updateServerPaymentStatus(input: {
       400,
     );
   }
-  const rejectionReason = text(input.rejectionReason);
-  if (nextStatus === "failed" && !rejectionReason) {
-    throw new OrderOperationError(
-      "ORDER_PAYMENT_REJECTION_REASON_REQUIRED",
-      "a payment rejection reason is required",
-      400,
-    );
-  }
-
   return mutateOrder(
     input.merchantId,
     input.orderId,
     input.expectedVersion,
     (current) => {
-      assertPaymentTransition(
+      assertNonTerminalPaymentTransition(
         current.payment_method,
         current.payment_status,
         nextStatus,
       );
-      if (nextStatus === "paid") {
-        return {
-          payment_status: nextStatus,
-          payment_verified_at: new Date().toISOString(),
-          payment_verified_by: input.merchantId,
-          payment_rejection_reason: undefined,
-        };
-      }
-      if (nextStatus === "failed") {
-        return {
+      return {
+        order: {
           payment_status: nextStatus,
           payment_verified_at: undefined,
           payment_verified_by: undefined,
-          payment_rejection_reason: rejectionReason,
-        };
-      }
-      return {
-        payment_status: nextStatus,
-        payment_verified_at: undefined,
-        payment_verified_by: undefined,
-        payment_rejection_reason: undefined,
+          payment_rejection_reason: undefined,
+        },
       };
     },
   );
@@ -719,12 +895,55 @@ export function confirmServerPayment(input: {
   merchantId: string;
   orderId: string;
   expectedVersion: unknown;
+  actorId?: unknown;
+  requestId?: unknown;
 }): ServerOrder {
+  const actorId = requireIdentifier(
+    input.actorId || input.merchantId,
+    "ORDER_PAYMENT_ACTOR_INVALID",
+    "payment actor",
+  );
+  const requestId = text(input.requestId).slice(0, 200);
   return mutateOrder(
     input.merchantId,
     input.orderId,
     input.expectedVersion,
     (current) => {
+      const decidedAt = new Date().toISOString();
+      if (current.payment_method === "cash_on_delivery") {
+        if (current.payment_status !== "cash_on_delivery") {
+          throw new OrderOperationError(
+            "ORDER_PAYMENT_REVIEW_REQUIRED",
+            "cash on delivery payment is not awaiting confirmation",
+          );
+        }
+        if (current.status !== "delivered") {
+          throw new OrderOperationError(
+            "ORDER_CASH_PAYMENT_DELIVERY_REQUIRED",
+            "cash on delivery payment can be confirmed only after delivery",
+          );
+        }
+        return {
+          order: {
+            payment_status: "paid",
+            payment_verified_at: decidedAt,
+            payment_verified_by: actorId,
+            payment_rejection_reason: undefined,
+          },
+          paymentDecision: {
+            operation: "confirm",
+            payment_channel: "cash_on_delivery",
+            outcome: "paid",
+            previous_payment_status: current.payment_status,
+            resulting_payment_status: "paid",
+            previous_order_status: current.status,
+            resulting_order_status: current.status,
+            actor_type: "merchant",
+            actor_id: actorId,
+            ...(requestId ? { request_id: requestId } : {}),
+          },
+        };
+      }
       if (
         current.payment_status !== "electronic_pending" &&
         current.payment_status !== "manual_review"
@@ -736,11 +955,25 @@ export function confirmServerPayment(input: {
       }
       assertOrderTransition(current.status, "confirmed");
       return {
-        status: "confirmed",
-        payment_status: "paid",
-        payment_verified_at: new Date().toISOString(),
-        payment_verified_by: input.merchantId,
-        payment_rejection_reason: undefined,
+        order: {
+          status: "confirmed",
+          payment_status: "paid",
+          payment_verified_at: decidedAt,
+          payment_verified_by: actorId,
+          payment_rejection_reason: undefined,
+        },
+        paymentDecision: {
+          operation: "confirm",
+          payment_channel: "electronic",
+          outcome: "paid",
+          previous_payment_status: current.payment_status,
+          resulting_payment_status: "paid",
+          previous_order_status: current.status,
+          resulting_order_status: "confirmed",
+          actor_type: "merchant",
+          actor_id: actorId,
+          ...(requestId ? { request_id: requestId } : {}),
+        },
       };
     },
   );
@@ -751,6 +984,8 @@ export function rejectServerPayment(input: {
   orderId: string;
   expectedVersion: unknown;
   reason: unknown;
+  actorId?: unknown;
+  requestId?: unknown;
 }): ServerOrder {
   const reason = text(input.reason);
   if (!reason || reason.length > 500) {
@@ -760,11 +995,23 @@ export function rejectServerPayment(input: {
       400,
     );
   }
+  const actorId = requireIdentifier(
+    input.actorId || input.merchantId,
+    "ORDER_PAYMENT_ACTOR_INVALID",
+    "payment actor",
+  );
+  const requestId = text(input.requestId).slice(0, 200);
   return mutateOrder(
     input.merchantId,
     input.orderId,
     input.expectedVersion,
     (current) => {
+      if (current.payment_method === "cash_on_delivery") {
+        throw new OrderOperationError(
+          "ORDER_PAYMENT_METHOD_MISMATCH",
+          "cash on delivery does not use electronic payment rejection",
+        );
+      }
       if (
         current.payment_status !== "electronic_pending" &&
         current.payment_status !== "manual_review"
@@ -784,11 +1031,26 @@ export function rejectServerPayment(input: {
         );
       }
       return {
-        status: "pending_confirmation",
-        payment_status: "failed",
-        payment_verified_at: undefined,
-        payment_verified_by: undefined,
-        payment_rejection_reason: reason,
+        order: {
+          status: "pending_confirmation",
+          payment_status: "failed",
+          payment_verified_at: undefined,
+          payment_verified_by: undefined,
+          payment_rejection_reason: reason,
+        },
+        paymentDecision: {
+          operation: "reject",
+          payment_channel: "electronic",
+          outcome: "failed",
+          previous_payment_status: current.payment_status,
+          resulting_payment_status: "failed",
+          previous_order_status: current.status,
+          resulting_order_status: "pending_confirmation",
+          actor_type: "merchant",
+          actor_id: actorId,
+          ...(requestId ? { request_id: requestId } : {}),
+          reason,
+        },
       };
     },
   );
@@ -796,14 +1058,25 @@ export function rejectServerPayment(input: {
 
 registerMerchantRuntimeDeletion((merchantId) => {
   const filePath = operationsPath();
-  if (!fs.existsSync(filePath)) return { orderOperations: 0 };
+  if (!fs.existsSync(filePath)) {
+    return { orderOperations: 0, orderPaymentDecisions: 0 };
+  }
   const descriptor = acquireLock();
   try {
     const database = readOperationsDatabase();
     const count = Object.keys(merchantOperations(database, merchantId)).length;
+    const decisionCount = database.payment_decisions.filter(
+      (decision) => decision.merchant_id === merchantId,
+    ).length;
     delete database.orders[merchantId];
+    database.payment_decisions = database.payment_decisions.filter(
+      (decision) => decision.merchant_id !== merchantId,
+    );
     writeJsonAtomically(filePath, database);
-    return { orderOperations: count };
+    return {
+      orderOperations: count,
+      orderPaymentDecisions: decisionCount,
+    };
   } finally {
     try {
       fs.closeSync(descriptor);
