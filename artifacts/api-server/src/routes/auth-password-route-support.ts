@@ -27,8 +27,10 @@ export function changePassword(
   );
   const validation = getPasswordValidationError(next);
   const current = authAccountRepository.findById(context.account.id, kind);
+  const forcedAdminChange =
+    kind === "admin" && current?.adminProfile?.mustChangePassword === true;
 
-  if (!currentPassword || validation || next !== confirm) {
+  if (validation || next !== confirm || (!forcedAdminChange && !currentPassword)) {
     sendAuthError(
       res,
       400,
@@ -37,12 +39,22 @@ export function changePassword(
     );
     return;
   }
-  if (!current || !verifyPassword(currentPassword, current.account.passwordHash)) {
+  if (!current) {
+    sendAuthError(res, 401, "CURRENT_PASSWORD_INVALID", "current password is incorrect");
+    return;
+  }
+  if (
+    (!forcedAdminChange &&
+      !verifyPassword(currentPassword, current.account.passwordHash)) ||
+    (forcedAdminChange && verifyPassword(next, current.account.passwordHash))
+  ) {
     sendAuthError(
       res,
-      401,
-      "CURRENT_PASSWORD_INVALID",
-      "current password is incorrect",
+      forcedAdminChange ? 409 : 401,
+      forcedAdminChange ? "PASSWORD_UNCHANGED" : "CURRENT_PASSWORD_INVALID",
+      forcedAdminChange
+        ? "new password must differ from the temporary password"
+        : "current password is incorrect",
     );
     return;
   }
@@ -57,6 +69,14 @@ export function changePassword(
     accountId: context.account.id,
     accountKind: kind,
     reason: "password_changed",
+  });
+  authSecurityStore.audit({
+    event_type: forcedAdminChange
+      ? "administrator_forced_password_changed"
+      : "account_password_changed",
+    actor_account_id: context.account.id,
+    actor_kind: kind,
+    subject_hash: context.account.id,
   });
   clearAuthSessionCookie(res, kind);
   res.json({ ok: true, reauthentication_required: true });
