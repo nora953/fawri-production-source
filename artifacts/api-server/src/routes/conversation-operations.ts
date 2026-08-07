@@ -2,7 +2,7 @@ import { Router, type Request, type Response } from "express";
 import {
   getMerchantIdFromSession,
   requireMerchantSession,
-} from "./auth";
+} from "../middleware/authSession";
 import {
   completeManualReply,
   failManualReply,
@@ -19,6 +19,11 @@ const GRAPH_VERSION = "v22.0";
 const GRAPH_BASE_URL = String(
   process.env.META_GRAPH_BASE_URL || "https://graph.facebook.com",
 ).replace(/\/$/, "");
+
+type MetaSendResponse = {
+  error?: { code?: unknown; message?: unknown };
+  message_id?: unknown;
+};
 
 function param(value: unknown): string {
   if (Array.isArray(value)) return String(value[0] || "").trim();
@@ -205,7 +210,9 @@ router.post(
         );
       }
 
-      const result = await response.json().catch(() => null);
+      const result = (await response.json().catch(() => null)) as
+        | MetaSendResponse
+        | null;
       if (!response.ok) {
         failManualReply({
           merchantId,
