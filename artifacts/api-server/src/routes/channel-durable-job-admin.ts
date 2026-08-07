@@ -5,7 +5,7 @@ import {
   type DurableJobStatus,
 } from "../services/durableJobQueue";
 
-export type DurableJobAdminAuthorize = (
+export type ChannelDurableJobAdminAuthorize = (
   req: Request,
   res: Response,
   next: NextFunction,
@@ -23,8 +23,8 @@ const statuses = new Set<DurableJobStatus>([
  * The integration coordinator must bind this factory to the existing
  * `view_logs`/`manage_channels` admin authorization middleware.
  */
-export function createDurableJobAdminRouter(
-  authorize: DurableJobAdminAuthorize,
+export function createChannelDurableJobAdminRouter(
+  authorize: ChannelDurableJobAdminAuthorize,
 ): Router {
   const router = Router();
 
