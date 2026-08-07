@@ -54,6 +54,7 @@ function legacySafeProfile(account: AuthAccount) {
 export function payload(account: AuthAccount) {
   const compatibilityProfile = legacySafeProfile(account);
   return {
+    ...compatibilityProfile,
     account: {
       id: account.account.id,
       phone: account.account.phone,
