@@ -108,7 +108,7 @@ test("order operation changes alter the validated source manifest", () => {
     const first = buildValidatedMigrationPlan({ dataDirectory: directory }).report;
 
     writeJson(directory, "order-operations.json", {
-      version: 1,
+      version: 2,
       orders: {
         "merchant-1": {
           "order-1": {
@@ -117,10 +117,32 @@ test("order operation changes alter the validated source manifest", () => {
             payment_status: "paid",
             payment_verified_at: "2026-08-06T12:00:00.000Z",
             payment_verified_by: "merchant-1",
+            payment_rejection_reason: null,
+            last_payment_decision_id: "decision-1",
             updated_at: "2026-08-06T12:00:00.000Z",
           },
         },
       },
+      payment_decisions: [
+        {
+          id: "decision-1",
+          merchant_id: "merchant-1",
+          order_id: "order-1",
+          operation: "confirm",
+          payment_channel: "electronic",
+          outcome: "paid",
+          previous_payment_status: "electronic_pending",
+          resulting_payment_status: "paid",
+          previous_order_status: "pending_confirmation",
+          resulting_order_status: "confirmed",
+          actor_type: "merchant",
+          actor_id: "merchant-1",
+          request_id: "manifest-change-request-1",
+          expected_version: 1,
+          resulting_version: 2,
+          decided_at: "2026-08-06T12:00:00.000Z",
+        },
+      ],
     });
     const second = buildValidatedMigrationPlan({ dataDirectory: directory }).report;
 
