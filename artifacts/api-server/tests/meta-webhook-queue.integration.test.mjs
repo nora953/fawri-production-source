@@ -208,17 +208,31 @@ test("verified Meta events are durably queued before reply processing", async (t
   const jobs = JSON.parse(
     await readFile(path.join(dataDirectory, "background-jobs.json"), "utf8"),
   );
-  assert.equal(jobs.version, 1);
-  assert.equal(jobs.jobs.length, 1);
-  assert.equal(jobs.jobs[0].type, "meta.webhook.reply");
-  assert.equal(jobs.jobs[0].dedupe_key, "meta:approved-page:queue-message-1");
-  assert.equal(jobs.jobs[0].status, "queued");
-  assert.equal(jobs.jobs[0].attempts, 0);
-  assert.equal(jobs.jobs[0].merchant_id, "merchant-approved");
-  assert.equal(
-    jobs.jobs[0].payload.external_message_id,
-    "queue-message-1",
+  assert.equal(jobs.version, 2);
+  const replyJobType = "meta.webhook.reply";
+  const replyDedupeKey = "meta:approved-page:queue-message-1";
+  const safeJobDiagnostics = jobs.jobs.map((job) => ({
+    type: job.type,
+    dedupe_key: job.dedupe_key,
+    status: job.status,
+    merchant_id: job.merchant_id,
+  }));
+  const matchingReplyJobs = jobs.jobs.filter(
+    (job) =>
+      job.type === replyJobType && job.dedupe_key === replyDedupeKey,
   );
+  assert.equal(
+    matchingReplyJobs.length,
+    1,
+    `expected exactly one matching Meta reply job; jobs=${JSON.stringify(safeJobDiagnostics)}`,
+  );
+  const [replyJob] = matchingReplyJobs;
+  assert.equal(replyJob.type, replyJobType);
+  assert.equal(replyJob.dedupe_key, replyDedupeKey);
+  assert.equal(replyJob.status, "queued");
+  assert.equal(replyJob.attempts, 0);
+  assert.equal(replyJob.merchant_id, "merchant-approved");
+  assert.equal(replyJob.payload.external_message_id, "queue-message-1");
 
   const processedEvents = JSON.parse(
     await readFile(path.join(dataDirectory, "processed-meta-events.json"), "utf8"),
