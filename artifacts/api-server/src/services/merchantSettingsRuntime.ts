@@ -63,7 +63,7 @@ type DurableJob = {
 };
 
 type DurableJobStore = {
-  version: 1;
+  version: 1 | 2;
   jobs: DurableJob[];
 };
 
@@ -297,16 +297,18 @@ function readDatabase(): SettingsDatabase {
 
 function readQueueStore(): DurableJobStore {
   try {
-    const parsed = JSON.parse(
-      fs.readFileSync(queuePath(), "utf8"),
-    ) as Partial<DurableJobStore>;
-    if (parsed.version !== 1 || !Array.isArray(parsed.jobs)) {
+    const parsed = JSON.parse(fs.readFileSync(queuePath(), "utf8")) as {
+      version?: unknown;
+      jobs?: unknown;
+    };
+    const version = Number(parsed.version);
+    if (![1, 2].includes(version) || !Array.isArray(parsed.jobs)) {
       throw new Error("durable job queue store has an unsupported shape");
     }
-    return { version: 1, jobs: parsed.jobs };
+    return { version: version as 1 | 2, jobs: parsed.jobs };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return { version: 1, jobs: [] };
+      return { version: 2, jobs: [] };
     }
     throw error;
   }
