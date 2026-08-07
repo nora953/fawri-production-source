@@ -105,7 +105,7 @@ test("validated migration plan matches schema and removes row payloads", () => {
     assert.equal(report.writes_performed, false);
     assert.equal(report.database_connection_used, false);
     assert.equal(report.summary.errors, 0);
-    assert.equal(report.schema_validation.snapshot, "0000_snapshot.json");
+    assert.equal(report.schema_validation.snapshot, "0001_snapshot.json");
     assert.match(report.schema_validation.snapshot_sha256, sha256Pattern);
     assert.equal(report.schema_validation.database_connection_used, false);
     assert.equal(report.schema_validation.rows_removed_from_output, true);
@@ -114,6 +114,45 @@ test("validated migration plan matches schema and removes row payloads", () => {
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test("committed latest Drizzle snapshot exposes current migration targets", () => {
+  const journal = JSON.parse(
+    fs.readFileSync(
+      path.join(repositoryRoot, "lib", "db", "drizzle", "meta", "_journal.json"),
+      "utf8",
+    ),
+  );
+  const latest = journal.entries?.at(-1);
+  assert.equal(latest?.idx, 1, "latest committed Drizzle migration is not 0001");
+
+  const snapshot = JSON.parse(
+    fs.readFileSync(
+      path.join(
+        repositoryRoot,
+        "lib",
+        "db",
+        "drizzle",
+        "meta",
+        "0001_snapshot.json",
+      ),
+      "utf8",
+    ),
+  );
+
+  assert.ok(snapshot.tables?.["public.orders"], "orders table missing from 0001");
+  assert.ok(
+    snapshot.tables["public.orders"].columns?.version,
+    "orders.version missing from 0001",
+  );
+  assert.ok(
+    snapshot.tables?.["public.manual_reply_requests"],
+    "manual_reply_requests table missing from 0001",
+  );
+  assert.ok(
+    snapshot.tables?.["public.merchant_settings"],
+    "merchant_settings table missing from 0001",
+  );
 });
 
 test("source manifest hash is deterministic and changes with source data", () => {
