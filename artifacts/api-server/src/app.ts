@@ -15,6 +15,7 @@ import channelOperationsRouter from "./routes/channel-operations";
 import { createChannelDurableJobAdminRouter } from "./routes/channel-durable-job-admin";
 import conversationOperationsRouter from "./routes/conversation-operations";
 import orderOperationsRouter from "./routes/order-operations";
+import merchantSettingsRouter from "./routes/merchant-settings";
 import retentionGuardRouter from "./routes/retention-guard";
 import supportPreviewRouter from "./routes/support-preview";
 import supportImagesRouter from "./routes/support-images";
@@ -215,6 +216,7 @@ app.use(
 app.use("/api/auth/admin/support-preview", supportPreviewRouter);
 app.use("/api", conversationOperationsRouter);
 app.use("/api", orderOperationsRouter);
+app.use("/api", merchantSettingsRouter);
 app.use("/api", channelOperationsRouter);
 app.use("/api", channelDurableJobAdminRouter);
 
