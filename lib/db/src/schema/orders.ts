@@ -8,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { accounts } from "./accounts";
@@ -73,8 +74,8 @@ export const orders = pgTable(
       name: "orders_conversation_merchant_fk",
       columns: [table.conversationId, table.merchantId],
       foreignColumns: [conversations.id, conversations.merchantId],
-    }).onDelete("set null"),
-    idMerchantUnique: uniqueIndex("orders_id_merchant_unique").on(
+    }).onDelete("restrict"),
+    idMerchantUnique: unique("orders_id_merchant_unique").on(
       table.id,
       table.merchantId,
     ),
@@ -139,12 +140,12 @@ export const orderItems = pgTable(
       name: "order_items_product_merchant_fk",
       columns: [table.productId, table.merchantId],
       foreignColumns: [products.id, products.merchantId],
-    }).onDelete("set null"),
+    }).onDelete("restrict"),
     variantTenantForeignKey: foreignKey({
       name: "order_items_variant_merchant_fk",
       columns: [table.productVariantId, table.merchantId],
       foreignColumns: [productVariants.id, productVariants.merchantId],
-    }).onDelete("set null"),
+    }).onDelete("restrict"),
     orderIndex: index("order_items_order_idx").on(table.orderId),
     merchantProductIndex: index("order_items_merchant_product_idx").on(
       table.merchantId,

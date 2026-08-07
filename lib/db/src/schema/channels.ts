@@ -6,6 +6,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { channelPlatformEnum, channelStatusEnum } from "./enums";
@@ -49,7 +50,7 @@ export const merchantChannels = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    idMerchantUnique: uniqueIndex("merchant_channels_id_merchant_unique").on(
+    idMerchantUnique: unique("merchant_channels_id_merchant_unique").on(
       table.id,
       table.merchantId,
     ),

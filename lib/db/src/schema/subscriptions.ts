@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import {
@@ -68,7 +69,7 @@ export const subscriptions = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    idMerchantUnique: uniqueIndex("subscriptions_id_merchant_unique").on(
+    idMerchantUnique: unique("subscriptions_id_merchant_unique").on(
       table.id,
       table.merchantId,
     ),
@@ -125,7 +126,7 @@ export const subscriptionReplyBatches = pgTable(
       columns: [table.subscriptionId, table.merchantId],
       foreignColumns: [subscriptions.id, subscriptions.merchantId],
     }).onDelete("cascade"),
-    idMerchantUnique: uniqueIndex("reply_batches_id_merchant_unique").on(
+    idMerchantUnique: unique("reply_batches_id_merchant_unique").on(
       table.id,
       table.merchantId,
     ),
@@ -177,12 +178,12 @@ export const replyLedger = pgTable(
       name: "reply_ledger_subscription_merchant_fk",
       columns: [table.subscriptionId, table.merchantId],
       foreignColumns: [subscriptions.id, subscriptions.merchantId],
-    }).onDelete("set null"),
+    }).onDelete("restrict"),
     batchTenantForeignKey: foreignKey({
       name: "reply_ledger_batch_merchant_fk",
       columns: [table.replyBatchId, table.merchantId],
       foreignColumns: [subscriptionReplyBatches.id, subscriptionReplyBatches.merchantId],
-    }).onDelete("set null"),
+    }).onDelete("restrict"),
     eventUnique: uniqueIndex("reply_ledger_external_event_unique")
       .on(table.externalEventId)
       .where(sql`${table.externalEventId} is not null`),

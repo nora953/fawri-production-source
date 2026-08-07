@@ -8,6 +8,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { accounts } from "./accounts";
@@ -59,7 +60,7 @@ export const conversations = pgTable(
       columns: [table.channelId, table.merchantId],
       foreignColumns: [merchantChannels.id, merchantChannels.merchantId],
     }).onDelete("restrict"),
-    idMerchantUnique: uniqueIndex("conversations_id_merchant_unique").on(
+    idMerchantUnique: unique("conversations_id_merchant_unique").on(
       table.id,
       table.merchantId,
     ),
@@ -123,7 +124,7 @@ export const messages = pgTable(
       columns: [table.conversationId, table.merchantId],
       foreignColumns: [conversations.id, conversations.merchantId],
     }).onDelete("cascade"),
-    idConversationMerchantUnique: uniqueIndex(
+    idConversationMerchantUnique: unique(
       "messages_id_conversation_merchant_unique",
     ).on(table.id, table.conversationId, table.merchantId),
     externalMessageUnique: uniqueIndex("messages_merchant_external_message_unique")

@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { merchants } from "./merchants";
@@ -45,7 +46,7 @@ export const products = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
-    idMerchantUnique: uniqueIndex("products_id_merchant_unique").on(
+    idMerchantUnique: unique("products_id_merchant_unique").on(
       table.id,
       table.merchantId,
     ),
@@ -107,7 +108,7 @@ export const productVariants = pgTable(
       columns: [table.productId, table.merchantId],
       foreignColumns: [products.id, products.merchantId],
     }).onDelete("cascade"),
-    idMerchantUnique: uniqueIndex("product_variants_id_merchant_unique").on(
+    idMerchantUnique: unique("product_variants_id_merchant_unique").on(
       table.id,
       table.merchantId,
     ),
