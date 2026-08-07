@@ -1,5 +1,8 @@
+import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -10,6 +13,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import {
+  accountKindEnum,
   accountStatusEnum,
   adminPermissionEnum,
   adminRoleEnum,
@@ -28,6 +32,7 @@ export const merchants = pgTable(
     accountId: text("account_id")
       .notNull()
       .references(() => accounts.id, { onDelete: "cascade" }),
+    profileKind: accountKindEnum("profile_kind").notNull().default("merchant"),
     ownerName: text("owner_name").notNull(),
     storeName: text("store_name").notNull(),
     activityType: text("activity_type").notNull(),
@@ -78,10 +83,19 @@ export const merchants = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    accountKindForeignKey: foreignKey({
+      name: "merchants_account_kind_fk",
+      columns: [table.accountId, table.profileKind],
+      foreignColumns: [accounts.id, accounts.kind],
+    }).onDelete("cascade"),
     accountUnique: uniqueIndex("merchants_account_unique").on(table.accountId),
     statusIndex: index("merchants_status_idx").on(table.status),
     retentionIndex: index("merchants_retention_status_idx").on(
       table.retentionStatus,
+    ),
+    roleExclusivityCheck: check(
+      "merchants_profile_kind_check",
+      sql`${table.profileKind} = 'merchant' AND ${table.id} = ${table.accountId}`,
     ),
   }),
 );
@@ -93,6 +107,7 @@ export const adminProfiles = pgTable(
     accountId: text("account_id")
       .notNull()
       .references(() => accounts.id, { onDelete: "cascade" }),
+    profileKind: accountKindEnum("profile_kind").notNull().default("admin"),
     displayName: text("display_name").notNull(),
     role: adminRoleEnum("role").notNull(),
     enabled: boolean("enabled").notNull().default(true),
@@ -105,10 +120,19 @@ export const adminProfiles = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    accountKindForeignKey: foreignKey({
+      name: "admin_profiles_account_kind_fk",
+      columns: [table.accountId, table.profileKind],
+      foreignColumns: [accounts.id, accounts.kind],
+    }).onDelete("cascade"),
     accountUnique: uniqueIndex("admin_profiles_account_unique").on(
       table.accountId,
     ),
     roleIndex: index("admin_profiles_role_idx").on(table.role),
+    roleExclusivityCheck: check(
+      "admin_profiles_profile_kind_check",
+      sql`${table.profileKind} = 'admin' AND ${table.id} = ${table.accountId}`,
+    ),
   }),
 );
 

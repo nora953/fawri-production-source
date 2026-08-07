@@ -166,7 +166,7 @@ export const replyLedger = pgTable(
     messageId: text("message_id"),
     balanceAfter: integer("balance_after"),
     metadata: jsonb("metadata")
-      .$type<Record<string, unknown>>()
+      .$type<Record<string, string | number | boolean | null>>()
       .notNull()
       .default({}),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -174,6 +174,10 @@ export const replyLedger = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    idMerchantUnique: unique("reply_ledger_id_merchant_unique").on(
+      table.id,
+      table.merchantId,
+    ),
     subscriptionTenantForeignKey: foreignKey({
       name: "reply_ledger_subscription_merchant_fk",
       columns: [table.subscriptionId, table.merchantId],
@@ -206,3 +210,4 @@ export const replyLedger = pgTable(
 export type Subscription = typeof subscriptions.$inferSelect;
 export type NewSubscription = typeof subscriptions.$inferInsert;
 export type SubscriptionReplyBatch = typeof subscriptionReplyBatches.$inferSelect;
+export type ReplyLedgerEntry = typeof replyLedger.$inferSelect;

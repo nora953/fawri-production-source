@@ -1,12 +1,14 @@
 import { sql } from "drizzle-orm";
 import {
   check,
+  foreignKey,
   index,
   integer,
   jsonb,
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import {
@@ -24,22 +26,25 @@ export const backgroundJobs = pgTable(
     merchantId: text("merchant_id").references(() => merchants.id, {
       onDelete: "cascade",
     }),
-    payload: jsonb("payload")
-      .$type<Record<string, unknown>>()
-      .notNull()
-      .default({}),
+    payloadHash: text("payload_hash"),
     priority: integer("priority").notNull().default(0),
     status: backgroundJobStatusEnum("status").notNull().default("queued"),
     attempts: integer("attempts").notNull().default(0),
     maxAttempts: integer("max_attempts").notNull().default(5),
+    requeueCount: integer("requeue_count").notNull().default(0),
+    settingsVersion: integer("settings_version"),
     availableAt: timestamp("available_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
     lockedAt: timestamp("locked_at", { withTimezone: true }),
     lockedBy: text("locked_by"),
+    leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+    leaseGeneration: integer("lease_generation"),
     lastErrorCode: text("last_error_code"),
-    lastErrorMessage: text("last_error_message"),
-    result: jsonb("result").$type<Record<string, unknown>>(),
+    result: jsonb("result")
+      .$type<Record<string, string | number | boolean | null>>()
+      .notNull()
+      .default({}),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     deadLetteredAt: timestamp("dead_lettered_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -50,6 +55,10 @@ export const backgroundJobs = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    idMerchantUnique: unique("background_jobs_id_merchant_unique").on(
+      table.id,
+      table.merchantId,
+    ),
     typeDedupeUnique: uniqueIndex("background_jobs_type_dedupe_unique").on(
       table.type,
       table.dedupeKey,
@@ -60,14 +69,19 @@ export const backgroundJobs = pgTable(
       table.priority,
       table.createdAt,
     ),
-    merchantStatusIndex: index("background_jobs_merchant_status_idx").on(
+    merchantClaimIndex: index("background_jobs_merchant_claim_idx").on(
       table.merchantId,
+      table.type,
       table.status,
-      table.createdAt,
+      table.availableAt,
+    ),
+    leaseExpiryIndex: index("background_jobs_lease_expiry_idx").on(
+      table.status,
+      table.leaseExpiresAt,
     ),
     attemptsNonnegative: check(
       "background_jobs_attempts_nonnegative",
-      sql`${table.attempts} >= 0`,
+      sql`${table.attempts} >= 0 AND ${table.requeueCount} >= 0`,
     ),
     maxAttemptsPositive: check(
       "background_jobs_max_attempts_positive",
@@ -77,13 +91,25 @@ export const backgroundJobs = pgTable(
       "background_jobs_attempts_within_limit",
       sql`${table.attempts} <= ${table.maxAttempts}`,
     ),
-    processingHasLock: check(
-      "background_jobs_processing_has_lock",
-      sql`(${table.status} <> 'processing') OR (${table.lockedAt} IS NOT NULL AND ${table.lockedBy} IS NOT NULL)`,
+    settingsVersionCheck: check(
+      "background_jobs_settings_version_check",
+      sql`${table.settingsVersion} IS NULL OR ${table.settingsVersion} > 0`,
     ),
-    nonprocessingHasNoLock: check(
-      "background_jobs_nonprocessing_has_no_lock",
-      sql`(${table.status} = 'processing') OR (${table.lockedAt} IS NULL AND ${table.lockedBy} IS NULL)`,
+    payloadHashCheck: check(
+      "background_jobs_payload_hash_check",
+      sql`${table.payloadHash} IS NULL OR char_length(${table.payloadHash}) BETWEEN 32 AND 128`,
+    ),
+    processingHasLease: check(
+      "background_jobs_processing_has_lease",
+      sql`(${table.status} <> 'processing') OR (${table.lockedAt} IS NOT NULL AND ${table.lockedBy} IS NOT NULL AND ${table.leaseExpiresAt} IS NOT NULL AND ${table.leaseGeneration} IS NOT NULL AND ${table.leaseGeneration} > 0)`,
+    ),
+    nonprocessingHasNoLease: check(
+      "background_jobs_nonprocessing_has_no_lease",
+      sql`(${table.status} = 'processing') OR (${table.lockedAt} IS NULL AND ${table.lockedBy} IS NULL AND ${table.leaseExpiresAt} IS NULL AND ${table.leaseGeneration} IS NULL)`,
+    ),
+    leaseTimeCheck: check(
+      "background_jobs_lease_time_check",
+      sql`${table.leaseExpiresAt} IS NULL OR (${table.lockedAt} IS NOT NULL AND ${table.leaseExpiresAt} > ${table.lockedAt})`,
     ),
     completedHasTimestamp: check(
       "background_jobs_completed_has_timestamp",
@@ -92,6 +118,35 @@ export const backgroundJobs = pgTable(
     deadLetterHasTimestamp: check(
       "background_jobs_dead_letter_has_timestamp",
       sql`(${table.status} <> 'dead_letter') OR ${table.deadLetteredAt} IS NOT NULL`,
+    ),
+  }),
+);
+
+/**
+ * Encrypted/privileged job payload storage is separated from the administrative
+ * job row so default queue inspection cannot accidentally expose payloads.
+ */
+export const backgroundJobPayloads = pgTable(
+  "background_job_payloads",
+  {
+    jobId: text("job_id").primaryKey(),
+    merchantId: text("merchant_id"),
+    ciphertext: text("ciphertext").notNull(),
+    keyId: text("key_id").notNull(),
+    payloadSha256: text("payload_sha256").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    jobTenantForeignKey: foreignKey({
+      name: "background_job_payloads_job_merchant_fk",
+      columns: [table.jobId, table.merchantId],
+      foreignColumns: [backgroundJobs.id, backgroundJobs.merchantId],
+    }).onDelete("cascade"),
+    payloadHashCheck: check(
+      "background_job_payloads_hash_check",
+      sql`char_length(${table.payloadSha256}) BETWEEN 32 AND 128`,
     ),
   }),
 );
@@ -105,11 +160,11 @@ export const jobAttempts = pgTable(
       .references(() => backgroundJobs.id, { onDelete: "cascade" }),
     attemptNumber: integer("attempt_number").notNull(),
     workerId: text("worker_id").notNull(),
+    leaseGeneration: integer("lease_generation").notNull(),
     status: jobAttemptStatusEnum("status").notNull(),
     errorCode: text("error_code"),
-    errorMessage: text("error_message"),
     metadata: jsonb("metadata")
-      .$type<Record<string, unknown>>()
+      .$type<Record<string, string | number | boolean | null>>()
       .notNull()
       .default({}),
     startedAt: timestamp("started_at", { withTimezone: true })
@@ -132,7 +187,7 @@ export const jobAttempts = pgTable(
     ),
     attemptPositive: check(
       "job_attempts_attempt_positive",
-      sql`${table.attemptNumber} > 0`,
+      sql`${table.attemptNumber} > 0 AND ${table.leaseGeneration} > 0`,
     ),
     validTimeRange: check(
       "job_attempts_valid_time_range",
@@ -154,13 +209,10 @@ export const jobDeadLetters = pgTable(
       .references(() => backgroundJobs.id, { onDelete: "cascade" }),
     occurrence: integer("occurrence").notNull().default(1),
     reasonCode: text("reason_code").notNull(),
-    reasonMessage: text("reason_message").notNull(),
     attempts: integer("attempts").notNull(),
-    payloadSnapshot: jsonb("payload_snapshot")
-      .$type<Record<string, unknown>>()
-      .notNull(),
+    payloadSha256: text("payload_sha256"),
     metadata: jsonb("metadata")
-      .$type<Record<string, unknown>>()
+      .$type<Record<string, string | number | boolean | null>>()
       .notNull()
       .default({}),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -182,9 +234,14 @@ export const jobDeadLetters = pgTable(
       "job_dead_letters_occurrence_positive",
       sql`${table.occurrence} > 0`,
     ),
+    payloadHashCheck: check(
+      "job_dead_letters_payload_hash_check",
+      sql`${table.payloadSha256} IS NULL OR char_length(${table.payloadSha256}) BETWEEN 32 AND 128`,
+    ),
   }),
 );
 
 export type BackgroundJob = typeof backgroundJobs.$inferSelect;
+export type BackgroundJobPayload = typeof backgroundJobPayloads.$inferSelect;
 export type JobAttempt = typeof jobAttempts.$inferSelect;
 export type JobDeadLetter = typeof jobDeadLetters.$inferSelect;

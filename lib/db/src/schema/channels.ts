@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   check,
   index,
+  integer,
   jsonb,
   pgTable,
   text,
@@ -21,15 +22,21 @@ export const merchantChannels = pgTable(
       .references(() => merchants.id, { onDelete: "cascade" }),
     platform: channelPlatformEnum("platform").notNull(),
     status: channelStatusEnum("status").notNull().default("pending"),
+    version: integer("version").notNull().default(1),
     externalAccountId: text("external_account_id"),
     externalAccountName: text("external_account_name"),
     pageId: text("page_id"),
     pageName: text("page_name"),
     instagramAccountId: text("instagram_account_id"),
     instagramUsername: text("instagram_username"),
-    tokenCiphertext: text("token_ciphertext"),
-    tokenKeyVersion: text("token_key_version"),
-    tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }),
+    credentialCiphertext: text("credential_ciphertext"),
+    credentialNonce: text("credential_nonce"),
+    credentialAuthTag: text("credential_auth_tag"),
+    credentialKeyId: text("credential_key_id"),
+    credentialAlgorithm: text("credential_algorithm"),
+    credentialExpiresAt: timestamp("credential_expires_at", {
+      withTimezone: true,
+    }),
     webhookSubscribedAt: timestamp("webhook_subscribed_at", {
       withTimezone: true,
     }),
@@ -39,7 +46,7 @@ export const merchantChannels = pgTable(
     connectedAt: timestamp("connected_at", { withTimezone: true }),
     disconnectedAt: timestamp("disconnected_at", { withTimezone: true }),
     metadata: jsonb("metadata")
-      .$type<Record<string, unknown>>()
+      .$type<Record<string, string | number | boolean | null>>()
       .notNull()
       .default({}),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -55,19 +62,27 @@ export const merchantChannels = pgTable(
       table.merchantId,
     ),
     merchantPlatformUnique: uniqueIndex(
-      "merchant_channels_merchant_platform_unique",
-    ).on(table.merchantId, table.platform, table.externalAccountId),
-    pageUnique: uniqueIndex("merchant_channels_page_unique").on(table.pageId),
+      "merchant_channels_merchant_platform_external_unique",
+    )
+      .on(table.merchantId, table.platform, table.externalAccountId)
+      .where(sql`${table.externalAccountId} IS NOT NULL`),
+    pageUnique: uniqueIndex("merchant_channels_page_unique")
+      .on(table.pageId)
+      .where(sql`${table.pageId} IS NOT NULL`),
     merchantStatusIndex: index("merchant_channels_merchant_status_idx").on(
       table.merchantId,
       table.status,
     ),
-    tokenExpiryIndex: index("merchant_channels_token_expiry_idx").on(
-      table.tokenExpiresAt,
+    credentialExpiryIndex: index("merchant_channels_credential_expiry_idx").on(
+      table.credentialExpiresAt,
     ),
-    tokenPairCheck: check(
-      "merchant_channels_token_pair_check",
-      sql`(${table.tokenCiphertext} IS NULL) = (${table.tokenKeyVersion} IS NULL)`,
+    versionCheck: check(
+      "merchant_channels_version_check",
+      sql`${table.version} > 0`,
+    ),
+    credentialEnvelopeCheck: check(
+      "merchant_channels_credential_envelope_check",
+      sql`(${table.credentialCiphertext} IS NULL AND ${table.credentialNonce} IS NULL AND ${table.credentialAuthTag} IS NULL AND ${table.credentialKeyId} IS NULL AND ${table.credentialAlgorithm} IS NULL) OR (${table.credentialCiphertext} IS NOT NULL AND ${table.credentialNonce} IS NOT NULL AND ${table.credentialAuthTag} IS NOT NULL AND ${table.credentialKeyId} IS NOT NULL AND ${table.credentialAlgorithm} = 'aes-256-gcm')`,
     ),
     timestampOrderCheck: check(
       "merchant_channels_timestamp_order_check",
