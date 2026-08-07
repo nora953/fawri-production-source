@@ -5,6 +5,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import pinoHttp from "pino-http";
 import router from "./routes";
+import authSecurityRouter from "./routes/auth-security";
 import conversationOperationsRouter from "./routes/conversation-operations";
 import orderOperationsRouter from "./routes/order-operations";
 import retentionGuardRouter from "./routes/retention-guard";
@@ -14,6 +15,8 @@ import emergencyOwnerSnapshotRouter from "./routes/emergency-owner-snapshot";
 import emergencyReadAccessRouter from "./routes/emergency-read-access";
 import emergencyReadDirectoryRouter from "./routes/emergency-read-directory";
 import emergencyMerchantNoticesRouter from "./routes/emergency-merchant-notices";
+import { enforceAuthCutoverCompatibility } from "./middleware/authCutoverCompatibility";
+import { enforceAuthOrigin } from "./middleware/authSession";
 import { enforceMerchantRetentionAccess } from "./middleware/merchantRetentionAccess";
 import {
   enforceMerchantOAuthCallbackOperationalAccess,
@@ -76,6 +79,13 @@ app.use(enforceMerchantWebhookOperationalAccess);
 app.use(enforceManualConversationWebhookAccess);
 app.use(enqueueMetaWebhookEvents);
 app.use(enforceMerchantWebhookSubscriptionAccess);
+
+// Auth cutover order is deliberate: the v2 router owns every new auth/session
+// endpoint first. Any remaining legacy business handler receives only a
+// server-derived compatibility credential after v2 session validation.
+app.use("/api/auth", authSecurityRouter);
+app.use("/api/auth", enforceAuthOrigin);
+app.use(enforceAuthCutoverCompatibility);
 
 app.use((req, res, next) => {
   const inspectionRequestPath =
