@@ -4,11 +4,11 @@
 
 - Coordination base: `b08c854f177953d3690c5dffde905fdb0c93eb09`
 - Integration branch: `parallel/integration-coordinator`
-- Coordinator remote HEAD before this update: `2b0fa90d83a180661506372cc67188b4e6680aa4`
+- Coordinator remote HEAD before this update: `3a6290030f92f52260e450955e821a3e046f66c3`
 - Validated target after ordered integration: `hardening/postgresql-foundation`
 - Direct modification of `main`: **not allowed**
 - Replit Agent: **not allowed**
-- Latest lane review/integration: `2026-08-07 05:52 +03:00`
+- Latest lane review/integration: `2026-08-07 06:33 +03:00`
 - Current project release decision: **NO-GO**
 
 ## Ordered integration queue
@@ -17,7 +17,7 @@
 2. `parallel/channels-messaging` — reviewed; next eligible lane
 3. `parallel/orders-settings-finalization` — reviewed; queued after channels
 4. `parallel/catalog-inventory` — reviewed; queued after orders/settings
-5. `parallel/knowledge-ai` — waiting
+5. `parallel/knowledge-ai` — reviewed; position reserved after catalog, but correction required before merge
 6. `parallel/db-migration-cutover` — after all domain schema requests are reconciled
 7. `parallel/quality-observability` — reviewed; integrate after domains and PostgreSQL
 8. Final shared wiring, full validation, migration candidate, backup/restore, and release-candidate checks
@@ -32,7 +32,7 @@ No merge to `main` or `hardening/postgresql-foundation` is authorized or perform
 | Channels/messaging | `parallel/channels-messaging` | reviewed; next in ordered integration | `22857159593aebeea0a12e6782581da6358080b3` | — | Allowlist compliant; 13 documented tests passed; activation blocked pending shared plaintext-token migration, key management, PostgreSQL, CI, and fake transport |
 | Orders/settings finalization | `parallel/orders-settings-finalization` | reviewed; queued after channels | `bde53f403f63d680fd96c1d8b8a5e264010d9b41` | — | Allowlist compliant; 5 runtime + 4 static-contract + 1 audit tests passed; shared queue/race/type/router integration mandatory |
 | Catalog/inventory | `parallel/catalog-inventory` | reviewed; queued after orders/settings | `ce363f7105f33e942c6c47ef8907dfb9b59658f6` | — | Allowlist compliant; 16 documented tests passed; full workspace validation pending |
-| Knowledge/AI | `parallel/knowledge-ai` | waiting for implementation/handoff review | — | — | Integrate after catalog/inventory |
+| Knowledge/AI | `parallel/knowledge-ai` | reviewed; held at integration position 5 pending lane correction | `a09f1a3b1b72d9dd7834db8ae6a4c0e971e38744` | — | 32 allowlisted files; documented 13 runtime + 5 audit/static tests and targeted TypeScript passes; no CI; parseable-but-structurally-invalid runtime must fail closed before merge; DB/vector/fact/policy/Meta integration remains activation-blocked |
 | PostgreSQL migration/cutover | `parallel/db-migration-cutover` | waiting; schema requests/blockers assigned | — | — | Must reconcile auth + channels + orders/settings + catalog + knowledge requests and quality-discovered schema failures |
 | Quality/observability | `parallel/quality-observability` | reviewed; accepted as final queued lane | `b473fb8397814aa7bd91e0e323dc6003f6ba96f6` | — | PR #4 open/draft/unmerged; quality/security red runs are real blockers; restore drill green |
 
@@ -133,6 +133,72 @@ Migration/cutover requirements:
 - prove revoked session fails on the immediately following request and rotation cannot create two concurrently valid successors;
 - add concurrency tests on disposable PostgreSQL.
 
+## Knowledge/AI review — position 5, correction required before merge
+
+### Branch, ancestry, and scope
+
+- Reviewed and rechecked final remote head: `a09f1a3b1b72d9dd7834db8ae6a4c0e971e38744`.
+- Implementation SHA: `f87607d5a25c49a9baf4df6e42a4baea487330b5`; final SHA adds the handoff only.
+- Branch ancestry: 2 commits ahead of coordination base, zero behind, coordination base as merge base.
+- Final diff contains exactly 32 added paths, all inside the Knowledge/AI allowlist.
+- No shared `app.ts`, `index.ts`, package/lockfile, workflow, `lib/db/**`, shared store/types/translations, Meta queue/worker, auth, orders/settings, catalog, target branch, or `main` file was modified.
+- Handoff reviewed: `docs/coordination/handoffs/knowledge-ai.md`.
+- Independent GitHub check found no workflow runs and no combined commit statuses on the final SHA; no CI-green claim is recorded.
+
+### Static behavior/security review
+
+- The lane defines one explicit decision engine: `fawri_knowledge_decision_engine_v1`.
+- Deterministic precedence is fact resolver, approved saved answer, tenant-filtered semantic retrieval, constrained AI fallback, then handoff/no-answer, with prompt-injection inspection before provider invocation.
+- Saved answers are tenant-scoped and always `merchant_approved`; duplicate normalized answers conflict within merchant/language boundaries.
+- Semantic retrieval filters `merchantId` before scoring and receives only active merchant-approved saved answers or approved/safe learned answers.
+- OpenAI-generated candidates are recorded as `openai_generated`, `pending_review`, `safeToAutoReply=false`; they are not automatically added to approved semantic knowledge.
+- Training approval is explicit, optimistic-versioned, and converts provenance to `merchant_approved`; approved requests are immutable in place.
+- Browser routes derive merchant identity from the authenticated server session and ignore browser-supplied merchant policy; current public decision route hard-codes generated auto-reply off.
+- Provider calls require explicit API key and model, use `store:false`, strict JSON-schema output, bounded timeout/output, separated system/trusted-merchant/untrusted-customer trust zones, and fail closed on request/provider failure.
+- Decision audit stores customer digest/length and signal/decision metadata rather than full customer text; training stores a bounded redacted preview plus digest.
+- Training UI clearly distinguishes generated/unapproved suggestions from merchant drafts and uses no operational LocalStorage/SessionStorage authority.
+- Knowledge lifecycle deletion hooks remove merchant saved-answer and training/learned state from the isolated runtime.
+
+### Lane correction required before merge
+
+`KnowledgeStateStore.validateState()` currently treats parseable but structurally invalid JSON as an empty/partially filtered runtime instead of throwing. Invalid records can therefore be silently dropped from the in-memory view and then permanently omitted when a later mutation writes the state. The documented corruption test covers malformed JSON syntax only, not parseable-invalid schema/records.
+
+Before this lane becomes merge-eligible, the Knowledge/AI lane must:
+
+1. fail closed on structurally invalid runtime roots, required arrays, schema version, and malformed records instead of silently filtering/dropping them;
+2. prove a mutation cannot overwrite a parseable-but-invalid runtime;
+3. add focused tests for structurally invalid JSON and preservation of the original file on refusal;
+4. keep ambiguous legacy training suggestion provenance untrusted during migration/import; do not label unknown generated/legacy text as merchant-approved authority.
+
+This is a lane-owned correction, so the coordinator does not edit the frozen Knowledge/AI branch. A corrected final SHA must be reviewed before the ordered merge at position 5.
+
+### Shared integration gates after lane correction and when position 5 is reached
+
+- Mount `knowledgeOperationsRouter` only after auth v2 ordering; replace the lane's base-era `./auth.js` session helper imports with the integrated `authSession.ts` authority rather than reintroducing legacy auth.
+- Activate `SavedAnswersPage.ts` and `TrainingPage.ts` in shared frontend routing and remove/deactivate legacy saved-answer/training authorities in the same cutover so two knowledge engines cannot remain active.
+- Move page-local AR/KU/EN copy into shared translations while preserving the distinction between merchant-approved and generated/pending content.
+- Inject one server-only `MerchantPolicyContext`; browser policy input remains ignored. Production launch keeps generated auto-reply disabled unless a later explicit product decision and tests approve otherwise.
+- Inject one tenant-scoped `KnowledgeFactResolver` from authoritative catalog/inventory, merchant settings, and order facts/policy. AI must not invent price, stock, payment, delivery, warranty, or order state.
+- Do not connect the Meta worker until PostgreSQL, vector retrieval, fact resolver, and policy resolver are integrated. Meta sends only `action === "reply"` under the final source policy, routes `handoff` to human handling, never treats `openai_generated` as merchant-approved knowledge, and does not log provider/customer bodies.
+- Replace the deterministic local semantic fallback with the production pgvector/equivalent adapter before production activation.
+- `knowledge-runtime.json` is transitional only and must not remain production authority.
+
+### Documented verification evidence
+
+- Knowledge/AI runtime tests: 13 passed / 0 failed.
+- Audit/static contract tests: 5 passed / 0 failed.
+- TypeScript services/routes: PASS.
+- TypeScript frontend pages: PASS.
+- No GitHub Actions workflow run or combined status exists on `a09f1a3b1b72d9dd7834db8ae6a4c0e971e38744`.
+- No live OpenAI request, real database, real Meta service, Replit Agent, customer data, or production credential was used according to the handoff.
+
+### Review decision
+
+- Final SHA is recorded and the lane retains ordered integration position 5 after catalog/inventory.
+- **Not merged now** because channels, orders/settings, and catalog precede it.
+- **Not merge-eligible yet** because the structurally-invalid-runtime fail-closed correction above is required on the lane.
+- Current project release decision remains **NO-GO**.
+
 ## Other reviewed lane shared integration requests
 
 ### Channels/messaging — next integration turn
@@ -156,6 +222,14 @@ Migration/cutover requirements:
 - Replace legacy bot product authority with the tenant-scoped catalog adapter and remove dual authority.
 - Carry schema, backup, audit, and workflow requests into DB/quality integration.
 
+### Knowledge/AI — after corrected lane review and catalog integration
+
+- Mount the single knowledge router behind auth v2 and remove legacy dual knowledge authority.
+- Activate server-backed Saved Answers/Training pages through shared routing.
+- Wire server-only policy and authoritative fact resolvers.
+- Defer live Meta decision-engine use until PostgreSQL/vector/fact/policy integration is complete.
+- Keep generated content visibly/provenance-distinct and untrusted until explicit merchant approval.
+
 ### Quality/observability
 
 - Keep observability router unmounted until final secure shared wiring.
@@ -175,6 +249,21 @@ Require tenant-safe products/variants/options/identifiers/images, durable idempo
 ### Channels/messaging
 
 Require transactional durable jobs, encrypted channel connections, inbound-event dedupe+enqueue, reply reservations/refunds, outbound outcomes, database-time leases, `FOR UPDATE SKIP LOCKED`, tenant-safe constraints, and payload-free default administration.
+
+### Knowledge/AI
+
+Require transactional replacements for:
+
+- `knowledge_saved_answers` with tenant/language/normalized-question uniqueness, positive optimistic versions, active state, and `source='merchant_approved'` constraint;
+- `knowledge_training_requests` with redacted preview + digest, detected intent/language, suggested-reply provenance, approval state, rejection reason, positive version, and tenant ownership;
+- `knowledge_learned_answers` with tenant-safe composite FK to training requests, examples/keywords, provenance, approval status, confidence, `safe_to_auto_reply`, and positive version;
+- a knowledge audit table that stores digest/length/signal/decision metadata only and has no raw customer-message column;
+- composite unique `(id, merchant_id)` targets and tenant-safe FKs;
+- transactions/locking for approval/rejection/version changes so provenance conversion and version increments are atomic;
+- DB checks/triggers enforcing `safe_to_auto_reply=true` only for `merchant_approved` + `approved`; generated content must never become approved/safe in place;
+- deterministic migration manifests/source hashes and fail-closed handling of ambiguous legacy provenance.
+
+Production semantic storage must use pgvector or an equivalent adapter with tenant filtering before scoring, approved/safe knowledge only, ephemeral customer query embeddings, no raw customer-query persistence, content/model uniqueness, rebuild on source-content change, and exact cross-tenant leakage tests.
 
 ### Quality-discovered PostgreSQL blockers
 
@@ -197,6 +286,8 @@ Require transactional durable jobs, encrypted channel connections, inbound-event
 | Orders/settings queue v1 vs channels queue v2 | Integration coordinator at orders integration | Central queue APIs; no direct settings ownership of queue file |
 | Claimed Meta reply disable race | Integration coordinator | Two settings/version checks plus same-attempt reservation rollback |
 | `PaymentStatus` shared frontend contract | Integration coordinator | Reconcile with canonical `OrderPaymentStatus`; full frontend build |
+| Knowledge parseable-invalid runtime can silently drop state | `parallel/knowledge-ai` | Make structural validation fail closed, preserve original file on refusal, and add mutation/no-overwrite tests before lane merge |
+| Knowledge PostgreSQL/vector/fact/policy/Meta activation | DB lane + integration coordinator | Replace JSON, enforce provenance/tenant transactions, tenant-filter vector search, server-only facts/policy, then fake-transport Meta integration tests before activation |
 | PostgreSQL schema drift/composite FK/migration failures | `parallel/db-migration-cutover` | Fix schema/migration and pass disposable PostgreSQL |
 | 22 dependency vulnerabilities including 14 high | Integration coordinator | Update reserved manifests/lockfiles or explicitly risk-review unavoidable transitives; never lower `pnpm audit --audit-level=high` |
 | Native dependency review unavailable | Repository owner | Enable Dependency Graph/Advanced Security/native review as appropriate |
@@ -209,6 +300,7 @@ Require transactional durable jobs, encrypted channel connections, inbound-event
 - Channels: 13 documented tests passed; targeted checks passed; no CI.
 - Orders/settings: 5 runtime + 4 static + 1 audit passed; isolated TypeScript checks passed; no final-SHA CI/full build.
 - Catalog: 16 documented tests passed; isolated TypeScript passed; no CI.
+- Knowledge/AI: documented 13 runtime + 5 audit/static tests passed and targeted service/route/frontend TypeScript passed; no Actions/combined status on `a09f1a3...`; structural invalid-runtime case is not covered and is a merge blocker.
 - Quality final-head CI:
   - Quality gates `31137063434`: **FAILURE**;
   - Security/supply chain `31137063654`: **FAILURE**;
@@ -231,7 +323,8 @@ Require transactional durable jobs, encrypted channel connections, inbound-event
 - [ ] Channels integrated second with plaintext-token/key-management gates closed.
 - [ ] Orders/settings integrated third with central queue APIs and claimed-reply race closed.
 - [ ] Catalog integrated fourth.
-- [ ] Knowledge/AI reviewed and integrated fifth.
+- [x] Knowledge/AI final SHA reviewed and recorded at integration position 5.
+- [ ] Knowledge/AI structural runtime correction reviewed and lane integrated fifth.
 - [ ] PostgreSQL lane reconciles every domain/auth request and quality blocker.
 - [ ] Quality lane integrated after DB/domain work.
 - [ ] Shared payment-status/frontend build contracts pass.
