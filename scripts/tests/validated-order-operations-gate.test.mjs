@@ -3,7 +3,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { buildValidatedMigrationPlan } from "../lib/postgresql-migration-plan.mjs";
+import { buildValidatedMigrationPlan } from "../lib/postgresql-migration-plan-complete.mjs";
 
 function makeDirectory() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "fawri-order-plan-gate-"));
@@ -86,9 +86,9 @@ test("validated plan includes order operation source identity", () => {
     const { report } = buildValidatedMigrationPlan({ dataDirectory: directory });
 
     assert.equal(report.ok, true, JSON.stringify(report.errors, null, 2));
-    assert.equal(report.tool_version, "4");
+    assert.equal(report.tool_version, "6");
     assert.equal(report.order_operations_migration.ok, true);
-    assert.equal(report.order_operations_migration.rows_included, false);
+    assert.equal(report.order_operations_migration.rows_included, true);
     assert.equal(
       report.source_files.orderOperations.file,
       "order-operations.json",
