@@ -44,9 +44,9 @@ const ImportProductsPage = lazy(
 );
 const OrdersPage = lazy(() => import("@/pages/dashboard/OrdersPage"));
 const SavedAnswersPage = lazy(
-  () => import("@/pages/dashboard/SavedAnswersPage"),
+  () => import("@/pages/dashboard/SavedAnswersPage.ts"),
 );
-const BotTrainingPage = lazy(() => import("@/pages/dashboard/BotTrainingPage"));
+const TrainingPage = lazy(() => import("@/pages/dashboard/TrainingPage.ts"));
 const ChannelsPage = lazy(() => import("@/pages/dashboard/ChannelsPage"));
 const SubscriptionPage = lazy(
   () => import("@/pages/dashboard/SubscriptionPage"),
@@ -155,7 +155,7 @@ function AppRouter() {
         </Route>
 
         <Route path="/dashboard/bot-training">
-          {() => <DashboardRoute Page={BotTrainingPage} />}
+          {() => <DashboardRoute Page={TrainingPage} />}
         </Route>
 
         <Route path="/dashboard/channels">
