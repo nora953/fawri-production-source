@@ -3,7 +3,7 @@ import { KeyRound, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { useI18n } from "@/lib/i18n";
-import { getAdminAuthHeaders, setAdminSessionToken } from "@/lib/store";
+import { getStableAuthDeviceId } from "@/lib/authClientCutover";
 import type { Merchant } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,7 +25,7 @@ type Props = {
 function validPassword(value: string): boolean {
   return (
     value.length >= 8 &&
-    /^[A-Za-z0-9@#$%&]+$/.test(value) &&
+    /^[A-Za-z0-9@#$%&!_-]+$/.test(value) &&
     /[A-Z]/.test(value) &&
     /\d/.test(value)
   );
@@ -40,13 +40,13 @@ export default function RequiredAdminPasswordChangeDialog({
     ar: {
       title: "يجب تغيير كلمة المرور المؤقتة",
       description:
-        "استخدم كلمة مرور دائمة خاصة بك قبل الوصول إلى لوحة الإدارة. لن تتمكن من استخدام أقسام الإدارة قبل إكمال هذه الخطوة.",
+        "استخدم كلمة مرور دائمة خاصة بك قبل الوصول إلى لوحة الإدارة. بعد الحفظ سيتم إنهاء جميع الجلسات ويجب تسجيل الدخول من جديد.",
       password: "كلمة المرور الجديدة",
       confirm: "تأكيد كلمة المرور الجديدة",
-      rules: "8 خانات على الأقل، مع رقم وحرف إنجليزي كبير، والرموز المسموحة: @ # $ % &",
-      submit: "حفظ كلمة المرور والدخول",
+      rules: "8 خانات على الأقل، مع رقم وحرف إنجليزي كبير، والرموز المسموحة: @ # $ % & ! _ -",
+      submit: "حفظ كلمة المرور",
       saving: "جارٍ الحفظ...",
-      success: "تم تغيير كلمة المرور بنجاح",
+      success: "تم تغيير كلمة المرور. سجّل الدخول من جديد.",
       mismatch: "كلمتا المرور غير متطابقتين.",
       invalid: "كلمة المرور لا تطابق شروط المشروع.",
       unchanged: "يجب أن تختلف كلمة المرور الجديدة عن كلمة المرور المؤقتة.",
@@ -55,13 +55,13 @@ export default function RequiredAdminPasswordChangeDialog({
     en: {
       title: "Temporary password change required",
       description:
-        "Set your own permanent password before accessing the administration panel. Administrative sections remain unavailable until this step is completed.",
+        "Set your own permanent password before accessing the administration panel. Saving it revokes every active session and requires a fresh sign-in.",
       password: "New password",
       confirm: "Confirm new password",
-      rules: "At least 8 characters, one number, one uppercase English letter, and only @ # $ % & symbols.",
-      submit: "Save password and continue",
+      rules: "At least 8 characters, one number, one uppercase English letter, and only @ # $ % & ! _ - symbols.",
+      submit: "Save password",
       saving: "Saving...",
-      success: "Password changed successfully",
+      success: "Password changed. Sign in again.",
       mismatch: "The passwords do not match.",
       invalid: "The password does not meet the project rules.",
       unchanged: "The new password must differ from the temporary password.",
@@ -70,13 +70,13 @@ export default function RequiredAdminPasswordChangeDialog({
     ku: {
       title: "گۆڕینی وشەی نهێنی کاتی پێویستە",
       description:
-        "پێش دەستگەیشتن بە پەڕەی بەڕێوەبردن وشەی نهێنییەکی هەمیشەیی بۆ خۆت دابنێ. تا تەواوکردنی ئەم هەنگاوە بەشەکانی بەڕێوەبردن بەردەست نابن.",
+        "پێش دەستگەیشتن بە پەڕەی بەڕێوەبردن وشەی نهێنییەکی هەمیشەیی بۆ خۆت دابنێ. دوای پاشەکەوتکردن هەموو دانیشتنەکان کۆتاییان پێدێت و دەبێت دووبارە بچیتە ژوورەوە.",
       password: "وشەی نهێنی نوێ",
       confirm: "پشتڕاستکردنەوەی وشەی نهێنی نوێ",
-      rules: "لانیکەم 8 پیت، ژمارەیەک، پیتی گەورەی ئینگلیزی و تەنها @ # $ % &.",
-      submit: "پاشەکەوتکردن و بەردەوامبوون",
+      rules: "لانیکەم 8 پیت، ژمارەیەک، پیتی گەورەی ئینگلیزی و تەنها @ # $ % & ! _ -.",
+      submit: "پاشەکەوتکردنی وشەی نهێنی",
       saving: "پاشەکەوت دەکرێت...",
-      success: "وشەی نهێنی بە سەرکەوتوویی گۆڕدرا",
+      success: "وشەی نهێنی گۆڕدرا. دووبارە بچۆ ژوورەوە.",
       mismatch: "دوو وشەی نهێنییەکە یەکسان نین.",
       invalid: "وشەی نهێنی مەرجەکانی پڕۆژە پڕ ناکاتەوە.",
       unchanged: "وشەی نهێنی نوێ دەبێت لە وشەی نهێنی کاتی جیاواز بێت.",
@@ -104,11 +104,12 @@ export default function RequiredAdminPasswordChangeDialog({
 
     setSaving(true);
     try {
-      const response = await fetch("/api/auth/admin/password/change-required", {
-        method: "PATCH",
+      const response = await fetch("/api/auth/admin/change-password", {
+        method: "POST",
+        credentials: "same-origin",
         headers: {
-          ...getAdminAuthHeaders(),
           "Content-Type": "application/json",
+          "X-Fawri-Device-Id": getStableAuthDeviceId(),
         },
         body: JSON.stringify({
           new_password: password,
@@ -116,8 +117,8 @@ export default function RequiredAdminPasswordChangeDialog({
         }),
       });
       const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.ok || !data?.admin || !data?.admin_token) {
-        if (data?.code === "PASSWORD_CONFIRMATION_MISMATCH") {
+      if (!response.ok || !data?.ok || data?.reauthentication_required !== true) {
+        if (data?.code === "PASSWORD_CONFIRMATION_INVALID") {
           setError(text.mismatch);
         } else if (data?.code === "PASSWORD_UNCHANGED") {
           setError(text.unchanged);
@@ -129,11 +130,11 @@ export default function RequiredAdminPasswordChangeDialog({
         return;
       }
 
-      setAdminSessionToken(data.admin_token);
-      onChanged(data.admin as Merchant);
+      onChanged({ ...admin, must_change_password: false });
       setPassword("");
       setConfirmPassword("");
       toast.success(text.success);
+      window.location.href = "/login";
     } catch (requestError) {
       console.error("Required administrator password change failed:", requestError);
       setError(text.error);
