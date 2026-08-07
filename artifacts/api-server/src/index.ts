@@ -24,7 +24,10 @@ let shuttingDown = false;
 const server = app.listen(port, () => {
   logger.info({ port, dataDir: getFawriDataDir() }, "Server listening");
 
-  if (process.env.FAWRI_DISABLE_JOB_WORKERS !== "1") {
+  const workersExplicitlyDisabled = process.env.FAWRI_DISABLE_JOB_WORKERS === "1";
+  const metaCutoverReady = process.env.FAWRI_META_CUTOVER_READY === "1";
+
+  if (!workersExplicitlyDisabled && metaCutoverReady) {
     try {
       metaWebhookWorker = startMetaWebhookWorker(port);
       logger.info("Meta webhook durable worker started");
@@ -32,8 +35,12 @@ const server = app.listen(port, () => {
       logger.fatal({ err: error }, "Meta webhook durable worker failed to start");
       server.close(() => process.exit(1));
     }
-  } else {
+  } else if (workersExplicitlyDisabled) {
     logger.warn("Background job workers are disabled by configuration");
+  } else {
+    logger.warn(
+      "Meta webhook worker is activation-gated until encrypted OAuth/send-path and PostgreSQL cutover are complete",
+    );
   }
 });
 
