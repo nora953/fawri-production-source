@@ -3,18 +3,20 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
+import { createRequire } from "node:module";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
-import pg from "pg";
 import { createStabilizedMigrationFolder } from "../../lib/db/scripts/lib/migration-sql-order.mjs";
 import { setTenantContext } from "../../lib/db/scripts/lib/cross-lane-transactions.mjs";
 import { buildValidatedMigrationPlan } from "../lib/postgresql-migration-plan-safe.mjs";
 
-const { Client, Pool } = pg;
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
+const dbRequire = createRequire(path.join(root, "lib", "db", "package.json"));
+const { drizzle } = dbRequire("drizzle-orm/node-postgres");
+const { migrate } = dbRequire("drizzle-orm/node-postgres/migrator");
+const pg = dbRequire("pg");
+const { Client, Pool } = pg;
 const committedDrizzle = path.join(root, "lib", "db", "drizzle");
 const fixtureScript = path.join(
   root,
