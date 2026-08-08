@@ -4,15 +4,16 @@ import test from "node:test";
 import { DecryptCommand, GenerateDataKeyCommand } from "@aws-sdk/client-kms";
 import {
   FAWRI_META_KMS_ENCRYPTION_CONTEXT,
+  assertAwsKmsMetaCredentialProviderReady,
   bootstrapAwsKmsMetaCredentialKeyProvider,
   generateWrappedAwsKmsMetaCredentialDek,
   type AwsKmsMetaCredentialConfig,
 } from "../src/services/awsKmsMetaCredentialKeyProvider";
 import {
-  assertProductionMetaCredentialProviderReady,
   createEnvironmentMetaCredentialKeyProvider,
   decryptMetaCredential,
   encryptMetaCredential,
+  type MetaCredentialKeyProvider,
 } from "../src/services/metaCredentialVault";
 
 const KMS_KEY_ARN = "arn:aws:kms:us-east-1:123456789012:key/11111111-2222-3333-4444-555555555555";
@@ -65,6 +66,7 @@ class FakeKmsClient {
     }
 
     if (command instanceof GenerateDataKeyCommand) {
+      assert.equal(input.KeySpec, "AES_256");
       this.generatedPlaintext = Uint8Array.from(crypto.randomBytes(32));
       return {
         KeyId: this.mode === "wrong-key" ? `${KMS_KEY_ARN}-wrong` : KMS_KEY_ARN,
@@ -76,17 +78,38 @@ class FakeKmsClient {
   }
 }
 
-test("successful bootstrap unwraps DEKs and satisfies production readiness", async () => {
+test("successful bootstrap unwraps DEKs and satisfies AWS KMS production readiness", async () => {
   const client = new FakeKmsClient(["dek-current", "dek-old"]);
   const provider = await bootstrapAwsKmsMetaCredentialKeyProvider({
     config: config("dek-current", ["dek-current", "dek-old"]),
     client: client as any,
   });
-  const readiness = assertProductionMetaCredentialProviderReady(provider);
+  const readiness = assertAwsKmsMetaCredentialProviderReady(provider);
   assert.equal(readiness.provider_id, "aws-kms");
   assert.equal(readiness.current_key_id, "dek-current");
   assert.deepEqual(new Set(readiness.decrypt_key_ids), new Set(["dek-current", "dek-old"]));
   provider.dispose();
+});
+
+test("AWS KMS readiness rejects a non-adapter external provider", () => {
+  const key = { id: "dek-current", key: crypto.randomBytes(32) };
+  const impostor: MetaCredentialKeyProvider = {
+    current: () => key,
+    resolve: (id) => (id === key.id ? key : null),
+    readiness: () => ({
+      provider: "external",
+      provider_id: "aws-kms",
+      available: true,
+      production_eligible: true,
+      current_key_id: key.id,
+      decrypt_key_ids: [key.id],
+    }),
+  };
+  assert.throws(
+    () => assertAwsKmsMetaCredentialProviderReady(impostor),
+    (error) => code(error) === "META_CREDENTIAL_AWS_KMS_PROVIDER_REQUIRED",
+  );
+  key.key.fill(0);
 });
 
 test("wrong returned KMS key identity fails closed", async () => {
@@ -190,6 +213,7 @@ test("dispose zeroizes cached DEKs and readiness becomes unavailable", async () 
   assert.equal(cached.every((byte) => byte === 0), true);
   assert.equal(provider.readiness?.().available, false);
   assert.equal(provider.resolve("dek-current"), null);
+  assert.throws(() => assertAwsKmsMetaCredentialProviderReady(provider));
 });
 
 test("GenerateDataKey AES_256 returns only wrapped artifact and zeroizes plaintext", async () => {
