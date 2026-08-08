@@ -41,6 +41,14 @@ function fail(code: string, message: string): Error & { code: string } {
   return Object.assign(new Error(message), { code });
 }
 
+function isAdapterError(error: unknown): error is Error & { code: string } {
+  const code =
+    error && typeof error === "object"
+      ? text((error as { code?: unknown }).code)
+      : "";
+  return code.startsWith("META_CREDENTIAL_");
+}
+
 function assertKmsKeyArn(value: unknown): string {
   const keyArn = text(value);
   if (!/^arn:aws[a-z-]*:kms:[^:]+:\d{12}:key\/[A-Za-z0-9-]+$/.test(keyArn)) {
@@ -85,14 +93,21 @@ function decodeCiphertextBlob(encoded: unknown): Buffer {
 function normalizeConfig(input: AwsKmsMetaCredentialConfig): AwsKmsMetaCredentialConfig {
   const region = text(input.region);
   const kmsKeyArn = assertKmsKeyArn(input.kmsKeyArn);
+  const kmsKeyRegion = kmsKeyArn.split(":")[3] || "";
   const currentDekId = assertLogicalDekId(input.currentDekId);
-  if (!region || !input.wrappedDeks || typeof input.wrappedDeks !== "object" || Array.isArray(input.wrappedDeks)) {
+  if (
+    !region ||
+    region !== kmsKeyRegion ||
+    !input.wrappedDeks ||
+    typeof input.wrappedDeks !== "object" ||
+    Array.isArray(input.wrappedDeks)
+  ) {
     throw fail(
       "META_CREDENTIAL_AWS_KMS_CONFIG_INVALID",
       "AWS KMS Meta credential configuration is invalid",
     );
   }
-  const wrappedDeks: AwsKmsWrappedDekManifest = {};
+  const wrappedDeks = Object.create(null) as AwsKmsWrappedDekManifest;
   for (const [rawId, rawCiphertext] of Object.entries(input.wrappedDeks)) {
     const id = assertLogicalDekId(rawId);
     if (Object.prototype.hasOwnProperty.call(wrappedDeks, id)) {
@@ -103,7 +118,10 @@ function normalizeConfig(input: AwsKmsMetaCredentialConfig): AwsKmsMetaCredentia
     }
     wrappedDeks[id] = text(rawCiphertext);
   }
-  if (!wrappedDeks[currentDekId]) {
+  if (
+    !Object.prototype.hasOwnProperty.call(wrappedDeks, currentDekId) ||
+    !wrappedDeks[currentDekId]
+  ) {
     throw fail(
       "META_CREDENTIAL_AWS_KMS_CONFIG_INVALID",
       "AWS KMS Meta credential current DEK is missing from the manifest",
@@ -199,7 +217,7 @@ export async function bootstrapAwsKmsMetaCredentialKeyProvider(input: {
     }
   } catch (error) {
     cleanup();
-    if ((error as { code?: unknown })?.code) throw error;
+    if (isAdapterError(error)) throw error;
     throw fail(
       "META_CREDENTIAL_AWS_KMS_BOOTSTRAP_FAILED",
       "AWS KMS Meta credential key bootstrap failed",
@@ -290,7 +308,7 @@ export async function generateWrappedAwsKmsMetaCredentialDek(input: {
       ciphertext_blob_base64: Buffer.from(output.CiphertextBlob).toString("base64"),
     };
   } catch (error) {
-    if ((error as { code?: unknown })?.code) throw error;
+    if (isAdapterError(error)) throw error;
     throw fail(
       "META_CREDENTIAL_AWS_KMS_GENERATE_FAILED",
       "AWS KMS Meta credential data key generation failed",
