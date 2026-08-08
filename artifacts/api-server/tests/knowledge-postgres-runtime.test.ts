@@ -387,8 +387,8 @@ test("model migration cannot mix incompatible vector spaces", async () => {
 test("ambiguous vector matches fail closed instead of choosing a guess", async () => {
   const runtime = new PostgresKnowledgeRuntime({
     sqlClient: new FakeSqlClient(async () => [
-      vectorRow({ knowledge_id: "saved-a", embedding: [0.8, 0.2] }),
-      vectorRow({ knowledge_id: "saved-b", embedding: [0.79, 0.21], content_hash: "b".repeat(64) }),
+      vectorRow({ knowledge_id: "saved-a", embedding: [0.9, 0.44] }),
+      vectorRow({ knowledge_id: "saved-b", embedding: [0.89, 0.46], content_hash: "b".repeat(64) }),
     ]),
     embeddingProvider: fakeEmbedding,
   });
