@@ -819,35 +819,44 @@ export async function evaluateSubscriptionServiceGuarantee(
   const extensionEligible =
     subscription.lifecycleState === "active" && eligibleExtensionSeconds > 0;
 
-  assessment.eligibleExtensionSeconds = extensionEligible
-    ? eligibleExtensionSeconds
-    : 0;
   assessment.qualifyingOutageSeconds = extensionEligible
     ? eligibleExtensionSeconds
     : 0;
   assessment.maxContinuousOutageSeconds = maxContinuousOutageSeconds;
 
   if (subscription.billingState !== "paid") {
-    if (extensionEligible || refundReviewEligible) {
+    if (refundReviewEligible) {
+      assessment.result = "eligible_for_manual_refund_review";
+      assessment.refundReviewEligible = true;
+      assessment.manualReviewRequired = true;
+      assessment.reasonCode = activationFailureEligible
+        ? "FAWRI_ACTIVATION_FAILURE_BILLING_REVIEW_REQUIRED"
+        : "FAWRI_OUTAGE_OVER_72H_BILLING_REVIEW_REQUIRED";
+    } else if (extensionEligible) {
       assessment.result = "manual_review_required";
       assessment.manualReviewRequired = true;
       assessment.reasonCode = "BILLING_AUTHORITY_UNAVAILABLE";
     }
-  } else if (extensionEligible && refundReviewEligible) {
-    assessment.result = "eligible_for_extension_and_manual_refund_review";
-    assessment.refundReviewEligible = true;
-    assessment.reasonCode = activationFailureEligible
-      ? "FAWRI_ACTIVATION_FAILURE_AND_EXTENSION_ELIGIBLE"
-      : "FAWRI_OUTAGE_OVER_72H";
-  } else if (refundReviewEligible) {
-    assessment.result = "eligible_for_manual_refund_review";
-    assessment.refundReviewEligible = true;
-    assessment.reasonCode = activationFailureEligible
-      ? "FAWRI_ACTIVATION_FAILURE"
-      : "FAWRI_OUTAGE_OVER_72H";
-  } else if (extensionEligible) {
-    assessment.result = "eligible_for_extension";
-    assessment.reasonCode = "FAWRI_OUTAGE_OVER_24H";
+  } else {
+    assessment.eligibleExtensionSeconds = extensionEligible
+      ? eligibleExtensionSeconds
+      : 0;
+    if (extensionEligible && refundReviewEligible) {
+      assessment.result = "eligible_for_extension_and_manual_refund_review";
+      assessment.refundReviewEligible = true;
+      assessment.reasonCode = activationFailureEligible
+        ? "FAWRI_ACTIVATION_FAILURE_AND_EXTENSION_ELIGIBLE"
+        : "FAWRI_OUTAGE_OVER_72H";
+    } else if (refundReviewEligible) {
+      assessment.result = "eligible_for_manual_refund_review";
+      assessment.refundReviewEligible = true;
+      assessment.reasonCode = activationFailureEligible
+        ? "FAWRI_ACTIVATION_FAILURE"
+        : "FAWRI_OUTAGE_OVER_72H";
+    } else if (extensionEligible) {
+      assessment.result = "eligible_for_extension";
+      assessment.reasonCode = "FAWRI_OUTAGE_OVER_24H";
+    }
   }
 
   assessment.evidence = incidents.map((incident) => {
