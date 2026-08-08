@@ -1,0 +1,174 @@
+name: Dependency remediation temp
+
+on:
+  pull_request:
+    branches:
+      - parallel/integration-coordinator
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  generate-lockfile:
+    if: >-
+      github.event.pull_request.head.ref == 'parallel/dependency-remediation' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - name: Verify exact head
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
+          test "${{ github.event.pull_request.head.ref }}" = "parallel/dependency-remediation"
+          test "${{ github.event.pull_request.base.ref }}" = "parallel/integration-coordinator"
+
+      - name: Setup Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Enable pnpm
+        shell: bash
+        run: |
+          set -euo pipefail
+          corepack enable
+          corepack prepare pnpm@11.20.0 --activate
+          node --version
+          pnpm --version
+
+      - name: Verify baseline frozen install
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
+
+      - name: Inspect vulnerable dependency paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm why brace-expansion || true
+          pnpm why fast-uri || true
+          pnpm why js-yaml || true
+          pnpm why xlsx || true
+
+      - name: Apply conservative remediation manifests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const fawriPath = 'artifacts/fawri/package.json';
+          const fawri = JSON.parse(fs.readFileSync(fawriPath, 'utf8'));
+          if (fawri.devDependencies?.xlsx !== '^0.18.5') {
+            throw new Error(`Unexpected xlsx specifier: ${fawri.devDependencies?.xlsx}`);
+          }
+          fawri.devDependencies.xlsx = 'https://cdn.sheetjs.com/xlsx-0.20.3/xlsx-0.20.3.tgz';
+          fs.writeFileSync(fawriPath, JSON.stringify(fawri, null, 2) + '\n');
+
+          const workspacePath = 'pnpm-workspace.yaml';
+          let workspace = fs.readFileSync(workspacePath, 'utf8');
+          const marker = 'overrides:\n';
+          if (!workspace.includes(marker)) throw new Error('pnpm-workspace overrides block missing');
+          const additions = [
+            "  'brace-expansion@5.0.6': 5.0.8",
+            "  'fast-uri@3.1.2': 3.1.4",
+            "  'js-yaml@4.1.1': 4.3.0",
+          ];
+          for (const line of additions) {
+            if (workspace.includes(line)) throw new Error(`Override already present: ${line}`);
+          }
+          workspace = workspace.replace(marker, marker + additions.join('\n') + '\n');
+          fs.writeFileSync(workspacePath, workspace);
+          NODE
+
+          git diff --check
+          git diff -- artifacts/fawri/package.json pnpm-workspace.yaml
+
+      - name: Generate synchronized pnpm lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --no-frozen-lockfile
+          git diff --check
+
+      - name: Verify frozen install from generated lockfile
+        shell: bash
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
+
+      - name: Run dependency audit and create safe summary
+        id: audit
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          pnpm audit --json > audit-full.json
+          AUDIT_RC=$?
+          set -e
+          node <<'NODE'
+          const fs = require('node:fs');
+          const raw = fs.readFileSync('audit-full.json', 'utf8').trim();
+          if (!raw) throw new Error('pnpm audit returned no JSON');
+          const audit = JSON.parse(raw);
+          const v = audit.metadata?.vulnerabilities || {};
+          const summary = {
+            critical: Number(v.critical || 0),
+            high: Number(v.high || 0),
+            moderate: Number(v.moderate || 0),
+            low: Number(v.low || 0),
+            total: Number(v.total || 0),
+          };
+          fs.writeFileSync('audit-summary.json', JSON.stringify(summary, null, 2) + '\n');
+          console.log(JSON.stringify(summary));
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `critical=${summary.critical}\nhigh=${summary.high}\n`);
+          NODE
+          rm -f audit-full.json
+          echo "pnpm_audit_exit_code=$AUDIT_RC" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare remediation artifact
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dependency-remediation-artifact/artifacts/fawri
+          cp pnpm-lock.yaml dependency-remediation-artifact/pnpm-lock.yaml
+          cp pnpm-workspace.yaml dependency-remediation-artifact/pnpm-workspace.yaml
+          cp artifacts/fawri/package.json dependency-remediation-artifact/artifacts/fawri/package.json
+          if [ -f audit-summary.json ]; then
+            cp audit-summary.json dependency-remediation-artifact/audit-summary.json
+          fi
+
+      - name: Upload generated dependency files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-remediation-generated-${{ github.event.pull_request.head.sha }}
+          path: dependency-remediation-artifact
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Enforce Critical and High zero
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f audit-summary.json
+          node <<'NODE'
+          const fs = require('node:fs');
+          const s = JSON.parse(fs.readFileSync('audit-summary.json', 'utf8'));
+          if (s.critical !== 0 || s.high !== 0) {
+            throw new Error(`Dependency audit blocker remains: critical=${s.critical}, high=${s.high}`);
+          }
+          NODE
