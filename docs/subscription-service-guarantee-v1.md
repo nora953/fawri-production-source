@@ -76,10 +76,11 @@ The engine applies these rules:
 8. a continuous Fawri interval must exceed 72 hours for manual refund-review eligibility;
 9. an attributed Fawri activation failure on `pending_activation` can qualify for manual refund review;
 10. policy reference/version and subscription lifecycle version/reference are preserved in the assessment/audit evidence;
-11. if billing is `unknown`, an otherwise qualifying claim stops at `manual_review_required / BILLING_AUTHORITY_UNAVAILABLE`;
-12. the result vocabulary contains no `refunded` or `paid_out` state.
+11. when billing is `unknown`, a 24h+ extension-only case remains `manual_review_required / BILLING_AUTHORITY_UNAVAILABLE` and no extension is granted automatically;
+12. when billing is `unknown` but the incident independently meets the >72h or activation-failure refund-review threshold, the result is still `eligible_for_manual_refund_review`, with `manualReviewRequired = true`; payment eligibility must be verified manually before any refund, and no extension is granted automatically;
+13. the result vocabulary contains no `refunded` or `paid_out` state.
 
-Eligible extension duration is retained as exact seconds. Conversion to whole subscription days, including any rounding/calendar rule, is deliberately not invented.
+The assessment preserves the measured qualifying Fawri outage duration separately from the extension actually eligible to be applied. Eligible extension duration is retained as exact seconds only after trusted paid state exists. Conversion to whole subscription days, including any rounding/calendar rule, is deliberately not invented.
 
 ### 6. Knowledge separation
 
@@ -107,6 +108,8 @@ Automatic financial refund remains blocked until an authoritative Fawri billing 
 - prior refund/chargeback state;
 - idempotent refund request/provider result;
 - reconciliation/audit state.
+
+A refund-review eligibility result is therefore a review state only; it is never evidence that a refund was executed.
 
 Automatic extension/refund eligibility also requires an authoritative service-incident source that can establish incident boundaries, provenance, and attribution. Until that source exists, the production incident authority is deliberately disabled/fail-closed.
 
@@ -197,10 +200,11 @@ Observability الحالية health/readiness/process metrics فقط، وليس�
 - الحوادث المتداخلة/المتجاورة تُدمج قبل الحساب حتى لا تتكرر مدة التعويض؛
 - unpaid/trial/inactive لا تستفيد؛
 - policy version وsubscription lifecycle version/reference التاريخية تُحفظ في assessment/audit؛
-- billing `unknown` يمنع الاستحقاق المالي ويوقف الحالة عند `manual_review_required`؛
+- إذا كان billing = `unknown` وكانت الحالة فقط >24h extension، تبقى `manual_review_required / BILLING_AUTHORITY_UNAVAILABLE` ولا يُطبّق تمديد تلقائي؛
+- إذا كان billing = `unknown` لكن العطل نفسه تجاوز >72h أو ثبت activation failure، تبقى النتيجة `eligible_for_manual_refund_review` مع `manualReviewRequired = true` حتى يتم التحقق اليدوي من الدفع؛ هذا لا يعني تنفيذ refund ولا يمنح extension تلقائيًا؛
 - لا توجد نتيجة `refunded` أو `paid_out` في التنفيذ.
 
-مدة التمديد محفوظة كثوانٍ دقيقة. تحويلها إلى أيام كاملة أو قاعدة rounding يحتاج قرار Owner/legal/billing قبل التطبيق الآلي.
+يحفظ الـassessment مدة عطل Fawri المؤهلة المقاسة بصورة منفصلة عن مدة التمديد التي يجوز تطبيقها. لا تصبح `eligibleExtensionSeconds` قابلة للتطبيق إلا بعد وجود paid state موثوق. تحويل المدة إلى أيام كاملة أو قاعدة rounding يحتاج قرار Owner/legal/billing قبل التطبيق الآلي.
 
 ### 6. فصل Knowledge
 
@@ -218,6 +222,8 @@ Merchant operational fact resolver لا يجيب ضمان اشتراك فوري�
 ### 7. Blockers الحالية
 
 أي refund فعلي يحتاج billing/payment authority موثوقة تثبت payment cycle/reference/amount/currency/refund state/idempotency/reconciliation.
+
+نتيجة `eligible_for_manual_refund_review` هي فقط حالة أهلية للمراجعة، وليست دليلًا على تنفيذ refund.
 
 وأي automatic eligibility في production يحتاج incident authority موثوقة تثبت زمن العطل وprovenance وattribution. إلى أن يوجد ذلك، incident authority production تكون disabled/fail-closed.
 
