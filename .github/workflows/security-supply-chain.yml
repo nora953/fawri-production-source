@@ -105,15 +105,36 @@ jobs:
   dependency-review:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - name: Checkout repository
+      - name: Checkout repository with pull request history
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-          fetch-depth: 1
+          fetch-depth: 0
 
-      - name: Review dependency changes
-        uses: actions/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
-          fail-on-severity: high
+          node-version: 24
+
+      - name: Detect dependency graph changes and enforce manifest-lockfile sync
+        id: dependency-review
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/security-final-audit.mjs dependency-review "$BASE_SHA"
+
+      - name: Verify changed dependency graph with frozen install and lifecycle scripts disabled
+        if: steps.dependency-review.outputs.dependency_changed == 'true'
+        run: node scripts/ci-run-redacted.mjs --label dependency-review-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Validate lockfile policy for changed dependency graph
+        if: steps.dependency-review.outputs.dependency_changed == 'true'
+        run: node scripts/security-final-audit.mjs policy
+
+      - name: Audit full head dependency graph for High or Critical vulnerabilities
+        if: steps.dependency-review.outputs.dependency_changed == 'true'
+        run: node scripts/security-final-audit.mjs dependency

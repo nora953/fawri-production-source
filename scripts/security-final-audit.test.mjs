@@ -4,7 +4,11 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { findSensitiveText, parseAuditSeverityCounts, redactSensitiveText } from "./security-ci-lib.mjs";
-import { validateRepositoryPolicy } from "./security-final-audit.mjs";
+import {
+  evaluateDependencyAudit,
+  evaluateDependencyChange,
+  validateRepositoryPolicy,
+} from "./security-final-audit.mjs";
 
 function makeToken(prefix, length = 40) {
   return `${prefix}${"A".repeat(length)}`;
@@ -58,7 +62,48 @@ test("dependency audit parser fails closed on malformed output", () => {
   assert.throws(() => parseAuditSeverityCounts({ metadata: {} }), /does not contain vulnerability counts/);
 });
 
-test("repository policy requires protected workflows, immutable action pins, and pnpm hardening", () => {
+test("dependency review fails when a dependency change introduces simulated High", () => {
+  const change = evaluateDependencyChange(["package.json", "pnpm-lock.yaml"]);
+  assert.equal(change.status, "pass");
+  assert.equal(change.dependency_graph_changed, true);
+  assert.equal(evaluateDependencyAudit({ high: 1, critical: 0 }, 1).status, "fail");
+});
+
+test("dependency review fails when a dependency change introduces simulated Critical", () => {
+  const change = evaluateDependencyChange(["artifacts/web/package.json", "pnpm-lock.yaml"]);
+  assert.equal(change.status, "pass");
+  assert.equal(change.dependency_graph_changed, true);
+  assert.equal(evaluateDependencyAudit({ high: 0, critical: 1 }, 1).status, "fail");
+});
+
+test("dependency review fails closed on manifest change without synchronized lockfile", () => {
+  const report = evaluateDependencyChange(["artifacts/api-server/package.json"]);
+  assert.equal(report.status, "fail");
+  assert.equal(report.dependency_graph_changed, true);
+  assert.equal(report.manifest_changed, true);
+  assert.equal(report.lockfile_changed, false);
+  assert.match(report.violations[0], /without pnpm-lock\.yaml/);
+});
+
+test("dependency review passes when no dependency graph file changed", () => {
+  const report = evaluateDependencyChange(["scripts/security-final-audit.mjs", "README.md"]);
+  assert.deepEqual(report, {
+    status: "pass",
+    dependency_graph_changed: false,
+    manifest_changed: false,
+    lockfile_changed: false,
+    violations: [],
+  });
+});
+
+test("dependency review passes the current clean blocking-severity baseline", () => {
+  assert.deepEqual(evaluateDependencyAudit({ high: 0, critical: 0 }, 0), {
+    status: "pass",
+    blocking: 0,
+  });
+});
+
+test("repository policy requires protected workflows, immutable action pins, pnpm hardening, and local dependency review", () => {
   const root = mkdtempSync(path.join(os.tmpdir(), "fawri-policy-"));
   try {
     const workflowDir = path.join(root, ".github", "workflows");
@@ -77,8 +122,9 @@ test("repository policy requires protected workflows, immutable action pins, and
     for (const name of protectedNames) writeFileSync(path.join(workflowDir, name), "name: existing\n");
     const checkoutSha = "11d5960a326750d5838078e36cf38b85af677262";
     const safeWorkflow = `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n`;
+    const safeSecurityWorkflow = `${safeWorkflow}jobs:\n  dependency-review:\n    steps:\n      - run: node scripts/security-final-audit.mjs dependency-review \"$BASE_SHA\"\n      - run: pnpm install --frozen-lockfile --ignore-scripts\n      - run: node scripts/security-final-audit.mjs dependency\n`;
     writeFileSync(path.join(workflowDir, "quality-gates.yml"), safeWorkflow);
-    writeFileSync(path.join(workflowDir, "security-supply-chain.yml"), safeWorkflow);
+    writeFileSync(path.join(workflowDir, "security-supply-chain.yml"), safeSecurityWorkflow);
     writeFileSync(path.join(root, "pnpm-workspace.yaml"), "autoInstallPeers: false\nminimumReleaseAge: 1440\n");
     writeFileSync(path.join(root, "package.json"), JSON.stringify({ scripts: { preinstall: "echo 'Use pnpm instead'" } }));
     writeFileSync(path.join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
@@ -98,6 +144,12 @@ test("repository policy requires protected workflows, immutable action pins, and
     const mutableAction = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
     assert.equal(mutableAction.status, "fail");
     assert.ok(mutableAction.violations.some((item) => item.includes("immutable SHA")));
+
+    writeFileSync(path.join(workflowDir, "quality-gates.yml"), safeWorkflow);
+    writeFileSync(path.join(workflowDir, "security-supply-chain.yml"), safeWorkflow);
+    const missingLocalGate = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
+    assert.equal(missingLocalGate.status, "fail");
+    assert.ok(missingLocalGate.violations.some((item) => item.includes("local dependency-review gate")));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

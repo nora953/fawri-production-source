@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { appendFileSync, existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import {
@@ -57,6 +57,54 @@ function collectFiles(inputPath) {
   return files;
 }
 
+function normalizeRepositoryPath(file) {
+  return String(file ?? "").replaceAll("\\", "/").replace(/^\.\/+/, "");
+}
+
+function isPackageManifest(file) {
+  const normalized = normalizeRepositoryPath(file);
+  return normalized === "package.json" || normalized.endsWith("/package.json");
+}
+
+function isDependencyGraphFile(file) {
+  const normalized = normalizeRepositoryPath(file);
+  return isPackageManifest(normalized) || normalized === "pnpm-workspace.yaml" || normalized === "pnpm-lock.yaml";
+}
+
+export function evaluateDependencyChange(changedFiles) {
+  const dependencyFiles = [...new Set(changedFiles.map(normalizeRepositoryPath).filter(isDependencyGraphFile))];
+  const manifestChanged = dependencyFiles.some(
+    (file) => isPackageManifest(file) || file === "pnpm-workspace.yaml",
+  );
+  const lockfileChanged = dependencyFiles.includes("pnpm-lock.yaml");
+  const violations = [];
+
+  if (manifestChanged && !lockfileChanged) {
+    violations.push("dependency manifest changed without pnpm-lock.yaml");
+  }
+
+  return {
+    status: violations.length === 0 ? "pass" : "fail",
+    dependency_graph_changed: dependencyFiles.length > 0,
+    manifest_changed: manifestChanged,
+    lockfile_changed: lockfileChanged,
+    violations,
+  };
+}
+
+export function evaluateDependencyAudit(counts, auditStatus = 0) {
+  const high = Number(counts?.high);
+  const critical = Number(counts?.critical);
+  if (!Number.isFinite(high) || high < 0 || !Number.isFinite(critical) || critical < 0) {
+    throw new Error("dependency audit counts are invalid");
+  }
+  const blocking = high + critical;
+  return {
+    status: blocking === 0 && auditStatus === 0 ? "pass" : "fail",
+    blocking,
+  };
+}
+
 export function validateRepositoryPolicy(root, files) {
   const violations = [];
   const workflowDir = path.join(root, ".github", "workflows");
@@ -85,6 +133,21 @@ export function validateRepositoryPolicy(root, files) {
       const action = match[1];
       if (!/@[0-9a-f]{40}$/i.test(action)) {
         violations.push(`${workflow}: action must be pinned to an immutable SHA: ${action}`);
+      }
+    }
+
+    if (workflow === "security-supply-chain.yml") {
+      if (!/^\s{2}dependency-review:\s*$/m.test(content)) {
+        violations.push("security-supply-chain.yml: mandatory dependency-review job is required");
+      }
+      if (!/security-final-audit\.mjs dependency-review/.test(content)) {
+        violations.push("security-supply-chain.yml: local dependency-review gate is required");
+      }
+      if (!/pnpm install --frozen-lockfile --ignore-scripts/.test(content)) {
+        violations.push("security-supply-chain.yml: dependency-review must use frozen install with scripts disabled");
+      }
+      if (!/security-final-audit\.mjs dependency/.test(content)) {
+        violations.push("security-supply-chain.yml: dependency-review must run the full dependency audit");
       }
     }
   }
@@ -210,17 +273,36 @@ function dependencyAudit() {
     throw new Error("pnpm audit output was not valid JSON");
   }
   const counts = parseAuditSeverityCounts(payload);
-  const blocking = counts.high + counts.critical;
+  const evaluation = evaluateDependencyAudit(counts, result.status ?? 1);
   const report = {
-    status: blocking === 0 && (result.status ?? 1) === 0 ? "pass" : "fail",
+    status: evaluation.status,
     vulnerabilities: counts,
     blocking_severities: ["high", "critical"],
   };
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 
-  if (blocking > 0) return 1;
+  if (evaluation.blocking > 0) return 1;
   if ((result.status ?? 1) !== 0) throw new Error(`pnpm audit failed with status ${result.status ?? 1}`);
   return 0;
+}
+
+function dependencyReview(baseSha, root) {
+  if (!/^[0-9a-f]{40}$/i.test(String(baseSha ?? ""))) {
+    throw new Error("dependency-review requires a 40-character base commit SHA");
+  }
+  const output = execFileSync("git", ["diff", "--name-only", "-z", `${baseSha}...HEAD`], {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 16 * 1024 * 1024,
+  });
+  const report = evaluateDependencyChange(output.split("\0").filter(Boolean));
+
+  if (process.env.GITHUB_OUTPUT) {
+    appendFileSync(process.env.GITHUB_OUTPUT, `dependency_changed=${report.dependency_graph_changed ? "true" : "false"}\n`);
+  }
+
+  process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  return report.status === "pass" ? 0 : 1;
 }
 
 export function main(argv = process.argv.slice(2)) {
@@ -229,12 +311,15 @@ export function main(argv = process.argv.slice(2)) {
   if (command === "repository") return scanRepository(root);
   if (command === "output") return scanOutput(argv.slice(1));
   if (command === "dependency") return dependencyAudit();
+  if (command === "dependency-review") return dependencyReview(argv[1], root);
   if (command === "policy") {
     const report = validateRepositoryPolicy(root, trackedFiles(root));
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     return report.status === "pass" ? 0 : 1;
   }
-  throw new Error("Usage: node scripts/security-final-audit.mjs <repository|output|dependency|policy> [paths...]");
+  throw new Error(
+    "Usage: node scripts/security-final-audit.mjs <repository|output|dependency|dependency-review|policy> [args...]",
+  );
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
