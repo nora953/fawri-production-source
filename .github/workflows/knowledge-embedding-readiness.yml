@@ -6,9 +6,13 @@ on:
       - parallel/prod-embedding-activation-plan
   pull_request:
     paths:
+      - "artifacts/api-server/src/index.ts"
+      - "artifacts/api-server/src/services/runtimeProviderBootstrap.ts"
+      - "artifacts/api-server/src/services/metaChannelRuntime.ts"
       - "artifacts/api-server/src/services/knowledge/**"
       - "artifacts/api-server/src/services/ai/knowledgeDecisionEngine.ts"
       - "artifacts/api-server/tests/knowledge-*.test.ts"
+      - "artifacts/api-server/tests/production-runtime-provider-wiring.test.ts"
       - "scripts/tests/knowledge-postgres-runtime-gate.test.mjs"
       - "lib/db/src/schema/knowledge.ts"
       - ".github/workflows/knowledge-embedding-readiness.yml"
@@ -100,6 +104,9 @@ jobs:
           echo "proof: no silent lexical fallback: PASS"
           echo "proof: OpenAI auth/API key/customer text never logged: PASS"
           echo "proof: OpenAI transient retry bounds: PASS"
+
+      - name: Test coordinator production provider startup wiring
+        run: pnpm exec tsx --test artifacts/api-server/tests/production-runtime-provider-wiring.test.ts
 
       - name: Run existing Knowledge PostgreSQL runtime gate
         run: node --test --test-concurrency=1 scripts/tests/knowledge-postgres-runtime-gate.test.mjs
