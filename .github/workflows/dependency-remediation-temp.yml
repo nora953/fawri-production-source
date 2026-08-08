@@ -31,6 +31,7 @@ jobs:
           test "$(git rev-parse HEAD)" = "${{ github.event.pull_request.head.sha }}"
           test "${{ github.event.pull_request.head.ref }}" = "parallel/dependency-remediation"
           test "${{ github.event.pull_request.base.ref }}" = "parallel/integration-coordinator"
+          echo "HEAD_TREE=$(git rev-parse HEAD^{tree})"
 
       - name: Setup Node 24
         uses: actions/setup-node@v4
