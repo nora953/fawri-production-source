@@ -15,6 +15,7 @@ import {
   KnowledgeRuntimeGateError,
   PostgresKnowledgeRuntime,
   PostgresMerchantKnowledgePolicyResolver,
+  type KnowledgeEmbeddingProvider,
   type MerchantKnowledgePolicyResolver,
 } from "../knowledge/postgresKnowledgeRuntime.js";
 import type {
@@ -102,6 +103,7 @@ export type KnowledgeDecisionEngineOptions = {
   /** Explicit JSON repository support exists only for historical isolated tests. */
   repository?: KnowledgeRepository;
   runtime?: KnowledgeDecisionRuntime;
+  embeddingProvider?: KnowledgeEmbeddingProvider;
   factResolver?: KnowledgeFactResolver;
   policyResolver?: MerchantKnowledgePolicyResolver | null;
   aiProvider?: AiFallbackProvider;
@@ -131,7 +133,7 @@ export class KnowledgeDecisionEngine {
     this.runtime =
       options.runtime ||
       options.repository ||
-      new PostgresKnowledgeRuntime();
+      new PostgresKnowledgeRuntime({ embeddingProvider: options.embeddingProvider });
     this.factResolver =
       options.factResolver ||
       (explicitLegacyRepository
@@ -513,13 +515,88 @@ export class KnowledgeDecisionEngine {
   }
 }
 
+export type KnowledgeEmbeddingActivationReadiness = {
+  ready: boolean;
+  providerId: string | null;
+  model: string | null;
+  dimensions: number | null;
+  reasonCode: "KNOWLEDGE_VECTOR_UNAVAILABLE" | "KNOWLEDGE_VECTOR_CONFIG_INVALID" | null;
+};
+
 let singleton: KnowledgeDecisionEngine | null = null;
+let configuredEmbeddingProvider: KnowledgeEmbeddingProvider | null = null;
+
+function inspectEmbeddingProvider(
+  provider: KnowledgeEmbeddingProvider | null,
+): KnowledgeEmbeddingActivationReadiness {
+  if (!provider) {
+    return {
+      ready: false,
+      providerId: null,
+      model: null,
+      dimensions: null,
+      reasonCode: "KNOWLEDGE_VECTOR_UNAVAILABLE",
+    };
+  }
+
+  const providerId = String(provider.providerId ?? "").trim();
+  const model = String(provider.model ?? "").trim();
+  const dimensions = Number(provider.dimensions);
+  const valid =
+    providerId.length > 0 &&
+    providerId.length <= 160 &&
+    model.length > 0 &&
+    model.length <= 160 &&
+    model !== "disabled" &&
+    Number.isInteger(dimensions) &&
+    dimensions >= 1 &&
+    dimensions <= 4_096 &&
+    typeof provider.embed === "function";
+
+  return {
+    ready: valid,
+    providerId: providerId || null,
+    model: model || null,
+    dimensions: Number.isFinite(dimensions) ? dimensions : null,
+    reasonCode: valid ? null : "KNOWLEDGE_VECTOR_CONFIG_INVALID",
+  };
+}
+
+export function getKnowledgeEmbeddingActivationReadiness(): KnowledgeEmbeddingActivationReadiness {
+  return inspectEmbeddingProvider(configuredEmbeddingProvider);
+}
+
+export function configureKnowledgeEmbeddingProvider(
+  provider: KnowledgeEmbeddingProvider,
+): void {
+  if (singleton || configuredEmbeddingProvider) {
+    throw new KnowledgeRuntimeGateError(
+      "KNOWLEDGE_VECTOR_ACTIVATION_LOCKED",
+      "knowledge vector provider activation is locked for this process",
+      409,
+    );
+  }
+
+  const readiness = inspectEmbeddingProvider(provider);
+  if (!readiness.ready) {
+    throw new KnowledgeRuntimeGateError(
+      readiness.reasonCode || "KNOWLEDGE_VECTOR_CONFIG_INVALID",
+      "knowledge vector provider configuration is invalid",
+    );
+  }
+  configuredEmbeddingProvider = provider;
+}
 
 export function getKnowledgeDecisionEngine(): KnowledgeDecisionEngine {
-  if (!singleton) singleton = new KnowledgeDecisionEngine();
+  if (!singleton) {
+    singleton = new KnowledgeDecisionEngine({
+      embeddingProvider: configuredEmbeddingProvider || undefined,
+    });
+  }
   return singleton;
 }
 
 export function resetKnowledgeDecisionEngineForTests(): void {
   singleton = null;
+  configuredEmbeddingProvider = null;
 }
