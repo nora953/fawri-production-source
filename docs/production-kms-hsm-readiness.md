@@ -1,31 +1,33 @@
 # Production Meta credential AWS KMS readiness
 
-## Owner decision and architecture
+## Owner decision and implemented architecture
 
 AWS KMS is the selected production KMS provider for Fawri Meta credentials.
 
-The design uses exactly **one production AWS KMS symmetric customer-managed key**. Fawri does not create one KMS key per merchant/customer. Meta page/access tokens remain encrypted with the existing AES-256-GCM Meta credential envelope (version 1). AWS KMS protects application data-encryption keys (DEKs), not each token/message operation.
+The implementation uses exactly **one production AWS KMS symmetric customer-managed key**. Fawri does not create one KMS key per merchant or customer. Meta tokens remain inside the existing version-1 AES-256-GCM application envelope; AWS KMS protects application data-encryption keys (DEKs), not each token operation.
 
-Startup asynchronously decrypts the configured wrapped AES-256 DEKs through AWS KMS, validates the returned KMS key identity, then keeps only the plaintext 32-byte DEKs in process memory. After bootstrap, the existing synchronous `MetaCredentialKeyProvider.current()` / `resolve(keyId)` contract is satisfied from the in-memory cache, so there is no KMS network call per Meta message or token read.
+Startup is asynchronous. When `FAWRI_META_CREDENTIAL_PROVIDER=aws-kms`, `runtimeProviderBootstrap` unwraps every configured current/historical DEK through AWS KMS before the application is loaded, requires AWS-specific readiness proof, injects the resulting cached provider into the Meta channel runtime, and disposes/zeroizes it during shutdown. Application startup fails closed if bootstrap/readiness fails.
 
-Rotation is logical-DEK rotation under the same single KMS key: one logical DEK is current for new envelopes, while explicitly retained historical logical DEKs remain available only for decrypting existing version-1 envelopes. Removing a historical logical DEK from the manifest retires it and old envelopes using that `key_id` fail closed.
+After bootstrap, `MetaCredentialKeyProvider.current()` and `resolve(keyId)` remain synchronous and are served from process memory. No KMS network call occurs per Meta token encrypt/decrypt operation.
 
-## Envelope compatibility
+## Envelope and backward compatibility
 
-The Meta credential envelope format is unchanged:
+The Meta credential envelope remains unchanged:
 
 - `version: 1`
 - `algorithm: aes-256-gcm`
 - logical `key_id`
-- IV
-- ciphertext
-- authentication tag
+- base64 IV
+- base64 ciphertext
+- base64 authentication tag
 
-AWS KMS is below this envelope layer. Therefore existing v1 envelopes remain readable as long as their logical `key_id` remains present in the wrapped-DEK manifest and can be unwrapped by the configured production KMS key.
+AWS KMS sits below this envelope. Existing envelopes remain readable while their logical `key_id` remains present in the configured wrapped-DEK manifest and can be unwrapped by the same approved KMS key. New writes use only the configured current logical DEK.
+
+An unknown/retired historical `key_id` fails closed with no substitution.
 
 ## Fixed AWS KMS EncryptionContext
 
-Every KMS `Decrypt` and `GenerateDataKey` operation for this purpose uses exactly this non-sensitive context:
+Every KMS `Decrypt` and `GenerateDataKey` operation for Meta credential DEKs uses exactly:
 
 ```json
 {
@@ -35,128 +37,204 @@ Every KMS `Decrypt` and `GenerateDataKey` operation for this purpose uses exactl
 }
 ```
 
-The context must not contain merchant IDs, customer IDs, tokens, message content, phone numbers, or any customer data. AWS KMS authentication of the encryption context is relied on: wrapped DEKs created under a different context must fail closed when decrypted with this context.
+The encryption context is intentionally non-sensitive and must not contain merchant/customer identifiers, Meta tokens, messages, phone numbers, or other customer data.
 
-## Exact production configuration
+## Exact production configuration contract
 
-The adapter reads:
+### `NODE_ENV`
 
-- `FAWRI_META_AWS_REGION` — AWS region containing the selected KMS key.
-- `FAWRI_META_AWS_KMS_KEY_ARN` — exact full ARN of the single symmetric customer-managed KMS key. A key ARN is required so returned `Decrypt` / `GenerateDataKey` `KeyId` can be compared exactly.
-- `FAWRI_META_AWS_CURRENT_DEK_ID` — logical DEK id used for all new Meta credential envelopes.
-- `FAWRI_META_AWS_KMS_WRAPPED_DEKS_JSON` — JSON object mapping logical DEK ids to base64 KMS `CiphertextBlob` values.
+- Purpose: identifies production process semantics used by runtime-provider bootstrap.
+- Production value: `production`.
+- Classification: non-secret.
+- Validation/use: `runtimeProviderBootstrap.ts`.
+- Failure behavior: when `NODE_ENV=production`, omission of the Meta credential provider selection is rejected before application load.
 
-Example shape only; values are deliberately non-production placeholders:
+### `FAWRI_META_CREDENTIAL_PROVIDER`
+
+- Purpose: selects the Meta credential key provider.
+- Production value: exactly `aws-kms`.
+- Classification: non-secret.
+- Validation/use: `runtimeProviderBootstrap.ts`.
+- Failure behavior: missing in production -> `META_CREDENTIAL_PROVIDER_REQUIRED`; unknown value -> `META_CREDENTIAL_PROVIDER_CONFIG_INVALID`; no downgrade to the environment provider.
+
+### `FAWRI_META_AWS_REGION`
+
+- Purpose: AWS region used by the KMS client.
+- Required: yes when AWS KMS is selected.
+- Format: the exact region encoded in the configured KMS key ARN.
+- Classification: non-secret.
+- Validation/use: `awsKmsMetaCredentialKeyProvider.ts`.
+- Failure behavior: missing or different from the key ARN region -> `META_CREDENTIAL_AWS_KMS_CONFIG_INVALID` before a KMS call.
+
+### `FAWRI_META_AWS_KMS_KEY_ARN`
+
+- Purpose: exact identity of the single approved production KMS key.
+- Required: yes when AWS KMS is selected.
+- Format: full KMS key ARN, not alias/name shorthand.
+- Classification: non-secret resource identifier.
+- Validation/use: `awsKmsMetaCredentialKeyProvider.ts`.
+- Failure behavior: malformed ARN -> `META_CREDENTIAL_AWS_KMS_CONFIG_INVALID`; returned KMS `KeyId` must exactly equal this ARN or bootstrap fails with `META_CREDENTIAL_AWS_KMS_KEY_ID_MISMATCH`.
+
+### `FAWRI_META_AWS_CURRENT_DEK_ID`
+
+- Purpose: logical application DEK id used for all new Meta credential envelopes.
+- Required: yes when AWS KMS is selected.
+- Format: 1-128 characters from `[A-Za-z0-9._:-]`.
+- Classification: non-secret identifier.
+- Validation/use: `awsKmsMetaCredentialKeyProvider.ts`.
+- Failure behavior: invalid or absent from the wrapped-DEK manifest -> `META_CREDENTIAL_AWS_KMS_CONFIG_INVALID`.
+
+### `FAWRI_META_AWS_KMS_WRAPPED_DEKS_JSON`
+
+- Purpose: maps current/historical logical DEK ids to base64 AWS KMS `CiphertextBlob` values.
+- Required: yes when AWS KMS is selected.
+- Format: JSON object; every value is canonical base64 ciphertext.
+- Classification: encrypted/sensitive operational configuration, but not plaintext key material.
+- Validation/use: `awsKmsMetaCredentialKeyProvider.ts`.
+- Failure behavior: malformed JSON, malformed ciphertext, invalid/duplicate normalized ids, missing current id, or any DEK that cannot be unwrapped causes startup to fail closed.
+
+Example shape only:
 
 ```json
 {
-  "meta-dek-2026-08": "<base64-wrapped-ciphertext>",
-  "meta-dek-2026-07": "<base64-wrapped-ciphertext>"
+  "meta-dek-current": "<base64-kms-ciphertext-blob>",
+  "meta-dek-previous": "<base64-kms-ciphertext-blob>"
 }
 ```
 
-The current logical DEK id must exist in the manifest. The repository contains no production ARN, production credentials, plaintext DEK, or wrapped production DEK.
+No production ARN, production credential, plaintext DEK, or wrapped production DEK is committed in the repository.
 
-AWS credentials are intentionally not represented by a Fawri environment variable. Production should use the normal AWS SDK credential provider chain backed by workload identity / role credentials, not long-lived credentials committed to source.
+### AWS credential mechanism
 
-## Bootstrap fail-closed behavior
+The application defines no Fawri-specific AWS access-key environment variables. The AWS SDK default credential provider chain is used. Production should supply workload identity/role credentials through the deployment platform. Long-lived static credentials must not be committed to source.
 
-Bootstrap fails before production readiness is true when any of the following occurs:
+Legacy `FAWRI_META_TOKEN_KEY_ID` / `FAWRI_META_TOKEN_KEY_BASE64` are environment-provider inputs only. That provider is not production-eligible, and production startup with no explicit AWS KMS selection now fails before application load even if those legacy variables are present.
 
-- missing or malformed region/key/current-DEK/manifest configuration;
-- malformed wrapped `CiphertextBlob`;
-- KMS permission denial;
-- KMS/network unavailability;
-- encryption-context mismatch / invalid ciphertext;
-- returned KMS `KeyId` differs from the exact expected KMS key ARN;
-- returned plaintext is not exactly 32 bytes;
-- the current logical DEK is absent;
-- any configured historical DEK cannot be unwrapped.
+## AWS KMS key requirements
 
-Provider readiness is `external`, `provider_id=aws-kms`, and `production_eligible=true` only after all configured DEKs have successfully bootstrapped. The environment provider remains `production_eligible=false`. Production activation must additionally use `assertAwsKmsMetaCredentialProviderReady(...)`; this assertion rejects providers that merely claim AWS readiness metadata unless they were actually created by the AWS KMS adapter bootstrap in the current process.
+The approved production key must be:
 
-## Runtime memory and cleanup
+- one AWS KMS customer-managed key;
+- symmetric (`SYMMETRIC_DEFAULT`);
+- key usage `ENCRYPT_DECRYPT`;
+- in exactly the same AWS region configured by `FAWRI_META_AWS_REGION`;
+- identified to Fawri by its full key ARN.
 
-KMS plaintext DEKs are copied only into process-memory buffers used by the synchronous provider. SDK-returned plaintext buffers are zeroized immediately after copying. If bootstrap fails, already cached DEKs are zeroized. `dispose()` zeroizes all cached DEK buffers and makes the provider unavailable.
+The application does not create KMS keys or aliases and does not administer key policy from this repository.
 
-The default AWS KMS client is destroyed immediately after bootstrap because runtime encryption/decryption uses only the cached DEKs.
-
-No token, plaintext DEK, or AWS exception detail is included in adapter errors or logs.
-
-## Rotation operation
-
-`generateWrappedAwsKmsMetaCredentialDek(...)` performs KMS `GenerateDataKey` with `KeySpec=AES_256`, the same exact KMS key ARN, and the fixed encryption context. It returns only:
-
-- the operator-provided logical DEK id;
-- base64 `CiphertextBlob` suitable for adding to the wrapped-DEK manifest.
-
-The plaintext returned by KMS is zeroized in a `finally` path and is never returned or logged.
-
-Safe rotation sequence:
-
-1. Using a rotation/admin principal, generate a new wrapped AES-256 DEK under the same production KMS key.
-2. Add its wrapped ciphertext to the manifest while retaining all historical DEKs still needed for existing envelopes.
-3. Promote its logical id to `FAWRI_META_AWS_CURRENT_DEK_ID`.
-4. Restart/redeploy so bootstrap validates and caches the updated manifest.
-5. New envelopes use the new logical `key_id`; old v1 envelopes still resolve historical ids.
-6. Retire a historical logical DEK only after the owner-approved decrypt-overlap/retention requirement is met. Removal is intentionally fail-closed.
-
-## IAM least privilege
-
-Use separate runtime and rotation principals where operationally possible.
+## IAM / key-policy least privilege
 
 ### Runtime workload principal
 
-Required KMS permission on the single selected KMS key:
+The runtime adapter actually calls only KMS `Decrypt`.
+
+Required permission on the one approved KMS key:
 
 - `kms:Decrypt`
 
-Do not grant the runtime principal `kms:GenerateDataKey`, `kms:Encrypt`, key creation, key policy administration, alias administration, scheduling deletion, disabling keys, or other KMS administration unless another separately reviewed runtime requirement exists.
+The runtime does **not** require `kms:Encrypt`, `kms:GenerateDataKey`, `kms:DescribeKey`, key creation, alias management, disabling/deletion, or policy administration.
 
-The key policy/IAM policy should additionally restrict `kms:Decrypt` to the fixed encryption-context values (`application=fawri`, `purpose=meta-credential-dek`, `version=1`) where AWS IAM condition support is used.
+Where policy conditions are used, restrict `kms:Decrypt` to the fixed encryption-context values:
 
-### Rotation principal / operator
+- `application=fawri`
+- `purpose=meta-credential-dek`
+- `version=1`
 
-Required for the included rotation operation:
+### Rotation/operator principal
+
+The included rotation helper calls only KMS `GenerateDataKey` with `KeySpec=AES_256`.
+
+Required permission on the same approved key:
 
 - `kms:GenerateDataKey`
 
-Grant it only on the same selected KMS key and restrict the same encryption context. It does not need key-creation/deletion/policy-administration permissions for normal DEK rotation.
+It does not require normal key administration permissions. A separate permission decision is required only if an operator intentionally performs additional AWS operations outside this helper.
 
-If an operator separately needs to verify/decrypt a generated wrapped DEK, that is a separate permission decision; it is not required by the generation helper itself.
+## Bootstrap and failure behavior
 
-## KMS key count
+Bootstrap fails closed before the application is loaded when any of these occur:
 
-Production KMS key count for this design: **1 symmetric customer-managed AWS KMS key**.
+- production provider selection is missing or invalid;
+- region/key/current-DEK/manifest configuration is missing or malformed;
+- configured region differs from the key ARN region;
+- wrapped ciphertext is malformed;
+- KMS access is denied;
+- KMS/network service is unavailable;
+- encryption context does not authenticate;
+- KMS returns a different key identity;
+- KMS returns plaintext not exactly 32 bytes;
+- the current logical DEK is absent;
+- any configured historical DEK cannot be unwrapped.
 
-Multiple logical application DEKs may coexist under that one KMS key for rotation/history. These logical DEKs are not separate AWS KMS keys.
+Foreign AWS/network exceptions are converted to sanitized adapter errors. Startup logging receives only a safe error code and a generic message; wrapped DEKs, plaintext DEKs, Meta tokens, and raw AWS exception text are not emitted.
 
-## CI boundary
+There is no production fallback from a failed AWS KMS bootstrap to local/environment key material.
 
-CI uses injected/fake KMS clients only. It must not receive AWS production credentials and must not make real KMS calls. Focused tests cover success, wrong KMS identity, context mismatch, permission denial, KMS unavailable, malformed ciphertext, invalid plaintext length, current/historical/retired logical DEKs, rotation compatibility, leak resistance, environment-provider ineligibility, AWS-specific readiness, and disposal zeroization.
+## Plaintext DEK memory handling
 
-## Coordinator handoff required for production activation
+- KMS-returned plaintext is accepted only when exactly 32 bytes.
+- The provider copies valid DEKs into process-memory buffers.
+- SDK-returned plaintext buffers are zeroized immediately after copying.
+- Wrapped-ciphertext working buffers are cleared after use.
+- Partial caches are zeroized if bootstrap fails.
+- `dispose()` zeroizes every cached DEK and clears the cache.
+- The default KMS client is destroyed after bootstrap because normal token operations use the in-memory provider.
 
-Current `metaChannelRuntime` still falls back to `createEnvironmentMetaCredentialKeyProvider()` when no provider is injected, and `src/index.ts` starts the API synchronously. A production AWS KMS provider therefore cannot be activated safely from this lane without central startup/runtime wiring.
+## Rotation and historical reads
 
-Coordinator change required after this lane is validated:
+Safe rotation under the same one KMS key:
 
-1. before accepting traffic, `await bootstrapAwsKmsMetaCredentialKeyProviderFromEnvironment()`;
-2. require `assertAwsKmsMetaCredentialProviderReady(...)` in production;
-3. inject the resulting cached provider into every Meta OAuth/connect/read/send credential path instead of allowing the environment fallback;
-4. call `dispose()` during server shutdown;
-5. fail startup closed if bootstrap/readiness fails.
+1. A rotation/operator principal uses the included `GenerateDataKey` helper with `AES_256` and the fixed encryption context.
+2. Only the logical DEK id and wrapped `CiphertextBlob` are retained; plaintext is zeroized and never returned.
+3. Add the new wrapped DEK to `FAWRI_META_AWS_KMS_WRAPPED_DEKS_JSON` while retaining every historical logical DEK still needed to read existing envelopes.
+4. Promote the new id via `FAWRI_META_AWS_CURRENT_DEK_ID`.
+5. Redeploy/restart; bootstrap unwraps and validates the full manifest before traffic is accepted.
+6. New envelopes use the new logical `key_id`; existing envelopes resolve historical ids.
+7. Remove a historical logical DEK only after the owner-approved retention/overlap window. Removal intentionally makes envelopes using that id unreadable rather than substituting another key.
 
-This lane intentionally does **not** modify `src/index.ts`, `app.ts`, or `routes/index.ts`.
+No merchant/customer receives a dedicated KMS CMK.
 
-## Remaining AWS-account / Owner blockers
+## CI-safe activation preflight
 
-Repository code cannot supply these values:
+`.github/workflows/meta-credential-kms-readiness.yml` runs for this activation branch and uses no real AWS credentials/calls. It performs:
 
-- actual production AWS account/region;
-- actual customer-managed KMS key ARN;
-- runtime IAM role/workload identity and key-policy binding;
-- rotation IAM role/operator identity;
-- initial wrapped production DEK manifest;
-- rotation cadence and historical-DEK retirement window;
+- frozen dependency install with scripts disabled;
+- API-server TypeScript typecheck;
+- Meta credential vault tests;
+- AWS KMS adapter tests;
+- activation-specific fail-closed/configuration/error-sanitization tests;
+- Meta channel tenant/isolation envelope tests;
+- production runtime-provider startup wiring tests;
+- API-server build.
+
+The fake-client tests cover successful bootstrap, invalid wrapped DEKs, KMS denial/unavailability, wrong key identity, invalid plaintext size, current/historical/retired DEKs, v1 envelope compatibility, readiness, zeroization, and leak resistance.
+
+## Controlled real AWS activation boundary
+
+A real smoke test is permitted only after all repository preflight checks pass and an approved execution environment already provides all of the following unambiguously:
+
+- approved AWS account and region;
+- exact approved KMS key ARN;
+- runtime/rotation identity with only the required permissions;
+- approved wrapped disposable test DEK material or an approved operation for generating disposable test material;
+- no production customer credential/data requirement;
+- a reversible/non-mutating or disposable verification path;
+- output/log handling that cannot expose secrets.
+
+If any item is absent, do not fabricate values and do not paste AWS secrets into source/chat.
+
+## External inputs still required for real activation
+
+Repository code cannot supply or approve:
+
+- actual production AWS account;
+- actual production region;
+- actual production KMS key ARN;
+- runtime IAM/workload identity and key-policy binding;
+- rotation/operator IAM identity if rotation is to be performed;
+- initial production wrapped-DEK manifest;
+- production current logical DEK id;
+- historical-DEK retention/retirement policy;
 - production rollout/change approval.
+
+Until those cloud/owner inputs exist in an approved execution environment, repository readiness can be proven but a real AWS KMS smoke test remains externally blocked.
