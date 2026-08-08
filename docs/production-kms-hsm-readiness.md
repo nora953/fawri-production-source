@@ -73,7 +73,7 @@ Bootstrap fails before production readiness is true when any of the following oc
 - the current logical DEK is absent;
 - any configured historical DEK cannot be unwrapped.
 
-Provider readiness is `external`, `provider_id=aws-kms`, and `production_eligible=true` only after all configured DEKs have successfully bootstrapped. The environment provider remains `production_eligible=false`.
+Provider readiness is `external`, `provider_id=aws-kms`, and `production_eligible=true` only after all configured DEKs have successfully bootstrapped. The environment provider remains `production_eligible=false`. Production activation must additionally use `assertAwsKmsMetaCredentialProviderReady(...)`; this assertion rejects providers that merely claim AWS readiness metadata unless they were actually created by the AWS KMS adapter bootstrap in the current process.
 
 ## Runtime memory and cleanup
 
@@ -133,7 +133,7 @@ Multiple logical application DEKs may coexist under that one KMS key for rotatio
 
 ## CI boundary
 
-CI uses injected/fake KMS clients only. It must not receive AWS production credentials and must not make real KMS calls. Focused tests cover success, wrong KMS identity, context mismatch, permission denial, KMS unavailable, malformed ciphertext, invalid plaintext length, current/historical/retired logical DEKs, rotation compatibility, leak resistance, environment-provider ineligibility, readiness, and disposal zeroization.
+CI uses injected/fake KMS clients only. It must not receive AWS production credentials and must not make real KMS calls. Focused tests cover success, wrong KMS identity, context mismatch, permission denial, KMS unavailable, malformed ciphertext, invalid plaintext length, current/historical/retired logical DEKs, rotation compatibility, leak resistance, environment-provider ineligibility, AWS-specific readiness, and disposal zeroization.
 
 ## Coordinator handoff required for production activation
 
@@ -142,7 +142,7 @@ Current `metaChannelRuntime` still falls back to `createEnvironmentMetaCredentia
 Coordinator change required after this lane is validated:
 
 1. before accepting traffic, `await bootstrapAwsKmsMetaCredentialKeyProviderFromEnvironment()`;
-2. require `assertProductionMetaCredentialProviderReady(...)` in production;
+2. require `assertAwsKmsMetaCredentialProviderReady(...)` in production;
 3. inject the resulting cached provider into every Meta OAuth/connect/read/send credential path instead of allowing the environment fallback;
 4. call `dispose()` during server shutdown;
 5. fail startup closed if bootstrap/readiness fails.
