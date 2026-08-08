@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import type { AccountKind, AdminPermission, AdminRole } from "./authPolicy";
+import { parseSessionToken } from "./authSecurityDataStore";
 import { authSecurityStore } from "./authSecurityStore";
 import type {
   AuthSessionRecord,
@@ -8,7 +9,6 @@ import type {
   SessionRevocationReason,
   ValidatedSession,
 } from "./authSecurityTypes";
-import { parseSessionToken } from "./authSecurityDataStore";
 
 const POSTGRES_AUTHORITY_ENV = "FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY";
 
@@ -63,15 +63,26 @@ type AccountVersionRow = {
   state: "active" | "suspended" | "closed";
 };
 
+type QueryTarget = {
+  query(
+    sql: string,
+    values?: unknown[],
+  ): Promise<{ rows: Record<string, unknown>[] }>;
+};
+
+type TransactionClient = QueryTarget & { release(): void };
+
+type DatabasePool = QueryTarget & {
+  connect(): Promise<TransactionClient>;
+};
+
 function postgresRequired(kind: AccountKind): boolean {
   return kind === "merchant" && process.env[POSTGRES_AUTHORITY_ENV] === "required";
 }
 
 function requireDatabaseUrl(): void {
   if (!process.env.DATABASE_URL) {
-    throw new Error(
-      `${POSTGRES_AUTHORITY_ENV}=required requires DATABASE_URL`,
-    );
+    throw new Error(`${POSTGRES_AUTHORITY_ENV}=required requires DATABASE_URL`);
   }
 }
 
@@ -129,17 +140,16 @@ function normalizePermissions(
 }
 
 function toRecord(row: SessionRow): AuthSessionRecord {
-  const dbVersion = Number(row.session_version);
   return {
     id: row.id,
     token_hash: row.token_hash,
     account_id: row.account_id,
     account_kind: row.kind,
     tenant_id: row.tenant_id,
-    // Transitional JSON Auth v2 starts at zero while the PostgreSQL schema is
-    // constrained to positive versions. The HTTP guard compares this projected
-    // value with the current JSON projection until account authority cutover.
-    account_version: Math.max(0, dbVersion - 1),
+    // The transitional JSON projection starts at version zero while PostgreSQL
+    // constrains account/session versions to positive integers. The proof gate
+    // keeps those existing Auth v2 semantics aligned without changing schema.
+    account_version: Math.max(0, Number(row.session_version) - 1),
     ...(row.role_snapshot ? { admin_role: row.role_snapshot } : {}),
     permissions: normalizePermissions(row.permission_snapshot),
     ...(row.device_fingerprint_hash
@@ -161,24 +171,29 @@ function toRecord(row: SessionRow): AuthSessionRecord {
   };
 }
 
-async function pool() {
+async function databasePool(): Promise<DatabasePool> {
   requireDatabaseUrl();
   const module = await import("@workspace/db");
   return module.pool;
 }
 
+async function queryRows<T>(
+  target: QueryTarget,
+  sql: string,
+  values: unknown[] = [],
+): Promise<T[]> {
+  const result = await target.query(sql, values);
+  return result.rows as unknown as T[];
+}
+
 async function withTransaction<T>(
-  work: (client: Awaited<ReturnType<typeof pool>> extends infer P
-    ? P extends { connect(): Promise<infer C> }
-      ? C
-      : never
-    : never) => Promise<T>,
+  work: (client: TransactionClient) => Promise<T>,
 ): Promise<T> {
-  const databasePool = await pool();
-  const client = await databasePool.connect();
+  const pool = await databasePool();
+  const client = await pool.connect();
   try {
     await client.query("BEGIN");
-    const result = await work(client as never);
+    const result = await work(client);
     await client.query("COMMIT");
     return result;
   } catch (error) {
@@ -190,18 +205,19 @@ async function withTransaction<T>(
 }
 
 async function lockAccount(
-  client: { query: (text: string, values?: unknown[]) => Promise<{ rows: AccountVersionRow[] }> },
+  client: QueryTarget,
   accountId: string,
   kind: AccountKind,
 ): Promise<AccountVersionRow | null> {
-  const result = await client.query(
+  const rows = await queryRows<AccountVersionRow>(
+    client,
     `SELECT session_version, security_version, state
        FROM accounts
       WHERE id = $1 AND kind = $2
       FOR UPDATE`,
     [accountId, kind],
   );
-  return result.rows[0] || null;
+  return rows[0] || null;
 }
 
 async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
@@ -222,7 +238,8 @@ async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
       [input.accountId, input.accountKind, now],
     );
 
-    const active = await client.query<{ id: string }>(
+    const active = await queryRows<{ id: string }>(
+      client,
       `SELECT id
          FROM account_sessions
         WHERE account_id = $1 AND kind = $2 AND status = 'active'
@@ -231,12 +248,13 @@ async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
       [input.accountId, input.accountKind],
     );
     const cap = input.accountKind === "admin" ? 2 : 5;
-    const revokeCount = Math.max(0, active.rows.length - cap + 1);
+    const revokeCount = Math.max(0, active.length - cap + 1);
     if (revokeCount > 0) {
-      const revokeIds = active.rows.slice(0, revokeCount).map((row) => row.id);
+      const revokeIds = active.slice(0, revokeCount).map((row) => row.id);
       await client.query(
         `UPDATE account_sessions
-            SET status = 'revoked', revoked_at = $2, revoke_reason = 'manual_revocation'
+            SET status = 'revoked', revoked_at = $2,
+                revoke_reason = 'manual_revocation'
           WHERE id = ANY($1::text[]) AND status = 'active'`,
         [revokeIds, now],
       );
@@ -260,16 +278,8 @@ async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
       throw new Error("AUTH_POSTGRES_SESSION_ABSOLUTE_EXPIRY_TOO_CLOSE");
     }
 
-    const tokenHash = fingerprint("session", material.secret);
-    const deviceHash = input.deviceId
-      ? fingerprint("device", input.deviceId)
-      : null;
-    const deviceLabel = String(input.deviceLabel || "Unknown device")
-      .replace(/\s+/g, " ")
-      .slice(0, 120);
-    const permissionSnapshot = normalizePermissions(input.permissions);
-
-    const inserted = await client.query<SessionRow>(
+    const inserted = await queryRows<SessionRow>(
+      client,
       `INSERT INTO account_sessions (
          id, account_id, kind, status, token_hash, tenant_id,
          device_fingerprint_hash, device_label, session_version, security_version,
@@ -286,31 +296,36 @@ async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
         material.id,
         input.accountId,
         input.accountKind,
-        tokenHash,
+        fingerprint("session", material.secret),
         input.tenantId,
-        deviceHash,
-        deviceLabel,
+        input.deviceId ? fingerprint("device", input.deviceId) : null,
+        String(input.deviceLabel || "Unknown device")
+          .replace(/\s+/g, " ")
+          .slice(0, 120),
         account.session_version,
         account.security_version,
         input.adminRole || null,
-        JSON.stringify(permissionSnapshot),
+        JSON.stringify(normalizePermissions(input.permissions)),
         now,
         idleExpiresAt,
         absoluteExpiresAt,
         rotateAfter,
       ],
     );
-
-    return { token: material.token, session: toRecord(inserted.rows[0]) };
+    if (!inserted[0]) throw new Error("AUTH_POSTGRES_SESSION_INSERT_FAILED");
+    return { token: material.token, session: toRecord(inserted[0]) };
   });
 }
 
-async function validatePostgres(input: ValidateInput): Promise<ValidatedSession | null> {
+async function validatePostgres(
+  input: ValidateInput,
+): Promise<ValidatedSession | null> {
   const parsed = parseSessionToken(input.token);
   if (!parsed) return null;
 
   return withTransaction(async (client) => {
-    const result = await client.query<SessionRow>(
+    const rows = await queryRows<SessionRow>(
+      client,
       `SELECT s.*,
               a.session_version AS current_session_version,
               a.security_version AS current_security_version,
@@ -321,7 +336,7 @@ async function validatePostgres(input: ValidateInput): Promise<ValidatedSession 
         FOR UPDATE OF s`,
       [parsed.id],
     );
-    const row = result.rows[0];
+    const row = rows[0];
     if (
       !row ||
       row.kind !== input.expectedKind ||
@@ -339,8 +354,7 @@ async function validatePostgres(input: ValidateInput): Promise<ValidatedSession 
     ) {
       await client.query(
         `UPDATE account_sessions
-            SET status = 'revoked', revoked_at = $2,
-                revoke_reason = $3
+            SET status = 'revoked', revoked_at = $2, revoke_reason = $3
           WHERE id = $1 AND status = 'active'`,
         [
           row.id,
@@ -388,18 +402,20 @@ async function validatePostgres(input: ValidateInput): Promise<ValidatedSession 
         row.absolute_expires_at.getTime(),
       ),
     );
-    const touched = await client.query<SessionRow>(
+    const touched = await queryRows<SessionRow>(
+      client,
       `UPDATE account_sessions
-          SET last_seen_at = $2, last_activity_at = $2, idle_expires_at = $3
+          SET last_seen_at = $2,
+              last_activity_at = $2,
+              idle_expires_at = $3
         WHERE id = $1 AND status = 'active'
         RETURNING *`,
       [row.id, now, nextIdle],
     );
-    const session = touched.rows[0];
-    if (!session) return null;
+    if (!touched[0]) return null;
     return {
-      session: toRecord(session),
-      needsRotation: session.rotate_after.getTime() <= now.getTime(),
+      session: toRecord(touched[0]),
+      needsRotation: touched[0].rotate_after.getTime() <= now.getTime(),
     };
   });
 }
@@ -409,7 +425,8 @@ async function rotatePostgres(input: ValidateInput): Promise<IssuedSession | nul
   if (!parsed) return null;
 
   return withTransaction(async (client) => {
-    const selected = await client.query<SessionRow>(
+    const rows = await queryRows<SessionRow>(
+      client,
       `SELECT s.*,
               a.session_version AS current_session_version,
               a.security_version AS current_security_version,
@@ -420,7 +437,7 @@ async function rotatePostgres(input: ValidateInput): Promise<IssuedSession | nul
         FOR UPDATE OF s`,
       [parsed.id],
     );
-    const old = selected.rows[0];
+    const old = rows[0];
     if (
       !old ||
       old.kind !== input.expectedKind ||
@@ -445,17 +462,15 @@ async function rotatePostgres(input: ValidateInput): Promise<IssuedSession | nul
       );
       return null;
     }
-
-    if (old.device_fingerprint_hash) {
-      if (
-        !input.deviceId ||
+    if (
+      old.device_fingerprint_hash &&
+      (!input.deviceId ||
         !safeEqual(
           old.device_fingerprint_hash,
           fingerprint("device", input.deviceId),
-        )
-      ) {
-        return null;
-      }
+        ))
+    ) {
+      return null;
     }
 
     const material = createTokenMaterial();
@@ -473,7 +488,8 @@ async function rotatePostgres(input: ValidateInput): Promise<IssuedSession | nul
     );
     if (rotateAfter.getTime() <= now.getTime()) return null;
 
-    const inserted = await client.query<SessionRow>(
+    const inserted = await queryRows<SessionRow>(
+      client,
       `INSERT INTO account_sessions (
          id, account_id, kind, status, token_hash, tenant_id,
          device_fingerprint_hash, device_label, session_version, security_version,
@@ -503,19 +519,24 @@ async function rotatePostgres(input: ValidateInput): Promise<IssuedSession | nul
         rotateAfter,
       ],
     );
+    if (!inserted[0]) throw new Error("AUTH_POSTGRES_ROTATION_INSERT_FAILED");
 
-    const revoked = await client.query(
+    const revoked = await queryRows<{ id: string }>(
+      client,
       `UPDATE account_sessions
-          SET status = 'revoked', revoked_at = $2,
-              revoke_reason = 'rotated', replaced_by_session_id = $3
-        WHERE id = $1 AND status = 'active'`,
+          SET status = 'revoked',
+              revoked_at = $2,
+              revoke_reason = 'rotated',
+              replaced_by_session_id = $3
+        WHERE id = $1 AND status = 'active'
+        RETURNING id`,
       [old.id, now, material.id],
     );
-    if (revoked.rowCount !== 1) {
+    if (revoked.length !== 1) {
       throw new Error("AUTH_POSTGRES_ROTATION_LOST_LOCK");
     }
 
-    return { token: material.token, session: toRecord(inserted.rows[0]) };
+    return { token: material.token, session: toRecord(inserted[0]) };
   });
 }
 
@@ -526,12 +547,14 @@ async function revokePostgres(
 ): Promise<boolean> {
   const parsed = parseSessionToken(token);
   if (!parsed) return false;
+
   return withTransaction(async (client) => {
-    const selected = await client.query<SessionRow>(
+    const rows = await queryRows<SessionRow>(
+      client,
       `SELECT * FROM account_sessions WHERE id = $1 FOR UPDATE`,
       [parsed.id],
     );
-    const row = selected.rows[0];
+    const row = rows[0];
     if (
       !row ||
       row.kind !== expectedKind ||
@@ -540,22 +563,28 @@ async function revokePostgres(
     ) {
       return false;
     }
-    const now = new Date();
+
     if (reason === "expired") {
-      const result = await client.query(
-        `UPDATE account_sessions SET status = 'expired'
-          WHERE id = $1 AND status = 'active'`,
+      const expired = await queryRows<{ id: string }>(
+        client,
+        `UPDATE account_sessions
+            SET status = 'expired'
+          WHERE id = $1 AND status = 'active'
+          RETURNING id`,
         [row.id],
       );
-      return result.rowCount === 1;
+      return expired.length === 1;
     }
-    const result = await client.query(
+
+    const revoked = await queryRows<{ id: string }>(
+      client,
       `UPDATE account_sessions
           SET status = 'revoked', revoked_at = $2, revoke_reason = $3
-        WHERE id = $1 AND status = 'active'`,
-      [row.id, now, reason],
+        WHERE id = $1 AND status = 'active'
+        RETURNING id`,
+      [row.id, new Date(), reason],
     );
-    return result.rowCount === 1;
+    return revoked.length === 1;
   });
 }
 
@@ -569,22 +598,28 @@ async function revokeForAccountPostgres(input: {
   if (input.actorAccountId && input.actorAccountId !== input.accountId) {
     return false;
   }
+
   return withTransaction(async (client) => {
-    const selected = await client.query<SessionRow>(
-      `SELECT * FROM account_sessions
+    const rows = await queryRows<SessionRow>(
+      client,
+      `SELECT *
+         FROM account_sessions
         WHERE id = $1 AND account_id = $2 AND kind = $3
         FOR UPDATE`,
       [input.sessionId, input.accountId, input.accountKind],
     );
-    const row = selected.rows[0];
+    const row = rows[0];
     if (!row || row.status !== "active") return false;
-    const result = await client.query(
+
+    const revoked = await queryRows<{ id: string }>(
+      client,
       `UPDATE account_sessions
           SET status = 'revoked', revoked_at = $2, revoke_reason = $3
-        WHERE id = $1 AND status = 'active'`,
+        WHERE id = $1 AND status = 'active'
+        RETURNING id`,
       [row.id, new Date(), input.reason],
     );
-    return result.rowCount === 1;
+    return revoked.length === 1;
   });
 }
 
@@ -597,6 +632,7 @@ async function revokeAllPostgres(input: {
   return withTransaction(async (client) => {
     const account = await lockAccount(client, input.accountId, input.accountKind);
     if (!account) return 0;
+
     const values: unknown[] = [
       input.accountId,
       input.accountKind,
@@ -608,13 +644,15 @@ async function revokeAllPostgres(input: {
       values.push(input.deviceHash);
       deviceClause = " AND device_fingerprint_hash = $5";
     }
-    const result = await client.query(
+    const revoked = await queryRows<{ id: string }>(
+      client,
       `UPDATE account_sessions
           SET status = 'revoked', revoked_at = $3, revoke_reason = $4
-        WHERE account_id = $1 AND kind = $2 AND status = 'active'${deviceClause}`,
+        WHERE account_id = $1 AND kind = $2 AND status = 'active'${deviceClause}
+        RETURNING id`,
       values,
     );
-    return result.rowCount || 0;
+    return revoked.length;
   });
 }
 
@@ -622,8 +660,9 @@ async function listPostgres(
   accountId: string,
   kind: AccountKind,
 ): Promise<PublicAuthSessionRecord[]> {
-  const databasePool = await pool();
-  const result = await databasePool.query<SessionRow>(
+  const pool = await databasePool();
+  const rows = await queryRows<SessionRow>(
+    pool,
     `SELECT s.*
        FROM account_sessions AS s
        JOIN accounts AS a ON a.id = s.account_id AND a.kind = s.kind
@@ -638,7 +677,7 @@ async function listPostgres(
       ORDER BY s.created_at DESC, s.id DESC`,
     [accountId, kind],
   );
-  return result.rows.map((row) => {
+  return rows.map((row) => {
     const { token_hash: _tokenHash, ...safe } = toRecord(row);
     return safe;
   });
@@ -653,8 +692,10 @@ async function commitPasswordChangePostgres(input: {
   return withTransaction(async (client) => {
     const account = await lockAccount(client, input.accountId, input.accountKind);
     if (!account) throw new Error("AUTH_POSTGRES_ACCOUNT_UNAVAILABLE");
+
     const now = new Date();
-    await client.query(
+    const updated = await queryRows<{ id: string }>(
+      client,
       `UPDATE accounts
           SET password_hash = $3,
               password_version = password_version + 1,
@@ -662,16 +703,23 @@ async function commitPasswordChangePostgres(input: {
               security_version = security_version + 1,
               password_changed_at = $4,
               updated_at = $4
-        WHERE id = $1 AND kind = $2`,
+        WHERE id = $1 AND kind = $2
+        RETURNING id`,
       [input.accountId, input.accountKind, input.passwordHash, now],
     );
-    const revoked = await client.query(
+    if (updated.length !== 1) {
+      throw new Error("AUTH_POSTGRES_PASSWORD_CHANGE_LOST_ACCOUNT");
+    }
+
+    const revoked = await queryRows<{ id: string }>(
+      client,
       `UPDATE account_sessions
           SET status = 'revoked', revoked_at = $3, revoke_reason = $4
-        WHERE account_id = $1 AND kind = $2 AND status = 'active'`,
+        WHERE account_id = $1 AND kind = $2 AND status = 'active'
+        RETURNING id`,
       [input.accountId, input.accountKind, now, input.reason],
     );
-    return revoked.rowCount || 0;
+    return revoked.length;
   });
 }
 
