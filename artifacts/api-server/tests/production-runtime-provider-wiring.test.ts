@@ -5,6 +5,7 @@ import path from "node:path";
 import test from "node:test";
 import type { AwsKmsMetaCredentialKeyProvider } from "../src/services/awsKmsMetaCredentialKeyProvider";
 import {
+  configureKnowledgeEmbeddingProvider,
   getKnowledgeDecisionEngine,
   getKnowledgeEmbeddingActivationReadiness,
   resetKnowledgeDecisionEngineForTests,
@@ -37,7 +38,11 @@ function fakeAwsProvider(id = "aws-dek-current"): {
   let disposeCount = 0;
   const provider: AwsKmsMetaCredentialKeyProvider = {
     current() {
-      if (disposeCount) throw Object.assign(new Error("provider disposed"), { code: "META_CREDENTIAL_EXTERNAL_PROVIDER_UNAVAILABLE" });
+      if (disposeCount) {
+        throw Object.assign(new Error("provider disposed"), {
+          code: "META_CREDENTIAL_EXTERNAL_PROVIDER_UNAVAILABLE",
+        });
+      }
       return { id, key };
     },
     resolve(requestedKeyId) {
@@ -368,9 +373,7 @@ test("AWS KMS and OpenAI initialize in deterministic order in the same process",
         },
         configureKnowledge: (provider) => {
           events.push("openai-configure");
-          const readiness = getKnowledgeEmbeddingActivationReadiness();
-          assert.equal(readiness.ready, false);
-          const { configureKnowledgeEmbeddingProvider } = require("../src/services/ai/knowledgeDecisionEngine");
+          assert.equal(getKnowledgeEmbeddingActivationReadiness().ready, false);
           configureKnowledgeEmbeddingProvider(provider);
         },
         configureMetaCredentialProvider: (provider) => {
