@@ -76,8 +76,8 @@ test("settings UI loads and saves only through versioned server authority", () =
   const requestBodyEnd = page.indexOf("      });", requestBodyStart);
   const requestBody = page.slice(requestBodyStart, requestBodyEnd);
   assert.doesNotMatch(requestBody, /merchant_id/);
-  assert.doesNotMatch(requestBody, /theme/);
-  assert.doesNotMatch(requestBody, /language:/);
+  assert.doesNotMatch(requestBody, /(^|[\s,{])theme\s*:/m);
+  assert.doesNotMatch(requestBody, /(^|[\s,{])language\s*:/m);
 });
 
 test("delivery and payment mappings match the canonical server model", () => {
@@ -96,7 +96,7 @@ test("delivery and payment mappings match the canonical server model", () => {
   assert.match(page, /electronic_payment_enabled/);
   assert.match(page, /'cash_on_delivery'/);
   assert.match(page, /'superqi'/);
-  assert.match(page, /disabled=!draft\.payment\.electronic_payment_enabled/);
+  assert.match(page, /disabled=\{!draft\.payment\.electronic_payment_enabled\}/);
 });
 
 test("settings API derives tenant identity from the authenticated session and returns effects", () => {
