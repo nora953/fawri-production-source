@@ -45,6 +45,23 @@ type MetaChannelStore = { version: 1; channels: MetaChannelRecord[] };
 
 const STORE_VERSION = 1 as const;
 const LOCK_STALE_MS = 120_000;
+let configuredMetaCredentialKeyProvider: MetaCredentialKeyProvider | null = null;
+
+export function configureMetaChannelCredentialKeyProvider(
+  provider: MetaCredentialKeyProvider | null,
+): void {
+  configuredMetaCredentialKeyProvider = provider;
+}
+
+function resolveMetaCredentialKeyProvider(
+  explicit?: MetaCredentialKeyProvider,
+): MetaCredentialKeyProvider {
+  return (
+    explicit ||
+    configuredMetaCredentialKeyProvider ||
+    createEnvironmentMetaCredentialKeyProvider()
+  );
+}
 
 function text(value: unknown): string {
   return String(value || "").trim();
@@ -204,8 +221,7 @@ export function connectMetaChannel(input: {
       code: "META_CHANNEL_IDENTITY_INVALID",
     });
   }
-  const provider =
-    input.keyProvider || createEnvironmentMetaCredentialKeyProvider();
+  const provider = resolveMetaCredentialKeyProvider(input.keyProvider);
   const encrypted = encryptMetaCredential(
     input.accessToken,
     provider,
@@ -267,7 +283,7 @@ export function readMetaChannelCredential(input: {
   }
   return decryptMetaCredential(
     record.credential,
-    input.keyProvider || createEnvironmentMetaCredentialKeyProvider(),
+    resolveMetaCredentialKeyProvider(input.keyProvider),
     `fawri:meta:${record.merchant_id}:${record.platform}:${record.page_id}`,
   );
 }
