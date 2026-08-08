@@ -1,0 +1,100 @@
+name: Auth PostgreSQL concurrency proof
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/middleware/authSession.ts"
+      - "artifacts/api-server/src/routes/auth-*.ts"
+      - "artifacts/api-server/src/services/auth*.ts"
+      - "artifacts/api-server/tests/auth-*.test.ts"
+      - "artifacts/api-server/tests/auth-*.test.mjs"
+      - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
+      - "artifacts/api-server/tests/meta-webhook-security.integration.test.mjs"
+      - ".github/workflows/auth-concurrency-proof.yml"
+  push:
+    branches:
+      - "parallel/final-auth-concurrency-proof"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auth-concurrency-proof-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-auth-concurrency:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Apply committed schema to disposable PostgreSQL 16
+        env:
+          FAWRI_ALLOW_MIGRATION_SMOKE: "1"
+        run: pnpm --filter @workspace/db run schema:smoke
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Build API server
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Run current Auth unit and cutover tests
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/auth-account-repository.test.ts
+          ./tests/auth-password-service.test.ts
+          ./tests/auth-policy.test.ts
+          ./tests/auth-security-store.test.ts
+          ./tests/auth-cutover-contract.test.mjs
+
+      - name: Run Merchant access security suite
+        run: |
+          pnpm --filter @workspace/api-server run test:reply-entitlement
+          pnpm --filter @workspace/api-server run test:durable-queue
+          node --test \
+            artifacts/api-server/tests/merchant-session.integration.test.mjs \
+            artifacts/api-server/tests/merchant-status-access.integration.test.mjs \
+            artifacts/api-server/tests/meta-webhook-security.integration.test.mjs
+
+      - name: Prove Auth HTTP PostgreSQL concurrency
+        env:
+          FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required"
+          FAWRI_AUTH_SECURITY_SECRET: "ci-auth-concurrency-proof-secret-with-more-than-thirty-two-characters"
+          FAWRI_PASSWORD_SALT: "auth-proof-password-salt"
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/auth-postgres-concurrency.integration.test.mjs

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { authAccountRepository } from "../services/authAccountRepository";
-import { authSecurityStore } from "../services/authSecurityStore";
+import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import {
   clearAuthSessionCookie,
   getAuthContext,
@@ -13,23 +13,27 @@ import { changePassword } from "./auth-password-route-support";
 
 const router = Router();
 
-router.post("/logout", (req, res) => {
+router.post("/logout", async (req, res) => {
   const token = getSessionToken(req, "merchant");
-  if (token) authSecurityStore.revokeSession(token, "logout");
+  if (token) {
+    await authPostgresSessionAuthority.revokeSession(token, "merchant", "logout");
+  }
   clearAuthSessionCookie(res, "merchant");
   res.json({ ok: true });
 });
 
-router.post("/admin/logout", (req, res) => {
+router.post("/admin/logout", async (req, res) => {
   const token = getSessionToken(req, "admin");
-  if (token) authSecurityStore.revokeSession(token, "logout");
+  if (token) {
+    await authPostgresSessionAuthority.revokeSession(token, "admin", "logout");
+  }
   clearAuthSessionCookie(res, "admin");
   res.json({ ok: true });
 });
 
-router.post("/logout-all", requireSecureMerchantSession, (_req, res) => {
+router.post("/logout-all", requireSecureMerchantSession, async (_req, res) => {
   const context = getAuthContext(res)!;
-  authSecurityStore.revokeAllSessions({
+  await authPostgresSessionAuthority.revokeAllSessions({
     accountId: context.account.id,
     accountKind: "merchant",
     reason: "logout_all",
@@ -38,9 +42,9 @@ router.post("/logout-all", requireSecureMerchantSession, (_req, res) => {
   res.json({ ok: true });
 });
 
-router.post("/admin/logout-all", requireSecureAdminSession, (_req, res) => {
+router.post("/admin/logout-all", requireSecureAdminSession, async (_req, res) => {
   const context = getAuthContext(res)!;
-  authSecurityStore.revokeAllSessions({
+  await authPostgresSessionAuthority.revokeAllSessions({
     accountId: context.account.id,
     accountKind: "admin",
     reason: "logout_all",
@@ -49,25 +53,31 @@ router.post("/admin/logout-all", requireSecureAdminSession, (_req, res) => {
   res.json({ ok: true });
 });
 
-router.get("/sessions", requireSecureMerchantSession, (_req, res) => {
+router.get("/sessions", requireSecureMerchantSession, async (_req, res) => {
   const context = getAuthContext(res)!;
   res.json({
     ok: true,
-    sessions: authSecurityStore.listActiveSessions(context.account.id, "merchant"),
+    sessions: await authPostgresSessionAuthority.listActiveSessions(
+      context.account.id,
+      "merchant",
+    ),
   });
 });
 
-router.get("/admin/sessions", requireSecureAdminSession, (_req, res) => {
+router.get("/admin/sessions", requireSecureAdminSession, async (_req, res) => {
   const context = getAuthContext(res)!;
   res.json({
     ok: true,
-    sessions: authSecurityStore.listActiveSessions(context.account.id, "admin"),
+    sessions: await authPostgresSessionAuthority.listActiveSessions(
+      context.account.id,
+      "admin",
+    ),
   });
 });
 
-router.delete("/sessions/:sessionId", requireSecureMerchantSession, (req, res) => {
+router.delete("/sessions/:sessionId", requireSecureMerchantSession, async (req, res) => {
   const context = getAuthContext(res)!;
-  const ok = authSecurityStore.revokeSessionById({
+  const ok = await authPostgresSessionAuthority.revokeSessionById({
     actorAccountId: context.account.id,
     accountId: context.account.id,
     accountKind: "merchant",
@@ -79,9 +89,9 @@ router.delete("/sessions/:sessionId", requireSecureMerchantSession, (req, res) =
 router.delete(
   "/admin/sessions/:sessionId",
   requireSecureAdminSession,
-  (req, res) => {
+  async (req, res) => {
     const context = getAuthContext(res)!;
-    const ok = authSecurityStore.revokeSessionById({
+    const ok = await authPostgresSessionAuthority.revokeSessionById({
       actorAccountId: context.account.id,
       accountId: context.account.id,
       accountKind: "admin",

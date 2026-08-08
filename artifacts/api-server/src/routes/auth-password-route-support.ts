@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { authAccountRepository } from "../services/authAccountRepository";
+import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import { authSecurityStore } from "../services/authSecurityStore";
 import {
   getPasswordValidationError,
@@ -12,11 +13,11 @@ import {
   sendAuthError,
 } from "../middleware/authSession";
 
-export function changePassword(
+export async function changePassword(
   req: Request,
   res: Response,
   kind: "merchant" | "admin",
-) {
+): Promise<void> {
   const context = getAuthContext(res)!;
   const currentPassword = String(
     req.body?.current_password || req.body?.currentPassword || "",
@@ -59,17 +60,26 @@ export function changePassword(
     return;
   }
 
+  const passwordHash = hashPassword(next);
   authAccountRepository.updatePassword(
     context.account.id,
     kind,
-    hashPassword(next),
+    passwordHash,
     kind === "admin" ? { mustChangePassword: false } : {},
   );
-  authSecurityStore.revokeAllSessions({
+  const postgresRevoked = await authPostgresSessionAuthority.commitPasswordChange({
     accountId: context.account.id,
     accountKind: kind,
+    passwordHash,
     reason: "password_changed",
   });
+  if (postgresRevoked === null) {
+    authSecurityStore.revokeAllSessions({
+      accountId: context.account.id,
+      accountKind: kind,
+      reason: "password_changed",
+    });
+  }
   authSecurityStore.audit({
     event_type: forcedAdminChange
       ? "administrator_forced_password_changed"
