@@ -1,7 +1,12 @@
 // @ts-nocheck
 import assert from "node:assert/strict";
 import test from "node:test";
-import { KnowledgeDecisionEngine } from "../src/services/ai/knowledgeDecisionEngine.js";
+import {
+  configureKnowledgeEmbeddingProvider,
+  getKnowledgeEmbeddingActivationReadiness,
+  KnowledgeDecisionEngine,
+  resetKnowledgeDecisionEngineForTests,
+} from "../src/services/ai/knowledgeDecisionEngine.js";
 import {
   KnowledgeRuntimeGateError,
   PostgresKnowledgeFactResolver,
@@ -79,6 +84,53 @@ const fakeEmbedding = {
     return [1, 0];
   },
 };
+
+test("production embedding activation is provider-neutral, explicit, and process-locked", () => {
+  resetKnowledgeDecisionEngineForTests();
+  assert.deepEqual(getKnowledgeEmbeddingActivationReadiness(), {
+    ready: false,
+    providerId: null,
+    model: null,
+    dimensions: null,
+    reasonCode: "KNOWLEDGE_VECTOR_UNAVAILABLE",
+  });
+
+  configureKnowledgeEmbeddingProvider(fakeEmbedding);
+  assert.deepEqual(getKnowledgeEmbeddingActivationReadiness(), {
+    ready: true,
+    providerId: "fake-embedding",
+    model: "fake-embedding-v1",
+    dimensions: 2,
+    reasonCode: null,
+  });
+
+  assert.throws(
+    () => configureKnowledgeEmbeddingProvider({ ...fakeEmbedding, model: "fake-embedding-v2" }),
+    (error) =>
+      error instanceof KnowledgeRuntimeGateError &&
+      error.code === "KNOWLEDGE_VECTOR_ACTIVATION_LOCKED",
+  );
+  resetKnowledgeDecisionEngineForTests();
+});
+
+test("invalid production embedding configuration fails closed before activation", () => {
+  resetKnowledgeDecisionEngineForTests();
+  for (const provider of [
+    { ...fakeEmbedding, providerId: "" },
+    { ...fakeEmbedding, model: "disabled" },
+    { ...fakeEmbedding, dimensions: 0 },
+    { ...fakeEmbedding, dimensions: 4097 },
+  ]) {
+    assert.throws(
+      () => configureKnowledgeEmbeddingProvider(provider),
+      (error) =>
+        error instanceof KnowledgeRuntimeGateError &&
+        error.code === "KNOWLEDGE_VECTOR_CONFIG_INVALID",
+    );
+    assert.equal(getKnowledgeEmbeddingActivationReadiness().ready, false);
+  }
+  resetKnowledgeDecisionEngineForTests();
+});
 
 test("merchant policy is server-resolved and denies retrieval before knowledge use", async () => {
   const sql = new FakeSqlClient(async () => [policyRow({ auto_reply_enabled: false })]);
@@ -159,7 +211,7 @@ test("fact resolver fails closed for ambiguous authoritative fact requests", asy
   );
 });
 
-test("vector retrieval applies tenant filter before scoring and returns approved provenance", async () => {
+test("vector retrieval applies tenant/model/language filters before scoring and returns approved provenance", async () => {
   const sql = new FakeSqlClient(async (query) => {
     if (query.includes("knowledge_embeddings")) return [vectorRow()];
     return [];
@@ -178,14 +230,18 @@ test("vector retrieval applies tenant filter before scoring and returns approved
   assert.equal(match?.document.source, "merchant_approved");
   assert.equal(match?.score, 1);
   assert.match(sql.queries[0].sql, /WHERE e\.merchant_id = \$1/);
+  assert.match(sql.queries[0].sql, /e\.embedding_model = \$2/);
+  assert.match(sql.queries[0].sql, /e\.language = \$3/);
   assert.deepEqual(sql.queries[0].values, ["merchant-a", "fake-embedding-v1", "ar"]);
 });
 
-test("vector retrieval rejects cross-tenant, invalid provenance, and stale/corrupt vectors", async () => {
+test("vector retrieval rejects cross-tenant, wrong model/dimensions/language, invalid provenance, and stale/corrupt state", async () => {
   const cases = [
     { row: vectorRow({ merchant_id: "merchant-b" }), code: "KNOWLEDGE_TENANT_VIOLATION" },
     { row: vectorRow({ source_provenance: "openai_generated" }), code: "KNOWLEDGE_PROVENANCE_INVALID" },
+    { row: vectorRow({ embedding_model: "fake-embedding-v0" }), code: "KNOWLEDGE_PROVENANCE_INVALID" },
     { row: vectorRow({ dimensions: 3 }), code: "KNOWLEDGE_PROVENANCE_INVALID" },
+    { row: vectorRow({ source_language: "en" }), code: "KNOWLEDGE_PROVENANCE_INVALID" },
     {
       row: vectorRow({
         embedding_updated_at: "2026-08-07T16:00:00.000Z",
@@ -194,6 +250,8 @@ test("vector retrieval rejects cross-tenant, invalid provenance, and stale/corru
       code: "KNOWLEDGE_VECTOR_STALE",
     },
     { row: vectorRow({ content_hash: "not-a-hash" }), code: "KNOWLEDGE_PROVENANCE_INVALID" },
+    { row: vectorRow({ embedding: [1, Number.NaN] }), code: "KNOWLEDGE_VECTOR_INVALID" },
+    { row: vectorRow({ embedding: [0, 0] }), code: "KNOWLEDGE_VECTOR_INVALID" },
   ];
 
   for (const item of cases) {
@@ -211,6 +269,57 @@ test("vector retrieval rejects cross-tenant, invalid provenance, and stale/corru
         error instanceof KnowledgeRuntimeGateError && error.code === item.code,
     );
   }
+});
+
+test("malformed provider query vectors fail closed", async () => {
+  for (const embedding of [[1], [1, Number.NaN], [Number.POSITIVE_INFINITY, 0]]) {
+    const runtime = new PostgresKnowledgeRuntime({
+      sqlClient: new FakeSqlClient(async () => []),
+      embeddingProvider: {
+        ...fakeEmbedding,
+        async embed() { return embedding; },
+      },
+    });
+    await assert.rejects(
+      () => runtime.retrieveSemanticMatch({
+        merchantId: "merchant-a",
+        query: "استبدال",
+        language: "ar",
+      }),
+      (error) =>
+        error instanceof KnowledgeRuntimeGateError &&
+        error.code === "KNOWLEDGE_VECTOR_INVALID",
+    );
+  }
+});
+
+test("model migration cannot mix incompatible vector spaces", async () => {
+  const sql = new FakeSqlClient(async () => [
+    vectorRow({ knowledge_id: "saved-current" }),
+    vectorRow({
+      knowledge_id: "saved-old",
+      embedding_model: "fake-embedding-v0",
+      dimensions: 3,
+      embedding: [1, 0, 0],
+      content_hash: "b".repeat(64),
+    }),
+  ]);
+  const runtime = new PostgresKnowledgeRuntime({
+    sqlClient: sql,
+    embeddingProvider: fakeEmbedding,
+  });
+
+  await assert.rejects(
+    () => runtime.retrieveSemanticMatch({
+      merchantId: "merchant-a",
+      query: "استبدال",
+      language: "ar",
+    }),
+    (error) =>
+      error instanceof KnowledgeRuntimeGateError &&
+      error.code === "KNOWLEDGE_PROVENANCE_INVALID",
+  );
+  assert.deepEqual(sql.queries[0].values, ["merchant-a", "fake-embedding-v1", "ar"]);
 });
 
 test("ambiguous vector matches fail closed instead of choosing a guess", async () => {
@@ -249,6 +358,51 @@ test("missing production vector provider fails closed without lexical or legacy 
       error instanceof KnowledgeRuntimeGateError &&
       error.code === "KNOWLEDGE_VECTOR_UNAVAILABLE",
   );
+});
+
+test("production decision path propagates vector failure instead of silently using lexical fallback", async () => {
+  let lexicalCalls = 0;
+  const runtime = {
+    authorityId: "postgresql_knowledge_authority_v1",
+    legacyFallbackEnabled: false,
+    async findApprovedSavedAnswer() { return null; },
+    async retrieveSemanticMatch() {
+      throw new KnowledgeRuntimeGateError(
+        "KNOWLEDGE_VECTOR_UNAVAILABLE",
+        "knowledge vector provider is unavailable",
+      );
+    },
+    async listApprovedSemanticDocuments() { lexicalCalls += 1; return []; },
+    async createTrainingRequest() { throw new Error("training should not run"); },
+    async recordGeneratedCandidate() { throw new Error("AI should not run"); },
+    async appendAudit() {},
+  };
+  const engine = new KnowledgeDecisionEngine({
+    runtime,
+    factResolver: { async resolve() { return null; } },
+    policyResolver: {
+      async resolve(merchantId) {
+        return {
+          merchantId,
+          policyVersion: 1,
+          allowKnowledgeUse: true,
+          policy: { allowGeneratedAutoReply: false },
+        };
+      },
+    },
+  });
+
+  await assert.rejects(
+    () => engine.decide({
+      merchantId: "merchant-a",
+      customerText: "general unknown question",
+      languageHint: "en",
+    }),
+    (error) =>
+      error instanceof KnowledgeRuntimeGateError &&
+      error.code === "KNOWLEDGE_VECTOR_UNAVAILABLE",
+  );
+  assert.equal(lexicalCalls, 0);
 });
 
 test("explicit PostgreSQL runtime prevents legacy repository fallback and uses no live AI transport", async () => {
