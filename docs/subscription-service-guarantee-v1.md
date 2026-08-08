@@ -1,6 +1,6 @@
 # Fawri Subscription Service Guarantee v1
 
-Status: structured server-side authority implemented; **not production-activated**  
+Status: structured server-side domain authority implemented; **not production-activated**  
 Scope: Fawri monthly SaaS subscriptions only  
 Non-scope: merchant product warranty
 
@@ -12,156 +12,126 @@ Non-scope: merchant product warranty
 
 Fawri sells a monthly SaaS subscription. This policy is a **Subscription Service Guarantee**, not a product warranty.
 
-The v1 policy contract is:
+The v1 structured contract is:
 
-- while a paid subscription cycle is active, Fawri provides the features included in that plan;
-- a material outage attributable to Fawri that lasts **more than 24 continuous hours** may qualify the affected subscription for an extension equal to the qualifying outage duration;
-- a material Fawri outage lasting **more than 72 continuous hours**, or an attributable failure to activate the service at all, may qualify the affected cycle for **manual refund review**;
-- Fawri does not guarantee sales growth, profit, AI outcomes, a specific message volume, or third-party service outcomes;
+- during a paid active subscription cycle, Fawri provides the features included in the plan;
+- a material outage attributable to Fawri lasting **more than 24 continuous hours** can qualify for an extension equal to the qualifying outage duration;
+- a material Fawri outage lasting **more than 72 continuous hours**, or an attributable failure to activate the service at all, can qualify for **manual refund review**;
+- Fawri does not guarantee sales growth, profit, AI outcomes, a specific message count, or third-party outcomes;
 - Meta/OpenAI/AWS or other external-provider failures are not automatically attributed to Fawri;
-- no money movement or refund completion may be represented without authoritative billing/payment state.
+- no refund completion or money movement can be represented without authoritative billing/payment state.
 
-The thresholds are implemented as strict `>` comparisons, not `>=`.
+The thresholds are strict `>` comparisons, not `>=`.
 
 ### 2. Current authority audit
 
 The repository currently has two subscription-lifecycle representations:
 
-1. the existing file-backed Auth runtime stores subscription records in `merchants.json`, including plan, configured price, reply limits, cycle start/expiry, status, and emergency/add-on reply state;
-2. the PostgreSQL schema has a tenant-bound `subscriptions` table with plan, status, configured `price_iqd`, cycle timestamps, versioning, reply-batch state, and a reply-usage ledger.
+1. the existing file-backed Auth runtime stores subscription plan/cycle state in `merchants.json`, including plan, configured price, reply limits, start/expiry, status, and emergency/add-on reply state;
+2. PostgreSQL has the tenant-bound `subscriptions` authority, including plan, lifecycle status, configured `price_iqd`, cycle timestamps, versioning, reply batches, and a reply-usage ledger.
 
-These are useful subscription/entitlement lifecycle authorities, but they are **not payment transaction authority**. The repository does not currently expose an authoritative Fawri SaaS payment transaction, charge, settlement, refund, or refund-status ledger. A positive `price_iqd` or an admin-activated plan is therefore not treated as proof that money was paid.
+These are subscription/entitlement lifecycle authorities. They are **not Fawri SaaS payment transaction authority**. The repository does not currently expose an authoritative SaaS charge, settlement, successful-payment, refund, or refund-status ledger. A positive configured price or an administratively active plan is therefore not proof that money was paid.
 
-The existing `reply_ledger` is a reply quota ledger; it is not a financial ledger.
+The existing `reply_ledger` is a reply-quota ledger, not a financial ledger.
 
-The current observability runtime provides health/readiness/process metrics. It does not provide an authoritative service-incident/uptime ledger suitable for compensation decisions.
+The current observability runtime exposes health/readiness/process metrics. It does not provide an authoritative incident/uptime ledger suitable for compensation attribution.
 
-Before this lane, there was no subscription service credit/refund eligibility ledger.
+The repository already has a general server-side `audit_events` authority that can record the resulting assessment/evidence without adding guarantee-specific database tables.
 
-### 3. Added PostgreSQL authority
+### 3. Minimum safe implementation
 
-This lane adds four dedicated tables. None reuses the proposed merchant/product warranty model.
+Because authoritative SaaS billing and compensation-grade incident records are missing, this lane implements the minimum fail-closed domain authority rather than pretending those records exist.
 
-#### `subscription_guarantee_policies`
+The implementation provides:
 
-Platform-global immutable policy-version identity:
+- a versioned v1 policy constructor with monthly scope, 24h/72h thresholds, Fawri-only automatic attribution, and an explicit effective date supplied by the server owner;
+- a historical policy authority that rejects overlapping/ambiguous policy versions;
+- a tenant-scoped PostgreSQL subscription-lifecycle reader using the existing `subscriptions` table;
+- an immutable subscription-cycle evidence reference derived from merchant id, subscription id, subscription version, plan, and cycle timestamps;
+- a server-only incident authority contract with provenance `server_ops | automated_monitor`;
+- a disabled incident authority that fails closed until a real authoritative incident source exists;
+- a pure eligibility engine that accepts only authenticated merchant/subscription identity and reads outage/billing evidence from server authorities;
+- audit persistence into the existing `audit_events` table for the assessment and each incident evidence reference;
+- no route, shared app wiring, payment-provider call, refund call, or automatic subscription extension.
 
-- `policy_ref`
-- positive `version`
-- `scope = monthly_subscription`
-- `qualifying_outage_seconds` (v1 contract: 24 hours)
-- `refund_review_outage_seconds` (v1 contract: 72 hours)
-- `activation_failure_refund_review`
-- `auto_qualifying_attribution = fawri`
-- `effective_at`
-- optional `superseded_at`
+### 4. Why no new guarantee tables were committed
 
-No production policy row is seeded by this lane because the final legal/Owner effective date has not been supplied.
+A guarantee-specific PostgreSQL schema was evaluated first. The repository's current migration generator is intentionally frozen around the committed cross-lane `0002_cross_lane_stage` and `0003_cross_lane_cleanup` chain and requires those historical migrations to reproduce byte-for-byte.
 
-#### `subscription_guarantee_incidents`
+Adding a new schema file changed the regenerated historical `0002` artifact, so both the dedicated validation workflow and the repository's existing PostgreSQL migration-candidate workflow failed the reproducibility guard before any Production DB action.
 
-Tenant-bound operational evidence:
+Rewriting historical `0002/0003` migrations or changing the shared migration generator to invent an `0004` contract would be broader cross-lane migration infrastructure work. This lane therefore removed the new schema and kept the existing migration chain unchanged. A future coordinator-owned migration extension can persist dedicated policy/incident/assessment tables after the shared migration contract is deliberately extended.
 
-- merchant/customer tenant id;
-- `material_outage | activation_failure`;
-- attribution `fawri | third_party | customer | unknown`;
-- start/end timestamps;
-- authority source restricted to `server_ops | automated_monitor`;
-- authority reference;
-- positive version;
-- bounded metadata.
+### 5. Eligibility semantics
 
-Browser/client outage claims are not an authority source.
+The engine applies these rules:
 
-#### `subscription_guarantee_assessments`
-
-Append-only eligibility/audit record tied to:
-
-- merchant tenant;
-- the subscription lifecycle record;
-- immutable policy reference + policy version;
-- billing state `paid | unpaid | unknown` and optional billing reference;
-- eligible extension seconds;
-- qualifying/max continuous outage seconds;
-- refund-review flag;
-- manual-review flag;
-- result/reason code and evaluation timestamp.
-
-The result vocabulary intentionally contains no `refunded` or `paid_out` state.
-
-#### `subscription_guarantee_assessment_incidents`
-
-Tenant-safe evidence links from an assessment to the exact incident records used/excluded, including the included duration. Composite foreign keys prevent cross-tenant incident or subscription evidence from being attached to an assessment.
-
-### 4. Eligibility semantics
-
-The eligibility engine reads only the injected server authority interface: subscription, effective historical policy, and incident evidence.
-
-It does not accept incidents, attribution, outage duration, billing state, or refund state from a browser request.
-
-Rules:
-
-1. trial/unpaid subscriptions receive no benefit;
-2. suspended/expired/replies-exhausted subscriptions receive no active-cycle benefit;
+1. trial or authoritative `unpaid` subscription => no benefit;
+2. expired, replies-exhausted, or suspended subscription => no active-cycle benefit;
 3. only `fawri` attribution can automatically qualify;
 4. `third_party` and `customer` incidents are excluded from automatic Fawri credit;
-5. `unknown`, open/unfinalized incidents, or contradictory overlapping attribution => `manual_review_required` and fail closed;
-6. overlapping/adjacent Fawri incident intervals are unioned before duration calculation, so overlap is not double-counted;
-7. a merged continuous Fawri interval must exceed 24 hours to count toward extension eligibility;
-8. a merged continuous Fawri interval must exceed 72 hours to qualify for manual refund review;
-9. an attributed Fawri `activation_failure` on `pending_activation` may qualify for manual refund review;
-10. the historical policy is selected using the subscription-cycle start, and its `policy_ref + version` is preserved in the assessment;
-11. where billing is `unknown`, otherwise qualifying cases stop at `manual_review_required / BILLING_AUTHORITY_UNAVAILABLE`;
-12. this lane never calls a payment provider and never reports that a refund happened.
+5. `unknown`, open/unfinalized incidents, contradictory overlapping attribution, duplicate incident identity, invalid provenance, or cross-tenant evidence fail closed;
+6. overlapping/adjacent Fawri intervals are unioned before calculation, so downtime is not double-counted;
+7. a continuous Fawri interval must exceed 24 hours to contribute to extension eligibility;
+8. a continuous Fawri interval must exceed 72 hours for manual refund-review eligibility;
+9. an attributed Fawri activation failure on `pending_activation` can qualify for manual refund review;
+10. policy reference/version and subscription lifecycle version/reference are preserved in the assessment/audit evidence;
+11. if billing is `unknown`, an otherwise qualifying claim stops at `manual_review_required / BILLING_AUTHORITY_UNAVAILABLE`;
+12. the result vocabulary contains no `refunded` or `paid_out` state.
 
-Extension duration is preserved as exact seconds. Conversion into whole subscription days (for example floor/ceiling/calendar-day semantics) is deliberately not invented and remains an Owner/legal/billing integration decision before automatic application.
+Eligible extension duration is retained as exact seconds. Conversion to whole subscription days, including any rounding/calendar rule, is deliberately not invented.
 
-### 5. Knowledge separation
+### 6. Knowledge separation
 
-Knowledge now has an explicit domain classifier that separates:
+Knowledge has an explicit authority-domain classifier separating:
 
 - `fawri_subscription_service_guarantee`
 - `merchant_product_warranty`
 
-Examples such as “ضمان فوري”, “ضمان الاشتراك”, “تعويض العطل”, “استرجاع الاشتراك”, `subscription service guarantee`, and `outage compensation` belong to the Fawri SaaS guarantee domain.
+Examples such as “ضمان فوري”, “ضمان الاشتراك”, “تعويض العطل”, “استرجاع الاشتراك”, `subscription service guarantee`, and `outage compensation` are treated as the Fawri SaaS guarantee domain.
 
-Generic product warranty/kafala questions remain in the merchant product-warranty domain and remain fail closed because no product-warranty authority has been approved or activated.
+Generic product warranty/kafala questions remain in the merchant product-warranty domain and remain fail closed because no structured merchant product-warranty authority is approved or activated.
 
-The merchant operational fact resolver is intentionally not wired to answer Fawri subscription-guarantee questions. Doing so would mix the merchant's customer-facing product context with Fawri's merchant-facing SaaS contract.
+The authoritative Knowledge gate also marks service-guarantee wording that does not contain the generic word “warranty/ضمان” as authoritative. This prevents those questions from falling through to merchant Saved Answers, embeddings, legacy knowledge, or generated AI.
 
-A future coordinator-owned Knowledge composition can route the Fawri guarantee classification to a dedicated support/account context that has an authenticated subscription id. No shared route/app wiring is performed in this lane.
+The merchant operational fact resolver is not wired to answer Fawri subscription-guarantee questions. That avoids mixing a merchant's customer-facing product policies with Fawri's merchant-facing SaaS contract.
 
-### 6. Payment integration blocker
+### 7. Payment and incident blockers
 
-Automatic financial refund remains blocked until the repository has an authoritative Fawri billing/payment lifecycle that can prove at minimum:
+Automatic financial refund remains blocked until an authoritative Fawri billing lifecycle can prove at minimum:
 
 - affected subscription billing cycle;
-- successful payment/settlement status;
+- successful payment/settlement state;
 - immutable payment/charge reference;
 - amount/currency actually collected;
 - prior refund/chargeback state;
-- idempotent refund operation + provider result;
+- idempotent refund request/provider result;
 - reconciliation/audit state.
 
-Until then, the strongest financial outcome is `eligible_for_manual_refund_review` when tests use a trusted `paid` authority, or `manual_review_required` when the production PostgreSQL adapter sees the current billing state as unknown.
+Automatic extension/refund eligibility also requires an authoritative service-incident source that can establish incident boundaries, provenance, and attribution. Until that source exists, the production incident authority is deliberately disabled/fail-closed.
 
-### 7. Coordinator handoff
+### 8. Coordinator handoff
 
-No shared `app.ts`, route mount, or existing Auth subscription route is changed here.
+No shared `app.ts`, route mount, or existing Auth subscription route is changed in this lane.
 
-If this authority is exposed through an API or composed into the production Knowledge decision engine, that shared wiring must be coordinator-owned. It must preserve authenticated tenant/subscription context and must not accept client-supplied incident/billing authority.
+A coordinator-owned follow-up is required for either:
 
-### 8. Remaining Owner/legal decisions
+- authenticated API/production Knowledge composition using merchant/subscription context; or
+- extension of the shared PostgreSQL migration contract if dedicated guarantee policy/incident/assessment tables are desired.
+
+Any future wiring must not accept client/browser/localStorage outage, attribution, billing, or refund authority.
+
+### 9. Remaining Owner/legal decisions
 
 Before production activation, confirm:
 
-- final policy legal wording;
-- policy effective date for v1;
-- whether extension is exact elapsed time or rounded to whole days, and the rounding/calendar rule;
-- what evidence is sufficient to set incident attribution to `fawri` rather than `unknown`;
-- whether activation failure requires a minimum elapsed period or specific remediation attempts;
-- refund calculation semantics for an affected cycle after authoritative billing exists;
-- customer notice/claims/review process and any jurisdiction-specific consumer-law wording.
+- final legal wording;
+- v1 effective date;
+- exact elapsed-time versus whole-day extension semantics and rounding/calendar rule;
+- evidence required to establish attribution `fawri` rather than `unknown`;
+- activation-failure qualification evidence/minimum elapsed period, if any;
+- refund calculation semantics after authoritative billing exists;
+- customer notice/claim/review process and jurisdiction-specific consumer-law wording.
 
 ---
 
@@ -171,89 +141,105 @@ Before production activation, confirm:
 
 فوري يبيع اشتراك SaaS شهري. هذه السياسة هي **ضمان خدمة الاشتراك** وليست ضمان منتجات التاجر.
 
-عقد v1 المنظم هو:
+العقد المنظم في v1 هو:
 
 - خلال دورة اشتراك مدفوعة وفعالة، يوفر فوري الميزات المشمولة بالخطة؛
-- العطل الجوهري المنسوب إلى أنظمة فوري والذي يستمر **أكثر من 24 ساعة متواصلة** قد يؤهل دورة الاشتراك المتأثرة لتمديد يعادل مدة التعطل المؤهلة؛
+- العطل الجوهري المنسوب إلى فوري والذي يستمر **أكثر من 24 ساعة متواصلة** قد يؤهل الدورة لتمديد يعادل مدة التعطل المؤهلة؛
 - عطل فوري الجوهري الذي يستمر **أكثر من 72 ساعة متواصلة**، أو تعذر تفعيل الخدمة أصلًا بسبب فوري، قد يؤهل الدورة إلى **مراجعة استرداد يدوية**؛
-- لا يوجد ضمان لزيادة المبيعات أو الأرباح أو نتائج AI أو حجم رسائل محدد أو نتائج خدمات الطرف الثالث؛
+- لا يوجد ضمان لزيادة المبيعات أو الأرباح أو نتائج AI أو عدد رسائل محدد أو نتائج خدمات الطرف الثالث؛
 - أعطال Meta/OpenAI/AWS أو أي مزود خارجي لا تُنسب تلقائيًا إلى فوري؛
 - لا يجوز تحريك أموال أو الادعاء بإتمام refund بدون billing/payment authority موثوقة.
 
-المقارنة في الكود هي `>` بشكل صريح وليست `>=`.
+الحدود في الكود هي `>` بشكل صريح وليست `>=`.
 
 ### 2. نتيجة الـAudit الحالية
 
-المستودع يملك subscription lifecycle فعليًا: توجد حالة خطة ودورة اشتراك وحدود ورسائل وتواريخ بداية/انتهاء في runtime القديم، وتوجد PostgreSQL `subscriptions` authority منظمة وtenant-safe مع versioning وreply ledger.
+المستودع يملك subscription lifecycle حقيقيًا: توجد حالة خطة ودورة اشتراك وحدود ورسائل وتواريخ بداية/انتهاء في runtime القديم، وتوجد PostgreSQL `subscriptions` authority منظمة وtenant-safe مع versioning وreply batches وreply ledger.
 
-لكن لا توجد حاليًا authority مستقلة تثبت معاملات دفع اشتراك فوري أو settlement أو refund. قيمة `price_iqd` أو تفعيل الخطة إداريًا لا تعتبر إثباتًا للدفع.
+لكن لا توجد حاليًا authority مستقلة تثبت معاملات دفع اشتراك فوري أو settlement أو successful payment أو refund. قيمة `price_iqd` أو تفعيل الخطة إداريًا لا تعتبر إثباتًا للدفع.
 
 `reply_ledger` الحالي خاص برصيد الردود وليس دفتر أموال.
 
-Observability الحالية health/readiness/process metrics فقط، وليست service incident/uptime authority صالحة للتعويضات.
+Observability الحالية health/readiness/process metrics فقط، وليست incident/uptime authority صالحة لاتخاذ قرار تعويض.
 
-### 3. السلطة المنظمة المضافة
+يوجد `audit_events` server-side أصلًا، ولذلك استُخدم لتسجيل assessment/evidence بدل اختراع جدول مالي أو ادعاء وجود billing authority.
 
-أضيفت جداول مستقلة خاصة بضمان خدمة الاشتراك:
+### 3. أقل تنفيذ آمن
 
-- `subscription_guarantee_policies`: نسخة السياسة، النطاق الشهري، thresholds، attribution المسموح، وتاريخ السريان/الاستبدال؛
-- `subscription_guarantee_incidents`: سجل عطل server-side مرتبط بالـmerchant مع attribution ومصدر authority وversion؛
-- `subscription_guarantee_assessments`: سجل eligibility/audit مرتبط بالاشتراك ونسخة السياسة وحالة billing والنتيجة؛
-- `subscription_guarantee_assessment_incidents`: روابط evidence tenant-safe تمنع خلط حوادث عميل مع عميل آخر.
+بسبب عدم وجود billing authority وسجل أعطال authoritative كافٍ، التنفيذ النهائي في هذه الـlane هو domain authority fail-closed ويشمل:
 
-لم تتم إعادة استخدام أي warranty tables خاصة بمنتجات التاجر.
+- policy v1 منظمة وقابلة للـversioning مع effective date يحددها Owner/server؛
+- historical policy authority تمنع النسخ المتداخلة/الملتبسة؛
+- قراءة tenant-safe من PostgreSQL `subscriptions` الحالية؛
+- immutable subscription-cycle evidence reference مبني على subscription version والدورة؛
+- incident authority contract يقبل فقط `server_ops | automated_monitor`؛
+- disabled incident authority في production إلى أن يوجد مصدر أعطال موثوق؛
+- eligibility engine لا يأخذ outage/billing authority من العميل؛
+- audit للنتيجة وincident evidence داخل `audit_events` الحالية؛
+- لا route جديد، لا app wiring، لا payment/refund call، ولا تمديد اشتراك آلي.
 
-لا يتم seed لسياسة production لأن تاريخ السريان القانوني النهائي لم يُعطَ بعد.
+### 4. لماذا لم تُضف جداول Guarantee جديدة
 
-### 4. قواعد الاستحقاق
+تمت تجربة schema مخصصة أولًا، لكن migration generator الحالي يثبت `0002_cross_lane_stage` و`0003_cross_lane_cleanup` كـhistorical chain يجب أن يتولد byte-for-byte بنفس الشكل.
 
-- أقل من أو يساوي 24 ساعة: لا extension تلقائي؛
+إضافة schema جديدة غيّرت ناتج `0002` التاريخي، ولذلك فشلت بوابة reproducibility في الـworkflow المخصص وكذلك `PostgreSQL migration candidate` الموجود أصلًا قبل الوصول إلى أي Production DB.
+
+تغيير historical migrations أو تعديل shared migration generator لاختراع عقد `0004` سيكون توسعًا خارج أقل تغيير آمن لهذه الـlane. لذلك أزيلت schema الجديدة وبقيت migration chain الحالية دون تغيير. إذا أُريد persistence مخصص لاحقًا، يحتاج ذلك migration/coordinator follow-up واضح.
+
+### 5. قواعد الاستحقاق
+
+- أقل من أو يساوي 24 ساعة: لا extension eligibility؛
 - أكثر من 24 ساعة متواصلة ومنسوبة إلى Fawri: extension eligibility؛
-- أكثر من 72 ساعة متواصلة ومنسوبة إلى Fawri: refund-review eligibility إضافةً إلى extension عندما تكون الدورة فعالة؛
+- 72 ساعة بالضبط لا تكفي لـrefund review؛ أكثر من 72 ساعة: manual refund-review eligibility؛
 - activation failure من Fawri على اشتراك pending activation: manual refund-review eligibility؛
 - third-party/customer: لا automatic Fawri credit؛
-- unknown/open/conflicting attribution: manual review وفشل مغلق؛
-- الحوادث المتداخلة تُدمج قبل الحساب حتى لا تتكرر مدة التعويض؛
-- unpaid/trial/inactive لا تستفيد تلقائيًا؛
-- policy version التاريخية تُحفظ مع assessment؛
-- billing `unknown` يمنع النتيجة المالية ويوقفها عند manual review؛
-- لا يوجد أي `refunded` result ولا استدعاء payment provider في هذا التنفيذ.
+- unknown/open/conflicting/duplicate/invalid provenance/cross-tenant evidence: fail closed/manual review أو rejection؛
+- الحوادث المتداخلة/المتجاورة تُدمج قبل الحساب حتى لا تتكرر مدة التعويض؛
+- unpaid/trial/inactive لا تستفيد؛
+- policy version وsubscription lifecycle version/reference التاريخية تُحفظ في assessment/audit؛
+- billing `unknown` يمنع الاستحقاق المالي ويوقف الحالة عند `manual_review_required`؛
+- لا توجد نتيجة `refunded` أو `paid_out` في التنفيذ.
 
 مدة التمديد محفوظة كثوانٍ دقيقة. تحويلها إلى أيام كاملة أو قاعدة rounding يحتاج قرار Owner/legal/billing قبل التطبيق الآلي.
 
-### 5. فصل Knowledge
+### 6. فصل Knowledge
 
-تم تعريف تصنيف صريح بين:
+تم فصل:
 
 - ضمان خدمة اشتراك فوري؛
 - ضمان منتجات التاجر.
 
-أسئلة مثل “ضمان فوري/ضمان الاشتراك/تعويض العطل/استرجاع الاشتراك” لا يجوز أن تُفسر كـproduct warranty للتاجر.
+أسئلة مثل “ضمان فوري/ضمان الاشتراك/تعويض العطل/استرجاع الاشتراك” تدخل structured Fawri service-guarantee domain ولا يجوز أن تسقط إلى Saved Answers أو embeddings أو generated AI الخاصة بالتاجر.
 
-وفي المقابل، سؤال مثل “شنو ضمان هذا المنتج؟” يبقى Product Warranty ويفشل مغلقًا كما كان، لأن هذه الـlane لم تعتمد أو تنفذ structured merchant product warranty.
+سؤال مثل “شنو ضمان هذا المنتج؟” يبقى Product Warranty ويفشل مغلقًا كما كان، لأن هذه الـlane لم تعتمد structured merchant product warranty.
 
-Merchant bot لا يتم ربطه مباشرة بسلطة ضمان اشتراك فوري في هذه الـlane حتى لا يخلط عقد SaaS الخاص بالتاجر مع أسئلة عملاء التاجر عن المنتجات.
+Merchant operational fact resolver لا يجيب ضمان اشتراك فوري، حتى لا يخلط عقد SaaS مع سياسات منتجات merchant.
 
-### 6. Blocker الدفع
+### 7. Blockers الحالية
 
-أي refund فعلي يحتاج أولًا billing/payment authority موثوقة تثبت الدفع، المبلغ/العملة، payment reference، حالة refund/chargeback السابقة، idempotency، وreconciliation.
+أي refund فعلي يحتاج billing/payment authority موثوقة تثبت payment cycle/reference/amount/currency/refund state/idempotency/reconciliation.
 
-حتى ذلك الوقت لا توجد نتيجة `refunded`. أقصى نتيجة مالية هي `eligible_for_manual_refund_review` عند وجود paid authority موثوقة، أو `manual_review_required` مع adapter الحالي لأن حالة دفع SaaS في PostgreSQL الحالية غير مثبتة.
+وأي automatic eligibility في production يحتاج incident authority موثوقة تثبت زمن العطل وprovenance وattribution. إلى أن يوجد ذلك، incident authority production تكون disabled/fail-closed.
 
-### 7. Handoff للـCoordinator
+### 8. Handoff للـCoordinator
 
 لم يتم تعديل shared routes أو `app.ts` أو Auth subscription routes.
 
-أي API exposure أو production Knowledge wiring لاحق يجب أن يكون coordinator-owned وأن يستمد merchant/subscription identity من authenticated server context، لا من browser/localStorage أو outage/billing fields يرسلها العميل.
+يلزم coordinator-owned follow-up إذا أُريد:
 
-### 8. قرارات Owner/Legal المتبقية
+- API/production Knowledge wiring مع authenticated merchant/subscription context؛ أو
+- توسيع shared PostgreSQL migration contract لإضافة جداول guarantee مخصصة.
+
+ولا يجوز مستقبلًا أخذ outage/attribution/billing/refund authority من browser/localStorage أو body يرسله العميل.
+
+### 9. قرارات Owner/Legal المتبقية
 
 قبل Production activation يلزم حسم:
 
 - الصياغة القانونية النهائية؛
 - effective date لسياسة v1؛
-- قاعدة تحويل مدة التعطل إلى أيام اشتراك كاملة/rounding؛
-- evidence المطلوب لاعتماد attribution = `fawri`؛
-- تفاصيل activation failure؛
+- قاعدة exact elapsed time مقابل whole days والـrounding/calendar rule؛
+- evidence المطلوب لاعتماد attribution = `fawri` بدل `unknown`؛
+- شروط/evidence تعذر التفعيل؛
 - طريقة حساب refund بعد وجود billing authority؛
-- آلية تقديم الطلب/المراجعة والإشعارات والمتطلبات القانونية المحلية.
+- آلية claim/review/notice والمتطلبات القانونية المحلية.
