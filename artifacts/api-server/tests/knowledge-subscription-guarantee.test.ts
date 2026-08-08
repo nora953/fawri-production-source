@@ -7,6 +7,7 @@ import {
   isMerchantProductWarrantyQuestion,
 } from "../src/services/knowledge/subscriptionGuaranteeClassification.js";
 import { PostgresOperationalFactResolver } from "../src/services/knowledge/postgresOperationalFactResolver.js";
+import { isAuthoritativeFactQuestion } from "../src/services/knowledge/postgresKnowledgeRuntime.js";
 
 class RejectingSql {
   queries = [];
@@ -16,7 +17,7 @@ class RejectingSql {
   }
 }
 
-test("Fawri SaaS guarantee wording is classified separately from merchant product warranty", () => {
+test("Fawri SaaS guarantee wording is classified separately and stays authoritative", () => {
   for (const question of [
     "شنو ضمان فوري؟",
     "شلون ضمان الاشتراك؟",
@@ -32,6 +33,7 @@ test("Fawri SaaS guarantee wording is classified separately from merchant produc
     );
     assert.equal(isFawriSubscriptionServiceGuaranteeQuestion(question), true);
     assert.equal(isMerchantProductWarrantyQuestion(question), false);
+    assert.equal(isAuthoritativeFactQuestion(question), true, question);
   }
 });
 
@@ -48,6 +50,7 @@ test("merchant product warranty remains its own fail-closed authoritative domain
     );
     assert.equal(isMerchantProductWarrantyQuestion(question), true);
     assert.equal(isFawriSubscriptionServiceGuaranteeQuestion(question), false);
+    assert.equal(isAuthoritativeFactQuestion(question), true, question);
   }
 });
 
@@ -74,16 +77,18 @@ test("merchant operational fact resolver does not answer either warranty authori
   assert.equal(sql.queries.length, 0);
 });
 
-test("service-guarantee terms without generic warranty wording cannot become merchant facts", async () => {
+test("service-guarantee terms without generic warranty wording cannot fall through", async () => {
   const sql = new RejectingSql();
   const resolver = new PostgresOperationalFactResolver(sql);
+  const question = "أريد تعويض العطل عن اشتراكي";
   assert.equal(
     await resolver.resolve({
       merchantId: "merchant-a",
-      customerText: "أريد تعويض العطل عن اشتراكي",
+      customerText: question,
       language: "ar",
     }),
     null,
   );
+  assert.equal(isAuthoritativeFactQuestion(question), true);
   assert.equal(sql.queries.length, 0);
 });
