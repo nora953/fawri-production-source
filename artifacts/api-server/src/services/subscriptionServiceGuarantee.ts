@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
 
+const HOUR_SECONDS = 60 * 60;
+
 export type SubscriptionGuaranteeAttribution =
   | "fawri"
   | "third_party"
@@ -47,6 +49,8 @@ export type SubscriptionGuaranteePolicySnapshot = {
 export type SubscriptionGuaranteeSubscriptionSnapshot = {
   merchantId: string;
   subscriptionId: string;
+  subscriptionVersion: number;
+  entitlementReference: string;
   planName: "silver" | "gold" | "diamond" | "trial";
   lifecycleState: SubscriptionGuaranteeLifecycleState;
   startsAt: string;
@@ -69,6 +73,12 @@ export type SubscriptionGuaranteeIncidentSnapshot = {
 
 export type SubscriptionGuaranteeAssessmentEvidence = {
   incidentId: string;
+  incidentVersion: number;
+  attribution: SubscriptionGuaranteeAttribution;
+  authoritySource: "server_ops" | "automated_monitor";
+  authorityReference: string | null;
+  startsAt: string;
+  endsAt: string | null;
   role: SubscriptionGuaranteeIncidentEvidenceRole;
   includedSeconds: number;
 };
@@ -77,6 +87,8 @@ export type SubscriptionGuaranteeAssessment = {
   assessmentId: string;
   merchantId: string;
   subscriptionId: string;
+  subscriptionVersion: number;
+  entitlementReference: string;
   policyRef: string;
   policyVersion: number;
   result: SubscriptionGuaranteeResultStatus;
@@ -98,19 +110,52 @@ export type SubscriptionGuaranteeEvaluationRequest = {
   evaluatedAt?: Date;
 };
 
-export interface SubscriptionServiceGuaranteeAuthority {
+export interface SubscriptionGuaranteeSubscriptionAuthority {
   loadSubscription(
     merchantId: string,
     subscriptionId: string,
   ): Promise<SubscriptionGuaranteeSubscriptionSnapshot | null>;
+}
+
+export interface SubscriptionGuaranteePolicyAuthority {
   loadPolicyForDate(
     effectiveAt: Date,
   ): Promise<SubscriptionGuaranteePolicySnapshot | null>;
+}
+
+export interface SubscriptionGuaranteeIncidentAuthority {
   listIncidents(
     merchantId: string,
     startsAt: Date,
     expiresAt: Date,
   ): Promise<SubscriptionGuaranteeIncidentSnapshot[]>;
+}
+
+export interface SubscriptionServiceGuaranteeAuthority
+  extends SubscriptionGuaranteeSubscriptionAuthority,
+    SubscriptionGuaranteePolicyAuthority,
+    SubscriptionGuaranteeIncidentAuthority {}
+
+export class ComposedSubscriptionServiceGuaranteeAuthority
+  implements SubscriptionServiceGuaranteeAuthority
+{
+  constructor(
+    private readonly subscriptions: SubscriptionGuaranteeSubscriptionAuthority,
+    private readonly policies: SubscriptionGuaranteePolicyAuthority,
+    private readonly incidents: SubscriptionGuaranteeIncidentAuthority,
+  ) {}
+
+  loadSubscription(merchantId: string, subscriptionId: string) {
+    return this.subscriptions.loadSubscription(merchantId, subscriptionId);
+  }
+
+  loadPolicyForDate(effectiveAt: Date) {
+    return this.policies.loadPolicyForDate(effectiveAt);
+  }
+
+  listIncidents(merchantId: string, startsAt: Date, expiresAt: Date) {
+    return this.incidents.listIncidents(merchantId, startsAt, expiresAt);
+  }
 }
 
 export class SubscriptionServiceGuaranteeAuthorityError extends Error {
@@ -129,6 +174,21 @@ type Interval = {
   incidentIds: string[];
 };
 
+type SqlResult<Row> = { rows: Row[] };
+
+export interface SubscriptionGuaranteeSqlExecutor {
+  query<Row extends Record<string, unknown> = Record<string, unknown>>(
+    sql: string,
+    values?: readonly unknown[],
+  ): Promise<SqlResult<Row>>;
+}
+
+export interface SubscriptionGuaranteeSqlClient extends SubscriptionGuaranteeSqlExecutor {
+  transaction<T>(
+    operation: (executor: SubscriptionGuaranteeSqlExecutor) => Promise<T>,
+  ): Promise<T>;
+}
+
 function authorityError(code: string, message: string): never {
   throw new SubscriptionServiceGuaranteeAuthorityError(code, message);
 }
@@ -136,15 +196,22 @@ function authorityError(code: string, message: string): never {
 function nonEmpty(value: unknown, max = 200): string {
   const text = String(value ?? "").trim();
   if (!text || text.length > max) {
-    authorityError("SUBSCRIPTION_GUARANTEE_STATE_INVALID", "subscription guarantee authority is invalid");
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+      "subscription guarantee authority is invalid",
+    );
   }
   return text;
 }
 
 function timestamp(value: unknown): number {
-  const parsed = value instanceof Date ? value.getTime() : Date.parse(String(value ?? ""));
+  const parsed =
+    value instanceof Date ? value.getTime() : Date.parse(String(value ?? ""));
   if (!Number.isFinite(parsed)) {
-    authorityError("SUBSCRIPTION_GUARANTEE_STATE_INVALID", "subscription guarantee authority is invalid");
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+      "subscription guarantee authority is invalid",
+    );
   }
   return parsed;
 }
@@ -152,9 +219,241 @@ function timestamp(value: unknown): number {
 function positiveInteger(value: unknown): number {
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed <= 0) {
-    authorityError("SUBSCRIPTION_GUARANTEE_STATE_INVALID", "subscription guarantee authority is invalid");
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+      "subscription guarantee authority is invalid",
+    );
   }
   return parsed;
+}
+
+function rowString(row: Record<string, unknown>, key: string, max = 200): string {
+  return nonEmpty(row[key], max);
+}
+
+function rowDate(row: Record<string, unknown>, key: string): string {
+  return new Date(timestamp(row[key])).toISOString();
+}
+
+function entitlementReferenceFor(input: {
+  merchantId: string;
+  subscriptionId: string;
+  version: number;
+  planName: string;
+  startsAt: string;
+  expiresAt: string;
+}): string {
+  const digest = crypto
+    .createHash("sha256")
+    .update(
+      JSON.stringify([
+        input.merchantId,
+        input.subscriptionId,
+        input.version,
+        input.planName,
+        input.startsAt,
+        input.expiresAt,
+      ]),
+    )
+    .digest("hex");
+  return `subscription-lifecycle-sha256:${digest}`;
+}
+
+export function createSubscriptionServiceGuaranteeV1Policy(input: {
+  effectiveAt: string | Date;
+  supersededAt?: string | Date | null;
+}): SubscriptionGuaranteePolicySnapshot {
+  const effectiveAt = new Date(timestamp(input.effectiveAt)).toISOString();
+  const supersededAt = input.supersededAt
+    ? new Date(timestamp(input.supersededAt)).toISOString()
+    : null;
+  if (supersededAt && timestamp(supersededAt) <= timestamp(effectiveAt)) {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_POLICY_INVALID",
+      "subscription guarantee policy is invalid",
+    );
+  }
+  return Object.freeze({
+    policyRef: "fawri-subscription-service-guarantee:v1",
+    version: 1,
+    scope: "monthly_subscription",
+    qualifyingOutageSeconds: 24 * HOUR_SECONDS,
+    refundReviewOutageSeconds: 72 * HOUR_SECONDS,
+    activationFailureRefundReview: true,
+    autoQualifyingAttribution: "fawri",
+    effectiveAt,
+    supersededAt,
+  });
+}
+
+export class VersionedSubscriptionGuaranteePolicyAuthority
+  implements SubscriptionGuaranteePolicyAuthority
+{
+  private readonly policies: readonly SubscriptionGuaranteePolicySnapshot[];
+
+  constructor(policies: readonly SubscriptionGuaranteePolicySnapshot[]) {
+    for (const policy of policies) validatePolicy(policy);
+    this.policies = Object.freeze([...policies]);
+  }
+
+  async loadPolicyForDate(
+    effectiveAt: Date,
+  ): Promise<SubscriptionGuaranteePolicySnapshot | null> {
+    const at = timestamp(effectiveAt);
+    const matches = this.policies.filter((policy) => {
+      const start = timestamp(policy.effectiveAt);
+      const end = policy.supersededAt
+        ? timestamp(policy.supersededAt)
+        : Number.POSITIVE_INFINITY;
+      return start <= at && at < end;
+    });
+    if (matches.length > 1) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_POLICY_AMBIGUOUS",
+        "subscription guarantee policy is ambiguous",
+      );
+    }
+    return matches[0] || null;
+  }
+}
+
+export class DisabledSubscriptionGuaranteeIncidentAuthority
+  implements SubscriptionGuaranteeIncidentAuthority
+{
+  async listIncidents(): Promise<SubscriptionGuaranteeIncidentSnapshot[]> {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_INCIDENT_AUTHORITY_UNAVAILABLE",
+      "subscription guarantee incident authority is unavailable",
+    );
+  }
+}
+
+export class PostgresSubscriptionGuaranteeSubscriptionAuthority
+  implements SubscriptionGuaranteeSubscriptionAuthority
+{
+  constructor(private readonly sql?: SubscriptionGuaranteeSqlExecutor) {}
+
+  private async executor(): Promise<SubscriptionGuaranteeSqlExecutor> {
+    if (this.sql) return this.sql;
+    const { pool } = await import("@workspace/db");
+    return {
+      async query<Row extends Record<string, unknown>>(
+        statement: string,
+        values: readonly unknown[] = [],
+      ): Promise<SqlResult<Row>> {
+        const result = await pool.query(statement, Array.from(values));
+        return { rows: result.rows as Row[] };
+      },
+    };
+  }
+
+  async loadSubscription(
+    merchantId: string,
+    subscriptionId: string,
+  ): Promise<SubscriptionGuaranteeSubscriptionSnapshot | null> {
+    const requestedMerchantId = nonEmpty(merchantId, 160);
+    const requestedSubscriptionId = nonEmpty(subscriptionId, 160);
+    const sql = await this.executor();
+    const result = await sql.query(
+      `SELECT id, merchant_id, plan_name, status, price_iqd,
+              starts_at, expires_at, version
+       FROM subscriptions
+       WHERE merchant_id = $1 AND id = $2
+       LIMIT 2`,
+      [requestedMerchantId, requestedSubscriptionId],
+    );
+    if (result.rows.length > 1) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_SUBSCRIPTION_AMBIGUOUS",
+        "subscription guarantee subscription is ambiguous",
+      );
+    }
+    const row = result.rows[0];
+    if (!row) return null;
+    if (rowString(row, "merchant_id", 160) !== requestedMerchantId) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_TENANT_VIOLATION",
+        "subscription guarantee tenant boundary violation",
+      );
+    }
+
+    const resolvedSubscriptionId = rowString(row, "id", 160);
+    if (resolvedSubscriptionId !== requestedSubscriptionId) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_TENANT_VIOLATION",
+        "subscription guarantee tenant boundary violation",
+      );
+    }
+    const planName = rowString(
+      row,
+      "plan_name",
+      40,
+    ) as SubscriptionGuaranteeSubscriptionSnapshot["planName"];
+    const lifecycleState = rowString(
+      row,
+      "status",
+      40,
+    ) as SubscriptionGuaranteeLifecycleState;
+    if (!["silver", "gold", "diamond", "trial"].includes(planName)) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+        "subscription guarantee authority is invalid",
+      );
+    }
+    if (
+      ![
+        "pending_activation",
+        "active",
+        "expired",
+        "replies_exhausted",
+        "suspended",
+      ].includes(lifecycleState)
+    ) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+        "subscription guarantee authority is invalid",
+      );
+    }
+    const priceIqd = Number(row.price_iqd);
+    if (!Number.isSafeInteger(priceIqd) || priceIqd < 0) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+        "subscription guarantee authority is invalid",
+      );
+    }
+    const subscriptionVersion = positiveInteger(row.version);
+    const startsAt = rowDate(row, "starts_at");
+    const expiresAt = rowDate(row, "expires_at");
+    if (timestamp(expiresAt) <= timestamp(startsAt)) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+        "subscription guarantee authority is invalid",
+      );
+    }
+
+    const billingState: SubscriptionGuaranteeBillingState =
+      planName === "trial" || priceIqd === 0 ? "unpaid" : "unknown";
+
+    return {
+      merchantId: requestedMerchantId,
+      subscriptionId: resolvedSubscriptionId,
+      subscriptionVersion,
+      entitlementReference: entitlementReferenceFor({
+        merchantId: requestedMerchantId,
+        subscriptionId: resolvedSubscriptionId,
+        version: subscriptionVersion,
+        planName,
+        startsAt,
+        expiresAt,
+      }),
+      planName,
+      lifecycleState,
+      startsAt,
+      expiresAt,
+      billingState,
+      billingReference: null,
+    };
+  }
 }
 
 function clipIncident(
@@ -198,6 +497,89 @@ function seconds(interval: Interval): number {
   return Math.floor((interval.endMs - interval.startMs) / 1000);
 }
 
+function validatePolicy(policy: SubscriptionGuaranteePolicySnapshot): void {
+  nonEmpty(policy.policyRef, 160);
+  positiveInteger(policy.version);
+  if (
+    policy.scope !== "monthly_subscription" ||
+    policy.autoQualifyingAttribution !== "fawri" ||
+    !policy.activationFailureRefundReview
+  ) {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_POLICY_INVALID",
+      "subscription guarantee policy is invalid",
+    );
+  }
+  const qualifying = positiveInteger(policy.qualifyingOutageSeconds);
+  const refund = positiveInteger(policy.refundReviewOutageSeconds);
+  if (refund <= qualifying) {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_POLICY_INVALID",
+      "subscription guarantee policy is invalid",
+    );
+  }
+  const effectiveAt = timestamp(policy.effectiveAt);
+  if (policy.supersededAt && timestamp(policy.supersededAt) <= effectiveAt) {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_POLICY_INVALID",
+      "subscription guarantee policy is invalid",
+    );
+  }
+}
+
+function validateSubscription(
+  subscription: SubscriptionGuaranteeSubscriptionSnapshot,
+  merchantId: string,
+  subscriptionId: string,
+): { startMs: number; endMs: number } {
+  if (
+    nonEmpty(subscription.merchantId, 160) !== merchantId ||
+    nonEmpty(subscription.subscriptionId, 160) !== subscriptionId
+  ) {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_TENANT_VIOLATION",
+      "subscription guarantee tenant boundary violation",
+    );
+  }
+  positiveInteger(subscription.subscriptionVersion);
+  nonEmpty(subscription.entitlementReference, 200);
+  if (!["silver", "gold", "diamond", "trial"].includes(subscription.planName)) {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+      "subscription guarantee authority is invalid",
+    );
+  }
+  if (
+    ![
+      "pending_activation",
+      "active",
+      "expired",
+      "replies_exhausted",
+      "suspended",
+    ].includes(subscription.lifecycleState)
+  ) {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+      "subscription guarantee authority is invalid",
+    );
+  }
+  if (!["paid", "unpaid", "unknown"].includes(subscription.billingState)) {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+      "subscription guarantee authority is invalid",
+    );
+  }
+  const startMs = timestamp(subscription.startsAt);
+  const endMs = timestamp(subscription.expiresAt);
+  if (endMs <= startMs) {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+      "subscription guarantee authority is invalid",
+    );
+  }
+  return { startMs, endMs };
+}
+
 function baseAssessment(params: {
   subscription: SubscriptionGuaranteeSubscriptionSnapshot;
   policy: SubscriptionGuaranteePolicySnapshot;
@@ -207,6 +589,8 @@ function baseAssessment(params: {
     assessmentId: `subscription-guarantee-assessment-${crypto.randomUUID()}`,
     merchantId: params.subscription.merchantId,
     subscriptionId: params.subscription.subscriptionId,
+    subscriptionVersion: params.subscription.subscriptionVersion,
+    entitlementReference: params.subscription.entitlementReference,
     policyRef: params.policy.policyRef,
     policyVersion: params.policy.version,
     result: "not_eligible",
@@ -223,59 +607,29 @@ function baseAssessment(params: {
   };
 }
 
-function validatePolicy(policy: SubscriptionGuaranteePolicySnapshot): void {
-  nonEmpty(policy.policyRef, 160);
-  positiveInteger(policy.version);
-  if (
-    policy.scope !== "monthly_subscription" ||
-    policy.autoQualifyingAttribution !== "fawri" ||
-    !policy.activationFailureRefundReview
-  ) {
-    authorityError("SUBSCRIPTION_GUARANTEE_POLICY_INVALID", "subscription guarantee policy is invalid");
-  }
-  const qualifying = positiveInteger(policy.qualifyingOutageSeconds);
-  const refund = positiveInteger(policy.refundReviewOutageSeconds);
-  if (refund <= qualifying) {
-    authorityError("SUBSCRIPTION_GUARANTEE_POLICY_INVALID", "subscription guarantee policy is invalid");
-  }
-  const effectiveAt = timestamp(policy.effectiveAt);
-  if (policy.supersededAt && timestamp(policy.supersededAt) <= effectiveAt) {
-    authorityError("SUBSCRIPTION_GUARANTEE_POLICY_INVALID", "subscription guarantee policy is invalid");
-  }
-}
-
-function validateSubscription(
-  subscription: SubscriptionGuaranteeSubscriptionSnapshot,
-  merchantId: string,
-  subscriptionId: string,
-): { startMs: number; endMs: number } {
-  if (
-    nonEmpty(subscription.merchantId, 160) !== merchantId ||
-    nonEmpty(subscription.subscriptionId, 160) !== subscriptionId
-  ) {
-    authorityError("SUBSCRIPTION_GUARANTEE_TENANT_VIOLATION", "subscription guarantee tenant boundary violation");
-  }
-  if (!["silver", "gold", "diamond", "trial"].includes(subscription.planName)) {
-    authorityError("SUBSCRIPTION_GUARANTEE_STATE_INVALID", "subscription guarantee authority is invalid");
-  }
-  if (!["paid", "unpaid", "unknown"].includes(subscription.billingState)) {
-    authorityError("SUBSCRIPTION_GUARANTEE_STATE_INVALID", "subscription guarantee authority is invalid");
-  }
-  const startMs = timestamp(subscription.startsAt);
-  const endMs = timestamp(subscription.expiresAt);
-  if (endMs <= startMs) {
-    authorityError("SUBSCRIPTION_GUARANTEE_STATE_INVALID", "subscription guarantee authority is invalid");
-  }
-  return { startMs, endMs };
+function evidenceFromIncident(
+  incident: SubscriptionGuaranteeIncidentSnapshot,
+  role: SubscriptionGuaranteeIncidentEvidenceRole,
+  includedSeconds: number,
+): SubscriptionGuaranteeAssessmentEvidence {
+  return {
+    incidentId: incident.id,
+    incidentVersion: incident.version,
+    attribution: incident.attribution,
+    authoritySource: incident.authoritySource,
+    authorityReference: incident.authorityReference,
+    startsAt: incident.startsAt,
+    endsAt: incident.endsAt,
+    role,
+    includedSeconds,
+  };
 }
 
 function incidentEvidenceRole(
   incident: SubscriptionGuaranteeIncidentSnapshot,
   extensionIncidentIds: Set<string>,
   refundIncidentIds: Set<string>,
-  manualReview: boolean,
 ): SubscriptionGuaranteeIncidentEvidenceRole {
-  if (manualReview && incident.attribution === "unknown") return "manual_review";
   if (incident.attribution !== "fawri") return "excluded_attribution";
   if (refundIncidentIds.has(incident.id)) return "refund_review";
   if (extensionIncidentIds.has(incident.id)) return "qualifying_extension";
@@ -293,19 +647,37 @@ export async function evaluateSubscriptionServiceGuarantee(
 
   const subscription = await authority.loadSubscription(merchantId, subscriptionId);
   if (!subscription) {
-    authorityError("SUBSCRIPTION_GUARANTEE_SUBSCRIPTION_MISSING", "subscription guarantee subscription is unavailable");
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_SUBSCRIPTION_MISSING",
+      "subscription guarantee subscription is unavailable",
+    );
   }
-  const { startMs, endMs } = validateSubscription(subscription, merchantId, subscriptionId);
+  const { startMs, endMs } = validateSubscription(
+    subscription,
+    merchantId,
+    subscriptionId,
+  );
 
   const policy = await authority.loadPolicyForDate(new Date(startMs));
   if (!policy) {
-    authorityError("SUBSCRIPTION_GUARANTEE_POLICY_MISSING", "subscription guarantee policy is unavailable");
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_POLICY_MISSING",
+      "subscription guarantee policy is unavailable",
+    );
   }
   validatePolicy(policy);
   const policyEffectiveAt = timestamp(policy.effectiveAt);
-  const policySupersededAt = policy.supersededAt ? timestamp(policy.supersededAt) : null;
-  if (policyEffectiveAt > startMs || (policySupersededAt !== null && policySupersededAt <= startMs)) {
-    authorityError("SUBSCRIPTION_GUARANTEE_POLICY_MISMATCH", "historical subscription guarantee policy is unavailable");
+  const policySupersededAt = policy.supersededAt
+    ? timestamp(policy.supersededAt)
+    : null;
+  if (
+    policyEffectiveAt > startMs ||
+    (policySupersededAt !== null && policySupersededAt <= startMs)
+  ) {
+    authorityError(
+      "SUBSCRIPTION_GUARANTEE_POLICY_MISMATCH",
+      "historical subscription guarantee policy is unavailable",
+    );
   }
 
   const assessment = baseAssessment({ subscription, policy, evaluatedAt });
@@ -326,6 +698,7 @@ export async function evaluateSubscriptionServiceGuarantee(
   );
 
   const clipped = new Map<string, Interval>();
+  const incidentById = new Map<string, SubscriptionGuaranteeIncidentSnapshot>();
   let hasUnknownAttribution = false;
   let hasOpenIncident = false;
   const fawriIntervals: Interval[] = [];
@@ -334,30 +707,59 @@ export async function evaluateSubscriptionServiceGuarantee(
 
   for (const incident of incidents) {
     if (nonEmpty(incident.merchantId, 160) !== merchantId) {
-      authorityError("SUBSCRIPTION_GUARANTEE_TENANT_VIOLATION", "subscription guarantee tenant boundary violation");
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_TENANT_VIOLATION",
+        "subscription guarantee tenant boundary violation",
+      );
     }
-    nonEmpty(incident.id, 200);
+    const incidentId = nonEmpty(incident.id, 200);
+    if (incidentById.has(incidentId)) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_INCIDENT_AMBIGUOUS",
+        "subscription guarantee incident evidence is ambiguous",
+      );
+    }
+    incidentById.set(incidentId, incident);
     positiveInteger(incident.version);
     if (!["server_ops", "automated_monitor"].includes(incident.authoritySource)) {
-      authorityError("SUBSCRIPTION_GUARANTEE_PROVENANCE_INVALID", "subscription guarantee incident provenance is invalid");
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_PROVENANCE_INVALID",
+        "subscription guarantee incident provenance is invalid",
+      );
     }
     if (!["fawri", "third_party", "customer", "unknown"].includes(incident.attribution)) {
-      authorityError("SUBSCRIPTION_GUARANTEE_STATE_INVALID", "subscription guarantee authority is invalid");
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+        "subscription guarantee authority is invalid",
+      );
     }
+    if (!["material_outage", "activation_failure"].includes(incident.incidentKind)) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+        "subscription guarantee authority is invalid",
+      );
+    }
+    timestamp(incident.startsAt);
     if (!incident.endsAt) {
       hasOpenIncident = true;
       if (incident.attribution === "unknown") hasUnknownAttribution = true;
       continue;
     }
+    if (timestamp(incident.endsAt) <= timestamp(incident.startsAt)) {
+      authorityError(
+        "SUBSCRIPTION_GUARANTEE_STATE_INVALID",
+        "subscription guarantee authority is invalid",
+      );
+    }
     const interval = clipIncident(incident, startMs, endMs);
     if (!interval) continue;
-    clipped.set(incident.id, interval);
+    clipped.set(incidentId, interval);
 
     if (incident.attribution === "unknown") hasUnknownAttribution = true;
     if (incident.attribution === "fawri") {
       fawriIntervals.push(interval);
       if (incident.incidentKind === "activation_failure") {
-        activationFailureIds.add(incident.id);
+        activationFailureIds.add(incidentId);
       }
     } else {
       excludedIntervals.push(interval);
@@ -376,11 +778,14 @@ export async function evaluateSubscriptionServiceGuarantee(
       : hasOpenIncident
         ? "OUTAGE_NOT_FINALIZED"
         : "OUTAGE_ATTRIBUTION_CONFLICT";
-    assessment.evidence = incidents.map((incident) => ({
-      incidentId: incident.id,
-      role: incident.attribution === "unknown" ? "manual_review" : "excluded_attribution",
-      includedSeconds: clipped.has(incident.id) ? seconds(clipped.get(incident.id)!) : 0,
-    }));
+    assessment.evidence = incidents.map((incident) => {
+      const interval = clipped.get(incident.id);
+      return evidenceFromIncident(
+        incident,
+        incident.attribution === "unknown" ? "manual_review" : "excluded_attribution",
+        interval ? seconds(interval) : 0,
+      );
+    });
     return assessment;
   }
 
@@ -391,8 +796,12 @@ export async function evaluateSubscriptionServiceGuarantee(
   const refundIntervals = mergedFawri.filter(
     (interval) => seconds(interval) > policy.refundReviewOutageSeconds,
   );
-  const extensionIncidentIds = new Set(qualifyingIntervals.flatMap((item) => item.incidentIds));
-  const refundIncidentIds = new Set(refundIntervals.flatMap((item) => item.incidentIds));
+  const extensionIncidentIds = new Set(
+    qualifyingIntervals.flatMap((item) => item.incidentIds),
+  );
+  const refundIncidentIds = new Set(
+    refundIntervals.flatMap((item) => item.incidentIds),
+  );
   const eligibleExtensionSeconds = qualifyingIntervals.reduce(
     (total, interval) => total + seconds(interval),
     0,
@@ -410,8 +819,12 @@ export async function evaluateSubscriptionServiceGuarantee(
   const extensionEligible =
     subscription.lifecycleState === "active" && eligibleExtensionSeconds > 0;
 
-  assessment.eligibleExtensionSeconds = extensionEligible ? eligibleExtensionSeconds : 0;
-  assessment.qualifyingOutageSeconds = extensionEligible ? eligibleExtensionSeconds : 0;
+  assessment.eligibleExtensionSeconds = extensionEligible
+    ? eligibleExtensionSeconds
+    : 0;
+  assessment.qualifyingOutageSeconds = extensionEligible
+    ? eligibleExtensionSeconds
+    : 0;
   assessment.maxContinuousOutageSeconds = maxContinuousOutageSeconds;
 
   if (subscription.billingState !== "paid") {
@@ -419,8 +832,6 @@ export async function evaluateSubscriptionServiceGuarantee(
       assessment.result = "manual_review_required";
       assessment.manualReviewRequired = true;
       assessment.reasonCode = "BILLING_AUTHORITY_UNAVAILABLE";
-    } else {
-      assessment.reasonCode = "NO_QUALIFYING_FAWRI_OUTAGE";
     }
   } else if (extensionEligible && refundReviewEligible) {
     assessment.result = "eligible_for_extension_and_manual_refund_review";
@@ -441,228 +852,137 @@ export async function evaluateSubscriptionServiceGuarantee(
 
   assessment.evidence = incidents.map((incident) => {
     const interval = clipped.get(incident.id);
-    return {
-      incidentId: incident.id,
-      role: incidentEvidenceRole(
-        incident,
-        extensionIncidentIds,
-        refundIncidentIds,
-        assessment.manualReviewRequired,
-      ),
-      includedSeconds: interval ? seconds(interval) : 0,
-    };
+    return evidenceFromIncident(
+      incident,
+      incidentEvidenceRole(incident, extensionIncidentIds, refundIncidentIds),
+      interval ? seconds(interval) : 0,
+    );
   });
 
   return assessment;
 }
 
-type SqlResult<Row> = { rows: Row[] };
-
-export interface SubscriptionGuaranteeSqlExecutor {
-  query<Row extends Record<string, unknown> = Record<string, unknown>>(
-    sql: string,
-    values?: readonly unknown[],
-  ): Promise<SqlResult<Row>>;
-}
-
-function rowString(row: Record<string, unknown>, key: string, max = 200): string {
-  return nonEmpty(row[key], max);
-}
-
-function rowDate(row: Record<string, unknown>, key: string): string {
-  return new Date(timestamp(row[key])).toISOString();
-}
-
-export class PostgresSubscriptionServiceGuaranteeAuthority
-  implements SubscriptionServiceGuaranteeAuthority
+class DefaultSubscriptionGuaranteeSqlClient
+  implements SubscriptionGuaranteeSqlClient
 {
-  constructor(private readonly sql?: SubscriptionGuaranteeSqlExecutor) {}
-
-  private async executor(): Promise<SubscriptionGuaranteeSqlExecutor> {
-    if (this.sql) return this.sql;
+  async query<Row extends Record<string, unknown>>(
+    statement: string,
+    values: readonly unknown[] = [],
+  ): Promise<SqlResult<Row>> {
     const { pool } = await import("@workspace/db");
-    return {
+    const result = await pool.query(statement, Array.from(values));
+    return { rows: result.rows as Row[] };
+  }
+
+  async transaction<T>(
+    operation: (executor: SubscriptionGuaranteeSqlExecutor) => Promise<T>,
+  ): Promise<T> {
+    const { pool } = await import("@workspace/db");
+    const connection = await pool.connect();
+    const executor: SubscriptionGuaranteeSqlExecutor = {
       async query<Row extends Record<string, unknown>>(
         statement: string,
         values: readonly unknown[] = [],
       ): Promise<SqlResult<Row>> {
-        const result = await pool.query(statement, Array.from(values));
+        const result = await connection.query(statement, Array.from(values));
         return { rows: result.rows as Row[] };
       },
     };
-  }
-
-  async loadSubscription(
-    merchantId: string,
-    subscriptionId: string,
-  ): Promise<SubscriptionGuaranteeSubscriptionSnapshot | null> {
-    const sql = await this.executor();
-    const result = await sql.query(`
-SELECT id, merchant_id, plan_name, status, price_iqd, starts_at, expires_at
-FROM subscriptions
-WHERE merchant_id = $1 AND id = $2
-LIMIT 2`, [merchantId, subscriptionId]);
-    if (result.rows.length > 1) {
-      authorityError("SUBSCRIPTION_GUARANTEE_SUBSCRIPTION_AMBIGUOUS", "subscription guarantee subscription is ambiguous");
-    }
-    const row = result.rows[0];
-    if (!row) return null;
-    if (rowString(row, "merchant_id", 160) !== merchantId) {
-      authorityError("SUBSCRIPTION_GUARANTEE_TENANT_VIOLATION", "subscription guarantee tenant boundary violation");
-    }
-    const planName = rowString(row, "plan_name", 40) as SubscriptionGuaranteeSubscriptionSnapshot["planName"];
-    const lifecycleState = rowString(row, "status", 40) as SubscriptionGuaranteeLifecycleState;
-    const priceIqd = Number(row.price_iqd);
-    if (!Number.isSafeInteger(priceIqd) || priceIqd < 0) {
-      authorityError("SUBSCRIPTION_GUARANTEE_STATE_INVALID", "subscription guarantee authority is invalid");
-    }
-
-    // The current repository has a subscription lifecycle but no authoritative
-    // SaaS payment-transaction/refund ledger. A positive configured price is not
-    // proof that money was paid, so paid plans remain billing=unknown here.
-    const billingState: SubscriptionGuaranteeBillingState =
-      planName === "trial" || priceIqd === 0 ? "unpaid" : "unknown";
-
-    return {
-      merchantId,
-      subscriptionId: rowString(row, "id", 160),
-      planName,
-      lifecycleState,
-      startsAt: rowDate(row, "starts_at"),
-      expiresAt: rowDate(row, "expires_at"),
-      billingState,
-      billingReference: null,
-    };
-  }
-
-  async loadPolicyForDate(
-    effectiveAt: Date,
-  ): Promise<SubscriptionGuaranteePolicySnapshot | null> {
-    const sql = await this.executor();
-    const result = await sql.query(`
-SELECT policy_ref, version, scope, qualifying_outage_seconds,
-       refund_review_outage_seconds, activation_failure_refund_review,
-       auto_qualifying_attribution, effective_at, superseded_at
-FROM subscription_guarantee_policies
-WHERE effective_at <= $1
-  AND (superseded_at IS NULL OR superseded_at > $1)
-ORDER BY version DESC
-LIMIT 2`, [effectiveAt]);
-    if (result.rows.length > 1) {
-      authorityError("SUBSCRIPTION_GUARANTEE_POLICY_AMBIGUOUS", "subscription guarantee policy is ambiguous");
-    }
-    const row = result.rows[0];
-    if (!row) return null;
-    return {
-      policyRef: rowString(row, "policy_ref", 160),
-      version: positiveInteger(row.version),
-      scope: rowString(row, "scope", 60) as "monthly_subscription",
-      qualifyingOutageSeconds: positiveInteger(row.qualifying_outage_seconds),
-      refundReviewOutageSeconds: positiveInteger(row.refund_review_outage_seconds),
-      activationFailureRefundReview: row.activation_failure_refund_review === true,
-      autoQualifyingAttribution: rowString(row, "auto_qualifying_attribution", 40) as "fawri",
-      effectiveAt: rowDate(row, "effective_at"),
-      supersededAt: row.superseded_at ? rowDate(row, "superseded_at") : null,
-    };
-  }
-
-  async listIncidents(
-    merchantId: string,
-    startsAt: Date,
-    expiresAt: Date,
-  ): Promise<SubscriptionGuaranteeIncidentSnapshot[]> {
-    const sql = await this.executor();
-    const result = await sql.query(`
-SELECT id, merchant_id, incident_kind, attribution, starts_at, ends_at,
-       authority_source, authority_reference, version
-FROM subscription_guarantee_incidents
-WHERE merchant_id = $1
-  AND starts_at < $3
-  AND (ends_at IS NULL OR ends_at > $2)
-ORDER BY starts_at ASC, id ASC`, [merchantId, startsAt, expiresAt]);
-
-    return result.rows.map((row) => {
-      if (rowString(row, "merchant_id", 160) !== merchantId) {
-        authorityError("SUBSCRIPTION_GUARANTEE_TENANT_VIOLATION", "subscription guarantee tenant boundary violation");
+    try {
+      await connection.query("BEGIN");
+      const result = await operation(executor);
+      await connection.query("COMMIT");
+      return result;
+    } catch (error) {
+      try {
+        await connection.query("ROLLBACK");
+      } catch {
+        // Preserve the original fail-closed audit persistence error.
       }
-      return {
-        id: rowString(row, "id", 200),
-        merchantId,
-        incidentKind: rowString(row, "incident_kind", 40) as SubscriptionGuaranteeIncidentKind,
-        attribution: rowString(row, "attribution", 40) as SubscriptionGuaranteeAttribution,
-        startsAt: rowDate(row, "starts_at"),
-        endsAt: row.ends_at ? rowDate(row, "ends_at") : null,
-        authoritySource: rowString(row, "authority_source", 40) as "server_ops" | "automated_monitor",
-        authorityReference: row.authority_reference
-          ? String(row.authority_reference).slice(0, 500)
-          : null,
-        version: positiveInteger(row.version),
-      };
-    });
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 }
 
-export async function recordSubscriptionServiceGuaranteeAssessment(
+function auditMetadata(
   assessment: SubscriptionGuaranteeAssessment,
+): Record<string, string | number | boolean | null> {
+  return {
+    result: assessment.result,
+    billingState: assessment.billingState,
+    billingReference: assessment.billingReference,
+    policyRef: assessment.policyRef,
+    policyVersion: assessment.policyVersion,
+    subscriptionVersion: assessment.subscriptionVersion,
+    entitlementReference: assessment.entitlementReference,
+    eligibleExtensionSeconds: assessment.eligibleExtensionSeconds,
+    qualifyingOutageSeconds: assessment.qualifyingOutageSeconds,
+    maxContinuousOutageSeconds: assessment.maxContinuousOutageSeconds,
+    refundReviewEligible: assessment.refundReviewEligible,
+    manualReviewRequired: assessment.manualReviewRequired,
+    evaluatedAt: assessment.evaluatedAt,
+  };
+}
+
+export async function recordSubscriptionServiceGuaranteeAssessmentAudit(
+  assessment: SubscriptionGuaranteeAssessment,
+  sqlClient: SubscriptionGuaranteeSqlClient = new DefaultSubscriptionGuaranteeSqlClient(),
 ): Promise<void> {
-  const { pool } = await import("@workspace/db");
-  const connection = await pool.connect();
-  try {
-    await connection.query("BEGIN");
-    await connection.query(
-      `INSERT INTO subscription_guarantee_assessments (
-        id, merchant_id, subscription_id, policy_ref, policy_version,
-        result, billing_state, billing_reference, eligible_extension_seconds,
-        qualifying_outage_seconds, max_continuous_outage_seconds,
-        refund_review_eligible, manual_review_required, reason_code,
-        evaluated_at
-      ) VALUES (
-        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15
-      )`,
+  nonEmpty(assessment.merchantId, 160);
+  nonEmpty(assessment.subscriptionId, 160);
+  nonEmpty(assessment.assessmentId, 200);
+  nonEmpty(assessment.entitlementReference, 200);
+  nonEmpty(assessment.policyRef, 160);
+  positiveInteger(assessment.policyVersion);
+  positiveInteger(assessment.subscriptionVersion);
+
+  await sqlClient.transaction(async (executor) => {
+    await executor.query(
+      `INSERT INTO audit_events
+       (id, actor_kind, actor_account_id, merchant_id, action_type,
+        entity_type, entity_id, reason_code, details, metadata,
+        ip_address, user_agent, request_id, previous_hash, event_hash, created_at)
+       VALUES ($1, 'system', NULL, $2, 'subscription_guarantee_assessed',
+               'subscription_service_guarantee_assessment', $3, $4, NULL,
+               $5::jsonb, NULL, NULL, NULL, NULL, NULL, NOW())`,
       [
-        assessment.assessmentId,
+        `audit-${crypto.randomUUID()}`,
         assessment.merchantId,
-        assessment.subscriptionId,
-        assessment.policyRef,
-        assessment.policyVersion,
-        assessment.result,
-        assessment.billingState,
-        assessment.billingReference,
-        assessment.eligibleExtensionSeconds,
-        assessment.qualifyingOutageSeconds,
-        assessment.maxContinuousOutageSeconds,
-        assessment.refundReviewEligible,
-        assessment.manualReviewRequired,
+        assessment.assessmentId,
         assessment.reasonCode,
-        assessment.evaluatedAt,
+        JSON.stringify(auditMetadata(assessment)),
       ],
     );
 
     for (const evidence of assessment.evidence) {
-      await connection.query(
-        `INSERT INTO subscription_guarantee_assessment_incidents (
-          id, assessment_id, incident_id, merchant_id, role, included_seconds
-        ) VALUES ($1, $2, $3, $4, $5, $6)`,
+      await executor.query(
+        `INSERT INTO audit_events
+         (id, actor_kind, actor_account_id, merchant_id, action_type,
+          entity_type, entity_id, reason_code, details, metadata,
+          ip_address, user_agent, request_id, previous_hash, event_hash, created_at)
+         VALUES ($1, 'system', NULL, $2, 'subscription_guarantee_incident_evidence',
+                 'subscription_service_guarantee_incident', $3, $4, NULL,
+                 $5::jsonb, NULL, NULL, NULL, NULL, NULL, NOW())`,
         [
-          `subscription-guarantee-evidence-${crypto.randomUUID()}`,
-          assessment.assessmentId,
-          evidence.incidentId,
+          `audit-${crypto.randomUUID()}`,
           assessment.merchantId,
+          evidence.incidentId,
           evidence.role,
-          evidence.includedSeconds,
+          JSON.stringify({
+            assessmentId: assessment.assessmentId,
+            incidentVersion: evidence.incidentVersion,
+            attribution: evidence.attribution,
+            authoritySource: evidence.authoritySource,
+            authorityReference: evidence.authorityReference,
+            startsAt: evidence.startsAt,
+            endsAt: evidence.endsAt,
+            role: evidence.role,
+            includedSeconds: evidence.includedSeconds,
+          }),
         ],
       );
     }
-
-    await connection.query("COMMIT");
-  } catch (error) {
-    try {
-      await connection.query("ROLLBACK");
-    } catch {
-      // Preserve the original fail-closed persistence error.
-    }
-    throw error;
-  } finally {
-    connection.release();
-  }
+  });
 }
