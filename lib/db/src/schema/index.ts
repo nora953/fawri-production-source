@@ -3,7 +3,6 @@ export * from "./accounts";
 export * from "./merchants";
 export * from "./sessions";
 export * from "./subscriptions";
-export * from "./subscription-guarantee";
 export * from "./catalog";
 export * from "./channels";
 export * from "./conversations";
