@@ -80,6 +80,7 @@ jobs:
             artifacts/api-server/tests/knowledge-postgres-operational-facts.test.ts \
             artifacts/api-server/tests/knowledge-ai-runtime.test.ts \
             artifacts/api-server/tests/knowledge-ai-security.test.ts \
+            artifacts/api-server/tests/knowledge-openai-embedding-provider.test.ts \
             | tee "$RUNNER_TEMP/knowledge-tests.log"
 
           echo "Knowledge direct suite summary:"
@@ -97,6 +98,8 @@ jobs:
           echo "proof: incompatible model spaces do not mix: PASS"
           echo "proof: activation lock: PASS"
           echo "proof: no silent lexical fallback: PASS"
+          echo "proof: OpenAI auth/API key/customer text never logged: PASS"
+          echo "proof: OpenAI transient retry bounds: PASS"
 
       - name: Run existing Knowledge PostgreSQL runtime gate
         run: node --test --test-concurrency=1 scripts/tests/knowledge-postgres-runtime-gate.test.mjs
