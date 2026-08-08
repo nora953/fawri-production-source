@@ -1,1 +1,1 @@
-export { default } from './ServerSettingsPage';
+export { default } from './MerchantSettingsPage';
