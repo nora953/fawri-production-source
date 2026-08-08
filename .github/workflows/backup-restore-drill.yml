@@ -1,0 +1,251 @@
+name: Backup and restore drill
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/observability/**"
+      - "artifacts/api-server/tests/observability-components.test.ts"
+      - "scripts/backup-postgresql.mjs"
+      - "scripts/restore-postgresql.mjs"
+      - "scripts/backup-object-storage.mjs"
+      - "scripts/restore-object-storage.mjs"
+      - "scripts/backup-postgresql.test.mjs"
+      - "scripts/restore-postgresql.test.mjs"
+      - "scripts/backup-object-storage.test.mjs"
+      - "docs/backup-restore-runbook.md"
+      - "docs/observability-alerts.md"
+      - "docs/operations-observability.md"
+      - ".github/workflows/backup-restore-drill.yml"
+  push:
+    branches:
+      - "hardening/**"
+    paths:
+      - "artifacts/api-server/src/observability/**"
+      - "artifacts/api-server/tests/observability-components.test.ts"
+      - "scripts/backup-*"
+      - "scripts/restore-*"
+      - "docs/backup-restore-runbook.md"
+      - "docs/observability-alerts.md"
+      - "docs/operations-observability.md"
+      - ".github/workflows/backup-restore-drill.yml"
+  schedule:
+    - cron: "17 2 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-restore-drill-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  observability-contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check API observability integration surface
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Test observability fail-closed and secret-safety contracts
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/observability-components.test.ts
+
+  disposable-restore-drill:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_backup_source
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_backup_source"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SOURCE_DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_backup_source
+      RESTORE_DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_restore_target
+      FAWRI_ALLOW_DISPOSABLE_POSTGRES_BACKUP: "1"
+      FAWRI_ALLOW_DISPOSABLE_POSTGRES_RESTORE: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Verify PostgreSQL client tools
+        run: |
+          pg_dump --version
+          pg_restore --version
+          psql --version
+
+      - name: Run backup and restore unit safety tests
+        run: >-
+          node --test
+          scripts/backup-postgresql.test.mjs
+          scripts/restore-postgresql.test.mjs
+          scripts/backup-object-storage.test.mjs
+
+      - name: Create disposable PostgreSQL source and restore targets
+        run: |
+          psql "$SOURCE_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          create table restore_drill_records (
+            id integer primary key,
+            value text not null
+          );
+          insert into restore_drill_records (id, value) values
+            (1, 'safe-fixture-one'),
+            (2, 'safe-fixture-two'),
+            (3, 'safe-fixture-three');
+          SQL
+          psql "postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/postgres" \
+            -v ON_ERROR_STOP=1 -c 'create database fawri_restore_target'
+
+      - name: Back up disposable PostgreSQL source
+        run: |
+          mkdir -p "$RUNNER_TEMP/fawri-backup-drill/postgresql"
+          node scripts/backup-postgresql.mjs \
+            --url "$SOURCE_DATABASE_URL" \
+            --output "$RUNNER_TEMP/fawri-backup-drill/postgresql/backup.dump" \
+            --manifest "$RUNNER_TEMP/fawri-backup-drill/postgresql/manifest.json"
+
+      - name: Verify PostgreSQL backup before restore
+        run: |
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const crypto = require('node:crypto');
+          const root = process.env.RUNNER_TEMP + '/fawri-backup-drill/postgresql';
+          const dump = root + '/backup.dump';
+          const manifest = JSON.parse(fs.readFileSync(root + '/manifest.json', 'utf8'));
+          const bytes = fs.readFileSync(dump);
+          const sha256 = crypto.createHash('sha256').update(bytes).digest('hex');
+          if (manifest.format !== 'fawri-postgresql-backup-v1') throw new Error('unexpected backup format');
+          if (manifest.size !== bytes.length) throw new Error('backup size verification failed');
+          if (manifest.sha256 !== sha256) throw new Error('backup checksum verification failed');
+          if (/postgres(?:ql)?:\/\//i.test(JSON.stringify(manifest))) throw new Error('database URL leaked into manifest');
+          console.log('PostgreSQL backup manifest and checksum verified before restore');
+          NODE
+          if strings "$RUNNER_TEMP/fawri-backup-drill/postgresql/backup.dump" | grep -Eqi 'postgres(ql)?://|fawri_ci:fawri_ci@|-----BEGIN (RSA|OPENSSH|EC) PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]|sk-[A-Za-z0-9]'; then
+            echo "Backup dump contains forbidden credential material" >&2
+            exit 1
+          fi
+          echo "PostgreSQL dump secret-safety scan passed"
+
+      - name: Restore and verify disposable PostgreSQL target
+        run: |
+          node scripts/restore-postgresql.mjs \
+            --url "$RESTORE_DATABASE_URL" \
+            --backup "$RUNNER_TEMP/fawri-backup-drill/postgresql/backup.dump" \
+            --manifest "$RUNNER_TEMP/fawri-backup-drill/postgresql/manifest.json" \
+            --verify-sql "select count(*) from restore_drill_records" \
+            --expect "3"
+
+          source_hash="$(psql "$SOURCE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select md5(string_agg(id::text || ':' || value, ',' order by id)) from restore_drill_records")"
+          restore_hash="$(psql "$RESTORE_DATABASE_URL" -X -A -t -v ON_ERROR_STOP=1 -c "select md5(string_agg(id::text || ':' || value, ',' order by id)) from restore_drill_records")"
+          test -n "$source_hash"
+          test "$source_hash" = "$restore_hash"
+          echo "PostgreSQL source/restore consistency hash matched"
+
+      - name: Back up, restore, and verify disposable object storage
+        env:
+          FAWRI_ALLOW_DISPOSABLE_OBJECT_BACKUP: "1"
+          FAWRI_ALLOW_DISPOSABLE_OBJECT_RESTORE: "1"
+          FAWRI_DISPOSABLE_OBJECT_ROOT: ${{ runner.temp }}/fawri-object-drill
+        run: |
+          mkdir -p "$FAWRI_DISPOSABLE_OBJECT_ROOT/source/merchant-assets/nested"
+          printf '%s' 'safe-fixture-logo' > "$FAWRI_DISPOSABLE_OBJECT_ROOT/source/merchant-assets/logo.txt"
+          printf '%s' 'safe-fixture-image' > "$FAWRI_DISPOSABLE_OBJECT_ROOT/source/merchant-assets/nested/image.txt"
+          node scripts/backup-object-storage.mjs \
+            --source "$FAWRI_DISPOSABLE_OBJECT_ROOT/source" \
+            --output "$FAWRI_DISPOSABLE_OBJECT_ROOT/backup"
+          node scripts/restore-object-storage.mjs \
+            --backup "$FAWRI_DISPOSABLE_OBJECT_ROOT/backup" \
+            --target "$FAWRI_DISPOSABLE_OBJECT_ROOT/restored"
+          diff -r "$FAWRI_DISPOSABLE_OBJECT_ROOT/source" "$FAWRI_DISPOSABLE_OBJECT_ROOT/restored"
+          if grep -Eqi 'safe-fixture-logo|safe-fixture-image|secret|token|password|authorization' "$FAWRI_DISPOSABLE_OBJECT_ROOT/backup/manifest.json"; then
+            echo "Object backup manifest contains forbidden payload/secret material" >&2
+            exit 1
+          fi
+          echo "Object-storage restore consistency and manifest secret-safety checks passed"
+
+      - name: Write and scan restore evidence
+        run: |
+          mkdir -p restore-drill-artifact
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const pg = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/fawri-backup-drill/postgresql/manifest.json', 'utf8'));
+          const objects = JSON.parse(fs.readFileSync(process.env.RUNNER_TEMP + '/fawri-object-drill/backup/manifest.json', 'utf8'));
+          fs.writeFileSync('restore-drill-artifact/report.json', JSON.stringify({
+            workflow: 'backup-restore-drill',
+            commit: process.env.GITHUB_SHA,
+            postgresql: {
+              disposable_source: true,
+              disposable_restore: true,
+              backup_verified_before_restore: true,
+              restored: true,
+              verified_rows: 3,
+              consistency_match: true,
+              backup_sha256: pg.sha256,
+              backup_bytes: pg.size,
+            },
+            object_storage: {
+              disposable_local_only: true,
+              restored: true,
+              consistency_match: true,
+              verified_objects: objects.object_count,
+              total_bytes: objects.total_bytes,
+            },
+            external_credentials_used: false,
+            production_or_replit_database_used: false,
+          }, null, 2) + '\n', { mode: 0o600 });
+          NODE
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const text = fs.readFileSync('restore-drill-artifact/report.json', 'utf8');
+          const forbidden = /postgres(?:ql)?:\/\/|bearer\s+\S+|-----BEGIN|gh[pousr]_[A-Za-z0-9]|sk-[A-Za-z0-9]|password\s*[:=]|authorization\s*[:=]/i;
+          if (forbidden.test(text)) throw new Error('restore evidence contains forbidden secret material');
+          console.log('Restore evidence secret-safety scan passed');
+          NODE
+
+      - name: Upload safe restore evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: restore-drill-${{ github.sha }}
+          path: restore-drill-artifact/report.json
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Cleanup disposable drill state
+        if: always()
+        run: |
+          psql "postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 <<'SQL' || true
+          drop database if exists fawri_restore_target with (force);
+          drop database if exists fawri_backup_source with (force);
+          SQL
+          rm -rf "$RUNNER_TEMP/fawri-backup-drill" "$RUNNER_TEMP/fawri-object-drill" restore-drill-artifact
+          echo "Disposable backup/restore drill state cleaned up"
