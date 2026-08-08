@@ -94,6 +94,7 @@ jobs:
         env:
           FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required"
           FAWRI_AUTH_SECURITY_SECRET: "ci-auth-concurrency-proof-secret-with-more-than-thirty-two-characters"
+          FAWRI_PASSWORD_SALT: "auth-proof-password-salt"
         run: >-
           pnpm --filter @workspace/api-server exec tsx --test
           ./tests/auth-postgres-concurrency.integration.test.mjs
