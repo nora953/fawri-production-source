@@ -20,6 +20,7 @@ import {
   uniqueNormalizedList,
 } from "./normalization.js";
 import { customerTextPreview } from "./redaction.js";
+import { classifyWarrantyAuthorityDomain } from "./subscriptionGuaranteeClassification.js";
 
 export class KnowledgeRuntimeGateError extends Error {
   readonly code: string;
@@ -1014,6 +1015,13 @@ async function insertAudit(
 export function isAuthoritativeFactQuestion(customerText: string): boolean {
   const normalized = normalizeKnowledgeText(customerText);
   if (!normalized) return false;
+
+  // Keep the two warranty authorities distinct. The service-guarantee domain is
+  // platform SaaS policy; the product-warranty domain is merchant product policy.
+  // Both are fail-closed authoritative domains, so neither may fall through to
+  // Saved Answers, embeddings, legacy knowledge, or generated AI.
+  if (classifyWarrantyAuthorityDomain(customerText)) return true;
+
   return containsAny(normalized, [
     ...DELIVERY_TERMS,
     ...PAYMENT_TERMS,
@@ -1028,7 +1036,5 @@ export function isAuthoritativeFactQuestion(customerText: string): boolean {
     "available",
     "طلب",
     "order",
-    "warranty",
-    "ضمان",
   ]);
 }
