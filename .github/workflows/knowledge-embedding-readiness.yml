@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: knowledge-embedding-readiness-${{ github.event.pull_request.number || github.ref }}
@@ -99,3 +100,33 @@ jobs:
 
       - name: Run existing Knowledge PostgreSQL runtime gate
         run: node --test --test-concurrency=1 scripts/tests/knowledge-postgres-runtime-gate.test.mjs
+
+      - name: Publish exact-head validation status
+        if: always() && github.event_name == 'push'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          payload="$(node - <<'NODE'
+          const state = process.env.JOB_STATUS === "success"
+            ? "success"
+            : process.env.JOB_STATUS === "cancelled"
+              ? "error"
+              : "failure";
+          process.stdout.write(JSON.stringify({
+            state,
+            target_url: `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`,
+            description: `Knowledge readiness run ${process.env.GITHUB_RUN_ID}: ${process.env.JOB_STATUS}`,
+            context: "knowledge-embedding-readiness/exact-head",
+          }));
+          NODE
+          )"
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -d "$payload" >/dev/null
