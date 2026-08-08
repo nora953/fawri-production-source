@@ -32,7 +32,7 @@ jobs:
           test "${{ github.event.pull_request.head.ref }}" = "parallel/dependency-remediation"
           test "${{ github.event.pull_request.base.ref }}" = "parallel/integration-coordinator"
 
-      - name: Setup Node 24 and pnpm
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -81,9 +81,8 @@ jobs:
             "  'fast-uri@3.1.2': 3.1.5",
             "  'js-yaml@4.1.1': 4.3.1",
             "  'linkify-it@5.0.0': 5.0.2",
-            "  'markdown-it@14.1.1': 14.1.2",
             "  'nanoid@3.3.12': 3.3.17",
-            "  'postcss@8.5.14': 8.5.23",
+            "  'postcss@8.5.14': 8.5.18",
             "  'qs@6.15.1': 6.15.2",
           ];
           workspace = workspace.replace(marker, marker + additions.join('\n') + '\n');
@@ -103,7 +102,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for package in body-parser brace-expansion fast-uri js-yaml linkify-it markdown-it nanoid postcss qs vite xlsx @babel/core esbuild; do
+          for package in body-parser brace-expansion fast-uri js-yaml linkify-it nanoid postcss qs vite xlsx markdown-it @babel/core esbuild; do
             echo "=== pnpm why $package ==="
             pnpm why "$package" || true
           done
