@@ -331,7 +331,9 @@ async function validatePostgres(
               a.security_version AS current_security_version,
               a.state AS account_state
          FROM account_sessions AS s
-         JOIN accounts AS a ON a.id = s.account_id AND a.kind = s.kind
+         JOIN accounts AS a
+           ON a.id = s.account_id
+          AND a.kind::text = s.kind::text
         WHERE s.id = $1
         FOR UPDATE OF s`,
       [parsed.id],
@@ -432,7 +434,9 @@ async function rotatePostgres(input: ValidateInput): Promise<IssuedSession | nul
               a.security_version AS current_security_version,
               a.state AS account_state
          FROM account_sessions AS s
-         JOIN accounts AS a ON a.id = s.account_id AND a.kind = s.kind
+         JOIN accounts AS a
+           ON a.id = s.account_id
+          AND a.kind::text = s.kind::text
         WHERE s.id = $1
         FOR UPDATE OF s`,
       [parsed.id],
@@ -665,7 +669,9 @@ async function listPostgres(
     pool,
     `SELECT s.*
        FROM account_sessions AS s
-       JOIN accounts AS a ON a.id = s.account_id AND a.kind = s.kind
+       JOIN accounts AS a
+         ON a.id = s.account_id
+        AND a.kind::text = s.kind::text
       WHERE s.account_id = $1
         AND s.kind = $2
         AND s.status = 'active'
