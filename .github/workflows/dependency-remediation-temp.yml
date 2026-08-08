@@ -132,10 +132,45 @@ jobs:
           };
           fs.writeFileSync('audit-summary.json', JSON.stringify(summary, null, 2) + '\n');
           console.log(JSON.stringify(summary));
+
+          const names = new Set();
+          if (audit.vulnerabilities && typeof audit.vulnerabilities === 'object') {
+            for (const [name, detail] of Object.entries(audit.vulnerabilities)) {
+              if (detail && detail.severity === 'high') {
+                names.add(name);
+                const range = typeof detail.range === 'string' ? detail.range : '';
+                console.log(`HIGH package=${name}${range ? ` range=${range}` : ''}`);
+              }
+            }
+          }
+          if (audit.advisories && typeof audit.advisories === 'object') {
+            for (const detail of Object.values(audit.advisories)) {
+              if (detail && detail.severity === 'high') {
+                const name = detail.module_name || detail.name || 'unknown';
+                names.add(name);
+                const range = detail.vulnerable_versions || detail.range || '';
+                const patched = detail.patched_versions || '';
+                console.log(`HIGH package=${name}${range ? ` range=${range}` : ''}${patched ? ` patched=${patched}` : ''}`);
+              }
+            }
+          }
+          fs.writeFileSync('high-package-names.txt', [...names].sort().join('\n') + ([...names].length ? '\n' : ''));
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `critical=${summary.critical}\nhigh=${summary.high}\n`);
           NODE
           rm -f audit-full.json
           echo "pnpm_audit_exit_code=$AUDIT_RC" >> "$GITHUB_OUTPUT"
+
+      - name: Show sanitized dependency paths for remaining High packages
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -s high-package-names.txt ]; then
+            while IFS= read -r package; do
+              echo "=== pnpm why $package ==="
+              pnpm why "$package" || true
+            done < high-package-names.txt
+          fi
 
       - name: Prepare remediation artifact
         if: always()
