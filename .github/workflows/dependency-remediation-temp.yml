@@ -50,7 +50,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Inspect vulnerable dependency paths
         shell: bash
@@ -99,14 +99,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pnpm install --no-frozen-lockfile
+          pnpm install --no-frozen-lockfile --ignore-scripts
           git diff --check
 
       - name: Verify frozen install from generated lockfile
         shell: bash
         run: |
           set -euo pipefail
-          pnpm install --frozen-lockfile
+          pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Run dependency audit and create safe summary
         id: audit
