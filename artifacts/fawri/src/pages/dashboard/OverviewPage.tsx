@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
-import {
-  getCurrentMerchant,
-  getConversations,
-  getOrders,
-  getProducts,
-  saveSubscriptions,
-} from '@/lib/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -22,34 +15,68 @@ import SubscriptionRetentionCard from '@/components/SubscriptionRetentionCard';
 import { subscriptionStateMessages } from '@/lib/subscriptionStateMessages';
 import { MERCHANT_REALTIME_EVENT, type MerchantRealtimeDetail } from '@/hooks/useMerchantRealtime';
 
+type StatState =
+  | { status: 'loading'; value: null }
+  | { status: 'ready'; value: number }
+  | { status: 'unavailable'; value: null };
+
+type OverviewStats = {
+  convs: StatState;
+  orders: StatState;
+  prods: StatState;
+};
+
+type CountResponse = {
+  ok?: unknown;
+  count?: unknown;
+};
+
+function loadingStats(): OverviewStats {
+  return {
+    convs: { status: 'loading', value: null },
+    orders: { status: 'loading', value: null },
+    prods: { status: 'loading', value: null },
+  };
+}
+
+async function loadServerCount(path: string): Promise<number> {
+  const response = await fetch(path, {
+    cache: 'no-store',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  const data = (await response.json().catch(() => null)) as CountResponse | null;
+
+  if (!response.ok || data?.ok !== true) {
+    throw new Error(`Overview authority request failed: ${path}`);
+  }
+
+  const count = Number(data.count);
+  if (!Number.isInteger(count) || count < 0) {
+    throw new Error(`Overview authority returned an invalid count: ${path}`);
+  }
+
+  return count;
+}
+
+function statFromResult(result: PromiseSettledResult<number>): StatState {
+  return result.status === 'fulfilled'
+    ? { status: 'ready', value: result.value }
+    : { status: 'unavailable', value: null };
+}
+
 export default function OverviewPage() {
   const { t, dir, lang } = useI18n();
-  const merchant = getCurrentMerchant();
 
   const [sub, setSub] = useState<Subscription | null>(null);
   const [loadingSubscription, setLoadingSubscription] = useState(true);
-  const [stats, setStats] = useState({ convs: 0, orders: 0, prods: 0 });
+  const [stats, setStats] = useState<OverviewStats>(loadingStats);
 
   useEffect(() => {
     let active = true;
 
-    if (!merchant) {
-      setLoadingSubscription(false);
-      return () => {
-        active = false;
-      };
-    }
-
-    setStats({
-      convs: getConversations(merchant.id).length,
-      orders: getOrders(merchant.id).length,
-      prods: getProducts(merchant.id).length,
-    });
-
     const applySubscription = (subscription: Subscription | null) => {
       if (!active) return;
-      if (subscription) saveSubscriptions([subscription]);
-      else saveSubscriptions([]);
       setSub(subscription);
       setLoadingSubscription(false);
     };
@@ -58,6 +85,8 @@ export default function OverviewPage() {
       try {
         const response = await fetch('/api/auth/subscription/current', {
           cache: 'no-store',
+          credentials: 'include',
+          headers: { Accept: 'application/json' },
         });
         const data = await response.json().catch(() => null);
         if (!active) return;
@@ -72,15 +101,35 @@ export default function OverviewPage() {
       }
     };
 
-    const handleFocus = () => void loadSubscription();
+    const loadStats = async () => {
+      if (active) setStats(loadingStats());
+
+      const [conversationsResult, ordersResult, productsResult] =
+        await Promise.allSettled([
+          loadServerCount('/api/conversations'),
+          loadServerCount('/api/orders'),
+          loadServerCount('/api/catalog/products'),
+        ]);
+
+      if (!active) return;
+      setStats({
+        convs: statFromResult(conversationsResult),
+        orders: statFromResult(ordersResult),
+        prods: statFromResult(productsResult),
+      });
+    };
+
+    const handleFocus = () => {
+      void loadSubscription();
+      void loadStats();
+    };
     const handleRealtime = (event: Event) => {
       const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
-      const subscription = detail?.subscription ?? null;
-      if (subscription && subscription.merchant_id !== merchant.id) return;
-      applySubscription(subscription);
+      applySubscription(detail?.subscription ?? null);
     };
 
     void loadSubscription();
+    void loadStats();
     window.addEventListener('focus', handleFocus);
     window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
 
@@ -89,20 +138,12 @@ export default function OverviewPage() {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     };
-  }, [merchant?.id]);
-
-  if (!merchant) {
-    return (
-      <div className="min-h-screen bg-background p-4 pb-28" dir={dir}>
-        <div className="rounded-3xl border bg-card p-8 text-center text-muted-foreground">
-          {t.overview_loading}
-        </div>
-      </div>
-    );
-  }
+  }, []);
 
   const messages = subscriptionStateMessages[lang];
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
+  const unavailableLabel =
+    lang === 'ar' ? 'غير متاح' : lang === 'ku' ? 'بەردەست نییە' : 'Unavailable';
   const planName = sub
     ? {
         silver: t.plan_silver,
@@ -130,8 +171,7 @@ export default function OverviewPage() {
     ? sub.base_replies_remaining ?? Math.max(0, baseReplyLimit - baseRepliesUsed)
     : 0;
   const addonRepliesRemaining = sub?.addon_replies_remaining ?? 0;
-  const totalRepliesAvailable =
-    baseRepliesRemaining + addonRepliesRemaining;
+  const totalRepliesAvailable = baseRepliesRemaining + addonRepliesRemaining;
   const usagePercent =
     baseReplyLimit > 0 ? (baseRepliesUsed / baseReplyLimit) * 100 : 0;
   const lowBaseBalanceThreshold = Math.ceil(baseReplyLimit * 0.15);
@@ -141,8 +181,8 @@ export default function OverviewPage() {
         0,
         Math.ceil(
           (new Date(sub.expires_at).getTime() - Date.now()) /
-            (1000 * 60 * 60 * 24)
-        )
+            (1000 * 60 * 60 * 24),
+        ),
       )
     : 0;
 
@@ -156,6 +196,20 @@ export default function OverviewPage() {
   let progressColor = 'bg-primary';
   if (usagePercent > 90) progressColor = 'bg-red-500';
   else if (usagePercent >= 80) progressColor = 'bg-yellow-500';
+
+  const renderStatValue = (stat: StatState) => {
+    if (stat.status === 'loading') {
+      return (
+        <span aria-label={t.overview_loading} className="text-muted-foreground">
+          …
+        </span>
+      );
+    }
+    if (stat.status === 'unavailable') {
+      return <span className="text-sm font-bold text-muted-foreground">{unavailableLabel}</span>;
+    }
+    return stat.value.toLocaleString(locale);
+  };
 
   return (
     <div className="bg-background" dir={dir}>
@@ -208,7 +262,7 @@ export default function OverviewPage() {
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">
-              <div className="text-xl font-extrabold">{stats.convs}</div>
+              <div className="text-xl font-extrabold">{renderStatValue(stats.convs)}</div>
             </CardContent>
           </Card>
 
@@ -218,7 +272,7 @@ export default function OverviewPage() {
               <ShoppingBag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">
-              <div className="text-xl font-extrabold">{stats.orders}</div>
+              <div className="text-xl font-extrabold">{renderStatValue(stats.orders)}</div>
             </CardContent>
           </Card>
 
@@ -228,7 +282,7 @@ export default function OverviewPage() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="px-4 pb-4 pt-0">
-              <div className="text-xl font-extrabold">{stats.prods}</div>
+              <div className="text-xl font-extrabold">{renderStatValue(stats.prods)}</div>
             </CardContent>
           </Card>
         </div>

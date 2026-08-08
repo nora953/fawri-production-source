@@ -1,0 +1,52 @@
+name: Dashboard channel coherence
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ChannelsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ServerChannelsPage.tsx"
+      - "artifacts/fawri/src/pages/LandingPage.tsx"
+      - "artifacts/fawri/tests/dashboard-channel-coherence.test.mjs"
+      - ".github/workflows/dashboard-channel-coherence.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dashboard-channel-coherence-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-dashboard-channel-coherence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label dashboard-channel-frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Test dashboard and channel authority contracts
+        run: node scripts/ci-run-redacted.mjs --label dashboard-channel-focused-test -- node --test artifacts/fawri/tests/dashboard-channel-coherence.test.mjs
+
+      - name: Type-check Fawri
+        run: node scripts/ci-run-redacted.mjs --label fawri-typecheck -- pnpm --filter @workspace/fawri run typecheck
+
+      - name: Build Fawri
+        run: node scripts/ci-run-redacted.mjs --label fawri-build -- pnpm --filter @workspace/fawri run build
