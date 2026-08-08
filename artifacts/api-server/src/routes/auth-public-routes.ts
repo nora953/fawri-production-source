@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authAccountRepository, normalizePhone } from "../services/authAccountRepository";
+import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import { authSecurityStore, type OtpPurpose } from "../services/authSecurityStore";
 import { getPasswordValidationError, hashPassword } from "../services/authPasswordService";
 import { clearAuthSessionCookie, requestDeviceId, requestDeviceLabel, requestIp, sendAuthError, setAuthSessionCookie } from "../middleware/authSession";
@@ -32,7 +33,7 @@ router.post("/otp/resend", async (req, res) => {
   try { const issued = await issueOtp(req, phone, purpose); res.status(202).json({ ok: true, message: "If the account is eligible, a verification code will be sent.", challenge_id: issued.challengeId, expires_at: issued.expiresAt, retry_after_seconds: issued.retryAfterSeconds, ...devCode(issued.code) }); }
   catch (error) { otpError(res, error, purpose === "password_reset"); }
 });
-router.post("/verify-otp", (req, res) => {
+router.post("/verify-otp", async (req, res) => {
   const phone = normalizePhone(req.body?.phone), challengeId = String(req.body?.challenge_id || ""), code = String(req.body?.code || "");
   if (!challengeId || !/^\d{6}$/.test(code)) { sendAuthError(res, 400, "OTP_INVALID", "verification code is invalid or expired"); return; }
   const account = authAccountRepository.findByPhone(phone, "merchant");
@@ -40,8 +41,8 @@ router.post("/verify-otp", (req, res) => {
   if (!account || result !== "verified") { sendAuthError(res, 400, "OTP_INVALID", "verification code is invalid or expired"); return; }
   const verified = authAccountRepository.markMerchantOtpVerified(account.account.id);
   if (!verified?.merchantProfile) { sendAuthError(res, 409, "ACCOUNT_STATE_CHANGED", "account state changed"); return; }
-  authSecurityStore.revokeAllSessions({ accountId: verified.account.id, accountKind: "merchant", reason: "logout_all" });
-  const issued = authSecurityStore.issueSession({ accountId: verified.account.id, accountKind: "merchant", tenantId: verified.merchantProfile.tenantId, accountVersion: verified.account.sessionVersion, deviceId: requestDeviceId(req) || undefined, deviceLabel: requestDeviceLabel(req) });
+  await authPostgresSessionAuthority.revokeAllSessions({ accountId: verified.account.id, accountKind: "merchant", reason: "logout_all" });
+  const issued = await authPostgresSessionAuthority.issueSession({ accountId: verified.account.id, accountKind: "merchant", tenantId: verified.merchantProfile.tenantId, accountVersion: verified.account.sessionVersion, deviceId: requestDeviceId(req) || undefined, deviceLabel: requestDeviceLabel(req) });
   setAuthSessionCookie(res, "merchant", issued); res.json({ ok: true, ...payload(verified) });
 });
 router.post("/login", async (req, res) => {
@@ -55,7 +56,7 @@ router.post("/password-reset/request", async (req, res) => {
   try { const issued = await issueOtp(req, phone, "password_reset"); res.status(202).json({ ...genericRecovery(), challenge_id: issued.challengeId, expires_at: issued.expiresAt, retry_after_seconds: issued.retryAfterSeconds, ...devCode(issued.code) }); }
   catch (error) { otpError(res, error, true); }
 });
-router.post("/password-reset/confirm", (req, res) => {
+router.post("/password-reset/confirm", async (req, res) => {
   const phone = normalizePhone(req.body?.phone), challengeId = String(req.body?.challenge_id || ""), code = String(req.body?.code || "");
   const next = String(req.body?.new_password || req.body?.newPassword || ""), confirm = String(req.body?.confirm_password || req.body?.confirmPassword || "");
   const validation = getPasswordValidationError(next);
@@ -63,8 +64,12 @@ router.post("/password-reset/confirm", (req, res) => {
   const account = authAccountRepository.findByPhone(phone, "merchant");
   const result = authSecurityStore.verifyOtpChallenge({ challengeId, target: phone, purpose: "password_reset", code, ip: requestIp(req) });
   if (!account || result !== "verified") { sendAuthError(res, 400, "RECOVERY_CONFIRMATION_INVALID", "recovery confirmation is invalid"); return; }
-  authAccountRepository.updatePassword(account.account.id, "merchant", hashPassword(next));
-  authSecurityStore.revokeAllSessions({ accountId: account.account.id, accountKind: "merchant", reason: "password_reset" });
+  const passwordHash = hashPassword(next);
+  authAccountRepository.updatePassword(account.account.id, "merchant", passwordHash);
+  const postgresRevoked = await authPostgresSessionAuthority.commitPasswordChange({ accountId: account.account.id, accountKind: "merchant", passwordHash, reason: "password_reset" });
+  if (postgresRevoked === null) {
+    authSecurityStore.revokeAllSessions({ accountId: account.account.id, accountKind: "merchant", reason: "password_reset" });
+  }
   clearAuthSessionCookie(res, "merchant"); res.json({ ok: true, reauthentication_required: true });
 });
 export default router;
