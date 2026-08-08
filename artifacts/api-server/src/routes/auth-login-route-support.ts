@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import { authAccountRepository, normalizePhone } from "../services/authAccountRepository";
+import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import { authSecurityStore } from "../services/authSecurityStore";
 import { hashPassword, passwordNeedsRehash, verifyPassword } from "../services/authPasswordService";
 import {
@@ -117,7 +118,7 @@ export async function login(
     return;
   }
 
-  const issued = authSecurityStore.issueSession({
+  const issued = await authPostgresSessionAuthority.issueSession({
     accountId: found.account.id,
     accountKind: kind,
     tenantId: kind === "merchant"
