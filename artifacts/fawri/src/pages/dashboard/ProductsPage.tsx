@@ -1,7 +1,23 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { getCurrentMerchant, getProducts, saveProducts } from '@/lib/store';
-import { Product, ProductStatus } from '@/lib/types';
+import { getCurrentMerchant } from '@/lib/store';
+import type { Lang, ProductStatus } from '@/lib/types';
+import {
+  CatalogApiError,
+  currentProductFromConflict,
+  createCatalogProduct,
+  deleteCatalogProduct,
+  getCatalogProduct,
+  idempotencyAttemptForRequest,
+  importCatalogProducts,
+  listCatalogProducts,
+  updateCatalogProduct,
+  type CatalogIdempotencyAttempt,
+  type CatalogImageInput,
+  type CatalogProduct,
+  type CatalogProductInput,
+  type CatalogVariantInput,
+} from '@/lib/catalogUiApi';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -33,6 +49,61 @@ type ProductFormState = {
   allow_fawri_reply: boolean;
 };
 
+type UiMessageKey =
+  | 'loadFailed'
+  | 'saveFailed'
+  | 'deleteFailed'
+  | 'versionConflict'
+  | 'importValidation'
+  | 'secureCryptoRequired'
+  | 'variantQuantityLocked';
+
+const messages: Record<UiMessageKey, Record<Lang, string>> = {
+  loadFailed: {
+    ar: 'تعذر تحميل المنتجات من الخادم.',
+    ku: 'بارکردنی بەرهەمەکان لە سێرڤەر سەرکەوتوو نەبوو.',
+    en: 'Could not load products from the server.',
+  },
+  saveFailed: {
+    ar: 'لم يتم حفظ المنتج لأن الخادم رفض العملية.',
+    ku: 'بەرهەمەکە پاشەکەوت نەکرا چونکە سێرڤەر داواکارییەکەی ڕەتکردەوە.',
+    en: 'The product was not saved because the server rejected the request.',
+  },
+  deleteFailed: {
+    ar: 'لم يتم حذف المنتج لأن الخادم رفض العملية.',
+    ku: 'بەرهەمەکە نەسڕایەوە چونکە سێرڤەر داواکارییەکەی ڕەتکردەوە.',
+    en: 'The product was not deleted because the server rejected the request.',
+  },
+  versionConflict: {
+    ar: 'تم تعديل هذا المنتج من مكان آخر. تم تحميل أحدث نسخة من الخادم؛ راجعها وحاول مجددًا.',
+    ku: 'ئەم بەرهەمە لە شوێنێکی تر گۆڕدراوە. نوێترین وەشانی سێرڤەر بارکرا؛ پێداچوونەوە بکە و دووبارە هەوڵ بدە.',
+    en: 'This product changed elsewhere. The latest server version was loaded; review it and try again.',
+  },
+  importValidation: {
+    ar: 'لم يبدأ الاستيراد بسبب أخطاء في الصفوف:',
+    ku: 'هاوردەکردن دەستپێنەکرد چونکە هەڵە لە ڕیزەکان هەیە:',
+    en: 'Import was not started because some rows are invalid:',
+  },
+  secureCryptoRequired: {
+    ar: 'تعذر إنشاء مفتاح أمان للعملية. لم يتم الحفظ.',
+    ku: 'دروستکردنی کلیلی پاراستن بۆ کردارەکە سەرکەوتوو نەبوو. پاشەکەوت نەکرا.',
+    en: 'A secure request key could not be created. Nothing was saved.',
+  },
+  variantQuantityLocked: {
+    ar: 'كمية المنتج ذي المتغيرات تُدار من مخزون المتغيرات.',
+    ku: 'بڕی بەرهەمی خاوەن جۆراوجۆری لە کۆگای جۆراوجۆرییەکان بەڕێوەدەبرێت.',
+    en: 'Quantity for products with variants is managed by variant inventory.',
+  },
+};
+
+const validStatuses = new Set<ProductStatus>([
+  'available',
+  'low_stock',
+  'out_of_stock',
+  'draft',
+  'hidden_from_fawri',
+]);
+
 const emptyForm: ProductFormState = {
   name: '',
   sku: '',
@@ -46,8 +117,8 @@ const emptyForm: ProductFormState = {
   allow_fawri_reply: true,
 };
 
-function makeId(prefix: string) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+function localMessage(lang: Lang, key: UiMessageKey): string {
+  return messages[key][lang] || messages[key].en;
 }
 
 function getStatusClass(status: ProductStatus) {
@@ -65,80 +136,249 @@ function getStatusClass(status: ProductStatus) {
   }
 }
 
-function getPrice(product: Product) {
-  return Number(
-    (product as any).current_price ||
-      (product as any).original_price ||
-      (product as any).price ||
-      0
+function productCode(product: CatalogProduct): string {
+  return product.external_ref || product.sku || product.barcode || product.id;
+}
+
+function formFromProduct(product: CatalogProduct): ProductFormState {
+  return {
+    name: product.name || '',
+    sku: product.sku || '',
+    barcode: product.barcode || '',
+    category: product.category || '',
+    description: product.description || '',
+    original_price:
+      product.compare_at_price_iqd === undefined
+        ? ''
+        : String(product.compare_at_price_iqd),
+    current_price: String(product.price_iqd),
+    quantity: String(product.stock_quantity),
+    status: product.status,
+    allow_fawri_reply: product.allow_fawri_reply,
+  };
+}
+
+function cleanText(value: unknown): string {
+  return String(value ?? '').trim();
+}
+
+function objectRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function normalizeDigits(value: unknown): string {
+  return cleanText(value)
+    .replace(/[,\s]/g, '')
+    .replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+    .replace(/[۰-۹]/g, digit => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
+}
+
+function parseNonNegativeInteger(value: unknown): number | null {
+  const normalized = normalizeDigits(value);
+  if (!normalized) return 0;
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function optionalText(value: unknown): string | undefined {
+  const normalized = cleanText(value);
+  return normalized || undefined;
+}
+
+function booleanValue(value: unknown, fallback = true): boolean {
+  if (typeof value === 'boolean') return value;
+  const normalized = cleanText(value).toLowerCase();
+  if (['false', '0', 'no', 'off'].includes(normalized)) return false;
+  if (['true', '1', 'yes', 'on'].includes(normalized)) return true;
+  return fallback;
+}
+
+function importVariant(
+  rawValue: unknown,
+  index: number,
+  productSku?: string,
+): CatalogVariantInput {
+  const raw = objectRecord(rawValue);
+  const rawOptions = objectRecord(raw.options);
+  const color = optionalText(raw.color);
+  const size = optionalText(raw.size);
+  const options: Record<string, string> = Object.fromEntries(
+    Object.entries(rawOptions)
+      .map(([name, value]) => [cleanText(name), cleanText(value)] as const)
+      .filter(([name, value]) => Boolean(name && value)),
   );
+  if (color && !Object.keys(options).some(name => name.toLowerCase() === 'color')) {
+    options.Color = color;
+  }
+  if (size && !Object.keys(options).some(name => name.toLowerCase() === 'size')) {
+    options.Size = size;
+  }
+
+  const quantity = parseNonNegativeInteger(raw.stock_quantity ?? raw.quantity);
+  const variantSku = optionalText(raw.sku);
+  const variantImages = Array.isArray(raw.image_refs)
+    ? (raw.image_refs as CatalogImageInput[])
+    : Array.isArray(raw.images)
+      ? (raw.images as CatalogImageInput[])
+      : [];
+
+  return {
+    ...(optionalText(raw.id) ? { id: optionalText(raw.id) } : {}),
+    name:
+      optionalText(raw.name) ||
+      Object.values(options).join(' / ') ||
+      variantSku ||
+      `Variant ${index + 1}`,
+    ...(variantSku && variantSku !== productSku ? { sku: variantSku } : {}),
+    ...(optionalText(raw.barcode) ? { barcode: optionalText(raw.barcode) } : {}),
+    ...(parseNonNegativeInteger(raw.price_iqd ?? raw.price_override) !== null &&
+    cleanText(raw.price_iqd ?? raw.price_override)
+      ? {
+          price_iqd: parseNonNegativeInteger(raw.price_iqd ?? raw.price_override) ?? 0,
+        }
+      : {}),
+    stock_quantity: quantity ?? 0,
+    options,
+    image_refs: variantImages,
+  };
 }
 
-function getQuantity(product: Product) {
-  return Number((product as any).quantity || 0);
+function importInputFromRecord(
+  rawValue: unknown,
+  rowNumber: number,
+): { input?: CatalogProductInput; errors: string[] } {
+  const raw = objectRecord(rawValue);
+  const errors: string[] = [];
+  const name = optionalText(raw.name ?? raw.product ?? raw.title ?? raw['اسم المنتج']);
+  const externalRef = optionalText(raw.external_ref ?? raw.code ?? raw['الكود']);
+  const sku = optionalText(raw.sku);
+  const barcode = optionalText(raw.barcode);
+  const price = parseNonNegativeInteger(
+    raw.price_iqd ?? raw.current_price ?? raw.price ?? raw['السعر'],
+  );
+  const comparePriceRaw =
+    raw.compare_at_price_iqd ?? raw.original_price ?? raw['السعر الأصلي'];
+  const comparePrice = cleanText(comparePriceRaw)
+    ? parseNonNegativeInteger(comparePriceRaw)
+    : undefined;
+  const quantity = parseNonNegativeInteger(
+    raw.stock_quantity ?? raw.quantity ?? raw['الكمية'],
+  );
+  const requestedStatus = optionalText(raw.status) || 'available';
+
+  if (!name) errors.push(`row ${rowNumber}: name is required`);
+  if (!externalRef && !sku && !barcode) {
+    errors.push(`row ${rowNumber}: external_ref, SKU or barcode is required`);
+  }
+  if (price === null) errors.push(`row ${rowNumber}: price must be a non-negative integer`);
+  if (comparePrice === null) {
+    errors.push(`row ${rowNumber}: original price must be a non-negative integer`);
+  }
+  if (
+    price !== null &&
+    comparePrice !== undefined &&
+    comparePrice !== null &&
+    comparePrice < price
+  ) {
+    errors.push(`row ${rowNumber}: original price cannot be lower than current price`);
+  }
+  if (quantity === null) {
+    errors.push(`row ${rowNumber}: quantity must be a non-negative integer`);
+  }
+  if (!validStatuses.has(requestedStatus as ProductStatus)) {
+    errors.push(`row ${rowNumber}: status is invalid`);
+  }
+
+  if (errors.length > 0 || !name || price === null || quantity === null) {
+    return { errors };
+  }
+
+  const variants = Array.isArray(raw.variants)
+    ? raw.variants.map((variant, index) => importVariant(variant, index, sku))
+    : [];
+  const imageRefs = Array.isArray(raw.image_refs)
+    ? (raw.image_refs as CatalogImageInput[])
+    : Array.isArray(raw.images)
+      ? (raw.images as CatalogImageInput[])
+      : [];
+
+  const input = {
+    ...(externalRef ? { external_ref: externalRef } : {}),
+    name,
+    description: cleanText(raw.description ?? raw['الوصف']),
+    category: cleanText(raw.category ?? raw['القسم']),
+    ...(sku ? { sku } : {}),
+    ...(barcode ? { barcode } : {}),
+    price_iqd: price,
+    ...(comparePrice !== undefined && comparePrice !== null
+      ? { compare_at_price_iqd: comparePrice }
+      : {}),
+    ...(variants.length === 0 ? { stock_quantity: quantity } : {}),
+    status: requestedStatus as ProductStatus,
+    allow_fawri_reply: booleanValue(raw.allow_fawri_reply, true),
+    image_refs: imageRefs,
+    variants,
+  } as CatalogProductInput;
+
+  return { input, errors: [] };
 }
 
-function normalizeProducts(products: Product[], merchantId?: string, fallbackName = 'Unnamed Product') {
-  return products.map((product, index) => ({
-    ...product,
-    id: product.id || (product as any).code || makeId(`product-${index}`),
-    merchant_id: merchantId || product.merchant_id,
-    name: product.name || fallbackName,
-    code: (product as any).code || `B${index + 1001}`,
-    sku: (product as any).sku || '',
-    barcode: (product as any).barcode || '',
-    category: (product as any).category || '',
-    description: (product as any).description || '',
-    original_price: Number((product as any).original_price || (product as any).price || 0),
-    current_price: Number((product as any).current_price || (product as any).price || 0),
-    quantity: Number((product as any).quantity || 0),
-    status: ((product as any).status || 'available') as ProductStatus,
-    allow_fawri_reply: (product as any).allow_fawri_reply !== false,
-    images: Array.isArray((product as any).images) ? (product as any).images : [],
-    variants: Array.isArray((product as any).variants) ? (product as any).variants : [],
-    created_at: (product as any).created_at || new Date().toISOString(),
-  })) as Product[];
-}
-
-function parseCsvProducts(text: string, merchantId: string, fallbackName: string): Product[] {
+function parseCsvRecords(text: string): Record<string, string>[] {
   const lines = text
     .split(/\r?\n/)
     .map(line => line.trim())
     .filter(Boolean);
-
   if (lines.length < 2) return [];
 
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-
-  return lines.slice(1).map((line, index) => {
-    const values = line.split(',').map(v => v.trim());
-    const row: Record<string, string> = {};
-
-    headers.forEach((header, i) => {
-      row[header] = values[i] || '';
-    });
-
-    const name = row.name || row['اسم المنتج'] || row.product || row.title || '';
-
-    return {
-      id: makeId('product'),
-      merchant_id: merchantId,
-      code: row.code || row['الكود'] || `B${index + 1001}`,
-      name: name || fallbackName,
-      sku: row.sku || '',
-      barcode: row.barcode || '',
-      category: row.category || row['القسم'] || '',
-      description: row.description || row['الوصف'] || '',
-      original_price: Number(row.original_price || row.price || row['السعر'] || 0),
-      current_price: Number(row.current_price || row.price || row['السعر'] || 0),
-      quantity: Number(row.quantity || row['الكمية'] || 0),
-      status: (row.status || 'available') as ProductStatus,
-      allow_fawri_reply: true,
-      images: [],
-      variants: [],
-      created_at: new Date().toISOString(),
-    } as Product;
+  const headers = lines[0].split(',').map(header => header.trim().toLowerCase());
+  return lines.slice(1).map(line => {
+    const values = line.split(',').map(value => value.trim());
+    return Object.fromEntries(headers.map((header, index) => [header, values[index] || '']));
   });
+}
+
+function formatCatalogError(lang: Lang, prefix: UiMessageKey, error: unknown): string {
+  if (error instanceof CatalogApiError) {
+    return `${localMessage(lang, prefix)} (${error.code})`;
+  }
+  return localMessage(lang, prefix);
+}
+
+function productInputFromForm(
+  form: ProductFormState,
+  existing?: CatalogProduct,
+): CatalogProductInput {
+  const currentPrice = Number(form.current_price || form.original_price || 0);
+  const comparePrice = form.original_price.trim()
+    ? Number(form.original_price)
+    : existing?.compare_at_price_iqd;
+  const quantity = Number(form.quantity || 0);
+  const hasVariants = Boolean(existing?.variants.length);
+
+  return {
+    name: form.name.trim(),
+    description: form.description.trim(),
+    category: form.category.trim(),
+    sku: form.sku.trim(),
+    barcode: form.barcode.trim(),
+    price_iqd: currentPrice,
+    ...(comparePrice !== undefined ? { compare_at_price_iqd: comparePrice } : {}),
+    ...(!hasVariants ? { stock_quantity: quantity } : {}),
+    ...(existing ? { low_stock_threshold: existing.low_stock_threshold } : {}),
+    status: form.status,
+    allow_fawri_reply: form.allow_fawri_reply,
+  } as CatalogProductInput;
+}
+
+function upsertServerProduct(
+  products: CatalogProduct[],
+  product: CatalogProduct,
+): CatalogProduct[] {
+  const index = products.findIndex(item => item.id === product.id);
+  if (index < 0) return [product, ...products];
+  return products.map(item => (item.id === product.id ? product : item));
 }
 
 function FawriToggle({
@@ -168,12 +408,12 @@ function FawriToggle({
 
 export default function ProductsPage() {
   const { t, lang, dir, isRTL } = useI18n();
-
   const merchant = getCurrentMerchant();
-  const merchantId = merchant?.id || '';
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const createAttemptRef = useRef<CatalogIdempotencyAttempt | null>(null);
+  const importAttemptRef = useRef<CatalogIdempotencyAttempt | null>(null);
 
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -181,9 +421,7 @@ export default function ProductsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const statusOptions = useMemo<
-    Array<{ value: ProductStatus; label: string }>
-  >(
+  const statusOptions = useMemo<Array<{ value: ProductStatus; label: string }>>(
     () => [
       { value: 'available', label: t.products_available },
       { value: 'low_stock', label: t.products_low_stock },
@@ -191,18 +429,22 @@ export default function ProductsPage() {
       { value: 'draft', label: t.products_draft },
       { value: 'hidden_from_fawri', label: t.products_hidden_from_fawri },
     ],
-    [t]
+    [t],
   );
 
   const statusLabels = useMemo<Record<ProductStatus, string>>(
     () =>
-      Object.fromEntries(
-        statusOptions.map(option => [option.value, option.label])
-      ) as Record<ProductStatus, string>,
-    [statusOptions]
+      Object.fromEntries(statusOptions.map(option => [option.value, option.label])) as Record<
+        ProductStatus,
+        string
+      >,
+    [statusOptions],
   );
 
-  const getStatusLabel = (status: ProductStatus) => statusLabels[status];
+  const editingProduct = useMemo(
+    () => products.find(product => product.id === editingProductId),
+    [editingProductId, products],
+  );
 
   const numberLocale = {
     ar: 'ar-IQ',
@@ -214,65 +456,78 @@ export default function ProductsPage() {
     let isMounted = true;
 
     async function loadProducts() {
-      if (!merchantId) {
+      if (!merchant) {
         if (isMounted) setIsLoading(false);
         return;
       }
 
       try {
-        const localProducts = getProducts(merchantId) || [];
-        if (isMounted) setProducts(localProducts);
-
-        const response = await fetch(
-          `/api/products?merchantId=${encodeURIComponent(merchantId)}`
-        );
-
-        const data = await response.json().catch(() => null);
-
-        if (data?.ok && Array.isArray(data.products)) {
-          const cleanProducts = normalizeProducts(
-            data.products as Product[],
-            merchantId,
-            t.products_unnamed
-          );
-
-          if (isMounted) {
-            setProducts(cleanProducts);
-            saveProducts(cleanProducts, merchantId);
-          }
-        }
+        const serverProducts = await listCatalogProducts();
+        if (isMounted) setProducts(serverProducts);
       } catch (error) {
-        console.error('Failed to load products:', error);
-        if (isMounted) setProducts(getProducts(merchantId) || []);
+        console.error('Failed to load canonical catalog products:', error);
+        if (isMounted) {
+          setProducts([]);
+          toast.error(formatCatalogError(lang, 'loadFailed', error));
+        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
     }
 
-    loadProducts();
-
+    void loadProducts();
     return () => {
       isMounted = false;
     };
-  }, [merchantId, t.products_unnamed]);
+  }, [merchant?.id, lang]);
 
   const filteredProducts = useMemo(() => {
     const search = searchTerm.trim().toLowerCase();
     if (!search) return products;
 
-    return products.filter(product => {
-      return (
-        product.name?.toLowerCase().includes(search) ||
-        ((product as any).code || '').toLowerCase().includes(search) ||
-        ((product as any).sku || '').toLowerCase().includes(search) ||
-        ((product as any).category || '').toLowerCase().includes(search)
-      );
-    });
+    return products.filter(product =>
+      [
+        product.name,
+        product.external_ref,
+        product.sku,
+        product.barcode,
+        product.category,
+      ]
+        .filter(Boolean)
+        .some(value => String(value).toLowerCase().includes(search)),
+    );
   }, [products, searchTerm]);
 
   if (!merchant) return null;
 
+  const replaceConflictProduct = async (
+    productId: string,
+    error: unknown,
+    replaceForm = false,
+  ): Promise<boolean> => {
+    if (!(error instanceof CatalogApiError) || error.code !== 'CATALOG_VERSION_CONFLICT') {
+      return false;
+    }
+
+    let current = currentProductFromConflict(error);
+    if (!current) {
+      try {
+        current = await getCatalogProduct(productId);
+      } catch (reloadError) {
+        console.error('Failed to reload product after catalog version conflict:', reloadError);
+      }
+    }
+
+    if (current) {
+      setProducts(existing => upsertServerProduct(existing, current as CatalogProduct));
+      if (replaceForm) setForm(formFromProduct(current));
+    }
+    toast.error(localMessage(lang, 'versionConflict'));
+    return true;
+  };
+
   const openAddForm = () => {
+    createAttemptRef.current = null;
     setForm(emptyForm);
     setEditingProductId(null);
     setIsFormOpen(true);
@@ -280,6 +535,7 @@ export default function ProductsPage() {
 
   const closeForm = () => {
     if (isSaving) return;
+    createAttemptRef.current = null;
     setIsFormOpen(false);
     setEditingProductId(null);
     setForm(emptyForm);
@@ -289,36 +545,6 @@ export default function ProductsPage() {
     setForm(current => ({ ...current, [field]: value }));
   };
 
-  const syncProductsToBot = async (nextProducts: Product[]) => {
-    if (!merchantId) {
-      console.error('Cannot sync products to bot: merchantId is missing');
-      return false;
-    }
-
-    try {
-      const response = await fetch('/api/bot/products/sync', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ merchant_id: merchantId, products: nextProducts }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || !data?.ok) {
-        console.error('Products sync to bot failed:', data);
-        toast.error(t.products_bot_sync_rejected);
-        return false;
-      }
-
-      console.log('Products synced to bot:', data);
-      return true;
-    } catch (error) {
-      console.error('Failed to sync products to bot:', error);
-      toast.error(t.products_bot_sync_failed);
-      return false;
-    }
-  };
-
   const handleImportClick = () => {
     fileInputRef.current?.click();
   };
@@ -326,46 +552,67 @@ export default function ProductsPage() {
   const handleImportProducts = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
-
     if (!file) return;
 
     try {
       const fileText = await file.text();
-      let importedProducts: Product[] = [];
+      let rawRows: unknown[] = [];
 
       if (file.name.toLowerCase().endsWith('.json')) {
         const parsed = JSON.parse(fileText);
-        const rawProducts = Array.isArray(parsed) ? parsed : parsed.products;
-
-        if (!Array.isArray(rawProducts)) {
-          toast.error(t.products_jsonError);
-          return;
-        }
-
-        importedProducts = normalizeProducts(
-          rawProducts as Product[],
-          merchantId,
-          t.products_unnamed
-        );
+        const record = objectRecord(parsed);
+        rawRows = Array.isArray(parsed)
+          ? parsed
+          : Array.isArray(record.products)
+            ? (record.products as unknown[])
+            : [];
       } else {
-        importedProducts = parseCsvProducts(fileText, merchantId, t.products_unnamed);
+        rawRows = parseCsvRecords(fileText);
       }
 
-      if (importedProducts.length === 0) {
+      if (rawRows.length === 0) {
         toast.error(t.products_noImportProducts);
         return;
       }
 
-      const nextProducts = [...importedProducts, ...products];
+      const inputs: CatalogProductInput[] = [];
+      const errors: string[] = [];
+      rawRows.forEach((row, index) => {
+        const result = importInputFromRecord(row, index + 2);
+        if (result.input) inputs.push(result.input);
+        errors.push(...result.errors);
+      });
 
-      setProducts(nextProducts);
-      saveProducts(nextProducts, merchantId);
-      await syncProductsToBot(nextProducts);
+      if (errors.length > 0) {
+        toast.error(`${localMessage(lang, 'importValidation')} ${errors.slice(0, 3).join('; ')}`);
+        return;
+      }
 
-      toast.success(`${t.products_imported} ${importedProducts.length} ${t.products_productWord}`);
+      let attempt: CatalogIdempotencyAttempt;
+      try {
+        attempt = idempotencyAttemptForRequest(
+          importAttemptRef.current,
+          'catalog-import',
+          { products: inputs },
+        );
+      } catch (error) {
+        console.error('Secure catalog import key generation failed:', error);
+        toast.error(localMessage(lang, 'secureCryptoRequired'));
+        return;
+      }
+      importAttemptRef.current = attempt;
+
+      const created = await importCatalogProducts(inputs, attempt.key);
+      importAttemptRef.current = null;
+      setProducts(existing => {
+        let next = existing;
+        for (const product of created) next = upsertServerProduct(next, product);
+        return next;
+      });
+      toast.success(`${t.products_imported} ${created.length} ${t.products_productWord}`);
     } catch (error) {
-      console.error('Import products failed:', error);
-      toast.error(t.products_importFailed);
+      console.error('Catalog import failed:', error);
+      toast.error(formatCatalogError(lang, 'saveFailed', error));
     }
   };
 
@@ -375,150 +622,114 @@ export default function ProductsPage() {
       return false;
     }
 
-    const originalPrice = Number(form.original_price || 0);
+    const originalPrice = form.original_price.trim()
+      ? Number(form.original_price)
+      : undefined;
     const currentPrice = Number(form.current_price || form.original_price || 0);
     const quantity = Number(form.quantity || 0);
 
-    if (Number.isNaN(originalPrice) || originalPrice < 0) {
+    if (
+      originalPrice !== undefined &&
+      (!Number.isSafeInteger(originalPrice) || originalPrice < 0)
+    ) {
       toast.error(t.products_enterValidPrice);
       return false;
     }
-
-    if (Number.isNaN(currentPrice) || currentPrice < 0) {
+    if (!Number.isSafeInteger(currentPrice) || currentPrice < 0) {
       toast.error(t.products_enterValidSalePrice);
       return false;
     }
-
-    if (Number.isNaN(quantity) || quantity < 0) {
+    if (originalPrice !== undefined && originalPrice < currentPrice) {
+      toast.error(t.products_enterValidPrice);
+      return false;
+    }
+    if (!editingProduct?.variants.length && (!Number.isSafeInteger(quantity) || quantity < 0)) {
       toast.error(t.products_enterValidQuantity);
       return false;
     }
-
     return true;
   };
 
-  const buildProduct = (apiProduct?: Product): Product => {
-    const originalPrice = Number(form.original_price || 0);
-    const currentPrice = Number(form.current_price || form.original_price || 0);
-    const quantity = Number(form.quantity || 0);
-
-    return {
-      ...(apiProduct || {}),
-      id: apiProduct?.id || editingProductId || makeId('product'),
-      merchant_id: merchantId,
-      code: (apiProduct as any)?.code || `B${products.length + 1001}`,
-      name: form.name.trim(),
-      sku: form.sku.trim(),
-      barcode: form.barcode.trim(),
-      category: form.category.trim(),
-      description: form.description.trim(),
-      original_price: originalPrice,
-      current_price: currentPrice,
-      quantity,
-      status: form.status,
-      allow_fawri_reply: form.allow_fawri_reply,
-      images: Array.isArray((apiProduct as any)?.images) ? (apiProduct as any).images : [],
-      variants: Array.isArray((apiProduct as any)?.variants) ? (apiProduct as any).variants : [],
-      created_at: (apiProduct as any)?.created_at || new Date().toISOString(),
-    } as Product;
-  };
-
   const handleSaveProduct = async () => {
-    if (isSaving) return;
-    if (!validateForm()) return;
-
+    if (isSaving || !validateForm()) return;
     setIsSaving(true);
 
     try {
-      let savedProduct: Product | undefined;
-
-      if (!editingProductId) {
-        try {
-          const response = await fetch('/api/products', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              merchant_id: merchantId,
-              name: form.name.trim(),
-              sku: form.sku.trim(),
-              barcode: form.barcode.trim(),
-              category: form.category.trim(),
-              description: form.description.trim(),
-              original_price: Number(form.original_price || 0),
-              current_price: Number(form.current_price || form.original_price || 0),
-              price: Number(form.current_price || form.original_price || 0),
-              quantity: Number(form.quantity || 0),
-              status: form.status,
-              allow_fawri_reply: form.allow_fawri_reply,
-            }),
-          });
-
-          const data = await response.json().catch(() => null);
-
-          if (response.ok && data?.ok && data.product) {
-            savedProduct = data.product as Product;
-          }
-        } catch (apiError) {
-          console.error('Create product API failed, saving locally:', apiError);
+      if (editingProductId) {
+        const current = products.find(product => product.id === editingProductId);
+        if (!current) {
+          toast.error(localMessage(lang, 'saveFailed'));
+          return;
         }
+
+        const input = productInputFromForm(form, current);
+        try {
+          const updated = await updateCatalogProduct(
+            current.id,
+            current.version,
+            input,
+          );
+          setProducts(existing => upsertServerProduct(existing, updated));
+          toast.success(t.products_updated);
+          setIsFormOpen(false);
+          setEditingProductId(null);
+          setForm(emptyForm);
+        } catch (error) {
+          if (await replaceConflictProduct(current.id, error, true)) return;
+          throw error;
+        }
+      } else {
+        const input = productInputFromForm(form);
+        let attempt: CatalogIdempotencyAttempt;
+        try {
+          attempt = idempotencyAttemptForRequest(
+            createAttemptRef.current,
+            'catalog-create',
+            input,
+          );
+        } catch (error) {
+          console.error('Secure catalog create key generation failed:', error);
+          toast.error(localMessage(lang, 'secureCryptoRequired'));
+          return;
+        }
+        createAttemptRef.current = attempt;
+
+        const created = await createCatalogProduct(input, attempt.key);
+        createAttemptRef.current = null;
+        setProducts(existing => upsertServerProduct(existing, created));
+        toast.success(t.products_added);
+        setIsFormOpen(false);
+        setEditingProductId(null);
+        setForm(emptyForm);
       }
-
-      const finalProduct = buildProduct(savedProduct);
-      const nextProducts = editingProductId
-        ? products.map(product =>
-            product.id === editingProductId ? finalProduct : product
-          )
-        : [finalProduct, ...products];
-
-      setProducts(nextProducts);
-      saveProducts(nextProducts, merchantId);
-      await syncProductsToBot(nextProducts);
-
-      toast.success(editingProductId ? t.products_updated : t.products_added);
-
-      setIsFormOpen(false);
-      setEditingProductId(null);
-      setForm(emptyForm);
     } catch (error) {
-      console.error('Save product failed:', error);
-      toast.error(t.products_saveError);
+      console.error('Canonical catalog save failed:', error);
+      toast.error(formatCatalogError(lang, 'saveFailed', error));
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleEditProduct = (product: Product) => {
-    setEditingProductId(product.id || null);
-
-    setForm({
-      name: product.name || '',
-      sku: (product as any).sku || '',
-      barcode: (product as any).barcode || '',
-      category: (product as any).category || '',
-      description: (product as any).description || '',
-      original_price: String((product as any).original_price || getPrice(product) || ''),
-      current_price: String((product as any).current_price || getPrice(product) || ''),
-      quantity: String((product as any).quantity || ''),
-      status: ((product as any).status || 'available') as ProductStatus,
-      allow_fawri_reply: (product as any).allow_fawri_reply !== false,
-    });
-
+  const handleEditProduct = (product: CatalogProduct) => {
+    createAttemptRef.current = null;
+    setEditingProductId(product.id);
+    setForm(formFromProduct(product));
     setIsFormOpen(true);
   };
 
-  const handleDeleteProduct = async (productId?: string) => {
-    if (!productId) return;
-
+  const handleDeleteProduct = async (product: CatalogProduct) => {
     const confirmed = window.confirm(t.products_deleteConfirm);
     if (!confirmed) return;
 
-    const nextProducts = products.filter(product => product.id !== productId);
-
-    setProducts(nextProducts);
-    saveProducts(nextProducts, merchantId);
-    await syncProductsToBot(nextProducts);
-
-    toast.success(t.products_deleted);
+    try {
+      await deleteCatalogProduct(product.id, product.version);
+      setProducts(existing => existing.filter(item => item.id !== product.id));
+      toast.success(t.products_deleted);
+    } catch (error) {
+      if (await replaceConflictProduct(product.id, error)) return;
+      console.error('Canonical catalog delete failed:', error);
+      toast.error(formatCatalogError(lang, 'deleteFailed', error));
+    }
   };
 
   return (
@@ -596,15 +807,15 @@ export default function ProductsPage() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {filteredProducts.map((product, index) => {
-            const price = getPrice(product);
-            const quantity = getQuantity(product);
+          {filteredProducts.map(product => {
+            const price = product.price_iqd;
+            const quantity = product.stock_quantity;
             const status = product.status;
-            const canReply = product.allow_fawri_reply !== false;
+            const canReply = product.allow_fawri_reply;
 
             return (
               <div
-                key={product.id || `${product.name}-${index}`}
+                key={product.id}
                 className="overflow-hidden rounded-3xl border bg-card shadow-sm transition hover:shadow-md"
               >
                 <div className="flex items-start justify-between gap-3 border-b p-4">
@@ -614,7 +825,7 @@ export default function ProductsPage() {
                         variant="outline"
                         className={`rounded-full px-3 py-1 text-xs font-semibold ${getStatusClass(status)}`}
                       >
-                        {getStatusLabel(status)}
+                        {statusLabels[status]}
                       </Badge>
 
                       {canReply ? (
@@ -641,11 +852,11 @@ export default function ProductsPage() {
 
                     <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                       <p>
-                        {t.products_code}: {(product as any).code || '-'}
+                        {t.products_code}: {productCode(product)}
                       </p>
-                      {(product as any).category && (
+                      {product.category && (
                         <p>
-                          {t.products_category}: {(product as any).category}
+                          {t.products_category}: {product.category}
                         </p>
                       )}
                     </div>
@@ -667,7 +878,7 @@ export default function ProductsPage() {
                       variant="destructive"
                       size="icon"
                       className="h-10 w-10 rounded-xl"
-                      onClick={() => handleDeleteProduct(product.id)}
+                      onClick={() => void handleDeleteProduct(product)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -696,10 +907,10 @@ export default function ProductsPage() {
                   </div>
                 </div>
 
-                {(product as any).description && (
+                {product.description && (
                   <div className="px-4 pb-4">
                     <p className="rounded-2xl bg-muted/30 p-3 text-sm leading-7 text-muted-foreground">
-                      {(product as any).description}
+                      {product.description}
                     </p>
                   </div>
                 )}
@@ -790,7 +1001,18 @@ export default function ProductsPage() {
                   onChange={event => updateForm('quantity', event.target.value)}
                   placeholder="5"
                   className="h-11 rounded-xl"
+                  disabled={Boolean(editingProduct?.variants.length)}
+                  title={
+                    editingProduct?.variants.length
+                      ? localMessage(lang, 'variantQuantityLocked')
+                      : undefined
+                  }
                 />
+                {Boolean(editingProduct?.variants.length) && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {localMessage(lang, 'variantQuantityLocked')}
+                  </p>
+                )}
               </div>
 
               <div>
@@ -839,9 +1061,7 @@ export default function ProductsPage() {
                 </label>
                 <select
                   value={form.status}
-                  onChange={event =>
-                    updateForm('status', event.target.value as ProductStatus)
-                  }
+                  onChange={event => updateForm('status', event.target.value as ProductStatus)}
                   className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20"
                 >
                   {statusOptions.map(option => (
@@ -883,7 +1103,7 @@ export default function ProductsPage() {
             <div className="shrink-0 border-t bg-background px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
               <Button
                 type="button"
-                onClick={handleSaveProduct}
+                onClick={() => void handleSaveProduct()}
                 disabled={isSaving}
                 className="h-12 w-full rounded-2xl bg-orange-500 text-base font-bold text-white hover:bg-orange-600 disabled:opacity-60"
               >
