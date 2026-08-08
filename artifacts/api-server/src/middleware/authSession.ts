@@ -12,10 +12,10 @@ import {
   type AccountKind,
   type AdminPermission,
 } from "../services/authPolicy";
-import {
-  authSecurityStore,
-  type AuthSessionRecord,
-  type IssuedSession,
+import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
+import type {
+  AuthSessionRecord,
+  IssuedSession,
 } from "../services/authSecurityStore";
 
 export const MERCHANT_SESSION_COOKIE = "fawri_merchant_session_v2";
@@ -82,25 +82,25 @@ export function getMerchantIdFromSecureSession(res: Response): string {
   return getAuthContext(res)?.merchantProfile?.merchantId || "";
 }
 
-export function requireSecureMerchantSession(
+export async function requireSecureMerchantSession(
   req: Request,
   res: Response,
   next: NextFunction,
-): void {
-  authenticate(req, res, "merchant", next);
+): Promise<void> {
+  await authenticate(req, res, "merchant", next);
 }
 
-export function requireSecureAdminSession(
+export async function requireSecureAdminSession(
   req: Request,
   res: Response,
   next: NextFunction,
-): void {
-  authenticate(req, res, "admin", next);
+): Promise<void> {
+  await authenticate(req, res, "admin", next);
 }
 
 export function requireSecureAdminPermission(permission: AdminPermission) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    authenticate(req, res, "admin", () => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await authenticate(req, res, "admin", () => {
       const context = getAuthContext(res);
       const profile = context?.adminProfile;
       if (!profile || !hasAdminPermission(profile.role, profile.permissions, permission)) {
@@ -115,8 +115,8 @@ export function requireSecureAdminPermission(permission: AdminPermission) {
 export function requireSecureTenant(
   resolveRequestedTenantId: (req: Request) => string | undefined,
 ) {
-  return (req: Request, res: Response, next: NextFunction): void => {
-    authenticate(req, res, "merchant", () => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    await authenticate(req, res, "merchant", () => {
       const context = getAuthContext(res);
       const tenantId = context?.merchantProfile?.tenantId || "";
       const decision = assertTenantIsolation(tenantId, resolveRequestedTenantId(req));
@@ -129,12 +129,12 @@ export function requireSecureTenant(
   };
 }
 
-function authenticate(
+async function authenticate(
   req: Request,
   res: Response,
   expectedKind: AccountKind,
   next: NextFunction,
-): void {
+): Promise<void> {
   const token = getSessionToken(req, expectedKind);
   if (!token) {
     sendAuthError(res, 401, "SESSION_REQUIRED", `${expectedKind} session is required`);
@@ -142,7 +142,7 @@ function authenticate(
   }
 
   const deviceId = requestDeviceId(req);
-  const validated = authSecurityStore.validateSession({
+  const validated = await authPostgresSessionAuthority.validateSession({
     token,
     expectedKind,
     ...(deviceId ? { deviceId } : {}),
@@ -158,14 +158,22 @@ function authenticate(
     expectedKind,
   );
   if (!authAccount || !authAccount.account.enabled) {
-    authSecurityStore.revokeSession(token, "account_disabled");
+    await authPostgresSessionAuthority.revokeSession(
+      token,
+      expectedKind,
+      "account_disabled",
+    );
     clearAuthSessionCookie(res, expectedKind);
     sendAuthError(res, 401, "SESSION_ACCOUNT_INVALID", "session account is no longer active");
     return;
   }
 
   if (authAccount.account.sessionVersion !== validated.session.account_version) {
-    authSecurityStore.revokeSession(token, "role_changed");
+    await authPostgresSessionAuthority.revokeSession(
+      token,
+      expectedKind,
+      "role_changed",
+    );
     clearAuthSessionCookie(res, expectedKind);
     sendAuthError(res, 401, "SESSION_VERSION_REVOKED", "session was revoked by an account security change");
     return;
@@ -183,7 +191,11 @@ function authenticate(
   if (expectedKind === "merchant") {
     const profile = authAccount.merchantProfile;
     if (!profile) {
-      authSecurityStore.revokeSession(token, "role_changed");
+      await authPostgresSessionAuthority.revokeSession(
+        token,
+        expectedKind,
+        "role_changed",
+      );
       clearAuthSessionCookie(res, expectedKind);
       sendAuthError(res, 401, "ROLE_SESSION_CONFUSION", "merchant session cannot be used as an admin session");
       return;
@@ -198,7 +210,11 @@ function authenticate(
       return;
     }
   } else if (!authAccount.adminProfile) {
-    authSecurityStore.revokeSession(token, "role_changed");
+    await authPostgresSessionAuthority.revokeSession(
+      token,
+      expectedKind,
+      "role_changed",
+    );
     clearAuthSessionCookie(res, expectedKind);
     sendAuthError(res, 401, "ROLE_SESSION_CONFUSION", "admin session cannot be used as a merchant session");
     return;
@@ -222,7 +238,7 @@ function authenticate(
   res.setHeader("Cache-Control", "no-store");
 
   if (validated.needsRotation) {
-    const rotated = authSecurityStore.rotateSession({
+    const rotated = await authPostgresSessionAuthority.rotateSession({
       token,
       expectedKind,
       ...(deviceId ? { deviceId } : {}),
