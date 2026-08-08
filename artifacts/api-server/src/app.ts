@@ -25,6 +25,14 @@ import emergencyOwnerSnapshotRouter from "./routes/emergency-owner-snapshot";
 import emergencyReadAccessRouter from "./routes/emergency-read-access";
 import emergencyReadDirectoryRouter from "./routes/emergency-read-directory";
 import emergencyMerchantNoticesRouter from "./routes/emergency-merchant-notices";
+import { createObservabilityRouter } from "./observability/router";
+import {
+  allowInternalMetricsRequest,
+  createPostgresAuthorityReadinessCheck,
+  observabilityService,
+  observabilityVersion,
+  processMetricsRegistry,
+} from "./observability/runtime";
 import { enforceAuthCutoverCompatibility } from "./middleware/authCutoverCompatibility";
 import {
   enforceAuthOrigin,
@@ -189,6 +197,16 @@ app.use(cookieParser());
 app.get("/healthz", (_req, res) => {
   res.status(200).json({ ok: true, service: "fawri" });
 });
+app.use(
+  "/ops",
+  createObservabilityRouter({
+    service: observabilityService,
+    version: observabilityVersion(),
+    readinessChecks: [createPostgresAuthorityReadinessCheck()],
+    metrics: processMetricsRegistry,
+    allowMetrics: allowInternalMetricsRequest,
+  }),
+);
 app.use("/api/auth/support-images", supportImagesRouter);
 app.use(
   express.json({
@@ -302,6 +320,8 @@ if (configuredWebDistDir) {
 
     if (
       req.path === "/healthz" ||
+      req.path === "/ops" ||
+      req.path.startsWith("/ops/") ||
       req.path === "/api" ||
       req.path.startsWith("/api/") ||
       path.extname(req.path)

@@ -1,0 +1,63 @@
+name: Observability mounted routes
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/app.ts"
+      - "artifacts/api-server/src/observability/**"
+      - "artifacts/api-server/tests/observability-mounted.integration.test.mjs"
+      - ".github/workflows/observability-mounted.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: observability-mounted-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mounted-routes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_observability
+          POSTGRES_PASSWORD: fawri_observability
+          POSTGRES_DB: fawri_observability_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_observability -d fawri_observability_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_observability:fawri_observability@127.0.0.1:5432/fawri_observability_test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check API observability wiring
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Test mounted observability routes against disposable PostgreSQL
+        run: node --test artifacts/api-server/tests/observability-mounted.integration.test.mjs
