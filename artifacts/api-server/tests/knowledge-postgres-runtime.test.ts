@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   configureKnowledgeEmbeddingProvider,
+  getKnowledgeDecisionEngine,
   getKnowledgeEmbeddingActivationReadiness,
   KnowledgeDecisionEngine,
   resetKnowledgeDecisionEngineForTests,
@@ -12,6 +13,7 @@ import {
   PostgresKnowledgeFactResolver,
   PostgresKnowledgeRuntime,
   PostgresMerchantKnowledgePolicyResolver,
+  setPostgresKnowledgeSqlClientForTests,
 } from "../src/services/knowledge/postgresKnowledgeRuntime.js";
 
 function policyRow(overrides = {}) {
@@ -111,6 +113,41 @@ test("production embedding activation is provider-neutral, explicit, and process
       error.code === "KNOWLEDGE_VECTOR_ACTIVATION_LOCKED",
   );
   resetKnowledgeDecisionEngineForTests();
+});
+
+test("configured embedding provider is wired into the production singleton", async () => {
+  resetKnowledgeDecisionEngineForTests();
+  const sql = new FakeSqlClient(async (query) => {
+    if (query.includes("FROM merchants m") && query.includes("JOIN merchant_settings")) {
+      return [policyRow()];
+    }
+    if (query.includes("knowledge_embeddings")) return [vectorRow()];
+    if (query.includes("FROM saved_answers")) return [];
+    return [];
+  });
+  setPostgresKnowledgeSqlClientForTests(sql);
+  configureKnowledgeEmbeddingProvider(fakeEmbedding);
+
+  try {
+    const result = await getKnowledgeDecisionEngine().decide({
+      merchantId: "merchant-a",
+      customerText: "سياسة الاستبدال",
+      languageHint: "ar",
+    });
+    assert.equal(result.action, "reply");
+    assert.equal(result.stage, "semantic_retrieval");
+    assert.equal(result.matchedRecordId, "saved-a");
+    assert.equal(
+      sql.queries.some((item) =>
+        item.values[0] === "merchant-a" &&
+        item.values[1] === "fake-embedding-v1" &&
+        item.values[2] === "ar"),
+      true,
+    );
+  } finally {
+    resetKnowledgeDecisionEngineForTests();
+    setPostgresKnowledgeSqlClientForTests(null);
+  }
 });
 
 test("invalid production embedding configuration fails closed before activation", () => {
@@ -269,6 +306,31 @@ test("vector retrieval rejects cross-tenant, wrong model/dimensions/language, in
         error instanceof KnowledgeRuntimeGateError && error.code === item.code,
     );
   }
+});
+
+test("provider transport failure becomes vector unavailable before database retrieval", async () => {
+  const sql = new FakeSqlClient(async () => []);
+  const runtime = new PostgresKnowledgeRuntime({
+    sqlClient: sql,
+    embeddingProvider: {
+      ...fakeEmbedding,
+      async embed() {
+        throw new Error("fake provider unavailable");
+      },
+    },
+  });
+
+  await assert.rejects(
+    () => runtime.retrieveSemanticMatch({
+      merchantId: "merchant-a",
+      query: "استبدال",
+      language: "ar",
+    }),
+    (error) =>
+      error instanceof KnowledgeRuntimeGateError &&
+      error.code === "KNOWLEDGE_VECTOR_UNAVAILABLE",
+  );
+  assert.equal(sql.queries.length, 0);
 });
 
 test("malformed provider query vectors fail closed", async () => {
