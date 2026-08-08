@@ -7,7 +7,7 @@ import { Zap, Globe2, TrendingUp, PackageCheck, Layers, MessageCircle, X } from 
 import { Button } from '@/components/ui/button';
 import { PolicyModal, type PolicyTab, getPolicyReadLabel } from '@/components/PolicyModal';
 
-type LandingStatus = 'available' | 'coming_soon' | 'development';
+type LandingStatus = 'available' | 'activation_pending' | 'coming_soon' | 'development';
 
 type LandingChannel = {
   id: string;
@@ -19,8 +19,54 @@ type LandingChannel = {
   features: string[];
 };
 
+const landingTruthCopy = {
+  en: {
+    activationPending: 'Activation pending',
+    instagramDescription:
+      'Instagram support remains visible for already connected accounts, but new Instagram connections are currently unavailable until secure activation is enabled.',
+    messengerDescription:
+      'Messenger support remains visible for already connected pages, but new Messenger connections are currently unavailable until secure activation is enabled.',
+    channelFeatureDescription:
+      'Channel management is being activated in stages. New Instagram and Messenger connections are currently unavailable.',
+    howStep3Title: 'Channel connection activation',
+    howStep3Description:
+      'Add your products now; new Instagram and Messenger connections will become available after secure channel activation is enabled.',
+    pendingCapabilitiesTitle: 'Capabilities for existing connections / after activation',
+    inDevelopment: 'In development',
+  },
+  ar: {
+    activationPending: 'التفعيل قيد الانتظار',
+    instagramDescription:
+      'دعم Instagram يبقى ظاهراً للحسابات المرتبطة مسبقاً، لكن الربط الجديد غير متاح حالياً حتى يتم تفعيل الربط الآمن.',
+    messengerDescription:
+      'دعم Messenger يبقى ظاهراً للصفحات المرتبطة مسبقاً، لكن الربط الجديد غير متاح حالياً حتى يتم تفعيل الربط الآمن.',
+    channelFeatureDescription:
+      'يتم تفعيل إدارة القنوات على مراحل. ربط Instagram وMessenger الجديد غير متاح حالياً.',
+    howStep3Title: 'تفعيل ربط القنوات',
+    howStep3Description:
+      'يمكنك إضافة المنتجات الآن، وسيصبح ربط Instagram وMessenger الجديد متاحاً بعد تفعيل الربط الآمن.',
+    pendingCapabilitiesTitle: 'القدرات للروابط الحالية / بعد التفعيل',
+    inDevelopment: 'قيد التطوير',
+  },
+  ku: {
+    activationPending: 'چالاککردن چاوەڕوانە',
+    instagramDescription:
+      'پشتیوانی Instagram بۆ هەژمارە پەیوەستکراوە پێشووترەکان دەردەکەوێت، بەڵام پەیوەستکردنی نوێ تا چالاککردنی پارێزراو بەردەست نییە.',
+    messengerDescription:
+      'پشتیوانی Messenger بۆ پەڕە پەیوەستکراوە پێشووترەکان دەردەکەوێت، بەڵام پەیوەستکردنی نوێ تا چالاککردنی پارێزراو بەردەست نییە.',
+    channelFeatureDescription:
+      'بەڕێوەبردنی کەناڵەکان بە قۆناغ چالاک دەکرێت. پەیوەستکردنی نوێی Instagram و Messenger لە ئێستادا بەردەست نییە.',
+    howStep3Title: 'چالاککردنی پەیوەستکردنی کەناڵ',
+    howStep3Description:
+      'دەتوانیت ئێستا بەرهەمەکان زیاد بکەیت؛ پەیوەستکردنی نوێی Instagram و Messenger دوای چالاککردنی پارێزراو بەردەست دەبێت.',
+    pendingCapabilitiesTitle: 'تواناکان بۆ پەیوەندییە هەنووکەییەکان / دوای چالاککردن',
+    inDevelopment: 'لە ژێر پەرەپێدان',
+  },
+} as const;
+
 export default function LandingPage() {
   const { t, isRTL, lang } = useI18n();
+  const truth = landingTruthCopy[lang];
 
   const brandName = lang === 'ar' ? 'فوري' : lang === 'ku' ? 'فورى' : 'Fawri';
   const getChannelLogoAlt = (name: string) => {
@@ -39,10 +85,9 @@ export default function LandingPage() {
     { icon: Globe2, title: t.feature_languages_title, desc: t.feature_languages_desc },
     { icon: TrendingUp, title: t.feature_sales_title, desc: t.feature_sales_desc },
     { icon: PackageCheck, title: t.feature_stock_title, desc: t.feature_stock_desc },
-    { icon: Layers, title: t.feature_channels_title, desc: t.feature_channels_desc },
+    { icon: Layers, title: t.feature_channels_title, desc: truth.channelFeatureDescription },
     { icon: MessageCircle, title: t.feature_takeover_title, desc: t.feature_takeover_desc },
   ];
-
 
   const landingChannels: LandingChannel[] = [
     {
@@ -50,8 +95,8 @@ export default function LandingPage() {
       name: 'Instagram',
       nameLines: ['Instagram'],
       iconSrc: '/channel-icons/instagram.svg',
-      status: 'available',
-      description: t.channel_instagram_desc,
+      status: 'activation_pending',
+      description: truth.instagramDescription,
       features: [t.channel_instagram_feature_reply, t.channel_instagram_feature_track, t.channel_instagram_feature_auto, t.channel_instagram_feature_orders, t.channel_instagram_feature_customer],
     },
     {
@@ -59,8 +104,8 @@ export default function LandingPage() {
       name: 'Facebook Messenger',
       nameLines: ['Facebook', 'Messenger'],
       iconSrc: '/channel-icons/facebook-messenger.svg',
-      status: 'available',
-      description: t.channel_messenger_desc,
+      status: 'activation_pending',
+      description: truth.messengerDescription,
       features: [t.channel_messenger_feature_reply, t.channel_messenger_feature_track, t.channel_messenger_feature_auto, t.channel_messenger_feature_orders, t.channel_messenger_feature_customer],
     },
     {
@@ -101,14 +146,16 @@ export default function LandingPage() {
     },
   ];
 
-  const getLandingStatusLabel = (status: string) => {
+  const getLandingStatusLabel = (status: LandingStatus) => {
     if (status === 'available') return t.supported;
+    if (status === 'activation_pending') return truth.activationPending;
     if (status === 'coming_soon') return t.coming_soon;
-    return t.in_development;
+    return truth.inDevelopment;
   };
 
-  const getLandingStatusClass = (status: string) => {
+  const getLandingStatusClass = (status: LandingStatus) => {
     if (status === 'available') return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30';
+    if (status === 'activation_pending') return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-200';
     if (status === 'coming_soon') return 'bg-muted text-muted-foreground';
     return 'bg-blue-50 text-blue-700 dark:bg-blue-900/30';
   };
@@ -117,11 +164,6 @@ export default function LandingPage() {
     { name: t.plan_gold, price: '49,000', replies: '8,000', emergency: '800', popular: true },
     { name: t.plan_diamond, price: '75,000', replies: '14,000', emergency: '1,400', popular: false },
   ];
-
-  const scrollToSection = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background selection:bg-primary/20">
@@ -139,11 +181,11 @@ export default function LandingPage() {
         >
         <section className="mb-7 px-4">
           <div dir="ltr" className="mx-auto grid max-w-md grid-cols-2 gap-3">
-            <a
-              href="#"
-              onClick={(event) => event.preventDefault()}
-              aria-label={t.android_app_label}
-              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-slate-950 shadow-sm transition hover:border-slate-300 hover:bg-slate-100 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:ring-offset-2"
+            <button
+              type="button"
+              disabled
+              aria-label={`${t.android}: ${truth.inDevelopment}`}
+              className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-slate-500 shadow-sm"
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-green-600 shadow-sm">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true" fill="currentColor">
@@ -151,15 +193,15 @@ export default function LandingPage() {
                 </svg>
               </span>
               <span className="min-w-0 text-left leading-tight">
-                <span className="block text-xs font-black sm:text-sm">{t.android}</span>
-                  <span className="block text-[11px] font-bold text-slate-500">{t.download_now}</span>
+                <span className="block text-xs font-black text-slate-700 sm:text-sm">{t.android}</span>
+                <span className="block text-[11px] font-bold text-slate-500">{truth.inDevelopment}</span>
               </span>
-            </a>
+            </button>
 
             <button
               type="button"
               disabled
-              aria-label={t.ios_app_label}
+              aria-label={`${t.ios}: ${truth.inDevelopment}`}
               className="flex min-h-14 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-slate-500 shadow-sm"
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-slate-500 shadow-sm">
@@ -169,7 +211,7 @@ export default function LandingPage() {
               </span>
               <span className="min-w-0 text-left leading-tight">
                 <span className="block text-xs font-black text-slate-700 sm:text-sm">{t.ios}</span>
-                <span className="block text-[11px] font-bold text-slate-500">In development</span>
+                <span className="block text-[11px] font-bold text-slate-500">{truth.inDevelopment}</span>
               </span>
             </button>
           </div>
@@ -266,7 +308,9 @@ export default function LandingPage() {
 
             <div className="mt-5 rounded-2xl bg-muted/40 p-4">
               <p className="mb-3 text-sm font-extrabold text-foreground">
-                    {t.channel_modal_title}
+                {selectedLandingChannel.status === 'activation_pending'
+                  ? truth.pendingCapabilitiesTitle
+                  : t.channel_modal_title}
               </p>
               <div className="space-y-2">
                 {selectedLandingChannel.features.map((feature) => (
@@ -352,7 +396,7 @@ export default function LandingPage() {
               {[
               { num: 1, title: t.step1, desc: t.step1_desc },
               { num: 2, title: t.step2, desc: t.step2_desc },
-              { num: 3, title: t.step3, desc: t.step3_desc },
+              { num: 3, title: truth.howStep3Title, desc: truth.howStep3Description },
               { num: 4, title: t.step4, desc: t.step4_desc },
               { num: 5, title: t.step5, desc: t.step5_desc },
               ].map((item) => (
