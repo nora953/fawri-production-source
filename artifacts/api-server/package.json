@@ -25,6 +25,7 @@
     "test:support-preview": "node ./build.mjs && node --test ./tests/support-preview.integration.test.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-kms": "^3.1097.0",
     "@workspace/api-zod": "workspace:*",
     "@workspace/db": "workspace:*",
     "cookie-parser": "^1.4.7",
