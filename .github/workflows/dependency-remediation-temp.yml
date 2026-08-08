@@ -56,10 +56,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pnpm why brace-expansion || true
-          pnpm why fast-uri || true
-          pnpm why js-yaml || true
-          pnpm why xlsx || true
+          for package in brace-expansion fast-uri js-yaml linkify-it nanoid postcss vite xlsx; do
+            echo "=== baseline pnpm why $package ==="
+            pnpm why "$package" || true
+          done
 
       - name: Apply conservative remediation manifests
         shell: bash
@@ -78,12 +78,20 @@ jobs:
 
           const workspacePath = 'pnpm-workspace.yaml';
           let workspace = fs.readFileSync(workspacePath, 'utf8');
+          const viteBefore = '  vite: ^7.3.2\n';
+          const viteAfter = '  vite: ^7.3.5\n';
+          if (!workspace.includes(viteBefore)) throw new Error('Unexpected Vite catalog specifier');
+          workspace = workspace.replace(viteBefore, viteAfter);
+
           const marker = 'overrides:\n';
           if (!workspace.includes(marker)) throw new Error('pnpm-workspace overrides block missing');
           const additions = [
-            "  'brace-expansion@5.0.6': 5.0.8",
-            "  'fast-uri@3.1.2': 3.1.4",
-            "  'js-yaml@4.1.1': 4.3.0",
+            "  'brace-expansion@5.0.6': 5.0.9",
+            "  'fast-uri@3.1.2': 3.1.5",
+            "  'js-yaml@4.1.1': 4.3.1",
+            "  'linkify-it@5.0.0': 5.0.2",
+            "  'nanoid@3.3.12': 3.3.17",
+            "  'postcss@8.5.14': 8.5.18",
           ];
           for (const line of additions) {
             if (workspace.includes(line)) throw new Error(`Override already present: ${line}`);
@@ -101,6 +109,15 @@ jobs:
           set -euo pipefail
           pnpm install --no-frozen-lockfile --ignore-scripts
           git diff --check
+
+      - name: Verify generated dependency versions
+        shell: bash
+        run: |
+          set -euo pipefail
+          for package in brace-expansion fast-uri js-yaml linkify-it nanoid postcss vite xlsx; do
+            echo "=== remediated pnpm why $package ==="
+            pnpm why "$package" || true
+          done
 
       - name: Verify frozen install from generated lockfile
         shell: bash
@@ -128,48 +145,48 @@ jobs:
             high: Number(v.high || 0),
             moderate: Number(v.moderate || 0),
             low: Number(v.low || 0),
-            total: Number(v.total || 0),
           };
+          summary.total = summary.critical + summary.high + summary.moderate + summary.low;
           fs.writeFileSync('audit-summary.json', JSON.stringify(summary, null, 2) + '\n');
-          console.log(JSON.stringify(summary));
+          console.log(`AUDIT_COUNTS ${JSON.stringify(summary)}`);
 
           const names = new Set();
           if (audit.vulnerabilities && typeof audit.vulnerabilities === 'object') {
             for (const [name, detail] of Object.entries(audit.vulnerabilities)) {
-              if (detail && detail.severity === 'high') {
-                names.add(name);
-                const range = typeof detail.range === 'string' ? detail.range : '';
-                console.log(`HIGH package=${name}${range ? ` range=${range}` : ''}`);
-              }
+              if (!detail || !detail.severity) continue;
+              const severity = String(detail.severity).toLowerCase();
+              const range = typeof detail.range === 'string' ? detail.range : '';
+              console.log(`ADVISORY severity=${severity} package=${name}${range ? ` range=${range}` : ''}`);
+              names.add(name);
             }
           }
           if (audit.advisories && typeof audit.advisories === 'object') {
             for (const detail of Object.values(audit.advisories)) {
-              if (detail && detail.severity === 'high') {
-                const name = detail.module_name || detail.name || 'unknown';
-                names.add(name);
-                const range = detail.vulnerable_versions || detail.range || '';
-                const patched = detail.patched_versions || '';
-                console.log(`HIGH package=${name}${range ? ` range=${range}` : ''}${patched ? ` patched=${patched}` : ''}`);
-              }
+              if (!detail || !detail.severity) continue;
+              const severity = String(detail.severity).toLowerCase();
+              const name = detail.module_name || detail.name || 'unknown';
+              const range = detail.vulnerable_versions || detail.range || '';
+              const patched = detail.patched_versions || '';
+              console.log(`ADVISORY severity=${severity} package=${name}${range ? ` range=${range}` : ''}${patched ? ` patched=${patched}` : ''}`);
+              names.add(name);
             }
           }
-          fs.writeFileSync('high-package-names.txt', [...names].sort().join('\n') + ([...names].length ? '\n' : ''));
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `critical=${summary.critical}\nhigh=${summary.high}\n`);
+          fs.writeFileSync('advisory-package-names.txt', [...names].sort().join('\n') + ([...names].length ? '\n' : ''));
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `critical=${summary.critical}\nhigh=${summary.high}\nmoderate=${summary.moderate}\nlow=${summary.low}\n`);
           NODE
           rm -f audit-full.json
           echo "pnpm_audit_exit_code=$AUDIT_RC" >> "$GITHUB_OUTPUT"
 
-      - name: Show sanitized dependency paths for remaining High packages
+      - name: Show sanitized dependency paths for remaining advisories
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          if [ -s high-package-names.txt ]; then
+          if [ -s advisory-package-names.txt ]; then
             while IFS= read -r package; do
               echo "=== pnpm why $package ==="
               pnpm why "$package" || true
-            done < high-package-names.txt
+            done < advisory-package-names.txt
           fi
 
       - name: Prepare remediation artifact
