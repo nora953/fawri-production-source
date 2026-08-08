@@ -4,10 +4,11 @@ import {
   KMSClient,
   type KMSClientConfig,
 } from "@aws-sdk/client-kms";
-import type {
-  MetaCredentialKey,
-  MetaCredentialKeyProvider,
-  MetaCredentialProviderReadiness,
+import {
+  assertProductionMetaCredentialProviderReady,
+  type MetaCredentialKey,
+  type MetaCredentialKeyProvider,
+  type MetaCredentialProviderReadiness,
 } from "./metaCredentialVault";
 
 export const FAWRI_META_KMS_ENCRYPTION_CONTEXT = Object.freeze({
@@ -30,6 +31,7 @@ export type AwsKmsMetaCredentialKeyProvider = MetaCredentialKeyProvider & {
 };
 
 type AwsKmsClientLike = Pick<KMSClient, "send">;
+const awsKmsBackedProviders = new WeakSet<MetaCredentialKeyProvider>();
 
 function text(value: unknown): string {
   return String(value || "").trim();
@@ -130,6 +132,25 @@ export function readAwsKmsMetaCredentialConfigFromEnvironment(
   });
 }
 
+export function assertAwsKmsMetaCredentialProviderReady(
+  provider: MetaCredentialKeyProvider,
+): MetaCredentialProviderReadiness {
+  if (!awsKmsBackedProviders.has(provider)) {
+    throw fail(
+      "META_CREDENTIAL_AWS_KMS_PROVIDER_REQUIRED",
+      "AWS KMS-backed Meta credential provider is required",
+    );
+  }
+  const readiness = assertProductionMetaCredentialProviderReady(provider);
+  if (readiness.provider_id !== "aws-kms") {
+    throw fail(
+      "META_CREDENTIAL_AWS_KMS_PROVIDER_REQUIRED",
+      "AWS KMS-backed Meta credential provider is required",
+    );
+  }
+  return readiness;
+}
+
 export async function bootstrapAwsKmsMetaCredentialKeyProvider(input: {
   config: AwsKmsMetaCredentialConfig;
   client: AwsKmsClientLike;
@@ -194,7 +215,7 @@ export async function bootstrapAwsKmsMetaCredentialKeyProvider(input: {
     decrypt_key_ids: [...cache.keys()],
   });
 
-  return {
+  const provider: AwsKmsMetaCredentialKeyProvider = {
     current() {
       if (disposed) {
         throw fail(
@@ -218,6 +239,8 @@ export async function bootstrapAwsKmsMetaCredentialKeyProvider(input: {
     readiness,
     dispose: cleanup,
   };
+  awsKmsBackedProviders.add(provider);
+  return provider;
 }
 
 export async function bootstrapAwsKmsMetaCredentialKeyProviderFromEnvironment(input?: {
