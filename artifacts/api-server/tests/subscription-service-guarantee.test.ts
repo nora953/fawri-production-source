@@ -350,7 +350,7 @@ test("client-supplied outage fields and browser localStorage cannot become autho
   }
 });
 
-test("missing SaaS payment authority keeps otherwise qualifying claims in manual review", async () => {
+test("missing SaaS payment authority blocks automatic extension for a 24h+ claim", async () => {
   const result = await evaluate(
     new FakeAuthority({
       subscription: subscription({
@@ -362,7 +362,32 @@ test("missing SaaS payment authority keeps otherwise qualifying claims in manual
   );
   assert.equal(result.result, "manual_review_required");
   assert.equal(result.reasonCode, "BILLING_AUTHORITY_UNAVAILABLE");
+  assert.equal(result.eligibleExtensionSeconds, 0);
+  assert.equal(result.qualifyingOutageSeconds, 30 * HOUR);
   assert.equal(result.refundReviewEligible, false);
+});
+
+test("missing SaaS payment authority preserves 72h+ manual refund-review eligibility without refund or extension", async () => {
+  const result = await evaluate(
+    new FakeAuthority({
+      subscription: subscription({
+        billingState: "unknown",
+        billingReference: null,
+      }),
+      incidents: [incident("fawri-refund-review-outage", 0, 73)],
+    }),
+  );
+  assert.equal(result.result, "eligible_for_manual_refund_review");
+  assert.equal(result.refundReviewEligible, true);
+  assert.equal(result.manualReviewRequired, true);
+  assert.equal(result.eligibleExtensionSeconds, 0);
+  assert.equal(result.qualifyingOutageSeconds, 73 * HOUR);
+  assert.equal(
+    result.reasonCode,
+    "FAWRI_OUTAGE_OVER_72H_BILLING_REVIEW_REQUIRED",
+  );
+  assert.equal("refunded" in result, false);
+  assert.equal("refundProviderResult" in result, false);
 });
 
 test("missing production incident authority fails closed", async () => {
