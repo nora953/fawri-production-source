@@ -63,7 +63,16 @@ function readMetaCredentialProviderSelection(
   env: NodeJS.ProcessEnv,
 ): MetaCredentialProviderSelection {
   const selected = text(env.FAWRI_META_CREDENTIAL_PROVIDER).toLowerCase();
-  if (!selected) return "environment";
+  const production = text(env.NODE_ENV).toLowerCase() === "production";
+  if (!selected) {
+    if (production) {
+      throw fail(
+        "META_CREDENTIAL_PROVIDER_REQUIRED",
+        "AWS KMS Meta credential provider selection is required in production",
+      );
+    }
+    return "environment";
+  }
   if (selected === "aws-kms") return "aws-kms";
   throw fail(
     "META_CREDENTIAL_PROVIDER_CONFIG_INVALID",
