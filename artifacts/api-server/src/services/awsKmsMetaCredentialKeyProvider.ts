@@ -148,6 +148,7 @@ export async function bootstrapAwsKmsMetaCredentialKeyProvider(input: {
   try {
     for (const [id, encoded] of Object.entries(config.wrappedDeks)) {
       const ciphertextBlob = decodeCiphertextBlob(encoded);
+      let plaintext: Uint8Array | undefined;
       try {
         const output = await input.client.send(
           new DecryptCommand({
@@ -156,23 +157,22 @@ export async function bootstrapAwsKmsMetaCredentialKeyProvider(input: {
             EncryptionContext: FAWRI_META_KMS_ENCRYPTION_CONTEXT,
           }),
         );
+        plaintext = output.Plaintext;
         if (text(output.KeyId) !== config.kmsKeyArn) {
           throw fail(
             "META_CREDENTIAL_AWS_KMS_KEY_ID_MISMATCH",
             "AWS KMS returned an unexpected key identity",
           );
         }
-        if (!output.Plaintext || output.Plaintext.byteLength !== 32) {
-          output.Plaintext?.fill(0);
+        if (!plaintext || plaintext.byteLength !== 32) {
           throw fail(
             "META_CREDENTIAL_AWS_KMS_PLAINTEXT_INVALID",
             "AWS KMS returned an invalid Meta credential data key",
           );
         }
-        const key = Buffer.from(output.Plaintext);
-        output.Plaintext.fill(0);
-        cache.set(id, { id, key });
+        cache.set(id, { id, key: Buffer.from(plaintext) });
       } finally {
+        plaintext?.fill(0);
         ciphertextBlob.fill(0);
       }
     }
@@ -228,9 +228,8 @@ export async function bootstrapAwsKmsMetaCredentialKeyProviderFromEnvironment(in
   const client = new KMSClient({ ...input?.clientConfig, region: config.region });
   try {
     return await bootstrapAwsKmsMetaCredentialKeyProvider({ config, client });
-  } catch (error) {
+  } finally {
     client.destroy();
-    throw error;
   }
 }
 
