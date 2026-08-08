@@ -21,16 +21,21 @@ test("catalog router derives the tenant from the authenticated session", () => {
   assert.match(source, /MERCHANT_ACCESS_FORBIDDEN/);
 });
 
-test("active products page is server-only and shadows the legacy page", () => {
-  const page = read("fawri/src/pages/dashboard/ServerProductsPage.tsx");
+test("active products entry exposes the canonical server-authoritative catalog UI", () => {
+  const page = read("fawri/src/pages/dashboard/ProductsPage.tsx");
   const activation = read("fawri/src/pages/dashboard/ProductsPage.ts");
 
   assert.doesNotMatch(page, /localStorage|sessionStorage/);
-  assert.doesNotMatch(page, /getProducts|saveProducts|getCurrentMerchant/);
-  assert.match(page, /fetch\('\/api\/catalog\/products/);
+  assert.doesNotMatch(page, /\bgetProducts\b|\bsaveProducts\b/);
+  assert.doesNotMatch(page, /['"]\/api\/products['"]/);
+  assert.doesNotMatch(page, /\/api\/bot\/products\/sync/);
+  assert.match(page, /listCatalogProducts\(\)/);
+  assert.match(page, /createCatalogProduct/);
+  assert.match(page, /updateCatalogProduct/);
+  assert.match(page, /deleteCatalogProduct/);
   assert.equal(
     activation.trim(),
-    "export { default } from './ServerProductsPage';",
+    "export { default } from './ProductsPage.tsx';",
   );
 });
 
