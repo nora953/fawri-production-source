@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import type { Message } from '../src/lib/types';
 import {
@@ -68,6 +69,19 @@ test('missing earlier same-conversation customer message leaves question blank f
   });
 });
 
+test('conversation page exposes save-as-answer only for merchant messages and avoids the legacy write endpoint', async () => {
+  const source = await readFile(
+    new URL('../src/pages/dashboard/ConversationsPage.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(source, /message\.sender === 'merchant' && \(/);
+  assert.match(source, /handleSaveAsAnswer\(message\.id\)/);
+  assert.match(source, /createConversationSavedAnswer\(/);
+  assert.doesNotMatch(source, /fetch\(['"]\/api\/saved-answers/);
+  assert.doesNotMatch(source, /merchant_id\s*:/);
+});
+
 test('canonical create uses only approved knowledge fields and returns the server answer', async () => {
   let capturedUrl = '';
   let capturedInit: RequestInit | undefined;
@@ -117,7 +131,7 @@ test('canonical create uses only approved knowledge fields and returns the serve
   assert.equal('customer_handle' in body, false);
   assert.equal('customer_name' in body, false);
   assert.equal('messages' in body, false);
-  assert.strictEqual(result, canonicalAnswer);
+  assert.deepEqual(result, canonicalAnswer);
 });
 
 test('server failure and malformed success both fail closed', async () => {
