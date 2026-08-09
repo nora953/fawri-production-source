@@ -160,10 +160,10 @@ export default function LandingPage() {
     return 'bg-blue-50 text-blue-700 dark:bg-blue-900/30';
   };
   const plans = [
-    { name: t.plan_silver, price: '25,000', replies: '4,000', emergency: '400', popular: false },
-    { name: t.plan_gold, price: '49,000', replies: '8,000', emergency: '800', popular: true },
-    { name: t.plan_diamond, price: '75,000', replies: '14,000', emergency: '1,400', popular: false },
-  ];
+    { id: 'silver', name: t.plan_silver, price: '25,000', replies: '4,000', emergency: '400', popular: false },
+    { id: 'gold', name: t.plan_gold, price: '49,000', replies: '8,000', emergency: '800', popular: true },
+    { id: 'diamond', name: t.plan_diamond, price: '75,000', replies: '14,000', emergency: '1,400', popular: false },
+  ] as const;
 
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background selection:bg-primary/20">
@@ -495,7 +495,7 @@ export default function LandingPage() {
                   className={`h-12 w-full rounded-2xl text-base font-extrabold shadow-sm transition-all ${plan.popular ? 'shadow-primary/20 hover:-translate-y-0.5 hover:shadow-lg' : 'hover:border-primary hover:bg-primary hover:text-primary-foreground'}`}
                   asChild
                 >
-                  <Link href="/signup">{t.get_started}</Link>
+                  <Link href={`/signup?plan=${plan.id}`}>{t.get_started}</Link>
                 </Button>
               </div>
             ))}
