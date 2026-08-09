@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authAccountRepository, normalizePhone } from "../services/authAccountRepository";
+import { authAccountRepository, normalizePhone, type RequestedPlan } from "../services/authAccountRepository";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import { authSecurityStore, type OtpPurpose } from "../services/authSecurityStore";
 import { getPasswordValidationError, hashPassword } from "../services/authPasswordService";
@@ -12,12 +12,21 @@ router.post("/signup", async (req, res) => {
   const phone = normalizePhone(req.body?.phone), password = String(req.body?.password || "");
   const ownerName = String(req.body?.owner_name || "").trim(), storeName = String(req.body?.store_name || "").trim(), activityType = String(req.body?.activity_type || "").trim();
   const language = req.body?.language === "en" || req.body?.language === "ku" ? req.body.language : "ar";
+  const requestedPlanInput = req.body?.requested_plan;
+  let requestedPlan: RequestedPlan | undefined;
+  if (requestedPlanInput !== undefined && requestedPlanInput !== null) {
+    if (requestedPlanInput !== "silver" && requestedPlanInput !== "gold" && requestedPlanInput !== "diamond") {
+      sendAuthError(res, 400, "INVALID_REQUESTED_PLAN", "requested_plan must be silver, gold, or diamond");
+      return;
+    }
+    requestedPlan = requestedPlanInput;
+  }
   const validation = getPasswordValidationError(password);
   if (!/^07\d{9}$/.test(phone)) { sendAuthError(res, 400, "INVALID_PHONE", "phone must start with 07 and contain 11 digits"); return; }
   if (validation) { sendAuthError(res, 400, validation.code, validation.message); return; }
   if (!ownerName || !storeName || !activityType) { sendAuthError(res, 400, "SIGNUP_FIELDS_REQUIRED", "owner, store, and activity fields are required"); return; }
   try {
-    const account = authAccountRepository.upsertPendingMerchant({ phone, passwordHash: hashPassword(password), ownerName, storeName, activityType, language });
+    const account = authAccountRepository.upsertPendingMerchant({ phone, passwordHash: hashPassword(password), ownerName, storeName, activityType, language, requestedPlan });
     const issued = await issueOtp(req, phone, "signup");
     res.status(201).json({ ok: true, ...payload(account), challenge_id: issued.challengeId, expires_at: issued.expiresAt, retry_after_seconds: issued.retryAfterSeconds, ...devCode(issued.code) });
   } catch (error) {
