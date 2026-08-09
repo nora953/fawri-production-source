@@ -28,7 +28,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: auth-otp-contract-continuity-${{ github.ref }}
@@ -53,33 +53,132 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies without package build scripts
+        id: install
+        continue-on-error: true
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Run focused frontend Auth OTP contract tests
+        id: frontend_contract
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
         run: node --test artifacts/fawri/tests/auth-otp-contract-continuity.test.mjs
 
       - name: Run focused backend Auth OTP contract tests
+        id: backend_contract
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
         run: node --test artifacts/api-server/tests/auth-otp-contract-continuity.test.mjs
 
       - name: Run Auth v2 security store tests
+        id: auth_security
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
         run: pnpm --filter @workspace/api-server exec tsx --test ./tests/auth-security-store.test.ts
 
       - name: Run Auth cutover contract tests
+        id: auth_cutover
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
         run: node --test artifacts/api-server/tests/auth-cutover-contract.test.mjs
 
       - name: Type-check API server
+        id: api_typecheck
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
         run: pnpm --filter @workspace/api-server run typecheck
 
       - name: Type-check Fawri frontend
+        id: fawri_typecheck
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
         run: pnpm --filter @workspace/fawri run typecheck
 
       - name: Build API server
+        id: api_build
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
         run: pnpm --filter @workspace/api-server run build
 
       - name: Build Fawri frontend
+        id: fawri_build
+        if: steps.install.outcome == 'success'
+        continue-on-error: true
         run: pnpm --filter @workspace/fawri run build
 
       - name: Run merchant session integration test
+        id: merchant_session
+        if: steps.install.outcome == 'success' && steps.api_build.outcome == 'success'
+        continue-on-error: true
         env:
           NODE_ENV: test
         run: node --test artifacts/api-server/tests/merchant-session.integration.test.mjs
+
+      - name: Record verification result on the tested branch
+        if: always()
+        env:
+          INSTALL: ${{ steps.install.outcome }}
+          FRONTEND_CONTRACT: ${{ steps.frontend_contract.outcome }}
+          BACKEND_CONTRACT: ${{ steps.backend_contract.outcome }}
+          AUTH_SECURITY: ${{ steps.auth_security.outcome }}
+          AUTH_CUTOVER: ${{ steps.auth_cutover.outcome }}
+          API_TYPECHECK: ${{ steps.api_typecheck.outcome }}
+          FAWRI_TYPECHECK: ${{ steps.fawri_typecheck.outcome }}
+          API_BUILD: ${{ steps.api_build.outcome }}
+          FAWRI_BUILD: ${{ steps.fawri_build.outcome }}
+          MERCHANT_SESSION: ${{ steps.merchant_session.outcome }}
+        run: |
+          mkdir -p artifacts/verification
+          node - <<'NODE'
+          const fs = require('node:fs');
+          const fields = {
+            install: process.env.INSTALL,
+            frontend_contract: process.env.FRONTEND_CONTRACT,
+            backend_contract: process.env.BACKEND_CONTRACT,
+            auth_security_store: process.env.AUTH_SECURITY,
+            auth_cutover_contract: process.env.AUTH_CUTOVER,
+            api_typecheck: process.env.API_TYPECHECK,
+            fawri_typecheck: process.env.FAWRI_TYPECHECK,
+            api_build: process.env.API_BUILD,
+            fawri_build: process.env.FAWRI_BUILD,
+            merchant_session_integration: process.env.MERCHANT_SESSION,
+          };
+          const required = Object.values(fields);
+          const ok = required.every((value) => value === 'success');
+          fs.writeFileSync(
+            'artifacts/verification/auth-otp-contract-continuity-ci.json',
+            JSON.stringify({
+              ok,
+              run_id: process.env.GITHUB_RUN_ID,
+              tested_sha: process.env.GITHUB_SHA,
+              branch: process.env.GITHUB_REF_NAME,
+              results: fields,
+            }, null, 2) + '\n',
+          );
+          NODE
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin "$GITHUB_REF_NAME"
+          remote_head="$(git rev-parse "origin/$GITHUB_REF_NAME")"
+          if [ "$remote_head" != "$GITHUB_SHA" ]; then
+            echo "Remote branch moved unexpectedly: expected $GITHUB_SHA, found $remote_head" >&2
+            exit 1
+          fi
+          git add artifacts/verification/auth-otp-contract-continuity-ci.json
+          git commit -m "Record Auth OTP continuity CI results"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+
+      - name: Fail when required verification failed
+        if: >-
+          always() &&
+          (steps.install.outcome != 'success' ||
+           steps.frontend_contract.outcome != 'success' ||
+           steps.backend_contract.outcome != 'success' ||
+           steps.auth_security.outcome != 'success' ||
+           steps.auth_cutover.outcome != 'success' ||
+           steps.api_typecheck.outcome != 'success' ||
+           steps.fawri_typecheck.outcome != 'success' ||
+           steps.api_build.outcome != 'success' ||
+           steps.fawri_build.outcome != 'success' ||
+           steps.merchant_session.outcome != 'success')
+        run: exit 1
