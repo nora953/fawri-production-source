@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
+  adjustCatalogInventory,
   CatalogApiError,
   createCatalogProduct,
   currentProductFromConflict,
@@ -9,11 +10,20 @@ import {
   idempotencyAttemptForRequest,
   importCatalogProducts,
   listCatalogProducts,
+  setCatalogInventory,
   updateCatalogProduct,
   type CatalogFetch,
   type CatalogProduct,
   type CatalogProductInput,
 } from '../src/lib/catalogUiApi.ts';
+import {
+  catalogProductFormFromProduct,
+  catalogProductInputFromForm,
+  createEmptyCatalogImageDraft,
+  createEmptyCatalogOptionDraft,
+  createEmptyCatalogVariantDraft,
+  validateCatalogProductForm,
+} from '../src/lib/catalogProductEditor.ts';
 
 const productsPage = await readFile(
   new URL('../src/pages/dashboard/ProductsPage.tsx', import.meta.url),
@@ -44,6 +54,52 @@ const product: CatalogProduct = {
   created_at: '2026-08-08T00:00:00.000Z',
   updated_at: '2026-08-08T00:00:00.000Z',
   version: 4,
+};
+
+const variantProduct: CatalogProduct = {
+  ...product,
+  id: 'prd-variants',
+  sku: 'TEE-PARENT',
+  barcode: undefined,
+  stock_quantity: 5,
+  image_refs: [
+    {
+      id: 'img-product',
+      url: 'https://cdn.example.test/tee.jpg',
+      alt: 'T-shirt',
+    },
+  ],
+  variants: [
+    {
+      id: 'var-black-m',
+      name: 'Black / M',
+      sku: 'TEE-BLK-M',
+      barcode: '100001',
+      price_iqd: 13000,
+      stock_quantity: 2,
+      options: { Color: 'Black', Size: 'M' },
+      image_refs: [
+        {
+          id: 'img-variant',
+          storage_key: 'catalog/merchant/tee-black-m.jpg',
+          alt: 'Black medium',
+        },
+      ],
+      created_at: '2026-08-08T00:00:00.000Z',
+      updated_at: '2026-08-08T00:00:00.000Z',
+    },
+    {
+      id: 'var-blue-l',
+      name: 'Blue / L',
+      sku: 'TEE-BLU-L',
+      barcode: '100002',
+      stock_quantity: 3,
+      options: { Color: 'Blue', Size: 'L' },
+      image_refs: [],
+      created_at: '2026-08-08T00:00:00.000Z',
+      updated_at: '2026-08-08T00:00:00.000Z',
+    },
+  ],
 };
 
 const input: CatalogProductInput = {
@@ -88,6 +144,95 @@ test('canonical load uses only GET /api/catalog/products', async () => {
   assert.equal(calls.length, 1);
   assert.equal(calls[0].input, '/api/catalog/products');
   assert.equal(calls[0].init.method, undefined);
+});
+
+test('product without variants still serializes canonical product stock for CRUD', () => {
+  const form = catalogProductFormFromProduct(product);
+  assert.equal(validateCatalogProductForm(form), null);
+  const serialized = catalogProductInputFromForm(form, product);
+  assert.equal(serialized.stock_quantity, 10);
+  assert.deepEqual(serialized.variants, []);
+  assert.deepEqual(serialized.image_refs, []);
+});
+
+test('variant editor round-trips options, SKU/barcode, price, stock and image refs', () => {
+  const form = catalogProductFormFromProduct(variantProduct);
+  assert.equal(validateCatalogProductForm(form), null);
+  assert.equal(form.variants.length, 2);
+  assert.equal(form.variants[0].sku, 'TEE-BLK-M');
+  assert.equal(form.variants[0].barcode, '100001');
+  assert.equal(form.variants[0].price_iqd, '13000');
+  assert.equal(form.image_refs[0].url, 'https://cdn.example.test/tee.jpg');
+
+  const serialized = catalogProductInputFromForm(form, variantProduct);
+  assert.equal('stock_quantity' in serialized, false, 'variant-managed product must omit root stock authority');
+  assert.equal(serialized.variants?.length, 2);
+  assert.deepEqual(serialized.variants?.[0].options, { Color: 'Black', Size: 'M' });
+  assert.equal(serialized.variants?.[0].sku, 'TEE-BLK-M');
+  assert.equal(serialized.variants?.[0].barcode, '100001');
+  assert.equal(serialized.variants?.[0].price_iqd, 13000);
+  assert.equal(serialized.variants?.[0].stock_quantity, 2);
+  assert.deepEqual(serialized.variants?.[0].image_refs, [
+    {
+      id: 'img-variant',
+      storage_key: 'catalog/merchant/tee-black-m.jpg',
+      alt: 'Black medium',
+    },
+  ]);
+  assert.deepEqual(serialized.image_refs, [
+    {
+      id: 'img-product',
+      url: 'https://cdn.example.test/tee.jpg',
+      alt: 'T-shirt',
+    },
+  ]);
+});
+
+test('variant add/edit/remove stays generic and removal is represented by the saved variants array', () => {
+  const form = catalogProductFormFromProduct(variantProduct);
+  form.variants[0].options[0].value = 'Jet Black';
+  form.variants = form.variants.slice(0, 1);
+
+  const added = createEmptyCatalogVariantDraft();
+  added.name = 'Green / XL';
+  added.sku = 'TEE-GRN-XL';
+  added.barcode = '100003';
+  added.price_iqd = '14000';
+  added.stock_quantity = '4';
+  const color = createEmptyCatalogOptionDraft();
+  color.name = 'Color';
+  color.value = 'Green';
+  const size = createEmptyCatalogOptionDraft();
+  size.name = 'Size';
+  size.value = 'XL';
+  added.options = [color, size];
+  const image = createEmptyCatalogImageDraft();
+  image.url = 'https://cdn.example.test/green-xl.jpg';
+  added.image_refs = [image];
+  form.variants.push(added);
+
+  assert.equal(validateCatalogProductForm(form), null);
+  const serialized = catalogProductInputFromForm(form, variantProduct);
+  assert.equal(serialized.variants?.length, 2);
+  assert.equal(serialized.variants?.some(variant => variant.id === 'var-blue-l'), false);
+  assert.deepEqual(serialized.variants?.[0].options, { Color: 'Jet Black', Size: 'M' });
+  assert.deepEqual(serialized.variants?.[1].options, { Color: 'Green', Size: 'XL' });
+  assert.equal(serialized.variants?.[1].stock_quantity, 4);
+  assert.equal(serialized.variants?.[1].image_refs?.[0] && 'url' in serialized.variants[1].image_refs![0]
+    ? serialized.variants[1].image_refs![0].url
+    : undefined, 'https://cdn.example.test/green-xl.jpg');
+});
+
+test('image editor requires a URL or storage key and never creates binary upload authority', () => {
+  const form = catalogProductFormFromProduct(product);
+  const image = createEmptyCatalogImageDraft();
+  image.alt = 'Alt without locator';
+  form.image_refs = [image];
+  assert.equal(validateCatalogProductForm(form), 'image_reference');
+
+  assert.match(productsPage, /imageReferenceOnly/);
+  assert.doesNotMatch(productsPage, /base64|FileReader|createObjectURL|FormData/);
+  assert.doesNotMatch(productsPage, /S3|Cloudinary/i);
 });
 
 test('create success uses canonical endpoint and server result', async () => {
@@ -193,6 +338,55 @@ test('delete sends expected_version and removes UI state only after server succe
   assert.ok(deleteStateWrite > deleteAwait);
 });
 
+test('inventory set is server-authoritative and variant-scoped when a variant is supplied', async () => {
+  const updated = { ...variantProduct, version: 5 };
+  const { fetcher, calls } = capturedFetch({ ok: true, product: updated });
+  const result = await setCatalogInventory({
+    productId: variantProduct.id,
+    expectedVersion: variantProduct.version,
+    variantId: variantProduct.variants[0].id,
+    quantity: 7,
+  }, fetcher);
+
+  assert.equal(result.version, 5);
+  assert.equal(calls[0].input, `/api/inventory/products/${variantProduct.id}/set`);
+  assert.equal(calls[0].init.method, 'POST');
+  assert.deepEqual(JSON.parse(String(calls[0].init.body)), {
+    expected_version: 4,
+    quantity: 7,
+    variant_id: 'var-black-m',
+  });
+});
+
+test('inventory adjust uses canonical idempotency and expected_version contract', async () => {
+  const updated = { ...variantProduct, version: 5 };
+  const { fetcher, calls } = capturedFetch({ ok: true, replayed: false, product: updated });
+  await adjustCatalogInventory({
+    productId: variantProduct.id,
+    expectedVersion: variantProduct.version,
+    variantId: variantProduct.variants[1].id,
+    delta: -1,
+    reason: 'merchant catalog inventory UX',
+  }, 'catalog-adjust-test-key', fetcher);
+
+  assert.equal(calls[0].input, `/api/inventory/products/${variantProduct.id}/adjust`);
+  assert.equal(new Headers(calls[0].init.headers).get('Idempotency-Key'), 'catalog-adjust-test-key');
+  assert.deepEqual(JSON.parse(String(calls[0].init.body)), {
+    expected_version: 4,
+    delta: -1,
+    variant_id: 'var-blue-l',
+    reason: 'merchant catalog inventory UX',
+  });
+});
+
+test('variant-managed inventory UI never exposes a product-level mutation path', () => {
+  assert.match(productsPage, /product\.variants\.length > 0 \?/);
+  assert.match(productsPage, /product\.variants\.map\(variant/);
+  assert.match(productsPage, /handleSetInventory\(product, variant\)/);
+  assert.match(productsPage, /handleAdjustInventory\(product, delta, variant\)/);
+  assert.match(productsPage, /catalogProductStockIsVariantManaged\(form\)/);
+});
+
 test('import success uses canonical atomic endpoint with idempotency key', async () => {
   const { fetcher, calls } = capturedFetch({
     ok: true,
@@ -218,6 +412,12 @@ test('import validation failure is visible and stops before canonical import cal
   assert.ok(validationGate >= 0 && importCall > validationGate);
   assert.doesNotMatch(importPage, /existingSkus/);
   assert.doesNotMatch(importPage, /skippedCount/);
+});
+
+test('load failure is not rendered as an empty catalog', () => {
+  assert.match(productsPage, /setLoadError\(/);
+  assert.match(productsPage, /loadError \?/);
+  assert.doesNotMatch(productsPage, /catch[\s\S]{0,300}setProducts\(\[\]\)/);
 });
 
 test('legacy write/sync and browser storage authority are absent from catalog UI', () => {
