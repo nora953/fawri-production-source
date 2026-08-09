@@ -18,6 +18,21 @@ export type CatalogImageReference = {
   alt?: string;
 };
 
+export type CatalogPhysicalDimensions = {
+  length_mm: number;
+  width_mm: number;
+  height_mm: number;
+};
+
+export type CatalogPhysicalMeasurementsResolution = {
+  weight_g: number | null;
+  dimensions: CatalogPhysicalDimensions | null;
+  provenance: {
+    weight: "product" | "variant" | null;
+    dimensions: "product" | "variant" | null;
+  };
+};
+
 export type CatalogVariant = {
   id: string;
   name: string;
@@ -25,6 +40,10 @@ export type CatalogVariant = {
   barcode?: string;
   price_iqd?: number;
   stock_quantity: number;
+  weight_g?: number;
+  length_mm?: number;
+  width_mm?: number;
+  height_mm?: number;
   options: Record<string, string>;
   image_refs: CatalogImageReference[];
   created_at: string;
@@ -44,6 +63,10 @@ export type CatalogProduct = {
   compare_at_price_iqd?: number;
   stock_quantity: number;
   low_stock_threshold: number;
+  weight_g?: number;
+  length_mm?: number;
+  width_mm?: number;
+  height_mm?: number;
   status: CatalogProductStatus;
   allow_fawri_reply: boolean;
   image_refs: CatalogImageReference[];
@@ -110,6 +133,13 @@ type InventoryMutationInput = {
   expectedVersion: unknown;
 };
 
+type PhysicalMeasurementFields = {
+  weight_g?: number;
+  length_mm?: number;
+  width_mm?: number;
+  height_mm?: number;
+};
+
 export class CatalogRuntimeError extends Error {
   code: string;
   status: number;
@@ -139,6 +169,8 @@ const MAX_IDEMPOTENCY_RECORDS_PER_MERCHANT = 2_000;
 const IDEMPOTENCY_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
 const LOCK_STALE_MS = 30_000;
 const MAX_PRICE_IQD = 1_000_000_000_000;
+export const MAX_CATALOG_WEIGHT_G = 100_000_000;
+export const MAX_CATALOG_DIMENSION_MM = 100_000;
 const PRODUCT_STATUSES = new Set<CatalogProductStatus>([
   "available",
   "low_stock",
@@ -290,6 +322,94 @@ function priceIqd(
     );
   }
   return parsed;
+}
+
+function physicalMeasurementInteger(
+  value: unknown,
+  field: string,
+  max: number,
+): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0 || parsed > max) {
+    throw new CatalogRuntimeError(
+      "CATALOG_MEASUREMENT_INVALID",
+      `${field} must be a positive bounded integer in canonical units`,
+      400,
+      { field, max },
+    );
+  }
+  return parsed;
+}
+
+function normalizePhysicalMeasurements(
+  record: Record<string, unknown>,
+  prefix: "product" | "variant",
+  existing?: PhysicalMeasurementFields,
+): PhysicalMeasurementFields {
+  const weight = hasOwn(record, "weight_g")
+    ? record.weight_g === null || record.weight_g === ""
+      ? undefined
+      : physicalMeasurementInteger(record.weight_g, `${prefix}.weight_g`, MAX_CATALOG_WEIGHT_G)
+    : existing?.weight_g;
+
+  const dimensionKeys = ["length_mm", "width_mm", "height_mm"] as const;
+  const touched = dimensionKeys.filter((key) => hasOwn(record, key));
+  let dimensions: Pick<PhysicalMeasurementFields, "length_mm" | "width_mm" | "height_mm"> = {
+    length_mm: existing?.length_mm,
+    width_mm: existing?.width_mm,
+    height_mm: existing?.height_mm,
+  };
+
+  if (touched.length > 0) {
+    if (touched.length !== dimensionKeys.length) {
+      throw new CatalogRuntimeError(
+        "CATALOG_DIMENSIONS_PARTIAL",
+        `${prefix} dimensions must provide length_mm, width_mm and height_mm together`,
+        400,
+        { fields: dimensionKeys },
+      );
+    }
+    const empty = dimensionKeys.filter(
+      (key) => record[key] === undefined || record[key] === null || record[key] === "",
+    );
+    if (empty.length === dimensionKeys.length) {
+      dimensions = { length_mm: undefined, width_mm: undefined, height_mm: undefined };
+    } else if (empty.length > 0) {
+      throw new CatalogRuntimeError(
+        "CATALOG_DIMENSIONS_PARTIAL",
+        `${prefix} dimensions must be fully specified or fully cleared`,
+        400,
+        { fields: dimensionKeys },
+      );
+    } else {
+      dimensions = {
+        length_mm: physicalMeasurementInteger(
+          record.length_mm,
+          `${prefix}.length_mm`,
+          MAX_CATALOG_DIMENSION_MM,
+        ),
+        width_mm: physicalMeasurementInteger(
+          record.width_mm,
+          `${prefix}.width_mm`,
+          MAX_CATALOG_DIMENSION_MM,
+        ),
+        height_mm: physicalMeasurementInteger(
+          record.height_mm,
+          `${prefix}.height_mm`,
+          MAX_CATALOG_DIMENSION_MM,
+        ),
+      };
+    }
+  }
+
+  return {
+    ...(weight !== undefined ? { weight_g: weight } : {}),
+    ...(dimensions.length_mm !== undefined &&
+    dimensions.width_mm !== undefined &&
+    dimensions.height_mm !== undefined
+      ? dimensions
+      : {}),
+  };
 }
 
 function booleanValue(value: unknown, fallback: boolean): boolean {
@@ -496,6 +616,7 @@ function normalizeVariant(
         (item) => variantSignature(item) === variantSignature(provisional),
       );
   const id = requestedId || existing?.id || safeId("var");
+  const measurements = normalizePhysicalMeasurements(record, "variant", existing);
 
   return {
     id,
@@ -514,6 +635,7 @@ function normalizeVariant(
       "variant.stock_quantity",
       existing?.stock_quantity || 0,
     ),
+    ...measurements,
     options,
     image_refs: hasOwn(record, "image_refs")
       ? normalizeImageReferences(record.image_refs, MAX_IMAGES_PER_VARIANT)
@@ -620,6 +742,7 @@ function normalizeProduct(
   const barcode = hasOwn(input, "barcode")
     ? optionalText(input.barcode, "barcode", 128)
     : existing?.barcode;
+  const measurements = normalizePhysicalMeasurements(input, "product", existing);
 
   const basePrice = priceIqd(
     hasOwn(input, "price_iqd") ? input.price_iqd : input.current_price,
@@ -718,6 +841,7 @@ function normalizeProduct(
       : {}),
     stock_quantity: stockQuantity,
     low_stock_threshold: lowStockThreshold,
+    ...measurements,
     status,
     allow_fawri_reply: allowFawriReply,
     image_refs: imageRefs,
@@ -1137,6 +1261,46 @@ function updatedProduct(product: CatalogProduct, now: string): CatalogProduct {
   product.updated_at = now;
   normalizeProductStatusAfterInventory(product);
   return product;
+}
+
+export function resolveProductPhysicalMeasurements(
+  product: CatalogProduct,
+  variant?: CatalogVariant,
+): CatalogPhysicalMeasurementsResolution {
+  const productDimensions =
+    product.length_mm !== undefined &&
+    product.width_mm !== undefined &&
+    product.height_mm !== undefined
+      ? {
+          length_mm: product.length_mm,
+          width_mm: product.width_mm,
+          height_mm: product.height_mm,
+        }
+      : null;
+  const variantDimensions =
+    variant?.length_mm !== undefined &&
+    variant.width_mm !== undefined &&
+    variant.height_mm !== undefined
+      ? {
+          length_mm: variant.length_mm,
+          width_mm: variant.width_mm,
+          height_mm: variant.height_mm,
+        }
+      : null;
+
+  return {
+    weight_g: variant?.weight_g ?? product.weight_g ?? null,
+    dimensions: variantDimensions ?? productDimensions,
+    provenance: {
+      weight:
+        variant?.weight_g !== undefined
+          ? "variant"
+          : product.weight_g !== undefined
+            ? "product"
+            : null,
+      dimensions: variantDimensions ? "variant" : productDimensions ? "product" : null,
+    },
+  };
 }
 
 export function listCatalogProducts(rawMerchantId: unknown): CatalogProduct[] {
