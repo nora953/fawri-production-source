@@ -490,6 +490,47 @@ test("manual conversation operations are server-authoritative and idempotent", a
   assert.equal(suppressedInboundMessages[0].counted_as_auto_reply, false);
   assert.equal(suppressedInboundMessages[0].status, "received");
 
+  const notificationsAfterInbound = await jsonResponse(
+    await apiFetch("/api/auth/notifications?limit=50", {
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(notificationsAfterInbound.response.status, 200);
+  const inboundNotifications = notificationsAfterInbound.body.notifications.filter(
+    (notification) => notification.type === "operational_customer_message",
+  );
+  assert.equal(inboundNotifications.length, 1);
+  assert.equal(inboundNotifications[0].merchant_id, "merchant-a");
+  assert.equal(inboundNotifications[0].conversation_id, "messenger-customer-a");
+  assert.equal(
+    inboundNotifications[0].action_url,
+    "/dashboard/conversations?conversation=messenger-customer-a",
+  );
+  assert.equal(Object.hasOwn(inboundNotifications[0], "body"), false);
+  assert.equal(Object.hasOwn(inboundNotifications[0], "text"), false);
+
+  const duplicateSuppressed = await apiFetch("/api/meta/webhook", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Hub-Signature-256": signed.signature,
+    },
+    body: signed.rawBody,
+  });
+  assert.equal(duplicateSuppressed.status, 200);
+  const notificationsAfterRetry = await jsonResponse(
+    await apiFetch("/api/auth/notifications?limit=50", {
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(
+    notificationsAfterRetry.body.notifications.filter(
+      (notification) => notification.type === "operational_customer_message",
+    ).length,
+    1,
+    "duplicate Meta webhook duplicated merchant notification",
+  );
+
   const requestKey = "manual-success-request-0001";
   const sent = await jsonResponse(
     await apiFetch("/api/conversations/messenger-customer-a/messages", {
@@ -512,6 +553,76 @@ test("manual conversation operations are server-authoritative and idempotent", a
     recipient: { id: "customer-a" },
     message: { text: "Manual reply sent" },
   });
+
+  const notificationsAfterOutbound = await jsonResponse(
+    await apiFetch("/api/auth/notifications?limit=50", {
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(
+    notificationsAfterOutbound.body.notifications.filter(
+      (notification) => notification.type === "operational_customer_message",
+    ).length,
+    1,
+    "manual outbound reply masqueraded as inbound notification",
+  );
+
+  const unreadBeforeRead = await jsonResponse(
+    await apiFetch("/api/auth/notifications?unread=1&limit=50", {
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(
+    unreadBeforeRead.body.notifications.filter(
+      (notification) => notification.type === "operational_customer_message",
+    ).length,
+    1,
+  );
+  const markNotificationRead = await jsonResponse(
+    await apiFetch(
+      `/api/auth/notifications/${encodeURIComponent(inboundNotifications[0].id)}/read`,
+      { method: "PATCH", headers: authenticatedHeaders },
+    ),
+  );
+  assert.equal(markNotificationRead.response.status, 200);
+  assert.ok(markNotificationRead.body.notification.read_at);
+  const unreadAfterRead = await jsonResponse(
+    await apiFetch("/api/auth/notifications?unread=1&limit=50", {
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(
+    unreadAfterRead.body.notifications.filter(
+      (notification) => notification.type === "operational_customer_message",
+    ).length,
+    0,
+  );
+
+  const merchantBLogin = await jsonResponse(
+    await apiFetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: merchantB.phone,
+        password: merchantB.password,
+      }),
+    }),
+  );
+  assert.equal(merchantBLogin.response.status, 200, JSON.stringify(merchantBLogin.body));
+  const merchantBCookie = cookiePair(getSetCookie(merchantBLogin.response));
+  const merchantBNotifications = await jsonResponse(
+    await apiFetch("/api/auth/notifications?limit=50", {
+      headers: { Cookie: merchantBCookie },
+    }),
+  );
+  assert.equal(merchantBNotifications.response.status, 200);
+  assert.equal(
+    merchantBNotifications.body.notifications.some(
+      (notification) => notification.merchant_id === "merchant-a",
+    ),
+    false,
+    "merchant B could read merchant A notification",
+  );
 
   const duplicate = await jsonResponse(
     await apiFetch("/api/conversations/messenger-customer-a/messages", {

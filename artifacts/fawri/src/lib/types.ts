@@ -298,11 +298,37 @@ export interface MerchantSupportReplyReminderNotification {
   read_at?: string;
 }
 
+export interface MerchantNewOrderNotification {
+  id: string;
+  merchant_id: string;
+  type: 'operational_new_order';
+  order_id: string;
+  conversation_id?: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantCustomerMessageNotification {
+  id: string;
+  merchant_id: string;
+  type: 'operational_customer_message';
+  conversation_id: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export type MerchantOperationalNotification =
+  | MerchantNewOrderNotification
+  | MerchantCustomerMessageNotification;
+
 export type MerchantNotification =
   | MerchantBalanceNotification
   | MerchantSubscriptionNotification
   | MerchantInspectionNotification
-  | MerchantSupportReplyReminderNotification;
+  | MerchantSupportReplyReminderNotification
+  | MerchantOperationalNotification;
 
 export type ProductStatus =
   | 'available'
