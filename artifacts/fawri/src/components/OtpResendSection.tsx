@@ -76,14 +76,14 @@ export default function OtpResendSection({
     setRetryAfterSeconds(safeSeconds);
 
     if (safeSeconds > 0) {
-      localStorage.setItem(resolvedStorageKey, String(resendAt));
+      sessionStorage.setItem(resolvedStorageKey, String(resendAt));
     } else {
-      localStorage.removeItem(resolvedStorageKey);
+      sessionStorage.removeItem(resolvedStorageKey);
     }
   };
 
   useEffect(() => {
-    const storedResendAt = Number(localStorage.getItem(resolvedStorageKey) || 0);
+    const storedResendAt = Number(sessionStorage.getItem(resolvedStorageKey) || 0);
     const storedRemaining = Math.max(
       0,
       Math.ceil((storedResendAt - Date.now()) / 1000)
@@ -100,7 +100,7 @@ export default function OtpResendSection({
       setRetryAfterSeconds(current => {
         const next = Math.max(0, current - 1);
         if (next === 0) {
-          localStorage.removeItem(resolvedStorageKey);
+          sessionStorage.removeItem(resolvedStorageKey);
         }
         return next;
       });
