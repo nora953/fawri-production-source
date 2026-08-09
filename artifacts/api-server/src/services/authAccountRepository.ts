@@ -10,6 +10,8 @@ import type {
 } from "./authPolicy";
 import { normalizeAdminPermissions } from "./authPolicy";
 
+export type RequestedPlan = "silver" | "gold" | "diamond";
+
 export type AccountIdentity = {
   id: string;
   phone: string;
@@ -29,7 +31,7 @@ export type MerchantProfile = {
   language: "ar" | "ku" | "en";
   accountStatus: MerchantAccountStatus;
   onboardingStatus: string;
-  requestedPlan: "silver" | "gold" | "diamond" | null;
+  requestedPlan: RequestedPlan | null;
   createdAt: string;
 };
 
@@ -107,6 +109,7 @@ export class AuthAccountRepository {
     storeName: string;
     activityType: string;
     language: "ar" | "ku" | "en";
+    requestedPlan?: RequestedPlan | null;
   }): AuthAccount {
     const phone = normalizePhone(input.phone);
     if (!/^07\d{9}$/.test(phone)) throw new Error("INVALID_PHONE");
@@ -130,6 +133,10 @@ export class AuthAccountRepository {
       db.merchants.push(record);
     }
 
+    const requestedPlan = input.requestedPlan === undefined
+      ? normalizeRequestedPlan(record.requested_plan)
+      : normalizeRequestedPlan(input.requestedPlan);
+
     Object.assign(record, {
       owner_name: input.ownerName.trim(),
       store_name: input.storeName.trim(),
@@ -145,7 +152,7 @@ export class AuthAccountRepository {
       onboarding_status: "pending_review",
       trial_status: record.trial_status || "eligible",
       signup_source: record.signup_source || "direct",
-      requested_plan: null,
+      requested_plan: requestedPlan,
       warning_stage: record.warning_stage || 0,
       retention_status: record.retention_status || "protected",
     });
@@ -321,6 +328,12 @@ function normalizeMerchantStatus(record: LegacyRecord): MerchantAccountStatus {
   return "pending_review";
 }
 
+function normalizeRequestedPlan(value: unknown): RequestedPlan | null {
+  return value === "silver" || value === "gold" || value === "diamond"
+    ? value
+    : null;
+}
+
 function toAuthAccount(record: LegacyRecord): AuthAccount {
   const kind = accountKind(record);
   const account: AccountIdentity = {
@@ -363,12 +376,7 @@ function toAuthAccount(record: LegacyRecord): AuthAccount {
       language: normalizeLanguage(record.language),
       accountStatus: normalizeMerchantStatus(record),
       onboardingStatus: String(record.onboarding_status || "pending_review"),
-      requestedPlan:
-        record.requested_plan === "silver" ||
-        record.requested_plan === "gold" ||
-        record.requested_plan === "diamond"
-          ? record.requested_plan
-          : null,
+      requestedPlan: normalizeRequestedPlan(record.requested_plan),
       createdAt: String(record.created_at || ""),
     },
   };
