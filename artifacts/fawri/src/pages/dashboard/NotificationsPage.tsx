@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bell, Check, ExternalLink, Loader2, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Bell, Check, ExternalLink, Loader2, MessageCircle, Package, RefreshCw, ShieldCheck } from 'lucide-react';
 
 import { useI18n } from '@/lib/i18n';
 import type {
   MerchantBalanceNotification,
   MerchantInspectionNotification,
   MerchantNotification,
+  MerchantOperationalNotification,
   MerchantSubscriptionNotification,
   MerchantSupportReplyReminderNotification,
 } from '@/lib/types';
@@ -113,6 +114,33 @@ const INSPECTION_NOTIFICATION_TEXT = {
   },
 } as const;
 
+const OPERATIONAL_NOTIFICATION_TEXT = {
+  ar: {
+    orderTitle: 'طلب جديد',
+    orderBody: 'تم إنشاء طلب جديد برقم {order}.',
+    orderOpen: 'فتح الطلب',
+    messageTitle: 'رسالة جديدة من زبون',
+    messageBody: 'وصلت رسالة جديدة ضمن محادثة الزبون.',
+    messageOpen: 'فتح المحادثة',
+  },
+  ku: {
+    orderTitle: 'داواکارییەکی نوێ',
+    orderBody: 'داواکارییەکی نوێ بە ژمارەی {order} دروست کرا.',
+    orderOpen: 'کردنەوەی داواکاری',
+    messageTitle: 'نامەیەکی نوێ لە کڕیار',
+    messageBody: 'نامەیەکی نوێ لە گفتوگۆی کڕیار گەیشت.',
+    messageOpen: 'کردنەوەی گفتوگۆ',
+  },
+  en: {
+    orderTitle: 'New order',
+    orderBody: 'A new order was created: {order}.',
+    orderOpen: 'Open order',
+    messageTitle: 'New customer message',
+    messageBody: 'A new customer message arrived in this conversation.',
+    messageOpen: 'Open conversation',
+  },
+} as const;
+
 const SUPPORT_REPLY_REMINDER_TEXT = {
   ar: {
     title: 'تذكير: ننتظر ردك',
@@ -151,6 +179,12 @@ export default function NotificationsPage() {
       : lang === 'ku'
         ? SUPPORT_REPLY_REMINDER_TEXT.ku
         : SUPPORT_REPLY_REMINDER_TEXT.ar;
+  const operationalText =
+    lang === 'en'
+      ? OPERATIONAL_NOTIFICATION_TEXT.en
+      : lang === 'ku'
+        ? OPERATIONAL_NOTIFICATION_TEXT.ku
+        : OPERATIONAL_NOTIFICATION_TEXT.ar;
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
@@ -232,7 +266,8 @@ export default function NotificationsPage() {
   const openNotificationAction = async (
     notification:
       | MerchantInspectionNotification
-      | MerchantSupportReplyReminderNotification,
+      | MerchantSupportReplyReminderNotification
+      | MerchantOperationalNotification,
   ) => {
     if (!notification.read_at) await markAsRead(notification.id);
     window.location.assign(notification.action_url);
@@ -448,6 +483,64 @@ export default function NotificationsPage() {
                             {t.notifications_read}
                           </span>
                         )}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            }
+
+            if (
+              notification.type === 'operational_new_order' ||
+              notification.type === 'operational_customer_message'
+            ) {
+              const isOrder = notification.type === 'operational_new_order';
+              const title = isOrder
+                ? operationalText.orderTitle
+                : operationalText.messageTitle;
+              const body = isOrder
+                ? formatNotificationText(operationalText.orderBody, {
+                    order: notification.order_id,
+                  })
+                : operationalText.messageBody;
+              const openLabel = isOrder
+                ? operationalText.orderOpen
+                : operationalText.messageOpen;
+              return (
+                <article
+                  key={notification.id}
+                  className={`rounded-2xl border p-4 shadow-sm transition-colors sm:p-5 ${
+                    unread
+                      ? 'border-teal-300 bg-teal-50/80 dark:border-teal-700 dark:bg-teal-950/25'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                      unread
+                        ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/60 dark:text-teal-300'
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {isOrder ? <Package className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <h2 className="font-black text-foreground">{title}</h2>
+                        <time className="text-[11px] font-medium text-muted-foreground" dateTime={notification.created_at}>
+                          {new Date(notification.created_at).toLocaleString(locale)}
+                        </time>
+                      </div>
+                      <p className="mt-2 text-sm font-medium leading-7 text-foreground/90">{body}</p>
+                      <div className="mt-3 flex justify-end">
+                        <button
+                          type="button"
+                          disabled={marking}
+                          onClick={() => void openNotificationAction(notification)}
+                          className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {marking ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}
+                          {openLabel}
+                        </button>
                       </div>
                     </div>
                   </div>

@@ -1,0 +1,85 @@
+name: Operational order and message notifications
+
+on:
+  push:
+    branches:
+      - parallel/operational-order-message-notifications
+    paths:
+      - .github/workflows/operational-order-message-notifications.yml
+      - artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts
+      - artifacts/api-server/src/routes/auth.ts
+      - artifacts/api-server/src/routes/index.ts
+      - artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs
+      - artifacts/api-server/tests/operational-notifications.test.ts
+      - artifacts/fawri/src/lib/types.ts
+      - artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx
+      - artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx
+      - artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx
+  pull_request:
+    paths:
+      - artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts
+      - artifacts/api-server/src/routes/auth.ts
+      - artifacts/api-server/src/routes/index.ts
+      - artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs
+      - artifacts/api-server/tests/operational-notifications.test.ts
+      - artifacts/fawri/src/lib/types.ts
+      - artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx
+      - artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx
+      - artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify coordinator baseline
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin parallel/integration-coordinator
+          test "$(git rev-parse origin/parallel/integration-coordinator)" = "b37103b95d6225aaff092fb781d0bf635564f745"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: API typecheck and build
+        run: |
+          pnpm --filter @workspace/api-server typecheck
+          pnpm --filter @workspace/api-server build
+
+      - name: Operational notification tests
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/operational-notifications.test.ts
+
+      - name: Manual conversation regression
+        run: pnpm --filter @workspace/api-server test:manual-conversations
+
+      - name: Order operations regression
+        working-directory: artifacts/api-server
+        run: |
+          node ./build.mjs
+          node --test ./tests/order-operations.integration.test.mjs
+
+      - name: Frontend typecheck and build
+        run: |
+          pnpm --filter @workspace/fawri typecheck
+          pnpm --filter @workspace/fawri build

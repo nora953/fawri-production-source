@@ -543,6 +543,33 @@ type MerchantSupportReplyReminderNotificationRecord = {
   read_at?: string;
 };
 
+type MerchantOperationalOrderNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "operational_new_order";
+  order_id: string;
+  conversation_id?: string;
+  action_url: string;
+  dedupe_key: string;
+  created_at: string;
+  read_at?: string;
+};
+
+type MerchantOperationalCustomerMessageNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "operational_customer_message";
+  conversation_id: string;
+  action_url: string;
+  dedupe_key: string;
+  created_at: string;
+  read_at?: string;
+};
+
+type MerchantOperationalNotificationRecord =
+  | MerchantOperationalOrderNotificationRecord
+  | MerchantOperationalCustomerMessageNotificationRecord;
+
 type MerchantNotificationRecord =
   | MerchantBalanceNotificationRecord
   | MerchantSubscriptionPlanNotificationRecord
@@ -551,7 +578,8 @@ type MerchantNotificationRecord =
   | MerchantSubscriptionExpiredNotificationRecord
   | MerchantAddonExpiryReminderNotificationRecord
   | MerchantInspectionNotificationRecord
-  | MerchantSupportReplyReminderNotificationRecord;
+  | MerchantSupportReplyReminderNotificationRecord
+  | MerchantOperationalNotificationRecord;
 
 type SupportTicketCategory =
   | "technical"
@@ -662,6 +690,22 @@ function isMerchantNotificationRecord(
   }
   if (item.type === "addon_expiry_reminder") {
     return typeof item.addon_batch_id === "string" && typeof item.expires_at === "string";
+  }
+
+  if (item.type === "operational_new_order") {
+    return (
+      typeof item.order_id === "string" &&
+      typeof item.action_url === "string" &&
+      typeof item.dedupe_key === "string"
+    );
+  }
+
+  if (item.type === "operational_customer_message") {
+    return (
+      typeof item.conversation_id === "string" &&
+      typeof item.action_url === "string" &&
+      typeof item.dedupe_key === "string"
+    );
   }
 
   if (item.type === "support_reply_reminder") {
@@ -2349,6 +2393,119 @@ function appendMerchantNotificationRecord<T extends MerchantNotificationRecord>(
     );
   }
   return notification;
+}
+
+function operationalNotificationTimestamp(value: unknown): string {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const numericDate = new Date(value);
+    if (Number.isFinite(numericDate.getTime())) return numericDate.toISOString();
+  }
+  const parsed = new Date(String(value || ""));
+  return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : now();
+}
+
+function operationalNotificationDedupeKey(
+  type: MerchantOperationalNotificationRecord["type"],
+  merchantId: string,
+  sourceId: string,
+): string {
+  return crypto
+    .createHash("sha256")
+    .update(`${type}:${merchantId}:${sourceId}`)
+    .digest("hex");
+}
+
+function persistMerchantOperationalNotification(
+  db: AuthDb,
+  notification: MerchantOperationalNotificationRecord,
+): {
+  notification: MerchantOperationalNotificationRecord | null;
+  deduplicated: boolean;
+  skipped?: "merchant_not_found" | "notification_store_unavailable";
+} {
+  if (!findRegularMerchant(db, notification.merchant_id)) {
+    return { notification: null, deduplicated: false, skipped: "merchant_not_found" };
+  }
+
+  const existing = db.merchant_notifications.find(
+    (item): item is MerchantOperationalNotificationRecord =>
+      (item.type === "operational_new_order" ||
+        item.type === "operational_customer_message") &&
+      item.merchant_id === notification.merchant_id &&
+      item.dedupe_key === notification.dedupe_key,
+  );
+  if (existing) return { notification: existing, deduplicated: true };
+
+  appendMerchantNotificationRecord(db, notification);
+  try {
+    writeDb(db);
+  } catch (error) {
+    console.error("Merchant operational notification persistence failed:", error);
+    return {
+      notification: null,
+      deduplicated: false,
+      skipped: "notification_store_unavailable",
+    };
+  }
+  emitMerchantRealtimeState(db, notification.merchant_id, "notifications_updated");
+  return { notification, deduplicated: false };
+}
+
+export function notifyMerchantNewOrder(input: {
+  merchantId: string;
+  orderId: string;
+  conversationId?: string;
+  createdAt?: unknown;
+}) {
+  const merchantId = String(input.merchantId || "").trim();
+  const orderId = String(input.orderId || "").trim();
+  const conversationId = String(input.conversationId || "").trim();
+  if (!merchantId || !orderId) {
+    return { notification: null, deduplicated: false, skipped: "invalid_identity" as const };
+  }
+  const db = ensureDb();
+  return persistMerchantOperationalNotification(db, {
+    id: makeId("merchant-notification"),
+    merchant_id: merchantId,
+    type: "operational_new_order",
+    order_id: orderId,
+    ...(conversationId ? { conversation_id: conversationId } : {}),
+    action_url: `/dashboard/orders?order=${encodeURIComponent(orderId)}`,
+    dedupe_key: operationalNotificationDedupeKey(
+      "operational_new_order",
+      merchantId,
+      orderId,
+    ),
+    created_at: operationalNotificationTimestamp(input.createdAt),
+  });
+}
+
+export function notifyMerchantNewCustomerMessage(input: {
+  merchantId: string;
+  conversationId: string;
+  sourceEventId: string;
+  createdAt?: unknown;
+}) {
+  const merchantId = String(input.merchantId || "").trim();
+  const conversationId = String(input.conversationId || "").trim();
+  const sourceEventId = String(input.sourceEventId || "").trim();
+  if (!merchantId || !conversationId || !sourceEventId) {
+    return { notification: null, deduplicated: false, skipped: "invalid_identity" as const };
+  }
+  const db = ensureDb();
+  return persistMerchantOperationalNotification(db, {
+    id: makeId("merchant-notification"),
+    merchant_id: merchantId,
+    type: "operational_customer_message",
+    conversation_id: conversationId,
+    action_url: `/dashboard/conversations?conversation=${encodeURIComponent(conversationId)}`,
+    dedupe_key: operationalNotificationDedupeKey(
+      "operational_customer_message",
+      merchantId,
+      sourceEventId,
+    ),
+    created_at: operationalNotificationTimestamp(input.createdAt),
+  });
 }
 
 function appendMerchantBalanceNotification(

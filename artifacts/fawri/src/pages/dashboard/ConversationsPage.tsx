@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { getCurrentMerchant } from '@/lib/store';
 import { Conversation } from '@/lib/types';
@@ -8,6 +8,11 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, UserIcon, Bot, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+
+function requestedConversationId(): string {
+  if (typeof window === 'undefined') return '';
+  return new URLSearchParams(window.location.search).get('conversation')?.trim() || '';
+}
 
 function makeIdempotencyKey() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -23,6 +28,7 @@ export default function ConversationsPage() {
   const merchantId = merchant?.id || '';
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const linkedConversationIdRef = useRef(requestedConversationId());
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [loadError, setLoadError] = useState('');
@@ -57,6 +63,14 @@ export default function ConversationsPage() {
       setConversations(apiConversations);
       setLoadError('');
       setActiveConvId(currentActiveId => {
+        const linkedConversationId = linkedConversationIdRef.current;
+        linkedConversationIdRef.current = '';
+        if (
+          linkedConversationId &&
+          apiConversations.some(conversation => conversation.id === linkedConversationId)
+        ) {
+          return linkedConversationId;
+        }
         if (
           currentActiveId &&
           apiConversations.some(conversation => conversation.id === currentActiveId)

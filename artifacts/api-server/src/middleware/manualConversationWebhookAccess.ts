@@ -6,6 +6,7 @@ import {
   isConversationUnderManualControl,
   recordManualInboundMessage,
 } from "../services/manualConversationRuntime";
+import { notifyMerchantNewCustomerMessage } from "../routes/auth";
 
 function eventRecord(event: unknown): Record<string, unknown> {
   return event && typeof event === "object" && !Array.isArray(event)
@@ -101,6 +102,12 @@ export function enforceManualConversationWebhookAccess(
           conversationId,
           externalMessageId: message.externalMessageId || eventId,
           messageText: message.text,
+          createdAt: message.createdAt,
+        });
+        notifyMerchantNewCustomerMessage({
+          merchantId,
+          conversationId,
+          sourceEventId: eventId,
           createdAt: message.createdAt,
         });
 

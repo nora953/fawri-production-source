@@ -17,10 +17,13 @@ import authRouter, {
   createMerchantOAuthState,
   getMerchantIdFromSession,
   merchantSessionAccountExists,
+  notifyMerchantNewCustomerMessage,
+  notifyMerchantNewOrder,
   requireMerchantSession,
   verifyMerchantOAuthState,
 } from "./auth";
 import savedAnswersRouter from "./saved-answers";
+import { getMetaWebhookEventId } from "../middleware/metaWebhookSecurity";
 const router: IRouter = Router();
 router.use(healthRouter);
 router.use("/auth", authRouter);
@@ -579,12 +582,13 @@ async function sendMessengerText(
   return result;
 }
 
-function saveMessengerConversation(params: {
+export function saveMessengerConversation(params: {
   merchantId: string;
   customerId: string;
   userText: string;
   botReply: string;
   externalMessageId?: string;
+  sourceEventId?: string;
   replyStatus: "sent" | "failed";
   replyType?: "ai" | "database" | "fallback";
   needsTraining?: boolean;
@@ -662,6 +666,13 @@ function saveMessengerConversation(params: {
 
   conversationsByMerchant.set(params.merchantId, updated);
   saveRuntimeDb();
+  notifyMerchantNewCustomerMessage({
+    merchantId: params.merchantId,
+    conversationId,
+    sourceEventId:
+      params.sourceEventId || params.externalMessageId || customerMessage.id,
+    createdAt: now,
+  });
   return updated.find((c) => c.id === conversationId);
 }
 
@@ -1734,7 +1745,7 @@ function replyText(
   return ar[key] || ar.unsupported;
 }
 
-function createOrder(params: {
+export function createOrder(params: {
   merchantId: string;
   conversationId: string;
   customerId: string;
@@ -1770,6 +1781,12 @@ function createOrder(params: {
   };
   ordersByMerchant.set(params.merchantId, [order, ...currentOrders]);
   saveRuntimeDb();
+  notifyMerchantNewOrder({
+    merchantId: params.merchantId,
+    orderId: order.id,
+    conversationId: order.conversation_id,
+    createdAt: order.created_at,
+  });
   return order;
 }
 
@@ -2344,6 +2361,7 @@ router.post("/meta/webhook", async (req: Request, res: Response) => {
         const senderId = event.sender?.id;
         const messageText = event.message?.text;
         const messageId = event.message?.mid;
+        const eventId = getMetaWebhookEventId(pageId, event);
         if (event.message?.is_echo) continue;
         if (!senderId || !messageText) continue;
 
@@ -2390,7 +2408,8 @@ router.post("/meta/webhook", async (req: Request, res: Response) => {
             customerId: senderId,
             userText: messageText,
             botReply: reply,
-            externalMessageId: messageId,
+            externalMessageId: messageId || eventId,
+            sourceEventId: eventId,
             replyStatus: "sent",
             replyType: trainedReply.replyType,
             needsTraining: trainedReply.needsTraining,
@@ -2406,7 +2425,8 @@ router.post("/meta/webhook", async (req: Request, res: Response) => {
             customerId: senderId,
             userText: messageText,
             botReply: reply,
-            externalMessageId: messageId,
+            externalMessageId: messageId || eventId,
+            sourceEventId: eventId,
             replyStatus: "failed",
             replyType: trainedReply.replyType,
             needsTraining: trainedReply.needsTraining,

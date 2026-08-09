@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import type { Order, OrderStatus, PaymentStatus } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -236,11 +236,17 @@ function statusVariant(status: OrderStatus) {
   return 'secondary' as const;
 }
 
+function requestedOrderId(): string {
+  if (typeof window === 'undefined') return '';
+  return new URLSearchParams(window.location.search).get('order')?.trim() || '';
+}
+
 export default function ServerOrdersPage() {
   const i18n = useI18n();
   const language = languageCode(i18n);
   const labels = textFor(language);
   const [orders, setOrders] = useState<ServerOrder[]>([]);
+  const linkedOrderIdRef = useRef(requestedOrderId());
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -268,11 +274,16 @@ export default function ServerOrdersPage() {
       const nextOrders = data.orders as ServerOrder[];
       setOrders(nextOrders);
       setLoadError('');
-      setSelectedOrderId(current =>
-        current && nextOrders.some(order => order.id === current)
+      setSelectedOrderId(current => {
+        const linkedOrderId = linkedOrderIdRef.current;
+        linkedOrderIdRef.current = '';
+        if (linkedOrderId && nextOrders.some(order => order.id === linkedOrderId)) {
+          return linkedOrderId;
+        }
+        return current && nextOrders.some(order => order.id === current)
           ? current
-          : nextOrders[0]?.id || null,
-      );
+          : nextOrders[0]?.id || null;
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : labels.loadFailed;
       setLoadError(message);
