@@ -1,0 +1,85 @@
+name: Auth OTP contract continuity
+
+on:
+  push:
+    branches:
+      - "parallel/auth-otp-contract-continuity"
+    paths:
+      - "artifacts/fawri/src/pages/SignupPage.tsx"
+      - "artifacts/fawri/src/pages/OTPPage.tsx"
+      - "artifacts/fawri/src/components/OtpResendSection.tsx"
+      - "artifacts/fawri/src/components/ForgotPasswordModal.tsx"
+      - "artifacts/fawri/src/lib/authOtpChallenge.ts"
+      - "artifacts/fawri/src/lib/passwordReset.ts"
+      - "artifacts/fawri/tests/auth-otp-contract-continuity.test.mjs"
+      - "artifacts/api-server/src/routes/auth-public-routes.ts"
+      - "artifacts/api-server/src/routes/auth-route-common.ts"
+      - "artifacts/api-server/src/services/authOtpSecurity.ts"
+      - "artifacts/api-server/src/services/authSecurityStore.ts"
+      - "artifacts/api-server/tests/auth-otp-contract-continuity.test.mjs"
+      - "artifacts/api-server/tests/auth-security-store.test.ts"
+      - "artifacts/api-server/tests/auth-cutover-contract.test.mjs"
+      - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
+      - ".github/workflows/auth-otp-contract-continuity.yml"
+      - "artifacts/fawri/package.json"
+      - "artifacts/api-server/package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auth-otp-contract-continuity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-auth-otp-continuity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run focused frontend Auth OTP contract tests
+        run: node --test artifacts/fawri/tests/auth-otp-contract-continuity.test.mjs
+
+      - name: Run focused backend Auth OTP contract tests
+        run: node --test artifacts/api-server/tests/auth-otp-contract-continuity.test.mjs
+
+      - name: Run Auth v2 security store tests
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/auth-security-store.test.ts
+
+      - name: Run Auth cutover contract tests
+        run: node --test artifacts/api-server/tests/auth-cutover-contract.test.mjs
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Type-check Fawri frontend
+        run: pnpm --filter @workspace/fawri run typecheck
+
+      - name: Build API server
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Build Fawri frontend
+        run: pnpm --filter @workspace/fawri run build
+
+      - name: Run merchant session integration test
+        env:
+          NODE_ENV: test
+        run: node --test artifacts/api-server/tests/merchant-session.integration.test.mjs
