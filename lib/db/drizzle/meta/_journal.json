@@ -29,6 +29,13 @@
       "when": 1786120376886,
       "tag": "0003_cross_lane_cleanup",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786314600000,
+      "tag": "0004_product_shipping_measurements",
+      "breakpoints": true
     }
   ]
 }
