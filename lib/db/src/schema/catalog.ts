@@ -50,6 +50,10 @@ export const products = pgTable(
     compareAtPriceIqd: integer("compare_at_price_iqd"),
     quantity: integer("quantity").notNull().default(0),
     lowStockThreshold: integer("low_stock_threshold").notNull().default(0),
+    weightG: integer("weight_g"),
+    lengthMm: integer("length_mm"),
+    widthMm: integer("width_mm"),
+    heightMm: integer("height_mm"),
     variantStockMode: boolean("variant_stock_mode").notNull().default(false),
     version: integer("version").notNull().default(1),
     status: text("status").notNull().default("available"),
@@ -93,6 +97,14 @@ export const products = pgTable(
       "products_stock_check",
       sql`${table.quantity} >= 0 AND ${table.lowStockThreshold} >= 0`,
     ),
+    weightCheck: check(
+      "products_weight_g_check",
+      sql`${table.weightG} IS NULL OR ${table.weightG} BETWEEN 1 AND 100000000`,
+    ),
+    dimensionsCheck: check(
+      "products_dimensions_mm_check",
+      sql`(${table.lengthMm} IS NULL AND ${table.widthMm} IS NULL AND ${table.heightMm} IS NULL) OR (${table.lengthMm} BETWEEN 1 AND 100000 AND ${table.widthMm} BETWEEN 1 AND 100000 AND ${table.heightMm} BETWEEN 1 AND 100000)`,
+    ),
     versionCheck: check("products_version_check", sql`${table.version} > 0`),
     externalRefPairCheck: check(
       "products_external_ref_pair_check",
@@ -123,6 +135,10 @@ export const productVariants = pgTable(
     quantity: integer("quantity").notNull().default(0),
     priceAdjustmentIqd: integer("price_adjustment_iqd").notNull().default(0),
     priceOverrideIqd: integer("price_override_iqd"),
+    weightG: integer("weight_g"),
+    lengthMm: integer("length_mm"),
+    widthMm: integer("width_mm"),
+    heightMm: integer("height_mm"),
     optionSignature: text("option_signature").notNull(),
     version: integer("version").notNull().default(1),
     metadata: jsonb("metadata")
@@ -170,6 +186,14 @@ export const productVariants = pgTable(
     priceCheck: check(
       "product_variants_price_check",
       sql`${table.priceOverrideIqd} IS NULL OR ${table.priceOverrideIqd} >= 0`,
+    ),
+    weightCheck: check(
+      "product_variants_weight_g_check",
+      sql`${table.weightG} IS NULL OR ${table.weightG} BETWEEN 1 AND 100000000`,
+    ),
+    dimensionsCheck: check(
+      "product_variants_dimensions_mm_check",
+      sql`(${table.lengthMm} IS NULL AND ${table.widthMm} IS NULL AND ${table.heightMm} IS NULL) OR (${table.lengthMm} BETWEEN 1 AND 100000 AND ${table.widthMm} BETWEEN 1 AND 100000 AND ${table.heightMm} BETWEEN 1 AND 100000)`,
     ),
     versionCheck: check(
       "product_variants_version_check",
@@ -296,7 +320,7 @@ export const catalogImageReferences = pgTable(
   },
   (table) => ({
     productTenantForeignKey: foreignKey({
-      name: "catalog_image_refs_product_tenant_fk",
+      name: "catalog_image_refs_product_merchant_fk",
       columns: [table.productId, table.merchantId],
       foreignColumns: [products.id, products.merchantId],
     }).onDelete("cascade"),
@@ -319,7 +343,7 @@ export const catalogImageReferences = pgTable(
     ),
     storageKeyCheck: check(
       "catalog_image_refs_storage_key_check",
-      sql`${table.storageKey} IS NULL OR (${table.storageKey} !~ '(^|/)\.\.(/|$)' AND char_length(${table.storageKey}) <= 1024)`,
+      sql`${table.storageKey} IS NULL OR (${table.storageKey} !~ '(^|/)\.\.(/|$)' AND char_length(${table.storageKey}) <= 1024`,
     ),
     ordinalCheck: check(
       "catalog_image_refs_ordinal_check",
