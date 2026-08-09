@@ -1,0 +1,73 @@
+name: Merchant account security UI
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/routes/auth-session-routes.ts"
+      - "artifacts/api-server/src/routes/auth-password-route-support.ts"
+      - "artifacts/api-server/src/middleware/authSession.ts"
+      - "artifacts/api-server/src/services/authPostgresSessionAuthority.ts"
+      - "artifacts/api-server/src/services/authSessionSecurity.ts"
+      - "artifacts/api-server/tests/merchant-account-security.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
+      - "artifacts/fawri/src/pages/dashboard/MerchantAccountSecurityPanel.tsx"
+      - "artifacts/fawri/src/pages/dashboard/MerchantSettingsPage.tsx"
+      - "artifacts/fawri/src/lib/authClientCutover.ts"
+      - "artifacts/fawri/src/lib/store.ts"
+      - "artifacts/fawri/tests/role-session-isolation.test.mjs"
+      - ".github/workflows/merchant-account-security-ui.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merchant-account-security-ui-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-account-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Check security integration test syntax
+        run: node --check artifacts/api-server/tests/merchant-account-security.integration.test.mjs
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Build API server
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Test merchant account security contracts
+        run: node --test artifacts/api-server/tests/merchant-account-security.integration.test.mjs
+
+      - name: Run merchant Auth session regression
+        run: node --test artifacts/api-server/tests/merchant-session.integration.test.mjs
+
+      - name: Type-check merchant frontend
+        run: pnpm --filter @workspace/fawri run typecheck
+
+      - name: Build merchant frontend
+        run: pnpm --filter @workspace/fawri run build
+
+      - name: Run frontend role/session isolation regression
+        run: pnpm --filter @workspace/fawri run test:role-session-isolation
