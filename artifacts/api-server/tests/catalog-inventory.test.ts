@@ -211,6 +211,139 @@ test("duplicate variants, invalid prices, and embedded images fail closed", () =
   );
 });
 
+test("variant media, options, identifiers and pricing survive create/edit/add/remove round trips", () => {
+  const created = createProduct("merchant-a", "variant-roundtrip-0001", {
+    sku: "TEE-PARENT",
+    barcode: "TEE-PARENT-BAR",
+    price_iqd: 20_000,
+    stock_quantity: 5,
+    image_refs: [
+      {
+        url: "https://cdn.example.test/tee.jpg",
+        alt: "T-shirt",
+      },
+    ],
+    variants: [
+      {
+        name: "Black / M",
+        sku: "TEE-BLK-M",
+        barcode: "TEE-BAR-M",
+        price_iqd: 21_000,
+        stock_quantity: 2,
+        options: { Color: "Black", Size: "M" },
+        image_refs: [
+          {
+            storage_key: "catalog/merchant-a/tee-black-m.jpg",
+            alt: "Black medium",
+          },
+        ],
+      },
+      {
+        name: "Blue / L",
+        sku: "TEE-BLU-L",
+        barcode: "TEE-BAR-L",
+        stock_quantity: 3,
+        options: { Color: "Blue", Size: "L" },
+      },
+    ],
+  });
+
+  assert.equal(created.stock_quantity, 5);
+  assert.equal(created.image_refs[0].url, "https://cdn.example.test/tee.jpg");
+  assert.equal(created.variants[0].sku, "TEE-BLK-M");
+  assert.equal(created.variants[0].barcode, "TEE-BAR-M");
+  assert.equal(created.variants[0].price_iqd, 21_000);
+  assert.deepEqual(created.variants[0].options, { Color: "Black", Size: "M" });
+  assert.equal(
+    created.variants[0].image_refs[0].storage_key,
+    "catalog/merchant-a/tee-black-m.jpg",
+  );
+
+  const updated = updateCatalogProduct({
+    merchantId: "merchant-a",
+    productId: created.id,
+    expectedVersion: created.version,
+    input: {
+      image_refs: [
+        {
+          id: created.image_refs[0].id,
+          url: "https://cdn.example.test/tee-v2.jpg",
+          alt: "T-shirt updated",
+        },
+      ],
+      variants: [
+        {
+          id: created.variants[0].id,
+          name: "Jet Black / M",
+          sku: "TEE-BLK-M",
+          barcode: "TEE-BAR-M",
+          price_iqd: 22_000,
+          stock_quantity: 2,
+          options: { Color: "Jet Black", Size: "M" },
+          image_refs: created.variants[0].image_refs,
+        },
+        {
+          name: "Green / XL",
+          sku: "TEE-GRN-XL",
+          barcode: "TEE-BAR-XL",
+          price_iqd: 23_000,
+          stock_quantity: 4,
+          options: { Color: "Green", Size: "XL" },
+          image_refs: [{ url: "https://cdn.example.test/tee-green-xl.jpg" }],
+        },
+      ],
+    },
+  });
+
+  assert.equal(updated.version, 2);
+  assert.equal(updated.stock_quantity, 6);
+  assert.equal(updated.variants.length, 2);
+  assert.equal(updated.variants[0].id, created.variants[0].id);
+  assert.equal(updated.variants.some((variant) => variant.id === created.variants[1].id), false);
+  assert.equal(updated.variants[0].name, "Jet Black / M");
+  assert.equal(updated.variants[0].price_iqd, 22_000);
+  assert.deepEqual(updated.variants[0].options, { Color: "Jet Black", Size: "M" });
+  assert.equal(updated.variants[1].sku, "TEE-GRN-XL");
+  assert.equal(updated.variants[1].barcode, "TEE-BAR-XL");
+  assert.equal(updated.variants[1].stock_quantity, 4);
+  assert.equal(updated.variants[1].image_refs[0].url, "https://cdn.example.test/tee-green-xl.jpg");
+  assert.equal(updated.image_refs[0].url, "https://cdn.example.test/tee-v2.jpg");
+
+  const removedAll = updateCatalogProduct({
+    merchantId: "merchant-a",
+    productId: updated.id,
+    expectedVersion: updated.version,
+    input: {
+      variants: [],
+      stock_quantity: updated.stock_quantity,
+    },
+  });
+  assert.equal(removedAll.variants.length, 0);
+  assert.equal(removedAll.stock_quantity, 6);
+});
+
+test("product-level quantity cannot overwrite variant-managed stock", () => {
+  const product = createProduct("merchant-a", "variant-root-stock-0001", {
+    stock_quantity: 5,
+    variants: [
+      { name: "Small", sku: "ROOT-S", stock_quantity: 2, options: { size: "S" } },
+      { name: "Large", sku: "ROOT-L", stock_quantity: 3, options: { size: "L" } },
+    ],
+  });
+
+  expectCatalogError(
+    () =>
+      updateCatalogProduct({
+        merchantId: "merchant-a",
+        productId: product.id,
+        expectedVersion: product.version,
+        input: { stock_quantity: 999 },
+      }),
+    "CATALOG_STOCK_MISMATCH",
+  );
+  assert.equal(getCatalogProduct("merchant-a", product.id).stock_quantity, 5);
+});
+
 test("negative stock is rejected and idempotent adjustments apply once", () => {
   const product = createProduct("merchant-a", "stock-create-0001", {
     stock_quantity: 2,
