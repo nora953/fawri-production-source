@@ -9,6 +9,13 @@ export type CatalogImageReference = {
 
 export type CatalogImageInput = string | CatalogImageReference;
 
+export type CatalogPhysicalMeasurementInput = {
+  weight_g?: number | null;
+  length_mm?: number | null;
+  width_mm?: number | null;
+  height_mm?: number | null;
+};
+
 export type CatalogVariant = {
   id: string;
   name: string;
@@ -16,13 +23,17 @@ export type CatalogVariant = {
   barcode?: string;
   price_iqd?: number;
   stock_quantity: number;
+  weight_g?: number;
+  length_mm?: number;
+  width_mm?: number;
+  height_mm?: number;
   options: Record<string, string>;
   image_refs: CatalogImageReference[];
   created_at?: string;
   updated_at?: string;
 };
 
-export type CatalogVariantInput = {
+export type CatalogVariantInput = CatalogPhysicalMeasurementInput & {
   id?: string;
   name?: string;
   sku?: string;
@@ -47,6 +58,10 @@ export type CatalogProduct = {
   compare_at_price_iqd?: number;
   stock_quantity: number;
   low_stock_threshold: number;
+  weight_g?: number;
+  length_mm?: number;
+  width_mm?: number;
+  height_mm?: number;
   status: ProductStatus;
   allow_fawri_reply: boolean;
   image_refs: CatalogImageReference[];
@@ -56,7 +71,7 @@ export type CatalogProduct = {
   version: number;
 };
 
-export type CatalogProductInput = {
+export type CatalogProductInput = CatalogPhysicalMeasurementInput & {
   external_ref?: string;
   name: string;
   description?: string;
