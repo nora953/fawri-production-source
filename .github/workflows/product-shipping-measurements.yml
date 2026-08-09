@@ -15,7 +15,24 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -31,6 +48,22 @@ jobs:
 
       - name: Install dependencies without package build scripts
         run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Generate and verify canonical migration chain
+        run: pnpm --filter @workspace/db run schema:generate
+
+      - name: Migration planner and safety tests
+        run: pnpm run migration:test
+
+      - name: Prove 0003 to 0004 upgrade and physical measurement constraints
+        env:
+          FAWRI_ALLOW_PRODUCT_MEASUREMENT_MIGRATION_TEST: "1"
+        run: node ./lib/db/scripts/test-product-shipping-measurements-upgrade.mjs
+
+      - name: Smoke full migration chain twice
+        env:
+          FAWRI_ALLOW_MIGRATION_SMOKE: "1"
+        run: pnpm --filter @workspace/db run schema:smoke
 
       - name: Catalog measurement runtime tests
         run: |
@@ -62,3 +95,18 @@ jobs:
         run: |
           pnpm --filter @workspace/fawri run typecheck
           pnpm --filter @workspace/fawri run build
+
+      - name: Verify committed migration output is reproducible
+        run: git diff --exit-code -- lib/db/drizzle
+
+      - name: Upload generated 0004 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: product-shipping-measurements-0004-evidence
+          path: |
+            lib/db/drizzle/0004_product_shipping_measurements.sql
+            lib/db/drizzle/meta/0004_snapshot.json
+            lib/db/drizzle/meta/_journal.json
+          if-no-files-found: warn
+          retention-days: 7
