@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - "parallel/product-shipping-measurements-knowledge"
+  pull_request:
+    branches:
+      - "parallel/integration-coordinator"
   workflow_dispatch:
 
 permissions:
