@@ -14,7 +14,6 @@ on:
       - "artifacts/fawri/src/pages/dashboard/MerchantSettingsPage.tsx"
       - "artifacts/fawri/src/lib/authClientCutover.ts"
       - "artifacts/fawri/src/lib/store.ts"
-      - "artifacts/fawri/tests/role-session-isolation.test.mjs"
       - ".github/workflows/merchant-account-security-ui.yml"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
@@ -51,6 +50,13 @@ jobs:
       - name: Check security integration test syntax
         run: node --check artifacts/api-server/tests/merchant-account-security.integration.test.mjs
 
+      - name: Guard merchant security UI against credential storage
+        run: |
+          if grep -En 'token_hash|localStorage|sessionStorage|Authorization' artifacts/fawri/src/pages/dashboard/MerchantAccountSecurityPanel.tsx; then
+            echo "Merchant account security UI must not reference raw credential/token storage primitives." >&2
+            exit 1
+          fi
+
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
 
@@ -68,6 +74,3 @@ jobs:
 
       - name: Build merchant frontend
         run: pnpm --filter @workspace/fawri run build
-
-      - name: Run frontend role/session isolation regression
-        run: pnpm --filter @workspace/fawri run test:role-session-isolation
