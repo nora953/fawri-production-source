@@ -15,17 +15,16 @@ on:
       - .github/workflows/landing-plan-intent-continuity.yml
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - name: Checkout lane
+      - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: parallel/landing-plan-intent-continuity
           fetch-depth: 0
 
       - name: Verify golden coordinator
@@ -35,172 +34,6 @@ jobs:
           git fetch origin parallel/integration-coordinator
           test "$(git rev-parse origin/parallel/integration-coordinator)" = "64a65667bab8609ac7f39f4975490f3a2f342ea4"
           test "$(git merge-base origin/parallel/integration-coordinator HEAD)" = "64a65667bab8609ac7f39f4975490f3a2f342ea4"
-
-      - name: Apply scoped frontend continuity and tests
-        if: github.event_name == 'push'
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 <<'PY'
-          from pathlib import Path
-
-          def replace_once(path, old, new):
-              p = Path(path)
-              text = p.read_text()
-              if new in text:
-                  return False
-              if old not in text:
-                  raise SystemExit(f"expected patch anchor missing: {path}")
-              p.write_text(text.replace(old, new, 1))
-              return True
-
-          replace_once(
-              "artifacts/fawri/src/pages/LandingPage.tsx",
-              """  const plans = [\n    { name: t.plan_silver, price: '25,000', replies: '4,000', emergency: '400', popular: false },\n    { name: t.plan_gold, price: '49,000', replies: '8,000', emergency: '800', popular: true },\n    { name: t.plan_diamond, price: '75,000', replies: '14,000', emergency: '1,400', popular: false },\n  ];""",
-              """  const plans = [\n    { id: 'silver', name: t.plan_silver, price: '25,000', replies: '4,000', emergency: '400', popular: false },\n    { id: 'gold', name: t.plan_gold, price: '49,000', replies: '8,000', emergency: '800', popular: true },\n    { id: 'diamond', name: t.plan_diamond, price: '75,000', replies: '14,000', emergency: '1,400', popular: false },\n  ] as const;""",
-          )
-          replace_once(
-              "artifacts/fawri/src/pages/LandingPage.tsx",
-              "<Link href=\"/signup\">{t.get_started}</Link>",
-              "<Link href={`/signup?plan=${plan.id}`}>{t.get_started}</Link>",
-          )
-
-          replace_once(
-              "artifacts/fawri/src/pages/SignupPage.tsx",
-              "import { PolicyModal, type PolicyTab } from '@/components/PolicyModal';\n\n\nfunction cacheMerchantLocally",
-              """import { PolicyModal, type PolicyTab } from '@/components/PolicyModal';\n\ntype RequestedPlan = 'silver' | 'gold' | 'diamond';\n\nfunction getRequestedPlanFromSearch(search: string): RequestedPlan | null {\n  const plan = new URLSearchParams(search).get('plan');\n  return plan === 'silver' || plan === 'gold' || plan === 'diamond' ? plan : null;\n}\n\nfunction cacheMerchantLocally""",
-          )
-          replace_once(
-              "artifacts/fawri/src/pages/SignupPage.tsx",
-              """  const fieldInvalidInputClass = \"border-red-500 focus-visible:ring-red-500\";\n  const [, setLocation] = useLocation();\n  const [loading, setLoading] = useState(false);""",
-              """  const fieldInvalidInputClass = \"border-red-500 focus-visible:ring-red-500\";\n  const [, setLocation] = useLocation();\n  const requestedPlan = getRequestedPlanFromSearch(\n    typeof window === 'undefined' ? '' : window.location.search,\n  );\n  const requestedPlanLabel = requestedPlan\n    ? { silver: t.plan_silver, gold: t.plan_gold, diamond: t.plan_diamond }[requestedPlan]\n    : null;\n  const requestedPlanPrefix =\n    lang === 'ar' ? 'الخطة المطلوبة' : lang === 'ku' ? 'پلانی داواکراو' : 'Requested plan';\n  const [loading, setLoading] = useState(false);""",
-          )
-          replace_once(
-              "artifacts/fawri/src/pages/SignupPage.tsx",
-              """          language: lang,\n        }),""",
-              """          language: lang,\n          ...(requestedPlan ? { requested_plan: requestedPlan } : {}),\n        }),""",
-          )
-          replace_once(
-              "artifacts/fawri/src/pages/SignupPage.tsx",
-              """          <h1 className=\"text-2xl font-bold\">{t.signup_title}</h1>\n        </div>""",
-              """          <h1 className=\"text-2xl font-bold\">{t.signup_title}</h1>\n          {requestedPlanLabel ? (\n            <p\n              className=\"mx-auto mt-3 w-fit rounded-xl border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-semibold text-foreground\"\n              data-testid=\"requested-plan\"\n            >\n              {requestedPlanPrefix}: <span className=\"font-extrabold\">{requestedPlanLabel}</span>\n            </p>\n          ) : null}\n        </div>""",
-          )
-
-          Path("artifacts/fawri/tests/landing-plan-intent-continuity.test.mjs").write_text(r'''import assert from "node:assert/strict";
-          import { readFile } from "node:fs/promises";
-          import path from "node:path";
-          import { fileURLToPath } from "node:url";
-          import test from "node:test";
-
-          const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-          const source = (relativePath) => readFile(path.join(root, relativePath), "utf8");
-
-          test("pricing CTAs carry exact requested plan while generic CTAs remain generic", async () => {
-            const landing = await source("src/pages/LandingPage.tsx");
-            assert.match(landing, /id: 'silver'/);
-            assert.match(landing, /id: 'gold'/);
-            assert.match(landing, /id: 'diamond'/);
-            assert.match(landing, /href=\{`\/signup\?plan=\$\{plan\.id\}`\}/);
-            assert.ok((landing.match(/href="\/signup"/g) || []).length >= 2);
-          });
-
-          test("signup accepts only canonical query plans and sends no invented generic plan", async () => {
-            const signup = await source("src/pages/SignupPage.tsx");
-            assert.match(signup, /type RequestedPlan = 'silver' \| 'gold' \| 'diamond'/);
-            assert.match(signup, /new URLSearchParams\(search\)\.get\('plan'\)/);
-            assert.match(signup, /plan === 'silver' \|\| plan === 'gold' \|\| plan === 'diamond' \? plan : null/);
-            assert.match(signup, /\.\.\.\(requestedPlan \? \{ requested_plan: requestedPlan \} : \{\}\)/);
-            assert.match(signup, /data-testid="requested-plan"/);
-            assert.doesNotMatch(signup, /localStorage[^\n]*requested[_-]?plan/i);
-          });
-          ''').replace("          ", "")
-
-          Path("artifacts/api-server/tests/landing-plan-intent-continuity.test.ts").write_text(r'''import assert from "node:assert/strict";
-          import fs from "node:fs";
-          import os from "node:os";
-          import path from "node:path";
-          import test from "node:test";
-          import { fileURLToPath } from "node:url";
-          import { AuthAccountRepository, type RequestedPlan } from "../src/services/authAccountRepository";
-
-          const testsDir = path.dirname(fileURLToPath(import.meta.url));
-          const routeSource = fs.readFileSync(path.join(testsDir, "../src/routes/auth-public-routes.ts"), "utf8");
-          const payloadSource = fs.readFileSync(path.join(testsDir, "../src/routes/auth-route-common.ts"), "utf8");
-
-          function repository() {
-            const dir = fs.mkdtempSync(path.join(os.tmpdir(), "fawri-plan-intent-"));
-            return { repo: new AuthAccountRepository(path.join(dir, "merchants.json")), file: path.join(dir, "merchants.json") };
-          }
-
-          function signup(repo: AuthAccountRepository, phone: string, requestedPlan?: RequestedPlan | null) {
-            return repo.upsertPendingMerchant({
-              phone,
-              passwordHash: "hash",
-              ownerName: "Owner",
-              storeName: "Store",
-              activityType: "retail",
-              language: "ar",
-              requestedPlan,
-            });
-          }
-
-          test("server signup validates requested_plan against the canonical plan set", () => {
-            assert.match(routeSource, /requestedPlanInput !== "silver" && requestedPlanInput !== "gold" && requestedPlanInput !== "diamond"/);
-            assert.match(routeSource, /INVALID_REQUESTED_PLAN/);
-            assert.match(routeSource, /requestedPlan = requestedPlanInput/);
-          });
-
-          test("repository stores canonical plans and OTP verification preserves them", () => {
-            for (const [index, plan] of (["silver", "gold", "diamond"] as const).entries()) {
-              const { repo } = repository();
-              const pending = signup(repo, `0700000000${index + 1}`, plan);
-              assert.equal(pending.merchantProfile?.requestedPlan, plan);
-              const verified = repo.markMerchantOtpVerified(pending.account.id);
-              assert.equal(verified?.merchantProfile?.requestedPlan, plan);
-              assert.equal(verified?.account.otpVerified, true);
-            }
-          });
-
-          test("generic signup remains null, invalid repository input fails closed, and pending retries preserve intent", () => {
-            const { repo, file } = repository();
-            const generic = signup(repo, "07000000004");
-            assert.equal(generic.merchantProfile?.requestedPlan, null);
-
-            const invalid = signup(repo, "07000000005", "platinum" as RequestedPlan);
-            assert.equal(invalid.merchantProfile?.requestedPlan, null);
-
-            const first = signup(repo, "07000000006", "gold");
-            const retry = signup(repo, "07000000006");
-            assert.equal(retry.merchantProfile?.requestedPlan, "gold");
-            assert.equal(retry.account.id, first.account.id);
-
-            const raw = JSON.parse(fs.readFileSync(file, "utf8"));
-            assert.equal("subscriptions" in raw, false);
-            assert.equal("payments" in raw, false);
-            assert.equal("invoices" in raw, false);
-            assert.equal("billing" in raw, false);
-          });
-
-          test("merchant payload keeps requested plan and signup has no subscription or payment side effect", () => {
-            assert.match(payloadSource, /requested_plan: profile\.requestedPlan/);
-            assert.match(payloadSource, /merchant_profile: account\.merchantProfile/);
-            const signupRoute = routeSource.slice(
-              routeSource.indexOf('router.post("/signup"'),
-              routeSource.indexOf('router.post("/otp/resend"'),
-            );
-            assert.doesNotMatch(signupRoute, /subscription|payment|invoice|charge|entitlement/i);
-          });
-          ''').replace("          ", "")
-          PY
-
-          if ! git diff --quiet; then
-            git diff --check
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add artifacts/fawri/src/pages/LandingPage.tsx artifacts/fawri/src/pages/SignupPage.tsx artifacts/fawri/tests/landing-plan-intent-continuity.test.mjs artifacts/api-server/tests/landing-plan-intent-continuity.test.ts
-            git commit -m "feat: carry landing requested plan through signup"
-            git push origin HEAD:parallel/landing-plan-intent-continuity
-          fi
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
