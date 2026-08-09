@@ -17,6 +17,12 @@ import {
 import { toast } from 'sonner';
 import { PolicyModal, type PolicyTab } from '@/components/PolicyModal';
 
+type RequestedPlan = 'silver' | 'gold' | 'diamond';
+
+function getRequestedPlanFromSearch(search: string): RequestedPlan | null {
+  const plan = new URLSearchParams(search).get('plan');
+  return plan === 'silver' || plan === 'gold' || plan === 'diamond' ? plan : null;
+}
 
 function cacheMerchantLocally(merchant: any) {
   if (!merchant?.id) return;
@@ -34,6 +40,14 @@ export default function SignupPage() {
   const fieldInputClass = "h-12 rounded-xl";
   const fieldInvalidInputClass = "border-red-500 focus-visible:ring-red-500";
   const [, setLocation] = useLocation();
+  const requestedPlan = getRequestedPlanFromSearch(
+    typeof window === 'undefined' ? '' : window.location.search,
+  );
+  const requestedPlanLabel = requestedPlan
+    ? { silver: t.plan_silver, gold: t.plan_gold, diamond: t.plan_diamond }[requestedPlan]
+    : null;
+  const requestedPlanPrefix =
+    lang === 'ar' ? 'الخطة المطلوبة' : lang === 'ku' ? 'پلانی داواکراو' : 'Requested plan';
   const [loading, setLoading] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyTab, setPolicyTab] = useState<PolicyTab>('privacy');
@@ -191,6 +205,7 @@ export default function SignupPage() {
           password: formData.password.trim(),
           activity_type: finalActivity,
           language: lang,
+          ...(requestedPlan ? { requested_plan: requestedPlan } : {}),
         }),
       });
 
@@ -239,6 +254,14 @@ export default function SignupPage() {
             {brandName}
           </Link>
           <h1 className="text-2xl font-bold">{t.signup_title}</h1>
+          {requestedPlanLabel ? (
+            <p
+              className="mx-auto mt-3 w-fit rounded-xl border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-semibold text-foreground"
+              data-testid="requested-plan"
+            >
+              {requestedPlanPrefix}: <span className="font-extrabold">{requestedPlanLabel}</span>
+            </p>
+          ) : null}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6" noValidate>
