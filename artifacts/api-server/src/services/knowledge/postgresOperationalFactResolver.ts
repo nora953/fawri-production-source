@@ -18,8 +18,18 @@ const PAYMENT_TERMS = ["دفع", "الدفع", "كاش", "نقد", "payment", "p
 const BUSINESS_TERMS = ["اسم المتجر", "اسم المحل", "store name", "business name", "ناوی فرۆشگا"];
 const PRICE_TERMS = ["سعر", "السعر", "بكم", "شكد", "price", "cost", "نرخ"];
 const STOCK_TERMS = ["مخزون", "متوفر", "متوفره", "متوفرة", "available", "stock", "in stock", "بەردەست"];
+const WEIGHT_TERMS = ["وزن", "وزنه", "الوزن", "weight", "weigh", "کێش", "كێش"];
+const DIMENSION_TERMS = ["أبعاد", "ابعاد", "الأبعاد", "الطول", "العرض", "الارتفاع", "dimensions", "dimension", "measurements", "size", "ڕەهەند", "درێژی", "پانی", "بەرزی"];
 const ORDER_TERMS = ["حالة الطلب", "طلبي", "الطلب", "order status", "my order", "داواکاری"];
 const WARRANTY_TERMS = ["ضمان", "كفالة", "warranty", "guarantee"];
+const MAX_WEIGHT_G = 100_000_000;
+const MAX_DIMENSION_MM = 100_000;
+
+type MeasurementKind = "weight" | "dimensions";
+type PhysicalFacts = {
+  weight_g: number | null;
+  dimensions: { length_mm: number; width_mm: number; height_mm: number } | null;
+};
 
 function fail(code: string, message: string, status = 503): never {
   throw new KnowledgeRuntimeGateError(code, message, status);
@@ -37,6 +47,15 @@ function integer(value: unknown): number {
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < 0) {
     fail("KNOWLEDGE_STATE_INVALID", "knowledge state is invalid");
+  }
+  return parsed;
+}
+
+function optionalPositiveInteger(value: unknown, max: number): number | null {
+  if (value === null || value === undefined) return null;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0 || parsed > max) {
+    fail("KNOWLEDGE_STATE_INVALID", "catalog physical measurement state is invalid");
   }
   return parsed;
 }
@@ -65,6 +84,30 @@ function tenant(row: Record<string, unknown>, merchantId: string): void {
   if (text(row.merchant_id, 160) !== merchantId) {
     fail("KNOWLEDGE_TENANT_VIOLATION", "knowledge tenant boundary violation");
   }
+}
+
+function physicalFacts(row: Record<string, unknown>): PhysicalFacts {
+  const weight = optionalPositiveInteger(row.weight_g, MAX_WEIGHT_G);
+  const length = optionalPositiveInteger(row.length_mm, MAX_DIMENSION_MM);
+  const width = optionalPositiveInteger(row.width_mm, MAX_DIMENSION_MM);
+  const height = optionalPositiveInteger(row.height_mm, MAX_DIMENSION_MM);
+  const presentDimensions = [length, width, height].filter((value) => value !== null).length;
+  if (presentDimensions !== 0 && presentDimensions !== 3) {
+    fail("KNOWLEDGE_STATE_INVALID", "catalog dimensions must be complete");
+  }
+  return {
+    weight_g: weight,
+    dimensions: presentDimensions === 3
+      ? { length_mm: length!, width_mm: width!, height_mm: height! }
+      : null,
+  };
+}
+
+function inheritedPhysicalFacts(product: PhysicalFacts, variant?: PhysicalFacts): PhysicalFacts {
+  return {
+    weight_g: variant?.weight_g ?? product.weight_g,
+    dimensions: variant?.dimensions ?? product.dimensions,
+  };
 }
 
 function localizedDelivery(row: Record<string, unknown>, lang: KnowledgeLanguage): string {
@@ -140,6 +183,7 @@ async function settings(
 const PRODUCTS_SQL = `
 SELECT id, merchant_id, external_ref, code, name, sku, barcode,
        current_price_iqd, quantity, low_stock_threshold, variant_stock_mode,
+       weight_g, length_mm, width_mm, height_mm,
        version, status, allow_fawri_reply, updated_at
 FROM products
 WHERE merchant_id = $1
@@ -152,6 +196,7 @@ LIMIT 250`;
 const VARIANTS_SQL = `
 SELECT id, product_id, merchant_id, external_ref, name, color, size, sku, barcode,
        quantity, price_adjustment_iqd, price_override_iqd, option_signature,
+       weight_g, length_mm, width_mm, height_mm,
        version, updated_at
 FROM product_variants
 WHERE merchant_id = $1 AND product_id = $2 AND version > 0
@@ -191,6 +236,139 @@ function uniqueBest(rows: Array<{ row: Record<string, unknown>; score: number }>
   return matched[0].row;
 }
 
+async function loadVariants(
+  sql: KnowledgeSqlExecutor,
+  merchantId: string,
+  productId: string,
+): Promise<Record<string, unknown>[]> {
+  let variants: Record<string, unknown>[];
+  try {
+    variants = (await sql.query(VARIANTS_SQL, [merchantId, productId])).rows;
+  } catch {
+    fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+  }
+  for (const row of variants) {
+    tenant(row, merchantId);
+    if (text(row.product_id, 160) !== productId) {
+      fail("KNOWLEDGE_TENANT_VIOLATION", "knowledge tenant boundary violation");
+    }
+    version(row.version);
+    physicalFacts(row);
+  }
+  return variants;
+}
+
+function formatScaled(value: number, scale: number): string {
+  const decimals = String(scale).length - 1;
+  const whole = Math.floor(value / scale);
+  const remainder = String(value % scale).padStart(decimals, "0").replace(/0+$/, "");
+  return remainder ? `${whole}.${remainder}` : String(whole);
+}
+
+function measurementSignature(facts: PhysicalFacts, kind: MeasurementKind): string {
+  if (kind === "weight") return facts.weight_g === null ? "unknown" : `w:${facts.weight_g}`;
+  return facts.dimensions
+    ? `d:${facts.dimensions.length_mm}:${facts.dimensions.width_mm}:${facts.dimensions.height_mm}`
+    : "unknown";
+}
+
+function localizedMeasurementAnswer(
+  language: KnowledgeLanguage,
+  productName: string,
+  kind: MeasurementKind,
+  facts: PhysicalFacts,
+): string {
+  if (kind === "weight") {
+    if (facts.weight_g === null) {
+      if (language === "en") return `The weight of ${productName} is not currently available.`;
+      if (language === "ku") return `زانیاری کێشی ${productName} لە ئێستادا بەردەست نییە.`;
+      return `معلومة وزن ${productName} غير متوفرة حاليًا.`;
+    }
+    const kilograms = formatScaled(facts.weight_g, 1_000);
+    if (language === "en") return `${productName} weighs ${kilograms} kg.`;
+    if (language === "ku") return `کێشی ${productName} بریتییە لە ${kilograms} کگم.`;
+    return `وزن ${productName} هو ${kilograms} كغم.`;
+  }
+
+  if (!facts.dimensions) {
+    if (language === "en") return `The dimensions of ${productName} are not currently available.`;
+    if (language === "ku") return `زانیاری ڕەهەندەکانی ${productName} لە ئێستادا بەردەست نییە.`;
+    return `أبعاد ${productName} غير متوفرة حاليًا.`;
+  }
+  const length = formatScaled(facts.dimensions.length_mm, 10);
+  const width = formatScaled(facts.dimensions.width_mm, 10);
+  const height = formatScaled(facts.dimensions.height_mm, 10);
+  if (language === "en") return `${productName} dimensions are ${length} × ${width} × ${height} cm (length × width × height).`;
+  if (language === "ku") return `ڕەهەندەکانی ${productName}: ${length} × ${width} × ${height} سم (درێژی × پانی × بەرزی).`;
+  return `أبعاد ${productName}: ${length} × ${width} × ${height} سم (الطول × العرض × الارتفاع).`;
+}
+
+async function resolveMeasurementFact(params: {
+  sql: KnowledgeSqlExecutor;
+  merchantId: string;
+  customer: string;
+  language: KnowledgeLanguage;
+  kind: MeasurementKind;
+}) {
+  let products: Record<string, unknown>[];
+  try {
+    products = (await params.sql.query(PRODUCTS_SQL, [params.merchantId])).rows;
+  } catch {
+    fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+  }
+  for (const row of products) {
+    tenant(row, params.merchantId);
+    version(row.version);
+    physicalFacts(row);
+    if (bool(row.allow_fawri_reply) !== true || !["available", "low_stock", "out_of_stock"].includes(text(row.status, 40))) {
+      fail("KNOWLEDGE_PROVENANCE_INVALID", "catalog fact provenance is invalid");
+    }
+  }
+  const product = uniqueBest(
+    products.map((row) => ({ row, score: productMatchScore(params.customer, row) })),
+    "KNOWLEDGE_PRODUCT_AMBIGUOUS",
+  );
+  if (!product) return null;
+
+  const productId = text(product.id, 160);
+  const productName = text(product.name, 300);
+  if (!productId || !productName) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+  const productFacts = physicalFacts(product);
+  let resolved = productFacts;
+  let recordId = productId;
+  const variantMode = bool(product.variant_stock_mode);
+
+  if (variantMode) {
+    const variants = await loadVariants(params.sql, params.merchantId, productId);
+    if (!variants.length) fail("KNOWLEDGE_STATE_INVALID", "variant-managed product has no variants");
+    const matchedVariant = uniqueBest(
+      variants.map((row) => ({ row, score: variantMatchScore(params.customer, row) })),
+      "KNOWLEDGE_VARIANT_AMBIGUOUS",
+    );
+    if (matchedVariant) {
+      resolved = inheritedPhysicalFacts(productFacts, physicalFacts(matchedVariant));
+      recordId = text(matchedVariant.id, 160);
+      if (!recordId) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+    } else {
+      const effective = variants.map((row) => inheritedPhysicalFacts(productFacts, physicalFacts(row)));
+      const signatures = new Set(effective.map((facts) => measurementSignature(facts, params.kind)));
+      if (signatures.size !== 1) {
+        fail("KNOWLEDGE_VARIANT_REQUIRED", "an unambiguous product variant is required for this measurement", 409);
+      }
+      resolved = effective[0];
+      recordId = `${productId}:common-measurement`;
+    }
+  }
+
+  return {
+    answerText: localizedMeasurementAnswer(params.language, productName, params.kind, resolved),
+    language: params.language,
+    confidence: 1,
+    factType: params.kind === "weight" ? "product_weight" : "product_dimensions",
+    recordId,
+  };
+}
+
 async function resolveProductFact(params: {
   sql: KnowledgeSqlExecutor;
   merchantId: string;
@@ -207,6 +385,7 @@ async function resolveProductFact(params: {
   for (const row of products) {
     tenant(row, params.merchantId);
     version(row.version);
+    physicalFacts(row);
     if (bool(row.allow_fawri_reply) !== true || !["available", "low_stock", "out_of_stock"].includes(text(row.status, 40))) {
       fail("KNOWLEDGE_PROVENANCE_INVALID", "catalog fact provenance is invalid");
     }
@@ -227,17 +406,7 @@ async function resolveProductFact(params: {
   let recordId = productId;
 
   if (variantMode) {
-    let variants: Record<string, unknown>[];
-    try {
-      variants = (await params.sql.query(VARIANTS_SQL, [params.merchantId, productId])).rows;
-    } catch {
-      fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
-    }
-    for (const row of variants) {
-      tenant(row, params.merchantId);
-      if (text(row.product_id, 160) !== productId) fail("KNOWLEDGE_TENANT_VIOLATION", "knowledge tenant boundary violation");
-      version(row.version);
-    }
+    const variants = await loadVariants(params.sql, params.merchantId, productId);
     const variant = uniqueBest(
       variants.map((row) => ({ row, score: variantMatchScore(params.customer, row) })),
       "KNOWLEDGE_VARIANT_AMBIGUOUS",
@@ -331,12 +500,17 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
     const normalized = normalizeKnowledgeText(input.customerText);
     if (!merchantId || !normalized) return null;
 
+    const weight = containsAny(normalized, WEIGHT_TERMS);
+    const dimensions = containsAny(normalized, DIMENSION_TERMS);
+    const physicalIntent = weight || dimensions;
     const kinds = {
       delivery: containsAny(normalized, DELIVERY_TERMS),
       payment: containsAny(normalized, PAYMENT_TERMS),
       business: containsAny(normalized, BUSINESS_TERMS),
-      price: containsAny(normalized, PRICE_TERMS),
+      price: !physicalIntent && containsAny(normalized, PRICE_TERMS),
       stock: containsAny(normalized, STOCK_TERMS),
+      weight,
+      dimensions,
       order: containsAny(normalized, ORDER_TERMS),
       warranty: containsAny(normalized, WARRANTY_TERMS),
     };
@@ -350,6 +524,16 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
       // The current PostgreSQL authority has no structured warranty-policy column.
       // Treat unstructured text/metadata as ambiguous provenance instead of guessing.
       return null;
+    }
+
+    if (kinds.weight || kinds.dimensions) {
+      return resolveMeasurementFact({
+        sql: this.sql,
+        merchantId,
+        customer: normalized,
+        language: input.language,
+        kind: kinds.weight ? "weight" : "dimensions",
+      });
     }
 
     if (kinds.price || kinds.stock) {
