@@ -2,12 +2,97 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { getCurrentMerchant } from '@/lib/store';
 import { Conversation } from '@/lib/types';
+import {
+  buildConversationSavedAnswerSeed,
+  createConversationSavedAnswer,
+  type ConversationSavedAnswerSeed,
+  type KnowledgeLanguage,
+} from '@/lib/conversationSavedAnswer';
 import { PlatformIcon } from '@/components/PlatformIcon';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Send, UserIcon, Bot, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
+
+type SaveAnswerDraft = ConversationSavedAnswerSeed & {
+  category: string;
+  language: KnowledgeLanguage;
+  active: boolean;
+};
+
+type SaveAnswerCopy = {
+  title: string;
+  subtitle: string;
+  question: string;
+  answer: string;
+  category: string;
+  language: string;
+  active: string;
+  cancel: string;
+  save: string;
+  saving: string;
+  required: string;
+  success: string;
+  failure: string;
+  source: string;
+  noSource: string;
+};
+
+const SAVE_ANSWER_COPY: Record<KnowledgeLanguage, SaveAnswerCopy> = {
+  ar: {
+    title: 'مراجعة الإجابة المحفوظة',
+    subtitle: 'راجع المعرفة التي ستعتمدها قبل إضافتها إلى فوري.',
+    question: 'نمط سؤال العميل',
+    answer: 'الإجابة المعتمدة',
+    category: 'الفئة',
+    language: 'اللغة',
+    active: 'مفعلة',
+    cancel: 'إلغاء',
+    save: 'حفظ الإجابة',
+    saving: 'جارٍ الحفظ…',
+    required: 'السؤال والإجابة مطلوبان.',
+    success: 'تم حفظ الإجابة في المعرفة المعتمدة.',
+    failure: 'تعذر حفظ الإجابة.',
+    source: 'تم اقتراح السؤال من أقرب رسالة عميل سابقة في هذه المحادثة.',
+    noSource: 'لم يوجد سؤال عميل سابق مناسب؛ اكتب نمط السؤال قبل الحفظ.',
+  },
+  ku: {
+    title: 'پێداچوونەوەی وەڵامی پاشەکەوتکراو',
+    subtitle: 'پێش زیادکردن بۆ زانیاریی فۆری، ناوەڕۆکەکە پێداچوونەوە بکە.',
+    question: 'شێوازی پرسیاری کڕیار',
+    answer: 'وەڵامی پەسەندکراو',
+    category: 'پۆل',
+    language: 'زمان',
+    active: 'چالاک',
+    cancel: 'هەڵوەشاندنەوە',
+    save: 'پاشەکەوتکردنی وەڵام',
+    saving: 'پاشەکەوت دەکرێت…',
+    required: 'پرسیار و وەڵام پێویستن.',
+    success: 'وەڵام لە زانیاریی پەسەندکراو پاشەکەوت کرا.',
+    failure: 'پاشەکەوتکردنی وەڵام سەرکەوتوو نەبوو.',
+    source: 'پرسیارەکە لە نزیکترین پەیامی پێشووی کڕیار لەم گفتوگۆیە پێشنیار کرا.',
+    noSource: 'هیچ پرسیارێکی پێشووی گونجاوی کڕیار نەدۆزرایەوە؛ پێش پاشەکەوتکردن پرسیارەکە بنووسە.',
+  },
+  en: {
+    title: 'Review saved answer',
+    subtitle: 'Review the knowledge you are approving before adding it to Fawri.',
+    question: 'Customer question pattern',
+    answer: 'Approved answer',
+    category: 'Category',
+    language: 'Language',
+    active: 'Active',
+    cancel: 'Cancel',
+    save: 'Save answer',
+    saving: 'Saving…',
+    required: 'Question and answer are required.',
+    success: 'Answer saved to approved knowledge.',
+    failure: 'Could not save the answer.',
+    source: 'The question was suggested from the nearest earlier customer message in this conversation.',
+    noSource: 'No suitable earlier customer question was found; enter the question pattern before saving.',
+  },
+};
 
 function requestedConversationId(): string {
   if (typeof window === 'undefined') return '';
@@ -22,7 +107,9 @@ function makeIdempotencyKey() {
 }
 
 export default function ConversationsPage() {
-  const { t, dir, isRTL } = useI18n();
+  const { t, dir, isRTL, lang } = useI18n();
+  const knowledgeLanguage: KnowledgeLanguage = lang === 'ku' || lang === 'en' ? lang : 'ar';
+  const saveAnswerCopy = SAVE_ANSWER_COPY[knowledgeLanguage];
 
   const merchant = getCurrentMerchant();
   const merchantId = merchant?.id || '';
@@ -33,6 +120,8 @@ export default function ConversationsPage() {
   const [replyText, setReplyText] = useState('');
   const [loadError, setLoadError] = useState('');
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [saveAnswerDraft, setSaveAnswerDraft] = useState<SaveAnswerDraft | null>(null);
+  const [savingAnswer, setSavingAnswer] = useState(false);
 
   const getStatusLabel = (status: Conversation['status']) => {
     const statusLabels: Record<Conversation['status'], string> = {
@@ -178,8 +267,54 @@ export default function ConversationsPage() {
     }
   };
 
-  const handleSaveAsAnswer = () => {
-    toast.success(t.conversations_comingSoon);
+  const handleSaveAsAnswer = (merchantMessageId: string) => {
+    if (!activeConv || savingAnswer) return;
+
+    const seed = buildConversationSavedAnswerSeed(
+      activeConv.messages,
+      merchantMessageId,
+    );
+    if (!seed) {
+      toast.error(saveAnswerCopy.failure);
+      return;
+    }
+
+    setSaveAnswerDraft({
+      ...seed,
+      category: 'custom',
+      language: knowledgeLanguage,
+      active: true,
+    });
+  };
+
+  const handleSaveAnswerSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!saveAnswerDraft || savingAnswer) return;
+
+    const questionPattern = saveAnswerDraft.questionPattern.trim();
+    const answerText = saveAnswerDraft.answerText.trim();
+    if (!questionPattern || !answerText) {
+      toast.error(saveAnswerCopy.required);
+      return;
+    }
+
+    setSavingAnswer(true);
+    try {
+      await createConversationSavedAnswer({
+        questionPattern,
+        answerText,
+        category: saveAnswerDraft.category,
+        language: saveAnswerDraft.language,
+        active: saveAnswerDraft.active,
+      });
+      setSaveAnswerDraft(null);
+      toast.success(saveAnswerCopy.success);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '';
+      toast.error(detail ? `${saveAnswerCopy.failure} ${detail}` : saveAnswerCopy.failure);
+    } finally {
+      setSavingAnswer(false);
+    }
   };
 
   const actionPending = Boolean(pendingAction);
@@ -362,11 +497,12 @@ export default function ConversationsPage() {
                         )}
                       </div>
 
-                      {!isCustomer && message.sender === 'merchant' && (
+                      {message.sender === 'merchant' && (
                         <button
                           type="button"
-                          onClick={handleSaveAsAnswer}
-                          className="mt-1 px-8 text-[10px] text-muted-foreground hover:text-primary"
+                          onClick={() => handleSaveAsAnswer(message.id)}
+                          disabled={savingAnswer}
+                          className="mt-1 px-8 text-[10px] text-muted-foreground hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
                         >
                           {t.save_as_answer}
                         </button>
@@ -414,6 +550,142 @@ export default function ConversationsPage() {
           )}
         </div>
       </div>
+
+      {saveAnswerDraft ? (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={saveAnswerCopy.title}
+          dir={dir}
+        >
+          <form
+            onSubmit={handleSaveAnswerSubmit}
+            className="max-h-[92dvh] w-full overflow-y-auto rounded-t-3xl border bg-card p-5 shadow-2xl sm:max-w-xl sm:rounded-3xl sm:p-6"
+          >
+            <div className="mb-5">
+              <h2 className="text-xl font-extrabold">{saveAnswerCopy.title}</h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                {saveAnswerCopy.subtitle}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                {saveAnswerDraft.customerQuestionMessageId
+                  ? saveAnswerCopy.source
+                  : saveAnswerCopy.noSource}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block space-y-2">
+                <span className="text-sm font-semibold">{saveAnswerCopy.question}</span>
+                <Textarea
+                  value={saveAnswerDraft.questionPattern}
+                  onChange={event =>
+                    setSaveAnswerDraft(current =>
+                      current
+                        ? { ...current, questionPattern: event.target.value }
+                        : current
+                    )
+                  }
+                  rows={3}
+                  maxLength={500}
+                  disabled={savingAnswer}
+                  required
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-semibold">{saveAnswerCopy.answer}</span>
+                <Textarea
+                  value={saveAnswerDraft.answerText}
+                  onChange={event =>
+                    setSaveAnswerDraft(current =>
+                      current ? { ...current, answerText: event.target.value } : current
+                    )
+                  }
+                  rows={5}
+                  maxLength={2000}
+                  disabled={savingAnswer}
+                  required
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-semibold">{saveAnswerCopy.category}</span>
+                <Input
+                  value={saveAnswerDraft.category}
+                  onChange={event =>
+                    setSaveAnswerDraft(current =>
+                      current ? { ...current, category: event.target.value } : current
+                    )
+                  }
+                  maxLength={100}
+                  disabled={savingAnswer}
+                />
+              </label>
+
+              <label className="block space-y-2">
+                <span className="text-sm font-semibold">{saveAnswerCopy.language}</span>
+                <select
+                  value={saveAnswerDraft.language}
+                  onChange={event =>
+                    setSaveAnswerDraft(current =>
+                      current
+                        ? {
+                            ...current,
+                            language: event.target.value as KnowledgeLanguage,
+                          }
+                        : current
+                    )
+                  }
+                  disabled={savingAnswer}
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                >
+                  <option value="ar">العربية</option>
+                  <option value="ku">کوردی</option>
+                  <option value="en">English</option>
+                </select>
+              </label>
+
+              <label className="flex items-center gap-3 rounded-xl border p-3">
+                <input
+                  type="checkbox"
+                  checked={saveAnswerDraft.active}
+                  onChange={event =>
+                    setSaveAnswerDraft(current =>
+                      current ? { ...current, active: event.target.checked } : current
+                    )
+                  }
+                  disabled={savingAnswer}
+                  className="h-4 w-4"
+                />
+                <span className="text-sm font-semibold">{saveAnswerCopy.active}</span>
+              </label>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setSaveAnswerDraft(null)}
+                disabled={savingAnswer}
+              >
+                {saveAnswerCopy.cancel}
+              </Button>
+              <Button
+                type="submit"
+                disabled={
+                  savingAnswer ||
+                  !saveAnswerDraft.questionPattern.trim() ||
+                  !saveAnswerDraft.answerText.trim()
+                }
+              >
+                {savingAnswer ? saveAnswerCopy.saving : saveAnswerCopy.save}
+              </Button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </div>
   );
 }
