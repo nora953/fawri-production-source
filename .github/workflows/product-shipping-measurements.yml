@@ -1,0 +1,64 @@
+name: Product shipping measurements validation
+
+on:
+  pull_request:
+    branches:
+      - "parallel/integration-coordinator"
+  push:
+    branches:
+      - "parallel/product-shipping-measurements-knowledge"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Catalog measurement runtime tests
+        run: |
+          pnpm --filter @workspace/api-server exec tsx --test \
+            ./tests/catalog-shipping-measurements.test.ts \
+            ./tests/catalog-inventory.test.ts
+
+      - name: Knowledge physical fact tests
+        run: |
+          pnpm --filter @workspace/api-server exec tsx --test \
+            ./tests/knowledge-product-shipping-measurements.test.ts \
+            ./tests/knowledge-postgres-operational-facts.test.ts
+
+      - name: Product catalog UI tests
+        run: |
+          pnpm --filter @workspace/fawri exec tsx --test \
+            ./tests/product-shipping-measurements-ui.test.ts \
+            ./tests/product-catalog-ui-cutover.test.ts
+
+      - name: Database schema typecheck
+        run: pnpm --filter @workspace/db run typecheck
+
+      - name: API typecheck and build
+        run: |
+          pnpm --filter @workspace/api-server run typecheck
+          pnpm --filter @workspace/api-server run build
+
+      - name: Frontend typecheck and build
+        run: |
+          pnpm --filter @workspace/fawri run typecheck
+          pnpm --filter @workspace/fawri run build
