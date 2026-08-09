@@ -1,6 +1,8 @@
 import {
   listCatalogProducts,
+  resolveProductPhysicalMeasurements,
   type CatalogImageReference,
+  type CatalogPhysicalMeasurementsResolution,
   type CatalogProduct,
   type CatalogProductStatus,
 } from "./catalogInventoryRuntime";
@@ -14,6 +16,11 @@ export type BotCatalogVariant = {
   current_price: number;
   stock_quantity: number;
   quantity: number;
+  weight_g?: number;
+  length_mm?: number;
+  width_mm?: number;
+  height_mm?: number;
+  physical_measurements: CatalogPhysicalMeasurementsResolution;
   options: Record<string, string>;
   image_refs: CatalogImageReference[];
 };
@@ -34,6 +41,11 @@ export type BotCatalogProduct = {
   current_price: number;
   stock_quantity: number;
   quantity: number;
+  weight_g?: number;
+  length_mm?: number;
+  width_mm?: number;
+  height_mm?: number;
+  physical_measurements: CatalogPhysicalMeasurementsResolution;
   status: CatalogProductStatus;
   allow_fawri_reply: true;
   image_refs: CatalogImageReference[];
@@ -109,6 +121,11 @@ export function adaptCatalogProductForBot(
     current_price: variant.price_iqd ?? product.price_iqd,
     stock_quantity: variant.stock_quantity,
     quantity: variant.stock_quantity,
+    ...(variant.weight_g !== undefined ? { weight_g: variant.weight_g } : {}),
+    ...(variant.length_mm !== undefined ? { length_mm: variant.length_mm } : {}),
+    ...(variant.width_mm !== undefined ? { width_mm: variant.width_mm } : {}),
+    ...(variant.height_mm !== undefined ? { height_mm: variant.height_mm } : {}),
+    physical_measurements: resolveProductPhysicalMeasurements(product, variant),
     options: { ...variant.options },
     image_refs: cloneImageReferences(variant.image_refs),
   }));
@@ -132,6 +149,11 @@ export function adaptCatalogProductForBot(
     current_price: product.price_iqd,
     stock_quantity: product.stock_quantity,
     quantity: product.stock_quantity,
+    ...(product.weight_g !== undefined ? { weight_g: product.weight_g } : {}),
+    ...(product.length_mm !== undefined ? { length_mm: product.length_mm } : {}),
+    ...(product.width_mm !== undefined ? { width_mm: product.width_mm } : {}),
+    ...(product.height_mm !== undefined ? { height_mm: product.height_mm } : {}),
+    physical_measurements: resolveProductPhysicalMeasurements(product),
     status: product.status,
     allow_fawri_reply: true,
     image_refs: productImages,
