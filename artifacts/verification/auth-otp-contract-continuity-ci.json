@@ -1,0 +1,18 @@
+{
+  "ok": true,
+  "run_id": "31318973831",
+  "tested_sha": "77246b6aeddc5dfcc2910634ad52913fe2deaac5",
+  "branch": "parallel/auth-otp-contract-continuity",
+  "results": {
+    "install": "success",
+    "frontend_contract": "success",
+    "backend_contract": "success",
+    "auth_security_store": "success",
+    "auth_cutover_contract": "success",
+    "api_typecheck": "success",
+    "fawri_typecheck": "success",
+    "api_build": "success",
+    "fawri_build": "success",
+    "merchant_session_integration": "success"
+  }
+}
