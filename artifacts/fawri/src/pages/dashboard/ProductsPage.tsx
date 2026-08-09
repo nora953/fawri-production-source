@@ -81,6 +81,14 @@ type UiMessageKey =
   | 'addOption'
   | 'optionName'
   | 'optionValue'
+  | 'physicalDetails'
+  | 'physicalDetailsOptional'
+  | 'weightKg'
+  | 'dimensionsCm'
+  | 'length'
+  | 'width'
+  | 'height'
+  | 'variantMeasurementsHint'
   | 'inventory'
   | 'inventorySet'
   | 'inventorySaved'
@@ -125,9 +133,9 @@ const messages: Record<UiMessageKey, Record<Lang, string>> = {
     en: 'Quantity for products with variants is managed by variant inventory.',
   },
   editorInvalid: {
-    ar: 'راجع حقول الصور والمتغيرات والقيم الرقمية قبل الحفظ.',
-    ku: 'پێش پاشەکەوتکردن خانەکانی وێنە و جۆراوجۆری و ژمارەکان بپشکنە.',
-    en: 'Review image, variant, and numeric fields before saving.',
+    ar: 'راجع حقول الصور والمتغيرات والقياسات والقيم الرقمية قبل الحفظ.',
+    ku: 'پێش پاشەکەوتکردن خانەکانی وێنە و جۆراوجۆری و پێوانە و ژمارەکان بپشکنە.',
+    en: 'Review image, variant, measurement, and numeric fields before saving.',
   },
   imageReferenceOnly: {
     ar: 'الكتالوج يخزن مراجع الصور فقط. أدخل رابطًا موجودًا أو storage key؛ رفع الملفات غير متوفر حاليًا.',
@@ -153,6 +161,14 @@ const messages: Record<UiMessageKey, Record<Lang, string>> = {
   addOption: { ar: 'إضافة خيار', ku: 'زیادکردنی هەڵبژاردە', en: 'Add option' },
   optionName: { ar: 'اسم الخيار (مثل Size)', ku: 'ناوی هەڵبژاردە (وەک Size)', en: 'Option name (e.g. Size)' },
   optionValue: { ar: 'القيمة (مثل M)', ku: 'بەها (وەک M)', en: 'Value (e.g. M)' },
+  physicalDetails: { ar: 'الشحن / التفاصيل الفيزيائية', ku: 'گەیاندن / وردەکارییە فیزیکییەکان', en: 'Shipping / physical details' },
+  physicalDetailsOptional: { ar: 'اختياري بالكامل. اترك الحقول فارغة إذا لم تكن هذه المعلومات متوفرة.', ku: 'بە تەواوی ئارەزوومەندانەیە. ئەگەر زانیارییەکە بەردەست نییە خانەکان بەتاڵ بهێڵە.', en: 'Completely optional. Leave these fields empty when the information is unknown.' },
+  weightKg: { ar: 'الوزن (كغم)', ku: 'کێش (کگم)', en: 'Weight (kg)' },
+  dimensionsCm: { ar: 'الأبعاد (سم)', ku: 'ڕەهەندەکان (سم)', en: 'Dimensions (cm)' },
+  length: { ar: 'الطول', ku: 'درێژی', en: 'Length' },
+  width: { ar: 'العرض', ku: 'پانی', en: 'Width' },
+  height: { ar: 'الارتفاع', ku: 'بەرزی', en: 'Height' },
+  variantMeasurementsHint: { ar: 'اترك قياسات المتغير فارغة لاستخدام قياسات المنتج. إذا أدخلت الأبعاد فأدخل الطول والعرض والارتفاع معًا.', ku: 'پێوانەکانی جۆراوجۆری بەتاڵ بهێڵە بۆ بەکارهێنانی پێوانەکانی بەرهەم. ئەگەر ڕەهەند بنووسیت، درێژی و پانی و بەرزی هەمووی بنووسە.', en: 'Leave variant measurements empty to inherit product values. If overriding dimensions, enter length, width, and height together.' },
   inventory: { ar: 'إدارة المخزون', ku: 'بەڕێوەبردنی کۆگا', en: 'Inventory' },
   inventorySet: { ar: 'تعيين', ku: 'دانان', en: 'Set' },
   inventorySaved: { ar: 'تم تحديث المخزون من الخادم.', ku: 'کۆگا لە سێرڤەر نوێکرایەوە.', en: 'Inventory updated from the server.' },
@@ -216,6 +232,46 @@ function parseNonNegativeInteger(value: unknown): number | null {
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
+function parsePositiveScaled(value: unknown, scale: number): number | null | undefined {
+  const normalized = normalizeDigits(value);
+  if (!normalized) return undefined;
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
+  const decimals = String(scale).length - 1;
+  const [whole, fraction = ''] = normalized.split('.');
+  if (fraction.length > decimals) return null;
+  const result = Number(whole) * scale + Number(fraction.padEnd(decimals, '0') || '0');
+  return Number.isSafeInteger(result) && result > 0 ? result : null;
+}
+
+function importedMeasurements(raw: Record<string, unknown>, rowLabel: string, errors: string[]) {
+  const weight = cleanText(raw.weight_g)
+    ? parsePositiveScaled(raw.weight_g, 1)
+    : parsePositiveScaled(raw.weight_kg ?? raw.weight, 1_000);
+  const length = cleanText(raw.length_mm)
+    ? parsePositiveScaled(raw.length_mm, 1)
+    : parsePositiveScaled(raw.length_cm ?? raw.length, 10);
+  const width = cleanText(raw.width_mm)
+    ? parsePositiveScaled(raw.width_mm, 1)
+    : parsePositiveScaled(raw.width_cm ?? raw.width, 10);
+  const height = cleanText(raw.height_mm)
+    ? parsePositiveScaled(raw.height_mm, 1)
+    : parsePositiveScaled(raw.height_cm ?? raw.height, 10);
+  if (weight === null) errors.push(`${rowLabel}: weight must be a positive number`);
+  if ([length, width, height].some(value => value === null)) {
+    errors.push(`${rowLabel}: dimensions must be positive numbers`);
+  }
+  const presentDimensions = [length, width, height].filter(value => value !== undefined).length;
+  if (presentDimensions > 0 && presentDimensions < 3) {
+    errors.push(`${rowLabel}: length, width and height must be provided together`);
+  }
+  return {
+    ...(weight !== undefined && weight !== null ? { weight_g: weight } : {}),
+    ...(presentDimensions === 3 && length && width && height
+      ? { length_mm: length, width_mm: width, height_mm: height }
+      : {}),
+  };
+}
+
 function optionalText(value: unknown): string | undefined {
   const normalized = cleanText(value);
   return normalized || undefined;
@@ -257,6 +313,9 @@ function importVariant(
     : Array.isArray(raw.images)
       ? (raw.images as CatalogImageInput[])
       : [];
+  const measurementErrors: string[] = [];
+  const measurements = importedMeasurements(raw, `variant ${index + 1}`, measurementErrors);
+  if (measurementErrors.length > 0) throw new Error(measurementErrors.join('; '));
 
   return {
     ...(optionalText(raw.id) ? { id: optionalText(raw.id) } : {}),
@@ -272,6 +331,7 @@ function importVariant(
       ? { price_iqd: parseNonNegativeInteger(raw.price_iqd ?? raw.price_override) ?? 0 }
       : {}),
     stock_quantity: quantity ?? 0,
+    ...measurements,
     options,
     image_refs: variantImages,
   };
@@ -299,6 +359,7 @@ function importInputFromRecord(
     raw.stock_quantity ?? raw.quantity ?? raw['الكمية'],
   );
   const requestedStatus = optionalText(raw.status) || 'available';
+  const measurements = importedMeasurements(raw, `row ${rowNumber}`, errors);
 
   if (!name) errors.push(`row ${rowNumber}: name is required`);
   if (!externalRef && !sku && !barcode) {
@@ -327,9 +388,14 @@ function importInputFromRecord(
     return { errors };
   }
 
-  const variants = Array.isArray(raw.variants)
-    ? raw.variants.map((variant, index) => importVariant(variant, index, sku))
-    : [];
+  let variants: CatalogVariantInput[] = [];
+  try {
+    variants = Array.isArray(raw.variants)
+      ? raw.variants.map((variant, index) => importVariant(variant, index, sku))
+      : [];
+  } catch (error) {
+    return { errors: [`row ${rowNumber}: ${(error as Error).message}`] };
+  }
   const imageRefs = Array.isArray(raw.image_refs)
     ? (raw.image_refs as CatalogImageInput[])
     : Array.isArray(raw.images)
@@ -348,6 +414,7 @@ function importInputFromRecord(
       ? { compare_at_price_iqd: comparePrice }
       : {}),
     ...(variants.length === 0 ? { stock_quantity: quantity } : {}),
+    ...measurements,
     status: requestedStatus as ProductStatus,
     allow_fawri_reply: booleanValue(raw.allow_fawri_reply, true),
     image_refs: imageRefs,
@@ -420,6 +487,66 @@ function FawriToggle({
         }`}
       />
     </button>
+  );
+}
+
+function PhysicalMeasurementsEditor({
+  lang,
+  value,
+  onChange,
+  variant = false,
+}: {
+  lang: Lang;
+  value: Pick<CatalogProductFormState, 'weight_kg' | 'length_cm' | 'width_cm' | 'height_cm'>;
+  onChange: (patch: Partial<Pick<CatalogProductFormState, 'weight_kg' | 'length_cm' | 'width_cm' | 'height_cm'>>) => void;
+  variant?: boolean;
+}) {
+  return (
+    <div className="space-y-3 rounded-2xl border bg-muted/10 p-4">
+      <div>
+        <p className="text-sm font-bold">{localMessage(lang, 'physicalDetails')}</p>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">
+          {variant
+            ? localMessage(lang, 'variantMeasurementsHint')
+            : localMessage(lang, 'physicalDetailsOptional')}
+        </p>
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+          {localMessage(lang, 'weightKg')}
+        </label>
+        <Input
+          inputMode="decimal"
+          dir="ltr"
+          value={value.weight_kg}
+          onChange={event => onChange({ weight_kg: event.target.value })}
+          placeholder="1.25"
+          className="h-10 rounded-xl"
+        />
+      </div>
+      <div>
+        <p className="mb-2 text-xs font-semibold text-muted-foreground">
+          {localMessage(lang, 'dimensionsCm')}
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {(['length_cm', 'width_cm', 'height_cm'] as const).map((field, index) => (
+            <Input
+              key={field}
+              inputMode="decimal"
+              dir="ltr"
+              value={value[field]}
+              onChange={event => onChange({ [field]: event.target.value })}
+              placeholder={`${[
+                localMessage(lang, 'length'),
+                localMessage(lang, 'width'),
+                localMessage(lang, 'height'),
+              ][index]} (cm)`}
+              className="h-10 rounded-xl"
+            />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -578,6 +705,13 @@ function VariantDraftEditor({
           </p>
         )}
       </div>
+
+      <PhysicalMeasurementsEditor
+        lang={lang}
+        variant
+        value={variant}
+        onChange={patch => onChange({ ...variant, ...patch })}
+      />
 
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
@@ -1298,6 +1432,9 @@ export default function ProductsPage() {
                           {t.products_category}: {product.category}
                         </p>
                       )}
+                      {product.weight_g !== undefined && (
+                        <p>{localMessage(lang, 'weightKg')}: {(product.weight_g / 1000).toLocaleString(numberLocale)} kg</p>
+                      )}
                     </div>
                   </div>
 
@@ -1548,6 +1685,12 @@ export default function ProductsPage() {
                   />
                 </div>
               </div>
+
+              <PhysicalMeasurementsEditor
+                lang={lang}
+                value={form}
+                onChange={patch => setForm(current => ({ ...current, ...patch }))}
+              />
 
               <ImageReferencesEditor
                 lang={lang}
