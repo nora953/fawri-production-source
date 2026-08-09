@@ -320,7 +320,7 @@ export const catalogImageReferences = pgTable(
   },
   (table) => ({
     productTenantForeignKey: foreignKey({
-      name: "catalog_image_refs_product_merchant_fk",
+      name: "catalog_image_refs_product_tenant_fk",
       columns: [table.productId, table.merchantId],
       foreignColumns: [products.id, products.merchantId],
     }).onDelete("cascade"),
@@ -343,7 +343,7 @@ export const catalogImageReferences = pgTable(
     ),
     storageKeyCheck: check(
       "catalog_image_refs_storage_key_check",
-      sql`${table.storageKey} IS NULL OR (${table.storageKey} !~ '(^|/)\.\.(/|$)' AND char_length(${table.storageKey}) <= 1024`,
+      sql`${table.storageKey} IS NULL OR (${table.storageKey} !~ '(^|/)\.\.(/|$)' AND char_length(${table.storageKey}) <= 1024)`,
     ),
     ordinalCheck: check(
       "catalog_image_refs_ordinal_check",
