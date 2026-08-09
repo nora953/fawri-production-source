@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useI18n } from '@/lib/i18n';
+import MerchantAccountSecurityPanel from './MerchantAccountSecurityPanel';
 import ServerSettingsPage from './ServerSettingsPage';
 
 type UiLanguage = 'ar' | 'ku' | 'en';
@@ -132,6 +133,8 @@ export default function MerchantSettingsPage() {
             <p>{copy.superQiModel}</p>
           </CardContent>
         </Card>
+
+        <MerchantAccountSecurityPanel />
       </div>
 
       <ServerSettingsPage />
