@@ -9,6 +9,7 @@ import {
   getCurrentMerchant,
   refreshCurrentMerchantFromApi,
 } from '@/lib/store';
+import { checkMerchantLifecycle } from '@/lib/merchantLifecycle';
 import { useI18n } from '@/lib/i18n';
 import type { Merchant } from '@/lib/types';
 import { useMerchantRealtimeConnection } from '@/hooks/useMerchantRealtime';
@@ -73,6 +74,9 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    let timer: number | undefined;
+    let controller: AbortController | null = null;
+    let profileLoaded = false;
 
     if (getAdminSessionToken()) {
       clearMerchantTabSession();
@@ -83,33 +87,75 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       };
     }
 
-    refreshCurrentMerchantFromApi()
-      .then((updated) => {
+    const routeToLifecycle = () => {
+      clearMerchantTabSession();
+      setMerchant(undefined);
+      setCheckingAccess(false);
+      setLocation('/pending');
+    };
+
+    async function verifyAccess() {
+      controller?.abort();
+      controller = new AbortController();
+
+      try {
+        const lifecycle = await checkMerchantLifecycle(controller.signal);
         if (!active) return;
-        if (
-          !updated ||
-          updated.is_admin === true ||
-          updated.status !== 'approved'
-        ) {
+
+        if (!lifecycle.ok) {
           clearMerchantTabSession();
           setMerchant(undefined);
-          setLocation('/login');
+          setCheckingAccess(false);
+          setLocation(
+            lifecycle.reason === 'unauthenticated' ? '/login' : '/pending',
+          );
           return;
         }
-        setMerchant(updated);
-      })
-      .catch(() => {
-        if (!active) return;
-        clearMerchantTabSession();
-        setMerchant(undefined);
-        setLocation('/login');
-      })
-      .finally(() => {
-        if (active) setCheckingAccess(false);
-      });
+
+        if (lifecycle.lifecycle.account_status !== 'approved') {
+          routeToLifecycle();
+          return;
+        }
+
+        if (!profileLoaded) {
+          try {
+            const updated = await refreshCurrentMerchantFromApi();
+            if (!active) return;
+            if (
+              !updated ||
+              updated.is_admin === true ||
+              updated.status !== 'approved'
+            ) {
+              routeToLifecycle();
+              return;
+            }
+            setMerchant(updated);
+            profileLoaded = true;
+            setCheckingAccess(false);
+          } catch {
+            if (!active) return;
+            routeToLifecycle();
+            return;
+          }
+        }
+
+        if (active) {
+          timer = window.setTimeout(() => void verifyAccess(), 30_000);
+        }
+      } catch (error) {
+        if (!active || (error instanceof Error && error.name === 'AbortError')) {
+          return;
+        }
+        routeToLifecycle();
+      }
+    }
+
+    void verifyAccess();
 
     return () => {
       active = false;
+      controller?.abort();
+      if (timer !== undefined) window.clearTimeout(timer);
     };
   }, [setLocation]);
 
