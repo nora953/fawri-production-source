@@ -4,18 +4,27 @@ import { useI18n } from '@/lib/i18n';
 
 type OtpPurpose = 'signup' | 'password_reset';
 
+export type OtpResendChallenge = {
+  challengeId: string;
+  expiresAt: string;
+  retryAfterSeconds: number;
+};
+
 type OtpResendSectionProps = {
   phone: string;
   purpose: OtpPurpose;
   initialRetryAfterSeconds?: number;
   storageKey?: string;
-  onResent?: (retryAfterSeconds: number) => void;
+  onResent?: (challenge: OtpResendChallenge) => void;
+  onChallengeUnavailable?: () => void;
 };
 
 type ResendResponse = {
   ok?: boolean;
   error?: string;
   message?: string;
+  challenge_id?: string;
+  expires_at?: string;
   retry_after_seconds?: number;
 };
 
@@ -47,6 +56,7 @@ export default function OtpResendSection({
   initialRetryAfterSeconds = 0,
   storageKey,
   onResent,
+  onChallengeUnavailable,
 }: OtpResendSectionProps) {
   const { t } = useI18n();
   const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
@@ -66,14 +76,14 @@ export default function OtpResendSection({
     setRetryAfterSeconds(safeSeconds);
 
     if (safeSeconds > 0) {
-      localStorage.setItem(resolvedStorageKey, String(resendAt));
+      sessionStorage.setItem(resolvedStorageKey, String(resendAt));
     } else {
-      localStorage.removeItem(resolvedStorageKey);
+      sessionStorage.removeItem(resolvedStorageKey);
     }
   };
 
   useEffect(() => {
-    const storedResendAt = Number(localStorage.getItem(resolvedStorageKey) || 0);
+    const storedResendAt = Number(sessionStorage.getItem(resolvedStorageKey) || 0);
     const storedRemaining = Math.max(
       0,
       Math.ceil((storedResendAt - Date.now()) / 1000)
@@ -90,7 +100,7 @@ export default function OtpResendSection({
       setRetryAfterSeconds(current => {
         const next = Math.max(0, current - 1);
         if (next === 0) {
-          localStorage.removeItem(resolvedStorageKey);
+          sessionStorage.removeItem(resolvedStorageKey);
         }
         return next;
       });
@@ -126,9 +136,20 @@ export default function OtpResendSection({
         return;
       }
 
+      const challengeId = String(result.challenge_id || '').trim();
+      if (!challengeId) {
+        onChallengeUnavailable?.();
+        toast.error(t.forgot_error_generic);
+        return;
+      }
+
       startCountdown(serverRetryAfter);
       toast.success(t.forgot_code_sent);
-      onResent?.(serverRetryAfter);
+      onResent?.({
+        challengeId,
+        expiresAt: String(result.expires_at || '').trim(),
+        retryAfterSeconds: serverRetryAfter,
+      });
     } catch (error) {
       console.error('OTP resend failed:', error);
       toast.error(t.forgot_error_connection);

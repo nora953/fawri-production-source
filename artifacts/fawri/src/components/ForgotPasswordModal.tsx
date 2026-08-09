@@ -7,6 +7,7 @@ import OtpResendSection from '@/components/OtpResendSection';
 import {
   requestPasswordReset,
   resetPasswordWithOtp,
+  type PasswordResetResult,
 } from '@/lib/passwordReset';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
@@ -18,6 +19,12 @@ type ForgotPasswordModalProps = {
 
 type Step = 'phone' | 'reset';
 
+type RecoveryChallenge = {
+  challengeId: string;
+  expiresAt: string;
+  retryAfterSeconds: number;
+};
+
 const initialState = {
   phone: '',
   code: '',
@@ -25,15 +32,36 @@ const initialState = {
   confirmPassword: '',
 };
 
+function challengeFromResult(result: PasswordResetResult): RecoveryChallenge | null {
+  const challengeId = String(result.challenge_id || '').trim();
+  if (!challengeId) return null;
+
+  const retryAfterSeconds = Number(result.retry_after_seconds || 0);
+  return {
+    challengeId,
+    expiresAt: String(result.expires_at || '').trim(),
+    retryAfterSeconds: Number.isFinite(retryAfterSeconds)
+      ? Math.max(0, Math.floor(retryAfterSeconds))
+      : 0,
+  };
+}
+
+function recoveryChallengeExpired(challenge: RecoveryChallenge): boolean {
+  if (!challenge.expiresAt) return false;
+  const expiresAt = Date.parse(challenge.expiresAt);
+  return Number.isFinite(expiresAt) && expiresAt <= Date.now();
+}
+
 export default function ForgotPasswordModal({
   open,
   onClose,
 }: ForgotPasswordModalProps) {
-  const { t, isRTL, lang } = useI18n();
+  const { t, isRTL } = useI18n();
   const [step, setStep] = useState<Step>('phone');
   const [form, setForm] = useState(initialState);
   const [isLoading, setIsLoading] = useState(false);
   const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
+  const [recoveryChallenge, setRecoveryChallenge] = useState<RecoveryChallenge | null>(null);
 
   if (!open) return null;
 
@@ -54,12 +82,16 @@ export default function ForgotPasswordModal({
       setForm(initialState);
       setIsLoading(false);
       setRetryAfterSeconds(0);
+      setRecoveryChallenge(null);
     }, 250);
   };
 
-  const getForgotPasswordErrorMessage = (error?: string) => {
+  const getForgotPasswordErrorMessage = (error?: string, code?: string) => {
     const message = error || '';
 
+    if (code === 'RECOVERY_CONFIRMATION_INVALID' || code === 'RECOVERY_CHALLENGE_MISSING') {
+      return t.forgot_error_invalid_code;
+    }
     if (message.includes('لا يوجد حساب بهذا الرقم')) return t.forgot_error_no_account;
     if (message.includes('تعذر تنفيذ العملية')) return t.forgot_error_generic;
     if (message.includes('تعذر الاتصال بالسيرفر')) return t.forgot_error_connection;
@@ -74,6 +106,13 @@ export default function ForgotPasswordModal({
     return t.forgot_error_generic;
   };
 
+  const restartRecovery = () => {
+    setStep('phone');
+    setRecoveryChallenge(null);
+    setRetryAfterSeconds(0);
+    updateField('code', '');
+  };
+
   const handleRequestCode = async () => {
     if (isLoading) return;
 
@@ -85,17 +124,25 @@ export default function ForgotPasswordModal({
     }
 
     setIsLoading(true);
+    setRecoveryChallenge(null);
 
     try {
       const result = await requestPasswordReset(cleanPhone);
 
       if (!result.ok) {
-        toast.error(getForgotPasswordErrorMessage(result.error));
+        toast.error(getForgotPasswordErrorMessage(result.error, result.code));
+        return;
+      }
+
+      const challenge = challengeFromResult(result);
+      if (!challenge) {
+        toast.error(t.forgot_error_generic);
         return;
       }
 
       toast.success(t.forgot_code_sent);
-      setRetryAfterSeconds(result.retry_after_seconds || 0);
+      setRecoveryChallenge(challenge);
+      setRetryAfterSeconds(challenge.retryAfterSeconds);
       setStep('reset');
     } finally {
       setIsLoading(false);
@@ -105,10 +152,17 @@ export default function ForgotPasswordModal({
   const handleResetPassword = async () => {
     if (isLoading) return;
 
+    if (!recoveryChallenge || recoveryChallengeExpired(recoveryChallenge)) {
+      toast.error(t.forgot_error_invalid_code);
+      restartRecovery();
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const result = await resetPasswordWithOtp(
+        recoveryChallenge.challengeId,
         form.phone,
         form.code,
         form.newPassword,
@@ -116,7 +170,7 @@ export default function ForgotPasswordModal({
       );
 
       if (!result.ok) {
-        toast.error(getForgotPasswordErrorMessage(result.error));
+        toast.error(getForgotPasswordErrorMessage(result.error, result.code));
         return;
       }
 
@@ -128,9 +182,7 @@ export default function ForgotPasswordModal({
   };
 
   const handleChangePhone = () => {
-    setStep('phone');
-    setRetryAfterSeconds(0);
-    updateField('code', '');
+    restartRecovery();
   };
 
   return (
@@ -234,7 +286,16 @@ export default function ForgotPasswordModal({
                   phone={form.phone}
                   purpose="password_reset"
                   initialRetryAfterSeconds={retryAfterSeconds}
-                  onResent={() => updateField('code', '')}
+                  onResent={(resentChallenge) => {
+                    setRecoveryChallenge({
+                      challengeId: resentChallenge.challengeId,
+                      expiresAt: resentChallenge.expiresAt,
+                      retryAfterSeconds: resentChallenge.retryAfterSeconds,
+                    });
+                    setRetryAfterSeconds(resentChallenge.retryAfterSeconds);
+                    updateField('code', '');
+                  }}
+                  onChallengeUnavailable={restartRecovery}
                 />
               </div>
 
@@ -245,7 +306,7 @@ export default function ForgotPasswordModal({
 
                 <PasswordInput
                   id="new-password"
-                    value={form.newPassword}
+                  value={form.newPassword}
                   onChange={event => updateField('newPassword', event.target.value)}
                   className="h-12 rounded-2xl text-base"
                   autoComplete="new-password"
@@ -259,7 +320,7 @@ export default function ForgotPasswordModal({
 
                 <PasswordInput
                   id="confirm-password"
-                    value={form.confirmPassword}
+                  value={form.confirmPassword}
                   onChange={event => updateField('confirmPassword', event.target.value)}
                   className="h-12 rounded-2xl text-base"
                   autoComplete="new-password"

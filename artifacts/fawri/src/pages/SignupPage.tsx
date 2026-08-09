@@ -9,6 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { normalizePhoneNumber, validatePhone, validatePassword } from '@/lib/validators';
+import {
+  clearPendingSignupChallenge,
+  createOtpChallengeContext,
+  savePendingSignupChallenge,
+} from '@/lib/authOtpChallenge';
 import { toast } from 'sonner';
 import { PolicyModal, type PolicyTab } from '@/components/PolicyModal';
 
@@ -171,6 +176,7 @@ export default function SignupPage() {
     }
 
     setLoading(true);
+    clearPendingSignupChallenge();
 
     try {
       const finalActivity = isOther ? formData.custom_activity.trim() : formData.activity_type;
@@ -195,20 +201,21 @@ export default function SignupPage() {
         return;
       }
 
-      cacheMerchantLocally(result.merchant);
-      localStorage.setItem('fawri_signup_phone', result.merchant.phone);
-      localStorage.setItem('fawri_signup_merchant_id', result.merchant.id);
+      const challenge = createOtpChallengeContext({
+        challengeId: result.challenge_id,
+        phone: result.merchant.phone,
+        purpose: 'signup',
+        expiresAt: result.expires_at,
+        retryAfterSeconds: result.retry_after_seconds,
+      });
 
-      const retryAfterSeconds = Number(result.retry_after_seconds || 0);
-      if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
-        localStorage.setItem(
-          'fawri_signup_otp_resend_until',
-          String(Date.now() + retryAfterSeconds * 1000)
-        );
-      } else {
-        localStorage.removeItem('fawri_signup_otp_resend_until');
+      if (!challenge) {
+        toast.error(t.signup_create_error);
+        return;
       }
 
+      cacheMerchantLocally(result.merchant);
+      savePendingSignupChallenge(challenge);
       setLocation('/verify-otp');
     } catch (error) {
       console.error('Signup request failed:', error);

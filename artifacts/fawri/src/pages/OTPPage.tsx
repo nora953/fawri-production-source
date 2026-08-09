@@ -5,7 +5,16 @@ import { Button } from '@/components/ui/button';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { toast } from 'sonner';
 import { getMerchants, saveMerchants, setSession } from '@/lib/store';
-import OtpResendSection from '@/components/OtpResendSection';function cacheMerchantLocally(merchant: any) {
+import OtpResendSection from '@/components/OtpResendSection';
+import {
+  clearPendingSignupChallenge,
+  createOtpChallengeContext,
+  isOtpChallengeExpired,
+  readPendingSignupChallenge,
+  savePendingSignupChallenge,
+} from '@/lib/authOtpChallenge';
+
+function cacheMerchantLocally(merchant: any) {
   if (!merchant?.id) return;
   const merchants = getMerchants();
   const cleaned = merchants.filter(item => item.id !== merchant.id && item.phone !== merchant.phone);
@@ -20,14 +29,20 @@ export default function OTPPage() {
   const [value, setValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const signupPhone = localStorage.getItem('fawri_signup_phone') || '';
+  const [signupChallenge, setSignupChallenge] = useState(() => readPendingSignupChallenge());
 
-  const getOtpErrorMessage = (serverError?: string) => {
+  const invalidateChallenge = () => {
+    clearPendingSignupChallenge();
+    setSignupChallenge(null);
+    setValue('');
+    setError(t.otp_session_expired);
+  };
+
+  const getOtpErrorMessage = (serverCode?: string, serverError?: string) => {
+    if (serverCode === 'OTP_INVALID') return t.otp_invalid_code;
+
     const message = String(serverError || '');
-
     if (message.includes('الحساب غير موجود')) return t.otp_account_not_found;
-    if (message.includes('رقم الهاتف')) return t.otp_phone_required;
-    if (message.includes('رمز التحقق مطلوب')) return t.otp_code_required;
     if (message.includes('رمز التحقق')) return t.otp_invalid_code;
 
     return t.otp_invalid_code;
@@ -37,10 +52,8 @@ export default function OTPPage() {
     e.preventDefault();
     if (value.length !== 6) return;
 
-    const phone = signupPhone;
-
-    if (!phone) {
-      setError(t.otp_session_expired);
+    if (!signupChallenge || isOtpChallengeExpired(signupChallenge)) {
+      invalidateChallenge();
       return;
     }
 
@@ -50,23 +63,26 @@ export default function OTPPage() {
     try {
       const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code: value }),
+        body: JSON.stringify({
+          phone: signupChallenge.phone,
+          challenge_id: signupChallenge.challengeId,
+          code: value,
+        }),
       });
 
       const result = await response.json().catch(() => null);
 
       if (!response.ok || !result?.ok || !result?.merchant) {
-        setError(getOtpErrorMessage(result?.error));
+        setError(getOtpErrorMessage(result?.code, result?.error));
         return;
       }
 
       const merchant = result.merchant;
       cacheMerchantLocally(merchant);
       setSession(merchant.id);
-      localStorage.removeItem('fawri_signup_phone');
-      localStorage.removeItem('fawri_signup_merchant_id');
-      localStorage.removeItem('fawri_signup_otp_resend_until');
+      clearPendingSignupChallenge();
 
       toast.success(t.otp_verified);
 
@@ -83,6 +99,8 @@ export default function OTPPage() {
       setLoading(false);
     }
   };
+
+  const displayedError = error || (!signupChallenge ? t.otp_session_expired : '');
 
   return (
     <div
@@ -109,6 +127,7 @@ export default function OTPPage() {
               setError('');
             }}
             dir="ltr"
+            disabled={!signupChallenge}
           >
             <InputOTPGroup>
               <InputOTPSlot index={0} />
@@ -120,24 +139,52 @@ export default function OTPPage() {
             </InputOTPGroup>
           </InputOTP>
 
-          <OtpResendSection
-            phone={signupPhone}
-            purpose="signup"
-            storageKey="fawri_signup_otp_resend_until"
-            onResent={() => {
-              setValue('');
-              setError('');
-            }}
-          />
+          {signupChallenge && (
+            <OtpResendSection
+              phone={signupChallenge.phone}
+              purpose="signup"
+              initialRetryAfterSeconds={signupChallenge.retryAfterSeconds}
+              storageKey="fawri_signup_otp_resend_until"
+              onResent={(resentChallenge) => {
+                const replacement = createOtpChallengeContext({
+                  challengeId: resentChallenge.challengeId,
+                  phone: signupChallenge.phone,
+                  purpose: 'signup',
+                  expiresAt: resentChallenge.expiresAt,
+                  retryAfterSeconds: resentChallenge.retryAfterSeconds,
+                });
 
-          {error && (
-            <p className="text-sm font-medium text-destructive">{error}</p>
+                if (!replacement) {
+                  invalidateChallenge();
+                  return;
+                }
+
+                savePendingSignupChallenge(replacement);
+                setSignupChallenge(replacement);
+                setValue('');
+                setError('');
+              }}
+              onChallengeUnavailable={invalidateChallenge}
+            />
+          )}
+
+          {displayedError && (
+            <p className="text-sm font-medium text-destructive">{displayedError}</p>
+          )}
+
+          {!signupChallenge && (
+            <Link
+              href="/signup"
+              className="w-full rounded-xl border px-4 py-3 text-sm font-bold text-primary transition hover:bg-muted"
+            >
+              {t.create_account}
+            </Link>
           )}
 
           <Button
             type="submit"
             className="h-12 w-full rounded-xl text-base font-bold"
-            disabled={loading || value.length !== 6}
+            disabled={loading || value.length !== 6 || !signupChallenge}
             data-testid="button-verify-otp"
           >
             {loading ? '...' : t.otp_verify}
