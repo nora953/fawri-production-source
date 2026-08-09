@@ -5,6 +5,7 @@ on:
     branches:
       - "parallel/pending-approval-ux-coherence"
   pull_request:
+    types: [opened, synchronize, reopened]
     paths:
       - "artifacts/api-server/src/routes/auth-session-routes.ts"
       - "artifacts/api-server/tests/merchant-lifecycle-status.integration.test.mjs"
