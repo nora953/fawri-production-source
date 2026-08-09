@@ -57,6 +57,7 @@ router.get("/sessions", requireSecureMerchantSession, async (_req, res) => {
   const context = getAuthContext(res)!;
   res.json({
     ok: true,
+    current_session_id: context.session.id,
     sessions: await authPostgresSessionAuthority.listActiveSessions(
       context.account.id,
       "merchant",
