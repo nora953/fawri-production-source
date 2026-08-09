@@ -3,6 +3,7 @@ import { useI18n } from '@/lib/i18n';
 import { getCurrentMerchant } from '@/lib/store';
 import type { Lang, ProductStatus } from '@/lib/types';
 import {
+  adjustCatalogInventory,
   CatalogApiError,
   currentProductFromConflict,
   createCatalogProduct,
@@ -11,43 +12,49 @@ import {
   idempotencyAttemptForRequest,
   importCatalogProducts,
   listCatalogProducts,
+  setCatalogInventory,
   updateCatalogProduct,
   type CatalogIdempotencyAttempt,
   type CatalogImageInput,
   type CatalogProduct,
   type CatalogProductInput,
+  type CatalogVariant,
   type CatalogVariantInput,
 } from '@/lib/catalogUiApi';
+import {
+  catalogProductFormFromProduct,
+  catalogProductInputFromForm,
+  catalogProductStockIsVariantManaged,
+  createEmptyCatalogImageDraft,
+  createEmptyCatalogOptionDraft,
+  createEmptyCatalogProductForm,
+  createEmptyCatalogVariantDraft,
+  validateCatalogProductForm,
+  variantOptionSummary,
+  type CatalogImageDraft,
+  type CatalogProductFormState,
+  type CatalogVariantDraft,
+} from '@/lib/catalogProductEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import {
+  Bot,
+  Boxes,
+  Image as ImageIcon,
+  Minus,
   Package,
+  Pencil,
   Plus,
+  RefreshCw,
+  Search,
+  Tag,
+  Trash2,
   Upload,
   X,
-  Trash2,
-  Pencil,
-  Search,
-  Bot,
-  Tag,
-  Boxes,
 } from 'lucide-react';
 import { toast } from 'sonner';
-
-type ProductFormState = {
-  name: string;
-  sku: string;
-  barcode: string;
-  category: string;
-  description: string;
-  original_price: string;
-  current_price: string;
-  quantity: string;
-  status: ProductStatus;
-  allow_fawri_reply: boolean;
-};
 
 type UiMessageKey =
   | 'loadFailed'
@@ -56,7 +63,30 @@ type UiMessageKey =
   | 'versionConflict'
   | 'importValidation'
   | 'secureCryptoRequired'
-  | 'variantQuantityLocked';
+  | 'variantQuantityLocked'
+  | 'editorInvalid'
+  | 'imageReferenceOnly'
+  | 'images'
+  | 'addImage'
+  | 'imageUrl'
+  | 'storageKey'
+  | 'imageAlt'
+  | 'variants'
+  | 'addVariant'
+  | 'variantName'
+  | 'variantPrice'
+  | 'variantInitialStock'
+  | 'variantInventoryManaged'
+  | 'options'
+  | 'addOption'
+  | 'optionName'
+  | 'optionValue'
+  | 'inventory'
+  | 'inventorySet'
+  | 'inventorySaved'
+  | 'inventoryFailed'
+  | 'retry'
+  | 'variantCount';
 
 const messages: Record<UiMessageKey, Record<Lang, string>> = {
   loadFailed: {
@@ -94,6 +124,41 @@ const messages: Record<UiMessageKey, Record<Lang, string>> = {
     ku: 'بڕی بەرهەمی خاوەن جۆراوجۆری لە کۆگای جۆراوجۆرییەکان بەڕێوەدەبرێت.',
     en: 'Quantity for products with variants is managed by variant inventory.',
   },
+  editorInvalid: {
+    ar: 'راجع حقول الصور والمتغيرات والقيم الرقمية قبل الحفظ.',
+    ku: 'پێش پاشەکەوتکردن خانەکانی وێنە و جۆراوجۆری و ژمارەکان بپشکنە.',
+    en: 'Review image, variant, and numeric fields before saving.',
+  },
+  imageReferenceOnly: {
+    ar: 'الكتالوج يخزن مراجع الصور فقط. أدخل رابطًا موجودًا أو storage key؛ رفع الملفات غير متوفر حاليًا.',
+    ku: 'کەتەلۆگ تەنها سەرچاوەی وێنە هەڵدەگرێت. URL یان storage key بنووسە؛ بارکردنی فایل بەردەست نییە.',
+    en: 'The catalog stores image references only. Enter an existing URL or storage key; file upload is not available.',
+  },
+  images: { ar: 'الصور', ku: 'وێنەکان', en: 'Images' },
+  addImage: { ar: 'إضافة مرجع صورة', ku: 'زیادکردنی سەرچاوەی وێنە', en: 'Add image reference' },
+  imageUrl: { ar: 'رابط الصورة', ku: 'URL ی وێنە', en: 'Image URL' },
+  storageKey: { ar: 'Storage key', ku: 'Storage key', en: 'Storage key' },
+  imageAlt: { ar: 'النص البديل', ku: 'دەقی جێگرەوە', en: 'Alt text' },
+  variants: { ar: 'المتغيرات', ku: 'جۆراوجۆرییەکان', en: 'Variants' },
+  addVariant: { ar: 'إضافة متغير', ku: 'زیادکردنی جۆراوجۆری', en: 'Add variant' },
+  variantName: { ar: 'اسم المتغير', ku: 'ناوی جۆراوجۆری', en: 'Variant name' },
+  variantPrice: { ar: 'سعر المتغير (اختياري)', ku: 'نرخی جۆراوجۆری (ئارەزوومەندانە)', en: 'Variant price (optional)' },
+  variantInitialStock: { ar: 'المخزون الابتدائي', ku: 'کۆگای سەرەتایی', en: 'Initial stock' },
+  variantInventoryManaged: {
+    ar: 'المخزون الحالي يُعدّل من أدوات المخزون بعد الحفظ.',
+    ku: 'کۆگای ئێستا دوای پاشەکەوتکردن لە ئامرازەکانی کۆگا دەگۆڕدرێت.',
+    en: 'Current stock is changed with inventory controls after saving.',
+  },
+  options: { ar: 'الخيارات', ku: 'هەڵبژاردەکان', en: 'Options' },
+  addOption: { ar: 'إضافة خيار', ku: 'زیادکردنی هەڵبژاردە', en: 'Add option' },
+  optionName: { ar: 'اسم الخيار (مثل Size)', ku: 'ناوی هەڵبژاردە (وەک Size)', en: 'Option name (e.g. Size)' },
+  optionValue: { ar: 'القيمة (مثل M)', ku: 'بەها (وەک M)', en: 'Value (e.g. M)' },
+  inventory: { ar: 'إدارة المخزون', ku: 'بەڕێوەبردنی کۆگا', en: 'Inventory' },
+  inventorySet: { ar: 'تعيين', ku: 'دانان', en: 'Set' },
+  inventorySaved: { ar: 'تم تحديث المخزون من الخادم.', ku: 'کۆگا لە سێرڤەر نوێکرایەوە.', en: 'Inventory updated from the server.' },
+  inventoryFailed: { ar: 'تعذر تحديث المخزون.', ku: 'نوێکردنەوەی کۆگا سەرکەوتوو نەبوو.', en: 'Could not update inventory.' },
+  retry: { ar: 'إعادة المحاولة', ku: 'دووبارە هەوڵدانەوە', en: 'Retry' },
+  variantCount: { ar: 'متغير', ku: 'جۆراوجۆری', en: 'variants' },
 };
 
 const validStatuses = new Set<ProductStatus>([
@@ -103,19 +168,6 @@ const validStatuses = new Set<ProductStatus>([
   'draft',
   'hidden_from_fawri',
 ]);
-
-const emptyForm: ProductFormState = {
-  name: '',
-  sku: '',
-  barcode: '',
-  category: '',
-  description: '',
-  original_price: '',
-  current_price: '',
-  quantity: '',
-  status: 'available',
-  allow_fawri_reply: true,
-};
 
 function localMessage(lang: Lang, key: UiMessageKey): string {
   return messages[key][lang] || messages[key].en;
@@ -138,24 +190,6 @@ function getStatusClass(status: ProductStatus) {
 
 function productCode(product: CatalogProduct): string {
   return product.external_ref || product.sku || product.barcode || product.id;
-}
-
-function formFromProduct(product: CatalogProduct): ProductFormState {
-  return {
-    name: product.name || '',
-    sku: product.sku || '',
-    barcode: product.barcode || '',
-    category: product.category || '',
-    description: product.description || '',
-    original_price:
-      product.compare_at_price_iqd === undefined
-        ? ''
-        : String(product.compare_at_price_iqd),
-    current_price: String(product.price_iqd),
-    quantity: String(product.stock_quantity),
-    status: product.status,
-    allow_fawri_reply: product.allow_fawri_reply,
-  };
 }
 
 function cleanText(value: unknown): string {
@@ -235,9 +269,7 @@ function importVariant(
     ...(optionalText(raw.barcode) ? { barcode: optionalText(raw.barcode) } : {}),
     ...(parseNonNegativeInteger(raw.price_iqd ?? raw.price_override) !== null &&
     cleanText(raw.price_iqd ?? raw.price_override)
-      ? {
-          price_iqd: parseNonNegativeInteger(raw.price_iqd ?? raw.price_override) ?? 0,
-        }
+      ? { price_iqd: parseNonNegativeInteger(raw.price_iqd ?? raw.price_override) ?? 0 }
       : {}),
     stock_quantity: quantity ?? 0,
     options,
@@ -320,7 +352,7 @@ function importInputFromRecord(
     allow_fawri_reply: booleanValue(raw.allow_fawri_reply, true),
     image_refs: imageRefs,
     variants,
-  } as CatalogProductInput;
+  } satisfies CatalogProductInput;
 
   return { input, errors: [] };
 }
@@ -346,32 +378,6 @@ function formatCatalogError(lang: Lang, prefix: UiMessageKey, error: unknown): s
   return localMessage(lang, prefix);
 }
 
-function productInputFromForm(
-  form: ProductFormState,
-  existing?: CatalogProduct,
-): CatalogProductInput {
-  const currentPrice = Number(form.current_price || form.original_price || 0);
-  const comparePrice = form.original_price.trim()
-    ? Number(form.original_price)
-    : existing?.compare_at_price_iqd;
-  const quantity = Number(form.quantity || 0);
-  const hasVariants = Boolean(existing?.variants.length);
-
-  return {
-    name: form.name.trim(),
-    description: form.description.trim(),
-    category: form.category.trim(),
-    sku: form.sku.trim(),
-    barcode: form.barcode.trim(),
-    price_iqd: currentPrice,
-    ...(comparePrice !== undefined ? { compare_at_price_iqd: comparePrice } : {}),
-    ...(!hasVariants ? { stock_quantity: quantity } : {}),
-    ...(existing ? { low_stock_threshold: existing.low_stock_threshold } : {}),
-    status: form.status,
-    allow_fawri_reply: form.allow_fawri_reply,
-  } as CatalogProductInput;
-}
-
 function upsertServerProduct(
   products: CatalogProduct[],
   product: CatalogProduct,
@@ -379,6 +385,17 @@ function upsertServerProduct(
   const index = products.findIndex(item => item.id === product.id);
   if (index < 0) return [product, ...products];
   return products.map(item => (item.id === product.id ? product : item));
+}
+
+function inventoryTargetKey(productId: string, variantId?: string): string {
+  return `${productId}:${variantId || 'product'}`;
+}
+
+function primaryImageUrl(product: CatalogProduct): string | null {
+  const candidate = product.image_refs.find(image =>
+    Boolean(image.url && (image.url.startsWith('http://') || image.url.startsWith('https://') || image.url.startsWith('/'))),
+  );
+  return candidate?.url || null;
 }
 
 function FawriToggle({
@@ -406,20 +423,310 @@ function FawriToggle({
   );
 }
 
+function ImageReferencesEditor({
+  lang,
+  images,
+  onChange,
+}: {
+  lang: Lang;
+  images: CatalogImageDraft[];
+  onChange: (images: CatalogImageDraft[]) => void;
+}) {
+  const updateImage = (index: number, patch: Partial<CatalogImageDraft>) => {
+    onChange(images.map((image, itemIndex) => (itemIndex === index ? { ...image, ...patch } : image)));
+  };
+
+  return (
+    <div className="space-y-3 rounded-2xl border bg-muted/10 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-sm font-bold">{localMessage(lang, 'images')}</p>
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
+            {localMessage(lang, 'imageReferenceOnly')}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="rounded-xl"
+          onClick={() => onChange([...images, createEmptyCatalogImageDraft()])}
+        >
+          <Plus className="mr-1 h-4 w-4" />
+          {localMessage(lang, 'addImage')}
+        </Button>
+      </div>
+
+      {images.map((image, index) => (
+        <div key={image.key} className="grid gap-2 rounded-xl border bg-background p-3 md:grid-cols-2">
+          <Input
+            dir="ltr"
+            value={image.url}
+            onChange={event => updateImage(index, { url: event.target.value })}
+            placeholder={localMessage(lang, 'imageUrl')}
+            className="h-10 rounded-xl"
+          />
+          <Input
+            dir="ltr"
+            value={image.storage_key}
+            onChange={event => updateImage(index, { storage_key: event.target.value })}
+            placeholder={localMessage(lang, 'storageKey')}
+            className="h-10 rounded-xl"
+          />
+          <Input
+            value={image.alt}
+            onChange={event => updateImage(index, { alt: event.target.value })}
+            placeholder={localMessage(lang, 'imageAlt')}
+            className="h-10 rounded-xl md:col-span-2"
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="justify-self-start rounded-xl text-destructive"
+            onClick={() => onChange(images.filter((_, itemIndex) => itemIndex !== index))}
+          >
+            <Trash2 className="mr-1 h-4 w-4" />
+            {localMessage(lang, 'deleteFailed').split(' ')[0] || 'Remove'}
+          </Button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function VariantDraftEditor({
+  lang,
+  index,
+  variant,
+  onChange,
+  onRemove,
+}: {
+  lang: Lang;
+  index: number;
+  variant: CatalogVariantDraft;
+  onChange: (variant: CatalogVariantDraft) => void;
+  onRemove: () => void;
+}) {
+  const updateOption = (optionIndex: number, field: 'name' | 'value', value: string) => {
+    onChange({
+      ...variant,
+      options: variant.options.map((option, itemIndex) =>
+        itemIndex === optionIndex ? { ...option, [field]: value } : option,
+      ),
+    });
+  };
+
+  return (
+    <div className="space-y-4 rounded-2xl border bg-muted/10 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="font-bold">
+          {localMessage(lang, 'variants')} #{index + 1}
+        </p>
+        <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl" onClick={onRemove}>
+          <Trash2 className="h-4 w-4 text-destructive" />
+        </Button>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        <Input
+          value={variant.name}
+          onChange={event => onChange({ ...variant, name: event.target.value })}
+          placeholder={localMessage(lang, 'variantName')}
+          className="h-10 rounded-xl"
+        />
+        <Input
+          dir="ltr"
+          value={variant.price_iqd}
+          onChange={event => onChange({ ...variant, price_iqd: event.target.value })}
+          placeholder={localMessage(lang, 'variantPrice')}
+          className="h-10 rounded-xl"
+        />
+        <Input
+          dir="ltr"
+          value={variant.sku}
+          onChange={event => onChange({ ...variant, sku: event.target.value })}
+          placeholder="SKU"
+          className="h-10 rounded-xl"
+        />
+        <Input
+          dir="ltr"
+          value={variant.barcode}
+          onChange={event => onChange({ ...variant, barcode: event.target.value })}
+          placeholder="Barcode"
+          className="h-10 rounded-xl"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-semibold text-muted-foreground">
+          {variant.id
+            ? localMessage(lang, 'inventory')
+            : localMessage(lang, 'variantInitialStock')}
+        </label>
+        <Input
+          type="number"
+          dir="ltr"
+          value={variant.stock_quantity}
+          onChange={event => onChange({ ...variant, stock_quantity: event.target.value })}
+          disabled={Boolean(variant.id)}
+          className="h-10 rounded-xl"
+        />
+        {variant.id && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {localMessage(lang, 'variantInventoryManaged')}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-bold">{localMessage(lang, 'options')}</p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-xl"
+            onClick={() => onChange({ ...variant, options: [...variant.options, createEmptyCatalogOptionDraft()] })}
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            {localMessage(lang, 'addOption')}
+          </Button>
+        </div>
+        {variant.options.map((option, optionIndex) => (
+          <div key={option.key} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+            <Input
+              value={option.name}
+              onChange={event => updateOption(optionIndex, 'name', event.target.value)}
+              placeholder={localMessage(lang, 'optionName')}
+              className="h-10 rounded-xl"
+            />
+            <Input
+              value={option.value}
+              onChange={event => updateOption(optionIndex, 'value', event.target.value)}
+              placeholder={localMessage(lang, 'optionValue')}
+              className="h-10 rounded-xl"
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 rounded-xl"
+              onClick={() =>
+                onChange({
+                  ...variant,
+                  options: variant.options.filter((_, itemIndex) => itemIndex !== optionIndex),
+                })
+              }
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+      </div>
+
+      <ImageReferencesEditor
+        lang={lang}
+        images={variant.image_refs}
+        onChange={image_refs => onChange({ ...variant, image_refs })}
+      />
+    </div>
+  );
+}
+
+function InventoryControl({
+  lang,
+  product,
+  variant,
+  value,
+  busy,
+  onValueChange,
+  onSet,
+  onAdjust,
+}: {
+  lang: Lang;
+  product: CatalogProduct;
+  variant?: CatalogVariant;
+  value: string;
+  busy: boolean;
+  onValueChange: (value: string) => void;
+  onSet: () => void;
+  onAdjust: (delta: number) => void;
+}) {
+  const optionSummary = variant ? variantOptionSummary(variant) : '';
+  return (
+    <div className="rounded-xl border bg-background p-3">
+      <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-sm font-bold">{variant?.name || product.name}</p>
+          {optionSummary && <p className="text-xs text-muted-foreground">{optionSummary}</p>}
+          {variant?.sku && <p className="text-xs text-muted-foreground">SKU: {variant.sku}</p>}
+        </div>
+        <Badge variant="outline" className="rounded-full">
+          {variant?.stock_quantity ?? product.stock_quantity}
+        </Badge>
+      </div>
+      <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 rounded-xl"
+          disabled={busy}
+          onClick={() => onAdjust(-1)}
+        >
+          <Minus className="h-4 w-4" />
+        </Button>
+        <Input
+          type="number"
+          dir="ltr"
+          value={value}
+          onChange={event => onValueChange(event.target.value)}
+          className="h-10 rounded-xl"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          className="h-10 rounded-xl px-3"
+          disabled={busy}
+          onClick={onSet}
+        >
+          {localMessage(lang, 'inventorySet')}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-10 w-10 rounded-xl"
+          disabled={busy}
+          onClick={() => onAdjust(1)}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function ProductsPage() {
   const { t, lang, dir, isRTL } = useI18n();
   const merchant = getCurrentMerchant();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const createAttemptRef = useRef<CatalogIdempotencyAttempt | null>(null);
   const importAttemptRef = useRef<CatalogIdempotencyAttempt | null>(null);
+  const inventoryAttemptRef = useRef<CatalogIdempotencyAttempt | null>(null);
 
   const [products, setProducts] = useState<CatalogProduct[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
-  const [form, setForm] = useState<ProductFormState>(emptyForm);
+  const [form, setForm] = useState<CatalogProductFormState>(() => createEmptyCatalogProductForm());
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [inventoryValues, setInventoryValues] = useState<Record<string, string>>({});
+  const [inventoryBusyKey, setInventoryBusyKey] = useState<string | null>(null);
 
   const statusOptions = useMemo<Array<{ value: ProductStatus; label: string }>>(
     () => [
@@ -452,6 +759,21 @@ export default function ProductsPage() {
     en: 'en-IQ',
   }[lang];
 
+  const syncInventoryDrafts = (product: CatalogProduct) => {
+    setInventoryValues(current => {
+      const next = { ...current };
+      if (product.variants.length > 0) {
+        for (const variant of product.variants) {
+          next[inventoryTargetKey(product.id, variant.id)] = String(variant.stock_quantity);
+        }
+        delete next[inventoryTargetKey(product.id)];
+      } else {
+        next[inventoryTargetKey(product.id)] = String(product.stock_quantity);
+      }
+      return next;
+    });
+  };
+
   useEffect(() => {
     let isMounted = true;
 
@@ -461,13 +783,30 @@ export default function ProductsPage() {
         return;
       }
 
+      setIsLoading(true);
+      setLoadError(null);
       try {
         const serverProducts = await listCatalogProducts();
-        if (isMounted) setProducts(serverProducts);
+        if (isMounted) {
+          setProducts(serverProducts);
+          setInventoryValues(() => {
+            const next: Record<string, string> = {};
+            for (const product of serverProducts) {
+              if (product.variants.length > 0) {
+                for (const variant of product.variants) {
+                  next[inventoryTargetKey(product.id, variant.id)] = String(variant.stock_quantity);
+                }
+              } else {
+                next[inventoryTargetKey(product.id)] = String(product.stock_quantity);
+              }
+            }
+            return next;
+          });
+        }
       } catch (error) {
         console.error('Failed to load canonical catalog products:', error);
         if (isMounted) {
-          setProducts([]);
+          setLoadError(formatCatalogError(lang, 'loadFailed', error));
           toast.error(formatCatalogError(lang, 'loadFailed', error));
         }
       } finally {
@@ -479,23 +818,31 @@ export default function ProductsPage() {
     return () => {
       isMounted = false;
     };
-  }, [merchant?.id, lang]);
+  }, [merchant?.id, lang, reloadToken]);
 
   const filteredProducts = useMemo(() => {
     const search = searchTerm.trim().toLowerCase();
     if (!search) return products;
 
-    return products.filter(product =>
-      [
+    return products.filter(product => {
+      const values = [
         product.name,
         product.external_ref,
         product.sku,
         product.barcode,
         product.category,
-      ]
+        ...product.variants.flatMap(variant => [
+          variant.name,
+          variant.sku,
+          variant.barcode,
+          ...Object.keys(variant.options),
+          ...Object.values(variant.options),
+        ]),
+      ];
+      return values
         .filter(Boolean)
-        .some(value => String(value).toLowerCase().includes(search)),
-    );
+        .some(value => String(value).toLowerCase().includes(search));
+    });
   }, [products, searchTerm]);
 
   if (!merchant) return null;
@@ -520,7 +867,8 @@ export default function ProductsPage() {
 
     if (current) {
       setProducts(existing => upsertServerProduct(existing, current as CatalogProduct));
-      if (replaceForm) setForm(formFromProduct(current));
+      syncInventoryDrafts(current);
+      if (replaceForm) setForm(catalogProductFormFromProduct(current));
     }
     toast.error(localMessage(lang, 'versionConflict'));
     return true;
@@ -528,7 +876,7 @@ export default function ProductsPage() {
 
   const openAddForm = () => {
     createAttemptRef.current = null;
-    setForm(emptyForm);
+    setForm(createEmptyCatalogProductForm());
     setEditingProductId(null);
     setIsFormOpen(true);
   };
@@ -538,10 +886,13 @@ export default function ProductsPage() {
     createAttemptRef.current = null;
     setIsFormOpen(false);
     setEditingProductId(null);
-    setForm(emptyForm);
+    setForm(createEmptyCatalogProductForm());
   };
 
-  const updateForm = (field: keyof ProductFormState, value: string | boolean) => {
+  const updateForm = (
+    field: keyof CatalogProductFormState,
+    value: string | boolean | CatalogImageDraft[] | CatalogVariantDraft[],
+  ) => {
     setForm(current => ({ ...current, [field]: value }));
   };
 
@@ -609,6 +960,7 @@ export default function ProductsPage() {
         for (const product of created) next = upsertServerProduct(next, product);
         return next;
       });
+      for (const product of created) syncInventoryDrafts(product);
       toast.success(`${t.products_imported} ${created.length} ${t.products_productWord}`);
     } catch (error) {
       console.error('Catalog import failed:', error);
@@ -617,37 +969,17 @@ export default function ProductsPage() {
   };
 
   const validateForm = () => {
-    if (!form.name.trim()) {
-      toast.error(t.products_enterName);
-      return false;
-    }
-
-    const originalPrice = form.original_price.trim()
-      ? Number(form.original_price)
-      : undefined;
-    const currentPrice = Number(form.current_price || form.original_price || 0);
-    const quantity = Number(form.quantity || 0);
-
-    if (
-      originalPrice !== undefined &&
-      (!Number.isSafeInteger(originalPrice) || originalPrice < 0)
-    ) {
+    const validation = validateCatalogProductForm(form);
+    if (!validation) return true;
+    if (validation === 'name') toast.error(t.products_enterName);
+    else if (validation === 'price' || validation === 'compare_price') {
       toast.error(t.products_enterValidPrice);
-      return false;
-    }
-    if (!Number.isSafeInteger(currentPrice) || currentPrice < 0) {
-      toast.error(t.products_enterValidSalePrice);
-      return false;
-    }
-    if (originalPrice !== undefined && originalPrice < currentPrice) {
-      toast.error(t.products_enterValidPrice);
-      return false;
-    }
-    if (!editingProduct?.variants.length && (!Number.isSafeInteger(quantity) || quantity < 0)) {
+    } else if (validation === 'quantity' || validation === 'variant_quantity') {
       toast.error(t.products_enterValidQuantity);
-      return false;
+    } else {
+      toast.error(localMessage(lang, 'editorInvalid'));
     }
-    return true;
+    return false;
   };
 
   const handleSaveProduct = async () => {
@@ -662,24 +994,21 @@ export default function ProductsPage() {
           return;
         }
 
-        const input = productInputFromForm(form, current);
+        const input = catalogProductInputFromForm(form, current);
         try {
-          const updated = await updateCatalogProduct(
-            current.id,
-            current.version,
-            input,
-          );
+          const updated = await updateCatalogProduct(current.id, current.version, input);
           setProducts(existing => upsertServerProduct(existing, updated));
+          syncInventoryDrafts(updated);
           toast.success(t.products_updated);
           setIsFormOpen(false);
           setEditingProductId(null);
-          setForm(emptyForm);
+          setForm(createEmptyCatalogProductForm());
         } catch (error) {
           if (await replaceConflictProduct(current.id, error, true)) return;
           throw error;
         }
       } else {
-        const input = productInputFromForm(form);
+        const input = catalogProductInputFromForm(form);
         let attempt: CatalogIdempotencyAttempt;
         try {
           attempt = idempotencyAttemptForRequest(
@@ -697,10 +1026,11 @@ export default function ProductsPage() {
         const created = await createCatalogProduct(input, attempt.key);
         createAttemptRef.current = null;
         setProducts(existing => upsertServerProduct(existing, created));
+        syncInventoryDrafts(created);
         toast.success(t.products_added);
         setIsFormOpen(false);
         setEditingProductId(null);
-        setForm(emptyForm);
+        setForm(createEmptyCatalogProductForm());
       }
     } catch (error) {
       console.error('Canonical catalog save failed:', error);
@@ -713,7 +1043,7 @@ export default function ProductsPage() {
   const handleEditProduct = (product: CatalogProduct) => {
     createAttemptRef.current = null;
     setEditingProductId(product.id);
-    setForm(formFromProduct(product));
+    setForm(catalogProductFormFromProduct(product));
     setIsFormOpen(true);
   };
 
@@ -729,6 +1059,83 @@ export default function ProductsPage() {
       if (await replaceConflictProduct(product.id, error)) return;
       console.error('Canonical catalog delete failed:', error);
       toast.error(formatCatalogError(lang, 'deleteFailed', error));
+    }
+  };
+
+  const handleSetInventory = async (product: CatalogProduct, variant?: CatalogVariant) => {
+    const key = inventoryTargetKey(product.id, variant?.id);
+    const raw = inventoryValues[key] ?? String(variant?.stock_quantity ?? product.stock_quantity);
+    if (!raw.trim()) {
+      toast.error(t.products_enterValidQuantity);
+      return;
+    }
+    const quantity = parseNonNegativeInteger(raw);
+    if (quantity === null) {
+      toast.error(t.products_enterValidQuantity);
+      return;
+    }
+
+    setInventoryBusyKey(key);
+    try {
+      const updated = await setCatalogInventory({
+        productId: product.id,
+        expectedVersion: product.version,
+        quantity,
+        ...(variant ? { variantId: variant.id } : {}),
+      });
+      setProducts(existing => upsertServerProduct(existing, updated));
+      syncInventoryDrafts(updated);
+      toast.success(localMessage(lang, 'inventorySaved'));
+    } catch (error) {
+      if (await replaceConflictProduct(product.id, error)) return;
+      console.error('Canonical inventory set failed:', error);
+      toast.error(formatCatalogError(lang, 'inventoryFailed', error));
+    } finally {
+      setInventoryBusyKey(null);
+    }
+  };
+
+  const handleAdjustInventory = async (
+    product: CatalogProduct,
+    delta: number,
+    variant?: CatalogVariant,
+  ) => {
+    const key = inventoryTargetKey(product.id, variant?.id);
+    const request = {
+      productId: product.id,
+      expectedVersion: product.version,
+      delta,
+      ...(variant ? { variantId: variant.id } : {}),
+      reason: 'merchant catalog inventory UX',
+    };
+
+    let attempt: CatalogIdempotencyAttempt;
+    try {
+      attempt = idempotencyAttemptForRequest(
+        inventoryAttemptRef.current,
+        'catalog-inventory-adjust',
+        request,
+      );
+    } catch (error) {
+      console.error('Secure inventory adjustment key generation failed:', error);
+      toast.error(localMessage(lang, 'secureCryptoRequired'));
+      return;
+    }
+    inventoryAttemptRef.current = attempt;
+    setInventoryBusyKey(key);
+
+    try {
+      const updated = await adjustCatalogInventory(request, attempt.key);
+      inventoryAttemptRef.current = null;
+      setProducts(existing => upsertServerProduct(existing, updated));
+      syncInventoryDrafts(updated);
+      toast.success(localMessage(lang, 'inventorySaved'));
+    } catch (error) {
+      if (await replaceConflictProduct(product.id, error)) return;
+      console.error('Canonical inventory adjust failed:', error);
+      toast.error(formatCatalogError(lang, 'inventoryFailed', error));
+    } finally {
+      setInventoryBusyKey(null);
     }
   };
 
@@ -795,6 +1202,20 @@ export default function ProductsPage() {
           <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" />
           <p className="text-lg text-muted-foreground">{t.products_loading}</p>
         </div>
+      ) : loadError ? (
+        <div className="rounded-3xl border border-destructive/30 bg-card p-10 text-center shadow-sm">
+          <Package className="mx-auto mb-4 h-16 w-16 text-destructive/30" />
+          <p className="text-lg font-semibold text-destructive">{loadError}</p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 rounded-xl"
+            onClick={() => setReloadToken(value => value + 1)}
+          >
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {localMessage(lang, 'retry')}
+          </Button>
+        </div>
       ) : filteredProducts.length === 0 ? (
         <div className="rounded-3xl border bg-card p-10 text-center shadow-sm">
           <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" />
@@ -806,18 +1227,24 @@ export default function ProductsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           {filteredProducts.map(product => {
             const price = product.price_iqd;
             const quantity = product.stock_quantity;
             const status = product.status;
             const canReply = product.allow_fawri_reply;
+            const imageUrl = primaryImageUrl(product);
 
             return (
               <div
                 key={product.id}
                 className="overflow-hidden rounded-3xl border bg-card shadow-sm transition hover:shadow-md"
               >
+                {imageUrl && (
+                  <div className="h-40 overflow-hidden border-b bg-muted/20">
+                    <img src={imageUrl} alt={product.image_refs[0]?.alt || product.name} className="h-full w-full object-cover" />
+                  </div>
+                )}
                 <div className="flex items-start justify-between gap-3 border-b p-4">
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -842,6 +1269,18 @@ export default function ProductsPage() {
                           className="rounded-full border-zinc-200 bg-zinc-50 px-3 py-1 text-xs font-semibold text-zinc-600"
                         >
                           {t.products_fawriDisabled}
+                        </Badge>
+                      )}
+
+                      {product.image_refs.length > 0 && (
+                        <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">
+                          <ImageIcon className="mr-1 h-3 w-3" />
+                          {product.image_refs.length}
+                        </Badge>
+                      )}
+                      {product.variants.length > 0 && (
+                        <Badge variant="outline" className="rounded-full px-3 py-1 text-xs">
+                          {product.variants.length} {localMessage(lang, 'variantCount')}
                         </Badge>
                       )}
                     </div>
@@ -907,6 +1346,52 @@ export default function ProductsPage() {
                   </div>
                 </div>
 
+                <div className="px-4 pb-4">
+                  <div className="rounded-2xl bg-muted/20 p-3">
+                    <p className="mb-3 text-sm font-bold">{localMessage(lang, 'inventory')}</p>
+                    <div className="space-y-2">
+                      {product.variants.length > 0 ? (
+                        product.variants.map(variant => {
+                          const targetKey = inventoryTargetKey(product.id, variant.id);
+                          return (
+                            <InventoryControl
+                              key={variant.id}
+                              lang={lang}
+                              product={product}
+                              variant={variant}
+                              value={inventoryValues[targetKey] ?? String(variant.stock_quantity)}
+                              busy={inventoryBusyKey === targetKey}
+                              onValueChange={value =>
+                                setInventoryValues(current => ({ ...current, [targetKey]: value }))
+                              }
+                              onSet={() => void handleSetInventory(product, variant)}
+                              onAdjust={delta => void handleAdjustInventory(product, delta, variant)}
+                            />
+                          );
+                        })
+                      ) : (
+                        <InventoryControl
+                          lang={lang}
+                          product={product}
+                          value={
+                            inventoryValues[inventoryTargetKey(product.id)] ??
+                            String(product.stock_quantity)
+                          }
+                          busy={inventoryBusyKey === inventoryTargetKey(product.id)}
+                          onValueChange={value =>
+                            setInventoryValues(current => ({
+                              ...current,
+                              [inventoryTargetKey(product.id)]: value,
+                            }))
+                          }
+                          onSet={() => void handleSetInventory(product)}
+                          onAdjust={delta => void handleAdjustInventory(product, delta)}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {product.description && (
                   <div className="px-4 pb-4">
                     <p className="rounded-2xl bg-muted/30 p-3 text-sm leading-7 text-muted-foreground">
@@ -922,7 +1407,7 @@ export default function ProductsPage() {
 
       {isFormOpen && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-6 backdrop-blur-[2px] md:items-center md:px-4 md:py-6">
-          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-hidden rounded-[2rem] bg-background shadow-2xl md:max-h-[calc(100dvh-4rem)]">
+          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[2rem] bg-background shadow-2xl md:max-h-[calc(100dvh-4rem)]">
             <div className="shrink-0 border-b bg-background px-5 py-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -947,7 +1432,7 @@ export default function ProductsPage() {
               </div>
             </div>
 
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
               <div>
                 <label className="mb-1 block text-sm font-semibold">
                   {t.products_productName}
@@ -1001,16 +1486,25 @@ export default function ProductsPage() {
                   onChange={event => updateForm('quantity', event.target.value)}
                   placeholder="5"
                   className="h-11 rounded-xl"
-                  disabled={Boolean(editingProduct?.variants.length)}
+                  disabled={
+                    catalogProductStockIsVariantManaged(form) || Boolean(editingProductId)
+                  }
                   title={
-                    editingProduct?.variants.length
+                    catalogProductStockIsVariantManaged(form)
                       ? localMessage(lang, 'variantQuantityLocked')
-                      : undefined
+                      : editingProductId
+                        ? localMessage(lang, 'inventory')
+                        : undefined
                   }
                 />
-                {Boolean(editingProduct?.variants.length) && (
+                {catalogProductStockIsVariantManaged(form) && (
                   <p className="mt-1 text-xs text-muted-foreground">
                     {localMessage(lang, 'variantQuantityLocked')}
+                  </p>
+                )}
+                {editingProductId && !catalogProductStockIsVariantManaged(form) && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {localMessage(lang, 'variantInventoryManaged')}
                   </p>
                 )}
               </div>
@@ -1053,6 +1547,58 @@ export default function ProductsPage() {
                     className="h-11 rounded-xl"
                   />
                 </div>
+              </div>
+
+              <ImageReferencesEditor
+                lang={lang}
+                images={form.image_refs}
+                onChange={images => updateForm('image_refs', images)}
+              />
+
+              <div className="space-y-3 rounded-2xl border bg-muted/10 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <p className="text-sm font-bold">{localMessage(lang, 'variants')}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {localMessage(lang, 'variantQuantityLocked')}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-xl"
+                    onClick={() =>
+                      updateForm('variants', [...form.variants, createEmptyCatalogVariantDraft()])
+                    }
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    {localMessage(lang, 'addVariant')}
+                  </Button>
+                </div>
+
+                {form.variants.map((variant, index) => (
+                  <VariantDraftEditor
+                    key={variant.key}
+                    lang={lang}
+                    index={index}
+                    variant={variant}
+                    onChange={nextVariant =>
+                      updateForm(
+                        'variants',
+                        form.variants.map((item, itemIndex) =>
+                          itemIndex === index ? nextVariant : item,
+                        ),
+                      )
+                    }
+                    onRemove={() =>
+                      updateForm(
+                        'variants',
+                        form.variants.filter((_, itemIndex) => itemIndex !== index),
+                      )
+                    }
+                  />
+                ))}
               </div>
 
               <div>

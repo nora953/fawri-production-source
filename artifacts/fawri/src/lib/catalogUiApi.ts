@@ -27,7 +27,7 @@ export type CatalogVariantInput = {
   name?: string;
   sku?: string;
   barcode?: string;
-  price_iqd?: number;
+  price_iqd?: number | null;
   stock_quantity?: number;
   quantity?: number;
   options?: Record<string, string>;
@@ -64,13 +64,28 @@ export type CatalogProductInput = {
   sku?: string;
   barcode?: string;
   price_iqd: number;
-  compare_at_price_iqd?: number;
-  stock_quantity: number;
+  compare_at_price_iqd?: number | null;
+  stock_quantity?: number;
   low_stock_threshold?: number;
   status: ProductStatus;
   allow_fawri_reply: boolean;
   image_refs?: CatalogImageInput[];
   variants?: CatalogVariantInput[];
+};
+
+export type CatalogInventorySetInput = {
+  productId: string;
+  expectedVersion: number;
+  quantity: number;
+  variantId?: string;
+};
+
+export type CatalogInventoryAdjustInput = {
+  productId: string;
+  expectedVersion: number;
+  delta: number;
+  variantId?: string;
+  reason?: string;
 };
 
 export type CatalogIdempotencyAttempt = {
@@ -300,6 +315,55 @@ export async function importCatalogProducts(
     fetcher,
   );
   return Array.isArray(data.products) ? data.products : [];
+}
+
+export async function setCatalogInventory(
+  input: CatalogInventorySetInput,
+  fetcher?: CatalogFetch,
+): Promise<CatalogProduct> {
+  const data = await requestCatalog<{
+    ok: true;
+    product: CatalogProduct;
+  }>(
+    `/api/inventory/products/${encodeURIComponent(input.productId)}/set`,
+    {
+      method: 'POST',
+      headers: catalogHeaders(),
+      body: JSON.stringify({
+        expected_version: input.expectedVersion,
+        quantity: input.quantity,
+        ...(input.variantId ? { variant_id: input.variantId } : {}),
+      }),
+    },
+    fetcher,
+  );
+  return data.product;
+}
+
+export async function adjustCatalogInventory(
+  input: CatalogInventoryAdjustInput,
+  idempotencyKey: string,
+  fetcher?: CatalogFetch,
+): Promise<CatalogProduct> {
+  const data = await requestCatalog<{
+    ok: true;
+    replayed: boolean;
+    product: CatalogProduct;
+  }>(
+    `/api/inventory/products/${encodeURIComponent(input.productId)}/adjust`,
+    {
+      method: 'POST',
+      headers: catalogHeaders({ 'Idempotency-Key': idempotencyKey }),
+      body: JSON.stringify({
+        expected_version: input.expectedVersion,
+        delta: input.delta,
+        ...(input.variantId ? { variant_id: input.variantId } : {}),
+        ...(input.reason ? { reason: input.reason } : {}),
+      }),
+    },
+    fetcher,
+  );
+  return data.product;
 }
 
 export function currentProductFromConflict(error: unknown): CatalogProduct | null {
