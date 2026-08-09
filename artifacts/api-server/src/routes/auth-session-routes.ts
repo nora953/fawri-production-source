@@ -5,8 +5,10 @@ import {
   clearAuthSessionCookie,
   getAuthContext,
   getSessionToken,
+  requestDeviceId,
   requireSecureAdminSession,
   requireSecureMerchantSession,
+  sendAuthError,
 } from "../middleware/authSession";
 import { payload } from "./auth-route-common";
 import { changePassword } from "./auth-password-route-support";
@@ -107,6 +109,74 @@ router.post("/change-password", requireSecureMerchantSession, (req, res) =>
 router.post("/admin/change-password", requireSecureAdminSession, (req, res) =>
   changePassword(req, res, "admin"),
 );
+
+router.get("/lifecycle", async (req, res) => {
+  const token = getSessionToken(req, "merchant");
+  if (!token) {
+    sendAuthError(res, 401, "SESSION_REQUIRED", "merchant session is required");
+    return;
+  }
+
+  const deviceId = requestDeviceId(req);
+  const validated = await authPostgresSessionAuthority.validateSession({
+    token,
+    expectedKind: "merchant",
+    ...(deviceId ? { deviceId } : {}),
+  });
+  if (!validated) {
+    clearAuthSessionCookie(res, "merchant");
+    sendAuthError(res, 401, "SESSION_INVALID", "merchant session is invalid or expired");
+    return;
+  }
+
+  const account = authAccountRepository.findById(
+    validated.session.account_id,
+    "merchant",
+  );
+  if (!account?.merchantProfile || !account.account.otpVerified) {
+    await authPostgresSessionAuthority.revokeSession(
+      token,
+      "merchant",
+      "account_disabled",
+    );
+    clearAuthSessionCookie(res, "merchant");
+    sendAuthError(
+      res,
+      401,
+      "SESSION_ACCOUNT_INVALID",
+      "session account is no longer available",
+    );
+    return;
+  }
+
+  if (account.account.sessionVersion !== validated.session.account_version) {
+    await authPostgresSessionAuthority.revokeSession(
+      token,
+      "merchant",
+      "role_changed",
+    );
+    clearAuthSessionCookie(res, "merchant");
+    sendAuthError(
+      res,
+      401,
+      "SESSION_VERSION_REVOKED",
+      "session was revoked by an account security change",
+    );
+    return;
+  }
+
+  const accountStatus = account.merchantProfile.accountStatus;
+  res.setHeader("Cache-Control", "no-store");
+  res.json({
+    ok: true,
+    lifecycle: {
+      account_status: accountStatus,
+      merchant_status:
+        accountStatus === "pending_review" ? "pending_activation" : accountStatus,
+      onboarding_status: account.merchantProfile.onboardingStatus,
+    },
+  });
+});
 
 router.get("/me", requireSecureMerchantSession, (_req, res) => {
   const context = getAuthContext(res)!;
