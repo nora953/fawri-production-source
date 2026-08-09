@@ -69,7 +69,7 @@ test('missing earlier same-conversation customer message leaves question blank f
   });
 });
 
-test('conversation page exposes save-as-answer only for merchant messages and avoids the legacy write endpoint', async () => {
+test('conversation page exposes save-as-answer only for merchant messages and requires editable review before submit', async () => {
   const source = await readFile(
     new URL('../src/pages/dashboard/ConversationsPage.tsx', import.meta.url),
     'utf8',
@@ -77,6 +77,13 @@ test('conversation page exposes save-as-answer only for merchant messages and av
 
   assert.match(source, /message\.sender === 'merchant' && \(/);
   assert.match(source, /handleSaveAsAnswer\(message\.id\)/);
+  assert.match(source, /value=\{saveAnswerDraft\.questionPattern\}/);
+  assert.match(source, /questionPattern: event\.target\.value/);
+  assert.match(source, /value=\{saveAnswerDraft\.answerText\}/);
+  assert.match(source, /answerText: event\.target\.value/);
+  assert.match(source, /value=\{saveAnswerDraft\.language\}/);
+  assert.match(source, /checked=\{saveAnswerDraft\.active\}/);
+  assert.match(source, /disabled=\{savingAnswer\}/);
   assert.match(source, /createConversationSavedAnswer\(/);
   assert.doesNotMatch(source, /fetch\(['"]\/api\/saved-answers/);
   assert.doesNotMatch(source, /merchant_id\s*:/);
