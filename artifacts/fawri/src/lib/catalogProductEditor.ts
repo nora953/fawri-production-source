@@ -22,7 +22,14 @@ export type CatalogOptionDraft = {
   value: string;
 };
 
-export type CatalogVariantDraft = {
+export type CatalogMeasurementDraft = {
+  weight_kg: string;
+  length_cm: string;
+  width_cm: string;
+  height_cm: string;
+};
+
+export type CatalogVariantDraft = CatalogMeasurementDraft & {
   key: string;
   id?: string;
   name: string;
@@ -34,7 +41,7 @@ export type CatalogVariantDraft = {
   image_refs: CatalogImageDraft[];
 };
 
-export type CatalogProductFormState = {
+export type CatalogProductFormState = CatalogMeasurementDraft & {
   name: string;
   sku: string;
   barcode: string;
@@ -54,14 +61,20 @@ export type CatalogEditorValidationCode =
   | 'price'
   | 'compare_price'
   | 'quantity'
+  | 'measurement'
+  | 'partial_dimensions'
   | 'image_reference'
   | 'variant_identity'
   | 'variant_price'
   | 'variant_quantity'
+  | 'variant_measurement'
+  | 'variant_partial_dimensions'
   | 'variant_option'
   | 'variant_option_duplicate'
   | 'variant_image_reference';
 
+const MAX_WEIGHT_G = 100_000_000;
+const MAX_DIMENSION_MM = 100_000;
 let draftSequence = 0;
 
 function nextDraftKey(prefix: string): string {
@@ -78,6 +91,77 @@ function wholeNumber(value: string): number | null {
   if (!normalized) return 0;
   const parsed = Number(normalized);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function canonicalDecimal(value: string, scale: number, max: number): number | null {
+  const normalized = value.trim();
+  if (!normalized) return 0;
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
+  const decimals = String(scale).length - 1;
+  const [whole, fraction = ''] = normalized.split('.');
+  if (fraction.length > decimals) return null;
+  const scaled = Number(whole) * scale + Number(fraction.padEnd(decimals, '0') || '0');
+  return Number.isSafeInteger(scaled) && scaled > 0 && scaled <= max ? scaled : null;
+}
+
+function displayCanonical(value: number | undefined, scale: number): string {
+  if (value === undefined) return '';
+  const decimals = String(scale).length - 1;
+  const whole = Math.floor(value / scale);
+  const remainder = String(value % scale).padStart(decimals, '0').replace(/0+$/, '');
+  return remainder ? `${whole}.${remainder}` : String(whole);
+}
+
+function measurementDraft(source?: {
+  weight_g?: number;
+  length_mm?: number;
+  width_mm?: number;
+  height_mm?: number;
+}): CatalogMeasurementDraft {
+  return {
+    weight_kg: displayCanonical(source?.weight_g, 1_000),
+    length_cm: displayCanonical(source?.length_mm, 10),
+    width_cm: displayCanonical(source?.width_mm, 10),
+    height_cm: displayCanonical(source?.height_mm, 10),
+  };
+}
+
+function measurementValidation(
+  draft: CatalogMeasurementDraft,
+): 'measurement' | 'partial_dimensions' | null {
+  if (draft.weight_kg.trim() && canonicalDecimal(draft.weight_kg, 1_000, MAX_WEIGHT_G) === null) {
+    return 'measurement';
+  }
+  const dimensions = [draft.length_cm, draft.width_cm, draft.height_cm];
+  const present = dimensions.filter(value => value.trim()).length;
+  if (present > 0 && present < dimensions.length) return 'partial_dimensions';
+  if (
+    present === dimensions.length &&
+    dimensions.some(value => canonicalDecimal(value, 10, MAX_DIMENSION_MM) === null)
+  ) {
+    return 'measurement';
+  }
+  return null;
+}
+
+function measurementInput(draft: CatalogMeasurementDraft) {
+  const dimensionsPresent = Boolean(
+    draft.length_cm.trim() || draft.width_cm.trim() || draft.height_cm.trim(),
+  );
+  return {
+    weight_g: draft.weight_kg.trim()
+      ? canonicalDecimal(draft.weight_kg, 1_000, MAX_WEIGHT_G)
+      : null,
+    length_mm: dimensionsPresent
+      ? canonicalDecimal(draft.length_cm, 10, MAX_DIMENSION_MM)
+      : null,
+    width_mm: dimensionsPresent
+      ? canonicalDecimal(draft.width_cm, 10, MAX_DIMENSION_MM)
+      : null,
+    height_mm: dimensionsPresent
+      ? canonicalDecimal(draft.height_cm, 10, MAX_DIMENSION_MM)
+      : null,
+  };
 }
 
 function imageDraftIsEmpty(image: CatalogImageDraft): boolean {
@@ -124,6 +208,7 @@ function variantDraftFromVariant(variant?: CatalogVariant): CatalogVariantDraft 
     barcode: variant?.barcode || '',
     price_iqd: variant?.price_iqd === undefined ? '' : String(variant.price_iqd),
     stock_quantity: String(variant?.stock_quantity ?? 0),
+    ...measurementDraft(variant),
     options: variant
       ? Object.entries(variant.options).map(([name, value]) => optionDraft(name, value))
       : [],
@@ -141,6 +226,7 @@ export function createEmptyCatalogProductForm(): CatalogProductFormState {
     original_price: '',
     current_price: '',
     quantity: '',
+    ...measurementDraft(),
     status: 'available',
     allow_fawri_reply: true,
     image_refs: [],
@@ -175,6 +261,7 @@ export function catalogProductFormFromProduct(
         : String(product.compare_at_price_iqd),
     current_price: String(product.price_iqd),
     quantity: String(product.stock_quantity),
+    ...measurementDraft(product),
     status: product.status,
     allow_fawri_reply: product.allow_fawri_reply,
     image_refs: product.image_refs.map(imageDraftFromReference),
@@ -206,6 +293,9 @@ export function validateCatalogProductForm(
     if (comparePrice === null || comparePrice < currentPrice) return 'compare_price';
   }
 
+  const measurementError = measurementValidation(form);
+  if (measurementError) return measurementError;
+
   const productImageError = validateImages(form.image_refs, 'image_reference');
   if (productImageError) return productImageError;
 
@@ -224,6 +314,10 @@ export function validateCatalogProductForm(
       return 'variant_price';
     }
     if (wholeNumber(variant.stock_quantity) === null) return 'variant_quantity';
+
+    const variantMeasurementError = measurementValidation(variant);
+    if (variantMeasurementError === 'partial_dimensions') return 'variant_partial_dimensions';
+    if (variantMeasurementError) return 'variant_measurement';
 
     const optionNames = new Set<string>();
     for (const option of usableOptions) {
@@ -257,6 +351,7 @@ function variantInput(variant: CatalogVariantDraft): CatalogVariantInput {
     barcode: variant.barcode.trim(),
     price_iqd: variant.price_iqd.trim() ? wholeNumber(variant.price_iqd) : null,
     stock_quantity: wholeNumber(variant.stock_quantity) ?? 0,
+    ...measurementInput(variant),
     options,
     image_refs: imageInputs(variant.image_refs),
   };
@@ -284,6 +379,7 @@ export function catalogProductInputFromForm(
       ? { stock_quantity: wholeNumber(form.quantity) ?? 0 }
       : {}),
     ...(existing ? { low_stock_threshold: existing.low_stock_threshold } : {}),
+    ...measurementInput(form),
     status: form.status,
     allow_fawri_reply: form.allow_fawri_reply,
     image_refs: imageInputs(form.image_refs),
