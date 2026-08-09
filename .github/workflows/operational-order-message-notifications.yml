@@ -6,412 +6,47 @@ on:
       - parallel/operational-order-message-notifications
     paths:
       - .github/workflows/operational-order-message-notifications.yml
+      - artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts
+      - artifacts/api-server/src/routes/auth.ts
+      - artifacts/api-server/src/routes/index.ts
+      - artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs
+      - artifacts/api-server/tests/operational-notifications.test.ts
+      - artifacts/fawri/src/lib/types.ts
+      - artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx
+      - artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx
+      - artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx
+  pull_request:
+    paths:
+      - artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts
+      - artifacts/api-server/src/routes/auth.ts
+      - artifacts/api-server/src/routes/index.ts
+      - artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs
+      - artifacts/api-server/tests/operational-notifications.test.ts
+      - artifacts/fawri/src/lib/types.ts
+      - artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx
+      - artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx
+      - artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  implement-and-verify:
+  verify:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Checkout lane
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Verify coordinator and lane head
+      - name: Verify coordinator baseline
+        if: github.event_name == 'push'
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin parallel/integration-coordinator parallel/operational-order-message-notifications
+          git fetch origin parallel/integration-coordinator
           test "$(git rev-parse origin/parallel/integration-coordinator)" = "b37103b95d6225aaff092fb781d0bf635564f745"
-          test "$(git rev-parse origin/parallel/operational-order-message-notifications)" = "$GITHUB_SHA"
-
-      - name: Apply implementation
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 <<'PY'
-          from pathlib import Path
-
-          def replace_once(path: str, old: str, new: str) -> None:
-              target = Path(path)
-              text = target.read_text()
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f"expected one anchor in {path}, found {count}: {old[:120]!r}")
-              target.write_text(text.replace(old, new, 1))
-
-          auth = "artifacts/api-server/src/routes/auth.ts"
-          replace_once(
-              auth,
-              '''type MerchantSupportReplyReminderNotificationRecord = {\n  id: string;\n  merchant_id: string;\n  type: "support_reply_reminder";\n  ticket_id: string;\n  ticket_subject: string;\n  action_url: string;\n  created_at: string;\n  read_at?: string;\n};\n\ntype MerchantNotificationRecord =\n  | MerchantBalanceNotificationRecord\n  | MerchantSubscriptionPlanNotificationRecord\n  | MerchantEmergencyActivationNotificationRecord\n  | MerchantSubscriptionExpiryReminderNotificationRecord\n  | MerchantSubscriptionExpiredNotificationRecord\n  | MerchantAddonExpiryReminderNotificationRecord\n  | MerchantInspectionNotificationRecord\n  | MerchantSupportReplyReminderNotificationRecord;''',
-              '''type MerchantSupportReplyReminderNotificationRecord = {\n  id: string;\n  merchant_id: string;\n  type: "support_reply_reminder";\n  ticket_id: string;\n  ticket_subject: string;\n  action_url: string;\n  created_at: string;\n  read_at?: string;\n};\n\ntype MerchantOperationalOrderNotificationRecord = {\n  id: string;\n  merchant_id: string;\n  type: "operational_new_order";\n  order_id: string;\n  conversation_id?: string;\n  action_url: string;\n  dedupe_key: string;\n  created_at: string;\n  read_at?: string;\n};\n\ntype MerchantOperationalCustomerMessageNotificationRecord = {\n  id: string;\n  merchant_id: string;\n  type: "operational_customer_message";\n  conversation_id: string;\n  action_url: string;\n  dedupe_key: string;\n  created_at: string;\n  read_at?: string;\n};\n\ntype MerchantOperationalNotificationRecord =\n  | MerchantOperationalOrderNotificationRecord\n  | MerchantOperationalCustomerMessageNotificationRecord;\n\ntype MerchantNotificationRecord =\n  | MerchantBalanceNotificationRecord\n  | MerchantSubscriptionPlanNotificationRecord\n  | MerchantEmergencyActivationNotificationRecord\n  | MerchantSubscriptionExpiryReminderNotificationRecord\n  | MerchantSubscriptionExpiredNotificationRecord\n  | MerchantAddonExpiryReminderNotificationRecord\n  | MerchantInspectionNotificationRecord\n  | MerchantSupportReplyReminderNotificationRecord\n  | MerchantOperationalNotificationRecord;''',
-          )
-          replace_once(
-              auth,
-              '''  if (item.type === "addon_expiry_reminder") {\n    return typeof item.addon_batch_id === "string" && typeof item.expires_at === "string";\n  }\n\n  if (item.type === "support_reply_reminder") {''',
-              '''  if (item.type === "addon_expiry_reminder") {\n    return typeof item.addon_batch_id === "string" && typeof item.expires_at === "string";\n  }\n\n  if (item.type === "operational_new_order") {\n    return (\n      typeof item.order_id === "string" &&\n      typeof item.action_url === "string" &&\n      typeof item.dedupe_key === "string"\n    );\n  }\n\n  if (item.type === "operational_customer_message") {\n    return (\n      typeof item.conversation_id === "string" &&\n      typeof item.action_url === "string" &&\n      typeof item.dedupe_key === "string"\n    );\n  }\n\n  if (item.type === "support_reply_reminder") {''',
-          )
-          replace_once(
-              auth,
-              '''  return notification;\n}\n\nfunction appendMerchantBalanceNotification(''',
-              '''  return notification;\n}\n\nfunction operationalNotificationTimestamp(value: unknown): string {\n  if (typeof value === "number" && Number.isFinite(value)) {\n    const numericDate = new Date(value);\n    if (Number.isFinite(numericDate.getTime())) return numericDate.toISOString();\n  }\n  const parsed = new Date(String(value || ""));\n  return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : now();\n}\n\nfunction operationalNotificationDedupeKey(\n  type: MerchantOperationalNotificationRecord["type"],\n  merchantId: string,\n  sourceId: string,\n): string {\n  return crypto\n    .createHash("sha256")\n    .update(`${type}:${merchantId}:${sourceId}`)\n    .digest("hex");\n}\n\nfunction persistMerchantOperationalNotification(\n  db: AuthDb,\n  notification: MerchantOperationalNotificationRecord,\n): {\n  notification: MerchantOperationalNotificationRecord | null;\n  deduplicated: boolean;\n  skipped?: "merchant_not_found" | "notification_store_unavailable";\n} {\n  if (!findRegularMerchant(db, notification.merchant_id)) {\n    return { notification: null, deduplicated: false, skipped: "merchant_not_found" };\n  }\n\n  const existing = db.merchant_notifications.find(\n    (item): item is MerchantOperationalNotificationRecord =>\n      (item.type === "operational_new_order" ||\n        item.type === "operational_customer_message") &&\n      item.merchant_id === notification.merchant_id &&\n      item.dedupe_key === notification.dedupe_key,\n  );\n  if (existing) return { notification: existing, deduplicated: true };\n\n  appendMerchantNotificationRecord(db, notification);\n  try {\n    writeDb(db);\n  } catch (error) {\n    console.error("Merchant operational notification persistence failed:", error);\n    return {\n      notification: null,\n      deduplicated: false,\n      skipped: "notification_store_unavailable",\n    };\n  }\n  emitMerchantRealtimeState(db, notification.merchant_id, "notifications_updated");\n  return { notification, deduplicated: false };\n}\n\nexport function notifyMerchantNewOrder(input: {\n  merchantId: string;\n  orderId: string;\n  conversationId?: string;\n  createdAt?: unknown;\n}) {\n  const merchantId = String(input.merchantId || "").trim();\n  const orderId = String(input.orderId || "").trim();\n  const conversationId = String(input.conversationId || "").trim();\n  if (!merchantId || !orderId) {\n    return { notification: null, deduplicated: false, skipped: "invalid_identity" as const };\n  }\n  const db = ensureDb();\n  return persistMerchantOperationalNotification(db, {\n    id: makeId("merchant-notification"),\n    merchant_id: merchantId,\n    type: "operational_new_order",\n    order_id: orderId,\n    ...(conversationId ? { conversation_id: conversationId } : {}),\n    action_url: `/dashboard/orders?order=${encodeURIComponent(orderId)}`,\n    dedupe_key: operationalNotificationDedupeKey(\n      "operational_new_order",\n      merchantId,\n      orderId,\n    ),\n    created_at: operationalNotificationTimestamp(input.createdAt),\n  });\n}\n\nexport function notifyMerchantNewCustomerMessage(input: {\n  merchantId: string;\n  conversationId: string;\n  sourceEventId: string;\n  createdAt?: unknown;\n}) {\n  const merchantId = String(input.merchantId || "").trim();\n  const conversationId = String(input.conversationId || "").trim();\n  const sourceEventId = String(input.sourceEventId || "").trim();\n  if (!merchantId || !conversationId || !sourceEventId) {\n    return { notification: null, deduplicated: false, skipped: "invalid_identity" as const };\n  }\n  const db = ensureDb();\n  return persistMerchantOperationalNotification(db, {\n    id: makeId("merchant-notification"),\n    merchant_id: merchantId,\n    type: "operational_customer_message",\n    conversation_id: conversationId,\n    action_url: `/dashboard/conversations?conversation=${encodeURIComponent(conversationId)}`,\n    dedupe_key: operationalNotificationDedupeKey(\n      "operational_customer_message",\n      merchantId,\n      sourceEventId,\n    ),\n    created_at: operationalNotificationTimestamp(input.createdAt),\n  });\n}\n\nfunction appendMerchantBalanceNotification(''',
-          )
-
-          index = "artifacts/api-server/src/routes/index.ts"
-          replace_once(
-              index,
-              '''import authRouter, {\n  createMerchantOAuthState,\n  getMerchantIdFromSession,\n  merchantSessionAccountExists,\n  requireMerchantSession,\n  verifyMerchantOAuthState,\n} from "./auth";''',
-              '''import authRouter, {\n  createMerchantOAuthState,\n  getMerchantIdFromSession,\n  merchantSessionAccountExists,\n  notifyMerchantNewCustomerMessage,\n  notifyMerchantNewOrder,\n  requireMerchantSession,\n  verifyMerchantOAuthState,\n} from "./auth";''',
-          )
-          replace_once(
-              index,
-              '''import savedAnswersRouter from "./saved-answers";''',
-              '''import savedAnswersRouter from "./saved-answers";\nimport { getMetaWebhookEventId } from "../middleware/metaWebhookSecurity";''',
-          )
-          replace_once(index, '''function saveMessengerConversation(params: {''', '''export function saveMessengerConversation(params: {''')
-          replace_once(
-              index,
-              '''  externalMessageId?: string;\n  replyStatus: "sent" | "failed";''',
-              '''  externalMessageId?: string;\n  sourceEventId?: string;\n  replyStatus: "sent" | "failed";''',
-          )
-          replace_once(
-              index,
-              '''  conversationsByMerchant.set(params.merchantId, updated);\n  saveRuntimeDb();\n  return updated.find((c) => c.id === conversationId);''',
-              '''  conversationsByMerchant.set(params.merchantId, updated);\n  saveRuntimeDb();\n  notifyMerchantNewCustomerMessage({\n    merchantId: params.merchantId,\n    conversationId,\n    sourceEventId:\n      params.sourceEventId || params.externalMessageId || customerMessage.id,\n    createdAt: now,\n  });\n  return updated.find((c) => c.id === conversationId);''',
-          )
-          replace_once(index, '''function createOrder(params: {''', '''export function createOrder(params: {''')
-          replace_once(
-              index,
-              '''  ordersByMerchant.set(params.merchantId, [order, ...currentOrders]);\n  saveRuntimeDb();\n  return order;''',
-              '''  ordersByMerchant.set(params.merchantId, [order, ...currentOrders]);\n  saveRuntimeDb();\n  notifyMerchantNewOrder({\n    merchantId: params.merchantId,\n    orderId: order.id,\n    conversationId: order.conversation_id,\n    createdAt: order.created_at,\n  });\n  return order;''',
-          )
-          replace_once(
-              index,
-              '''        const senderId = event.sender?.id;\n        const messageText = event.message?.text;\n        const messageId = event.message?.mid;''',
-              '''        const senderId = event.sender?.id;\n        const messageText = event.message?.text;\n        const messageId = event.message?.mid;\n        const eventId = getMetaWebhookEventId(pageId, event);''',
-          )
-          replace_once(
-              index,
-              '''            externalMessageId: messageId,\n            replyStatus: "sent",''',
-              '''            externalMessageId: messageId || eventId,\n            sourceEventId: eventId,\n            replyStatus: "sent",''',
-          )
-          replace_once(
-              index,
-              '''            externalMessageId: messageId,\n            replyStatus: "failed",''',
-              '''            externalMessageId: messageId || eventId,\n            sourceEventId: eventId,\n            replyStatus: "failed",''',
-          )
-
-          manual = "artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts"
-          replace_once(
-              manual,
-              '''import {\n  isConversationUnderManualControl,\n  recordManualInboundMessage,\n} from "../services/manualConversationRuntime";''',
-              '''import {\n  isConversationUnderManualControl,\n  recordManualInboundMessage,\n} from "../services/manualConversationRuntime";\nimport { notifyMerchantNewCustomerMessage } from "../routes/auth";''',
-          )
-          replace_once(
-              manual,
-              '''        recordManualInboundMessage({\n          merchantId,\n          conversationId,\n          externalMessageId: message.externalMessageId || eventId,\n          messageText: message.text,\n          createdAt: message.createdAt,\n        });\n\n        if (internalReplay) {''',
-              '''        recordManualInboundMessage({\n          merchantId,\n          conversationId,\n          externalMessageId: message.externalMessageId || eventId,\n          messageText: message.text,\n          createdAt: message.createdAt,\n        });\n        notifyMerchantNewCustomerMessage({\n          merchantId,\n          conversationId,\n          sourceEventId: eventId,\n          createdAt: message.createdAt,\n        });\n\n        if (internalReplay) {''',
-          )
-
-          types = "artifacts/fawri/src/lib/types.ts"
-          replace_once(
-              types,
-              '''export interface MerchantSupportReplyReminderNotification {\n  id: string;\n  merchant_id: string;\n  type: 'support_reply_reminder';\n  ticket_id: string;\n  ticket_subject: string;\n  action_url: string;\n  created_at: string;\n  read_at?: string;\n}\n\nexport type MerchantNotification =\n  | MerchantBalanceNotification\n  | MerchantSubscriptionNotification\n  | MerchantInspectionNotification\n  | MerchantSupportReplyReminderNotification;''',
-              '''export interface MerchantSupportReplyReminderNotification {\n  id: string;\n  merchant_id: string;\n  type: 'support_reply_reminder';\n  ticket_id: string;\n  ticket_subject: string;\n  action_url: string;\n  created_at: string;\n  read_at?: string;\n}\n\nexport interface MerchantNewOrderNotification {\n  id: string;\n  merchant_id: string;\n  type: 'operational_new_order';\n  order_id: string;\n  conversation_id?: string;\n  action_url: string;\n  created_at: string;\n  read_at?: string;\n}\n\nexport interface MerchantCustomerMessageNotification {\n  id: string;\n  merchant_id: string;\n  type: 'operational_customer_message';\n  conversation_id: string;\n  action_url: string;\n  created_at: string;\n  read_at?: string;\n}\n\nexport type MerchantOperationalNotification =\n  | MerchantNewOrderNotification\n  | MerchantCustomerMessageNotification;\n\nexport type MerchantNotification =\n  | MerchantBalanceNotification\n  | MerchantSubscriptionNotification\n  | MerchantInspectionNotification\n  | MerchantSupportReplyReminderNotification\n  | MerchantOperationalNotification;''',
-          )
-
-          notifications = "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx"
-          replace_once(
-              notifications,
-              '''import { Bell, Check, ExternalLink, Loader2, MessageCircle, RefreshCw, ShieldCheck } from 'lucide-react';''',
-              '''import { Bell, Check, ExternalLink, Loader2, MessageCircle, Package, RefreshCw, ShieldCheck } from 'lucide-react';''',
-          )
-          replace_once(
-              notifications,
-              '''  MerchantNotification,\n  MerchantSubscriptionNotification,''',
-              '''  MerchantNotification,\n  MerchantOperationalNotification,\n  MerchantSubscriptionNotification,''',
-          )
-          replace_once(
-              notifications,
-              '''const SUPPORT_REPLY_REMINDER_TEXT = {''',
-              '''const OPERATIONAL_NOTIFICATION_TEXT = {\n  ar: {\n    orderTitle: 'طلب جديد',\n    orderBody: 'تم إنشاء طلب جديد برقم {order}.',\n    orderOpen: 'فتح الطلب',\n    messageTitle: 'رسالة جديدة من زبون',\n    messageBody: 'وصلت رسالة جديدة ضمن محادثة الزبون.',\n    messageOpen: 'فتح المحادثة',\n  },\n  ku: {\n    orderTitle: 'داواکارییەکی نوێ',\n    orderBody: 'داواکارییەکی نوێ بە ژمارەی {order} دروست کرا.',\n    orderOpen: 'کردنەوەی داواکاری',\n    messageTitle: 'نامەیەکی نوێ لە کڕیار',\n    messageBody: 'نامەیەکی نوێ لە گفتوگۆی کڕیار گەیشت.',\n    messageOpen: 'کردنەوەی گفتوگۆ',\n  },\n  en: {\n    orderTitle: 'New order',\n    orderBody: 'A new order was created: {order}.',\n    orderOpen: 'Open order',\n    messageTitle: 'New customer message',\n    messageBody: 'A new customer message arrived in this conversation.',\n    messageOpen: 'Open conversation',\n  },\n} as const;\n\nconst SUPPORT_REPLY_REMINDER_TEXT = {''',
-          )
-          replace_once(
-              notifications,
-              '''  const supportReminderText =\n    lang === 'en'\n      ? SUPPORT_REPLY_REMINDER_TEXT.en\n      : lang === 'ku'\n        ? SUPPORT_REPLY_REMINDER_TEXT.ku\n        : SUPPORT_REPLY_REMINDER_TEXT.ar;''',
-              '''  const supportReminderText =\n    lang === 'en'\n      ? SUPPORT_REPLY_REMINDER_TEXT.en\n      : lang === 'ku'\n        ? SUPPORT_REPLY_REMINDER_TEXT.ku\n        : SUPPORT_REPLY_REMINDER_TEXT.ar;\n  const operationalText =\n    lang === 'en'\n      ? OPERATIONAL_NOTIFICATION_TEXT.en\n      : lang === 'ku'\n        ? OPERATIONAL_NOTIFICATION_TEXT.ku\n        : OPERATIONAL_NOTIFICATION_TEXT.ar;''',
-          )
-          replace_once(
-              notifications,
-              '''    notification:\n      | MerchantInspectionNotification\n      | MerchantSupportReplyReminderNotification,''',
-              '''    notification:\n      | MerchantInspectionNotification\n      | MerchantSupportReplyReminderNotification\n      | MerchantOperationalNotification,''',
-          )
-          replace_once(
-              notifications,
-              '''            if (notification.type === 'support_reply_reminder') {''',
-              '''            if (\n              notification.type === 'operational_new_order' ||\n              notification.type === 'operational_customer_message'\n            ) {\n              const isOrder = notification.type === 'operational_new_order';\n              const title = isOrder\n                ? operationalText.orderTitle\n                : operationalText.messageTitle;\n              const body = isOrder\n                ? formatNotificationText(operationalText.orderBody, {\n                    order: notification.order_id,\n                  })\n                : operationalText.messageBody;\n              const openLabel = isOrder\n                ? operationalText.orderOpen\n                : operationalText.messageOpen;\n              return (\n                <article\n                  key={notification.id}\n                  className={`rounded-2xl border p-4 shadow-sm transition-colors sm:p-5 ${\n                    unread\n                      ? 'border-teal-300 bg-teal-50/80 dark:border-teal-700 dark:bg-teal-950/25'\n                      : 'border-border bg-card'\n                  }`}\n                >\n                  <div className="flex items-start gap-3">\n                    <div className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${\n                      unread\n                        ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/60 dark:text-teal-300'\n                        : 'bg-muted text-muted-foreground'\n                    }`}>\n                      {isOrder ? <Package className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}\n                    </div>\n                    <div className="min-w-0 flex-1">\n                      <div className="flex flex-wrap items-start justify-between gap-2">\n                        <h2 className="font-black text-foreground">{title}</h2>\n                        <time className="text-[11px] font-medium text-muted-foreground" dateTime={notification.created_at}>\n                          {new Date(notification.created_at).toLocaleString(locale)}\n                        </time>\n                      </div>\n                      <p className="mt-2 text-sm font-medium leading-7 text-foreground/90">{body}</p>\n                      <div className="mt-3 flex justify-end">\n                        <button\n                          type="button"\n                          disabled={marking}\n                          onClick={() => void openNotificationAction(notification)}\n                          className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"\n                        >\n                          {marking ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />}\n                          {openLabel}\n                        </button>\n                      </div>\n                    </div>\n                  </div>\n                </article>\n              );\n            }\n\n            if (notification.type === 'support_reply_reminder') {''',
-          )
-
-          orders = "artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx"
-          replace_once(
-              orders,
-              '''import React, { useEffect, useMemo, useState } from 'react';''',
-              '''import React, { useEffect, useMemo, useRef, useState } from 'react';''',
-          )
-          replace_once(
-              orders,
-              '''export default function ServerOrdersPage() {\n  const i18n = useI18n();''',
-              '''function requestedOrderId(): string {\n  if (typeof window === 'undefined') return '';\n  return new URLSearchParams(window.location.search).get('order')?.trim() || '';\n}\n\nexport default function ServerOrdersPage() {\n  const i18n = useI18n();''',
-          )
-          replace_once(
-              orders,
-              '''  const [orders, setOrders] = useState<ServerOrder[]>([]);\n  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);''',
-              '''  const [orders, setOrders] = useState<ServerOrder[]>([]);\n  const linkedOrderIdRef = useRef(requestedOrderId());\n  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);''',
-          )
-          replace_once(
-              orders,
-              '''      setSelectedOrderId(current =>\n        current && nextOrders.some(order => order.id === current)\n          ? current\n          : nextOrders[0]?.id || null,\n      );''',
-              '''      setSelectedOrderId(current => {\n        const linkedOrderId = linkedOrderIdRef.current;\n        linkedOrderIdRef.current = '';\n        if (linkedOrderId && nextOrders.some(order => order.id === linkedOrderId)) {\n          return linkedOrderId;\n        }\n        return current && nextOrders.some(order => order.id === current)\n          ? current\n          : nextOrders[0]?.id || null;\n      });''',
-          )
-
-          conversations = "artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx"
-          replace_once(
-              conversations,
-              '''import React, { useEffect, useMemo, useState } from 'react';''',
-              '''import React, { useEffect, useMemo, useRef, useState } from 'react';''',
-          )
-          replace_once(
-              conversations,
-              '''function makeIdempotencyKey() {''',
-              '''function requestedConversationId(): string {\n  if (typeof window === 'undefined') return '';\n  return new URLSearchParams(window.location.search).get('conversation')?.trim() || '';\n}\n\nfunction makeIdempotencyKey() {''',
-          )
-          replace_once(
-              conversations,
-              '''  const [conversations, setConversations] = useState<Conversation[]>([]);\n  const [activeConvId, setActiveConvId] = useState<string | null>(null);''',
-              '''  const [conversations, setConversations] = useState<Conversation[]>([]);\n  const linkedConversationIdRef = useRef(requestedConversationId());\n  const [activeConvId, setActiveConvId] = useState<string | null>(null);''',
-          )
-          replace_once(
-              conversations,
-              '''      setActiveConvId(currentActiveId => {\n        if (\n          currentActiveId &&\n          apiConversations.some(conversation => conversation.id === currentActiveId)\n        ) {\n          return currentActiveId;\n        }\n        return null;\n      });''',
-              '''      setActiveConvId(currentActiveId => {\n        const linkedConversationId = linkedConversationIdRef.current;\n        linkedConversationIdRef.current = '';\n        if (\n          linkedConversationId &&\n          apiConversations.some(conversation => conversation.id === linkedConversationId)\n        ) {\n          return linkedConversationId;\n        }\n        if (\n          currentActiveId &&\n          apiConversations.some(conversation => conversation.id === currentActiveId)\n        ) {\n          return currentActiveId;\n        }\n        return null;\n      });''',
-          )
-
-          test_path = Path("artifacts/api-server/tests/operational-notifications.test.ts")
-          if test_path.exists():
-              raise SystemExit(f"unexpected existing file: {test_path}")
-          test_path.write_text(r'''import assert from "node:assert/strict";
-          import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
-          import os from "node:os";
-          import path from "node:path";
-          import test from "node:test";
-
-          function merchant(id: string) {
-            return {
-              id,
-              owner_name: `Owner ${id}`,
-              store_name: `Store ${id}`,
-              phone: id === "merchant-a" ? "07111111111" : "07222222222",
-              password: `Password-${id}-1!`,
-              activity_type: "retail",
-              status: "approved",
-              account_status: "approved",
-              onboarding_status: "channel_connected",
-              trial_status: "active",
-              signup_source: "direct",
-              language: "en",
-              theme_preference: "auto",
-              created_at: "2026-08-01T00:00:00.000Z",
-              otp_verified: true,
-              warning_stage: 0,
-              retention_status: "protected",
-            };
-          }
-
-          test("operational notifications are authoritative, deduplicated, tenant-scoped, and privacy-minimal", async (t) => {
-            const root = await mkdtemp(path.join(os.tmpdir(), "fawri-operational-notifications-"));
-            const dataDir = path.join(root, "data");
-            await mkdir(dataDir, { recursive: true });
-            t.after(async () => rm(root, { recursive: true, force: true }));
-
-            process.env.NODE_ENV = "test";
-            process.env.FAWRI_DATA_DIR = dataDir;
-            process.env.FAWRI_PASSWORD_SALT = "operational-test-password-salt";
-            process.env.FAWRI_ADMIN_SESSION_SECRET = "operational-test-admin-secret";
-            process.env.FAWRI_MERCHANT_SESSION_SECRET = "operational-test-merchant-secret";
-            process.env.FAWRI_DISABLE_JOB_WORKERS = "1";
-
-            const existingNotification = {
-              id: "existing-balance",
-              merchant_id: "merchant-a",
-              type: "subscription_balance_purchase",
-              purchased_replies: 100,
-              emergency_debt_paid: 0,
-              addon_replies_added: 100,
-              emergency_debt_remaining: 0,
-              base_replies_remaining: 1000,
-              emergency_replies_remaining: 0,
-              addon_replies_remaining: 100,
-              total_replies_available: 1100,
-              created_at: "2026-08-01T00:00:00.000Z",
-            };
-            await writeFile(
-              path.join(dataDir, "merchants.json"),
-              JSON.stringify({
-                merchants: [merchant("merchant-a"), merchant("merchant-b")],
-                subscriptions: [],
-                otps: [],
-                admin_logs: [],
-                merchant_notifications: [existingNotification],
-                support_tickets: [],
-                deletion_requests: [],
-                channel_overrides: {},
-                admin_notes: {},
-              }),
-            );
-            await writeFile(
-              path.join(dataDir, "fawri-runtime-db.json"),
-              JSON.stringify({
-                productsByMerchant: {},
-                conversationsByMerchant: {},
-                metaPagesByPageId: {},
-                ordersByMerchant: {},
-                orderDraftsByConversation: {},
-                lastSyncedMerchantId: null,
-              }),
-            );
-
-            const routeModule = await import(`../src/routes/index.ts?operational=${Date.now()}`);
-            const authModule = await import("../src/routes/auth.ts");
-
-            const order = routeModule.createOrder({
-              merchantId: "merchant-a",
-              conversationId: "messenger-customer-a",
-              customerId: "customer-a",
-              customerName: "Customer A",
-              customerPhone: "07123456789",
-              customerAddress: "Baghdad",
-              productName: "Product A",
-              quantity: 1,
-              unitPrice: 25000,
-            });
-
-            let authDb = JSON.parse(await readFile(path.join(dataDir, "merchants.json"), "utf8"));
-            let orderNotifications = authDb.merchant_notifications.filter(
-              (item: { type?: string; order_id?: string }) =>
-                item.type === "operational_new_order" && item.order_id === order.id,
-            );
-            assert.equal(orderNotifications.length, 1);
-            assert.equal(orderNotifications[0].merchant_id, "merchant-a");
-            assert.equal(orderNotifications[0].conversation_id, "messenger-customer-a");
-            assert.equal(orderNotifications[0].action_url, `/dashboard/orders?order=${encodeURIComponent(order.id)}`);
-            assert.equal(orderNotifications[0].read_at, undefined);
-
-            const duplicateOrder = authModule.notifyMerchantNewOrder({
-              merchantId: "merchant-a",
-              orderId: order.id,
-              conversationId: "messenger-customer-a",
-              createdAt: order.created_at,
-            });
-            assert.equal(duplicateOrder.deduplicated, true);
-            authDb = JSON.parse(await readFile(path.join(dataDir, "merchants.json"), "utf8"));
-            orderNotifications = authDb.merchant_notifications.filter(
-              (item: { type?: string; order_id?: string }) =>
-                item.type === "operational_new_order" && item.order_id === order.id,
-            );
-            assert.equal(orderNotifications.length, 1, "order retry duplicated notification");
-
-            routeModule.saveMessengerConversation({
-              merchantId: "merchant-a",
-              customerId: "customer-a",
-              userText: "private customer text must not enter notification payload",
-              botReply: "reply",
-              externalMessageId: "mid-customer-a-1",
-              sourceEventId: "meta:page-a:mid-customer-a-1",
-              replyStatus: "failed",
-            });
-            routeModule.saveMessengerConversation({
-              merchantId: "merchant-a",
-              customerId: "customer-a",
-              userText: "private customer text must not enter notification payload",
-              botReply: "reply",
-              externalMessageId: "mid-customer-a-1",
-              sourceEventId: "meta:page-a:mid-customer-a-1",
-              replyStatus: "failed",
-            });
-
-            authDb = JSON.parse(await readFile(path.join(dataDir, "merchants.json"), "utf8"));
-            const messageNotifications = authDb.merchant_notifications.filter(
-              (item: { type?: string; conversation_id?: string }) =>
-                item.type === "operational_customer_message" &&
-                item.conversation_id === "messenger-customer-a",
-            );
-            assert.equal(messageNotifications.length, 1, "message retry duplicated notification");
-            assert.equal(messageNotifications[0].merchant_id, "merchant-a");
-            assert.equal(
-              messageNotifications[0].action_url,
-              "/dashboard/conversations?conversation=messenger-customer-a",
-            );
-            assert.equal(Object.hasOwn(messageNotifications[0], "body"), false);
-            assert.equal(Object.hasOwn(messageNotifications[0], "text"), false);
-            assert.equal(
-              JSON.stringify(messageNotifications[0]).includes("private customer text"),
-              false,
-            );
-
-            assert.ok(
-              authDb.merchant_notifications.some(
-                (item: { id?: string; type?: string }) =>
-                  item.id === "existing-balance" && item.type === "subscription_balance_purchase",
-              ),
-              "existing notification type was dropped",
-            );
-            assert.equal(
-              authDb.merchant_notifications.filter(
-                (item: { merchant_id?: string }) => item.merchant_id === "merchant-b",
-              ).length,
-              0,
-              "merchant A event leaked to merchant B",
-            );
-
-            const missingMerchant = authModule.notifyMerchantNewCustomerMessage({
-              merchantId: "merchant-missing",
-              conversationId: "messenger-missing",
-              sourceEventId: "meta:missing:event",
-            });
-            assert.equal(missingMerchant.notification, null);
-            assert.equal(missingMerchant.skipped, "merchant_not_found");
-
-            const runtimeDb = JSON.parse(
-              await readFile(path.join(dataDir, "fawri-runtime-db.json"), "utf8"),
-            );
-            assert.equal(runtimeDb.ordersByMerchant["merchant-a"].length, 1);
-            assert.equal(runtimeDb.ordersByMerchant["merchant-a"][0].id, order.id);
-            assert.equal(runtimeDb.conversationsByMerchant["merchant-a"].length, 1);
-            assert.equal(
-              runtimeDb.conversationsByMerchant["merchant-a"][0].messages.filter(
-                (item: { sender?: string }) => item.sender === "customer",
-              ).length,
-              1,
-              "duplicate inbound message changed conversation authority",
-            );
-          });
-          '''.replace("          ", ""))
-
-          manual_test = "artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs"
-          replace_once(
-              manual_test,
-              '''  assert.equal(suppressedInboundMessages[0].counted_as_auto_reply, false);\n  assert.equal(suppressedInboundMessages[0].status, "received");\n\n  const requestKey = "manual-success-request-0001";''',
-              '''  assert.equal(suppressedInboundMessages[0].counted_as_auto_reply, false);\n  assert.equal(suppressedInboundMessages[0].status, "received");\n\n  const notificationsAfterInbound = await jsonResponse(\n    await apiFetch("/api/auth/notifications?limit=50", {\n      headers: authenticatedHeaders,\n    }),\n  );\n  assert.equal(notificationsAfterInbound.response.status, 200);\n  const inboundNotifications = notificationsAfterInbound.body.notifications.filter(\n    (notification) => notification.type === "operational_customer_message",\n  );\n  assert.equal(inboundNotifications.length, 1);\n  assert.equal(inboundNotifications[0].merchant_id, "merchant-a");\n  assert.equal(inboundNotifications[0].conversation_id, "messenger-customer-a");\n  assert.equal(\n    inboundNotifications[0].action_url,\n    "/dashboard/conversations?conversation=messenger-customer-a",\n  );\n  assert.equal(Object.hasOwn(inboundNotifications[0], "body"), false);\n  assert.equal(Object.hasOwn(inboundNotifications[0], "text"), false);\n\n  const duplicateSuppressed = await apiFetch("/api/meta/webhook", {\n    method: "POST",\n    headers: {\n      "Content-Type": "application/json",\n      "X-Hub-Signature-256": signed.signature,\n    },\n    body: signed.rawBody,\n  });\n  assert.equal(duplicateSuppressed.status, 200);\n  const notificationsAfterRetry = await jsonResponse(\n    await apiFetch("/api/auth/notifications?limit=50", {\n      headers: authenticatedHeaders,\n    }),\n  );\n  assert.equal(\n    notificationsAfterRetry.body.notifications.filter(\n      (notification) => notification.type === "operational_customer_message",\n    ).length,\n    1,\n    "duplicate Meta webhook duplicated merchant notification",\n  );\n\n  const requestKey = "manual-success-request-0001";''',
-          )
-          replace_once(
-              manual_test,
-              '''  assert.deepEqual(fakeMeta.requests[0].body, {\n    recipient: { id: "customer-a" },\n    message: { text: "Manual reply sent" },\n  });\n\n  const duplicate = await jsonResponse(''',
-              '''  assert.deepEqual(fakeMeta.requests[0].body, {\n    recipient: { id: "customer-a" },\n    message: { text: "Manual reply sent" },\n  });\n\n  const notificationsAfterOutbound = await jsonResponse(\n    await apiFetch("/api/auth/notifications?limit=50", {\n      headers: authenticatedHeaders,\n    }),\n  );\n  assert.equal(\n    notificationsAfterOutbound.body.notifications.filter(\n      (notification) => notification.type === "operational_customer_message",\n    ).length,\n    1,\n    "manual outbound reply masqueraded as inbound notification",\n  );\n\n  const unreadBeforeRead = await jsonResponse(\n    await apiFetch("/api/auth/notifications?unread=1&limit=50", {\n      headers: authenticatedHeaders,\n    }),\n  );\n  assert.equal(\n    unreadBeforeRead.body.notifications.filter(\n      (notification) => notification.type === "operational_customer_message",\n    ).length,\n    1,\n  );\n  const markNotificationRead = await jsonResponse(\n    await apiFetch(\n      `/api/auth/notifications/${encodeURIComponent(inboundNotifications[0].id)}/read`,\n      { method: "PATCH", headers: authenticatedHeaders },\n    ),\n  );\n  assert.equal(markNotificationRead.response.status, 200);\n  assert.ok(markNotificationRead.body.notification.read_at);\n  const unreadAfterRead = await jsonResponse(\n    await apiFetch("/api/auth/notifications?unread=1&limit=50", {\n      headers: authenticatedHeaders,\n    }),\n  );\n  assert.equal(\n    unreadAfterRead.body.notifications.filter(\n      (notification) => notification.type === "operational_customer_message",\n    ).length,\n    0,\n  );\n\n  const merchantBLogin = await jsonResponse(\n    await apiFetch("/api/auth/login", {\n      method: "POST",\n      headers: { "Content-Type": "application/json" },\n      body: JSON.stringify({\n        phone: merchantB.phone,\n        password: merchantB.password,\n      }),\n    }),\n  );\n  assert.equal(merchantBLogin.response.status, 200, JSON.stringify(merchantBLogin.body));\n  const merchantBCookie = cookiePair(getSetCookie(merchantBLogin.response));\n  const merchantBNotifications = await jsonResponse(\n    await apiFetch("/api/auth/notifications?limit=50", {\n      headers: { Cookie: merchantBCookie },\n    }),\n  );\n  assert.equal(merchantBNotifications.response.status, 200);\n  assert.equal(\n    merchantBNotifications.body.notifications.some(\n      (notification) => notification.merchant_id === "merchant-a",\n    ),\n    false,\n    "merchant B could read merchant A notification",\n  );\n\n  const duplicate = await jsonResponse(''',
-          )
-          PY
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -448,31 +83,3 @@ jobs:
         run: |
           pnpm --filter @workspace/fawri typecheck
           pnpm --filter @workspace/fawri build
-
-      - name: Verify coordinator before commit
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin parallel/integration-coordinator parallel/operational-order-message-notifications
-          test "$(git rev-parse origin/parallel/integration-coordinator)" = "b37103b95d6225aaff092fb781d0bf635564f745"
-          test "$(git rev-parse origin/parallel/operational-order-message-notifications)" = "$GITHUB_SHA"
-
-      - name: Commit implementation
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add \
-            artifacts/api-server/src/routes/auth.ts \
-            artifacts/api-server/src/routes/index.ts \
-            artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts \
-            artifacts/api-server/tests/operational-notifications.test.ts \
-            artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs \
-            artifacts/fawri/src/lib/types.ts \
-            artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx \
-            artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx \
-            artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx
-          git diff --cached --check
-          git commit -m "feat: add operational merchant notifications"
-          git push origin HEAD:parallel/operational-order-message-notifications
