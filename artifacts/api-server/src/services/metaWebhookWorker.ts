@@ -9,7 +9,7 @@ import {
   type ExpiredJobResolution,
 } from "./durableJobQueue";
 import { removeFailedMetaWebhookAttempt } from "./metaWebhookOutcome";
-import { refundMerchantAutoReply } from "./merchantReplyRefund";
+import { refundMerchantAutoReplyAuthoritative } from "./merchantReplyRefundAuthority";
 import { createMetaChannelDisconnectHandler } from "./metaChannelJobs";
 import { merchantAllowsAutoReply } from "./merchantSettingsRuntime";
 import {
@@ -51,7 +51,9 @@ function jobError(
   });
 }
 
-function processMetaReplyRefundJob(job: DurableJob): Record<string, unknown> {
+async function processMetaReplyRefundJob(
+  job: DurableJob,
+): Promise<Record<string, unknown>> {
   const eventId = text(job.payload?.event_id || job.dedupe_key);
   if (!eventId) {
     throw jobError(
@@ -64,7 +66,10 @@ function processMetaReplyRefundJob(job: DurableJob): Record<string, unknown> {
 
   let refund;
   try {
-    refund = refundMerchantAutoReply(eventId, "META_REPLY_FAILED");
+    refund = await refundMerchantAutoReplyAuthoritative(
+      eventId,
+      "META_REPLY_FAILED",
+    );
   } catch {
     throw jobError(
       "META_REPLY_REFUND_UNAVAILABLE",
@@ -142,13 +147,13 @@ async function processClaimedMetaReplyJob(
   });
 }
 
-function reconcileExpiredMetaJob(
+async function reconcileExpiredMetaJob(
   job: DurableJob,
   replyTransport: MetaWebhookReplyTransport,
-): ExpiredJobResolution {
+): Promise<ExpiredJobResolution> {
   if (job.type === META_REPLY_REFUND_JOB_TYPE) {
     try {
-      return { action: "complete", result: processMetaReplyRefundJob(job) };
+      return { action: "complete", result: await processMetaReplyRefundJob(job) };
     } catch (error) {
       const failure = error as {
         code?: unknown;

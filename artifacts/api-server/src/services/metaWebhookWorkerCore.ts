@@ -4,11 +4,11 @@ import {
   getMerchantOperationalSettings,
   type MerchantOperationalSettings,
 } from "./merchantSettingsRuntime";
-import { reserveMerchantAutoReply } from "./merchantReplyEntitlement";
+import { reserveMerchantAutoReplyAuthoritative } from "./merchantReplyEntitlementAuthority";
 import {
-  releaseMerchantAutoReplyReservation,
+  releaseMerchantAutoReplyReservationAuthoritative,
   type MerchantReplyReleaseCode,
-} from "./merchantReplyReservationRelease";
+} from "./merchantReplyReservationReleaseAuthority";
 import type {
   MetaWebhookReplyTransport,
   MetaWebhookReplyTransportState,
@@ -136,14 +136,17 @@ function throwIfOutcomeUncertain(state: MetaWebhookReplyTransportState | null): 
   }
 }
 
-function releaseAndSuppress(input: {
+async function releaseAndSuppress(input: {
   eventId: string;
   merchantId: string;
   settingsVersion: number;
   code: MerchantReplyReleaseCode;
   transport: MetaWebhookReplyTransport;
-}): Record<string, unknown> {
-  const released = releaseMerchantAutoReplyReservation(input.eventId, input.code);
+}): Promise<Record<string, unknown>> {
+  const released = await releaseMerchantAutoReplyReservationAuthoritative(
+    input.eventId,
+    input.code,
+  );
   if (
     !released.released &&
     released.reason !== "already_released"
@@ -225,7 +228,7 @@ export async function processMetaReplyJob(
     existingState.settings_version !== claimedSettings.version
   ) {
     if (existingState.status === "reserved" || existingState.status === "failed") {
-      return releaseAndSuppress({
+      return await releaseAndSuppress({
         eventId,
         merchantId,
         settingsVersion: existingState.settings_version,
@@ -263,7 +266,7 @@ export async function processMetaReplyJob(
 
   let reservation;
   try {
-    reservation = reserveMerchantAutoReply(merchantId, eventId);
+    reservation = await reserveMerchantAutoReplyAuthoritative(merchantId, eventId);
   } catch {
     throw jobError(
       "MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE",
@@ -302,7 +305,7 @@ export async function processMetaReplyJob(
       settingsVersion: claimedSettings.version,
     });
   } catch {
-    return releaseAndSuppress({
+    return await releaseAndSuppress({
       eventId,
       merchantId,
       settingsVersion: claimedSettings.version,
@@ -312,7 +315,7 @@ export async function processMetaReplyJob(
   }
 
   if (reservedState.settings_version !== claimedSettings.version) {
-    return releaseAndSuppress({
+    return await releaseAndSuppress({
       eventId,
       merchantId,
       settingsVersion: reservedState.settings_version,
@@ -377,7 +380,7 @@ export async function processMetaReplyJob(
       code === "MERCHANT_SETTINGS_VERSION_CHANGED" ||
       code === "MERCHANT_SETTINGS_UNAVAILABLE"
     ) {
-      return releaseAndSuppress({
+      return await releaseAndSuppress({
         eventId,
         merchantId,
         settingsVersion: claimedSettings.version,
@@ -413,7 +416,7 @@ export async function processMetaReplyJob(
     );
   }
 
-  return releaseAndSuppress({
+  return await releaseAndSuppress({
     eventId,
     merchantId,
     settingsVersion: claimedSettings.version,
