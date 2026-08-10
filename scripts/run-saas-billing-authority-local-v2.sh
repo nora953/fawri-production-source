@@ -32,6 +32,35 @@ if old not in text:
     raise SystemExit("STOP: base runner guarantee path block changed unexpectedly")
 text = text.replace(old, new, 1)
 
+# Raw historical SQL contains composite foreign keys whose required UNIQUE
+# constraints appear later in the same migration file. The repository already
+# ships the canonical dependency-order stabilizer for applying that history.
+# Use it for the disposable test database instead of mutating committed SQL.
+old_apply = '''apply_migrations() {
+  for migration in lib/db/drizzle/[0-9][0-9][0-9][0-9]_*.sql; do
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$migration"
+  done
+}
+'''
+new_apply = '''apply_migrations() {
+  local stabilized rc
+  stabilized="$(node --input-type=module - <<'NODE'
+import { createStabilizedMigrationFolder } from "./lib/db/scripts/lib/migration-sql-order.mjs";
+process.stdout.write(createStabilizedMigrationFolder("./lib/db/drizzle"));
+NODE
+)"
+  rc=0
+  for migration in "$stabilized"/[0-9][0-9][0-9][0-9]_*.sql; do
+    psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q -f "$migration" || { rc=$?; break; }
+  done
+  rm -rf "$stabilized"
+  return "$rc"
+}
+'''
+if old_apply not in text:
+    raise SystemExit("STOP: base runner raw migration apply block changed unexpectedly")
+text = text.replace(old_apply, new_apply, 1)
+
 old_cleanup = '''rm -f scripts/.tmp-saas-billing-authority.py \\
   scripts/.tmp-saas-billing-authority-2.py \\
   scripts/run-saas-billing-authority-local.sh\n'''
