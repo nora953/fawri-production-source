@@ -47,6 +47,11 @@ merge_base="$(git merge-base "$start_lane" "$coordinator")"
   exit 33
 }
 
+if [[ ! -d "$ROOT/node_modules" ]]; then
+  echo "STOP: the existing repository node_modules directory is missing; refusing a network install." >&2
+  exit 37
+fi
+
 WORKTREE="${TMPDIR:-/tmp}/fawri-delivery-fee-per-area-$$"
 REPRO="${TMPDIR:-/tmp}/fawri-delivery-fee-per-area-repro-$$"
 cleanup() {
@@ -62,6 +67,30 @@ cleanup() {
 trap cleanup EXIT
 
 git worktree add --detach "$WORKTREE" "$start_lane"
+
+# Reuse the already installed dependency trees without contacting npm. Copying with
+# hard links preserves pnpm's relative workspace links so they resolve to this
+# isolated worktree, not to the original checkout. Fall back to a normal copy only
+# if the temporary directory is on a different filesystem.
+node_modules_count=0
+while IFS= read -r source_dir; do
+  relative="${source_dir#"$ROOT"/}"
+  destination="$WORKTREE/$relative"
+  mkdir -p "$(dirname "$destination")"
+  rm -rf "$destination"
+  if ! cp -al "$source_dir" "$destination" 2>/dev/null; then
+    cp -a "$source_dir" "$destination"
+  fi
+  node_modules_count=$((node_modules_count + 1))
+done < <(find "$ROOT" -mindepth 1 -maxdepth 4 -type d -name node_modules -prune -print)
+
+if [[ "$node_modules_count" -lt 1 || ! -d "$WORKTREE/node_modules/.pnpm" ]]; then
+  echo "STOP: existing pnpm dependency tree is incomplete; no network fallback was attempted." >&2
+  exit 38
+fi
+
+echo "Reused $node_modules_count existing node_modules tree(s); npm network access is disabled for this validation."
+
 cd "$WORKTREE"
 
 python3 scripts/.tmp-delivery-fee-per-area-1.py
@@ -71,7 +100,7 @@ python3 scripts/.tmp-delivery-fee-per-area-4.py
 python3 scripts/.tmp-delivery-fee-per-area-5.py
 
 corepack enable
-pnpm install --frozen-lockfile --ignore-scripts
+pnpm --version
 
 pnpm --filter @workspace/db run schema:generate
 rm -rf "$REPRO"
