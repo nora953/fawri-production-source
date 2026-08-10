@@ -54,7 +54,6 @@ fi
 
 TMPBASE="${TMPDIR:-/tmp}"
 mkdir -p "$TMPBASE"
-# Clean only stale worktrees created by this validation runner.
 for stale in "$TMPBASE"/fawri-delivery-fee-per-area-*; do
   [[ -e "$stale" ]] || continue
   git worktree remove --force "$stale" >/dev/null 2>&1 || rm -rf "$stale"
@@ -77,8 +76,6 @@ trap cleanup EXIT
 
 git worktree add --detach "$WORKTREE" "$start_lane"
 
-# Reuse already-installed dependency trees. No package-manager install command is
-# allowed in this runner. Hard links preserve pnpm's relative package layout.
 node_modules_count=0
 while IFS= read -r source_dir; do
   relative="${source_dir#"$ROOT"/}"
@@ -110,6 +107,31 @@ for required in \
   }
 done
 
+reset_disposable_database() {
+  node --input-type=module <<'NODE'
+import { createRequire } from "node:module";
+import path from "node:path";
+const require = createRequire(path.resolve("lib/db/package.json"));
+const { Client } = require("pg");
+const client = new Client({ connectionString: process.env.DATABASE_URL });
+await client.connect();
+try {
+  await client.query("DROP SCHEMA IF EXISTS drizzle CASCADE");
+  await client.query("DROP SCHEMA IF EXISTS public CASCADE");
+  await client.query("CREATE SCHEMA public");
+} finally {
+  await client.end();
+}
+NODE
+}
+
+# Historical proof belongs to the committed 0004 boundary. Run it before this
+# lane creates 0005, on an explicitly empty disposable database.
+reset_disposable_database
+FAWRI_ALLOW_PRODUCT_MEASUREMENT_MIGRATION_TEST=1 \
+  node ./lib/db/scripts/test-product-shipping-measurements-upgrade.mjs
+reset_disposable_database
+
 python3 scripts/.tmp-delivery-fee-per-area-1.py
 python3 scripts/.tmp-delivery-fee-per-area-2.py
 python3 scripts/.tmp-delivery-fee-per-area-3.py
@@ -117,9 +139,9 @@ python3 scripts/.tmp-delivery-fee-per-area-4.py
 python3 scripts/.tmp-delivery-fee-per-area-5.py
 python3 scripts/.tmp-delivery-fee-per-area-6.py
 
-# The canonical generator normally shells through `pnpm exec drizzle-kit`.
-# For this offline validation only, point it directly at the already-installed
-# package binary. This temporary change is restored to Golden before final diff.
+# The canonical generator normally shells through pnpm exec drizzle-kit. For
+# this offline validation only, invoke the already-installed binary directly;
+# restore the canonical generator before any final diff/commit.
 python3 - <<'PY'
 from pathlib import Path
 path = Path("lib/db/scripts/generate-migration.mjs")
@@ -172,10 +194,16 @@ git diff --exit-code "$GOLDEN" -- \
   lib/db/drizzle/meta/0003_snapshot.json \
   lib/db/drizzle/meta/0004_snapshot.json
 
-# Full script-level migration/authority suite on real local PostgreSQL.
+# The full migration suite assumes fawri_ci is initially empty. Do not inherit
+# database state from any earlier validation attempt.
+reset_disposable_database
 node --test --test-concurrency=1 ./scripts/tests/*.test.mjs
+
+# Run the final 0005 chain smoke independently, then remove its database state
+# before non-migration tests.
+reset_disposable_database
 FAWRI_ALLOW_MIGRATION_SMOKE=1 node lib/db/scripts/smoke-migration.mjs
-FAWRI_ALLOW_PRODUCT_MEASUREMENT_MIGRATION_TEST=1 node ./lib/db/scripts/test-product-shipping-measurements-upgrade.mjs
+reset_disposable_database
 
 node_modules/.bin/tsx --test \
   artifacts/api-server/tests/delivery-fee-per-area.test.ts \
@@ -201,7 +229,7 @@ node_modules/.bin/tsc -p artifacts/fawri/tsconfig.json --noEmit
   ./node_modules/.bin/vite build --config vite.config.ts
 )
 
-# Return all shared/temporary CI machinery to the Golden tree before final commit.
+# Return every temporary/staging artifact to the Golden tree before commit.
 git checkout "$GOLDEN" -- .github/workflows/product-shipping-measurements.yml
 rm -f \
   .github/workflows/delivery-fee-per-area.yml \
