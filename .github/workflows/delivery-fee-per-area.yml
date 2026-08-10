@@ -68,6 +68,7 @@ jobs:
           python3 scripts/.tmp-delivery-fee-per-area-2.py
           python3 scripts/.tmp-delivery-fee-per-area-3.py
           python3 scripts/.tmp-delivery-fee-per-area-4.py
+          python3 scripts/.tmp-delivery-fee-per-area-5.py
 
       - name: Enable Corepack
         run: corepack enable
@@ -158,6 +159,7 @@ jobs:
             scripts/.tmp-delivery-fee-per-area-2.py \
             scripts/.tmp-delivery-fee-per-area-3.py \
             scripts/.tmp-delivery-fee-per-area-4.py \
+            scripts/.tmp-delivery-fee-per-area-5.py \
             .github/workflows/delivery-fee-per-area.yml
 
           git diff --check "$GOLDEN_SHA"
