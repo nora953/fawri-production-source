@@ -24,9 +24,10 @@ text = text.replace(old_lane, new_lane, 1)
 
 # Patches 3/4 update migration tests that historically pinned 0005 as the
 # forever-latest migration. Patch 5 updates the Guarantee SQL-shape proof to
-# require the new billing joins while preserving tenant binding.
+# require the new billing joins while preserving tenant binding. Patch 6 makes
+# disposable PostgreSQL acceptance independent of prior test database state.
 old = "python3 scripts/.tmp-saas-billing-authority-2.py\n"
-new = old + "python3 scripts/.tmp-saas-billing-authority-3.py\npython3 scripts/.tmp-saas-billing-authority-4.py\npython3 scripts/.tmp-saas-billing-authority-5.py\n"
+new = old + "python3 scripts/.tmp-saas-billing-authority-3.py\npython3 scripts/.tmp-saas-billing-authority-4.py\npython3 scripts/.tmp-saas-billing-authority-5.py\npython3 scripts/.tmp-saas-billing-authority-6.py\n"
 if old not in text:
     raise SystemExit("STOP: base runner staging patch block changed unexpectedly")
 text = text.replace(old, new, 1)
@@ -82,6 +83,7 @@ new_cleanup = '''rm -f scripts/.tmp-saas-billing-authority.py \\
   scripts/.tmp-saas-billing-authority-3.py \\
   scripts/.tmp-saas-billing-authority-4.py \\
   scripts/.tmp-saas-billing-authority-5.py \\
+  scripts/.tmp-saas-billing-authority-6.py \\
   scripts/run-saas-billing-authority-local.sh \\
   scripts/run-saas-billing-authority-local-v2.sh \\
   scripts/run-saas-billing-authority-local-v3.sh\n'''
