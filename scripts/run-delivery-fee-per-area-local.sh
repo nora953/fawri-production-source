@@ -47,8 +47,8 @@ merge_base="$(git merge-base "$start_lane" "$coordinator")"
   exit 33
 }
 
-if [[ ! -d "$ROOT/node_modules" ]]; then
-  echo "STOP: the existing repository node_modules directory is missing; refusing a network install." >&2
+if [[ ! -d "$ROOT/node_modules/.pnpm" ]]; then
+  echo "STOP: existing pnpm dependency tree is missing; refusing network installation." >&2
   exit 37
 fi
 
@@ -68,10 +68,8 @@ trap cleanup EXIT
 
 git worktree add --detach "$WORKTREE" "$start_lane"
 
-# Reuse the already installed dependency trees without contacting npm. Copying with
-# hard links preserves pnpm's relative workspace links so they resolve to this
-# isolated worktree, not to the original checkout. Fall back to a normal copy only
-# if the temporary directory is on a different filesystem.
+# Reuse already-installed dependency trees. No package-manager install command is
+# allowed in this runner. Hard links preserve pnpm's relative package layout.
 node_modules_count=0
 while IFS= read -r source_dir; do
   relative="${source_dir#"$ROOT"/}"
@@ -85,13 +83,23 @@ while IFS= read -r source_dir; do
 done < <(find "$ROOT" -mindepth 1 -maxdepth 4 -type d -name node_modules -prune -print)
 
 if [[ "$node_modules_count" -lt 1 || ! -d "$WORKTREE/node_modules/.pnpm" ]]; then
-  echo "STOP: existing pnpm dependency tree is incomplete; no network fallback was attempted." >&2
+  echo "STOP: copied dependency tree is incomplete; no network fallback attempted." >&2
   exit 38
 fi
 
-echo "Reused $node_modules_count existing node_modules tree(s); npm network access is disabled for this validation."
-
 cd "$WORKTREE"
+echo "Reused $node_modules_count existing node_modules tree(s). Running fully offline without pnpm install/run/exec."
+
+for required in \
+  node_modules/.bin/tsx \
+  node_modules/.bin/tsc \
+  artifacts/fawri/node_modules/.bin/vite \
+  lib/db/node_modules/.bin/drizzle-kit; do
+  [[ -x "$required" ]] || {
+    echo "STOP: required existing local binary is missing: $required" >&2
+    exit 39
+  }
+done
 
 python3 scripts/.tmp-delivery-fee-per-area-1.py
 python3 scripts/.tmp-delivery-fee-per-area-2.py
@@ -99,15 +107,50 @@ python3 scripts/.tmp-delivery-fee-per-area-3.py
 python3 scripts/.tmp-delivery-fee-per-area-4.py
 python3 scripts/.tmp-delivery-fee-per-area-5.py
 
-corepack enable
-pnpm --version
+# The canonical generator normally shells through `pnpm exec drizzle-kit`.
+# For this offline validation only, point it directly at the already-installed
+# package binary. This temporary change is restored to Golden before final diff.
+python3 - <<'PY'
+from pathlib import Path
+path = Path("lib/db/scripts/generate-migration.mjs")
+text = path.read_text(encoding="utf-8")
+old = '''  const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+  const result = spawnSync(
+    command,
+    [
+      "exec",
+      "drizzle-kit",
+      "generate",
+      "--config",
+      configPath,
+      "--name",
+      migrationName,
+    ],'''
+new = '''  const command = path.join(dbRoot, "node_modules", ".bin", "drizzle-kit");
+  const result = spawnSync(
+    command,
+    [
+      "generate",
+      "--config",
+      configPath,
+      "--name",
+      migrationName,
+    ],'''
+if old not in text:
+    raise SystemExit("STOP: canonical generator command shape changed unexpectedly")
+path.write_text(text.replace(old, new, 1), encoding="utf-8")
+PY
 
-pnpm --filter @workspace/db run schema:generate
+# Canonical migration generation, without pnpm.
+node lib/db/scripts/generate-migration.mjs
 rm -rf "$REPRO"
-FAWRI_MIGRATION_OUTPUT_DIR="$REPRO" pnpm --filter @workspace/db run schema:generate
+FAWRI_MIGRATION_OUTPUT_DIR="$REPRO" node lib/db/scripts/generate-migration.mjs
 cmp lib/db/drizzle/0005_delivery_fee_per_area.sql "$REPRO/0005_delivery_fee_per_area.sql"
 cmp lib/db/drizzle/meta/0005_snapshot.json "$REPRO/meta/0005_snapshot.json"
 cmp lib/db/drizzle/meta/_journal.json "$REPRO/meta/_journal.json"
+
+# Restore the generator itself before assessing product diff.
+git checkout "$GOLDEN" -- lib/db/scripts/generate-migration.mjs
 
 git diff --exit-code "$GOLDEN" -- \
   lib/db/drizzle/0000_even_kulan_gath.sql \
@@ -121,28 +164,37 @@ git diff --exit-code "$GOLDEN" -- \
   lib/db/drizzle/meta/0003_snapshot.json \
   lib/db/drizzle/meta/0004_snapshot.json
 
-pnpm run migration:test
-FAWRI_ALLOW_MIGRATION_SMOKE=1 pnpm --filter @workspace/db run schema:smoke
+# PostgreSQL migration and smoke gates use Node directly.
+node --test --test-concurrency=1 ./scripts/tests/*.test.mjs
+FAWRI_ALLOW_MIGRATION_SMOKE=1 node lib/db/scripts/smoke-migration.mjs
 FAWRI_ALLOW_PRODUCT_MEASUREMENT_MIGRATION_TEST=1 node ./lib/db/scripts/test-product-shipping-measurements-upgrade.mjs
 
-pnpm --filter @workspace/api-server exec tsx --test \
-  ./tests/delivery-fee-per-area.test.ts \
-  ./tests/knowledge-delivery-area-rates.test.ts \
-  ./tests/knowledge-postgres-operational-facts.test.ts \
-  ./tests/orders-settings-runtime.test.ts
+# Runtime/Knowledge tests: local tsx binary only.
+node_modules/.bin/tsx --test \
+  artifacts/api-server/tests/delivery-fee-per-area.test.ts \
+  artifacts/api-server/tests/knowledge-delivery-area-rates.test.ts \
+  artifacts/api-server/tests/knowledge-postgres-operational-facts.test.ts \
+  artifacts/api-server/tests/orders-settings-runtime.test.ts
 node --test artifacts/api-server/tests/delivery-order-authority-static.test.mjs
 node --test scripts/tests/delivery-fee-per-area-audit.test.mjs
 node --test scripts/tests/delivery-fee-per-area-migration-history.test.mjs
 
-pnpm --filter @workspace/db run typecheck
-pnpm --filter @workspace/api-server run typecheck
-pnpm --filter @workspace/api-server run build
+# Typechecks/builds: direct local binaries or Node build entrypoints only.
+node_modules/.bin/tsc -p lib/db/tsconfig.json --noEmit
+node_modules/.bin/tsc -p artifacts/api-server/tsconfig.json --noEmit
+(
+  cd artifacts/api-server
+  node ./build.mjs
+)
 node --test artifacts/api-server/tests/merchant-settings.integration.test.mjs
-pnpm --filter @workspace/fawri exec tsx --test ./tests/delivery-fee-per-area-ui.test.ts
-pnpm --filter @workspace/fawri run typecheck
-pnpm --filter @workspace/fawri run build
+node_modules/.bin/tsx --test artifacts/fawri/tests/delivery-fee-per-area-ui.test.ts
+node_modules/.bin/tsc -p artifacts/fawri/tsconfig.json --noEmit
+(
+  cd artifacts/fawri
+  ./node_modules/.bin/vite build --config vite.config.ts
+)
 
-# Return all shared/temporary CI machinery to the Golden tree before the final commit.
+# Return all shared/temporary CI machinery to the Golden tree before final commit.
 git checkout "$GOLDEN" -- .github/workflows/product-shipping-measurements.yml
 rm -f \
   .github/workflows/delivery-fee-per-area.yml \
