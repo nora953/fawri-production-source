@@ -37,4 +37,17 @@ if old not in text:
 text = text.replace(old, new, 1)
 MIGRATION_TEST.write_text(text, encoding="utf-8")
 
+# A delivery-fee question can contain a generic price word such as Arabic
+# "شكد" or English "cost". Once a delivery term is present, that price word
+# modifies the delivery request and must not independently create product-price
+# intent; otherwise the resolver rejects a valid delivery question as ambiguous.
+KNOWLEDGE = ROOT / "artifacts/api-server/src/services/knowledge/postgresOperationalFactResolver.ts"
+text = KNOWLEDGE.read_text(encoding="utf-8")
+old = '''    const weight = containsAny(normalized, WEIGHT_TERMS);\n    const dimensions = containsAny(normalized, DIMENSION_TERMS);\n    const physicalIntent = weight || dimensions;\n    const kinds = {\n      delivery: containsAny(normalized, DELIVERY_TERMS),\n      payment: containsAny(normalized, PAYMENT_TERMS),\n      business: containsAny(normalized, BUSINESS_TERMS),\n      price: !physicalIntent && containsAny(normalized, PRICE_TERMS),'''
+new = '''    const weight = containsAny(normalized, WEIGHT_TERMS);\n    const dimensions = containsAny(normalized, DIMENSION_TERMS);\n    const physicalIntent = weight || dimensions;\n    const deliveryIntent = containsAny(normalized, DELIVERY_TERMS);\n    const kinds = {\n      delivery: deliveryIntent,\n      payment: containsAny(normalized, PAYMENT_TERMS),\n      business: containsAny(normalized, BUSINESS_TERMS),\n      price:\n        !physicalIntent &&\n        !deliveryIntent &&\n        containsAny(normalized, PRICE_TERMS),'''
+if old not in text:
+    raise SystemExit("delivery Knowledge intent classifier target not found")
+text = text.replace(old, new, 1)
+KNOWLEDGE.write_text(text, encoding="utf-8")
+
 print("patch 6 complete")
