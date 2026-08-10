@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { getMetaWebhookEventId } from "./metaWebhookSecurity";
 import { readMetaPageMerchantMap } from "../services/metaPageDirectory";
-import { reserveMerchantAutoReply } from "../services/merchantReplyEntitlement";
+import { reserveMerchantAutoReplyAuthoritative } from "../services/merchantReplyEntitlementAuthority";
 
 function isReplyEligibleEvent(event: unknown): boolean {
   if (!event || typeof event !== "object" || Array.isArray(event)) return false;
@@ -34,11 +34,11 @@ function sendInternalDecision(
   res.status(unavailable ? 503 : 409).json({ ok: false, code, error });
 }
 
-export function enforceMerchantWebhookSubscriptionAccess(
+export async function enforceMerchantWebhookSubscriptionAccess(
   req: Request,
   res: Response,
   next: NextFunction,
-): void {
+): Promise<void> {
   if (req.method !== "POST" || req.path !== "/api/meta/webhook") {
     next();
     return;
@@ -88,7 +88,10 @@ export function enforceMerchantWebhookSubscriptionAccess(
         }
 
         const eventId = getMetaWebhookEventId(pageId, event);
-        const decision = reserveMerchantAutoReply(merchantId, eventId);
+        const decision = await reserveMerchantAutoReplyAuthoritative(
+          merchantId,
+          eventId,
+        );
         if (decision.allowed) {
           if (!decision.duplicate) reservedReplies += 1;
           filteredMessaging.push(event);
