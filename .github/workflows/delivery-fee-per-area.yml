@@ -60,6 +60,25 @@ jobs:
           }
           echo "Coordinator and lane base verified at $GOLDEN_SHA"
 
+      - name: Publish diagnostic run marker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .ci
+          cat > .ci/delivery-fee-per-area-run.json <<EOF
+          {
+            "run_id": ${{ github.run_id }},
+            "run_attempt": ${{ github.run_attempt }},
+            "source_sha": "${{ github.sha }}",
+            "state": "started"
+          }
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .ci/delivery-fee-per-area-run.json
+          git commit -m "ci: mark delivery fee gate run ${{ github.run_id }}"
+          git push origin HEAD:parallel/delivery-fee-per-area
+
       - name: Apply implementation patches
         shell: bash
         run: |
@@ -160,6 +179,7 @@ jobs:
             scripts/.tmp-delivery-fee-per-area-3.py \
             scripts/.tmp-delivery-fee-per-area-4.py \
             scripts/.tmp-delivery-fee-per-area-5.py \
+            .ci/delivery-fee-per-area-run.json \
             .github/workflows/delivery-fee-per-area.yml
 
           git diff --check "$GOLDEN_SHA"
