@@ -52,16 +52,25 @@ if [[ ! -d "$ROOT/node_modules/.pnpm" ]]; then
   exit 37
 fi
 
-WORKTREE="${TMPDIR:-/tmp}/fawri-delivery-fee-per-area-$$"
-REPRO="${TMPDIR:-/tmp}/fawri-delivery-fee-per-area-repro-$$"
+TMPBASE="${TMPDIR:-/tmp}"
+mkdir -p "$TMPBASE"
+# Clean only stale worktrees created by this validation runner.
+for stale in "$TMPBASE"/fawri-delivery-fee-per-area-*; do
+  [[ -e "$stale" ]] || continue
+  git worktree remove --force "$stale" >/dev/null 2>&1 || rm -rf "$stale"
+done
+git worktree prune
+
+WORKTREE="$TMPBASE/fawri-delivery-fee-per-area-$$"
+REPRO="$TMPBASE/fawri-delivery-fee-per-area-repro-$$"
 cleanup() {
   status=$?
-  if [[ $status -eq 0 ]]; then
-    cd "$ROOT"
-    git worktree remove --force "$WORKTREE" >/dev/null 2>&1 || true
-    rm -rf "$REPRO"
-  else
-    echo "Validation stopped with exit $status. Worktree kept for inspection: $WORKTREE" >&2
+  cd "$ROOT" >/dev/null 2>&1 || true
+  git worktree remove --force "$WORKTREE" >/dev/null 2>&1 || rm -rf "$WORKTREE"
+  rm -rf "$REPRO"
+  git worktree prune >/dev/null 2>&1 || true
+  if [[ $status -ne 0 ]]; then
+    echo "Validation stopped with exit $status. Temporary validation worktree was cleaned." >&2
   fi
 }
 trap cleanup EXIT
@@ -106,6 +115,7 @@ python3 scripts/.tmp-delivery-fee-per-area-2.py
 python3 scripts/.tmp-delivery-fee-per-area-3.py
 python3 scripts/.tmp-delivery-fee-per-area-4.py
 python3 scripts/.tmp-delivery-fee-per-area-5.py
+python3 scripts/.tmp-delivery-fee-per-area-6.py
 
 # The canonical generator normally shells through `pnpm exec drizzle-kit`.
 # For this offline validation only, point it directly at the already-installed
@@ -141,7 +151,6 @@ if old not in text:
 path.write_text(text.replace(old, new, 1), encoding="utf-8")
 PY
 
-# Canonical migration generation, without pnpm.
 node lib/db/scripts/generate-migration.mjs
 rm -rf "$REPRO"
 FAWRI_MIGRATION_OUTPUT_DIR="$REPRO" node lib/db/scripts/generate-migration.mjs
@@ -149,7 +158,6 @@ cmp lib/db/drizzle/0005_delivery_fee_per_area.sql "$REPRO/0005_delivery_fee_per_
 cmp lib/db/drizzle/meta/0005_snapshot.json "$REPRO/meta/0005_snapshot.json"
 cmp lib/db/drizzle/meta/_journal.json "$REPRO/meta/_journal.json"
 
-# Restore the generator itself before assessing product diff.
 git checkout "$GOLDEN" -- lib/db/scripts/generate-migration.mjs
 
 git diff --exit-code "$GOLDEN" -- \
@@ -164,12 +172,11 @@ git diff --exit-code "$GOLDEN" -- \
   lib/db/drizzle/meta/0003_snapshot.json \
   lib/db/drizzle/meta/0004_snapshot.json
 
-# PostgreSQL migration and smoke gates use Node directly.
+# Full script-level migration/authority suite on real local PostgreSQL.
 node --test --test-concurrency=1 ./scripts/tests/*.test.mjs
 FAWRI_ALLOW_MIGRATION_SMOKE=1 node lib/db/scripts/smoke-migration.mjs
 FAWRI_ALLOW_PRODUCT_MEASUREMENT_MIGRATION_TEST=1 node ./lib/db/scripts/test-product-shipping-measurements-upgrade.mjs
 
-# Runtime/Knowledge tests: local tsx binary only.
 node_modules/.bin/tsx --test \
   artifacts/api-server/tests/delivery-fee-per-area.test.ts \
   artifacts/api-server/tests/knowledge-delivery-area-rates.test.ts \
@@ -178,8 +185,8 @@ node_modules/.bin/tsx --test \
 node --test artifacts/api-server/tests/delivery-order-authority-static.test.mjs
 node --test scripts/tests/delivery-fee-per-area-audit.test.mjs
 node --test scripts/tests/delivery-fee-per-area-migration-history.test.mjs
+node --test scripts/tests/server-authoritative-settings-contract.test.mjs
 
-# Typechecks/builds: direct local binaries or Node build entrypoints only.
 node_modules/.bin/tsc -p lib/db/tsconfig.json --noEmit
 node_modules/.bin/tsc -p artifacts/api-server/tsconfig.json --noEmit
 (
@@ -204,11 +211,12 @@ rm -f \
   scripts/.tmp-delivery-fee-per-area-3.py \
   scripts/.tmp-delivery-fee-per-area-4.py \
   scripts/.tmp-delivery-fee-per-area-5.py \
+  scripts/.tmp-delivery-fee-per-area-6.py \
   scripts/run-delivery-fee-per-area-local.sh
 
 git diff --check "$GOLDEN"
 
-allowed='^(artifacts/api-server/src/routes/index\.ts|artifacts/api-server/src/services/deliveryPricing\.ts|artifacts/api-server/src/services/merchantSettingsRuntime\.ts|artifacts/api-server/src/services/knowledge/postgresOperationalFactResolver\.ts|artifacts/api-server/tests/delivery-fee-per-area\.test\.ts|artifacts/api-server/tests/knowledge-delivery-area-rates\.test\.ts|artifacts/api-server/tests/delivery-order-authority-static\.test\.mjs|artifacts/fawri/src/pages/dashboard/ServerSettingsPage\.tsx|artifacts/fawri/src/pages/dashboard/MerchantSettingsPage\.tsx|artifacts/fawri/tests/delivery-fee-per-area-ui\.test\.ts|lib/db/src/schema/merchant-settings\.ts|lib/db/src/schema/tenant-security\.ts|lib/db/migration-stages/0005/stage\.json|lib/db/migration-stages/0005/preimage/merchant-settings\.ts|lib/db/migration-stages/0005/preimage/tenant-security\.ts|lib/db/drizzle/0005_delivery_fee_per_area\.sql|lib/db/drizzle/meta/0005_snapshot\.json|lib/db/drizzle/meta/_journal\.json|scripts/audit-merchant-settings\.mjs|scripts/lib/postgresql-migration-plan-complete\.mjs|scripts/lib/postgresql-cross-lane-reconciliation\.mjs|scripts/tests/delivery-fee-per-area-audit\.test\.mjs|scripts/tests/delivery-fee-per-area-migration-history\.test\.mjs|scripts/tests/product-shipping-migration-history\.test\.mjs|scripts/tests/cross-lane-migration-generator\.test\.mjs|scripts/tests/cross-lane-postgresql-edge-gates\.test\.mjs|scripts/tests/postgresql-disposable-acceptance\.test\.mjs|scripts/tests/run-postgresql-migration-plan\.test\.mjs)$'
+allowed='^(artifacts/api-server/src/routes/index\.ts|artifacts/api-server/src/services/deliveryPricing\.ts|artifacts/api-server/src/services/merchantSettingsRuntime\.ts|artifacts/api-server/src/services/knowledge/postgresOperationalFactResolver\.ts|artifacts/api-server/tests/delivery-fee-per-area\.test\.ts|artifacts/api-server/tests/knowledge-delivery-area-rates\.test\.ts|artifacts/api-server/tests/delivery-order-authority-static\.test\.mjs|artifacts/fawri/src/pages/dashboard/ServerSettingsPage\.tsx|artifacts/fawri/src/pages/dashboard/MerchantSettingsPage\.tsx|artifacts/fawri/tests/delivery-fee-per-area-ui\.test\.ts|lib/db/src/schema/merchant-settings\.ts|lib/db/src/schema/tenant-security\.ts|lib/db/migration-stages/0005/stage\.json|lib/db/migration-stages/0005/preimage/merchant-settings\.ts|lib/db/migration-stages/0005/preimage/tenant-security\.ts|lib/db/drizzle/0005_delivery_fee_per_area\.sql|lib/db/drizzle/meta/0005_snapshot\.json|lib/db/drizzle/meta/_journal\.json|scripts/audit-merchant-settings\.mjs|scripts/lib/postgresql-migration-plan-complete\.mjs|scripts/lib/postgresql-cross-lane-reconciliation\.mjs|scripts/tests/delivery-fee-per-area-audit\.test\.mjs|scripts/tests/delivery-fee-per-area-migration-history\.test\.mjs|scripts/tests/product-shipping-migration-history\.test\.mjs|scripts/tests/cross-lane-migration-generator\.test\.mjs|scripts/tests/cross-lane-postgresql-edge-gates\.test\.mjs|scripts/tests/postgresql-disposable-acceptance\.test\.mjs|scripts/tests/run-postgresql-migration-plan\.test\.mjs|scripts/tests/server-authoritative-settings-contract\.test\.mjs)$'
 bad="$(git diff --name-only "$GOLDEN" | grep -Ev "$allowed" || true)"
 if [[ -n "$bad" ]]; then
   echo "STOP: unexpected files in final net diff:" >&2
