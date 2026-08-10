@@ -37,4 +37,32 @@ if old not in text:
 text = text.replace(old, new, 1)
 MIGRATION_TEST.write_text(text, encoding="utf-8")
 
+# The historical 0003 -> 0004 proof is intentionally about 0004 only. The
+# delivery lane generates 0005 before this proof runs, and schema:smoke may
+# leave the disposable database populated. Temporarily isolate that proof by
+# resetting the local-only database and truncating its full migration folder at
+# 0004. The script restores itself from Golden in its finally block so this
+# validation-only adaptation can never enter the final lane diff.
+UPGRADE = ROOT / "lib/db/scripts/test-product-shipping-measurements-upgrade.mjs"
+text = UPGRADE.read_text(encoding="utf-8")
+
+old = '''const prefixSource = createMigrationPrefix(committedMigrationsFolder, 3);\nconst prefixFolder = createStabilizedMigrationFolder(prefixSource);\nconst fullFolder = createStabilizedMigrationFolder(committedMigrationsFolder);'''
+new = '''const prefixSource = createMigrationPrefix(committedMigrationsFolder, 3);\nconst prefixFolder = createStabilizedMigrationFolder(prefixSource);\nconst fullSource = createMigrationPrefix(committedMigrationsFolder, 4);\nconst fullFolder = createStabilizedMigrationFolder(fullSource);'''
+if old not in text:
+    raise SystemExit("product shipping migration folder target not found")
+text = text.replace(old, new, 1)
+
+old = '''try {\n  assert.deepEqual(\n    await publicTables(pool),'''
+new = '''async function resetDisposableSchema() {\n  await pool.query("DROP SCHEMA IF EXISTS drizzle CASCADE");\n  await pool.query("DROP SCHEMA IF EXISTS public CASCADE");\n  await pool.query("CREATE SCHEMA public");\n}\n\ntry {\n  await resetDisposableSchema();\n  assert.deepEqual(\n    await publicTables(pool),'''
+if old not in text:
+    raise SystemExit("product shipping empty-database assertion target not found")
+text = text.replace(old, new, 1)
+
+old = '''} finally {\n  await pool.end();\n  fs.rmSync(prefixSource, { recursive: true, force: true });\n  fs.rmSync(prefixFolder, { recursive: true, force: true });\n  fs.rmSync(fullFolder, { recursive: true, force: true });\n}'''
+new = '''} finally {\n  try {\n    await resetDisposableSchema();\n  } catch {}\n  await pool.end();\n  fs.rmSync(prefixSource, { recursive: true, force: true });\n  fs.rmSync(prefixFolder, { recursive: true, force: true });\n  fs.rmSync(fullSource, { recursive: true, force: true });\n  fs.rmSync(fullFolder, { recursive: true, force: true });\n  const { spawnSync } = await import("node:child_process");\n  spawnSync(\n    "git",\n    [\n      "checkout",\n      "35074fb698edf436a9bfad845d4657f3e0a793ca",\n      "--",\n      "lib/db/scripts/test-product-shipping-measurements-upgrade.mjs",\n    ],\n    { cwd: path.resolve(currentDirectory, "../../..") },\n  );\n}'''
+if old not in text:
+    raise SystemExit("product shipping cleanup target not found")
+text = text.replace(old, new, 1)
+UPGRADE.write_text(text, encoding="utf-8")
+
 print("patch 6 complete")
