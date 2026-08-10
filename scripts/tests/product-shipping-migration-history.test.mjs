@@ -122,7 +122,7 @@ test("migration journal is an append-only 0,1,2,3,4 chain", () => {
 test("0004 SQL is additive and contains only the physical measurement delta", () => {
   const sqlFiles = fs
     .readdirSync(drizzleRoot)
-    .filter((name) => /^\\d{4}_.*\\.sql$/.test(name))
+    .filter((name) => /^\d{4}_.*\.sql$/.test(name))
     .sort();
   assert.deepEqual(sqlFiles, [
     "0000_even_kulan_gath.sql",
@@ -155,10 +155,10 @@ test("0004 SQL is additive and contains only the physical measurement delta", ()
   ]) {
     assert.match(sql, new RegExp(`ADD CONSTRAINT \\\"${constraint}\\\" CHECK`));
   }
-  assert.match(sql, /weight_g\\" BETWEEN 1 AND 100000000/);
-  assert.match(sql, /length_mm\\" BETWEEN 1 AND 100000/);
-  assert.match(sql, /width_mm\\" BETWEEN 1 AND 100000/);
-  assert.match(sql, /height_mm\\" BETWEEN 1 AND 100000/);
+  assert.match(sql, /weight_g" BETWEEN 1 AND 100000000/);
+  assert.match(sql, /length_mm" BETWEEN 1 AND 100000/);
+  assert.match(sql, /width_mm" BETWEEN 1 AND 100000/);
+  assert.match(sql, /height_mm" BETWEEN 1 AND 100000/);
 });
 
 test("canonical 0004 metadata must include a committed Drizzle snapshot", () => {

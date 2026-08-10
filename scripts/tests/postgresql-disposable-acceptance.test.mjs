@@ -77,7 +77,7 @@ async function resetDisposableSchema(connectionString) {
   }
 }
 
-test("committed dual-stage Drizzle chain is reproducible from the committed 0001 baseline", () => {
+test("committed Drizzle chain is reproducible from the committed 0001 baseline", () => {
   const generatedDirectory = fs.mkdtempSync(
     path.join(databaseDirectory, ".fawri-reproducibility-"),
   );
@@ -95,15 +95,17 @@ test("committed dual-stage Drizzle chain is reproducible from the committed 0001
     );
     const report = parseJsonOutput(generator.stdout, "dual-stage generator");
     assert.equal(report.ok, true);
-    assert.equal(report.mode, "verify_committed");
+    assert.equal(report.mode, "verify_committed_external_copy");
     assert.equal(report.committed_reproducible, true);
-    assert.equal(report.generated_entries, 4);
+    assert.equal(report.generated_entries, 5);
 
     for (const relativePath of [
       "0002_cross_lane_stage.sql",
       "0003_cross_lane_cleanup.sql",
       "meta/0002_snapshot.json",
       "meta/0003_snapshot.json",
+      "0004_product_shipping_measurements.sql",
+      "meta/0004_snapshot.json",
     ]) {
       assertSameBytes(
         path.join(generatedDirectory, relativePath),
@@ -118,7 +120,7 @@ test("committed dual-stage Drizzle chain is reproducible from the committed 0001
         "utf8",
       ),
     );
-    assert.equal(journal.entries?.length, 4);
+    assert.equal(journal.entries?.length, 5);
     assert.deepEqual(
       journal.entries.map(({ idx, tag }) => [idx, tag]),
       [
@@ -126,6 +128,7 @@ test("committed dual-stage Drizzle chain is reproducible from the committed 0001
         [1, "0001_military_proteus"],
         [2, "0002_cross_lane_stage"],
         [3, "0003_cross_lane_cleanup"],
+        [4, "0004_product_shipping_measurements"],
       ],
     );
   } finally {
@@ -152,9 +155,9 @@ test(
       );
       const smokeReport = parseJsonOutput(smoke.stdout, "migration smoke");
       assert.equal(smokeReport.ok, true);
-      assert.equal(smokeReport.snapshot, "0003_snapshot.json");
+      assert.equal(smokeReport.snapshot, "0004_snapshot.json");
       assert.equal(smokeReport.tables, 59);
-      assert.equal(smokeReport.migrations, 4);
+      assert.equal(smokeReport.migrations, 5);
       assert.equal(smokeReport.applied_twice_without_changes, true);
       assert.equal(smokeReport.dependency_order_stabilized, true);
       assert.ok(smokeReport.composite_foreign_keys > 0);

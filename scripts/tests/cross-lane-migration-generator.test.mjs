@@ -45,9 +45,12 @@ function runGenerator(label) {
       .join("\n"),
   );
   const combined = `${result.stdout}\n${result.stderr}`;
-  assert.match(combined, /"event":"stage-preflight"/);
-  assert.match(combined, /"event":"stage-postflight"/);
-  assert.match(combined, /"event":"final-postflight"/);
+  assert.match(combined, /"event":"legacy-stage-preflight"/);
+  assert.match(combined, /"event":"legacy-stage-postflight"/);
+  assert.match(combined, /"event":"legacy-cleanup-preflight"/);
+  assert.match(combined, /"event":"legacy-cleanup-postflight"/);
+  assert.match(combined, /"event":"append-stage-preflight"/);
+  assert.match(combined, /"event":"append-stage-postflight"/);
   assert.doesNotMatch(
     combined,
     /Interactive prompts require|created or renamed|rename prompt/i,
@@ -69,11 +72,17 @@ function artifactHashes(outputDirectory) {
     cleanupSnapshot: sha256(
       path.join(outputDirectory, "meta", "0003_snapshot.json"),
     ),
+    productShippingSql: sha256(
+      path.join(outputDirectory, "0004_product_shipping_measurements.sql"),
+    ),
+    productShippingSnapshot: sha256(
+      path.join(outputDirectory, "meta", "0004_snapshot.json"),
+    ),
   };
 }
 
 test(
-  "dual-stage Drizzle generator is non-interactive and deterministic",
+  "Drizzle generator is non-interactive and deterministic across legacy and append stages",
   { timeout: 120_000 },
   () => {
     const generatorSource = fs.readFileSync(generatorPath, "utf8");
@@ -96,6 +105,7 @@ test(
           "0001_military_proteus.sql",
           "0002_cross_lane_stage.sql",
           "0003_cross_lane_cleanup.sql",
+          "0004_product_shipping_measurements.sql",
         ]);
 
         const journal = JSON.parse(
@@ -104,9 +114,13 @@ test(
             "utf8",
           ),
         );
-        assert.equal(journal.entries?.length, 4);
+        assert.equal(journal.entries?.length, 5);
         assert.equal(journal.entries[2]?.tag, "0002_cross_lane_stage");
         assert.equal(journal.entries[3]?.tag, "0003_cross_lane_cleanup");
+        assert.equal(
+          journal.entries[4]?.tag,
+          "0004_product_shipping_measurements",
+        );
       }
 
       const firstHashes = artifactHashes(first.outputDirectory);
