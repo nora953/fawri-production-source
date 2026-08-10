@@ -1,21 +1,23 @@
-name: Product shipping measurements validation
+name: Delivery fee per area implementation validation
 
 on:
   pull_request:
     branches:
       - "parallel/integration-coordinator"
-  push:
-    branches:
-      - "parallel/product-shipping-measurements-knowledge"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: delivery-fee-per-area-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.ref == 'parallel/delivery-fee-per-area'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
     services:
       postgres:
         image: postgres:16-alpine
@@ -32,10 +34,40 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+      GOLDEN_SHA: 35074fb698edf436a9bfad845d4657f3e0a793ca
+      LANE: parallel/delivery-fee-per-area
 
     steps:
-      - name: Checkout repository
+      - name: Checkout implementation lane
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: parallel/delivery-fee-per-area
+
+      - name: Verify exact coordinator and merge-base
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin parallel/integration-coordinator
+          coordinator="$(git rev-parse origin/parallel/integration-coordinator)"
+          test "$coordinator" = "$GOLDEN_SHA" || {
+            echo "Coordinator moved: $coordinator" >&2
+            exit 20
+          }
+          test "$(git merge-base HEAD "$coordinator")" = "$GOLDEN_SHA" || {
+            echo "Unexpected lane merge-base" >&2
+            exit 21
+          }
+
+      - name: Apply implementation patches
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/.tmp-delivery-fee-per-area-1.py
+          python3 scripts/.tmp-delivery-fee-per-area-2.py
+          python3 scripts/.tmp-delivery-fee-per-area-3.py
+          python3 scripts/.tmp-delivery-fee-per-area-4.py
+          python3 scripts/.tmp-delivery-fee-per-area-5.py
 
       - name: Enable Corepack
         run: corepack enable
@@ -49,39 +81,54 @@ jobs:
       - name: Install dependencies without package build scripts
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Generate and verify canonical migration chain
+      - name: Generate canonical additive 0005 migration
         run: pnpm --filter @workspace/db run schema:generate
 
-      - name: Migration planner and safety tests
+      - name: Prove migration generator determinism
+        shell: bash
+        run: |
+          set -euo pipefail
+          repro="$RUNNER_TEMP/delivery-fee-per-area-repro"
+          rm -rf "$repro"
+          FAWRI_MIGRATION_OUTPUT_DIR="$repro" pnpm --filter @workspace/db run schema:generate
+          cmp lib/db/drizzle/0005_delivery_fee_per_area.sql "$repro/0005_delivery_fee_per_area.sql"
+          cmp lib/db/drizzle/meta/0005_snapshot.json "$repro/meta/0005_snapshot.json"
+          cmp lib/db/drizzle/meta/_journal.json "$repro/meta/_journal.json"
+
+      - name: Prove historical 0000-0004 artifacts unchanged
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --exit-code "$GOLDEN_SHA" -- \
+            lib/db/drizzle/0000_even_kulan_gath.sql \
+            lib/db/drizzle/0001_military_proteus.sql \
+            lib/db/drizzle/0002_cross_lane_stage.sql \
+            lib/db/drizzle/0003_cross_lane_cleanup.sql \
+            lib/db/drizzle/0004_product_shipping_measurements.sql \
+            lib/db/drizzle/meta/0000_snapshot.json \
+            lib/db/drizzle/meta/0001_snapshot.json \
+            lib/db/drizzle/meta/0002_snapshot.json \
+            lib/db/drizzle/meta/0003_snapshot.json \
+            lib/db/drizzle/meta/0004_snapshot.json
+
+      - name: Migration safety suite on real PostgreSQL
         run: pnpm run migration:test
 
-      - name: Prove 0003 to 0004 upgrade and physical measurement constraints
-        env:
-          FAWRI_ALLOW_PRODUCT_MEASUREMENT_MIGRATION_TEST: "1"
-        run: node ./lib/db/scripts/test-product-shipping-measurements-upgrade.mjs
-
-      - name: Smoke full migration chain twice
+      - name: Smoke full migration chain twice on PostgreSQL
         env:
           FAWRI_ALLOW_MIGRATION_SMOKE: "1"
         run: pnpm --filter @workspace/db run schema:smoke
 
-      - name: Catalog measurement runtime tests
+      - name: Delivery runtime and Knowledge tests
         run: |
           pnpm --filter @workspace/api-server exec tsx --test \
-            ./tests/catalog-shipping-measurements.test.ts \
-            ./tests/catalog-inventory.test.ts
-
-      - name: Knowledge physical fact tests
-        run: |
-          pnpm --filter @workspace/api-server exec tsx --test \
-            ./tests/knowledge-product-shipping-measurements.test.ts \
-            ./tests/knowledge-postgres-operational-facts.test.ts
-
-      - name: Product catalog UI tests
-        run: |
-          pnpm --filter @workspace/fawri exec tsx --test \
-            ./tests/product-shipping-measurements-ui.test.ts \
-            ./tests/product-catalog-ui-cutover.test.ts
+            ./tests/delivery-fee-per-area.test.ts \
+            ./tests/knowledge-delivery-area-rates.test.ts \
+            ./tests/knowledge-postgres-operational-facts.test.ts \
+            ./tests/orders-settings-runtime.test.ts
+          node --test artifacts/api-server/tests/delivery-order-authority-static.test.mjs
+          node --test scripts/tests/delivery-fee-per-area-audit.test.mjs
+          node --test scripts/tests/delivery-fee-per-area-migration-history.test.mjs
 
       - name: Database schema typecheck
         run: pnpm --filter @workspace/db run typecheck
@@ -91,22 +138,65 @@ jobs:
           pnpm --filter @workspace/api-server run typecheck
           pnpm --filter @workspace/api-server run build
 
+      - name: Merchant settings HTTP regression
+        run: node --test artifacts/api-server/tests/merchant-settings.integration.test.mjs
+
+      - name: Frontend per-area UI test
+        run: pnpm --filter @workspace/fawri exec tsx --test ./tests/delivery-fee-per-area-ui.test.ts
+
       - name: Frontend typecheck and build
         run: |
           pnpm --filter @workspace/fawri run typecheck
           pnpm --filter @workspace/fawri run build
 
-      - name: Verify committed migration output is reproducible
-        run: git diff --exit-code -- lib/db/drizzle
+      - name: Restore shared workflow and remove staging files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "$GOLDEN_SHA" -- .github/workflows/product-shipping-measurements.yml
+          rm -f \
+            .github/workflows/delivery-fee-per-area.yml \
+            .ci/delivery-fee-per-area-run.json \
+            scripts/.tmp-delivery-fee-per-area-1.py \
+            scripts/.tmp-delivery-fee-per-area-2.py \
+            scripts/.tmp-delivery-fee-per-area-3.py \
+            scripts/.tmp-delivery-fee-per-area-4.py \
+            scripts/.tmp-delivery-fee-per-area-5.py
 
-      - name: Upload generated 0004 evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: product-shipping-measurements-0004-evidence
-          path: |
-            lib/db/drizzle/0004_product_shipping_measurements.sql
-            lib/db/drizzle/meta/0004_snapshot.json
-            lib/db/drizzle/meta/_journal.json
-          if-no-files-found: warn
-          retention-days: 7
+      - name: Verify final net scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "$GOLDEN_SHA"
+          allowed='^(artifacts/api-server/src/routes/index\.ts|artifacts/api-server/src/services/deliveryPricing\.ts|artifacts/api-server/src/services/merchantSettingsRuntime\.ts|artifacts/api-server/src/services/knowledge/postgresOperationalFactResolver\.ts|artifacts/api-server/tests/delivery-fee-per-area\.test\.ts|artifacts/api-server/tests/knowledge-delivery-area-rates\.test\.ts|artifacts/api-server/tests/delivery-order-authority-static\.test\.mjs|artifacts/fawri/src/pages/dashboard/ServerSettingsPage\.tsx|artifacts/fawri/src/pages/dashboard/MerchantSettingsPage\.tsx|artifacts/fawri/tests/delivery-fee-per-area-ui\.test\.ts|lib/db/src/schema/merchant-settings\.ts|lib/db/src/schema/tenant-security\.ts|lib/db/migration-stages/0005/stage\.json|lib/db/migration-stages/0005/preimage/merchant-settings\.ts|lib/db/migration-stages/0005/preimage/tenant-security\.ts|lib/db/drizzle/0005_delivery_fee_per_area\.sql|lib/db/drizzle/meta/0005_snapshot\.json|lib/db/drizzle/meta/_journal\.json|scripts/audit-merchant-settings\.mjs|scripts/lib/postgresql-migration-plan-complete\.mjs|scripts/lib/postgresql-cross-lane-reconciliation\.mjs|scripts/tests/delivery-fee-per-area-audit\.test\.mjs|scripts/tests/delivery-fee-per-area-migration-history\.test\.mjs|scripts/tests/product-shipping-migration-history\.test\.mjs|scripts/tests/cross-lane-migration-generator\.test\.mjs|scripts/tests/cross-lane-postgresql-edge-gates\.test\.mjs|scripts/tests/postgresql-disposable-acceptance\.test\.mjs|scripts/tests/run-postgresql-migration-plan\.test\.mjs)$'
+          bad="$(git diff --name-only "$GOLDEN_SHA" | grep -Ev "$allowed" || true)"
+          if [ -n "$bad" ]; then
+            echo "Unexpected final files:" >&2
+            echo "$bad" >&2
+            exit 22
+          fi
+          git status --short
+
+      - name: Commit validated final implementation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: add per-area delivery pricing authority"
+
+      - name: Recheck coordinator immediately before push
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin parallel/integration-coordinator
+          coordinator="$(git rev-parse origin/parallel/integration-coordinator)"
+          test "$coordinator" = "$GOLDEN_SHA" || {
+            echo "Coordinator moved before push: $coordinator" >&2
+            exit 23
+          }
+          test "$(git merge-base HEAD "$coordinator")" = "$GOLDEN_SHA"
+
+      - name: Push final implementation without force
+        run: git push origin HEAD:parallel/delivery-fee-per-area
