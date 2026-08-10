@@ -3,6 +3,11 @@ import fs from "node:fs";
 import { getFawriDataDir, getFawriDataFilePath } from "../lib/dataPaths";
 import healthRouter from "./health";
 import botTrainingRouter from "./bot-training";
+import {
+  formatDeliveryQuoteText,
+  type DeliveryQuote,
+} from "../services/deliveryPricing";
+import { getMerchantDeliveryQuote } from "../services/merchantSettingsRuntime";
 import { registerMerchantRuntimeDeletion } from "../services/merchantRuntime";
 import {
   connectMetaChannel,
@@ -118,7 +123,13 @@ type Order = {
   product_name: string;
   quantity: number;
   unit_price: number;
+  subtotal_iqd: number;
+  delivery_fee_iqd: number;
+  total_iqd: number;
   total_price: number;
+  delivery_pricing_mode: "flat" | "per_area";
+  delivery_settings_version: number;
+  delivery_area_rate_id?: string;
   status: "new" | "pending_confirmation" | "confirmed" | "cancelled";
   source_channel: "messenger";
   notes?: string;
@@ -1622,6 +1633,18 @@ function formatPrice(price: number, language: LanguageCode) {
   return `${formatted} دينار عراقي`;
 }
 
+function deliveryLanguage(language: LanguageCode): "ar" | "ku" | "en" {
+  if (language === "en") return "en";
+  if (language === "ku_sorani") return "ku";
+  return "ar";
+}
+
+function deliveryQuoteFromError(error: unknown): DeliveryQuote | null {
+  if (!error || typeof error !== "object") return null;
+  const quote = (error as { deliveryQuote?: unknown }).deliveryQuote;
+  return quote && typeof quote === "object" ? (quote as DeliveryQuote) : null;
+}
+
 function replyText(
   language: LanguageCode,
   key: string,
@@ -1758,6 +1781,22 @@ export function createOrder(params: {
   unitPrice: number;
   notes?: string;
 }) {
+  const subtotal = params.unitPrice * params.quantity;
+  const deliveryQuote = getMerchantDeliveryQuote({
+    merchantId: params.merchantId,
+    area: params.customerAddress,
+    subtotalIqd: subtotal,
+  });
+  if (!deliveryQuote.available) {
+    throw Object.assign(
+      new Error("delivery quote is required before order creation"),
+      {
+        code: "ORDER_DELIVERY_QUOTE_REQUIRED",
+        status: 409,
+        deliveryQuote,
+      },
+    );
+  }
   const now = new Date().toISOString();
   const currentOrders = ordersByMerchant.get(params.merchantId) || [];
   const order: Order = {
@@ -1768,11 +1807,20 @@ export function createOrder(params: {
     customer_name: params.customerName,
     customer_phone: params.customerPhone,
     customer_address: params.customerAddress,
+    customer_area: deliveryQuote.matched_area || params.customerAddress,
     product_id: params.productId,
     product_name: params.productName,
     quantity: params.quantity,
     unit_price: params.unitPrice,
-    total_price: params.unitPrice * params.quantity,
+    subtotal_iqd: subtotal,
+    delivery_fee_iqd: deliveryQuote.effective_fee_iqd,
+    total_iqd: deliveryQuote.total_iqd,
+    total_price: deliveryQuote.total_iqd,
+    delivery_pricing_mode: deliveryQuote.pricing_mode,
+    delivery_settings_version: deliveryQuote.settings_version,
+    ...(deliveryQuote.area_rate_id
+      ? { delivery_area_rate_id: deliveryQuote.area_rate_id }
+      : {}),
     status: "new",
     source_channel: "messenger",
     notes: params.notes,
@@ -2038,24 +2086,35 @@ async function generateTrainedBotReply(params: {
           replyType: "database",
         });
 
-      const order = createOrder({
-        merchantId: context.merchantId,
-        conversationId,
-        customerId,
-        customerName,
-        customerPhone: phone,
-        customerAddress: address,
-        productId: existingDraft.product_id,
-        productName: existingDraft.product_name || "منتج غير محدد",
-        quantity: existingDraft.quantity || 1,
-        unitPrice: existingDraft.unit_price || 0,
-        notes: userText,
-      });
-      clearOrderDraft(conversationId);
-      return withDebug({
-        text: replyText(language, "orderConfirm", { orderId: order.id }),
-        replyType: "database",
-      });
+      try {
+        const order = createOrder({
+          merchantId: context.merchantId,
+          conversationId,
+          customerId,
+          customerName,
+          customerPhone: phone,
+          customerAddress: address,
+          productId: existingDraft.product_id,
+          productName: existingDraft.product_name || "منتج غير محدد",
+          quantity: existingDraft.quantity || 1,
+          unitPrice: existingDraft.unit_price || 0,
+          notes: userText,
+        });
+        clearOrderDraft(conversationId);
+        return withDebug({
+          text: replyText(language, "orderConfirm", { orderId: order.id }),
+          replyType: "database",
+        });
+      } catch (error) {
+        const quote = deliveryQuoteFromError(error);
+        if (quote) {
+          return withDebug({
+            text: formatDeliveryQuoteText(quote, deliveryLanguage(language)),
+            replyType: "database",
+          });
+        }
+        throw error;
+      }
     }
 
     case "order_cancel":
@@ -2065,11 +2124,17 @@ async function generateTrainedBotReply(params: {
         replyType: "database",
       });
 
-    case "info_delivery":
+    case "info_delivery": {
+      const quote = getMerchantDeliveryQuote({
+        merchantId: context.merchantId,
+        area: userText,
+        subtotalIqd: 0,
+      });
       return withDebug({
-        text: replyText(language, "delivery"),
+        text: formatDeliveryQuoteText(quote, deliveryLanguage(language)),
         replyType: "database",
       });
+    }
     case "methods_payment":
       return withDebug({
         text: replyText(language, "payment"),

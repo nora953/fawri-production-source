@@ -97,7 +97,7 @@ test("committed Drizzle chain is reproducible from the committed 0001 baseline",
     assert.equal(report.ok, true);
     assert.equal(report.mode, "verify_committed_external_copy");
     assert.equal(report.committed_reproducible, true);
-    assert.equal(report.generated_entries, 5);
+    assert.equal(report.generated_entries, 6);
 
     for (const relativePath of [
       "0002_cross_lane_stage.sql",
@@ -106,6 +106,8 @@ test("committed Drizzle chain is reproducible from the committed 0001 baseline",
       "meta/0003_snapshot.json",
       "0004_product_shipping_measurements.sql",
       "meta/0004_snapshot.json",
+      "0005_delivery_fee_per_area.sql",
+      "meta/0005_snapshot.json",
     ]) {
       assertSameBytes(
         path.join(generatedDirectory, relativePath),
@@ -120,7 +122,7 @@ test("committed Drizzle chain is reproducible from the committed 0001 baseline",
         "utf8",
       ),
     );
-    assert.equal(journal.entries?.length, 5);
+    assert.equal(journal.entries?.length, 6);
     assert.deepEqual(
       journal.entries.map(({ idx, tag }) => [idx, tag]),
       [
@@ -129,6 +131,7 @@ test("committed Drizzle chain is reproducible from the committed 0001 baseline",
         [2, "0002_cross_lane_stage"],
         [3, "0003_cross_lane_cleanup"],
         [4, "0004_product_shipping_measurements"],
+        [5, "0005_delivery_fee_per_area"],
       ],
     );
   } finally {
@@ -155,9 +158,9 @@ test(
       );
       const smokeReport = parseJsonOutput(smoke.stdout, "migration smoke");
       assert.equal(smokeReport.ok, true);
-      assert.equal(smokeReport.snapshot, "0004_snapshot.json");
-      assert.equal(smokeReport.tables, 59);
-      assert.equal(smokeReport.migrations, 5);
+      assert.equal(smokeReport.snapshot, "0005_snapshot.json");
+      assert.equal(smokeReport.tables, 60);
+      assert.equal(smokeReport.migrations, 6);
       assert.equal(smokeReport.applied_twice_without_changes, true);
       assert.equal(smokeReport.dependency_order_stabilized, true);
       assert.ok(smokeReport.composite_foreign_keys > 0);

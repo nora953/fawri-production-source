@@ -47,7 +47,11 @@ test("settings entry points use one server-authoritative operational page", () =
   assert.match(wrapper, /setLang/);
   assert.match(wrapper, /setTheme/);
   assert.match(wrapper, /local UI preferences only/);
-  assert.match(wrapper, /COORDINATOR\/PRODUCT MODEL HANDOFF REQUIRED/);
+  assert.doesNotMatch(wrapper, /COORDINATOR\/PRODUCT MODEL HANDOFF REQUIRED/);
+  assert.match(
+    wrapper,
+    /Delivery supports either one flat fee or different fees by area/,
+  );
   assert.match(wrapper, /Account-name and QR data do not have a secure server authority/);
 });
 
@@ -85,6 +89,10 @@ test("delivery and payment mappings match the canonical server model", () => {
     "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx",
   );
 
+  assert.match(page, /pricing_mode/);
+  assert.match(page, /area_rates/);
+  assert.match(page, /value="flat"/);
+  assert.match(page, /value="per_area"/);
   assert.match(page, /fee_iqd/);
   assert.match(page, /free_delivery_threshold_iqd/);
   assert.match(page, /estimated_days_min/);

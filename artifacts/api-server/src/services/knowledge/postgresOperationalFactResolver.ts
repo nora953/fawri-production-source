@@ -1,4 +1,11 @@
 import {
+  DeliveryPricingPolicyError,
+  formatDeliveryQuoteText,
+  normalizeDeliveryAreaName,
+  resolveDeliveryQuote,
+  type DeliveryAreaRate,
+} from "../deliveryPricing.js";
+import {
   boundedText,
   normalizeKnowledgeText,
 } from "./normalization.js";
@@ -110,23 +117,95 @@ function inheritedPhysicalFacts(product: PhysicalFacts, variant?: PhysicalFacts)
   };
 }
 
-function localizedDelivery(row: Record<string, unknown>, lang: KnowledgeLanguage): string {
-  const enabled = bool(row.delivery_enabled);
-  if (!enabled) {
-    if (lang === "en") return "Delivery is currently unavailable.";
-    if (lang === "ku") return "گەیاندن لە ئێستادا بەردەست نییە.";
-    return "التوصيل غير متاح حاليًا.";
+async function resolveDeliveryFact(params: {
+  sql: KnowledgeSqlExecutor;
+  merchantId: string;
+  customerText: string;
+  language: KnowledgeLanguage;
+  row: Record<string, unknown>;
+}) {
+  let areaRows: Record<string, unknown>[] = [];
+  const pricingMode = text(params.row.delivery_pricing_mode, 40);
+  if (pricingMode !== "flat" && pricingMode !== "per_area") {
+    fail("KNOWLEDGE_POLICY_INVALID", "merchant delivery pricing mode is invalid");
   }
-  const min = integer(row.delivery_estimated_days_min);
-  const max = integer(row.delivery_estimated_days_max);
-  const fee = integer(row.delivery_fee_iqd);
-  if (min <= 0 || max < min || max > 30) {
-    fail("KNOWLEDGE_POLICY_INVALID", "merchant knowledge policy is invalid");
+  if (pricingMode === "per_area") {
+    try {
+      areaRows = (
+        await params.sql.query(
+          `SELECT id, merchant_id, area_name, normalized_area_name, fee_iqd, enabled
+           FROM merchant_delivery_area_rates
+           WHERE merchant_id = $1 AND enabled = TRUE
+           ORDER BY normalized_area_name
+           LIMIT 100`,
+          [params.merchantId],
+        )
+      ).rows;
+    } catch {
+      fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+    }
   }
-  const days = min === max ? String(min) : `${min}-${max}`;
-  if (lang === "en") return `Delivery is available. Estimated delivery time is ${days} day(s). Delivery fee is ${fee.toLocaleString("en-US")} IQD.`;
-  if (lang === "ku") return `گەیاندن بەردەستە. ماوەی خەمڵێنراو ${days} ڕۆژە و کرێی گەیاندن ${fee.toLocaleString("en-US")} دینارە.`;
-  return `التوصيل متاح. المدة التقديرية ${days} يوم، ورسوم التوصيل ${fee.toLocaleString("en-US")} دينار.`;
+  const areaRates: DeliveryAreaRate[] = areaRows.map((areaRow) => {
+    tenant(areaRow, params.merchantId);
+    const id = text(areaRow.id, 200);
+    const areaName = text(areaRow.area_name, 100);
+    const normalized = text(areaRow.normalized_area_name, 100);
+    const fee = integer(areaRow.fee_iqd);
+    const enabled = bool(areaRow.enabled);
+    if (
+      !id ||
+      !areaName ||
+      normalized !== normalizeDeliveryAreaName(areaName) ||
+      fee > 100_000_000
+    ) {
+      fail("KNOWLEDGE_POLICY_INVALID", "merchant delivery area policy is invalid");
+    }
+    return {
+      id,
+      area_name: areaName,
+      normalized_area_name: normalized,
+      fee_iqd: fee,
+      enabled,
+    };
+  });
+
+  const freeThreshold =
+    params.row.free_delivery_threshold_iqd === null ||
+    params.row.free_delivery_threshold_iqd === undefined
+      ? null
+      : integer(params.row.free_delivery_threshold_iqd);
+  try {
+    const quote = resolveDeliveryQuote({
+      policy: {
+        merchant_id: params.merchantId,
+        settings_version: version(params.row.settings_version),
+        enabled: bool(params.row.delivery_enabled),
+        pricing_mode: pricingMode,
+        flat_fee_iqd: integer(params.row.delivery_fee_iqd),
+        free_delivery_threshold_iqd: freeThreshold,
+        estimated_days_min: integer(params.row.delivery_estimated_days_min),
+        estimated_days_max: integer(params.row.delivery_estimated_days_max),
+        areas: stringArray(params.row.delivery_areas, 100),
+        area_rates: areaRates,
+      },
+      area: params.customerText,
+      subtotal_iqd: 0,
+    });
+    return {
+      answerText: formatDeliveryQuoteText(quote, params.language),
+      language: params.language,
+      confidence: 1,
+      factType: "delivery_policy",
+      recordId:
+        quote.area_rate_id ||
+        `${params.merchantId}:settings:${version(params.row.settings_version)}`,
+    };
+  } catch (error) {
+    if (error instanceof DeliveryPricingPolicyError) {
+      fail("KNOWLEDGE_POLICY_INVALID", "merchant delivery pricing policy is invalid");
+    }
+    throw error;
+  }
 }
 
 function localizedPayment(row: Record<string, unknown>, lang: KnowledgeLanguage): string {
@@ -150,7 +229,8 @@ function localizedPayment(row: Record<string, unknown>, lang: KnowledgeLanguage)
 const SETTINGS_SQL = `
 SELECT m.id AS merchant_id, m.store_name, m.status AS merchant_status,
        m.account_status, ms.version AS settings_version, ms.auto_reply_enabled,
-       ms.delivery_enabled, ms.delivery_fee_iqd,
+       ms.delivery_enabled, ms.delivery_pricing_mode, ms.delivery_fee_iqd,
+       ms.free_delivery_threshold_iqd, ms.delivery_areas,
        ms.delivery_estimated_days_min, ms.delivery_estimated_days_max,
        ms.cash_on_delivery_enabled, ms.electronic_payment_enabled,
        ms.payment_methods
@@ -503,11 +583,15 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
     const weight = containsAny(normalized, WEIGHT_TERMS);
     const dimensions = containsAny(normalized, DIMENSION_TERMS);
     const physicalIntent = weight || dimensions;
+    const deliveryIntent = containsAny(normalized, DELIVERY_TERMS);
     const kinds = {
-      delivery: containsAny(normalized, DELIVERY_TERMS),
+      delivery: deliveryIntent,
       payment: containsAny(normalized, PAYMENT_TERMS),
       business: containsAny(normalized, BUSINESS_TERMS),
-      price: !physicalIntent && containsAny(normalized, PRICE_TERMS),
+      price:
+        !physicalIntent &&
+        !deliveryIntent &&
+        containsAny(normalized, PRICE_TERMS),
       stock: containsAny(normalized, STOCK_TERMS),
       weight,
       dimensions,
@@ -553,13 +637,13 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
     const row = await settings(this.sql, merchantId);
     if (!bool(row.auto_reply_enabled)) return null;
     if (kinds.delivery) {
-      return {
-        answerText: localizedDelivery(row, input.language),
+      return resolveDeliveryFact({
+        sql: this.sql,
+        merchantId,
+        customerText: input.customerText,
         language: input.language,
-        confidence: 1,
-        factType: "delivery_policy",
-        recordId: `${merchantId}:settings:${version(row.settings_version)}`,
-      };
+        row,
+      });
     }
     if (kinds.payment) {
       return {

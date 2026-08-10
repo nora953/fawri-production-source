@@ -2,14 +2,12 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
-  index,
   integer,
   jsonb,
   pgEnum,
   pgTable,
   text,
   timestamp,
-  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { merchants } from "./merchants";
 
@@ -18,11 +16,6 @@ export const merchantReplyLanguageEnum = pgEnum("merchant_reply_language", [
   "ar",
   "ku",
   "en",
-]);
-
-export const deliveryPricingModeEnum = pgEnum("delivery_pricing_mode", [
-  "flat",
-  "per_area",
 ]);
 
 export const merchantSettings = pgTable(
@@ -37,9 +30,6 @@ export const merchantSettings = pgTable(
       .notNull()
       .default("auto"),
     deliveryEnabled: boolean("delivery_enabled").notNull().default(true),
-    deliveryPricingMode: deliveryPricingModeEnum("delivery_pricing_mode")
-      .notNull()
-      .default("flat"),
     deliveryFeeIqd: integer("delivery_fee_iqd").notNull().default(0),
     freeDeliveryThresholdIqd: integer("free_delivery_threshold_iqd"),
     deliveryEstimatedDaysMin: integer("delivery_estimated_days_min")
@@ -119,49 +109,5 @@ export const merchantSettings = pgTable(
   }),
 );
 
-export const merchantDeliveryAreaRates = pgTable(
-  "merchant_delivery_area_rates",
-  {
-    id: text("id").primaryKey(),
-    merchantId: text("merchant_id")
-      .notNull()
-      .references(() => merchantSettings.merchantId, { onDelete: "cascade" }),
-    areaName: text("area_name").notNull(),
-    normalizedAreaName: text("normalized_area_name").notNull(),
-    feeIqd: integer("fee_iqd").notNull(),
-    enabled: boolean("enabled").notNull().default(true),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => ({
-    merchantAreaUnique: uniqueIndex(
-      "merchant_delivery_area_rates_merchant_area_unique",
-    ).on(table.merchantId, table.normalizedAreaName),
-    merchantEnabledIndex: index(
-      "merchant_delivery_area_rates_merchant_enabled_idx",
-    ).on(table.merchantId, table.enabled),
-    feeCheck: check(
-      "merchant_delivery_area_rates_fee_check",
-      sql`${table.feeIqd} >= 0 AND ${table.feeIqd} <= 100000000`,
-    ),
-    areaNameCheck: check(
-      "merchant_delivery_area_rates_area_name_check",
-      sql`char_length(${table.areaName}) BETWEEN 1 AND 100 AND char_length(${table.normalizedAreaName}) BETWEEN 1 AND 100`,
-    ),
-    timestampOrderCheck: check(
-      "merchant_delivery_area_rates_timestamp_order_check",
-      sql`${table.updatedAt} >= ${table.createdAt}`,
-    ),
-  }),
-);
-
 export type MerchantSettings = typeof merchantSettings.$inferSelect;
 export type NewMerchantSettings = typeof merchantSettings.$inferInsert;
-export type MerchantDeliveryAreaRate =
-  typeof merchantDeliveryAreaRates.$inferSelect;
-export type NewMerchantDeliveryAreaRate =
-  typeof merchantDeliveryAreaRates.$inferInsert;

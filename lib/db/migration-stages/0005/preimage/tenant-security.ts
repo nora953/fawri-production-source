@@ -1,10 +1,7 @@
 import { sql } from "drizzle-orm";
 import { check, index, pgPolicy, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { adminProfiles } from "./merchants";
-import {
-  merchantDeliveryAreaRates,
-  merchantSettings,
-} from "./merchant-settings";
+import { merchantSettings } from "./merchant-settings";
 import { orders, orderPaymentDecisions, orderTerminalDecisionLinks } from "./orders";
 import { backgroundJobs, backgroundJobPayloads } from "./jobs";
 import { merchantChannels } from "./channels";
@@ -53,10 +50,6 @@ function tenantPolicy(name: string, table: any) {
 }
 
 export const merchantSettingsTenantPolicy = tenantPolicy("merchant_settings_tenant_boundary", merchantSettings);
-export const merchantDeliveryAreaRatesTenantPolicy = tenantPolicy(
-  "merchant_delivery_area_rates_tenant_boundary",
-  merchantDeliveryAreaRates,
-);
 export const ordersTenantPolicy = tenantPolicy("orders_tenant_boundary", orders);
 export const orderPaymentDecisionsTenantPolicy = tenantPolicy("order_payment_decisions_tenant_boundary", orderPaymentDecisions);
 export const orderTerminalDecisionLinksTenantPolicy = tenantPolicy("order_terminal_decision_links_tenant_boundary", orderTerminalDecisionLinks);

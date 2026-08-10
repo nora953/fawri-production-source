@@ -51,6 +51,7 @@ const baseSourceByTable = {
   conversations: "runtime",
   orders: "runtime",
   order_drafts: "runtime",
+  merchant_delivery_area_rates: "merchantSettings",
   saved_answers: "savedAnswers",
   training_requests: "trainingRequests",
   learned_answers: "learnedAnswers",
@@ -79,6 +80,22 @@ function stableId(prefix, value) {
 
 function text(value) {
   return String(value ?? "").trim();
+}
+
+function normalizeDeliveryAreaName(value) {
+  return String(value ?? "")
+    .normalize("NFKC")
+    .replace(/[ـًٌٍَُِّْ]/g, "")
+    .replace(/[إأآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[کكگ]/g, "ك")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function asRecord(value) {
@@ -558,12 +575,14 @@ function applyMerchantSettings(report, source) {
     const settings = asRecord(settingsValue);
     const delivery = asRecord(settings.delivery);
     const payment = asRecord(settings.payment);
+    const pricingMode = delivery.pricing_mode === "per_area" ? "per_area" : "flat";
     const row = {
       merchant_id: merchantId,
       version: Number(settings.version),
       auto_reply_enabled: settings.auto_reply_enabled === true,
       reply_language: text(settings.reply_language) || "auto",
       delivery_enabled: delivery.enabled === true,
+      delivery_pricing_mode: pricingMode,
       delivery_fee_iqd: Number(delivery.fee_iqd || 0),
       free_delivery_threshold_iqd:
         delivery.free_delivery_threshold_iqd === null ||
@@ -572,7 +591,7 @@ function applyMerchantSettings(report, source) {
           : Number(delivery.free_delivery_threshold_iqd),
       delivery_estimated_days_min: Number(delivery.estimated_days_min),
       delivery_estimated_days_max: Number(delivery.estimated_days_max),
-      delivery_areas: asArray(delivery.areas),
+      delivery_areas: pricingMode === "per_area" ? [] : asArray(delivery.areas),
       delivery_notes: String(delivery.notes ?? ""),
       cash_on_delivery_enabled: payment.cash_on_delivery_enabled === true,
       electronic_payment_enabled: payment.electronic_payment_enabled === true,
@@ -582,6 +601,29 @@ function applyMerchantSettings(report, source) {
       updated_at: settings.updated_at || settings.created_at || null,
     };
     mergeRow(report, "merchant_settings", row, "merchantSettings", settings);
+
+    for (const [index, rateValue] of asArray(delivery.area_rates).entries()) {
+      const rate = asRecord(rateValue);
+      const areaName = text(rate.area_name);
+      const normalizedArea = normalizeDeliveryAreaName(areaName);
+      if (!areaName || !normalizedArea) continue;
+      mergeRow(
+        report,
+        "merchant_delivery_area_rates",
+        {
+          id: text(rate.id) || stableId("delivery-area", `${merchantId}:${normalizedArea}`),
+          merchant_id: merchantId,
+          area_name: areaName,
+          normalized_area_name: normalizedArea,
+          fee_iqd: Number(rate.fee_iqd || 0),
+          enabled: rate.enabled !== false,
+          created_at: settings.created_at || null,
+          updated_at: settings.updated_at || settings.created_at || null,
+        },
+        "merchantSettings",
+        { index, ...rate },
+      );
+    }
   }
 }
 

@@ -35,7 +35,7 @@ const UI_COPY: Record<UiLanguage, UiCopy> = {
     authorityDescription:
       'الإعدادات التشغيلية أدناه تأتي من السيرفر وتُحفظ على السيرفر فقط.',
     deliveryModel:
-      'التوصيل يدعم أجرة واحدة لجميع المناطق. اختلاف الأجرة لكل منطقة غير ممثل في نموذج السيرفر ويحتاج COORDINATOR/PRODUCT MODEL HANDOFF REQUIRED قبل أي ترحيل.',
+      'التوصيل يدعم أجرة موحدة أو أجرة مختلفة حسب المنطقة، وتبقى الأسعار والمناطق محفوظة ضمن سلطة السيرفر.',
     superQiModel:
       'SuperQi هنا يحدد طريقة دفع إلكترونية فقط. اسم الحساب وQR غير مدعومين بسلطة سيرفر آمنة حاليًا، لذلك لا يتم حفظهما محليًا ولا ضمن الإعدادات التشغيلية.',
   },
@@ -52,7 +52,7 @@ const UI_COPY: Record<UiLanguage, UiCopy> = {
     authorityDescription:
       'ڕێکخستنە کارپێکراوەکانی خوارەوە لە سێرڤەرەوە دێن و تەنها لە سێرڤەر پاشەکەوت دەکرێن.',
     deliveryModel:
-      'گەیاندن تەنها یەک نرخ بۆ هەموو ناوچەکان پشتگیری دەکات. نرخی جیاواز بۆ هەر ناوچەیەک لە مۆدێلی سێرڤەر نییە و پێویستی بە COORDINATOR/PRODUCT MODEL HANDOFF REQUIRED هەیە.',
+      'گەیاندن یەک نرخ یان نرخی جیاواز بەپێی ناوچە پشتگیری دەکات و هەموو نرخەکان لە دەسەڵاتی سێرڤەر پاشەکەوت دەکرێن.',
     superQiModel:
       'SuperQi لێرە تەنها وەک شێوازی پارەدانی ئەلیکترۆنی هەڵدەبژێردرێت. ناوی هەژمار و QR دەسەڵاتی سێرڤەری پارێزراویان نییە، بۆیە ناوخۆ یان لە ڕێکخستنە کارپێکراوەکان پاشەکەوت ناکرێن.',
   },
@@ -69,7 +69,7 @@ const UI_COPY: Record<UiLanguage, UiCopy> = {
     authorityDescription:
       'The operational settings below are loaded from the server and saved to the server only.',
     deliveryModel:
-      'Delivery supports one fee across all areas. Different per-area fees are not representable by the current server model and require COORDINATOR/PRODUCT MODEL HANDOFF REQUIRED before migration.',
+      'Delivery supports either one flat fee or different fees by area, with all pricing stored in the server authority.',
     superQiModel:
       'SuperQi here selects an electronic payment method only. Account-name and QR data do not have a secure server authority, so they are not stored locally or in operational settings.',
   },

@@ -1,6 +1,14 @@
+import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { getFawriDataFilePath } from "../lib/dataPaths";
+import {
+  DeliveryPricingPolicyError,
+  normalizeDeliveryAreaName,
+  resolveDeliveryQuote,
+  type DeliveryAreaRate,
+  type DeliveryPricingMode,
+} from "./deliveryPricing";
 import { registerMerchantRuntimeDeletion } from "./merchantRuntime";
 
 export type MerchantReplyLanguage = "auto" | "ar" | "ku" | "en";
@@ -18,11 +26,13 @@ export type MerchantOperationalSettings = {
   reply_language: MerchantReplyLanguage;
   delivery: {
     enabled: boolean;
+    pricing_mode: DeliveryPricingMode;
     fee_iqd: number;
     free_delivery_threshold_iqd: number | null;
     estimated_days_min: number;
     estimated_days_max: number;
     areas: string[];
+    area_rates: DeliveryAreaRate[];
     notes: string;
   };
   payment: {
@@ -110,11 +120,13 @@ const ROOT_PATCH_KEYS = new Set([
 ]);
 const DELIVERY_PATCH_KEYS = new Set([
   "enabled",
+  "pricing_mode",
   "fee_iqd",
   "free_delivery_threshold_iqd",
   "estimated_days_min",
   "estimated_days_max",
   "areas",
+  "area_rates",
   "notes",
 ]);
 const PAYMENT_PATCH_KEYS = new Set([
@@ -261,6 +273,100 @@ function normalizedPaymentMethods(value: unknown): MerchantPaymentMethod[] {
     }
     return true;
   });
+}
+
+function deliveryRateId(merchantId: string, normalizedArea: string): string {
+  const digest = crypto
+    .createHash("sha256")
+    .update(`${merchantId}\0${normalizedArea}`)
+    .digest("hex")
+    .slice(0, 32);
+  return `delivery-area:${digest}`;
+}
+
+function normalizedAreaRates(
+  merchantId: string,
+  value: unknown,
+  fallback: DeliveryAreaRate[],
+): DeliveryAreaRate[] {
+  if (value === undefined) return structuredClone(fallback);
+  if (!Array.isArray(value) || value.length > 100) {
+    throw new MerchantSettingsError(
+      "MERCHANT_DELIVERY_AREA_RATES_INVALID",
+      "delivery area rates must be an array with at most 100 entries",
+      400,
+    );
+  }
+  const result: DeliveryAreaRate[] = [];
+  const seen = new Set<string>();
+  for (const raw of value) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+      throw new MerchantSettingsError(
+        "MERCHANT_DELIVERY_AREA_RATE_INVALID",
+        "delivery area rate is invalid",
+        400,
+      );
+    }
+    const record = raw as Record<string, unknown>;
+    const areaName = text(record.area_name);
+    const normalized = normalizeDeliveryAreaName(areaName);
+    const enabled = record.enabled === undefined ? true : record.enabled;
+    if (
+      !areaName ||
+      areaName.length > 100 ||
+      !normalized ||
+      normalized.length > 100 ||
+      typeof enabled !== "boolean"
+    ) {
+      throw new MerchantSettingsError(
+        "MERCHANT_DELIVERY_AREA_RATE_INVALID",
+        "delivery area rate is invalid",
+        400,
+      );
+    }
+    if (seen.has(normalized)) {
+      throw new MerchantSettingsError(
+        "MERCHANT_DELIVERY_AREA_DUPLICATE",
+        "delivery area is duplicated after normalization",
+        400,
+      );
+    }
+    if (record.fee_iqd === undefined) {
+      throw new MerchantSettingsError(
+        "MERCHANT_DELIVERY_AREA_RATE_INVALID",
+        "delivery area rate fee is required",
+        400,
+      );
+    }
+    seen.add(normalized);
+    result.push({
+      id: deliveryRateId(merchantId, normalized),
+      area_name: areaName,
+      normalized_area_name: normalized,
+      fee_iqd: nonNegativeInteger(record.fee_iqd, 0),
+      enabled,
+    });
+  }
+  return result;
+}
+
+function hydrateStoredSettings(
+  settings: MerchantOperationalSettings,
+): MerchantOperationalSettings {
+  const delivery = objectRecord(settings.delivery);
+  const pricingMode = delivery.pricing_mode === "per_area" ? "per_area" : "flat";
+  return {
+    ...settings,
+    delivery: {
+      ...settings.delivery,
+      pricing_mode: pricingMode,
+      area_rates: normalizedAreaRates(
+        settings.merchant_id,
+        delivery.area_rates === undefined ? [] : delivery.area_rates,
+        [],
+      ),
+    },
+  };
 }
 
 function writeJsonAtomically(filePath: string, value: unknown): void {
@@ -467,11 +573,13 @@ function defaultSettings(merchantId: string): MerchantOperationalSettings {
     reply_language: "auto",
     delivery: {
       enabled: true,
+      pricing_mode: "flat",
       fee_iqd: 0,
       free_delivery_threshold_iqd: null,
       estimated_days_min: 1,
       estimated_days_max: 3,
       areas: [],
+      area_rates: [],
       notes: "",
     },
     payment: {
@@ -589,10 +697,36 @@ function normalizePatch(
       400,
     );
   }
+  const pricingModeValue = Object.prototype.hasOwnProperty.call(
+    deliveryPatch,
+    "pricing_mode",
+  )
+    ? text(deliveryPatch.pricing_mode)
+    : current.delivery.pricing_mode;
+  if (pricingModeValue !== "flat" && pricingModeValue !== "per_area") {
+    throw new MerchantSettingsError(
+      "MERCHANT_DELIVERY_PRICING_MODE_INVALID",
+      "delivery pricing mode must be flat or per_area",
+      400,
+    );
+  }
+  const pricingMode = pricingModeValue as DeliveryPricingMode;
   const deliveryFee = nonNegativeInteger(
     deliveryPatch.fee_iqd,
     current.delivery.fee_iqd,
   );
+  const areaRates = normalizedAreaRates(
+    current.merchant_id,
+    deliveryPatch.area_rates,
+    current.delivery.area_rates,
+  );
+  if (pricingMode === "per_area" && !areaRates.some((rate) => rate.enabled)) {
+    throw new MerchantSettingsError(
+      "MERCHANT_DELIVERY_AREA_RATE_REQUIRED",
+      "at least one enabled delivery area rate is required in per-area mode",
+      400,
+    );
+  }
   let freeThreshold = current.delivery.free_delivery_threshold_iqd;
   if (
     Object.prototype.hasOwnProperty.call(
@@ -609,10 +743,12 @@ function normalizePatch(
   const estimatedMin = positiveInteger(
     deliveryPatch.estimated_days_min,
     current.delivery.estimated_days_min,
+    30,
   );
   const estimatedMax = positiveInteger(
     deliveryPatch.estimated_days_max,
     current.delivery.estimated_days_max,
+    30,
   );
   if (estimatedMax < estimatedMin) {
     throw new MerchantSettingsError(
@@ -695,13 +831,18 @@ function normalizePatch(
       : current.reply_language,
     delivery: {
       enabled: deliveryEnabled,
+      pricing_mode: pricingMode,
       fee_iqd: deliveryFee,
       free_delivery_threshold_iqd: freeThreshold,
       estimated_days_min: estimatedMin,
       estimated_days_max: estimatedMax,
-      areas: Object.prototype.hasOwnProperty.call(deliveryPatch, "areas")
-        ? normalizedStringList(deliveryPatch.areas)
-        : [...current.delivery.areas],
+      areas:
+        pricingMode === "per_area"
+          ? []
+          : Object.prototype.hasOwnProperty.call(deliveryPatch, "areas")
+            ? normalizedStringList(deliveryPatch.areas)
+            : [...current.delivery.areas],
+      area_rates: areaRates,
       notes: Object.prototype.hasOwnProperty.call(deliveryPatch, "notes")
         ? text(deliveryPatch.notes).slice(0, 1000)
         : current.delivery.notes,
@@ -735,7 +876,9 @@ export function getMerchantOperationalSettings(
       503,
     );
   }
-  return cloneSettings(stored || defaultSettings(merchantId));
+  return cloneSettings(
+    stored ? hydrateStoredSettings(stored) : defaultSettings(merchantId),
+  );
 }
 
 export function updateMerchantOperationalSettingsWithEffects(input: {
@@ -757,7 +900,9 @@ export function updateMerchantOperationalSettingsWithEffects(input: {
         503,
       );
     }
-    const current = stored || defaultSettings(merchantId);
+    const current = stored
+      ? hydrateStoredSettings(stored)
+      : defaultSettings(merchantId);
     if (current.version !== expectedVersion) {
       throw new MerchantSettingsError(
         "MERCHANT_SETTINGS_VERSION_CONFLICT",
@@ -794,6 +939,43 @@ export function updateMerchantOperationalSettings(input: {
 
 export function merchantAllowsAutoReply(merchantId: string): boolean {
   return getMerchantOperationalSettings(merchantId).auto_reply_enabled;
+}
+
+export function getMerchantDeliveryQuote(input: {
+  merchantId: string;
+  area?: unknown;
+  subtotalIqd?: unknown;
+}) {
+  const settings = getMerchantOperationalSettings(input.merchantId);
+  try {
+    return resolveDeliveryQuote({
+      policy: {
+        merchant_id: settings.merchant_id,
+        settings_version: settings.version,
+        enabled: settings.delivery.enabled,
+        pricing_mode: settings.delivery.pricing_mode,
+        flat_fee_iqd: settings.delivery.fee_iqd,
+        free_delivery_threshold_iqd:
+          settings.delivery.free_delivery_threshold_iqd,
+        estimated_days_min: settings.delivery.estimated_days_min,
+        estimated_days_max: settings.delivery.estimated_days_max,
+        areas: settings.delivery.areas,
+        area_rates: settings.delivery.area_rates,
+      },
+      area: input.area,
+      subtotal_iqd: input.subtotalIqd ?? 0,
+    });
+  } catch (error) {
+    if (error instanceof DeliveryPricingPolicyError) {
+      throw new MerchantSettingsError(
+        "MERCHANT_DELIVERY_POLICY_INVALID",
+        "merchant delivery pricing policy is invalid",
+        503,
+        { pricing_code: error.code },
+      );
+    }
+    throw error;
+  }
 }
 
 registerMerchantRuntimeDeletion((merchantIdValue) => {

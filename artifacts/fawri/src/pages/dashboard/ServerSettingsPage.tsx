@@ -7,6 +7,14 @@ import { Loader2, RefreshCw, Save } from 'lucide-react';
 import { toast } from 'sonner';
 
 type ReplyLanguage = 'auto' | 'ar' | 'ku' | 'en';
+type DeliveryPricingMode = 'flat' | 'per_area';
+type DeliveryAreaRate = {
+  id: string;
+  area_name: string;
+  normalized_area_name: string;
+  fee_iqd: number;
+  enabled: boolean;
+};
 type PaymentMethod =
   | 'cash_on_delivery'
   | 'superqi'
@@ -21,11 +29,13 @@ type MerchantSettings = {
   reply_language: ReplyLanguage;
   delivery: {
     enabled: boolean;
+    pricing_mode: DeliveryPricingMode;
     fee_iqd: number;
     free_delivery_threshold_iqd: number | null;
     estimated_days_min: number;
     estimated_days_max: number;
     areas: string[];
+    area_rates: DeliveryAreaRate[];
     notes: string;
   };
   payment: {
@@ -55,7 +65,15 @@ type Copy = {
   replyLanguage: string;
   delivery: string;
   deliveryEnabled: string;
+  pricingMode: string;
+  flatPricing: string;
+  perAreaPricing: string;
   deliveryFee: string;
+  areaName: string;
+  areaFee: string;
+  addArea: string;
+  removeArea: string;
+  areaRateRequired: string;
   freeThreshold: string;
   minDays: string;
   maxDays: string;
@@ -86,7 +104,15 @@ const COPY: Record<LanguageCode, Copy> = {
     replyLanguage: 'لغة الرد',
     delivery: 'التوصيل',
     deliveryEnabled: 'التوصيل متاح',
+    pricingMode: 'طريقة تسعير التوصيل',
+    flatPricing: 'أجرة موحدة',
+    perAreaPricing: 'أجرة حسب المنطقة',
     deliveryFee: 'أجرة التوصيل (دينار)',
+    areaName: 'المنطقة',
+    areaFee: 'أجرة التوصيل',
+    addArea: 'إضافة منطقة',
+    removeArea: 'حذف',
+    areaRateRequired: 'أضف منطقة واحدة على الأقل مع أجرة صحيحة.',
     freeThreshold: 'التوصيل المجاني فوق مبلغ',
     minDays: 'أقل مدة بالأيام',
     maxDays: 'أقصى مدة بالأيام',
@@ -115,7 +141,15 @@ const COPY: Record<LanguageCode, Copy> = {
     replyLanguage: 'زمانی وەڵام',
     delivery: 'گەیاندن',
     deliveryEnabled: 'گەیاندن بەردەستە',
+    pricingMode: 'شێوازی نرخی گەیاندن',
+    flatPricing: 'یەک نرخ',
+    perAreaPricing: 'نرخ بەپێی ناوچە',
     deliveryFee: 'کرێی گەیاندن',
+    areaName: 'ناوچە',
+    areaFee: 'کرێی گەیاندن',
+    addArea: 'زیادکردنی ناوچە',
+    removeArea: 'سڕینەوە',
+    areaRateRequired: 'لانیکەم یەک ناوچە و نرخ زیاد بکە.',
     freeThreshold: 'گەیاندنی بەخۆڕایی لە سەرووی',
     minDays: 'کەمترین ڕۆژ',
     maxDays: 'زۆرترین ڕۆژ',
@@ -144,7 +178,15 @@ const COPY: Record<LanguageCode, Copy> = {
     replyLanguage: 'Reply language',
     delivery: 'Delivery',
     deliveryEnabled: 'Delivery available',
+    pricingMode: 'Delivery pricing',
+    flatPricing: 'One flat fee',
+    perAreaPricing: 'Fee by area',
     deliveryFee: 'Delivery fee (IQD)',
+    areaName: 'Area',
+    areaFee: 'Delivery fee',
+    addArea: 'Add area',
+    removeArea: 'Remove',
+    areaRateRequired: 'Add at least one area with a valid delivery fee.',
     freeThreshold: 'Free delivery above',
     minDays: 'Minimum days',
     maxDays: 'Maximum days',
@@ -200,8 +242,14 @@ export default function ServerSettingsPage() {
   const [error, setError] = useState('');
 
   const dirty = useMemo(
-    () => Boolean(settings && draft && JSON.stringify(settings) !== JSON.stringify(draft)),
-    [settings, draft],
+    () =>
+      Boolean(
+        settings &&
+          draft &&
+          (JSON.stringify(settings) !== JSON.stringify(draft) ||
+            areasText !== settings.delivery.areas.join('\n')),
+      ),
+    [settings, draft, areasText],
   );
 
   const applyServerState = (next: MerchantSettings) => {
@@ -248,12 +296,67 @@ export default function ServerSettingsPage() {
     });
   };
 
+  const addAreaRate = () => {
+    updateDraft(current => ({
+      ...current,
+      delivery: {
+        ...current.delivery,
+        area_rates: [
+          ...current.delivery.area_rates,
+          {
+            id: `draft-${Date.now()}-${current.delivery.area_rates.length}`,
+            area_name: '',
+            normalized_area_name: '',
+            fee_iqd: 0,
+            enabled: true,
+          },
+        ],
+      },
+    }));
+  };
+
+  const updateAreaRate = (index: number, patch: Partial<DeliveryAreaRate>) => {
+    updateDraft(current => ({
+      ...current,
+      delivery: {
+        ...current.delivery,
+        area_rates: current.delivery.area_rates.map((rate, rateIndex) =>
+          rateIndex === index ? { ...rate, ...patch } : rate,
+        ),
+      },
+    }));
+  };
+
+  const removeAreaRate = (index: number) => {
+    updateDraft(current => ({
+      ...current,
+      delivery: {
+        ...current.delivery,
+        area_rates: current.delivery.area_rates.filter(
+          (_, rateIndex) => rateIndex !== index,
+        ),
+      },
+    }));
+  };
+
   const persistSettings = async () => {
     if (!settings || !draft || saving) return;
 
     const normalized: MerchantSettings = {
       ...draft,
-      delivery: { ...draft.delivery, areas: normalizeAreas(areasText) },
+      delivery: {
+        ...draft.delivery,
+        areas:
+          draft.delivery.pricing_mode === 'flat'
+            ? normalizeAreas(areasText)
+            : [],
+        area_rates: draft.delivery.area_rates.map(rate => ({
+          ...rate,
+          area_name: rate.area_name.trim(),
+          fee_iqd: Math.max(0, Number(rate.fee_iqd || 0)),
+          enabled: rate.enabled !== false,
+        })),
+      },
       payment: {
         ...draft.payment,
         methods: draft.payment.methods.filter(method =>
@@ -264,6 +367,15 @@ export default function ServerSettingsPage() {
       },
     };
 
+    if (
+      normalized.delivery.pricing_mode === 'per_area' &&
+      !normalized.delivery.area_rates.some(
+        rate => rate.enabled && rate.area_name.length > 0,
+      )
+    ) {
+      toast.error(copy.areaRateRequired);
+      return;
+    }
     if (
       normalized.payment.cash_on_delivery_enabled &&
       !normalized.payment.methods.includes('cash_on_delivery')
@@ -453,12 +565,32 @@ export default function ServerSettingsPage() {
                 className="h-5 w-5 accent-primary"
               />
             </label>
+            <label className="block space-y-2 rounded-xl border p-4 text-sm font-semibold">
+              <span>{copy.pricingMode}</span>
+              <select
+                value={draft.delivery.pricing_mode}
+                onChange={event =>
+                  updateDraft(current => ({
+                    ...current,
+                    delivery: {
+                      ...current.delivery,
+                      pricing_mode: event.target.value as DeliveryPricingMode,
+                    },
+                  }))
+                }
+                className="h-11 w-full rounded-md border bg-background px-3"
+              >
+                <option value="flat">{copy.flatPricing}</option>
+                <option value="per_area">{copy.perAreaPricing}</option>
+              </select>
+            </label>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <label className="space-y-2 text-sm font-medium">
                 <span>{copy.deliveryFee}</span>
                 <Input
                   type="number"
                   min={0}
+                  disabled={draft.delivery.pricing_mode === 'per_area'}
                   value={draft.delivery.fee_iqd}
                   onChange={event =>
                     updateDraft(current => ({
@@ -527,10 +659,59 @@ export default function ServerSettingsPage() {
                 />
               </label>
             </div>
+            {draft.delivery.pricing_mode === 'per_area' ? (
+              <div className="space-y-3 rounded-xl border p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-semibold">{copy.perAreaPricing}</span>
+                  <Button type="button" variant="outline" onClick={addAreaRate}>
+                    {copy.addArea}
+                  </Button>
+                </div>
+                {draft.delivery.area_rates.map((rate, index) => (
+                  <div
+                    key={rate.id || index}
+                    className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_180px_auto]"
+                  >
+                    <label className="space-y-1 text-sm font-medium">
+                      <span>{copy.areaName}</span>
+                      <Input
+                        value={rate.area_name}
+                        maxLength={100}
+                        onChange={event =>
+                          updateAreaRate(index, { area_name: event.target.value })
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm font-medium">
+                      <span>{copy.areaFee}</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={rate.fee_iqd}
+                        onChange={event =>
+                          updateAreaRate(index, {
+                            fee_iqd: Math.max(0, Number(event.target.value || 0)),
+                          })
+                        }
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="self-end"
+                      onClick={() => removeAreaRate(index)}
+                    >
+                      {copy.removeArea}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <label className="block space-y-2 text-sm font-medium">
               <span>{copy.areas}</span>
               <textarea
                 value={areasText}
+                disabled={draft.delivery.pricing_mode === 'per_area'}
                 onChange={event => setAreasText(event.target.value)}
                 rows={4}
                 maxLength={10000}

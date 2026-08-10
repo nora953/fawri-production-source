@@ -99,7 +99,7 @@ test("0004 archives the exact Golden catalog schema as its 0003 preimage", () =>
   }
 });
 
-test("migration journal is an append-only 0,1,2,3,4 chain", () => {
+test("migration journal keeps the Golden 0-4 prefix and appends 0005", () => {
   const journal = JSON.parse(
     fs.readFileSync(path.join(metaRoot, "_journal.json"), "utf8"),
   );
@@ -108,7 +108,7 @@ test("migration journal is an append-only 0,1,2,3,4 chain", () => {
   assert.deepEqual(journal.entries.slice(0, 4), goldenJournalPrefix);
   assert.deepEqual(
     journal.entries.map((entry) => entry.idx),
-    [0, 1, 2, 3, 4],
+    [0, 1, 2, 3, 4, 5],
   );
   assert.deepEqual(journal.entries[4], {
     idx: 4,
@@ -130,6 +130,7 @@ test("0004 SQL is additive and contains only the physical measurement delta", ()
     "0002_cross_lane_stage.sql",
     "0003_cross_lane_cleanup.sql",
     "0004_product_shipping_measurements.sql",
+    "0005_delivery_fee_per_area.sql",
   ]);
 
   const sql = fs.readFileSync(

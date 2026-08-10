@@ -16,6 +16,23 @@ const PAYMENT_METHODS = new Set([
   "other",
 ]);
 const REPLY_JOB_TYPE = "meta.webhook.reply";
+const DELIVERY_PRICING_MODES = new Set(["flat", "per_area"]);
+
+function normalizeDeliveryAreaName(value) {
+  return String(value ?? "")
+    .normalize("NFKC")
+    .replace(/[ـًٌٍَُِّْ]/g, "")
+    .replace(/[إأآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[کكگ]/g, "ك")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 function text(value) {
   return String(value || "").trim();
@@ -89,7 +106,10 @@ function buildReport() {
       }),
     );
   }
-  if (jobsSource.exists && jobsSource.value?.version !== 1) {
+  if (
+    jobsSource.exists &&
+    ![1, 2].includes(Number(jobsSource.value?.version))
+  ) {
     issues.push(
       issue("error", "MERCHANT_SETTINGS_JOB_STORE_VERSION_UNSUPPORTED", {
         version: jobsSource.value?.version ?? null,
@@ -140,6 +160,15 @@ function buildReport() {
     }
 
     const delivery = asRecord(settings.delivery);
+    const pricingMode =
+      delivery.pricing_mode === undefined ? "flat" : text(delivery.pricing_mode);
+    if (!DELIVERY_PRICING_MODES.has(pricingMode)) {
+      issues.push(
+        issue("error", "MERCHANT_SETTINGS_DELIVERY_PRICING_MODE_INVALID", {
+          merchant_id: merchantId,
+        }),
+      );
+    }
     const minDays = Number(delivery.estimated_days_min);
     const maxDays = Number(delivery.estimated_days_max);
     if (
@@ -170,10 +199,59 @@ function buildReport() {
       areas.length !== asArray(delivery.areas).length ||
       new Set(areas).size !== areas.length ||
       areas.some((area) => area.length > 100) ||
-      text(delivery.notes).length > 1000
+      text(delivery.notes).length > 1000 ||
+      (pricingMode === "per_area" && areas.length > 0)
     ) {
       issues.push(
         issue("error", "MERCHANT_SETTINGS_DELIVERY_CONTENT_INVALID", {
+          merchant_id: merchantId,
+        }),
+      );
+    }
+
+    const rateKeys = new Set();
+    let enabledRateCount = 0;
+    const areaRates = asArray(delivery.area_rates);
+    if (areaRates.length > 100) {
+      issues.push(
+        issue("error", "MERCHANT_SETTINGS_DELIVERY_AREA_RATES_INVALID", {
+          merchant_id: merchantId,
+        }),
+      );
+    }
+    for (const rawRate of areaRates) {
+      const rate = asRecord(rawRate);
+      const areaName = text(rate.area_name);
+      const normalized = normalizeDeliveryAreaName(areaName);
+      if (
+        !text(rate.id) ||
+        !areaName ||
+        areaName.length > 100 ||
+        normalized !== text(rate.normalized_area_name) ||
+        !nonNegativeInteger(rate.fee_iqd) ||
+        typeof rate.enabled !== "boolean"
+      ) {
+        issues.push(
+          issue("error", "MERCHANT_SETTINGS_DELIVERY_AREA_RATE_INVALID", {
+            merchant_id: merchantId,
+            rate_id: text(rate.id) || null,
+          }),
+        );
+      }
+      if (rateKeys.has(normalized)) {
+        issues.push(
+          issue("error", "MERCHANT_SETTINGS_DELIVERY_AREA_RATE_DUPLICATE", {
+            merchant_id: merchantId,
+            normalized_area_name: normalized,
+          }),
+        );
+      }
+      rateKeys.add(normalized);
+      if (rate.enabled === true) enabledRateCount += 1;
+    }
+    if (pricingMode === "per_area" && enabledRateCount === 0) {
+      issues.push(
+        issue("error", "MERCHANT_SETTINGS_DELIVERY_AREA_RATE_REQUIRED", {
           merchant_id: merchantId,
         }),
       );
