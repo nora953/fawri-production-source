@@ -61,6 +61,23 @@ if old_apply not in text:
     raise SystemExit("STOP: base runner raw migration apply block changed unexpectedly")
 text = text.replace(old_apply, new_apply, 1)
 
+# The migration test suite includes PostgreSQL acceptance tests whose contract
+# requires the disposable fawri_ci schema to be empty at suite start. A failed
+# prior run may leave tables behind, so reset before the suite rather than
+# weakening those tests.
+old_gate = '''echo "Running migration and PostgreSQL gates..."
+pnpm run migration:test
+reset_db
+'''
+new_gate = '''echo "Running migration and PostgreSQL gates..."
+reset_db
+pnpm run migration:test
+reset_db
+'''
+if old_gate not in text:
+    raise SystemExit("STOP: base runner migration gate block changed unexpectedly")
+text = text.replace(old_gate, new_gate, 1)
+
 old_cleanup = '''rm -f scripts/.tmp-saas-billing-authority.py \\
   scripts/.tmp-saas-billing-authority-2.py \\
   scripts/run-saas-billing-authority-local.sh\n'''
