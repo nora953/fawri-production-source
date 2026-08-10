@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { SaasBillingPanel } from '@/components/SaasBillingPanel';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
 import { useI18n } from '@/lib/i18n';
 import { getCurrentMerchant, saveSubscriptions } from '@/lib/store';
@@ -117,23 +118,25 @@ export default function SubscriptionPage() {
     );
   }
 
-  if (!subscription) {
-    return (
-      <div className="mx-auto max-w-3xl space-y-3 p-8">
-        <h1 className="text-2xl font-bold">{messages.noSubscriptionTitle}</h1>
-        <p className="text-muted-foreground">{messages.noSubscriptionBody}</p>
-      </div>
-    );
-  }
-
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold">{t.subscription}</h1>
 
-      <SubscriptionCard
-        subscription={subscription}
-        onEmergencyActivate={handleActivateEmergency}
-      />
+      {!subscription && (
+        <div className="space-y-2 rounded-xl border p-4">
+          <h2 className="font-bold">{messages.noSubscriptionTitle}</h2>
+          <p className="text-sm text-muted-foreground">{messages.noSubscriptionBody}</p>
+        </div>
+      )}
+
+      {subscription && (
+        <SubscriptionCard
+          subscription={subscription}
+          onEmergencyActivate={handleActivateEmergency}
+        />
+      )}
+
+      <SaasBillingPanel subscription={subscription} />
     </div>
   );
 }
