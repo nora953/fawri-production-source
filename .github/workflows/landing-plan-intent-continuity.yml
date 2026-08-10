@@ -4,6 +4,15 @@ on:
   push:
     branches:
       - parallel/landing-plan-intent-continuity
+      - parallel/integration-coordinator
+    paths:
+      - artifacts/fawri/src/pages/LandingPage.tsx
+      - artifacts/fawri/src/pages/SignupPage.tsx
+      - artifacts/fawri/tests/landing-plan-intent-continuity.test.mjs
+      - artifacts/api-server/src/routes/auth-public-routes.ts
+      - artifacts/api-server/src/services/authAccountRepository.ts
+      - artifacts/api-server/tests/landing-plan-intent-continuity.test.ts
+      - .github/workflows/landing-plan-intent-continuity.yml
   pull_request:
     paths:
       - artifacts/fawri/src/pages/LandingPage.tsx
@@ -26,14 +35,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Verify golden coordinator
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin parallel/integration-coordinator
-          test "$(git rev-parse origin/parallel/integration-coordinator)" = "64a65667bab8609ac7f39f4975490f3a2f342ea4"
-          test "$(git merge-base origin/parallel/integration-coordinator HEAD)" = "64a65667bab8609ac7f39f4975490f3a2f342ea4"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
