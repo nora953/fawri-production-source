@@ -105,10 +105,6 @@ export const products = pgTable(
       "products_dimensions_mm_check",
       sql`(${table.lengthMm} IS NULL AND ${table.widthMm} IS NULL AND ${table.heightMm} IS NULL) OR (${table.lengthMm} BETWEEN 1 AND 100000 AND ${table.widthMm} BETWEEN 1 AND 100000 AND ${table.heightMm} BETWEEN 1 AND 100000)`,
     ),
-    dimensionsAllOrNoneCheck: check(
-      "products_dimensions_mm_all_or_none_check",
-      sql`(${table.lengthMm} IS NULL AND ${table.widthMm} IS NULL AND ${table.heightMm} IS NULL) OR (${table.lengthMm} IS NOT NULL AND ${table.widthMm} IS NOT NULL AND ${table.heightMm} IS NOT NULL AND ${table.lengthMm} BETWEEN 1 AND 100000 AND ${table.widthMm} BETWEEN 1 AND 100000 AND ${table.heightMm} BETWEEN 1 AND 100000)`,
-    ),
     versionCheck: check("products_version_check", sql`${table.version} > 0`),
     externalRefPairCheck: check(
       "products_external_ref_pair_check",
@@ -198,10 +194,6 @@ export const productVariants = pgTable(
     dimensionsCheck: check(
       "product_variants_dimensions_mm_check",
       sql`(${table.lengthMm} IS NULL AND ${table.widthMm} IS NULL AND ${table.heightMm} IS NULL) OR (${table.lengthMm} BETWEEN 1 AND 100000 AND ${table.widthMm} BETWEEN 1 AND 100000 AND ${table.heightMm} BETWEEN 1 AND 100000)`,
-    ),
-    dimensionsAllOrNoneCheck: check(
-      "product_variants_dimensions_mm_all_or_none_check",
-      sql`(${table.lengthMm} IS NULL AND ${table.widthMm} IS NULL AND ${table.heightMm} IS NULL) OR (${table.lengthMm} IS NOT NULL AND ${table.widthMm} IS NOT NULL AND ${table.heightMm} IS NOT NULL AND ${table.lengthMm} BETWEEN 1 AND 100000 AND ${table.widthMm} BETWEEN 1 AND 100000 AND ${table.heightMm} BETWEEN 1 AND 100000)`,
     ),
     versionCheck: check(
       "product_variants_version_check",

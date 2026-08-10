@@ -140,7 +140,7 @@ test(
       const history = await pool.query(
         'SELECT COUNT(*)::integer AS count FROM "drizzle"."__drizzle_migrations"',
       );
-      assert.equal(history.rows[0].count, 5, "committed chain must apply 5 migrations");
+      assert.equal(history.rows[0].count, 6, "committed chain must apply 6 migrations");
 
       client = new Client({ connectionString: testUrl.toString() });
       await client.connect();

@@ -346,9 +346,87 @@ function reconcileOrders(report, dataDirectory) {
   report.rows.order_terminal_decision_links = links;
 }
 
+function normalizeDeliveryAreaName(value) {
+  return String(value ?? "")
+    .normalize("NFKC")
+    .replace(/[ـًٌٍَُِّْ]/g, "")
+    .replace(/[إأآٱ]/g, "ا")
+    .replace(/ى/g, "ي")
+    .replace(/ؤ/g, "و")
+    .replace(/ئ/g, "ي")
+    .replace(/ة/g, "ه")
+    .replace(/[کكگ]/g, "ك")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function reconcileSettings(report) {
+  const settingsByMerchant = new Map(
+    asArray(report.rows.merchant_settings).map((row) => [String(row.merchant_id), row]),
+  );
+  const enabledRates = new Map();
+  const normalizedKeys = new Set();
+  for (const rate of asArray(report.rows.merchant_delivery_area_rates)) {
+    const merchantId = String(rate.merchant_id || "");
+    const settings = settingsByMerchant.get(merchantId);
+    const normalized = normalizeDeliveryAreaName(rate.area_name);
+    if (!settings) {
+      addError(report, "MERCHANT_DELIVERY_AREA_RATE_SETTINGS_MISSING", {
+        merchant_id: merchantId,
+        rate_id: rate.id,
+      });
+      continue;
+    }
+    if (
+      !rate.id ||
+      !normalized ||
+      normalized !== String(rate.normalized_area_name || "") ||
+      normalized.length > 100 ||
+      !Number.isInteger(Number(rate.fee_iqd)) ||
+      Number(rate.fee_iqd) < 0 ||
+      Number(rate.fee_iqd) > 100000000 ||
+      typeof rate.enabled !== "boolean"
+    ) {
+      addError(report, "MERCHANT_DELIVERY_AREA_RATE_INVALID", {
+        merchant_id: merchantId,
+        rate_id: rate.id || null,
+      });
+    }
+    const key = `${merchantId}:${normalized}`;
+    if (normalizedKeys.has(key)) {
+      addError(report, "MERCHANT_DELIVERY_AREA_RATE_DUPLICATE", {
+        merchant_id: merchantId,
+        normalized_area_name: normalized,
+      });
+    }
+    normalizedKeys.add(key);
+    if (rate.enabled === true) {
+      enabledRates.set(merchantId, (enabledRates.get(merchantId) || 0) + 1);
+    }
+  }
+
   for (const row of asArray(report.rows.merchant_settings)) {
     row.version = positiveInteger(row.version, 1);
+    row.delivery_pricing_mode =
+      row.delivery_pricing_mode === "per_area" ? "per_area" : "flat";
+    if (
+      row.delivery_pricing_mode === "per_area" &&
+      (enabledRates.get(String(row.merchant_id)) || 0) === 0
+    ) {
+      addError(report, "MERCHANT_DELIVERY_AREA_RATE_REQUIRED", {
+        merchant_id: row.merchant_id,
+      });
+    }
+    if (
+      row.delivery_pricing_mode === "per_area" &&
+      asArray(row.delivery_areas).length > 0
+    ) {
+      addError(report, "MERCHANT_DELIVERY_DUAL_AREA_AUTHORITY", {
+        merchant_id: row.merchant_id,
+      });
+    }
     const methods = asArray(row.payment_methods);
     if (String(row.delivery_notes || "").length > 1000) addError(report, "MERCHANT_SETTINGS_DELIVERY_NOTES_TOO_LONG", { merchant_id: row.merchant_id });
     if (String(row.payment_instructions || "").length > 2000) addError(report, "MERCHANT_SETTINGS_PAYMENT_INSTRUCTIONS_TOO_LONG", { merchant_id: row.merchant_id });

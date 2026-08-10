@@ -78,6 +78,12 @@ function artifactHashes(outputDirectory) {
     productShippingSnapshot: sha256(
       path.join(outputDirectory, "meta", "0004_snapshot.json"),
     ),
+    deliveryAreaSql: sha256(
+      path.join(outputDirectory, "0005_delivery_fee_per_area.sql"),
+    ),
+    deliveryAreaSnapshot: sha256(
+      path.join(outputDirectory, "meta", "0005_snapshot.json"),
+    ),
   };
 }
 
@@ -106,6 +112,7 @@ test(
           "0002_cross_lane_stage.sql",
           "0003_cross_lane_cleanup.sql",
           "0004_product_shipping_measurements.sql",
+          "0005_delivery_fee_per_area.sql",
         ]);
 
         const journal = JSON.parse(
@@ -114,13 +121,14 @@ test(
             "utf8",
           ),
         );
-        assert.equal(journal.entries?.length, 5);
+        assert.equal(journal.entries?.length, 6);
         assert.equal(journal.entries[2]?.tag, "0002_cross_lane_stage");
         assert.equal(journal.entries[3]?.tag, "0003_cross_lane_cleanup");
         assert.equal(
           journal.entries[4]?.tag,
           "0004_product_shipping_measurements",
         );
+        assert.equal(journal.entries[5]?.tag, "0005_delivery_fee_per_area");
       }
 
       const firstHashes = artifactHashes(first.outputDirectory);

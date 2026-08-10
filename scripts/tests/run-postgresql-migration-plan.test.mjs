@@ -105,7 +105,7 @@ test("validated migration plan matches schema and removes row payloads", () => {
     assert.equal(report.writes_performed, false);
     assert.equal(report.database_connection_used, false);
     assert.equal(report.summary.errors, 0);
-    assert.equal(report.schema_validation.snapshot, "0004_snapshot.json");
+    assert.equal(report.schema_validation.snapshot, "0005_snapshot.json");
     assert.match(report.schema_validation.snapshot_sha256, sha256Pattern);
     assert.equal(report.schema_validation.database_connection_used, false);
     assert.equal(report.schema_validation.rows_removed_from_output, true);
@@ -124,8 +124,8 @@ test("committed latest Drizzle snapshot exposes current migration targets", () =
     ),
   );
   const latest = journal.entries?.at(-1);
-  assert.equal(latest?.idx, 4, "latest committed Drizzle migration is not 0004");
-  assert.equal(latest?.tag, "0004_product_shipping_measurements");
+  assert.equal(latest?.idx, 5, "latest committed Drizzle migration is not 0005");
+  assert.equal(latest?.tag, "0005_delivery_fee_per_area");
 
   const snapshot = JSON.parse(
     fs.readFileSync(
@@ -135,20 +135,21 @@ test("committed latest Drizzle snapshot exposes current migration targets", () =
         "db",
         "drizzle",
         "meta",
-        "0004_snapshot.json",
+        "0005_snapshot.json",
       ),
       "utf8",
     ),
   );
 
-  assert.ok(snapshot.tables?.["public.orders"], "orders table missing from 0004");
+  assert.ok(snapshot.tables?.["public.orders"], "orders table missing from 0005");
   assert.ok(
     snapshot.tables["public.orders"].columns?.version,
-    "orders.version missing from 0004",
+    "orders.version missing from 0005",
   );
   for (const table of [
     "manual_reply_requests",
     "merchant_settings",
+    "merchant_delivery_area_rates",
     "auth_otp_challenges",
     "reply_reservations",
     "order_payment_decisions",
@@ -157,16 +158,16 @@ test("committed latest Drizzle snapshot exposes current migration targets", () =
     "knowledge_embeddings",
     "database_admin_access_audits",
   ]) {
-    assert.ok(snapshot.tables?.[`public.${table}`], `${table} missing from 0004`);
+    assert.ok(snapshot.tables?.[`public.${table}`], `${table} missing from 0005`);
   }
   assert.equal(
     snapshot.tables["public.training_requests"].columns?.customer_message,
     undefined,
-    "raw training customer_message authority survived 0004",
+    "raw training customer_message authority survived 0005",
   );
   assert.ok(
     snapshot.tables["public.training_requests"].columns?.customer_text_hash,
-    "training customer_text_hash missing from 0004",
+    "training customer_text_hash missing from 0005",
   );
 });
 
