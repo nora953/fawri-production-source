@@ -1,9 +1,9 @@
 import type { DurableJob } from "./durableJobQueue";
 import {
-  completeMetaChannelDisconnect,
-  markMetaChannelError,
-  readMetaChannelCredential,
-} from "./metaChannelRuntime";
+  completeMetaChannelDisconnectAuthoritative,
+  markMetaChannelErrorAuthoritative,
+  readMetaChannelCredentialAuthoritative,
+} from "./postgresMetaChannelAuthority";
 import type { MetaCredentialKeyProvider } from "./metaCredentialVault";
 
 export type MetaGraphFetch = typeof fetch;
@@ -57,7 +57,7 @@ export function createMetaChannelDisconnectHandler(options: {
 
     let token: string;
     try {
-      token = readMetaChannelCredential({
+      token = await readMetaChannelCredentialAuthoritative({
         merchantId,
         pageId,
         platform,
@@ -66,7 +66,7 @@ export function createMetaChannelDisconnectHandler(options: {
     } catch (error) {
       const code = text((error as { code?: unknown }).code);
       if (code === "META_CHANNEL_CREDENTIAL_UNAVAILABLE") {
-        const disconnected = completeMetaChannelDisconnect({
+        const disconnected = await completeMetaChannelDisconnectAuthoritative({
           merchantId,
           pageId,
           platform,
@@ -109,7 +109,7 @@ export function createMetaChannelDisconnectHandler(options: {
           true,
         );
       }
-      markMetaChannelError({
+      await markMetaChannelErrorAuthoritative({
         merchantId,
         pageId,
         platform,
@@ -123,7 +123,7 @@ export function createMetaChannelDisconnectHandler(options: {
       );
     }
 
-    const disconnected = completeMetaChannelDisconnect({
+    const disconnected = await completeMetaChannelDisconnectAuthoritative({
       merchantId,
       pageId,
       platform,
