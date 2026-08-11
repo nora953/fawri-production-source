@@ -1,15 +1,32 @@
 import fs from "node:fs";
 import { getFawriDataFilePath } from "../lib/dataPaths";
 import { listActiveMetaPageMappings } from "./metaChannelRuntime";
+import {
+  listActiveMetaPageMappingsAuthoritative,
+} from "./postgresMetaChannelAuthority";
+import { operationalPostgresAuthorityRequired } from "./operationalPostgresAuthority";
 
 type MetaPageRecord = { merchant_id?: unknown; status?: unknown };
 type RuntimeDatabase = { metaPagesByPageId?: unknown };
 
 /**
- * Reads the encrypted channel registry first. The legacy runtime map remains a
- * temporary read-only compatibility source until the integration coordinator
- * migrates the shared Meta OAuth callback.
+ * PostgreSQL is the only page-to-merchant authority when the operational
+ * cutover is required. The legacy map remains read-only compatibility only
+ * while the cutover flag is disabled.
  */
+export async function readMetaPageMerchantMapAuthoritative(): Promise<Map<string, string>> {
+  if (operationalPostgresAuthorityRequired()) {
+    const result = new Map<string, string>();
+    for (const mapping of await listActiveMetaPageMappingsAuthoritative()) {
+      if (mapping.pageId && mapping.merchantId) {
+        result.set(mapping.pageId, mapping.merchantId);
+      }
+    }
+    return result;
+  }
+  return readMetaPageMerchantMap();
+}
+
 export function readMetaPageMerchantMap(): Map<string, string> {
   const result = new Map<string, string>();
 
