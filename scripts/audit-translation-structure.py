@@ -5,7 +5,9 @@ import re
 import sys
 from pathlib import Path
 
-from lib.translation_structure_scan import find_localized_object_declarations
+from lib.translation_structure_policy import (
+    find_hardcoded_localized_object_declarations,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "artifacts" / "fawri" / "src"
@@ -14,6 +16,8 @@ TRANSLATIONS = FRONTEND / "lib" / "translations"
 ADMIN_TRANSLATIONS = FRONTEND / "lib" / "admin-translations.ts"
 
 KEY_RE = re.compile(r"^\s{2}([A-Za-z_][A-Za-z0-9_]*):", re.MULTILINE)
+ADMIN_LANGUAGE_RE = re.compile(r"^  (ar|ku|en):\s*\{", re.MULTILINE)
+ADMIN_DIRECT_KEY_RE = re.compile(r"^    ([A-Za-z_][A-Za-z0-9_]*):", re.MULTILINE)
 JSX_TEXT_RE = re.compile(r">\s*([^<>{}\n][^<>{}\n]*?[A-Za-z\u0600-\u06ff][^<>{}\n]*?)\s*<")
 STRING_PROP_RE = re.compile(
     r"\b(?:title|placeholder|aria-label|description|label)\s*=\s*([\"'])([^\"']*[A-Za-z\u0600-\u06ff][^\"']*)\1"
@@ -39,6 +43,59 @@ def extract_general_keys(path: Path) -> set[str]:
     return set(KEY_RE.findall(read(path)))
 
 
+def _matching_brace(text: str, start: int) -> int:
+    depth = 0
+    index = start
+    mode = "code"
+    quote = ""
+    while index < len(text):
+        char = text[index]
+        nxt = text[index + 1] if index + 1 < len(text) else ""
+        if mode == "code":
+            if char in {"'", '"', "`"}:
+                quote = char
+                mode = "string"
+            elif char == "/" and nxt == "/":
+                mode = "line_comment"
+                index += 1
+            elif char == "/" and nxt == "*":
+                mode = "block_comment"
+                index += 1
+            elif char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    return index
+        elif mode == "string":
+            if char == "\\":
+                index += 1
+            elif char == quote:
+                mode = "code"
+                quote = ""
+        elif mode == "line_comment":
+            if char == "\n":
+                mode = "code"
+        elif char == "*" and nxt == "/":
+            mode = "code"
+            index += 1
+        index += 1
+    raise ValueError("unbalanced admin translation language block")
+
+
+def extract_admin_language_keys(text: str) -> dict[str, set[str]]:
+    result: dict[str, set[str]] = {}
+    for match in ADMIN_LANGUAGE_RE.finditer(text):
+        lang = match.group(1)
+        open_brace = text.find("{", match.start())
+        if open_brace < 0:
+            continue
+        close_brace = _matching_brace(text, open_brace)
+        block = text[open_brace + 1 : close_brace]
+        result[lang] = set(ADMIN_DIRECT_KEY_RE.findall(block))
+    return result
+
+
 def line_count(path: Path) -> int:
     try:
         return len(read(path).splitlines())
@@ -62,8 +119,8 @@ def visible_copy_candidates(path: Path) -> list[tuple[int, str]]:
                 continue
             line = text.count("\n", 0, match.start()) + 1
             findings.append((line, value[:140]))
-    seen = set()
-    result = []
+    seen: set[tuple[int, str]] = set()
+    result: list[tuple[int, str]] = []
     for item in findings:
         if item in seen:
             continue
@@ -72,24 +129,47 @@ def visible_copy_candidates(path: Path) -> list[tuple[int, str]]:
     return result
 
 
+def report_parity(
+    label: str,
+    keys_by_lang: dict[str, set[str]],
+    errors: list[str],
+) -> None:
+    print(label)
+    expected_languages = ("en", "ar", "ku")
+    if any(lang not in keys_by_lang for lang in expected_languages):
+        missing_languages = [lang for lang in expected_languages if lang not in keys_by_lang]
+        print(f"missing language blocks: {', '.join(missing_languages)}")
+        errors.append(f"{label.lower()} missing language blocks")
+        return
+
+    union = set().union(*(keys_by_lang[lang] for lang in expected_languages))
+    for lang in expected_languages:
+        keys = keys_by_lang[lang]
+        missing = sorted(union - keys)
+        extra_vs_en = sorted(keys - keys_by_lang["en"])
+        print(
+            f"{lang}={len(keys)} missing={len(missing)} extra_vs_en={len(extra_vs_en)}"
+        )
+        if missing:
+            print(f"  missing sample: {', '.join(missing[:30])}")
+            errors.append(f"{label.lower()} {lang} missing {len(missing)} keys")
+        if lang != "en" and extra_vs_en:
+            print(f"  extra sample: {', '.join(extra_vs_en[:30])}")
+            errors.append(f"{label.lower()} {lang} extra {len(extra_vs_en)} keys")
+
+
 def main() -> int:
     errors: list[str] = []
 
-    en_keys = extract_general_keys(TRANSLATIONS / "en.ts")
-    ar_keys = extract_general_keys(TRANSLATIONS / "ar.ts")
-    ku_keys = extract_general_keys(TRANSLATIONS / "ku.ts")
+    general_keys = {
+        lang: extract_general_keys(TRANSLATIONS / f"{lang}.ts")
+        for lang in ("en", "ar", "ku")
+    }
+    report_parity("=== GENERAL I18N PARITY ===", general_keys, errors)
 
-    print("=== GENERAL I18N PARITY ===")
-    print(f"en={len(en_keys)} ar={len(ar_keys)} ku={len(ku_keys)}")
-    for lang, keys in (("ar", ar_keys), ("ku", ku_keys)):
-        missing = sorted(en_keys - keys)
-        extra = sorted(keys - en_keys)
-        print(f"{lang}: missing={len(missing)} extra={len(extra)}")
-        if missing:
-            print(f"  missing sample: {', '.join(missing[:20])}")
-            errors.append(f"general i18n {lang} missing {len(missing)} keys")
-        if extra:
-            print(f"  extra sample: {', '.join(extra[:20])}")
+    print()
+    admin_keys = extract_admin_language_keys(read(ADMIN_TRANSLATIONS))
+    report_parity("=== ADMIN I18N PARITY ===", admin_keys, errors)
 
     print("\n=== LOCALIZED COPY OUTSIDE TRANSLATION AUTHORITY ===")
     localized_files: list[tuple[str, int]] = []
@@ -97,7 +177,8 @@ def main() -> int:
     for path in sorted(FRONTEND.rglob("*.ts*")):
         if is_translation_authority(path):
             continue
-        declarations = find_localized_object_declarations(read(path))
+        source_text = read(path)
+        declarations = find_hardcoded_localized_object_declarations(source_text)
         if declarations:
             localized_files.append((rel(path), len(declarations)))
             localized_object_count += len(declarations)
@@ -118,15 +199,17 @@ def main() -> int:
         for line, value in visible_copy_candidates(path):
             visible.append((rel(path), line, value))
     print(f"count={len(visible)}")
-    for file_name, line, value in visible[:80]:
+    for file_name, line, value in visible[:120]:
         print(f"{file_name}:{line}: {value}")
     if visible:
         errors.append(f"visible hardcoded copy candidates={len(visible)}")
 
-    print("\n=== LONG SOURCE FILES ===")
+    print("\n=== LONG EXECUTABLE SOURCE FILES ===")
     long_files: list[tuple[int, str]] = []
     for base in (FRONTEND, API):
         for path in base.rglob("*.ts*"):
+            if base == FRONTEND and is_translation_authority(path):
+                continue
             count = line_count(path)
             if count >= 800:
                 long_files.append((count, rel(path)))
@@ -136,13 +219,16 @@ def main() -> int:
         print(f"{marker} {count:5d} {file_name}")
     critical = [(count, file_name) for count, file_name in long_files if count >= 1800]
     if critical:
-        errors.append(f"critical long files={len(critical)}")
+        errors.append(f"critical executable files={len(critical)}")
 
     print("\n=== KNOWN STRUCTURE TARGETS ===")
     for target in (
         FRONTEND / "pages" / "AdminPage.tsx",
         API / "routes" / "auth.ts",
         API / "routes" / "index.ts",
+        FRONTEND / "pages" / "dashboard" / "BotTrainingPage.tsx",
+        FRONTEND / "pages" / "dashboard" / "ProductsPage.tsx",
+        FRONTEND / "pages" / "dashboard" / "SupportPage.tsx",
         FRONTEND / "components" / "SaasBillingPanel.tsx",
     ):
         if target.exists():
