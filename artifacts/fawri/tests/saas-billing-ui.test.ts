@@ -16,5 +16,14 @@ test('subscription page uses server billing catalog and does not invent paid sta
   assert.match(panel, /checkout_available/);
   assert.match(panel, /idempotency_key/);
   assert.doesNotMatch(panel, /paid:\s*true/);
-  assert.doesNotMatch(panel, /amount_iqd\s*:/);
+
+  const checkoutStart = panel.indexOf("fetch('/api/auth/billing/checkout'");
+  const checkoutEnd = panel.indexOf('const data =', checkoutStart);
+  assert.ok(checkoutStart >= 0 && checkoutEnd > checkoutStart, 'checkout request block missing');
+  const checkoutRequest = panel.slice(checkoutStart, checkoutEnd);
+  assert.match(checkoutRequest, /operation/);
+  assert.match(checkoutRequest, /plan/);
+  assert.match(checkoutRequest, /idempotency_key/);
+  assert.doesNotMatch(checkoutRequest, /(?:amount_iqd|monthly_price_iqd|price_iqd)\s*:/);
+  assert.match(panel, /order\.amount_iqd\.toLocaleString/);
 });

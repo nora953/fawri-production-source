@@ -16,6 +16,22 @@ const runnerPath = path.join(
 );
 const sha256Pattern = /^[a-f0-9]{64}$/;
 
+function latestCommittedMigration() {
+  const journal = JSON.parse(
+    fs.readFileSync(
+      path.join(repositoryRoot, "lib", "db", "drizzle", "meta", "_journal.json"),
+      "utf8",
+    ),
+  );
+  const latest = journal.entries?.at(-1);
+  assert.ok(Number.isInteger(latest?.idx), "latest committed Drizzle migration is missing");
+  assert.match(String(latest?.tag || ""), new RegExp(`^${String(latest.idx).padStart(4, "0")}_`));
+  return {
+    latest,
+    snapshotName: `${String(latest.idx).padStart(4, "0")}_snapshot.json`,
+  };
+}
+
 function makeDataDirectory() {
   return fs.mkdtempSync(path.join(os.tmpdir(), "fawri-validated-plan-"));
 }
@@ -105,7 +121,7 @@ test("validated migration plan matches schema and removes row payloads", () => {
     assert.equal(report.writes_performed, false);
     assert.equal(report.database_connection_used, false);
     assert.equal(report.summary.errors, 0);
-    assert.equal(report.schema_validation.snapshot, "0005_snapshot.json");
+    assert.equal(report.schema_validation.snapshot, latestCommittedMigration().snapshotName);
     assert.match(report.schema_validation.snapshot_sha256, sha256Pattern);
     assert.equal(report.schema_validation.database_connection_used, false);
     assert.equal(report.schema_validation.rows_removed_from_output, true);
@@ -117,16 +133,7 @@ test("validated migration plan matches schema and removes row payloads", () => {
 });
 
 test("committed latest Drizzle snapshot exposes current migration targets", () => {
-  const journal = JSON.parse(
-    fs.readFileSync(
-      path.join(repositoryRoot, "lib", "db", "drizzle", "meta", "_journal.json"),
-      "utf8",
-    ),
-  );
-  const latest = journal.entries?.at(-1);
-  assert.equal(latest?.idx, 5, "latest committed Drizzle migration is not 0005");
-  assert.equal(latest?.tag, "0005_delivery_fee_per_area");
-
+  const { snapshotName } = latestCommittedMigration();
   const snapshot = JSON.parse(
     fs.readFileSync(
       path.join(
@@ -135,16 +142,16 @@ test("committed latest Drizzle snapshot exposes current migration targets", () =
         "db",
         "drizzle",
         "meta",
-        "0005_snapshot.json",
+        snapshotName,
       ),
       "utf8",
     ),
   );
 
-  assert.ok(snapshot.tables?.["public.orders"], "orders table missing from 0005");
+  assert.ok(snapshot.tables?.["public.orders"], "orders table missing from latest snapshot");
   assert.ok(
     snapshot.tables["public.orders"].columns?.version,
-    "orders.version missing from 0005",
+    "orders.version missing from latest snapshot",
   );
   for (const table of [
     "manual_reply_requests",
@@ -158,16 +165,16 @@ test("committed latest Drizzle snapshot exposes current migration targets", () =
     "knowledge_embeddings",
     "database_admin_access_audits",
   ]) {
-    assert.ok(snapshot.tables?.[`public.${table}`], `${table} missing from 0005`);
+    assert.ok(snapshot.tables?.[`public.${table}`], `${table} missing from latest snapshot`);
   }
   assert.equal(
     snapshot.tables["public.training_requests"].columns?.customer_message,
     undefined,
-    "raw training customer_message authority survived 0005",
+    "raw training customer_message authority survived latest snapshot",
   );
   assert.ok(
     snapshot.tables["public.training_requests"].columns?.customer_text_hash,
-    "training customer_text_hash missing from 0005",
+    "training customer_text_hash missing from latest snapshot",
   );
 });
 

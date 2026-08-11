@@ -140,7 +140,14 @@ test(
       const history = await pool.query(
         'SELECT COUNT(*)::integer AS count FROM "drizzle"."__drizzle_migrations"',
       );
-      assert.equal(history.rows[0].count, 6, "committed chain must apply 6 migrations");
+      const committedJournal = JSON.parse(
+        fs.readFileSync(path.join(committedDrizzle, "meta", "_journal.json"), "utf8"),
+      );
+      assert.equal(
+        history.rows[0].count,
+        committedJournal.entries.length,
+        "committed chain must apply every journaled migration",
+      );
 
       client = new Client({ connectionString: testUrl.toString() });
       await client.connect();

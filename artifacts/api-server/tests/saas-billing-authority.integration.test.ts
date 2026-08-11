@@ -6,7 +6,6 @@ import {
   createSaasBillingCheckout,
   getSaasBillingCatalog,
   listMerchantSaasBillingOrders,
-  SaasBillingAuthorityError,
 } from "../src/services/saasBillingAuthority";
 import {
   applySubscriptionPlanOperationPostgres,
@@ -274,23 +273,20 @@ test("browser amount cannot override server plan pricing", async () => {
       idempotencyKey: "server-price-only",
       now: new Date("2026-08-11T04:00:00.000Z"),
     });
-    await assert.rejects(
-      () => applyVerifiedSaasBillingProviderEvent(
-        successEvent({
-          orderId: created.order.id,
-          eventId: "provider-event-wrong-amount",
-          paymentRef: "provider-payment-wrong-amount",
-          amount: 1,
-          at: new Date("2026-08-11T04:01:00.000Z"),
-        }),
-      ),
-      (error: unknown) =>
-        error instanceof SaasBillingAuthorityError &&
-        error.code === "SAAS_BILLING_AMOUNT_MISMATCH",
+    const mismatch = await applyVerifiedSaasBillingProviderEvent(
+      successEvent({
+        orderId: created.order.id,
+        eventId: "provider-event-wrong-amount",
+        paymentRef: "provider-payment-wrong-amount",
+        amount: 1,
+        at: new Date("2026-08-11T04:01:00.000Z"),
+      }),
     );
+    assert.equal(mismatch.status, "reconciliation_required");
+    assert.equal(mismatch.reasonCode, "SAAS_BILLING_AMOUNT_MISMATCH");
     const orders = await listMerchantSaasBillingOrders(merchantId);
     assert.equal(orders[0].amount_iqd, 25_000);
-    assert.equal(orders[0].status, "pending");
+    assert.equal(orders[0].status, "paid_reconciliation_required");
     assert.equal(await getCurrentSubscriptionPostgres(merchantId), null);
   } finally {
     await cleanup();

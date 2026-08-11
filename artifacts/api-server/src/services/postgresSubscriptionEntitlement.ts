@@ -1,4 +1,8 @@
 import crypto from "node:crypto";
+import {
+  applySubscriptionPlanCyclePostgres,
+  SubscriptionPlanCycleError,
+} from "./subscriptionPlanCycleAuthority";
 
 export const SUBSCRIPTION_POSTGRES_AUTHORITY_ENV =
   "FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY";
@@ -176,15 +180,6 @@ type LockedSubscription = {
   batches: BatchRow[];
   totalRemaining: number;
   totalUsed: number;
-};
-
-const PLAN_CONFIG: Record<
-  PaidSubscriptionPlan,
-  { priceIqd: number; replyLimit: number; emergencyCreditAmount: number }
-> = {
-  silver: { priceIqd: 25_000, replyLimit: 4_000, emergencyCreditAmount: 400 },
-  gold: { priceIqd: 49_000, replyLimit: 8_000, emergencyCreditAmount: 800 },
-  diamond: { priceIqd: 75_000, replyLimit: 14_000, emergencyCreditAmount: 1_400 },
 };
 
 const BAGHDAD_UTC_OFFSET_MS = 3 * 60 * 60 * 1000;
@@ -1210,162 +1205,28 @@ export async function applySubscriptionPlanOperationPostgres(input: {
   now?: Date;
 }): Promise<SubscriptionApiRecord> {
   const merchantId = requiredText(input.merchantId, 160);
-  const now = input.now || new Date();
-  const config = PLAN_CONFIG[input.plan];
-  if (!config) fail("INVALID_SUBSCRIPTION_PLAN", "invalid paid subscription plan", 400);
-
-  return withTransaction(async (client) => {
-    await lockApprovedMerchant(client, merchantId);
-    let existing = await loadSubscriptionRow(client, merchantId, true);
-    if (existing) {
-      existing = (await refreshLockedSubscription(client, existing, now)).row;
-    }
-
-    if (input.operation === "activate" && existing) {
-      fail("SUBSCRIPTION_ALREADY_EXISTS", "merchant already has a subscription");
-    }
-    if (input.operation !== "activate" && !existing) {
-      fail("SUBSCRIPTION_NOT_FOUND", "merchant does not have a subscription", 409);
-    }
-    if (existing && input.operation !== "activate") {
-      const canStartNewCycle =
-        existing.status === "expired" || existing.base_replies_remaining <= 0;
-      if (!canStartNewCycle) {
-        fail(
-          "SUBSCRIPTION_CYCLE_STILL_ACTIVE",
-          "a new subscription cycle requires exhausted base replies or an expired subscription",
-          409,
-          {
-            base_replies_remaining: existing.base_replies_remaining,
-            expires_at: existing.expires_at.toISOString(),
-          },
-        );
-      }
-      if (input.operation === "renew" && existing.plan_name !== input.plan) {
-        fail("RENEWAL_PLAN_MISMATCH", "renewal must keep the current plan");
-      }
-    }
-
-    const subscriptionId = existing?.id || `subscription-${crypto.randomUUID()}`;
-    const previousExpiresAt = existing?.expires_at || null;
-    const previousPlan = existing?.plan_name || null;
-    const emergencyDebt = existing?.emergency_debt || 0;
-    const emergencyDeduction = Math.min(emergencyDebt, config.replyLimit);
-    const remainingDebt = Math.max(0, emergencyDebt - emergencyDeduction);
-    const anchorDay = getBaghdadDateParts(now).day;
-    const expiresAt = addBaghdadCalendarMonths(now, 1, anchorDay);
-
-    if (existing) {
-      await client.query(
-        `UPDATE subscriptions
-            SET plan_name = $3,
-                status = 'active',
-                price_iqd = $4,
-                billing_anchor_day = $5,
-                base_reply_limit = $6,
-                base_replies_used = $7,
-                base_replies_remaining = $8,
-                emergency_credit_amount = $9,
-                emergency_credit_activated = FALSE,
-                emergency_debt = $10,
-                auto_reply_enabled = TRUE,
-                starts_at = $11,
-                expires_at = $12,
-                activated_at = $11,
-                suspended_at = NULL,
-                expiry_reminder_sent_at = NULL,
-                expired_notification_sent_at = NULL,
-                version = version + 1,
-                updated_at = $11
-          WHERE id = $1 AND merchant_id = $2`,
-        [
-          subscriptionId,
-          merchantId,
-          input.plan,
-          config.priceIqd,
-          anchorDay,
-          config.replyLimit,
-          emergencyDeduction,
-          config.replyLimit - emergencyDeduction,
-          config.emergencyCreditAmount,
-          remainingDebt,
-          now,
-          expiresAt,
-        ],
-      );
-    } else {
-      await client.query(
-        `INSERT INTO subscriptions (
-           id, merchant_id, plan_name, status, price_iqd, billing_anchor_day,
-           base_reply_limit, base_replies_used, base_replies_remaining,
-           addon_replies_remaining, emergency_credit_amount,
-           emergency_credit_activated, emergency_debt, auto_reply_enabled,
-           starts_at, expires_at, activated_at, version, created_at, updated_at
-         ) VALUES (
-           $1, $2, $3, 'active', $4, $5,
-           $6, 0, $6,
-           0, $7,
-           FALSE, 0, TRUE,
-           $8, $9, $8, 1, $8, $8
-         )`,
-        [
-          subscriptionId,
-          merchantId,
-          input.plan,
-          config.priceIqd,
-          anchorDay,
-          config.replyLimit,
-          config.emergencyCreditAmount,
-          now,
-          expiresAt,
-        ],
-      );
-    }
-
-    const endedAt =
-      previousExpiresAt && previousExpiresAt.getTime() <= now.getTime()
-        ? previousExpiresAt
-        : existing
-          ? now
-          : null;
-    await client.query(
-      `UPDATE merchants
-          SET last_subscription_ended_at = COALESCE($2, last_subscription_ended_at),
-              retention_status = 'protected',
-              warning_stage = 0,
-              products_read_only = FALSE,
-              retention_suspended_at = NULL,
-              grace_period_ends_at = NULL,
-              eligible_for_deletion_at = NULL,
-              updated_at = $3
-        WHERE id = $1`,
-      [merchantId, endedAt, now],
-    );
-
-    await writeAudit(client, {
-      actorAccountId: input.actorAccountId,
+  try {
+    await applySubscriptionPlanCyclePostgres({
       merchantId,
-      actionType:
-        input.operation === "activate"
-          ? "plan_activated"
-          : input.operation === "change"
-            ? "plan_changed"
-            : "plan_renewed",
-      subscriptionId,
-      metadata: {
-        plan: input.plan,
-        ...(previousPlan ? { previous_plan: previousPlan } : {}),
-        ...(emergencyDeduction > 0
-          ? { emergency_deduction: emergencyDeduction }
-          : {}),
-      },
-      now,
+      actorAccountId: input.actorAccountId,
+      operation: input.operation,
+      plan: input.plan,
+      now: input.now,
     });
-
-    const next = await loadSubscriptionRow(client, merchantId, true);
-    if (!next) fail("SUBSCRIPTION_NOT_FOUND", "subscription not found", 404);
-    return apiRecord(await refreshLockedSubscription(client, next, now));
-  });
+  } catch (error) {
+    if (error instanceof SubscriptionPlanCycleError) {
+      throw new SubscriptionEntitlementAuthorityError(
+        error.code,
+        error.message,
+        error.status,
+        error.details,
+      );
+    }
+    throw error;
+  }
+  const current = await getCurrentSubscriptionPostgres(merchantId, input.now || new Date());
+  if (!current) fail("SUBSCRIPTION_NOT_FOUND", "subscription not found", 404);
+  return current;
 }
 
 export async function applySubscriptionActionPostgres(input: {

@@ -65,6 +65,24 @@ function assertSameBytes(left, right, label) {
   );
 }
 
+function committedMigrationState() {
+  const journal = JSON.parse(
+    fs.readFileSync(
+      path.join(committedDrizzleDirectory, "meta", "_journal.json"),
+      "utf8",
+    ),
+  );
+  const entries = Array.isArray(journal.entries) ? journal.entries : [];
+  assert.ok(entries.length >= 2, "committed Drizzle journal is incomplete");
+  const latest = entries.at(-1);
+  assert.ok(Number.isInteger(latest?.idx), "latest committed Drizzle migration is missing");
+  const snapshotName = `${String(latest.idx).padStart(4, "0")}_snapshot.json`;
+  const snapshot = JSON.parse(
+    fs.readFileSync(path.join(committedDrizzleDirectory, "meta", snapshotName), "utf8"),
+  );
+  return { entries, latest, snapshotName, snapshot };
+}
+
 async function resetDisposableSchema(connectionString) {
   const client = new Client({ connectionString });
   await client.connect();
@@ -97,23 +115,21 @@ test("committed Drizzle chain is reproducible from the committed 0001 baseline",
     assert.equal(report.ok, true);
     assert.equal(report.mode, "verify_committed_external_copy");
     assert.equal(report.committed_reproducible, true);
-    assert.equal(report.generated_entries, 6);
+    const committed = committedMigrationState();
+    assert.equal(report.generated_entries, committed.entries.length);
 
-    for (const relativePath of [
-      "0002_cross_lane_stage.sql",
-      "0003_cross_lane_cleanup.sql",
-      "meta/0002_snapshot.json",
-      "meta/0003_snapshot.json",
-      "0004_product_shipping_measurements.sql",
-      "meta/0004_snapshot.json",
-      "0005_delivery_fee_per_area.sql",
-      "meta/0005_snapshot.json",
-    ]) {
-      assertSameBytes(
-        path.join(generatedDirectory, relativePath),
-        path.join(committedDrizzleDirectory, relativePath),
-        relativePath,
-      );
+    for (const entry of committed.entries.slice(2)) {
+      const prefix = String(entry.idx).padStart(4, "0");
+      for (const relativePath of [
+        `${entry.tag}.sql`,
+        `meta/${prefix}_snapshot.json`,
+      ]) {
+        assertSameBytes(
+          path.join(generatedDirectory, relativePath),
+          path.join(committedDrizzleDirectory, relativePath),
+          relativePath,
+        );
+      }
     }
 
     const journal = JSON.parse(
@@ -122,17 +138,9 @@ test("committed Drizzle chain is reproducible from the committed 0001 baseline",
         "utf8",
       ),
     );
-    assert.equal(journal.entries?.length, 6);
     assert.deepEqual(
       journal.entries.map(({ idx, tag }) => [idx, tag]),
-      [
-        [0, "0000_even_kulan_gath"],
-        [1, "0001_military_proteus"],
-        [2, "0002_cross_lane_stage"],
-        [3, "0003_cross_lane_cleanup"],
-        [4, "0004_product_shipping_measurements"],
-        [5, "0005_delivery_fee_per_area"],
-      ],
+      committed.entries.map(({ idx, tag }) => [idx, tag]),
     );
   } finally {
     fs.rmSync(generatedDirectory, { recursive: true, force: true });
@@ -148,6 +156,7 @@ test(
     const fixtureDirectory = fs.mkdtempSync(
       path.join(process.env.RUNNER_TEMP || "/tmp", "fawri-postgresql-acceptance-"),
     );
+    await resetDisposableSchema(process.env.DATABASE_URL);
     try {
       const smoke = run(
         process.execPath,
@@ -158,9 +167,10 @@ test(
       );
       const smokeReport = parseJsonOutput(smoke.stdout, "migration smoke");
       assert.equal(smokeReport.ok, true);
-      assert.equal(smokeReport.snapshot, "0005_snapshot.json");
-      assert.equal(smokeReport.tables, 60);
-      assert.equal(smokeReport.migrations, 6);
+      const committed = committedMigrationState();
+      assert.equal(smokeReport.snapshot, committed.snapshotName);
+      assert.equal(smokeReport.tables, Object.keys(committed.snapshot.tables || {}).length);
+      assert.equal(smokeReport.migrations, committed.entries.length);
       assert.equal(smokeReport.applied_twice_without_changes, true);
       assert.equal(smokeReport.dependency_order_stabilized, true);
       assert.ok(smokeReport.composite_foreign_keys > 0);

@@ -11,7 +11,6 @@ import { merchantChannels } from "./channels";
 import { channelInboundEvents, outboundDeliveries, replyRefunds, replyReservations } from "./channel-messaging";
 import { catalogIdempotencyKeys, catalogIdentifiers, catalogImageReferences, catalogVariantOptions, inventoryMutations, products, productVariants } from "./catalog";
 import { replyLedger, subscriptionReplyBatches, subscriptions } from "./subscriptions";
-import { saasBillingEvents, saasBillingOrders, saasBillingRefunds, saasEntitlementApplications } from "./saas-billing";
 import { conversations, messages } from "./conversations";
 import { knowledgeAuditEvents, knowledgeEmbeddings, learnedAnswers, savedAnswers, trainingRequests } from "./knowledge";
 
@@ -78,10 +77,6 @@ export const inventoryMutationsTenantPolicy = tenantPolicy("inventory_mutations_
 export const subscriptionsTenantPolicy = tenantPolicy("subscriptions_tenant_boundary", subscriptions);
 export const subscriptionReplyBatchesTenantPolicy = tenantPolicy("subscription_reply_batches_tenant_boundary", subscriptionReplyBatches);
 export const replyLedgerTenantPolicy = tenantPolicy("reply_ledger_tenant_boundary", replyLedger);
-export const saasBillingOrdersTenantPolicy = tenantPolicy("saas_billing_orders_tenant_boundary", saasBillingOrders);
-export const saasBillingEventsTenantPolicy = tenantPolicy("saas_billing_events_tenant_boundary", saasBillingEvents);
-export const saasEntitlementApplicationsTenantPolicy = tenantPolicy("saas_entitlement_applications_tenant_boundary", saasEntitlementApplications);
-export const saasBillingRefundsTenantPolicy = tenantPolicy("saas_billing_refunds_tenant_boundary", saasBillingRefunds);
 export const conversationsTenantPolicy = tenantPolicy("conversations_tenant_boundary", conversations);
 export const messagesTenantPolicy = tenantPolicy("messages_tenant_boundary", messages);
 export const savedAnswersTenantPolicy = tenantPolicy("saved_answers_tenant_boundary", savedAnswers);

@@ -59,31 +59,23 @@ function runGenerator(label) {
 }
 
 function artifactHashes(outputDirectory) {
+  const sql = fs
+    .readdirSync(outputDirectory)
+    .filter((name) => /^\d{4}_.*\.sql$/.test(name))
+    .sort();
+  const snapshots = fs
+    .readdirSync(path.join(outputDirectory, "meta"))
+    .filter((name) => /^\d{4}_snapshot\.json$/.test(name))
+    .sort();
   return {
-    stageSql: sha256(
-      path.join(outputDirectory, "0002_cross_lane_stage.sql"),
-    ),
-    cleanupSql: sha256(
-      path.join(outputDirectory, "0003_cross_lane_cleanup.sql"),
-    ),
-    stageSnapshot: sha256(
-      path.join(outputDirectory, "meta", "0002_snapshot.json"),
-    ),
-    cleanupSnapshot: sha256(
-      path.join(outputDirectory, "meta", "0003_snapshot.json"),
-    ),
-    productShippingSql: sha256(
-      path.join(outputDirectory, "0004_product_shipping_measurements.sql"),
-    ),
-    productShippingSnapshot: sha256(
-      path.join(outputDirectory, "meta", "0004_snapshot.json"),
-    ),
-    deliveryAreaSql: sha256(
-      path.join(outputDirectory, "0005_delivery_fee_per_area.sql"),
-    ),
-    deliveryAreaSnapshot: sha256(
-      path.join(outputDirectory, "meta", "0005_snapshot.json"),
-    ),
+    stageSql: sha256(path.join(outputDirectory, "0002_cross_lane_stage.sql")),
+    all: Object.fromEntries([
+      ...sql.map((name) => [name, sha256(path.join(outputDirectory, name))]),
+      ...snapshots.map((name) => [
+        `meta/${name}`,
+        sha256(path.join(outputDirectory, "meta", name)),
+      ]),
+    ]),
   };
 }
 
@@ -106,14 +98,11 @@ test(
           .readdirSync(run.outputDirectory)
           .filter((name) => /^\d{4}_.*\.sql$/.test(name))
           .sort();
-        assert.deepEqual(sql, [
-          "0000_even_kulan_gath.sql",
-          "0001_military_proteus.sql",
-          "0002_cross_lane_stage.sql",
-          "0003_cross_lane_cleanup.sql",
-          "0004_product_shipping_measurements.sql",
-          "0005_delivery_fee_per_area.sql",
-        ]);
+        const committedSql = fs
+          .readdirSync(path.join(databaseDirectory, "drizzle"))
+          .filter((name) => /^\d{4}_.*\.sql$/.test(name))
+          .sort();
+        assert.deepEqual(sql, committedSql);
 
         const journal = JSON.parse(
           fs.readFileSync(
@@ -121,13 +110,19 @@ test(
             "utf8",
           ),
         );
-        assert.equal(journal.entries?.length, 6);
+        const committedJournal = JSON.parse(
+          fs.readFileSync(
+            path.join(databaseDirectory, "drizzle", "meta", "_journal.json"),
+            "utf8",
+          ),
+        );
+        assert.deepEqual(
+          journal.entries.map(({ idx, tag }) => [idx, tag]),
+          committedJournal.entries.map(({ idx, tag }) => [idx, tag]),
+        );
         assert.equal(journal.entries[2]?.tag, "0002_cross_lane_stage");
         assert.equal(journal.entries[3]?.tag, "0003_cross_lane_cleanup");
-        assert.equal(
-          journal.entries[4]?.tag,
-          "0004_product_shipping_measurements",
-        );
+        assert.equal(journal.entries[4]?.tag, "0004_product_shipping_measurements");
         assert.equal(journal.entries[5]?.tag, "0005_delivery_fee_per_area");
       }
 

@@ -361,6 +361,14 @@ export async function createSaasBillingCheckout(input: {
   const plan = getSaasPlan(input.plan);
 
   return transaction(async (client) => {
+    await client.query(
+      `UPDATE saas_billing_orders
+          SET status = 'expired', updated_at = $2
+        WHERE merchant_id = $1
+          AND status = 'pending'
+          AND request_expires_at <= $2`,
+      [merchantId, now],
+    );
     const existingResult = await client.query(
       `${ORDER_SELECT}
         WHERE merchant_id = $1 AND idempotency_key = $2
@@ -395,6 +403,21 @@ export async function createSaasBillingCheckout(input: {
       };
     }
 
+    const pendingResult = await client.query(
+      `${ORDER_SELECT}
+        WHERE merchant_id = $1 AND status = 'pending'
+        LIMIT 2 FOR UPDATE`,
+      [merchantId],
+    );
+    if (pendingResult.rows.length > 0) {
+      const pending = orderFromRow(pendingResult.rows[0]);
+      fail(
+        "SAAS_BILLING_CHECKOUT_ALREADY_PENDING",
+        "merchant already has a pending SaaS billing checkout",
+        409,
+        { order_id: pending.id },
+      );
+    }
     await validateCheckoutEligibility(
       client,
       merchantId,
@@ -441,13 +464,22 @@ export async function createSaasBillingCheckout(input: {
 export async function listMerchantSaasBillingOrders(
   merchantId: string,
 ): Promise<SaasBillingOrderRecord[]> {
+  const normalizedMerchantId = requiredText(merchantId, 180);
   const database = await pool();
+  await database.query(
+    `UPDATE saas_billing_orders
+        SET status = 'expired', updated_at = NOW()
+      WHERE merchant_id = $1
+        AND status = 'pending'
+        AND request_expires_at <= NOW()`,
+    [normalizedMerchantId],
+  );
   const result = await database.query(
     `${ORDER_SELECT}
       WHERE merchant_id = $1
       ORDER BY created_at DESC, id DESC
       LIMIT 100`,
-    [requiredText(merchantId, 180)],
+    [normalizedMerchantId],
   );
   return result.rows.map(orderFromRow);
 }
@@ -517,6 +549,13 @@ export async function applyVerifiedSaasBillingProviderEvent(
       [input.provider, eventId],
     );
     if (duplicateEvent.rows.length > 0) {
+      if (String(duplicateEvent.rows[0].order_id) !== orderId) {
+        fail(
+          "SAAS_BILLING_PROVIDER_EVENT_COLLISION",
+          "provider event identity was reused for another billing order",
+          409,
+        );
+      }
       const order = await loadOrder(client, orderId, true);
       if (!order) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 404);
       return { status: "duplicate" as const, order };
@@ -552,8 +591,8 @@ export async function applyVerifiedSaasBillingProviderEvent(
       if (!input.providerRefundRef || order.status !== "paid") {
         fail("SAAS_BILLING_REFUND_INVALID", "billing refund state is invalid", 409);
       }
-      if (input.amountIqd > order.amount_iqd) {
-        fail("SAAS_BILLING_REFUND_AMOUNT_INVALID", "refund exceeds paid order amount", 409);
+      if (input.amountIqd !== order.amount_iqd) {
+        fail("SAAS_BILLING_REFUND_AMOUNT_INVALID", "V1 requires a full-cycle refund matching the paid order amount", 409);
       }
       await client.query(
         `INSERT INTO saas_billing_refunds (
@@ -582,13 +621,44 @@ export async function applyVerifiedSaasBillingProviderEvent(
     }
 
     const paymentRef = requiredText(input.providerPaymentRef, 300);
-    if (input.amountIqd !== order.amount_iqd) {
-      await recordEvent(client, input, order.merchant_id, "rejected", null);
+    const paymentCollision = await client.query(
+      `SELECT id FROM saas_billing_orders
+        WHERE provider = $1 AND provider_payment_ref = $2 AND id <> $3
+        LIMIT 1 FOR UPDATE`,
+      [input.provider, paymentRef, order.id],
+    );
+    if (paymentCollision.rows.length > 0) {
       fail(
-        "SAAS_BILLING_AMOUNT_MISMATCH",
-        "verified payment amount does not match the server billing order",
+        "SAAS_BILLING_PROVIDER_PAYMENT_COLLISION",
+        "provider payment identity was already linked to another billing order",
         409,
       );
+    }
+    if (input.amountIqd !== order.amount_iqd) {
+      await client.query(
+        `UPDATE saas_billing_orders
+            SET status = 'paid_reconciliation_required', provider_payment_ref = $2,
+                paid_at = $3, updated_at = $3,
+                metadata = metadata || $4::jsonb
+          WHERE id = $1`,
+        [
+          order.id,
+          paymentRef,
+          input.occurredAt,
+          JSON.stringify({
+            reconciliation_code: "SAAS_BILLING_AMOUNT_MISMATCH",
+            received_amount_iqd: input.amountIqd,
+          }),
+        ],
+      );
+      await recordEvent(client, input, order.merchant_id, "rejected", null);
+      const updated = await loadOrder(client, order.id, true);
+      if (!updated) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
+      return {
+        status: "reconciliation_required" as const,
+        order: updated,
+        reasonCode: "SAAS_BILLING_AMOUNT_MISMATCH",
+      };
     }
     if (order.status === "paid") {
       const application = await client.query(

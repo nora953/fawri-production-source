@@ -61,6 +61,11 @@ export const saasBillingOrders = pgTable(
     )
       .on(table.provider, table.providerPaymentRef)
       .where(sql`${table.providerPaymentRef} is not null`),
+    merchantPendingUnique: uniqueIndex(
+      "saas_billing_orders_merchant_pending_unique",
+    )
+      .on(table.merchantId)
+      .where(sql`${table.status} = 'pending'`),
     merchantCreatedIndex: index("saas_billing_orders_merchant_created_idx").on(
       table.merchantId,
       table.createdAt,
@@ -87,7 +92,7 @@ export const saasBillingOrders = pgTable(
     ),
     statusCheck: check(
       "saas_billing_orders_status_check",
-      sql`${table.status} IN ('pending', 'paid', 'failed', 'cancelled', 'expired', 'refunded')`,
+      sql`${table.status} IN ('pending', 'paid', 'paid_reconciliation_required', 'failed', 'cancelled', 'expired', 'refunded')`,
     ),
     requestTimeCheck: check(
       "saas_billing_orders_request_time_check",

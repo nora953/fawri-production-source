@@ -355,10 +355,20 @@ export class PostgresSubscriptionGuaranteeSubscriptionAuthority
     const requestedSubscriptionId = nonEmpty(subscriptionId, 160);
     const sql = await this.executor();
     const result = await sql.query(
-      `SELECT id, merchant_id, plan_name, status, price_iqd,
-              starts_at, expires_at, version
-       FROM subscriptions
-       WHERE merchant_id = $1 AND id = $2
+      `SELECT subscription.id, subscription.merchant_id, subscription.plan_name,
+              subscription.status, subscription.price_iqd, subscription.starts_at,
+              subscription.expires_at, subscription.version,
+              billing_order.id AS billing_order_id
+       FROM subscriptions AS subscription
+       LEFT JOIN saas_entitlement_applications AS application
+         ON application.subscription_id = subscription.id
+        AND application.merchant_id = subscription.merchant_id
+        AND application.applied_at = subscription.starts_at
+       LEFT JOIN saas_billing_orders AS billing_order
+         ON billing_order.id = application.order_id
+        AND billing_order.merchant_id = application.merchant_id
+        AND billing_order.status IN ('paid', 'refunded')
+       WHERE subscription.merchant_id = $1 AND subscription.id = $2
        LIMIT 2`,
       [requestedMerchantId, requestedSubscriptionId],
     );
@@ -431,8 +441,15 @@ export class PostgresSubscriptionGuaranteeSubscriptionAuthority
       );
     }
 
+    const billingOrderId = row.billing_order_id
+      ? rowString(row, "billing_order_id", 180)
+      : null;
     const billingState: SubscriptionGuaranteeBillingState =
-      planName === "trial" || priceIqd === 0 ? "unpaid" : "unknown";
+      planName === "trial" || priceIqd === 0
+        ? "unpaid"
+        : billingOrderId
+          ? "paid"
+          : "unknown";
 
     return {
       merchantId: requestedMerchantId,
@@ -451,7 +468,7 @@ export class PostgresSubscriptionGuaranteeSubscriptionAuthority
       startsAt,
       expiresAt,
       billingState,
-      billingReference: null,
+      billingReference: billingOrderId ? `saas-billing-order:${billingOrderId}` : null,
     };
   }
 }
