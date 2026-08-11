@@ -13,6 +13,9 @@ import type { KnowledgeEmbeddingProvider } from "./knowledge/postgresKnowledgeRu
 import {
   configureMetaChannelCredentialKeyProvider,
 } from "./metaChannelRuntime";
+import {
+  configurePostgresMetaChannelCredentialKeyProvider,
+} from "./postgresMetaChannelAuthority";
 import type { MetaCredentialKeyProvider } from "./metaCredentialVault";
 
 export type MetaCredentialProviderSelection = "environment" | "aws-kms";
@@ -83,6 +86,13 @@ function readKnowledgeEmbeddingProviderSelection(
   );
 }
 
+function configureMetaCredentialProvider(
+  provider: MetaCredentialKeyProvider | null,
+): void {
+  configureMetaChannelCredentialKeyProvider(provider);
+  configurePostgresMetaChannelCredentialKeyProvider(provider);
+}
+
 function defaultDependencies(): RuntimeProviderBootstrapDependencies {
   return {
     bootstrapAwsKms: (env) =>
@@ -91,7 +101,7 @@ function defaultDependencies(): RuntimeProviderBootstrapDependencies {
     createOpenAi: (apiKey) =>
       createOpenAiKnowledgeEmbeddingProvider({ apiKey }),
     configureKnowledge: configureKnowledgeEmbeddingProvider,
-    configureMetaCredentialProvider: configureMetaChannelCredentialKeyProvider,
+    configureMetaCredentialProvider,
   };
 }
 
