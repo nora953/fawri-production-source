@@ -19,11 +19,23 @@ import {
 import { subscriptionPostgresAuthorityRequired } from "./postgresSubscriptionEntitlement";
 
 export const SAAS_BILLING_PROVIDER_ENV = "FAWRI_SAAS_BILLING_PROVIDER";
+export const SAAS_BILLING_PROVIDERS_ENV = "FAWRI_SAAS_BILLING_PROVIDERS";
 
+export type SaasBillingCheckoutProvider = "test_fake" | "superqi_sandbox";
+export type SaasBillingProviderKey = SaasBillingCheckoutProvider | "fastpay";
 export type SaasBillingProviderState = {
-  provider: "disabled" | "test_fake" | "superqi_sandbox" | "unsupported";
+  provider: SaasBillingProviderKey | "disabled" | "unsupported";
+  display_name: string;
   checkout_available: boolean;
   production_ready: boolean;
+  test_only: boolean;
+  status:
+    | "available"
+    | "disabled"
+    | "merchant_setup_required"
+    | "production_forbidden"
+    | "configuration_incomplete"
+    | "unsupported";
 };
 
 export type SaasBillingOrderRecord = {
@@ -167,37 +179,142 @@ async function transaction<T>(work: (client: DatabaseClient) => Promise<T>): Pro
   }
 }
 
-export function getSaasBillingProviderState(): SaasBillingProviderState {
-  const configured = String(process.env[SAAS_BILLING_PROVIDER_ENV] || "disabled")
-    .trim()
-    .toLowerCase();
-  if (!configured || configured === "disabled") {
-    return {
-      provider: "disabled",
-      checkout_available: false,
-      production_ready: false,
-    };
-  }
-  if (configured === "test_fake") {
+function configuredProviderNames(): string[] {
+  const multi = String(process.env[SAAS_BILLING_PROVIDERS_ENV] || "")
+    .split(",")
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  const raw = multi.length > 0
+    ? multi
+    : [String(process.env[SAAS_BILLING_PROVIDER_ENV] || "").trim().toLowerCase()]
+        .filter(Boolean);
+  return [...new Set(raw.filter((value) => value !== "disabled"))];
+}
+
+function providerStateFor(
+  requestedProvider: string,
+  configuredProviders: Set<string>,
+): SaasBillingProviderState {
+  const provider = String(requestedProvider || "").trim().toLowerCase();
+  if (provider === "test_fake") {
+    const configured = configuredProviders.has(provider);
+    const available = configured && process.env.NODE_ENV === "test";
     return {
       provider: "test_fake",
-      checkout_available: process.env.NODE_ENV === "test",
+      display_name: "Internal test provider",
+      checkout_available: available,
       production_ready: false,
+      test_only: true,
+      status: available ? "available" : "disabled",
     };
   }
-  if (configured === "superqi_sandbox") {
+  if (provider === "superqi_sandbox") {
+    if (!configuredProviders.has(provider)) {
+      return {
+        provider: "superqi_sandbox",
+        display_name: "SuperQi",
+        checkout_available: false,
+        production_ready: false,
+        test_only: true,
+        status: "disabled",
+      };
+    }
     const sandbox = getSuperQiSandboxPublicState();
     return {
       provider: "superqi_sandbox",
+      display_name: "SuperQi",
       checkout_available: sandbox.checkout_available,
       production_ready: false,
+      test_only: true,
+      status: sandbox.checkout_available
+        ? "available"
+        : sandbox.reason === "production_forbidden"
+          ? "production_forbidden"
+          : "configuration_incomplete",
+    };
+  }
+  if (provider === "fastpay") {
+    return {
+      provider: "fastpay",
+      display_name: "FastPay",
+      checkout_available: false,
+      production_ready: false,
+      test_only: false,
+      status: "merchant_setup_required",
     };
   }
   return {
-    provider: "unsupported",
+    provider: provider ? "unsupported" : "disabled",
+    display_name: provider || "Disabled",
     checkout_available: false,
     production_ready: false,
+    test_only: false,
+    status: provider ? "unsupported" : "disabled",
   };
+}
+
+export function getSaasBillingProviderState(
+  requestedProvider?: string,
+): SaasBillingProviderState {
+  const configured = configuredProviderNames();
+  const configuredSet = new Set(configured);
+  if (requestedProvider) {
+    return providerStateFor(requestedProvider, configuredSet);
+  }
+  if (configured.length === 0) {
+    return providerStateFor("", configuredSet);
+  }
+  return providerStateFor(configured[0], configuredSet);
+}
+
+export function getSaasBillingProviderStates(): SaasBillingProviderState[] {
+  const configured = configuredProviderNames();
+  const configuredSet = new Set(configured);
+  const states = configured.map((provider) => providerStateFor(provider, configuredSet));
+  if (!configuredSet.has("fastpay")) {
+    states.push(providerStateFor("fastpay", configuredSet));
+  }
+  return states;
+}
+
+export function resolveSaasBillingCheckoutProvider(
+  requestedProvider?: string,
+): SaasBillingProviderState & { provider: SaasBillingCheckoutProvider } {
+  if (requestedProvider) {
+    const state = getSaasBillingProviderState(requestedProvider);
+    if (
+      !state.checkout_available ||
+      !["test_fake", "superqi_sandbox"].includes(state.provider)
+    ) {
+      fail(
+        "SAAS_BILLING_PROVIDER_DISABLED",
+        "selected SaaS billing provider is not available",
+        503,
+        { provider: state.provider, provider_status: state.status },
+      );
+    }
+    return state as SaasBillingProviderState & { provider: SaasBillingCheckoutProvider };
+  }
+
+  const available = getSaasBillingProviderStates().filter(
+    (state): state is SaasBillingProviderState & { provider: SaasBillingCheckoutProvider } =>
+      state.checkout_available &&
+      (state.provider === "test_fake" || state.provider === "superqi_sandbox"),
+  );
+  if (available.length === 1) return available[0];
+  if (available.length > 1) {
+    fail(
+      "SAAS_BILLING_PROVIDER_REQUIRED",
+      "billing provider selection is required",
+      400,
+      { providers: available.map((provider) => provider.provider) },
+    );
+  }
+  fail(
+    "SAAS_BILLING_PROVIDER_DISABLED",
+    "SaaS subscription checkout is not enabled yet",
+    503,
+  );
 }
 
 export function getSaasBillingCatalog() {
@@ -206,6 +323,7 @@ export function getSaasBillingCatalog() {
     currency: "IQD" as const,
     plans: listSaasPlans(),
     provider: getSaasBillingProviderState(),
+    providers: getSaasBillingProviderStates(),
   };
 }
 
@@ -351,6 +469,7 @@ export async function createSaasBillingCheckout(input: {
   operation: SubscriptionPlanCycleOperation;
   plan: SaasPaidPlan;
   idempotencyKey: string;
+  provider?: string;
   now?: Date;
   providerFetch?: SuperQiFetch;
 }): Promise<{
@@ -365,18 +484,7 @@ export async function createSaasBillingCheckout(input: {
         test_only: true;
       };
 }> {
-  const provider = getSaasBillingProviderState();
-  if (
-    !provider.checkout_available ||
-    !["test_fake", "superqi_sandbox"].includes(provider.provider)
-  ) {
-    fail(
-      "SAAS_BILLING_PROVIDER_DISABLED",
-      "SaaS subscription checkout is not enabled yet",
-      503,
-      { provider: provider.provider },
-    );
-  }
+  const provider = resolveSaasBillingCheckoutProvider(input.provider);
   if (!subscriptionPostgresAuthorityRequired()) {
     fail(
       "SAAS_BILLING_ENTITLEMENT_AUTHORITY_NOT_ACTIVE",
@@ -619,13 +727,13 @@ async function recordEvent(
 export async function applyVerifiedSaasBillingProviderEvent(
   input: VerifiedSaasBillingProviderEvent,
 ): Promise<SaasBillingApplicationOutcome> {
-  const configuredProvider = getSaasBillingProviderState();
+  const configuredProvider = getSaasBillingProviderState(input.provider);
   const providerEventAllowed =
-    (input.provider === "test_fake" && process.env.NODE_ENV === "test") ||
-    (input.provider === "superqi_sandbox" &&
-      process.env.NODE_ENV !== "production" &&
-      configuredProvider.provider === "superqi_sandbox" &&
-      configuredProvider.checkout_available);
+    configuredProvider.checkout_available &&
+    ((input.provider === "test_fake" && process.env.NODE_ENV === "test") ||
+      (input.provider === "superqi_sandbox" &&
+        process.env.NODE_ENV !== "production" &&
+        configuredProvider.provider === "superqi_sandbox"));
   if (!providerEventAllowed) {
     fail(
       "SAAS_BILLING_PROVIDER_EVENT_UNAVAILABLE",

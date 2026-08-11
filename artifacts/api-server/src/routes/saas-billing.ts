@@ -79,6 +79,7 @@ router.get("/billing/orders", requireSecureMerchantSession, async (_req, res) =>
 router.post("/billing/checkout", requireSecureMerchantSession, async (req, res) => {
   const operation = String(req.body?.operation || "").trim() as SubscriptionPlanCycleOperation;
   const plan = String(req.body?.plan || "").trim();
+  const provider = String(req.body?.provider || "").trim();
   const idempotencyKey = String(req.body?.idempotency_key || "").trim();
 
   if (!(["activate", "renew", "change"] as string[]).includes(operation)) {
@@ -100,6 +101,7 @@ router.post("/billing/checkout", requireSecureMerchantSession, async (req, res) 
       operation,
       plan,
       idempotencyKey,
+      ...(provider ? { provider } : {}),
     });
     res.setHeader("Cache-Control", "no-store");
     res.status(result.duplicate ? 200 : 201).json({ ok: true, ...result });

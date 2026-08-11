@@ -20,6 +20,7 @@ test("SaaS billing is structurally separate from merchant customer payments", as
 test("merchant checkout never accepts client-supplied amount or paid state", async () => {
   const route = await read("src/routes/saas-billing.ts");
   assert.match(route, /idempotency_key/);
+  assert.match(route, /req\.body\?\.provider/);
   assert.match(route, /createSaasBillingCheckout/);
   assert.doesNotMatch(route, /req\.body\?\.amount/);
   assert.doesNotMatch(route, /req\.body\?\.paid/);

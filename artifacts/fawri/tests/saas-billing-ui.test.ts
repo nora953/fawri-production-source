@@ -23,10 +23,14 @@ test('subscription page uses server billing catalog and does not invent paid sta
   const checkoutRequest = panel.slice(checkoutStart, checkoutEnd);
   assert.match(checkoutRequest, /operation/);
   assert.match(checkoutRequest, /plan/);
+  assert.match(checkoutRequest, /provider/);
   assert.match(checkoutRequest, /idempotency_key/);
   assert.doesNotMatch(checkoutRequest, /(?:amount_iqd|monthly_price_iqd|price_iqd)\s*:/);
   assert.match(panel, /order\.amount_iqd\.toLocaleString/);
   assert.match(panel, /superqi_sandbox/);
+  assert.match(panel, /fastpay/);
+  assert.match(panel, /merchant_setup_required/);
+  assert.match(panel, /catalog\.providers/);
   assert.match(panel, /window\.location\.assign\(redirectUrl\)/);
   assert.match(panel, /checkout\?\.redirect_url/);
   assert.doesNotMatch(panel, /[?&]paid=true/);
