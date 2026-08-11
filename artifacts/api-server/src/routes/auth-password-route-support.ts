@@ -7,6 +7,8 @@ import {
   hashPassword,
   verifyPassword,
 } from "../services/authPasswordService";
+import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
+import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import {
   clearAuthSessionCookie,
   getAuthContext,
@@ -27,7 +29,10 @@ export async function changePassword(
     req.body?.confirm_password || req.body?.confirmPassword || "",
   );
   const validation = getPasswordValidationError(next);
-  const current = authAccountRepository.findById(context.account.id, kind);
+  const current =
+    kind === "merchant"
+      ? await findMerchantByIdAuthoritative(context.account.id)
+      : authAccountRepository.findById(context.account.id, "admin");
   const forcedAdminChange =
     kind === "admin" && current?.adminProfile?.mustChangePassword === true;
 
@@ -41,7 +46,12 @@ export async function changePassword(
     return;
   }
   if (!current) {
-    sendAuthError(res, 401, "CURRENT_PASSWORD_INVALID", "current password is incorrect");
+    sendAuthError(
+      res,
+      401,
+      "CURRENT_PASSWORD_INVALID",
+      "current password is incorrect",
+    );
     return;
   }
   if (
@@ -61,18 +71,33 @@ export async function changePassword(
   }
 
   const passwordHash = hashPassword(next);
-  authAccountRepository.updatePassword(
-    context.account.id,
-    kind,
-    passwordHash,
-    kind === "admin" ? { mustChangePassword: false } : {},
-  );
+  if (kind === "admin" || !operationalPostgresAuthorityRequired()) {
+    authAccountRepository.updatePassword(
+      context.account.id,
+      kind,
+      passwordHash,
+      kind === "admin" ? { mustChangePassword: false } : {},
+    );
+  }
   const postgresRevoked = await authPostgresSessionAuthority.commitPasswordChange({
     accountId: context.account.id,
     accountKind: kind,
     passwordHash,
     reason: "password_changed",
   });
+  if (
+    kind === "merchant" &&
+    operationalPostgresAuthorityRequired() &&
+    postgresRevoked === null
+  ) {
+    sendAuthError(
+      res,
+      503,
+      "AUTH_POSTGRES_CUTOVER_INCOMPLETE",
+      "merchant authentication PostgreSQL authority is incomplete",
+    );
+    return;
+  }
   if (postgresRevoked === null) {
     authSecurityStore.revokeAllSessions({
       accountId: context.account.id,
