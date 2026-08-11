@@ -4,15 +4,13 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+from lib.translation_structure_scan import find_localized_object_declarations
+
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "artifacts" / "fawri" / "src"
 TRANSLATIONS = FRONTEND / "lib" / "translations"
 ADMIN_TRANSLATIONS = FRONTEND / "lib" / "admin-translations.ts"
 
-LOCAL_TRILINGUAL_RE = re.compile(
-    r"(?:const|let)\s+[A-Za-z_$][\w$]*\s*=\s*\{[\s\S]{0,12000}?\bar\s*:\s*\{[\s\S]{0,12000}?\b(?:en|ku)\s*:\s*\{[\s\S]{0,12000}?\b(?:en|ku)\s*:\s*\{",
-    re.MULTILINE,
-)
 JSX_TEXT_RE = re.compile(r">\s*([^<>{}\n][^<>{}\n]*?[A-Za-z\u0600-\u06ff][^<>{}\n]*?)\s*<")
 STRING_PROP_RE = re.compile(
     r"\b(?:title|placeholder|aria-label|description|label)\s*=\s*([\"'])([^\"']*[A-Za-z\u0600-\u06ff][^\"']*)\1"
@@ -31,7 +29,7 @@ def read(path: Path) -> str:
 
 
 def is_translation_authority(path: Path) -> bool:
-    return path.parent == TRANSLATIONS or path == ADMIN_TRANSLATIONS
+    return path == ADMIN_TRANSLATIONS or TRANSLATIONS in path.parents
 
 
 def visible_count(path: Path) -> int:
@@ -54,12 +52,15 @@ def visible_count(path: Path) -> int:
 
 
 def main() -> None:
-    local: list[str] = []
+    localized: list[tuple[int, str]] = []
+    total_localized_objects = 0
     for path in sorted(FRONTEND.rglob("*.ts*")):
         if is_translation_authority(path):
             continue
-        if LOCAL_TRILINGUAL_RE.search(read(path)):
-            local.append(rel(path))
+        declarations = find_localized_object_declarations(read(path))
+        if declarations:
+            localized.append((len(declarations), rel(path)))
+            total_localized_objects += len(declarations)
 
     visible: list[tuple[int, str]] = []
     for path in sorted(FRONTEND.rglob("*.tsx")):
@@ -68,10 +69,11 @@ def main() -> None:
             visible.append((count, rel(path)))
     visible.sort(key=lambda item: (-item[0], item[1]))
 
-    print("=== LOCAL DICTIONARY FILES ===")
-    for item in local:
-        print(item)
-    print(f"TOTAL_LOCAL_DICTIONARY_FILES={len(local)}")
+    print("=== LOCALIZED COPY FILES ===")
+    for count, item in localized:
+        print(f"{count:02d} {item}")
+    print(f"TOTAL_LOCALIZED_COPY_FILES={len(localized)}")
+    print(f"TOTAL_LOCALIZED_COPY_OBJECTS={total_localized_objects}")
 
     print("\n=== HARDCODED COPY CANDIDATES BY FILE ===")
     for count, item in visible:
