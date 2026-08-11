@@ -99,6 +99,26 @@ if old_allow not in text:
     raise SystemExit("STOP: base runner final allowlist changed unexpectedly")
 text = text.replace(old_allow, new_allow, 1)
 
+# Generated migration SQL/snapshot/preimage files are intentionally created
+# inside the isolated validation worktree. Before git add they are untracked,
+# so git diff --name-only alone cannot see them. Final scope validation must
+# include both tracked changes and untracked, non-ignored files.
+old_changed = '''changed = set(subprocess.check_output(
+  ["git", "diff", "--name-only", "ca583e8d43042c2d4c489f2bc0e3c038c451ce2e"],
+  text=True,
+).splitlines())'''
+new_changed = '''changed = set(subprocess.check_output(
+  ["git", "diff", "--name-only", "ca583e8d43042c2d4c489f2bc0e3c038c451ce2e"],
+  text=True,
+).splitlines())
+changed.update(subprocess.check_output(
+  ["git", "ls-files", "--others", "--exclude-standard"],
+  text=True,
+).splitlines())'''
+if old_changed not in text:
+    raise SystemExit("STOP: base runner final changed-file gate changed unexpectedly")
+text = text.replace(old_changed, new_changed, 1)
+
 out.write_text(text, encoding="utf-8")
 PY
 
