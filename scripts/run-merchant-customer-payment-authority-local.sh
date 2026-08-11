@@ -6,7 +6,7 @@ REMOTE="github"
 BRANCH="parallel/merchant-customer-payment-confirmation-authority"
 COORDINATOR="parallel/integration-coordinator"
 GOLDEN="a2ee58e4fc46123551c24f9741612780cda2ebc2"
-EXPECTED_PRE_RUNNER_HEAD="5546f69527c51ef26b95fd9c4b7a253e9f2ad469"
+EXPECTED_PRE_RUNNER_HEAD="bf08156d5b133a4f5f7735855b9f60383dd88cfb"
 RUNNER_PATH="scripts/run-merchant-customer-payment-authority-local.sh"
 CACHE_ROOT="${TMPDIR:-$HOME/.cache/fawri-validation}"
 WORKTREE="$CACHE_ROOT/merchant-customer-payment-$$"
@@ -109,7 +109,7 @@ pnpm install --offline --frozen-lockfile --ignore-scripts
 echo "Generating deterministic migration stage 0007..."
 pnpm --filter @workspace/db run schema:generate
 
-git diff --check "$GOLDEN"..HEAD
+git diff --check "$GOLDEN"
 
 echo "Running repository typecheck..."
 pnpm run typecheck
@@ -135,7 +135,7 @@ pnpm --filter @workspace/api-server exec tsx --test \
 echo "Running repository builds..."
 pnpm -r --if-present run build
 
-git diff --check "$GOLDEN"..HEAD
+git diff --check "$GOLDEN"
 
 FINAL_ALLOWED_REGEX='^(artifacts/api-server/src/routes/auth\.ts|artifacts/api-server/src/routes/order-operations\.ts|artifacts/api-server/src/services/orderOperationsRuntime\.ts|artifacts/api-server/src/services/postgresManualConversationAuthority\.ts|artifacts/api-server/src/services/postgresOperationalNotificationAuthority\.ts|artifacts/api-server/src/services/postgresOrderOperationsAuthority\.ts|artifacts/api-server/src/services/postgresOrderPaymentProviderAuthority\.ts|artifacts/api-server/tests/merchant-customer-payment-authority-postgres\.integration\.test\.ts|artifacts/fawri/src/lib/types\.ts|artifacts/fawri/src/pages/dashboard/NotificationsPage\.tsx|artifacts/fawri/src/pages/dashboard/ServerOrdersPage\.tsx|lib/db/src/schema/orders\.ts|lib/db/src/schema/tenant-security\.ts|lib/db/migration-stages/0007/stage\.json|lib/db/migration-stages/0007/preimage/orders\.ts|lib/db/migration-stages/0007/preimage/tenant-security\.ts|lib/db/drizzle/0007_.*\.sql|lib/db/drizzle/meta/0007_snapshot\.json|lib/db/drizzle/meta/_journal\.json)$'
 while IFS= read -r changed; do
@@ -144,7 +144,7 @@ while IFS= read -r changed; do
     echo "STOP: unexpected final diff path: $changed"
     exit 10
   fi
-done < <(git diff --name-only "$GOLDEN"..HEAD)
+done < <(git diff --name-only "$GOLDEN")
 
 if git status --porcelain | grep -E '(^| )pnpm-workspace\.yaml$|(^| )pnpm-lock\.yaml$' >/dev/null; then
   echo "STOP: package policy or lockfile changed unexpectedly"
