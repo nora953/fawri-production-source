@@ -12,6 +12,12 @@ import {
   updateServerOrderStatusAuthoritative,
   updateServerPaymentStatusAuthoritative,
 } from "../services/postgresOrderOperationsAuthority";
+import {
+  resolveMerchantPaymentConflictAuthoritative,
+} from "../services/postgresOrderPaymentProviderAuthority";
+import {
+  notifyMerchantPaymentConflictPostgres,
+} from "../services/postgresOperationalNotificationAuthority";
 
 const router = Router();
 
@@ -144,13 +150,23 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
+      const paymentRequestId = requestId(req);
       const order = await confirmServerPaymentAuthoritative({
         merchantId,
         orderId: parameter(req.params.orderId),
         expectedVersion: req.body?.expected_version,
         actorId: merchantId,
-        requestId: requestId(req),
+        requestId: paymentRequestId,
       });
+      if (order.payment_reconciliation_status === "reconciliation_required") {
+        await notifyMerchantPaymentConflictPostgres({
+          merchantId,
+          orderId: order.id,
+          conversationId: order.conversation_id,
+          provider: order.payment_provider,
+          sourceEventId: paymentRequestId || `merchant:${order.id}:${order.version}`,
+        });
+      }
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, order });
     } catch (error) {
@@ -172,6 +188,27 @@ router.post(
         reason: req.body?.reason,
         actorId: merchantId,
         requestId: requestId(req),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, order });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/orders/:orderId/payment/conflict/resolve",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const order = await resolveMerchantPaymentConflictAuthoritative({
+        merchantId,
+        orderId: parameter(req.params.orderId),
+        expectedVersion: req.body?.expected_version,
+        actorId: merchantId,
+        resolutionNote: req.body?.resolution_note,
       });
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, order });

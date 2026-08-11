@@ -28,6 +28,15 @@ export type ServerPaymentStatus =
   | "failed"
   | "manual_review";
 
+export type PaymentConfirmationSource =
+  | "merchant_confirmed"
+  | "provider_verified";
+
+export type PaymentReconciliationStatus =
+  | "clear"
+  | "reconciliation_required"
+  | "resolved";
+
 export type ServerOrderItem = {
   product_id: string;
   product_name: string;
@@ -42,6 +51,7 @@ export type PaymentDecisionAudit = {
   operation: "confirm" | "reject";
   payment_channel: "cash_on_delivery" | "electronic";
   outcome: "paid" | "failed";
+  confirmation_source?: PaymentConfirmationSource;
   previous_payment_status: ServerPaymentStatus;
   resulting_payment_status: ServerPaymentStatus;
   previous_order_status: ServerOrderStatus;
@@ -72,6 +82,16 @@ export type ServerOrder = {
   payment_verified_at?: string;
   payment_verified_by?: string;
   payment_rejection_reason?: string;
+  payment_confirmation_source?: PaymentConfirmationSource;
+  payment_provider?: string;
+  payment_provider_transaction_ref?: string;
+  payment_provider_last_event_id?: string;
+  payment_reconciliation_status?: PaymentReconciliationStatus;
+  payment_conflict_code?: string;
+  payment_conflict_at?: string;
+  payment_conflict_resolved_at?: string;
+  payment_conflict_resolved_by?: string;
+  payment_conflict_resolution_note?: string;
   last_payment_decision?: PaymentDecisionAudit;
   source_channel: string;
   total_price: number;
