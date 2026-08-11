@@ -26,4 +26,8 @@ test('subscription page uses server billing catalog and does not invent paid sta
   assert.match(checkoutRequest, /idempotency_key/);
   assert.doesNotMatch(checkoutRequest, /(?:amount_iqd|monthly_price_iqd|price_iqd)\s*:/);
   assert.match(panel, /order\.amount_iqd\.toLocaleString/);
+  assert.match(panel, /superqi_sandbox/);
+  assert.match(panel, /window\.location\.assign\(redirectUrl\)/);
+  assert.match(panel, /checkout\?\.redirect_url/);
+  assert.doesNotMatch(panel, /[?&]paid=true/);
 });

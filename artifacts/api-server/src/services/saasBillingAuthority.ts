@@ -1,5 +1,10 @@
 import crypto from "node:crypto";
 import {
+  createSuperQiSandboxPayment,
+  getSuperQiSandboxPublicState,
+  type SuperQiFetch,
+} from "./superQiSandboxTransport";
+import {
   SAAS_PLAN_CATALOG_VERSION,
   getSaasPlan,
   listSaasPlans,
@@ -16,7 +21,7 @@ import { subscriptionPostgresAuthorityRequired } from "./postgresSubscriptionEnt
 export const SAAS_BILLING_PROVIDER_ENV = "FAWRI_SAAS_BILLING_PROVIDER";
 
 export type SaasBillingProviderState = {
-  provider: "disabled" | "test_fake" | "unsupported";
+  provider: "disabled" | "test_fake" | "superqi_sandbox" | "unsupported";
   checkout_available: boolean;
   production_ready: boolean;
 };
@@ -47,10 +52,11 @@ export type SaasBillingOrderRecord = {
   cancelled_at: string | null;
   created_at: string;
   updated_at: string;
+  metadata: Record<string, string | number | boolean | null>;
 };
 
 export type VerifiedSaasBillingProviderEvent = {
-  provider: "test_fake";
+  provider: "test_fake" | "superqi_sandbox";
   providerEventId: string;
   orderId: string;
   eventType:
@@ -179,6 +185,14 @@ export function getSaasBillingProviderState(): SaasBillingProviderState {
       production_ready: false,
     };
   }
+  if (configured === "superqi_sandbox") {
+    const sandbox = getSuperQiSandboxPublicState();
+    return {
+      provider: "superqi_sandbox",
+      checkout_available: sandbox.checkout_available,
+      production_ready: false,
+    };
+  }
   return {
     provider: "unsupported",
     checkout_available: false,
@@ -243,13 +257,17 @@ function orderFromRow(row: Record<string, unknown>): SaasBillingOrderRecord {
       : null,
     created_at: timestamp(row.created_at).toISOString(),
     updated_at: timestamp(row.updated_at).toISOString(),
+    metadata:
+      row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+        ? (row.metadata as Record<string, string | number | boolean | null>)
+        : {},
   };
 }
 
 const ORDER_SELECT = `SELECT id, merchant_id, operation, requested_plan, amount_iqd,
   currency, catalog_version, provider, status, idempotency_key,
   provider_checkout_ref, provider_payment_ref, request_expires_at,
-  paid_at, failed_at, cancelled_at, created_at, updated_at
+  paid_at, failed_at, cancelled_at, created_at, updated_at, metadata
   FROM saas_billing_orders`;
 
 async function loadOrder(
@@ -334,13 +352,24 @@ export async function createSaasBillingCheckout(input: {
   plan: SaasPaidPlan;
   idempotencyKey: string;
   now?: Date;
+  providerFetch?: SuperQiFetch;
 }): Promise<{
   order: SaasBillingOrderRecord;
   duplicate: boolean;
-  checkout: { provider: "test_fake"; checkout_reference: string; test_only: true };
+  checkout:
+    | { provider: "test_fake"; checkout_reference: string; test_only: true }
+    | {
+        provider: "superqi_sandbox";
+        checkout_reference: string;
+        redirect_url: string;
+        test_only: true;
+      };
 }> {
   const provider = getSaasBillingProviderState();
-  if (!provider.checkout_available || provider.provider !== "test_fake") {
+  if (
+    !provider.checkout_available ||
+    !["test_fake", "superqi_sandbox"].includes(provider.provider)
+  ) {
     fail(
       "SAAS_BILLING_PROVIDER_DISABLED",
       "SaaS subscription checkout is not enabled yet",
@@ -384,13 +413,34 @@ export async function createSaasBillingCheckout(input: {
         existing.operation !== input.operation ||
         existing.requested_plan !== input.plan ||
         existing.amount_iqd !== plan.monthly_price_iqd ||
-        existing.catalog_version !== SAAS_PLAN_CATALOG_VERSION
+        existing.catalog_version !== SAAS_PLAN_CATALOG_VERSION ||
+        existing.provider !== provider.provider
       ) {
         fail(
           "SAAS_BILLING_IDEMPOTENCY_CONFLICT",
           "billing idempotency key was already used for another request",
           409,
         );
+      }
+      if (provider.provider === "superqi_sandbox") {
+        const redirectUrl = String(existing.metadata.provider_form_url || "").trim();
+        if (!existing.provider_checkout_ref || !redirectUrl) {
+          fail(
+            "SAAS_BILLING_PROVIDER_CHECKOUT_INCOMPLETE",
+            "SuperQi sandbox checkout is incomplete; use a new checkout request",
+            503,
+          );
+        }
+        return {
+          order: existing,
+          duplicate: true,
+          checkout: {
+            provider: "superqi_sandbox" as const,
+            checkout_reference: existing.provider_checkout_ref,
+            redirect_url: redirectUrl,
+            test_only: true as const,
+          },
+        };
       }
       return {
         order: existing,
@@ -426,14 +476,22 @@ export async function createSaasBillingCheckout(input: {
       now,
     );
     const orderId = `saas-billing-${crypto.randomUUID()}`;
-    const checkoutRef = `test-checkout-${crypto.randomUUID()}`;
+    const providerRequestId =
+      provider.provider === "superqi_sandbox" ? crypto.randomUUID() : null;
+    const checkoutRef =
+      provider.provider === "test_fake"
+        ? `test-checkout-${crypto.randomUUID()}`
+        : null;
     const expiresAt = new Date(now.getTime() + 30 * 60 * 1000);
+    const metadata = providerRequestId
+      ? { provider_request_id: providerRequestId }
+      : {};
     await client.query(
       `INSERT INTO saas_billing_orders (
          id, merchant_id, operation, requested_plan, amount_iqd, currency,
          catalog_version, provider, status, idempotency_key,
-         provider_checkout_ref, request_expires_at, created_at, updated_at
-       ) VALUES ($1, $2, $3, $4, $5, 'IQD', $6, 'test_fake', 'pending', $7, $8, $9, $10, $10)`,
+         provider_checkout_ref, request_expires_at, metadata, created_at, updated_at
+       ) VALUES ($1, $2, $3, $4, $5, 'IQD', $6, $7, 'pending', $8, $9, $10, $11::jsonb, $12, $12)`,
       [
         orderId,
         merchantId,
@@ -441,12 +499,58 @@ export async function createSaasBillingCheckout(input: {
         input.plan,
         plan.monthly_price_iqd,
         SAAS_PLAN_CATALOG_VERSION,
+        provider.provider,
         idempotencyKey,
         checkoutRef,
         expiresAt,
+        JSON.stringify(metadata),
         now,
       ],
     );
+
+    if (provider.provider === "superqi_sandbox") {
+      if (!providerRequestId) {
+        fail("SAAS_BILLING_PROVIDER_STATE_INVALID", "SuperQi sandbox request ID is missing", 503);
+      }
+      const payment = await createSuperQiSandboxPayment(
+        {
+          requestId: providerRequestId,
+          orderId,
+          amountIqd: plan.monthly_price_iqd,
+        },
+        input.providerFetch,
+      );
+      const attached = await client.query(
+        `UPDATE saas_billing_orders
+            SET provider_checkout_ref = $2,
+                metadata = metadata || $3::jsonb,
+                updated_at = $4
+          WHERE id = $1 AND provider = 'superqi_sandbox'
+          RETURNING id`,
+        [
+          orderId,
+          payment.paymentId,
+          JSON.stringify({ provider_form_url: payment.formUrl }),
+          now,
+        ],
+      );
+      if (attached.rows.length !== 1) {
+        fail("SAAS_BILLING_PROVIDER_REFERENCE_FAILED", "SuperQi sandbox reference was not attached", 503);
+      }
+      const order = await loadOrder(client, orderId, true);
+      if (!order) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
+      return {
+        order,
+        duplicate: false,
+        checkout: {
+          provider: "superqi_sandbox" as const,
+          checkout_reference: payment.paymentId,
+          redirect_url: payment.formUrl,
+          test_only: true as const,
+        },
+      };
+    }
+
     const order = await loadOrder(client, orderId, true);
     if (!order) fail("SAAS_BILLING_ORDER_NOT_FOUND", "SaaS billing order not found", 503);
     return {
@@ -454,7 +558,7 @@ export async function createSaasBillingCheckout(input: {
       duplicate: false,
       checkout: {
         provider: "test_fake" as const,
-        checkout_reference: checkoutRef,
+        checkout_reference: checkoutRef || "",
         test_only: true as const,
       },
     };
@@ -515,10 +619,17 @@ async function recordEvent(
 export async function applyVerifiedSaasBillingProviderEvent(
   input: VerifiedSaasBillingProviderEvent,
 ): Promise<SaasBillingApplicationOutcome> {
-  if (process.env.NODE_ENV !== "test" || input.provider !== "test_fake") {
+  const configuredProvider = getSaasBillingProviderState();
+  const providerEventAllowed =
+    (input.provider === "test_fake" && process.env.NODE_ENV === "test") ||
+    (input.provider === "superqi_sandbox" &&
+      process.env.NODE_ENV !== "production" &&
+      configuredProvider.provider === "superqi_sandbox" &&
+      configuredProvider.checkout_available);
+  if (!providerEventAllowed) {
     fail(
       "SAAS_BILLING_PROVIDER_EVENT_UNAVAILABLE",
-      "no production SaaS billing provider adapter is configured",
+      "SaaS billing provider event is not enabled in this environment",
       503,
     );
   }
