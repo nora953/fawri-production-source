@@ -11,6 +11,13 @@ DECLARATION_RE = re.compile(
     r"\b(?P<kind>const|let)\s+(?P<name>[A-Za-z_$][\w$]*)"
     r"(?P<type>\s*:[^=;]{0,800}?)?\s*=\s*\{"
 )
+RUNTIME_MEMBER_RE = re.compile(
+    r"\b[A-Za-z_$][\w$]*\s*\.\s*[A-Za-z_$][\w$]*"
+)
+RUNTIME_VALUE_RE = re.compile(
+    r":\s*([A-Za-z_$][\w$]*)\s*(?=[,}\]])"
+)
+RUNTIME_TOKENS = {"true", "false", "null", "undefined"}
 
 
 @dataclass(frozen=True)
@@ -216,6 +223,89 @@ def _property_keys(object_source: str) -> frozenset[str]:
             index += 1
 
     return frozenset(keys)
+
+
+def _code_without_strings_or_comments(text: str) -> str:
+    output: list[str] = []
+    index = 0
+    mode = "code"
+    quote = ""
+
+    while index < len(text):
+        char = text[index]
+        nxt = text[index + 1] if index + 1 < len(text) else ""
+
+        if mode == "code":
+            if char in {"'", '"', "`"}:
+                quote = char
+                mode = "string"
+                output.append(" ")
+                index += 1
+                continue
+            if char == "/" and nxt == "/":
+                mode = "line_comment"
+                output.extend((" ", " "))
+                index += 2
+                continue
+            if char == "/" and nxt == "*":
+                mode = "block_comment"
+                output.extend((" ", " "))
+                index += 2
+                continue
+            output.append(char)
+            index += 1
+            continue
+
+        if mode == "string":
+            if char == "\\":
+                output.extend((" ", " "))
+                index += 2
+                continue
+            output.append("\n" if char == "\n" else " ")
+            if char == quote:
+                mode = "code"
+                quote = ""
+            index += 1
+            continue
+
+        if mode == "line_comment":
+            output.append("\n" if char == "\n" else " ")
+            if char == "\n":
+                mode = "code"
+            index += 1
+            continue
+
+        output.append(" ")
+        if char == "*" and nxt == "/":
+            output.append(" ")
+            mode = "code"
+            index += 2
+        else:
+            index += 1
+
+    return "".join(output)
+
+
+def localized_object_uses_runtime_authority(object_source: str) -> bool:
+    """Return True for language-shaped runtime maps, not hardcoded copy authorities.
+
+    Objects such as `{ ar: t.foo, ku: t.bar, en: t.baz }` or a larger runtime
+    mapping that happens to contain language keys should stay with the component:
+    their text already comes from the central dictionary. Moving them would sever
+    their runtime dependency and create a second authority accidentally.
+    """
+    if "${" in object_source or "=>" in object_source or "..." in object_source:
+        return True
+
+    code = _code_without_strings_or_comments(object_source)
+    if RUNTIME_MEMBER_RE.search(code):
+        return True
+
+    for match in RUNTIME_VALUE_RE.finditer(code):
+        if match.group(1) not in RUNTIME_TOKENS:
+            return True
+
+    return False
 
 
 def find_localized_object_declarations(text: str) -> list[LocalizedObjectDeclaration]:
