@@ -1,11 +1,13 @@
 import type { NextFunction, Request, Response } from "express";
 import { getMetaWebhookEventId } from "./metaWebhookSecurity";
 import { isTrustedMetaWebhookInternalReplay } from "../services/metaWebhookInternalReplay";
-import { readMetaPageMerchantMap } from "../services/metaPageDirectory";
 import {
-  isConversationUnderManualControl,
-  recordManualInboundMessage,
-} from "../services/manualConversationRuntime";
+  readMetaPageMerchantMapAuthoritative,
+} from "../services/metaPageDirectory";
+import {
+  isConversationUnderManualControlAuthoritative,
+  recordManualInboundMessageAuthoritative,
+} from "../services/postgresManualConversationAuthority";
 import { notifyMerchantNewCustomerMessage } from "../routes/auth";
 
 function eventRecord(event: unknown): Record<string, unknown> {
@@ -47,11 +49,11 @@ function existingTerminalEventIds(res: Response): string[] {
     : [];
 }
 
-export function enforceManualConversationWebhookAccess(
+export async function enforceManualConversationWebhookAccess(
   req: Request,
   res: Response,
   next: NextFunction,
-): void {
+): Promise<void> {
   if (req.method !== "POST" || req.path !== "/api/meta/webhook") {
     next();
     return;
@@ -67,7 +69,7 @@ export function enforceManualConversationWebhookAccess(
   }
 
   try {
-    const pageMerchantMap = readMetaPageMerchantMap();
+    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative();
     const terminalEventIds = new Set(existingTerminalEventIds(res));
     const filteredEntries: Record<string, unknown>[] = [];
     const internalReplay = isTrustedMetaWebhookInternalReplay(req);
@@ -91,13 +93,18 @@ export function enforceManualConversationWebhookAccess(
         }
 
         const conversationId = `messenger-${customerId}`;
-        if (!isConversationUnderManualControl(merchantId, conversationId)) {
+        if (
+          !(await isConversationUnderManualControlAuthoritative(
+            merchantId,
+            conversationId,
+          ))
+        ) {
           filteredMessaging.push(event);
           continue;
         }
 
         const eventId = getMetaWebhookEventId(pageId, event);
-        recordManualInboundMessage({
+        await recordManualInboundMessageAuthoritative({
           merchantId,
           conversationId,
           externalMessageId: message.externalMessageId || eventId,
