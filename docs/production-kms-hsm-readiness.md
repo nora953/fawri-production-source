@@ -135,19 +135,11 @@ Multiple logical application DEKs may coexist under that one KMS key for rotatio
 
 CI uses injected/fake KMS clients only. It must not receive AWS production credentials and must not make real KMS calls. Focused tests cover success, wrong KMS identity, context mismatch, permission denial, KMS unavailable, malformed ciphertext, invalid plaintext length, current/historical/retired logical DEKs, rotation compatibility, leak resistance, environment-provider ineligibility, AWS-specific readiness, and disposal zeroization.
 
-## Coordinator handoff required for production activation
+## Production startup wiring status
 
-Current `metaChannelRuntime` still falls back to `createEnvironmentMetaCredentialKeyProvider()` when no provider is injected, and `src/index.ts` starts the API synchronously. A production AWS KMS provider therefore cannot be activated safely from this lane without central startup/runtime wiring.
+The coordinator handoff described by the original adapter lane has now been completed. `runtimeProviderBootstrap.ts` asynchronously bootstraps the selected AWS KMS provider before the application is imported, validates provider readiness, injects the cached provider into the legacy Meta credential runtime, PostgreSQL Meta channel authority, and PostgreSQL durable-job credential path, and disposes it during shutdown. `src/index.ts` fails startup closed when provider bootstrap fails.
 
-Coordinator change required after this lane is validated:
-
-1. before accepting traffic, `await bootstrapAwsKmsMetaCredentialKeyProviderFromEnvironment()`;
-2. require `assertAwsKmsMetaCredentialProviderReady(...)` in production;
-3. inject the resulting cached provider into every Meta OAuth/connect/read/send credential path instead of allowing the environment fallback;
-4. call `dispose()` during server shutdown;
-5. fail startup closed if bootstrap/readiness fails.
-
-This lane intentionally does **not** modify `src/index.ts`, `app.ts`, or `routes/index.ts`.
+Production still requires the real AWS account/KMS/IAM configuration and wrapped-DEK manifest listed below. Repository wiring does not prove that those external resources exist or that the production workload role has the required permissions. The final production release gate therefore requires explicit `aws-kms` selection and complete KMS configuration before Meta OAuth/live sending can activate.
 
 ## Remaining AWS-account / Owner blockers
 

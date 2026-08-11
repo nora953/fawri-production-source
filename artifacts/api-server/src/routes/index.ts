@@ -41,9 +41,7 @@ const router: IRouter = Router();
 router.use(healthRouter);
 router.use("/auth", authRouter);
 const GRAPH_VERSION = "v22.0";
-const META_REDIRECT_URI =
-  process.env.META_REDIRECT_URI ||
-  "https://7420821c-790f-40d9-9ded-46b56a9c6cba-00-1v3w7iufkjvhe.sisko.replit.dev/api/meta/callback";
+const META_REDIRECT_URI = String(process.env.META_REDIRECT_URI || "").trim();
 
 const DB_DIR = getFawriDataDir();
 const DB_PATH = getFawriDataFilePath("fawri-runtime-db.json");
@@ -2586,6 +2584,8 @@ router.get(
     if (!appId) return res.status(500).send("META_APP_ID is not configured");
     if (!configId)
       return res.status(500).send("META_CONFIG_ID is not configured");
+    if (!META_REDIRECT_URI)
+      return res.status(503).send("META_REDIRECT_URI is not configured");
 
     const state = createMerchantOAuthState(
       merchantId,
@@ -2632,6 +2632,8 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
   if (!appId) return res.status(500).send("META_APP_ID is not configured");
   if (!appSecret)
     return res.status(500).send("META_APP_SECRET is not configured");
+  if (!META_REDIRECT_URI)
+    return res.status(503).send("META_REDIRECT_URI is not configured");
 
   try {
     const tokenUrl =

@@ -1,6 +1,7 @@
 import { logger } from "./lib/logger";
 import { getFawriDataDir } from "./lib/dataPaths";
 import type { DurableJobWorker } from "./services/durableJobQueue";
+import { assertProductionRuntimeConfiguration } from "./services/productionReleaseReadiness";
 import { bootstrapRuntimeAndLoadApplication } from "./services/runtimeProviderBootstrap";
 
 const rawPort = process.env["PORT"];
@@ -28,6 +29,11 @@ function safeStartupErrorCode(error: unknown): string {
 }
 
 async function main(): Promise<void> {
+  // The release gate is opt-in until the production environment is populated.
+  // Once FAWRI_PRODUCTION_RELEASE_GATE=required is set, startup fails closed
+  // before any provider bootstrap, listener, worker, or application traffic.
+  assertProductionRuntimeConfiguration(process.env);
+
   const { application, runtime } = await bootstrapRuntimeAndLoadApplication({
     loadApplication: async () => {
       const [{ default: app }, { startMetaWebhookWorker }] = await Promise.all([

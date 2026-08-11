@@ -60,6 +60,10 @@ import {
   refreshMerchantRetentionPolicy,
   startMerchantRetentionPolicyScheduler,
 } from "./services/merchantRetentionPolicy";
+import {
+  assertProductionRuntimeConfiguration,
+  metaConnectionActivationConfigured,
+} from "./services/productionReleaseReadiness";
 import "./services/manualConversationDeletion";
 
 const app: Express = express();
@@ -113,11 +117,11 @@ function enforceMetaConnectionActivationGate(
   res: Response,
   next: NextFunction,
 ): void {
-  const isLegacyConnectionPath =
+  const isConnectionPath =
     req.method === "GET" &&
     (req.path === "/api/meta/login" || req.path === "/api/meta/callback");
 
-  if (!isLegacyConnectionPath) {
+  if (!isConnectionPath || metaConnectionActivationConfigured(process.env)) {
     next();
     return;
   }
@@ -126,7 +130,7 @@ function enforceMetaConnectionActivationGate(
   res.status(503).json({
     ok: false,
     code: "META_CHANNEL_CONNECTION_CUTOVER_PENDING",
-    error: "Meta channel connection is disabled until encrypted OAuth cutover is complete",
+    error: "Meta channel connection is disabled until production-safe OAuth configuration is complete",
   });
 }
 
@@ -202,7 +206,15 @@ app.use(
   createObservabilityRouter({
     service: observabilityService,
     version: observabilityVersion(),
-    readinessChecks: [createPostgresAuthorityReadinessCheck()],
+    readinessChecks: [
+      createPostgresAuthorityReadinessCheck(),
+      {
+        name: "production_release_configuration",
+        check() {
+          assertProductionRuntimeConfiguration(process.env);
+        },
+      },
+    ],
     metrics: processMetricsRegistry,
     allowMetrics: allowInternalMetricsRequest,
   }),
@@ -287,9 +299,8 @@ app.use("/api", channelDurableJobAdminRouter);
 app.use("/api", catalogOperationsRouter);
 app.use("/api/knowledge", knowledgeOperationsRouter);
 
-// Do not allow a new plaintext Meta connection to be created while the
-// encrypted OAuth/send-path cutover and PostgreSQL/KMS dependencies are still
-// pending. Existing legacy handlers remain unreachable for these paths.
+// Meta OAuth remains fail-closed by default. It is reachable only when the
+// explicit PostgreSQL/KMS/live-send activation contract is configured.
 app.use(enforceMetaConnectionActivationGate);
 
 // The corrected Knowledge/AI router is now the sole merchant-facing knowledge
