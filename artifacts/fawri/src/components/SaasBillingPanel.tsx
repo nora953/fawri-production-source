@@ -16,9 +16,18 @@ type BillingPlan = {
   billing_period_months: 1;
 };
 type ProviderState = {
-  provider: 'disabled' | 'test_fake' | 'superqi_sandbox' | 'unsupported';
+  provider: 'disabled' | 'test_fake' | 'superqi_sandbox' | 'fastpay' | 'unsupported';
+  display_name: string;
   checkout_available: boolean;
   production_ready: boolean;
+  test_only: boolean;
+  status:
+    | 'available'
+    | 'disabled'
+    | 'merchant_setup_required'
+    | 'production_forbidden'
+    | 'configuration_incomplete'
+    | 'unsupported';
 };
 type BillingOrder = {
   id: string;
@@ -42,6 +51,7 @@ type CatalogResponse = {
   currency: 'IQD';
   plans: BillingPlan[];
   provider: ProviderState;
+  providers: ProviderState[];
 };
 
 const copy = {
@@ -58,6 +68,8 @@ const copy = {
     checkoutUnavailable: 'الدفع غير متاح حاليًا',
     checkoutCreated: 'تم إنشاء طلب الدفع',
     sandboxNotice: 'أنت تستخدم بيئة اختبار SuperQi. لا يتم استخدام أموال حقيقية في هذا الوضع.',
+    fastPayNotice: 'FastPay سيكون متاحًا بعد إكمال حساب التاجر والحصول على بيانات الربط الرسمية من FastPay.',
+    merchantSetupRequired: 'يتطلب إعداد حساب تاجر',
   },
   en: {
     title: 'Fawri subscription plans',
@@ -72,6 +84,8 @@ const copy = {
     checkoutUnavailable: 'Checkout is not available yet',
     checkoutCreated: 'Billing order created',
     sandboxNotice: 'SuperQi sandbox is active. No real money is used in this mode.',
+    fastPayNotice: 'FastPay will become available after merchant onboarding and official integration credentials are provided.',
+    merchantSetupRequired: 'Merchant setup required',
   },
   ku: {
     title: 'پلانی بەشداری فەوری',
@@ -86,6 +100,8 @@ const copy = {
     checkoutUnavailable: 'پارەدان هێشتا بەردەست نییە',
     checkoutCreated: 'داواکاری پارەدان دروست کرا',
     sandboxNotice: 'ژینگەی تاقیکردنەوەی SuperQi چالاکە. لەم دۆخەدا پارەی ڕاستەقینە بەکارناهێنرێت.',
+    fastPayNotice: 'FastPay دوای تەواوکردنی هەژماری بازرگان و وەرگرتنی زانیارییە فەرمییەکانی بەستنەوە بەردەست دەبێت.',
+    merchantSetupRequired: 'پێویستی بە ڕێکخستنی هەژماری بازرگان هەیە',
   },
 };
 
@@ -103,7 +119,7 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
   const [catalog, setCatalog] = React.useState<CatalogResponse | null>(null);
   const [orders, setOrders] = React.useState<BillingOrder[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [submitting, setSubmitting] = React.useState<Plan | null>(null);
+  const [submitting, setSubmitting] = React.useState<string | null>(null);
 
   const load = React.useCallback(async () => {
     try {
@@ -134,14 +150,21 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
     : true;
   const canStartCycle = !subscription || expired || baseRemaining <= 0;
 
-  const beginCheckout = async (plan: Plan) => {
-    if (!catalog.provider.checkout_available || !canStartCycle) return;
+  const providers = Array.isArray(catalog.providers) ? catalog.providers : [catalog.provider];
+  const checkoutAvailable = providers.some((provider) => provider.checkout_available);
+  const fastPayPending = providers.some(
+    (provider) => provider.provider === 'fastpay' && provider.status === 'merchant_setup_required',
+  );
+
+  const beginCheckout = async (plan: Plan, provider: ProviderState) => {
+    if (!provider.checkout_available || !canStartCycle) return;
     const operation: 'activate' | 'renew' | 'change' = !subscription
       ? 'activate'
       : subscription.plan_name === plan
         ? 'renew'
         : 'change';
-    setSubmitting(plan);
+    const submittingKey = `${plan}:${provider.provider}`;
+    setSubmitting(submittingKey);
     try {
       const response = await fetch('/api/auth/billing/checkout', {
         method: 'POST',
@@ -149,6 +172,7 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
         body: JSON.stringify({
           operation,
           plan,
+          provider: provider.provider,
           idempotency_key: makeIdempotencyKey(),
         }),
       });
@@ -160,8 +184,7 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
         typeof data?.checkout?.redirect_url === 'string'
           ? data.checkout.redirect_url.trim()
           : '';
-      if (catalog.provider.provider === 'superqi_sandbox') {
-        if (!redirectUrl) throw new Error(text.checkoutUnavailable);
+      if (redirectUrl) {
         window.location.assign(redirectUrl);
         return;
       }
@@ -180,19 +203,25 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
         <CardTitle>{text.title}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!catalog.provider.checkout_available && (
+        {!checkoutAvailable && (
           <Alert>
             <AlertTitle>{text.checkoutUnavailable}</AlertTitle>
             <AlertDescription>{text.providerDisabled}</AlertDescription>
           </Alert>
         )}
-        {catalog.provider.provider === 'superqi_sandbox' &&
-          catalog.provider.checkout_available && (
+        {providers.some(
+          (provider) => provider.provider === 'superqi_sandbox' && provider.checkout_available,
+        ) && (
             <Alert>
               <AlertDescription>{text.sandboxNotice}</AlertDescription>
             </Alert>
           )}
-        {catalog.provider.checkout_available && subscription && !canStartCycle && (
+        {fastPayPending && (
+          <Alert>
+            <AlertDescription>{text.fastPayNotice}</AlertDescription>
+          </Alert>
+        )}
+        {checkoutAvailable && subscription && !canStartCycle && (
           <Alert>
             <AlertDescription>{text.cycleActive}</AlertDescription>
           </Alert>
@@ -215,13 +244,30 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
                 <p className="mt-1 text-sm text-muted-foreground">
                   {plan.base_reply_limit.toLocaleString(locale)} {text.replies}
                 </p>
-                <Button
-                  className="mt-4 w-full"
-                  disabled={!catalog.provider.checkout_available || !canStartCycle || submitting !== null}
-                  onClick={() => void beginCheckout(plan.plan)}
-                >
-                  {submitting === plan.plan ? t.overview_loading : text.choose}
-                </Button>
+                <div className="mt-4 space-y-2">
+                  {providers
+                    .filter((provider) => provider.provider !== 'disabled' && provider.provider !== 'unsupported')
+                    .map((provider) => {
+                      const key = `${plan.plan}:${provider.provider}`;
+                      return (
+                        <Button
+                          key={provider.provider}
+                          className="w-full"
+                          variant={provider.checkout_available ? 'default' : 'outline'}
+                          disabled={!provider.checkout_available || !canStartCycle || submitting !== null}
+                          onClick={() => void beginCheckout(plan.plan, provider)}
+                        >
+                          {submitting === key
+                            ? t.overview_loading
+                            : `${text.choose} · ${provider.display_name}${
+                                provider.status === 'merchant_setup_required'
+                                  ? ` · ${text.merchantSetupRequired}`
+                                  : ''
+                              }`}
+                        </Button>
+                      );
+                    })}
+                </div>
               </div>
             );
           })}
