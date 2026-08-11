@@ -6,7 +6,7 @@ REMOTE="github"
 BRANCH="parallel/merchant-customer-payment-confirmation-authority"
 COORDINATOR="parallel/integration-coordinator"
 GOLDEN="a2ee58e4fc46123551c24f9741612780cda2ebc2"
-EXPECTED_PRE_RUNNER_HEAD="091f50c3af2046737bc92003ad4559cb15270ad2"
+EXPECTED_PRE_RUNNER_HEAD="f407e6ab844116f9bc644fe580d38ea94a33b54b"
 RUNNER_PATH="scripts/run-merchant-customer-payment-authority-local.sh"
 CACHE_ROOT="${TMPDIR:-$HOME/.cache/fawri-validation}"
 WORKTREE="$CACHE_ROOT/merchant-customer-payment-$$"
@@ -45,6 +45,7 @@ INITIAL_ALLOWED=(
   "artifacts/api-server/src/services/postgresOrderPaymentProviderAuthority.ts"
   "artifacts/api-server/tests/merchant-customer-payment-authority-postgres.integration.test.ts"
   "scripts/.tmp-merchant-customer-payment-authority.py"
+  "scripts/.tmp-merchant-payment-decisionrow-fix.py"
   "scripts/.tmp-merchant-payment-provider-safety.py"
   "$RUNNER_PATH"
 )
@@ -88,9 +89,11 @@ git worktree add -b "$TEMP_BRANCH" "$WORKTREE" "$BRANCH_HEAD"
 cd "$WORKTREE"
 
 python3 scripts/.tmp-merchant-customer-payment-authority.py
+python3 scripts/.tmp-merchant-payment-decisionrow-fix.py
 python3 scripts/.tmp-merchant-payment-provider-safety.py
 rm -f \
   scripts/.tmp-merchant-customer-payment-authority.py \
+  scripts/.tmp-merchant-payment-decisionrow-fix.py \
   scripts/.tmp-merchant-payment-provider-safety.py \
   "$RUNNER_PATH"
 
