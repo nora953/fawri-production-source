@@ -1,17 +1,25 @@
 export const OPERATIONAL_POSTGRES_AUTHORITY_ENV =
   "FAWRI_OPERATIONAL_POSTGRES_AUTHORITY";
 
-export type OperationalQueryResult = {
-  rows: Record<string, unknown>[];
+export type OperationalQueryResult<
+  T extends Record<string, unknown> = Record<string, unknown>,
+> = {
+  rows: T[];
   rowCount?: number | null;
 };
 
 export type OperationalQueryTarget = {
-  query(
+  query<T extends Record<string, unknown> = Record<string, unknown>>(
     sql: string,
     values?: unknown[],
-  ): Promise<OperationalQueryResult>;
+  ): Promise<OperationalQueryResult<T>>;
 };
+
+/**
+ * Query-only SQL client used by PostgreSQL runtime authorities. The alias keeps
+ * authority implementations explicit without granting pool/transaction control.
+ */
+export type OperationalSqlClient = OperationalQueryTarget;
 
 export type OperationalTransactionClient = OperationalQueryTarget & {
   release(): void;
@@ -53,8 +61,8 @@ export async function operationalQueryRows<T extends Record<string, unknown>>(
   sql: string,
   values: unknown[] = [],
 ): Promise<T[]> {
-  const result = await target.query(sql, values);
-  return result.rows as T[];
+  const result = await target.query<T>(sql, values);
+  return result.rows;
 }
 
 export async function withOperationalTransaction<T>(
