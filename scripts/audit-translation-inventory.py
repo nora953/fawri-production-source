@@ -4,7 +4,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from lib.translation_structure_scan import find_localized_object_declarations
+from lib.translation_structure_policy import (
+    find_hardcoded_localized_object_declarations,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "artifacts" / "fawri" / "src"
@@ -57,7 +59,8 @@ def main() -> None:
     for path in sorted(FRONTEND.rglob("*.ts*")):
         if is_translation_authority(path):
             continue
-        declarations = find_localized_object_declarations(read(path))
+        source_text = read(path)
+        declarations = find_hardcoded_localized_object_declarations(source_text)
         if declarations:
             localized.append((len(declarations), rel(path)))
             total_localized_objects += len(declarations)
