@@ -1,5 +1,7 @@
 import fs from "node:fs";
 import { getFawriDataFilePath } from "../lib/dataPaths";
+import { findMerchantByIdAuthoritative } from "./postgresMerchantAccountAuthority";
+import { operationalPostgresAuthorityRequired } from "./operationalPostgresAuthority";
 
 export type MerchantOperationalRecord = {
   id?: unknown;
@@ -102,6 +104,42 @@ export function getMerchantOperationalDecision(
     );
   } catch (error) {
     console.error("Merchant operational access state read failed:", error);
+    return {
+      allowed: false,
+      statusCode: 503,
+      code: "MERCHANT_ACCESS_STATE_UNAVAILABLE",
+      error: "merchant access state is unavailable",
+    };
+  }
+}
+
+export async function getMerchantOperationalDecisionAuthoritative(
+  merchantIdValue: string,
+): Promise<MerchantOperationalDecision> {
+  const merchantId = String(merchantIdValue || "").trim();
+  if (!operationalPostgresAuthorityRequired()) {
+    return getMerchantOperationalDecision(merchantId);
+  }
+  try {
+    const account = await findMerchantByIdAuthoritative(merchantId);
+    if (!account?.merchantProfile) {
+      return evaluateMerchantOperationalAccess(undefined);
+    }
+    const status =
+      account.merchantProfile.accountStatus === "pending_review"
+        ? "pending_activation"
+        : account.merchantProfile.accountStatus;
+    return evaluateMerchantOperationalAccess({
+      id: account.account.id,
+      is_admin: false,
+      otp_verified: account.account.otpVerified,
+      status,
+      account_status: account.merchantProfile.accountStatus,
+    });
+  } catch (error) {
+    console.error("Merchant operational PostgreSQL access state read failed", {
+      code: String((error as { code?: unknown })?.code || "") || undefined,
+    });
     return {
       allowed: false,
       statusCode: 503,
