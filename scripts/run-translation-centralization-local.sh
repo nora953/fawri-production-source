@@ -41,6 +41,10 @@ fi
 git worktree add --detach "$WORKTREE" "$BRANCH_HEAD"
 cd "$WORKTREE"
 
+# Python helper imports must never leave bytecode artifacts that contaminate the
+# guarded worktree diff/scope checks.
+export PYTHONDONTWRITEBYTECODE=1
+
 echo "=== BEFORE CENTRALIZATION ==="
 python3 scripts/audit-translation-inventory.py | tee "$BEFORE_OUT"
 
@@ -58,6 +62,10 @@ grep -qx 'TOTAL_LOCALIZED_COPY_OBJECTS=0' "$AFTER_OUT" || {
   echo "STOP: localized copy objects remain outside translation authority"
   exit 24
 }
+
+# Defensive cleanup for Python versions/environments that may still emit cache files.
+find scripts -type d -name '__pycache__' -prune -exec rm -rf {} + 2>/dev/null || true
+find scripts -type f -name '*.py[co]' -delete 2>/dev/null || true
 
 git diff --check
 
