@@ -723,14 +723,16 @@ export async function importCatalogProductsAuthoritative(params: {
   if (!operationalPostgresAuthorityRequired()) {
     return importCatalogProducts({ ...params, merchantId });
   }
-  if (!Array.isArray(params.items) || params.items.length === 0) {
+  const itemsValue = params.items;
+  if (!Array.isArray(itemsValue) || itemsValue.length === 0) {
     throw new CatalogRuntimeError(
       "CATALOG_IMPORT_EMPTY",
       "import requires at least one product",
       400,
     );
   }
-  if (params.items.length > MAX_IMPORT_ITEMS) {
+  const items: unknown[] = itemsValue;
+  if (items.length > MAX_IMPORT_ITEMS) {
     throw new CatalogRuntimeError(
       "CATALOG_IMPORT_LIMIT_EXCEEDED",
       "import contains too many products",
@@ -739,7 +741,7 @@ export async function importCatalogProductsAuthoritative(params: {
     );
   }
   const keyHash = catalogIdempotencyKeyHash(params.idempotencyKey);
-  const requestHash = catalogRequestHash(params.items);
+  const requestHash = catalogRequestHash(items);
   return withMerchantOperationalTransaction(merchantId, async (client) => {
     const replay = await readIdempotency(
       client,
@@ -755,7 +757,7 @@ export async function importCatalogProductsAuthoritative(params: {
       return { products, created_count: products.length, replayed: true };
     }
     const existing = await loadProducts(client, merchantId, true);
-    if (existing.length + params.items.length > MAX_PRODUCTS_PER_MERCHANT) {
+    if (existing.length + items.length > MAX_PRODUCTS_PER_MERCHANT) {
       throw new CatalogRuntimeError(
         "CATALOG_PRODUCT_LIMIT_EXCEEDED",
         "merchant product limit exceeded",
@@ -764,7 +766,7 @@ export async function importCatalogProductsAuthoritative(params: {
       );
     }
     const now = new Date().toISOString();
-    const products = params.items.map((item) => {
+    const products = items.map((item) => {
       const product = normalizeCatalogProduct(item, {
         merchantId,
         now,

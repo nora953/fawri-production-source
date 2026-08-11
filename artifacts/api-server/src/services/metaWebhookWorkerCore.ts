@@ -1,9 +1,13 @@
 import type { DurableJob, ExpiredJobResolution } from "./durableJobQueue";
-import { getMerchantOperationalDecision } from "./merchantOperationalAccess";
 import {
-  getMerchantOperationalSettings,
+  getMerchantOperationalDecisionAuthoritative,
+} from "./merchantOperationalAccess";
+import {
   type MerchantOperationalSettings,
 } from "./merchantSettingsRuntime";
+import {
+  getMerchantOperationalSettingsAuthoritative,
+} from "./postgresMerchantSettingsAuthority";
 import { reserveMerchantAutoReplyAuthoritative } from "./merchantReplyEntitlementAuthority";
 import {
   releaseMerchantAutoReplyReservationAuthoritative,
@@ -70,9 +74,9 @@ function validateJob(job: DurableJob): {
   return { eventId, merchantId, externalMessageId };
 }
 
-function readSettings(merchantId: string): MerchantOperationalSettings {
+async function readSettings(merchantId: string): Promise<MerchantOperationalSettings> {
   try {
-    return getMerchantOperationalSettings(merchantId);
+    return await getMerchantOperationalSettingsAuthoritative(merchantId);
   } catch {
     throw jobError(
       "MERCHANT_SETTINGS_UNAVAILABLE",
@@ -198,7 +202,7 @@ export async function processMetaReplyJob(
   if (terminal) return terminal;
   throwIfOutcomeUncertain(existingState);
 
-  const access = getMerchantOperationalDecision(merchantId);
+  const access = await getMerchantOperationalDecisionAuthoritative(merchantId);
   if (!access.allowed) {
     if (access.code === "MERCHANT_ACCESS_STATE_UNAVAILABLE") {
       throw jobError(access.code, access.error, true, true);
@@ -212,7 +216,7 @@ export async function processMetaReplyJob(
     return completedSuppression(eventId, access.code);
   }
 
-  const claimedSettings = readSettings(merchantId);
+  const claimedSettings = await readSettings(merchantId);
   if (!claimedSettings.auto_reply_enabled) {
     transport.markSuppressed({
       eventId,
@@ -249,7 +253,7 @@ export async function processMetaReplyJob(
     settings: claimedSettings,
   });
 
-  const beforeReservation = readSettings(merchantId);
+  const beforeReservation = await readSettings(merchantId);
   const beforeReservationCode = settingsSuppressionCode(
     claimedSettings.version,
     beforeReservation,
@@ -335,8 +339,8 @@ export async function processMetaReplyJob(
       eventId,
       merchantId,
       settingsVersion: claimedSettings.version,
-      beforeSend: () => {
-        const immediatelyBeforeSend = readSettings(merchantId);
+      beforeSend: async () => {
+        const immediatelyBeforeSend = await readSettings(merchantId);
         const code = settingsSuppressionCode(
           claimedSettings.version,
           immediatelyBeforeSend,

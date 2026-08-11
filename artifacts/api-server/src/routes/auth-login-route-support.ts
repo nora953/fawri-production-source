@@ -13,6 +13,10 @@ import {
 import { findMerchantByPhoneAuthoritative } from "../services/postgresMerchantAccountAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import {
+  checkMerchantLoginAllowedAuthoritative,
+  recordMerchantLoginAttemptAuthoritative,
+} from "../services/postgresMerchantAuthSecurityAuthority";
+import {
   requestDeviceId,
   requestDeviceLabel,
   requestIp,
@@ -38,7 +42,7 @@ export async function login(
     return;
   }
 
-  const allowed = authSecurityStore.checkLoginAllowed({
+  const allowed = await checkMerchantLoginAllowedAuthoritative({
     target: phone,
     accountKind: kind,
     ip: requestIp(req),
@@ -61,7 +65,7 @@ export async function login(
     !verifyPassword(password, found.account.passwordHash) ||
     (kind === "merchant" && !found.account.otpVerified)
   ) {
-    authSecurityStore.recordLoginAttempt({
+    await recordMerchantLoginAttemptAuthoritative({
       target: phone,
       accountKind: kind,
       ip: requestIp(req),
@@ -124,7 +128,7 @@ export async function login(
       });
     }
     if (!authSecurityStore.isDeviceTrusted(found.account.id, "admin", deviceId)) {
-      authSecurityStore.recordLoginAttempt({
+      await recordMerchantLoginAttemptAuthoritative({
         target: phone,
         accountKind: kind,
         ip: requestIp(req),
@@ -172,7 +176,7 @@ export async function login(
     ...(deviceId ? { deviceId } : {}),
     deviceLabel: requestDeviceLabel(req),
   });
-  authSecurityStore.recordLoginAttempt({
+  await recordMerchantLoginAttemptAuthoritative({
     target: phone,
     accountKind: kind,
     ip: requestIp(req),

@@ -14,6 +14,9 @@ import {
 } from "../services/postgresMerchantAccountAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import {
+  verifyMerchantOtpChallengeAuthoritative,
+} from "../services/postgresMerchantAuthSecurityAuthority";
+import {
   clearAuthSessionCookie,
   requestDeviceId,
   requestDeviceLabel,
@@ -164,7 +167,7 @@ router.post("/verify-otp", async (req, res) => {
     return;
   }
   const account = await findMerchantByPhoneAuthoritative(phone);
-  const result = authSecurityStore.verifyOtpChallenge({
+  const result = await verifyMerchantOtpChallengeAuthoritative({
     challengeId,
     target: phone,
     purpose: "signup",
@@ -271,7 +274,7 @@ router.post("/password-reset/confirm", async (req, res) => {
     return;
   }
   const account = await findMerchantByPhoneAuthoritative(phone);
-  const result = authSecurityStore.verifyOtpChallenge({
+  const result = await verifyMerchantOtpChallengeAuthoritative({
     challengeId,
     target: phone,
     purpose: "password_reset",

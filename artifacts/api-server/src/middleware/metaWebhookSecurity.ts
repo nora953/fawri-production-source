@@ -4,6 +4,7 @@ import path from "node:path";
 import type { NextFunction, Request, Response } from "express";
 import { getFawriDataFilePath } from "../lib/dataPaths";
 import { isTrustedMetaWebhookInternalReplay } from "../services/metaWebhookInternalReplay";
+import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 
 export type MetaRawBodyRequest = Request & { rawBody?: Buffer };
 
@@ -111,7 +112,7 @@ export function markMetaWebhookEventsProcessed(
 ): void {
   const normalizedIds = [...new Set(eventIds.map(String).map((id) => id.trim()))]
     .filter(Boolean);
-  if (normalizedIds.length === 0) return;
+  if (normalizedIds.length === 0 || operationalPostgresAuthorityRequired()) return;
 
   const storePath = getFawriDataFilePath("processed-meta-events.json");
   const store = readProcessedEventsStore(storePath);
@@ -126,6 +127,25 @@ function filterDuplicateEvents(body: Record<string, unknown>): {
   duplicates: number;
   acceptedEventIds: string[];
 } {
+  if (operationalPostgresAuthorityRequired()) {
+    const acceptedEventIds: string[] = [];
+    for (const entryValue of Array.isArray(body.entry) ? body.entry : []) {
+      const entry = entryValue && typeof entryValue === "object"
+        ? (entryValue as Record<string, unknown>)
+        : {};
+      const pageId = String(entry.id || "").trim();
+      for (const event of Array.isArray(entry.messaging) ? entry.messaging : []) {
+        acceptedEventIds.push(getMetaWebhookEventId(pageId, event));
+      }
+    }
+    return {
+      body,
+      accepted: acceptedEventIds.length,
+      duplicates: 0,
+      acceptedEventIds,
+    };
+  }
+
   const storePath = getFawriDataFilePath("processed-meta-events.json");
   const store = readProcessedEventsStore(storePath);
   const persisted = pruneProcessedEvents(store.events, Date.now());
