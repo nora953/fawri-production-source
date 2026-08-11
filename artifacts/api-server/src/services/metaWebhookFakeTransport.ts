@@ -41,8 +41,8 @@ export type MetaWebhookReplyTransportResult =
       transportMessageId: string;
       deduplicated: boolean;
     }
-  | { status: "failed"; code: "META_FAKE_CONFIRMED_FAILURE" }
-  | { status: "uncertain"; code: "META_FAKE_DELIVERY_UNCERTAIN" }
+  | { status: "failed"; code: string }
+  | { status: "uncertain"; code: string }
   | { status: "blocked"; code: string };
 
 export type MetaWebhookReplyTransport = {
