@@ -3,16 +3,16 @@ import {
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "../middleware/authSession";
+import { ManualConversationError } from "../services/manualConversationRuntime";
 import {
-  completeManualReply,
-  failManualReply,
-  getServerConversation,
-  listServerConversations,
-  ManualConversationError,
-  prepareManualReply,
-  returnConversationToFawri,
-  takeOverConversation,
-} from "../services/manualConversationRuntime";
+  completeManualReplyAuthoritative,
+  failManualReplyAuthoritative,
+  getServerConversationAuthoritative,
+  listServerConversationsAuthoritative,
+  prepareManualReplyAuthoritative,
+  returnConversationToFawriAuthoritative,
+  takeOverConversationAuthoritative,
+} from "../services/postgresManualConversationAuthority";
 
 const router = Router();
 const GRAPH_VERSION = "v22.0";
@@ -58,10 +58,10 @@ function idempotencyKey(req: Request): string {
 router.get(
   "/conversations",
   requireMerchantSession,
-  (_req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const conversations = listServerConversations(merchantId);
+      const conversations = await listServerConversationsAuthoritative(merchantId);
       res.setHeader("Cache-Control", "no-store");
       res.json({
         ok: true,
@@ -78,7 +78,7 @@ router.get(
 router.get(
   "/conversations/:merchantId",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
       if (param(req.params.merchantId) !== merchantId) {
@@ -89,7 +89,7 @@ router.get(
         });
         return;
       }
-      const conversations = listServerConversations(merchantId);
+      const conversations = await listServerConversationsAuthoritative(merchantId);
       res.setHeader("Cache-Control", "no-store");
       res.json({
         ok: true,
@@ -106,10 +106,10 @@ router.get(
 router.get(
   "/conversation/:conversationId",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const conversation = getServerConversation(
+      const conversation = await getServerConversationAuthoritative(
         merchantId,
         param(req.params.conversationId),
       );
@@ -124,10 +124,10 @@ router.get(
 router.post(
   "/conversations/:conversationId/takeover",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const conversation = takeOverConversation(
+      const conversation = await takeOverConversationAuthoritative(
         merchantId,
         param(req.params.conversationId),
       );
@@ -142,10 +142,10 @@ router.post(
 router.post(
   "/conversations/:conversationId/return-to-fawri",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const conversation = returnConversationToFawri(
+      const conversation = await returnConversationToFawriAuthoritative(
         merchantId,
         param(req.params.conversationId),
       );
@@ -167,7 +167,7 @@ router.post(
     const messageText = String(req.body?.text || "").trim();
 
     try {
-      const prepared = prepareManualReply({
+      const prepared = await prepareManualReplyAuthoritative({
         merchantId,
         conversationId,
         idempotencyKey: requestKey,
@@ -179,7 +179,10 @@ router.post(
           ok: true,
           deduplicated: true,
           message: prepared.existingMessage,
-          conversation: getServerConversation(merchantId, conversationId),
+          conversation: await getServerConversationAuthoritative(
+            merchantId,
+            conversationId,
+          ),
         });
         return;
       }
@@ -198,7 +201,7 @@ router.post(
           },
         );
       } catch {
-        failManualReply({
+        await failManualReplyAuthoritative({
           merchantId,
           conversationId,
           idempotencyKey: requestKey,
@@ -216,7 +219,7 @@ router.post(
         | MetaSendResponse
         | null;
       if (!response.ok) {
-        failManualReply({
+        await failManualReplyAuthoritative({
           merchantId,
           conversationId,
           idempotencyKey: requestKey,
@@ -234,7 +237,7 @@ router.post(
 
       let message;
       try {
-        message = completeManualReply({
+        message = await completeManualReplyAuthoritative({
           merchantId,
           conversationId,
           idempotencyKey: requestKey,
@@ -243,7 +246,7 @@ router.post(
         });
       } catch {
         try {
-          failManualReply({
+          await failManualReplyAuthoritative({
             merchantId,
             conversationId,
             idempotencyKey: requestKey,
@@ -267,7 +270,10 @@ router.post(
         ok: true,
         deduplicated: false,
         message,
-        conversation: getServerConversation(merchantId, conversationId),
+        conversation: await getServerConversationAuthoritative(
+          merchantId,
+          conversationId,
+        ),
       });
     } catch (error) {
       sendError(res, error);
