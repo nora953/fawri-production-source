@@ -17,6 +17,8 @@ import type {
   AuthSessionRecord,
   IssuedSession,
 } from "../services/authSecurityStore";
+import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
+import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 
 export const MERCHANT_SESSION_COOKIE = "fawri_merchant_session_v2";
 export const ADMIN_SESSION_COOKIE = "fawri_admin_session_v2";
@@ -37,9 +39,8 @@ export function setAuthSessionCookie(
   kind: AccountKind,
   issued: IssuedSession,
 ): void {
-  const cookieName = kind === "merchant"
-    ? MERCHANT_SESSION_COOKIE
-    : ADMIN_SESSION_COOKIE;
+  const cookieName =
+    kind === "merchant" ? MERCHANT_SESSION_COOKIE : ADMIN_SESSION_COOKIE;
   const maxAge = Math.max(
     1_000,
     new Date(issued.session.idle_expires_at).getTime() - Date.now(),
@@ -68,9 +69,8 @@ export function clearAuthSessionCookie(res: Response, kind: AccountKind): void {
 }
 
 export function getSessionToken(req: Request, kind: AccountKind): string {
-  const cookieName = kind === "merchant"
-    ? MERCHANT_SESSION_COOKIE
-    : ADMIN_SESSION_COOKIE;
+  const cookieName =
+    kind === "merchant" ? MERCHANT_SESSION_COOKIE : ADMIN_SESSION_COOKIE;
   return String(req.cookies?.[cookieName] || "").trim();
 }
 
@@ -99,12 +99,24 @@ export async function requireSecureAdminSession(
 }
 
 export function requireSecureAdminPermission(permission: AdminPermission) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     await authenticate(req, res, "admin", () => {
       const context = getAuthContext(res);
       const profile = context?.adminProfile;
-      if (!profile || !hasAdminPermission(profile.role, profile.permissions, permission)) {
-        sendAuthError(res, 403, "ADMIN_PERMISSION_REQUIRED", "admin permission is required");
+      if (
+        !profile ||
+        !hasAdminPermission(profile.role, profile.permissions, permission)
+      ) {
+        sendAuthError(
+          res,
+          403,
+          "ADMIN_PERMISSION_REQUIRED",
+          "admin permission is required",
+        );
         return;
       }
       next();
@@ -115,13 +127,25 @@ export function requireSecureAdminPermission(permission: AdminPermission) {
 export function requireSecureTenant(
   resolveRequestedTenantId: (req: Request) => string | undefined,
 ) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     await authenticate(req, res, "merchant", () => {
       const context = getAuthContext(res);
       const tenantId = context?.merchantProfile?.tenantId || "";
-      const decision = assertTenantIsolation(tenantId, resolveRequestedTenantId(req));
+      const decision = assertTenantIsolation(
+        tenantId,
+        resolveRequestedTenantId(req),
+      );
       if (!decision.allowed) {
-        sendAuthError(res, 403, decision.code, "cross-tenant access is forbidden");
+        sendAuthError(
+          res,
+          403,
+          decision.code,
+          "cross-tenant access is forbidden",
+        );
         return;
       }
       next();
@@ -137,7 +161,12 @@ async function authenticate(
 ): Promise<void> {
   const token = getSessionToken(req, expectedKind);
   if (!token) {
-    sendAuthError(res, 401, "SESSION_REQUIRED", `${expectedKind} session is required`);
+    sendAuthError(
+      res,
+      401,
+      "SESSION_REQUIRED",
+      `${expectedKind} session is required`,
+    );
     return;
   }
 
@@ -149,14 +178,22 @@ async function authenticate(
   });
   if (!validated) {
     clearAuthSessionCookie(res, expectedKind);
-    sendAuthError(res, 401, "SESSION_INVALID", `${expectedKind} session is invalid or expired`);
+    sendAuthError(
+      res,
+      401,
+      "SESSION_INVALID",
+      `${expectedKind} session is invalid or expired`,
+    );
     return;
   }
 
-  const authAccount = authAccountRepository.findById(
-    validated.session.account_id,
-    expectedKind,
-  );
+  const authAccount =
+    expectedKind === "merchant"
+      ? await findMerchantByIdAuthoritative(validated.session.account_id)
+      : authAccountRepository.findById(
+          validated.session.account_id,
+          "admin",
+        );
   if (!authAccount || !authAccount.account.enabled) {
     await authPostgresSessionAuthority.revokeSession(
       token,
@@ -164,7 +201,12 @@ async function authenticate(
       "account_disabled",
     );
     clearAuthSessionCookie(res, expectedKind);
-    sendAuthError(res, 401, "SESSION_ACCOUNT_INVALID", "session account is no longer active");
+    sendAuthError(
+      res,
+      401,
+      "SESSION_ACCOUNT_INVALID",
+      "session account is no longer active",
+    );
     return;
   }
 
@@ -175,7 +217,12 @@ async function authenticate(
       "role_changed",
     );
     clearAuthSessionCookie(res, expectedKind);
-    sendAuthError(res, 401, "SESSION_VERSION_REVOKED", "session was revoked by an account security change");
+    sendAuthError(
+      res,
+      401,
+      "SESSION_VERSION_REVOKED",
+      "session was revoked by an account security change",
+    );
     return;
   }
 
@@ -185,7 +232,9 @@ async function authenticate(
     ...(authAccount.merchantProfile
       ? { merchantProfile: authAccount.merchantProfile }
       : {}),
-    ...(authAccount.adminProfile ? { adminProfile: authAccount.adminProfile } : {}),
+    ...(authAccount.adminProfile
+      ? { adminProfile: authAccount.adminProfile }
+      : {}),
   };
 
   if (expectedKind === "merchant") {
@@ -197,7 +246,12 @@ async function authenticate(
         "role_changed",
       );
       clearAuthSessionCookie(res, expectedKind);
-      sendAuthError(res, 401, "ROLE_SESSION_CONFUSION", "merchant session cannot be used as an admin session");
+      sendAuthError(
+        res,
+        401,
+        "ROLE_SESSION_CONFUSION",
+        "merchant session cannot be used as an admin session",
+      );
       return;
     }
     const access = canMerchantAccessPath({
@@ -206,7 +260,12 @@ async function authenticate(
       requestPath: req.originalUrl || req.path,
     });
     if (!access.allowed) {
-      sendAuthError(res, 403, access.code, "merchant operational access is not available");
+      sendAuthError(
+        res,
+        403,
+        access.code,
+        "merchant operational access is not available",
+      );
       return;
     }
   } else if (!authAccount.adminProfile) {
@@ -216,7 +275,12 @@ async function authenticate(
       "role_changed",
     );
     clearAuthSessionCookie(res, expectedKind);
-    sendAuthError(res, 401, "ROLE_SESSION_CONFUSION", "admin session cannot be used as a merchant session");
+    sendAuthError(
+      res,
+      401,
+      "ROLE_SESSION_CONFUSION",
+      "admin session cannot be used as a merchant session",
+    );
     return;
   } else if (
     authAccount.adminProfile.mustChangePassword &&
@@ -233,7 +297,8 @@ async function authenticate(
 
   (res as AuthenticatedResponse).locals.auth = context;
   if (context.merchantProfile) {
-    (res as AuthenticatedResponse).locals.merchantId = context.merchantProfile.merchantId;
+    (res as AuthenticatedResponse).locals.merchantId =
+      context.merchantProfile.merchantId;
   }
   res.setHeader("Cache-Control", "no-store");
 
@@ -245,7 +310,12 @@ async function authenticate(
     });
     if (!rotated) {
       clearAuthSessionCookie(res, expectedKind);
-      sendAuthError(res, 401, "SESSION_ROTATION_FAILED", "session rotation failed closed");
+      sendAuthError(
+        res,
+        401,
+        "SESSION_ROTATION_FAILED",
+        "session rotation failed closed",
+      );
       return;
     }
     setAuthSessionCookie(res, expectedKind, rotated);
@@ -257,9 +327,11 @@ async function authenticate(
 
 function isAdminPasswordChangePath(requestPath: string): boolean {
   const path = String(requestPath || "").split("?", 1)[0];
-  return path === "/api/auth/admin/change-password" ||
+  return (
+    path === "/api/auth/admin/change-password" ||
     path === "/api/auth/admin/logout" ||
-    path === "/api/auth/admin/me";
+    path === "/api/auth/admin/me"
+  );
 }
 
 export function requestIp(req: Request): string {
@@ -267,13 +339,19 @@ export function requestIp(req: Request): string {
 }
 
 export function requestDeviceId(req: Request): string {
-  return String(req.headers["x-fawri-device-id"] || req.body?.device_id || "")
+  return String(
+    req.headers["x-fawri-device-id"] || req.body?.device_id || "",
+  )
     .trim()
     .slice(0, 160);
 }
 
 export function requestDeviceLabel(req: Request): string {
-  return String(req.body?.device_label || req.headers["user-agent"] || "Unknown device")
+  return String(
+    req.body?.device_label ||
+      req.headers["user-agent"] ||
+      "Unknown device",
+  )
     .trim()
     .replace(/\s+/g, " ")
     .slice(0, 120);
@@ -302,7 +380,12 @@ export function enforceAuthOrigin(
     return;
   }
   if (!allowed.includes(origin)) {
-    sendAuthError(res, 403, "AUTH_ORIGIN_FORBIDDEN", "request origin is not allowed");
+    sendAuthError(
+      res,
+      403,
+      "AUTH_ORIGIN_FORBIDDEN",
+      "request origin is not allowed",
+    );
     return;
   }
   next();
@@ -324,11 +407,14 @@ export const requireMerchantSession = requireSecureMerchantSession;
 export const getMerchantIdFromSession = getMerchantIdFromSecureSession;
 
 export function merchantSessionAccountExists(merchantId: string): boolean {
+  // Legacy synchronous callers cannot safely cross into PostgreSQL. Required
+  // operational mode therefore fails closed instead of consulting merchants.json.
+  if (operationalPostgresAuthorityRequired()) return false;
   const authAccount = authAccountRepository.findById(merchantId, "merchant");
   return Boolean(
     authAccount &&
-    authAccount.account.enabled &&
-    authAccount.account.otpVerified &&
-    authAccount.merchantProfile,
+      authAccount.account.enabled &&
+      authAccount.account.otpVerified &&
+      authAccount.merchantProfile,
   );
 }

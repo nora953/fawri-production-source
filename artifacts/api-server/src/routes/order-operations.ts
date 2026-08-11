@@ -3,15 +3,15 @@ import {
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "./auth";
+import { OrderOperationError } from "../services/orderOperationsRuntime";
 import {
-  confirmServerPayment,
-  getServerOrder,
-  listServerOrders,
-  OrderOperationError,
-  rejectServerPayment,
-  updateServerOrderStatus,
-  updateServerPaymentStatus,
-} from "../services/orderOperationsRuntime";
+  confirmServerPaymentAuthoritative,
+  getServerOrderAuthoritative,
+  listServerOrdersAuthoritative,
+  rejectServerPaymentAuthoritative,
+  updateServerOrderStatusAuthoritative,
+  updateServerPaymentStatusAuthoritative,
+} from "../services/postgresOrderOperationsAuthority";
 
 const router = Router();
 
@@ -45,10 +45,10 @@ function sendError(res: Response, error: unknown): void {
   });
 }
 
-router.get("/orders", requireMerchantSession, (_req: Request, res: Response) => {
+router.get("/orders", requireMerchantSession, async (_req: Request, res: Response) => {
   try {
     const merchantId = getMerchantIdFromSession(res);
-    const orders = listServerOrders(merchantId);
+    const orders = await listServerOrdersAuthoritative(merchantId);
     res.setHeader("Cache-Control", "no-store");
     res.json({ ok: true, merchant_id: merchantId, count: orders.length, orders });
   } catch (error) {
@@ -59,7 +59,7 @@ router.get("/orders", requireMerchantSession, (_req: Request, res: Response) => 
 router.get(
   "/orders/:merchantId",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
       if (parameter(req.params.merchantId) !== merchantId) {
@@ -71,7 +71,7 @@ router.get(
         });
         return;
       }
-      const orders = listServerOrders(merchantId);
+      const orders = await listServerOrdersAuthoritative(merchantId);
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, merchant_id: merchantId, count: orders.length, orders });
     } catch (error) {
@@ -83,10 +83,13 @@ router.get(
 router.get(
   "/order/:orderId",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const order = getServerOrder(merchantId, parameter(req.params.orderId));
+      const order = await getServerOrderAuthoritative(
+        merchantId,
+        parameter(req.params.orderId),
+      );
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, order });
     } catch (error) {
@@ -98,10 +101,10 @@ router.get(
 router.patch(
   "/orders/:orderId/status",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const order = updateServerOrderStatus({
+      const order = await updateServerOrderStatusAuthoritative({
         merchantId,
         orderId: parameter(req.params.orderId),
         expectedVersion: req.body?.expected_version,
@@ -118,10 +121,10 @@ router.patch(
 router.patch(
   "/orders/:orderId/payment-status",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const order = updateServerPaymentStatus({
+      const order = await updateServerPaymentStatusAuthoritative({
         merchantId,
         orderId: parameter(req.params.orderId),
         expectedVersion: req.body?.expected_version,
@@ -138,10 +141,10 @@ router.patch(
 router.post(
   "/orders/:orderId/payment/confirm",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const order = confirmServerPayment({
+      const order = await confirmServerPaymentAuthoritative({
         merchantId,
         orderId: parameter(req.params.orderId),
         expectedVersion: req.body?.expected_version,
@@ -159,10 +162,10 @@ router.post(
 router.post(
   "/orders/:orderId/payment/reject",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const order = rejectServerPayment({
+      const order = await rejectServerPaymentAuthoritative({
         merchantId,
         orderId: parameter(req.params.orderId),
         expectedVersion: req.body?.expected_version,

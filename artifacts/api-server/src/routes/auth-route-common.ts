@@ -2,10 +2,13 @@ import type { Request, Response } from "express";
 import type { AuthAccount } from "../services/authAccountRepository";
 import { buildGenericOtpResponse } from "../services/authPolicy";
 import {
-  authSecurityStore,
   AuthSecurityStoreError,
   type OtpPurpose,
 } from "../services/authSecurityStore";
+import {
+  issueMerchantOtpChallengeAuthoritative,
+  revokeMerchantOtpChallengeAuthoritative,
+} from "../services/postgresMerchantAuthSecurityAuthority";
 import { deliverAuthOtp } from "../services/authOtpDelivery";
 import { getAuthContext, requestIp, sendAuthError } from "../middleware/authSession";
 
@@ -90,14 +93,14 @@ export function devCode(code: string) {
 }
 
 export async function issueOtp(req: Request, target: string, purpose: OtpPurpose) {
-  const issued = authSecurityStore.issueOtpChallenge({
+  const issued = await issueMerchantOtpChallengeAuthoritative({
     target,
     purpose,
     ip: requestIp(req),
   });
   const delivery = await deliverAuthOtp(target, issued.code, purpose);
   if (!delivery.ok) {
-    authSecurityStore.revokeOtpChallenge(issued.challengeId);
+    await revokeMerchantOtpChallengeAuthoritative(issued.challengeId);
     throw new AuthSecurityStoreError(delivery.code, delivery.message);
   }
   return issued;

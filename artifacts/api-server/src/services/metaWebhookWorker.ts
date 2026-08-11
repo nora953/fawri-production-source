@@ -1,17 +1,19 @@
 import os from "node:os";
 import {
-  blockDeadLetterJobRequeue,
-  enqueueDurableJob,
-  listDurableJobs,
-  startDurableJobWorker,
   type DurableJob,
   type DurableJobWorker,
   type ExpiredJobResolution,
 } from "./durableJobQueue";
+import {
+  blockDeadLetterJobRequeueAuthoritative,
+  enqueueDurableJobAuthoritative,
+  listDurableJobsAuthoritative,
+  startDurableJobWorkerAuthoritative,
+} from "./postgresDurableJobQueue";
 import { removeFailedMetaWebhookAttempt } from "./metaWebhookOutcome";
 import { refundMerchantAutoReplyAuthoritative } from "./merchantReplyRefundAuthority";
 import { createMetaChannelDisconnectHandler } from "./metaChannelJobs";
-import { merchantAllowsAutoReply } from "./merchantSettingsRuntime";
+import { merchantAllowsAutoReplyAuthoritative } from "./postgresMerchantSettingsAuthority";
 import {
   processMetaReplyJob,
   reconcileMetaReplyJob,
@@ -122,9 +124,7 @@ async function processClaimedMetaReplyJob(
   if (merchantId) {
     let enabled: boolean;
     try {
-      // Preserve the existing worker/server-authoritative settings contract.
-      // The core then performs versioned reads before reservation and send.
-      enabled = merchantAllowsAutoReply(merchantId);
+      enabled = await merchantAllowsAutoReplyAuthoritative(merchantId);
     } catch {
       throw jobError(
         "MERCHANT_SETTINGS_UNAVAILABLE",
@@ -191,12 +191,12 @@ async function reconcileExpiredMetaJob(
   return { action: "complete", result: { recovered_terminal_job: true } };
 }
 
-function enqueueConfirmedFailureRefund(job: DurableJob): void {
+async function enqueueConfirmedFailureRefund(job: DurableJob): Promise<void> {
   const eventId = text(job.payload?.event_id || job.dedupe_key);
   const merchantId = text(job.payload?.merchant_id || job.merchant_id);
-  if (!eventId) return;
-  blockDeadLetterJobRequeue(job.id);
-  enqueueDurableJob({
+  if (!eventId || !merchantId) return;
+  await blockDeadLetterJobRequeueAuthoritative(job.id, merchantId);
+  await enqueueDurableJobAuthoritative({
     type: META_REPLY_REFUND_JOB_TYPE,
     dedupeKey: `meta-refund:${eventId}`,
     merchantId,
@@ -206,18 +206,18 @@ function enqueueConfirmedFailureRefund(job: DurableJob): void {
   });
 }
 
-function recoverMissingRefundJobs(): void {
-  for (const job of listDurableJobs("dead_letter")) {
+async function recoverMissingRefundJobs(): Promise<void> {
+  for (const job of await listDurableJobsAuthoritative("dead_letter")) {
     if (
       job.type === META_REPLY_JOB_TYPE &&
       job.last_error_code === "META_REPLY_FAILED"
     ) {
-      enqueueConfirmedFailureRefund(job);
+      await enqueueConfirmedFailureRefund(job);
     }
   }
 }
 
-function handleMetaDeadLetter(job: DurableJob): void {
+async function handleMetaDeadLetter(job: DurableJob): Promise<void> {
   const eventId = text(job.payload?.event_id || job.dedupe_key);
   const merchantId = text(job.payload?.merchant_id || job.merchant_id);
   const externalMessageId = text(job.payload?.external_message_id);
@@ -228,7 +228,7 @@ function handleMetaDeadLetter(job: DurableJob): void {
     eventId
   ) {
     try {
-      enqueueConfirmedFailureRefund(job);
+      await enqueueConfirmedFailureRefund(job);
       if (merchantId && externalMessageId) {
         removeFailedMetaWebhookAttempt({ merchantId, externalMessageId });
       }
@@ -271,9 +271,23 @@ export function startMetaWebhookWorker(
   const replyTransport =
     options.replyTransport || createFakeMetaWebhookReplyTransport();
   const disconnectMetaChannel = createMetaChannelDisconnectHandler();
-  recoverMissingRefundJobs();
+  const recovery = recoverMissingRefundJobs();
 
-  return startDurableJobWorker({
+  async function afterRecovery<T>(work: () => Promise<T>): Promise<T> {
+    try {
+      await recovery;
+    } catch {
+      throw jobError(
+        "META_REFUND_RECOVERY_UNAVAILABLE",
+        "Meta refund recovery must succeed before processing new jobs",
+        true,
+        true,
+      );
+    }
+    return work();
+  }
+
+  return startDurableJobWorkerAuthoritative({
     workerId,
     pollIntervalMs: Number(process.env.FAWRI_JOB_POLL_INTERVAL_MS || 500),
     visibilityTimeoutMs: Number(
@@ -281,20 +295,26 @@ export function startMetaWebhookWorker(
     ),
     handlers: {
       [META_REPLY_JOB_TYPE]: (job) =>
-        processClaimedMetaReplyJob(job, replyTransport, options.replyHooks),
-      [META_EVENT_JOB_TYPE]: async (job) => ({
-        event_id: text(job.payload?.event_id || job.dedupe_key),
-        delivery_status: "ignored_non_reply_event",
-      }),
-      [META_TERMINAL_JOB_TYPE]: async (job) => ({
-        event_id: text(job.payload?.event_id || job.dedupe_key),
-        delivery_status: "terminal_no_reply",
-      }),
-      [META_CHANNEL_DISCONNECT_JOB_TYPE]: disconnectMetaChannel,
-      [META_REPLY_REFUND_JOB_TYPE]: async (job) => processMetaReplyRefundJob(job),
+        afterRecovery(() =>
+          processClaimedMetaReplyJob(job, replyTransport, options.replyHooks),
+        ),
+      [META_EVENT_JOB_TYPE]: (job) =>
+        afterRecovery(async () => ({
+          event_id: text(job.payload?.event_id || job.dedupe_key),
+          delivery_status: "ignored_non_reply_event",
+        })),
+      [META_TERMINAL_JOB_TYPE]: (job) =>
+        afterRecovery(async () => ({
+          event_id: text(job.payload?.event_id || job.dedupe_key),
+          delivery_status: "terminal_no_reply",
+        })),
+      [META_CHANNEL_DISCONNECT_JOB_TYPE]: (job) =>
+        afterRecovery(() => disconnectMetaChannel(job)),
+      [META_REPLY_REFUND_JOB_TYPE]: (job) =>
+        afterRecovery(() => processMetaReplyRefundJob(job)),
     },
     reconcileExpiredJob: (job) =>
-      reconcileExpiredMetaJob(job, replyTransport),
+      afterRecovery(() => reconcileExpiredMetaJob(job, replyTransport)),
     onDeadLetter: handleMetaDeadLetter,
   });
 }

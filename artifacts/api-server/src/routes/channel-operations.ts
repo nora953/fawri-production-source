@@ -3,13 +3,15 @@ import {
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "../middleware/authSession";
-import { getMerchantOperationalDecision } from "../services/merchantOperationalAccess";
 import {
-  listMetaChannels,
-  markMetaChannelError,
-  requestMetaChannelDisconnect,
-} from "../services/metaChannelRuntime";
-import { enqueueDurableJob } from "../services/durableJobQueue";
+  getMerchantOperationalDecisionAuthoritative,
+} from "../services/merchantOperationalAccess";
+import {
+  listMetaChannelsAuthoritative,
+  markMetaChannelErrorAuthoritative,
+  requestMetaChannelDisconnectAuthoritative,
+} from "../services/postgresMetaChannelAuthority";
+import { enqueueDurableJobAuthoritative } from "../services/postgresDurableJobQueue";
 
 const router = Router();
 
@@ -26,9 +28,9 @@ function sendError(
   res.setHeader("Cache-Control", "no-store");
   return res.status(status).json({ ok: false, code, error, ...details });
 }
-function requireOperationalMerchant(res: Response): string | null {
+async function requireOperationalMerchant(res: Response): Promise<string | null> {
   const merchantId = getMerchantIdFromSession(res);
-  const decision = getMerchantOperationalDecision(merchantId);
+  const decision = await getMerchantOperationalDecisionAuthoritative(merchantId);
   if (decision.allowed) return merchantId;
   sendError(res, decision.statusCode, decision.code, decision.error);
   return null;
@@ -37,19 +39,22 @@ function requireOperationalMerchant(res: Response): string | null {
 router.get(
   "/channels",
   requireMerchantSession,
-  (_req: Request, res: Response) => {
-    const merchantId = requireOperationalMerchant(res);
+  async (_req: Request, res: Response) => {
+    const merchantId = await requireOperationalMerchant(res);
     if (!merchantId) return;
     res.setHeader("Cache-Control", "no-store");
-    return res.json({ ok: true, channels: listMetaChannels(merchantId) });
+    return res.json({
+      ok: true,
+      channels: await listMetaChannelsAuthoritative(merchantId),
+    });
   },
 );
 
 router.post(
   "/channels/meta/:platform/:pageId/disconnect",
   requireMerchantSession,
-  (req: Request, res: Response) => {
-    const merchantId = requireOperationalMerchant(res);
+  async (req: Request, res: Response) => {
+    const merchantId = await requireOperationalMerchant(res);
     if (!merchantId) return;
     const platform = text(req.params.platform);
     const pageId = text(req.params.pageId);
@@ -66,15 +71,15 @@ router.post(
       );
     }
 
-    let channel: ReturnType<typeof requestMetaChannelDisconnect> | null = null;
+    let channel: Awaited<ReturnType<typeof requestMetaChannelDisconnectAuthoritative>> | null = null;
     try {
-      channel = requestMetaChannelDisconnect({
+      channel = await requestMetaChannelDisconnectAuthoritative({
         merchantId,
         platform,
         pageId,
         expectedVersion,
       });
-      const queued = enqueueDurableJob({
+      const queued = await enqueueDurableJobAuthoritative({
         type: "meta.channel.disconnect",
         dedupeKey: `meta-channel-disconnect:${channel.id}:${channel.connection_version}`,
         merchantId,
@@ -98,7 +103,7 @@ router.post(
     } catch (error) {
       if (channel) {
         try {
-          markMetaChannelError({
+          await markMetaChannelErrorAuthoritative({
             merchantId,
             platform,
             pageId,

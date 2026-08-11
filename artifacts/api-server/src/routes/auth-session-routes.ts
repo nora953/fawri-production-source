@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authAccountRepository } from "../services/authAccountRepository";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
+import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
 import {
   clearAuthSessionCookie,
   getAuthContext,
@@ -18,7 +19,11 @@ const router = Router();
 router.post("/logout", async (req, res) => {
   const token = getSessionToken(req, "merchant");
   if (token) {
-    await authPostgresSessionAuthority.revokeSession(token, "merchant", "logout");
+    await authPostgresSessionAuthority.revokeSession(
+      token,
+      "merchant",
+      "logout",
+    );
   }
   clearAuthSessionCookie(res, "merchant");
   res.json({ ok: true });
@@ -78,16 +83,20 @@ router.get("/admin/sessions", requireSecureAdminSession, async (_req, res) => {
   });
 });
 
-router.delete("/sessions/:sessionId", requireSecureMerchantSession, async (req, res) => {
-  const context = getAuthContext(res)!;
-  const ok = await authPostgresSessionAuthority.revokeSessionById({
-    actorAccountId: context.account.id,
-    accountId: context.account.id,
-    accountKind: "merchant",
-    sessionId: String(req.params.sessionId || ""),
-  });
-  res.status(ok ? 200 : 404).json({ ok });
-});
+router.delete(
+  "/sessions/:sessionId",
+  requireSecureMerchantSession,
+  async (req, res) => {
+    const context = getAuthContext(res)!;
+    const ok = await authPostgresSessionAuthority.revokeSessionById({
+      actorAccountId: context.account.id,
+      accountId: context.account.id,
+      accountKind: "merchant",
+      sessionId: String(req.params.sessionId || ""),
+    });
+    res.status(ok ? 200 : 404).json({ ok });
+  },
+);
 
 router.delete(
   "/admin/sessions/:sessionId",
@@ -114,7 +123,12 @@ router.post("/admin/change-password", requireSecureAdminSession, (req, res) =>
 router.get("/lifecycle", async (req, res) => {
   const token = getSessionToken(req, "merchant");
   if (!token) {
-    sendAuthError(res, 401, "SESSION_REQUIRED", "merchant session is required");
+    sendAuthError(
+      res,
+      401,
+      "SESSION_REQUIRED",
+      "merchant session is required",
+    );
     return;
   }
 
@@ -126,13 +140,17 @@ router.get("/lifecycle", async (req, res) => {
   });
   if (!validated) {
     clearAuthSessionCookie(res, "merchant");
-    sendAuthError(res, 401, "SESSION_INVALID", "merchant session is invalid or expired");
+    sendAuthError(
+      res,
+      401,
+      "SESSION_INVALID",
+      "merchant session is invalid or expired",
+    );
     return;
   }
 
-  const account = authAccountRepository.findById(
+  const account = await findMerchantByIdAuthoritative(
     validated.session.account_id,
-    "merchant",
   );
   if (!account?.merchantProfile || !account.account.otpVerified) {
     await authPostgresSessionAuthority.revokeSession(
@@ -173,15 +191,17 @@ router.get("/lifecycle", async (req, res) => {
     lifecycle: {
       account_status: accountStatus,
       merchant_status:
-        accountStatus === "pending_review" ? "pending_activation" : accountStatus,
+        accountStatus === "pending_review"
+          ? "pending_activation"
+          : accountStatus,
       onboarding_status: account.merchantProfile.onboardingStatus,
     },
   });
 });
 
-router.get("/me", requireSecureMerchantSession, (_req, res) => {
+router.get("/me", requireSecureMerchantSession, async (_req, res) => {
   const context = getAuthContext(res)!;
-  const account = authAccountRepository.findById(context.account.id, "merchant");
+  const account = await findMerchantByIdAuthoritative(context.account.id);
   if (!account) {
     res.status(404).json({
       ok: false,

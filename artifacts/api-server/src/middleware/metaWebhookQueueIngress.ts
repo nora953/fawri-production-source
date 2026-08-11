@@ -4,8 +4,12 @@ import {
   markMetaWebhookEventsProcessed,
 } from "./metaWebhookSecurity";
 import { enqueueDurableJob } from "../services/durableJobQueue";
+import { enqueueDurableJobAuthoritative } from "../services/postgresDurableJobQueue";
 import { isTrustedMetaWebhookInternalReplay } from "../services/metaWebhookInternalReplay";
-import { readMetaPageMerchantMap } from "../services/metaPageDirectory";
+import {
+  readMetaPageMerchantMapAuthoritative,
+} from "../services/metaPageDirectory";
+import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -38,11 +42,11 @@ function terminalIds(res: Response): string[] {
     : [];
 }
 
-export function enqueueMetaWebhookEvents(
+export async function enqueueMetaWebhookEvents(
   req: Request,
   res: Response,
   next: NextFunction,
-): void {
+): Promise<void> {
   if (req.method !== "POST" || req.path !== "/api/meta/webhook") {
     next();
     return;
@@ -64,7 +68,7 @@ export function enqueueMetaWebhookEvents(
   }
 
   try {
-    const pageMerchantMap = readMetaPageMerchantMap();
+    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative();
     const processed = new Set<string>();
     let enqueued = 0;
     let deduplicated = Number(res.locals.metaWebhookDuplicateEvents || 0);
@@ -83,7 +87,7 @@ export function enqueueMetaWebhookEvents(
         const eventId = getMetaWebhookEventId(pageId, event);
         processed.add(eventId);
         const isReply = replyEligible(event);
-        const result = enqueueDurableJob({
+        const input = {
           type: isReply ? "meta.webhook.reply" : "meta.webhook.event",
           dedupeKey: eventId,
           merchantId,
@@ -107,21 +111,26 @@ export function enqueueMetaWebhookEvents(
                 merchant_id: merchantId,
                 event_kind: "non_reply",
               },
-        });
+        };
+        const result = operationalPostgresAuthorityRequired()
+          ? await enqueueDurableJobAuthoritative(input)
+          : enqueueDurableJob(input);
         result.deduplicated ? (deduplicated += 1) : (enqueued += 1);
       }
     }
 
     for (const eventId of terminalIds(res)) {
       processed.add(eventId);
-      const result = enqueueDurableJob({
-        type: "meta.webhook.terminal",
-        dedupeKey: eventId,
-        payload: { event_id: eventId, event_kind: "terminal" },
-        priority: 20,
-        maxAttempts: 1,
-      });
-      result.deduplicated ? (deduplicated += 1) : (enqueued += 1);
+      if (!operationalPostgresAuthorityRequired()) {
+        const result = enqueueDurableJob({
+          type: "meta.webhook.terminal",
+          dedupeKey: eventId,
+          payload: { event_id: eventId, event_kind: "terminal" },
+          priority: 20,
+          maxAttempts: 1,
+        });
+        result.deduplicated ? (deduplicated += 1) : (enqueued += 1);
+      }
     }
 
     if (processed.size === 0 && deduplicated === 0) {

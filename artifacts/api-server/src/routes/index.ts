@@ -14,6 +14,14 @@ import {
   readMetaChannelCredential,
 } from "../services/metaChannelRuntime";
 import {
+  connectMetaChannelAuthoritative,
+  listMetaChannelsAuthoritative,
+} from "../services/postgresMetaChannelAuthority";
+import {
+  getMerchantOperationalDecisionAuthoritative,
+} from "../services/merchantOperationalAccess";
+import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
+import {
   BotCatalogAuthorityError,
   readBotCatalogProducts,
   type BotCatalogProduct,
@@ -305,6 +313,7 @@ function normalizeMetaPageConnection(
 }
 
 function loadRuntimeDb() {
+  if (operationalPostgresAuthorityRequired()) return;
   try {
     ensureDbFile();
     const raw = fs.readFileSync(DB_PATH, "utf8");
@@ -365,6 +374,7 @@ function loadRuntimeDb() {
 }
 
 function saveRuntimeDb() {
+  if (operationalPostgresAuthorityRequired()) return;
   try {
     ensureDbFile();
     const db: RuntimeDb = {
@@ -467,6 +477,16 @@ function readBotProductsForHttp(
   res: Response,
   merchantId: string,
 ): Product[] | null {
+  if (operationalPostgresAuthorityRequired()) {
+    res.setHeader("Cache-Control", "no-store");
+    res.status(410).json({
+      ok: false,
+      merchant_id: merchantId,
+      code: "LEGACY_RUNTIME_AUTHORITY_DISABLED",
+      error: "legacy bot runtime is disabled; use the PostgreSQL operational APIs",
+    });
+    return null;
+  }
   try {
     return readBotCatalogProducts(merchantId);
   } catch (error) {
@@ -605,6 +625,11 @@ export function saveMessengerConversation(params: {
   needsTraining?: boolean;
   assignedToHuman?: boolean;
 }) {
+  if (operationalPostgresAuthorityRequired()) {
+    throw Object.assign(new Error("legacy Messenger conversation persistence is disabled"), {
+      code: "LEGACY_RUNTIME_AUTHORITY_DISABLED",
+    });
+  }
   const current = conversationsByMerchant.get(params.merchantId) || [];
   const conversationId = `messenger-${params.customerId}`;
   const now = new Date().toISOString();
@@ -2284,6 +2309,9 @@ router.get("/bot/debug", requireMerchantSession, (req: Request, res: Response) =
 
 router.get("/bot/conversations/:merchantId", requireMerchantSession, (req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
+  if (operationalPostgresAuthorityRequired()) {
+    return res.status(410).json({ ok: false, code: "LEGACY_RUNTIME_AUTHORITY_DISABLED", error: "legacy bot conversation runtime is disabled" });
+  }
   if (rejectCrossMerchantPath(req, res, merchantId)) return;
   const conversations = conversationsByMerchant.get(merchantId) || [];
   return res.json({
@@ -2296,6 +2324,9 @@ router.get("/bot/conversations/:merchantId", requireMerchantSession, (req: Reque
 
 router.get("/bot/orders/:merchantId", requireMerchantSession, (req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
+  if (operationalPostgresAuthorityRequired()) {
+    return res.status(410).json({ ok: false, code: "LEGACY_RUNTIME_AUTHORITY_DISABLED", error: "legacy bot order runtime is disabled" });
+  }
   if (rejectCrossMerchantPath(req, res, merchantId)) return;
   const orders = ordersByMerchant.get(merchantId) || [];
   return res.json({
@@ -2306,8 +2337,20 @@ router.get("/bot/orders/:merchantId", requireMerchantSession, (req: Request, res
   });
 });
 
-router.get("/meta/pages", requireMerchantSession, (_req: Request, res: Response) => {
+router.get("/meta/pages", requireMerchantSession, async (_req: Request, res: Response) => {
   const merchantId = getMerchantIdFromSession(res);
+  if (operationalPostgresAuthorityRequired()) {
+    const channels = await listMetaChannelsAuthoritative(merchantId);
+    const pages = channels
+      .filter((channel) => channel.page_id)
+      .map((channel) => ({
+        page_id: channel.page_id,
+        page_name: channel.page_name,
+        platform: channel.platform,
+        connected_at: channel.connected_at,
+      }));
+    return res.json({ ok: true, merchant_id: merchantId, pages });
+  }
   const pages = Array.from(metaPagesByPageId.values())
     .filter((page) => page.merchant_id === merchantId)
     .map((page) => ({
@@ -2407,6 +2450,14 @@ router.get("/meta/webhook", (req: Request, res: Response) => {
 });
 
 router.post("/meta/webhook", async (req: Request, res: Response) => {
+  if (operationalPostgresAuthorityRequired()) {
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(410).json({
+      ok: false,
+      code: "LEGACY_META_WEBHOOK_DISABLED",
+      error: "legacy Meta webhook runtime is disabled",
+    });
+  }
   try {
     const body = req.body;
     if (body.object !== "page") return res.sendStatus(200);
@@ -2564,7 +2615,12 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
       .send(`Meta login error: ${errorDescription || error}`);
   if (!code) return res.status(400).send("Missing code from Meta");
   if (!state) return res.status(400).send("Invalid or expired Meta state");
-  if (!merchantSessionAccountExists(state.merchantId)) {
+  if (operationalPostgresAuthorityRequired()) {
+    const decision = await getMerchantOperationalDecisionAuthoritative(state.merchantId);
+    if (!decision.allowed) {
+      return res.status(decision.statusCode).send("Merchant account is unavailable");
+    }
+  } else if (!merchantSessionAccountExists(state.merchantId)) {
     return res.status(401).send("Merchant account is unavailable");
   }
 
@@ -2728,7 +2784,7 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
         });
       }
 
-      connectMetaChannel({
+      await connectMetaChannelAuthoritative({
         merchantId,
         platform: connection.platform,
         pageId: connection.page_id,
@@ -2740,10 +2796,12 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
       });
 
       connectedPages.push(connection);
-      metaPagesByPageId.set(connection.page_id, connection);
+      if (!operationalPostgresAuthorityRequired()) {
+        metaPagesByPageId.set(connection.page_id, connection);
+      }
     }
 
-    saveRuntimeDb();
+    if (!operationalPostgresAuthorityRequired()) saveRuntimeDb();
 
     return res.send(`
       <html>

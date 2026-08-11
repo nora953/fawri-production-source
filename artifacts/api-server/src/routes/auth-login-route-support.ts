@@ -1,8 +1,21 @@
 import type { Request, Response } from "express";
-import { authAccountRepository, normalizePhone } from "../services/authAccountRepository";
+import {
+  authAccountRepository,
+  normalizePhone,
+} from "../services/authAccountRepository";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import { authSecurityStore } from "../services/authSecurityStore";
-import { hashPassword, passwordNeedsRehash, verifyPassword } from "../services/authPasswordService";
+import {
+  hashPassword,
+  passwordNeedsRehash,
+  verifyPassword,
+} from "../services/authPasswordService";
+import { findMerchantByPhoneAuthoritative } from "../services/postgresMerchantAccountAuthority";
+import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
+import {
+  checkMerchantLoginAllowedAuthoritative,
+  recordMerchantLoginAttemptAuthoritative,
+} from "../services/postgresMerchantAuthSecurityAuthority";
 import {
   requestDeviceId,
   requestDeviceLabel,
@@ -20,11 +33,16 @@ export async function login(
   const phone = normalizePhone(req.body?.phone);
   const password = String(req.body?.password || "");
   if (!phone || !password) {
-    sendAuthError(res, 400, "CREDENTIALS_REQUIRED", "phone and password are required");
+    sendAuthError(
+      res,
+      400,
+      "CREDENTIALS_REQUIRED",
+      "phone and password are required",
+    );
     return;
   }
 
-  const allowed = authSecurityStore.checkLoginAllowed({
+  const allowed = await checkMerchantLoginAllowedAuthoritative({
     target: phone,
     accountKind: kind,
     ip: requestIp(req),
@@ -37,14 +55,17 @@ export async function login(
     return;
   }
 
-  const found = authAccountRepository.findByPhone(phone, kind);
+  let found =
+    kind === "merchant"
+      ? await findMerchantByPhoneAuthoritative(phone)
+      : authAccountRepository.findByPhone(phone, "admin");
   if (
     !found ||
     !found.account.enabled ||
     !verifyPassword(password, found.account.passwordHash) ||
     (kind === "merchant" && !found.account.otpVerified)
   ) {
-    authSecurityStore.recordLoginAttempt({
+    await recordMerchantLoginAttemptAuthoritative({
       target: phone,
       accountKind: kind,
       ip: requestIp(req),
@@ -52,14 +73,28 @@ export async function login(
       reason: "invalid_credentials",
       ...(found ? { accountId: found.account.id } : {}),
     });
-    sendAuthError(res, 401, "INVALID_CREDENTIALS", "phone or password is incorrect");
+    sendAuthError(
+      res,
+      401,
+      "INVALID_CREDENTIALS",
+      "phone or password is incorrect",
+    );
     return;
   }
 
   if (passwordNeedsRehash(found.account.passwordHash)) {
-    authAccountRepository.updatePassword(found.account.id, kind, hashPassword(password));
-    const refreshed = authAccountRepository.findById(found.account.id, kind);
-    if (refreshed) Object.assign(found.account, refreshed.account);
+    // A PostgreSQL merchant password is never rewritten through the legacy
+    // file repository. Rehash can safely wait until a password change/reset,
+    // where the PostgreSQL password/session transaction owns the mutation.
+    if (kind === "admin" || !operationalPostgresAuthorityRequired()) {
+      authAccountRepository.updatePassword(
+        found.account.id,
+        kind,
+        hashPassword(password),
+      );
+      const refreshed = authAccountRepository.findById(found.account.id, kind);
+      if (refreshed) found = refreshed;
+    }
   }
 
   const deviceId = requestDeviceId(req);
@@ -93,7 +128,7 @@ export async function login(
       });
     }
     if (!authSecurityStore.isDeviceTrusted(found.account.id, "admin", deviceId)) {
-      authSecurityStore.recordLoginAttempt({
+      await recordMerchantLoginAttemptAuthoritative({
         target: phone,
         accountKind: kind,
         ip: requestIp(req),
@@ -112,18 +147,25 @@ export async function login(
     }
   }
 
-  const profile = kind === "merchant" ? found.merchantProfile : found.adminProfile;
+  const profile =
+    kind === "merchant" ? found.merchantProfile : found.adminProfile;
   if (!profile) {
-    sendAuthError(res, 401, "ROLE_SESSION_CONFUSION", "account role is invalid");
+    sendAuthError(
+      res,
+      401,
+      "ROLE_SESSION_CONFUSION",
+      "account role is invalid",
+    );
     return;
   }
 
   const issued = await authPostgresSessionAuthority.issueSession({
     accountId: found.account.id,
     accountKind: kind,
-    tenantId: kind === "merchant"
-      ? found.merchantProfile!.tenantId
-      : found.account.id,
+    tenantId:
+      kind === "merchant"
+        ? found.merchantProfile!.tenantId
+        : found.account.id,
     accountVersion: found.account.sessionVersion,
     ...(found.adminProfile
       ? {
@@ -134,7 +176,7 @@ export async function login(
     ...(deviceId ? { deviceId } : {}),
     deviceLabel: requestDeviceLabel(req),
   });
-  authSecurityStore.recordLoginAttempt({
+  await recordMerchantLoginAttemptAuthoritative({
     target: phone,
     accountKind: kind,
     ip: requestIp(req),
