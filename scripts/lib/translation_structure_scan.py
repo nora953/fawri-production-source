@@ -4,9 +4,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
+# Keep the type annotation bounded to the declaration itself. In particular, never
+# cross an earlier '=' or ';' while looking for a typed object initializer; doing
+# so can incorrectly associate `const foo: Type[] = [...]` with a later `const bar = {`.
 DECLARATION_RE = re.compile(
     r"\b(?P<kind>const|let)\s+(?P<name>[A-Za-z_$][\w$]*)"
-    r"(?P<type>\s*:[\s\S]{0,800}?)?\s*=\s*\{"
+    r"(?P<type>\s*:[^=;]{0,800}?)?\s*=\s*\{"
 )
 
 
