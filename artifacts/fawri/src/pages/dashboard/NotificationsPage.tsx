@@ -1,3 +1,4 @@
+import { NOTIFICATIONS_PAGE_INSPECTION_NOTIFICATION_TEXT, NOTIFICATIONS_PAGE_OPERATIONAL_NOTIFICATION_TEXT, NOTIFICATIONS_PAGE_SUPPORT_REPLY_REMINDER_TEXT } from '@/lib/translations/features/pages/dashboard/NotificationsPage';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, Bell, Check, ExternalLink, Loader2, MessageCircle, Package, RefreshCw, ShieldCheck } from 'lucide-react';
 
@@ -45,128 +46,11 @@ function isSubscriptionNotification(
   );
 }
 
-const INSPECTION_NOTIFICATION_TEXT = {
-  ar: {
-    pendingTitle: 'طلب فحص حسابك',
-    approvedTitle: 'تمت الموافقة على طلب الفحص',
-    rejectedTitle: 'تم رفض طلب الفحص',
-    expiredTitle: 'انتهى طلب الفحص',
-    pendingBody: 'أرسل {admin} طلب {mode} ضمن تذكرة «{ticket}».',
-    approvedBody: 'وافقت على طلب {mode} من {admin} ضمن تذكرة «{ticket}».',
-    rejectedBody: 'رفضت طلب {mode} من {admin} ضمن تذكرة «{ticket}».',
-    expiredBody: 'انتهى طلب {mode} من {admin} ضمن تذكرة «{ticket}».',
-    live: 'مشاهدة مباشرة',
-    readOnly: 'فحص مستقل للقراءة فقط',
-    requestExpires: 'ينتهي الطلب',
-    approvalExpires: 'تنتهي الموافقة',
-    decisionAt: 'وقت القرار',
-    endedAt: 'وقت الانتهاء',
-    pending: 'بانتظار قرارك',
-    approved: 'تمت الموافقة',
-    rejected: 'تم الرفض',
-    expired: 'منتهٍ',
-    openRequest: 'فتح الطلب',
-    openTicket: 'فتح التذكرة',
-  },
-  ku: {
-    pendingTitle: 'داواکاری پشکنینی هەژمارەکەت',
-    approvedTitle: 'داواکاری پشکنین پەسەند کرا',
-    rejectedTitle: 'داواکاری پشکنین ڕەت کرایەوە',
-    expiredTitle: 'داواکاری پشکنین کۆتایی هات',
-    pendingBody: '{admin} داواکاری {mode}ی لە تیکێتی «{ticket}» ناردووە.',
-    approvedBody: 'ڕەزامەندیت دا بە داواکاری {mode}ی {admin} لە تیکێتی «{ticket}».',
-    rejectedBody: 'داواکاری {mode}ی {admin}ت لە تیکێتی «{ticket}» ڕەتکردەوە.',
-    expiredBody: 'داواکاری {mode}ی {admin} لە تیکێتی «{ticket}» کۆتایی هات.',
-    live: 'بینینی ڕاستەوخۆ',
-    readOnly: 'پشکنینی سەربەخۆی تەنها خوێندنەوە',
-    requestExpires: 'داواکاری کۆتایی دێت',
-    approvalExpires: 'ڕەزامەندی کۆتایی دێت',
-    decisionAt: 'کاتی بڕیار',
-    endedAt: 'کاتی کۆتایی',
-    pending: 'چاوەڕوانی بڕیارت',
-    approved: 'پەسەند کرا',
-    rejected: 'ڕەت کرایەوە',
-    expired: 'کۆتایی هاتوو',
-    openRequest: 'کردنەوەی داواکاری',
-    openTicket: 'کردنەوەی تیکێت',
-  },
-  en: {
-    pendingTitle: 'Account inspection request',
-    approvedTitle: 'Inspection request approved',
-    rejectedTitle: 'Inspection request rejected',
-    expiredTitle: 'Inspection request ended',
-    pendingBody: '{admin} requested {mode} for the “{ticket}” support ticket.',
-    approvedBody: 'You approved {admin}’s {mode} request for the “{ticket}” support ticket.',
-    rejectedBody: 'You rejected {admin}’s {mode} request for the “{ticket}” support ticket.',
-    expiredBody: '{admin}’s {mode} request for the “{ticket}” support ticket has ended.',
-    live: 'live observation',
-    readOnly: 'an independent read-only inspection',
-    requestExpires: 'Request expires',
-    approvalExpires: 'Approval expires',
-    decisionAt: 'Decision time',
-    endedAt: 'Ended at',
-    pending: 'Waiting for your decision',
-    approved: 'Approved',
-    rejected: 'Rejected',
-    expired: 'Ended',
-    openRequest: 'Open request',
-    openTicket: 'Open ticket',
-  },
-} as const;
+const INSPECTION_NOTIFICATION_TEXT = NOTIFICATIONS_PAGE_INSPECTION_NOTIFICATION_TEXT;
 
-const OPERATIONAL_NOTIFICATION_TEXT = {
-  ar: {
-    orderTitle: 'طلب جديد',
-    orderBody: 'تم إنشاء طلب جديد برقم {order}.',
-    orderOpen: 'فتح الطلب',
-    messageTitle: 'رسالة جديدة من زبون',
-    messageBody: 'وصلت رسالة جديدة ضمن محادثة الزبون.',
-    messageOpen: 'فتح المحادثة',
-    conflictTitle: 'تعارض في تأكيد الدفع',
-    conflictBody: 'يوجد اختلاف في معلومات دفع الطلب {order}. تم إيقاف البوت للمحادثة المعنية حتى تراجع العملية.',
-    conflictOpen: 'مراجعة الخلاف',
-  },
-  ku: {
-    orderTitle: 'داواکارییەکی نوێ',
-    orderBody: 'داواکارییەکی نوێ بە ژمارەی {order} دروست کرا.',
-    orderOpen: 'کردنەوەی داواکاری',
-    messageTitle: 'نامەیەکی نوێ لە کڕیار',
-    messageBody: 'نامەیەکی نوێ لە گفتوگۆی کڕیار گەیشت.',
-    messageOpen: 'کردنەوەی گفتوگۆ',
-    conflictTitle: 'ناکۆکی لە پشتڕاستکردنەوەی پارەدان',
-    conflictBody: 'زانیاری پارەدانی داواکاری {order} یەک ناگرێتەوە. بۆتی ئەم گفتوگۆیە تا پشکنین وەستاوە.',
-    conflictOpen: 'پشکنینی ناکۆکی',
-  },
-  en: {
-    orderTitle: 'New order',
-    orderBody: 'A new order was created: {order}.',
-    orderOpen: 'Open order',
-    messageTitle: 'New customer message',
-    messageBody: 'A new customer message arrived in this conversation.',
-    messageOpen: 'Open conversation',
-    conflictTitle: 'Payment confirmation conflict',
-    conflictBody: 'Payment information for order {order} conflicts. Fawri paused only the related conversation until you review it.',
-    conflictOpen: 'Review conflict',
-  },
-} as const;
+const OPERATIONAL_NOTIFICATION_TEXT = NOTIFICATIONS_PAGE_OPERATIONAL_NOTIFICATION_TEXT;
 
-const SUPPORT_REPLY_REMINDER_TEXT = {
-  ar: {
-    title: 'تذكير: ننتظر ردك',
-    body: 'فريق الدعم رد على تذكرة «{ticket}» وينتظر ردك. ستُغلق التذكرة تلقائيًا بعد 72 ساعة من آخر رد للدعم إذا لم يصل رد منك.',
-    open: 'فتح التذكرة',
-  },
-  ku: {
-    title: 'بیرهێنانەوە: چاوەڕوانی وەڵامەکەتین',
-    body: 'تیمی پشتگیری وەڵامی تیکێتی «{ticket}»ی داوەتەوە و چاوەڕوانی وەڵامەکەتە. ئەگەر وەڵام نەدەیت، تیکێتەکە دوای ٧٢ کاتژمێر لە دوا وەڵامی پشتگیری خۆکارانە دادەخرێت.',
-    open: 'کردنەوەی تیکێت',
-  },
-  en: {
-    title: 'Reminder: awaiting your reply',
-    body: 'Support replied to the “{ticket}” ticket and is waiting for you. The ticket will close automatically 72 hours after the latest support reply if you do not respond.',
-    open: 'Open ticket',
-  },
-} as const;
+const SUPPORT_REPLY_REMINDER_TEXT = NOTIFICATIONS_PAGE_SUPPORT_REPLY_REMINDER_TEXT;
 
 export default function NotificationsPage() {
   const { t, lang } = useI18n();

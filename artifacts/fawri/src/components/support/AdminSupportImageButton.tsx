@@ -1,29 +1,11 @@
+import { ADMIN_SUPPORT_IMAGE_BUTTON_TEXT } from '@/lib/translations/features/components/support/AdminSupportImageButton';
 import React, { useRef, useState } from 'react';
 import { ImagePlus, Loader2 } from 'lucide-react';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
-const TEXT = {
-  ar: {
-    label: 'إرسال صورة',
-    invalidType: 'اختر صورة بصيغة JPEG أو PNG أو WebP فقط.',
-    tooLarge: 'حجم الصورة يجب ألا يتجاوز 5 ميغابايت.',
-    uploadError: 'تعذر إرسال الصورة. حاول مرة أخرى.',
-  },
-  ku: {
-    label: 'ناردنی وێنە',
-    invalidType: 'تەنها وێنەی JPEG یان PNG یان WebP هەڵبژێرە.',
-    tooLarge: 'قەبارەی وێنەکە نابێت لە 5 مێگابایت زیاتر بێت.',
-    uploadError: 'ناردنی وێنەکە سەرکەوتوو نەبوو. دووبارە هەوڵ بدە.',
-  },
-  en: {
-    label: 'Send image',
-    invalidType: 'Choose a JPEG, PNG, or WebP image only.',
-    tooLarge: 'The image must not exceed 5 MB.',
-    uploadError: 'Could not send the image. Try again.',
-  },
-} as const;
+const TEXT = ADMIN_SUPPORT_IMAGE_BUTTON_TEXT;
 
 type AdminSupportImageButtonProps<TTicket> = {
   ticketId: string;

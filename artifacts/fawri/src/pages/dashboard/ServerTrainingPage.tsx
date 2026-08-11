@@ -1,3 +1,4 @@
+import { SERVER_TRAINING_PAGE_COPY } from '@/lib/translations/features/pages/dashboard/ServerTrainingPage';
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Brain, CheckCircle2, RefreshCw, Search, ShieldAlert, XCircle } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
@@ -58,101 +59,7 @@ type Copy = {
   statuses: Record<TrainingStatus, string>;
 };
 
-const COPY: Record<Language, Copy> = {
-  ar: {
-    title: "تدريب فوري",
-    subtitle: "راجع فجوات المعرفة. الإجابة المولدة لا تصبح معتمدة إلا بعد موافقتك الصريحة.",
-    refresh: "تحديث",
-    search: "ابحث في الطلبات",
-    loading: "جارٍ تحميل طلبات التدريب…",
-    empty: "لا توجد طلبات تدريب مطابقة.",
-    customer: "نص العميل المنقح",
-    intent: "النية",
-    language: "اللغة",
-    reason: "سبب التحويل",
-    generated: "مقترح مولد — غير معتمد",
-    merchantDraft: "مسودة التاجر",
-    reply: "الإجابة المقترحة",
-    replyPlaceholder: "اكتب الإجابة الصحيحة التي يمكن اعتمادها…",
-    propose: "حفظ للمراجعة",
-    approve: "اعتماد الإجابة",
-    reject: "رفض",
-    saving: "جارٍ الحفظ…",
-    loadFailed: "تعذر تحميل طلبات التدريب.",
-    actionFailed: "تعذر تنفيذ العملية.",
-    conflict: "تغير الطلب على جهاز آخر. تم تحميل النسخة الحالية.",
-    replyRequired: "اكتب إجابة قبل الحفظ أو الاعتماد.",
-    approvalNote: "الاعتماد يحول المصدر إلى merchant_approved ويسمح بالاسترجاع الآمن.",
-    statuses: {
-      pending_merchant_reply: "بانتظار رد التاجر",
-      pending_review: "بانتظار المراجعة",
-      approved: "معتمد",
-      rejected: "مرفوض",
-    },
-  },
-  ku: {
-    title: "ڕاهێنانی فەوری",
-    subtitle: "کەلێنی زانیاری بپشکنە. وەڵامی دروستکراو تەنها دوای پەسەندی ڕوونی تۆ متمانەپێکراو دەبێت.",
-    refresh: "نوێکردنەوە",
-    search: "گەڕان لە داواکارییەکان",
-    loading: "داواکارییەکانی ڕاهێنان بار دەکرێن…",
-    empty: "هیچ داواکارییەکی گونجاو نییە.",
-    customer: "دەقی پاککراوەی کڕیار",
-    intent: "مەبەست",
-    language: "زمان",
-    reason: "هۆکاری گواستنەوە",
-    generated: "پێشنیاری دروستکراو — پەسەند نەکراو",
-    merchantDraft: "ڕەشنووسی بازرگان",
-    reply: "وەڵامی پێشنیارکراو",
-    replyPlaceholder: "وەڵامی دروست بنووسە کە دەتوانرێت پەسەند بکرێت…",
-    propose: "پاشەکەوت بۆ پشکنین",
-    approve: "پەسەندکردنی وەڵام",
-    reject: "ڕەتکردنەوە",
-    saving: "پاشەکەوت دەکرێت…",
-    loadFailed: "بارکردنی داواکارییەکان سەرکەوتوو نەبوو.",
-    actionFailed: "کردارەکە سەرکەوتوو نەبوو.",
-    conflict: "داواکارییەکە لە ئامێرێکی تر گۆڕاوە. وەشانی ئێستا بارکرا.",
-    replyRequired: "پێش پاشەکەوتکردن یان پەسەندکردن وەڵامێک بنووسە.",
-    approvalNote: "پەسەندکردن سەرچاوەکە دەگۆڕێت بۆ merchant_approved و گەڕانەوەی پارێزراو چالاک دەکات.",
-    statuses: {
-      pending_merchant_reply: "چاوەڕوانی وەڵامی بازرگان",
-      pending_review: "چاوەڕوانی پشکنین",
-      approved: "پەسەندکراو",
-      rejected: "ڕەتکراو",
-    },
-  },
-  en: {
-    title: "Fawri training",
-    subtitle: "Review knowledge gaps. Generated text is never trusted without your explicit approval.",
-    refresh: "Refresh",
-    search: "Search training requests",
-    loading: "Loading training requests…",
-    empty: "No matching training requests.",
-    customer: "Redacted customer text",
-    intent: "Intent",
-    language: "Language",
-    reason: "Handoff reason",
-    generated: "Generated suggestion — unapproved",
-    merchantDraft: "Merchant draft",
-    reply: "Suggested answer",
-    replyPlaceholder: "Write the correct answer that may be approved…",
-    propose: "Save for review",
-    approve: "Approve answer",
-    reject: "Reject",
-    saving: "Saving…",
-    loadFailed: "Could not load training requests.",
-    actionFailed: "The action could not be completed.",
-    conflict: "This request changed on another device. The current version was loaded.",
-    replyRequired: "Write an answer before saving or approving.",
-    approvalNote: "Approval changes provenance to merchant_approved and enables safe retrieval.",
-    statuses: {
-      pending_merchant_reply: "Awaiting merchant reply",
-      pending_review: "Awaiting review",
-      approved: "Approved",
-      rejected: "Rejected",
-    },
-  },
-};
+const COPY: Record<Language, Copy> = SERVER_TRAINING_PAGE_COPY;
 
 function statusTone(status: TrainingStatus) {
   if (status === "approved") return "success" as const;

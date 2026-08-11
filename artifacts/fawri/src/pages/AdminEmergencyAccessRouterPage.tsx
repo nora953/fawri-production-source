@@ -1,3 +1,4 @@
+import { ADMIN_EMERGENCY_ACCESS_ROUTER_PAGE_VIEW_LABELS } from '@/lib/translations/features/pages/AdminEmergencyAccessRouterPage';
 import { useEffect } from "react";
 import { useLocation } from "wouter";
 
@@ -20,11 +21,7 @@ type OverviewResponse = {
   requests?: EmergencyRequest[];
 };
 
-const VIEW_LABELS = {
-  ar: "فتح النسخة الآمنة",
-  ku: "کردنەوەی وێنەی پارێزراو",
-  en: "Open safe snapshot",
-} as const;
+const VIEW_LABELS = ADMIN_EMERGENCY_ACCESS_ROUTER_PAGE_VIEW_LABELS;
 
 const ASSISTANT_FORM_COPY = {
   ar: {
