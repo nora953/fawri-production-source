@@ -5,6 +5,8 @@ import re
 import sys
 from pathlib import Path
 
+from lib.translation_structure_scan import find_localized_object_declarations
+
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND = ROOT / "artifacts" / "fawri" / "src"
 API = ROOT / "artifacts" / "api-server" / "src"
@@ -12,10 +14,6 @@ TRANSLATIONS = FRONTEND / "lib" / "translations"
 ADMIN_TRANSLATIONS = FRONTEND / "lib" / "admin-translations.ts"
 
 KEY_RE = re.compile(r"^\s{2}([A-Za-z_][A-Za-z0-9_]*):", re.MULTILINE)
-LOCAL_TRILINGUAL_RE = re.compile(
-    r"(?:const|let)\s+[A-Za-z_$][\w$]*\s*=\s*\{[\s\S]{0,12000}?\bar\s*:\s*\{[\s\S]{0,12000}?\b(?:en|ku)\s*:\s*\{[\s\S]{0,12000}?\b(?:en|ku)\s*:\s*\{",
-    re.MULTILINE,
-)
 JSX_TEXT_RE = re.compile(r">\s*([^<>{}\n][^<>{}\n]*?[A-Za-z\u0600-\u06ff][^<>{}\n]*?)\s*<")
 STRING_PROP_RE = re.compile(
     r"\b(?:title|placeholder|aria-label|description|label)\s*=\s*([\"'])([^\"']*[A-Za-z\u0600-\u06ff][^\"']*)\1"
@@ -34,7 +32,7 @@ def read(path: Path) -> str:
 
 
 def is_translation_authority(path: Path) -> bool:
-    return path.parent == TRANSLATIONS or path == ADMIN_TRANSLATIONS
+    return path == ADMIN_TRANSLATIONS or TRANSLATIONS in path.parents
 
 
 def extract_general_keys(path: Path) -> set[str]:
@@ -93,20 +91,24 @@ def main() -> int:
         if extra:
             print(f"  extra sample: {', '.join(extra[:20])}")
 
-    print("\n=== LOCAL TRILINGUAL DICTIONARIES ===")
-    local_dicts: list[str] = []
+    print("\n=== LOCALIZED COPY OUTSIDE TRANSLATION AUTHORITY ===")
+    localized_files: list[tuple[str, int]] = []
+    localized_object_count = 0
     for path in sorted(FRONTEND.rglob("*.ts*")):
         if is_translation_authority(path):
             continue
-        text = read(path)
-        if LOCAL_TRILINGUAL_RE.search(text):
-            local_dicts.append(rel(path))
-    if local_dicts:
-        for item in local_dicts:
-            print(item)
-        errors.append(f"local trilingual dictionaries={len(local_dicts)}")
+        declarations = find_localized_object_declarations(read(path))
+        if declarations:
+            localized_files.append((rel(path), len(declarations)))
+            localized_object_count += len(declarations)
+    if localized_files:
+        for file_name, count in localized_files:
+            print(f"{count:02d} {file_name}")
+        print(f"localized_objects={localized_object_count}")
+        errors.append(f"localized copy files={len(localized_files)}")
     else:
         print("none")
+        print("localized_objects=0")
 
     print("\n=== VISIBLE HARDCODED COPY CANDIDATES ===")
     visible: list[tuple[str, int, str]] = []
