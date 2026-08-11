@@ -8,6 +8,10 @@ import {
   isConversationUnderManualControlAuthoritative,
   recordManualInboundMessageAuthoritative,
 } from "../services/postgresManualConversationAuthority";
+import {
+  notifyMerchantNewCustomerMessagePostgres,
+} from "../services/postgresOperationalNotificationAuthority";
+import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import { notifyMerchantNewCustomerMessage } from "../routes/auth";
 
 function eventRecord(event: unknown): Record<string, unknown> {
@@ -111,12 +115,21 @@ export async function enforceManualConversationWebhookAccess(
           messageText: message.text,
           createdAt: message.createdAt,
         });
-        notifyMerchantNewCustomerMessage({
-          merchantId,
-          conversationId,
-          sourceEventId: eventId,
-          createdAt: message.createdAt,
-        });
+        if (operationalPostgresAuthorityRequired()) {
+          await notifyMerchantNewCustomerMessagePostgres({
+            merchantId,
+            conversationId,
+            sourceEventId: eventId,
+            createdAt: message.createdAt,
+          });
+        } else {
+          notifyMerchantNewCustomerMessage({
+            merchantId,
+            conversationId,
+            sourceEventId: eventId,
+            createdAt: message.createdAt,
+          });
+        }
 
         if (internalReplay) {
           res.setHeader("Cache-Control", "no-store");
