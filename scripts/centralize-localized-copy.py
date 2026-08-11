@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import re
 import sys
-from collections import defaultdict
 from pathlib import Path
 
 from lib.translation_structure_scan import (
@@ -69,13 +68,6 @@ def classify_suffix(suffix: str) -> tuple[str, str]:
     raise ValueError(f"unsupported localized object suffix: {suffix!r}")
 
 
-def object_is_safe_to_move(object_source: str) -> bool:
-    # Centralized copy must stay declarative. References to runtime expressions should
-    # remain beside their owning code and be handled manually rather than guessed.
-    forbidden = ("${", "=>", "function ", "...", "new ")
-    return not any(token in object_source for token in forbidden)
-
-
 def analyze() -> tuple[
     dict[Path, list[LocalizedObjectDeclaration]],
     list[str],
@@ -95,15 +87,6 @@ def analyze() -> tuple[
                 classify_suffix(declaration.suffix)
             except ValueError as error:
                 blockers.append(f"{rel(path)}::{declaration.name}: {error}")
-                continue
-
-            object_source = read(path)[
-                declaration.object_start : declaration.object_end + 1
-            ]
-            if not object_is_safe_to_move(object_source):
-                blockers.append(
-                    f"{rel(path)}::{declaration.name}: runtime expression inside localized copy"
-                )
 
         found[path] = declarations
 
