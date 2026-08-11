@@ -16,6 +16,9 @@ import {
 import {
   configurePostgresMetaChannelCredentialKeyProvider,
 } from "./postgresMetaChannelAuthority";
+import {
+  configurePostgresDurableJobCredentialKeyProvider,
+} from "./postgresDurableJobQueue";
 import type { MetaCredentialKeyProvider } from "./metaCredentialVault";
 
 export type MetaCredentialProviderSelection = "environment" | "aws-kms";
@@ -91,6 +94,7 @@ function configureMetaCredentialProvider(
 ): void {
   configureMetaChannelCredentialKeyProvider(provider);
   configurePostgresMetaChannelCredentialKeyProvider(provider);
+  configurePostgresDurableJobCredentialKeyProvider(provider);
 }
 
 function defaultDependencies(): RuntimeProviderBootstrapDependencies {
