@@ -23,12 +23,24 @@ import {
   createFakeMetaWebhookReplyTransport,
   type MetaWebhookReplyTransport,
 } from "./metaWebhookFakeTransport";
+import { operationalPostgresAuthorityRequired } from "./operationalPostgresAuthority";
+import { subscriptionPostgresAuthorityRequired } from "./postgresSubscriptionEntitlement";
+import {
+  preparePostgresMetaAutoReply,
+  suppressPreparedPostgresMetaAutoReply,
+} from "./postgresMetaAutoReplyIntent";
+import {
+  createPostgresMetaWebhookReplyTransport,
+  reconcilePostgresMetaReplyJob,
+} from "./postgresMetaWebhookReplyTransport";
 
 const META_REPLY_JOB_TYPE = "meta.webhook.reply";
 const META_EVENT_JOB_TYPE = "meta.webhook.event";
 const META_TERMINAL_JOB_TYPE = "meta.webhook.terminal";
 const META_CHANNEL_DISCONNECT_JOB_TYPE = "meta.channel.disconnect";
 const META_REPLY_REFUND_JOB_TYPE = "meta.reply.refund";
+
+type MetaReplyTransportMode = "fake" | "live";
 
 function text(value: unknown): string {
   return String(value || "").trim();
@@ -51,6 +63,48 @@ function jobError(
     requeueSafe,
     safeMessage,
   });
+}
+
+function readMetaReplyTransportMode(): MetaReplyTransportMode {
+  const selected = text(process.env.FAWRI_META_REPLY_TRANSPORT).toLowerCase();
+  if (!selected || selected === "fake") return "fake";
+  if (selected === "live") return "live";
+  throw jobError(
+    "META_REPLY_TRANSPORT_CONFIG_INVALID",
+    "Meta reply transport selection is invalid",
+    false,
+    false,
+  );
+}
+
+function assertLiveMetaReplyTransportReady(): void {
+  if (!operationalPostgresAuthorityRequired()) {
+    throw jobError(
+      "META_LIVE_OPERATIONAL_POSTGRES_REQUIRED",
+      "live Meta replies require PostgreSQL operational authority",
+      false,
+      false,
+    );
+  }
+  if (!subscriptionPostgresAuthorityRequired()) {
+    throw jobError(
+      "META_LIVE_SUBSCRIPTION_POSTGRES_REQUIRED",
+      "live Meta replies require PostgreSQL subscription authority",
+      false,
+      false,
+    );
+  }
+  if (
+    process.env.NODE_ENV === "production" &&
+    text(process.env.FAWRI_META_CREDENTIAL_PROVIDER).toLowerCase() !== "aws-kms"
+  ) {
+    throw jobError(
+      "META_LIVE_PRODUCTION_CREDENTIAL_PROVIDER_REQUIRED",
+      "production live Meta replies require the production credential provider",
+      false,
+      false,
+    );
+  }
 }
 
 async function processMetaReplyRefundJob(
@@ -114,7 +168,7 @@ async function processMetaReplyRefundJob(
   );
 }
 
-async function processClaimedMetaReplyJob(
+async function processFakeMetaReplyJob(
   job: DurableJob,
   replyTransport: MetaWebhookReplyTransport,
   hooks?: MetaReplyLifecycleHooks,
@@ -147,9 +201,73 @@ async function processClaimedMetaReplyJob(
   });
 }
 
+async function processLiveMetaReplyJob(
+  job: DurableJob,
+  hooks?: MetaReplyLifecycleHooks,
+): Promise<Record<string, unknown>> {
+  let prepared;
+  try {
+    prepared = await preparePostgresMetaAutoReply(job);
+  } catch (error) {
+    const code = text((error as { code?: unknown } | undefined)?.code);
+    throw jobError(
+      code || "META_REPLY_DECISION_UNAVAILABLE",
+      "Meta reply preparation is temporarily unavailable",
+      true,
+      true,
+    );
+  }
+
+  if (prepared.action === "suppress") {
+    return {
+      event_id: prepared.eventId,
+      conversation_id: prepared.conversationId,
+      delivery_status: "suppressed",
+      suppression_code: prepared.code,
+      credit_consumed: false,
+    };
+  }
+
+  let transport: MetaWebhookReplyTransport;
+  try {
+    transport = await createPostgresMetaWebhookReplyTransport({ prepared });
+  } catch (error) {
+    const code = text((error as { code?: unknown } | undefined)?.code);
+    throw jobError(
+      code || "META_LIVE_TRANSPORT_UNAVAILABLE",
+      "live Meta reply transport is temporarily unavailable",
+      true,
+      true,
+    );
+  }
+
+  const result = await processMetaReplyJob(job, { transport, hooks });
+  if (result.delivery_status === "suppressed") {
+    try {
+      await suppressPreparedPostgresMetaAutoReply({
+        merchantId: prepared.merchantId,
+        replyMessageId: prepared.replyMessageId,
+        conversationId: prepared.conversationId,
+      });
+    } catch {
+      throw jobError(
+        "META_REPLY_SUPPRESSION_COMMIT_FAILED",
+        "suppressed Meta reply could not be finalized safely",
+        false,
+        false,
+      );
+    }
+  }
+  return {
+    ...result,
+    conversation_id: prepared.conversationId,
+  };
+}
+
 async function reconcileExpiredMetaJob(
   job: DurableJob,
-  replyTransport: MetaWebhookReplyTransport,
+  mode: MetaReplyTransportMode,
+  replyTransport: MetaWebhookReplyTransport | null,
 ): Promise<ExpiredJobResolution> {
   if (job.type === META_REPLY_REFUND_JOB_TYPE) {
     try {
@@ -186,6 +304,14 @@ async function reconcileExpiredMetaJob(
     };
   }
   if (job.type === META_REPLY_JOB_TYPE) {
+    if (mode === "live") return reconcilePostgresMetaReplyJob(job);
+    if (!replyTransport) {
+      return {
+        action: "dead_letter",
+        code: "META_REPLY_TRANSPORT_UNAVAILABLE",
+        message: "Meta reply transport is unavailable for reconciliation",
+      };
+    }
     return reconcileMetaReplyJob(job, replyTransport);
   }
   return { action: "complete", result: { recovered_terminal_job: true } };
@@ -229,7 +355,7 @@ async function handleMetaDeadLetter(job: DurableJob): Promise<void> {
   ) {
     try {
       await enqueueConfirmedFailureRefund(job);
-      if (merchantId && externalMessageId) {
+      if (!operationalPostgresAuthorityRequired() && merchantId && externalMessageId) {
         removeFailedMetaWebhookAttempt({ merchantId, externalMessageId });
       }
       console.error("Meta reply moved to DLQ after confirmed failure", {
@@ -267,9 +393,14 @@ export function startMetaWebhookWorker(
     throw new Error("a valid API port is required for the Meta webhook worker");
   }
 
-  const workerId = `meta-worker:${os.hostname()}:${process.pid}:${port}`;
+  const mode: MetaReplyTransportMode = options.replyTransport
+    ? "fake"
+    : readMetaReplyTransportMode();
+  if (mode === "live") assertLiveMetaReplyTransportReady();
   const replyTransport =
-    options.replyTransport || createFakeMetaWebhookReplyTransport();
+    options.replyTransport ||
+    (mode === "fake" ? createFakeMetaWebhookReplyTransport() : null);
+  const workerId = `meta-worker:${os.hostname()}:${process.pid}:${port}`;
   const disconnectMetaChannel = createMetaChannelDisconnectHandler();
   const recovery = recoverMissingRefundJobs();
 
@@ -295,9 +426,24 @@ export function startMetaWebhookWorker(
     ),
     handlers: {
       [META_REPLY_JOB_TYPE]: (job) =>
-        afterRecovery(() =>
-          processClaimedMetaReplyJob(job, replyTransport, options.replyHooks),
-        ),
+        afterRecovery(() => {
+          if (mode === "live") {
+            return processLiveMetaReplyJob(job, options.replyHooks);
+          }
+          if (!replyTransport) {
+            throw jobError(
+              "META_REPLY_TRANSPORT_UNAVAILABLE",
+              "Meta reply transport is unavailable",
+              true,
+              true,
+            );
+          }
+          return processFakeMetaReplyJob(
+            job,
+            replyTransport,
+            options.replyHooks,
+          );
+        }),
       [META_EVENT_JOB_TYPE]: (job) =>
         afterRecovery(async () => ({
           event_id: text(job.payload?.event_id || job.dedupe_key),
@@ -314,7 +460,7 @@ export function startMetaWebhookWorker(
         afterRecovery(() => processMetaReplyRefundJob(job)),
     },
     reconcileExpiredJob: (job) =>
-      afterRecovery(() => reconcileExpiredMetaJob(job, replyTransport)),
+      afterRecovery(() => reconcileExpiredMetaJob(job, mode, replyTransport)),
     onDeadLetter: handleMetaDeadLetter,
   });
 }
