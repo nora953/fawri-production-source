@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import collections
 import re
 from pathlib import Path
 
@@ -22,13 +21,6 @@ TOAST_RE = re.compile(
     r"\btoast\.(?:success|error|warning|info)\(\s*([\"'])([^\"']*[A-Za-z\u0600-\u06ff][^\"']*)\1"
 )
 
-EXCLUDED = {
-    TRANSLATIONS / "en.ts",
-    TRANSLATIONS / "ar.ts",
-    TRANSLATIONS / "ku.ts",
-    ADMIN_TRANSLATIONS,
-}
-
 
 def rel(path: Path) -> str:
     return str(path.relative_to(ROOT)).replace("\\", "/")
@@ -38,8 +30,12 @@ def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
 
+def is_translation_authority(path: Path) -> bool:
+    return path.parent == TRANSLATIONS or path == ADMIN_TRANSLATIONS
+
+
 def visible_count(path: Path) -> int:
-    if path in EXCLUDED or "/components/ui/" in rel(path):
+    if is_translation_authority(path) or "/components/ui/" in rel(path):
         return 0
     text = read(path)
     seen: set[tuple[int, str]] = set()
@@ -60,7 +56,7 @@ def visible_count(path: Path) -> int:
 def main() -> None:
     local: list[str] = []
     for path in sorted(FRONTEND.rglob("*.ts*")):
-        if path in EXCLUDED:
+        if is_translation_authority(path):
             continue
         if LOCAL_TRILINGUAL_RE.search(read(path)):
             local.append(rel(path))
