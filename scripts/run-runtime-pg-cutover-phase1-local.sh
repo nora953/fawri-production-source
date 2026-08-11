@@ -37,7 +37,7 @@ git worktree add --detach "$WORKTREE" "$BRANCH_HEAD"
 cd "$WORKTREE"
 
 export CI=1
-pnpm install --offline --frozen-lockfile
+pnpm install --offline --frozen-lockfile --ignore-scripts
 pnpm run typecheck
 
 echo "RUNTIME_PG_PHASE1_TYPECHECK_READY $BRANCH_HEAD"
