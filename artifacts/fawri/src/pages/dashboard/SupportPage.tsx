@@ -1,3 +1,4 @@
+import { SUPPORT_PAGE_SUPPORT_LIFECYCLE_TEXT } from '@/lib/translations/features/pages/dashboard/SupportPage';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown,
@@ -189,23 +190,7 @@ const INSPECTION_TEXT = {
   },
 } as const;
 
-const SUPPORT_LIFECYCLE_TEXT = {
-  ar: {
-    waitingForYou: 'بانتظار ردك',
-    waitingForSupport: 'بانتظار رد فريق الدعم',
-    autoClosed: 'أُغلقت لعدم ورود رد منك خلال 72 ساعة.',
-  },
-  ku: {
-    waitingForYou: 'چاوەڕوانی وەڵامەکەت',
-    waitingForSupport: 'چاوەڕوانی وەڵامی تیمی پشتگیری',
-    autoClosed: 'بەهۆی نەگەیشتنی وەڵامت لە ماوەی ٧٢ کاتژمێردا داخرا.',
-  },
-  en: {
-    waitingForYou: 'Waiting for your reply',
-    waitingForSupport: 'Waiting for support',
-    autoClosed: 'Closed because no reply was received from you for 72 hours.',
-  },
-} as const;
+const SUPPORT_LIFECYCLE_TEXT = SUPPORT_PAGE_SUPPORT_LIFECYCLE_TEXT;
 
 const categoryValues: SupportCategory[] = [
   'technical',

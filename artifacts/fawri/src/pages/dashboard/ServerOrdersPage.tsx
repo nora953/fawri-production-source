@@ -1,3 +1,4 @@
+import { SERVER_ORDERS_PAGE_STATUS_LABELS, SERVER_ORDERS_PAGE_PAYMENT_LABELS } from '@/lib/translations/features/pages/dashboard/ServerOrdersPage';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import type { Order, OrderStatus, PaymentStatus } from '@/lib/types';
@@ -62,62 +63,9 @@ const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   ],
 };
 
-const STATUS_LABELS: Record<LanguageCode, Record<OrderStatus, string>> = {
-  ar: {
-    pending_confirmation: 'بانتظار التأكيد',
-    confirmed: 'مؤكد',
-    preparing: 'قيد التجهيز',
-    shipped: 'تم الشحن',
-    delivered: 'تم التسليم',
-    cancelled: 'ملغي',
-    out_of_stock: 'غير متوفر',
-    waiting_customer_approval: 'بانتظار موافقة الزبون',
-  },
-  ku: {
-    pending_confirmation: 'چاوەڕوانی پشتڕاستکردنەوە',
-    confirmed: 'پشتڕاستکراو',
-    preparing: 'لە ئامادەکردندایە',
-    shipped: 'نێردراوە',
-    delivered: 'گەیەنراوە',
-    cancelled: 'هەڵوەشاوە',
-    out_of_stock: 'بەردەست نییە',
-    waiting_customer_approval: 'چاوەڕوانی ڕەزامەندی کڕیار',
-  },
-  en: {
-    pending_confirmation: 'Pending confirmation',
-    confirmed: 'Confirmed',
-    preparing: 'Preparing',
-    shipped: 'Shipped',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled',
-    out_of_stock: 'Out of stock',
-    waiting_customer_approval: 'Waiting for customer approval',
-  },
-};
+const STATUS_LABELS: Record<LanguageCode, Record<OrderStatus, string>> = SERVER_ORDERS_PAGE_STATUS_LABELS;
 
-const PAYMENT_LABELS: Record<LanguageCode, Record<PaymentStatus, string>> = {
-  ar: {
-    cash_on_delivery: 'الدفع عند الاستلام',
-    electronic_pending: 'دفع إلكتروني معلق',
-    paid: 'مدفوع',
-    failed: 'فشل الدفع',
-    manual_review: 'مراجعة يدوية',
-  },
-  ku: {
-    cash_on_delivery: 'پارەدان لە کاتی گەیاندن',
-    electronic_pending: 'پارەدانی ئەلیکترۆنی چاوەڕوانە',
-    paid: 'پارەدراوە',
-    failed: 'پارەدان سەرکەوتوو نەبوو',
-    manual_review: 'پشکنینی دەستی',
-  },
-  en: {
-    cash_on_delivery: 'Cash on delivery',
-    electronic_pending: 'Electronic payment pending',
-    paid: 'Paid',
-    failed: 'Payment failed',
-    manual_review: 'Manual review',
-  },
-};
+const PAYMENT_LABELS: Record<LanguageCode, Record<PaymentStatus, string>> = SERVER_ORDERS_PAGE_PAYMENT_LABELS;
 
 function languageCode(i18n: ReturnType<typeof useI18n>): LanguageCode {
   const value = String(
