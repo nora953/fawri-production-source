@@ -24,13 +24,6 @@ TOAST_RE = re.compile(
     r"\btoast\.(?:success|error|warning|info)\(\s*([\"'])([^\"']*[A-Za-z\u0600-\u06ff][^\"']*)\1"
 )
 
-EXCLUDED_VISIBLE_COPY = {
-    FRONTEND / "lib" / "translations" / "en.ts",
-    FRONTEND / "lib" / "translations" / "ar.ts",
-    FRONTEND / "lib" / "translations" / "ku.ts",
-    ADMIN_TRANSLATIONS,
-}
-
 
 def rel(path: Path) -> str:
     return str(path.relative_to(ROOT)).replace("\\", "/")
@@ -38,6 +31,10 @@ def rel(path: Path) -> str:
 
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def is_translation_authority(path: Path) -> bool:
+    return path.parent == TRANSLATIONS or path == ADMIN_TRANSLATIONS
 
 
 def extract_general_keys(path: Path) -> set[str]:
@@ -52,7 +49,7 @@ def line_count(path: Path) -> int:
 
 
 def visible_copy_candidates(path: Path) -> list[tuple[int, str]]:
-    if path in EXCLUDED_VISIBLE_COPY:
+    if is_translation_authority(path):
         return []
     text = read(path)
     findings: list[tuple[int, str]] = []
@@ -67,7 +64,6 @@ def visible_copy_candidates(path: Path) -> list[tuple[int, str]]:
                 continue
             line = text.count("\n", 0, match.start()) + 1
             findings.append((line, value[:140]))
-    # de-dupe while preserving order
     seen = set()
     result = []
     for item in findings:
@@ -100,7 +96,7 @@ def main() -> int:
     print("\n=== LOCAL TRILINGUAL DICTIONARIES ===")
     local_dicts: list[str] = []
     for path in sorted(FRONTEND.rglob("*.ts*")):
-        if path in EXCLUDED_VISIBLE_COPY:
+        if is_translation_authority(path):
             continue
         text = read(path)
         if LOCAL_TRILINGUAL_RE.search(text):
