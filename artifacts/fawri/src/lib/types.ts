@@ -68,6 +68,15 @@ export type OrderPaymentStatus =
   | 'failed'
   | 'manual_review';
 
+export type PaymentConfirmationSource =
+  | 'merchant_confirmed'
+  | 'provider_verified';
+
+export type PaymentReconciliationStatus =
+  | 'clear'
+  | 'reconciliation_required'
+  | 'resolved';
+
 export interface Merchant {
   id: string;
   owner_name: string;
@@ -319,9 +328,22 @@ export interface MerchantCustomerMessageNotification {
   read_at?: string;
 }
 
+export interface MerchantPaymentConflictNotification {
+  id: string;
+  merchant_id: string;
+  type: 'operational_payment_conflict';
+  order_id: string;
+  conversation_id?: string;
+  provider?: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+}
+
 export type MerchantOperationalNotification =
   | MerchantNewOrderNotification
-  | MerchantCustomerMessageNotification;
+  | MerchantCustomerMessageNotification
+  | MerchantPaymentConflictNotification;
 
 export type MerchantNotification =
   | MerchantBalanceNotification
@@ -430,6 +452,16 @@ export interface Order {
   payment_verified_at?: string;
   payment_verified_by?: string;
   payment_rejection_reason?: string;
+  payment_confirmation_source?: PaymentConfirmationSource;
+  payment_provider?: string;
+  payment_provider_transaction_ref?: string;
+  payment_provider_last_event_id?: string;
+  payment_reconciliation_status?: PaymentReconciliationStatus;
+  payment_conflict_code?: string;
+  payment_conflict_at?: string;
+  payment_conflict_resolved_at?: string;
+  payment_conflict_resolved_by?: string;
+  payment_conflict_resolution_note?: string;
 
   created_at: string;
 }

@@ -566,9 +566,23 @@ type MerchantOperationalCustomerMessageNotificationRecord = {
   read_at?: string;
 };
 
+type MerchantOperationalPaymentConflictNotificationRecord = {
+  id: string;
+  merchant_id: string;
+  type: "operational_payment_conflict";
+  order_id: string;
+  conversation_id?: string;
+  provider?: string;
+  action_url: string;
+  dedupe_key: string;
+  created_at: string;
+  read_at?: string;
+};
+
 type MerchantOperationalNotificationRecord =
   | MerchantOperationalOrderNotificationRecord
-  | MerchantOperationalCustomerMessageNotificationRecord;
+  | MerchantOperationalCustomerMessageNotificationRecord
+  | MerchantOperationalPaymentConflictNotificationRecord;
 
 type MerchantNotificationRecord =
   | MerchantBalanceNotificationRecord
@@ -703,6 +717,14 @@ function isMerchantNotificationRecord(
   if (item.type === "operational_customer_message") {
     return (
       typeof item.conversation_id === "string" &&
+      typeof item.action_url === "string" &&
+      typeof item.dedupe_key === "string"
+    );
+  }
+
+  if (item.type === "operational_payment_conflict") {
+    return (
+      typeof item.order_id === "string" &&
       typeof item.action_url === "string" &&
       typeof item.dedupe_key === "string"
     );

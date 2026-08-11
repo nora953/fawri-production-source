@@ -126,6 +126,16 @@ type OrderRow = {
   payment_verified_at: Date | string | null;
   payment_verified_by_account_id: string | null;
   payment_rejection_reason: string | null;
+  payment_confirmation_source: "merchant_confirmed" | "provider_verified" | null;
+  payment_provider: string | null;
+  payment_provider_transaction_ref: string | null;
+  payment_provider_last_event_id: string | null;
+  payment_reconciliation_status: "clear" | "reconciliation_required" | "resolved";
+  payment_conflict_code: string | null;
+  payment_conflict_at: Date | string | null;
+  payment_conflict_resolved_at: Date | string | null;
+  payment_conflict_resolved_by_account_id: string | null;
+  payment_conflict_resolution_note: string | null;
   metadata: Record<string, unknown> | null;
   created_at: Date | string;
   updated_at: Date | string;
@@ -145,6 +155,7 @@ type DecisionRow = {
   operation: "confirm" | "reject" | "legacy_import";
   payment_channel: "cash_on_delivery" | "electronic";
   outcome: "paid" | "failed";
+  confirmation_source: "merchant_confirmed" | "provider_verified" | null;
   previous_order_status: ServerOrderStatus;
   resulting_order_status: ServerOrderStatus;
   previous_payment_status: ServerPaymentStatus;
@@ -165,7 +176,12 @@ SELECT id, merchant_id, conversation_id, customer_external_id, customer_name,
        payment_status::text AS payment_status,
        subtotal_iqd, delivery_fee_iqd, total_iqd, source_channel, version,
        notes, payment_verified_at, payment_verified_by_account_id,
-       payment_rejection_reason, metadata, created_at, updated_at
+       payment_rejection_reason, payment_confirmation_source::text AS payment_confirmation_source,
+       payment_provider, payment_provider_transaction_ref, payment_provider_last_event_id,
+       payment_reconciliation_status::text AS payment_reconciliation_status,
+       payment_conflict_code, payment_conflict_at, payment_conflict_resolved_at,
+       payment_conflict_resolved_by_account_id, payment_conflict_resolution_note,
+       metadata, created_at, updated_at
 FROM orders`;
 
 async function loadItems(
@@ -199,6 +215,7 @@ function mapDecision(row: DecisionRow | undefined): PaymentDecisionAudit | undef
     operation: row.operation,
     payment_channel: row.payment_channel,
     outcome: row.outcome,
+    ...(row.confirmation_source ? { confirmation_source: row.confirmation_source } : {}),
     previous_payment_status: row.previous_payment_status,
     resulting_payment_status: row.resulting_payment_status,
     previous_order_status: row.previous_order_status,
@@ -221,6 +238,7 @@ async function latestDecision(
   const result = await client.query<DecisionRow>(
     `SELECT d.id, d.merchant_id, d.order_id, d.operation::text AS operation,
             d.payment_channel::text AS payment_channel, d.outcome::text AS outcome,
+            d.confirmation_source::text AS confirmation_source,
             d.previous_order_status::text AS previous_order_status,
             d.resulting_order_status::text AS resulting_order_status,
             d.previous_payment_status::text AS previous_payment_status,
@@ -271,6 +289,32 @@ async function mapOrder(
       : {}),
     ...(row.payment_rejection_reason
       ? { payment_rejection_reason: row.payment_rejection_reason }
+      : {}),
+    ...(row.payment_confirmation_source
+      ? { payment_confirmation_source: row.payment_confirmation_source }
+      : {}),
+    ...(row.payment_provider ? { payment_provider: row.payment_provider } : {}),
+    ...(row.payment_provider_transaction_ref
+      ? { payment_provider_transaction_ref: row.payment_provider_transaction_ref }
+      : {}),
+    ...(row.payment_provider_last_event_id
+      ? { payment_provider_last_event_id: row.payment_provider_last_event_id }
+      : {}),
+    payment_reconciliation_status: row.payment_reconciliation_status,
+    ...(row.payment_conflict_code
+      ? { payment_conflict_code: row.payment_conflict_code }
+      : {}),
+    ...(iso(row.payment_conflict_at)
+      ? { payment_conflict_at: iso(row.payment_conflict_at)! }
+      : {}),
+    ...(iso(row.payment_conflict_resolved_at)
+      ? { payment_conflict_resolved_at: iso(row.payment_conflict_resolved_at)! }
+      : {}),
+    ...(row.payment_conflict_resolved_by_account_id
+      ? { payment_conflict_resolved_by: row.payment_conflict_resolved_by_account_id }
+      : {}),
+    ...(row.payment_conflict_resolution_note
+      ? { payment_conflict_resolution_note: row.payment_conflict_resolution_note }
       : {}),
     ...(decision ? { last_payment_decision: decision } : {}),
     source_channel: row.source_channel,
@@ -468,6 +512,7 @@ async function saveTerminalDecision(input: {
   operation: "confirm" | "reject";
   channel: "cash_on_delivery" | "electronic";
   outcome: "paid" | "failed";
+  confirmationSource?: "merchant_confirmed" | "provider_verified";
   resultingStatus: ServerOrderStatus;
   resultingPaymentStatus: ServerPaymentStatus;
   reason?: string;
@@ -493,7 +538,7 @@ async function saveTerminalDecision(input: {
   const decisionId = crypto.randomUUID();
   await input.client.query(
     `INSERT INTO order_payment_decisions
-      (id, merchant_id, order_id, operation, payment_channel, outcome,
+      (id, merchant_id, order_id, operation, payment_channel, outcome, confirmation_source,
        previous_order_status, resulting_order_status,
        previous_payment_status, resulting_payment_status,
        actor_type, actor_account_id, request_id, reason,
@@ -501,9 +546,10 @@ async function saveTerminalDecision(input: {
      VALUES
       ($1, $2, $3, $4::payment_decision_operation,
        $5::payment_decision_channel, $6::payment_decision_outcome,
-       $7::order_status, $8::order_status,
-       $9::payment_status, $10::payment_status,
-       'merchant', $11, $12, $13, $14, $15, now())`,
+       $7::payment_confirmation_source,
+       $8::order_status, $9::order_status,
+       $10::payment_status, $11::payment_status,
+       'merchant', $12, $13, $14, $15, $16, now())`,
     [
       decisionId,
       input.merchantId,
@@ -511,6 +557,7 @@ async function saveTerminalDecision(input: {
       input.operation,
       input.channel,
       input.outcome,
+      input.confirmationSource || null,
       input.current.status,
       input.resultingStatus,
       input.current.payment_status,
@@ -574,7 +621,8 @@ export async function confirmServerPaymentAuthoritative(input: {
     } else {
       if (
         current.payment_status !== "electronic_pending" &&
-        current.payment_status !== "manual_review"
+        current.payment_status !== "manual_review" &&
+        current.payment_status !== "failed"
       ) {
         throw new OrderOperationError(
           "ORDER_PAYMENT_REVIEW_REQUIRED",
@@ -584,6 +632,28 @@ export async function confirmServerPaymentAuthoritative(input: {
       assertOrderTransition(current.status, "confirmed");
       resultingStatus = "confirmed";
     }
+    const providerEvidence =
+      current.payment_method === "cash_on_delivery"
+        ? { rows: [] as Array<{ provider: string; provider_event_id: string; provider_transaction_ref: string | null; outcome: string }> }
+        : await client.query<{
+            provider: string;
+            provider_event_id: string;
+            provider_transaction_ref: string | null;
+            outcome: string;
+          }>(
+            `SELECT provider, provider_event_id, provider_transaction_ref, outcome::text AS outcome
+               FROM order_payment_provider_events
+              WHERE merchant_id = $1 AND order_id = $2
+              ORDER BY received_at DESC, processed_at DESC, id DESC
+              LIMIT 1`,
+            [merchantId, orderId],
+          );
+    const latestProvider = providerEvidence.rows[0];
+    const providerConflict = Boolean(latestProvider && latestProvider.outcome !== "paid");
+    const providerConflictCode = providerConflict
+      ? `MERCHANT_PAID_PROVIDER_${String(latestProvider!.outcome).toUpperCase()}`
+      : null;
+
     await saveTerminalDecision({
       client,
       current,
@@ -594,6 +664,7 @@ export async function confirmServerPaymentAuthoritative(input: {
       operation: "confirm",
       channel: current.payment_method === "cash_on_delivery" ? "cash_on_delivery" : "electronic",
       outcome: "paid",
+      confirmationSource: "merchant_confirmed",
       resultingStatus,
       resultingPaymentStatus: "paid",
     });
@@ -604,12 +675,40 @@ export async function confirmServerPaymentAuthoritative(input: {
               payment_verified_at = now(),
               payment_verified_by_account_id = $4,
               payment_rejection_reason = NULL,
+              payment_confirmation_source = 'merchant_confirmed',
+              payment_provider = COALESCE($5, payment_provider),
+              payment_provider_transaction_ref = COALESCE($6, payment_provider_transaction_ref),
+              payment_provider_last_event_id = COALESCE($7, payment_provider_last_event_id),
+              payment_reconciliation_status = (CASE WHEN $8::boolean THEN 'reconciliation_required' ELSE 'clear' END)::payment_reconciliation_status,
+              payment_conflict_code = CASE WHEN $8::boolean THEN $9 ELSE NULL END,
+              payment_conflict_at = CASE WHEN $8::boolean THEN COALESCE(payment_conflict_at, now()) ELSE NULL END,
+              payment_conflict_resolved_at = NULL,
+              payment_conflict_resolved_by_account_id = NULL,
+              payment_conflict_resolution_note = NULL,
               confirmed_at = CASE WHEN $3 = 'confirmed' THEN COALESCE(confirmed_at, now()) ELSE confirmed_at END,
               version = version + 1,
               updated_at = now()
         WHERE merchant_id = $1 AND id = $2`,
-      [merchantId, orderId, resultingStatus, actorId],
+      [
+        merchantId,
+        orderId,
+        resultingStatus,
+        actorId,
+        latestProvider?.provider || null,
+        latestProvider?.provider_transaction_ref || null,
+        latestProvider?.provider_event_id || null,
+        providerConflict,
+        providerConflictCode,
+      ],
     );
+    if (providerConflict && current.conversation_id) {
+      await client.query(
+        `UPDATE conversations
+            SET status = 'manual', assigned_to_human = TRUE, updated_at = now()
+          WHERE merchant_id = $1 AND id = $2`,
+        [merchantId, current.conversation_id],
+      );
+    }
     return mapOrder(client, await loadOrderRow(client, merchantId, orderId));
   });
 }

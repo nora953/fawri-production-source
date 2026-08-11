@@ -50,6 +50,13 @@
       "when": 1786400580000,
       "tag": "0006_saas_billing_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786488600000,
+      "tag": "0007_merchant_customer_payment_confirmation_authority",
+      "breakpoints": true
     }
   ]
 }

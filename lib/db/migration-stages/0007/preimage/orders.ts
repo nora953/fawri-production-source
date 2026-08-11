@@ -1,6 +1,5 @@
 import { sql } from "drizzle-orm";
 import {
-  boolean,
   check,
   foreignKey,
   index,
@@ -41,18 +40,6 @@ export const paymentDecisionActorEnum = pgEnum("payment_decision_actor", [
   "admin",
   "system",
 ]);
-export const paymentConfirmationSourceEnum = pgEnum(
-  "payment_confirmation_source",
-  ["merchant_confirmed", "provider_verified"],
-);
-export const paymentReconciliationStatusEnum = pgEnum(
-  "payment_reconciliation_status",
-  ["clear", "reconciliation_required", "resolved"],
-);
-export const providerPaymentOutcomeEnum = pgEnum(
-  "provider_payment_outcome",
-  ["paid", "failed", "cancelled"],
-);
 
 export const orders = pgTable(
   "orders",
@@ -82,26 +69,6 @@ export const orders = pgTable(
       { onDelete: "set null" },
     ),
     paymentRejectionReason: text("payment_rejection_reason"),
-    paymentConfirmationSource: paymentConfirmationSourceEnum(
-      "payment_confirmation_source",
-    ),
-    paymentProvider: text("payment_provider"),
-    paymentProviderTransactionRef: text("payment_provider_transaction_ref"),
-    paymentProviderLastEventId: text("payment_provider_last_event_id"),
-    paymentReconciliationStatus: paymentReconciliationStatusEnum(
-      "payment_reconciliation_status",
-    )
-      .notNull()
-      .default("clear"),
-    paymentConflictCode: text("payment_conflict_code"),
-    paymentConflictAt: timestamp("payment_conflict_at", { withTimezone: true }),
-    paymentConflictResolvedAt: timestamp("payment_conflict_resolved_at", {
-      withTimezone: true,
-    }),
-    paymentConflictResolvedByAccountId: text(
-      "payment_conflict_resolved_by_account_id",
-    ).references(() => accounts.id, { onDelete: "set null" }),
-    paymentConflictResolutionNote: text("payment_conflict_resolution_note"),
     confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
@@ -132,14 +99,6 @@ export const orders = pgTable(
       "orders_payment_metadata_check",
       sql`(${table.paymentStatus} = 'paid' AND ${table.paymentVerifiedAt} IS NOT NULL AND ${table.paymentRejectionReason} IS NULL) OR (${table.paymentStatus} = 'failed' AND ${table.paymentVerifiedAt} IS NULL AND ${table.paymentVerifiedByAccountId} IS NULL AND ${table.paymentRejectionReason} IS NOT NULL) OR (${table.paymentStatus} NOT IN ('paid', 'failed') AND ${table.paymentVerifiedAt} IS NULL AND ${table.paymentVerifiedByAccountId} IS NULL AND ${table.paymentRejectionReason} IS NULL)`,
     ),
-    paymentConfirmationSourceCheck: check(
-      "orders_payment_confirmation_source_check",
-      sql`${table.paymentStatus} <> 'paid' OR ${table.paymentConfirmationSource} IS NOT NULL OR ${table.paymentVerifiedAt} IS NOT NULL`,
-    ),
-    paymentReconciliationCheck: check(
-      "orders_payment_reconciliation_check",
-      sql`(${table.paymentReconciliationStatus} = 'clear' AND ${table.paymentConflictCode} IS NULL AND ${table.paymentConflictAt} IS NULL AND ${table.paymentConflictResolvedAt} IS NULL AND ${table.paymentConflictResolvedByAccountId} IS NULL AND ${table.paymentConflictResolutionNote} IS NULL) OR (${table.paymentReconciliationStatus} = 'reconciliation_required' AND ${table.paymentConflictCode} IS NOT NULL AND ${table.paymentConflictAt} IS NOT NULL AND ${table.paymentConflictResolvedAt} IS NULL AND ${table.paymentConflictResolvedByAccountId} IS NULL AND ${table.paymentConflictResolutionNote} IS NULL) OR (${table.paymentReconciliationStatus} = 'resolved' AND ${table.paymentConflictCode} IS NOT NULL AND ${table.paymentConflictAt} IS NOT NULL AND ${table.paymentConflictResolvedAt} IS NOT NULL AND ${table.paymentConflictResolvedByAccountId} IS NOT NULL AND ${table.paymentConflictResolutionNote} IS NOT NULL)`,
-    ),
     lifecycleTimestampCheck: check("orders_lifecycle_timestamp_check", sql`${table.updatedAt} >= ${table.createdAt}`),
   }),
 );
@@ -153,7 +112,6 @@ export const orderPaymentDecisions = pgTable(
     operation: paymentDecisionOperationEnum("operation").notNull(),
     paymentChannel: paymentDecisionChannelEnum("payment_channel").notNull(),
     outcome: paymentDecisionOutcomeEnum("outcome").notNull(),
-    confirmationSource: paymentConfirmationSourceEnum("confirmation_source"),
     previousOrderStatus: orderStatusEnum("previous_order_status").notNull(),
     resultingOrderStatus: orderStatusEnum("resulting_order_status").notNull(),
     previousPaymentStatus: paymentStatusEnum("previous_payment_status").notNull(),
@@ -191,86 +149,6 @@ export const orderPaymentDecisions = pgTable(
     legacyProvenanceCheck: check(
       "order_payment_decisions_legacy_provenance_check",
       sql`(${table.operation} <> 'legacy_import' AND ${table.sourceFile} IS NULL AND ${table.sourceSha256} IS NULL AND ${table.migrationBatchId} IS NULL) OR (${table.operation} = 'legacy_import' AND ${table.sourceFile} IS NOT NULL AND ${table.sourceSha256} IS NOT NULL AND ${table.migrationBatchId} IS NOT NULL AND char_length(${table.sourceSha256}) BETWEEN 32 AND 128)`,
-    ),
-  }),
-);
-
-
-export const orderPaymentProviderEvents = pgTable(
-  "order_payment_provider_events",
-  {
-    id: text("id").primaryKey(),
-    merchantId: text("merchant_id")
-      .notNull()
-      .references(() => merchants.id, { onDelete: "cascade" }),
-    orderId: text("order_id").notNull(),
-    provider: text("provider").notNull(),
-    providerEventId: text("provider_event_id").notNull(),
-    providerTransactionRef: text("provider_transaction_ref"),
-    outcome: providerPaymentOutcomeEnum("outcome").notNull(),
-    amountIqd: integer("amount_iqd").notNull(),
-    currency: text("currency").notNull().default("IQD"),
-    authenticityVerified: boolean("authenticity_verified").notNull(),
-    payloadSha256: text("payload_sha256").notNull(),
-    sanitizedMetadata: jsonb("sanitized_metadata")
-      .$type<Record<string, string | number | boolean | null>>()
-      .notNull()
-      .default({}),
-    resultingAction: text("resulting_action").notNull(),
-    receivedAt: timestamp("received_at", { withTimezone: true }).notNull(),
-    processedAt: timestamp("processed_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (table) => ({
-    idMerchantUnique: unique("order_payment_provider_events_id_merchant_unique").on(
-      table.id,
-      table.merchantId,
-    ),
-    orderTenantForeignKey: foreignKey({
-      name: "order_payment_provider_events_order_merchant_fk",
-      columns: [table.orderId, table.merchantId],
-      foreignColumns: [orders.id, orders.merchantId],
-    }).onDelete("cascade"),
-    providerEventUnique: uniqueIndex(
-      "order_payment_provider_events_provider_event_unique",
-    ).on(table.merchantId, table.provider, table.providerEventId),
-    merchantOrderIndex: index("order_payment_provider_events_merchant_order_idx").on(
-      table.merchantId,
-      table.orderId,
-      table.receivedAt,
-    ),
-    providerCheck: check(
-      "order_payment_provider_events_provider_check",
-      sql`char_length(${table.provider}) BETWEEN 2 AND 40`,
-    ),
-    eventCheck: check(
-      "order_payment_provider_events_event_check",
-      sql`char_length(${table.providerEventId}) BETWEEN 6 AND 200`,
-    ),
-    transactionCheck: check(
-      "order_payment_provider_events_transaction_check",
-      sql`${table.providerTransactionRef} IS NULL OR char_length(${table.providerTransactionRef}) BETWEEN 1 AND 200`,
-    ),
-    amountCurrencyCheck: check(
-      "order_payment_provider_events_amount_currency_check",
-      sql`${table.amountIqd} >= 0 AND ${table.currency} = 'IQD'`,
-    ),
-    authenticityCheck: check(
-      "order_payment_provider_events_authenticity_check",
-      sql`${table.authenticityVerified} = TRUE`,
-    ),
-    payloadHashCheck: check(
-      "order_payment_provider_events_payload_hash_check",
-      sql`char_length(${table.payloadSha256}) = 64`,
-    ),
-    actionCheck: check(
-      "order_payment_provider_events_action_check",
-      sql`${table.resultingAction} IN ('provider_paid_confirmed', 'provider_failure_recorded', 'payment_conflict', 'provider_evidence_recorded')`,
-    ),
-    timeCheck: check(
-      "order_payment_provider_events_time_check",
-      sql`${table.processedAt} >= ${table.receivedAt}`,
     ),
   }),
 );
@@ -348,7 +226,6 @@ export const orderDrafts = pgTable(
 
 export type Order = typeof orders.$inferSelect;
 export type OrderPaymentDecision = typeof orderPaymentDecisions.$inferSelect;
-export type OrderPaymentProviderEvent = typeof orderPaymentProviderEvents.$inferSelect;
 export type OrderTerminalDecisionLink = typeof orderTerminalDecisionLinks.$inferSelect;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type OrderDraft = typeof orderDrafts.$inferSelect;

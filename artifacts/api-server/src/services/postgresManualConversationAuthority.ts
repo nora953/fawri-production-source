@@ -206,6 +206,22 @@ async function updateConversationControl(
         "manual reply delivery must be reconciled before returning to Fawri",
       );
     }
+    if (!manual) {
+      const paymentConflict = await client.query<{ id: string }>(
+        `SELECT id
+           FROM orders
+          WHERE merchant_id = $1 AND conversation_id = $2
+            AND payment_reconciliation_status = 'reconciliation_required'
+          LIMIT 1`,
+        [merchantId, conversationId],
+      );
+      if (paymentConflict.rows.length > 0) {
+        throw new ManualConversationError(
+          "PAYMENT_RECONCILIATION_REQUIRED",
+          "payment conflict must be resolved before returning the conversation to Fawri",
+        );
+      }
+    }
     const updated = await client.query<{ id: string }>(
       `UPDATE conversations
           SET status = $3::conversation_status,

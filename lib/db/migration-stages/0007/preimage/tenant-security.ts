@@ -5,12 +5,7 @@ import {
   merchantDeliveryAreaRates,
   merchantSettings,
 } from "./merchant-settings";
-import {
-  orders,
-  orderPaymentDecisions,
-  orderPaymentProviderEvents,
-  orderTerminalDecisionLinks,
-} from "./orders";
+import { orders, orderPaymentDecisions, orderTerminalDecisionLinks } from "./orders";
 import { backgroundJobs, backgroundJobPayloads } from "./jobs";
 import { merchantChannels } from "./channels";
 import { channelInboundEvents, outboundDeliveries, replyRefunds, replyReservations } from "./channel-messaging";
@@ -65,10 +60,6 @@ export const merchantDeliveryAreaRatesTenantPolicy = tenantPolicy(
 );
 export const ordersTenantPolicy = tenantPolicy("orders_tenant_boundary", orders);
 export const orderPaymentDecisionsTenantPolicy = tenantPolicy("order_payment_decisions_tenant_boundary", orderPaymentDecisions);
-export const orderPaymentProviderEventsTenantPolicy = tenantPolicy(
-  "order_payment_provider_events_tenant_boundary",
-  orderPaymentProviderEvents,
-);
 export const orderTerminalDecisionLinksTenantPolicy = tenantPolicy("order_terminal_decision_links_tenant_boundary", orderTerminalDecisionLinks);
 export const backgroundJobsTenantPolicy = tenantPolicy("background_jobs_tenant_boundary", backgroundJobs);
 export const backgroundJobPayloadsTenantPolicy = tenantPolicy("background_job_payloads_tenant_boundary", backgroundJobPayloads);

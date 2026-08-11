@@ -12,6 +12,7 @@ import {
   Package,
   RefreshCw,
   Search,
+  AlertTriangle,
   XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -27,6 +28,7 @@ type ServerOrder = Order & {
     actor_id: string;
     decided_at: string;
     reason?: string;
+    confirmation_source?: 'merchant_confirmed' | 'provider_verified';
   };
 };
 
@@ -153,6 +155,14 @@ function textFor(language: LanguageCode) {
       updated: 'تم تحديث الطلب',
       version: 'نسخة',
       paymentDecision: 'آخر قرار دفع',
+      confirmationSource: 'مصدر تأكيد الدفع',
+      merchantConfirmed: 'أكد التاجر يدويًا',
+      providerVerified: 'تم التحقق من مزود الدفع',
+      paymentConflictTitle: 'يوجد تعارض في معلومات الدفع',
+      paymentConflictBody: 'تم إيقاف البوت لهذه المحادثة فقط. راجع العملية مع الزبون ثم سجل حل الخلاف.',
+      resolutionNote: 'اكتب كيف تم حل الخلاف',
+      resolveConflict: 'تم حل الخلاف',
+      conflictResolved: 'تم تسجيل حل خلاف الدفع. يمكنك إعادة المحادثة إلى فوري من صفحة المحادثات.',
     };
   }
   if (language === 'ku') {
@@ -182,6 +192,14 @@ function textFor(language: LanguageCode) {
       updated: 'داواکارییەکە نوێکرایەوە',
       version: 'وەشان',
       paymentDecision: 'دوایین بڕیاری پارەدان',
+      confirmationSource: 'سەرچاوەی پشتڕاستکردنەوەی پارەدان',
+      merchantConfirmed: 'فرۆشیار بە دەستی پشتڕاستی کردەوە',
+      providerVerified: 'دابینکەری پارەدان پشتڕاستی کردەوە',
+      paymentConflictTitle: 'ناکۆکی لە زانیاری پارەدان هەیە',
+      paymentConflictBody: 'بۆتی تەنها بۆ ئەم گفتوگۆیە وەستاوە. مامەڵەکە پشکنین بکە و چارەسەرەکە تۆمار بکە.',
+      resolutionNote: 'چۆنیەتی چارەسەرکردنی ناکۆکی بنووسە',
+      resolveConflict: 'ناکۆکی چارەسەر کرا',
+      conflictResolved: 'چارەسەری ناکۆکی پارەدان تۆمار کرا. دەتوانیت گفتوگۆکە بگەڕێنیتەوە بۆ فەوری.',
     };
   }
   return {
@@ -210,6 +228,14 @@ function textFor(language: LanguageCode) {
     updated: 'Order updated',
     version: 'Version',
     paymentDecision: 'Last payment decision',
+    confirmationSource: 'Payment confirmation source',
+    merchantConfirmed: 'Merchant confirmed manually',
+    providerVerified: 'Verified by payment provider',
+    paymentConflictTitle: 'Payment information conflict',
+    paymentConflictBody: 'Fawri paused only this conversation. Review the payment with the customer, then record how the conflict was resolved.',
+    resolutionNote: 'Describe how the conflict was resolved',
+    resolveConflict: 'Mark conflict resolved',
+    conflictResolved: 'Payment conflict resolution recorded. You can return the conversation to Fawri from Conversations.',
   };
 }
 
@@ -253,6 +279,7 @@ export default function ServerOrdersPage() {
   const [loadError, setLoadError] = useState('');
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [conflictResolutionNote, setConflictResolutionNote] = useState('');
 
   const replaceOrder = (order: ServerOrder) => {
     setOrders(current =>
@@ -345,6 +372,7 @@ export default function ServerOrdersPage() {
       }
       replaceOrder(data.order as ServerOrder);
       setRejectionReason('');
+      setConflictResolutionNote('');
       toast.success(labels.updated);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : labels.updateFailed);
@@ -381,6 +409,20 @@ export default function ServerOrdersPage() {
       'POST',
     );
 
+  const resolvePaymentConflict = (order: ServerOrder) => {
+    const note = conflictResolutionNote.trim();
+    if (!note) {
+      toast.error(labels.resolutionNote);
+      return;
+    }
+    void mutateOrder(
+      order,
+      `/api/orders/${encodeURIComponent(order.id)}/payment/conflict/resolve`,
+      { resolution_note: note },
+      'POST',
+    );
+  };
+
   const rejectPayment = (order: ServerOrder) => {
     const reason = rejectionReason.trim();
     if (!reason) {
@@ -400,6 +442,8 @@ export default function ServerOrdersPage() {
     selectedOrder?.payment_method !== 'cash_on_delivery' &&
     (selectedOrder?.payment_status === 'electronic_pending' ||
       selectedOrder?.payment_status === 'manual_review');
+  const paymentConflictActive =
+    selectedOrder?.payment_reconciliation_status === 'reconciliation_required';
   const cashCanConfirm =
     selectedOrder?.payment_method === 'cash_on_delivery' &&
     selectedOrder.payment_status === 'cash_on_delivery' &&
@@ -595,6 +639,58 @@ export default function ServerOrdersPage() {
                     </div>
                   </div>
                 </div>
+
+                {selectedOrder.payment_status === 'paid' &&
+                selectedOrder.payment_confirmation_source ? (
+                  <div className="rounded-xl border bg-muted/20 p-4 text-sm">
+                    <p className="font-semibold">{labels.confirmationSource}</p>
+                    <p className="mt-1 text-muted-foreground">
+                      {selectedOrder.payment_confirmation_source === 'provider_verified'
+                        ? labels.providerVerified
+                        : labels.merchantConfirmed}
+                      {selectedOrder.payment_provider
+                        ? ` · ${selectedOrder.payment_provider}`
+                        : ''}
+                    </p>
+                  </div>
+                ) : null}
+
+                {paymentConflictActive ? (
+                  <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-4">
+                    <div className="flex items-center gap-2 font-bold text-amber-800 dark:text-amber-300">
+                      <AlertTriangle className="h-5 w-5" />
+                      {labels.paymentConflictTitle}
+                    </div>
+                    <p className="mt-2 text-sm leading-6 text-foreground/80">
+                      {labels.paymentConflictBody}
+                    </p>
+                    {selectedOrder.payment_conflict_code ? (
+                      <p className="mt-2 font-mono text-xs text-muted-foreground">
+                        {selectedOrder.payment_conflict_code}
+                      </p>
+                    ) : null}
+                    <Input
+                      value={conflictResolutionNote}
+                      onChange={event => setConflictResolutionNote(event.target.value)}
+                      placeholder={labels.resolutionNote}
+                      maxLength={500}
+                      disabled={busy}
+                      className="mt-3"
+                    />
+                    <Button
+                      className="mt-3"
+                      variant="outline"
+                      disabled={busy || !conflictResolutionNote.trim()}
+                      onClick={() => resolvePaymentConflict(selectedOrder)}
+                    >
+                      {labels.resolveConflict}
+                    </Button>
+                  </div>
+                ) : selectedOrder.payment_reconciliation_status === 'resolved' ? (
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm">
+                    {labels.conflictResolved}
+                  </div>
+                ) : null}
 
                 {electronicPending ? (
                   <div className="rounded-xl border p-4">

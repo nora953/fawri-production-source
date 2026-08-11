@@ -65,7 +65,10 @@ type OrderPaymentRow = {
 
 type ProviderEventRow = {
   id: string;
+  order_id: string;
   outcome: VerifiedProviderPaymentOutcome;
+  amount_iqd: number;
+  payload_sha256: string;
   resulting_action: string;
 };
 
@@ -260,7 +263,8 @@ async function findExistingEvent(
   eventId: string,
 ): Promise<ProviderEventRow | null> {
   const result = await client.query<ProviderEventRow>(
-    `SELECT id, outcome::text AS outcome, resulting_action
+    `SELECT id, order_id, outcome::text AS outcome, amount_iqd,
+            payload_sha256, resulting_action
        FROM order_payment_provider_events
       WHERE merchant_id = $1 AND provider = $2 AND provider_event_id = $3
       LIMIT 1`,
@@ -467,7 +471,30 @@ async function applyProviderFailure(input: {
   }
 
   if (order.payment_method === "cash_on_delivery") {
-    return "provider_evidence_recorded";
+    await markConflict({
+      client: input.client,
+      order,
+      provider: input.provider,
+      eventId: input.eventId,
+      transactionRef: input.transactionRef,
+      code: "PROVIDER_PAYMENT_ON_CASH_ORDER",
+    });
+    return "payment_conflict";
+  }
+
+  if (
+    order.status !== "pending_confirmation" &&
+    order.status !== "waiting_customer_approval"
+  ) {
+    await markConflict({
+      client: input.client,
+      order,
+      provider: input.provider,
+      eventId: input.eventId,
+      transactionRef: input.transactionRef,
+      code: "PROVIDER_FAILURE_ORDER_STATE_CONFLICT",
+    });
+    return "payment_conflict";
   }
 
   await input.client.query(
@@ -547,6 +574,18 @@ export async function recordVerifiedProviderPaymentEvidenceAuthoritative(
   const applied = await withMerchantOperationalTransaction(merchantId, async (client) => {
     const existing = await findExistingEvent(client, merchantId, provider, eventId);
     if (existing) {
+      if (
+        existing.order_id !== orderId ||
+        existing.outcome !== input.outcome ||
+        Number(existing.amount_iqd) !== amount ||
+        existing.payload_sha256 !== hash
+      ) {
+        throw new OrderOperationError(
+          "ORDER_PAYMENT_PROVIDER_EVENT_COLLISION",
+          "provider event identifier was reused with conflicting payment evidence",
+          409,
+        );
+      }
       const order = await lockOrder(client, merchantId, orderId);
       return {
         deduplicated: true,

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bell, Check, ExternalLink, Loader2, MessageCircle, Package, RefreshCw, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Bell, Check, ExternalLink, Loader2, MessageCircle, Package, RefreshCw, ShieldCheck } from 'lucide-react';
 
 import { useI18n } from '@/lib/i18n';
 import type {
@@ -122,6 +122,9 @@ const OPERATIONAL_NOTIFICATION_TEXT = {
     messageTitle: 'رسالة جديدة من زبون',
     messageBody: 'وصلت رسالة جديدة ضمن محادثة الزبون.',
     messageOpen: 'فتح المحادثة',
+    conflictTitle: 'تعارض في تأكيد الدفع',
+    conflictBody: 'يوجد اختلاف في معلومات دفع الطلب {order}. تم إيقاف البوت للمحادثة المعنية حتى تراجع العملية.',
+    conflictOpen: 'مراجعة الخلاف',
   },
   ku: {
     orderTitle: 'داواکارییەکی نوێ',
@@ -130,6 +133,9 @@ const OPERATIONAL_NOTIFICATION_TEXT = {
     messageTitle: 'نامەیەکی نوێ لە کڕیار',
     messageBody: 'نامەیەکی نوێ لە گفتوگۆی کڕیار گەیشت.',
     messageOpen: 'کردنەوەی گفتوگۆ',
+    conflictTitle: 'ناکۆکی لە پشتڕاستکردنەوەی پارەدان',
+    conflictBody: 'زانیاری پارەدانی داواکاری {order} یەک ناگرێتەوە. بۆتی ئەم گفتوگۆیە تا پشکنین وەستاوە.',
+    conflictOpen: 'پشکنینی ناکۆکی',
   },
   en: {
     orderTitle: 'New order',
@@ -138,6 +144,9 @@ const OPERATIONAL_NOTIFICATION_TEXT = {
     messageTitle: 'New customer message',
     messageBody: 'A new customer message arrived in this conversation.',
     messageOpen: 'Open conversation',
+    conflictTitle: 'Payment confirmation conflict',
+    conflictBody: 'Payment information for order {order} conflicts. Fawri paused only the related conversation until you review it.',
+    conflictOpen: 'Review conflict',
   },
 } as const;
 
@@ -492,20 +501,31 @@ export default function NotificationsPage() {
 
             if (
               notification.type === 'operational_new_order' ||
-              notification.type === 'operational_customer_message'
+              notification.type === 'operational_customer_message' ||
+              notification.type === 'operational_payment_conflict'
             ) {
               const isOrder = notification.type === 'operational_new_order';
-              const title = isOrder
-                ? operationalText.orderTitle
-                : operationalText.messageTitle;
-              const body = isOrder
-                ? formatNotificationText(operationalText.orderBody, {
+              const isPaymentConflict =
+                notification.type === 'operational_payment_conflict';
+              const title = isPaymentConflict
+                ? operationalText.conflictTitle
+                : isOrder
+                  ? operationalText.orderTitle
+                  : operationalText.messageTitle;
+              const body = isPaymentConflict
+                ? formatNotificationText(operationalText.conflictBody, {
                     order: notification.order_id,
                   })
-                : operationalText.messageBody;
-              const openLabel = isOrder
-                ? operationalText.orderOpen
-                : operationalText.messageOpen;
+                : isOrder
+                  ? formatNotificationText(operationalText.orderBody, {
+                      order: notification.order_id,
+                    })
+                  : operationalText.messageBody;
+              const openLabel = isPaymentConflict
+                ? operationalText.conflictOpen
+                : isOrder
+                  ? operationalText.orderOpen
+                  : operationalText.messageOpen;
               return (
                 <article
                   key={notification.id}
@@ -521,7 +541,13 @@ export default function NotificationsPage() {
                         ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/60 dark:text-teal-300'
                         : 'bg-muted text-muted-foreground'
                     }`}>
-                      {isOrder ? <Package className="h-5 w-5" /> : <MessageCircle className="h-5 w-5" />}
+                      {isPaymentConflict ? (
+                        <AlertTriangle className="h-5 w-5" />
+                      ) : isOrder ? (
+                        <Package className="h-5 w-5" />
+                      ) : (
+                        <MessageCircle className="h-5 w-5" />
+                      )}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-start justify-between gap-2">

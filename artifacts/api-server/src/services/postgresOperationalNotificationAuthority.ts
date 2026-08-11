@@ -27,8 +27,11 @@ function deterministicId(type: string, merchantId: string, sourceId: string): st
 
 async function insertOperationalNotification(input: {
   merchantId: string;
-  type: "operational_new_order" | "operational_customer_message";
-  sourceEntityType: "order" | "conversation_event";
+  type:
+    | "operational_new_order"
+    | "operational_customer_message"
+    | "operational_payment_conflict";
+  sourceEntityType: "order" | "conversation_event" | "order_payment_conflict";
   sourceEntityId: string;
   titleKey: string;
   bodyKey: string;
@@ -97,6 +100,36 @@ export async function notifyMerchantNewOrderPostgres(input: {
         ? { conversation_id: text(input.conversationId) }
         : {}),
       action_url: `/dashboard/orders?order=${encodeURIComponent(orderId)}`,
+    },
+    createdAt: input.createdAt,
+  });
+}
+
+export async function notifyMerchantPaymentConflictPostgres(input: {
+  merchantId: string;
+  orderId: string;
+  conversationId?: string;
+  provider?: string;
+  sourceEventId: string;
+  createdAt?: unknown;
+}) {
+  const orderId = text(input.orderId);
+  const conversationId = text(input.conversationId);
+  const sourceEventId = text(input.sourceEventId);
+  return insertOperationalNotification({
+    merchantId: input.merchantId,
+    type: "operational_payment_conflict",
+    sourceEntityType: "order_payment_conflict",
+    sourceEntityId: sourceEventId || orderId,
+    titleKey: "notifications.payment_conflict.title",
+    bodyKey: "notifications.payment_conflict.body",
+    variables: {
+      order_id: orderId,
+      ...(conversationId ? { conversation_id: conversationId } : {}),
+      ...(text(input.provider) ? { provider: text(input.provider) } : {}),
+      action_url: conversationId
+        ? `/dashboard/conversations?conversation=${encodeURIComponent(conversationId)}`
+        : `/dashboard/orders?order=${encodeURIComponent(orderId)}`,
     },
     createdAt: input.createdAt,
   });
