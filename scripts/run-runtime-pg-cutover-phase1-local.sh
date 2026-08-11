@@ -36,6 +36,8 @@ trap cleanup EXIT
 git worktree add --detach "$WORKTREE" "$BRANCH_HEAD"
 cd "$WORKTREE"
 
+python3 scripts/.tmp-runtime-pg-phase1-types-fix.py
+
 export CI=1
 pnpm install --offline --frozen-lockfile --ignore-scripts
 pnpm run typecheck
