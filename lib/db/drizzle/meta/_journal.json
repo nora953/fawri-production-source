@@ -43,6 +43,13 @@
       "when": 1786393740000,
       "tag": "0005_delivery_fee_per_area",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786400580000,
+      "tag": "0006_saas_billing_authority",
+      "breakpoints": true
     }
   ]
 }

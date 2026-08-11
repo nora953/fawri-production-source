@@ -9,8 +9,8 @@ const drizzle = path.join(root, "lib", "db", "drizzle");
 const journal = JSON.parse(fs.readFileSync(path.join(drizzle, "meta", "_journal.json"), "utf8"));
 
 test("0005 delivery pricing migration is additive and RLS-protected", () => {
-  assert.equal(journal.entries.at(-1)?.idx, 5);
-  assert.equal(journal.entries.at(-1)?.tag, "0005_delivery_fee_per_area");
+  const deliveryEntry = journal.entries.find((entry) => entry.idx === 5);
+  assert.equal(deliveryEntry?.tag, "0005_delivery_fee_per_area");
   const sql = fs.readFileSync(path.join(drizzle, "0005_delivery_fee_per_area.sql"), "utf8");
   assert.match(sql, /CREATE TYPE "public"\."delivery_pricing_mode" AS ENUM\('flat', 'per_area'\)/);
   assert.match(sql, /CREATE TABLE "merchant_delivery_area_rates"/);

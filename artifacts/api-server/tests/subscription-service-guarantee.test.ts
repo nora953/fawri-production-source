@@ -438,7 +438,13 @@ test("PostgreSQL subscription lifecycle is tenant-bound and never misrepresented
     loaded.entitlementReference,
     /^subscription-lifecycle-sha256:[0-9a-f]{64}$/,
   );
-  assert.match(queries[0].statement, /WHERE merchant_id = \$1 AND id = \$2/);
+  assert.match(
+    queries[0].statement,
+    /WHERE subscription\.merchant_id = \$1 AND subscription\.id = \$2/,
+  );
+  assert.match(queries[0].statement, /LEFT JOIN saas_entitlement_applications AS application/);
+  assert.match(queries[0].statement, /LEFT JOIN saas_billing_orders AS billing_order/);
+  assert.match(queries[0].statement, /application\.applied_at = subscription\.starts_at/);
   assert.deepEqual(queries[0].values, ["merchant-a", "subscription-a"]);
 });
 

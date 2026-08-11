@@ -99,7 +99,7 @@ test("0004 archives the exact Golden catalog schema as its 0003 preimage", () =>
   }
 });
 
-test("migration journal keeps the Golden 0-4 prefix and appends 0005", () => {
+test("migration journal keeps the Golden 0-4 prefix with contiguous append-only history", () => {
   const journal = JSON.parse(
     fs.readFileSync(path.join(metaRoot, "_journal.json"), "utf8"),
   );
@@ -108,7 +108,8 @@ test("migration journal keeps the Golden 0-4 prefix and appends 0005", () => {
   assert.deepEqual(journal.entries.slice(0, 4), goldenJournalPrefix);
   assert.deepEqual(
     journal.entries.map((entry) => entry.idx),
-    [0, 1, 2, 3, 4, 5],
+    journal.entries.map((_entry, index) => index),
+    "migration journal must remain contiguous from 0000",
   );
   assert.deepEqual(journal.entries[4], {
     idx: 4,
@@ -124,14 +125,14 @@ test("0004 SQL is additive and contains only the physical measurement delta", ()
     .readdirSync(drizzleRoot)
     .filter((name) => /^\d{4}_.*\.sql$/.test(name))
     .sort();
-  assert.deepEqual(sqlFiles, [
-    "0000_even_kulan_gath.sql",
-    "0001_military_proteus.sql",
-    "0002_cross_lane_stage.sql",
-    "0003_cross_lane_cleanup.sql",
-    "0004_product_shipping_measurements.sql",
-    "0005_delivery_fee_per_area.sql",
-  ]);
+  const journal = JSON.parse(
+    fs.readFileSync(path.join(metaRoot, "_journal.json"), "utf8"),
+  );
+  assert.deepEqual(
+    sqlFiles,
+    journal.entries.map((entry) => `${entry.tag}.sql`),
+    "SQL files must match the complete append-only migration journal",
+  );
 
   const sql = fs.readFileSync(
     path.join(drizzleRoot, "0004_product_shipping_measurements.sql"),
