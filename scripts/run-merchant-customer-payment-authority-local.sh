@@ -6,7 +6,7 @@ REMOTE="github"
 BRANCH="parallel/merchant-customer-payment-confirmation-authority"
 COORDINATOR="parallel/integration-coordinator"
 GOLDEN="a2ee58e4fc46123551c24f9741612780cda2ebc2"
-EXPECTED_PRE_RUNNER_HEAD="fb24d19a4f026f9e12806a1443ce3313522f82bf"
+EXPECTED_PRE_RUNNER_HEAD="5546f69527c51ef26b95fd9c4b7a253e9f2ad469"
 RUNNER_PATH="scripts/run-merchant-customer-payment-authority-local.sh"
 CACHE_ROOT="${TMPDIR:-$HOME/.cache/fawri-validation}"
 WORKTREE="$CACHE_ROOT/merchant-customer-payment-$$"
@@ -47,6 +47,7 @@ INITIAL_ALLOWED=(
   "scripts/.tmp-merchant-customer-payment-authority.py"
   "scripts/.tmp-merchant-payment-decisionrow-fix.py"
   "scripts/.tmp-merchant-payment-enum-cast-fix.py"
+  "scripts/.tmp-merchant-payment-order-mapping-fix.py"
   "scripts/.tmp-merchant-payment-provider-safety.py"
   "$RUNNER_PATH"
 )
@@ -92,11 +93,13 @@ cd "$WORKTREE"
 python3 scripts/.tmp-merchant-customer-payment-authority.py
 python3 scripts/.tmp-merchant-payment-decisionrow-fix.py
 python3 scripts/.tmp-merchant-payment-enum-cast-fix.py
+python3 scripts/.tmp-merchant-payment-order-mapping-fix.py
 python3 scripts/.tmp-merchant-payment-provider-safety.py
 rm -f \
   scripts/.tmp-merchant-customer-payment-authority.py \
   scripts/.tmp-merchant-payment-decisionrow-fix.py \
   scripts/.tmp-merchant-payment-enum-cast-fix.py \
+  scripts/.tmp-merchant-payment-order-mapping-fix.py \
   scripts/.tmp-merchant-payment-provider-safety.py \
   "$RUNNER_PATH"
 
