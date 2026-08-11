@@ -3,17 +3,17 @@ import {
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "./auth";
+import { CatalogRuntimeError } from "../services/catalogInventoryRuntime";
 import {
-  adjustCatalogInventory,
-  CatalogRuntimeError,
-  createCatalogProduct,
-  deleteCatalogProduct,
-  getCatalogProduct,
-  importCatalogProducts,
-  listCatalogProducts,
-  setCatalogInventory,
-  updateCatalogProduct,
-} from "../services/catalogInventoryRuntime";
+  adjustCatalogInventoryAuthoritative,
+  createCatalogProductAuthoritative,
+  deleteCatalogProductAuthoritative,
+  getCatalogProductAuthoritative,
+  importCatalogProductsAuthoritative,
+  listCatalogProductsAuthoritative,
+  setCatalogInventoryAuthoritative,
+  updateCatalogProductAuthoritative,
+} from "../services/postgresCatalogAuthority";
 
 const router = Router();
 
@@ -77,10 +77,10 @@ function sendError(res: Response, error: unknown): void {
 router.get(
   "/catalog/products",
   requireMerchantSession,
-  (_req: Request, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const products = listCatalogProducts(merchantId);
+      const products = await listCatalogProductsAuthoritative(merchantId);
       res.setHeader("Cache-Control", "no-store");
       res.json({
         ok: true,
@@ -97,10 +97,10 @@ router.get(
 router.get(
   "/catalog/products/:productId",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
-      const product = getCatalogProduct(
+      const product = await getCatalogProductAuthoritative(
         merchantId,
         parameter(req.params.productId),
       );
@@ -115,11 +115,11 @@ router.get(
 router.post(
   "/catalog/products",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
       if (rejectMerchantOverride(req, res, merchantId)) return;
-      const result = createCatalogProduct({
+      const result = await createCatalogProductAuthoritative({
         merchantId,
         idempotencyKey: idempotencyKey(req),
         input: productBody(req),
@@ -140,11 +140,11 @@ router.post(
 router.post(
   "/catalog/products/import",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
       if (rejectMerchantOverride(req, res, merchantId)) return;
-      const result = importCatalogProducts({
+      const result = await importCatalogProductsAuthoritative({
         merchantId,
         idempotencyKey: idempotencyKey(req),
         items: req.body?.products,
@@ -166,11 +166,11 @@ router.post(
 router.patch(
   "/catalog/products/:productId",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
       if (rejectMerchantOverride(req, res, merchantId)) return;
-      const product = updateCatalogProduct({
+      const product = await updateCatalogProductAuthoritative({
         merchantId,
         productId: parameter(req.params.productId),
         expectedVersion: req.body?.expected_version,
@@ -187,11 +187,11 @@ router.patch(
 router.delete(
   "/catalog/products/:productId",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
       if (rejectMerchantOverride(req, res, merchantId)) return;
-      const result = deleteCatalogProduct({
+      const result = await deleteCatalogProductAuthoritative({
         merchantId,
         productId: parameter(req.params.productId),
         expectedVersion:
@@ -208,11 +208,11 @@ router.delete(
 router.post(
   "/inventory/products/:productId/set",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
       if (rejectMerchantOverride(req, res, merchantId)) return;
-      const product = setCatalogInventory({
+      const product = await setCatalogInventoryAuthoritative({
         merchantId,
         productId: parameter(req.params.productId),
         variantId: req.body?.variant_id,
@@ -230,11 +230,11 @@ router.post(
 router.post(
   "/inventory/products/:productId/adjust",
   requireMerchantSession,
-  (req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const merchantId = getMerchantIdFromSession(res);
       if (rejectMerchantOverride(req, res, merchantId)) return;
-      const result = adjustCatalogInventory({
+      const result = await adjustCatalogInventoryAuthoritative({
         merchantId,
         productId: parameter(req.params.productId),
         variantId: req.body?.variant_id,
