@@ -45,6 +45,11 @@ cd "$WORKTREE"
 # guarded worktree diff/scope checks.
 export PYTHONDONTWRITEBYTECODE=1
 
+# Apply the validation-only refinement that distinguishes real local copy from
+# runtime maps whose values already come from `t` / adminText. Those maps are not
+# independent translation authorities and must stay beside their runtime owner.
+python3 scripts/.tmp-translation-runtime-map-filter.py
+
 echo "=== BEFORE CENTRALIZATION ==="
 python3 scripts/audit-translation-inventory.py | tee "$BEFORE_OUT"
 
@@ -62,6 +67,13 @@ grep -qx 'TOTAL_LOCALIZED_COPY_OBJECTS=0' "$AFTER_OUT" || {
   echo "STOP: localized copy objects remain outside translation authority"
   exit 24
 }
+
+# The filter only adjusts validation helpers inside this detached worktree. Restore
+# those helpers before scope/typecheck/commit so only product-source changes remain.
+git checkout -- \
+  scripts/audit-translation-inventory.py \
+  scripts/audit-translation-structure.py \
+  scripts/centralize-localized-copy.py
 
 # Defensive cleanup for Python versions/environments that may still emit cache files.
 find scripts -type d -name '__pycache__' -prune -exec rm -rf {} + 2>/dev/null || true
