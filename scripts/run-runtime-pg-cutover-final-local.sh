@@ -86,6 +86,7 @@ while IFS= read -r file; do
     artifacts/api-server/src/middleware/authSession.ts|\
     artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts|\
     artifacts/api-server/src/middleware/metaWebhookQueueIngress.ts|\
+    artifacts/api-server/src/middleware/metaWebhookSecurity.ts|\
     artifacts/api-server/src/routes/auth-login-route-support.ts|\
     artifacts/api-server/src/routes/auth-password-route-support.ts|\
     artifacts/api-server/src/routes/auth-public-routes.ts|\
@@ -95,6 +96,7 @@ while IFS= read -r file; do
     artifacts/api-server/src/routes/channel-durable-job-admin.ts|\
     artifacts/api-server/src/routes/channel-operations.ts|\
     artifacts/api-server/src/routes/conversation-operations.ts|\
+    artifacts/api-server/src/routes/index.ts|\
     artifacts/api-server/src/routes/merchant-settings.ts|\
     artifacts/api-server/src/routes/order-operations.ts|\
     artifacts/api-server/src/services/catalogProductNormalization.ts|\
@@ -102,6 +104,7 @@ while IFS= read -r file; do
     artifacts/api-server/src/services/metaChannelJobs.ts|\
     artifacts/api-server/src/services/metaPageDirectory.ts|\
     artifacts/api-server/src/services/metaWebhookWorker.ts|\
+    artifacts/api-server/src/services/metaWebhookWorkerCore.ts|\
     artifacts/api-server/src/services/operationalPostgresAuthority.ts|\
     artifacts/api-server/src/services/postgresCatalogAuthority.ts|\
     artifacts/api-server/src/services/postgresDurableJobQueue.ts|\
@@ -151,9 +154,9 @@ done
 pnpm --filter @workspace/api-server exec tsx --test tests/runtime-authorities-postgres.integration.test.ts
 
 git diff --check
-if git status --porcelain | grep -E 'scripts/(\.tmp-runtime-pg|run-runtime-pg-cutover)' >/dev/null; then
+if find scripts -maxdepth 1 -type f \( -name '.tmp-runtime-pg*' -o -name 'run-runtime-pg-cutover*' \) -print -quit | grep -q .; then
   echo "STOP: temporary runtime validation files remain"
-  git status --short
+  find scripts -maxdepth 1 -type f \( -name '.tmp-runtime-pg*' -o -name 'run-runtime-pg-cutover*' \) -print
   exit 9
 fi
 
