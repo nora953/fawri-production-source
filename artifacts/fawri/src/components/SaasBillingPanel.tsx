@@ -16,7 +16,7 @@ type BillingPlan = {
   billing_period_months: 1;
 };
 type ProviderState = {
-  provider: 'disabled' | 'test_fake' | 'unsupported';
+  provider: 'disabled' | 'test_fake' | 'superqi_sandbox' | 'unsupported';
   checkout_available: boolean;
   production_ready: boolean;
 };
@@ -57,6 +57,7 @@ const copy = {
     reconciliation: 'دفعة تحتاج مراجعة',
     checkoutUnavailable: 'الدفع غير متاح حاليًا',
     checkoutCreated: 'تم إنشاء طلب الدفع',
+    sandboxNotice: 'أنت تستخدم بيئة اختبار SuperQi. لا يتم استخدام أموال حقيقية في هذا الوضع.',
   },
   en: {
     title: 'Fawri subscription plans',
@@ -70,6 +71,7 @@ const copy = {
     reconciliation: 'Payment needs review',
     checkoutUnavailable: 'Checkout is not available yet',
     checkoutCreated: 'Billing order created',
+    sandboxNotice: 'SuperQi sandbox is active. No real money is used in this mode.',
   },
   ku: {
     title: 'پلانی بەشداری فەوری',
@@ -83,6 +85,7 @@ const copy = {
     reconciliation: 'پارەدان پێویستی بە پشکنین هەیە',
     checkoutUnavailable: 'پارەدان هێشتا بەردەست نییە',
     checkoutCreated: 'داواکاری پارەدان دروست کرا',
+    sandboxNotice: 'ژینگەی تاقیکردنەوەی SuperQi چالاکە. لەم دۆخەدا پارەی ڕاستەقینە بەکارناهێنرێت.',
   },
 };
 
@@ -153,6 +156,15 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
       if (!response.ok || !data?.ok) {
         throw new Error(data?.error || text.checkoutUnavailable);
       }
+      const redirectUrl =
+        typeof data?.checkout?.redirect_url === 'string'
+          ? data.checkout.redirect_url.trim()
+          : '';
+      if (catalog.provider.provider === 'superqi_sandbox') {
+        if (!redirectUrl) throw new Error(text.checkoutUnavailable);
+        window.location.assign(redirectUrl);
+        return;
+      }
       toast.success(text.checkoutCreated);
       await load();
     } catch (error) {
@@ -174,6 +186,12 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
             <AlertDescription>{text.providerDisabled}</AlertDescription>
           </Alert>
         )}
+        {catalog.provider.provider === 'superqi_sandbox' &&
+          catalog.provider.checkout_available && (
+            <Alert>
+              <AlertDescription>{text.sandboxNotice}</AlertDescription>
+            </Alert>
+          )}
         {catalog.provider.checkout_available && subscription && !canStartCycle && (
           <Alert>
             <AlertDescription>{text.cycleActive}</AlertDescription>

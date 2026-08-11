@@ -12,6 +12,8 @@ import {
 } from "../services/saasBillingAuthority";
 import { isSaasPaidPlan } from "../services/saasPlanCatalog";
 import type { SubscriptionPlanCycleOperation } from "../services/subscriptionPlanCycleAuthority";
+import { handleSuperQiSandboxWebhook } from "../services/superQiSandboxWebhook";
+import { SuperQiSandboxProviderError } from "../services/superQiSandboxTransport";
 
 const router = Router();
 
@@ -20,6 +22,10 @@ function merchantId(res: Response): string {
 }
 
 function authorityError(res: Response, error: unknown): void {
+  if (error instanceof SuperQiSandboxProviderError) {
+    sendAuthError(res, error.status, error.code, error.message);
+    return;
+  }
   if (error instanceof SaasBillingAuthorityError) {
     sendAuthError(res, error.status, error.code, error.message, error.details || {});
     return;
@@ -31,6 +37,29 @@ function authorityError(res: Response, error: unknown): void {
     "SaaS billing authority is unavailable",
   );
 }
+
+router.post("/billing/providers/superqi/webhook", async (req, res) => {
+  const signature = String(req.headers["x-signature"] || "").trim();
+  if (!signature) {
+    sendAuthError(
+      res,
+      401,
+      "SUPERQI_SANDBOX_SIGNATURE_REQUIRED",
+      "SuperQi sandbox webhook signature is required",
+    );
+    return;
+  }
+  try {
+    const result = await handleSuperQiSandboxWebhook({
+      payload: req.body || {},
+      signature,
+    });
+    res.setHeader("Cache-Control", "no-store");
+    res.status(200).json({ ok: true, status: result.status });
+  } catch (error) {
+    authorityError(res, error);
+  }
+});
 
 router.get("/billing/catalog", requireSecureMerchantSession, (_req, res) => {
   res.setHeader("Cache-Control", "no-store");
