@@ -2,7 +2,7 @@ import type { AccountKind, AdminPermission, AdminRole } from "./authPolicy";
 
 export const MAX_TRUSTED_DEVICES_PER_ACCOUNT = 2;
 export type SessionRevocationReason = "logout" | "logout_all" | "manual_revocation" | "password_changed" | "password_reset" | "account_disabled" | "role_changed" | "device_revoked" | "expired" | "rotated";
-export type OtpPurpose = "signup" | "password_reset" | "admin_recovery";
+export type OtpPurpose = "signup" | "password_reset" | "admin_recovery" | "admin_device_verification";
 export type AuthSessionRecord = {
   id: string; token_hash: string; account_id: string; account_kind: AccountKind;
   tenant_id: string; account_version: number; admin_role?: AdminRole;
