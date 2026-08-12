@@ -31,6 +31,7 @@ type OwnerDeviceChallenge = {
   deviceRecordId: string;
   expiresAt: string;
   retryAfterSeconds: number;
+  devCode?: string;
 };
 
 function cacheMerchantLocally(merchant: any) {
@@ -38,6 +39,11 @@ function cacheMerchantLocally(merchant: any) {
   const merchants = getMerchants();
   const cleaned = merchants.filter(item => item.id !== merchant.id && item.phone !== merchant.phone);
   saveMerchants([merchant, ...cleaned]);
+}
+
+function previewDevCode(value: unknown): string | undefined {
+  const code = String(value || '').trim();
+  return /^\d{6}$/.test(code) ? code : undefined;
 }
 
 function ownerDeviceChallengeFromResult(
@@ -53,6 +59,7 @@ function ownerDeviceChallengeFromResult(
     deviceRecordId,
     expiresAt: String(result?.expires_at || '').trim(),
     retryAfterSeconds: Math.max(0, Number(result?.retry_after_seconds) || 0),
+    devCode: previewDevCode(result?.devCode),
   };
 }
 
@@ -106,6 +113,10 @@ export default function LoginPage() {
       toast.error(securityText.sessionLimit, { duration: 8000 });
     } else if (result?.code === 'ADMIN_DEVICE_ID_REQUIRED') {
       toast.error(securityText.deviceRequired);
+    } else if (result?.code === 'OTP_DELIVERY_NOT_CONFIGURED') {
+      toast.error(securityText.otpDeliveryUnavailable, { duration: 9000 });
+    } else if (result?.code === 'OTP_DELIVERY_FAILED') {
+      toast.error(securityText.otpDeliveryFailed, { duration: 9000 });
     } else {
       toast.error(t.login_error_invalid);
     }
@@ -159,6 +170,10 @@ export default function LoginPage() {
         setOwnerOtpError(securityText.trustedDeviceLimit);
       } else if (result?.code === 'ADMIN_DEVICE_ID_REQUIRED') {
         setOwnerOtpError(securityText.deviceRequired);
+      } else if (result?.code === 'OTP_DELIVERY_NOT_CONFIGURED') {
+        setOwnerOtpError(securityText.otpDeliveryUnavailable);
+      } else if (result?.code === 'OTP_DELIVERY_FAILED') {
+        setOwnerOtpError(securityText.otpDeliveryFailed);
       } else {
         setOwnerOtpError(t.otp_connection_error);
       }
@@ -289,6 +304,17 @@ export default function LoginPage() {
 
           {ownerDeviceChallenge ? (
             <form onSubmit={handleOwnerOtpSubmit} className="flex flex-col items-center space-y-6" noValidate>
+              {ownerDeviceChallenge.devCode && (
+                <div className="w-full rounded-xl border bg-muted/40 px-4 py-3 text-center text-sm">
+                  <span className="text-muted-foreground">
+                    {securityText.previewOtpLabel}:{' '}
+                  </span>
+                  <strong dir="ltr" className="font-mono text-base tracking-widest text-foreground">
+                    {ownerDeviceChallenge.devCode}
+                  </strong>
+                </div>
+              )}
+
               <InputOTP
                 maxLength={6}
                 value={ownerOtpValue}
@@ -319,6 +345,7 @@ export default function LoginPage() {
                     challengeId: replacement.challengeId,
                     expiresAt: replacement.expiresAt,
                     retryAfterSeconds: replacement.retryAfterSeconds,
+                    devCode: replacement.devCode,
                   } : current);
                   setOwnerOtpValue('');
                   setOwnerOtpError('');
