@@ -1,11 +1,15 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import {
   authAccountRepository,
   normalizePhone,
   type RequestedPlan,
 } from "../services/authAccountRepository";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
-import { authSecurityStore, type OtpPurpose } from "../services/authSecurityStore";
+import {
+  authSecurityStore,
+  AuthSecurityStoreError,
+  type OtpPurpose,
+} from "../services/authSecurityStore";
 import { getPasswordValidationError, hashPassword } from "../services/authPasswordService";
 import {
   findMerchantByPhoneAuthoritative,
@@ -14,6 +18,7 @@ import {
 } from "../services/postgresMerchantAccountAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import {
+  recordMerchantLoginAttemptAuthoritative,
   verifyMerchantOtpChallengeAuthoritative,
 } from "../services/postgresMerchantAuthSecurityAuthority";
 import {
@@ -34,6 +39,61 @@ import {
 import { login } from "./auth-login-route-support";
 
 const router = Router();
+
+function ownerAdminForDeviceVerification(
+  phone: string,
+  res: Response,
+) {
+  const account = authAccountRepository.findByPhone(phone, "admin");
+  if (
+    !account?.adminProfile ||
+    account.adminProfile.role !== "owner_admin" ||
+    !account.account.enabled
+  ) {
+    sendAuthError(
+      res,
+      400,
+      "OWNER_DEVICE_VERIFICATION_INVALID",
+      "owner administrator device verification is invalid",
+    );
+    return null;
+  }
+  return account;
+}
+
+function ownerDeviceForRequest(
+  req: Request,
+  res: Response,
+  accountId: string,
+  deviceRecordId: string,
+) {
+  const deviceId = requestDeviceId(req);
+  if (!deviceId) {
+    sendAuthError(
+      res,
+      400,
+      "ADMIN_DEVICE_ID_REQUIRED",
+      "administrator device identifier is required",
+    );
+    return null;
+  }
+  const device = authSecurityStore.registerDevice({
+    accountId,
+    accountKind: "admin",
+    deviceId,
+    deviceLabel: requestDeviceLabel(req),
+  });
+  if (!deviceRecordId || device.id !== deviceRecordId) {
+    sendAuthError(
+      res,
+      400,
+      "OWNER_DEVICE_VERIFICATION_INVALID",
+      "owner administrator device verification is invalid",
+    );
+    return null;
+  }
+  return { deviceId, device };
+}
 
 router.post("/signup", async (req, res) => {
   const phone = normalizePhone(req.body?.phone);
@@ -225,6 +285,149 @@ router.post("/login", async (req, res) => {
 
 router.post("/admin/login", async (req, res) => {
   await login(req, res, "admin");
+});
+
+router.post("/admin/device-otp/resend", async (req, res) => {
+  const phone = normalizePhone(req.body?.phone);
+  const deviceRecordId = String(req.body?.device_record_id || "");
+  const account = ownerAdminForDeviceVerification(phone, res);
+  if (!account) return;
+  const current = ownerDeviceForRequest(
+    req,
+    res,
+    account.account.id,
+    deviceRecordId,
+  );
+  if (!current) return;
+  if (current.device.status === "trusted") {
+    sendAuthError(
+      res,
+      409,
+      "ADMIN_DEVICE_ALREADY_TRUSTED",
+      "administrator device is already trusted",
+    );
+    return;
+  }
+  try {
+    const issued = await issueOtp(
+      req,
+      phone,
+      "admin_device_verification",
+    );
+    res.status(202).json({
+      ok: true,
+      challenge_id: issued.challengeId,
+      expires_at: issued.expiresAt,
+      retry_after_seconds: issued.retryAfterSeconds,
+      ...devCode(issued.code),
+    });
+  } catch (error) {
+    otpError(res, error);
+  }
+});
+
+router.post("/admin/device-otp/verify", async (req, res) => {
+  const phone = normalizePhone(req.body?.phone);
+  const challengeId = String(req.body?.challenge_id || "");
+  const deviceRecordId = String(req.body?.device_record_id || "");
+  const code = String(req.body?.code || "");
+  if (!challengeId || !/^\d{6}$/.test(code)) {
+    sendAuthError(
+      res,
+      400,
+      "OTP_INVALID",
+      "verification code is invalid or expired",
+    );
+    return;
+  }
+  const account = ownerAdminForDeviceVerification(phone, res);
+  if (!account?.adminProfile) return;
+  const current = ownerDeviceForRequest(
+    req,
+    res,
+    account.account.id,
+    deviceRecordId,
+  );
+  if (!current) return;
+  if (current.device.status === "trusted") {
+    sendAuthError(
+      res,
+      409,
+      "ADMIN_DEVICE_ALREADY_TRUSTED",
+      "administrator device is already trusted",
+    );
+    return;
+  }
+
+  const result = authSecurityStore.verifyOtpChallenge({
+    challengeId,
+    target: phone,
+    purpose: "admin_device_verification",
+    code,
+    ip: requestIp(req),
+  });
+  if (result !== "verified") {
+    sendAuthError(
+      res,
+      400,
+      "OTP_INVALID",
+      "verification code is invalid or expired",
+    );
+    return;
+  }
+
+  try {
+    const trusted = authSecurityStore.setDeviceTrust({
+      deviceRecordId: current.device.id,
+      trusted: true,
+      actorAccountId: account.account.id,
+    });
+    if (!trusted) {
+      sendAuthError(res, 404, "DEVICE_NOT_FOUND", "device not found");
+      return;
+    }
+  } catch (error) {
+    if (error instanceof AuthSecurityStoreError) {
+      sendAuthError(
+        res,
+        409,
+        error.code === "TRUSTED_DEVICE_LIMIT_REACHED"
+          ? "ADMIN_TRUSTED_DEVICE_LIMIT_REACHED"
+          : error.code,
+        error.message,
+      );
+      return;
+    }
+    throw error;
+  }
+
+  const issued = await authPostgresSessionAuthority.issueSession({
+    accountId: account.account.id,
+    accountKind: "admin",
+    tenantId: account.account.id,
+    accountVersion: account.account.sessionVersion,
+    adminRole: account.adminProfile.role,
+    permissions: account.adminProfile.permissions,
+    deviceId: current.deviceId,
+    deviceLabel: requestDeviceLabel(req),
+  });
+  await recordMerchantLoginAttemptAuthoritative({
+    target: phone,
+    accountKind: "admin",
+    ip: requestIp(req),
+    success: true,
+    reason: "owner_device_otp_verified",
+    accountId: account.account.id,
+  });
+  authSecurityStore.audit({
+    event_type: "owner_device_otp_verified",
+    actor_account_id: account.account.id,
+    actor_kind: "admin",
+    subject_hash: account.account.id,
+    metadata: { device_record_id: current.device.id },
+  });
+  setAuthSessionCookie(res, "admin", issued);
+  res.json({ ok: true, ...payload(account) });
 });
 
 router.post("/password-reset/request", async (req, res) => {
