@@ -87,6 +87,13 @@ function collectRenderedStringLiterals(findings, sourceFile, expression, kind) {
   }
 }
 
+function isRenderedChildExpression(node) {
+  return Boolean(
+    node.parent &&
+      (ts.isJsxElement(node.parent) || ts.isJsxFragment(node.parent)),
+  );
+}
+
 function scanFile(file) {
   const source = fs.readFileSync(file, 'utf8');
   const sourceFile = ts.createSourceFile(
@@ -101,7 +108,11 @@ function scanFile(file) {
   function visit(node) {
     if (ts.isJsxText(node)) {
       add(findings, sourceFile, node, 'jsx-text', node.getText(sourceFile));
-    } else if (ts.isJsxExpression(node)) {
+    } else if (ts.isJsxExpression(node) && isRenderedChildExpression(node)) {
+      // Only inspect expressions that are actual rendered children. Attribute
+      // expressions such as className={condition ? 'foo' : 'bar'} are styling
+      // implementation details, not visible copy, and are audited separately
+      // only for user-facing attributes below.
       collectRenderedStringLiterals(findings, sourceFile, node.expression, 'jsx-expression');
     } else if (ts.isJsxAttribute(node)) {
       const name = node.name.getText(sourceFile);
