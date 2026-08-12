@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -14,19 +16,13 @@ FRONTEND = ROOT / "artifacts" / "fawri" / "src"
 API = ROOT / "artifacts" / "api-server" / "src"
 TRANSLATIONS = FRONTEND / "lib" / "translations"
 ADMIN_TRANSLATIONS = FRONTEND / "lib" / "admin-translations.ts"
+VISIBLE_COPY_AUDIT = ROOT / "scripts" / "audit-visible-ui-copy.mjs"
 
 KEY_RE = re.compile(r"^\s{2}([A-Za-z_][A-Za-z0-9_]*):", re.MULTILINE)
 ADMIN_LANGUAGE_RE = re.compile(r"^  (ar|ku|en):\s*\{", re.MULTILINE)
 ADMIN_DIRECT_KEY_RE = re.compile(r"^    ([A-Za-z_][A-Za-z0-9_]*):", re.MULTILINE)
 ADMIN_KU_OBJECT_RE = re.compile(r"^const kuTranslations\s*=\s*\{", re.MULTILINE)
 ADMIN_KU_DIRECT_KEY_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_]*):", re.MULTILINE)
-JSX_TEXT_RE = re.compile(r">\s*([^<>{}\n][^<>{}\n]*?[A-Za-z\u0600-\u06ff][^<>{}\n]*?)\s*<")
-STRING_PROP_RE = re.compile(
-    r"\b(?:title|placeholder|aria-label|description|label)\s*=\s*([\"'])([^\"']*[A-Za-z\u0600-\u06ff][^\"']*)\1"
-)
-TOAST_RE = re.compile(
-    r"\btoast\.(?:success|error|warning|info)\(\s*([\"'])([^\"']*[A-Za-z\u0600-\u06ff][^\"']*)\1"
-)
 
 
 def rel(path: Path) -> str:
@@ -96,11 +92,6 @@ def extract_admin_language_keys(text: str) -> dict[str, set[str]]:
         block = text[open_brace + 1 : close_brace]
         result[lang] = set(ADMIN_DIRECT_KEY_RE.findall(block))
 
-    # Kurdish intentionally remains a separate object because the admin runtime
-    # layers a handful of Kurdish overrides onto the shared admin contract.
-    # Treat that object as the canonical `ku` authority instead of reporting a
-    # false missing-language blocker merely because it is not nested inside the
-    # `adminTranslations` object literal.
     ku_match = ADMIN_KU_OBJECT_RE.search(text)
     if ku_match is not None:
         open_brace = text.find("{", ku_match.start())
@@ -119,30 +110,33 @@ def line_count(path: Path) -> int:
         return 0
 
 
-def visible_copy_candidates(path: Path) -> list[tuple[int, str]]:
-    if is_translation_authority(path):
-        return []
-    text = read(path)
-    findings: list[tuple[int, str]] = []
-    for regex in (JSX_TEXT_RE, STRING_PROP_RE, TOAST_RE):
-        for match in regex.finditer(text):
-            value = match.group(match.lastindex or 1).strip()
-            if len(value) < 3:
-                continue
-            if value.startswith(("http://", "https://", "/api/", "data:", "mailto:")):
-                continue
-            if value in {"svg", "div", "span", "button", "input"}:
-                continue
-            line = text.count("\n", 0, match.start()) + 1
-            findings.append((line, value[:140]))
-    seen: set[tuple[int, str]] = set()
-    result: list[tuple[int, str]] = []
-    for item in findings:
-        if item in seen:
-            continue
-        seen.add(item)
-        result.append(item)
-    return result
+def visible_copy_candidates_ast() -> tuple[list[tuple[str, int, str, str]], str | None]:
+    try:
+        completed = subprocess.run(
+            ["node", str(VISIBLE_COPY_AUDIT), "--json"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        payload = json.loads(completed.stdout)
+    except (OSError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
+        detail = getattr(error, "stderr", "") or str(error)
+        return [], detail.strip() or "visible-copy AST audit failed"
+
+    findings: list[tuple[str, int, str, str]] = []
+    for entry in payload.get("files", []):
+        file_name = str(entry.get("file", "")).strip()
+        for finding in entry.get("findings", []):
+            findings.append(
+                (
+                    file_name,
+                    int(finding.get("line", 0)),
+                    str(finding.get("kind", "copy")),
+                    str(finding.get("value", ""))[:180],
+                )
+            )
+    return findings, None
 
 
 def report_parity(
@@ -208,17 +202,16 @@ def main() -> int:
         print("localized_objects=0")
 
     print("\n=== VISIBLE HARDCODED COPY CANDIDATES ===")
-    visible: list[tuple[str, int, str]] = []
-    for path in sorted(FRONTEND.rglob("*.tsx")):
-        if "/components/ui/" in rel(path):
-            continue
-        for line, value in visible_copy_candidates(path):
-            visible.append((rel(path), line, value))
-    print(f"count={len(visible)}")
-    for file_name, line, value in visible[:120]:
-        print(f"{file_name}:{line}: {value}")
-    if visible:
-        errors.append(f"visible hardcoded copy candidates={len(visible)}")
+    visible, visible_error = visible_copy_candidates_ast()
+    if visible_error:
+        print(f"AST_AUDIT_ERROR {visible_error}")
+        errors.append("visible hardcoded copy AST audit failed")
+    else:
+        print(f"count={len(visible)}")
+        for file_name, line, kind, value in visible[:160]:
+            print(f"{file_name}:{line}: {kind}: {value}")
+        if visible:
+            errors.append(f"visible hardcoded copy candidates={len(visible)}")
 
     print("\n=== LONG EXECUTABLE SOURCE FILES ===")
     long_files: list[tuple[int, str]] = []
