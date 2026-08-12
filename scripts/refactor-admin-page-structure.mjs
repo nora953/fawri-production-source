@@ -7,9 +7,22 @@ const ROOT = process.cwd();
 const SOURCE_PATH = path.join(ROOT, 'artifacts/fawri/src/pages/AdminPage.tsx');
 const ADMIN_DIR = path.join(ROOT, 'artifacts/fawri/src/pages/admin');
 const SECTIONS_PATH = path.join(ADMIN_DIR, 'AdminPageSections.tsx');
+const DIALOGS_PATH = path.join(ADMIN_DIR, 'AdminPageDialogs.tsx');
+const PARTS_PATH = path.join(ADMIN_DIR, 'AdminPageParts.ts');
 const CONTROLLER_PATH = path.join(ADMIN_DIR, 'useAdminPageController.tsx');
 const VIEW_PATH = path.join(ADMIN_DIR, 'AdminPageView.tsx');
 const MAX_FILE_LINES = 1799;
+
+const DIALOG_DECLARATION_NAMES = new Set([
+  'ConfirmType',
+  'ConfirmState',
+  'ConfirmDialog',
+  'PlanModalState',
+  'PlanModal',
+  'RepliesModalState',
+  'RepliesModal',
+  'DetailsModal',
+]);
 
 function read(file) {
   return fs.readFileSync(file, 'utf8');
@@ -66,15 +79,34 @@ function addHelperDeclaration(statement, valueNames, typeNames) {
   }
 }
 
-function importBlock(valueNames, typeNames) {
+function statementDeclarationNames(statement) {
+  const values = new Set();
+  const types = new Set();
+  addHelperDeclaration(statement, values, types);
+  return new Set([...values, ...types]);
+}
+
+function collectReferencedIdentifiers(node, out) {
+  function visit(current) {
+    if (ts.isIdentifier(current)) out.add(current.text);
+    ts.forEachChild(current, visit);
+  }
+  visit(node);
+}
+
+function importBlock(valueNames, typeNames, modulePath = '@/pages/admin/AdminPageParts') {
   const lines = [];
   if (valueNames.size) {
-    lines.push(`import { ${[...valueNames].sort().join(', ')} } from '@/pages/admin/AdminPageSections';`);
+    lines.push(`import { ${[...valueNames].sort().join(', ')} } from '${modulePath}';`);
   }
   if (typeNames.size) {
-    lines.push(`import type { ${[...typeNames].sort().join(', ')} } from '@/pages/admin/AdminPageSections';`);
+    lines.push(`import type { ${[...typeNames].sort().join(', ')} } from '${modulePath}';`);
   }
   return lines.join('\n');
+}
+
+function exportify(source) {
+  return source.replace(/^(const|let|var|function|class|interface|type|enum)\s+/gm, 'export $1 ');
 }
 
 function compactSections(source) {
@@ -120,18 +152,73 @@ function main() {
   const importEnd = importDeclarations[importDeclarations.length - 1].end;
   const imports = source.slice(0, importEnd).trimEnd();
 
-  const helperValueNames = new Set();
-  const helperTypeNames = new Set();
-  for (const statement of sourceFile.statements) {
-    if (statement === mainFunction) break;
-    if (ts.isImportDeclaration(statement)) continue;
-    addHelperDeclaration(statement, helperValueNames, helperTypeNames);
+  const helperStatements = sourceFile.statements.filter(
+    (statement) =>
+      statement !== mainFunction &&
+      !ts.isImportDeclaration(statement) &&
+      statement.end <= mainFunction.getFullStart(),
+  );
+
+  const sectionStatements = [];
+  const dialogStatements = [];
+  for (const statement of helperStatements) {
+    const names = statementDeclarationNames(statement);
+    const isDialogDeclaration = [...names].some((name) => DIALOG_DECLARATION_NAMES.has(name));
+    (isDialogDeclaration ? dialogStatements : sectionStatements).push(statement);
   }
 
-  let helperSource = source.slice(importEnd, mainFunction.getFullStart()).trim();
-  helperSource = helperSource
-    .replace(/^(const|let|var|function|class|interface|type|enum)\s+/gm, 'export $1 ');
-  const sectionsSource = compactSections(`${imports}\n\n${helperSource}`);
+  if (!dialogStatements.length) throw new Error('AdminPage dialog declarations not discovered');
+  if (!sectionStatements.length) throw new Error('AdminPage section declarations not discovered');
+
+  const helperValueNames = new Set();
+  const helperTypeNames = new Set();
+  const sectionValueNames = new Set();
+  const sectionTypeNames = new Set();
+  const dialogValueNames = new Set();
+  const dialogTypeNames = new Set();
+
+  for (const statement of sectionStatements) {
+    addHelperDeclaration(statement, helperValueNames, helperTypeNames);
+    addHelperDeclaration(statement, sectionValueNames, sectionTypeNames);
+  }
+  for (const statement of dialogStatements) {
+    addHelperDeclaration(statement, helperValueNames, helperTypeNames);
+    addHelperDeclaration(statement, dialogValueNames, dialogTypeNames);
+  }
+
+  const dialogReferences = new Set();
+  for (const statement of dialogStatements) collectReferencedIdentifiers(statement, dialogReferences);
+  const dialogSectionValueDeps = new Set(
+    [...sectionValueNames].filter((name) => dialogReferences.has(name)),
+  );
+  const dialogSectionTypeDeps = new Set(
+    [...sectionTypeNames].filter((name) => dialogReferences.has(name)),
+  );
+
+  const sectionReferences = new Set();
+  for (const statement of sectionStatements) collectReferencedIdentifiers(statement, sectionReferences);
+  const sectionDialogDeps = [
+    ...[...dialogValueNames].filter((name) => sectionReferences.has(name)),
+    ...[...dialogTypeNames].filter((name) => sectionReferences.has(name)),
+  ];
+  if (sectionDialogDeps.length) {
+    throw new Error(`AdminPage split would create reverse dialog dependencies: ${sectionDialogDeps.join(', ')}`);
+  }
+
+  const statementSource = (statement) => source.slice(statement.getFullStart(), statement.end).trim();
+  const sectionsBody = exportify(sectionStatements.map(statementSource).join('\n\n'));
+  const dialogBody = exportify(dialogStatements.map(statementSource).join('\n\n'));
+
+  const sectionsSource = compactSections(`${imports}\n\n${sectionsBody}`);
+  const dialogDependencyImports = importBlock(
+    dialogSectionValueDeps,
+    dialogSectionTypeDeps,
+    '@/pages/admin/AdminPageSections',
+  );
+  const dialogsSource = compactSections(
+    `${imports}${dialogDependencyImports ? `\n${dialogDependencyImports}` : ''}\n\n${dialogBody}`,
+  );
+  const partsSource = `export * from '@/pages/admin/AdminPageSections';\nexport * from '@/pages/admin/AdminPageDialogs';\n`;
 
   const topLevelReturns = mainFunction.body.statements.filter(ts.isReturnStatement);
   if (topLevelReturns.length !== 1 || !topLevelReturns[0].expression) {
@@ -161,11 +248,15 @@ function main() {
   const wrapperSource = `import { AdminPageView } from '@/pages/admin/AdminPageView';\nimport { useAdminPageController } from '@/pages/admin/useAdminPageController';\n\nexport default function AdminPage() {\n  const model = useAdminPageController();\n  return <AdminPageView model={model} />;\n}\n`;
 
   assertUnderLimit('AdminPageSections.tsx', sectionsSource);
+  assertUnderLimit('AdminPageDialogs.tsx', dialogsSource);
+  assertUnderLimit('AdminPageParts.ts', partsSource);
   assertUnderLimit('useAdminPageController.tsx', controllerSource);
   assertUnderLimit('AdminPageView.tsx', viewSource);
   assertUnderLimit('AdminPage.tsx', wrapperSource);
 
   write(SECTIONS_PATH, sectionsSource);
+  write(DIALOGS_PATH, dialogsSource);
+  write(PARTS_PATH, partsSource);
   write(CONTROLLER_PATH, controllerSource);
   write(VIEW_PATH, viewSource);
   write(SOURCE_PATH, wrapperSource);
