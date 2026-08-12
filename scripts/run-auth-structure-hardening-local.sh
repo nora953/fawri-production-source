@@ -39,6 +39,20 @@ export PYTHONDONTWRITEBYTECODE=1
 printf '=== DEPENDENCIES ===\n'
 pnpm install --offline --frozen-lockfile --ignore-scripts >/dev/null
 
+printf '\n=== AUTH REFACTOR TOOLING FIX ===\n'
+python3 - <<'PY'
+from pathlib import Path
+path = Path('scripts/refactor-auth-structure.mjs')
+source = path.read_text(encoding='utf-8')
+old = "  const localNames = new Set(byName.keys());"
+new = "  const localNames = new Set([...byName.keys(), ...externalNames]);"
+if old in source:
+    path.write_text(source.replace(old, new, 1), encoding='utf-8')
+elif new not in source:
+    raise SystemExit('STOP: auth refactor dependency matcher changed unexpectedly')
+print('AUTH_RUNTIME_EXTERNAL_REFS_ENABLED')
+PY
+
 printf '\n=== AUTH ROUTE REFACTOR ===\n'
 node scripts/refactor-auth-structure.mjs
 
@@ -88,7 +102,7 @@ grep -q '^BLOCKER critical executable files=1$' "$AUDIT_LOG" || {
   exit 25
 }
 
-git add artifacts/api-server/src/routes/auth.ts artifacts/api-server/src/routes/authRuntime.ts artifacts/api-server/src/routes/authRuntimePart*.ts artifacts/api-server/src/routes/authRoutesPart*.ts
+git add scripts/refactor-auth-structure.mjs artifacts/api-server/src/routes/auth.ts artifacts/api-server/src/routes/authRuntime.ts artifacts/api-server/src/routes/authRuntimePart*.ts artifacts/api-server/src/routes/authRoutesPart*.ts
 if git diff --cached --quiet; then
   echo "STOP: auth refactor produced no source changes"
   exit 26
