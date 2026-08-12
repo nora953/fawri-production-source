@@ -46,6 +46,7 @@ export PYTHONDONTWRITEBYTECODE=1
 
 printf '=== APPLY CENTRALIZED VISIBLE COPY ===\n'
 node scripts/harden-visible-copy-centralization.mjs
+node scripts/harden-auth-shell-copy.mjs
 
 printf '\n=== DEPENDENCIES ===\n'
 pnpm install --offline --frozen-lockfile --ignore-scripts >/dev/null
