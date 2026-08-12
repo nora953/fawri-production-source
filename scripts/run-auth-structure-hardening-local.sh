@@ -52,21 +52,23 @@ SQL
 }
 
 run_auth_regression_tests() {
+  printf '%s\n' '--- current Auth unit/cutover contracts ---'
   pnpm --filter @workspace/api-server exec tsx --test \
     ./tests/auth-account-repository.test.ts \
     ./tests/auth-password-service.test.ts \
     ./tests/auth-policy.test.ts \
     ./tests/auth-security-store.test.ts \
-    ./tests/auth-cutover-contract.test.mjs
+    ./tests/auth-cutover-contract.test.mjs \
+    ./tests/auth-otp-contract-continuity.test.mjs \
+    ./tests/landing-plan-intent-continuity.test.ts
 
+  printf '%s\n' '--- current merchant access/session contracts ---'
   node --test \
     artifacts/api-server/tests/merchant-session.integration.test.mjs \
     artifacts/api-server/tests/merchant-status-access.integration.test.mjs \
-    artifacts/api-server/tests/admin-permissions.integration.test.mjs \
-    artifacts/api-server/tests/admin-work-monitor.integration.test.mjs \
-    artifacts/api-server/tests/subscription-lifecycle.integration.test.mjs \
-    artifacts/api-server/tests/support-preview.integration.test.mjs
+    artifacts/api-server/tests/meta-webhook-security.integration.test.mjs
 
+  printf '%s\n' '--- PostgreSQL Auth HTTP concurrency proof ---'
   FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required \
   FAWRI_AUTH_SECURITY_SECRET='auth-structure-proof-secret-with-more-than-thirty-two-characters' \
   FAWRI_PASSWORD_SALT='auth-structure-proof-password-salt' \
