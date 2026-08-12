@@ -72,6 +72,20 @@ git diff --check
 printf '\n=== TYPECHECK + BUILD ===\n'
 pnpm run build
 
+printf '\n=== AUTH SOURCE IMPORT SMOKE ===\n'
+(
+  cd artifacts/api-server
+  NODE_ENV=test \
+  LOG_LEVEL=error \
+  FAWRI_PASSWORD_SALT=test-password-salt \
+  FAWRI_ADMIN_SESSION_SECRET=test-admin-session-secret \
+  FAWRI_MERCHANT_SESSION_SECRET=test-merchant-session-secret \
+  META_APP_ID=test-meta-app \
+  META_CONFIG_ID=test-meta-config \
+  META_REDIRECT_URI=http://127.0.0.1/api/meta/callback \
+  pnpm exec tsx -e "import('./src/app.ts').then(() => { console.log('AUTH_SOURCE_IMPORT_READY'); process.exit(0); }).catch((error) => { console.error(error?.stack || error); process.exit(1); })"
+)
+
 printf '\n=== AUTH REGRESSION TESTS ===\n'
 (
   cd artifacts/api-server
