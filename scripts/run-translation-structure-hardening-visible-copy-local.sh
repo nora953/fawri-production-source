@@ -4,7 +4,6 @@ set -euo pipefail
 BRANCH="parallel/frontend-translation-structure-hardening"
 COORDINATOR="parallel/integration-coordinator"
 GOLDEN="33bd13d412bb10c67c6d3769e16474387f18e110"
-EXPECTED_HEAD="40fac4dcd30a4295875151b1b9a083bf756ce160"
 CACHE_ROOT="${TMPDIR:-$HOME/.cache/fawri-validation}"
 WORKTREE="$CACHE_ROOT/translation-visible-copy-$$"
 AUDIT_LOG="$CACHE_ROOT/translation-visible-copy-audit-$$.log"
@@ -31,16 +30,14 @@ COORD_HEAD="$(git rev-parse "github/$COORDINATOR")"
   exit 21
 }
 
+# Capture the exact remote branch head at validation start. The same SHA must
+# remain remote until the final push; this protects against concurrent writes
+# without hard-coding the runner's own commit SHA.
 BRANCH_HEAD="$(git rev-parse "github/$BRANCH")"
-[[ "$BRANCH_HEAD" == "$EXPECTED_HEAD" ]] || {
-  echo "STOP: branch moved unexpectedly: $BRANCH_HEAD"
-  exit 22
-}
-
 MERGE_BASE="$(git merge-base "$GOLDEN" "$BRANCH_HEAD")"
 [[ "$MERGE_BASE" == "$GOLDEN" ]] || {
   echo "STOP: branch merge-base changed: $MERGE_BASE"
-  exit 23
+  exit 22
 }
 
 git worktree add --detach "$WORKTREE" "$BRANCH_HEAD" >/dev/null
@@ -74,7 +71,7 @@ fi
 if grep '^BLOCKER ' "$AUDIT_LOG" | grep -v '^BLOCKER critical executable files=' >/dev/null; then
   echo "STOP: unexpected non-structure blocker remains"
   grep '^BLOCKER ' "$AUDIT_LOG"
-  exit 24
+  exit 23
 fi
 
 printf '\n=== DIFF CHECK ===\n'
@@ -89,7 +86,7 @@ find scripts -type f -name '*.py[co]' -delete 2>/dev/null || true
 git add artifacts/fawri/src
 if git diff --cached --quiet; then
   echo "STOP: centralization produced no source changes"
-  exit 25
+  exit 24
 fi
 
 git -c user.name="nora953" -c user.email="45720986+nora953@users.noreply.github.com" \
@@ -100,11 +97,11 @@ printf '\n=== REMOTE SAFETY RECHECK ===\n'
 git fetch github "$BRANCH" "$COORDINATOR"
 [[ "$(git rev-parse "github/$COORDINATOR")" == "$GOLDEN" ]] || {
   echo "STOP: coordinator moved during validation"
-  exit 26
+  exit 25
 }
-[[ "$(git rev-parse "github/$BRANCH")" == "$EXPECTED_HEAD" ]] || {
+[[ "$(git rev-parse "github/$BRANCH")" == "$BRANCH_HEAD" ]] || {
   echo "STOP: branch moved during validation"
-  exit 27
+  exit 26
 }
 
 git push github "HEAD:refs/heads/$BRANCH"
