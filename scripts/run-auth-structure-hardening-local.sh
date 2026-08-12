@@ -52,11 +52,11 @@ SQL
 
 run_auth_regression_tests() {
   pnpm --filter @workspace/api-server exec tsx --test \
-    ./artifacts/api-server/tests/auth-account-repository.test.ts \
-    ./artifacts/api-server/tests/auth-password-service.test.ts \
-    ./artifacts/api-server/tests/auth-policy.test.ts \
-    ./artifacts/api-server/tests/auth-security-store.test.ts \
-    ./artifacts/api-server/tests/auth-cutover-contract.test.mjs
+    ./tests/auth-account-repository.test.ts \
+    ./tests/auth-password-service.test.ts \
+    ./tests/auth-policy.test.ts \
+    ./tests/auth-security-store.test.ts \
+    ./tests/auth-cutover-contract.test.mjs
 
   node --test \
     artifacts/api-server/tests/merchant-session.integration.test.mjs \
@@ -70,7 +70,7 @@ run_auth_regression_tests() {
   FAWRI_AUTH_SECURITY_SECRET='auth-structure-proof-secret-with-more-than-thirty-two-characters' \
   FAWRI_PASSWORD_SALT='auth-structure-proof-password-salt' \
     pnpm --filter @workspace/api-server exec tsx --test \
-      ./artifacts/api-server/tests/auth-postgres-concurrency.integration.test.mjs
+      ./tests/auth-postgres-concurrency.integration.test.mjs
 }
 
 mkdir -p "$CACHE_ROOT"
