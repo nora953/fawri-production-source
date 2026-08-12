@@ -6,12 +6,12 @@ const root = new URL("../", import.meta.url);
 const read = (relative) => readFile(new URL(relative, root), "utf8");
 
 const frontendFilesWithoutLegacyAdminTokenGate = [
-  "../../fawri/src/components/admin/EmergencyReadAccessLauncher.tsx",
-  "../../fawri/src/components/admin/SupportPreviewLauncher.tsx",
-  "../../fawri/src/pages/AdminEmergencyAccessPage.tsx",
-  "../../fawri/src/pages/AdminEmergencySnapshotPage.tsx",
-  "../../fawri/src/pages/AdminSupportPreviewPage.tsx",
-  "../../fawri/src/components/layout/DashboardLayout.tsx",
+  "../fawri/src/components/admin/EmergencyReadAccessLauncher.tsx",
+  "../fawri/src/components/admin/SupportPreviewLauncher.tsx",
+  "../fawri/src/pages/AdminEmergencyAccessPage.tsx",
+  "../fawri/src/pages/AdminEmergencySnapshotPage.tsx",
+  "../fawri/src/pages/AdminSupportPreviewPage.tsx",
+  "../fawri/src/components/layout/DashboardLayout.tsx",
 ];
 
 test("support images run only after Auth v2 cutover validation", async () => {
@@ -41,7 +41,7 @@ test("admin support and emergency UI no longer gates on legacy admin bearer stat
 });
 
 test("dashboard proves the secure admin session before merchant lifecycle routing and fails closed on ambiguity", async () => {
-  const layout = await read("../../fawri/src/components/layout/DashboardLayout.tsx");
+  const layout = await read("../fawri/src/components/layout/DashboardLayout.tsx");
   assert.match(layout, /fetch\('\/api\/auth\/admin\/me'/);
   assert.match(layout, /secureAdminSessionStatus/);
   assert.match(layout, /adminStatus === 'admin'/);
@@ -50,7 +50,7 @@ test("dashboard proves the secure admin session before merchant lifecycle routin
 });
 
 test("leaving an admin route revokes the secure Auth v2 admin session", async () => {
-  const app = await read("../../fawri/src/App.tsx");
+  const app = await read("../fawri/src/App.tsx");
   assert.match(
     app,
     /previous\.startsWith\('\/admin'\) && !location\.startsWith\('\/admin'\)/,
