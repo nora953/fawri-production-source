@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import type { AuthAccount } from "../services/authAccountRepository";
 import { buildGenericOtpResponse } from "../services/authPolicy";
 import {
+  authSecurityStore,
   AuthSecurityStoreError,
   type OtpPurpose,
 } from "../services/authSecurityStore";
@@ -93,14 +94,25 @@ export function devCode(code: string) {
 }
 
 export async function issueOtp(req: Request, target: string, purpose: OtpPurpose) {
-  const issued = await issueMerchantOtpChallengeAuthoritative({
-    target,
-    purpose,
-    ip: requestIp(req),
-  });
+  const issued =
+    purpose === "admin_device_verification"
+      ? authSecurityStore.issueOtpChallenge({
+          target,
+          purpose,
+          ip: requestIp(req),
+        })
+      : await issueMerchantOtpChallengeAuthoritative({
+          target,
+          purpose,
+          ip: requestIp(req),
+        });
   const delivery = await deliverAuthOtp(target, issued.code, purpose);
   if (!delivery.ok) {
-    await revokeMerchantOtpChallengeAuthoritative(issued.challengeId);
+    if (purpose === "admin_device_verification") {
+      authSecurityStore.revokeOtpChallenge(issued.challengeId);
+    } else {
+      await revokeMerchantOtpChallengeAuthoritative(issued.challengeId);
+    }
     throw new AuthSecurityStoreError(delivery.code, delivery.message);
   }
   return issued;
