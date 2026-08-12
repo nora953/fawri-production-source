@@ -71,7 +71,7 @@ run_auth_regression_tests() {
   printf '%s\n' '--- PostgreSQL Auth HTTP concurrency proof ---'
   FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required \
   FAWRI_AUTH_SECURITY_SECRET='auth-structure-proof-secret-with-more-than-thirty-two-characters' \
-  FAWRI_PASSWORD_SALT='auth-structure-proof-password-salt' \
+  FAWRI_PASSWORD_SALT='auth-proof-password-salt' \
     pnpm --filter @workspace/api-server exec tsx --test \
       ./tests/auth-postgres-concurrency.integration.test.mjs
 }
