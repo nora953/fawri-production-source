@@ -62,6 +62,31 @@ function add(findings, sourceFile, node, kind, value) {
   findings.push({ line, column, kind, value: text });
 }
 
+function collectRenderedStringLiterals(findings, sourceFile, expression, kind) {
+  if (!expression) return;
+
+  if (ts.isStringLiteral(expression) || ts.isNoSubstitutionTemplateLiteral(expression)) {
+    add(findings, sourceFile, expression, kind, expression.text);
+    return;
+  }
+
+  if (ts.isConditionalExpression(expression)) {
+    collectRenderedStringLiterals(findings, sourceFile, expression.whenTrue, kind);
+    collectRenderedStringLiterals(findings, sourceFile, expression.whenFalse, kind);
+    return;
+  }
+
+  if (ts.isParenthesizedExpression(expression)) {
+    collectRenderedStringLiterals(findings, sourceFile, expression.expression, kind);
+    return;
+  }
+
+  if (ts.isBinaryExpression(expression) && expression.operatorToken.kind === ts.SyntaxKind.PlusToken) {
+    collectRenderedStringLiterals(findings, sourceFile, expression.left, kind);
+    collectRenderedStringLiterals(findings, sourceFile, expression.right, kind);
+  }
+}
+
 function scanFile(file) {
   const source = fs.readFileSync(file, 'utf8');
   const sourceFile = ts.createSourceFile(
@@ -76,10 +101,21 @@ function scanFile(file) {
   function visit(node) {
     if (ts.isJsxText(node)) {
       add(findings, sourceFile, node, 'jsx-text', node.getText(sourceFile));
+    } else if (ts.isJsxExpression(node)) {
+      collectRenderedStringLiterals(findings, sourceFile, node.expression, 'jsx-expression');
     } else if (ts.isJsxAttribute(node)) {
       const name = node.name.getText(sourceFile);
-      if (STRING_ATTRIBUTES.has(name) && node.initializer && ts.isStringLiteral(node.initializer)) {
-        add(findings, sourceFile, node, `attribute:${name}`, node.initializer.text);
+      if (STRING_ATTRIBUTES.has(name) && node.initializer) {
+        if (ts.isStringLiteral(node.initializer)) {
+          add(findings, sourceFile, node, `attribute:${name}`, node.initializer.text);
+        } else if (ts.isJsxExpression(node.initializer)) {
+          collectRenderedStringLiterals(
+            findings,
+            sourceFile,
+            node.initializer.expression,
+            `attribute-expression:${name}`,
+          );
+        }
       }
     } else if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
       const target = node.expression.expression;
