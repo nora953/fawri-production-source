@@ -1,3 +1,4 @@
+import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import React from 'react';
 import { useI18n } from '@/lib/i18n';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -102,7 +103,7 @@ export function SubscriptionCard({ subscription, onEmergencyActivate }: Subscrip
           <div className="min-w-0">
             <CardTitle className="text-2xl font-bold">{planName}</CardTitle>
             <div className="mt-1 text-sm text-muted-foreground">
-              {subscription.price_iqd.toLocaleString(locale)} IQD {t.per_month}
+              {subscription.price_iqd.toLocaleString(locale)} {COMMON_UI_LABELS.technical.currencyIqd} {t.per_month}
             </div>
           </div>
           <Badge variant={isActive ? 'default' : 'secondary'} className="shrink-0 text-sm">

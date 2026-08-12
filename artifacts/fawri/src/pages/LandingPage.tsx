@@ -1,3 +1,4 @@
+import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import { LANDING_PAGE_LANDING_TRUTH_COPY } from '@/lib/translations/features/pages/LandingPage';
 import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
@@ -423,7 +424,7 @@ export default function LandingPage() {
                       {plan.price}
                     </span>
                     <span className="pb-1 text-sm font-bold text-muted-foreground">
-                      IQD / {t.per_month}
+                      {COMMON_UI_LABELS.technical.currencyIqd} / {t.per_month}
                     </span>
                   </div>
                 </div>
@@ -502,7 +503,7 @@ export default function LandingPage() {
                 {brandName}
               </span>
               <p dir="ltr" className="text-sm font-medium text-muted-foreground">
-                © 2026 Fawri. All rights reserved.
+                {COMMON_UI_LABELS.legal.copyright}
               </p>
             </div>
 

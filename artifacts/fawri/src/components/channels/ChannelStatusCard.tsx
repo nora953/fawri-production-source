@@ -1,3 +1,5 @@
+import { useI18n } from '@/lib/i18n';
+import { COMMON_UI_COPY, COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -20,6 +22,8 @@ export function ChannelStatusCard(props: {
   onDisconnect(channel: ServerChannelSummary): void;
 }) {
   const { channel, busy, onDisconnect } = props;
+  const { lang } = useI18n();
+  const commonCopy = COMMON_UI_COPY[lang];
   const canDisconnect = channel.status === "active" || channel.status === "error";
 
   return (
@@ -41,15 +45,15 @@ export function ChannelStatusCard(props: {
 
       <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
         <div className="rounded-2xl bg-muted/50 p-3">
-          <dt className="text-muted-foreground">Webhook</dt>
+          <dt className="text-muted-foreground">{COMMON_UI_LABELS.technical.webhook}</dt>
           <dd className="mt-1 font-bold">
-            {channel.webhook_subscribed ? "Subscribed" : "Not subscribed"}
+            {channel.webhook_subscribed ? commonCopy.channelSubscribed : commonCopy.channelNotSubscribed}
           </dd>
         </div>
         <div className="rounded-2xl bg-muted/50 p-3">
-          <dt className="text-muted-foreground">Encrypted token</dt>
+          <dt className="text-muted-foreground">{COMMON_UI_LABELS.technical.encryptedToken}</dt>
           <dd className="mt-1 font-bold">
-            {channel.credential_configured ? "Configured" : "Removed"}
+            {channel.credential_configured ? commonCopy.credentialConfigured : commonCopy.credentialRemoved}
           </dd>
         </div>
       </dl>
@@ -68,8 +72,8 @@ export function ChannelStatusCard(props: {
         onClick={() => onDisconnect(channel)}
       >
         {busy || channel.status === "disconnecting"
-          ? "Disconnecting…"
-          : "Disconnect channel"}
+          ? commonCopy.disconnectingChannel
+          : commonCopy.disconnectChannel}
       </Button>
     </article>
   );

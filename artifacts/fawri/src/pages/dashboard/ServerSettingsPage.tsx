@@ -1,3 +1,5 @@
+import { COMMON_UI_COPY } from '@/lib/translations/commonUi';
+import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import { SERVER_SETTINGS_PAGE_COPY } from '@/lib/translations/features/pages/dashboard/ServerSettingsPage';
 import { useEffect, useMemo, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
@@ -123,6 +125,7 @@ export default function ServerSettingsPage() {
   const i18n = useI18n();
   const language = languageCode(i18n);
   const copy = COPY[language];
+  const commonCopy = COMMON_UI_COPY[language];
   const [settings, setSettings] = useState<MerchantSettings | null>(null);
   const [draft, setDraft] = useState<MerchantSettings | null>(null);
   const [areasText, setAreasText] = useState('');
@@ -426,10 +429,10 @@ export default function ServerSettingsPage() {
                 }
                 className="h-11 w-full rounded-md border bg-background px-3"
               >
-                <option value="auto">Auto</option>
-                <option value="ar">العربية</option>
-                <option value="ku">کوردی</option>
-                <option value="en">English</option>
+                <option value="auto">{commonCopy.auto}</option>
+                <option value="ar">{COMMON_UI_LABELS.languageNames.ar}</option>
+                <option value="ku">{COMMON_UI_LABELS.languageNames.ku}</option>
+                <option value="en">{COMMON_UI_LABELS.languageNames.en}</option>
               </select>
             </label>
           </CardContent>

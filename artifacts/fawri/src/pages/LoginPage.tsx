@@ -1,3 +1,4 @@
+import { COMMON_UI_COPY } from '@/lib/translations/commonUi';
 import { LOGIN_PAGE_SECURITY_TEXT } from '@/lib/translations/features/pages/LoginPage';
 import React, { useState } from 'react';
 import { useI18n } from '@/lib/i18n';
@@ -66,6 +67,7 @@ export default function LoginPage() {
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyTab, setPolicyTab] = useState<PolicyTab>('privacy');
   const securityText = LOGIN_PAGE_SECURITY_TEXT[lang];
+  const commonCopy = COMMON_UI_COPY[lang];
 
   const showAuthError = (result: any) => {
     if (result?.code === 'ADMIN_DEVICE_APPROVAL_REQUIRED') {
@@ -169,7 +171,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md rounded-3xl border bg-card p-8 shadow-xl md:translate-y-3">
           <div className="mb-8 flex flex-col items-center text-center">
             <Link href="/" className="mb-4 inline-block text-3xl font-extrabold leading-none tracking-tight text-primary fowri-header-brand-font">
-              {lang === 'en' ? 'Fawri' : lang === 'ku' ? 'فورى' : 'فوري'}
+              {commonCopy.brandName}
             </Link>
 
             <h1 className="fowri-auth-title text-2xl font-extrabold">{t.login_title}</h1>

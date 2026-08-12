@@ -1,3 +1,4 @@
+import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import { SERVER_SAVED_ANSWERS_PAGE_COPY } from '@/lib/translations/features/pages/dashboard/ServerSavedAnswersPage';
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import { BookOpen, Pencil, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
@@ -294,7 +295,7 @@ export default function ServerSavedAnswersPage() {
             <label className="block text-sm font-semibold">
               {copy.language}
               <select className="mt-1 h-10 w-full rounded-md border bg-background px-3" value={form.language} onChange={(event: ChangeEvent<HTMLSelectElement>) => setForm((current) => ({ ...current, language: event.target.value as Language }))}>
-                <option value="ar">العربية</option><option value="ku">کوردی</option><option value="en">English</option>
+                <option value="ar">{COMMON_UI_LABELS.languageNames.ar}</option><option value="ku">{COMMON_UI_LABELS.languageNames.ku}</option><option value="en">{COMMON_UI_LABELS.languageNames.en}</option>
               </select>
             </label>
             <label className="block text-sm font-semibold">

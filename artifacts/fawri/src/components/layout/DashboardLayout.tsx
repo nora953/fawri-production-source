@@ -1,3 +1,4 @@
+import { COMMON_UI_COPY } from '@/lib/translations/commonUi';
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Sidebar } from './Sidebar';
@@ -66,6 +67,7 @@ function AuthorizedDashboard({
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { lang } = useI18n();
+  const commonCopy = COMMON_UI_COPY[lang];
   const [, setLocation] = useLocation();
   const [merchant, setMerchant] = useState<Merchant | undefined>(
     getCurrentMerchant(),
@@ -162,7 +164,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   if (checkingAccess) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4 text-center text-sm font-semibold text-muted-foreground">
-        {lang === 'en' ? 'Checking account access…' : lang === 'ku' ? 'پشکنینی دەستگەیشتن بە هەژمار…' : 'جارٍ التحقق من صلاحية الدخول…'}
+        {commonCopy.checkingAccountAccess}
       </div>
     );
   }
