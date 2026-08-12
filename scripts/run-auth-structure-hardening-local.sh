@@ -45,6 +45,7 @@ require_disposable_postgres() {
 reset_schema() {
   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL' >/dev/null
 DROP SCHEMA IF EXISTS public CASCADE;
+DROP SCHEMA IF EXISTS drizzle CASCADE;
 CREATE SCHEMA public;
 SQL
   FAWRI_ALLOW_MIGRATION_SMOKE=1 pnpm --filter @workspace/db run schema:smoke >/dev/null
