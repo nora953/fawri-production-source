@@ -57,3 +57,28 @@ test("password recovery request and confirmation use the challenge authority", a
   assert.match(routes, /RECOVERY_CONFIRMATION_INVALID/);
   assert.match(routes, /reauthentication_required:\s*true/);
 });
+
+test("owner new-device login requires OTP while assistant new-device login requires owner approval", async () => {
+  const loginSupport = await source("src/routes/auth-login-route-support.ts");
+  const routes = await source("src/routes/auth-public-routes.ts");
+  const types = await source("src/services/authSecurityTypes.ts");
+
+  assert.match(types, /"admin_device_verification"/);
+  assert.doesNotMatch(loginSupport, /FAWRI_OWNER_BOOTSTRAP_DEVICE_ID/);
+  assert.match(
+    loginSupport,
+    /found\.adminProfile\?\.role === "owner_admin"[\s\S]*issueOtp\([\s\S]*"admin_device_verification"[\s\S]*OWNER_DEVICE_OTP_REQUIRED/,
+  );
+  assert.match(loginSupport, /ADMIN_DEVICE_APPROVAL_REQUIRED/);
+  assert.match(routes, /router\.post\("\/admin\/device-otp\/resend"/);
+  assert.match(routes, /router\.post\("\/admin\/device-otp\/verify"/);
+  assert.match(
+    routes,
+    /verifyOtpChallenge\(\{\s*challengeId,\s*target:\s*phone,\s*purpose:\s*"admin_device_verification",\s*code,/s,
+  );
+  assert.match(
+    routes,
+    /setDeviceTrust\(\{\s*deviceRecordId:\s*current\.device\.id,\s*trusted:\s*true,\s*actorAccountId:\s*account\.account\.id,/s,
+  );
+  assert.match(routes, /setAuthSessionCookie\(res, "admin", issued\)/);
+});
