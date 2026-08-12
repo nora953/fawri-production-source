@@ -18,7 +18,10 @@ test("Auth v2 signup and verification are challenge based", async () => {
   assert.match(routes, /router\.post\("\/verify-otp"/);
   assert.match(routes, /challengeId = String\(req\.body\?\.challenge_id \|\| ""\)/);
   assert.match(routes, /if \(!challengeId \|\| !\/\^\\d\{6\}\$\/\.test\(code\)\)/);
-  assert.match(routes, /verifyOtpChallenge\(\{ challengeId, target: phone, purpose: "signup", code/);
+  assert.match(
+    routes,
+    /verifyMerchantOtpChallengeAuthoritative\(\{\s*challengeId,\s*target:\s*phone,\s*purpose:\s*"signup",\s*code,/s,
+  );
 });
 
 test("OTP resend returns a replacement challenge and backend invalidates superseded challenges", async () => {
@@ -47,7 +50,10 @@ test("password recovery request and confirmation use the challenge authority", a
 
   assert.match(routes, /router\.post\("\/password-reset\/confirm"/);
   assert.match(routes, /challengeId = String\(req\.body\?\.challenge_id \|\| ""\)/);
-  assert.match(routes, /verifyOtpChallenge\(\{ challengeId, target: phone, purpose: "password_reset", code/);
+  assert.match(
+    routes,
+    /verifyMerchantOtpChallengeAuthoritative\(\{\s*challengeId,\s*target:\s*phone,\s*purpose:\s*"password_reset",\s*code,/s,
+  );
   assert.match(routes, /RECOVERY_CONFIRMATION_INVALID/);
   assert.match(routes, /reauthentication_required:\s*true/);
 });
