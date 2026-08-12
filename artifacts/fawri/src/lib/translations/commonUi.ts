@@ -32,6 +32,8 @@ export const COMMON_UI_LABELS = {
 type CommonUiCopy = {
   all: string;
   auto: string;
+  brandName: string;
+  checkingAccountAccess: string;
   channelSubscribed: string;
   channelNotSubscribed: string;
   credentialConfigured: string;
@@ -44,6 +46,8 @@ export const COMMON_UI_COPY: Record<Lang, CommonUiCopy> = {
   ar: {
     all: 'الكل',
     auto: 'تلقائي',
+    brandName: 'فوري',
+    checkingAccountAccess: 'جارٍ التحقق من صلاحية الدخول…',
     channelSubscribed: 'مشترك',
     channelNotSubscribed: 'غير مشترك',
     credentialConfigured: 'مهيأ',
@@ -54,6 +58,8 @@ export const COMMON_UI_COPY: Record<Lang, CommonUiCopy> = {
   ku: {
     all: 'هەموو',
     auto: 'خۆکار',
+    brandName: 'فورى',
+    checkingAccountAccess: 'پشکنینی دەستگەیشتن بە هەژمار…',
     channelSubscribed: 'بەشدارە',
     channelNotSubscribed: 'بەشدار نییە',
     credentialConfigured: 'ڕێکخراوە',
@@ -64,6 +70,8 @@ export const COMMON_UI_COPY: Record<Lang, CommonUiCopy> = {
   en: {
     all: 'All',
     auto: 'Auto',
+    brandName: 'Fawri',
+    checkingAccountAccess: 'Checking account access…',
     channelSubscribed: 'Subscribed',
     channelNotSubscribed: 'Not subscribed',
     credentialConfigured: 'Configured',
