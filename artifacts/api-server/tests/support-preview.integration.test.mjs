@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import crypto from "node:crypto";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
@@ -10,6 +11,8 @@ import test from "node:test";
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const apiRoot = path.resolve(testDir, "..");
 const serverEntry = path.join(apiRoot, "dist", "index.mjs");
+const ADMIN_DEVICE_ID = "support-preview-admin-device-01";
+const AUTH_SECURITY_SECRET = "fawri-support-preview-auth-security-secret";
 
 async function reservePort() {
   const server = net.createServer();
@@ -38,11 +41,31 @@ async function waitForServer(baseUrl, child, logs) {
   throw new Error(`API did not become ready.\n${logs()}`);
 }
 
+function getSetCookie(response) {
+  const values =
+    typeof response.headers.getSetCookie === "function"
+      ? response.headers.getSetCookie()
+      : [];
+  return values[0] || response.headers.get("set-cookie") || "";
+}
+
+function cookiePair(setCookie, cookieName) {
+  assert.match(setCookie, new RegExp(`^${cookieName}=`));
+  return setCookie.split(";", 1)[0];
+}
+
+function deviceHash(deviceId) {
+  return crypto
+    .createHmac("sha256", AUTH_SECURITY_SECRET)
+    .update(`device:${deviceId}`)
+    .digest("base64url");
+}
+
 async function json(response) {
   return { response, body: await response.json().catch(() => null) };
 }
 
-test("support preview is consent-bound, secret-safe, and read-only", async (t) => {
+test("support preview is consent-bound, secret-safe, read-only, and authenticated by Auth v2", async (t) => {
   const runtimeDir = await mkdtemp(path.join(os.tmpdir(), "fawri-support-preview-"));
   const dataDir = path.join(runtimeDir, "data");
   await mkdir(dataDir, { recursive: true });
@@ -160,6 +183,31 @@ test("support preview is consent-bound, secret-safe, and read-only", async (t) =
   );
 
   await writeFile(
+    path.join(dataDir, "auth-security.json"),
+    JSON.stringify({
+      version: 1,
+      sessions: [],
+      devices: [
+        {
+          id: "support-preview-admin-device-record",
+          account_id: "assistant-admin",
+          account_kind: "admin",
+          device_hash: deviceHash(ADMIN_DEVICE_ID),
+          label: "Support preview test admin",
+          status: "trusted",
+          created_at: approvedAt,
+          last_seen_at: approvedAt,
+          trusted_at: approvedAt,
+          trusted_by: "assistant-admin",
+        },
+      ],
+      otp_challenges: [],
+      login_attempts: [],
+      audit_events: [],
+    }),
+  );
+
+  await writeFile(
     path.join(dataDir, "fawri-runtime-db.json"),
     JSON.stringify({
       productsByMerchant: {
@@ -220,7 +268,7 @@ test("support preview is consent-bound, secret-safe, and read-only", async (t) =
       FAWRI_PASSWORD_SALT: "test-password-salt",
       FAWRI_ADMIN_SESSION_SECRET: "test-admin-session-secret",
       FAWRI_MERCHANT_SESSION_SECRET: "test-merchant-session-secret",
-      FAWRI_ADMIN_DEVICE_TRUST_ENFORCED: "false",
+      FAWRI_AUTH_SECURITY_SECRET: AUTH_SECURITY_SECRET,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -245,19 +293,29 @@ test("support preview is consent-bound, secret-safe, and read-only", async (t) =
   await waitForServer(baseUrl, child, () => output);
 
   const login = await json(
-    await fetch(`${baseUrl}/api/auth/login`, {
+    await fetch(`${baseUrl}/api/auth/admin/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-Fawri-Device-Id": ADMIN_DEVICE_ID,
+      },
       body: JSON.stringify({
         phone: "07333333333",
         password: "Assistant1@",
+        device_id: ADMIN_DEVICE_ID,
+        device_label: "Support preview test admin",
       }),
     }),
   );
   assert.equal(login.response.status, 200);
   assert.equal(login.body.account_type, "admin");
+  const adminCookie = cookiePair(
+    getSetCookie(login.response),
+    "fawri_admin_session_v2",
+  );
   const headers = {
-    Authorization: `Bearer ${login.body.admin_token}`,
+    Cookie: adminCookie,
+    "X-Fawri-Device-Id": ADMIN_DEVICE_ID,
     "Content-Type": "application/json",
   };
 

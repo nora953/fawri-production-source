@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import crypto from "node:crypto";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import net from "node:net";
 import os from "node:os";
@@ -10,6 +11,10 @@ import test from "node:test";
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const apiRoot = path.resolve(testDir, "..");
 const serverEntry = path.join(apiRoot, "dist", "index.mjs");
+const AUTH_SECURITY_SECRET = "fawri-emergency-read-auth-security-secret";
+const OWNER_DEVICE_ID = "emergency-owner-admin-device-01";
+const TRUSTED_DEVICE_ID = "emergency-trusted-admin-device-01";
+const UNTRUSTED_DEVICE_ID = "emergency-untrusted-admin-device-01";
 
 async function reservePort() {
   const server = net.createServer();
@@ -38,28 +43,60 @@ async function waitForServer(baseUrl, child, logs) {
   throw new Error(`API did not become ready.\n${logs()}`);
 }
 
+function getSetCookie(response) {
+  const values =
+    typeof response.headers.getSetCookie === "function"
+      ? response.headers.getSetCookie()
+      : [];
+  return values[0] || response.headers.get("set-cookie") || "";
+}
+
+function cookiePair(setCookie, cookieName) {
+  assert.match(setCookie, new RegExp(`^${cookieName}=`));
+  return setCookie.split(";", 1)[0];
+}
+
+function deviceHash(deviceId) {
+  return crypto
+    .createHmac("sha256", AUTH_SECURITY_SECRET)
+    .update(`device:${deviceId}`)
+    .digest("base64url");
+}
+
 async function json(response) {
   return { response, body: await response.json().catch(() => null) };
 }
 
-async function loginAdmin(baseUrl, phone, password) {
+async function loginAdmin(baseUrl, phone, password, deviceId, deviceLabel) {
   const result = await json(
-    await fetch(`${baseUrl}/api/auth/login`, {
+    await fetch(`${baseUrl}/api/auth/admin/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, password }),
+      headers: {
+        "Content-Type": "application/json",
+        "X-Fawri-Device-Id": deviceId,
+      },
+      body: JSON.stringify({
+        phone,
+        password,
+        device_id: deviceId,
+        device_label: deviceLabel,
+      }),
     }),
   );
   assert.equal(result.response.status, 200);
   assert.equal(result.body.account_type, "admin");
-  assert.ok(result.body.admin_token);
+  const cookie = cookiePair(
+    getSetCookie(result.response),
+    "fawri_admin_session_v2",
+  );
   return {
-    Authorization: `Bearer ${result.body.admin_token}`,
+    Cookie: cookie,
+    "X-Fawri-Device-Id": deviceId,
     "Content-Type": "application/json",
   };
 }
 
-test("emergency read access is owner-controlled, secret-safe, read-only, and audited", async (t) => {
+test("emergency read access is owner-controlled, secret-safe, read-only, audited, and authenticated by Auth v2", async (t) => {
   const runtimeDir = await mkdtemp(path.join(os.tmpdir(), "fawri-emergency-read-"));
   const dataDir = path.join(runtimeDir, "data");
   await mkdir(dataDir, { recursive: true });
@@ -169,6 +206,55 @@ test("emergency read access is owner-controlled, secret-safe, read-only, and aud
   );
 
   await writeFile(
+    path.join(dataDir, "auth-security.json"),
+    JSON.stringify({
+      version: 1,
+      sessions: [],
+      devices: [
+        {
+          id: "emergency-owner-device-record",
+          account_id: "owner-admin",
+          account_kind: "admin",
+          device_hash: deviceHash(OWNER_DEVICE_ID),
+          label: "Emergency owner test device",
+          status: "trusted",
+          created_at: createdAt,
+          last_seen_at: createdAt,
+          trusted_at: createdAt,
+          trusted_by: "owner-admin",
+        },
+        {
+          id: "emergency-trusted-device-record",
+          account_id: "trusted-admin",
+          account_kind: "admin",
+          device_hash: deviceHash(TRUSTED_DEVICE_ID),
+          label: "Emergency responder test device",
+          status: "trusted",
+          created_at: createdAt,
+          last_seen_at: createdAt,
+          trusted_at: createdAt,
+          trusted_by: "owner-admin",
+        },
+        {
+          id: "emergency-untrusted-device-record",
+          account_id: "untrusted-admin",
+          account_kind: "admin",
+          device_hash: deviceHash(UNTRUSTED_DEVICE_ID),
+          label: "Emergency unauthorized responder test device",
+          status: "trusted",
+          created_at: createdAt,
+          last_seen_at: createdAt,
+          trusted_at: createdAt,
+          trusted_by: "owner-admin",
+        },
+      ],
+      otp_challenges: [],
+      login_attempts: [],
+      audit_events: [],
+    }),
+  );
+
+  await writeFile(
     path.join(dataDir, "fawri-runtime-db.json"),
     JSON.stringify({
       productsByMerchant: {
@@ -228,7 +314,7 @@ test("emergency read access is owner-controlled, secret-safe, read-only, and aud
       FAWRI_PASSWORD_SALT: "test-password-salt",
       FAWRI_ADMIN_SESSION_SECRET: "test-admin-session-secret",
       FAWRI_MERCHANT_SESSION_SECRET: "test-merchant-session-secret",
-      FAWRI_ADMIN_DEVICE_TRUST_ENFORCED: "false",
+      FAWRI_AUTH_SECURITY_SECRET: AUTH_SECURITY_SECRET,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -256,16 +342,22 @@ test("emergency read access is owner-controlled, secret-safe, read-only, and aud
     baseUrl,
     "07222222222",
     "Owner123@",
+    OWNER_DEVICE_ID,
+    "Emergency owner test device",
   );
   const trustedHeaders = await loginAdmin(
     baseUrl,
     "07333333333",
     "Assistant1@",
+    TRUSTED_DEVICE_ID,
+    "Emergency responder test device",
   );
   const untrustedHeaders = await loginAdmin(
     baseUrl,
     "07444444444",
     "Untrusted1@",
+    UNTRUSTED_DEVICE_ID,
+    "Emergency unauthorized responder test device",
   );
 
   const untrustedAttempt = await json(

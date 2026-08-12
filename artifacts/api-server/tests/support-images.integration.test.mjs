@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
+import crypto from "node:crypto";
 import {
   access,
   mkdtemp,
@@ -17,6 +18,8 @@ import test from "node:test";
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const apiRoot = path.resolve(testDir, "..");
 const serverEntry = path.join(apiRoot, "dist", "index.mjs");
+const ADMIN_DEVICE_ID = "support-images-admin-device-01";
+const AUTH_SECURITY_SECRET = "fawri-support-images-auth-security-secret";
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9ZQmcAAAAASUVORK5CYII=",
   "base64",
@@ -57,9 +60,16 @@ function getSetCookie(response) {
   return values[0] || response.headers.get("set-cookie") || "";
 }
 
-function cookiePair(setCookie) {
-  assert.match(setCookie, /^fawri_merchant_session=/);
+function cookiePair(setCookie, cookieName) {
+  assert.match(setCookie, new RegExp(`^${cookieName}=`));
   return setCookie.split(";", 1)[0];
+}
+
+function deviceHash(deviceId) {
+  return crypto
+    .createHmac("sha256", AUTH_SECURITY_SECRET)
+    .update(`device:${deviceId}`)
+    .digest("base64url");
 }
 
 async function json(response) {
@@ -84,7 +94,7 @@ function merchant(id, phone, password) {
   };
 }
 
-test("support images are private, validated, and tenant-bound", async (t) => {
+test("support images are private, validated, tenant-bound, and authenticated by Auth v2", async (t) => {
   const runtimeDir = await mkdtemp(path.join(os.tmpdir(), "fawri-support-images-"));
   const dataDir = path.join(runtimeDir, "data");
   await mkdir(dataDir, { recursive: true });
@@ -136,6 +146,30 @@ test("support images are private, validated, and tenant-bound", async (t) => {
       admin_notes: {},
     }),
   );
+  await writeFile(
+    path.join(dataDir, "auth-security.json"),
+    JSON.stringify({
+      version: 1,
+      sessions: [],
+      devices: [
+        {
+          id: "support-images-admin-device-record",
+          account_id: "assistant-admin",
+          account_kind: "admin",
+          device_hash: deviceHash(ADMIN_DEVICE_ID),
+          label: "Support images test admin",
+          status: "trusted",
+          created_at: createdAt,
+          last_seen_at: createdAt,
+          trusted_at: createdAt,
+          trusted_by: "assistant-admin",
+        },
+      ],
+      otp_challenges: [],
+      login_attempts: [],
+      audit_events: [],
+    }),
+  );
   await writeFile(path.join(dataDir, "fawri-runtime-db.json"), "{}");
   await writeFile(path.join(dataDir, "saved-answers.json"), JSON.stringify({ answers: [] }));
   await writeFile(path.join(dataDir, "training-requests.json"), JSON.stringify({ requests: [] }));
@@ -156,7 +190,7 @@ test("support images are private, validated, and tenant-bound", async (t) => {
       FAWRI_PASSWORD_SALT: "test-password-salt",
       FAWRI_ADMIN_SESSION_SECRET: "test-admin-session-secret",
       FAWRI_MERCHANT_SESSION_SECRET: "test-merchant-session-secret",
-      FAWRI_ADMIN_DEVICE_TRUST_ENFORCED: "false",
+      FAWRI_AUTH_SECURITY_SECRET: AUTH_SECURITY_SECRET,
     },
     stdio: ["ignore", "pipe", "pipe"],
   });
@@ -189,22 +223,39 @@ test("support images are private, validated, and tenant-bound", async (t) => {
       }),
     );
     assert.equal(result.response.status, 200);
-    return cookiePair(getSetCookie(result.response));
+    assert.equal(result.body.account_type, "merchant");
+    return cookiePair(
+      getSetCookie(result.response),
+      "fawri_merchant_session_v2",
+    );
   }
 
   const cookieA = await merchantLogin("07111111111", "MerchantA1@");
   const cookieB = await merchantLogin("07222222222", "MerchantB1@");
   const adminLogin = await json(
-    await fetch(`${baseUrl}/api/auth/login`, {
+    await fetch(`${baseUrl}/api/auth/admin/login`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone: "07333333333", password: "Assistant1@" }),
+      headers: {
+        "Content-Type": "application/json",
+        "X-Fawri-Device-Id": ADMIN_DEVICE_ID,
+      },
+      body: JSON.stringify({
+        phone: "07333333333",
+        password: "Assistant1@",
+        device_id: ADMIN_DEVICE_ID,
+        device_label: "Support images test admin",
+      }),
     }),
   );
   assert.equal(adminLogin.response.status, 200);
   assert.equal(adminLogin.body.account_type, "admin");
+  const adminCookie = cookiePair(
+    getSetCookie(adminLogin.response),
+    "fawri_admin_session_v2",
+  );
   const adminHeaders = {
-    Authorization: `Bearer ${adminLogin.body.admin_token}`,
+    Cookie: adminCookie,
+    "X-Fawri-Device-Id": ADMIN_DEVICE_ID,
   };
 
   const merchantUpload = await json(

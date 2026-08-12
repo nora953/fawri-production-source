@@ -6,7 +6,6 @@ import { BottomNav } from './BottomNav';
 import { useLocation } from 'wouter';
 import {
   clearMerchantTabSession,
-  getAdminSessionToken,
   getCurrentMerchant,
   refreshCurrentMerchantFromApi,
 } from '@/lib/store';
@@ -21,6 +20,26 @@ const PRODUCT_READ_ONLY_STATUSES = new Set([
   'final_warning',
   'eligible_for_deletion',
 ]);
+
+async function secureAdminSessionStatus(
+  signal: AbortSignal,
+): Promise<'admin' | 'none' | 'unknown'> {
+  try {
+    const response = await fetch('/api/auth/admin/me', {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      signal,
+    });
+    if (response.ok) {
+      const data = await response.json().catch(() => null);
+      return data?.ok === true && data?.admin?.is_admin === true ? 'admin' : 'none';
+    }
+    return response.status === 401 ? 'none' : 'unknown';
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
+    return 'unknown';
+  }
+}
 
 function AuthorizedDashboard({
   children,
@@ -80,15 +99,6 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     let controller: AbortController | null = null;
     let profileLoaded = false;
 
-    if (getAdminSessionToken()) {
-      clearMerchantTabSession();
-      setLocation('/admin');
-      setCheckingAccess(false);
-      return () => {
-        active = false;
-      };
-    }
-
     const routeToLifecycle = () => {
       clearMerchantTabSession();
       setMerchant(undefined);
@@ -101,6 +111,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       controller = new AbortController();
 
       try {
+        const adminStatus = await secureAdminSessionStatus(controller.signal);
+        if (!active) return;
+        if (adminStatus === 'admin') {
+          clearMerchantTabSession();
+          setMerchant(undefined);
+          setCheckingAccess(false);
+          setLocation('/admin');
+          return;
+        }
+        if (adminStatus === 'unknown') {
+          setCheckingAccess(true);
+          timer = window.setTimeout(() => void verifyAccess(), 5_000);
+          return;
+        }
+
         const lifecycle = await checkMerchantLifecycle(controller.signal);
         if (!active) return;
 

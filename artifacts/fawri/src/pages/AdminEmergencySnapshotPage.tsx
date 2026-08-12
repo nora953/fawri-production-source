@@ -26,7 +26,6 @@ import { useI18n } from "@/lib/i18n";
 import {
   clearSession,
   getAdminAuthHeaders,
-  getAdminSessionToken,
 } from "@/lib/store";
 
 type UiLang = "ar" | "ku" | "en";
@@ -223,10 +222,6 @@ export default function AdminEmergencySnapshotPage({
 
   const load = useCallback(
     async (silent = false) => {
-      if (!getAdminSessionToken()) {
-        setLocation("/login");
-        return;
-      }
       if (!silent) setLoading(true);
       setError(false);
       try {

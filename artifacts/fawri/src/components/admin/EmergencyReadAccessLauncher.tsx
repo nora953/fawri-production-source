@@ -9,7 +9,6 @@ import { useI18n } from '@/lib/i18n';
 import {
   clearSession,
   getAdminAuthHeaders,
-  getAdminSessionToken,
 } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 
@@ -64,8 +63,7 @@ export default function EmergencyReadAccessLauncher() {
     if (
       !location.startsWith('/admin') ||
       location.startsWith('/admin/support-preview/') ||
-      location === '/admin/emergency-access' ||
-      !getAdminSessionToken()
+      location === '/admin/emergency-access'
     ) {
       setVisible(false);
       setPendingCount(0);

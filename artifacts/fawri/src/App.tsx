@@ -195,7 +195,7 @@ function AdminSessionRevalidator() {
   useEffect(() => {
     const previous = previousLocation.current;
     previousLocation.current = location;
-    if (previous.startsWith('/admin') && location === '/login') {
+    if (previous.startsWith('/admin') && !location.startsWith('/admin')) {
       void secureAdminLogout();
     }
   }, [location]);

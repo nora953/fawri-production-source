@@ -22,7 +22,6 @@ import { useI18n } from '@/lib/i18n';
 import {
   clearSession,
   getAdminAuthHeaders,
-  getAdminSessionToken,
 } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -238,10 +237,6 @@ export default function AdminEmergencyAccessPage() {
   }, [setLocation]);
 
   const loadAll = useCallback(async (silent = false) => {
-    if (!getAdminSessionToken()) {
-      setLocation('/login');
-      return;
-    }
     if (!silent) {
       setLoading(true);
       setLoadError(false);
@@ -274,7 +269,7 @@ export default function AdminEmergencyAccessPage() {
     } finally {
       if (!silent) setLoading(false);
     }
-  }, [handleUnauthorized, headers, setLocation]);
+  }, [handleUnauthorized, headers]);
 
   useEffect(() => {
     void loadAll();

@@ -4,7 +4,7 @@ import { Eye, Loader2, ShieldCheck } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { getAdminAuthHeaders, getAdminSessionToken } from "@/lib/store";
+import { getAdminAuthHeaders } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 
 type InspectionRequest = {
@@ -39,7 +39,7 @@ export default function SupportPreviewLauncher() {
   const text = lang === "en" ? TEXT.en : lang === "ku" ? TEXT.ku : TEXT.ar;
 
   useEffect(() => {
-    if (!getAdminSessionToken() || !location.startsWith("/admin")) return;
+    if (!location.startsWith("/admin")) return;
 
     if (location.startsWith("/admin/support-preview/")) {
       let active = true;
@@ -62,6 +62,11 @@ export default function SupportPreviewLauncher() {
           );
           if (!active || response.ok) return;
           const data = await response.json().catch(() => null);
+          if (response.status === 401) {
+            redirecting = true;
+            setLocation("/login");
+            return;
+          }
           if (response.status !== 410) return;
 
           redirecting = true;
@@ -109,6 +114,13 @@ export default function SupportPreviewLauncher() {
             cache: "no-store",
           }),
         ]);
+        if (!active) return;
+        if (adminResponse.status === 401 || ticketsResponse.status === 401) {
+          setAdmin(null);
+          setTickets([]);
+          setLocation("/login");
+          return;
+        }
         const adminData = await adminResponse.json().catch(() => null);
         const ticketsData = await ticketsResponse.json().catch(() => null);
         if (!active) return;
@@ -155,7 +167,6 @@ export default function SupportPreviewLauncher() {
   }, [admin, tickets]);
 
   if (
-    !getAdminSessionToken() ||
     !location.startsWith("/admin") ||
     location.startsWith("/admin/support-preview/") ||
     approved.length === 0

@@ -219,7 +219,6 @@ app.use(
     allowMetrics: allowInternalMetricsRequest,
   }),
 );
-app.use("/api/auth/support-images", supportImagesRouter);
 app.use(
   express.json({
     verify(req, _res, buffer) {
@@ -242,6 +241,11 @@ app.use(enforceMerchantWebhookSubscriptionAccess);
 app.use("/api/auth", authSecurityRouter);
 app.use("/api/auth", enforceAuthOrigin);
 app.use(enforceAuthCutoverCompatibility);
+
+// Support images remain on the transitional business router, but authentication
+// must be resolved by Auth v2 first. The compatibility layer injects only a
+// short-lived server-derived credential for the legacy-shaped support handler.
+app.use("/api/auth/support-images", supportImagesRouter);
 
 app.use((req, res, next) => {
   const inspectionRequestPath =
