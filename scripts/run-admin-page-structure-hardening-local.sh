@@ -46,10 +46,14 @@ printf '\n=== ADMIN PAGE LINE COUNTS ===\n'
 wc -l \
   artifacts/fawri/src/pages/AdminPage.tsx \
   artifacts/fawri/src/pages/admin/AdminPageSections.tsx \
+  artifacts/fawri/src/pages/admin/AdminPageDialogs.tsx \
+  artifacts/fawri/src/pages/admin/AdminPageParts.ts \
   artifacts/fawri/src/pages/admin/useAdminPageController.tsx \
   artifacts/fawri/src/pages/admin/AdminPageView.tsx
 
-if find artifacts/fawri/src/pages/admin -maxdepth 1 -type f -name 'AdminPage*.tsx' -o -name 'useAdminPageController.tsx' | xargs wc -l | awk '$1 >= 1800 { bad=1 } END { exit bad ? 1 : 0 }'; then
+if find artifacts/fawri/src/pages/admin -maxdepth 1 -type f \( -name 'AdminPage*.ts' -o -name 'AdminPage*.tsx' -o -name 'useAdminPageController.tsx' \) -print0 \
+  | xargs -0 wc -l \
+  | awk '$2 != "total" && $1 >= 1800 { bad=1 } END { exit bad ? 1 : 0 }'; then
   :
 else
   echo "STOP: AdminPage split still contains a critical file"
