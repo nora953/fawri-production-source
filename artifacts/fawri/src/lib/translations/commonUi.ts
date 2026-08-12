@@ -29,17 +29,46 @@ export const COMMON_UI_LABELS = {
   },
 } as const;
 
-export const COMMON_UI_COPY: Record<Lang, { all: string; auto: string }> = {
+type CommonUiCopy = {
+  all: string;
+  auto: string;
+  channelSubscribed: string;
+  channelNotSubscribed: string;
+  credentialConfigured: string;
+  credentialRemoved: string;
+  disconnectingChannel: string;
+  disconnectChannel: string;
+};
+
+export const COMMON_UI_COPY: Record<Lang, CommonUiCopy> = {
   ar: {
     all: 'الكل',
     auto: 'تلقائي',
+    channelSubscribed: 'مشترك',
+    channelNotSubscribed: 'غير مشترك',
+    credentialConfigured: 'مهيأ',
+    credentialRemoved: 'محذوف',
+    disconnectingChannel: 'جارٍ فصل القناة…',
+    disconnectChannel: 'فصل القناة',
   },
   ku: {
     all: 'هەموو',
     auto: 'خۆکار',
+    channelSubscribed: 'بەشدارە',
+    channelNotSubscribed: 'بەشدار نییە',
+    credentialConfigured: 'ڕێکخراوە',
+    credentialRemoved: 'سڕاوەتەوە',
+    disconnectingChannel: 'کەناڵەکە دادەبڕدرێت…',
+    disconnectChannel: 'پچڕاندنی کەناڵ',
   },
   en: {
     all: 'All',
     auto: 'Auto',
+    channelSubscribed: 'Subscribed',
+    channelNotSubscribed: 'Not subscribed',
+    credentialConfigured: 'Configured',
+    credentialRemoved: 'Removed',
+    disconnectingChannel: 'Disconnecting…',
+    disconnectChannel: 'Disconnect channel',
   },
 };
