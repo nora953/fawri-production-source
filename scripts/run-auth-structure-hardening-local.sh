@@ -16,6 +16,19 @@ cleanup() {
 }
 trap cleanup EXIT
 
+run_auth_regression_tests() {
+  (
+    cd artifacts/api-server
+    env -u DATABASE_URL node --test \
+      tests/merchant-session.integration.test.mjs \
+      tests/merchant-status-access.integration.test.mjs \
+      tests/admin-permissions.integration.test.mjs \
+      tests/admin-work-monitor.integration.test.mjs \
+      tests/subscription-lifecycle.integration.test.mjs \
+      tests/support-preview.integration.test.mjs
+  )
+}
+
 mkdir -p "$CACHE_ROOT"
 git fetch github "$BRANCH" "$COORDINATOR"
 
@@ -38,6 +51,13 @@ export PYTHONDONTWRITEBYTECODE=1
 
 printf '=== DEPENDENCIES ===\n'
 pnpm install --offline --frozen-lockfile --ignore-scripts >/dev/null
+
+printf '\n=== BASELINE BUILD ===\n'
+pnpm run build
+
+printf '\n=== BASELINE AUTH REGRESSION TESTS ===\n'
+run_auth_regression_tests
+printf 'AUTH_BASELINE_REGRESSION_READY\n'
 
 printf '\n=== AUTH REFACTOR TOOLING FIX ===\n'
 python3 - <<'PY'
@@ -69,34 +89,12 @@ fi
 printf '\n=== DIFF CHECK ===\n'
 git diff --check
 
-printf '\n=== TYPECHECK + BUILD ===\n'
+printf '\n=== POST-REFACTOR TYPECHECK + BUILD ===\n'
 pnpm run build
 
-printf '\n=== AUTH SOURCE IMPORT SMOKE ===\n'
-(
-  cd artifacts/api-server
-  NODE_ENV=test \
-  LOG_LEVEL=error \
-  FAWRI_PASSWORD_SALT=test-password-salt \
-  FAWRI_ADMIN_SESSION_SECRET=test-admin-session-secret \
-  FAWRI_MERCHANT_SESSION_SECRET=test-merchant-session-secret \
-  META_APP_ID=test-meta-app \
-  META_CONFIG_ID=test-meta-config \
-  META_REDIRECT_URI=http://127.0.0.1/api/meta/callback \
-  pnpm exec tsx -e "import('./src/app.ts').then(() => { console.log('AUTH_SOURCE_IMPORT_READY'); process.exit(0); }).catch((error) => { console.error(error?.stack || error); process.exit(1); })"
-)
-
-printf '\n=== AUTH REGRESSION TESTS ===\n'
-(
-  cd artifacts/api-server
-  node --test \
-    tests/merchant-session.integration.test.mjs \
-    tests/merchant-status-access.integration.test.mjs \
-    tests/admin-permissions.integration.test.mjs \
-    tests/admin-work-monitor.integration.test.mjs \
-    tests/subscription-lifecycle.integration.test.mjs \
-    tests/support-preview.integration.test.mjs
-)
+printf '\n=== POST-REFACTOR AUTH REGRESSION TESTS ===\n'
+run_auth_regression_tests
+printf 'AUTH_POST_REFACTOR_REGRESSION_READY\n'
 
 printf '\n=== STRUCTURE AUDIT ===\n'
 set +e
