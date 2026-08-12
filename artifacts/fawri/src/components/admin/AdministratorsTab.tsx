@@ -1,4 +1,4 @@
-import { ADMINISTRATORS_TAB_ADMINISTRATOR_PASSWORD_TEXT, ADMINISTRATORS_TAB_WORK_MONITOR_TEXT } from '@/lib/translations/features/components/admin/AdministratorsTab';
+import { ADMINISTRATORS_TAB_ADMINISTRATOR_PASSWORD_TEXT, ADMINISTRATORS_TAB_WORK_MONITOR_TEXT, ADMINISTRATORS_TAB_PERMISSION_TEXT, ADMINISTRATORS_TAB_ADMINISTRATOR_STATUS_TEXT } from '@/lib/translations/features/components/admin/AdministratorsTab';
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
@@ -227,95 +227,9 @@ export default function AdministratorsTab({
     "manage_support",
   ];
 
-  const permissionText = {
-    ar: {
-      button: "إدارة الصلاحيات",
-      title: "صلاحيات المسؤول المساعد",
-      description: "حدد الأقسام والإجراءات التي يستطيع هذا المسؤول الوصول إليها.",
-      view_merchants: "عرض التجار",
-      manage_merchant_status: "إدارة حالة التجار",
-      manage_subscriptions: "إدارة الاشتراكات",
-      manage_channels: "إدارة القنوات",
-      view_logs: "عرض سجل النشاط",
-      inspect_merchant_sessions: "جلسات فحص حساب التاجر",
-      manage_support: "إدارة الدعم",
-      cancel: "إلغاء",
-      save: "حفظ الصلاحيات",
-      saving: "جارٍ الحفظ...",
-      success: "تم تحديث صلاحيات المسؤول بنجاح",
-      error: "تعذر تحديث الصلاحيات",
-      connectionError: "تعذر الاتصال بالخادم",
-    },
-    en: {
-      button: "Manage permissions",
-      title: "Assistant administrator permissions",
-      description: "Select the sections and actions this administrator can access.",
-      view_merchants: "View merchants",
-      manage_merchant_status: "Manage merchant status",
-      manage_subscriptions: "Manage subscriptions",
-      manage_channels: "Manage channels",
-      view_logs: "View activity logs",
-      inspect_merchant_sessions: "Inspect merchant sessions",
-      manage_support: "Manage support",
-      cancel: "Cancel",
-      save: "Save permissions",
-      saving: "Saving...",
-      success: "Administrator permissions updated successfully",
-      error: "Could not update permissions",
-      connectionError: "Could not connect to the server",
-    },
-    ku: {
-      button: "بەڕێوەبردنی دەسەڵاتەکان",
-      title: "دەسەڵاتەکانی بەڕێوەبەری یاریدەدەر",
-      description: "ئەو بەشانە دیاری بکە کە ئەم بەڕێوەبەرە دەتوانێت دەستی پێیان بگات.",
-      view_merchants: "بینینی بازرگانان",
-      manage_merchant_status: "بەڕێوەبردنی دۆخی بازرگانان",
-      manage_subscriptions: "بەڕێوەبردنی بەشداریکردنەکان",
-      manage_channels: "بەڕێوەبردنی کەناڵەکان",
-      view_logs: "بینینی تۆماری چالاکی",
-      inspect_merchant_sessions: "دانیشتنەکانی پشکنینی هەژماری بازرگان",
-      manage_support: "بەڕێوەبردنی پشتگیری",
-      cancel: "هەڵوەشاندنەوە",
-      save: "پاشەکەوتکردنی دەسەڵاتەکان",
-      saving: "پاشەکەوت دەکرێت...",
-      success: "دەسەڵاتەکانی بەڕێوەبەر بە سەرکەوتوویی نوێکرانەوە",
-      error: "نوێکردنەوەی دەسەڵاتەکان سەرکەوتوو نەبوو",
-      connectionError: "پەیوەندی بە ڕاژەکارەوە نەکرا",
-    },
-  }[language];
+  const permissionText = ADMINISTRATORS_TAB_PERMISSION_TEXT[language];
 
-  const administratorStatusText = {
-    ar: {
-      enable: "تفعيل المسؤول",
-      disable: "تعطيل المسؤول",
-      enabling: "جارٍ التفعيل...",
-      disabling: "جارٍ التعطيل...",
-      enabledSuccess: "تم تفعيل المسؤول بنجاح",
-      disabledSuccess: "تم تعطيل المسؤول بنجاح",
-      error: "تعذر تحديث حالة المسؤول",
-      connectionError: "تعذر الاتصال بالخادم",
-    },
-    en: {
-      enable: "Enable administrator",
-      disable: "Disable administrator",
-      enabling: "Enabling...",
-      disabling: "Disabling...",
-      enabledSuccess: "Administrator enabled successfully",
-      disabledSuccess: "Administrator disabled successfully",
-      error: "Unable to update administrator status",
-      connectionError: "Unable to connect to the server",
-    },
-    ku: {
-      enable: "چالاککردنی بەڕێوەبەر",
-      disable: "ناچالاککردنی بەڕێوەبەر",
-      enabling: "چالاک دەکرێت...",
-      disabling: "ناچالاک دەکرێت...",
-      enabledSuccess: "بەڕێوەبەر بە سەرکەوتوویی چالاک کرا",
-      disabledSuccess: "بەڕێوەبەر بە سەرکەوتوویی ناچالاک کرا",
-      error: "نوێکردنەوەی دۆخی بەڕێوەبەر سەرکەوتوو نەبوو",
-      connectionError: "پەیوەندی بە ڕاژەکارەوە نەکرا",
-    },
-  }[language];
+  const administratorStatusText = ADMINISTRATORS_TAB_ADMINISTRATOR_STATUS_TEXT[language];
 
   const administratorPasswordText = ADMINISTRATORS_TAB_ADMINISTRATOR_PASSWORD_TEXT[language];
 
