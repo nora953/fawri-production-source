@@ -28,9 +28,12 @@ function signup(repo: AuthAccountRepository, phone: string, requestedPlan?: Requ
 }
 
 test("server signup validates requested_plan against the canonical plan set", () => {
-  assert.match(routeSource, /requestedPlanInput !== "silver" && requestedPlanInput !== "gold" && requestedPlanInput !== "diamond"/);
+  assert.match(
+    routeSource,
+    /requestedPlanInput\s*!==\s*"silver"\s*&&\s*requestedPlanInput\s*!==\s*"gold"\s*&&\s*requestedPlanInput\s*!==\s*"diamond"/s,
+  );
   assert.match(routeSource, /INVALID_REQUESTED_PLAN/);
-  assert.match(routeSource, /requestedPlan = requestedPlanInput/);
+  assert.match(routeSource, /requestedPlan\s*=\s*requestedPlanInput/);
 });
 
 test("repository stores canonical plans and OTP verification preserves them", () => {
@@ -65,8 +68,8 @@ test("generic signup remains null, invalid repository input fails closed, and pe
 });
 
 test("merchant payload keeps requested plan and signup has no subscription or payment side effect", () => {
-  assert.match(payloadSource, /requested_plan: profile\.requestedPlan/);
-  assert.match(payloadSource, /merchant_profile: account\.merchantProfile/);
+  assert.match(payloadSource, /requested_plan:\s*profile\.requestedPlan/);
+  assert.match(payloadSource, /merchant_profile:\s*account\.merchantProfile/);
   const signupRoute = routeSource.slice(
     routeSource.indexOf('router.post("/signup"'),
     routeSource.indexOf('router.post("/otp/resend"'),

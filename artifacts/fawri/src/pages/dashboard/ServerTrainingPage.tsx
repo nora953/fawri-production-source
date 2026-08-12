@@ -1,3 +1,4 @@
+import { COMMON_UI_COPY } from '@/lib/translations/commonUi';
 import { SERVER_TRAINING_PAGE_COPY } from '@/lib/translations/features/pages/dashboard/ServerTrainingPage';
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent } from "react";
 import { Brain, CheckCircle2, RefreshCw, Search, ShieldAlert, XCircle } from "lucide-react";
@@ -78,6 +79,7 @@ export default function ServerTrainingPage() {
   const { lang, dir } = useI18n();
   const language: Language = lang === "ku" || lang === "en" ? lang : "ar";
   const copy = COPY[language];
+  const commonCopy = COMMON_UI_COPY[language];
   const [requests, setRequests] = useState<TrainingRequest[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
@@ -185,7 +187,7 @@ export default function ServerTrainingPage() {
             <Input value={query} onChange={(event: ChangeEvent<HTMLInputElement>) => setQuery(event.target.value)} placeholder={copy.search} className="ps-10" />
           </div>
           <select className="h-10 rounded-md border bg-background px-3 text-sm" value={filter} onChange={(event: ChangeEvent<HTMLSelectElement>) => setFilter(event.target.value as TrainingStatus | "all")}>
-            <option value="all">All</option>
+            <option value="all">{commonCopy.all}</option>
             {Object.entries(copy.statuses).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </div>

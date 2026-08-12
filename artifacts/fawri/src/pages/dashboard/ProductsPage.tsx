@@ -1,3 +1,4 @@
+import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import { PRODUCTS_PAGE_MESSAGES, PRODUCTS_PAGE_NUMBER_LOCALE } from '@/lib/translations/features/pages/dashboard/ProductsPage';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
@@ -595,14 +596,14 @@ function VariantDraftEditor({
           dir="ltr"
           value={variant.sku}
           onChange={event => onChange({ ...variant, sku: event.target.value })}
-          placeholder="SKU"
+          placeholder={COMMON_UI_LABELS.technical.sku}
           className="h-10 rounded-xl"
         />
         <Input
           dir="ltr"
           value={variant.barcode}
           onChange={event => onChange({ ...variant, barcode: event.target.value })}
-          placeholder="Barcode"
+          placeholder={COMMON_UI_LABELS.technical.barcode}
           className="h-10 rounded-xl"
         />
       </div>
@@ -716,7 +717,7 @@ function InventoryControl({
         <div className="min-w-0">
           <p className="text-sm font-bold">{variant?.name || product.name}</p>
           {optionSummary && <p className="text-xs text-muted-foreground">{optionSummary}</p>}
-          {variant?.sku && <p className="text-xs text-muted-foreground">SKU: {variant.sku}</p>}
+          {variant?.sku && <p className="text-xs text-muted-foreground">{COMMON_UI_LABELS.technical.sku}: {variant.sku}</p>}
         </div>
         <Badge variant="outline" className="rounded-full">
           {variant?.stock_quantity ?? product.stock_quantity}
@@ -1351,7 +1352,7 @@ export default function ProductsPage() {
                         </p>
                       )}
                       {product.weight_g !== undefined && (
-                        <p>{localMessage(lang, 'weightKg')}: {(product.weight_g / 1000).toLocaleString(numberLocale)} kg</p>
+                        <p>{localMessage(lang, 'weightKg')}: {(product.weight_g / 1000).toLocaleString(numberLocale)} {COMMON_UI_LABELS.technical.unitKg}</p>
                       )}
                     </div>
                   </div>
@@ -1585,7 +1586,7 @@ export default function ProductsPage() {
                     dir="ltr"
                     value={form.sku}
                     onChange={event => updateForm('sku', event.target.value)}
-                    placeholder="SKU-001"
+                    placeholder={COMMON_UI_LABELS.technical.skuExample}
                     className="h-11 rounded-xl"
                   />
                 </div>

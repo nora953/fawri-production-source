@@ -1,3 +1,4 @@
+import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import React from 'react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -229,7 +230,7 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
             {orders.slice(0, 5).map((order) => (
               <div key={order.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
                 <span>
-                  {order.requested_plan.toUpperCase()} · {order.amount_iqd.toLocaleString(locale)} IQD
+                  {order.requested_plan.toUpperCase()} · {order.amount_iqd.toLocaleString(locale)} {COMMON_UI_LABELS.technical.currencyIqd}
                 </span>
                 <Badge variant={order.status === 'paid' ? 'default' : 'secondary'}>
                   {order.status === 'paid_reconciliation_required' ? text.reconciliation : order.status}

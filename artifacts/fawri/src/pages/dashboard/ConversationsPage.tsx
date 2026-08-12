@@ -1,3 +1,4 @@
+import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import { CONVERSATIONS_PAGE_SAVE_ANSWER_COPY } from '@/lib/translations/features/pages/dashboard/ConversationsPage';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
@@ -590,9 +591,9 @@ export default function ConversationsPage() {
                   disabled={savingAnswer}
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                 >
-                  <option value="ar">العربية</option>
-                  <option value="ku">کوردی</option>
-                  <option value="en">English</option>
+                  <option value="ar">{COMMON_UI_LABELS.languageNames.ar}</option>
+                  <option value="ku">{COMMON_UI_LABELS.languageNames.ku}</option>
+                  <option value="en">{COMMON_UI_LABELS.languageNames.en}</option>
                 </select>
               </label>
 

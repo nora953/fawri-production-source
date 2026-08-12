@@ -1,3 +1,4 @@
+import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import { MERCHANT_SETTINGS_PAGE_UI_COPY } from '@/lib/translations/features/pages/dashboard/MerchantSettingsPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -47,9 +48,9 @@ export default function MerchantSettingsPage() {
                 onChange={event => setLang(event.target.value as UiLanguage)}
                 className="h-11 w-full rounded-md border bg-background px-3"
               >
-                <option value="ar">العربية</option>
-                <option value="ku">کوردی</option>
-                <option value="en">English</option>
+                <option value="ar">{COMMON_UI_LABELS.languageNames.ar}</option>
+                <option value="ku">{COMMON_UI_LABELS.languageNames.ku}</option>
+                <option value="en">{COMMON_UI_LABELS.languageNames.en}</option>
               </select>
             </label>
 
