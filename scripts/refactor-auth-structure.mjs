@@ -212,7 +212,7 @@ function sourceLinesForStatement(source, statement) {
 
 function tryPartition(source, statements, targetLines, externalNames = new Set()) {
   const { byName, kindByName } = buildNameIndex(statements);
-  const localNames = new Set(byName.keys());
+  const localNames = new Set([...byName.keys(), ...externalNames]);
   const refs = statements.map((statement) => refsForStatement(statement, localNames));
   const parts = [];
   let currentPart = 0;
