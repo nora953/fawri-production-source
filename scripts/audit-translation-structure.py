@@ -18,6 +18,8 @@ ADMIN_TRANSLATIONS = FRONTEND / "lib" / "admin-translations.ts"
 KEY_RE = re.compile(r"^\s{2}([A-Za-z_][A-Za-z0-9_]*):", re.MULTILINE)
 ADMIN_LANGUAGE_RE = re.compile(r"^  (ar|ku|en):\s*\{", re.MULTILINE)
 ADMIN_DIRECT_KEY_RE = re.compile(r"^    ([A-Za-z_][A-Za-z0-9_]*):", re.MULTILINE)
+ADMIN_KU_OBJECT_RE = re.compile(r"^const kuTranslations\s*=\s*\{", re.MULTILINE)
+ADMIN_KU_DIRECT_KEY_RE = re.compile(r"^  ([A-Za-z_][A-Za-z0-9_]*):", re.MULTILINE)
 JSX_TEXT_RE = re.compile(r">\s*([^<>{}\n][^<>{}\n]*?[A-Za-z\u0600-\u06ff][^<>{}\n]*?)\s*<")
 STRING_PROP_RE = re.compile(
     r"\b(?:title|placeholder|aria-label|description|label)\s*=\s*([\"'])([^\"']*[A-Za-z\u0600-\u06ff][^\"']*)\1"
@@ -93,6 +95,20 @@ def extract_admin_language_keys(text: str) -> dict[str, set[str]]:
         close_brace = _matching_brace(text, open_brace)
         block = text[open_brace + 1 : close_brace]
         result[lang] = set(ADMIN_DIRECT_KEY_RE.findall(block))
+
+    # Kurdish intentionally remains a separate object because the admin runtime
+    # layers a handful of Kurdish overrides onto the shared admin contract.
+    # Treat that object as the canonical `ku` authority instead of reporting a
+    # false missing-language blocker merely because it is not nested inside the
+    # `adminTranslations` object literal.
+    ku_match = ADMIN_KU_OBJECT_RE.search(text)
+    if ku_match is not None:
+        open_brace = text.find("{", ku_match.start())
+        if open_brace >= 0:
+            close_brace = _matching_brace(text, open_brace)
+            block = text[open_brace + 1 : close_brace]
+            result["ku"] = set(ADMIN_KU_DIRECT_KEY_RE.findall(block))
+
     return result
 
 
