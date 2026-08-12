@@ -14,6 +14,9 @@ function normalizeRecipient(phone: string): string {
 }
 
 function buildMessage(code: string, purpose: OtpPurpose): string {
+  if (purpose === "admin_device_verification") {
+    return `Fawri verification code: ${code}\nUse this code to verify a new owner administrator device. It expires in 10 minutes.`;
+  }
   if (purpose === "password_reset" || purpose === "admin_recovery") {
     return `Fawri verification code: ${code}\nUse this code to reset your password. It expires in 10 minutes.`;
   }

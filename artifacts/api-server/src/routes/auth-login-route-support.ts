@@ -23,7 +23,12 @@ import {
   sendAuthError,
   setAuthSessionCookie,
 } from "../middleware/authSession";
-import { payload } from "./auth-route-common";
+import {
+  devCode,
+  issueOtp,
+  otpError,
+  payload,
+} from "./auth-route-common";
 
 export async function login(
   req: Request,
@@ -114,20 +119,38 @@ export async function login(
       deviceId,
       deviceLabel: requestDeviceLabel(req),
     });
-    const bootstrap = String(process.env.FAWRI_OWNER_BOOTSTRAP_DEVICE_ID || "");
-    if (
-      found.adminProfile?.role === "owner_admin" &&
-      bootstrap &&
-      bootstrap === deviceId &&
-      device.status !== "trusted"
-    ) {
-      authSecurityStore.setDeviceTrust({
-        deviceRecordId: device.id,
-        trusted: true,
-        actorAccountId: found.account.id,
-      });
-    }
     if (!authSecurityStore.isDeviceTrusted(found.account.id, "admin", deviceId)) {
+      if (found.adminProfile?.role === "owner_admin") {
+        try {
+          const issued = await issueOtp(
+            req,
+            phone,
+            "admin_device_verification",
+          );
+          await recordMerchantLoginAttemptAuthoritative({
+            target: phone,
+            accountKind: kind,
+            ip: requestIp(req),
+            success: false,
+            reason: "owner_device_otp_required",
+            accountId: found.account.id,
+          });
+          res.status(403).json({
+            ok: false,
+            code: "OWNER_DEVICE_OTP_REQUIRED",
+            error: "owner administrator device verification is required",
+            device_record_id: device.id,
+            challenge_id: issued.challengeId,
+            expires_at: issued.expiresAt,
+            retry_after_seconds: issued.retryAfterSeconds,
+            ...devCode(issued.code),
+          });
+        } catch (error) {
+          otpError(res, error);
+        }
+        return;
+      }
+
       await recordMerchantLoginAttemptAuthoritative({
         target: phone,
         accountKind: kind,
