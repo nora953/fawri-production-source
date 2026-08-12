@@ -17,17 +17,43 @@ import {
 } from '@/lib/authClientCutover';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
+import OtpResendSection from '@/components/OtpResendSection';
 import { PolicyModal, type PolicyTab, getPolicyReadLabel } from '@/components/PolicyModal';
+
+type OwnerDeviceChallenge = {
+  phone: string;
+  challengeId: string;
+  deviceRecordId: string;
+  expiresAt: string;
+  retryAfterSeconds: number;
+};
 
 function cacheMerchantLocally(merchant: any) {
   if (!merchant?.id) return;
   const merchants = getMerchants();
   const cleaned = merchants.filter(item => item.id !== merchant.id && item.phone !== merchant.phone);
   saveMerchants([merchant, ...cleaned]);
+}
+
+function ownerDeviceChallengeFromResult(
+  phone: string,
+  result: any,
+): OwnerDeviceChallenge | null {
+  const challengeId = String(result?.challenge_id || '').trim();
+  const deviceRecordId = String(result?.device_record_id || '').trim();
+  if (!challengeId || !deviceRecordId) return null;
+  return {
+    phone,
+    challengeId,
+    deviceRecordId,
+    expiresAt: String(result?.expires_at || '').trim(),
+    retryAfterSeconds: Math.max(0, Number(result?.retry_after_seconds) || 0),
+  };
 }
 
 async function loginRequest(
@@ -66,6 +92,10 @@ export default function LoginPage() {
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyTab, setPolicyTab] = useState<PolicyTab>('privacy');
+  const [ownerDeviceChallenge, setOwnerDeviceChallenge] = useState<OwnerDeviceChallenge | null>(null);
+  const [ownerOtpValue, setOwnerOtpValue] = useState('');
+  const [ownerOtpError, setOwnerOtpError] = useState('');
+  const [ownerOtpLoading, setOwnerOtpLoading] = useState(false);
   const securityText = LOGIN_PAGE_SECURITY_TEXT[lang];
   const commonCopy = COMMON_UI_COPY[lang];
 
@@ -78,6 +108,65 @@ export default function LoginPage() {
       toast.error(securityText.deviceRequired);
     } else {
       toast.error(t.login_error_invalid);
+    }
+  };
+
+  const handleOwnerOtpSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!ownerDeviceChallenge || ownerOtpValue.length !== 6) return;
+
+    setOwnerOtpLoading(true);
+    setOwnerOtpError('');
+
+    try {
+      const deviceId = getStableAuthDeviceId();
+      const response = await fetch('/api/auth/admin/device-otp/verify', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Fawri-Device-Id': deviceId,
+        },
+        body: JSON.stringify({
+          phone: ownerDeviceChallenge.phone,
+          challenge_id: ownerDeviceChallenge.challengeId,
+          device_record_id: ownerDeviceChallenge.deviceRecordId,
+          code: ownerOtpValue,
+          device_id: deviceId,
+          device_label: authDeviceLabel(),
+        }),
+      });
+      const result = await response.json().catch(() => null);
+
+      if (
+        response.ok &&
+        result?.ok &&
+        result?.admin_profile?.role === 'owner_admin' &&
+        result?.admin?.is_admin === true
+      ) {
+        await secureMerchantLogout();
+        clearMerchantTabSession();
+        setOwnerDeviceChallenge(null);
+        setOwnerOtpValue('');
+        toast.success(t.login_success_admin);
+        setLocation('/admin');
+        return;
+      }
+
+      if (result?.code === 'OTP_INVALID') {
+        setOwnerOtpError(t.otp_invalid_code);
+      } else if (result?.code === 'ADMIN_TRUSTED_DEVICE_LIMIT_REACHED') {
+        setOwnerOtpError(securityText.trustedDeviceLimit);
+      } else if (result?.code === 'ADMIN_DEVICE_ID_REQUIRED') {
+        setOwnerOtpError(securityText.deviceRequired);
+      } else {
+        setOwnerOtpError(t.otp_connection_error);
+      }
+    } catch (error) {
+      console.error('Owner device OTP verification failed:', error);
+      setOwnerOtpError(t.otp_connection_error);
+    } finally {
+      setOwnerOtpLoading(false);
     }
   };
 
@@ -156,6 +245,20 @@ export default function LoginPage() {
         return;
       }
 
+      if (adminAttempt.result?.code === 'OWNER_DEVICE_OTP_REQUIRED') {
+        const challenge = ownerDeviceChallengeFromResult(
+          cleanPhone,
+          adminAttempt.result,
+        );
+        if (challenge) {
+          setOwnerDeviceChallenge(challenge);
+          setOwnerOtpValue('');
+          setOwnerOtpError('');
+          setPassword('');
+          return;
+        }
+      }
+
       showAuthError(adminAttempt.result);
     } catch (error) {
       console.error('Login request failed:', error);
@@ -174,67 +277,129 @@ export default function LoginPage() {
               {commonCopy.brandName}
             </Link>
 
-            <h1 className="fowri-auth-title text-2xl font-extrabold">{t.login_title}</h1>
+            <h1 className="fowri-auth-title text-2xl font-extrabold">
+              {ownerDeviceChallenge ? t.otp_title : t.login_title}
+            </h1>
+            {ownerDeviceChallenge && (
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                {securityText.ownerDeviceVerification}
+              </p>
+            )}
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-            <div className="space-y-2">
-              <div className="flex min-h-5 items-center justify-between gap-3">
-                <Label htmlFor="phone" className="leading-5">{t.phone}</Label>
-              </div>
-              <Input
-                id="phone"
-                type="tel"
+          {ownerDeviceChallenge ? (
+            <form onSubmit={handleOwnerOtpSubmit} className="flex flex-col items-center space-y-6" noValidate>
+              <InputOTP
+                maxLength={6}
+                value={ownerOtpValue}
+                onChange={(value) => {
+                  setOwnerOtpValue(value);
+                  setOwnerOtpError('');
+                }}
                 dir="ltr"
-                value={phone}
-                onChange={event => setPhone(event.target.value)}
-                placeholder="07..."
-                required
-                className="h-12 rounded-xl"
-                data-testid="input-phone"
+              >
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+
+              <OtpResendSection
+                phone={ownerDeviceChallenge.phone}
+                purpose="admin_device_verification"
+                deviceRecordId={ownerDeviceChallenge.deviceRecordId}
+                initialRetryAfterSeconds={ownerDeviceChallenge.retryAfterSeconds}
+                onResent={(replacement) => {
+                  setOwnerDeviceChallenge(current => current ? {
+                    ...current,
+                    challengeId: replacement.challengeId,
+                    expiresAt: replacement.expiresAt,
+                    retryAfterSeconds: replacement.retryAfterSeconds,
+                  } : current);
+                  setOwnerOtpValue('');
+                  setOwnerOtpError('');
+                }}
               />
-            </div>
 
-            <div className="space-y-2">
-              <div className="flex min-h-5 items-center justify-between gap-3">
-                <Label htmlFor="password" className="leading-5">{t.password}</Label>
+              {ownerOtpError && (
+                <p className="text-sm font-medium text-destructive">
+                  {ownerOtpError}
+                </p>
+              )}
 
-                <button
-                  type="button"
-                  onClick={() => setForgotPasswordOpen(true)}
-                  className="text-sm font-semibold leading-5 text-primary hover:underline"
-                >
-                  {t.forgot_password}
-                </button>
+              <Button
+                type="submit"
+                className="h-12 w-full rounded-xl text-base font-bold"
+                disabled={ownerOtpLoading || ownerOtpValue.length !== 6}
+                data-testid="button-owner-device-otp"
+              >
+                {ownerOtpLoading ? '...' : t.otp_verify}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+              <div className="space-y-2">
+                <div className="flex min-h-5 items-center justify-between gap-3">
+                  <Label htmlFor="phone" className="leading-5">{t.phone}</Label>
+                </div>
+                <Input
+                  id="phone"
+                  type="tel"
+                  dir="ltr"
+                  value={phone}
+                  onChange={event => setPhone(event.target.value)}
+                  placeholder="07..."
+                  required
+                  className="h-12 rounded-xl"
+                  data-testid="input-phone"
+                />
               </div>
 
-              <PasswordInput
-                id="password"
-                dir="ltr"
-                value={password}
-                onChange={event => setPassword(event.target.value)}
-                required
-                className="h-12 rounded-xl"
-                data-testid="input-password"
-              />
-            </div>
+              <div className="space-y-2">
+                <div className="flex min-h-5 items-center justify-between gap-3">
+                  <Label htmlFor="password" className="leading-5">{t.password}</Label>
 
-            <Button
-              type="submit"
-              className="h-12 w-full rounded-xl text-base font-bold"
-              disabled={loading}
-              data-testid="button-login"
-            >
-              {loading ? '...' : t.login}
-            </Button>
+                  <button
+                    type="button"
+                    onClick={() => setForgotPasswordOpen(true)}
+                    className="text-sm font-semibold leading-5 text-primary hover:underline"
+                  >
+                    {t.forgot_password}
+                  </button>
+                </div>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              {t.no_account}{' '}
-              <Link href="/signup" className="font-semibold text-primary hover:underline">
-                {t.create_account}
-              </Link>
-            </div>
-          </form>
+                <PasswordInput
+                  id="password"
+                  dir="ltr"
+                  value={password}
+                  onChange={event => setPassword(event.target.value)}
+                  required
+                  className="h-12 rounded-xl"
+                  data-testid="input-password"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="h-12 w-full rounded-xl text-base font-bold"
+                disabled={loading}
+                data-testid="button-login"
+              >
+                {loading ? '...' : t.login}
+              </Button>
+
+              <div className="mt-6 text-center text-sm text-muted-foreground">
+                {t.no_account}{' '}
+                <Link href="/signup" className="font-semibold text-primary hover:underline">
+                  {t.create_account}
+                </Link>
+              </div>
+            </form>
+          )}
 
           <div className="mt-8 border-t pt-6 text-center">
             <button
