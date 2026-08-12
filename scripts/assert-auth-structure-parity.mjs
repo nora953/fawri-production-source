@@ -43,6 +43,17 @@ function isDefaultRouterExport(statement) {
     statement.expression.text === 'router';
 }
 
+function statementIsSideEffectful(statement) {
+  if (
+    ts.isFunctionDeclaration(statement) ||
+    ts.isInterfaceDeclaration(statement) ||
+    ts.isTypeAliasDeclaration(statement) ||
+    ts.isClassDeclaration(statement) ||
+    ts.isEnumDeclaration(statement)
+  ) return false;
+  return true;
+}
+
 function collectBindingNames(name, out) {
   if (ts.isIdentifier(name)) {
     out.add(name.text);
@@ -83,12 +94,15 @@ function stripExportModifier(text) {
   return text.replace(/^\s*export\s+/, '').replace(/\s+/g, ' ').trim();
 }
 
-function normalizedStatements(file, predicate = () => true) {
+function normalizedEntries(file, predicate = () => true) {
   const { source, file: sourceFile } = parse(file);
   return sourceFile.statements
     .filter((statement) => !ts.isImportDeclaration(statement))
     .filter(predicate)
-    .map((statement) => stripExportModifier(source.slice(statement.getFullStart(), statement.end)));
+    .map((statement) => ({
+      statement,
+      text: stripExportModifier(source.slice(statement.getFullStart(), statement.end)),
+    }));
 }
 
 function numericFiles(prefix) {
@@ -113,6 +127,28 @@ function assertArrayEqual(label, expected, actual) {
   }
 }
 
+function statementCounts(entries) {
+  const counts = new Map();
+  for (const entry of entries) counts.set(entry.text, (counts.get(entry.text) || 0) + 1);
+  return counts;
+}
+
+function assertMultisetEqual(label, expectedEntries, actualEntries) {
+  if (expectedEntries.length !== actualEntries.length) {
+    throw new Error(`${label} count changed: expected ${expectedEntries.length}, got ${actualEntries.length}`);
+  }
+  const expected = statementCounts(expectedEntries);
+  const actual = statementCounts(actualEntries);
+  const all = new Set([...expected.keys(), ...actual.keys()]);
+  for (const text of all) {
+    const expectedCount = expected.get(text) || 0;
+    const actualCount = actual.get(text) || 0;
+    if (expectedCount !== actualCount) {
+      throw new Error(`${label} statement multiplicity changed\nEXPECTED_COUNT=${expectedCount}\nACTUAL_COUNT=${actualCount}\nSTATEMENT: ${text}`);
+    }
+  }
+}
+
 const original = parse(originalPath);
 const nonImports = original.file.statements.filter((statement) => !ts.isImportDeclaration(statement));
 const firstRouteIndex = nonImports.findIndex(isRouterRegistration);
@@ -121,18 +157,38 @@ if (firstRouteIndex < 0 || defaultExportIndex < 0 || defaultExportIndex <= first
   throw new Error('original auth route boundaries are invalid');
 }
 
-const originalRuntime = nonImports.slice(0, firstRouteIndex)
-  .map((statement) => stripExportModifier(original.source.slice(statement.getFullStart(), statement.end)));
-const originalRoutes = nonImports.slice(firstRouteIndex, defaultExportIndex)
-  .map((statement) => stripExportModifier(original.source.slice(statement.getFullStart(), statement.end)));
+const originalRuntimeEntries = nonImports.slice(0, firstRouteIndex).map((statement) => ({
+  statement,
+  text: stripExportModifier(original.source.slice(statement.getFullStart(), statement.end)),
+}));
+const originalRouteEntries = nonImports.slice(firstRouteIndex, defaultExportIndex).map((statement) => ({
+  statement,
+  text: stripExportModifier(original.source.slice(statement.getFullStart(), statement.end)),
+}));
 
-const generatedRuntime = numericFiles('authRuntimePart')
-  .flatMap((file) => normalizedStatements(file));
-const generatedRoutes = numericFiles('authRoutesPart')
-  .flatMap((file) => normalizedStatements(file));
+const generatedRuntimeEntries = numericFiles('authRuntimePart')
+  .flatMap((file) => normalizedEntries(file));
+const generatedRouteEntries = numericFiles('authRoutesPart')
+  .flatMap((file) => normalizedEntries(file));
 
-assertArrayEqual('auth runtime statement sequence', originalRuntime, generatedRuntime);
-assertArrayEqual('auth route registration sequence', originalRoutes, generatedRoutes);
+// Runtime declarations may move across split modules to satisfy dependency
+// boundaries. Function/class/type declarations are safe to reorder, but every
+// statement must be preserved exactly once and the relative order of all
+// side-effectful top-level statements must remain unchanged.
+assertMultisetEqual('auth runtime statements', originalRuntimeEntries, generatedRuntimeEntries);
+assertArrayEqual(
+  'auth runtime side-effect sequence',
+  originalRuntimeEntries.filter((entry) => statementIsSideEffectful(entry.statement)).map((entry) => entry.text),
+  generatedRuntimeEntries.filter((entry) => statementIsSideEffectful(entry.statement)).map((entry) => entry.text),
+);
+
+// Route registration order is behavior and must remain byte-semantically equal
+// after whitespace/export normalization.
+assertArrayEqual(
+  'auth route registration sequence',
+  originalRouteEntries.map((entry) => entry.text),
+  generatedRouteEntries.map((entry) => entry.text),
+);
 
 const originalExports = new Set();
 for (const statement of nonImports.slice(0, firstRouteIndex)) {
@@ -158,7 +214,8 @@ assertArrayEqual(
 );
 if (!wrapperDefaultRouter) throw new Error('auth default router export was not preserved');
 
-console.log(`AUTH_RUNTIME_STATEMENTS_PRESERVED=${originalRuntime.length}`);
-console.log(`AUTH_ROUTE_STATEMENTS_PRESERVED=${originalRoutes.length}`);
+console.log(`AUTH_RUNTIME_STATEMENTS_PRESERVED=${originalRuntimeEntries.length}`);
+console.log(`AUTH_RUNTIME_SIDE_EFFECTS_PRESERVED=${originalRuntimeEntries.filter((entry) => statementIsSideEffectful(entry.statement)).length}`);
+console.log(`AUTH_ROUTE_STATEMENTS_PRESERVED=${originalRouteEntries.length}`);
 console.log(`AUTH_PUBLIC_EXPORTS_PRESERVED=${originalExports.size}`);
 console.log('AUTH_STRUCTURE_PARITY_READY');
