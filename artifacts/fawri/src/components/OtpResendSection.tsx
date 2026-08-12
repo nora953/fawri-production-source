@@ -8,6 +8,7 @@ export type OtpResendChallenge = {
   challengeId: string;
   expiresAt: string;
   retryAfterSeconds: number;
+  devCode?: string;
 };
 
 type OtpResendSectionProps = {
@@ -27,12 +28,18 @@ type ResendResponse = {
   challenge_id?: string;
   expires_at?: string;
   retry_after_seconds?: number;
+  devCode?: string;
 };
 
 function clampSeconds(value: unknown): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
   return Math.max(0, Math.floor(parsed));
+}
+
+function previewDevCode(value: unknown): string | undefined {
+  const code = String(value || '').trim();
+  return /^\d{6}$/.test(code) ? code : undefined;
 }
 
 function formatCountdown(totalSeconds: number): string {
@@ -171,6 +178,7 @@ export default function OtpResendSection({
         challengeId,
         expiresAt: String(result.expires_at || '').trim(),
         retryAfterSeconds: serverRetryAfter,
+        devCode: previewDevCode(result.devCode),
       });
     } catch (error) {
       console.error('OTP resend failed:', error);
