@@ -7,29 +7,74 @@ GOLDEN="33bd13d412bb10c67c6d3769e16474387f18e110"
 CACHE_ROOT="${TMPDIR:-$HOME/.cache/fawri-validation}"
 WORKTREE="$CACHE_ROOT/auth-structure-$$"
 AUDIT_LOG="$CACHE_ROOT/auth-structure-audit-$$.log"
+ORIGINAL_AUTH="$CACHE_ROOT/auth-original-$$.ts"
 
 cleanup() {
   cd "$HOME/fawri-production-source" 2>/dev/null || true
   git worktree remove --force "$WORKTREE" >/dev/null 2>&1 || true
   rm -rf "$WORKTREE" >/dev/null 2>&1 || true
-  rm -f "$AUDIT_LOG" >/dev/null 2>&1 || true
+  rm -f "$AUDIT_LOG" "$ORIGINAL_AUTH" >/dev/null 2>&1 || true
 }
 trap cleanup EXIT
 
+require_disposable_postgres() {
+  [[ -n "${DATABASE_URL:-}" ]] || {
+    echo "STOP: DATABASE_URL is required for the disposable local PostgreSQL proof"
+    exit 30
+  }
+
+  local host db
+  host="$(node -e 'const u=new URL(process.argv[1]); console.log(u.hostname)' "$DATABASE_URL")"
+  db="$(node -e 'const u=new URL(process.argv[1]); console.log(u.pathname.replace(/^\//, ""))' "$DATABASE_URL")"
+  if [[ "$host" != "127.0.0.1" && "$host" != "localhost" ]]; then
+    echo "STOP: auth structure validation permits local PostgreSQL only; got $host"
+    exit 31
+  fi
+  [[ "$db" == "fawri_ci" ]] || {
+    echo "STOP: disposable database must be exactly fawri_ci; got $db"
+    exit 32
+  }
+
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -Atqc 'SELECT current_database()' | grep -qx 'fawri_ci' || {
+    echo "STOP: local fawri_ci PostgreSQL is not reachable"
+    exit 33
+  }
+  echo "LOCAL_POSTGRES_READY database=fawri_ci host=$host"
+}
+
+reset_schema() {
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL' >/dev/null
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+SQL
+  FAWRI_ALLOW_MIGRATION_SMOKE=1 pnpm --filter @workspace/db run schema:smoke >/dev/null
+}
+
 run_auth_regression_tests() {
-  (
-    cd artifacts/api-server
-    env -u DATABASE_URL node --test \
-      tests/merchant-session.integration.test.mjs \
-      tests/merchant-status-access.integration.test.mjs \
-      tests/admin-permissions.integration.test.mjs \
-      tests/admin-work-monitor.integration.test.mjs \
-      tests/subscription-lifecycle.integration.test.mjs \
-      tests/support-preview.integration.test.mjs
-  )
+  pnpm --filter @workspace/api-server exec tsx --test \
+    ./artifacts/api-server/tests/auth-account-repository.test.ts \
+    ./artifacts/api-server/tests/auth-password-service.test.ts \
+    ./artifacts/api-server/tests/auth-policy.test.ts \
+    ./artifacts/api-server/tests/auth-security-store.test.ts \
+    ./artifacts/api-server/tests/auth-cutover-contract.test.mjs
+
+  node --test \
+    artifacts/api-server/tests/merchant-session.integration.test.mjs \
+    artifacts/api-server/tests/merchant-status-access.integration.test.mjs \
+    artifacts/api-server/tests/admin-permissions.integration.test.mjs \
+    artifacts/api-server/tests/admin-work-monitor.integration.test.mjs \
+    artifacts/api-server/tests/subscription-lifecycle.integration.test.mjs \
+    artifacts/api-server/tests/support-preview.integration.test.mjs
+
+  FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required \
+  FAWRI_AUTH_SECURITY_SECRET='auth-structure-proof-secret-with-more-than-thirty-two-characters' \
+  FAWRI_PASSWORD_SALT='auth-structure-proof-password-salt' \
+    pnpm --filter @workspace/api-server exec tsx --test \
+      ./artifacts/api-server/tests/auth-postgres-concurrency.integration.test.mjs
 }
 
 mkdir -p "$CACHE_ROOT"
+cd "$HOME/fawri-production-source"
 git fetch github "$BRANCH" "$COORDINATOR"
 
 COORD_HEAD="$(git rev-parse "github/$COORDINATOR")"
@@ -45,6 +90,8 @@ MERGE_BASE="$(git merge-base "$GOLDEN" "$BRANCH_HEAD")"
   exit 22
 }
 
+require_disposable_postgres
+
 git worktree add --detach "$WORKTREE" "$BRANCH_HEAD" >/dev/null
 cd "$WORKTREE"
 export PYTHONDONTWRITEBYTECODE=1
@@ -52,10 +99,17 @@ export PYTHONDONTWRITEBYTECODE=1
 printf '=== DEPENDENCIES ===\n'
 pnpm install --offline --frozen-lockfile --ignore-scripts >/dev/null
 
-printf '\n=== BASELINE BUILD ===\n'
+cp artifacts/api-server/src/routes/auth.ts "$ORIGINAL_AUTH"
+printf 'AUTH_BASELINE_SOURCE_CAPTURED\n'
+
+printf '\n=== BASELINE DATABASE RESET + SCHEMA ===\n'
+reset_schema
+printf 'AUTH_BASELINE_SCHEMA_READY\n'
+
+printf '\n=== BASELINE TYPECHECK + BUILD ===\n'
 pnpm run build
 
-printf '\n=== BASELINE AUTH REGRESSION TESTS ===\n'
+printf '\n=== BASELINE AUTH REGRESSION ===\n'
 run_auth_regression_tests
 printf 'AUTH_BASELINE_REGRESSION_READY\n'
 
@@ -76,6 +130,9 @@ PY
 printf '\n=== AUTH ROUTE REFACTOR ===\n'
 node scripts/refactor-auth-structure.mjs
 
+printf '\n=== AUTH SOURCE PARITY ===\n'
+node scripts/assert-auth-structure-parity.mjs "$ORIGINAL_AUTH"
+
 printf '\n=== AUTH MODULE LINE COUNTS ===\n'
 wc -l artifacts/api-server/src/routes/auth.ts artifacts/api-server/src/routes/authRuntime*.ts artifacts/api-server/src/routes/authRoutesPart*.ts
 
@@ -92,7 +149,11 @@ git diff --check
 printf '\n=== POST-REFACTOR TYPECHECK + BUILD ===\n'
 pnpm run build
 
-printf '\n=== POST-REFACTOR AUTH REGRESSION TESTS ===\n'
+printf '\n=== POST-REFACTOR DATABASE RESET + SCHEMA ===\n'
+reset_schema
+printf 'AUTH_POST_REFACTOR_SCHEMA_READY\n'
+
+printf '\n=== POST-REFACTOR AUTH REGRESSION ===\n'
 run_auth_regression_tests
 printf 'AUTH_POST_REFACTOR_REGRESSION_READY\n'
 
