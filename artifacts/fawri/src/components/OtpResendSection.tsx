@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 
-type OtpPurpose = 'signup' | 'password_reset';
+type OtpPurpose = 'signup' | 'password_reset' | 'admin_device_verification';
 
 export type OtpResendChallenge = {
   challengeId: string;
@@ -13,6 +13,7 @@ export type OtpResendChallenge = {
 type OtpResendSectionProps = {
   phone: string;
   purpose: OtpPurpose;
+  deviceRecordId?: string;
   initialRetryAfterSeconds?: number;
   storageKey?: string;
   onResent?: (challenge: OtpResendChallenge) => void;
@@ -53,6 +54,7 @@ function createPhoneStorageId(phone: string): string {
 export default function OtpResendSection({
   phone,
   purpose,
+  deviceRecordId,
   initialRetryAfterSeconds = 0,
   storageKey,
   onResent,
@@ -110,19 +112,39 @@ export default function OtpResendSection({
   }, [retryAfterSeconds, resolvedStorageKey]);
 
   const handleResend = async () => {
-    if (isResending || retryAfterSeconds > 0 || !phone.trim()) return;
+    const requiresDeviceRecord = purpose === 'admin_device_verification';
+    if (
+      isResending ||
+      retryAfterSeconds > 0 ||
+      !phone.trim() ||
+      (requiresDeviceRecord && !deviceRecordId)
+    ) {
+      return;
+    }
 
     setIsResending(true);
 
     try {
-      const response = await fetch('/api/auth/otp/resend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: phone.trim(),
-          purpose,
-        }),
-      });
+      const response = await fetch(
+        requiresDeviceRecord
+          ? '/api/auth/admin/device-otp/resend'
+          : '/api/auth/otp/resend',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(
+            requiresDeviceRecord
+              ? {
+                  phone: phone.trim(),
+                  device_record_id: deviceRecordId,
+                }
+              : {
+                  phone: phone.trim(),
+                  purpose,
+                },
+          ),
+        },
+      );
 
       const result = (await response.json().catch(() => null)) as ResendResponse | null;
       const serverRetryAfter = clampSeconds(result?.retry_after_seconds);
@@ -175,7 +197,11 @@ export default function OtpResendSection({
         <button
           type="button"
           onClick={handleResend}
-          disabled={isResending || !phone.trim()}
+          disabled={
+            isResending ||
+            !phone.trim() ||
+            (purpose === 'admin_device_verification' && !deviceRecordId)
+          }
           className="mt-1 rounded-lg px-2 py-1 text-sm font-bold text-orange-600 transition hover:text-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-60"
         >
           {isResending ? t.forgot_sending : t.otp_resend_action}
