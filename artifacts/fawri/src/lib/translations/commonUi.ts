@@ -3,9 +3,10 @@ import type { Lang } from '@/lib/types';
 /**
  * Canonical shared UI vocabulary.
  *
- * Keep stable technical labels and native language names here instead of
- * scattering them through pages/components. Localized feature copy should stay
- * in the owning feature dictionary.
+ * Keep stable technical labels, native language names, invariant product units,
+ * and global legal/runtime labels here instead of scattering them through
+ * pages/components. Localized feature copy should stay in the owning feature
+ * dictionary.
  */
 export const COMMON_UI_LABELS = {
   languageNames: {
@@ -19,6 +20,12 @@ export const COMMON_UI_LABELS = {
     skuExample: 'SKU-001',
     unitKg: 'kg',
     unitCm: 'cm',
+    currencyIqd: 'IQD',
+    webhook: 'Webhook',
+    encryptedToken: 'Encrypted token',
+  },
+  legal: {
+    copyright: '© 2026 Fawri. All rights reserved.',
   },
 } as const;
 
