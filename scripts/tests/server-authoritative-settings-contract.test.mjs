@@ -20,11 +20,15 @@ test("settings entry points use one server-authoritative operational page", () =
   const page = read(
     "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx",
   );
+  const translations = read(
+    "artifacts/fawri/src/lib/translations/features/pages/dashboard/MerchantSettingsPage.ts",
+  );
   const combined = `${activeEntry}\n${legacyEntry}\n${wrapper}\n${page}`;
 
   assert.match(activeEntry, /MerchantSettingsPage/);
   assert.match(legacyEntry, /MerchantSettingsPage/);
   assert.match(wrapper, /ServerSettingsPage/);
+  assert.match(wrapper, /MERCHANT_SETTINGS_PAGE_UI_COPY/);
 
   for (const forbidden of [
     "getCurrentMerchant",
@@ -46,13 +50,16 @@ test("settings entry points use one server-authoritative operational page", () =
 
   assert.match(wrapper, /setLang/);
   assert.match(wrapper, /setTheme/);
-  assert.match(wrapper, /local UI preferences only/);
+  assert.match(translations, /local UI preferences only/);
   assert.doesNotMatch(wrapper, /COORDINATOR\/PRODUCT MODEL HANDOFF REQUIRED/);
   assert.match(
-    wrapper,
+    translations,
     /Delivery supports either one flat fee or different fees by area/,
   );
-  assert.match(wrapper, /Account-name and QR data do not have a secure server authority/);
+  assert.match(
+    translations,
+    /Account-name and QR data do not have a secure server authority/,
+  );
 });
 
 test("settings UI loads and saves only through versioned server authority", () => {
@@ -114,15 +121,19 @@ test("settings API derives tenant identity from the authenticated session and re
   const service = read(
     "artifacts/api-server/src/services/merchantSettingsRuntime.ts",
   );
+  const postgresAuthority = read(
+    "artifacts/api-server/src/services/postgresMerchantSettingsAuthority.ts",
+  );
   const worker = read(
     "artifacts/api-server/src/services/metaWebhookWorker.ts",
   );
 
   assert.match(router, /requireMerchantSession/);
   assert.match(router, /getMerchantIdFromSession/);
-  assert.match(router, /getMerchantOperationalSettings/);
-  assert.match(router, /updateMerchantOperationalSettingsWithEffects/);
+  assert.match(router, /getMerchantOperationalSettingsAuthoritative/);
+  assert.match(router, /updateMerchantOperationalSettingsAuthoritative/);
   assert.match(router, /effects: result\.effects/);
+  assert.match(postgresAuthority, /updateMerchantOperationalSettingsWithEffects/);
   assert.match(service, /MERCHANT_SETTINGS_VERSION_CONFLICT/);
   assert.match(service, /writeJsonAtomically/);
   assert.match(service, /registerMerchantRuntimeDeletion/);
