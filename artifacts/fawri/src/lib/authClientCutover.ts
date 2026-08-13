@@ -69,7 +69,8 @@ function mergedHeaders(input: RequestInfo | URL, init?: RequestInit): Headers {
  * HttpOnly cookies are the only authentication credential. Historical callers
  * may still construct Authorization headers, but this boundary strips them
  * before same-origin API traffic leaves the browser and adds the non-secret,
- * stable device identifier required for administrator session validation.
+ * stable device identifier required whenever Auth v2 validates a device-bound
+ * session, including operational routes outside /api/auth.
  */
 export function installAuthClientCutover(): void {
   if (installed || typeof window === 'undefined') return;
@@ -88,9 +89,7 @@ export function installAuthClientCutover(): void {
     if (/^Bearer\s+/i.test(headers.get('Authorization') || '')) {
       headers.delete('Authorization');
     }
-    if (url.pathname.startsWith('/api/auth')) {
-      headers.set('X-Fawri-Device-Id', getStableAuthDeviceId());
-    }
+    headers.set('X-Fawri-Device-Id', getStableAuthDeviceId());
 
     let target = url.pathname + url.search;
     let method = String(init?.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
