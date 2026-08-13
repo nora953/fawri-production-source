@@ -18,9 +18,11 @@ export interface MerchantRealtimeDetail {
   emitted_at: string;
 }
 
-let sharedSource: EventSource | null = null;
+let sharedAbortController: AbortController | null = null;
 let activeConsumers = 0;
 let delayedClose: ReturnType<typeof setTimeout> | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let connectionGeneration = 0;
 
 const REALTIME_EVENT_NAMES: MerchantRealtimeEventName[] = [
   'snapshot',
@@ -30,21 +32,21 @@ const REALTIME_EVENT_NAMES: MerchantRealtimeEventName[] = [
 ];
 
 function closeSharedSource(): void {
-  sharedSource?.close();
-  sharedSource = null;
+  connectionGeneration += 1;
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  sharedAbortController?.abort();
+  sharedAbortController = null;
 }
 
-function dispatchRealtimeEvent(
+function dispatchRealtimeData(
   eventName: MerchantRealtimeEventName,
-  event: Event,
+  data: string,
 ): void {
-  if (!(event instanceof MessageEvent)) return;
-
   try {
-    const payload = JSON.parse(event.data) as Omit<
-      MerchantRealtimeDetail,
-      'event'
-    >;
+    const payload = JSON.parse(data) as Omit<MerchantRealtimeDetail, 'event'>;
     if (
       !payload ||
       typeof payload.unread_notification_count !== 'number' ||
@@ -69,30 +71,116 @@ function dispatchRealtimeEvent(
   }
 }
 
-function openSharedSource(): void {
-  if (typeof window === 'undefined' || typeof EventSource === 'undefined') return;
+function dispatchSseBlock(block: string): void {
+  let eventName: MerchantRealtimeEventName | null = null;
+  const dataLines: string[] = [];
+
+  for (const line of block.split('\n')) {
+    if (line.startsWith('event:')) {
+      const candidate = line.slice('event:'.length).trim();
+      if (REALTIME_EVENT_NAMES.includes(candidate as MerchantRealtimeEventName)) {
+        eventName = candidate as MerchantRealtimeEventName;
+      }
+      continue;
+    }
+    if (line.startsWith('data:')) {
+      dataLines.push(line.slice('data:'.length).trimStart());
+    }
+  }
+
+  if (!eventName || dataLines.length === 0) return;
+  dispatchRealtimeData(eventName, dataLines.join('\n'));
+}
+
+async function consumeRealtimeStream(
+  response: Response,
+  signal: AbortSignal,
+): Promise<void> {
+  if (!response.ok || !response.body) {
+    throw new Error(`Merchant realtime connection failed: ${response.status}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (!signal.aborted) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    buffer = buffer.replace(/\r\n/g, '\n');
+
+    let boundary = buffer.indexOf('\n\n');
+    while (boundary >= 0) {
+      const block = buffer.slice(0, boundary);
+      buffer = buffer.slice(boundary + 2);
+      if (block.trim()) dispatchSseBlock(block);
+      boundary = buffer.indexOf('\n\n');
+    }
+  }
+
+  buffer += decoder.decode();
+  if (buffer.trim()) dispatchSseBlock(buffer.replace(/\r\n/g, '\n'));
+}
+
+function scheduleReconnect(generation: number): void {
   if (
-    sharedSource &&
-    (sharedSource.readyState === EventSource.OPEN ||
-      sharedSource.readyState === EventSource.CONNECTING)
+    reconnectTimer ||
+    generation !== connectionGeneration ||
+    activeConsumers === 0
   ) {
     return;
   }
 
-  closeSharedSource();
-  const source = new EventSource('/api/auth/events');
-  sharedSource = source;
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+    if (generation === connectionGeneration && activeConsumers > 0) {
+      openSharedSource();
+    }
+  }, 1_000);
+}
 
-  for (const eventName of REALTIME_EVENT_NAMES) {
-    source.addEventListener(eventName, (event) =>
-      dispatchRealtimeEvent(eventName, event),
-    );
+async function runSharedSource(
+  controller: AbortController,
+  generation: number,
+): Promise<void> {
+  try {
+    const response = await fetch('/api/auth/events', {
+      method: 'GET',
+      credentials: 'include',
+      cache: 'no-store',
+      headers: { Accept: 'text/event-stream' },
+      signal: controller.signal,
+    });
+    await consumeRealtimeStream(response, controller.signal);
+  } catch (error) {
+    if (!controller.signal.aborted) {
+      console.error('Merchant realtime connection failed:', error);
+    }
+  } finally {
+    if (sharedAbortController === controller) {
+      sharedAbortController = null;
+    }
+    if (!controller.signal.aborted) {
+      scheduleReconnect(generation);
+    }
+  }
+}
+
+function openSharedSource(): void {
+  if (typeof window === 'undefined') return;
+  if (sharedAbortController && !sharedAbortController.signal.aborted) return;
+
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
   }
 
-  source.onerror = () => {
-    // Native EventSource reconnects automatically. A fresh connection receives
-    // a complete snapshot, so missed changes are recovered without polling.
-  };
+  const controller = new AbortController();
+  const generation = connectionGeneration;
+  sharedAbortController = controller;
+  void runSharedSource(controller, generation);
 }
 
 export function useMerchantRealtimeConnection(): void {
@@ -105,7 +193,7 @@ export function useMerchantRealtimeConnection(): void {
     openSharedSource();
 
     const handleFocus = () => {
-      if (!sharedSource || sharedSource.readyState === EventSource.CLOSED) {
+      if (!sharedAbortController || sharedAbortController.signal.aborted) {
         openSharedSource();
       }
     };
