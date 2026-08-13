@@ -246,7 +246,8 @@ export default function AdminEmergencySnapshotPage({
         setSnapshot(data.snapshot as Snapshot);
       } catch (loadError) {
         console.error("Could not load emergency snapshot:", loadError);
-        if (!silent) setError(true);
+        setSnapshot(null);
+        setError(true);
       } finally {
         if (!silent) setLoading(false);
       }
@@ -276,6 +277,12 @@ export default function AdminEmergencySnapshotPage({
   const remaining = `${String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:${String(
     remainingSeconds % 60,
   ).padStart(2, "0")}`;
+
+  useEffect(() => {
+    if (!snapshot || remainingSeconds > 0) return;
+    setSnapshot(null);
+    setError(true);
+  }, [remainingSeconds, snapshot]);
 
   const tabs = useMemo(
     () => [
