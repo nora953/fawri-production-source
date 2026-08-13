@@ -25,6 +25,26 @@ test("Auth v2 browser transport sends the stable device id to every same-origin 
   );
 });
 
+test("merchant realtime SSE uses the Auth v2 fetch transport instead of native EventSource", async () => {
+  const source = await read("../fawri/src/hooks/useMerchantRealtime.ts");
+
+  assert.match(
+    source,
+    /fetch\('\/api\/auth\/events'/,
+    "merchant realtime must flow through the wrapped same-origin fetch boundary",
+  );
+  assert.match(
+    source,
+    /Accept:\s*'text\/event-stream'/,
+    "merchant realtime must keep the SSE media type",
+  );
+  assert.doesNotMatch(
+    source,
+    /new EventSource\(/,
+    "native EventSource cannot carry the device header required by device-bound Auth v2 sessions",
+  );
+});
+
 test("operational routes remain behind the global Auth v2 compatibility boundary", async () => {
   const app = await read("src/app.ts");
   const compatibilityIndex = app.indexOf("app.use(enforceAuthCutoverCompatibility);");
