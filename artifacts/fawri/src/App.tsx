@@ -13,7 +13,6 @@ import {
 } from "@/lib/authClientCutover";
 import { useI18n } from "@/lib/i18n";
 import SupportPreviewLauncher from "@/components/admin/SupportPreviewLauncher";
-import EmergencyReadAccessLauncher from "@/components/admin/EmergencyReadAccessLauncher";
 import EmergencyIncidentNoticeBanner from "@/components/EmergencyIncidentNoticeBanner";
 import "@/styles/emergency-access-compact.css";
 
@@ -247,7 +246,6 @@ function App() {
             <AdminSessionRevalidator />
             <AppRouter />
             <SupportPreviewLauncher />
-            <EmergencyReadAccessLauncher />
             <EmergencyIncidentNoticeBanner />
           </WouterRouter>
 
