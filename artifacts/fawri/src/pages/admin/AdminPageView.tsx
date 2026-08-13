@@ -60,6 +60,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import DeleteMerchantDialog from "@/components/DeleteMerchantDialog";
 import AdministratorsTab from "@/components/admin/AdministratorsTab";
+import EmergencyReadAccessLauncher from "@/components/admin/EmergencyReadAccessLauncher";
 import RequiredAdminPasswordChangeDialog from "@/components/admin/RequiredAdminPasswordChangeDialog";
 import AdminSupportTab, { getAdminSupportText } from "@/components/admin/AdminSupportTab";
 import {
@@ -256,6 +257,7 @@ export function AdminPageView({ model }: { model: AdminPageViewModel }) {
                   </button>
                 ))}
               </div>
+              <EmergencyReadAccessLauncher />
               <Button
                 variant="outline"
                 size="sm"
