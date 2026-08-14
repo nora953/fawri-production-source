@@ -76,8 +76,8 @@ type DatabasePool = QueryTarget & {
   connect(): Promise<TransactionClient>;
 };
 
-function postgresRequired(kind: AccountKind): boolean {
-  return kind === "merchant" && process.env[POSTGRES_AUTHORITY_ENV] === "required";
+function postgresRequired(_kind: AccountKind): boolean {
+  return process.env[POSTGRES_AUTHORITY_ENV] === "required";
 }
 
 function requireDatabaseUrl(): void {
@@ -146,9 +146,6 @@ function toRecord(row: SessionRow): AuthSessionRecord {
     account_id: row.account_id,
     account_kind: row.kind,
     tenant_id: row.tenant_id,
-    // The transitional JSON projection starts at version zero while PostgreSQL
-    // constrains account/session versions to positive integers. The proof gate
-    // keeps those existing Auth v2 semantics aligned without changing schema.
     account_version: Math.max(0, Number(row.session_version) - 1),
     ...(row.role_snapshot ? { admin_role: row.role_snapshot } : {}),
     permissions: normalizePermissions(row.permission_snapshot),
@@ -218,6 +215,25 @@ async function lockAccount(
     [accountId, kind],
   );
   return rows[0] || null;
+}
+
+async function isTrustedAdminDevice(
+  client: QueryTarget,
+  accountId: string,
+  deviceId: string,
+): Promise<boolean> {
+  const rows = await queryRows<{ id: string }>(
+    client,
+    `SELECT id
+       FROM trusted_devices
+      WHERE account_id = $1
+        AND kind = 'admin'
+        AND device_fingerprint_hash = $2
+        AND status = 'trusted'
+      LIMIT 1`,
+    [accountId, fingerprint("device", deviceId)],
+  );
+  return rows.length === 1;
 }
 
 async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
@@ -392,7 +408,7 @@ async function validatePostgres(
       }
       if (
         row.kind === "admin" &&
-        !authSecurityStore.isDeviceTrusted(row.account_id, "admin", input.deviceId)
+        !(await isTrustedAdminDevice(client, row.account_id, input.deviceId))
       ) {
         return null;
       }
@@ -473,6 +489,14 @@ async function rotatePostgres(input: ValidateInput): Promise<IssuedSession | nul
           old.device_fingerprint_hash,
           fingerprint("device", input.deviceId),
         ))
+    ) {
+      return null;
+    }
+    if (
+      old.kind === "admin" &&
+      old.device_fingerprint_hash &&
+      input.deviceId &&
+      !(await isTrustedAdminDevice(client, old.account_id, input.deviceId))
     ) {
       return null;
     }
