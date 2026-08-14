@@ -152,6 +152,15 @@ function iso(value: Date | null | undefined): string | undefined {
     : undefined;
 }
 
+function effectiveLifecycleEnd(row: ManagedMerchantRow): string | undefined {
+  const timestamps = [
+    row.last_subscription_ended_at?.getTime(),
+    row.subscription_expires_at?.getTime(),
+  ].filter((value): value is number => Number.isFinite(value));
+  if (timestamps.length === 0) return undefined;
+  return new Date(Math.max(...timestamps)).toISOString();
+}
+
 function managedMerchant(row: ManagedMerchantRow): ManagedMerchant {
   return {
     id: row.id,
@@ -364,20 +373,28 @@ export async function setMerchantAdminNotePostgres(input: {
     if (!merchant || merchant.account_state === "closed") {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
     }
-    await client.query(
-      `INSERT INTO merchant_admin_notes (
-         merchant_id, note, updated_by_admin_id, created_at, updated_at
-       ) VALUES ($1, $2, $3, now(), now())
-       ON CONFLICT (merchant_id) DO UPDATE
-         SET note = EXCLUDED.note,
-             updated_by_admin_id = EXCLUDED.updated_by_admin_id,
-             updated_at = now()`,
-      [input.merchantId, note, input.actorAdminId],
-    );
+    if (!note) {
+      await client.query(
+        `DELETE FROM merchant_admin_notes WHERE merchant_id = $1`,
+        [input.merchantId],
+      );
+    } else {
+      await client.query(
+        `INSERT INTO merchant_admin_notes (
+           merchant_id, note, updated_by_admin_id, created_at, updated_at
+         ) VALUES ($1, $2, $3, now(), now())
+         ON CONFLICT (merchant_id) DO UPDATE
+           SET note = EXCLUDED.note,
+               updated_by_admin_id = EXCLUDED.updated_by_admin_id,
+               updated_at = now()`,
+        [input.merchantId, note, input.actorAdminId],
+      );
+    }
     await writeAudit(client, {
       actorAdminId: input.actorAdminId,
       merchantId: input.merchantId,
-      actionType: "merchant_note_saved",
+      actionType: "note_saved",
+      details: "internal note saved",
       metadata: { note_length: note.length },
     });
     return note;
@@ -503,7 +520,6 @@ export async function updateMerchantStatusPostgres(input: {
     }
 
     const previousStatus = merchant.status;
-    const transitionAt = new Date();
     const suspensionLike = input.status === "suspended" || input.status === "rejected";
     const newlyBlocked = suspensionLike && merchant.account_state !== "suspended";
 
@@ -626,9 +642,9 @@ export async function updateMerchantStatusPostgres(input: {
       if (newlyBlocked) {
         await client.query(
           `UPDATE account_sessions
-              SET status = 'revoked', revoked_at = now(), revoke_reason = $2
+              SET status = 'revoked', revoked_at = now(), revoke_reason = 'account_disabled'
             WHERE account_id = $1 AND kind = 'merchant' AND status = 'active'`,
-          [input.merchantId, input.status === "rejected" ? "account_disabled" : "account_disabled"],
+          [input.merchantId],
         );
       }
     }
@@ -653,7 +669,6 @@ export async function updateMerchantStatusPostgres(input: {
     return managedMerchant(refreshed);
   });
 
-  // Keep retention fields canonical after an administrative transition.
   await refreshMerchantRetentionPostgres(input.merchantId).catch(() => null);
   return (await getManagedMerchantPostgres(input.merchantId)) || result;
 }
@@ -683,7 +698,11 @@ export async function createDeletionRequestPostgres(input: {
   requirePostgres();
   const details = String(input.details || "").trim();
   if (!details || details.length > 1000) {
-    throw new MerchantManagementError(400, "DELETION_DETAILS_INVALID", "deletion details are required and must not exceed 1000 characters");
+    throw new MerchantManagementError(
+      400,
+      "DELETION_DETAILS_INVALID",
+      "deletion details are required and must not exceed 1000 characters",
+    );
   }
   if (input.reason !== "policy_violation" && input.reason !== "retention_expired") {
     throw new MerchantManagementError(400, "DELETION_REASON_INVALID", "invalid deletion reason");
@@ -694,18 +713,24 @@ export async function createDeletionRequestPostgres(input: {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
     }
     if (merchant.status !== "suspended") {
-      throw new MerchantManagementError(409, "MERCHANT_MUST_BE_SUSPENDED", "merchant must be suspended before deletion can be requested");
+      throw new MerchantManagementError(
+        409,
+        "MERCHANT_MUST_BE_SUSPENDED",
+        "merchant must be suspended before deletion can be requested",
+      );
     }
     const actor = await adminSnapshot(client, input.actorAdminId);
     if (!actor) {
       throw new MerchantManagementError(403, "ADMIN_ACCOUNT_INVALID", "administrator account is unavailable");
     }
     if (input.reason === "retention_expired") {
-      const retention = calculateRetentionStatus(
-        iso(merchant.last_subscription_ended_at) || iso(merchant.subscription_expires_at),
-      );
+      const retention = calculateRetentionStatus(effectiveLifecycleEnd(merchant));
       if (retention.retentionStatus !== MerchantRetentionStatus.EligibleForDeletion) {
-        throw new MerchantManagementError(409, "MERCHANT_NOT_ELIGIBLE_FOR_DELETION", "merchant is not eligible for retention deletion");
+        throw new MerchantManagementError(
+          409,
+          "MERCHANT_NOT_ELIGIBLE_FOR_DELETION",
+          "merchant is not eligible for retention deletion",
+        );
       }
     }
     const id = `merchant-deletion-${crypto.randomUUID()}`;
@@ -736,15 +761,20 @@ export async function createDeletionRequestPostgres(input: {
       );
     } catch (error) {
       if ((error as { code?: string })?.code === "23505") {
-        throw new MerchantManagementError(409, "DELETION_REQUEST_ALREADY_PENDING", "a deletion request is already pending for this merchant");
+        throw new MerchantManagementError(
+          409,
+          "DELETION_REQUEST_ALREADY_PENDING",
+          "a deletion request is already pending for this merchant",
+        );
       }
       throw error;
     }
     await writeAudit(client, {
       actorAdminId: input.actorAdminId,
       merchantId: input.merchantId,
-      actionType: "merchant_deletion_requested",
+      actionType: "deletion_requested",
       reasonCode: input.reason,
+      details: "merchant deletion requested",
       metadata: { deletion_request_id: id },
     });
     const rows = await operationalQueryRows<DeletionRequestRow>(
@@ -784,7 +814,11 @@ export async function rejectDeletionRequestPostgres(input: {
       throw new MerchantManagementError(404, "DELETION_REQUEST_NOT_FOUND", "deletion request not found");
     }
     if (request.status !== "pending") {
-      throw new MerchantManagementError(409, "DELETION_REQUEST_ALREADY_REVIEWED", "deletion request is already reviewed");
+      throw new MerchantManagementError(
+        409,
+        "DELETION_REQUEST_ALREADY_REVIEWED",
+        "deletion request is already reviewed",
+      );
     }
     await client.query(
       `UPDATE merchant_deletion_requests
@@ -792,15 +826,14 @@ export async function rejectDeletionRequestPostgres(input: {
         WHERE id = $1`,
       [input.requestId, input.actorAdminId],
     );
-    if (request.merchant_id_snapshot) {
-      await writeAudit(client, {
-        actorAdminId: input.actorAdminId,
-        merchantId: request.merchant_id_snapshot,
-        actionType: "merchant_deletion_rejected",
-        reasonCode: request.reason,
-        metadata: { deletion_request_id: request.id },
-      });
-    }
+    await writeAudit(client, {
+      actorAdminId: input.actorAdminId,
+      merchantId: request.merchant_id_snapshot,
+      actionType: "deletion_request_rejected",
+      reasonCode: request.reason,
+      details: "merchant deletion request rejected",
+      metadata: { deletion_request_id: request.id },
+    });
     const refreshed = await operationalQueryRows<DeletionRequestRow>(
       client,
       `SELECT id, merchant_id, merchant_id_snapshot, merchant_name_snapshot,
@@ -865,8 +898,8 @@ async function purgeMerchantOperationalData(
   target: OperationalQueryTarget,
   merchantId: string,
 ): Promise<void> {
-  // Preserve order/payment proof but remove customer PII and references to
-  // operational conversations/catalog records.
+  // Preserve order/payment proof while removing customer/business free-text PII
+  // and references to operational conversation/catalog records.
   await target.query(
     `UPDATE orders
         SET conversation_id = NULL,
@@ -876,6 +909,14 @@ async function purgeMerchantOperationalData(
             customer_address = NULL,
             customer_area = NULL,
             notes = NULL,
+            payment_rejection_reason = CASE
+              WHEN payment_status = 'failed' THEN '[deleted reason]'
+              ELSE NULL
+            END,
+            payment_conflict_resolution_note = CASE
+              WHEN payment_reconciliation_status = 'resolved' THEN '[deleted note]'
+              ELSE NULL
+            END,
             metadata = '{}'::jsonb,
             updated_at = now()
       WHERE merchant_id = $1`,
@@ -885,21 +926,33 @@ async function purgeMerchantOperationalData(
     `UPDATE order_items
         SET product_id = NULL,
             product_variant_id = NULL,
+            product_name_snapshot = '[deleted product]',
             variant_snapshot = '{}'::jsonb
       WHERE merchant_id = $1`,
     [merchantId],
   );
+  await target.query(
+    `UPDATE order_payment_decisions
+        SET actor_session_fingerprint = NULL,
+            reason = NULL
+      WHERE merchant_id = $1`,
+    [merchantId],
+  );
+  await target.query(
+    `UPDATE order_payment_provider_events
+        SET sanitized_metadata = '{}'::jsonb
+      WHERE merchant_id = $1`,
+    [merchantId],
+  );
 
-  // Remove transient conversation/order-draft content before catalog/channel
-  // cleanup. Manual reply rows contain RESTRICT references to messages.
   await target.query(`DELETE FROM order_drafts WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM manual_reply_requests WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM messages WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM conversations WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM processed_channel_events WHERE merchant_id = $1`, [merchantId]);
 
-  // Channel rows must remain as FK anchors for exactly-once/reply reservation
-  // history, but credentials and external account PII are irreversibly scrubbed.
+  // Channel rows remain as FK anchors for exactly-once/reply history, but all
+  // credentials/external-account identity are irreversibly scrubbed.
   await target.query(
     `UPDATE merchant_channels
         SET status = 'revoked',
@@ -916,6 +969,7 @@ async function purgeMerchantOperationalData(
             credential_algorithm = NULL,
             credential_expires_at = NULL,
             webhook_subscribed_at = NULL,
+            last_error_code = NULL,
             metadata = '{}'::jsonb,
             disconnected_at = COALESCE(disconnected_at, now()),
             updated_at = now()
@@ -923,10 +977,28 @@ async function purgeMerchantOperationalData(
     [merchantId],
   );
 
-  // Remove encrypted job payloads even for the small set of completed job rows
-  // retained as inbound-event FK anchors; delete every unreferenced job.
+  // Remove encrypted payloads. Completed/dead-letter jobs referenced by inbound
+  // event history stay as non-sensitive anchors; unreferenced jobs are deleted.
+  await target.query(`DELETE FROM background_job_payloads WHERE merchant_id = $1`, [merchantId]);
   await target.query(
-    `DELETE FROM background_job_payloads WHERE merchant_id = $1`,
+    `UPDATE job_attempts
+        SET error_code = NULL, metadata = '{}'::jsonb
+      WHERE job_id IN (SELECT id FROM background_jobs WHERE merchant_id = $1)`,
+    [merchantId],
+  );
+  await target.query(
+    `UPDATE job_dead_letters
+        SET payload_sha256 = NULL, metadata = '{}'::jsonb
+      WHERE job_id IN (SELECT id FROM background_jobs WHERE merchant_id = $1)`,
+    [merchantId],
+  );
+  await target.query(
+    `UPDATE background_jobs
+        SET payload_hash = NULL,
+            last_error_code = NULL,
+            result = '{}'::jsonb,
+            updated_at = now()
+      WHERE merchant_id = $1`,
     [merchantId],
   );
   await target.query(
@@ -938,7 +1010,6 @@ async function purgeMerchantOperationalData(
     [merchantId],
   );
 
-  // Catalog dependencies are deleted explicitly so order snapshots can remain.
   await target.query(`DELETE FROM catalog_idempotency_keys WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM inventory_mutations WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM catalog_identifiers WHERE merchant_id = $1`, [merchantId]);
@@ -947,7 +1018,6 @@ async function purgeMerchantOperationalData(
   await target.query(`DELETE FROM product_variants WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM products WHERE merchant_id = $1`, [merchantId]);
 
-  // Knowledge and support are merchant-owned operational content.
   await target.query(`DELETE FROM knowledge_embeddings WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM knowledge_audit_events WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM learned_answers WHERE merchant_id = $1`, [merchantId]);
@@ -960,16 +1030,21 @@ async function purgeMerchantOperationalData(
   await target.query(`DELETE FROM support_preview_sessions WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM support_tickets WHERE merchant_id = $1`, [merchantId]);
 
+  await target.query(`DELETE FROM emergency_access_requests WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM notifications WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM merchant_settings WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM merchant_admin_notes WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM merchant_channel_overrides WHERE merchant_id = $1`, [merchantId]);
 
-  // Authentication secrets/device material are not historical business records.
   await target.query(`DELETE FROM auth_otp_challenges WHERE account_id = $1`, [merchantId]);
   await target.query(`DELETE FROM trusted_devices WHERE account_id = $1 AND kind = 'merchant'`, [merchantId]);
   await target.query(`DELETE FROM account_sessions WHERE account_id = $1 AND kind = 'merchant'`, [merchantId]);
   await target.query(`DELETE FROM login_attempts WHERE account_id = $1 AND kind = 'merchant'`, [merchantId]);
+
+  // Retained financial/entitlement/audit rows keep only non-PII proof fields.
+  await target.query(`UPDATE reply_ledger SET message_id = NULL, metadata = '{}'::jsonb WHERE merchant_id = $1`, [merchantId]);
+  await target.query(`UPDATE saas_billing_orders SET metadata = '{}'::jsonb WHERE merchant_id = $1`, [merchantId]);
+  await target.query(`UPDATE audit_events SET details = NULL, metadata = '{}'::jsonb WHERE merchant_id = $1`, [merchantId]);
 }
 
 export async function completeMerchantDeletionPostgres(input: {
@@ -984,7 +1059,11 @@ export async function completeMerchantDeletionPostgres(input: {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
     }
     if (merchant.status !== "suspended") {
-      throw new MerchantManagementError(409, "MERCHANT_MUST_BE_SUSPENDED", "merchant must be suspended before deletion");
+      throw new MerchantManagementError(
+        409,
+        "MERCHANT_MUST_BE_SUSPENDED",
+        "merchant must be suspended before deletion",
+      );
     }
     const requests = await operationalQueryRows<DeletionRequestRow>(
       client,
@@ -1003,23 +1082,26 @@ export async function completeMerchantDeletionPostgres(input: {
       throw new MerchantManagementError(404, "DELETION_REQUEST_NOT_FOUND", "deletion request not found");
     }
     if (request.status !== "pending") {
-      throw new MerchantManagementError(409, "DELETION_REQUEST_ALREADY_REVIEWED", "deletion request is already reviewed");
+      throw new MerchantManagementError(
+        409,
+        "DELETION_REQUEST_ALREADY_REVIEWED",
+        "deletion request is already reviewed",
+      );
     }
     if (request.reason === MerchantDeleteReason.RetentionExpired) {
-      const retention = calculateRetentionStatus(
-        iso(merchant.last_subscription_ended_at) || iso(merchant.subscription_expires_at),
-      );
+      const retention = calculateRetentionStatus(effectiveLifecycleEnd(merchant));
       if (retention.retentionStatus !== MerchantRetentionStatus.EligibleForDeletion) {
-        throw new MerchantManagementError(409, "MERCHANT_NOT_ELIGIBLE_FOR_DELETION", "merchant is not eligible for retention deletion");
+        throw new MerchantManagementError(
+          409,
+          "MERCHANT_NOT_ELIGIBLE_FOR_DELETION",
+          "merchant is not eligible for retention deletion",
+        );
       }
     }
 
     await assertDeletionQuiescent(client, input.merchantId);
     await purgeMerchantOperationalData(client, input.merchantId);
 
-    // Financial/entitlement/provider/audit rows retain merchant_id as a stable
-    // non-PII tenant reference. The account/profile become an irreversible
-    // tombstone and no longer contain login or business identity PII.
     await client.query(
       `UPDATE subscriptions
           SET status = 'suspended',
@@ -1076,13 +1158,18 @@ export async function completeMerchantDeletionPostgres(input: {
 
     await client.query(
       `UPDATE merchant_deletion_requests
+          SET merchant_name_snapshot = '[deleted merchant]',
+              merchant_phone_snapshot = '',
+              details = '[merchant data deleted]'
+        WHERE merchant_id_snapshot = $1`,
+      [input.merchantId],
+    );
+    await client.query(
+      `UPDATE merchant_deletion_requests
           SET status = 'completed',
               reviewed_by_admin_id = $2,
               reviewed_at = now(),
-              completed_at = now(),
-              merchant_name_snapshot = '[deleted merchant]',
-              merchant_phone_snapshot = '',
-              details = '[merchant data deleted]'
+              completed_at = now()
         WHERE id = $1`,
       [input.deletionRequestId, input.actorAdminId],
     );
