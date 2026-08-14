@@ -154,6 +154,27 @@ export async function isAdminDeviceTrustedAuthoritative(
   return Boolean(row);
 }
 
+export async function findAdminDeviceForVerificationPostgres(input: {
+  accountId: string;
+  deviceRecordId: string;
+  deviceId: string;
+}): Promise<TrustedDeviceRecord | null> {
+  if (!operationalPostgresAuthorityRequired()) {
+    throw new Error("AUTH_POSTGRES_ADMIN_DEVICE_LOOKUP_REQUIRES_POSTGRES");
+  }
+  const pool = await operationalDatabasePool();
+  const row = await selectDevice(
+    pool,
+    "id = $1 AND account_id = $2 AND kind = 'admin' AND device_fingerprint_hash = $3",
+    [
+      input.deviceRecordId,
+      input.accountId,
+      fingerprint("device", input.deviceId),
+    ],
+  );
+  return row ? toDevice(row) : null;
+}
+
 export async function listAdminDevicesAuthoritative(
   accountId?: string,
 ): Promise<TrustedDeviceRecord[]> {
