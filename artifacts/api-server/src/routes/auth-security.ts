@@ -1,6 +1,7 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { enforceAuthOrigin, sendAuthError } from "../middleware/authSession";
 import { adminAuthPostgresCutoverMode } from "../services/adminAuthPostgresCutover";
+import { startPostgresSupportRuntimeCutover } from "../services/postgresSupportRuntimeCutover";
 import adminDeviceOtpPgRoutes from "./auth-admin-device-otp-pg-routes";
 import merchantManagementPostgresRoutes from "./auth-merchant-management-postgres-routes";
 import supportPostgresRoutes from "./auth-support-postgres-routes";
@@ -12,6 +13,10 @@ import subscriptionEntitlementPgRouter from "./subscription-entitlement-pg";
 import saasBillingRouter from "./saas-billing";
 
 const router = Router();
+router.use((_req: Request, _res: Response, next: NextFunction) => {
+  startPostgresSupportRuntimeCutover();
+  next();
+});
 router.use(enforceAuthOrigin);
 router.use((req: Request, res: Response, next: NextFunction) => {
   const path = String(req.path || "");
