@@ -287,7 +287,7 @@ test("admin auth/security is end-to-end PostgreSQL authoritative", async (t) => 
   assert.equal(createdAssistant.body?.admin_profile?.role, "assistant_admin");
   assert.equal(createdAssistant.body?.admin_profile?.mustChangePassword, true);
 
-  const permissions = ["view_merchants", "manage_support"];
+  const permissions = ["manage_support", "view_merchants"];
   const permissionsResult = await json(await fetch(
     `${baseUrl}/api/auth/admins/${encodeURIComponent(assistantId)}/permissions`,
     {
