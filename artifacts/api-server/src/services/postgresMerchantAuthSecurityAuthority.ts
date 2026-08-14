@@ -67,10 +67,11 @@ type OtpRow = {
 async function accountIdForPhone(
   client: OperationalSqlClient,
   phone: string,
+  kind: "merchant" | "admin",
 ): Promise<string | null> {
   const result = await client.query<{ id: string }>(
-    `SELECT id FROM accounts WHERE kind = 'merchant' AND phone = $1 LIMIT 1`,
-    [phone],
+    `SELECT id FROM accounts WHERE kind = $2::account_kind AND phone = $1 LIMIT 1`,
+    [phone, kind],
   );
   return result.rows[0]?.id || null;
 }
@@ -167,7 +168,8 @@ export async function issueMerchantOtpChallengeAuthoritative(input: {
     const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
     const expiresAt = new Date(now.getTime() + otpTtlMs());
     const resendAfter = new Date(now.getTime() + otpResendMs());
-    const accountId = await accountIdForPhone(client, input.target);
+    const accountKind = input.purpose === "admin_device_verification" ? "admin" : "merchant";
+    const accountId = await accountIdForPhone(client, input.target, accountKind);
     await client.query(
       `INSERT INTO auth_otp_challenges
         (id, account_id, target_hash, code_hash, ip_hash, purpose,
@@ -280,10 +282,7 @@ export async function checkMerchantLoginAllowedAuthoritative(input: {
   accountKind: "merchant" | "admin";
   ip: string;
 }): Promise<{ allowed: true } | { allowed: false; retryAfterSeconds: number }> {
-  if (
-    !operationalPostgresAuthorityRequired() ||
-    input.accountKind !== "merchant"
-  ) {
+  if (!operationalPostgresAuthorityRequired()) {
     return authSecurityStore.checkLoginAllowed(input);
   }
   const targetHash = fingerprint("login-target", input.target);
@@ -293,10 +292,10 @@ export async function checkMerchantLoginAllowedAuthoritative(input: {
     const since = new Date(now.getTime() - 15 * 60 * 1000);
     const targetFailures = await client.query<{ created_at: Date }>(
       `SELECT created_at FROM login_attempts
-        WHERE success = FALSE AND kind = 'merchant'
+        WHERE success = FALSE AND kind = $3::session_kind
           AND target_hash = $1 AND created_at >= $2
         ORDER BY created_at`,
-      [targetHash, since],
+      [targetHash, since, input.accountKind],
     );
     const ipFailures = await client.query<{ created_at: Date }>(
       `SELECT created_at FROM login_attempts
@@ -331,10 +330,7 @@ export async function recordMerchantLoginAttemptAuthoritative(input: {
   reason: string;
   accountId?: string;
 }): Promise<void> {
-  if (
-    !operationalPostgresAuthorityRequired() ||
-    input.accountKind !== "merchant"
-  ) {
+  if (!operationalPostgresAuthorityRequired()) {
     authSecurityStore.recordLoginAttempt(input);
     return;
   }
@@ -344,11 +340,12 @@ export async function recordMerchantLoginAttemptAuthoritative(input: {
       `INSERT INTO login_attempts
         (id, account_id, target_hash, kind, ip_hash, success,
          reason_code, created_at, expires_at)
-       VALUES ($1, $2, $3, 'merchant', $4, $5, $6, $7, $8)`,
+       VALUES ($1, $2, $3, $4::session_kind, $5, $6, $7, $8, $9)`,
       [
         crypto.randomUUID(),
         input.accountId || null,
         fingerprint("login-target", input.target),
+        input.accountKind,
         fingerprint("ip", input.ip),
         input.success,
         String(input.reason || "unknown").replace(/\s+/g, " ").slice(0, 120),
