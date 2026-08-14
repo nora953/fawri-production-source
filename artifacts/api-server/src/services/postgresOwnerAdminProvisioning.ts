@@ -1,9 +1,5 @@
 import crypto from "node:crypto";
 import {
-  getPasswordValidationError,
-  hashPassword,
-} from "./authPasswordService";
-import {
   operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
@@ -132,7 +128,6 @@ export async function provisionOwnerAdminPostgres(input: {
   const phone = normalizePhone(input.phone);
   const language = normalizeLanguage(input.language);
   const password = String(input.password ?? "");
-  const passwordValidation = getPasswordValidationError(password);
 
   if (!displayName || displayName.length > 200) {
     fail("OWNER_DISPLAY_NAME_INVALID", "owner display name is invalid");
@@ -140,6 +135,14 @@ export async function provisionOwnerAdminPostgres(input: {
   if (!/^07\d{9}$/.test(phone)) {
     fail("INVALID_PHONE", "owner phone is invalid");
   }
+
+  // Keep startup readiness free of password-service module side effects. The
+  // password policy and hashing implementation are loaded only when an
+  // operator explicitly invokes provisioning.
+  const { getPasswordValidationError, hashPassword } = await import(
+    "./authPasswordService"
+  );
+  const passwordValidation = getPasswordValidationError(password);
   if (passwordValidation) {
     fail(passwordValidation.code, passwordValidation.message);
   }
