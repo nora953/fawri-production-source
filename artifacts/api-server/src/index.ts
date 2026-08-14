@@ -2,6 +2,7 @@ import { logger } from "./lib/logger";
 import { getFawriDataDir } from "./lib/dataPaths";
 import type { DurableJobWorker } from "./services/durableJobQueue";
 import { assertProductionRuntimeConfiguration } from "./services/productionReleaseReadiness";
+import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminProvisioning";
 import { bootstrapRuntimeAndLoadApplication } from "./services/runtimeProviderBootstrap";
 
 const rawPort = process.env["PORT"];
@@ -33,6 +34,7 @@ async function main(): Promise<void> {
   // Once FAWRI_PRODUCTION_RELEASE_GATE=required is set, startup fails closed
   // before any provider bootstrap, listener, worker, or application traffic.
   assertProductionRuntimeConfiguration(process.env);
+  await assertProductionOwnerAdminReady(process.env);
 
   const { application, runtime } = await bootstrapRuntimeAndLoadApplication({
     loadApplication: async () => {
