@@ -5,7 +5,14 @@ import {
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "../routes/auth";
+import {
+  getAuthContext,
+  getSessionToken,
+  requireSecureMerchantSession,
+} from "./authSession";
 import { getMerchantRetentionAccess } from "../services/merchantRetentionPolicy";
+import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
+import { getMerchantRetentionAccessPostgres } from "../services/postgresMerchantRetentionAuthority";
 
 const MERCHANT_SESSION_COOKIE = "fawri_merchant_session";
 
@@ -13,7 +20,7 @@ function normalizePhone(value: unknown): string {
   return String(value || "").replace(/\s+/g, "").trim();
 }
 
-function isRetentionSuspendedPhone(phone: string): boolean {
+function isRetentionSuspendedPhoneLegacy(phone: string): boolean {
   const normalizedPhone = normalizePhone(phone);
   if (!normalizedPhone) return false;
 
@@ -64,7 +71,85 @@ function isPublicMerchantPath(pathname: string): boolean {
   ].includes(pathname);
 }
 
-export function enforceMerchantRetentionAccess(
+function isProductWritePath(req: Request, pathname: string): boolean {
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return false;
+  return (
+    pathname === "/products" ||
+    pathname === "/bot/products/sync" ||
+    pathname === "/catalog/products" ||
+    pathname.startsWith("/catalog/products/") ||
+    pathname.startsWith("/inventory/")
+  );
+}
+
+async function enforcePostgresRetentionAccess(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const pathname = requestApiPath(req);
+
+  if (isPublicMerchantPath(pathname) || !getSessionToken(req, "merchant")) {
+    next();
+    return;
+  }
+
+  let authenticated = false;
+  await requireSecureMerchantSession(req, res, () => {
+    authenticated = true;
+  });
+  if (!authenticated || res.headersSent) return;
+
+  const merchantId = getAuthContext(res)?.merchantProfile?.merchantId || "";
+  if (!merchantId) {
+    res.status(401).json({
+      ok: false,
+      code: "MERCHANT_SESSION_REQUIRED",
+      error: "merchant session is missing or expired",
+    });
+    return;
+  }
+
+  try {
+    const access = await getMerchantRetentionAccessPostgres(merchantId);
+    if (!access) {
+      res.status(401).json({
+        ok: false,
+        code: "MERCHANT_ACCOUNT_UNAVAILABLE",
+        error: "merchant account is unavailable",
+      });
+      return;
+    }
+    if (access.accountSuspended) {
+      res.status(403).json({
+        ok: false,
+        error: "account is suspended after the retention period",
+        code: "RETENTION_ACCOUNT_SUSPENDED",
+        retention_status: access.retentionStatus,
+      });
+      return;
+    }
+    if (access.productsReadOnly && isProductWritePath(req, pathname)) {
+      res.status(423).json({
+        ok: false,
+        error: "products are read-only after three calendar months without renewal",
+        code: "PRODUCTS_READ_ONLY",
+        retention_status: access.retentionStatus,
+      });
+      return;
+    }
+    next();
+  } catch (error) {
+    console.error("PostgreSQL retention access check failed:", error);
+    res.status(503).json({
+      ok: false,
+      code: "RETENTION_AUTHORITY_UNAVAILABLE",
+      error: "merchant retention authority is unavailable",
+    });
+  }
+}
+
+function enforceLegacyRetentionAccess(
   req: Request,
   res: Response,
   next: NextFunction,
@@ -72,7 +157,7 @@ export function enforceMerchantRetentionAccess(
   const pathname = requestApiPath(req);
 
   if (req.method === "POST" && pathname === "/auth/login") {
-    if (isRetentionSuspendedPhone(String(req.body?.phone || ""))) {
+    if (isRetentionSuspendedPhoneLegacy(String(req.body?.phone || ""))) {
       res.status(403).json({
         ok: false,
         error: "account is suspended after the retention period",
@@ -115,4 +200,16 @@ export function enforceMerchantRetentionAccess(
 
     next();
   });
+}
+
+export function enforceMerchantRetentionAccess(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  if (operationalPostgresAuthorityRequired()) {
+    void enforcePostgresRetentionAccess(req, res, next);
+    return;
+  }
+  enforceLegacyRetentionAccess(req, res, next);
 }

@@ -1,3 +1,5 @@
+import { operationalPostgresAuthorityRequired } from "./operationalPostgresAuthority";
+
 export type MerchantRetentionUpdateSummary = {
   checked: number;
   updated: number;
@@ -16,6 +18,9 @@ export function registerMerchantRetentionUpdate(
 }
 
 export function runMerchantRetentionUpdate(): MerchantRetentionUpdateSummary {
+  if (operationalPostgresAuthorityRequired()) {
+    return { checked: 0, updated: 0 };
+  }
   if (!updateHandler) {
     throw new Error("Merchant retention update handler is not registered");
   }
@@ -24,6 +29,8 @@ export function runMerchantRetentionUpdate(): MerchantRetentionUpdateSummary {
 }
 
 export function startMerchantRetentionScheduler(): void {
+  if (operationalPostgresAuthorityRequired()) return;
+
   const globalState = globalThis as typeof globalThis & {
     __fawriMerchantRetentionSchedulerStarted?: boolean;
   };

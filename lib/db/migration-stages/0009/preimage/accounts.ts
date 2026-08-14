@@ -26,10 +26,7 @@ export const accounts = pgTable(
   {
     id: text("id").primaryKey(),
     kind: accountKindEnum("kind").notNull(),
-    // Closed merchant tombstones deliberately clear the phone so irreversible
-    // deletion does not retain the login identifier. Active accounts are still
-    // required to provide a valid phone by application authority.
-    phone: text("phone"),
+    phone: text("phone").notNull(),
     passwordHash: text("password_hash").notNull(),
     passwordVersion: integer("password_version").notNull().default(1),
     securityVersion: integer("security_version").notNull().default(1),
@@ -73,11 +70,7 @@ export const accounts = pgTable(
     ),
     phoneShapeCheck: check(
       "accounts_phone_shape_check",
-      sql`${table.phone} IS NULL OR ${table.phone} ~ '^07[0-9]{9}$'`,
-    ),
-    activePhoneCheck: check(
-      "accounts_active_phone_required_check",
-      sql`${table.state} = 'closed' OR ${table.phone} IS NOT NULL`,
+      sql`${table.phone} ~ '^07[0-9]{9}$'`,
     ),
     timestampOrderCheck: check(
       "accounts_timestamp_order_check",
