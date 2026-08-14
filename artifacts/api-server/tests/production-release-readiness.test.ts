@@ -135,12 +135,12 @@ test("Meta OAuth remains blocked when any explicit production cutover prerequisi
 
 test("legacy Meta router contains no Replit redirect fallback", () => {
   const current = path.dirname(fileURLToPath(import.meta.url));
-  const routerPath = path.resolve(current, "../src/routes/index.ts");
+  const routerPath = path.resolve(current, "../src/routes/indexModulePart1.ts");
   const source = fs.readFileSync(routerPath, "utf8");
   assert.equal(source.includes(".replit.dev/api/meta/callback"), false);
   assert.equal(source.includes(".repl.co/api/meta/callback"), false);
   assert.match(
     source,
-    /const META_REDIRECT_URI = String\(process\.env\.META_REDIRECT_URI \|\| ""\)\.trim\(\);/,
+    /export const META_REDIRECT_URI = String\(process\.env\.META_REDIRECT_URI \|\| ""\)\.trim\(\);/,
   );
 });
