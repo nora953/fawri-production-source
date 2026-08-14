@@ -1,11 +1,11 @@
-import { getKnowledgeRepository } from "./knowledge/knowledgeRepository.js";
+import { getPostgresKnowledgeManagementRuntime } from "./knowledge/postgresKnowledgeManagementRuntime.js";
 import type {
   KnowledgeLanguage,
   SuggestedReplySource,
 } from "./knowledge/types.js";
 
 export function listMerchantTrainingRequests(merchantId: string) {
-  return getKnowledgeRepository().listTrainingRequests(merchantId);
+  return getPostgresKnowledgeManagementRuntime().listTrainingRequests(merchantId);
 }
 
 export function createMerchantTrainingRequest(input: {
@@ -17,7 +17,7 @@ export function createMerchantTrainingRequest(input: {
   suggestedReply?: string | null;
   suggestedReplySource?: SuggestedReplySource | null;
 }) {
-  return getKnowledgeRepository().createTrainingRequest(input);
+  return getPostgresKnowledgeManagementRuntime().createTrainingRequest(input);
 }
 
 export function proposeMerchantTrainingReply(input: {
@@ -27,7 +27,7 @@ export function proposeMerchantTrainingReply(input: {
   suggestedReply: string;
   source: SuggestedReplySource;
 }) {
-  return getKnowledgeRepository().proposeTrainingReply(input);
+  return getPostgresKnowledgeManagementRuntime().proposeTrainingReply(input);
 }
 
 export function approveMerchantTrainingRequest(input: {
@@ -37,7 +37,7 @@ export function approveMerchantTrainingRequest(input: {
   approvedAnswer?: string;
   keywords?: string[];
 }) {
-  return getKnowledgeRepository().approveTrainingRequest(input);
+  return getPostgresKnowledgeManagementRuntime().approveTrainingRequest(input);
 }
 
 export function rejectMerchantTrainingRequest(input: {
@@ -46,5 +46,5 @@ export function rejectMerchantTrainingRequest(input: {
   expectedVersion: number;
   reason?: string;
 }) {
-  return getKnowledgeRepository().rejectTrainingRequest(input);
+  return getPostgresKnowledgeManagementRuntime().rejectTrainingRequest(input);
 }
