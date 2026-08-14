@@ -4,12 +4,20 @@ import {
   normalizePhone,
 } from "../services/authAccountRepository";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
-import { authSecurityStore } from "../services/authSecurityStore";
 import {
   hashPassword,
   passwordNeedsRehash,
   verifyPassword,
 } from "../services/authPasswordService";
+import {
+  findAdminByIdAuthoritative,
+  findAdminByPhoneAuthoritative,
+  updateAdminPasswordAuthoritative,
+} from "../services/postgresAdminAccountAuthority";
+import {
+  isAdminDeviceTrustedAuthoritative,
+  registerAdminDeviceAuthoritative,
+} from "../services/postgresAdminSecurityAuthority";
 import { findMerchantByPhoneAuthoritative } from "../services/postgresMerchantAccountAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import {
@@ -63,7 +71,7 @@ export async function login(
   let found =
     kind === "merchant"
       ? await findMerchantByPhoneAuthoritative(phone)
-      : authAccountRepository.findByPhone(phone, "admin");
+      : await findAdminByPhoneAuthoritative(phone);
   if (
     !found ||
     !found.account.enabled ||
@@ -88,10 +96,14 @@ export async function login(
   }
 
   if (passwordNeedsRehash(found.account.passwordHash)) {
-    // A PostgreSQL merchant password is never rewritten through the legacy
-    // file repository. Rehash can safely wait until a password change/reset,
-    // where the PostgreSQL password/session transaction owns the mutation.
-    if (kind === "admin" || !operationalPostgresAuthorityRequired()) {
+    if (kind === "admin") {
+      await updateAdminPasswordAuthoritative(
+        found.account.id,
+        hashPassword(password),
+      );
+      const refreshed = await findAdminByIdAuthoritative(found.account.id);
+      if (refreshed) found = refreshed;
+    } else if (!operationalPostgresAuthorityRequired()) {
       authAccountRepository.updatePassword(
         found.account.id,
         kind,
@@ -113,13 +125,13 @@ export async function login(
       );
       return;
     }
-    const device = authSecurityStore.registerDevice({
+    const device = await registerAdminDeviceAuthoritative({
       accountId: found.account.id,
       accountKind: "admin",
       deviceId,
       deviceLabel: requestDeviceLabel(req),
     });
-    if (!authSecurityStore.isDeviceTrusted(found.account.id, "admin", deviceId)) {
+    if (!(await isAdminDeviceTrustedAuthoritative(found.account.id, deviceId))) {
       if (found.adminProfile?.role === "owner_admin") {
         try {
           const issued = await issueOtp(

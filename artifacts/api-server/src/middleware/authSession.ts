@@ -12,11 +12,13 @@ import {
   type AccountKind,
   type AdminPermission,
 } from "../services/authPolicy";
+import { adminAuthPostgresCutoverMode } from "../services/adminAuthPostgresCutover";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import type {
   AuthSessionRecord,
   IssuedSession,
 } from "../services/authSecurityStore";
+import { findAdminByIdAuthoritative } from "../services/postgresAdminAccountAuthority";
 import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 
@@ -159,6 +161,19 @@ async function authenticate(
   expectedKind: AccountKind,
   next: NextFunction,
 ): Promise<void> {
+  if (
+    expectedKind === "admin" &&
+    adminAuthPostgresCutoverMode() === "incomplete"
+  ) {
+    sendAuthError(
+      res,
+      503,
+      "AUTH_POSTGRES_CUTOVER_INCOMPLETE",
+      "administrator authentication PostgreSQL authority is incomplete",
+    );
+    return;
+  }
+
   const token = getSessionToken(req, expectedKind);
   if (!token) {
     sendAuthError(
@@ -190,10 +205,7 @@ async function authenticate(
   const authAccount =
     expectedKind === "merchant"
       ? await findMerchantByIdAuthoritative(validated.session.account_id)
-      : authAccountRepository.findById(
-          validated.session.account_id,
-          "admin",
-        );
+      : await findAdminByIdAuthoritative(validated.session.account_id);
   if (!authAccount || !authAccount.account.enabled) {
     await authPostgresSessionAuthority.revokeSession(
       token,

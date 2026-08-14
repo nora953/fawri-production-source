@@ -94,21 +94,21 @@ export function devCode(code: string) {
 }
 
 export async function issueOtp(req: Request, target: string, purpose: OtpPurpose) {
-  const issued =
-    purpose === "admin_device_verification"
-      ? authSecurityStore.issueOtpChallenge({
-          target,
-          purpose,
-          ip: requestIp(req),
-        })
-      : await issueMerchantOtpChallengeAuthoritative({
-          target,
-          purpose,
-          ip: requestIp(req),
-        });
+  const legacyAdminRecovery = purpose === "admin_recovery";
+  const issued = legacyAdminRecovery
+    ? authSecurityStore.issueOtpChallenge({
+        target,
+        purpose,
+        ip: requestIp(req),
+      })
+    : await issueMerchantOtpChallengeAuthoritative({
+        target,
+        purpose,
+        ip: requestIp(req),
+      });
   const delivery = await deliverAuthOtp(target, issued.code, purpose);
   if (!delivery.ok) {
-    if (purpose === "admin_device_verification") {
+    if (legacyAdminRecovery) {
       authSecurityStore.revokeOtpChallenge(issued.challengeId);
     } else {
       await revokeMerchantOtpChallengeAuthoritative(issued.challengeId);

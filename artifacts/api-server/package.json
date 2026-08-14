@@ -7,6 +7,7 @@
     "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
+    "provision:owner-admin": "pnpm exec tsx ./scripts/provision-owner-admin.ts",
     "test:merchant-session": "node ./build.mjs && node --test ./tests/merchant-session.integration.test.mjs",
     "test:merchant-status-access": "node ./build.mjs && node --test ./tests/merchant-status-access.integration.test.mjs",
     "test:meta-webhook-security": "node ./build.mjs && node --test ./tests/meta-webhook-security.integration.test.mjs",
