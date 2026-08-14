@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { getFawriDataFilePath } from "../lib/dataPaths";
 import { calculateRetentionStatus } from "./merchantLifecycle";
+import { operationalPostgresAuthorityRequired } from "./operationalPostgresAuthority";
+import { refreshAllMerchantRetentionPostgres } from "./postgresMerchantRetentionAuthority";
 
 const RETENTION_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
@@ -63,9 +65,14 @@ function isActiveSubscription(db: AuthDb, merchant: MerchantRecord): boolean {
   return Number.isFinite(expiryTime) && expiryTime > Date.now();
 }
 
+/** Legacy compatibility path only. Production PostgreSQL authority never calls this. */
 export function refreshMerchantRetentionPolicy(
   merchantId?: string,
 ): { checked: number; updated: number } {
+  if (operationalPostgresAuthorityRequired()) {
+    return { checked: 0, updated: 0 };
+  }
+
   const db = readDb();
   const merchants = Array.isArray(db.merchants) ? db.merchants : [];
   let checked = 0;
@@ -131,6 +138,7 @@ export function refreshMerchantRetentionPolicy(
   return { checked, updated };
 }
 
+/** Legacy compatibility accessor only. */
 export function getMerchantRetentionAccess(
   merchantId: string,
 ): MerchantRetentionAccess {
@@ -160,13 +168,21 @@ export function startMerchantRetentionPolicyScheduler(): void {
   if (globalState.__fawriRetentionPolicySchedulerStarted) return;
   globalState.__fawriRetentionPolicySchedulerStarted = true;
 
-  refreshMerchantRetentionPolicy();
-  const timer = setInterval(() => {
+  const run = () => {
+    if (operationalPostgresAuthorityRequired()) {
+      void refreshAllMerchantRetentionPostgres().catch((error) => {
+        console.error("PostgreSQL merchant retention update failed:", error);
+      });
+      return;
+    }
     try {
       refreshMerchantRetentionPolicy();
     } catch (error) {
       console.error("Merchant retention policy update failed:", error);
     }
-  }, RETENTION_CHECK_INTERVAL_MS);
+  };
+
+  run();
+  const timer = setInterval(run, RETENTION_CHECK_INTERVAL_MS);
   timer.unref?.();
 }
