@@ -12,6 +12,7 @@ import {
   type AccountKind,
   type AdminPermission,
 } from "../services/authPolicy";
+import { adminAuthPostgresCutoverMode } from "../services/adminAuthPostgresCutover";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import type {
   AuthSessionRecord,
@@ -160,6 +161,19 @@ async function authenticate(
   expectedKind: AccountKind,
   next: NextFunction,
 ): Promise<void> {
+  if (
+    expectedKind === "admin" &&
+    adminAuthPostgresCutoverMode() === "incomplete"
+  ) {
+    sendAuthError(
+      res,
+      503,
+      "AUTH_POSTGRES_CUTOVER_INCOMPLETE",
+      "administrator authentication PostgreSQL authority is incomplete",
+    );
+    return;
+  }
+
   const token = getSessionToken(req, expectedKind);
   if (!token) {
     sendAuthError(
