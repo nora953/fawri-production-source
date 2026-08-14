@@ -64,6 +64,13 @@
       "when": 1786722600000,
       "tag": "0008_admin_device_verification_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786752000000,
+      "tag": "0009_merchant_management_lifecycle_authority",
+      "breakpoints": true
     }
   ]
 }
