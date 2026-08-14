@@ -71,6 +71,17 @@ function isPublicMerchantPath(pathname: string): boolean {
   ].includes(pathname);
 }
 
+function isProductWritePath(req: Request, pathname: string): boolean {
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return false;
+  return (
+    pathname === "/products" ||
+    pathname === "/bot/products/sync" ||
+    pathname === "/catalog/products" ||
+    pathname.startsWith("/catalog/products/") ||
+    pathname.startsWith("/inventory/")
+  );
+}
+
 async function enforcePostgresRetentionAccess(
   req: Request,
   res: Response,
@@ -118,6 +129,15 @@ async function enforcePostgresRetentionAccess(
         ok: false,
         error: "account is suspended after the retention period",
         code: "RETENTION_ACCOUNT_SUSPENDED",
+        retention_status: access.retentionStatus,
+      });
+      return;
+    }
+    if (access.productsReadOnly && isProductWritePath(req, pathname)) {
+      res.status(423).json({
+        ok: false,
+        error: "products are read-only after three calendar months without renewal",
+        code: "PRODUCTS_READ_ONLY",
         retention_status: access.retentionStatus,
       });
       return;
