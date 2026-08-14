@@ -121,7 +121,7 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
 
     const firstDecision = await engineB.decide({
       merchantId: merchantIds[1],
-      customerText: "هل يمكن تغليف الطلب كهدية؟",
+      customerText: "هل يمكن إضافة بطاقة تهنئة للهدية؟",
       languageHint: "ar",
     });
     assert.equal(firstDecision.action, "handoff");
@@ -137,8 +137,8 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
       merchantId: merchantIds[1],
       id: request.id,
       expectedVersion: request.version,
-      approvedAnswer: "نعم، يمكن تغليف الطلب كهدية عند الطلب.",
-      keywords: ["هدية", "تغليف"],
+      approvedAnswer: "نعم، يمكن إضافة بطاقة تهنئة للهدية.",
+      keywords: ["هدية", "تهنئة"],
     });
     assert.equal(approved.request.status, "approved");
     assert.equal(approved.learnedAnswer.source, "merchant_approved");
@@ -155,13 +155,13 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
 
     const secondDecision = await engineB.decide({
       merchantId: merchantIds[1],
-      customerText: "هل يمكن تغليف الطلب كهدية؟",
+      customerText: "هل يمكن إضافة بطاقة تهنئة للهدية؟",
       languageHint: "ar",
     });
     assert.equal(secondDecision.action, "reply");
     assert.equal(secondDecision.stage, "semantic_retrieval");
     assert.equal(secondDecision.matchedRecordId, approved.learnedAnswer.id);
-    assert.equal(secondDecision.answerText, "نعم، يمكن تغليف الطلب كهدية عند الطلب.");
+    assert.equal(secondDecision.answerText, "نعم، يمكن إضافة بطاقة تهنئة للهدية.");
   });
 
   await t.test("tenant isolation prevents Knowledge records crossing merchants", async () => {
