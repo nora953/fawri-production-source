@@ -6,7 +6,7 @@ import {
   requireMerchantSession,
 } from "../middleware/authSession.js";
 import { getKnowledgeDecisionEngine } from "../services/ai/knowledgeDecisionEngine.js";
-import { getKnowledgeRepository } from "../services/knowledge/knowledgeRepository.js";
+import { getPostgresKnowledgeManagementRuntime } from "../services/knowledge/postgresKnowledgeManagementRuntime.js";
 import { readLanguage, readString, sendKnowledgeError } from "./knowledge-route-utils.js";
 import "../services/knowledge/knowledgeLifecycle.js";
 
@@ -60,8 +60,6 @@ router.post("/decision", async (req: Request, res: Response): Promise<void> => {
       merchantId,
       customerText,
       languageHint: languageHint || undefined,
-      // No browser-supplied merchant policy is accepted here. The engine resolves
-      // policy from PostgreSQL before any fact/retrieval/model stage.
       requestId: readString(req.body?.requestId, 160) || undefined,
     });
     res.setHeader("Cache-Control", "no-store");
@@ -71,24 +69,28 @@ router.post("/decision", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-router.get("/learned-answers", (_req: Request, res: Response): void => {
+router.get("/learned-answers", async (_req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
-  res.json({
-    ok: true,
-    answers: getKnowledgeRepository().listLearnedAnswers(merchantId),
-  });
+  try {
+    const answers = await getPostgresKnowledgeManagementRuntime().listLearnedAnswers(merchantId);
+    res.json({ ok: true, answers });
+  } catch (error) {
+    sendKnowledgeError(res, error);
+  }
 });
 
-router.get("/audit", (req: Request, res: Response): void => {
+router.get("/audit", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
   const limit = Number(req.query.limit);
-  res.json({
-    ok: true,
-    events: getKnowledgeRepository().listAuditEvents(
+  try {
+    const events = await getPostgresKnowledgeManagementRuntime().listAuditEvents(
       merchantId,
       Number.isInteger(limit) ? limit : 100,
-    ),
-  });
+    );
+    res.json({ ok: true, events });
+  } catch (error) {
+    sendKnowledgeError(res, error);
+  }
 });
 
 router.use("/saved-answers", savedAnswerOperationsRouter);

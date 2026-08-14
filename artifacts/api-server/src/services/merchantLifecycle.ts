@@ -1,7 +1,6 @@
 import { deleteMerchantRuntimeData } from "./merchantRuntime";
-import { deleteMerchantSavedAnswersData } from "./merchantSavedAnswers";
-import { deleteMerchantBotTrainingData } from "./merchantBotTraining";
 import { deleteMerchantAuthData } from "./merchantAuthData";
+import { deleteMerchantKnowledgePostgresData } from "./knowledge/postgresKnowledgeLifecycle.js";
 
 export const WARNING_1_MONTHS = 2;
 export const WARNING_2_MONTHS = 3;
@@ -245,9 +244,9 @@ export function canDeleteMerchant(
   return retentionStatus === MerchantRetentionStatus.EligibleForDeletion;
 }
 
-export function deleteMerchant(
+export async function deleteMerchant(
   options: DeleteMerchantOptions,
-): DeleteMerchantResult {
+): Promise<DeleteMerchantResult> {
   const merchantId = options.merchantId.trim();
 
   if (!merchantId) {
@@ -262,8 +261,7 @@ export function deleteMerchant(
   }
 
   const runtime = deleteMerchantRuntimeData(merchantId);
-  const savedAnswers = deleteMerchantSavedAnswersData(merchantId);
-  const botTraining = deleteMerchantBotTrainingData(merchantId);
+  const knowledge = await deleteMerchantKnowledgePostgresData(merchantId);
 
   // Delete the account last so a failed dependency cleanup does not
   // remove the merchant login before the failure is reported.
@@ -283,9 +281,9 @@ export function deleteMerchant(
       orders: runtime.orders,
       orderDrafts: runtime.orderDrafts,
       metaPages: runtime.metaPages,
-      savedAnswers,
-      trainingRequests: botTraining.trainingRequests,
-      learnedAnswers: botTraining.learnedAnswers,
+      savedAnswers: knowledge.savedAnswers,
+      trainingRequests: knowledge.trainingRequests,
+      learnedAnswers: knowledge.learnedAnswers,
     },
   };
 }

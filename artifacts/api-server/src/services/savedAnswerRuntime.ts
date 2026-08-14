@@ -1,8 +1,8 @@
-import { getKnowledgeRepository } from "./knowledge/knowledgeRepository.js";
+import { getPostgresKnowledgeManagementRuntime } from "./knowledge/postgresKnowledgeManagementRuntime.js";
 import type { KnowledgeLanguage } from "./knowledge/types.js";
 
 export function listMerchantSavedAnswers(merchantId: string) {
-  return getKnowledgeRepository().listSavedAnswers(merchantId);
+  return getPostgresKnowledgeManagementRuntime().listSavedAnswers(merchantId);
 }
 
 export function createMerchantSavedAnswer(input: {
@@ -13,7 +13,7 @@ export function createMerchantSavedAnswer(input: {
   language: KnowledgeLanguage;
   active?: boolean;
 }) {
-  return getKnowledgeRepository().createSavedAnswer(input);
+  return getPostgresKnowledgeManagementRuntime().createSavedAnswer(input);
 }
 
 export function updateMerchantSavedAnswer(input: {
@@ -26,7 +26,7 @@ export function updateMerchantSavedAnswer(input: {
   language?: KnowledgeLanguage;
   active?: boolean;
 }) {
-  return getKnowledgeRepository().updateSavedAnswer(input);
+  return getPostgresKnowledgeManagementRuntime().updateSavedAnswer(input);
 }
 
 export function deleteMerchantSavedAnswer(input: {
@@ -34,5 +34,5 @@ export function deleteMerchantSavedAnswer(input: {
   id: string;
   expectedVersion: number;
 }) {
-  return getKnowledgeRepository().deleteSavedAnswer(input);
+  return getPostgresKnowledgeManagementRuntime().deleteSavedAnswer(input);
 }

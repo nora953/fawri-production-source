@@ -19,12 +19,17 @@ import {
 const router = Router();
 router.use(requireMerchantSession);
 
-router.get("/", (_req: Request, res: Response): void => {
+router.get("/", async (_req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
-  res.json({ ok: true, answers: listMerchantSavedAnswers(merchantId) });
+  try {
+    const answers = await listMerchantSavedAnswers(merchantId);
+    res.json({ ok: true, answers });
+  } catch (error) {
+    sendKnowledgeError(res, error);
+  }
 });
 
-router.post("/", (req: Request, res: Response): void => {
+router.post("/", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
   const questionPattern = readString(req.body?.questionPattern ?? req.body?.question_pattern, 500);
   const answerText = readString(req.body?.answerText ?? req.body?.answer_text, 2_000);
@@ -40,12 +45,12 @@ router.post("/", (req: Request, res: Response): void => {
   }
 
   try {
-    const answer = createMerchantSavedAnswer({
+    const answer = await createMerchantSavedAnswer({
       merchantId,
       category: readString(req.body?.category, 100) || "custom",
       questionPattern,
       answerText,
-      language: language || undefined,
+      language,
       active: req.body?.active !== false,
     });
     res.status(201).json({ ok: true, answer });
@@ -54,7 +59,7 @@ router.post("/", (req: Request, res: Response): void => {
   }
 });
 
-router.patch("/:id", (req: Request, res: Response): void => {
+router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
   const expectedVersion = readExpectedVersion(req);
   if (!expectedVersion) {
@@ -74,7 +79,7 @@ router.patch("/:id", (req: Request, res: Response): void => {
   }
 
   try {
-    const answer = updateMerchantSavedAnswer({
+    const answer = await updateMerchantSavedAnswer({
       merchantId,
       id: readString(req.params.id, 160),
       expectedVersion,
@@ -100,7 +105,7 @@ router.patch("/:id", (req: Request, res: Response): void => {
   }
 });
 
-router.delete("/:id", (req: Request, res: Response): void => {
+router.delete("/:id", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
   const expectedVersion = readExpectedVersion(req);
   if (!expectedVersion) {
@@ -113,7 +118,7 @@ router.delete("/:id", (req: Request, res: Response): void => {
   }
 
   try {
-    const answer = deleteMerchantSavedAnswer({
+    const answer = await deleteMerchantSavedAnswer({
       merchantId,
       id: readString(req.params.id, 160),
       expectedVersion,
