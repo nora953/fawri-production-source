@@ -7,6 +7,12 @@ import {
   hashPassword,
   verifyPassword,
 } from "../services/authPasswordService";
+import { findAdminByIdAuthoritative } from "../services/postgresAdminAccountAuthority";
+import {
+  clearAdminMustChangePasswordAuthoritative,
+  clearLegacyAdminMustChangePassword,
+} from "../services/postgresAdminPasswordProfileAuthority";
+import { auditAdminSecurityEventAuthoritative } from "../services/postgresAdminSecurityAuthority";
 import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import {
@@ -32,7 +38,7 @@ export async function changePassword(
   const current =
     kind === "merchant"
       ? await findMerchantByIdAuthoritative(context.account.id)
-      : authAccountRepository.findById(context.account.id, "admin");
+      : await findAdminByIdAuthoritative(context.account.id);
   const forcedAdminChange =
     kind === "admin" && current?.adminProfile?.mustChangePassword === true;
 
@@ -71,20 +77,40 @@ export async function changePassword(
   }
 
   const passwordHash = hashPassword(next);
-  if (kind === "admin" || !operationalPostgresAuthorityRequired()) {
-    authAccountRepository.updatePassword(
-      context.account.id,
-      kind,
+  const adminPostgresCutover =
+    kind === "admin" &&
+    operationalPostgresAuthorityRequired() &&
+    authPostgresSessionAuthority.enabled("admin");
+
+  let postgresRevoked: number | null = null;
+  if (kind === "admin") {
+    if (adminPostgresCutover) {
+      postgresRevoked = await authPostgresSessionAuthority.commitPasswordChange({
+        accountId: context.account.id,
+        accountKind: "admin",
+        passwordHash,
+        reason: "password_changed",
+      });
+      await clearAdminMustChangePasswordAuthoritative(context.account.id);
+    } else {
+      clearLegacyAdminMustChangePassword(context.account.id, passwordHash);
+    }
+  } else {
+    if (!operationalPostgresAuthorityRequired()) {
+      authAccountRepository.updatePassword(
+        context.account.id,
+        "merchant",
+        passwordHash,
+      );
+    }
+    postgresRevoked = await authPostgresSessionAuthority.commitPasswordChange({
+      accountId: context.account.id,
+      accountKind: "merchant",
       passwordHash,
-      kind === "admin" ? { mustChangePassword: false } : {},
-    );
+      reason: "password_changed",
+    });
   }
-  const postgresRevoked = await authPostgresSessionAuthority.commitPasswordChange({
-    accountId: context.account.id,
-    accountKind: kind,
-    passwordHash,
-    reason: "password_changed",
-  });
+
   if (
     kind === "merchant" &&
     operationalPostgresAuthorityRequired() &&
@@ -98,6 +124,15 @@ export async function changePassword(
     );
     return;
   }
+  if (kind === "admin" && operationalPostgresAuthorityRequired() && !adminPostgresCutover) {
+    sendAuthError(
+      res,
+      503,
+      "AUTH_POSTGRES_CUTOVER_INCOMPLETE",
+      "administrator authentication PostgreSQL authority is incomplete",
+    );
+    return;
+  }
   if (postgresRevoked === null) {
     authSecurityStore.revokeAllSessions({
       accountId: context.account.id,
@@ -105,14 +140,25 @@ export async function changePassword(
       reason: "password_changed",
     });
   }
-  authSecurityStore.audit({
-    event_type: forcedAdminChange
-      ? "administrator_forced_password_changed"
-      : "account_password_changed",
-    actor_account_id: context.account.id,
-    actor_kind: kind,
-    subject_hash: context.account.id,
-  });
+  if (adminPostgresCutover) {
+    await auditAdminSecurityEventAuthoritative({
+      event_type: forcedAdminChange
+        ? "administrator_forced_password_changed"
+        : "account_password_changed",
+      actor_account_id: context.account.id,
+      actor_kind: "admin",
+      subject_hash: context.account.id,
+    });
+  } else {
+    authSecurityStore.audit({
+      event_type: forcedAdminChange
+        ? "administrator_forced_password_changed"
+        : "account_password_changed",
+      actor_account_id: context.account.id,
+      actor_kind: kind,
+      subject_hash: context.account.id,
+    });
+  }
   clearAuthSessionCookie(res, kind);
   res.json({ ok: true, reauthentication_required: true });
 }
