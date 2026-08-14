@@ -49,3 +49,16 @@ test("PostgreSQL admin interceptors remain ahead of legacy routers", () => {
   assert.ok(adminOtpPg >= 0 && publicLegacy >= 0 && adminOtpPg < publicLegacy);
   assert.ok(adminPg >= 0 && adminLegacy >= 0 && adminPg < adminLegacy);
 });
+
+test("partial admin PostgreSQL configuration fails closed before legacy access", () => {
+  const router = source("../src/routes/auth-security.ts");
+  const middleware = source("../src/middleware/authSession.ts");
+
+  assert.match(router, /adminAuthPostgresCutoverMode\(\) === "incomplete"/);
+  assert.match(router, /AUTH_POSTGRES_CUTOVER_INCOMPLETE/);
+  assert.match(
+    middleware,
+    /expectedKind === "admin"[\s\S]{0,160}adminAuthPostgresCutoverMode\(\) === "incomplete"/,
+  );
+  assert.match(middleware, /AUTH_POSTGRES_CUTOVER_INCOMPLETE/);
+});
