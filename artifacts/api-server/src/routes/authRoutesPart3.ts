@@ -236,7 +236,7 @@ router.post("/admin/verify-password", (req: Request, res: Response) => {
   return res.json({ ok: true });
 });
 
-router.post("/merchants/:id/delete", (req: Request, res: Response) => {
+router.post("/merchants/:id/delete", async (req: Request, res: Response) => {
   const owner = requireOwner(req, res);
   if (!owner) return;
 
@@ -292,7 +292,7 @@ router.post("/merchants/:id/delete", (req: Request, res: Response) => {
   }
 
   try {
-    const result = deleteMerchant({
+    const result = await deleteMerchant({
       merchantId,
       reason: deletionRequest.reason,
       performedBy: owner.id,
