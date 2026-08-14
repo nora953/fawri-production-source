@@ -17,6 +17,7 @@ import type {
   AuthSessionRecord,
   IssuedSession,
 } from "../services/authSecurityStore";
+import { findAdminByIdAuthoritative } from "../services/postgresAdminAccountAuthority";
 import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 
@@ -190,10 +191,7 @@ async function authenticate(
   const authAccount =
     expectedKind === "merchant"
       ? await findMerchantByIdAuthoritative(validated.session.account_id)
-      : authAccountRepository.findById(
-          validated.session.account_id,
-          "admin",
-        );
+      : await findAdminByIdAuthoritative(validated.session.account_id);
   if (!authAccount || !authAccount.account.enabled) {
     await authPostgresSessionAuthority.revokeSession(
       token,
