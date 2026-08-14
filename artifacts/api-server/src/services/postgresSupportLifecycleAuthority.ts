@@ -40,7 +40,7 @@ function deterministicId(prefix: string, ...parts: string[]): string {
     .digest("hex")}`;
 }
 
-function localizedAutoCloseMessage(language: string): { sender: string; body: string } {
+function autoCloseMessage(language: string): { sender: string; body: string } {
   if (language === "en") {
     return {
       sender: "Fawri",
@@ -59,14 +59,13 @@ function localizedAutoCloseMessage(language: string): { sender: string; body: st
   };
 }
 
-async function insertSystemAudit(
+async function insertAudit(
   target: OperationalQueryTarget,
   input: {
     merchantId: string;
     ticketId: string;
     actionType: string;
     details: string;
-    metadata?: Record<string, string | number | boolean | null>;
     createdAt: string;
   },
 ): Promise<void> {
@@ -80,7 +79,8 @@ async function insertSystemAudit(
     `INSERT INTO audit_events
        (id, actor_kind, merchant_id, action_type, entity_type, entity_id,
         details, metadata, created_at)
-     VALUES ($1, 'system', $2, $3, 'support_ticket', $4, $5, $6::jsonb, $7::timestamptz)
+     VALUES ($1, 'system', $2, $3, 'support_ticket', $4, $5,
+             jsonb_build_object('ticket_id', $4::text), $6::timestamptz)
      ON CONFLICT (id) DO NOTHING`,
     [
       id,
@@ -88,7 +88,6 @@ async function insertSystemAudit(
       input.actionType,
       input.ticketId,
       input.details,
-      JSON.stringify(input.metadata || {}),
       input.createdAt,
     ],
   );
@@ -110,7 +109,9 @@ async function insertMerchantNotification(
     `INSERT INTO notifications
        (id, audience, merchant_id, account_id, type, title_key, body_key,
         variables, source_entity_type, source_entity_id, created_at)
-     VALUES ($1, 'merchant', $2, $2, $3, $4, $5, $6::jsonb, $7, $8, $9::timestamptz)
+     VALUES ($1, 'merchant', $2,
+             (SELECT account_id FROM merchants WHERE id = $2),
+             $3, $4, $5, $6::jsonb, $7, $8, $9::timestamptz)
      ON CONFLICT (id) DO NOTHING`,
     [
       input.id,
@@ -126,63 +127,26 @@ async function insertMerchantNotification(
   );
 }
 
-export async function upsertInspectionRequestNotificationPostgres(input: {
-  ticketId: string;
-  requestId: string;
-}): Promise<void> {
-  if (!operationalPostgresAuthorityRequired()) {
-    throw new SupportPostgresError(
-      "SUPPORT_POSTGRES_AUTHORITY_REQUIRED",
-      "PostgreSQL support authority is not required",
-      503,
-    );
-  }
-  await withOperationalTransaction(async (client) => {
-    const result = await client.query<{
-      merchant_id: string;
-      subject: string;
-      admin_name: string;
-      mode: string;
-      request_expires_at: Date | string;
-      requested_at: Date | string;
-    }>(
-      `SELECT r.merchant_id, t.subject,
-              COALESCE(ap.display_name, 'Support') AS admin_name,
-              r.mode, r.request_expires_at, r.requested_at
-         FROM support_inspection_requests r
-         JOIN support_tickets t ON t.id = r.ticket_id
-         LEFT JOIN admin_profiles ap ON ap.id = r.admin_account_id
-        WHERE r.id = $1 AND r.ticket_id = $2
-        LIMIT 1`,
-      [input.requestId, input.ticketId],
-    );
-    const row = result.rows[0];
-    if (!row) {
-      throw new SupportPostgresError(
-        "SUPPORT_INSPECTION_NOT_FOUND",
-        "inspection request not found",
-        404,
-      );
-    }
-    const createdAt = new Date(row.requested_at).toISOString();
-    await insertMerchantNotification(client, {
-      id: `notification-inspection-${input.requestId}`,
-      merchantId: row.merchant_id,
-      type: "inspection_session_request",
-      variables: {
-        ticket_id: input.ticketId,
-        inspection_request_id: input.requestId,
-        ticket_subject: row.subject,
-        admin_name: row.admin_name,
-        mode: row.mode,
-        request_expires_at: new Date(row.request_expires_at).toISOString(),
-        action_url: `/dashboard/support?ticket=${encodeURIComponent(input.ticketId)}`,
-      },
-      sourceEntityType: "support_inspection_request",
-      sourceEntityId: input.requestId,
-      createdAt,
-    });
-  });
+async function closeInspectionForTicket(
+  target: OperationalQueryTarget,
+  ticketId: string,
+  nowIso: string,
+): Promise<void> {
+  await target.query(
+    `UPDATE support_inspection_requests
+        SET ended_at = COALESCE(ended_at, $2::timestamptz),
+            end_reason = COALESCE(end_reason, 'ticket_closed')
+      WHERE ticket_id = $1 AND ended_at IS NULL`,
+    [ticketId, nowIso],
+  );
+  await target.query(
+    `UPDATE support_preview_sessions
+        SET status = 'ended', ended_at = COALESCE(ended_at, $2::timestamptz),
+            end_reason = COALESCE(end_reason, 'ticket_closed'),
+            last_seen_at = $2::timestamptz
+      WHERE ticket_id = $1 AND status = 'active'`,
+    [ticketId, nowIso],
+  );
 }
 
 export async function refreshSupportLifecyclePostgresCanonical(now = new Date()) {
@@ -237,8 +201,7 @@ export async function refreshSupportLifecyclePostgresCanonical(now = new Date())
     }>(
       `SELECT t.id, t.merchant_id, t.subject, t.waiting_on, t.waiting_since,
               t.updated_at, t.merchant_reminder_sent_at,
-              t.assistant_reminder_sent_at, t.owner_escalated_at,
-              a.language
+              t.assistant_reminder_sent_at, t.owner_escalated_at, a.language
          FROM support_tickets t
          JOIN merchants m ON m.id = t.merchant_id
          JOIN accounts a ON a.id = m.account_id
@@ -253,8 +216,7 @@ export async function refreshSupportLifecyclePostgresCanonical(now = new Date())
     let autoClosed = 0;
 
     for (const ticket of active.rows) {
-      const waitingSinceValue = ticket.waiting_since || ticket.updated_at;
-      const waitingSince = new Date(waitingSinceValue);
+      const waitingSince = new Date(ticket.waiting_since || ticket.updated_at);
       if (!Number.isFinite(waitingSince.getTime())) continue;
       const elapsed = nowMs - waitingSince.getTime();
 
@@ -263,13 +225,12 @@ export async function refreshSupportLifecyclePostgresCanonical(now = new Date())
           !ticket.merchant_reminder_sent_at &&
           elapsed >= SUPPORT_MERCHANT_REMINDER_MS
         ) {
-          const notificationId = deterministicId(
-            "notification-support-reply-reminder",
-            ticket.id,
-            waitingSince.toISOString(),
-          );
           await insertMerchantNotification(client, {
-            id: notificationId,
+            id: deterministicId(
+              "notification-support-reply-reminder",
+              ticket.id,
+              waitingSince.toISOString(),
+            ),
             merchantId: ticket.merchant_id,
             type: "support_reply_reminder",
             variables: {
@@ -291,7 +252,7 @@ export async function refreshSupportLifecyclePostgresCanonical(now = new Date())
         }
 
         if (elapsed >= SUPPORT_MERCHANT_AUTO_CLOSE_MS) {
-          const message = localizedAutoCloseMessage(ticket.language);
+          const localized = autoCloseMessage(ticket.language);
           const messageId = deterministicId(
             "support-message-auto-close",
             ticket.id,
@@ -303,7 +264,14 @@ export async function refreshSupportLifecyclePostgresCanonical(now = new Date())
                 sender_name_snapshot, body, created_at)
              VALUES ($1, $2, $3, 'system', NULL, $4, $5, $6::timestamptz)
              ON CONFLICT (id) DO NOTHING`,
-            [messageId, ticket.id, ticket.merchant_id, message.sender, message.body, nowIso],
+            [
+              messageId,
+              ticket.id,
+              ticket.merchant_id,
+              localized.sender,
+              localized.body,
+              nowIso,
+            ],
           );
           await client.query(
             `UPDATE support_tickets
@@ -326,27 +294,12 @@ export async function refreshSupportLifecyclePostgresCanonical(now = new Date())
                 AND source_entity_id = $2 AND read_at IS NULL`,
             [ticket.merchant_id, ticket.id, nowIso],
           );
-          await client.query(
-            `UPDATE support_inspection_requests
-                SET ended_at = COALESCE(ended_at, $2::timestamptz),
-                    end_reason = COALESCE(end_reason, 'ticket_closed')
-              WHERE ticket_id = $1 AND ended_at IS NULL`,
-            [ticket.id, nowIso],
-          );
-          await client.query(
-            `UPDATE support_preview_sessions
-                SET status = 'ended', ended_at = COALESCE(ended_at, $2::timestamptz),
-                    end_reason = COALESCE(end_reason, 'ticket_closed'),
-                    last_seen_at = $2::timestamptz
-              WHERE ticket_id = $1 AND status = 'active'`,
-            [ticket.id, nowIso],
-          );
-          await insertSystemAudit(client, {
+          await closeInspectionForTicket(client, ticket.id, nowIso);
+          await insertAudit(client, {
             merchantId: ticket.merchant_id,
             ticketId: ticket.id,
             actionType: "support_ticket_auto_closed_merchant_inactivity",
             details: "Ticket auto-closed after 72 hours without a merchant reply",
-            metadata: { ticket_id: ticket.id },
             createdAt: nowIso,
           });
           autoClosed += 1;
@@ -377,12 +330,11 @@ export async function refreshSupportLifecyclePostgresCanonical(now = new Date())
             WHERE id = $1`,
           [ticket.id, nowIso],
         );
-        await insertSystemAudit(client, {
+        await insertAudit(client, {
           merchantId: ticket.merchant_id,
           ticketId: ticket.id,
           actionType: "support_ticket_owner_escalated",
           details: "Ticket escalated to the owner because the merchant is still waiting for support",
-          metadata: { ticket_id: ticket.id },
           createdAt: nowIso,
         });
         ownerEscalations += 1;
