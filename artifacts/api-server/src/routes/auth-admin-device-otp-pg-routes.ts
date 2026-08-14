@@ -4,7 +4,7 @@ import { authPostgresSessionAuthority } from "../services/authPostgresSessionAut
 import { findAdminByPhoneAuthoritative } from "../services/postgresAdminAccountAuthority";
 import {
   auditAdminSecurityEventAuthoritative,
-  registerAdminDeviceAuthoritative,
+  findAdminDeviceForVerificationPostgres,
   setAdminDeviceTrustAuthoritative,
 } from "../services/postgresAdminSecurityAuthority";
 import { AuthSecurityStoreError } from "../services/authSecurityTypes";
@@ -43,14 +43,17 @@ async function context(req: Request, res: Response) {
     sendAuthError(res, 400, "ADMIN_DEVICE_ID_REQUIRED", "administrator device identifier is required");
     return null;
   }
-  const device = await registerAdminDeviceAuthoritative({
+  const requestedRecordId = String(req.body?.device_record_id || "").trim();
+  if (!requestedRecordId) {
+    sendAuthError(res, 400, "OWNER_DEVICE_VERIFICATION_INVALID", "owner administrator device verification is invalid");
+    return null;
+  }
+  const device = await findAdminDeviceForVerificationPostgres({
     accountId: account.account.id,
-    accountKind: "admin",
+    deviceRecordId: requestedRecordId,
     deviceId,
-    deviceLabel: requestDeviceLabel(req),
   });
-  const requestedRecordId = String(req.body?.device_record_id || "");
-  if (!requestedRecordId || requestedRecordId !== device.id) {
+  if (!device) {
     sendAuthError(res, 400, "OWNER_DEVICE_VERIFICATION_INVALID", "owner administrator device verification is invalid");
     return null;
   }
