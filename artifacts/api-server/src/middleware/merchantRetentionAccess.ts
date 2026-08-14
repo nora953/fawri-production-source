@@ -89,11 +89,7 @@ async function enforcePostgresRetentionAccess(
 ): Promise<void> {
   const pathname = requestApiPath(req);
 
-  if (
-    req.headers.authorization ||
-    isPublicMerchantPath(pathname) ||
-    !getSessionToken(req, "merchant")
-  ) {
+  if (isPublicMerchantPath(pathname) || !getSessionToken(req, "merchant")) {
     next();
     return;
   }
