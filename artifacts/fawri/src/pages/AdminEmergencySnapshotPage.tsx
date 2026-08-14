@@ -81,6 +81,12 @@ const SENSITIVE_KEYS = new Set([
   "secret",
 ]);
 
+const VERBATIM_IDENTIFIER_KEYS = new Set(["sku", "barcode"]);
+
+function isVerbatimIdentifierKey(key: string): boolean {
+  return key === "phone" || key.endsWith("_phone") || VERBATIM_IDENTIFIER_KEYS.has(key);
+}
+
 function formatDate(value: unknown, locale: string): string {
   if (typeof value !== "string" || !value) return "—";
   const date = new Date(value);
@@ -121,6 +127,7 @@ function localizedValue(
     if (formatted !== "—") return formatted;
   }
   const raw = String(value);
+  if (isVerbatimIdentifierKey(key)) return raw;
   const translated = STATUS_LABELS[lang][raw.toLowerCase()];
   if (translated) return translated;
   if (key === "price_iqd" || key === "total_iqd") {
