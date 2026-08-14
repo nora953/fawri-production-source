@@ -4,7 +4,6 @@ import {
   normalizePhone,
 } from "../services/authAccountRepository";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
-import { authSecurityStore } from "../services/authSecurityStore";
 import {
   hashPassword,
   passwordNeedsRehash,
@@ -15,6 +14,10 @@ import {
   findAdminByPhoneAuthoritative,
   updateAdminPasswordAuthoritative,
 } from "../services/postgresAdminAccountAuthority";
+import {
+  isAdminDeviceTrustedAuthoritative,
+  registerAdminDeviceAuthoritative,
+} from "../services/postgresAdminSecurityAuthority";
 import { findMerchantByPhoneAuthoritative } from "../services/postgresMerchantAccountAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import {
@@ -122,13 +125,13 @@ export async function login(
       );
       return;
     }
-    const device = authSecurityStore.registerDevice({
+    const device = await registerAdminDeviceAuthoritative({
       accountId: found.account.id,
       accountKind: "admin",
       deviceId,
       deviceLabel: requestDeviceLabel(req),
     });
-    if (!authSecurityStore.isDeviceTrusted(found.account.id, "admin", deviceId)) {
+    if (!(await isAdminDeviceTrustedAuthoritative(found.account.id, deviceId))) {
       if (found.adminProfile?.role === "owner_admin") {
         try {
           const issued = await issueOtp(
