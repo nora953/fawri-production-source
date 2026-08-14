@@ -531,7 +531,7 @@ SELECT e.merchant_id, e.knowledge_kind, e.knowledge_id, e.language,
        l.language AS source_language, l.source AS source_provenance,
        TRUE AS source_active, l.version AS source_version,
        l.updated_at AS source_updated_at,
-       l.approval_status, l.safe_to_auto_reply
+       l.approval_status::text AS approval_status, l.safe_to_auto_reply
 FROM knowledge_embeddings e
 JOIN learned_answers l
   ON l.id = e.learned_answer_id AND l.merchant_id = e.merchant_id
