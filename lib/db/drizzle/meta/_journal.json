@@ -57,6 +57,13 @@
       "when": 1786488600000,
       "tag": "0007_merchant_customer_payment_confirmation_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786722600000,
+      "tag": "0008_admin_device_verification_auth",
+      "breakpoints": true
     }
   ]
 }
