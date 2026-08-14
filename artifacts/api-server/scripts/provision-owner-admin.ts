@@ -47,7 +47,14 @@ async function main(): Promise<void> {
 
   // Passwords are intentionally accepted only through stdin. Never accept or
   // print a password CLI argument, where it could be retained in shell history
-  // or process listings.
+  // or process listings. Refuse an interactive TTY instead of waiting for an
+  // echoed password.
+  if (process.stdin.isTTY) {
+    throw new OwnerAdminProvisioningError(
+      "PASSWORD_STDIN_REQUIRED",
+      "owner password must be provided through stdin",
+    );
+  }
   const passwordInput = await readFile(0, "utf8");
   const password = passwordInput.replace(/(?:\r?\n)+$/, "");
   if (!password) {
