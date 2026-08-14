@@ -1,1 +1,1 @@
-ALTER TYPE "auth_otp_purpose" ADD VALUE IF NOT EXISTS 'admin_device_verification';
+ALTER TYPE "public"."auth_otp_purpose" ADD VALUE 'admin_device_verification';
