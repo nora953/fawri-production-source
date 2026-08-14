@@ -20,12 +20,17 @@ import {
 const router = Router();
 router.use(requireMerchantSession);
 
-router.get("/", (_req: Request, res: Response): void => {
+router.get("/", async (_req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
-  res.json({ ok: true, requests: listMerchantTrainingRequests(merchantId) });
+  try {
+    const requests = await listMerchantTrainingRequests(merchantId);
+    res.json({ ok: true, requests });
+  } catch (error) {
+    sendKnowledgeError(res, error);
+  }
 });
 
-router.post("/", (req: Request, res: Response): void => {
+router.post("/", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
   const customerText = readString(req.body?.customerText, 2_000);
   const reason = readString(req.body?.reason, 300) || "merchant_created_training_request";
@@ -43,7 +48,7 @@ router.post("/", (req: Request, res: Response): void => {
   }
 
   try {
-    const request = createMerchantTrainingRequest({
+    const request = await createMerchantTrainingRequest({
       merchantId,
       customerText,
       detectedIntent: readString(req.body?.detectedIntent, 100) || "unknown",
@@ -56,7 +61,7 @@ router.post("/", (req: Request, res: Response): void => {
   }
 });
 
-router.post("/:id/propose", (req: Request, res: Response): void => {
+router.post("/:id/propose", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
   const expectedVersion = readExpectedVersion(req);
   const suggestedReply = readString(req.body?.suggestedReply, 2_000);
@@ -71,7 +76,7 @@ router.post("/:id/propose", (req: Request, res: Response): void => {
   }
 
   try {
-    const request = proposeMerchantTrainingReply({
+    const request = await proposeMerchantTrainingReply({
       merchantId,
       id: readString(req.params.id, 160),
       expectedVersion,
@@ -84,7 +89,7 @@ router.post("/:id/propose", (req: Request, res: Response): void => {
   }
 });
 
-router.post("/:id/approve", (req: Request, res: Response): void => {
+router.post("/:id/approve", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
   const expectedVersion = readExpectedVersion(req);
   if (!expectedVersion) {
@@ -97,7 +102,7 @@ router.post("/:id/approve", (req: Request, res: Response): void => {
   }
 
   try {
-    const result = approveMerchantTrainingRequest({
+    const result = await approveMerchantTrainingRequest({
       merchantId,
       id: readString(req.params.id, 160),
       expectedVersion,
@@ -115,7 +120,7 @@ router.post("/:id/approve", (req: Request, res: Response): void => {
   }
 });
 
-router.post("/:id/reject", (req: Request, res: Response): void => {
+router.post("/:id/reject", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
   const expectedVersion = readExpectedVersion(req);
   if (!expectedVersion) {
@@ -128,7 +133,7 @@ router.post("/:id/reject", (req: Request, res: Response): void => {
   }
 
   try {
-    const request = rejectMerchantTrainingRequest({
+    const request = await rejectMerchantTrainingRequest({
       merchantId,
       id: readString(req.params.id, 160),
       expectedVersion,
