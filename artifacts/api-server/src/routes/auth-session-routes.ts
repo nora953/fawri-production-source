@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { authAccountRepository } from "../services/authAccountRepository";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
+import { findAdminByIdAuthoritative } from "../services/postgresAdminAccountAuthority";
 import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
 import {
   clearAuthSessionCookie,
@@ -213,9 +213,9 @@ router.get("/me", requireSecureMerchantSession, async (_req, res) => {
   res.json({ ok: true, ...payload(account) });
 });
 
-router.get("/admin/me", requireSecureAdminSession, (_req, res) => {
+router.get("/admin/me", requireSecureAdminSession, async (_req, res) => {
   const context = getAuthContext(res)!;
-  const account = authAccountRepository.findById(context.account.id, "admin");
+  const account = await findAdminByIdAuthoritative(context.account.id);
   if (!account) {
     res.status(404).json({
       ok: false,
