@@ -1,5 +1,6 @@
-import { Router } from "express";
-import { enforceAuthOrigin } from "../middleware/authSession";
+import { Router, type NextFunction, type Request, type Response } from "express";
+import { enforceAuthOrigin, sendAuthError } from "../middleware/authSession";
+import { adminAuthPostgresCutoverMode } from "../services/adminAuthPostgresCutover";
 import adminDeviceOtpPgRoutes from "./auth-admin-device-otp-pg-routes";
 import publicRoutes from "./auth-public-routes";
 import sessionRoutes from "./auth-session-routes";
@@ -10,6 +11,21 @@ import saasBillingRouter from "./saas-billing";
 
 const router = Router();
 router.use(enforceAuthOrigin);
+router.use((req: Request, res: Response, next: NextFunction) => {
+  const path = String(req.path || "");
+  const adminSurface = path === "/admin" || path.startsWith("/admin/") ||
+    path === "/admins" || path.startsWith("/admins/");
+  if (adminSurface && adminAuthPostgresCutoverMode() === "incomplete") {
+    sendAuthError(
+      res,
+      503,
+      "AUTH_POSTGRES_CUTOVER_INCOMPLETE",
+      "administrator authentication PostgreSQL authority is incomplete",
+    );
+    return;
+  }
+  next();
+});
 router.use(saasBillingRouter as any);
 router.use(subscriptionEntitlementPgRouter as any);
 router.use(adminDeviceOtpPgRoutes as any);
