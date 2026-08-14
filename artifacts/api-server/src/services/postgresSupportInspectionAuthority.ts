@@ -132,7 +132,9 @@ export async function createInspectionRequestCanonicalPostgres(input: {
       `INSERT INTO notifications
          (id, audience, merchant_id, account_id, type, title_key, body_key,
           variables, source_entity_type, source_entity_id, created_at)
-       VALUES ($1, 'merchant', $2, $2, 'inspection_session_request',
+       VALUES ($1, 'merchant', $2,
+               (SELECT account_id FROM merchants WHERE id = $2),
+               'inspection_session_request',
                'notifications.inspection_session_request.title',
                'notifications.inspection_session_request.body',
                $3::jsonb, 'support_inspection_request', $4, $5::timestamptz)
