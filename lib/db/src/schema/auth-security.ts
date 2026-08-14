@@ -17,6 +17,7 @@ export const authOtpPurposeEnum = pgEnum("auth_otp_purpose", [
   "signup",
   "password_reset",
   "admin_recovery",
+  "admin_device_verification",
 ]);
 
 export const authOtpChallenges = pgTable(
