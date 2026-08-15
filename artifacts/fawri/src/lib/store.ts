@@ -18,7 +18,7 @@ const save = (key: string, value: unknown) => {
 
 const MERCHANT_SESSION_ID_KEY = 'fawri_merchant_session_id';
 const LEGACY_MERCHANT_SESSION_ID_KEY = 'fawri_session';
-const ADMIN_SESSION_TOKEN_KEY = 'fawri_admin_session_token';
+const LEGACY_ADMIN_SESSION_TOKEN_KEY = 'fawri_admin_session_token';
 const ADMIN_DEVICE_ID_KEY = 'fawri_admin_device_id';
 
 export const getSession = (): string | null =>
@@ -74,42 +74,43 @@ export const getAdminDeviceLabel = (): string => {
   return `${platform} / ${browser}`;
 };
 
+/**
+ * Compatibility presence signal for legacy UI callers only.
+ *
+ * Auth v2 credentials live exclusively in the HttpOnly admin session cookie.
+ * This function never reads or returns a bearer token; admin API responses remain
+ * the authoritative proof of authentication and authorization.
+ */
 export const getAdminSessionToken = (): string | null =>
-  sessionStorage.getItem(ADMIN_SESSION_TOKEN_KEY);
+  typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+    ? 'auth-v2-cookie-session'
+    : null;
 
-export const setAdminSessionToken = (token: string) =>
-  sessionStorage.setItem(ADMIN_SESSION_TOKEN_KEY, token);
+/** Retired bearer-token writers are intentionally reduced to legacy cleanup. */
+export const setAdminSessionToken = (_token: string) =>
+  sessionStorage.removeItem(LEGACY_ADMIN_SESSION_TOKEN_KEY);
 
 export const clearAdminSessionToken = () =>
-  sessionStorage.removeItem(ADMIN_SESSION_TOKEN_KEY);
+  sessionStorage.removeItem(LEGACY_ADMIN_SESSION_TOKEN_KEY);
 
-export const getAdminAuthHeaders = (): Record<string, string> => {
-  const token = getAdminSessionToken();
-
-  return token
-    ? {
-        Authorization: `Bearer ${token}`,
-        'X-Fawri-Device-Id': getAdminDeviceId(),
-      }
-    : {};
-};
+export const getAdminAuthHeaders = (): Record<string, string> => ({
+  'X-Fawri-Device-Id': getAdminDeviceId(),
+});
 
 export const clearAdminSession = () => {
-  const adminToken = getAdminSessionToken();
-  if (!adminToken) return;
-
-  const adminHeaders = getAdminAuthHeaders();
   clearAdminSessionToken();
-
-  void fetch('/api/auth/admin/session/logout', {
+  void fetch('/api/auth/admin/logout', {
     method: 'POST',
-    headers: adminHeaders,
+    headers: getAdminAuthHeaders(),
     keepalive: true,
   }).catch(() => undefined);
 };
 
 export const clearSession = () => {
-  if (getAdminSessionToken()) {
+  const isAdminRoute =
+    typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+
+  if (isAdminRoute) {
     clearMerchantTabSession();
     clearAdminSession();
     return;
