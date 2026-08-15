@@ -227,17 +227,25 @@ router.get("/admin/me", requireSecureAdminSession, async (_req, res) => {
   }
 
   const responsePayload = payload(account);
-  if (account.adminProfile?.role === "owner_admin" && responsePayload.admin) {
-    const pendingDeviceCount = (await listAdminDevicesAuthoritative()).filter(
-      (device) => device.status === "pending",
-    ).length;
-    responsePayload.admin = {
-      ...responsePayload.admin,
-      pending_device_count: pendingDeviceCount,
-    };
-  }
+  const pendingDeviceCount =
+    account.adminProfile?.role === "owner_admin" && responsePayload.admin
+      ? (await listAdminDevicesAuthoritative()).filter(
+          (device) => device.status === "pending",
+        ).length
+      : null;
 
-  res.json({ ok: true, ...responsePayload });
+  res.json({
+    ok: true,
+    ...responsePayload,
+    ...(pendingDeviceCount !== null && responsePayload.admin
+      ? {
+          admin: {
+            ...responsePayload.admin,
+            pending_device_count: pendingDeviceCount,
+          },
+        }
+      : {}),
+  });
 });
 
 export default router;
