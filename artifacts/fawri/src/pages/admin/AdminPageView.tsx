@@ -203,6 +203,14 @@ export function AdminPageView({ model }: { model: AdminPageViewModel }) {
     updateMerchant,
   } = model;
 
+  const pendingAdminDeviceCount = Number(
+    (
+      currentAdmin as
+        | (Merchant & { pending_device_count?: number })
+        | undefined
+    )?.pending_device_count || 0,
+  );
+
   return (
     <div className="min-h-screen bg-background" dir={adminText.dir}>
       {currentAdmin?.must_change_password === true && (
@@ -303,7 +311,10 @@ export function AdminPageView({ model }: { model: AdminPageViewModel }) {
         {TABS.length > 0 && (
           <div className="-mx-4 grid grid-cols-2 gap-2 px-4 sm:grid-cols-3 md:mx-0 md:grid-cols-4 md:px-0 lg:flex lg:flex-wrap">
           {TABS.map((t) => {
-            const count = tabCount(t);
+            const count =
+              t.filter === "ADMINISTRATORS"
+                ? pendingAdminDeviceCount
+                : tabCount(t);
             return (
               <button
                 key={t.id}
