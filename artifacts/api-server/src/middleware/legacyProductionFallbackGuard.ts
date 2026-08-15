@@ -4,11 +4,14 @@ import { operationalPostgresAuthorityRequired } from "../services/operationalPos
 /**
  * Final production cutover guard.
  *
- * Auth v2/PostgreSQL routers are mounted before the shared legacy router. When
- * operational PostgreSQL authority is required, any /api/auth request that
- * reaches this guard is therefore an unresolved legacy fallback and must not
- * be allowed to consult merchants.json/auth-security.json or a legacy token
- * store. Non-required environments preserve the compatibility behavior.
+ * Auth v2/PostgreSQL routers are mounted before legacy compatibility routers.
+ * When operational PostgreSQL authority is required, any /api/auth request
+ * that reaches this guard is therefore an unresolved legacy fallback and must
+ * not be allowed to consult merchants.json/auth-security.json or a legacy
+ * token store. Non-required environments preserve compatibility behavior.
+ *
+ * originalUrl is deliberate: this middleware is also mounted beneath legacy
+ * Support subpaths, where req.path is relative to the mount point.
  */
 export function enforceLegacyAuthProductionCutoverGate(
   req: Request,
@@ -20,7 +23,7 @@ export function enforceLegacyAuthProductionCutoverGate(
     return;
   }
 
-  const pathname = String(req.path || "").split("?", 1)[0];
+  const pathname = String(req.originalUrl || req.path || "").split("?", 1)[0];
   const legacyAuthPath =
     pathname === "/api/auth" || pathname.startsWith("/api/auth/");
   if (!legacyAuthPath) {
