@@ -10,7 +10,8 @@ export type ProductionReleaseIssue = {
     | "knowledge"
     | "observability"
     | "billing"
-    | "backup";
+    | "backup"
+    | "storage";
 };
 
 export type ProductionLaunchReadiness = {
@@ -213,6 +214,7 @@ export function getProductionExternalLaunchBlockers(): ProductionReleaseIssue[] 
   return [
     issue("billing", "SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE"),
     issue("backup", "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED"),
+    issue("storage", "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED"),
   ];
 }
 
