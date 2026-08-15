@@ -19,6 +19,9 @@ import {
 } from "../services/postgresSubscriptionEntitlement";
 
 const router = Router();
+const DEFAULT_ADMIN_SUBSCRIPTION_SSE_REVALIDATE_MS = 30_000;
+const ADMIN_SUBSCRIPTION_SNAPSHOT_INTERVAL_MS = 5_000;
+const ADMIN_SUBSCRIPTION_HEARTBEAT_MS = 15_000;
 
 function postgresOnly(_req: Request, _res: Response, next: NextFunction): void {
   if (!subscriptionPostgresAuthorityRequired()) {
@@ -47,6 +50,26 @@ function merchantId(res: Response): string {
 
 function actorId(res: Response): string {
   return getAuthContext(res)?.account.id || "";
+}
+
+function adminSubscriptionSseRevalidateMs(): number {
+  const configured = Number(process.env.FAWRI_AUTH_SSE_REVALIDATE_MS);
+  if (!Number.isFinite(configured)) {
+    return DEFAULT_ADMIN_SUBSCRIPTION_SSE_REVALIDATE_MS;
+  }
+  return Math.max(5_000, Math.min(60_000, Math.trunc(configured)));
+}
+
+function writeSseEvent(
+  res: Response,
+  eventName: string,
+  payload: Record<string, unknown>,
+): void {
+  if (res.writableEnded) return;
+  res.write(`event: ${eventName}\n`);
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+  const flush = (res as Response & { flush?: () => void }).flush;
+  if (typeof flush === "function") flush.call(res);
 }
 
 router.use(postgresOnly);
@@ -97,6 +120,88 @@ router.get(
     } catch (error) {
       authorityError(res, error);
     }
+  },
+);
+
+router.get(
+  "/admin/subscriptions/events",
+  requireSecureAdminPermission("manage_subscriptions"),
+  async (req, res) => {
+    let subscriptions;
+    try {
+      subscriptions = await listSubscriptionsPostgres();
+    } catch (error) {
+      authorityError(res, error);
+      return;
+    }
+
+    res.status(200);
+    res.setHeader("Content-Type", "text/event-stream; charset=utf-8");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("X-Accel-Buffering", "no");
+    res.flushHeaders();
+
+    req.socket.setTimeout(0);
+    req.socket.setKeepAlive(true);
+
+    let closed = false;
+    let refreshInFlight = false;
+    let snapshotInterval: NodeJS.Timeout | undefined;
+    let heartbeatInterval: NodeJS.Timeout | undefined;
+    let revalidateTimeout: NodeJS.Timeout | undefined;
+
+    const cleanup = () => {
+      if (closed) return;
+      closed = true;
+      if (snapshotInterval) clearInterval(snapshotInterval);
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      if (revalidateTimeout) clearTimeout(revalidateTimeout);
+      if (!res.writableEnded) res.end();
+    };
+
+    writeSseEvent(res, "snapshot", { subscriptions });
+
+    snapshotInterval = setInterval(() => {
+      if (closed || res.writableEnded || refreshInFlight) return;
+      refreshInFlight = true;
+      void listSubscriptionsPostgres()
+        .then((nextSubscriptions) => {
+          if (!closed && !res.writableEnded) {
+            writeSseEvent(res, "snapshot", { subscriptions: nextSubscriptions });
+          }
+        })
+        .catch(() => {
+          if (!closed && !res.writableEnded) {
+            writeSseEvent(res, "authority_unavailable", {
+              code: "SUBSCRIPTION_ENTITLEMENT_UNAVAILABLE",
+            });
+          }
+          cleanup();
+        })
+        .finally(() => {
+          refreshInFlight = false;
+        });
+    }, ADMIN_SUBSCRIPTION_SNAPSHOT_INTERVAL_MS);
+    snapshotInterval.unref();
+
+    heartbeatInterval = setInterval(() => {
+      if (closed || res.writableEnded) return;
+      try {
+        res.write(": heartbeat\n\n");
+        const flush = (res as Response & { flush?: () => void }).flush;
+        if (typeof flush === "function") flush.call(res);
+      } catch {
+        cleanup();
+      }
+    }, ADMIN_SUBSCRIPTION_HEARTBEAT_MS);
+    heartbeatInterval.unref();
+
+    revalidateTimeout = setTimeout(cleanup, adminSubscriptionSseRevalidateMs());
+    revalidateTimeout.unref();
+
+    req.once("close", cleanup);
+    res.once("close", cleanup);
   },
 );
 
