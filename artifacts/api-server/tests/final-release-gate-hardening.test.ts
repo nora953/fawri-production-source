@@ -48,7 +48,8 @@ test("Support legacy routers are explicitly gated after PostgreSQL interceptors"
   );
 });
 
-test("Emergency read access is Auth v2 and PostgreSQL authoritative before legacy routes", () => {
+test("Emergency read access is Auth v2 and PostgreSQL authoritative before gated legacy routes", () => {
+  const app = source("../src/app.ts");
   const authSecurity = source("../src/routes/auth-security.ts");
   const router = source("../src/routes/auth-emergency-postgres-routes.ts");
   const authority = source("../src/services/postgresEmergencyReadAccessAuthority.ts");
@@ -58,6 +59,15 @@ test("Emergency read access is Auth v2 and PostgreSQL authoritative before legac
   const publicLegacy = authSecurity.indexOf("router.use(publicRoutes as any)");
   const adminLegacy = authSecurity.indexOf("router.use(adminRoutes as any)");
   assert.ok(emergency >= 0 && emergency < publicLegacy && emergency < adminLegacy);
+
+  assert.match(
+    app,
+    /"\/api\/auth\/admin\/emergency-read-access",\s*enforceLegacyAuthProductionCutoverGate,\s*emergencyReadDirectoryRouter/,
+  );
+  assert.match(
+    app,
+    /"\/api\/auth\/emergency-read-access",\s*enforceLegacyAuthProductionCutoverGate,\s*emergencyMerchantNoticesRouter/,
+  );
 
   for (const code of [router, authority, snapshot]) {
     assert.equal(code.includes("readEmergencyAccessDb"), false);
