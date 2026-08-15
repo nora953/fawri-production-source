@@ -1,9 +1,11 @@
 import crypto from "node:crypto";
 import {
   operationalPostgresAuthorityRequired,
+  withMerchantOperationalTransaction,
   withOperationalTransaction,
 } from "./operationalPostgresAuthority";
 import {
+  getMerchantSupportTicketPostgres,
   listAdminSupportTicketsPostgres,
   SupportPostgresError,
 } from "./postgresSupportAuthority";
@@ -167,4 +169,91 @@ export async function createInspectionRequestCanonicalPostgres(input: {
     );
   }
   return ticket;
+}
+
+export async function decideInspectionRequestCanonicalPostgres(input: {
+  merchantId: string;
+  ticketId: string;
+  requestId: string;
+  decision: "approve" | "reject";
+}) {
+  if (!operationalPostgresAuthorityRequired()) {
+    throw new SupportPostgresError(
+      "SUPPORT_POSTGRES_AUTHORITY_REQUIRED",
+      "PostgreSQL support authority is not required",
+      503,
+    );
+  }
+  const merchantId = text(input.merchantId);
+  const ticketId = text(input.ticketId);
+  const requestId = text(input.requestId);
+  if (input.decision !== "approve" && input.decision !== "reject") {
+    throw new SupportPostgresError(
+      "SUPPORT_INSPECTION_DECISION_INVALID",
+      "inspection decision is invalid",
+      400,
+    );
+  }
+
+  await withMerchantOperationalTransaction(merchantId, async (client) => {
+    const result = await client.query<{
+      status: string;
+      request_expires_at: Date | string;
+    }>(
+      `SELECT status, request_expires_at
+         FROM support_inspection_requests
+        WHERE id = $1 AND ticket_id = $2 AND merchant_id = $3
+        FOR UPDATE`,
+      [requestId, ticketId, merchantId],
+    );
+    const request = result.rows[0];
+    if (!request) {
+      throw new SupportPostgresError(
+        "SUPPORT_INSPECTION_NOT_FOUND",
+        "inspection request not found",
+        404,
+      );
+    }
+    if (request.status !== "pending") {
+      throw new SupportPostgresError(
+        "SUPPORT_INSPECTION_NOT_PENDING",
+        "inspection request is no longer pending",
+        409,
+      );
+    }
+    if (new Date(request.request_expires_at).getTime() <= Date.now()) {
+      await client.query(
+        `UPDATE support_inspection_requests
+            SET status = 'expired', expired_at = now(), ended_at = now(),
+                end_reason = 'request_timeout'
+          WHERE id = $1`,
+        [requestId],
+      );
+      throw new SupportPostgresError(
+        "SUPPORT_INSPECTION_EXPIRED",
+        "inspection request has expired",
+        409,
+      );
+    }
+
+    if (input.decision === "approve") {
+      await client.query(
+        `UPDATE support_inspection_requests
+            SET status = 'approved', consent_decision = 'approved',
+                responded_at = now(), approved_at = now()
+          WHERE id = $1`,
+        [requestId],
+      );
+    } else {
+      await client.query(
+        `UPDATE support_inspection_requests
+            SET status = 'rejected', consent_decision = 'rejected',
+                responded_at = now(), rejected_at = now(), ended_at = now()
+          WHERE id = $1`,
+        [requestId],
+      );
+    }
+  });
+
+  return getMerchantSupportTicketPostgres(merchantId, ticketId);
 }
