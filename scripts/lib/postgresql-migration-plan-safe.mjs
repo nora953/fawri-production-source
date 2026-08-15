@@ -23,6 +23,8 @@ const schemaValidationCodes = new Set([
   "REQUIRED_TARGET_VALUE_MISSING",
   "INVALID_TARGET_ENUM_VALUE",
   "DUPLICATE_TARGET_PRIMARY_KEY",
+  "DUPLICATE_TARGET_UNIQUE_INDEX",
+  "DUPLICATE_TARGET_UNIQUE_CONSTRAINT",
   "ORPHAN_TARGET_REFERENCE",
 ]);
 
@@ -39,6 +41,24 @@ function pushPlannerError(report, code, details = {}) {
   report.errors.push({
     code,
     source: "knowledge_migration_normalization",
+    ...details,
+  });
+}
+
+function pushSupportMigrationError(report, code, details = {}) {
+  report.errors ||= [];
+  report.errors.push({
+    code,
+    source: "support_preview_migration_normalization",
+    ...details,
+  });
+}
+
+function pushSupportMigrationWarning(report, code, details = {}) {
+  report.warnings ||= [];
+  report.warnings.push({
+    code,
+    source: "support_preview_migration_normalization",
     ...details,
   });
 }
@@ -203,6 +223,216 @@ function normalizeKnowledgeRows(report) {
   normalizeLearnedAnswers(report);
 }
 
+function parsedTime(value) {
+  const result = new Date(String(value || "")).getTime();
+  return Number.isFinite(result) ? result : null;
+}
+
+function terminalPreviewSession(row) {
+  return text(row?.status) === "ended" && parsedTime(row?.ended_at) !== null;
+}
+
+function safeReplayEvidence(row) {
+  return {
+    id: text(row?.id),
+    started_at: row?.started_at || null,
+    ended_at: row?.ended_at || null,
+    end_reason: text(row?.end_reason) || null,
+    status: text(row?.status) || null,
+  };
+}
+
+export function normalizeSupportPreviewSessions(report) {
+  report.rows ||= {};
+  const sessions = Array.isArray(report.rows.support_preview_sessions)
+    ? report.rows.support_preview_sessions
+    : [];
+  const byRequest = new Map();
+  for (const row of sessions) {
+    const requestId = text(row?.request_id);
+    if (!requestId) continue;
+    const group = byRequest.get(requestId) || [];
+    group.push(row);
+    byRequest.set(requestId, group);
+  }
+
+  const droppedIds = new Set();
+  for (const [requestId, group] of byRequest.entries()) {
+    if (group.length <= 1) continue;
+    const deterministic = group
+      .map((row) => ({ row, startedAt: parsedTime(row?.started_at) }))
+      .sort(
+        (left, right) =>
+          (left.startedAt ?? Number.MAX_SAFE_INTEGER) -
+            (right.startedAt ?? Number.MAX_SAFE_INTEGER) ||
+          text(left.row?.id).localeCompare(text(right.row?.id)),
+      );
+    const unsafe = deterministic.some(
+      (entry) => entry.startedAt === null || !terminalPreviewSession(entry.row),
+    );
+    if (unsafe) {
+      pushSupportMigrationError(report, "LEGACY_SUPPORT_PREVIEW_REPLAY_UNSAFE", {
+        table: "support_preview_sessions",
+        request_id: requestId,
+        preview_session_ids: deterministic.map((entry) => text(entry.row?.id)),
+      });
+      continue;
+    }
+
+    const retained = deterministic[0].row;
+    const dropped = deterministic.slice(1).map((entry) => entry.row);
+    for (const row of dropped) droppedIds.add(text(row?.id));
+
+    const request = (report.rows.support_inspection_requests || []).find(
+      (candidate) => text(candidate?.id) === requestId,
+    );
+    if (request) {
+      const metadata =
+        request.metadata && typeof request.metadata === "object"
+          ? structuredClone(request.metadata)
+          : {};
+      const normalization =
+        metadata.migration_normalization &&
+        typeof metadata.migration_normalization === "object"
+          ? metadata.migration_normalization
+          : {};
+      metadata.migration_normalization = {
+        ...normalization,
+        support_preview_consent_replay: {
+          canonical_preview_session_id: text(retained?.id),
+          dropped_replayed_sessions: dropped.map(safeReplayEvidence),
+        },
+      };
+      request.metadata = metadata;
+    }
+
+    pushSupportMigrationWarning(
+      report,
+      "LEGACY_SUPPORT_PREVIEW_REPLAY_COLLAPSED",
+      {
+        table: "support_preview_sessions",
+        request_id: requestId,
+        retained_preview_session_id: text(retained?.id),
+        dropped_preview_session_ids: dropped.map((row) => text(row?.id)),
+        durable_evidence_preserved_in:
+          "support_inspection_requests.metadata.migration_normalization",
+      },
+    );
+  }
+
+  if (droppedIds.size > 0) {
+    report.rows.support_preview_sessions = sessions.filter(
+      (row) => !droppedIds.has(text(row?.id)),
+    );
+  }
+}
+
+function rowRecordId(row, index) {
+  return text(row?.id || row?.account_id || row?.merchant_id) || `row-${index + 1}`;
+}
+
+function uniqueColumnsFromIndex(index) {
+  if (!index?.isUnique || index?.where) return null;
+  const columns = Array.isArray(index.columns) ? index.columns : [];
+  if (
+    columns.length === 0 ||
+    columns.some(
+      (column) => column?.isExpression === true || !text(column?.expression),
+    )
+  ) {
+    return null;
+  }
+  return columns.map((column) => text(column.expression));
+}
+
+function uniqueCollisionKey(row, columns) {
+  return canonicalJson(columns.map((column) => row?.[column]));
+}
+
+function hasDatabaseNull(row, columns) {
+  return columns.some(
+    (column) => row?.[column] === null || row?.[column] === undefined,
+  );
+}
+
+function validateUniqueDefinition(
+  report,
+  tableName,
+  tableRows,
+  definitionName,
+  columns,
+  code,
+  { nullsNotDistinct = false } = {},
+) {
+  const seen = new Map();
+  tableRows.forEach((row, index) => {
+    if (!nullsNotDistinct && hasDatabaseNull(row, columns)) return;
+    const key = uniqueCollisionKey(row, columns);
+    const recordId = rowRecordId(row, index);
+    if (seen.has(key)) {
+      report.errors ||= [];
+      report.errors.push({
+        code,
+        source: "schema_validation",
+        table: tableName,
+        unique_definition: definitionName,
+        columns,
+        record_id: recordId,
+        conflicts_with_record_id: seen.get(key),
+      });
+      return;
+    }
+    seen.set(key, recordId);
+  });
+}
+
+export function validateUniqueIndexes(report, snapshotDescriptor) {
+  const snapshot = snapshotDescriptor?.value || snapshotDescriptor;
+  const rows = report.rows && typeof report.rows === "object" ? report.rows : {};
+  for (const [tableName, tableRowsValue] of Object.entries(rows)) {
+    const tableRows = Array.isArray(tableRowsValue) ? tableRowsValue : [];
+    const table = snapshot?.tables?.[`public.${tableName}`];
+    if (!table || tableRows.length <= 1) continue;
+
+    for (const index of Object.values(table.indexes || {})) {
+      const columns = uniqueColumnsFromIndex(index);
+      if (!columns) continue;
+      validateUniqueDefinition(
+        report,
+        tableName,
+        tableRows,
+        index.name,
+        columns,
+        "DUPLICATE_TARGET_UNIQUE_INDEX",
+      );
+    }
+
+    for (const constraint of Object.values(table.uniqueConstraints || {})) {
+      const columns = Array.isArray(constraint?.columns)
+        ? constraint.columns.map(text).filter(Boolean)
+        : [];
+      if (columns.length === 0) continue;
+      validateUniqueDefinition(
+        report,
+        tableName,
+        tableRows,
+        constraint.name,
+        columns,
+        "DUPLICATE_TARGET_UNIQUE_CONSTRAINT",
+        { nullsNotDistinct: constraint.nullsNotDistinct === true },
+      );
+    }
+  }
+
+  report.ok = (report.errors || []).length === 0;
+  report.summary = {
+    ...(report.summary || {}),
+    errors: (report.errors || []).length,
+    warnings: (report.warnings || []).length,
+  };
+  return report;
+}
+
 export function buildValidatedMigrationPlan(options) {
   const includeRows = options?.includeRows === true;
   const result = buildBaseValidatedMigrationPlan({
@@ -211,9 +441,16 @@ export function buildValidatedMigrationPlan(options) {
   });
 
   normalizeKnowledgeRows(result.report);
-  validateAgainstSnapshot(result.report, loadLatestSnapshot(), {
-    removeRows: !includeRows,
+  normalizeSupportPreviewSessions(result.report);
+  const snapshot = loadLatestSnapshot();
+  validateAgainstSnapshot(result.report, snapshot, {
+    removeRows: false,
   });
+  validateUniqueIndexes(result.report, snapshot);
+  if (!includeRows) delete result.report.rows;
+  if (result.report.schema_validation) {
+    result.report.schema_validation.rows_removed_from_output = !includeRows;
+  }
   addOperationalOverlayWriteReadiness(result.report);
   return result;
 }
