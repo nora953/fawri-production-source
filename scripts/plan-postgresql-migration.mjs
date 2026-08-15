@@ -199,7 +199,8 @@ function planMigration() {
       emergency_credit_activated: item?.emergency_credit_activated === true,
       emergency_debt: Number(item?.emergency_debt || 0),
       auto_reply_enabled: item?.auto_reply_enabled === true,
-      starts_at: item?.starts_at || item?.activated_at || null,
+      starts_at:
+        item?.starts_at || item?.start_date || item?.activated_at || null,
       expires_at: item?.expires_at || null,
       activated_at: item?.activated_at || null,
       metadata: { legacy: item },
@@ -405,6 +406,7 @@ function planMigration() {
     });
 
     asArray(ticket?.messages).forEach((message, messageIndex) => {
+      const senderType = text(message?.sender_type) || "system";
       rows.support_messages.push({
         id: rowId(
           `support-message-${ticketIndex + 1}`,
@@ -413,8 +415,9 @@ function planMigration() {
         ),
         ticket_id: ticketId,
         merchant_id: merchantId,
-        sender_type: text(message?.sender_type) || "system",
-        sender_account_id: text(message?.sender_id) || null,
+        sender_type: senderType,
+        sender_account_id:
+          senderType === "system" ? null : text(message?.sender_id) || null,
         sender_name_snapshot: text(message?.sender_name),
         body: text(message?.body),
         created_at: message?.created_at || null,
@@ -474,37 +477,41 @@ function planMigration() {
   mapMerchantScoped(
     emergency.requests,
     "emergency_access_requests",
-    (item, index, merchantId) => ({
-      id: rowId("emergency-request", item?.id, index),
-      merchant_id: merchantId,
-      requested_by_admin_account_id: text(item?.requested_by_admin_id),
-      incident_reference: text(item?.incident_reference),
-      severity: text(item?.severity),
-      reason: text(item?.reason),
-      duration_minutes: Number(item?.duration_minutes || 15),
-      read_only: item?.read_only !== false,
-      status: text(item?.status) || "pending",
-      activation_mode:
-        text(item?.activation_mode) || "owner_approval",
-      reviewed_by_owner_account_id:
-        text(item?.reviewed_by_owner_id) || null,
-      admin_session_id: text(item?.admin_session_id) || null,
-      request_expires_at: item?.request_expires_at || null,
-      reviewed_at: item?.reviewed_at || null,
-      started_at: item?.started_at || null,
-      expires_at: item?.expires_at || null,
-      ended_at: item?.ended_at || null,
-      end_reason: text(item?.end_reason) || null,
-      first_viewed_at: item?.first_viewed_at || null,
-      viewed_sections: asArray(item?.viewed_sections),
-      created_at: item?.requested_at || item?.created_at || null,
-      updated_at:
-        item?.ended_at ||
-        item?.reviewed_at ||
-        item?.requested_at ||
-        item?.created_at ||
-        null,
-    }),
+    (item, index, merchantId) => {
+      const status = text(item?.status) || "pending";
+      const terminalStatus = ["ended", "expired", "rejected"].includes(status);
+      return {
+        id: rowId("emergency-request", item?.id, index),
+        merchant_id: merchantId,
+        requested_by_admin_account_id: text(item?.requested_by_admin_id),
+        incident_reference: text(item?.incident_reference),
+        severity: text(item?.severity),
+        reason: text(item?.reason),
+        duration_minutes: Number(item?.duration_minutes || 15),
+        read_only: item?.read_only !== false,
+        status,
+        activation_mode: text(item?.activation_mode) || "owner_approval",
+        reviewed_by_owner_account_id:
+          text(item?.reviewed_by_owner_id) || null,
+        admin_session_id:
+          terminalStatus ? null : text(item?.admin_session_id) || null,
+        request_expires_at: item?.request_expires_at || null,
+        reviewed_at: item?.reviewed_at || null,
+        started_at: item?.started_at || null,
+        expires_at: item?.expires_at || null,
+        ended_at: item?.ended_at || null,
+        end_reason: text(item?.end_reason) || null,
+        first_viewed_at: item?.first_viewed_at || null,
+        viewed_sections: asArray(item?.viewed_sections),
+        created_at: item?.requested_at || item?.created_at || null,
+        updated_at:
+          item?.ended_at ||
+          item?.reviewed_at ||
+          item?.requested_at ||
+          item?.created_at ||
+          null,
+      };
+    },
   );
 
   asArray(emergency.owner_alerts).forEach((item, index) => {
