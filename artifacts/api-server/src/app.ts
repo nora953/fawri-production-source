@@ -34,6 +34,7 @@ import {
   processMetricsRegistry,
 } from "./observability/runtime";
 import { enforceAuthCutoverCompatibility } from "./middleware/authCutoverCompatibility";
+import { enforceLegacyAuthProductionCutoverGate } from "./middleware/legacyProductionFallbackGuard";
 import {
   enforceAuthOrigin,
   getAuthContext,
@@ -310,6 +311,11 @@ app.use(enforceMetaConnectionActivationGate);
 // authority. Legacy saved-answer/training routes are blocked before the shared
 // legacy router so two authorities cannot remain active at once.
 app.use(enforceLegacyKnowledgeCutoverGate);
+
+// In PostgreSQL-required mode every supported /api/auth surface must have been
+// handled above. Anything still falling through is legacy authority and is
+// retired rather than allowed to consult JSON/session compatibility stores.
+app.use(enforceLegacyAuthProductionCutoverGate);
 
 app.use("/api", router);
 
