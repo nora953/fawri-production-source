@@ -1,6 +1,6 @@
 import { EMERGENCY_INCIDENT_NOTICE_BANNER_TEXT } from '@/lib/translations/features/components/EmergencyIncidentNoticeBanner';
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, Check, Loader2, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ChevronUp, Loader2, ShieldCheck } from 'lucide-react';
 import { useLocation } from 'wouter';
 
 import { useI18n } from '@/lib/i18n';
@@ -27,6 +27,7 @@ export default function EmergencyIncidentNoticeBanner() {
   const { lang } = useI18n();
   const [location] = useLocation();
   const [notice, setNotice] = useState<EmergencyIncidentNotice | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [acknowledging, setAcknowledging] = useState(false);
   const text = TEXT[lang];
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
@@ -67,6 +68,10 @@ export default function EmergencyIncidentNoticeBanner() {
     };
   }, [loadNotice]);
 
+  useEffect(() => {
+    setDetailsOpen(false);
+  }, [notice?.id]);
+
   const acknowledge = async () => {
     if (!notice || acknowledging) return;
     setAcknowledging(true);
@@ -87,42 +92,71 @@ export default function EmergencyIncidentNoticeBanner() {
 
   if (!notice || !location.startsWith('/dashboard')) return null;
 
+  const detailsId = `emergency-incident-notice-details-${notice.id}`;
+
   return (
     <div
-      className="fixed inset-x-3 top-3 z-[70] mx-auto max-w-3xl rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950 shadow-2xl dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100 sm:top-4 sm:p-5"
+      className="fixed inset-x-3 top-3 z-[70] mx-auto max-w-xl rounded-xl border border-amber-300 bg-amber-50 p-3 text-amber-950 shadow-lg dark:border-amber-800 dark:bg-amber-950 dark:text-amber-100 sm:top-4 sm:p-4"
       dir={lang === 'en' ? 'ltr' : 'rtl'}
       role="alert"
     >
       <div className="flex items-start gap-3">
-        <div className="rounded-full bg-amber-200 p-2 dark:bg-amber-900">
-          <ShieldCheck className="h-5 w-5" aria-hidden="true" />
+        <div className="mt-0.5 rounded-full bg-amber-200 p-1.5 dark:bg-amber-900">
+          <ShieldCheck className="h-4 w-4" aria-hidden="true" />
         </div>
+
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
-            <h2 className="font-bold">{text.title}</h2>
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <h2 className="text-sm font-black sm:text-base">{text.title}</h2>
           </div>
-          <p className="mt-2 text-sm leading-6">{text.body}</p>
+          <p className="mt-1 text-xs font-medium leading-5 text-amber-900/90 dark:text-amber-100/90 sm:text-sm">
+            {text.summary}
+          </p>
 
-          <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
-            <p><strong>{text.reference}:</strong> <span dir="ltr">{notice.incident_reference}</span></p>
-            <p><strong>{text.admin}:</strong> {notice.accessed_by_admin_name}</p>
-            <p><strong>{text.started}:</strong> {new Date(notice.started_at).toLocaleString(locale)}</p>
-            <p><strong>{text.ended}:</strong> {new Date(notice.ended_at).toLocaleString(locale)}</p>
-          </div>
+          {detailsOpen && (
+            <div
+              id={detailsId}
+              className="mt-3 rounded-lg border border-amber-300/80 bg-white/45 p-3 dark:border-amber-800 dark:bg-black/10"
+            >
+              <p className="text-xs leading-5">{text.body}</p>
 
-          <div className="mt-4 flex justify-end">
+              <div className="mt-2 grid gap-x-4 gap-y-1.5 text-[11px] leading-5 sm:grid-cols-2 sm:text-xs">
+                <p><strong>{text.reference}:</strong> <span dir="ltr">{notice.incident_reference}</span></p>
+                <p><strong>{text.admin}:</strong> {notice.accessed_by_admin_name}</p>
+                <p><strong>{text.started}:</strong> {new Date(notice.started_at).toLocaleString(locale)}</p>
+                <p><strong>{text.ended}:</strong> {new Date(notice.ended_at).toLocaleString(locale)}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-2.5 flex flex-wrap items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setDetailsOpen((current) => !current)}
+              aria-expanded={detailsOpen}
+              aria-controls={detailsId}
+              className="inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-amber-900 transition-colors hover:bg-amber-200/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 dark:text-amber-100 dark:hover:bg-amber-900"
+            >
+              {detailsOpen ? (
+                <ChevronUp className="h-3.5 w-3.5" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="h-3.5 w-3.5" aria-hidden="true" />
+              )}
+              {detailsOpen ? text.hideDetails : text.showDetails}
+            </button>
+
             <Button
               type="button"
               size="sm"
               onClick={() => void acknowledge()}
               disabled={acknowledging}
-              className="gap-2"
+              className="h-8 gap-1.5 px-3 text-xs"
             >
               {acknowledging ? (
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
               ) : (
-                <Check className="h-4 w-4" aria-hidden="true" />
+                <Check className="h-3.5 w-3.5" aria-hidden="true" />
               )}
               {acknowledging ? text.acknowledging : text.acknowledge}
             </Button>
