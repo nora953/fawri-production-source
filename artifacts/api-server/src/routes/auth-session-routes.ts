@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import { findAdminByIdAuthoritative } from "../services/postgresAdminAccountAuthority";
+import { listAdminDevicesAuthoritative } from "../services/postgresAdminSecurityAuthority";
 import { findMerchantByIdAuthoritative } from "../services/postgresMerchantAccountAuthority";
 import {
   clearAuthSessionCookie,
@@ -224,7 +225,19 @@ router.get("/admin/me", requireSecureAdminSession, async (_req, res) => {
     });
     return;
   }
-  res.json({ ok: true, ...payload(account) });
+
+  const responsePayload = payload(account);
+  if (account.adminProfile?.role === "owner_admin" && responsePayload.admin) {
+    const pendingDeviceCount = (await listAdminDevicesAuthoritative()).filter(
+      (device) => device.status === "pending",
+    ).length;
+    responsePayload.admin = {
+      ...responsePayload.admin,
+      pending_device_count: pendingDeviceCount,
+    };
+  }
+
+  res.json({ ok: true, ...responsePayload });
 });
 
 export default router;
