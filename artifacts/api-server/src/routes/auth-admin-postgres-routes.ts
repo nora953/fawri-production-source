@@ -92,11 +92,46 @@ async function audit(input: Parameters<typeof auditAdminSecurityEventAuthoritati
   await auditAdminSecurityEventAuthoritative(input);
 }
 
+async function adminWorkMonitorState(adminId: string) {
+  const [sessions, devices] = await Promise.all([
+    authPostgresSessionAuthority.listActiveSessions(adminId, "admin"),
+    listAdminDevicesAuthoritative(adminId),
+  ]);
+  const timestamps = sessions
+    .map((session) => Date.parse(session.last_seen_at))
+    .filter(Number.isFinite);
+  const lastSeen = timestamps.length
+    ? new Date(Math.max(...timestamps)).toISOString()
+    : null;
+  const lastSeenMs = lastSeen ? Date.parse(lastSeen) : 0;
+  const age = lastSeenMs ? Date.now() - lastSeenMs : Number.POSITIVE_INFINITY;
+  const workStatus: "active" | "idle" | "offline" =
+    age <= 2 * 60 * 1000 ? "active" : age <= 15 * 60 * 1000 ? "idle" : "offline";
+
+  return {
+    sessions,
+    devices,
+    summary: {
+      work_status: workStatus,
+      open_session_count: sessions.length,
+      last_activity_at: lastSeen,
+      pending_device_count: devices.filter((device) => device.status === "pending").length,
+    },
+  };
+}
+
 router.get("/admins", requireSecureAdminSession, async (_req, res) => {
   if (!ownerContext(res)) return;
+  const admins = await listAdminsAuthoritative();
+  const enrichedAdmins = await Promise.all(
+    admins.map(async (admin) => ({
+      ...payload(admin),
+      ...(await adminWorkMonitorState(admin.account.id)).summary,
+    })),
+  );
   res.json({
     ok: true,
-    admins: (await listAdminsAuthoritative()).map(payload),
+    admins: enrichedAdmins,
   });
 });
 
@@ -325,18 +360,7 @@ router.get(
     const target = await assistantTarget(id, res);
     if (!target?.adminProfile) return;
 
-    const sessions = await authPostgresSessionAuthority.listActiveSessions(id, "admin");
-    const devices = await listAdminDevicesAuthoritative(id);
-    const timestamps = sessions
-      .map((session) => Date.parse(session.last_seen_at))
-      .filter(Number.isFinite);
-    const lastSeen = timestamps.length
-      ? new Date(Math.max(...timestamps)).toISOString()
-      : null;
-    const lastSeenMs = lastSeen ? Date.parse(lastSeen) : 0;
-    const age = lastSeenMs ? Date.now() - lastSeenMs : Number.POSITIVE_INFINITY;
-    const workStatus =
-      age <= 2 * 60 * 1000 ? "active" : age <= 15 * 60 * 1000 ? "idle" : "offline";
+    const { sessions, devices, summary } = await adminWorkMonitorState(id);
     const recentLogs = (await listAdminAuditEventsAuthoritative(id, 20)).map((event) => ({
       id: event.id,
       action_type: event.event_type,
@@ -353,10 +377,7 @@ router.get(
         admin_enabled: target.account.enabled,
       },
       summary: {
-        work_status: workStatus,
-        open_session_count: sessions.length,
-        last_activity_at: lastSeen,
-        pending_device_count: devices.filter((device) => device.status === "pending").length,
+        ...summary,
         session_limit: 2,
         trusted_device_limit: MAX_TRUSTED_DEVICES_PER_ACCOUNT,
         trusted_device_count: devices.filter((device) => device.status === "trusted").length,
