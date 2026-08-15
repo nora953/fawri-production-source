@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { getAdminAuthHeaders, getAdminSessionToken } from "@/lib/store";
+import { getAdminAuthHeaders } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 
 type Snapshot = {
@@ -168,10 +168,6 @@ export default function AdminSupportPreviewPage({
 
   const load = useCallback(
     async (silent = false) => {
-      if (!getAdminSessionToken()) {
-        setLocation("/login");
-        return;
-      }
       if (!silent) setLoading(true);
       setError(false);
       try {
@@ -179,6 +175,10 @@ export default function AdminSupportPreviewPage({
           `/api/auth/admin/support-preview/${encodeURIComponent(sessionId)}/snapshot`,
           { headers: getAdminAuthHeaders(), cache: "no-store" },
         );
+        if (response.status === 401 || response.status === 403) {
+          setLocation("/login");
+          return;
+        }
         const data = await response.json().catch(() => null);
         if (!response.ok || !data?.ok || !data.snapshot) {
           throw new Error(data?.error || "invalid snapshot");
