@@ -170,7 +170,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
         requested_plan, warning_stage, products_read_only, created_at, updated_at)
      VALUES
        ($1, $1, 'merchant', 'Emergency Merchant Owner', 'Emergency Merchant Store', 'retail',
-        'approved', 'approved', 'completed', 'active', 'direct',
+        'approved', 'approved', 'channel_connected', 'active', 'direct',
         'gold', 0, false, now(), now())`,
     [merchantId],
   );
@@ -269,7 +269,10 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
 
   t.after(async () => {
     stopPostgresSupportRuntimeCutoverForTests();
-    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+      server.closeAllConnections?.();
+    });
     await cleanup();
     await pool.end();
     await rm(runtimeDirectory, { recursive: true, force: true });
