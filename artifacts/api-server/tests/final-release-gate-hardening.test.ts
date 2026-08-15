@@ -101,11 +101,16 @@ test("Emergency PostgreSQL snapshot allowlists channels and excludes credential 
 
 test("server-derived compatibility credentials are issued only after Auth v2 validation", () => {
   const compatibility = source("../src/middleware/authCutoverCompatibility.ts");
-  assert.match(compatibility, /requireSecureMerchantSession/);
-  assert.match(compatibility, /requireSecureAdminSession/);
-  assert.match(compatibility, /SERVER_DERIVED_MERCHANT_HEADER/);
-  assert.match(compatibility, /SERVER_DERIVED_ADMIN_HEADER/);
-  assert.match(compatibility, /LEGACY_ADMIN_BEARER_REJECTED/);
+  assert.match(
+    compatibility,
+    /function injectMerchantCompatibility[\s\S]*requireSecureMerchantSession\(req, res,[\s\S]*internalMerchantCredential\(merchantId\)/,
+  );
+  assert.match(
+    compatibility,
+    /function injectAdminCompatibility[\s\S]*requireSecureAdminSession\(req, res,[\s\S]*internalAdminCredential\(/,
+  );
+  assert.match(compatibility, /clearLegacyMerchantCookie\(req, res\)/);
+  assert.match(compatibility, /LEGACY_ADMIN_BEARER_DISABLED/);
 });
 
 test("legacy runtime JSON persistence is disabled when PostgreSQL authority is required", () => {
