@@ -20,13 +20,22 @@ test("Support PostgreSQL routers remain ahead of every legacy Support surface", 
   const imageAliases = authSecurity.indexOf(
     "router.use(supportImageAliasPostgresRoutes as any)",
   );
+  const messageTransitions = authSecurity.indexOf(
+    "router.use(supportMessagePostgresRoutes as any)",
+  );
   const support = authSecurity.indexOf("router.use(supportPostgresRoutes as any)");
   const publicLegacy = authSecurity.indexOf("router.use(publicRoutes as any)");
   const adminLegacy = authSecurity.indexOf("router.use(adminRoutes as any)");
 
-  assert.ok(lifecycleView >= 0 && imageAliases >= 0 && support >= 0);
+  assert.ok(
+    lifecycleView >= 0 &&
+      imageAliases >= 0 &&
+      messageTransitions >= 0 &&
+      support >= 0,
+  );
   assert.ok(lifecycleView < support);
   assert.ok(imageAliases < support);
+  assert.ok(messageTransitions < support);
   assert.ok(support < publicLegacy);
   assert.ok(support < adminLegacy);
 
@@ -44,11 +53,12 @@ test("Support PostgreSQL routers remain ahead of every legacy Support surface", 
 test("Support PostgreSQL route authority uses Auth v2 and has no JSON or legacy token dependency", () => {
   const router = source("../src/routes/auth-support-postgres-routes.ts");
   const aliases = source("../src/routes/auth-support-image-alias-postgres-routes.ts");
+  const messages = source("../src/routes/auth-support-message-postgres-routes.ts");
   const lifecycleView = source(
     "../src/routes/auth-support-admin-lifecycle-postgres-routes.ts",
   );
 
-  for (const code of [router, aliases, lifecycleView]) {
+  for (const code of [router, aliases, messages, lifecycleView]) {
     assert.equal(code.includes("ensureDb("), false);
     assert.equal(code.includes("readAuthDb("), false);
     assert.equal(code.includes("writeJson("), false);
@@ -63,6 +73,18 @@ test("Support PostgreSQL route authority uses Auth v2 and has no JSON or legacy 
   assert.match(router, /getSessionToken\(req, "admin"\)/);
   assert.match(aliases, /requireSecureMerchantSession/);
   assert.match(aliases, /requireSecureAdminSession/);
+  assert.match(messages, /requireSecureMerchantSession/);
+  assert.match(messages, /requireSecureAdminSession/);
+});
+
+test("Support text replies reset stale lifecycle reminder state in PostgreSQL", () => {
+  const messages = source("../src/routes/auth-support-message-postgres-routes.ts");
+
+  assert.match(messages, /merchant_reminder_sent_at = NULL/);
+  assert.match(messages, /assistant_reminder_sent_at = NULL/);
+  assert.match(messages, /owner_escalated_at = NULL/);
+  assert.match(messages, /addMerchantSupportMessagePostgres/);
+  assert.match(messages, /addAdminSupportMessagePostgres/);
 });
 
 test("Support lifecycle cuts off legacy JSON timers before PostgreSQL sweeps", () => {
