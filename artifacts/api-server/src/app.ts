@@ -34,6 +34,7 @@ import {
   processMetricsRegistry,
 } from "./observability/runtime";
 import { enforceAuthCutoverCompatibility } from "./middleware/authCutoverCompatibility";
+import { enforceLegacyAuthProductionCutoverGate } from "./middleware/legacyProductionFallbackGuard";
 import {
   enforceAuthOrigin,
   getAuthContext,
@@ -240,9 +241,13 @@ app.use(enforceMerchantWebhookSubscriptionAccess);
 // server-derived compatibility credential after v2 session validation.
 app.use("/api/auth", authSecurityRouter);
 // Legacy Support images are mounted only after the PostgreSQL Support
-// interceptor. In required mode the v2 router owns these requests; in
-// compatibility mode they fall through here unchanged.
-app.use("/api/auth/support-images", supportImagesRouter);
+// interceptor. In required mode any unresolved fallthrough is retired before
+// the JSON-backed compatibility router can execute.
+app.use(
+  "/api/auth/support-images",
+  enforceLegacyAuthProductionCutoverGate,
+  supportImagesRouter,
+);
 app.use("/api/auth", enforceAuthOrigin);
 app.use(enforceAuthCutoverCompatibility);
 
@@ -279,21 +284,29 @@ app.use(enforceCatalogSecureSession);
 app.use("/api", retentionGuardRouter);
 app.use(
   "/api/auth/admin/emergency-read-access",
+  enforceLegacyAuthProductionCutoverGate,
   emergencyReadDirectoryRouter,
 );
 app.use(
   "/api/auth/admin/emergency-read-access",
+  enforceLegacyAuthProductionCutoverGate,
   emergencyOwnerSnapshotRouter,
 );
 app.use(
   "/api/auth/admin/emergency-read-access",
+  enforceLegacyAuthProductionCutoverGate,
   emergencyReadAccessRouter,
 );
 app.use(
   "/api/auth/emergency-read-access",
+  enforceLegacyAuthProductionCutoverGate,
   emergencyMerchantNoticesRouter,
 );
-app.use("/api/auth/admin/support-preview", supportPreviewRouter);
+app.use(
+  "/api/auth/admin/support-preview",
+  enforceLegacyAuthProductionCutoverGate,
+  supportPreviewRouter,
+);
 app.use("/api", conversationOperationsRouter);
 app.use("/api", orderOperationsRouter);
 app.use("/api", merchantSettingsRouter);
@@ -310,6 +323,11 @@ app.use(enforceMetaConnectionActivationGate);
 // authority. Legacy saved-answer/training routes are blocked before the shared
 // legacy router so two authorities cannot remain active at once.
 app.use(enforceLegacyKnowledgeCutoverGate);
+
+// In PostgreSQL-required mode every supported /api/auth surface must have been
+// handled above. Anything still falling through is legacy authority and is
+// retired rather than allowed to consult JSON/session compatibility stores.
+app.use(enforceLegacyAuthProductionCutoverGate);
 
 app.use("/api", router);
 

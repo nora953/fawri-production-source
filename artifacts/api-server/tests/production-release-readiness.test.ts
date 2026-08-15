@@ -92,6 +92,7 @@ test("synthetic complete runtime configuration passes code-level release readine
     [
       "PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED",
       "SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE",
+      "SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED",
     ].sort(),
   );
 });

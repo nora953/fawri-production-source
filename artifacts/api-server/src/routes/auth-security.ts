@@ -3,6 +3,7 @@ import { enforceAuthOrigin, sendAuthError } from "../middleware/authSession";
 import { adminAuthPostgresCutoverMode } from "../services/adminAuthPostgresCutover";
 import { startPostgresSupportRuntimeCutover } from "../services/postgresSupportRuntimeCutover";
 import adminDeviceOtpPgRoutes from "./auth-admin-device-otp-pg-routes";
+import emergencyPostgresRoutes from "./auth-emergency-postgres-routes";
 import merchantManagementPostgresRoutes from "./auth-merchant-management-postgres-routes";
 import supportAdminLifecyclePostgresRoutes from "./auth-support-admin-lifecycle-postgres-routes";
 import supportImageAliasPostgresRoutes from "./auth-support-image-alias-postgres-routes";
@@ -37,6 +38,7 @@ router.use((req: Request, res: Response, next: NextFunction) => {
 router.use(saasBillingRouter as any);
 router.use(subscriptionEntitlementPgRouter as any);
 router.use(merchantManagementPostgresRoutes as any);
+router.use(emergencyPostgresRoutes as any);
 router.use(supportAdminLifecyclePostgresRoutes as any);
 router.use(supportImageAliasPostgresRoutes as any);
 router.use(supportInspectionDecisionPostgresRoutes as any);

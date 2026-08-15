@@ -40,14 +40,18 @@ test("Support PostgreSQL routers remain ahead of every legacy Support surface", 
   assert.ok(support < adminLegacy);
 
   const authV2Mount = app.indexOf('app.use("/api/auth", authSecurityRouter)');
-  const legacyImages = app.indexOf(
-    'app.use("/api/auth/support-images", supportImagesRouter)',
-  );
-  const legacyPreview = app.indexOf(
-    'app.use("/api/auth/admin/support-preview", supportPreviewRouter)',
-  );
+  const legacyImages = app.indexOf('"/api/auth/support-images"');
+  const legacyPreview = app.indexOf('"/api/auth/admin/support-preview"');
   assert.ok(authV2Mount >= 0 && authV2Mount < legacyImages);
   assert.ok(authV2Mount < legacyPreview);
+  assert.match(
+    app,
+    /"\/api\/auth\/support-images",\s*enforceLegacyAuthProductionCutoverGate,\s*supportImagesRouter/,
+  );
+  assert.match(
+    app,
+    /"\/api\/auth\/admin\/support-preview",\s*enforceLegacyAuthProductionCutoverGate,\s*supportPreviewRouter/,
+  );
 });
 
 test("Support PostgreSQL route authority uses Auth v2 and has no JSON or legacy token dependency", () => {
