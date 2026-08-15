@@ -328,7 +328,7 @@ export const saveConversations = (
     merchant_id: merchantId,
   }));
 
-  const currentConversations = safeParse<Product[]>('fawri_conversations', []);
+  const currentConversations = safeParse<Conversation[]>('fawri_conversations', []);
   const otherMerchantsConversations = currentConversations.filter(
     conversation => conversation.merchant_id !== merchantId
   );
