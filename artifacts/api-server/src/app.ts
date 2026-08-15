@@ -284,18 +284,22 @@ app.use(enforceCatalogSecureSession);
 app.use("/api", retentionGuardRouter);
 app.use(
   "/api/auth/admin/emergency-read-access",
+  enforceLegacyAuthProductionCutoverGate,
   emergencyReadDirectoryRouter,
 );
 app.use(
   "/api/auth/admin/emergency-read-access",
+  enforceLegacyAuthProductionCutoverGate,
   emergencyOwnerSnapshotRouter,
 );
 app.use(
   "/api/auth/admin/emergency-read-access",
+  enforceLegacyAuthProductionCutoverGate,
   emergencyReadAccessRouter,
 );
 app.use(
   "/api/auth/emergency-read-access",
+  enforceLegacyAuthProductionCutoverGate,
   emergencyMerchantNoticesRouter,
 );
 app.use(
