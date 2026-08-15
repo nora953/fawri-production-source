@@ -15,10 +15,7 @@ import subscriptionEntitlementPgRouter from "./subscription-entitlement-pg";
 import saasBillingRouter from "./saas-billing";
 
 const router = Router();
-router.use((_req: Request, _res: Response, next: NextFunction) => {
-  startPostgresSupportRuntimeCutover();
-  next();
-});
+startPostgresSupportRuntimeCutover();
 router.use(enforceAuthOrigin);
 router.use((req: Request, res: Response, next: NextFunction) => {
   const path = String(req.path || "");
