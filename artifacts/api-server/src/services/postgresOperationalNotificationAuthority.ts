@@ -62,7 +62,9 @@ async function insertOperationalNotification(input: {
          title_key, body_key, variables,
          source_entity_type, source_entity_id, created_at)
        VALUES
-        ($1, 'merchant', $2, $2, $3, $4, $5, $6::jsonb, $7, $8, $9::timestamptz)
+        ($1, 'merchant', $2,
+         (SELECT account_id FROM merchants WHERE id = $2),
+         $3, $4, $5, $6::jsonb, $7, $8, $9::timestamptz)
        ON CONFLICT (id) DO NOTHING`,
       [
         id,

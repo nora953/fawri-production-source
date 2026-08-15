@@ -1,8 +1,14 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
 import { enforceAuthOrigin, sendAuthError } from "../middleware/authSession";
 import { adminAuthPostgresCutoverMode } from "../services/adminAuthPostgresCutover";
+import { startPostgresSupportRuntimeCutover } from "../services/postgresSupportRuntimeCutover";
 import adminDeviceOtpPgRoutes from "./auth-admin-device-otp-pg-routes";
 import merchantManagementPostgresRoutes from "./auth-merchant-management-postgres-routes";
+import supportAdminLifecyclePostgresRoutes from "./auth-support-admin-lifecycle-postgres-routes";
+import supportImageAliasPostgresRoutes from "./auth-support-image-alias-postgres-routes";
+import supportInspectionDecisionPostgresRoutes from "./auth-support-inspection-decision-postgres-routes";
+import supportMessagePostgresRoutes from "./auth-support-message-postgres-routes";
+import supportPostgresRoutes from "./auth-support-postgres-routes";
 import publicRoutes from "./auth-public-routes";
 import sessionRoutes from "./auth-session-routes";
 import adminPostgresRoutes from "./auth-admin-postgres-routes";
@@ -11,6 +17,7 @@ import subscriptionEntitlementPgRouter from "./subscription-entitlement-pg";
 import saasBillingRouter from "./saas-billing";
 
 const router = Router();
+startPostgresSupportRuntimeCutover();
 router.use(enforceAuthOrigin);
 router.use((req: Request, res: Response, next: NextFunction) => {
   const path = String(req.path || "");
@@ -30,6 +37,11 @@ router.use((req: Request, res: Response, next: NextFunction) => {
 router.use(saasBillingRouter as any);
 router.use(subscriptionEntitlementPgRouter as any);
 router.use(merchantManagementPostgresRoutes as any);
+router.use(supportAdminLifecyclePostgresRoutes as any);
+router.use(supportImageAliasPostgresRoutes as any);
+router.use(supportInspectionDecisionPostgresRoutes as any);
+router.use(supportMessagePostgresRoutes as any);
+router.use(supportPostgresRoutes as any);
 router.use(adminDeviceOtpPgRoutes as any);
 router.use(publicRoutes as any);
 router.use(sessionRoutes as any);

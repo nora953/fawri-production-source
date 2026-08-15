@@ -219,7 +219,6 @@ app.use(
     allowMetrics: allowInternalMetricsRequest,
   }),
 );
-app.use("/api/auth/support-images", supportImagesRouter);
 app.use(
   express.json({
     verify(req, _res, buffer) {
@@ -240,6 +239,10 @@ app.use(enforceMerchantWebhookSubscriptionAccess);
 // endpoint first. Any remaining legacy business handler receives only a
 // server-derived compatibility credential after v2 session validation.
 app.use("/api/auth", authSecurityRouter);
+// Legacy Support images are mounted only after the PostgreSQL Support
+// interceptor. In required mode the v2 router owns these requests; in
+// compatibility mode they fall through here unchanged.
+app.use("/api/auth/support-images", supportImagesRouter);
 app.use("/api/auth", enforceAuthOrigin);
 app.use(enforceAuthCutoverCompatibility);
 
