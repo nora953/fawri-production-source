@@ -14,6 +14,7 @@ import publicRoutes from "./auth-public-routes";
 import sessionRoutes from "./auth-session-routes";
 import adminPostgresRoutes from "./auth-admin-postgres-routes";
 import adminRoutes from "./auth-admin-routes";
+import merchantRealtimePgRouter from "./merchant-realtime-pg";
 import subscriptionEntitlementPgRouter from "./subscription-entitlement-pg";
 import saasBillingRouter from "./saas-billing";
 
@@ -37,6 +38,7 @@ router.use((req: Request, res: Response, next: NextFunction) => {
 });
 router.use(saasBillingRouter as any);
 router.use(subscriptionEntitlementPgRouter as any);
+router.use(merchantRealtimePgRouter as any);
 router.use(merchantManagementPostgresRoutes as any);
 router.use(emergencyPostgresRoutes as any);
 router.use(supportAdminLifecyclePostgresRoutes as any);
