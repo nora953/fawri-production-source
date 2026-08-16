@@ -95,7 +95,7 @@ router.use(postgresOnly);
 
 router.get("/events", requireSecureMerchantSession, async (req, res) => {
   const currentMerchantId = merchantId(res);
-  let state;
+  let state: Awaited<ReturnType<typeof loadRealtimeState>>;
   try {
     state = await loadRealtimeState(currentMerchantId);
   } catch (error) {
