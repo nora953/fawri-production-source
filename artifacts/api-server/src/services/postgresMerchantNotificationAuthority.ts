@@ -287,6 +287,25 @@ export async function listMerchantNotificationsPostgresCanonical(input: {
   });
 }
 
+export async function countUnreadMerchantNotificationsPostgresCanonical(
+  merchantIdValue: string,
+): Promise<number> {
+  assertRequired();
+  const merchantId = text(merchantIdValue);
+  await refreshSubscriptionNotificationsPostgres(merchantId);
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    const result = await client.query<{ count: string | number }>(
+      `SELECT COUNT(*) AS count
+         FROM notifications
+        WHERE audience = 'merchant' AND merchant_id = $1
+          AND read_at IS NULL
+          AND (expires_at IS NULL OR expires_at > now())`,
+      [merchantId],
+    );
+    return Number(result.rows[0]?.count || 0);
+  });
+}
+
 export async function markMerchantNotificationReadPostgresCanonical(input: {
   merchantId: string;
   notificationId: string;
