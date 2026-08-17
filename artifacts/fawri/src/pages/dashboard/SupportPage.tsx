@@ -476,7 +476,7 @@ export default function SupportPage() {
 
   return (
     <div
-      className="mx-auto flex w-full max-w-6xl flex-col gap-3 md:h-[calc(100dvh-7rem)] md:min-h-0 md:overflow-hidden"
+      className="mx-auto flex w-full max-w-7xl flex-col gap-3 md:h-[calc(100dvh-5rem)] md:min-h-0 md:overflow-hidden"
       dir={dir}
     >
       <div className="flex shrink-0 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -619,7 +619,7 @@ export default function SupportPage() {
           </p>
         </div>
       ) : (
-        <div className="grid min-h-[520px] flex-1 overflow-hidden rounded-2xl border bg-card shadow-sm md:min-h-0 lg:grid-cols-[300px_1fr]">
+        <div className="grid min-h-[520px] flex-1 overflow-hidden rounded-2xl border bg-card shadow-sm md:min-h-0 lg:grid-cols-[260px_minmax(0,1fr)]">
           <div className="min-h-0 border-b lg:border-b-0 lg:border-e">
             <div className="h-full max-h-64 space-y-2 overflow-y-auto p-3 lg:max-h-none">
               {tickets.map((ticket) => (
@@ -660,7 +660,7 @@ export default function SupportPage() {
           </div>
 
           {selectedTicket ? (
-            <div className="flex min-h-0 flex-col">
+            <div className="flex min-h-0 min-w-0 flex-col">
               <div className="shrink-0 border-b p-3">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>

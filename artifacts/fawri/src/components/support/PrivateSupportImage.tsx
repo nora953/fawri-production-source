@@ -75,14 +75,14 @@ export default function PrivateSupportImage({
   return (
     <button
       type="button"
-      className={`block max-w-full overflow-hidden rounded-xl border bg-background ${className}`}
+      className={`block w-fit max-w-full overflow-hidden rounded-xl border bg-background ${className}`}
       title={attachment.file_name}
       onClick={() => window.open(objectUrl, '_blank', 'noopener,noreferrer')}
     >
       <img
         src={objectUrl}
         alt={attachment.file_name}
-        className="max-h-72 w-auto max-w-full object-contain"
+        className="max-h-48 w-auto max-w-full object-contain sm:max-w-80"
         loading="lazy"
       />
     </button>
