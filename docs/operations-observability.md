@@ -1,15 +1,15 @@
 # Operations Observability
 
-## Components delivered in this branch
+## Current runtime status
 
-The API observability module provides isolated contracts for:
+The API observability module is mounted by the canonical application at `/ops` and provides:
 
-- `/health`: liveness metadata with bounded service/version fields;
-- `/readiness`: dependency checks with timeout and generic failure codes;
-- `/metrics`: registered aggregate Prometheus metrics with bounded labels and default-deny access;
+- `/ops/health`: liveness metadata with bounded service/version fields;
+- `/ops/readiness`: dependency checks with timeout and generic failure codes;
+- `/ops/metrics`: registered aggregate Prometheus metrics with bounded labels and default-deny access;
 - static alert definitions and validation.
 
-These components are intentionally not mounted by this branch because `artifacts/api-server/src/app.ts` and shared routing files are outside this task's ownership.
+The runtime uses one process-wide metrics registry. The canonical application currently supplies readiness checks for PostgreSQL authority and production release configuration. Metrics access is denied unless the request presents the configured internal observability bearer token. The legacy `/healthz` route remains available until deployment probe cutover is explicitly completed.
 
 ## Fail-closed contracts
 
@@ -23,25 +23,27 @@ Readiness reports `ready` only when at least one coordinator-supplied dependency
 
 ### Metrics
 
-Metrics accept registered metric names and bounded internal labels only. Unregistered names, forbidden label keys, unsafe values, token/URL/email-like values, and high-cardinality identifiers are rejected. The metrics HTTP route returns `503` unless the coordinator supplies an explicit access predicate.
+Metrics accept registered metric names and bounded internal labels only. Unregistered names, forbidden label keys, unsafe values, token/URL/email-like values, and high-cardinality identifiers are rejected. The metrics HTTP route returns `503` unless the configured internal access predicate succeeds.
 
 All probe responses set `Cache-Control: no-store` and `X-Content-Type-Options: nosniff`.
 
-## Coordinator handoff required
+## Integration constraints
 
-`STOP: coordinator handoff required`
+The observability wiring is active. Future monitoring work must extend the current authority instead of creating a second metrics surface.
 
-To activate the module, the coordinator must make the wiring change in an owned integration branch. The required wiring is:
+1. Keep one process-wide `MetricsRegistry` and register new aggregate metrics explicitly.
+2. Add readiness checks only for server-owned dependencies with real authority interfaces. Do not invent object-storage, queue, provider, or credential state.
+3. Keep service/version values bounded and free of secrets or customer data.
+4. Keep `/ops/metrics` default-deny. Never expose it publicly with an unconditional allow predicate.
+5. Do not put merchant IDs, user IDs, phone numbers, emails, conversation IDs, message IDs, IP addresses, tokens, or other high-cardinality/private values in Prometheus labels.
+6. Merchant-specific diagnostics belong in authenticated server-derived diagnostic APIs or PostgreSQL rollups, not in public/aggregate metric labels.
+7. Keep `/healthz` until deployment probe cutover is separately confirmed.
 
-1. Import `createObservabilityRouter` and `MetricsRegistry` from `./observability` in `artifacts/api-server/src/app.ts` (or the coordinator-owned shared router).
-2. Construct one process-wide `MetricsRegistry`.
-3. Supply non-empty readiness checks for the final server-authoritative dependencies. At minimum, the database authority used by the final runtime must have a lightweight read/ping check. Add queue/object-storage checks only when a server-owned dependency interface exists; do not invent external credentials or fallback authorities.
-4. Supply bounded `service` and deployment `version` values that do not contain secrets or customer data.
-5. Supply `allowMetrics(request)` using the deployment's internal-network/service-auth policy. Do not set it to unconditional `true` on a public route.
-6. Mount the router at the coordinator-approved operational prefix, for example `app.use("/ops", observabilityRouter)`, then configure platform probes to `/ops/health` and `/ops/readiness` and the internal scraper to `/ops/metrics`.
-7. Keep the existing `/healthz` route until the coordinator confirms deployment probe cutover; this branch does not delete or replace it.
+## Early-warning extension
 
-The coordinator should add an integration test that starts the real app and proves the mounted paths return the expected status codes with a failing and a passing readiness dependency.
+The next observability phase may build an authenticated Early Warning / System Health control plane on top of these contracts. It should instrument real runtime events first, then aggregate, evaluate alerts, and finally expose dashboards. A missing telemetry source must be reported as unavailable or not instrumented rather than represented as zero.
+
+Recommended coverage includes API latency/error rates, PostgreSQL health, queue/DLQ health, channel/webhook/send health, AI token usage and latency, bot guardrail outcomes, merchant usage rollups, support delivery/storage failures, security signals, and incident lifecycle. Telemetry must use bounded reason/status codes and must not contain customer message text, raw prompts, webhook bodies, credentials, or secrets.
 
 ## Queue and DLQ response
 
