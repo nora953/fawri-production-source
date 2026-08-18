@@ -5,6 +5,7 @@ on:
     paths:
       - "artifacts/api-server/src/app.ts"
       - "artifacts/api-server/src/observability/**"
+      - "artifacts/api-server/tests/early-warning-observability.test.ts"
       - "artifacts/api-server/tests/observability-mounted.integration.test.mjs"
       - ".github/workflows/observability-mounted.yml"
   workflow_dispatch:
@@ -58,6 +59,9 @@ jobs:
 
       - name: Type-check API observability wiring
         run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Test early-warning telemetry and threshold contracts
+        run: pnpm exec tsx --test artifacts/api-server/tests/early-warning-observability.test.ts
 
       - name: Test mounted observability routes against disposable PostgreSQL
         run: node --test artifacts/api-server/tests/observability-mounted.integration.test.mjs
