@@ -9,6 +9,10 @@ import {
   evaluateRuntimeEarlyWarnings,
   mergeEarlyWarningHealth,
 } from "../observability/earlyWarningEvaluation";
+import {
+  evaluateMerchantEarlyWarnings,
+  operationalMerchantHealthRows,
+} from "../observability/earlyWarningMerchantEvaluation";
 import { getHttpTelemetrySnapshot } from "../observability/requestTelemetry";
 import { hasAdminPermission } from "../services/authPolicy";
 import {
@@ -69,6 +73,8 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
     const http = getHttpTelemetrySnapshot(window);
     const aiRuntime = getAiUsageTelemetrySnapshot(window);
     const runtimeEvaluation = evaluateRuntimeEarlyWarnings({ http, ai: aiRuntime });
+    const operationalMerchants = operationalMerchantHealthRows(snapshot.merchants);
+    const merchantEvaluation = evaluateMerchantEarlyWarnings(operationalMerchants);
     const merchantHealthVisible = canViewMerchantHealth(res);
     const runtimeByMerchant = new Map(
       aiRuntime.merchants.map((merchant) => [merchant.merchant_id, merchant]),
@@ -83,12 +89,16 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
           snapshot.overall_health,
           runtimeEvaluation.health,
         ),
-        incidents: [...snapshot.incidents, ...runtimeEvaluation.incidents],
+        incidents: [
+          ...snapshot.incidents,
+          ...merchantEvaluation,
+          ...runtimeEvaluation.incidents,
+        ],
         http,
         ai_runtime: aiRuntime,
         merchant_health_visible: merchantHealthVisible,
         merchants: merchantHealthVisible
-          ? snapshot.merchants.map((merchant) => {
+          ? operationalMerchants.map((merchant) => {
               const runtime = runtimeByMerchant.get(merchant.merchant_id);
               return {
                 ...merchant,
