@@ -97,6 +97,11 @@ async function readJson(url, init) {
   return { response, body: await response.json() };
 }
 
+const expectedReadyChecks = [
+  { name: "postgresql_authority", status: "up" },
+  { name: "production_release_configuration", status: "up" },
+];
+
 test("real app mounts bounded observability routes and protects metrics", async () => {
   const databaseUrl = String(process.env.DATABASE_URL || "").trim();
   assert.match(databaseUrl, /^postgres(?:ql)?:\/\//i, "disposable PostgreSQL DATABASE_URL is required");
@@ -120,7 +125,7 @@ test("real app mounts bounded observability routes and protects metrics", async 
     assert.ok(Array.isArray(readiness.body.checks) && readiness.body.checks.length > 0);
     assert.deepEqual(
       readiness.body.checks.map((item) => ({ name: item.name, status: item.status })),
-      [{ name: "postgresql_authority", status: "up" }],
+      expectedReadyChecks,
     );
 
     const denied = await fetch(`${base}/ops/metrics`);
@@ -157,10 +162,14 @@ test("real app readiness fails closed when PostgreSQL authority is unavailable",
     const readiness = await readJson(`${base}/ops/readiness`);
     assert.equal(readiness.response.status, 503);
     assert.equal(readiness.body.status, "not_ready");
-    assert.equal(readiness.body.checks.length, 1);
+    assert.equal(readiness.body.checks.length, 2);
     assert.equal(readiness.body.checks[0].name, "postgresql_authority");
     assert.equal(readiness.body.checks[0].status, "down");
     assert.ok(["dependency_unavailable", "timeout"].includes(readiness.body.checks[0].error_code));
+    assert.deepEqual(
+      { name: readiness.body.checks[1].name, status: readiness.body.checks[1].status },
+      expectedReadyChecks[1],
+    );
     assert.equal(JSON.stringify(readiness.body).includes(unavailableUrl.toString()), false);
   } finally {
     await server.stop();
