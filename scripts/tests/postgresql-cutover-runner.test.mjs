@@ -15,7 +15,7 @@ const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repositoryRoot = path.resolve(currentDirectory, "../..");
 const gitSha = "a".repeat(40);
 const connectionString =
-  "postgresql://fawri_user:secret@db.internal.example/heliumdb";
+  "postgresql://fawri_user:test@db.internal.example/heliumdb";
 
 function validEnvironment(overrides = {}) {
   return {
@@ -105,7 +105,7 @@ test("cutover target requires explicit approval, database, environment and exact
   assert.throws(
     () =>
       requireCutoverTarget(
-        "postgresql://user:pass@db.internal.example/otherdb",
+        "postgresql://user:test@db.internal.example/otherdb",
         validEnvironment(),
         gitSha,
       ),
@@ -114,7 +114,7 @@ test("cutover target requires explicit approval, database, environment and exact
   assert.throws(
     () =>
       requireCutoverTarget(
-        "postgresql://user:pass@127.0.0.1/fawri_ci",
+        "postgresql://user:test@127.0.0.1/fawri_ci",
         validEnvironment({ FAWRI_MIGRATION_TARGET_DATABASE: "fawri_ci" }),
         gitSha,
       ),
