@@ -4,6 +4,7 @@ import type {
   AiFallbackCandidate,
   AiFallbackProvider,
   AiFallbackRequest,
+  AiTokenUsage,
   KnowledgeLanguage,
 } from "../knowledge/types.js";
 
@@ -26,6 +27,27 @@ function extractResponseText(payload: unknown): string {
     }
   }
   return parts.join("\n");
+}
+
+function nonNegativeInteger(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function extractTokenUsage(payload: unknown): AiTokenUsage | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const usage = (payload as { usage?: unknown }).usage;
+  if (!usage || typeof usage !== "object") return undefined;
+  const record = usage as Record<string, unknown>;
+  const inputTokens = nonNegativeInteger(record.input_tokens);
+  const outputTokens = nonNegativeInteger(record.output_tokens);
+  const suppliedTotal = nonNegativeInteger(record.total_tokens);
+  if (inputTokens === null && outputTokens === null && suppliedTotal === null) return undefined;
+  const input = inputTokens ?? 0;
+  const output = outputTokens ?? 0;
+  const total = suppliedTotal ?? input + output;
+  if (total < input + output) return undefined;
+  return { inputTokens: input, outputTokens: output, totalTokens: total };
 }
 
 function parseLanguage(value: unknown, fallback: KnowledgeLanguage): KnowledgeLanguage {
@@ -61,6 +83,7 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const started = Date.now();
 
     const merchantEnvelope = {
       policy: {
@@ -158,6 +181,10 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
         canAnswer: parsed.can_answer === true && Boolean(answerText),
         reason: boundedText(parsed.reason, 240) || "provider_unspecified",
         source: "openai_generated",
+        usage: extractTokenUsage(payload),
+        providerId: this.providerId,
+        model: this.model,
+        latencyMs: Math.max(0, Date.now() - started),
       };
       return candidate;
     } catch {
