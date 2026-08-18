@@ -47,8 +47,10 @@ function healthRank(value: EarlyWarningHealth): number {
   return value === "critical" ? 3 : value === "warning" ? 2 : value === "unknown" ? 1 : 0;
 }
 
-function worstHealth(values: EarlyWarningHealth[]): EarlyWarningHealth {
-  return values.reduce<EarlyWarningHealth>(
+function worstOperationalHealth(values: EarlyWarningHealth[]): EarlyWarningHealth {
+  const operational = values.filter((value) => value !== "unknown");
+  if (operational.length === 0) return "unknown";
+  return operational.reduce<EarlyWarningHealth>(
     (worst, current) => (healthRank(current) > healthRank(worst) ? current : worst),
     "healthy",
   );
@@ -147,7 +149,7 @@ export type EarlyWarningSnapshot = {
     recorded_calls: number;
     input_tokens: number | null;
     output_tokens: number | null;
-    total_tokens: number;
+    total_tokens: number | null;
   };
   data_usage: {
     support_attachment_bytes: number;
@@ -165,13 +167,18 @@ export type EarlyWarningSnapshot = {
 
 type AggregateRow = Record<string, unknown>;
 
-async function one(client: OperationalSqlClient, sql: string, values: unknown[] = []): Promise<AggregateRow> {
+async function one(
+  client: OperationalSqlClient,
+  sql: string,
+  values: unknown[] = [],
+): Promise<AggregateRow> {
   const result = await client.query<AggregateRow>(sql, values);
   return result.rows[0] || {};
 }
 
 function merchantHealth(row: AggregateRow): EarlyWarningMerchantHealth {
-  const operational = text(row.merchant_status) === "approved" && text(row.account_status) === "approved";
+  const operational =
+    text(row.merchant_status) === "approved" && text(row.account_status) === "approved";
   const critical =
     numberValue(row.uncertain_deliveries) > 0 ||
     numberValue(row.refund_conflicts) > 0 ||
@@ -218,8 +225,7 @@ export async function loadEarlyWarningPostgresSnapshot(
     });
   }
 
-  const windowMs = WINDOW_MS[requestedWindow];
-  const since = new Date(now.getTime() - windowMs);
+  const since = new Date(now.getTime() - WINDOW_MS[requestedWindow]);
   const started = Date.now();
 
   const data = await withOperationalTransaction(async (client) => {
@@ -257,32 +263,18 @@ export async function loadEarlyWarningPostgresSnapshot(
       client,
       `SELECT
          (SELECT COUNT(*) FROM channel_inbound_events WHERE received_at >= $1::timestamptz) AS inbound_events,
-         COUNT(*) AS messages,
-         COUNT(*) FILTER (WHERE sender = 'customer') AS customer_messages,
-         COUNT(*) FILTER (WHERE sender = 'fawri') AS fawri_messages,
-         COUNT(*) FILTER (WHERE status = 'failed') AS failed_messages,
-         COALESCE(SUM(o.sent), 0) AS outbound_sent,
-         COALESCE(SUM(o.confirmed_failed), 0) AS outbound_confirmed_failed,
-         COALESCE(SUM(o.uncertain), 0) AS outbound_uncertain,
-         COALESCE(SUM(o.stuck_pending), 0) AS outbound_stuck_pending,
-         MAX(o.p95_latency_ms) AS outbound_p95_latency_ms,
-         COALESCE(SUM(o.total_text_bytes), 0) + COALESCE(SUM(o.message_text_bytes), 0) AS tracked_message_text_bytes
-       FROM messages m
-       CROSS JOIN LATERAL (
-         SELECT
-           COUNT(*) FILTER (WHERE outcome = 'sent')::bigint AS sent,
-           COUNT(*) FILTER (WHERE outcome = 'confirmed_failed')::bigint AS confirmed_failed,
-           COUNT(*) FILTER (WHERE outcome = 'uncertain')::bigint AS uncertain,
-           COUNT(*) FILTER (WHERE outcome = 'pending' AND attempted_at < now() - interval '5 minutes')::bigint AS stuck_pending,
-           percentile_cont(0.95) WITHIN GROUP (
+         (SELECT COUNT(*) FROM messages WHERE created_at >= $1::timestamptz) AS messages,
+         (SELECT COUNT(*) FROM messages WHERE created_at >= $1::timestamptz AND sender = 'customer') AS customer_messages,
+         (SELECT COUNT(*) FROM messages WHERE created_at >= $1::timestamptz AND sender = 'fawri') AS fawri_messages,
+         (SELECT COUNT(*) FROM messages WHERE created_at >= $1::timestamptz AND status = 'failed') AS failed_messages,
+         (SELECT COUNT(*) FROM outbound_deliveries WHERE attempted_at >= $1::timestamptz AND outcome = 'sent') AS outbound_sent,
+         (SELECT COUNT(*) FROM outbound_deliveries WHERE attempted_at >= $1::timestamptz AND outcome = 'confirmed_failed') AS outbound_confirmed_failed,
+         (SELECT COUNT(*) FROM outbound_deliveries WHERE attempted_at >= $1::timestamptz AND outcome = 'uncertain') AS outbound_uncertain,
+         (SELECT COUNT(*) FROM outbound_deliveries WHERE outcome = 'pending' AND attempted_at < now() - interval '5 minutes') AS outbound_stuck_pending,
+         (SELECT percentile_cont(0.95) WITHIN GROUP (
              ORDER BY EXTRACT(EPOCH FROM (finalized_at - attempted_at)) * 1000
-           ) FILTER (WHERE finalized_at IS NOT NULL) AS p95_latency_ms,
-           0::bigint AS total_text_bytes,
-           0::bigint AS message_text_bytes
-         FROM outbound_deliveries
-         WHERE attempted_at >= $1::timestamptz
-       ) o
-       WHERE m.created_at >= $1::timestamptz`,
+           ) FROM outbound_deliveries
+           WHERE attempted_at >= $1::timestamptz AND finalized_at IS NOT NULL) AS outbound_p95_latency_ms`,
       [since.toISOString()],
     );
 
@@ -335,15 +327,15 @@ export async function loadEarlyWarningPostgresSnapshot(
       client,
       `SELECT
          COUNT(*) FILTER (WHERE metadata ? 'ai_usage') AS recorded_calls,
-         COALESCE(SUM(CASE WHEN metadata ? 'ai_usage' THEN NULLIF(metadata->'ai_usage'->>'input_tokens','')::bigint ELSE 0 END), 0) AS input_tokens,
-         COALESCE(SUM(CASE WHEN metadata ? 'ai_usage' THEN NULLIF(metadata->'ai_usage'->>'output_tokens','')::bigint ELSE 0 END), 0) AS output_tokens,
-         COALESCE(SUM(CASE WHEN metadata ? 'ai_usage' THEN NULLIF(metadata->'ai_usage'->>'total_tokens','')::bigint ELSE 0 END), 0) AS total_tokens
+         SUM(CASE WHEN metadata ? 'ai_usage' THEN NULLIF(metadata->'ai_usage'->>'input_tokens','')::bigint END) AS input_tokens,
+         SUM(CASE WHEN metadata ? 'ai_usage' THEN NULLIF(metadata->'ai_usage'->>'output_tokens','')::bigint END) AS output_tokens,
+         SUM(CASE WHEN metadata ? 'ai_usage' THEN NULLIF(metadata->'ai_usage'->>'total_tokens','')::bigint END) AS total_tokens
        FROM messages
        WHERE created_at >= $1::timestamptz AND sender = 'fawri'`,
       [since.toISOString()],
     );
 
-    const merchants = await client.query<AggregateRow>(
+    const merchantsResult = await client.query<AggregateRow>(
       `WITH
        ch AS (
          SELECT merchant_id,
@@ -377,7 +369,7 @@ export async function loadEarlyWarningPostgresSnapshot(
            COUNT(*) FILTER (WHERE conflict_at >= $1::timestamptz AND state = 'conflict') AS refund_conflicts
          FROM reply_refunds GROUP BY merchant_id
        ),
-       support AS (
+       support_rollup AS (
          SELECT merchant_id,
            COUNT(*) FILTER (WHERE status IN ('open','in_progress')) AS open_support_tickets
          FROM support_tickets GROUP BY merchant_id
@@ -395,14 +387,14 @@ export async function loadEarlyWarningPostgresSnapshot(
               COALESCE(jobs.dangerous_jobs,0) AS dangerous_jobs,
               COALESCE(delivery.uncertain_deliveries,0) AS uncertain_deliveries,
               COALESCE(refunds.refund_conflicts,0) AS refund_conflicts,
-              COALESCE(support.open_support_tickets,0) AS open_support_tickets
+              COALESCE(support_rollup.open_support_tickets,0) AS open_support_tickets
          FROM merchants m
          LEFT JOIN ch ON ch.merchant_id = m.id
          LEFT JOIN msg ON msg.merchant_id = m.id
          LEFT JOIN jobs ON jobs.merchant_id = m.id
          LEFT JOIN delivery ON delivery.merchant_id = m.id
          LEFT JOIN refunds ON refunds.merchant_id = m.id
-         LEFT JOIN support ON support.merchant_id = m.id
+         LEFT JOIN support_rollup ON support_rollup.merchant_id = m.id
         ORDER BY m.store_name, m.id`,
       [since.toISOString(), [...DANGEROUS_JOB_CODES]],
     );
@@ -416,20 +408,16 @@ export async function loadEarlyWarningPostgresSnapshot(
       credits,
       support,
       aiUsage,
-      merchants: merchants.rows.map(merchantHealth),
+      merchants: merchantsResult.rows.map(merchantHealth),
     };
   });
 
-  const databaseLatencyMs = Math.max(0, Date.now() - started);
   const incidents: EarlyWarningIncident[] = [];
-  const addIncident = (
-    condition: boolean,
-    incident: EarlyWarningIncident,
-  ) => {
+  const add = (condition: boolean, incident: EarlyWarningIncident) => {
     if (condition) incidents.push(incident);
   };
 
-  addIncident(numberValue(data.queue.dead_letter) > 0, {
+  add(numberValue(data.queue.dead_letter) > 0, {
     id: "queue-dlq-nonzero",
     severity: "warning",
     area: "queue",
@@ -437,7 +425,7 @@ export async function loadEarlyWarningPostgresSnapshot(
     value: numberValue(data.queue.dead_letter),
     runbook: "docs/operations-observability.md#queue-and-dlq-response",
   });
-  addIncident(numberValue(data.messaging.outbound_uncertain) > 0, {
+  add(numberValue(data.messaging.outbound_uncertain) > 0, {
     id: "outbound-delivery-uncertain",
     severity: "critical",
     area: "channels",
@@ -445,7 +433,7 @@ export async function loadEarlyWarningPostgresSnapshot(
     value: numberValue(data.messaging.outbound_uncertain),
     runbook: "docs/operations-observability.md#queue-and-dlq-response",
   });
-  addIncident(numberValue(data.messaging.outbound_stuck_pending) > 0, {
+  add(numberValue(data.messaging.outbound_stuck_pending) > 0, {
     id: "outbound-delivery-stuck",
     severity: "critical",
     area: "channels",
@@ -453,7 +441,7 @@ export async function loadEarlyWarningPostgresSnapshot(
     value: numberValue(data.messaging.outbound_stuck_pending),
     runbook: "docs/operations-observability.md#queue-and-dlq-response",
   });
-  addIncident(numberValue(data.credits.refund_conflicts) > 0, {
+  add(numberValue(data.credits.refund_conflicts) > 0, {
     id: "reply-refund-conflict",
     severity: "critical",
     area: "credits",
@@ -461,7 +449,7 @@ export async function loadEarlyWarningPostgresSnapshot(
     value: numberValue(data.credits.refund_conflicts),
     runbook: "docs/operations-observability.md#queue-and-dlq-response",
   });
-  addIncident(numberValue(data.credits.stale_reservations) > 0, {
+  add(numberValue(data.credits.stale_reservations) > 0, {
     id: "reply-reservation-stale",
     severity: "critical",
     area: "credits",
@@ -469,7 +457,7 @@ export async function loadEarlyWarningPostgresSnapshot(
     value: numberValue(data.credits.stale_reservations),
     runbook: "docs/operations-observability.md#queue-and-dlq-response",
   });
-  addIncident(numberValue(data.queue.dangerous_failures_in_window) > 0, {
+  add(numberValue(data.queue.dangerous_failures_in_window) > 0, {
     id: "bot-guardrail-dangerous-event",
     severity: "critical",
     area: "bot_guardrails",
@@ -477,7 +465,7 @@ export async function loadEarlyWarningPostgresSnapshot(
     value: numberValue(data.queue.dangerous_failures_in_window),
     runbook: "docs/operations-observability.md#queue-and-dlq-response",
   });
-  addIncident(numberValue(data.channels.recent_errors) > 0, {
+  add(numberValue(data.channels.recent_errors) > 0, {
     id: "channel-recent-errors",
     severity: "warning",
     area: "channels",
@@ -485,7 +473,7 @@ export async function loadEarlyWarningPostgresSnapshot(
     value: numberValue(data.channels.recent_errors),
     runbook: "docs/operations-observability.md#webhook-signature-response",
   });
-  addIncident(numberValue(data.messaging.failed_messages) > 0, {
+  add(numberValue(data.messaging.failed_messages) > 0, {
     id: "message-failures",
     severity: "warning",
     area: "messaging",
@@ -494,12 +482,12 @@ export async function loadEarlyWarningPostgresSnapshot(
     runbook: "docs/operations-observability.md#queue-and-dlq-response",
   });
 
+  const merchantOverall = worstOperationalHealth(data.merchants.map((merchant) => merchant.health));
   const overallHealth: EarlyWarningHealth = incidents.some((item) => item.severity === "critical")
     ? "critical"
     : incidents.length > 0
       ? "warning"
-      : worstHealth(data.merchants.map((merchant) => merchant.health));
-
+      : merchantOverall;
   const aiRecordedCalls = numberValue(data.aiUsage.recorded_calls);
 
   return {
@@ -507,7 +495,7 @@ export async function loadEarlyWarningPostgresSnapshot(
     generated_at: now.toISOString(),
     window: requestedWindow,
     window_started_at: since.toISOString(),
-    database_latency_ms: databaseLatencyMs,
+    database_latency_ms: Math.max(0, Date.now() - started),
     overall_health: overallHealth,
     incidents,
     queue: {
@@ -566,11 +554,11 @@ export async function loadEarlyWarningPostgresSnapshot(
       local_filesystem_attachments: numberValue(data.support.local_filesystem_attachments),
     },
     ai_usage: {
-      coverage: aiRecordedCalls > 0 ? "partial" : "partial",
+      coverage: "partial",
       recorded_calls: aiRecordedCalls,
-      input_tokens: aiRecordedCalls > 0 ? numberValue(data.aiUsage.input_tokens) : 0,
-      output_tokens: aiRecordedCalls > 0 ? numberValue(data.aiUsage.output_tokens) : 0,
-      total_tokens: numberValue(data.aiUsage.total_tokens),
+      input_tokens: aiRecordedCalls > 0 ? numberValue(data.aiUsage.input_tokens) : null,
+      output_tokens: aiRecordedCalls > 0 ? numberValue(data.aiUsage.output_tokens) : null,
+      total_tokens: aiRecordedCalls > 0 ? numberValue(data.aiUsage.total_tokens) : null,
     },
     data_usage: {
       support_attachment_bytes: numberValue(data.support.attachment_bytes_in_window),
@@ -580,11 +568,11 @@ export async function loadEarlyWarningPostgresSnapshot(
     },
     coverage: [
       { id: "postgresql", coverage: "available", note: "server-authoritative PostgreSQL snapshot" },
-      { id: "queue", coverage: "available", note: "durable jobs, attempts and DLQ state" },
+      { id: "queue", coverage: "available", note: "durable jobs and DLQ state" },
       { id: "channels", coverage: "available", note: "channel state, inbound events and outbound delivery outcomes" },
-      { id: "bot_guardrails", coverage: "available", note: "deterministic job and delivery safety outcomes" },
-      { id: "ai_tokens", coverage: "partial", note: "recorded only for instrumented AI-generated message intents" },
-      { id: "http_latency", coverage: "partial", note: "current-process telemetry is supplied separately by the API route" },
+      { id: "bot_guardrails", coverage: "available", note: "deterministic job, delivery and refund safety outcomes" },
+      { id: "ai_tokens", coverage: "partial", note: "only message intents that contain explicit provider usage metadata are counted" },
+      { id: "http_latency", coverage: "partial", note: "current-process bounded telemetry; external Prometheus retention is required for durable history" },
       { id: "database_storage", coverage: "not_instrumented", note: "per-merchant physical PostgreSQL storage is not measured yet" },
       { id: "network_transfer", coverage: "not_instrumented", note: "hosting-provider bandwidth authority is not connected" },
       { id: "durable_object_storage", coverage: "not_instrumented", note: "support attachment durability still depends on production object-storage activation" },
