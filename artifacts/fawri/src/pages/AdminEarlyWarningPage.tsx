@@ -25,7 +25,12 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { earlyWarningCoverageNote } from "@/lib/earlyWarningCoverageCopy";
+import {
+  earlyWarningCoverageLabel,
+  earlyWarningCoverageNote,
+  earlyWarningIncidentAreaLabel,
+  earlyWarningIncidentLabel,
+} from "@/lib/earlyWarningCoverageCopy";
 import { getAdminAuthHeaders } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { ADMIN_EARLY_WARNING_PAGE_TEXT } from "@/lib/translations/features/pages/AdminEarlyWarningPage";
@@ -426,8 +431,8 @@ export default function AdminEarlyWarningPage() {
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="font-bold" dir="ltr">{incident.code}</p>
-                            <p className="mt-1 text-xs opacity-75">{incident.area}</p>
+                            <p className="font-bold">{earlyWarningIncidentLabel(lang, incident.code)}</p>
+                            <p className="mt-1 text-xs opacity-75">{earlyWarningIncidentAreaLabel(lang, incident.area)}</p>
                           </div>
                           <span className="rounded-full border px-2 py-1 text-xs font-bold">
                             {incident.severity === "critical" ? text.critical : text.warning}
@@ -571,7 +576,7 @@ export default function AdminEarlyWarningPage() {
                   <Card key={item.id}>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between gap-3">
-                        <strong className="text-sm" dir="ltr">{item.id}</strong>
+                        <strong className="text-sm">{earlyWarningCoverageLabel(lang, item.id)}</strong>
                         <span className={`rounded-full border px-2 py-1 text-xs font-bold ${
                           item.coverage === "available"
                             ? healthClass("healthy")
