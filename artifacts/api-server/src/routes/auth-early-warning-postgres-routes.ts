@@ -5,6 +5,10 @@ import {
   sendAuthError,
 } from "../middleware/authSession";
 import { getAiUsageTelemetrySnapshot } from "../observability/aiUsageTelemetry";
+import {
+  evaluateRuntimeEarlyWarnings,
+  mergeEarlyWarningHealth,
+} from "../observability/earlyWarningEvaluation";
 import { getHttpTelemetrySnapshot } from "../observability/requestTelemetry";
 import { hasAdminPermission } from "../services/authPolicy";
 import {
@@ -33,6 +37,12 @@ function canViewEarlyWarning(res: Response): boolean {
   return hasAdminPermission(profile.role, profile.permissions, "view_logs");
 }
 
+function canViewMerchantHealth(res: Response): boolean {
+  const profile = getAuthContext(res)?.adminProfile;
+  if (!profile) return false;
+  return hasAdminPermission(profile.role, profile.permissions, "view_merchants");
+}
+
 async function snapshotFor(window: EarlyWarningWindow): Promise<EarlyWarningSnapshot> {
   const current = cache.get(window);
   const now = Date.now();
@@ -58,6 +68,8 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
     const snapshot = await snapshotFor(window);
     const http = getHttpTelemetrySnapshot(window);
     const aiRuntime = getAiUsageTelemetrySnapshot(window);
+    const runtimeEvaluation = evaluateRuntimeEarlyWarnings({ http, ai: aiRuntime });
+    const merchantHealthVisible = canViewMerchantHealth(res);
     const runtimeByMerchant = new Map(
       aiRuntime.merchants.map((merchant) => [merchant.merchant_id, merchant]),
     );
@@ -67,18 +79,27 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
       ok: true,
       snapshot: {
         ...snapshot,
+        overall_health: mergeEarlyWarningHealth(
+          snapshot.overall_health,
+          runtimeEvaluation.health,
+        ),
+        incidents: [...snapshot.incidents, ...runtimeEvaluation.incidents],
         http,
         ai_runtime: aiRuntime,
-        merchants: snapshot.merchants.map((merchant) => {
-          const runtime = runtimeByMerchant.get(merchant.merchant_id);
-          return {
-            ...merchant,
-            ai_runtime_calls: runtime?.calls ?? 0,
-            ai_runtime_input_tokens: runtime?.input_tokens ?? 0,
-            ai_runtime_output_tokens: runtime?.output_tokens ?? 0,
-            ai_runtime_total_tokens: runtime?.total_tokens ?? 0,
-          };
-        }),
+        merchant_health_visible: merchantHealthVisible,
+        merchants: merchantHealthVisible
+          ? snapshot.merchants.map((merchant) => {
+              const runtime = runtimeByMerchant.get(merchant.merchant_id);
+              return {
+                ...merchant,
+                ai_runtime_calls: runtime?.calls ?? 0,
+                ai_runtime_failed_calls: runtime?.failed_calls ?? 0,
+                ai_runtime_input_tokens: runtime?.input_tokens ?? 0,
+                ai_runtime_output_tokens: runtime?.output_tokens ?? 0,
+                ai_runtime_total_tokens: runtime?.total_tokens ?? 0,
+              };
+            })
+          : [],
       },
     });
   } catch (error) {
