@@ -5,7 +5,7 @@ import {
   earlyWarningCoverageLabel,
   earlyWarningIncidentAreaLabel,
   earlyWarningIncidentLabel,
-} from "../src/lib/earlyWarningCoverageCopy.ts";
+} from "../src/lib/earlyWarningCoverageCopy";
 
 const languages = ["ar", "ku", "en"] as const;
 const coverageIds = [
