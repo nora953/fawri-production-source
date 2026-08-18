@@ -25,6 +25,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { earlyWarningCoverageNote } from "@/lib/earlyWarningCoverageCopy";
 import { getAdminAuthHeaders } from "@/lib/store";
 import { useI18n } from "@/lib/i18n";
 import { ADMIN_EARLY_WARNING_PAGE_TEXT } from "@/lib/translations/features/pages/AdminEarlyWarningPage";
@@ -581,7 +582,9 @@ export default function AdminEarlyWarningPage() {
                           {coverageLabel(item.coverage)}
                         </span>
                       </div>
-                      <p className="mt-2 text-xs leading-5 text-muted-foreground">{item.note}</p>
+                      <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                        {earlyWarningCoverageNote(lang, item.id, item.note)}
+                      </p>
                     </CardContent>
                   </Card>
                 ))}
