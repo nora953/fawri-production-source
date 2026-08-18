@@ -5,17 +5,19 @@ import {
   getAiUsageTelemetrySnapshot,
   recordAiUsageTelemetry,
   resetAiUsageTelemetryForTests,
+  type AiUsageTelemetrySnapshot,
 } from "../src/observability/aiUsageTelemetry";
 import {
   EARLY_WARNING_THRESHOLDS,
   evaluateRuntimeEarlyWarnings,
   mergeEarlyWarningHealth,
 } from "../src/observability/earlyWarningEvaluation";
+import type { HttpTelemetrySnapshot } from "../src/observability/requestTelemetry";
 import { ConstrainedOpenAiProvider } from "../src/services/ai/constrainedOpenAiProvider";
 
-function healthyHttp() {
+function healthyHttp(): HttpTelemetrySnapshot {
   return {
-    coverage: "current_process" as const,
+    coverage: "current_process",
     process_started_at: "2026-08-18T00:00:00.000Z",
     retained_events: 10,
     capped: false,
@@ -32,9 +34,9 @@ function healthyHttp() {
   };
 }
 
-function healthyAi() {
+function healthyAi(): AiUsageTelemetrySnapshot {
   return {
-    coverage: "current_process" as const,
+    coverage: "current_process",
     process_started_at: "2026-08-18T00:00:00.000Z",
     retained_events: 0,
     capped: false,
