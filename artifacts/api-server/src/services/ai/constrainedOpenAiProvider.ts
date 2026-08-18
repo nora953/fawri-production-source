@@ -1,3 +1,4 @@
+import { recordAiUsageTelemetry } from "../../observability/aiUsageTelemetry.js";
 import { boundedText, clampConfidence } from "../knowledge/normalization.js";
 import { redactSensitiveText } from "../knowledge/redaction.js";
 import type {
@@ -170,6 +171,8 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
       if (!text) return null;
       const parsed = JSON.parse(text) as Record<string, unknown>;
       const answerText = boundedText(parsed.answer, 2_000);
+      const usage = extractTokenUsage(payload);
+      const latencyMs = Math.max(0, Date.now() - started);
       const candidate: AiFallbackCandidate = {
         answerText,
         language: parseLanguage(parsed.language, request.language),
@@ -181,11 +184,20 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
         canAnswer: parsed.can_answer === true && Boolean(answerText),
         reason: boundedText(parsed.reason, 240) || "provider_unspecified",
         source: "openai_generated",
-        usage: extractTokenUsage(payload),
+        usage,
         providerId: this.providerId,
         model: this.model,
-        latencyMs: Math.max(0, Date.now() - started),
+        latencyMs,
       };
+      if (usage) {
+        recordAiUsageTelemetry({
+          merchantId: request.merchantId,
+          providerId: this.providerId,
+          model: this.model,
+          latencyMs,
+          usage,
+        });
+      }
       return candidate;
     } catch {
       return null;
