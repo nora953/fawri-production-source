@@ -8,6 +8,9 @@ on:
       - "artifacts/api-server/tests/early-warning-observability.test.ts"
       - "artifacts/api-server/tests/early-warning-qa-regressions.test.ts"
       - "artifacts/api-server/tests/observability-mounted.integration.test.mjs"
+      - "artifacts/fawri/src/lib/earlyWarningCoverageCopy.ts"
+      - "artifacts/fawri/src/pages/AdminEarlyWarningPage.tsx"
+      - "artifacts/fawri/tests/early-warning-label-localization.test.ts"
       - ".github/workflows/observability-mounted.yml"
   workflow_dispatch:
 
@@ -61,8 +64,8 @@ jobs:
       - name: Type-check API observability wiring
         run: pnpm --filter @workspace/api-server run typecheck
 
-      - name: Test early-warning telemetry and QA regression contracts
-        run: pnpm exec tsx --test artifacts/api-server/tests/early-warning-observability.test.ts artifacts/api-server/tests/early-warning-qa-regressions.test.ts
+      - name: Test early-warning telemetry, QA, and label localization contracts
+        run: pnpm exec tsx --test artifacts/api-server/tests/early-warning-observability.test.ts artifacts/api-server/tests/early-warning-qa-regressions.test.ts artifacts/fawri/tests/early-warning-label-localization.test.ts
 
       - name: Test mounted observability routes against disposable PostgreSQL
         run: node --test artifacts/api-server/tests/observability-mounted.integration.test.mjs
