@@ -12,6 +12,7 @@ import {
   secureAdminLogout,
 } from "@/lib/authClientCutover";
 import { useI18n } from "@/lib/i18n";
+import EarlyWarningLauncher from "@/components/admin/EarlyWarningLauncher";
 import SupportPreviewLauncher from "@/components/admin/SupportPreviewLauncher";
 import EmergencyIncidentNoticeBanner from "@/components/EmergencyIncidentNoticeBanner";
 import "@/styles/emergency-access-compact.css";
@@ -55,6 +56,7 @@ const SupportPage = lazy(() => import("@/pages/dashboard/SupportPage"));
 
 // Admin
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
+const AdminEarlyWarningPage = lazy(() => import("@/pages/AdminEarlyWarningPage"));
 const AdminWorkMonitorPage = lazy(() => import("@/pages/AdminWorkMonitorPage"));
 const AdminSupportPreviewPage = lazy(
   () => import("@/pages/AdminSupportPreviewPage"),
@@ -118,6 +120,9 @@ function AppRouter() {
               <AdminEmergencyAccessRouterPage />
             </div>
           )}
+        </Route>
+        <Route path="/admin/early-warning">
+          {() => <AdminEarlyWarningPage />}
         </Route>
         <Route path="/admin/work-monitor/:adminId">
           {(params) => <AdminWorkMonitorPage adminId={params.adminId} />}
@@ -245,6 +250,7 @@ function App() {
           <WouterRouter base={routerBase}>
             <AdminSessionRevalidator />
             <AppRouter />
+            <EarlyWarningLauncher />
             <SupportPreviewLauncher />
             <EmergencyIncidentNoticeBanner />
           </WouterRouter>

@@ -1,9 +1,11 @@
+import { recordAiUsageTelemetry, type AiCallOutcome } from "../../observability/aiUsageTelemetry.js";
 import { boundedText, clampConfidence } from "../knowledge/normalization.js";
 import { redactSensitiveText } from "../knowledge/redaction.js";
 import type {
   AiFallbackCandidate,
   AiFallbackProvider,
   AiFallbackRequest,
+  AiTokenUsage,
   KnowledgeLanguage,
 } from "../knowledge/types.js";
 
@@ -26,6 +28,27 @@ function extractResponseText(payload: unknown): string {
     }
   }
   return parts.join("\n");
+}
+
+function nonNegativeInteger(value: unknown): number | null {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function extractTokenUsage(payload: unknown): AiTokenUsage | undefined {
+  if (!payload || typeof payload !== "object") return undefined;
+  const usage = (payload as { usage?: unknown }).usage;
+  if (!usage || typeof usage !== "object") return undefined;
+  const record = usage as Record<string, unknown>;
+  const inputTokens = nonNegativeInteger(record.input_tokens);
+  const outputTokens = nonNegativeInteger(record.output_tokens);
+  const suppliedTotal = nonNegativeInteger(record.total_tokens);
+  if (inputTokens === null && outputTokens === null && suppliedTotal === null) return undefined;
+  const input = inputTokens ?? 0;
+  const output = outputTokens ?? 0;
+  const total = suppliedTotal ?? input + output;
+  if (total < input + output) return undefined;
+  return { inputTokens: input, outputTokens: output, totalTokens: total };
 }
 
 function parseLanguage(value: unknown, fallback: KnowledgeLanguage): KnowledgeLanguage {
@@ -61,6 +84,21 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    const started = Date.now();
+    const record = (outcome: AiCallOutcome, usage?: AiTokenUsage) => {
+      try {
+        recordAiUsageTelemetry({
+          merchantId: request.merchantId,
+          providerId: this.providerId,
+          model: this.model,
+          latencyMs: Math.max(0, Date.now() - started),
+          outcome,
+          usage,
+        });
+      } catch {
+        // Observability must never change provider behavior.
+      }
+    };
 
     const merchantEnvelope = {
       policy: {
@@ -141,12 +179,28 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
         body: JSON.stringify(body),
         signal: controller.signal,
       });
-      if (!response.ok) return null;
+      if (!response.ok) {
+        record("provider_error");
+        return null;
+      }
       const payload = await response.json().catch(() => null);
-      const text = extractResponseText(payload);
-      if (!text) return null;
-      const parsed = JSON.parse(text) as Record<string, unknown>;
+      const usage = extractTokenUsage(payload);
+      const responseText = extractResponseText(payload);
+      if (!responseText) {
+        record("invalid_response", usage);
+        return null;
+      }
+
+      let parsed: Record<string, unknown>;
+      try {
+        parsed = JSON.parse(responseText) as Record<string, unknown>;
+      } catch {
+        record("invalid_response", usage);
+        return null;
+      }
+
       const answerText = boundedText(parsed.answer, 2_000);
+      const latencyMs = Math.max(0, Date.now() - started);
       const candidate: AiFallbackCandidate = {
         answerText,
         language: parseLanguage(parsed.language, request.language),
@@ -158,9 +212,15 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
         canAnswer: parsed.can_answer === true && Boolean(answerText),
         reason: boundedText(parsed.reason, 240) || "provider_unspecified",
         source: "openai_generated",
+        usage,
+        providerId: this.providerId,
+        model: this.model,
+        latencyMs,
       };
+      record("success", usage);
       return candidate;
     } catch {
+      record(controller.signal.aborted ? "timeout" : "transport_error");
       return null;
     } finally {
       clearTimeout(timer);

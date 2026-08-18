@@ -26,6 +26,7 @@ import emergencyReadAccessRouter from "./routes/emergency-read-access";
 import emergencyReadDirectoryRouter from "./routes/emergency-read-directory";
 import emergencyMerchantNoticesRouter from "./routes/emergency-merchant-notices";
 import { createObservabilityRouter } from "./observability/router";
+import { recordHttpTelemetry } from "./observability/requestTelemetry";
 import {
   allowInternalMetricsRequest,
   createPostgresAuthorityReadinessCheck,
@@ -197,6 +198,7 @@ app.use(
     },
   }),
 );
+app.use(recordHttpTelemetry);
 app.use(cors());
 app.use(cookieParser());
 app.get("/healthz", (_req, res) => {
