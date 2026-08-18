@@ -125,6 +125,12 @@ export interface KnowledgeFactResolver {
   resolve(input: KnowledgeFactResolverInput): Promise<DatabaseFactResult | null>;
 }
 
+export type AiTokenUsage = {
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+};
+
 export type AiFallbackRequest = {
   merchantId: string;
   language: KnowledgeLanguage;
@@ -148,6 +154,10 @@ export type AiFallbackCandidate = {
   canAnswer: boolean;
   reason: string;
   source: "openai_generated";
+  usage?: AiTokenUsage;
+  providerId?: string;
+  model?: string;
+  latencyMs?: number;
 };
 
 export interface AiFallbackProvider {
@@ -175,6 +185,10 @@ export type KnowledgeDecisionResult = {
   matchedRecordId: string | null;
   reasonCode: string;
   injectionSignals: string[];
+  aiUsage?: AiTokenUsage;
+  aiProviderId?: string;
+  aiModel?: string;
+  aiLatencyMs?: number;
 };
 
 export type SemanticDocument = {
