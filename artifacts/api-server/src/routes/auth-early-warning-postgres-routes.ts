@@ -4,6 +4,7 @@ import {
   requireSecureAdminSession,
   sendAuthError,
 } from "../middleware/authSession";
+import { getAiUsageTelemetrySnapshot } from "../observability/aiUsageTelemetry";
 import { getHttpTelemetrySnapshot } from "../observability/requestTelemetry";
 import { hasAdminPermission } from "../services/authPolicy";
 import {
@@ -56,12 +57,28 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
   try {
     const snapshot = await snapshotFor(window);
     const http = getHttpTelemetrySnapshot(window);
+    const aiRuntime = getAiUsageTelemetrySnapshot(window);
+    const runtimeByMerchant = new Map(
+      aiRuntime.merchants.map((merchant) => [merchant.merchant_id, merchant]),
+    );
+
     res.setHeader("Cache-Control", "no-store");
     res.json({
       ok: true,
       snapshot: {
         ...snapshot,
         http,
+        ai_runtime: aiRuntime,
+        merchants: snapshot.merchants.map((merchant) => {
+          const runtime = runtimeByMerchant.get(merchant.merchant_id);
+          return {
+            ...merchant,
+            ai_runtime_calls: runtime?.calls ?? 0,
+            ai_runtime_input_tokens: runtime?.input_tokens ?? 0,
+            ai_runtime_output_tokens: runtime?.output_tokens ?? 0,
+            ai_runtime_total_tokens: runtime?.total_tokens ?? 0,
+          };
+        }),
       },
     });
   } catch (error) {
