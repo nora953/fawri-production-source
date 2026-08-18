@@ -103,6 +103,10 @@ Database physical storage and hosting-provider network transfer remain separate 
 
 Support attachment bytes currently include PostgreSQL metadata for attachments, while actual support image bytes still depend on the active storage provider. Local filesystem storage is explicitly surfaced as a production-readiness warning signal rather than represented as durable object storage.
 
+## Channel connectivity response
+
+`MERCHANT_NO_CONNECTED_CHANNEL` means at least one approved operational merchant currently has no connected channel. Confirm the merchant channel state and credential lifecycle first, then inspect recent channel errors and webhook activity. Do not treat suspended, deleted, rejected, or otherwise non-operational merchant rows as live service-health failures, and do not expose historical deleted merchant identifiers in the live merchant-health table.
+
 ## Webhook signature response
 
 A signature-failure spike should trigger channel/security investigation using aggregate counts and existing secure audit paths. Do not include webhook bodies, headers, or access tokens in the alert.
