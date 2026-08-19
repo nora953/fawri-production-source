@@ -263,6 +263,13 @@ async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
         FOR UPDATE`,
       [input.accountId, input.accountKind],
     );
+    if (
+      input.accountKind === "admin" &&
+      input.adminRole === "owner_admin" &&
+      active.length >= 2
+    ) {
+      throw new Error("OWNER_SESSION_LIMIT_REACHED");
+    }
     const cap = input.accountKind === "admin" ? 2 : 5;
     const revokeCount = Math.max(0, active.length - cap + 1);
     if (revokeCount > 0) {
