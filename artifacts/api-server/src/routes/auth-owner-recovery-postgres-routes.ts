@@ -10,6 +10,7 @@ import {
   getOwnerRecoveryStatus,
   ownerRecoveryFingerprint,
   verifyOwnerRecoveryKey1,
+  verifyOwnerRecoveryOldPhone,
 } from "../services/ownerBreakGlassRecoveryAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import {
@@ -256,14 +257,9 @@ router.post("/admin/owner-recovery/generate", async (_req, res) => {
 
 router.post("/owner-recovery/:recoveryId/start", async (req, res) => {
   const recoveryId = String(req.params.recoveryId || "").trim();
-  const oldPhone = normalizePhone(req.body?.old_phone);
   const key1 = String(req.body?.key_1 || "").trim();
   const target = `owner-recovery:${recoveryId}`;
-  if (
-    !/^[0-9a-f]{48}$/.test(recoveryId) ||
-    !/^07\d{9}$/.test(oldPhone) ||
-    !/^[0-9a-f]{64}$/.test(key1)
-  ) {
+  if (!/^[0-9a-f]{48}$/.test(recoveryId) || !/^[0-9a-f]{64}$/.test(key1)) {
     await recordAttempt({ req, target, success: false, reason: "owner_recovery_start_invalid" });
     sendAuthError(res, 401, "OWNER_RECOVERY_INVALID", "owner recovery credentials are invalid");
     return;
@@ -272,7 +268,6 @@ router.post("/owner-recovery/:recoveryId/start", async (req, res) => {
   try {
     const verified = await verifyOwnerRecoveryKey1({
       recoveryId,
-      oldPhone,
       key1,
     });
     await recordAttempt({
@@ -290,7 +285,7 @@ router.post("/owner-recovery/:recoveryId/start", async (req, res) => {
       oldPhoneHash: verified.old_phone_hash,
       generation: verified.generation,
     });
-    res.json({ ok: true, next: "verify_new_phone" });
+    res.json({ ok: true, next: "verify_owner_and_new_phone" });
   } catch (error) {
     await recordAttempt({ req, target, success: false, reason: "owner_recovery_key1_invalid" });
     recoveryError(res, error);
@@ -301,20 +296,40 @@ router.post("/owner-recovery/:recoveryId/otp/request", async (req, res) => {
   const recoveryId = String(req.params.recoveryId || "").trim();
   const proof = recoveryProof(req, res, recoveryId);
   if (!proof || proof.stage !== "key1_verified") return;
+  const oldPhone = normalizePhone(req.body?.old_phone);
   const newPhone = normalizePhone(req.body?.new_phone);
   const confirmPhone = normalizePhone(req.body?.confirm_new_phone);
-  if (!/^07\d{9}$/.test(newPhone) || newPhone !== confirmPhone) {
+  if (
+    !/^07\d{9}$/.test(oldPhone) ||
+    !/^07\d{9}$/.test(newPhone) ||
+    newPhone !== confirmPhone
+  ) {
     sendAuthError(
       res,
       400,
-      "OWNER_RECOVERY_NEW_PHONE_INVALID",
-      "new phone confirmation is invalid",
+      "OWNER_RECOVERY_PHONE_INPUT_INVALID",
+      "owner recovery phone confirmation is invalid",
     );
     return;
   }
+  const oldPhoneTarget = `owner-recovery-old-phone:${proof.recoveryIdHash}`;
+  if (!(await rateLimit(req, res, oldPhoneTarget))) return;
   try {
+    await verifyOwnerRecoveryOldPhone({
+      ownerId: proof.ownerId,
+      oldPhoneHash: proof.oldPhoneHash,
+      generation: proof.generation,
+      oldPhone,
+    });
     await ensureOwnerRecoveryPhoneAvailable({ ownerId: proof.ownerId, newPhone });
     const issued = await issueOtp(req, newPhone, "admin_recovery");
+    await recordAttempt({
+      req,
+      target: oldPhoneTarget,
+      success: true,
+      reason: "owner_recovery_old_phone_verified",
+      accountId: proof.ownerId,
+    });
     setRecoveryCookie(res, {
       version: 1,
       stage: "otp_pending",
@@ -333,6 +348,13 @@ router.post("/owner-recovery/:recoveryId/otp/request", async (req, res) => {
       ...devCode(issued.code),
     });
   } catch (error) {
+    await recordAttempt({
+      req,
+      target: oldPhoneTarget,
+      success: false,
+      reason: "owner_recovery_phone_verification_failed",
+      accountId: proof.ownerId,
+    });
     if (error instanceof OwnerRecoveryError) {
       recoveryError(res, error);
       return;
