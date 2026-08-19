@@ -109,7 +109,10 @@ export default function LoginPage() {
   const showAuthError = (result: any) => {
     if (result?.code === 'ADMIN_DEVICE_APPROVAL_REQUIRED') {
       toast.error(securityText.approval, { duration: 9000 });
-    } else if (result?.code === 'ADMIN_SESSION_LIMIT_REACHED') {
+    } else if (
+      result?.code === 'ADMIN_SESSION_LIMIT_REACHED' ||
+      result?.code === 'OWNER_SESSION_LIMIT_REACHED'
+    ) {
       toast.error(securityText.sessionLimit, { duration: 8000 });
     } else if (result?.code === 'ADMIN_DEVICE_ID_REQUIRED') {
       toast.error(securityText.deviceRequired);
@@ -168,6 +171,8 @@ export default function LoginPage() {
         setOwnerOtpError(t.otp_invalid_code);
       } else if (result?.code === 'ADMIN_TRUSTED_DEVICE_LIMIT_REACHED') {
         setOwnerOtpError(securityText.trustedDeviceLimit);
+      } else if (result?.code === 'OWNER_SESSION_LIMIT_REACHED') {
+        setOwnerOtpError(securityText.sessionLimit);
       } else if (result?.code === 'ADMIN_DEVICE_ID_REQUIRED') {
         setOwnerOtpError(securityText.deviceRequired);
       } else if (result?.code === 'OTP_DELIVERY_NOT_CONFIGURED') {
