@@ -143,16 +143,36 @@ router.post("/admin/device-otp/verify", async (req, res) => {
     }
     throw error;
   }
-  const issued = await authPostgresSessionAuthority.issueSession({
-    accountId: current.account.account.id,
-    accountKind: "admin",
-    tenantId: current.account.account.id,
-    accountVersion: current.account.account.sessionVersion,
-    adminRole: current.account.adminProfile.role,
-    permissions: current.account.adminProfile.permissions,
-    deviceId: current.deviceId,
-    deviceLabel: requestDeviceLabel(req),
-  });
+
+  let issued;
+  try {
+    issued = await authPostgresSessionAuthority.issueSession({
+      accountId: current.account.account.id,
+      accountKind: "admin",
+      tenantId: current.account.account.id,
+      accountVersion: current.account.account.sessionVersion,
+      adminRole: current.account.adminProfile.role,
+      permissions: current.account.adminProfile.permissions,
+      deviceId: current.deviceId,
+      deviceLabel: requestDeviceLabel(req),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "OWNER_SESSION_LIMIT_REACHED") {
+      await setAdminDeviceTrustAuthoritative({
+        deviceRecordId: current.device.id,
+        trusted: false,
+        actorAccountId: current.account.account.id,
+      }).catch(() => undefined);
+      sendAuthError(
+        res,
+        409,
+        "OWNER_SESSION_LIMIT_REACHED",
+        "owner account already has two active sessions",
+      );
+      return;
+    }
+    throw error;
+  }
   await recordMerchantLoginAttemptAuthoritative({
     target: current.phone,
     accountKind: "admin",
