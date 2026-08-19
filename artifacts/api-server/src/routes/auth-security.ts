@@ -1,5 +1,9 @@
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { enforceAuthOrigin, sendAuthError } from "../middleware/authSession";
+import {
+  enforceAuthOrigin,
+  requireSecureAdminSession,
+  sendAuthError,
+} from "../middleware/authSession";
 import { adminAuthPostgresCutoverMode } from "../services/adminAuthPostgresCutover";
 import { startPostgresSupportRuntimeCutover } from "../services/postgresSupportRuntimeCutover";
 import adminDeviceOtpPgRoutes from "./auth-admin-device-otp-pg-routes";
@@ -49,6 +53,7 @@ router.use(supportImageAliasPostgresRoutes as any);
 router.use(supportInspectionDecisionPostgresRoutes as any);
 router.use(supportMessagePostgresRoutes as any);
 router.use(supportPostgresRoutes as any);
+router.use("/admin/owner-recovery", requireSecureAdminSession);
 router.use(ownerRecoveryPostgresRoutes as any);
 router.use(adminDeviceOtpPgRoutes as any);
 router.use(publicRoutes as any);
