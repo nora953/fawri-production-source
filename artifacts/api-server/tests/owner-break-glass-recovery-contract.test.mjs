@@ -70,6 +70,16 @@ test("recovery follows key1 then old phone and new-phone OTP then key2", () => {
   assert.match(recoveryPage, /<Dialog open=\{key2Open\}/);
 });
 
+test("malformed public recovery starts are rate limited before failure recording", () => {
+  const start = routes.indexOf('router.post("/owner-recovery/:recoveryId/start"');
+  assert.notEqual(start, -1);
+  const limiter = routes.indexOf("if (!(await rateLimit(req, res, target))) return;", start);
+  const shapeCheck = routes.indexOf("if (!/^[0-9a-f]{48}$/.test(recoveryId)", start);
+  assert.notEqual(limiter, -1);
+  assert.notEqual(shapeCheck, -1);
+  assert.ok(limiter < shapeCheck);
+});
+
 test("forgot-password recovery requires a replacement password rather than the lost password", () => {
   assert.match(routes, /forgot_password === true \? "reset_password" : "current_password"/);
   assert.match(authority, /input\.mode === "current_password"/);
@@ -88,6 +98,22 @@ test("successful break-glass recovery revokes sessions and trusted devices atomi
   assert.match(routes, /all_sessions_revoked: true/);
   assert.match(routes, /all_devices_revoked: true/);
   assert.match(routes, /recovery_keys_consumed: true/);
+});
+
+test("recovery generation and completion audit records are inside the security transaction", () => {
+  assert.match(
+    authority,
+    /await writeRecoveryAudit\(client, \{\s*eventType: "owner_recovery_bundle_generated"/s,
+  );
+  assert.match(
+    authority,
+    /await writeRecoveryAudit\(client, \{\s*eventType: "owner_break_glass_recovery_completed"/s,
+  );
+  assert.doesNotMatch(authority, /auditAdminSecurityEventAuthoritative/);
+  assert.match(
+    routes,
+    /clearRecoveryCookie\(res\);[\s\S]*recordAttempt\([\s\S]*\)\.catch\(\(\) => undefined\);[\s\S]*res\.json\(/,
+  );
 });
 
 test("recovery setup is owner-session protected, password reauthenticated, and never cached", () => {
