@@ -17,7 +17,10 @@ function buildMessage(code: string, purpose: OtpPurpose): string {
   if (purpose === "admin_device_verification") {
     return `Fawri verification code: ${code}\nUse this code to verify a new owner administrator device. It expires in 10 minutes.`;
   }
-  if (purpose === "password_reset" || purpose === "admin_recovery") {
+  if (purpose === "admin_recovery") {
+    return `Fawri verification code: ${code}\nUse this code only to verify the new phone during owner emergency recovery. It expires in 10 minutes.`;
+  }
+  if (purpose === "password_reset") {
     return `Fawri verification code: ${code}\nUse this code to reset your password. It expires in 10 minutes.`;
   }
   return `Fawri verification code: ${code}\nUse this code to verify your account. It expires in 10 minutes.`;

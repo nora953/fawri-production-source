@@ -114,6 +114,30 @@ export async function login(
     }
   }
 
+  if (kind === "admin" && found.adminProfile?.role === "owner_admin") {
+    const activeOwnerSessions = await authPostgresSessionAuthority.listActiveSessions(
+      found.account.id,
+      "admin",
+    );
+    if (activeOwnerSessions.length >= 2) {
+      await recordMerchantLoginAttemptAuthoritative({
+        target: phone,
+        accountKind: "admin",
+        ip: requestIp(req),
+        success: false,
+        reason: "owner_session_limit_reached",
+        accountId: found.account.id,
+      });
+      sendAuthError(
+        res,
+        409,
+        "OWNER_SESSION_LIMIT_REACHED",
+        "owner account already has two active sessions",
+      );
+      return;
+    }
+  }
+
   const deviceId = requestDeviceId(req);
   if (kind === "admin") {
     if (!deviceId) {
@@ -194,23 +218,45 @@ export async function login(
     return;
   }
 
-  const issued = await authPostgresSessionAuthority.issueSession({
-    accountId: found.account.id,
-    accountKind: kind,
-    tenantId:
-      kind === "merchant"
-        ? found.merchantProfile!.tenantId
-        : found.account.id,
-    accountVersion: found.account.sessionVersion,
-    ...(found.adminProfile
-      ? {
-          adminRole: found.adminProfile.role,
-          permissions: found.adminProfile.permissions,
-        }
-      : {}),
-    ...(deviceId ? { deviceId } : {}),
-    deviceLabel: requestDeviceLabel(req),
-  });
+  let issued;
+  try {
+    issued = await authPostgresSessionAuthority.issueSession({
+      accountId: found.account.id,
+      accountKind: kind,
+      tenantId:
+        kind === "merchant"
+          ? found.merchantProfile!.tenantId
+          : found.account.id,
+      accountVersion: found.account.sessionVersion,
+      ...(found.adminProfile
+        ? {
+            adminRole: found.adminProfile.role,
+            permissions: found.adminProfile.permissions,
+          }
+        : {}),
+      ...(deviceId ? { deviceId } : {}),
+      deviceLabel: requestDeviceLabel(req),
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "OWNER_SESSION_LIMIT_REACHED") {
+      await recordMerchantLoginAttemptAuthoritative({
+        target: phone,
+        accountKind: "admin",
+        ip: requestIp(req),
+        success: false,
+        reason: "owner_session_limit_reached",
+        accountId: found.account.id,
+      });
+      sendAuthError(
+        res,
+        409,
+        "OWNER_SESSION_LIMIT_REACHED",
+        "owner account already has two active sessions",
+      );
+      return;
+    }
+    throw error;
+  }
   await recordMerchantLoginAttemptAuthoritative({
     target: phone,
     accountKind: kind,

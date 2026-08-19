@@ -86,10 +86,7 @@ export async function issueMerchantOtpChallengeAuthoritative(input: {
   expiresAt: string;
   retryAfterSeconds: number;
 }> {
-  if (
-    !operationalPostgresAuthorityRequired() ||
-    input.purpose === "admin_recovery"
-  ) {
+  if (!operationalPostgresAuthorityRequired()) {
     return authSecurityStore.issueOtpChallenge(input);
   }
   const targetHash = fingerprint("otp-target", input.target);
@@ -168,7 +165,10 @@ export async function issueMerchantOtpChallengeAuthoritative(input: {
     const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, "0");
     const expiresAt = new Date(now.getTime() + otpTtlMs());
     const resendAfter = new Date(now.getTime() + otpResendMs());
-    const accountKind = input.purpose === "admin_device_verification" ? "admin" : "merchant";
+    const accountKind =
+      input.purpose === "admin_device_verification" || input.purpose === "admin_recovery"
+        ? "admin"
+        : "merchant";
     const accountId = await accountIdForPhone(client, input.target, accountKind);
     await client.query(
       `INSERT INTO auth_otp_challenges
@@ -205,10 +205,7 @@ export async function verifyMerchantOtpChallengeAuthoritative(input: {
   code: string;
   ip: string;
 }): Promise<"verified" | "invalid" | "expired" | "used" | "locked"> {
-  if (
-    !operationalPostgresAuthorityRequired() ||
-    input.purpose === "admin_recovery"
-  ) {
+  if (!operationalPostgresAuthorityRequired()) {
     return authSecurityStore.verifyOtpChallenge(input);
   }
   return withOperationalTransaction(async (client) => {

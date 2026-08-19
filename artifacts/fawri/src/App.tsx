@@ -13,6 +13,7 @@ import {
 } from "@/lib/authClientCutover";
 import { useI18n } from "@/lib/i18n";
 import EarlyWarningLauncher from "@/components/admin/EarlyWarningLauncher";
+import OwnerRecoveryLauncher from "@/components/admin/OwnerRecoveryLauncher";
 import SupportPreviewLauncher from "@/components/admin/SupportPreviewLauncher";
 import EmergencyIncidentNoticeBanner from "@/components/EmergencyIncidentNoticeBanner";
 import "@/styles/emergency-access-compact.css";
@@ -28,6 +29,7 @@ const OTPPage = lazy(() => import("@/pages/OTPPage"));
 const PendingPage = lazy(() => import("@/pages/PendingPage"));
 const PrivacyPage = lazy(() => import("@/pages/PrivacyPage"));
 const TermsPage = lazy(() => import("@/pages/TermsPage"));
+const OwnerRecoveryPage = lazy(() => import("@/pages/OwnerRecoveryPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
 // Dashboard Pages - each page loads only when opened
@@ -67,6 +69,9 @@ const AdminEmergencyAccessRouterPage = lazy(
 const AdminEmergencySnapshotPage = lazy(
   () => import("@/pages/AdminEmergencySnapshotPage"),
 );
+const OwnerRecoverySetupPage = lazy(
+  () => import("@/pages/OwnerRecoverySetupPage"),
+);
 
 const queryClient = new QueryClient();
 
@@ -104,6 +109,9 @@ function AppRouter() {
         <Route path="/pending">{() => <PendingPage />}</Route>
         <Route path="/privacy">{() => <PrivacyPage />}</Route>
         <Route path="/terms">{() => <TermsPage />}</Route>
+        <Route path="/owner-recovery/:recoveryId">
+          {(params) => <OwnerRecoveryPage recoveryId={params.recoveryId} />}
+        </Route>
 
         {/* Admin */}
         <Route path="/admin/support-preview/:sessionId">
@@ -123,6 +131,9 @@ function AppRouter() {
         </Route>
         <Route path="/admin/early-warning">
           {() => <AdminEarlyWarningPage />}
+        </Route>
+        <Route path="/admin/owner-recovery-setup">
+          {() => <OwnerRecoverySetupPage />}
         </Route>
         <Route path="/admin/work-monitor/:adminId">
           {(params) => <AdminWorkMonitorPage adminId={params.adminId} />}
@@ -250,6 +261,7 @@ function App() {
           <WouterRouter base={routerBase}>
             <AdminSessionRevalidator />
             <AppRouter />
+            <OwnerRecoveryLauncher />
             <EarlyWarningLauncher />
             <SupportPreviewLauncher />
             <EmergencyIncidentNoticeBanner />
