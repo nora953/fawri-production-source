@@ -169,7 +169,11 @@ export default function OwnerRecoverySetupPage() {
               </div>
               <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                 <div className="space-y-2">
-                  <Label htmlFor="owner-recovery-password">{copy.currentPassword}</Label>
+                  <div className="flex min-h-5 items-center justify-between gap-3">
+                    <Label htmlFor="owner-recovery-password" className="leading-5">
+                      {copy.currentPassword}
+                    </Label>
+                  </div>
                   <Input
                     id="owner-recovery-password"
                     type="password"
