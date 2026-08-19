@@ -4,6 +4,8 @@ import { useLocation } from "wouter";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { getStableAuthDeviceId } from "@/lib/authClientCutover";
 import { useI18n } from "@/lib/i18n";
 import { OWNER_RECOVERY_COPY } from "@/lib/ownerRecoveryCopy";
@@ -29,7 +31,6 @@ async function jsonRequest(path: string, init: RequestInit = {}) {
     headers: {
       "Content-Type": "application/json",
       "X-Fawri-Device-Id": getStableAuthDeviceId(),
-      ...(init.headers || {}),
     },
   });
   const body = await response.json().catch(() => ({}));
@@ -47,6 +48,7 @@ export default function OwnerRecoverySetupPage() {
   const copy = OWNER_RECOVERY_COPY[lang];
   const [status, setStatus] = useState<RecoveryStatus | null>(null);
   const [bundle, setBundle] = useState<RecoveryBundle | null>(null);
+  const [ownerPassword, setOwnerPassword] = useState("");
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState("");
@@ -86,13 +88,14 @@ export default function OwnerRecoverySetupPage() {
   }, [copy.genericError, setLocation]);
 
   const generate = async () => {
+    if (!ownerPassword) return;
     setGenerating(true);
     setError("");
     setBundle(null);
     try {
       const value = await jsonRequest("/api/auth/admin/owner-recovery/generate", {
         method: "POST",
-        body: "{}",
+        body: JSON.stringify({ owner_password: ownerPassword }),
       });
       const next: RecoveryBundle = {
         recovery_path: String(value.recovery_path || ""),
@@ -105,6 +108,7 @@ export default function OwnerRecoverySetupPage() {
     } catch {
       setError(copy.genericError);
     } finally {
+      setOwnerPassword("");
       setGenerating(false);
     }
   };
@@ -150,24 +154,42 @@ export default function OwnerRecoverySetupPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border p-4">
-              <div>
-                <div className="font-bold">
-                  {loading ? "…" : status?.enabled ? copy.enabled : copy.disabled}
-                </div>
-                {status?.created_at && (
-                  <div className="mt-1 text-xs text-muted-foreground" dir="ltr">
-                    {new Date(status.created_at).toLocaleString()}
+            <div className="rounded-xl border p-4">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <div className="font-bold">
+                    {loading ? "…" : status?.enabled ? copy.enabled : copy.disabled}
                   </div>
-                )}
+                  {status?.created_at && (
+                    <div className="mt-1 text-xs text-muted-foreground" dir="ltr">
+                      {new Date(status.created_at).toLocaleString()}
+                    </div>
+                  )}
+                </div>
               </div>
-              <Button onClick={() => void generate()} disabled={loading || generating}>
-                {generating
-                  ? copy.saving
-                  : status?.enabled
-                    ? copy.regenerate
-                    : copy.generate}
-              </Button>
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
+                <div className="space-y-2">
+                  <Label htmlFor="owner-recovery-password">{copy.currentPassword}</Label>
+                  <Input
+                    id="owner-recovery-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={ownerPassword}
+                    onChange={(event) => setOwnerPassword(event.target.value)}
+                    disabled={loading || generating}
+                  />
+                </div>
+                <Button
+                  onClick={() => void generate()}
+                  disabled={loading || generating || !ownerPassword}
+                >
+                  {generating
+                    ? copy.saving
+                    : status?.enabled
+                      ? copy.regenerate
+                      : copy.generate}
+                </Button>
+              </div>
             </div>
 
             {error && (
