@@ -4,6 +4,7 @@ import {
   requireSecureAdminSession,
   sendAuthError,
 } from "../middleware/authSession";
+import { requireOwnerRecoverySetupPassword } from "../middleware/ownerRecoveryReauth";
 import { adminAuthPostgresCutoverMode } from "../services/adminAuthPostgresCutover";
 import { startPostgresSupportRuntimeCutover } from "../services/postgresSupportRuntimeCutover";
 import adminDeviceOtpPgRoutes from "./auth-admin-device-otp-pg-routes";
@@ -42,6 +43,13 @@ router.use((req: Request, res: Response, next: NextFunction) => {
   }
   next();
 });
+
+const recoveryNoStore = (_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+  res.setHeader("Pragma", "no-cache");
+  next();
+};
+
 router.use(saasBillingRouter as any);
 router.use(subscriptionEntitlementPgRouter as any);
 router.use(merchantRealtimePgRouter as any);
@@ -53,7 +61,13 @@ router.use(supportImageAliasPostgresRoutes as any);
 router.use(supportInspectionDecisionPostgresRoutes as any);
 router.use(supportMessagePostgresRoutes as any);
 router.use(supportPostgresRoutes as any);
+router.use("/admin/owner-recovery", recoveryNoStore);
+router.use("/owner-recovery", recoveryNoStore);
 router.use("/admin/owner-recovery", requireSecureAdminSession);
+router.post(
+  "/admin/owner-recovery/generate",
+  requireOwnerRecoverySetupPassword,
+);
 router.use(ownerRecoveryPostgresRoutes as any);
 router.use(adminDeviceOtpPgRoutes as any);
 router.use(publicRoutes as any);
