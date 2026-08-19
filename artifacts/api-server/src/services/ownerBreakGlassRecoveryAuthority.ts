@@ -193,7 +193,6 @@ export async function generateOwnerRecoveryBundle(accountId: string): Promise<{
 
 export async function verifyOwnerRecoveryKey1(input: {
   recoveryId: string;
-  oldPhone: string;
   key1: string;
 }): Promise<{
   owner_id: string;
@@ -219,11 +218,10 @@ export async function verifyOwnerRecoveryKey1(input: {
           AND a.state = 'active'
           AND p.enabled = TRUE
           AND p.role = 'owner_admin'
-          AND a.phone = $2
           AND a.metadata -> 'owner_recovery' ->> 'recovery_id_hash' = $1
         LIMIT 1
         FOR UPDATE OF a`,
-      [recoveryIdHash, input.oldPhone],
+      [recoveryIdHash],
     );
     const owner = rows[0];
     const recovery = owner ? recoveryFromMetadata(owner.metadata || {}) : null;
@@ -249,6 +247,43 @@ export async function verifyOwnerRecoveryKey1(input: {
       generation: recovery.generation,
     };
   });
+}
+
+export async function verifyOwnerRecoveryOldPhone(input: {
+  ownerId: string;
+  oldPhoneHash: string;
+  generation: string;
+  oldPhone: string;
+}): Promise<void> {
+  if (!operationalPostgresAuthorityRequired()) {
+    throw new OwnerRecoveryError(
+      "OWNER_RECOVERY_POSTGRES_REQUIRED",
+      "owner recovery requires PostgreSQL authority",
+      503,
+    );
+  }
+  const pool = await operationalDatabasePool();
+  const owner = await ownerById(pool, input.ownerId);
+  const recovery = owner ? recoveryFromMetadata(owner.metadata || {}) : null;
+  if (
+    !owner ||
+    !recovery?.enabled ||
+    recovery.generation !== input.generation ||
+    !safeEqual(
+      input.oldPhoneHash,
+      ownerRecoveryFingerprint("old-phone", input.oldPhone),
+    ) ||
+    !safeEqual(
+      input.oldPhoneHash,
+      ownerRecoveryFingerprint("old-phone", owner.phone),
+    )
+  ) {
+    throw new OwnerRecoveryError(
+      "OWNER_RECOVERY_INVALID",
+      "owner recovery credentials are invalid",
+      401,
+    );
+  }
 }
 
 export async function ensureOwnerRecoveryPhoneAvailable(input: {
