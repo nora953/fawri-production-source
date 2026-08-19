@@ -259,12 +259,12 @@ router.post("/owner-recovery/:recoveryId/start", async (req, res) => {
   const recoveryId = String(req.params.recoveryId || "").trim();
   const key1 = String(req.body?.key_1 || "").trim();
   const target = `owner-recovery:${recoveryId}`;
+  if (!(await rateLimit(req, res, target))) return;
   if (!/^[0-9a-f]{48}$/.test(recoveryId) || !/^[0-9a-f]{64}$/.test(key1)) {
     await recordAttempt({ req, target, success: false, reason: "owner_recovery_start_invalid" });
     sendAuthError(res, 401, "OWNER_RECOVERY_INVALID", "owner recovery credentials are invalid");
     return;
   }
-  if (!(await rateLimit(req, res, target))) return;
   try {
     const verified = await verifyOwnerRecoveryKey1({
       recoveryId,
@@ -427,6 +427,7 @@ router.post("/owner-recovery/:recoveryId/complete", async (req, res) => {
       newPassword: String(req.body?.new_password || ""),
       confirmNewPassword: String(req.body?.confirm_new_password || ""),
     });
+    clearRecoveryCookie(res);
     await recordAttempt({
       req,
       target,
@@ -435,8 +436,7 @@ router.post("/owner-recovery/:recoveryId/complete", async (req, res) => {
         ? "owner_recovery_phone_password_completed"
         : "owner_recovery_phone_completed",
       accountId: proof.ownerId,
-    });
-    clearRecoveryCookie(res);
+    }).catch(() => undefined);
     res.json({
       ok: true,
       recovered: true,
@@ -453,7 +453,7 @@ router.post("/owner-recovery/:recoveryId/complete", async (req, res) => {
       success: false,
       reason: "owner_recovery_completion_failed",
       accountId: proof.ownerId,
-    });
+    }).catch(() => undefined);
     recoveryError(res, error);
   }
 });
