@@ -1,4 +1,5 @@
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import type { FormEvent } from "react";
 import { KeyRound, LockKeyhole, ShieldCheck, Smartphone } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -70,7 +71,6 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
     setError("");
     try {
       await request(`${basePath}/start`, {
-        old_phone: oldPhone,
         key_1: key1.trim().toLowerCase(),
       });
       setKey1("");
@@ -88,6 +88,7 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
     setNotice("");
     try {
       const value = await request(`${basePath}/otp/request`, {
+        old_phone: oldPhone,
         new_phone: newPhone,
         confirm_new_phone: confirmNewPhone,
       });
@@ -186,18 +187,6 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
             {stage === "key1" && (
               <form onSubmit={start} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="old-phone">{copy.oldPhone}</Label>
-                  <Input
-                    id="old-phone"
-                    dir="ltr"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    value={oldPhone}
-                    onChange={(event) => setOldPhone(event.target.value)}
-                    placeholder="07XXXXXXXXX"
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="key-1">{copy.key1Label}</Label>
                   <Input
                     id="key-1"
@@ -208,7 +197,7 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
                     onChange={(event) => setKey1(event.target.value)}
                   />
                 </div>
-                <Button className="w-full gap-2" disabled={busy} type="submit">
+                <Button className="w-full gap-2" disabled={busy || !key1.trim()} type="submit">
                   <KeyRound className="h-4 w-4" />
                   {busy ? copy.saving : copy.start}
                 </Button>
@@ -217,6 +206,19 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
 
             {stage === "phone" && (
               <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="old-phone">{copy.oldPhone}</Label>
+                  <Input
+                    id="old-phone"
+                    dir="ltr"
+                    inputMode="tel"
+                    autoComplete="tel"
+                    value={oldPhone}
+                    onChange={(event) => setOldPhone(event.target.value)}
+                    placeholder="07XXXXXXXXX"
+                    disabled={otpRequested}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="new-phone">{copy.newPhone}</Label>
                   <Input
@@ -242,7 +244,11 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
                   />
                 </div>
                 {!otpRequested ? (
-                  <Button className="w-full gap-2" disabled={busy} onClick={() => void sendOtp()}>
+                  <Button
+                    className="w-full gap-2"
+                    disabled={busy || !oldPhone || !newPhone || !confirmNewPhone}
+                    onClick={() => void sendOtp()}
+                  >
                     <Smartphone className="h-4 w-4" />
                     {busy ? copy.saving : copy.sendOtp}
                   </Button>
@@ -265,7 +271,7 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
                         </p>
                       )}
                     </div>
-                    <Button className="w-full" disabled={busy} onClick={() => void verifyOtp()}>
+                    <Button className="w-full" disabled={busy || otp.length !== 6} onClick={() => void verifyOtp()}>
                       {busy ? copy.saving : copy.verifyOtp}
                     </Button>
                   </>
