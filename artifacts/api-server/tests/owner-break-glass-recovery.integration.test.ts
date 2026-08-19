@@ -56,7 +56,19 @@ function adminHeaders(cookie: string, deviceId: string): Record<string, string> 
   };
 }
 
+async function clearProofAuthState(): Promise<void> {
+  await pool.query(
+    "DELETE FROM login_attempts WHERE account_id = $1",
+    [ownerId],
+  );
+  await pool.query(
+    "DELETE FROM auth_otp_challenges WHERE account_id = $1 OR purpose = 'admin_recovery'",
+    [ownerId],
+  );
+}
+
 async function seedOwner(): Promise<void> {
+  await clearProofAuthState();
   await pool.query(
     "DELETE FROM accounts WHERE id = $1 OR phone = ANY($2::text[])",
     [ownerId, [phone0, phone1, phone2, phone3]],
@@ -100,6 +112,7 @@ test("owner break-glass recovery is PostgreSQL authoritative, one-time, and capp
     FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
     AUTH_ALLOW_DEV_OTP_BYPASS: "true",
     AUTH_INCLUDE_DEV_CODE: "true",
+    AUTH_OTP_RESEND_MS: "1",
   });
 
   const [{ default: express }, { default: cookieParser }, { default: authSecurityRouter }] =
@@ -127,7 +140,7 @@ test("owner break-glass recovery is PostgreSQL authoritative, one-time, and capp
       "DELETE FROM accounts WHERE id = $1 OR phone = ANY($2::text[])",
       [ownerId, [phone0, phone1, phone2, phone3]],
     );
-    await pool.query("DELETE FROM auth_otp_challenges WHERE purpose = 'admin_recovery'");
+    await clearProofAuthState();
     await pool.end();
     await rm(runtimeDirectory, { recursive: true, force: true });
   });
