@@ -60,9 +60,22 @@ async function context(req: Request, res: Response) {
   return { phone, account, deviceId, device };
 }
 
+async function ownerSessionCapacity(accountId: string, res: Response): Promise<boolean> {
+  const active = await authPostgresSessionAuthority.listActiveSessions(accountId, "admin");
+  if (active.length < 2) return true;
+  sendAuthError(
+    res,
+    409,
+    "OWNER_SESSION_LIMIT_REACHED",
+    "owner account already has two active sessions",
+  );
+  return false;
+}
+
 router.post("/admin/device-otp/resend", async (req, res) => {
   const current = await context(req, res);
   if (!current) return;
+  if (!(await ownerSessionCapacity(current.account.account.id, res))) return;
   if (current.device.status === "trusted") {
     sendAuthError(res, 409, "ADMIN_DEVICE_ALREADY_TRUSTED", "administrator device is already trusted");
     return;
@@ -90,6 +103,7 @@ router.post("/admin/device-otp/verify", async (req, res) => {
   }
   const current = await context(req, res);
   if (!current?.account.adminProfile) return;
+  if (!(await ownerSessionCapacity(current.account.account.id, res))) return;
   if (current.device.status === "trusted") {
     sendAuthError(res, 409, "ADMIN_DEVICE_ALREADY_TRUSTED", "administrator device is already trusted");
     return;
