@@ -5,9 +5,6 @@ import {
   verifyPassword,
 } from "./authPasswordService";
 import {
-  auditAdminSecurityEventAuthoritative,
-} from "./postgresAdminSecurityAuthority";
-import {
   operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
@@ -60,6 +57,41 @@ export function ownerRecoveryFingerprint(domain: string, value: string): string 
     .createHmac("sha256", authSecret())
     .update(`owner-recovery:${domain}:${value}`)
     .digest("base64url");
+}
+
+function auditSubjectFingerprint(value: string): string {
+  return crypto
+    .createHmac("sha256", authSecret())
+    .update(`audit-subject:${value}`)
+    .digest("base64url");
+}
+
+async function writeRecoveryAudit(
+  target: OperationalQueryTarget,
+  input: {
+    eventType: string;
+    actorAccountId?: string;
+    actorKind?: "admin" | "merchant";
+    subjectId: string;
+    reasonCode?: string;
+    decisionCode?: string;
+  },
+): Promise<void> {
+  await target.query(
+    `INSERT INTO auth_audit_events
+      (id, event_type, actor_account_id, actor_kind, subject_hash,
+       reason_code, decision_code)
+     VALUES ($1, $2, $3, $4::account_kind, $5, $6, $7)`,
+    [
+      crypto.randomUUID(),
+      String(input.eventType || "owner_recovery_event").slice(0, 120),
+      input.actorAccountId || null,
+      input.actorKind || null,
+      auditSubjectFingerprint(input.subjectId),
+      input.reasonCode || null,
+      input.decisionCode || null,
+    ],
+  );
 }
 
 function safeEqual(left: string, right: string): boolean {
@@ -148,7 +180,7 @@ export async function generateOwnerRecoveryBundle(accountId: string): Promise<{
       503,
     );
   }
-  const generated = await withOperationalTransaction(async (client) => {
+  return withOperationalTransaction(async (client) => {
     const owner = await ownerById(client, accountId, true);
     if (!owner) {
       throw new OwnerRecoveryError("OWNER_ADMIN_REQUIRED", "owner administrator is required", 403);
@@ -174,6 +206,12 @@ export async function generateOwnerRecoveryBundle(accountId: string): Promise<{
         WHERE id = $1 AND kind = 'admin'`,
       [accountId, JSON.stringify(state)],
     );
+    await writeRecoveryAudit(client, {
+      eventType: "owner_recovery_bundle_generated",
+      actorAccountId: accountId,
+      actorKind: "admin",
+      subjectId: accountId,
+    });
     return {
       recovery_id: recoveryId,
       recovery_path: `/owner-recovery/${recoveryId}`,
@@ -182,13 +220,6 @@ export async function generateOwnerRecoveryBundle(accountId: string): Promise<{
       created_at: now,
     };
   });
-  await auditAdminSecurityEventAuthoritative({
-    event_type: "owner_recovery_bundle_generated",
-    actor_account_id: accountId,
-    actor_kind: "admin",
-    subject_hash: accountId,
-  });
-  return generated;
 }
 
 export async function verifyOwnerRecoveryKey1(input: {
@@ -331,7 +362,7 @@ export async function completeOwnerRecovery(input: {
       503,
     );
   }
-  const result = await withOperationalTransaction(async (client) => {
+  return withOperationalTransaction(async (client) => {
     const owner = await ownerById(client, input.ownerId, true);
     const recovery = owner ? recoveryFromMetadata(owner.metadata || {}) : null;
     if (
@@ -453,15 +484,14 @@ export async function completeOwnerRecovery(input: {
         WHERE account_id = $1 AND kind = 'admin' AND status <> 'revoked'`,
       [owner.id, now],
     );
-    return { password_reset: Boolean(nextPasswordHash) };
+    const passwordReset = Boolean(nextPasswordHash);
+    await writeRecoveryAudit(client, {
+      eventType: "owner_break_glass_recovery_completed",
+      actorKind: "admin",
+      subjectId: owner.id,
+      reasonCode: passwordReset ? "phone_and_password_recovered" : "phone_recovered",
+      decisionCode: "all_sessions_and_devices_revoked",
+    });
+    return { password_reset: passwordReset };
   });
-
-  await auditAdminSecurityEventAuthoritative({
-    event_type: "owner_break_glass_recovery_completed",
-    actor_kind: "admin",
-    subject_hash: input.ownerId,
-    reason_code: result.password_reset ? "phone_and_password_recovered" : "phone_recovered",
-    decision_code: "all_sessions_and_devices_revoked",
-  });
-  return result;
 }
