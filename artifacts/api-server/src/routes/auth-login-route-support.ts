@@ -114,6 +114,30 @@ export async function login(
     }
   }
 
+  if (kind === "admin" && found.adminProfile?.role === "owner_admin") {
+    const activeOwnerSessions = await authPostgresSessionAuthority.listActiveSessions(
+      found.account.id,
+      "admin",
+    );
+    if (activeOwnerSessions.length >= 2) {
+      await recordMerchantLoginAttemptAuthoritative({
+        target: phone,
+        accountKind: "admin",
+        ip: requestIp(req),
+        success: false,
+        reason: "owner_session_limit_reached",
+        accountId: found.account.id,
+      });
+      sendAuthError(
+        res,
+        409,
+        "OWNER_SESSION_LIMIT_REACHED",
+        "owner account already has two active sessions",
+      );
+      return;
+    }
+  }
+
   const deviceId = requestDeviceId(req);
   if (kind === "admin") {
     if (!deviceId) {
