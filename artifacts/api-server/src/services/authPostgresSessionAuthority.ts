@@ -254,33 +254,42 @@ async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
       [input.accountId, input.accountKind, now],
     );
 
-    const active = await queryRows<{ id: string }>(
+    const active = await queryRows<{
+      id: string;
+      device_fingerprint_hash: string | null;
+    }>(
       client,
-      `SELECT id
+      `SELECT id, device_fingerprint_hash
          FROM account_sessions
         WHERE account_id = $1 AND kind = $2 AND status = 'active'
         ORDER BY created_at ASC, id ASC
         FOR UPDATE`,
       [input.accountId, input.accountKind],
     );
-    if (
-      input.accountKind === "admin" &&
-      input.adminRole === "owner_admin" &&
-      active.length >= 2
-    ) {
-      throw new Error("OWNER_SESSION_LIMIT_REACHED");
-    }
-    const cap = input.accountKind === "admin" ? 2 : 5;
-    const revokeCount = Math.max(0, active.length - cap + 1);
-    if (revokeCount > 0) {
-      const revokeIds = active.slice(0, revokeCount).map((row) => row.id);
-      await client.query(
-        `UPDATE account_sessions
-            SET status = 'revoked', revoked_at = $2,
-                revoke_reason = 'manual_revocation'
-          WHERE id = ANY($1::text[]) AND status = 'active'`,
-        [revokeIds, now],
+    if (input.accountKind === "admin" && input.adminRole === "owner_admin") {
+      if (!input.deviceId) {
+        throw new Error("AUTH_POSTGRES_OWNER_DEVICE_REQUIRED");
+      }
+      const ownerDeviceFingerprint = fingerprint("device", input.deviceId);
+      const activeOnDevice = active.filter(
+        (row) => row.device_fingerprint_hash === ownerDeviceFingerprint,
       );
+      if (activeOnDevice.length >= 2) {
+        throw new Error("OWNER_SESSION_LIMIT_REACHED");
+      }
+    } else {
+      const cap = input.accountKind === "admin" ? 2 : 5;
+      const revokeCount = Math.max(0, active.length - cap + 1);
+      if (revokeCount > 0) {
+        const revokeIds = active.slice(0, revokeCount).map((row) => row.id);
+        await client.query(
+          `UPDATE account_sessions
+              SET status = 'revoked', revoked_at = $2,
+                  revoke_reason = 'manual_revocation'
+            WHERE id = ANY($1::text[]) AND status = 'active'`,
+          [revokeIds, now],
+        );
+      }
     }
 
     const material = createTokenMaterial();

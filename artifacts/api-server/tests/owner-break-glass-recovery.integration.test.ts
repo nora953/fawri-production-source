@@ -378,33 +378,42 @@ test("owner break-glass recovery is PostgreSQL authoritative, one-time, and capp
 
   const sessionDevice1 = "owner-session-cap-device-1";
   await loginOwner(phone2, password2, sessionDevice1);
-  const sessionDevice2 = "owner-session-cap-device-2";
-  await loginOwner(phone2, password2, sessionDevice2);
-  const liveTwo = await pool.query(
-    `SELECT count(*)::int AS count
+  await loginOwner(phone2, password2, sessionDevice1);
+
+  const device1Two = await pool.query(
+    `SELECT count(*)::int AS count,
+            count(DISTINCT device_fingerprint_hash)::int AS devices
        FROM account_sessions
       WHERE account_id = $1 AND kind = 'admin' AND status = 'active'
         AND idle_expires_at > now() AND absolute_expires_at > now()`,
     [ownerId],
   );
-  assert.equal(liveTwo.rows[0].count, 2);
+  assert.equal(device1Two.rows[0].count, 2);
+  assert.equal(device1Two.rows[0].devices, 1);
 
-  const third = await json(await fetch(`${baseUrl}/api/auth/admin/login`, {
+  const thirdSameDevice = await json(await fetch(`${baseUrl}/api/auth/admin/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-fawri-device-id": "owner-session-cap-device-3",
+      "x-fawri-device-id": sessionDevice1,
     },
     body: JSON.stringify({ phone: phone2, password: password2 }),
   }));
-  assert.equal(third.response.status, 409);
-  assert.equal(third.body?.code, "OWNER_SESSION_LIMIT_REACHED");
-  const stillTwo = await pool.query(
-    `SELECT count(*)::int AS count
+  assert.equal(thirdSameDevice.response.status, 409);
+  assert.equal(thirdSameDevice.body?.code, "OWNER_SESSION_LIMIT_REACHED");
+
+  const sessionDevice2 = "owner-session-cap-device-2";
+  await loginOwner(phone2, password2, sessionDevice2);
+  await loginOwner(phone2, password2, sessionDevice2);
+
+  const liveFour = await pool.query(
+    `SELECT count(*)::int AS count,
+            count(DISTINCT device_fingerprint_hash)::int AS devices
        FROM account_sessions
       WHERE account_id = $1 AND kind = 'admin' AND status = 'active'
         AND idle_expires_at > now() AND absolute_expires_at > now()`,
     [ownerId],
   );
-  assert.equal(stillTwo.rows[0].count, 2);
+  assert.equal(liveFour.rows[0].count, 4);
+  assert.equal(liveFour.rows[0].devices, 2);
 });
