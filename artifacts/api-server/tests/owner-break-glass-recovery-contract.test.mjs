@@ -142,7 +142,8 @@ test("admin recovery OTP and owner session cap remain PostgreSQL authoritative",
   assert.match(otpAuthority, /input\.purpose === "admin_recovery"/);
   assert.match(otpAuthority, /"admin_device_verification" \|\| input\.purpose === "admin_recovery"/);
   assert.match(sessionAuthority, /input\.adminRole === "owner_admin"/);
-  assert.match(sessionAuthority, /active\.length >= 2/);
+  assert.match(sessionAuthority, /activeOnDevice\.length >= 2/);
+  assert.match(sessionAuthority, /fingerprint\("device", input\.deviceId\)/);
   assert.match(sessionAuthority, /throw new Error\("OWNER_SESSION_LIMIT_REACHED"\)/);
   assert.match(loginRoute, /OWNER_SESSION_LIMIT_REACHED/);
   assert.match(deviceOtpRoute, /OWNER_SESSION_LIMIT_REACHED/);
