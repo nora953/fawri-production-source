@@ -18,6 +18,8 @@ export const providerCostRates = pgTable(
     meterKey: text("meter_key").notNull(),
     providerKey: text("provider_key").notNull(),
     unitCode: text("unit_code").notNull(),
+    dimensionKey: text("dimension_key").notNull().default("global"),
+    dimensionValue: text("dimension_value").notNull().default("global"),
     rateUsd: numeric("rate_usd", { precision: 20, scale: 10 }).notNull(),
     sourceType: text("source_type").notNull().default("owner_configured"),
     sourceReference: text("source_reference"),
@@ -39,8 +41,12 @@ export const providerCostRates = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    meterEffectiveUnique: uniqueIndex("provider_cost_rates_meter_effective_unique").on(
+    meterDimensionEffectiveUnique: uniqueIndex(
+      "provider_cost_rates_meter_dimension_effective_unique",
+    ).on(
       table.meterKey,
+      table.dimensionKey,
+      table.dimensionValue,
       table.effectiveFrom,
     ),
     meterEffectiveIndex: index("provider_cost_rates_meter_effective_idx").on(
@@ -66,6 +72,10 @@ export const providerCostRates = pgTable(
     meterKeyCheck: check(
       "provider_cost_rates_meter_key_check",
       sql`${table.meterKey} ~ '^[a-z0-9][a-z0-9._-]{0,79}$'`,
+    ),
+    dimensionCheck: check(
+      "provider_cost_rates_dimension_check",
+      sql`char_length(${table.dimensionKey}) BETWEEN 1 AND 80 AND char_length(${table.dimensionValue}) BETWEEN 1 AND 160`,
     ),
     effectiveRangeCheck: check(
       "provider_cost_rates_effective_range_check",
