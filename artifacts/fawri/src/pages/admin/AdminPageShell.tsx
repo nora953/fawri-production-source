@@ -2,15 +2,18 @@ import React, { useState } from "react";
 import {
   BadgeCheck,
   Ban,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Clock3,
   Headphones,
+  KeyRound,
   LayoutGrid,
   LogOut,
   Menu,
   PauseCircle,
   ScrollText,
+  ShieldAlert,
   Trash2,
   UsersRound,
   X,
@@ -19,7 +22,16 @@ import type { LucideIcon } from "lucide-react";
 
 import EmergencyReadAccessLauncher from "@/components/admin/EmergencyReadAccessLauncher";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { OWNER_RECOVERY_COPY } from "@/lib/ownerRecoveryCopy";
 import { clearSession } from "@/lib/store";
+import { ADMIN_EARLY_WARNING_PAGE_TEXT } from "@/lib/translations/features/pages/AdminEarlyWarningPage";
 import { AdminPageView } from "@/pages/admin/AdminPageView";
 import type { AdminPageViewModel } from "@/pages/admin/useAdminPageController";
 
@@ -44,6 +56,7 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
     TABS,
     adminText,
     currentAdmin,
+    isOwnerAdmin,
     lang,
     setLang,
     setLocation,
@@ -53,6 +66,15 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
   } = model;
 
   const isRTL = adminText.dir === "rtl";
+  const ownerRecoveryCopy = OWNER_RECOVERY_COPY[lang];
+  const earlyWarningText = ADMIN_EARLY_WARNING_PAGE_TEXT[lang];
+  const securityMenuLabel =
+    lang === "ar"
+      ? "إجراءات الأمان"
+      : lang === "ku"
+        ? "کردارەکانی ئاسایش"
+        : "Security actions";
+
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window === "undefined") return true;
     return window.innerWidth >= 768;
@@ -140,30 +162,77 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
         }}
         aria-hidden={!sidebarOpen}
       >
-        <div className="relative flex h-16 shrink-0 items-center border-b border-white/10 px-5">
-          <img
-            src="/fawri-logo.svg"
-            alt="Fawri"
-            className="h-10 w-auto object-contain"
-            draggable={false}
-          />
-          <div className="absolute inset-y-0 end-3 flex items-center md:hidden">
-            <button
-              type="button"
-              onClick={() => setSidebarOpen(false)}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80 transition hover:bg-white/10 hover:text-white"
-              aria-label={lang === "ar" ? "إغلاق القائمة" : lang === "ku" ? "داخستنی لیست" : "Close menu"}
-            >
-              <X className="h-5 w-5" />
-            </button>
+        <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <img
+              src="/fawri-logo.svg"
+              alt="Fawri"
+              className="h-10 w-auto shrink-0 object-contain"
+              draggable={false}
+            />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 gap-1 rounded-xl border border-white/10 bg-white/[0.06] px-2 text-white/80 shadow-none hover:bg-white/12 hover:text-white"
+                  aria-label={securityMenuLabel}
+                  title={securityMenuLabel}
+                >
+                  <ShieldAlert className="h-4 w-4" />
+                  <ChevronDown className="h-3.5 w-3.5" />
+                  <span className="sr-only">{securityMenuLabel}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="start"
+                sideOffset={8}
+                className="w-72 max-w-[calc(100vw-2rem)]"
+              >
+                {isOwnerAdmin && (
+                  <DropdownMenuItem
+                    className="cursor-pointer gap-2 whitespace-normal py-2.5 text-[13px] font-semibold leading-5"
+                    onSelect={() => {
+                      setLocation("/admin/owner-recovery-setup");
+                      closeSidebarOnSmallScreen();
+                    }}
+                  >
+                    <KeyRound className="h-4 w-4 shrink-0" />
+                    <span>{ownerRecoveryCopy.setupTitle}</span>
+                  </DropdownMenuItem>
+                )}
+                {isOwnerAdmin && <DropdownMenuSeparator />}
+                <DropdownMenuItem
+                  className="cursor-pointer gap-2 whitespace-normal py-2.5 text-[13px] font-semibold leading-5"
+                  onSelect={() => {
+                    setLocation("/admin/early-warning");
+                    closeSidebarOnSmallScreen();
+                  }}
+                >
+                  <ShieldAlert className="h-4 w-4 shrink-0" />
+                  <span>{earlyWarningText.title}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(false)}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80 transition hover:bg-white/10 hover:text-white md:hidden"
+            aria-label={lang === "ar" ? "إغلاق القائمة" : lang === "ku" ? "داخستنی لیست" : "Close menu"}
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        <div className="px-4 pb-2 pt-5">
-          <div className="mb-3 px-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/35">
+        <div className="px-4 pb-2 pt-4">
+          <div className="mb-2.5 px-2 text-[9px] font-bold uppercase tracking-[0.16em] text-white/35">
             {lang === "ar" ? "أقسام الإدارة" : lang === "ku" ? "بەشەکانی بەڕێوەبردن" : "Administration"}
           </div>
-          <nav className="space-y-1.5" aria-label={adminText.mainAdminTitle}>
+          <nav className="space-y-1" aria-label={adminText.mainAdminTitle}>
             {TABS.map((item) => {
               const Icon = TAB_ICONS[item.id] || LayoutGrid;
               const count =
@@ -181,10 +250,10 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
                     closeSidebarOnSmallScreen();
                   }}
                   aria-current={active ? "page" : undefined}
-                  className={`group relative flex min-h-11 w-full items-center gap-3 overflow-hidden rounded-xl px-3 text-sm transition-all duration-200 ${
+                  className={`group relative flex min-h-10 w-full items-center gap-2.5 overflow-hidden rounded-xl px-2.5 py-1.5 text-[12.5px] transition-all duration-200 ${
                     active
                       ? "bg-white/12 font-bold text-white shadow-[0_8px_26px_rgba(0,0,0,0.18)] ring-1 ring-white/10"
-                      : "text-white/68 hover:bg-white/[0.07] hover:text-white"
+                      : "text-white/72 hover:bg-white/[0.07] hover:text-white"
                   }`}
                 >
                   {active && (
@@ -196,21 +265,21 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
                     />
                   )}
                   <span
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors ${
                       active
                         ? "bg-orange-500/15 text-orange-400"
                         : "bg-white/[0.04] text-white/55 group-hover:text-white/90"
                     }`}
                   >
-                    <Icon className="h-[18px] w-[18px]" />
+                    <Icon className="h-4 w-4" />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-start">
+                  <span className="min-w-0 flex-1 whitespace-normal break-words text-start font-semibold leading-[1.1rem]">
                     {item.label}
                   </span>
                   {count > 0 && (
                     <span
                       dir="ltr"
-                      className={`inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-black tabular-nums ${
+                      className={`inline-flex min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-[9px] font-black tabular-nums ${
                         active
                           ? "bg-orange-500 text-white"
                           : "bg-white/10 text-white/65"
