@@ -16,6 +16,14 @@ import {
 import { getHttpTelemetrySnapshot } from "../observability/requestTelemetry";
 import { hasAdminPermission } from "../services/authPolicy";
 import {
+  loadEarlyWarningCostReport,
+  type EarlyWarningCostReport,
+} from "../services/earlyWarningCostAuthority";
+import {
+  syncEarlyWarningIncidentHistory,
+  type EarlyWarningIncidentWithScope,
+} from "../services/earlyWarningIncidentHistory";
+import {
   loadEarlyWarningPostgresSnapshot,
   normalizeEarlyWarningWindow,
   type EarlyWarningSnapshot,
@@ -25,7 +33,9 @@ import { operationalPostgresAuthorityRequired } from "../services/operationalPos
 
 const router = Router();
 const CACHE_TTL_MS = 10_000;
+const COST_CACHE_TTL_MS = 30_000;
 const cache = new Map<EarlyWarningWindow, { loadedAt: number; snapshot: EarlyWarningSnapshot }>();
+let costCache: { loadedAt: number; report: EarlyWarningCostReport } | null = null;
 
 router.use((_req: Request, _res: Response, next: NextFunction) => {
   if (!operationalPostgresAuthorityRequired()) {
@@ -56,6 +66,18 @@ async function snapshotFor(window: EarlyWarningWindow): Promise<EarlyWarningSnap
   return snapshot;
 }
 
+async function costReportFor(): Promise<EarlyWarningCostReport> {
+  const now = Date.now();
+  if (costCache && now - costCache.loadedAt < COST_CACHE_TTL_MS) return costCache.report;
+  const report = await loadEarlyWarningCostReport();
+  costCache = { loadedAt: now, report };
+  return report;
+}
+
+function systemIncident(incident: EarlyWarningSnapshot["incidents"][number]): EarlyWarningIncidentWithScope {
+  return { ...incident, scope: "system", merchant_id: null, merchant_name: null };
+}
+
 router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) => {
   if (!canViewEarlyWarning(res)) {
     sendAuthError(
@@ -79,6 +101,46 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
     const runtimeByMerchant = new Map(
       aiRuntime.merchants.map((merchant) => [merchant.merchant_id, merchant]),
     );
+    const allIncidents: EarlyWarningIncidentWithScope[] = [
+      ...snapshot.incidents.map(systemIncident),
+      ...merchantEvaluation,
+      ...runtimeEvaluation.incidents.map((incident) => ({
+        ...incident,
+        scope: "system" as const,
+        merchant_id: null,
+        merchant_name: null,
+      })),
+    ];
+
+    const [historyResult, costResult] = await Promise.allSettled([
+      syncEarlyWarningIncidentHistory({ incidents: allIncidents, window }),
+      costReportFor(),
+    ]);
+    if (historyResult.status === "rejected") {
+      console.error("Early warning incident history unavailable", {
+        code: String((historyResult.reason as { code?: unknown } | null)?.code || "INCIDENT_HISTORY_UNAVAILABLE"),
+      });
+    }
+    if (costResult.status === "rejected") {
+      console.error("Early warning cost report unavailable", {
+        code: String((costResult.reason as { code?: unknown } | null)?.code || "COST_REPORT_UNAVAILABLE"),
+      });
+    }
+
+    const visibleIncidents = merchantHealthVisible
+      ? allIncidents
+      : allIncidents.filter((incident) => incident.scope !== "merchant");
+    const incidentHistory = historyResult.status === "fulfilled"
+      ? merchantHealthVisible
+        ? historyResult.value
+        : historyResult.value.filter((incident) => incident.scope !== "merchant")
+      : [];
+    const costReport = costResult.status === "fulfilled"
+      ? {
+          ...costResult.value,
+          merchants: merchantHealthVisible ? costResult.value.merchants : [],
+        }
+      : null;
 
     res.setHeader("Cache-Control", "no-store");
     res.json({
@@ -89,11 +151,11 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
           snapshot.overall_health,
           runtimeEvaluation.health,
         ),
-        incidents: [
-          ...snapshot.incidents,
-          ...merchantEvaluation,
-          ...runtimeEvaluation.incidents,
-        ],
+        incidents: visibleIncidents,
+        incident_history_status: historyResult.status === "fulfilled" ? "available" : "unavailable",
+        incident_history: incidentHistory,
+        cost_report_status: costResult.status === "fulfilled" ? "available" : "unavailable",
+        cost_report: costReport,
         http,
         ai_runtime: aiRuntime,
         merchant_health_visible: merchantHealthVisible,
