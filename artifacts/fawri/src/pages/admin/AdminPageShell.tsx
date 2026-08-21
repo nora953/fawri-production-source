@@ -162,22 +162,22 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
         }}
         aria-hidden={!sidebarOpen}
       >
-        <div className="flex h-16 shrink-0 items-center justify-between gap-2 border-b border-white/10 px-4">
-          <div className="flex min-w-0 items-center gap-2">
-            <img
-              src="/fawri-logo.svg"
-              alt="Fawri"
-              className="h-10 w-auto shrink-0 object-contain"
-              draggable={false}
-            />
+        <div className="flex h-16 shrink-0 items-center gap-3 border-b border-white/10 px-4">
+          <img
+            src="/fawri-logo.svg"
+            alt="Fawri"
+            className="h-10 w-auto shrink-0 object-contain"
+            draggable={false}
+          />
 
+          <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="h-9 gap-1 rounded-xl border border-white/10 bg-white/[0.06] px-2 text-white/80 shadow-none hover:bg-white/12 hover:text-white"
+                  className="h-9 gap-1.5 rounded-xl border border-white/15 bg-white/[0.07] px-2.5 text-white/90 shadow-none transition hover:border-orange-400/35 hover:bg-orange-500/10 hover:text-orange-100"
                   aria-label={securityMenuLabel}
                   title={securityMenuLabel}
                 >
@@ -187,50 +187,61 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
-                align="start"
-                sideOffset={8}
-                className="w-72 max-w-[calc(100vw-2rem)]"
+                align={isRTL ? "end" : "start"}
+                sideOffset={10}
+                dir={adminText.dir}
+                className="w-64 max-w-[calc(100vw-2rem)] rounded-2xl border border-white/10 bg-[#0b1d33] p-1.5 text-white shadow-[0_22px_55px_rgba(2,8,23,0.42)]"
               >
+                <div className="px-3 pb-1.5 pt-1 text-[10px] font-extrabold text-orange-200/90">
+                  {securityMenuLabel}
+                </div>
                 {isOwnerAdmin && (
                   <DropdownMenuItem
-                    className="cursor-pointer gap-2 whitespace-normal py-2.5 text-[13px] font-semibold leading-5"
+                    className="cursor-pointer gap-2.5 whitespace-normal rounded-xl px-2.5 py-2.5 text-[12px] font-semibold leading-5 text-white/90 outline-none focus:bg-white/10 focus:text-white"
                     onSelect={() => {
                       setLocation("/admin/owner-recovery-setup");
                       closeSidebarOnSmallScreen();
                     }}
                   >
-                    <KeyRound className="h-4 w-4 shrink-0" />
-                    <span>{ownerRecoveryCopy.setupTitle}</span>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-500/12 text-orange-300">
+                      <KeyRound className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">{ownerRecoveryCopy.setupTitle}</span>
                   </DropdownMenuItem>
                 )}
-                {isOwnerAdmin && <DropdownMenuSeparator />}
+                {isOwnerAdmin && <DropdownMenuSeparator className="my-1 bg-white/10" />}
                 <DropdownMenuItem
-                  className="cursor-pointer gap-2 whitespace-normal py-2.5 text-[13px] font-semibold leading-5"
+                  className="cursor-pointer gap-2.5 whitespace-normal rounded-xl px-2.5 py-2.5 text-[12px] font-semibold leading-5 text-white/90 outline-none focus:bg-white/10 focus:text-white"
                   onSelect={() => {
                     setLocation("/admin/early-warning");
                     closeSidebarOnSmallScreen();
                   }}
                 >
-                  <ShieldAlert className="h-4 w-4 shrink-0" />
-                  <span>{earlyWarningText.title}</span>
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sky-400/10 text-sky-300">
+                    <ShieldAlert className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">{earlyWarningText.title}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
 
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(false)}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80 transition hover:bg-white/10 hover:text-white md:hidden"
-            aria-label={lang === "ar" ? "إغلاق القائمة" : lang === "ku" ? "داخستنی لیست" : "Close menu"}
-          >
-            <X className="h-5 w-5" />
-          </button>
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(false)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80 transition hover:bg-white/10 hover:text-white md:hidden"
+              aria-label={lang === "ar" ? "إغلاق القائمة" : lang === "ku" ? "داخستنی لیست" : "Close menu"}
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <div className="px-4 pb-2 pt-4">
-          <div className="mb-2.5 px-2 text-[9px] font-bold uppercase tracking-[0.16em] text-white/35">
-            {lang === "ar" ? "أقسام الإدارة" : lang === "ku" ? "بەشەکانی بەڕێوەبردن" : "Administration"}
+          <div className="mb-2.5 flex items-center gap-2 px-2 text-[10px] font-extrabold text-orange-200/90">
+            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" aria-hidden="true" />
+            <span>
+              {lang === "ar" ? "أقسام الإدارة" : lang === "ku" ? "بەشەکانی بەڕێوەبردن" : "Administration"}
+            </span>
           </div>
           <nav className="space-y-1" aria-label={adminText.mainAdminTitle}>
             {TABS.map((item) => {
