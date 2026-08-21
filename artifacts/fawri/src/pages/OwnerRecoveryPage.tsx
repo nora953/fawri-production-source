@@ -438,18 +438,18 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
       <Dialog open={key2Open} onOpenChange={(open) => !busy && setKey2Open(open)}>
         <DialogContent
           dir={dir}
-          className="rounded-2xl sm:max-w-md"
+          className="gap-0 overflow-hidden rounded-xl p-0 sm:max-w-lg"
           closeButtonClassName={isRTL ? "left-4 right-auto top-4" : "right-4 left-auto top-4"}
         >
           <DialogHeader
-            className={`space-y-1.5 ${
+            className={`space-y-1.5 px-5 pb-3 pt-4 ${
               isRTL ? "pl-12 text-right sm:text-right" : "pr-12 text-left sm:text-left"
             }`}
           >
-            <DialogTitle className="text-lg font-black">{copy.key2Title}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3 py-1 text-start">
+            <DialogTitle className="text-xl font-black">{copy.key2Title}</DialogTitle>
             <p className="text-xs leading-5 text-muted-foreground">{copy.key2Help}</p>
+          </DialogHeader>
+          <div className="space-y-3 px-5 pb-3 text-start">
             <div className={fieldBlockClass}>
               <div className={fieldHeaderClass}>
                 <Label htmlFor="key-2" className={fieldLabelClass}>{copy.key2}</Label>
@@ -465,7 +465,7 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
               />
             </div>
           </div>
-          <DialogFooter className="flex-row-reverse justify-end gap-2 space-x-0 sm:flex-row-reverse sm:justify-end sm:gap-3 sm:space-x-0">
+          <DialogFooter className="flex-row-reverse justify-end gap-2 space-x-0 px-5 pb-4 pt-0 sm:flex-row-reverse sm:justify-end sm:gap-3 sm:space-x-0">
             <Button
               className="h-10 min-w-20 rounded-xl"
               variant="outline"
