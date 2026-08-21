@@ -1,1 +1,1 @@
-export { default } from "./AdminEarlyWarningWorkspacePageV2";
+export { default } from "./AdminEarlyWarningWorkspacePageFinal";
