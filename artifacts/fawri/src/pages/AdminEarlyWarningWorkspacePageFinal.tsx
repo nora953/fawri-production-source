@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import AdminEarlyWarningWorkspacePageV2 from "./AdminEarlyWarningWorkspacePageV2";
+import ProviderCostSettings from "./ProviderCostSettings";
 import "./adminEarlyWarningFinal.css";
 
 function isolateYearMonthText(root: HTMLElement) {
@@ -21,10 +22,12 @@ function isolateYearMonthText(root: HTMLElement) {
 }
 
 export default function AdminEarlyWarningWorkspacePageFinal() {
-  const rootRef = useRef<HTMLDivElement>(null);
+  const [root, setRoot] = useState<HTMLDivElement | null>(null);
+  const captureRoot = useCallback((node: HTMLDivElement | null) => {
+    setRoot(node);
+  }, []);
 
   useEffect(() => {
-    const root = rootRef.current;
     if (!root) return;
     isolateYearMonthText(root);
     const observer = new MutationObserver(() => {
@@ -34,11 +37,12 @@ export default function AdminEarlyWarningWorkspacePageFinal() {
     });
     observer.observe(root, { subtree: true, childList: true, characterData: true });
     return () => observer.disconnect();
-  }, []);
+  }, [root]);
 
   return (
-    <div ref={rootRef} className="early-warning-final">
+    <div ref={captureRoot} className="early-warning-final">
       <AdminEarlyWarningWorkspacePageV2 />
+      <ProviderCostSettings root={root} />
     </div>
   );
 }
