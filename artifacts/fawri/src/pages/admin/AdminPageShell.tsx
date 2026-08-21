@@ -189,7 +189,7 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
               <DropdownMenuContent
                 align={isRTL ? "end" : "start"}
                 sideOffset={10}
-                dir={adminText.dir}
+                style={{ direction: adminText.dir }}
                 className="w-64 max-w-[calc(100vw-2rem)] rounded-2xl border border-white/10 bg-[#0b1d33] p-1.5 text-white shadow-[0_22px_55px_rgba(2,8,23,0.42)]"
               >
                 <div className="px-3 pb-1.5 pt-1 text-[10px] font-extrabold text-orange-200/90">
