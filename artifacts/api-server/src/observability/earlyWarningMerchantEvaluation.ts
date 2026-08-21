@@ -52,48 +52,40 @@ export function evaluateMerchantEarlyWarnings(
     add(merchant, merchant.recent_channel_errors > 0, {
       id: `merchant-channel-errors:${suffix}`,
       severity: "warning",
-      area: "merchant_channels",
-      code: "MERCHANT_CHANNEL_ERRORS",
+      area: "channels",
+      code: "CHANNEL_RECENT_ERRORS",
       value: merchant.recent_channel_errors,
       runbook: "docs/operations-observability.md#webhook-signature-response",
     });
     add(merchant, merchant.failed_messages > 0, {
       id: `merchant-message-failures:${suffix}`,
       severity: "warning",
-      area: "merchant_messaging",
-      code: "MERCHANT_MESSAGE_FAILURES",
+      area: "messaging",
+      code: "MESSAGE_FAILURES",
       value: merchant.failed_messages,
-      runbook: "docs/operations-observability.md#queue-and-dlq-response",
-    });
-    add(merchant, merchant.failed_jobs > 0, {
-      id: `merchant-job-failures:${suffix}`,
-      severity: "warning",
-      area: "merchant_queue",
-      code: "MERCHANT_JOB_FAILURES",
-      value: merchant.failed_jobs,
       runbook: "docs/operations-observability.md#queue-and-dlq-response",
     });
     add(merchant, merchant.dead_letter_jobs > 0, {
       id: `merchant-dlq:${suffix}`,
       severity: "critical",
-      area: "merchant_queue",
-      code: "MERCHANT_DLQ_NONZERO",
+      area: "queue",
+      code: "DLQ_NONZERO",
       value: merchant.dead_letter_jobs,
       runbook: "docs/operations-observability.md#queue-and-dlq-response",
     });
     add(merchant, merchant.uncertain_deliveries > 0, {
       id: `merchant-uncertain-delivery:${suffix}`,
       severity: "critical",
-      area: "merchant_channels",
-      code: "MERCHANT_OUTBOUND_DELIVERY_UNCERTAIN",
+      area: "channels",
+      code: "OUTBOUND_DELIVERY_UNCERTAIN",
       value: merchant.uncertain_deliveries,
       runbook: "docs/operations-observability.md#queue-and-dlq-response",
     });
     add(merchant, merchant.refund_conflicts > 0, {
       id: `merchant-refund-conflict:${suffix}`,
       severity: "critical",
-      area: "merchant_credits",
-      code: "MERCHANT_REPLY_REFUND_CONFLICT",
+      area: "credits",
+      code: "REPLY_REFUND_CONFLICT",
       value: merchant.refund_conflicts,
       runbook: "docs/operations-observability.md#queue-and-dlq-response",
     });
