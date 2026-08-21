@@ -29,6 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getStableAuthDeviceId } from "@/lib/authClientCutover";
 import { OWNER_RECOVERY_COPY } from "@/lib/ownerRecoveryCopy";
 import { clearSession } from "@/lib/store";
 import { ADMIN_EARLY_WARNING_PAGE_TEXT } from "@/lib/translations/features/pages/AdminEarlyWarningPage";
@@ -93,6 +94,9 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
     void fetch("/api/auth/admin/owner-recovery/status", {
       credentials: "same-origin",
       cache: "no-store",
+      headers: {
+        "X-Fawri-Device-Id": getStableAuthDeviceId(),
+      },
     })
       .then(async (response) => {
         if (!response.ok) throw new Error("OWNER_RECOVERY_STATUS_FAILED");
