@@ -79,6 +79,39 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
     if (typeof window === "undefined") return true;
     return window.innerWidth >= 768;
   });
+  const [recoveryBundleNeedsRenewal, setRecoveryBundleNeedsRenewal] = useState(false);
+
+  React.useEffect(() => {
+    let alive = true;
+    if (!isOwnerAdmin) {
+      setRecoveryBundleNeedsRenewal(false);
+      return () => {
+        alive = false;
+      };
+    }
+
+    void fetch("/api/auth/admin/owner-recovery/status", {
+      credentials: "same-origin",
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("OWNER_RECOVERY_STATUS_FAILED");
+        return response.json();
+      })
+      .then((value) => {
+        if (!alive) return;
+        setRecoveryBundleNeedsRenewal(
+          value?.enabled !== true && typeof value?.used_at === "string" && value.used_at.length > 0,
+        );
+      })
+      .catch(() => {
+        if (alive) setRecoveryBundleNeedsRenewal(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [isOwnerAdmin]);
 
   const pendingAdminDeviceCount = Number(
     (
@@ -396,6 +429,34 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
             </div>
           </div>
         </header>
+
+        {recoveryBundleNeedsRenewal && (
+          <div className="px-4 pt-4 md:px-6">
+            <div className="flex flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 shadow-sm sm:flex-row sm:items-center dark:border-amber-900 dark:bg-amber-950/25">
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200">
+                  <KeyRound className="h-4 w-4" />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-sm font-black text-amber-950 dark:text-amber-100">
+                    {ownerRecoveryCopy.consumedReminderTitle}
+                  </div>
+                  <p className="mt-0.5 text-xs leading-5 text-amber-900/80 dark:text-amber-100/75">
+                    {ownerRecoveryCopy.consumedReminderBody}
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                className="shrink-0 rounded-xl"
+                onClick={() => setLocation("/admin/owner-recovery-setup")}
+              >
+                {ownerRecoveryCopy.consumedReminderAction}
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="admin-page-legacy">
           <AdminPageView model={model} />
