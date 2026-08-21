@@ -25,6 +25,10 @@ import {
   type EarlyWarningIncidentWithScope,
 } from "../services/earlyWarningIncidentHistory";
 import {
+  loadEarlyWarningMerchantUsageReport,
+  type MerchantUsageReport,
+} from "../services/earlyWarningMerchantUsageAuthority";
+import {
   loadEarlyWarningPostgresSnapshot,
   normalizeEarlyWarningWindow,
   type EarlyWarningSnapshot,
@@ -37,6 +41,7 @@ const CACHE_TTL_MS = 10_000;
 const COST_CACHE_TTL_MS = 30_000;
 const cache = new Map<EarlyWarningWindow, { loadedAt: number; snapshot: EarlyWarningSnapshot }>();
 const costCache = new Map<string, { loadedAt: number; report: EarlyWarningCostReport }>();
+const merchantUsageCache = new Map<string, { loadedAt: number; report: MerchantUsageReport }>();
 
 router.use((_req: Request, _res: Response, next: NextFunction) => {
   if (!operationalPostgresAuthorityRequired()) {
@@ -73,6 +78,15 @@ async function costReportFor(month: string): Promise<EarlyWarningCostReport> {
   if (current && now - current.loadedAt < COST_CACHE_TTL_MS) return current.report;
   const report = await loadEarlyWarningCostReport({ month });
   costCache.set(month, { loadedAt: now, report });
+  return report;
+}
+
+async function merchantUsageReportFor(month: string): Promise<MerchantUsageReport> {
+  const current = merchantUsageCache.get(month);
+  const now = Date.now();
+  if (current && now - current.loadedAt < COST_CACHE_TTL_MS) return current.report;
+  const report = await loadEarlyWarningMerchantUsageReport({ month });
+  merchantUsageCache.set(month, { loadedAt: now, report });
   return report;
 }
 
@@ -115,9 +129,10 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
       })),
     ];
 
-    const [historyResult, costResult] = await Promise.allSettled([
+    const [historyResult, costResult, merchantUsageResult] = await Promise.allSettled([
       syncEarlyWarningIncidentHistory({ incidents: allIncidents, window }),
       costReportFor(costMonth),
+      merchantHealthVisible ? merchantUsageReportFor(costMonth) : Promise.resolve(null),
     ]);
     if (historyResult.status === "rejected") {
       console.error("Early warning incident history unavailable", {
@@ -127,6 +142,11 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
     if (costResult.status === "rejected") {
       console.error("Early warning cost report unavailable", {
         code: String((costResult.reason as { code?: unknown } | null)?.code || "COST_REPORT_UNAVAILABLE"),
+      });
+    }
+    if (merchantUsageResult.status === "rejected") {
+      console.error("Early warning merchant usage report unavailable", {
+        code: String((merchantUsageResult.reason as { code?: unknown } | null)?.code || "MERCHANT_USAGE_REPORT_UNAVAILABLE"),
       });
     }
 
@@ -144,6 +164,9 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
           merchants: merchantHealthVisible ? costResult.value.merchants : [],
         }
       : null;
+    const merchantUsage = merchantHealthVisible && merchantUsageResult.status === "fulfilled"
+      ? merchantUsageResult.value
+      : null;
 
     res.setHeader("Cache-Control", "no-store");
     res.json({
@@ -159,6 +182,8 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
         incident_history: incidentHistory,
         cost_report_status: costResult.status === "fulfilled" ? "available" : "unavailable",
         cost_report: costReport,
+        merchant_usage_status: merchantHealthVisible && merchantUsageResult.status === "fulfilled" ? "available" : "unavailable",
+        merchant_usage: merchantUsage,
         http,
         ai_runtime: aiRuntime,
         merchant_health_visible: merchantHealthVisible,
