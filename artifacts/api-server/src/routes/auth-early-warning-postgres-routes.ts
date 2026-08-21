@@ -57,6 +57,13 @@ function canViewMerchantHealth(res: Response): boolean {
   return hasAdminPermission(profile.role, profile.permissions, "view_merchants");
 }
 
+function monthlyOperatingBudget(): number | null {
+  const raw = String(process.env.FAWRI_MONTHLY_OPERATING_BUDGET_USD ?? "").trim();
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? value : null;
+}
+
 async function snapshotFor(window: EarlyWarningWindow): Promise<EarlyWarningSnapshot> {
   const current = cache.get(window);
   const now = Date.now();
@@ -135,10 +142,20 @@ router.get("/admin/early-warning", requireSecureAdminSession, async (req, res) =
         ? historyResult.value
         : historyResult.value.filter((incident) => incident.scope !== "merchant")
       : [];
+    const configuredBudget = monthlyOperatingBudget();
     const costReport = costResult.status === "fulfilled"
       ? {
           ...costResult.value,
           merchants: merchantHealthVisible ? costResult.value.merchants : [],
+          monthly_budget_usd: configuredBudget,
+          remaining_budget_usd:
+            configuredBudget !== null && costResult.value.known_monthly_cost_usd !== null
+              ? Math.round((configuredBudget - costResult.value.known_monthly_cost_usd) * 1_000_000) / 1_000_000
+              : null,
+          budget_usage_percent:
+            configuredBudget !== null && costResult.value.known_monthly_cost_usd !== null
+              ? Math.round((costResult.value.known_monthly_cost_usd / configuredBudget) * 10_000) / 100
+              : null,
         }
       : null;
 
