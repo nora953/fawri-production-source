@@ -84,6 +84,65 @@ export const providerCostRates = pgTable(
   }),
 );
 
+export const providerCostObservations = pgTable(
+  "provider_cost_observations",
+  {
+    id: text("id").primaryKey(),
+    providerKey: text("provider_key").notNull(),
+    meterKey: text("meter_key"),
+    amountUsd: numeric("amount_usd", { precision: 20, scale: 10 }).notNull(),
+    currency: text("currency").notNull().default("USD"),
+    sourceType: text("source_type").notNull(),
+    sourceReference: text("source_reference"),
+    dimensionKey: text("dimension_key").notNull().default("global"),
+    dimensionValue: text("dimension_value").notNull().default("global"),
+    periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+    periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
+    observedAt: timestamp("observed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    metadata: jsonb("metadata")
+      .$type<Record<string, string | number | boolean | null>>()
+      .notNull()
+      .default({}),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    providerPeriodIndex: index("provider_cost_observations_provider_period_idx").on(
+      table.providerKey,
+      table.periodStart,
+      table.periodEnd,
+    ),
+    meterPeriodIndex: index("provider_cost_observations_meter_period_idx").on(
+      table.meterKey,
+      table.periodStart,
+    ),
+    providerReferenceUnique: uniqueIndex(
+      "provider_cost_observations_provider_reference_unique",
+    )
+      .on(table.providerKey, table.sourceReference)
+      .where(sql`${table.sourceReference} is not null`),
+    currencyCheck: check(
+      "provider_cost_observations_currency_check",
+      sql`${table.currency} = 'USD'`,
+    ),
+    sourceCheck: check(
+      "provider_cost_observations_source_check",
+      sql`${table.sourceType} IN ('provider_api', 'provider_invoice', 'owner_adjustment')`,
+    ),
+    providerKeyCheck: check(
+      "provider_cost_observations_provider_key_check",
+      sql`${table.providerKey} ~ '^[a-z0-9][a-z0-9._-]{0,79}$'`,
+    ),
+    periodCheck: check(
+      "provider_cost_observations_period_check",
+      sql`${table.periodEnd} > ${table.periodStart}`,
+    ),
+  }),
+);
+
 export const providerCostSettings = pgTable(
   "provider_cost_settings",
   {
@@ -140,5 +199,6 @@ export const providerCostAuditEvents = pgTable(
 );
 
 export type ProviderCostRate = typeof providerCostRates.$inferSelect;
+export type ProviderCostObservation = typeof providerCostObservations.$inferSelect;
 export type ProviderCostSetting = typeof providerCostSettings.$inferSelect;
 export type ProviderCostAuditEvent = typeof providerCostAuditEvents.$inferSelect;
