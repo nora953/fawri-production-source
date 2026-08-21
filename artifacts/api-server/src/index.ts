@@ -1,6 +1,7 @@
 import { logger } from "./lib/logger";
 import { getFawriDataDir } from "./lib/dataPaths";
 import type { DurableJobWorker } from "./services/durableJobQueue";
+import type { EarlyWarningIncidentMonitor } from "./services/earlyWarningIncidentMonitor";
 import { assertProductionRuntimeConfiguration } from "./services/productionReleaseReadiness";
 import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminProvisioning";
 import { bootstrapRuntimeAndLoadApplication } from "./services/runtimeProviderBootstrap";
@@ -38,20 +39,36 @@ async function main(): Promise<void> {
 
   const { application, runtime } = await bootstrapRuntimeAndLoadApplication({
     loadApplication: async () => {
-      const [{ default: app }, { startMetaWebhookWorker }] = await Promise.all([
+      const [
+        { default: app },
+        { startMetaWebhookWorker },
+        { startEarlyWarningIncidentMonitor },
+      ] = await Promise.all([
         import("./app"),
         import("./services/metaWebhookWorker"),
+        import("./services/earlyWarningIncidentMonitor"),
       ]);
-      return { app, startMetaWebhookWorker };
+      return { app, startMetaWebhookWorker, startEarlyWarningIncidentMonitor };
     },
   });
-  const { app, startMetaWebhookWorker } = application;
+  const { app, startMetaWebhookWorker, startEarlyWarningIncidentMonitor } = application;
 
   let metaWebhookWorker: DurableJobWorker | null = null;
+  let earlyWarningMonitor: EarlyWarningIncidentMonitor | null = null;
   let shuttingDown = false;
 
   const server = app.listen(port, () => {
     logger.info({ port, dataDir: getFawriDataDir() }, "Server listening");
+
+    try {
+      earlyWarningMonitor = startEarlyWarningIncidentMonitor();
+      logger.info("Early warning incident monitor started");
+    } catch (error) {
+      logger.warn(
+        { code: safeStartupErrorCode(error) },
+        "Early warning incident monitor failed to start",
+      );
+    }
 
     const workersExplicitlyDisabled = process.env.FAWRI_DISABLE_JOB_WORKERS === "1";
     const metaCutoverReady = process.env.FAWRI_META_CUTOVER_READY === "1";
@@ -62,6 +79,7 @@ async function main(): Promise<void> {
         logger.info("Meta webhook durable worker started");
       } catch (error) {
         logger.fatal({ err: error }, "Meta webhook durable worker failed to start");
+        earlyWarningMonitor?.stop();
         runtime.dispose();
         server.close(() => process.exit(1));
       }
@@ -75,6 +93,7 @@ async function main(): Promise<void> {
   });
 
   server.on("error", (error) => {
+    earlyWarningMonitor?.stop();
     runtime.dispose();
     logger.fatal({ err: error, port }, "Error listening on port");
     process.exit(1);
@@ -85,6 +104,7 @@ async function main(): Promise<void> {
     shuttingDown = true;
     logger.info({ signal }, "Shutting down API server");
     metaWebhookWorker?.stop();
+    earlyWarningMonitor?.stop();
     runtime.dispose();
 
     const forcedExit = setTimeout(() => {
