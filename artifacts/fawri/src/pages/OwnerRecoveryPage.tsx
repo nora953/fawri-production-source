@@ -42,6 +42,7 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
   const { lang, dir, t } = useI18n();
   const [, setLocation] = useLocation();
   const copy = OWNER_RECOVERY_COPY[lang];
+  const isRTL = dir === "rtl";
   const basePath = `/api/auth/owner-recovery/${encodeURIComponent(recoveryId)}`;
   const fieldLabelClass = "text-[13px] leading-4";
   const fieldHeaderClass = "flex min-h-4 items-center justify-between gap-3";
@@ -435,11 +436,19 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
       </div>
 
       <Dialog open={key2Open} onOpenChange={(open) => !busy && setKey2Open(open)}>
-        <DialogContent dir={dir} className="rounded-2xl sm:max-w-md">
-          <DialogHeader className="space-y-1.5">
+        <DialogContent
+          dir={dir}
+          className="rounded-2xl sm:max-w-md"
+          closeButtonClassName={isRTL ? "left-4 right-auto top-4" : "right-4 left-auto top-4"}
+        >
+          <DialogHeader
+            className={`space-y-1.5 ${
+              isRTL ? "pl-12 text-right sm:text-right" : "pr-12 text-left sm:text-left"
+            }`}
+          >
             <DialogTitle className="text-lg font-black">{copy.key2Title}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-1">
+          <div className="space-y-3 py-1 text-start">
             <p className="text-xs leading-5 text-muted-foreground">{copy.key2Help}</p>
             <div className={fieldBlockClass}>
               <div className={fieldHeaderClass}>
@@ -456,11 +465,20 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
               />
             </div>
           </div>
-          <DialogFooter className="gap-2 sm:gap-3">
-            <Button className="h-10 rounded-xl" variant="outline" disabled={busy} onClick={() => setKey2Open(false)}>
+          <DialogFooter className="flex-row-reverse justify-end gap-2 space-x-0 sm:flex-row-reverse sm:justify-end sm:gap-3 sm:space-x-0">
+            <Button
+              className="h-10 min-w-20 rounded-xl"
+              variant="outline"
+              disabled={busy}
+              onClick={() => setKey2Open(false)}
+            >
               {copy.cancel}
             </Button>
-            <Button className="h-10 rounded-xl" disabled={busy || !key2.trim()} onClick={() => void complete()}>
+            <Button
+              className="h-10 min-w-28 rounded-xl"
+              disabled={busy || !key2.trim()}
+              onClick={() => void complete()}
+            >
               {busy ? copy.saving : copy.complete}
             </Button>
           </DialogFooter>
