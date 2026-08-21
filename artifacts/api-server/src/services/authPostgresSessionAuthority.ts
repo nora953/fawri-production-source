@@ -355,11 +355,10 @@ async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
         `UPDATE account_sessions
             SET status = 'revoked',
                 revoked_at = $2,
-                revoke_reason = 'owner_session_replaced',
-                replaced_by_session_id = $3
+                revoke_reason = 'owner_session_replaced'
           WHERE id = ANY($1::text[]) AND status = 'active'
           RETURNING id`,
-        [ownerReplacementIds, now, material.id],
+        [ownerReplacementIds, now],
       );
       if (replaced.length !== ownerReplacementIds.length) {
         throw new Error("AUTH_POSTGRES_OWNER_SESSION_REPLACEMENT_LOST_LOCK");
@@ -439,8 +438,7 @@ async function validatePostgres(
       await client.query(
         `UPDATE account_sessions
             SET status = 'expired'
-          WHERE id = $1 AND status = 'active'
-          RETURNING id`,
+          WHERE id = $1 AND status = 'active'`,
         [row.id],
       );
       return null;
