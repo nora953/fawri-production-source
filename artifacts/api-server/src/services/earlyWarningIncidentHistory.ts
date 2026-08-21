@@ -14,6 +14,12 @@ const WINDOW_MS: Record<EarlyWarningWindow, number> = {
   "30d": 30 * 24 * 60 * 60 * 1_000,
 };
 
+export type EarlyWarningIncidentWithScope = EarlyWarningIncident & {
+  scope?: "system" | "merchant";
+  merchant_id?: string | null;
+  merchant_name?: string | null;
+};
+
 type IncidentAuditRow = {
   entity_id: unknown;
   action_type: unknown;
@@ -77,7 +83,7 @@ function normalizedMetadata(value: unknown): IncidentMetadata {
   };
 }
 
-function metadataForIncident(incident: EarlyWarningIncident): IncidentMetadata {
+function metadataForIncident(incident: EarlyWarningIncidentWithScope): IncidentMetadata {
   return {
     severity: incident.severity,
     area: incident.area,
@@ -192,7 +198,7 @@ function buildHistory(
 }
 
 export async function syncEarlyWarningIncidentHistory(input: {
-  incidents: EarlyWarningIncident[];
+  incidents: EarlyWarningIncidentWithScope[];
   window: EarlyWarningWindow;
   now?: Date;
 }): Promise<EarlyWarningIncidentHistoryItem[]> {
