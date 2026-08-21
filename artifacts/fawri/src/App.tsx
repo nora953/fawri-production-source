@@ -1,9 +1,18 @@
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import type { ComponentType, LazyExoticComponent } from "react";
-import { lazy, Suspense, useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, KeyRound, ShieldAlert } from "lucide-react";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { initStore } from "@/lib/store";
 import {
@@ -12,8 +21,8 @@ import {
   secureAdminLogout,
 } from "@/lib/authClientCutover";
 import { useI18n } from "@/lib/i18n";
-import EarlyWarningLauncher from "@/components/admin/EarlyWarningLauncher";
-import OwnerRecoveryLauncher from "@/components/admin/OwnerRecoveryLauncher";
+import { OWNER_RECOVERY_COPY } from "@/lib/ownerRecoveryCopy";
+import { ADMIN_EARLY_WARNING_PAGE_TEXT } from "@/lib/translations/features/pages/AdminEarlyWarningPage";
 import SupportPreviewLauncher from "@/components/admin/SupportPreviewLauncher";
 import EmergencyIncidentNoticeBanner from "@/components/EmergencyIncidentNoticeBanner";
 import "@/styles/emergency-access-compact.css";
@@ -98,13 +107,97 @@ function DashboardRoute({ Page }: { Page: LazyPage }) {
 }
 
 function AdminSecurityActions() {
+  const { lang, dir } = useI18n();
+  const [, setLocation] = useLocation();
+  const [isOwner, setIsOwner] = useState(false);
+  const ownerRecoveryCopy = OWNER_RECOVERY_COPY[lang];
+  const earlyWarningText = ADMIN_EARLY_WARNING_PAGE_TEXT[lang];
+  const menuLabel =
+    lang === "ar"
+      ? "إجراءات الأمان"
+      : lang === "ku"
+        ? "کردارەکانی ئاسایش"
+        : "Security actions";
+
+  useEffect(() => {
+    let alive = true;
+    void fetch("/api/auth/admin/me", {
+      credentials: "same-origin",
+      cache: "no-store",
+      headers: { "X-Fawri-Device-Id": getStableAuthDeviceId() },
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json();
+      })
+      .then((value) => {
+        if (!alive || !value) return;
+        const role =
+          value?.admin_profile?.role ||
+          value?.admin?.admin_role ||
+          value?.admin_role;
+        setIsOwner(role === "owner_admin");
+      })
+      .catch(() => {
+        if (alive) setIsOwner(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   return (
-    <div className="border-b bg-background/95">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-2 md:px-6">
-        <OwnerRecoveryLauncher />
-        <EarlyWarningLauncher />
+    <>
+      <style>{`header .fowri-header-brand-font { display: none !important; }`}</style>
+      <div
+        dir={dir}
+        className="fixed top-2.5 z-[65]"
+        style={{
+          insetInlineStart: "max(5rem, calc((100vw - 80rem) / 2 + 5rem))",
+        }}
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 gap-1 rounded-xl bg-background/95 px-2 shadow-sm backdrop-blur"
+              aria-label={menuLabel}
+              title={menuLabel}
+            >
+              <ShieldAlert className="h-4 w-4" />
+              <ChevronDown className="h-3.5 w-3.5" />
+              <span className="sr-only">{menuLabel}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            sideOffset={6}
+            className="w-80 max-w-[calc(100vw-2rem)]"
+          >
+            {isOwner && (
+              <DropdownMenuItem
+                className="cursor-pointer gap-2 whitespace-normal py-2.5 font-semibold"
+                onSelect={() => setLocation("/admin/owner-recovery-setup")}
+              >
+                <KeyRound className="h-4 w-4 shrink-0" />
+                <span>{ownerRecoveryCopy.setupTitle}</span>
+              </DropdownMenuItem>
+            )}
+            {isOwner && <DropdownMenuSeparator />}
+            <DropdownMenuItem
+              className="cursor-pointer gap-2 whitespace-normal py-2.5 font-semibold"
+              onSelect={() => setLocation("/admin/early-warning")}
+            >
+              <ShieldAlert className="h-4 w-4 shrink-0" />
+              <span>{earlyWarningText.title}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </div>
+    </>
   );
 }
 
