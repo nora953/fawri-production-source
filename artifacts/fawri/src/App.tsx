@@ -97,6 +97,17 @@ function DashboardRoute({ Page }: { Page: LazyPage }) {
   );
 }
 
+function AdminSecurityActions() {
+  return (
+    <div className="border-b bg-background/95">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-2 px-4 py-2 md:px-6">
+        <OwnerRecoveryLauncher />
+        <EarlyWarningLauncher />
+      </div>
+    </div>
+  );
+}
+
 function AppRouter() {
   return (
     <Suspense fallback={<PageLoading />}>
@@ -138,7 +149,14 @@ function AppRouter() {
         <Route path="/admin/work-monitor/:adminId">
           {(params) => <AdminWorkMonitorPage adminId={params.adminId} />}
         </Route>
-        <Route path="/admin">{() => <AdminPage />}</Route>
+        <Route path="/admin">
+          {() => (
+            <>
+              <AdminSecurityActions />
+              <AdminPage />
+            </>
+          )}
+        </Route>
 
         {/* Dashboard */}
         <Route path="/dashboard/notifications">
@@ -261,8 +279,6 @@ function App() {
           <WouterRouter base={routerBase}>
             <AdminSessionRevalidator />
             <AppRouter />
-            <OwnerRecoveryLauncher />
-            <EarlyWarningLauncher />
             <SupportPreviewLauncher />
             <EmergencyIncidentNoticeBanner />
           </WouterRouter>
