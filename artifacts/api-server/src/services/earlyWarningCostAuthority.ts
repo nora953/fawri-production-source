@@ -1,4 +1,5 @@
 import { withOperationalTransaction, type OperationalSqlClient } from "./operationalPostgresAuthority";
+import { loadProviderCostSnapshot } from "./providerCostAuthority";
 
 const BYTES_PER_GB = 1024 ** 3;
 const DAY_MS = 24 * 60 * 60 * 1_000;
@@ -44,6 +45,7 @@ export type EarlyWarningCostReport = {
   generated_at: string;
   actual_billing_connected: false;
   cost_basis: "configured_rate_estimate";
+  pricing_authority: "postgresql_provider_cost_authority";
   pricing_status: "unconfigured" | "partial" | "configured";
   pricing_coverage_percent: number;
   rates: CostRates;
@@ -99,22 +101,6 @@ function numberValue(value: unknown): number {
 
 function money(value: number): number {
   return Math.round(value * 1_000_000) / 1_000_000;
-}
-
-function configuredRate(name: string): number | null {
-  const raw = String(process.env[name] ?? "").trim();
-  if (!raw) return null;
-  const value = Number(raw);
-  return Number.isFinite(value) && value >= 0 ? value : null;
-}
-
-function ratesFromEnvironment(): CostRates {
-  return {
-    ai_input_per_1m_usd: configuredRate("FAWRI_COST_AI_INPUT_PER_1M_USD"),
-    ai_output_per_1m_usd: configuredRate("FAWRI_COST_AI_OUTPUT_PER_1M_USD"),
-    outbound_message_per_1000_usd: configuredRate("FAWRI_COST_OUTBOUND_MESSAGE_PER_1000_USD"),
-    support_storage_per_gb_month_usd: configuredRate("FAWRI_COST_SUPPORT_STORAGE_PER_GB_MONTH_USD"),
-  };
 }
 
 function componentCost(input: {
@@ -287,10 +273,14 @@ export async function loadEarlyWarningCostReport(input?: {
 }): Promise<EarlyWarningCostReport> {
   const now = input?.now || new Date();
   const month = normalizeEarlyWarningCostMonth(input?.month, now);
-  const rates = ratesFromEnvironment();
   const bounds = monthBounds(month, now);
   const previousMonth = shiftMonth(month, -1);
   const previousBounds = monthBounds(previousMonth, now);
+  const [providerPricing, previousProviderPricing] = await Promise.all([
+    loadProviderCostSnapshot(bounds.start),
+    loadProviderCostSnapshot(previousBounds.start),
+  ]);
+  const rates = providerPricing.rates;
 
   const result = await withOperationalTransaction(async (client) => {
     const merchants = await client.query<AggregateRow>(
@@ -427,7 +417,7 @@ export async function loadEarlyWarningCostReport(input?: {
     outputTokens: result.previous.outputTokens,
     outboundMessages: result.previous.outboundMessages,
     storageBytes: result.previous.storageBytes,
-    rates,
+    rates: previousProviderPricing.rates,
   });
 
   const configured = Object.values(rates).filter((value) => value !== null).length;
@@ -456,7 +446,7 @@ export async function loadEarlyWarningCostReport(input?: {
           (totalCost.storage ?? 0),
       );
 
-  const monthlyBudget = configuredRate("FAWRI_MONTHLY_BUDGET_USD");
+  const monthlyBudget = providerPricing.monthly_budget_usd;
   const budgetBase = bounds.isCurrent ? projected ?? totalCost.total : totalCost.total;
   const budgetRemaining = monthlyBudget === null || budgetBase === null
     ? null
@@ -486,6 +476,7 @@ export async function loadEarlyWarningCostReport(input?: {
     generated_at: now.toISOString(),
     actual_billing_connected: false,
     cost_basis: "configured_rate_estimate",
+    pricing_authority: "postgresql_provider_cost_authority",
     pricing_status: pricingStatus,
     pricing_coverage_percent: Math.round((configured / 4) * 100),
     rates,
