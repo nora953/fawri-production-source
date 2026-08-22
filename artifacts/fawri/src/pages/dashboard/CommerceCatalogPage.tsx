@@ -518,8 +518,8 @@ export default function CommerceCatalogPage() {
     setFormOpen(true);
   };
 
-  const closeForm = () => {
-    if (saving) return;
+  const closeForm = (force = false) => {
+    if (saving && !force) return;
     createAttempt.current = null;
     setEditingId(null);
     setForm(createEmptyCatalogProductForm());
@@ -567,7 +567,7 @@ export default function CommerceCatalogPage() {
           setItems(existing => upsert(existing, updated));
           syncInventory(updated);
           toast.success(copy.updated);
-          closeForm();
+          closeForm(true);
         } catch (error) {
           if (await loadConflict(current.id, error)) return;
           throw error;
@@ -586,7 +586,7 @@ export default function CommerceCatalogPage() {
         setItems(existing => upsert(existing, created));
         syncInventory(created);
         toast.success(copy.saved);
-        closeForm();
+        closeForm(true);
       }
     } catch (error) {
       console.error('Catalog save failed:', error);
@@ -867,7 +867,7 @@ export default function CommerceCatalogPage() {
                   <h2 className="text-xl font-extrabold">{editingId ? copy.edit : copy.create}</h2>
                   <p className="mt-1 text-xs text-muted-foreground">{copy.subtitle}</p>
                 </div>
-                <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl" onClick={closeForm} disabled={saving}><X className="h-4 w-4" /></Button>
+                <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl" onClick={() => closeForm()} disabled={saving}><X className="h-4 w-4" /></Button>
               </div>
             </div>
 
