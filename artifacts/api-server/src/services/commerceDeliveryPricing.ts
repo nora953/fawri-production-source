@@ -58,11 +58,15 @@ export function resolveCommerceDeliveryQuote(input: {
     promotions: input.promotions,
     at: input.at,
   });
+  const promotionMadeDeliveryFree =
+    promotion.promotion_applied && promotion.effective_fee_minor === 0;
 
   return {
     ...quote,
     pre_promotion_fee_iqd: prePromotionFee,
     effective_fee_iqd: promotion.effective_fee_minor,
+    free_delivery_applied:
+      quote.free_delivery_applied || promotionMadeDeliveryFree,
     total_iqd: quote.subtotal_iqd + promotion.effective_fee_minor,
     promotion_applied: promotion.promotion_applied,
     ...(promotion.promotion_id ? { promotion_id: promotion.promotion_id } : {}),
