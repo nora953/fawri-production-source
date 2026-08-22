@@ -63,8 +63,30 @@ CREATE TABLE "commerce_promotions" (
   CONSTRAINT "commerce_promotions_version_check" CHECK ("commerce_promotions"."version" > 0),
   CONSTRAINT "commerce_promotions_timestamp_order_check" CHECK ("commerce_promotions"."updated_at" >= "commerce_promotions"."created_at")
 );--> statement-breakpoint
+ALTER TABLE "commerce_promotions" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "commerce_promotions" ADD CONSTRAINT "commerce_promotions_merchant_id_merchants_id_fk" FOREIGN KEY ("merchant_id") REFERENCES "public"."merchants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "commerce_promotions" ADD CONSTRAINT "commerce_promotions_product_tenant_fk" FOREIGN KEY ("product_id","merchant_id") REFERENCES "public"."products"("id","merchant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "commerce_promotions" ADD CONSTRAINT "commerce_promotions_variant_tenant_fk" FOREIGN KEY ("variant_id","product_id","merchant_id") REFERENCES "public"."product_variants"("id","product_id","merchant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "commerce_promotions_merchant_window_idx" ON "commerce_promotions" USING btree ("merchant_id","enabled","starts_at","ends_at");--> statement-breakpoint
-CREATE INDEX "commerce_promotions_catalog_target_idx" ON "commerce_promotions" USING btree ("merchant_id","product_id","variant_id","enabled");
+CREATE INDEX "commerce_promotions_catalog_target_idx" ON "commerce_promotions" USING btree ("merchant_id","product_id","variant_id","enabled");--> statement-breakpoint
+CREATE POLICY "commerce_promotions_tenant_boundary" ON "commerce_promotions" AS PERMISSIVE FOR ALL TO public USING ((
+    "commerce_promotions"."merchant_id" = nullif(current_setting('fawri.tenant_id', true), '')
+    OR EXISTS (
+      SELECT 1 FROM database_admin_access_audits AS admin_audit
+      WHERE admin_audit.id = nullif(current_setting('fawri.admin_audit_id', true), '')
+        AND admin_audit.admin_account_id = nullif(current_setting('fawri.admin_account_id', true), '')
+        AND admin_audit.started_at <= clock_timestamp()
+        AND admin_audit.expires_at > clock_timestamp()
+        AND (admin_audit.merchant_id IS NULL OR admin_audit.merchant_id = "commerce_promotions"."merchant_id")
+    )
+  )) WITH CHECK ((
+    "commerce_promotions"."merchant_id" = nullif(current_setting('fawri.tenant_id', true), '')
+    OR EXISTS (
+      SELECT 1 FROM database_admin_access_audits AS admin_audit
+      WHERE admin_audit.id = nullif(current_setting('fawri.admin_audit_id', true), '')
+        AND admin_audit.admin_account_id = nullif(current_setting('fawri.admin_account_id', true), '')
+        AND admin_audit.started_at <= clock_timestamp()
+        AND admin_audit.expires_at > clock_timestamp()
+        AND (admin_audit.merchant_id IS NULL OR admin_audit.merchant_id = "commerce_promotions"."merchant_id")
+    )
+  ));
