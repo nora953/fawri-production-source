@@ -262,6 +262,19 @@ function minimumSatisfied(rule: CommercePromotionRule, subtotalMinor: number): b
   );
 }
 
+function reducesCatalogPrice(
+  rule: CommercePromotionRule,
+  baseAmountMinor: number,
+): boolean {
+  if (baseAmountMinor <= 0) return false;
+  if (rule.effect === "percentage_off") return true;
+  if (rule.effect === "fixed_amount_off") return true;
+  if (rule.effect === "fixed_price") {
+    return Number(rule.amount_minor) < baseAmountMinor;
+  }
+  return false;
+}
+
 function selectOnePromotion(
   candidates: CommercePromotionRule[],
   specificity: (rule: CommercePromotionRule) => number,
@@ -328,7 +341,8 @@ export function resolveEffectiveCatalogPrice(input: {
         (!rule.variant_id || rule.variant_id === input.variantId) &&
         currency(rule.currency_code) === currencyCode &&
         minimumSatisfied(rule, subtotal) &&
-        commercePromotionLifecycleAt(rule, at) === "active",
+        commercePromotionLifecycleAt(rule, at) === "active" &&
+        reducesCatalogPrice(rule, base),
     );
   const promotion = selectOnePromotion(candidates, (rule) =>
     rule.variant_id ? 2 : 1,
