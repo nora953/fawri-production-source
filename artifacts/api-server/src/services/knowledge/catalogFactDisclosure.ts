@@ -78,14 +78,32 @@ export function catalogAvailabilityAnswer(params: {
   return `${params.itemName} غير متوفر حاليًا.`;
 }
 
+function currencyLabel(language: "ar" | "ku" | "en", currencyCode: string): string {
+  if (currencyCode === "IQD") {
+    if (language === "en") return "IQD";
+    return "دينار";
+  }
+  return currencyCode;
+}
+
 export function catalogPriceAnswer(params: {
   language: "ar" | "ku" | "en";
   itemName: string;
   unitPriceIqd: number;
+  baseUnitPriceIqd?: number;
+  currencyCode?: string;
+  promotionApplied?: boolean;
   commerce: CatalogCommerceFields;
 }): string {
   const priceType = params.commerce.service_details?.price_type || "fixed";
+  const currencyCode = String(params.currencyCode || "IQD").toUpperCase();
+  const currency = currencyLabel(params.language, currencyCode);
   const amount = params.unitPriceIqd.toLocaleString("en-US");
+  const basePrice = params.baseUnitPriceIqd ?? params.unitPriceIqd;
+  const baseAmount = basePrice.toLocaleString("en-US");
+  const promoted =
+    params.promotionApplied === true &&
+    basePrice > params.unitPriceIqd;
 
   if (params.commerce.item_type === "service" && priceType === "free") {
     if (params.language === "en") return `${params.itemName} is free.`;
@@ -97,13 +115,33 @@ export function catalogPriceAnswer(params: {
     if (params.language === "ku") return `نرخی ${params.itemName} بە پێی وردەکاریی داواکاری دیاری دەکرێت.`;
     return `سعر ${params.itemName} يُحدد حسب تفاصيل الطلب.`;
   }
-  if (params.commerce.item_type === "service" && priceType === "from") {
-    if (params.language === "en") return `${params.itemName} starts from ${amount} IQD.`;
-    if (params.language === "ku") return `نرخی ${params.itemName} لە ${amount} دینارەوە دەست پێدەکات.`;
-    return `سعر ${params.itemName} يبدأ من ${amount} دينار.`;
+
+  if (promoted) {
+    if (params.commerce.item_type === "service" && priceType === "from") {
+      if (params.language === "en") {
+        return `${params.itemName} currently starts from ${amount} ${currency} on offer, instead of ${baseAmount} ${currency}.`;
+      }
+      if (params.language === "ku") {
+        return `نرخی ${params.itemName} لە ئێستادا لە ژێر ئۆفەر لە ${amount} ${currency} دەست پێدەکات، لەبری ${baseAmount} ${currency}.`;
+      }
+      return `سعر ${params.itemName} يبدأ حاليًا ضمن العرض من ${amount} ${currency} بدل ${baseAmount} ${currency}.`;
+    }
+    if (params.language === "en") {
+      return `${params.itemName} is currently ${amount} ${currency} on offer, instead of ${baseAmount} ${currency}.`;
+    }
+    if (params.language === "ku") {
+      return `نرخی ${params.itemName} لە ئێستادا لە ژێر ئۆفەر ${amount} ${currency}ە، لەبری ${baseAmount} ${currency}.`;
+    }
+    return `سعر ${params.itemName} حاليًا ضمن العرض ${amount} ${currency} بدل ${baseAmount} ${currency}.`;
   }
 
-  if (params.language === "en") return `${params.itemName} is ${amount} IQD.`;
-  if (params.language === "ku") return `نرخی ${params.itemName} بریتییە لە ${amount} دینار.`;
-  return `سعر ${params.itemName} هو ${amount} دينار.`;
+  if (params.commerce.item_type === "service" && priceType === "from") {
+    if (params.language === "en") return `${params.itemName} starts from ${amount} ${currency}.`;
+    if (params.language === "ku") return `نرخی ${params.itemName} لە ${amount} ${currency}ەوە دەست پێدەکات.`;
+    return `سعر ${params.itemName} يبدأ من ${amount} ${currency}.`;
+  }
+
+  if (params.language === "en") return `${params.itemName} is ${amount} ${currency}.`;
+  if (params.language === "ku") return `نرخی ${params.itemName} بریتییە لە ${amount} ${currency}.`;
+  return `سعر ${params.itemName} هو ${amount} ${currency}.`;
 }
