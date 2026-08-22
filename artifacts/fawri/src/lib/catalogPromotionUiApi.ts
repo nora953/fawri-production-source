@@ -12,6 +12,13 @@ export type CatalogPromotionLifecycle =
   | 'active'
   | 'expired';
 
+export type CatalogCommerceContext = {
+  country_code: string;
+  timezone: string;
+  currency_code: string;
+  currency_fraction_digits: number;
+};
+
 export type CatalogPromotion = {
   id: string;
   merchant_id: string;
@@ -80,6 +87,64 @@ function objectRecord(value: unknown): Record<string, unknown> {
     : {};
 }
 
+function normalizeDecimalDigits(value: string): string {
+  return value
+    .normalize('NFKC')
+    .replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+    .replace(/[۰-۹]/g, digit => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+    .replace(/٫/g, '.')
+    .replace(/٬/g, '')
+    .trim();
+}
+
+export function catalogMajorAmountToMinor(
+  value: string,
+  fractionDigits: number,
+): number | null {
+  if (!Number.isInteger(fractionDigits) || fractionDigits < 0 || fractionDigits > 6) {
+    return null;
+  }
+  const normalized = normalizeDecimalDigits(value);
+  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
+  const [wholeRaw, fractionRaw = ''] = normalized.split('.');
+  if (fractionRaw.length > fractionDigits) return null;
+  if (fractionDigits === 0 && fractionRaw.length > 0) return null;
+
+  try {
+    const scale = 10n ** BigInt(fractionDigits);
+    const whole = BigInt(wholeRaw);
+    const fraction = fractionDigits
+      ? BigInt(fractionRaw.padEnd(fractionDigits, '0') || '0')
+      : 0n;
+    const minor = whole * scale + fraction;
+    if (minor > BigInt(Number.MAX_SAFE_INTEGER)) return null;
+    return Number(minor);
+  } catch {
+    return null;
+  }
+}
+
+export function catalogMinorAmountToMajor(
+  value: number,
+  fractionDigits: number,
+): string {
+  if (!Number.isSafeInteger(value) || value < 0) return '';
+  if (!Number.isInteger(fractionDigits) || fractionDigits < 0 || fractionDigits > 6) {
+    return '';
+  }
+  if (fractionDigits === 0) return String(value);
+  const scale = 10n ** BigInt(fractionDigits);
+  const minor = BigInt(value);
+  const whole = minor / scale;
+  const fraction = (minor % scale).toString().padStart(fractionDigits, '0');
+  return `${whole.toString()}.${fraction}`;
+}
+
+export function catalogCurrencyStep(fractionDigits: number): string {
+  if (!Number.isInteger(fractionDigits) || fractionDigits <= 0) return '1';
+  return `0.${'0'.repeat(Math.max(0, fractionDigits - 1))}1`;
+}
+
 async function request<T extends Record<string, unknown>>(
   path: string,
   init: RequestInit = {},
@@ -116,6 +181,16 @@ async function request<T extends Record<string, unknown>>(
     throw new CatalogPromotionApiError(code, message, response.status, details);
   }
   return payload as T;
+}
+
+export async function getCatalogCommerceContext(
+  fetcher?: CatalogPromotionFetch,
+): Promise<CatalogCommerceContext> {
+  const response = await request<{
+    ok: true;
+    context: CatalogCommerceContext;
+  }>('/api/catalog/context', {}, fetcher);
+  return response.context;
 }
 
 export async function listCatalogPromotions(
