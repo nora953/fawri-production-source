@@ -10,6 +10,7 @@ import { startPostgresSupportRuntimeCutover } from "../services/postgresSupportR
 import adminDeviceOtpPgRoutes from "./auth-admin-device-otp-pg-routes";
 import ownerRecoveryPostgresRoutes from "./auth-owner-recovery-postgres-routes";
 import earlyWarningPostgresRoutes from "./auth-early-warning-postgres-routes";
+import providerCostPostgresRoutes from "./auth-provider-cost-postgres-routes";
 import emergencyPostgresRoutes from "./auth-emergency-postgres-routes";
 import merchantManagementPostgresRoutes from "./auth-merchant-management-postgres-routes";
 import supportAdminLifecyclePostgresRoutes from "./auth-support-admin-lifecycle-postgres-routes";
@@ -55,6 +56,7 @@ router.use(subscriptionEntitlementPgRouter as any);
 router.use(merchantRealtimePgRouter as any);
 router.use(merchantManagementPostgresRoutes as any);
 router.use(emergencyPostgresRoutes as any);
+router.use(providerCostPostgresRoutes as any);
 router.use(earlyWarningPostgresRoutes as any);
 router.use(supportAdminLifecyclePostgresRoutes as any);
 router.use(supportImageAliasPostgresRoutes as any);

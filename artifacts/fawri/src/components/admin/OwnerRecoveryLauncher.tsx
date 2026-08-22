@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n";
 import { OWNER_RECOVERY_COPY } from "@/lib/ownerRecoveryCopy";
 
 export default function OwnerRecoveryLauncher() {
-  const { lang, dir } = useI18n();
+  const { lang } = useI18n();
   const [location, setLocation] = useLocation();
   const [owner, setOwner] = useState(false);
   const copy = OWNER_RECOVERY_COPY[lang];
@@ -44,19 +44,14 @@ export default function OwnerRecoveryLauncher() {
   if (!owner || location !== "/admin") return null;
 
   return (
-    <aside
-      dir={dir}
-      className="fixed bottom-20 end-5 z-[65] rounded-2xl border bg-background/95 p-2 shadow-xl backdrop-blur"
+    <Button
+      type="button"
+      variant="outline"
+      className="h-10 gap-2 rounded-xl border-primary/30 bg-primary/5 font-bold"
+      onClick={() => setLocation("/admin/owner-recovery-setup")}
     >
-      <Button
-        type="button"
-        variant="outline"
-        className="gap-2 border-primary/30 bg-primary/5 font-bold"
-        onClick={() => setLocation("/admin/owner-recovery-setup")}
-      >
-        <KeyRound className="h-4 w-4" />
-        {copy.setupTitle}
-      </Button>
-    </aside>
+      <KeyRound className="h-4 w-4" />
+      {copy.setupTitle}
+    </Button>
   );
 }

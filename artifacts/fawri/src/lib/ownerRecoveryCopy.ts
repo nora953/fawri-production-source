@@ -48,6 +48,10 @@ export const OWNER_RECOVERY_COPY: Record<OwnerRecoveryLanguage, Record<string, s
     otpVerified: "تم التحقق من الرقم الجديد.",
     genericError: "تعذر إكمال العملية. تحقق من البيانات وحاول مرة أخرى.",
     sessionLimit: "حساب المالك يسمح بجلستين نشطتين فقط.",
+    consumedReminderTitle: "أنشئ مفاتيح طوارئ جديدة",
+    consumedReminderBody:
+      "تم استهلاك مفاتيح الاسترداد السابقة بنجاح. أنشئ حزمة جديدة واحفظ الرابط والمفتاحين في أماكن آمنة ومنفصلة.",
+    consumedReminderAction: "إنشاء مفاتيح جديدة",
   },
   ku: {
     setupTitle: "گەڕاندنەوەی هەژماری خاوەن لە کاتی فریاکەوتن",
@@ -96,6 +100,10 @@ export const OWNER_RECOVERY_COPY: Record<OwnerRecoveryLanguage, Record<string, s
     otpVerified: "ژمارەی نوێ پشتڕاستکرایەوە.",
     genericError: "کردارەکە تەواو نەبوو. زانیارییەکان بپشکنەوە.",
     sessionLimit: "هەژماری خاوەن تەنها دوو دانیشتنی چالاک ڕێگەپێدراوە.",
+    consumedReminderTitle: "کلیلی فریاکەوتنی نوێ دروست بکە",
+    consumedReminderBody:
+      "کلیلەکانی گەڕاندنەوەی پێشوو بە سەرکەوتوویی بەکارهاتن. حەزمەتی نوێ دروست بکە و بەستەر و هەردوو کلیلەکە لە شوێنی پارێزراو و جیاواز هەڵبگرە.",
+    consumedReminderAction: "دروستکردنی کلیلی نوێ",
   },
   en: {
     setupTitle: "Owner emergency account recovery",
@@ -144,5 +152,9 @@ export const OWNER_RECOVERY_COPY: Record<OwnerRecoveryLanguage, Record<string, s
     otpVerified: "The new phone was verified.",
     genericError: "The operation could not be completed. Check the information and try again.",
     sessionLimit: "The owner account allows no more than two active sessions.",
+    consumedReminderTitle: "Create new emergency recovery keys",
+    consumedReminderBody:
+      "The previous recovery keys were successfully consumed. Create a new bundle and store the link and both keys in separate secure locations.",
+    consumedReminderAction: "Create new keys",
   },
 };

@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
 import { getStableAuthDeviceId } from "@/lib/authClientCutover";
 import { useI18n } from "@/lib/i18n";
@@ -46,6 +46,9 @@ export default function OwnerRecoverySetupPage() {
   const { lang, dir } = useI18n();
   const [, setLocation] = useLocation();
   const copy = OWNER_RECOVERY_COPY[lang];
+  const fieldLabelClass = "leading-5";
+  const fieldHeaderClass = "flex min-h-5 items-center justify-between gap-3";
+  const fieldInputClass = "h-12 rounded-xl";
   const [status, setStatus] = useState<RecoveryStatus | null>(null);
   const [bundle, setBundle] = useState<RecoveryBundle | null>(null);
   const [ownerPassword, setOwnerPassword] = useState("");
@@ -169,19 +172,25 @@ export default function OwnerRecoverySetupPage() {
               </div>
               <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
                 <div className="space-y-2">
-                  <Label htmlFor="owner-recovery-password">{copy.currentPassword}</Label>
-                  <Input
+                  <div className={fieldHeaderClass}>
+                    <Label htmlFor="owner-recovery-password" className={fieldLabelClass}>
+                      {copy.currentPassword}
+                    </Label>
+                  </div>
+                  <PasswordInput
                     id="owner-recovery-password"
-                    type="password"
+                    dir="ltr"
                     autoComplete="current-password"
                     value={ownerPassword}
                     onChange={(event) => setOwnerPassword(event.target.value)}
                     disabled={loading || generating}
+                    className={fieldInputClass}
                   />
                 </div>
                 <Button
                   onClick={() => void generate()}
                   disabled={loading || generating || !ownerPassword}
+                  className="h-12 rounded-xl"
                 >
                   {generating
                     ? copy.saving

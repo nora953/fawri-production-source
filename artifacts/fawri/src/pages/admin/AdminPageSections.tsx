@@ -8,6 +8,7 @@ import {
   getMerchantStatusLabel,
   getSubscriptionStatusLabel,
 } from "@/lib/admin-status-translations";
+import { ADMIN_SECURITY_ACTION_COPY } from "@/lib/translations/features/admin/AdminSecurityActions";
 import {
   getMerchants,
   saveMerchants,
@@ -114,7 +115,7 @@ export function StatusBadge({
     pending_activation:
       "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200",
     approved:
-      "bg-green-100  text-green-800  dark:bg-green-900/50  dark:text-green-200",
+      "bg-green-100  text-green-800  dark:bg-green-900/50 dark:text-green-200",
     suspended:
       "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200",
     rejected:
@@ -137,7 +138,7 @@ export function SubBadge({
 }) {
   const styles: Record<string, string> = {
     active:
-      "bg-green-100  text-green-800  dark:bg-green-900/50  dark:text-green-200",
+      "bg-green-100  text-green-800  dark:bg-green-900/50 dark:text-green-200",
     expired:
       "bg-red-100    text-red-800    dark:bg-red-900/50    dark:text-red-200",
     suspended:
@@ -392,48 +393,8 @@ export function LogsTab({ logs }: { logs: AdminLog[] }) {
   const actionTypes = [
     ...new Set(logs.map((log) => log.action_type)),
   ];
-  const securityActionLabels: Record<string, string> =
-    lang === "ar"
-      ? {
-          assistant_device_trusted: "منح الثقة لجهاز المسؤول المساعد",
-          assistant_device_trust_revoked: "سحب الثقة من جهاز المسؤول المساعد",
-          assistant_session_revoked: "إنهاء جلسة المسؤول المساعد",
-          assistant_sessions_revoked: "إنهاء جميع جلسات المسؤول المساعد",
-        }
-      : lang === "ku"
-        ? {
-            assistant_device_trusted: "متمانەپێکردنی ئامێری بەڕێوەبەری یاریدەدەر",
-            assistant_device_trust_revoked: "سەندنەوەی متمانە لە ئامێری بەڕێوەبەری یاریدەدەر",
-            assistant_session_revoked: "کۆتاییهێنان بە دانیشتنی بەڕێوەبەری یاریدەدەر",
-            assistant_sessions_revoked: "کۆتاییهێنان بە هەموو دانیشتنەکانی بەڕێوەبەری یاریدەدەر",
-          }
-        : {
-            assistant_device_trusted: "Trust assistant device",
-            assistant_device_trust_revoked: "Revoke assistant device trust",
-            assistant_session_revoked: "Terminate assistant session",
-            assistant_sessions_revoked: "Terminate all assistant sessions",
-          };
-  const securityActionDetails: Record<string, string> =
-    lang === "ar"
-      ? {
-          assistant_device_trusted: "تم منح الثقة لجهاز المسؤول المساعد",
-          assistant_device_trust_revoked: "تم سحب الثقة من جهاز المسؤول المساعد",
-          assistant_session_revoked: "تم إنهاء جلسة المسؤول المساعد",
-          assistant_sessions_revoked: "تم إنهاء جميع جلسات المسؤول المساعد",
-        }
-      : lang === "ku"
-        ? {
-            assistant_device_trusted: "متمانە بە ئامێری بەڕێوەبەری یاریدەدەر درا",
-            assistant_device_trust_revoked: "متمانە لە ئامێری بەڕێوەبەری یاریدەدەر سەندرایەوە",
-            assistant_session_revoked: "دانیشتنی بەڕێوەبەری یاریدەدەر کۆتایی پێ هات",
-            assistant_sessions_revoked: "هەموو دانیشتنەکانی بەڕێوەبەری یاریدەدەر کۆتاییان پێ هات",
-          }
-        : {
-            assistant_device_trusted: "The assistant administrator device was trusted",
-            assistant_device_trust_revoked: "Trust was revoked from the assistant administrator device",
-            assistant_session_revoked: "The assistant administrator session was terminated",
-            assistant_sessions_revoked: "All assistant administrator sessions were terminated",
-          };
+  const securityActionLabels: Record<string, string> = ADMIN_SECURITY_ACTION_COPY[lang].labels;
+  const securityActionDetails: Record<string, string> = ADMIN_SECURITY_ACTION_COPY[lang].details;
   const actionLabel: Record<string, string> = {
     approved: adminText.logsActionApproved,
     rejected: adminText.logsActionRejected,

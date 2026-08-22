@@ -12,8 +12,6 @@ import {
   secureAdminLogout,
 } from "@/lib/authClientCutover";
 import { useI18n } from "@/lib/i18n";
-import EarlyWarningLauncher from "@/components/admin/EarlyWarningLauncher";
-import OwnerRecoveryLauncher from "@/components/admin/OwnerRecoveryLauncher";
 import SupportPreviewLauncher from "@/components/admin/SupportPreviewLauncher";
 import EmergencyIncidentNoticeBanner from "@/components/EmergencyIncidentNoticeBanner";
 import "@/styles/emergency-access-compact.css";
@@ -210,7 +208,10 @@ function AdminSessionRevalidator() {
   useEffect(() => {
     const previous = previousLocation.current;
     previousLocation.current = location;
-    if (previous.startsWith('/admin') && location === '/login') {
+    if (
+      previous.startsWith('/admin') &&
+      (location === '/login' || location === '/')
+    ) {
       void secureAdminLogout();
     }
   }, [location]);
@@ -261,8 +262,6 @@ function App() {
           <WouterRouter base={routerBase}>
             <AdminSessionRevalidator />
             <AppRouter />
-            <OwnerRecoveryLauncher />
-            <EarlyWarningLauncher />
             <SupportPreviewLauncher />
             <EmergencyIncidentNoticeBanner />
           </WouterRouter>

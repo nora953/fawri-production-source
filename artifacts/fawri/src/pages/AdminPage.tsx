@@ -1,7 +1,7 @@
-import { AdminPageView } from '@/pages/admin/AdminPageView';
+import { AdminPageShell } from '@/pages/admin/AdminPageShell';
 import { useAdminPageController } from '@/pages/admin/useAdminPageController';
 
 export default function AdminPage() {
   const model = useAdminPageController();
-  return <AdminPageView model={model} />;
+  return <AdminPageShell model={model} />;
 }

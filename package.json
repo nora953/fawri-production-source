@@ -1,6 +1,7 @@
 {
   "name": "workspace",
   "version": "0.0.0",
+  "packageManager": "pnpm@10.26.1",
   "license": "MIT",
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
@@ -10,6 +11,7 @@
     "audit:legacy-json": "node ./scripts/audit-fawri-json-data.mjs",
     "audit:jobs": "node ./scripts/audit-fawri-background-jobs.mjs",
     "audit:manual-conversations": "node ./scripts/audit-manual-conversation-operations.mjs",
+    "audit:admin-architecture": "node ./scripts/audit-admin-architecture.mjs",
     "migration:preflight": "node ./scripts/audit-transitional-migration-readiness.mjs",
     "migration:plan": "node ./scripts/run-postgresql-migration-plan.mjs",
     "migration:test": "node --test --test-concurrency=1 ./scripts/tests/*.test.mjs",
