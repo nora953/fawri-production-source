@@ -88,6 +88,8 @@ type PageCopy = {
   originalPrice: string;
   price: string;
   currency: string;
+  freePrice: string;
+  customPrice: string;
   quantity: string;
   inventoryNotTracked: string;
   duration: string;
@@ -119,7 +121,7 @@ type PageCopy = {
 const COPY: Record<Lang, PageCopy> = {
   ar: {
     title: 'المنتجات والخدمات',
-    subtitle: 'مصدر فوري الموحد لما يبيعه أو يقدمه نشاطك، ويُستخدم للمحادثات والمخزون والكاشير والتقارير.',
+    subtitle: 'مصدر فوري الموحد لبيانات المنتجات والخدمات والمخزون التي يعتمد عليها عند الرد على العملاء.',
     add: 'إضافة منتج أو خدمة',
     import: 'استيراد المنتجات',
     search: 'ابحث بالاسم أو القسم أو SKU أو الباركود...',
@@ -152,6 +154,8 @@ const COPY: Record<Lang, PageCopy> = {
     originalPrice: 'السعر السابق / للمقارنة',
     price: 'السعر',
     currency: 'د.ع',
+    freePrice: 'مجاني',
+    customPrice: 'حسب الطلب',
     quantity: 'المخزون',
     inventoryNotTracked: 'غير متابع',
     duration: 'المدة',
@@ -181,7 +185,7 @@ const COPY: Record<Lang, PageCopy> = {
   },
   ku: {
     title: 'بەرهەم و خزمەتگوزارییەکان',
-    subtitle: 'سەرچاوەی یەکگرتووی فەوری بۆ ئەوەی بازرگانییەکەت دەیفرۆشێت یان پێشکەشی دەکات.',
+    subtitle: 'سەرچاوەی یەکگرتووی فەوری بۆ زانیاریی بەرهەم و خزمەتگوزاری و کۆگا کە لە وەڵامدانەوە بە کڕیار پشت پێ دەبەستێت.',
     add: 'زیادکردنی بەرهەم یان خزمەتگوزاری',
     import: 'هاوردەکردنی بەرهەم',
     search: 'گەڕان بە ناو، بەش، SKU یان بارکۆد...',
@@ -214,6 +218,8 @@ const COPY: Record<Lang, PageCopy> = {
     originalPrice: 'نرخی پێشوو / بەراورد',
     price: 'نرخ',
     currency: 'د.ع',
+    freePrice: 'بەخۆڕایی',
+    customPrice: 'بەپێی داواکاری',
     quantity: 'کۆگا',
     inventoryNotTracked: 'بەدواداچوون ناکرێت',
     duration: 'ماوە',
@@ -243,7 +249,7 @@ const COPY: Record<Lang, PageCopy> = {
   },
   en: {
     title: 'Products & Services',
-    subtitle: 'Fawri’s canonical source for what your business sells or provides, used by conversations, inventory, POS, and reports.',
+    subtitle: 'Fawri’s canonical source for trusted product, service, and inventory facts used in customer replies.',
     add: 'Add product or service',
     import: 'Import products',
     search: 'Search by name, category, SKU, or barcode...',
@@ -276,6 +282,8 @@ const COPY: Record<Lang, PageCopy> = {
     originalPrice: 'Previous / compare price',
     price: 'Price',
     currency: 'IQD',
+    freePrice: 'Free',
+    customPrice: 'On request',
     quantity: 'Inventory',
     inventoryNotTracked: 'Not tracked',
     duration: 'Duration',
@@ -431,6 +439,13 @@ export default function CommerceCatalogPage() {
     [statusOptions],
   );
 
+  const editorStatusOptions = useMemo(
+    () => form.item_type === 'service'
+      ? statusOptions.filter(option => option.value !== 'low_stock')
+      : statusOptions,
+    [form.item_type, statusOptions],
+  );
+
   const syncInventory = (product: CatalogProduct) => {
     if (!tracksInventory(product)) return;
     setInventoryValues(current => {
@@ -514,7 +529,11 @@ export default function CommerceCatalogPage() {
   const openEdit = (product: CatalogProduct) => {
     createAttempt.current = null;
     setEditingId(product.id);
-    setForm(catalogProductFormFromProduct(product));
+    const nextForm = catalogProductFormFromProduct(product);
+    if (nextForm.item_type === 'service' && nextForm.status === 'low_stock') {
+      nextForm.status = 'available';
+    }
+    setForm(nextForm);
     setFormOpen(true);
   };
 
@@ -780,10 +799,10 @@ export default function CommerceCatalogPage() {
                     <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Tag className="h-4 w-4" />{copy.price}</div>
                     <p className="text-xl font-extrabold">
                       {service?.price_type === 'custom'
-                        ? '—'
+                        ? copy.customPrice
                         : service?.price_type === 'free'
-                          ? '0'
-                          : product.price_iqd.toLocaleString(lang === 'en' ? 'en-US' : 'ar-IQ')} {service?.price_type === 'custom' ? '' : copy.currency}
+                          ? copy.freePrice
+                          : `${product.price_iqd.toLocaleString(lang === 'en' ? 'en-US' : 'ar-IQ')} ${copy.currency}`}
                     </p>
                   </div>
                   <div className="rounded-2xl bg-muted/40 p-3">
@@ -911,7 +930,7 @@ export default function CommerceCatalogPage() {
               <label className="space-y-1 text-sm font-semibold">
                 <span>{copy.status}</span>
                 <select value={form.status} onChange={event => patchForm({ status: event.target.value as ProductStatus })} className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
-                  {statusOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  {editorStatusOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
                 </select>
               </label>
 
