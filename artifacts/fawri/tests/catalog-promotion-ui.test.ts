@@ -7,6 +7,7 @@ import {
   catalogMinorAmountToMajor,
   createCatalogPromotion,
   getCatalogCommerceContext,
+  updateCatalogPromotion,
 } from '../src/lib/catalogPromotionUiApi';
 
 test('promotion money helpers convert IQD, USD, KWD, and localized digits exactly', () => {
@@ -126,4 +127,63 @@ test('promotion create sends exact minor-unit values and a stable idempotency ke
   assert.equal(body.promotion.schedule_timezone, undefined);
   assert.equal(body.promotion.starts_at, undefined);
   assert.equal(body.promotion.ends_at, undefined);
+});
+
+test('promotion update serializes explicit undefined targets as null so old targeting is cleared', async () => {
+  const calls: Array<{ input: RequestInfo | URL; init?: RequestInit }> = [];
+  const fetcher = async (input: RequestInfo | URL, init?: RequestInit) => {
+    calls.push({ input, init });
+    return new Response(
+      JSON.stringify({
+        ok: true,
+        promotion: {
+          id: 'promo-variant',
+          merchant_id: 'merchant-1',
+          name: 'Whole product offer',
+          scope: 'catalog_item',
+          effect: 'percentage_off',
+          product_id: 'product-1',
+          percentage_bps: 1000,
+          currency_code: 'IQD',
+          starts_at: '2026-09-01T06:00:00.000Z',
+          ends_at: '2026-09-02T06:00:00.000Z',
+          schedule_timezone: 'Asia/Baghdad',
+          starts_local: '2026-09-01T09:00',
+          ends_local: '2026-09-02T09:00',
+          priority: 0,
+          enabled: true,
+          version: 2,
+          lifecycle: 'scheduled',
+        },
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    );
+  };
+
+  await updateCatalogPromotion(
+    'promo-variant',
+    1,
+    {
+      name: 'Whole product offer',
+      scope: 'catalog_item',
+      effect: 'percentage_off',
+      product_id: 'product-1',
+      variant_id: undefined,
+      percentage_bps: 1000,
+      amount_minor: null,
+      minimum_subtotal_minor: null,
+      starts_local: '2026-09-01T09:00',
+      ends_local: '2026-09-02T09:00',
+      priority: 0,
+      enabled: true,
+    },
+    fetcher,
+  );
+
+  assert.equal(calls.length, 1);
+  const body = JSON.parse(String(calls[0].init?.body));
+  assert.equal(body.expected_version, 1);
+  assert.equal(body.promotion.variant_id, null);
+  assert.equal(body.promotion.amount_minor, null);
+  assert.equal(body.promotion.minimum_subtotal_minor, null);
 });
