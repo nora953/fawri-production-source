@@ -1,9 +1,20 @@
-import { Router, type Request, type Response } from "express";
+import express, {
+  Router,
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
 import {
   getMerchantIdFromSession,
   requireMerchantSession,
 } from "./auth";
 import { CatalogRuntimeError } from "../services/catalogInventoryRuntime";
+import {
+  CATALOG_IMAGE_MAX_BYTES,
+  CatalogMediaError,
+  readCatalogImage,
+  storeCatalogImage,
+} from "../services/catalogMediaStorage";
 import {
   adjustCatalogInventoryAuthoritative,
   createCatalogProductAuthoritative,
@@ -16,6 +27,10 @@ import {
 } from "../services/postgresCatalogAuthority";
 
 const router = Router();
+const catalogImageBodyParser = express.raw({
+  type: ["image/jpeg", "image/png", "image/webp"],
+  limit: CATALOG_IMAGE_MAX_BYTES,
+});
 
 function parameter(value: unknown): string {
   if (Array.isArray(value)) return String(value[0] || "").trim();
@@ -56,12 +71,12 @@ function rejectMerchantOverride(
 
 function sendError(res: Response, error: unknown): void {
   res.setHeader("Cache-Control", "no-store");
-  if (error instanceof CatalogRuntimeError) {
+  if (error instanceof CatalogRuntimeError || error instanceof CatalogMediaError) {
     res.status(error.status).json({
       ok: false,
       code: error.code,
       error: error.message,
-      ...(error.details || {}),
+      ...(error instanceof CatalogRuntimeError ? error.details || {} : {}),
     });
     return;
   }
@@ -73,6 +88,75 @@ function sendError(res: Response, error: unknown): void {
     error: "catalog operation failed",
   });
 }
+
+function parseCatalogImageBody(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  catalogImageBodyParser(req, res, (error?: unknown) => {
+    if (!error) {
+      next();
+      return;
+    }
+    const status = Number((error as { status?: unknown })?.status || 400);
+    res.setHeader("Cache-Control", "no-store");
+    res.status(status === 413 ? 413 : 400).json({
+      ok: false,
+      code: status === 413 ? "CATALOG_IMAGE_TOO_LARGE" : "CATALOG_IMAGE_INVALID",
+      error: status === 413 ? "catalog image is too large" : "catalog image is invalid",
+      max_bytes: CATALOG_IMAGE_MAX_BYTES,
+    });
+  });
+}
+
+router.post(
+  "/catalog/media/images",
+  requireMerchantSession,
+  parseCatalogImageBody,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (!Buffer.isBuffer(req.body)) {
+        throw new CatalogMediaError(
+          "CATALOG_IMAGE_REQUIRED",
+          "catalog image is required",
+          400,
+        );
+      }
+      const asset = await storeCatalogImage({
+        merchantId,
+        buffer: req.body,
+        suppliedMime: req.get("Content-Type"),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.status(201).json({ ok: true, asset });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/catalog/media/images",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const asset = await readCatalogImage({
+        merchantId,
+        storageKey: parameter(req.query.storage_key),
+      });
+      res.setHeader("Cache-Control", "private, max-age=300");
+      res.setHeader("Content-Type", asset.mime_type);
+      res.setHeader("ETag", `\"${asset.sha256}\"`);
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.status(200).send(asset.buffer);
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
 
 router.get(
   "/catalog/products",
