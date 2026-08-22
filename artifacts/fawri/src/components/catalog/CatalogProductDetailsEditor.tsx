@@ -1,9 +1,13 @@
-import { Minus, Plus, Trash2, X } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
 
 import { CatalogImageUploadEditor } from '@/components/catalog/CatalogImageUploadEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { CatalogProductFormState, CatalogVariantDraft } from '@/lib/catalogProductEditor';
+import type {
+  CatalogMeasurementDraft,
+  CatalogProductFormState,
+  CatalogVariantDraft,
+} from '@/lib/catalogProductEditor';
 import {
   catalogProductStockIsVariantManaged,
   createEmptyCatalogOptionDraft,
@@ -84,8 +88,8 @@ function Measurements({
   onChange,
 }: {
   lang: Lang;
-  value: Pick<CatalogProductFormState, 'weight_kg' | 'length_cm' | 'width_cm' | 'height_cm'>;
-  onChange: (patch: Partial<CatalogProductFormState>) => void;
+  value: CatalogMeasurementDraft;
+  onChange: (patch: Partial<CatalogMeasurementDraft>) => void;
 }) {
   const labels = copy[lang] || copy.en;
   return (
@@ -188,7 +192,7 @@ function VariantEditor({
         </label>
       )}
 
-      <Measurements lang={lang} value={variant} onChange={next => patch(next)} />
+      <Measurements lang={lang} value={variant} onChange={patch} />
 
       <div className="space-y-2">
         <div className="flex items-center justify-between gap-2">
