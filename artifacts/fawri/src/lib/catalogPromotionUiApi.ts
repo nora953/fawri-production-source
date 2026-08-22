@@ -1,4 +1,4 @@
-import { createStrongIdempotencyKey } from '@/lib/catalogUiApi';
+import { createStrongIdempotencyKey } from './catalogUiApi';
 
 export type CatalogPromotionScope = 'catalog_item' | 'delivery';
 export type CatalogPromotionEffect =
