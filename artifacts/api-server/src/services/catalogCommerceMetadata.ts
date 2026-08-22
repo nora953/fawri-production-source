@@ -195,7 +195,9 @@ export function normalizeCatalogCommerceInput(
 
   const requestedTrackInventory = hasOwn(input, "track_inventory")
     ? booleanValue(input.track_inventory, fallback.track_inventory)
-    : fallback.track_inventory;
+    : resolvedItemType === "service"
+      ? false
+      : fallback.track_inventory;
 
   if (resolvedItemType === "service" && requestedTrackInventory) {
     throw new CatalogRuntimeError(
