@@ -557,11 +557,11 @@ export async function updateSupportTicketStatusPostgres(input: {
     await assertAssignedToAdmin(client, ticketId, adminId);
     await client.query(
       `UPDATE support_tickets
-          SET status = $2,
-              resolved_at = CASE WHEN $2 = 'resolved' THEN now() ELSE resolved_at END,
-              closed_at = CASE WHEN $2 = 'closed' THEN now() ELSE CASE WHEN $2 IN ('open','in_progress') THEN NULL ELSE closed_at END END,
-              waiting_on = CASE WHEN $2 IN ('resolved','closed') THEN NULL ELSE waiting_on END,
-              waiting_since = CASE WHEN $2 IN ('resolved','closed') THEN NULL ELSE waiting_since END,
+          SET status = $2::support_ticket_status,
+              resolved_at = CASE WHEN $2::support_ticket_status = 'resolved' THEN now() ELSE resolved_at END,
+              closed_at = CASE WHEN $2::support_ticket_status = 'closed' THEN now() ELSE CASE WHEN $2::support_ticket_status IN ('open','in_progress') THEN NULL ELSE closed_at END END,
+              waiting_on = CASE WHEN $2::support_ticket_status IN ('resolved','closed') THEN NULL ELSE waiting_on END,
+              waiting_since = CASE WHEN $2::support_ticket_status IN ('resolved','closed') THEN NULL ELSE waiting_since END,
               updated_at = now()
         WHERE id = $1`,
       [ticketId, status],
