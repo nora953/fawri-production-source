@@ -16,6 +16,7 @@ import {
   storeCatalogImage,
 } from "../services/catalogMediaStorage";
 import { CommercePromotionError } from "../services/commercePromotionRuntime";
+import { CurrencyMoneyError } from "../services/currencyMoneyRuntime";
 import { MerchantRegionalError } from "../services/merchantRegionalRuntime";
 import {
   createCommercePromotionAuthoritative,
@@ -23,6 +24,10 @@ import {
   listCommercePromotionsAuthoritative,
   updateCommercePromotionAuthoritative,
 } from "../services/postgresCommercePromotionAuthority";
+import {
+  MerchantCommerceContextError,
+  getMerchantCommerceContextAuthoritative,
+} from "../services/postgresMerchantRegionalAuthority";
 import {
   adjustCatalogInventoryAuthoritative,
   createCatalogProductAuthoritative,
@@ -93,7 +98,9 @@ function sendError(res: Response, error: unknown): void {
     error instanceof CatalogRuntimeError ||
     error instanceof CatalogMediaError ||
     error instanceof CommercePromotionError ||
-    error instanceof MerchantRegionalError
+    error instanceof MerchantRegionalError ||
+    error instanceof CurrencyMoneyError ||
+    error instanceof MerchantCommerceContextError
   ) {
     res.status(error.status).json({
       ok: false,
@@ -101,7 +108,8 @@ function sendError(res: Response, error: unknown): void {
       error: error.message,
       ...(error instanceof CatalogRuntimeError ||
       error instanceof CommercePromotionError ||
-      error instanceof MerchantRegionalError
+      error instanceof MerchantRegionalError ||
+      error instanceof CurrencyMoneyError
         ? error.details || {}
         : {}),
     });
@@ -179,6 +187,21 @@ router.get(
       res.setHeader("ETag", `\"${asset.sha256}\"`);
       res.setHeader("X-Content-Type-Options", "nosniff");
       res.status(200).send(asset.buffer);
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/catalog/context",
+  requireMerchantSession,
+  async (_req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const context = await getMerchantCommerceContextAuthoritative(merchantId);
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, context });
     } catch (error) {
       sendError(res, error);
     }
