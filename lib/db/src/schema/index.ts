@@ -7,6 +7,7 @@ export * from "./subscriptions";
 export * from "./saas-billing";
 export * from "./provider-costs";
 export * from "./catalog";
+export * from "./commerce-promotions";
 export * from "./channels";
 export * from "./conversations";
 export * from "./manual-conversations";
