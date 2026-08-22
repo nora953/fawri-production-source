@@ -18,6 +18,15 @@ import {
   type CatalogVariant,
 } from "./catalogInventoryRuntime";
 import {
+  applyCatalogCommerceFields,
+  catalogCommerceFieldsOf,
+  catalogCommerceFromMetadata,
+  catalogCommerceMetadataPatch,
+  catalogTracksInventory,
+  normalizeCatalogCommerceInput,
+  type CatalogCommerceProduct,
+} from "./catalogCommerceMetadata";
+import {
   MAX_IMPORT_ITEMS,
   MAX_PRODUCTS_PER_MERCHANT,
   assertCatalogProductUniqueness,
@@ -63,6 +72,7 @@ type ProductRow = {
   version: number;
   status: string;
   allow_fawri_reply: boolean;
+  metadata: Record<string, unknown> | null;
   created_at: Date;
   updated_at: Date;
 };
@@ -214,17 +224,42 @@ function translateDatabaseError(error: unknown): never {
   throw error;
 }
 
+function commerceInputRequiresPostgres(input: unknown): boolean {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return false;
+  const record = input as Record<string, unknown>;
+  return (
+    Object.prototype.hasOwnProperty.call(record, "item_type") ||
+    Object.prototype.hasOwnProperty.call(record, "track_inventory") ||
+    Object.prototype.hasOwnProperty.call(record, "service_details") ||
+    Object.prototype.hasOwnProperty.call(record, "duration_minutes") ||
+    Object.prototype.hasOwnProperty.call(record, "buffer_minutes") ||
+    Object.prototype.hasOwnProperty.call(record, "booking_required") ||
+    Object.prototype.hasOwnProperty.call(record, "price_type") ||
+    Object.prototype.hasOwnProperty.call(record, "location_mode")
+  );
+}
+
+function assertFallbackCommerceCompatibility(input: unknown): void {
+  if (commerceInputRequiresPostgres(input)) {
+    throw new CatalogRuntimeError(
+      "CATALOG_COMMERCE_POSTGRES_REQUIRED",
+      "product/service commerce fields require PostgreSQL catalog authority",
+      503,
+    );
+  }
+}
+
 async function loadProducts(
   target: OperationalQueryTarget,
   merchantId: string,
   lock = false,
-): Promise<CatalogProduct[]> {
+): Promise<CatalogCommerceProduct[]> {
   const products = await operationalQueryRows<ProductRow>(
     target,
     `SELECT id, merchant_id, external_ref, name, sku, barcode, category,
             description, current_price_iqd, compare_at_price_iqd, quantity,
             low_stock_threshold, weight_g, length_mm, width_mm, height_mm,
-            version, status, allow_fawri_reply, created_at, updated_at
+            version, status, allow_fawri_reply, metadata, created_at, updated_at
        FROM products
       WHERE merchant_id = $1 AND deleted_at IS NULL
       ORDER BY updated_at DESC, id ASC${lock ? " FOR UPDATE" : ""}`,
@@ -302,33 +337,39 @@ async function loadProducts(
     variantsByProduct.set(variant.product_id, list);
   }
 
-  return products.map((product) => ({
-    id: product.id,
-    merchant_id: product.merchant_id,
-    ...(product.external_ref ? { external_ref: product.external_ref } : {}),
-    name: product.name,
-    ...(product.description ? { description: product.description } : {}),
-    ...(product.category ? { category: product.category } : {}),
-    ...(product.sku ? { sku: product.sku } : {}),
-    ...(product.barcode ? { barcode: product.barcode } : {}),
-    price_iqd: Number(product.current_price_iqd),
-    ...(product.compare_at_price_iqd !== null
-      ? { compare_at_price_iqd: Number(product.compare_at_price_iqd) }
-      : {}),
-    stock_quantity: Number(product.quantity),
-    low_stock_threshold: Number(product.low_stock_threshold),
-    ...(product.weight_g !== null ? { weight_g: Number(product.weight_g) } : {}),
-    ...(product.length_mm !== null ? { length_mm: Number(product.length_mm) } : {}),
-    ...(product.width_mm !== null ? { width_mm: Number(product.width_mm) } : {}),
-    ...(product.height_mm !== null ? { height_mm: Number(product.height_mm) } : {}),
-    status: toStatus(product.status),
-    allow_fawri_reply: product.allow_fawri_reply,
-    image_refs: imagesByOwner.get(product.id) || [],
-    variants: variantsByProduct.get(product.id) || [],
-    created_at: product.created_at.toISOString(),
-    updated_at: product.updated_at.toISOString(),
-    version: Number(product.version),
-  }));
+  return products.map((product) => {
+    const baseProduct: CatalogProduct = {
+      id: product.id,
+      merchant_id: product.merchant_id,
+      ...(product.external_ref ? { external_ref: product.external_ref } : {}),
+      name: product.name,
+      ...(product.description ? { description: product.description } : {}),
+      ...(product.category ? { category: product.category } : {}),
+      ...(product.sku ? { sku: product.sku } : {}),
+      ...(product.barcode ? { barcode: product.barcode } : {}),
+      price_iqd: Number(product.current_price_iqd),
+      ...(product.compare_at_price_iqd !== null
+        ? { compare_at_price_iqd: Number(product.compare_at_price_iqd) }
+        : {}),
+      stock_quantity: Number(product.quantity),
+      low_stock_threshold: Number(product.low_stock_threshold),
+      ...(product.weight_g !== null ? { weight_g: Number(product.weight_g) } : {}),
+      ...(product.length_mm !== null ? { length_mm: Number(product.length_mm) } : {}),
+      ...(product.width_mm !== null ? { width_mm: Number(product.width_mm) } : {}),
+      ...(product.height_mm !== null ? { height_mm: Number(product.height_mm) } : {}),
+      status: toStatus(product.status),
+      allow_fawri_reply: product.allow_fawri_reply,
+      image_refs: imagesByOwner.get(product.id) || [],
+      variants: variantsByProduct.get(product.id) || [],
+      created_at: product.created_at.toISOString(),
+      updated_at: product.updated_at.toISOString(),
+      version: Number(product.version),
+    };
+    return applyCatalogCommerceFields(
+      baseProduct,
+      catalogCommerceFromMetadata(product.metadata),
+    );
+  });
 }
 
 async function persistProductGraph(
@@ -337,6 +378,8 @@ async function persistProductGraph(
   create: boolean,
   expectedVersion?: number,
 ): Promise<void> {
+  const commerce = catalogCommerceFieldsOf(product);
+  const metadataPatch = JSON.stringify(catalogCommerceMetadataPatch(commerce));
   const values = [
     product.id,
     product.merchant_id,
@@ -352,18 +395,19 @@ async function persistProductGraph(
     product.compare_at_price_iqd ?? product.price_iqd,
     product.price_iqd,
     product.compare_at_price_iqd ?? null,
-    product.stock_quantity,
+    commerce.track_inventory ? product.stock_quantity : 0,
     product.low_stock_threshold,
     product.weight_g ?? null,
     product.length_mm ?? null,
     product.width_mm ?? null,
     product.height_mm ?? null,
-    product.variants.length > 0,
+    commerce.track_inventory && product.variants.length > 0,
     product.version,
     product.status,
     product.allow_fawri_reply,
     new Date(product.created_at),
     new Date(product.updated_at),
+    metadataPatch,
   ];
   if (create) {
     await target.query(
@@ -372,10 +416,10 @@ async function persistProductGraph(
          sku, barcode, category, description, original_price_iqd,
          current_price_iqd, compare_at_price_iqd, quantity, low_stock_threshold,
          weight_g, length_mm, width_mm, height_mm, variant_stock_mode, version,
-         status, allow_fawri_reply, created_at, updated_at
+         status, allow_fawri_reply, created_at, updated_at, metadata
        ) VALUES (
          $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,
-         $19,$20,$21,$22,$23,$24
+         $19,$20,$21,$22,$23,$24,$25::jsonb
        )`,
       values,
     );
@@ -403,8 +447,9 @@ async function persistProductGraph(
               version = $20,
               status = $21,
               allow_fawri_reply = $22,
-              updated_at = $24
-        WHERE id = $1 AND merchant_id = $2 AND version = $25 AND deleted_at IS NULL
+              updated_at = $24,
+              metadata = COALESCE(metadata, '{}'::jsonb) || $25::jsonb
+        WHERE id = $1 AND merchant_id = $2 AND version = $26 AND deleted_at IS NULL
         RETURNING id`,
       [...values, expectedVersion],
     );
@@ -451,7 +496,7 @@ async function persistProductGraph(
         variant.name,
         variant.sku || null,
         variant.barcode || null,
-        variant.stock_quantity,
+        commerce.track_inventory ? variant.stock_quantity : 0,
         variant.price_iqd ?? null,
         variant.weight_g ?? null,
         variant.length_mm ?? null,
@@ -648,6 +693,7 @@ export async function createCatalogProductAuthoritative(params: {
 }): Promise<CatalogCreateResult> {
   const merchantId = normalizeCatalogMerchantId(params.merchantId);
   if (!operationalPostgresAuthorityRequired()) {
+    assertFallbackCommerceCompatibility(params.input);
     return createCatalogProduct({ ...params, merchantId });
   }
   const keyHash = catalogIdempotencyKeyHash(params.idempotencyKey);
@@ -683,11 +729,21 @@ export async function createCatalogProductAuthoritative(params: {
         { max: MAX_PRODUCTS_PER_MERCHANT },
       );
     }
-    const product = normalizeCatalogProduct(params.input, {
+    const baseProduct = normalizeCatalogProduct(params.input, {
       merchantId,
       now: new Date().toISOString(),
       forceCreate: true,
     });
+    const product = applyCatalogCommerceFields(
+      baseProduct,
+      normalizeCatalogCommerceInput(params.input),
+    );
+    if (!product.track_inventory) {
+      product.stock_quantity = 0;
+      if (product.status === "out_of_stock" || product.status === "low_stock") {
+        product.status = "available";
+      }
+    }
     if (products.some((item) => item.id === product.id)) {
       throw new CatalogRuntimeError(
         "CATALOG_PRODUCT_ID_DUPLICATE",
@@ -721,6 +777,9 @@ export async function importCatalogProductsAuthoritative(params: {
 }): Promise<CatalogImportResult> {
   const merchantId = normalizeCatalogMerchantId(params.merchantId);
   if (!operationalPostgresAuthorityRequired()) {
+    if (Array.isArray(params.items)) {
+      for (const item of params.items) assertFallbackCommerceCompatibility(item);
+    }
     return importCatalogProducts({ ...params, merchantId });
   }
   const itemsValue = params.items;
@@ -767,11 +826,21 @@ export async function importCatalogProductsAuthoritative(params: {
     }
     const now = new Date().toISOString();
     const products = items.map((item) => {
-      const product = normalizeCatalogProduct(item, {
+      const baseProduct = normalizeCatalogProduct(item, {
         merchantId,
         now,
         forceCreate: true,
       });
+      const product = applyCatalogCommerceFields(
+        baseProduct,
+        normalizeCatalogCommerceInput(item),
+      );
+      if (!product.track_inventory) {
+        product.stock_quantity = 0;
+        if (product.status === "out_of_stock" || product.status === "low_stock") {
+          product.status = "available";
+        }
+      }
       if (!product.external_ref && !product.sku && !product.barcode) {
         throw new CatalogRuntimeError(
           "CATALOG_IMPORT_IDENTITY_REQUIRED",
@@ -823,6 +892,7 @@ export async function updateCatalogProductAuthoritative(params: {
   const productId = normalizeCatalogProductId(params.productId);
   const expectedVersion = requireCatalogExpectedVersion(params.expectedVersion);
   if (!operationalPostgresAuthorityRequired()) {
+    assertFallbackCommerceCompatibility(params.input);
     return updateCatalogProduct({ ...params, merchantId, productId });
   }
   return withMerchantOperationalTransaction(merchantId, async (client) => {
@@ -840,11 +910,22 @@ export async function updateCatalogProductAuthoritative(params: {
         },
       );
     }
-    const product = normalizeCatalogProduct(params.input, {
+    const baseProduct = normalizeCatalogProduct(params.input, {
       merchantId,
       existing: current,
       now: new Date().toISOString(),
     });
+    const product = applyCatalogCommerceFields(
+      baseProduct,
+      normalizeCatalogCommerceInput(params.input, catalogCommerceFieldsOf(current)),
+    );
+    if (!product.track_inventory) {
+      product.stock_quantity = 0;
+      for (const variant of product.variants) variant.stock_quantity = 0;
+      if (product.status === "out_of_stock" || product.status === "low_stock") {
+        product.status = "available";
+      }
+    }
     assertCatalogProductUniqueness(
       products.filter((item) => item.id !== productId),
       [product],
@@ -958,6 +1039,13 @@ async function mutateInventoryAuthoritative(input: {
           current_version: product.version,
           current_product: product,
         },
+      );
+    }
+    if (!catalogTracksInventory(product)) {
+      throw new CatalogRuntimeError(
+        "CATALOG_INVENTORY_NOT_TRACKED",
+        "inventory mutations are disabled for this catalog item",
+        409,
       );
     }
     let variant: CatalogVariant | undefined;
@@ -1141,6 +1229,13 @@ export async function adjustCatalogInventoryAuthoritative(params: {
           current_version: product.version,
           current_product: product,
         },
+      );
+    }
+    if (!catalogTracksInventory(product)) {
+      throw new CatalogRuntimeError(
+        "CATALOG_INVENTORY_NOT_TRACKED",
+        "inventory mutations are disabled for this catalog item",
+        409,
       );
     }
     let variant: CatalogVariant | undefined;
