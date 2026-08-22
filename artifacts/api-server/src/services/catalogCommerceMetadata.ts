@@ -308,6 +308,50 @@ export function catalogCommerceFieldsOf(product: unknown): CatalogCommerceFields
   };
 }
 
+export function applyCatalogInventoryTrackingState(params: {
+  product: CatalogCommerceProduct;
+  input: unknown;
+  previous?: CatalogCommerceProduct;
+}): CatalogCommerceProduct {
+  const { product } = params;
+  if (product.track_inventory) return product;
+
+  product.stock_quantity = 0;
+  for (const variant of product.variants) variant.stock_quantity = 0;
+
+  const input = record(params.input);
+  if (hasOwn(input, "status")) {
+    const requestedStatus = normalizedText(input.status);
+    if (requestedStatus === "low_stock") {
+      throw new CatalogRuntimeError(
+        "CATALOG_NON_INVENTORY_LOW_STOCK_INVALID",
+        "low_stock is only valid for inventory-tracked products",
+        400,
+      );
+    }
+    if (
+      requestedStatus === "available" ||
+      requestedStatus === "out_of_stock" ||
+      requestedStatus === "draft" ||
+      requestedStatus === "hidden_from_fawri"
+    ) {
+      product.status = requestedStatus;
+      return product;
+    }
+  }
+
+  if (params.previous && !params.previous.track_inventory) {
+    product.status =
+      params.previous.status === "low_stock" ? "available" : params.previous.status;
+    return product;
+  }
+
+  if (product.status === "out_of_stock" || product.status === "low_stock") {
+    product.status = "available";
+  }
+  return product;
+}
+
 export function catalogTracksInventory(product: unknown): boolean {
   return catalogCommerceFieldsOf(product).track_inventory;
 }
