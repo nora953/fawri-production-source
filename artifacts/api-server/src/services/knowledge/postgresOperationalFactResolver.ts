@@ -6,6 +6,15 @@ import {
   type DeliveryAreaRate,
 } from "../deliveryPricing.js";
 import {
+  catalogCommerceFromMetadata,
+  type CatalogCommerceFields,
+} from "../catalogCommerceMetadata.js";
+import {
+  catalogAvailabilityAnswer,
+  catalogPriceAnswer,
+  requestedCatalogQuantity,
+} from "./catalogFactDisclosure.js";
+import {
   boundedText,
   normalizeKnowledgeText,
 } from "./normalization.js";
@@ -90,6 +99,14 @@ function stringArray(value: unknown, maxItems = 100): string[] {
 function tenant(row: Record<string, unknown>, merchantId: string): void {
   if (text(row.merchant_id, 160) !== merchantId) {
     fail("KNOWLEDGE_TENANT_VIOLATION", "knowledge tenant boundary violation");
+  }
+}
+
+function commerceFacts(row: Record<string, unknown>): CatalogCommerceFields {
+  try {
+    return catalogCommerceFromMetadata(row.metadata);
+  } catch {
+    fail("KNOWLEDGE_STATE_INVALID", "catalog commerce state is invalid");
   }
 }
 
@@ -263,7 +280,7 @@ async function settings(
 const PRODUCTS_SQL = `
 SELECT id, merchant_id, external_ref, code, name, sku, barcode,
        current_price_iqd, quantity, low_stock_threshold, variant_stock_mode,
-       weight_g, length_mm, width_mm, height_mm,
+       weight_g, length_mm, width_mm, height_mm, metadata,
        version, status, allow_fawri_reply, updated_at
 FROM products
 WHERE merchant_id = $1
@@ -400,6 +417,7 @@ async function resolveMeasurementFact(params: {
     tenant(row, params.merchantId);
     version(row.version);
     physicalFacts(row);
+    commerceFacts(row);
     if (bool(row.allow_fawri_reply) !== true || !["available", "low_stock", "out_of_stock"].includes(text(row.status, 40))) {
       fail("KNOWLEDGE_PROVENANCE_INVALID", "catalog fact provenance is invalid");
     }
@@ -416,7 +434,8 @@ async function resolveMeasurementFact(params: {
   const productFacts = physicalFacts(product);
   let resolved = productFacts;
   let recordId = productId;
-  const variantMode = bool(product.variant_stock_mode);
+  const commerce = commerceFacts(product);
+  const variantMode = commerce.track_inventory && bool(product.variant_stock_mode);
 
   if (variantMode) {
     const variants = await loadVariants(params.sql, params.merchantId, productId);
@@ -466,6 +485,7 @@ async function resolveProductFact(params: {
     tenant(row, params.merchantId);
     version(row.version);
     physicalFacts(row);
+    commerceFacts(row);
     if (bool(row.allow_fawri_reply) !== true || !["available", "low_stock", "out_of_stock"].includes(text(row.status, 40))) {
       fail("KNOWLEDGE_PROVENANCE_INVALID", "catalog fact provenance is invalid");
     }
@@ -480,9 +500,10 @@ async function resolveProductFact(params: {
   const productName = text(product.name, 300);
   if (!productId || !productName) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
 
+  const commerce = commerceFacts(product);
   let unitPrice = integer(product.current_price_iqd);
-  let quantity = integer(product.quantity);
-  const variantMode = bool(product.variant_stock_mode);
+  let quantity = commerce.track_inventory ? integer(product.quantity) : 0;
+  const variantMode = commerce.track_inventory && bool(product.variant_stock_mode);
   let recordId = productId;
 
   if (variantMode) {
@@ -505,21 +526,36 @@ async function resolveProductFact(params: {
   }
 
   if (params.kind === "price") {
-    const answer = params.language === "en"
-      ? `${productName} is ${unitPrice.toLocaleString("en-US")} IQD.`
-      : params.language === "ku"
-        ? `نرخی ${productName} بریتییە لە ${unitPrice.toLocaleString("en-US")} دینار.`
-        : `سعر ${productName} هو ${unitPrice.toLocaleString("en-US")} دينار.`;
-    return { answerText: answer, language: params.language, confidence: 1, factType: "product_price", recordId };
+    return {
+      answerText: catalogPriceAnswer({
+        language: params.language,
+        itemName: productName,
+        unitPriceIqd: unitPrice,
+        commerce,
+      }),
+      language: params.language,
+      confidence: 1,
+      factType: commerce.item_type === "service" ? "service_price" : "product_price",
+      recordId,
+    };
   }
 
-  const available = quantity > 0 && text(product.status, 40) !== "out_of_stock";
-  const answer = params.language === "en"
-    ? `${productName} is ${available ? `available (${quantity} in stock)` : "currently out of stock"}.`
-    : params.language === "ku"
-      ? `${productName} ${available ? `بەردەستە (${quantity} دانە)` : "لە ئێستادا بەردەست نییە"}.`
-      : `${productName} ${available ? `متوفر حاليًا (${quantity} بالمخزون)` : "غير متوفر حاليًا"}.`;
-  return { answerText: answer, language: params.language, confidence: 1, factType: "product_stock", recordId };
+  return {
+    answerText: catalogAvailabilityAnswer({
+      language: params.language,
+      itemName: productName,
+      status: text(product.status, 40),
+      authoritativeQuantity: quantity,
+      commerce,
+      requestedQuantity: commerce.track_inventory
+        ? requestedCatalogQuantity(params.customer)
+        : null,
+    }),
+    language: params.language,
+    confidence: 1,
+    factType: commerce.item_type === "service" ? "service_availability" : "product_stock",
+    recordId,
+  };
 }
 
 function extractOrderId(customerText: string): string | null {
