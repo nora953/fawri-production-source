@@ -97,6 +97,12 @@ function normalizeDecimalDigits(value: string): string {
     .trim();
 }
 
+function stringifyPromotionPayload(value: unknown): string {
+  return JSON.stringify(value, (_key, item) =>
+    item === undefined ? null : item,
+  );
+}
+
 export function catalogMajorAmountToMinor(
   value: string,
   fractionDigits: number,
@@ -217,7 +223,7 @@ export async function createCatalogPromotion(
     {
       method: 'POST',
       headers: { 'Idempotency-Key': idempotencyKey },
-      body: JSON.stringify({ promotion }),
+      body: stringifyPromotionPayload({ promotion }),
     },
     fetcher,
   );
@@ -237,7 +243,10 @@ export async function updateCatalogPromotion(
     `/api/catalog/promotions/${encodeURIComponent(promotionId)}`,
     {
       method: 'PATCH',
-      body: JSON.stringify({ expected_version: expectedVersion, promotion }),
+      body: stringifyPromotionPayload({
+        expected_version: expectedVersion,
+        promotion,
+      }),
     },
     fetcher,
   );
