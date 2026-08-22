@@ -1,0 +1,942 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Bot,
+  Boxes,
+  BriefcaseBusiness,
+  CalendarClock,
+  Image as ImageIcon,
+  Minus,
+  Package,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  Tag,
+  Trash2,
+  Upload,
+  X,
+} from 'lucide-react';
+import { toast } from 'sonner';
+
+import { CatalogImageUploadEditor } from '@/components/catalog/CatalogImageUploadEditor';
+import { CatalogItemTypeEditor } from '@/components/catalog/CatalogItemTypeEditor';
+import { CatalogProductDetailsEditor } from '@/components/catalog/CatalogProductDetailsEditor';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  adjustCatalogInventory,
+  CatalogApiError,
+  createCatalogProduct,
+  deleteCatalogProduct,
+  getCatalogProduct,
+  idempotencyAttemptForRequest,
+  listCatalogProducts,
+  setCatalogInventory,
+  updateCatalogProduct,
+  type CatalogIdempotencyAttempt,
+  type CatalogProduct,
+  type CatalogVariant,
+} from '@/lib/catalogUiApi';
+import { catalogImagePreviewUrl } from '@/lib/catalogMediaUiApi';
+import {
+  catalogItemTracksInventory,
+  catalogProductFormFromProduct,
+  catalogProductInputFromForm,
+  createEmptyCatalogProductForm,
+  validateCatalogProductForm,
+  variantOptionSummary,
+  type CatalogProductFormState,
+} from '@/lib/catalogProductEditor';
+import { useI18n } from '@/lib/i18n';
+import { getCurrentMerchant } from '@/lib/store';
+import type { Lang, ProductStatus } from '@/lib/types';
+
+type PageCopy = {
+  title: string;
+  subtitle: string;
+  add: string;
+  import: string;
+  search: string;
+  all: string;
+  products: string;
+  services: string;
+  product: string;
+  service: string;
+  noItems: string;
+  noItemsHint: string;
+  loading: string;
+  retry: string;
+  loadFailed: string;
+  saveFailed: string;
+  saved: string;
+  updated: string;
+  deleted: string;
+  deleteConfirm: string;
+  versionConflict: string;
+  secureCrypto: string;
+  invalidName: string;
+  invalidPrice: string;
+  invalidQuantity: string;
+  invalidForm: string;
+  name: string;
+  namePlaceholder: string;
+  category: string;
+  categoryPlaceholder: string;
+  salePrice: string;
+  originalPrice: string;
+  price: string;
+  currency: string;
+  quantity: string;
+  inventoryNotTracked: string;
+  duration: string;
+  booking: string;
+  bookingRequired: string;
+  bookingOptional: string;
+  status: string;
+  description: string;
+  descriptionPlaceholder: string;
+  fawri: string;
+  fawriHint: string;
+  images: string;
+  inventory: string;
+  inventorySet: string;
+  inventorySaved: string;
+  inventoryFailed: string;
+  save: string;
+  saving: string;
+  edit: string;
+  create: string;
+  available: string;
+  lowStock: string;
+  unavailable: string;
+  draft: string;
+  hidden: string;
+  minute: string;
+};
+
+const COPY: Record<Lang, PageCopy> = {
+  ar: {
+    title: 'المنتجات والخدمات',
+    subtitle: 'مصدر فوري الموحد لما يبيعه أو يقدمه نشاطك، ويُستخدم للمحادثات والمخزون والكاشير والتقارير.',
+    add: 'إضافة منتج أو خدمة',
+    import: 'استيراد المنتجات',
+    search: 'ابحث بالاسم أو القسم أو SKU أو الباركود...',
+    all: 'الكل',
+    products: 'المنتجات',
+    services: 'الخدمات',
+    product: 'منتج',
+    service: 'خدمة',
+    noItems: 'لا توجد عناصر بعد',
+    noItemsHint: 'أضف أول منتج أو خدمة ليبدأ فوري باستخدام بيانات الكتالوج الموثوقة.',
+    loading: 'جارٍ تحميل الكتالوج...',
+    retry: 'إعادة المحاولة',
+    loadFailed: 'تعذر تحميل الكتالوج من الخادم.',
+    saveFailed: 'تعذر حفظ العنصر.',
+    saved: 'تمت إضافة العنصر.',
+    updated: 'تم تحديث العنصر.',
+    deleted: 'تم حذف العنصر.',
+    deleteConfirm: 'هل تريد حذف هذا العنصر؟',
+    versionConflict: 'تم تعديل هذا العنصر من مكان آخر. حمّلنا أحدث نسخة؛ راجعها ثم احفظ مجددًا.',
+    secureCrypto: 'تعذر إنشاء مفتاح أمان للعملية.',
+    invalidName: 'أدخل اسمًا صحيحًا.',
+    invalidPrice: 'راجع السعر الحالي والسعر السابق.',
+    invalidQuantity: 'راجع كمية المخزون.',
+    invalidForm: 'راجع حقول العنصر قبل الحفظ.',
+    name: 'الاسم',
+    namePlaceholder: 'اسم المنتج أو الخدمة',
+    category: 'القسم',
+    categoryPlaceholder: 'مثال: إلكترونيات، عناية، خدمات منزلية',
+    salePrice: 'السعر',
+    originalPrice: 'السعر السابق / للمقارنة',
+    price: 'السعر',
+    currency: 'د.ع',
+    quantity: 'المخزون',
+    inventoryNotTracked: 'غير متابع',
+    duration: 'المدة',
+    booking: 'الحجز',
+    bookingRequired: 'مطلوب',
+    bookingOptional: 'غير مطلوب',
+    status: 'الحالة',
+    description: 'الوصف',
+    descriptionPlaceholder: 'معلومات واضحة يمكن لفوري الاعتماد عليها عند الرد على العميل.',
+    fawri: 'السماح لفوري باستخدام هذا العنصر',
+    fawriHint: 'عند الإيقاف لن يستخدم فوري هذا المنتج أو الخدمة في الردود الآلية.',
+    images: 'الصور',
+    inventory: 'إدارة المخزون',
+    inventorySet: 'تعيين',
+    inventorySaved: 'تم تحديث المخزون.',
+    inventoryFailed: 'تعذر تحديث المخزون.',
+    save: 'حفظ',
+    saving: 'جارٍ الحفظ...',
+    edit: 'تعديل العنصر',
+    create: 'إضافة عنصر',
+    available: 'متوفر',
+    lowStock: 'مخزون منخفض',
+    unavailable: 'غير متوفر',
+    draft: 'مسودة',
+    hidden: 'مخفي عن فوري',
+    minute: 'دقيقة',
+  },
+  ku: {
+    title: 'بەرهەم و خزمەتگوزارییەکان',
+    subtitle: 'سەرچاوەی یەکگرتووی فەوری بۆ ئەوەی بازرگانییەکەت دەیفرۆشێت یان پێشکەشی دەکات.',
+    add: 'زیادکردنی بەرهەم یان خزمەتگوزاری',
+    import: 'هاوردەکردنی بەرهەم',
+    search: 'گەڕان بە ناو، بەش، SKU یان بارکۆد...',
+    all: 'هەموو',
+    products: 'بەرهەمەکان',
+    services: 'خزمەتگوزارییەکان',
+    product: 'بەرهەم',
+    service: 'خزمەتگوزاری',
+    noItems: 'هیچ بابەتێک نییە',
+    noItemsHint: 'یەکەم بەرهەم یان خزمەتگوزاری زیاد بکە.',
+    loading: 'کەتەلۆگ بار دەکرێت...',
+    retry: 'دووبارە هەوڵدانەوە',
+    loadFailed: 'بارکردنی کەتەلۆگ سەرکەوتوو نەبوو.',
+    saveFailed: 'پاشەکەوتکردنی بابەت سەرکەوتوو نەبوو.',
+    saved: 'بابەت زیادکرا.',
+    updated: 'بابەت نوێکرایەوە.',
+    deleted: 'بابەت سڕایەوە.',
+    deleteConfirm: 'دەتەوێت ئەم بابەتە بسڕیتەوە؟',
+    versionConflict: 'ئەم بابەتە لە شوێنێکی تر گۆڕدراوە. نوێترین وەشان بارکرا.',
+    secureCrypto: 'دروستکردنی کلیلی پاراستن سەرکەوتوو نەبوو.',
+    invalidName: 'ناوێکی دروست بنووسە.',
+    invalidPrice: 'نرخەکان بپشکنە.',
+    invalidQuantity: 'بڕی کۆگا بپشکنە.',
+    invalidForm: 'خانەکان پێش پاشەکەوتکردن بپشکنە.',
+    name: 'ناو',
+    namePlaceholder: 'ناوی بەرهەم یان خزمەتگوزاری',
+    category: 'بەش',
+    categoryPlaceholder: 'نموونە: ئەلیکترۆنیات، خزمەتگوزاری',
+    salePrice: 'نرخ',
+    originalPrice: 'نرخی پێشوو / بەراورد',
+    price: 'نرخ',
+    currency: 'د.ع',
+    quantity: 'کۆگا',
+    inventoryNotTracked: 'بەدواداچوون ناکرێت',
+    duration: 'ماوە',
+    booking: 'حجز',
+    bookingRequired: 'پێویستە',
+    bookingOptional: 'پێویست نییە',
+    status: 'دۆخ',
+    description: 'وەسف',
+    descriptionPlaceholder: 'زانیارییەکی ڕوون کە فەوری بتوانێت پشتی پێ ببەستێت.',
+    fawri: 'ڕێگە بدە فەوری ئەم بابەتە بەکاربهێنێت',
+    fawriHint: 'کاتێک ناچالاکە فەوری لە وەڵامە ئۆتۆماتیکییەکان بەکاری ناهێنێت.',
+    images: 'وێنەکان',
+    inventory: 'بەڕێوەبردنی کۆگا',
+    inventorySet: 'دانان',
+    inventorySaved: 'کۆگا نوێکرایەوە.',
+    inventoryFailed: 'نوێکردنەوەی کۆگا سەرکەوتوو نەبوو.',
+    save: 'پاشەکەوتکردن',
+    saving: 'پاشەکەوت دەکرێت...',
+    edit: 'دەستکاری بابەت',
+    create: 'زیادکردنی بابەت',
+    available: 'بەردەست',
+    lowStock: 'کۆگای کەم',
+    unavailable: 'بەردەست نییە',
+    draft: 'ڕەشنووس',
+    hidden: 'لە فەوری شاردراوەتەوە',
+    minute: 'خولەک',
+  },
+  en: {
+    title: 'Products & Services',
+    subtitle: 'Fawri’s canonical source for what your business sells or provides, used by conversations, inventory, POS, and reports.',
+    add: 'Add product or service',
+    import: 'Import products',
+    search: 'Search by name, category, SKU, or barcode...',
+    all: 'All',
+    products: 'Products',
+    services: 'Services',
+    product: 'Product',
+    service: 'Service',
+    noItems: 'No catalog items yet',
+    noItemsHint: 'Add your first product or service so Fawri can use trusted catalog facts.',
+    loading: 'Loading catalog...',
+    retry: 'Retry',
+    loadFailed: 'Could not load the catalog from the server.',
+    saveFailed: 'Could not save the item.',
+    saved: 'Item added.',
+    updated: 'Item updated.',
+    deleted: 'Item deleted.',
+    deleteConfirm: 'Delete this catalog item?',
+    versionConflict: 'This item changed elsewhere. The latest server version was loaded; review it and save again.',
+    secureCrypto: 'Could not create a secure request key.',
+    invalidName: 'Enter a valid name.',
+    invalidPrice: 'Review current and comparison prices.',
+    invalidQuantity: 'Review inventory quantity.',
+    invalidForm: 'Review the item fields before saving.',
+    name: 'Name',
+    namePlaceholder: 'Product or service name',
+    category: 'Category',
+    categoryPlaceholder: 'e.g. Electronics, Beauty, Home services',
+    salePrice: 'Price',
+    originalPrice: 'Previous / compare price',
+    price: 'Price',
+    currency: 'IQD',
+    quantity: 'Inventory',
+    inventoryNotTracked: 'Not tracked',
+    duration: 'Duration',
+    booking: 'Booking',
+    bookingRequired: 'Required',
+    bookingOptional: 'Not required',
+    status: 'Status',
+    description: 'Description',
+    descriptionPlaceholder: 'Clear information Fawri can rely on when answering customers.',
+    fawri: 'Allow Fawri to use this item',
+    fawriHint: 'When disabled, Fawri will not use this product or service in automated replies.',
+    images: 'Images',
+    inventory: 'Inventory management',
+    inventorySet: 'Set',
+    inventorySaved: 'Inventory updated.',
+    inventoryFailed: 'Could not update inventory.',
+    save: 'Save',
+    saving: 'Saving...',
+    edit: 'Edit item',
+    create: 'Add item',
+    available: 'Available',
+    lowStock: 'Low stock',
+    unavailable: 'Unavailable',
+    draft: 'Draft',
+    hidden: 'Hidden from Fawri',
+    minute: 'min',
+  },
+};
+
+function statusClass(status: ProductStatus): string {
+  if (status === 'available') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  if (status === 'low_stock') return 'border-amber-200 bg-amber-50 text-amber-700';
+  if (status === 'out_of_stock') return 'border-red-200 bg-red-50 text-red-700';
+  if (status === 'draft') return 'border-slate-200 bg-slate-50 text-slate-700';
+  return 'border-zinc-200 bg-zinc-50 text-zinc-700';
+}
+
+function imageUrl(product: CatalogProduct): string | null {
+  const primary = product.image_refs[0];
+  if (!primary) return null;
+  if (primary.url?.trim()) return primary.url.trim();
+  if (primary.storage_key?.trim()) return catalogImagePreviewUrl(primary.storage_key);
+  return null;
+}
+
+function itemType(product: CatalogProduct): 'product' | 'service' {
+  return product.item_type === 'service' ? 'service' : 'product';
+}
+
+function tracksInventory(product: CatalogProduct): boolean {
+  return itemType(product) === 'product' && product.track_inventory !== false;
+}
+
+function inventoryKey(productId: string, variantId?: string): string {
+  return `${productId}:${variantId || 'product'}`;
+}
+
+function upsert(items: CatalogProduct[], product: CatalogProduct): CatalogProduct[] {
+  const found = items.some(item => item.id === product.id);
+  return found
+    ? items.map(item => (item.id === product.id ? product : item))
+    : [product, ...items];
+}
+
+function FawriToggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      aria-pressed={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${checked ? 'bg-orange-500' : 'bg-zinc-300'}`}
+    >
+      <span className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-all ${checked ? 'right-7' : 'right-1'}`} />
+    </button>
+  );
+}
+
+function InventoryControl({
+  copy,
+  product,
+  variant,
+  value,
+  busy,
+  onValue,
+  onSet,
+  onAdjust,
+}: {
+  copy: PageCopy;
+  product: CatalogProduct;
+  variant?: CatalogVariant;
+  value: string;
+  busy: boolean;
+  onValue: (value: string) => void;
+  onSet: () => void;
+  onAdjust: (delta: number) => void;
+}) {
+  return (
+    <div className="rounded-xl border bg-background p-3">
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-bold">{variant?.name || product.name}</p>
+          {variant && variantOptionSummary(variant) && (
+            <p className="text-xs text-muted-foreground">{variantOptionSummary(variant)}</p>
+          )}
+        </div>
+        <Badge variant="outline" className="rounded-full">{variant?.stock_quantity ?? product.stock_quantity}</Badge>
+      </div>
+      <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2">
+        <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={busy} onClick={() => onAdjust(-1)}>
+          <Minus className="h-4 w-4" />
+        </Button>
+        <Input type="number" min={0} dir="ltr" value={value} onChange={event => onValue(event.target.value)} className="h-10 rounded-xl" />
+        <Button type="button" variant="outline" className="h-10 rounded-xl" disabled={busy} onClick={onSet}>{copy.inventorySet}</Button>
+        <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={busy} onClick={() => onAdjust(1)}>
+          <Plus className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export default function CommerceCatalogPage() {
+  const { lang, dir, isRTL } = useI18n();
+  const copy = COPY[lang] || COPY.en;
+  const merchant = getCurrentMerchant();
+
+  const createAttempt = useRef<CatalogIdempotencyAttempt | null>(null);
+  const inventoryAttempt = useRef<CatalogIdempotencyAttempt | null>(null);
+
+  const [items, setItems] = useState<CatalogProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reload, setReload] = useState(0);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<'all' | 'product' | 'service'>('all');
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<CatalogProductFormState>(() => createEmptyCatalogProductForm());
+  const [saving, setSaving] = useState(false);
+  const [inventoryValues, setInventoryValues] = useState<Record<string, string>>({});
+  const [inventoryBusy, setInventoryBusy] = useState<string | null>(null);
+
+  const statusOptions = useMemo(() => [
+    { value: 'available' as const, label: copy.available },
+    { value: 'low_stock' as const, label: copy.lowStock },
+    { value: 'out_of_stock' as const, label: copy.unavailable },
+    { value: 'draft' as const, label: copy.draft },
+    { value: 'hidden_from_fawri' as const, label: copy.hidden },
+  ], [copy]);
+
+  const statusLabels = useMemo(
+    () => Object.fromEntries(statusOptions.map(option => [option.value, option.label])) as Record<ProductStatus, string>,
+    [statusOptions],
+  );
+
+  const syncInventory = (product: CatalogProduct) => {
+    if (!tracksInventory(product)) return;
+    setInventoryValues(current => {
+      const next = { ...current };
+      if (product.variants.length > 0) {
+        for (const variant of product.variants) next[inventoryKey(product.id, variant.id)] = String(variant.stock_quantity);
+        delete next[inventoryKey(product.id)];
+      } else {
+        next[inventoryKey(product.id)] = String(product.stock_quantity);
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      if (!merchant) {
+        if (active) setLoading(false);
+        return;
+      }
+      setLoading(true);
+      setLoadError(false);
+      try {
+        const loaded = await listCatalogProducts();
+        if (!active) return;
+        setItems(loaded);
+        const drafts: Record<string, string> = {};
+        for (const product of loaded) {
+          if (!tracksInventory(product)) continue;
+          if (product.variants.length > 0) {
+            for (const variant of product.variants) drafts[inventoryKey(product.id, variant.id)] = String(variant.stock_quantity);
+          } else {
+            drafts[inventoryKey(product.id)] = String(product.stock_quantity);
+          }
+        }
+        setInventoryValues(drafts);
+      } catch (error) {
+        console.error('Catalog load failed:', error);
+        if (active) {
+          setLoadError(true);
+          toast.error(copy.loadFailed);
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [merchant?.id, reload, copy.loadFailed]);
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase();
+    return items.filter(product => {
+      const type = itemType(product);
+      if (filter !== 'all' && type !== filter) return false;
+      if (!needle) return true;
+      const values = [
+        product.name,
+        product.category,
+        product.external_ref,
+        product.sku,
+        product.barcode,
+        ...product.variants.flatMap(variant => [variant.name, variant.sku, variant.barcode, ...Object.values(variant.options)]),
+      ];
+      return values.filter(Boolean).some(value => String(value).toLocaleLowerCase().includes(needle));
+    });
+  }, [items, filter, query]);
+
+  if (!merchant) return null;
+
+  const openCreate = () => {
+    createAttempt.current = null;
+    setEditingId(null);
+    setForm(createEmptyCatalogProductForm());
+    setFormOpen(true);
+  };
+
+  const openEdit = (product: CatalogProduct) => {
+    createAttempt.current = null;
+    setEditingId(product.id);
+    setForm(catalogProductFormFromProduct(product));
+    setFormOpen(true);
+  };
+
+  const closeForm = () => {
+    if (saving) return;
+    createAttempt.current = null;
+    setEditingId(null);
+    setForm(createEmptyCatalogProductForm());
+    setFormOpen(false);
+  };
+
+  const patchForm = (patch: Partial<CatalogProductFormState>) => {
+    setForm(current => ({ ...current, ...patch }));
+  };
+
+  const validate = () => {
+    const code = validateCatalogProductForm(form);
+    if (!code) return true;
+    if (code === 'name') toast.error(copy.invalidName);
+    else if (code === 'price' || code === 'compare_price') toast.error(copy.invalidPrice);
+    else if (code === 'quantity' || code === 'variant_quantity') toast.error(copy.invalidQuantity);
+    else toast.error(copy.invalidForm);
+    return false;
+  };
+
+  const loadConflict = async (productId: string, error: unknown) => {
+    if (!(error instanceof CatalogApiError) || error.code !== 'CATALOG_VERSION_CONFLICT') return false;
+    try {
+      const latest = await getCatalogProduct(productId);
+      setItems(current => upsert(current, latest));
+      syncInventory(latest);
+      if (editingId === productId) setForm(catalogProductFormFromProduct(latest));
+    } catch (reloadError) {
+      console.error('Catalog conflict reload failed:', reloadError);
+    }
+    toast.error(copy.versionConflict);
+    return true;
+  };
+
+  const save = async () => {
+    if (saving || !validate()) return;
+    setSaving(true);
+    try {
+      const input = catalogProductInputFromForm(form, editingId ? items.find(item => item.id === editingId) : undefined);
+      if (editingId) {
+        const current = items.find(item => item.id === editingId);
+        if (!current) throw new Error('catalog item missing');
+        try {
+          const updated = await updateCatalogProduct(current.id, current.version, input);
+          setItems(existing => upsert(existing, updated));
+          syncInventory(updated);
+          toast.success(copy.updated);
+          closeForm();
+        } catch (error) {
+          if (await loadConflict(current.id, error)) return;
+          throw error;
+        }
+      } else {
+        let attempt: CatalogIdempotencyAttempt;
+        try {
+          attempt = idempotencyAttemptForRequest(createAttempt.current, 'catalog-create', input);
+        } catch {
+          toast.error(copy.secureCrypto);
+          return;
+        }
+        createAttempt.current = attempt;
+        const created = await createCatalogProduct(input, attempt.key);
+        createAttempt.current = null;
+        setItems(existing => upsert(existing, created));
+        syncInventory(created);
+        toast.success(copy.saved);
+        closeForm();
+      }
+    } catch (error) {
+      console.error('Catalog save failed:', error);
+      toast.error(error instanceof CatalogApiError ? `${copy.saveFailed} (${error.code})` : copy.saveFailed);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (product: CatalogProduct) => {
+    if (!window.confirm(copy.deleteConfirm)) return;
+    try {
+      await deleteCatalogProduct(product.id, product.version);
+      setItems(current => current.filter(item => item.id !== product.id));
+      toast.success(copy.deleted);
+    } catch (error) {
+      if (await loadConflict(product.id, error)) return;
+      toast.error(copy.saveFailed);
+    }
+  };
+
+  const parseQuantity = (raw: string): number | null => {
+    const parsed = Number(raw);
+    return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+  };
+
+  const setInventory = async (product: CatalogProduct, variant?: CatalogVariant) => {
+    const key = inventoryKey(product.id, variant?.id);
+    const quantity = parseQuantity(inventoryValues[key] ?? '');
+    if (quantity === null) {
+      toast.error(copy.invalidQuantity);
+      return;
+    }
+    setInventoryBusy(key);
+    try {
+      const updated = await setCatalogInventory({
+        productId: product.id,
+        expectedVersion: product.version,
+        quantity,
+        ...(variant ? { variantId: variant.id } : {}),
+      });
+      setItems(current => upsert(current, updated));
+      syncInventory(updated);
+      toast.success(copy.inventorySaved);
+    } catch (error) {
+      if (await loadConflict(product.id, error)) return;
+      toast.error(copy.inventoryFailed);
+    } finally {
+      setInventoryBusy(null);
+    }
+  };
+
+  const adjustInventory = async (product: CatalogProduct, delta: number, variant?: CatalogVariant) => {
+    const key = inventoryKey(product.id, variant?.id);
+    const request = {
+      productId: product.id,
+      expectedVersion: product.version,
+      delta,
+      ...(variant ? { variantId: variant.id } : {}),
+      reason: 'merchant commerce catalog inventory UX',
+    };
+    let attempt: CatalogIdempotencyAttempt;
+    try {
+      attempt = idempotencyAttemptForRequest(inventoryAttempt.current, 'catalog-inventory-adjust', request);
+    } catch {
+      toast.error(copy.secureCrypto);
+      return;
+    }
+    inventoryAttempt.current = attempt;
+    setInventoryBusy(key);
+    try {
+      const updated = await adjustCatalogInventory(request, attempt.key);
+      inventoryAttempt.current = null;
+      setItems(current => upsert(current, updated));
+      syncInventory(updated);
+      toast.success(copy.inventorySaved);
+    } catch (error) {
+      if (await loadConflict(product.id, error)) return;
+      toast.error(copy.inventoryFailed);
+    } finally {
+      setInventoryBusy(null);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background p-4 pb-28" dir={dir}>
+      <header className="mb-5 space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className={isRTL ? 'text-right' : 'text-left'}>
+            <h1 className="text-3xl font-extrabold tracking-tight">{copy.title}</h1>
+            <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{copy.subtitle}</p>
+          </div>
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <Button type="button" onClick={openCreate} className="h-11 rounded-xl bg-orange-500 px-4 font-bold text-white hover:bg-orange-600">
+              <Plus className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />
+              {copy.add}
+            </Button>
+            <Button type="button" variant="outline" onClick={() => { window.location.href = '/dashboard/products/import'; }} className="h-11 rounded-xl px-4 font-bold">
+              <Upload className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />
+              {copy.import}
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-[1fr_auto]">
+          <div className="relative">
+            <Search className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground ${isRTL ? 'right-3' : 'left-3'}`} />
+            <Input value={query} onChange={event => setQuery(event.target.value)} placeholder={copy.search} className={`h-12 rounded-2xl ${isRTL ? 'pr-10' : 'pl-10'}`} />
+          </div>
+          <div className="flex rounded-2xl border bg-card p-1">
+            {([
+              ['all', copy.all],
+              ['product', copy.products],
+              ['service', copy.services],
+            ] as const).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setFilter(value)}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${filter === value ? 'bg-orange-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted'}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      {loading ? (
+        <div className="rounded-3xl border bg-card p-10 text-center shadow-sm">
+          <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" />
+          <p className="text-lg text-muted-foreground">{copy.loading}</p>
+        </div>
+      ) : loadError ? (
+        <div className="rounded-3xl border border-destructive/30 bg-card p-10 text-center shadow-sm">
+          <p className="font-semibold text-destructive">{copy.loadFailed}</p>
+          <Button type="button" variant="outline" className="mt-4 rounded-xl" onClick={() => setReload(value => value + 1)}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            {copy.retry}
+          </Button>
+        </div>
+      ) : visible.length === 0 ? (
+        <div className="rounded-3xl border bg-card p-10 text-center shadow-sm">
+          <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" />
+          <p className="text-lg font-semibold text-muted-foreground">{copy.noItems}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{copy.noItemsHint}</p>
+        </div>
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+          {visible.map(product => {
+            const type = itemType(product);
+            const primary = imageUrl(product);
+            const service = product.service_details;
+            return (
+              <article key={product.id} className="overflow-hidden rounded-3xl border bg-card shadow-sm transition hover:shadow-md">
+                {primary && (
+                  <div className="h-44 overflow-hidden border-b bg-muted/20">
+                    <img src={primary} alt={product.image_refs[0]?.alt || product.name} className="h-full w-full object-cover" />
+                  </div>
+                )}
+                <div className="border-b p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="mb-2 flex flex-wrap gap-2">
+                        <Badge variant="outline" className="rounded-full">
+                          {type === 'service' ? <BriefcaseBusiness className="mr-1 h-3 w-3" /> : <Package className="mr-1 h-3 w-3" />}
+                          {type === 'service' ? copy.service : copy.product}
+                        </Badge>
+                        <Badge variant="outline" className={`rounded-full ${statusClass(product.status)}`}>{statusLabels[product.status]}</Badge>
+                        {product.allow_fawri_reply && (
+                          <Badge variant="outline" className="rounded-full border-orange-200 bg-orange-50 text-orange-700">
+                            <Bot className="mr-1 h-3 w-3" /> Fawri
+                          </Badge>
+                        )}
+                        {product.image_refs.length > 0 && (
+                          <Badge variant="outline" className="rounded-full"><ImageIcon className="mr-1 h-3 w-3" />{product.image_refs.length}</Badge>
+                        )}
+                      </div>
+                      <h2 className="line-clamp-2 text-xl font-extrabold">{product.name}</h2>
+                      {product.category && <p className="mt-1 text-sm text-muted-foreground">{product.category}</p>}
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-2">
+                      <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" onClick={() => openEdit(product)}><Pencil className="h-4 w-4" /></Button>
+                      <Button type="button" variant="destructive" size="icon" className="h-10 w-10 rounded-xl" onClick={() => void remove(product)}><Trash2 className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 p-4">
+                  <div className="rounded-2xl bg-muted/40 p-3">
+                    <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Tag className="h-4 w-4" />{copy.price}</div>
+                    <p className="text-xl font-extrabold">
+                      {service?.price_type === 'custom'
+                        ? '—'
+                        : service?.price_type === 'free'
+                          ? '0'
+                          : product.price_iqd.toLocaleString(lang === 'en' ? 'en-US' : 'ar-IQ')} {service?.price_type === 'custom' ? '' : copy.currency}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-muted/40 p-3">
+                    {type === 'service' ? (
+                      <>
+                        <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{copy.duration}</div>
+                        <p className="text-xl font-extrabold">{service?.duration_minutes ? `${service.duration_minutes} ${copy.minute}` : '—'}</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Boxes className="h-4 w-4" />{copy.quantity}</div>
+                        <p className="text-xl font-extrabold">{tracksInventory(product) ? product.stock_quantity.toLocaleString() : copy.inventoryNotTracked}</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {type === 'service' && (
+                  <div className="px-4 pb-4">
+                    <div className="rounded-2xl bg-muted/20 p-3 text-sm">
+                      <span className="font-bold">{copy.booking}: </span>
+                      <span className="text-muted-foreground">{service?.booking_required === false ? copy.bookingOptional : copy.bookingRequired}</span>
+                    </div>
+                  </div>
+                )}
+
+                {tracksInventory(product) && (
+                  <div className="px-4 pb-4">
+                    <div className="rounded-2xl bg-muted/20 p-3">
+                      <p className="mb-3 text-sm font-bold">{copy.inventory}</p>
+                      <div className="space-y-2">
+                        {product.variants.length > 0
+                          ? product.variants.map(variant => {
+                              const key = inventoryKey(product.id, variant.id);
+                              return (
+                                <InventoryControl
+                                  key={variant.id}
+                                  copy={copy}
+                                  product={product}
+                                  variant={variant}
+                                  value={inventoryValues[key] ?? String(variant.stock_quantity)}
+                                  busy={inventoryBusy === key}
+                                  onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
+                                  onSet={() => void setInventory(product, variant)}
+                                  onAdjust={delta => void adjustInventory(product, delta, variant)}
+                                />
+                              );
+                            })
+                          : (() => {
+                              const key = inventoryKey(product.id);
+                              return (
+                                <InventoryControl
+                                  copy={copy}
+                                  product={product}
+                                  value={inventoryValues[key] ?? String(product.stock_quantity)}
+                                  busy={inventoryBusy === key}
+                                  onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
+                                  onSet={() => void setInventory(product)}
+                                  onAdjust={delta => void adjustInventory(product, delta)}
+                                />
+                              );
+                            })()}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {product.description && <div className="px-4 pb-4"><p className="rounded-2xl bg-muted/30 p-3 text-sm leading-7 text-muted-foreground">{product.description}</p></div>}
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {formOpen && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-6 backdrop-blur-[2px] md:items-center md:px-4 md:py-6">
+          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[2rem] bg-background shadow-2xl md:max-h-[calc(100dvh-4rem)]">
+            <div className="shrink-0 border-b px-5 py-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold">{editingId ? copy.edit : copy.create}</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">{copy.subtitle}</p>
+                </div>
+                <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl" onClick={closeForm} disabled={saving}><X className="h-4 w-4" /></Button>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
+              <CatalogItemTypeEditor lang={lang} form={form} onChange={patchForm} />
+
+              <label className="space-y-1 text-sm font-semibold">
+                <span>{copy.name}</span>
+                <Input value={form.name} onChange={event => patchForm({ name: event.target.value })} placeholder={copy.namePlaceholder} className="h-11 rounded-xl" />
+              </label>
+
+              <label className="space-y-1 text-sm font-semibold">
+                <span>{copy.category}</span>
+                <Input value={form.category} onChange={event => patchForm({ category: event.target.value })} placeholder={copy.categoryPlaceholder} className="h-11 rounded-xl" />
+              </label>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="space-y-1 text-sm font-semibold">
+                  <span>{copy.salePrice}</span>
+                  <Input
+                    type="number"
+                    min={0}
+                    dir="ltr"
+                    value={form.current_price}
+                    onChange={event => patchForm({ current_price: event.target.value })}
+                    disabled={form.item_type === 'service' && (form.service_price_type === 'free' || form.service_price_type === 'custom')}
+                    placeholder="15000"
+                    className="h-11 rounded-xl"
+                  />
+                </label>
+                <label className="space-y-1 text-sm font-semibold">
+                  <span>{copy.originalPrice}</span>
+                  <Input type="number" min={0} dir="ltr" value={form.original_price} onChange={event => patchForm({ original_price: event.target.value })} placeholder="20000" className="h-11 rounded-xl" />
+                </label>
+              </div>
+
+              <CatalogProductDetailsEditor lang={lang} form={form} editing={Boolean(editingId)} onChange={patchForm} />
+
+              <CatalogImageUploadEditor images={form.image_refs} onChange={image_refs => patchForm({ image_refs })} maxImages={20} />
+
+              <label className="space-y-1 text-sm font-semibold">
+                <span>{copy.status}</span>
+                <select value={form.status} onChange={event => patchForm({ status: event.target.value as ProductStatus })} className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
+                  {statusOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </label>
+
+              <label className="space-y-1 text-sm font-semibold">
+                <span>{copy.description}</span>
+                <Textarea value={form.description} onChange={event => patchForm({ description: event.target.value })} placeholder={copy.descriptionPlaceholder} rows={4} className="rounded-xl" />
+              </label>
+
+              <div className="flex items-start justify-between gap-4 rounded-2xl border bg-muted/20 p-4">
+                <div>
+                  <p className="text-sm font-bold">{copy.fawri}</p>
+                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.fawriHint}</p>
+                </div>
+                <FawriToggle checked={form.allow_fawri_reply} onChange={allow_fawri_reply => patchForm({ allow_fawri_reply })} />
+              </div>
+            </div>
+
+            <div className="shrink-0 border-t px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              <Button type="button" onClick={() => void save()} disabled={saving} className="h-12 w-full rounded-2xl bg-orange-500 text-base font-bold text-white hover:bg-orange-600 disabled:opacity-60">
+                {saving ? copy.saving : copy.save}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
