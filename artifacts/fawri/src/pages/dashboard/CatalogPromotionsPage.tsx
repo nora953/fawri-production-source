@@ -16,7 +16,11 @@ import {
   type CatalogPromotionInput,
   type CatalogPromotionScope,
 } from '@/lib/catalogPromotionUiApi';
-import { listCatalogProducts, type CatalogProduct } from '@/lib/catalogUiApi';
+import {
+  createStrongIdempotencyKey,
+  listCatalogProducts,
+  type CatalogProduct,
+} from '@/lib/catalogUiApi';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 
@@ -282,8 +286,8 @@ export default function CatalogPromotionsPage() {
     setEditorOpen(true);
   };
 
-  const closeEditor = () => {
-    if (saving) return;
+  const closeEditor = (force = false) => {
+    if (saving && !force) return;
     createKey.current = null;
     setEditing(null);
     setDraft(emptyDraft());
@@ -293,7 +297,7 @@ export default function CatalogPromotionsPage() {
   const promotionInput = (): CatalogPromotionInput | null => {
     const name = draft.name.trim();
     if (!name || !draft.starts_local || !draft.ends_local) return null;
-    if (new Date(draft.ends_local).getTime() <= new Date(draft.starts_local).getTime()) return null;
+    if (draft.ends_local <= draft.starts_local) return null;
 
     if (draft.scope === 'delivery') {
       const minimum = draft.minimum_subtotal.trim()
@@ -369,16 +373,18 @@ export default function CatalogPromotionsPage() {
         setPromotions(current => current.map(item => item.id === updated.id ? updated : item));
         toast.success(copy.updated);
       } else {
-        const result = await createCatalogPromotion(input, createKey.current || undefined);
+        const key = createKey.current || createStrongIdempotencyKey('catalog-promotion-create');
+        createKey.current = key;
+        const result = await createCatalogPromotion(input, key);
         createKey.current = null;
         setPromotions(current => [result.promotion, ...current.filter(item => item.id !== result.promotion.id)]);
         toast.success(copy.created);
       }
       setSaving(false);
-      closeEditor();
+      closeEditor(true);
     } catch (error) {
       console.error('Promotion save failed:', error);
-      if (error instanceof CatalogPromotionApiError && error.code === 'COMMERCE_PROMOTION_IDEMPOTENCY_KEY_REQUIRED') {
+      if (error instanceof CatalogPromotionApiError && error.code === 'COMMERCE_PROMOTION_IDEMPOTENCY_CONFLICT') {
         createKey.current = null;
       }
       toast.error(error instanceof CatalogPromotionApiError ? `${copy.saveFailed} (${error.code})` : copy.saveFailed);
@@ -576,7 +582,7 @@ export default function CatalogPromotionsPage() {
               </label>
             </div>
             <div className="grid shrink-0 grid-cols-2 gap-3 border-t px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-              <Button type="button" variant="outline" className="h-11 rounded-xl" disabled={saving} onClick={closeEditor}>{copy.cancel}</Button>
+              <Button type="button" variant="outline" className="h-11 rounded-xl" disabled={saving} onClick={() => closeEditor()}>{copy.cancel}</Button>
               <Button type="button" className="h-11 rounded-xl bg-orange-500 font-bold text-white hover:bg-orange-600" disabled={saving} onClick={() => void save()}>{saving ? copy.saving : copy.save}</Button>
             </div>
           </div>
