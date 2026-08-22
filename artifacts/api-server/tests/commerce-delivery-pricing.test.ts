@@ -44,6 +44,7 @@ test("scheduled promotion makes remaining delivery fee free inside its window", 
   });
   assert.equal(quote.pre_promotion_fee_iqd, 5_000);
   assert.equal(quote.effective_fee_iqd, 0);
+  assert.equal(quote.free_delivery_applied, true);
   assert.equal(quote.total_iqd, 30_000);
   assert.equal(quote.promotion_applied, true);
   assert.equal(quote.promotion_id, "promo-delivery");
