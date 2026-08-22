@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
   foreignKey,
@@ -39,9 +40,9 @@ export const commercePromotions = pgTable(
     productId: text("product_id"),
     variantId: text("variant_id"),
     percentageBps: integer("percentage_bps"),
-    amountMinor: integer("amount_minor"),
+    amountMinor: bigint("amount_minor", { mode: "number" }),
     currencyCode: text("currency_code").notNull().default("IQD"),
-    minimumSubtotalMinor: integer("minimum_subtotal_minor"),
+    minimumSubtotalMinor: bigint("minimum_subtotal_minor", { mode: "number" }),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
     scheduleTimezone: text("schedule_timezone").notNull(),
