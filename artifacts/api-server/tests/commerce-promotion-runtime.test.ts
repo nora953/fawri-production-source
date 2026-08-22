@@ -112,6 +112,63 @@ test("fixed amount and fixed price promotions never mutate base amount", () => {
   assert.equal(fixedPrice.effective_amount_minor, 35_000);
 });
 
+test("fixed price that would increase price is ignored as a promotion", () => {
+  const result = resolveEffectiveCatalogPrice({
+    merchantId: "merchant-1",
+    productId: "product-1",
+    baseAmountMinor: 50_000,
+    currencyCode: "IQD",
+    promotions: [
+      promotion({
+        effect: "fixed_price",
+        percentage_bps: undefined,
+        amount_minor: 60_000,
+      }),
+    ],
+    at: "2026-09-04T12:00:00.000Z",
+  });
+  assert.equal(result.effective_amount_minor, 50_000);
+  assert.equal(result.discount_amount_minor, 0);
+  assert.equal(result.promotion_applied, false);
+});
+
+test("non-reducing variant price does not block a valid product promotion", () => {
+  const result = resolveEffectiveCatalogPrice({
+    merchantId: "merchant-1",
+    productId: "product-1",
+    variantId: "variant-red",
+    baseAmountMinor: 50_000,
+    currencyCode: "IQD",
+    promotions: [
+      promotion({ id: "product-promo", percentage_bps: 1000 }),
+      promotion({
+        id: "variant-price-up",
+        variant_id: "variant-red",
+        effect: "fixed_price",
+        percentage_bps: undefined,
+        amount_minor: 60_000,
+      }),
+    ],
+    at: "2026-09-04T12:00:00.000Z",
+  });
+  assert.equal(result.promotion_id, "product-promo");
+  assert.equal(result.effective_amount_minor, 45_000);
+});
+
+test("zero-priced item does not claim a zero-value discount", () => {
+  const result = resolveEffectiveCatalogPrice({
+    merchantId: "merchant-1",
+    productId: "product-1",
+    baseAmountMinor: 0,
+    currencyCode: "IQD",
+    promotions: [promotion()],
+    at: "2026-09-04T12:00:00.000Z",
+  });
+  assert.equal(result.effective_amount_minor, 0);
+  assert.equal(result.discount_amount_minor, 0);
+  assert.equal(result.promotion_applied, false);
+});
+
 test("variant-specific promotion wins over product-level promotion", () => {
   const result = resolveEffectiveCatalogPrice({
     merchantId: "merchant-1",
