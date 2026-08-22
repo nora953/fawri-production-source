@@ -37,6 +37,7 @@ import {
   type CatalogProductFormState,
   type CatalogVariantDraft,
 } from '@/lib/catalogProductEditor';
+import { CatalogImageUploadEditor } from '@/components/catalog/CatalogImageUploadEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -482,66 +483,13 @@ function ImageReferencesEditor({
   images: CatalogImageDraft[];
   onChange: (images: CatalogImageDraft[]) => void;
 }) {
-  const updateImage = (index: number, patch: Partial<CatalogImageDraft>) => {
-    onChange(images.map((image, itemIndex) => (itemIndex === index ? { ...image, ...patch } : image)));
-  };
-
   return (
-    <div className="space-y-3 rounded-2xl border bg-muted/10 p-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <p className="text-sm font-bold">{localMessage(lang, 'images')}</p>
-          <p className="mt-1 max-w-2xl text-xs leading-5 text-muted-foreground">
-            {localMessage(lang, 'imageReferenceOnly')}
-          </p>
-        </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="rounded-xl"
-          onClick={() => onChange([...images, createEmptyCatalogImageDraft()])}
-        >
-          <Plus className="mr-1 h-4 w-4" />
-          {localMessage(lang, 'addImage')}
-        </Button>
-      </div>
-
-      {images.map((image, index) => (
-        <div key={image.key} className="grid gap-2 rounded-xl border bg-background p-3 md:grid-cols-2">
-          <Input
-            dir="ltr"
-            value={image.url}
-            onChange={event => updateImage(index, { url: event.target.value })}
-            placeholder={localMessage(lang, 'imageUrl')}
-            className="h-10 rounded-xl"
-          />
-          <Input
-            dir="ltr"
-            value={image.storage_key}
-            onChange={event => updateImage(index, { storage_key: event.target.value })}
-            placeholder={localMessage(lang, 'storageKey')}
-            className="h-10 rounded-xl"
-          />
-          <Input
-            value={image.alt}
-            onChange={event => updateImage(index, { alt: event.target.value })}
-            placeholder={localMessage(lang, 'imageAlt')}
-            className="h-10 rounded-xl md:col-span-2"
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="justify-self-start rounded-xl text-destructive"
-            onClick={() => onChange(images.filter((_, itemIndex) => itemIndex !== index))}
-          >
-            <Trash2 className="mr-1 h-4 w-4" />
-            {localMessage(lang, 'deleteFailed').split(' ')[0] || 'Remove'}
-          </Button>
-        </div>
-      ))}
-    </div>
+    <CatalogImageUploadEditor
+      key={lang}
+      images={images}
+      onChange={onChange}
+      maxImages={20}
+    />
   );
 }
 
