@@ -19,6 +19,7 @@ import {
 } from "./catalogInventoryRuntime";
 import {
   applyCatalogCommerceFields,
+  applyCatalogInventoryTrackingState,
   catalogCommerceFieldsOf,
   catalogCommerceFromMetadata,
   catalogCommerceMetadataPatch,
@@ -646,9 +647,9 @@ function assertIdempotencyRequest(
 }
 
 function requireProductFromList(
-  products: CatalogProduct[],
+  products: CatalogCommerceProduct[],
   id: string,
-): CatalogProduct {
+): CatalogCommerceProduct {
   const product = products.find((item) => item.id === id);
   if (!product) {
     throw new CatalogRuntimeError(
@@ -734,16 +735,13 @@ export async function createCatalogProductAuthoritative(params: {
       now: new Date().toISOString(),
       forceCreate: true,
     });
-    const product = applyCatalogCommerceFields(
-      baseProduct,
-      normalizeCatalogCommerceInput(params.input),
-    );
-    if (!product.track_inventory) {
-      product.stock_quantity = 0;
-      if (product.status === "out_of_stock" || product.status === "low_stock") {
-        product.status = "available";
-      }
-    }
+    const product = applyCatalogInventoryTrackingState({
+      product: applyCatalogCommerceFields(
+        baseProduct,
+        normalizeCatalogCommerceInput(params.input),
+      ),
+      input: params.input,
+    });
     if (products.some((item) => item.id === product.id)) {
       throw new CatalogRuntimeError(
         "CATALOG_PRODUCT_ID_DUPLICATE",
@@ -831,16 +829,13 @@ export async function importCatalogProductsAuthoritative(params: {
         now,
         forceCreate: true,
       });
-      const product = applyCatalogCommerceFields(
-        baseProduct,
-        normalizeCatalogCommerceInput(item),
-      );
-      if (!product.track_inventory) {
-        product.stock_quantity = 0;
-        if (product.status === "out_of_stock" || product.status === "low_stock") {
-          product.status = "available";
-        }
-      }
+      const product = applyCatalogInventoryTrackingState({
+        product: applyCatalogCommerceFields(
+          baseProduct,
+          normalizeCatalogCommerceInput(item),
+        ),
+        input: item,
+      });
       if (!product.external_ref && !product.sku && !product.barcode) {
         throw new CatalogRuntimeError(
           "CATALOG_IMPORT_IDENTITY_REQUIRED",
@@ -915,17 +910,14 @@ export async function updateCatalogProductAuthoritative(params: {
       existing: current,
       now: new Date().toISOString(),
     });
-    const product = applyCatalogCommerceFields(
-      baseProduct,
-      normalizeCatalogCommerceInput(params.input, catalogCommerceFieldsOf(current)),
-    );
-    if (!product.track_inventory) {
-      product.stock_quantity = 0;
-      for (const variant of product.variants) variant.stock_quantity = 0;
-      if (product.status === "out_of_stock" || product.status === "low_stock") {
-        product.status = "available";
-      }
-    }
+    const product = applyCatalogInventoryTrackingState({
+      product: applyCatalogCommerceFields(
+        baseProduct,
+        normalizeCatalogCommerceInput(params.input, catalogCommerceFieldsOf(current)),
+      ),
+      input: params.input,
+      previous: current,
+    });
     assertCatalogProductUniqueness(
       products.filter((item) => item.id !== productId),
       [product],
