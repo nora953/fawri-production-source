@@ -5,6 +5,7 @@
   "preimage_files": [
     "commerce-promotions.ts",
     "index.ts",
-    "merchants.ts"
+    "merchants.ts",
+    "tenant-security.ts"
   ]
 }
