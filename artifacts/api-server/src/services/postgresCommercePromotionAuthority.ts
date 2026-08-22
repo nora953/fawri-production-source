@@ -28,6 +28,11 @@ export type CommercePromotionView = CommercePromotionRule & {
   ends_local: string;
 };
 
+export type CommercePromotionCreateResult = {
+  promotion: CommercePromotionView;
+  replayed: boolean;
+};
+
 type MerchantRegionRow = {
   id: string;
   country_code: string;
@@ -53,6 +58,7 @@ type PromotionRow = {
   priority: number;
   enabled: boolean;
   version: number;
+  metadata: Record<string, unknown> | null;
   created_at: Date;
   updated_at: Date;
 };
@@ -181,16 +187,41 @@ function postgresRequired(): void {
   }
 }
 
+function idempotencyKey(value: unknown): string {
+  const key = text(value, 200);
+  if (key.length < 8) {
+    throw new CommercePromotionError(
+      "COMMERCE_PROMOTION_IDEMPOTENCY_KEY_REQUIRED",
+      "a stable Idempotency-Key of at least 8 characters is required",
+      400,
+    );
+  }
+  return key;
+}
+
+function sha256(value: string): string {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+function promotionIdForKey(merchantId: string, key: string): string {
+  return `promo_${sha256(`${merchantId}\0${key}`).slice(0, 32)}`;
+}
+
+function inputRequestHash(input: PromotionInput): string {
+  return sha256(JSON.stringify(input));
+}
+
 async function merchantRegion(
   target: OperationalQueryTarget,
   merchantId: string,
+  lock = false,
 ): Promise<MerchantRegionRow> {
   const rows = await operationalQueryRows<MerchantRegionRow>(
     target,
     `SELECT id, country_code, timezone, currency_code
        FROM merchants
       WHERE id = $1
-      LIMIT 2`,
+      LIMIT 2${lock ? " FOR UPDATE" : ""}`,
     [merchantId],
   );
   if (rows.length !== 1) {
@@ -240,7 +271,6 @@ function rowToRule(row: PromotionRow): CommercePromotionRule {
     enabled: row.enabled,
     version: integer(row.version, "version", 1, Number.MAX_SAFE_INTEGER),
   };
-  // Lifecycle resolution validates the complete rule contract as well.
   commercePromotionLifecycleAt(rule);
   return rule;
 }
@@ -270,7 +300,7 @@ async function promotionRows(
     `SELECT id, merchant_id, name, scope, effect, product_id, variant_id,
             percentage_bps, amount_minor, currency_code, minimum_subtotal_minor,
             starts_at, ends_at, schedule_timezone, priority, enabled, version,
-            created_at, updated_at
+            metadata, created_at, updated_at
        FROM commerce_promotions
       WHERE merchant_id = $1
       ORDER BY starts_at DESC, id ASC${lock ? " FOR UPDATE" : ""}`,
@@ -536,10 +566,12 @@ export async function listCommercePromotionsAuthoritative(
 
 export async function createCommercePromotionAuthoritative(params: {
   merchantId: unknown;
+  idempotencyKey: unknown;
   input: unknown;
-}): Promise<CommercePromotionView> {
+}): Promise<CommercePromotionCreateResult> {
   postgresRequired();
   const merchantId = text(params.merchantId, 200);
+  const key = idempotencyKey(params.idempotencyKey);
   if (!merchantId) {
     throw new CommercePromotionError(
       "COMMERCE_PROMOTION_MERCHANT_INVALID",
@@ -548,25 +580,40 @@ export async function createCommercePromotionAuthoritative(params: {
     );
   }
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const merchant = await merchantRegion(client, merchantId);
+    const merchant = await merchantRegion(client, merchantId, true);
     const input = normalizeInput(params.input, merchant);
-    await assertTargetExists(client, merchantId, input);
+    const requestHash = inputRequestHash(input);
+    const id = promotionIdForKey(merchantId, key);
     const rows = await promotionRows(client, merchantId, true);
+    const replay = rows.find((row) => row.id === id);
+    if (replay) {
+      const storedHash = text(replay.metadata?.create_request_hash, 128);
+      if (!storedHash || storedHash !== requestHash) {
+        throw new CommercePromotionError(
+          "COMMERCE_PROMOTION_IDEMPOTENCY_CONFLICT",
+          "Idempotency-Key was already used with different promotion data",
+          409,
+        );
+      }
+      return { promotion: viewOf(rowToRule(replay)), replayed: true };
+    }
+
+    await assertTargetExists(client, merchantId, input);
     assertNoPromotionConflict(rows, input);
-    const id = `promo_${crypto.randomUUID()}`;
     const inserted = await operationalQueryRows<PromotionRow>(
       client,
       `INSERT INTO commerce_promotions (
          id, merchant_id, name, scope, effect, product_id, variant_id,
          percentage_bps, amount_minor, currency_code, minimum_subtotal_minor,
-         starts_at, ends_at, schedule_timezone, priority, enabled, version
+         starts_at, ends_at, schedule_timezone, priority, enabled, version,
+         metadata
        ) VALUES (
-         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,1
+         $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,1,$17::jsonb
        )
        RETURNING id, merchant_id, name, scope, effect, product_id, variant_id,
                  percentage_bps, amount_minor, currency_code,
                  minimum_subtotal_minor, starts_at, ends_at,
-                 schedule_timezone, priority, enabled, version,
+                 schedule_timezone, priority, enabled, version, metadata,
                  created_at, updated_at`,
       [
         id,
@@ -585,6 +632,7 @@ export async function createCommercePromotionAuthoritative(params: {
         input.schedule_timezone,
         input.priority,
         input.enabled,
+        JSON.stringify({ create_request_hash: requestHash }),
       ],
     );
     if (inserted.length !== 1) {
@@ -594,7 +642,7 @@ export async function createCommercePromotionAuthoritative(params: {
         503,
       );
     }
-    return viewOf(rowToRule(inserted[0]));
+    return { promotion: viewOf(rowToRule(inserted[0])), replayed: false };
   });
 }
 
@@ -616,7 +664,7 @@ export async function updateCommercePromotionAuthoritative(params: {
     );
   }
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const merchant = await merchantRegion(client, merchantId);
+    const merchant = await merchantRegion(client, merchantId, true);
     const rows = await promotionRows(client, merchantId, true);
     const currentRow = requirePromotion(rows, promotionId);
     const current = rowToRule(currentRow);
@@ -654,7 +702,7 @@ export async function updateCommercePromotionAuthoritative(params: {
         RETURNING id, merchant_id, name, scope, effect, product_id, variant_id,
                   percentage_bps, amount_minor, currency_code,
                   minimum_subtotal_minor, starts_at, ends_at,
-                  schedule_timezone, priority, enabled, version,
+                  schedule_timezone, priority, enabled, version, metadata,
                   created_at, updated_at`,
       [
         merchantId,
@@ -705,6 +753,7 @@ export async function deleteCommercePromotionAuthoritative(params: {
     );
   }
   return withMerchantOperationalTransaction(merchantId, async (client) => {
+    await merchantRegion(client, merchantId, true);
     const rows = await operationalQueryRows<{ id: string }>(
       client,
       `DELETE FROM commerce_promotions
@@ -745,7 +794,7 @@ export async function activeCommercePromotionsForPricing(params: {
     `SELECT id, merchant_id, name, scope, effect, product_id, variant_id,
             percentage_bps, amount_minor, currency_code, minimum_subtotal_minor,
             starts_at, ends_at, schedule_timezone, priority, enabled, version,
-            created_at, updated_at
+            metadata, created_at, updated_at
        FROM commerce_promotions
       WHERE merchant_id = $1
         AND enabled = TRUE
