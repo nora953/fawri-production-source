@@ -2,9 +2,16 @@ import {
   DeliveryPricingPolicyError,
   formatDeliveryQuoteText,
   normalizeDeliveryAreaName,
-  resolveDeliveryQuote,
   type DeliveryAreaRate,
 } from "../deliveryPricing.js";
+import { resolveCommerceDeliveryQuote } from "../commerceDeliveryPricing.js";
+import {
+  CommercePromotionError,
+  resolveEffectiveCatalogPrice,
+  type CommercePromotionEffect,
+  type CommercePromotionRule,
+  type CommercePromotionScope,
+} from "../commercePromotionRuntime.js";
 import {
   catalogCommerceFromMetadata,
   type CatalogCommerceFields,
@@ -102,6 +109,24 @@ function tenant(row: Record<string, unknown>, merchantId: string): void {
   }
 }
 
+function merchantCurrency(value: unknown): string {
+  const currency = text(value, 3).toUpperCase();
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    fail("KNOWLEDGE_STATE_INVALID", "merchant currency state is invalid");
+  }
+  return currency;
+}
+
+function legacyIqdCommerceGuard(currencyCode: string): void {
+  if (currencyCode !== "IQD") {
+    fail(
+      "CATALOG_CURRENCY_MIGRATION_REQUIRED",
+      "catalog monetary authority must be migrated before non-IQD pricing can be disclosed",
+      503,
+    );
+  }
+}
+
 function commerceFacts(row: Record<string, unknown>): CatalogCommerceFields {
   try {
     return catalogCommerceFromMetadata(row.metadata);
@@ -132,6 +157,111 @@ function inheritedPhysicalFacts(product: PhysicalFacts, variant?: PhysicalFacts)
     weight_g: variant?.weight_g ?? product.weight_g,
     dimensions: variant?.dimensions ?? product.dimensions,
   };
+}
+
+function instantIso(value: unknown): string {
+  const date = value instanceof Date ? value : new Date(String(value ?? ""));
+  if (!Number.isFinite(date.getTime())) {
+    fail("KNOWLEDGE_PROMOTION_STATE_INVALID", "promotion schedule state is invalid");
+  }
+  return date.toISOString();
+}
+
+function promotionScope(value: unknown): CommercePromotionScope {
+  const normalized = text(value, 40);
+  if (normalized !== "catalog_item" && normalized !== "delivery") {
+    fail("KNOWLEDGE_PROMOTION_STATE_INVALID", "promotion scope state is invalid");
+  }
+  return normalized;
+}
+
+function promotionEffect(value: unknown): CommercePromotionEffect {
+  const normalized = text(value, 40);
+  if (
+    normalized !== "percentage_off" &&
+    normalized !== "fixed_amount_off" &&
+    normalized !== "fixed_price" &&
+    normalized !== "free_delivery"
+  ) {
+    fail("KNOWLEDGE_PROMOTION_STATE_INVALID", "promotion effect state is invalid");
+  }
+  return normalized;
+}
+
+function promotionRule(
+  row: Record<string, unknown>,
+  merchantId: string,
+): CommercePromotionRule {
+  tenant(row, merchantId);
+  const id = text(row.id, 200);
+  const name = text(row.name, 200);
+  if (!id || !name) {
+    fail("KNOWLEDGE_PROMOTION_STATE_INVALID", "promotion identity state is invalid");
+  }
+  const amountMinor =
+    row.amount_minor === null || row.amount_minor === undefined
+      ? undefined
+      : integer(row.amount_minor);
+  const minimumSubtotalMinor =
+    row.minimum_subtotal_minor === null || row.minimum_subtotal_minor === undefined
+      ? undefined
+      : integer(row.minimum_subtotal_minor);
+  const percentageBps =
+    row.percentage_bps === null || row.percentage_bps === undefined
+      ? undefined
+      : integer(row.percentage_bps);
+  const priority = integer(row.priority);
+  if (priority > 1000 || (percentageBps !== undefined && (percentageBps < 1 || percentageBps > 10_000))) {
+    fail("KNOWLEDGE_PROMOTION_STATE_INVALID", "promotion precedence state is invalid");
+  }
+  return {
+    id,
+    merchant_id: merchantId,
+    name,
+    scope: promotionScope(row.scope),
+    effect: promotionEffect(row.effect),
+    ...(row.product_id ? { product_id: text(row.product_id, 200) } : {}),
+    ...(row.variant_id ? { variant_id: text(row.variant_id, 200) } : {}),
+    ...(percentageBps !== undefined ? { percentage_bps: percentageBps } : {}),
+    ...(amountMinor !== undefined ? { amount_minor: amountMinor } : {}),
+    currency_code: merchantCurrency(row.currency_code),
+    ...(minimumSubtotalMinor !== undefined
+      ? { minimum_subtotal_minor: minimumSubtotalMinor }
+      : {}),
+    starts_at: instantIso(row.starts_at),
+    ends_at: instantIso(row.ends_at),
+    schedule_timezone: text(row.schedule_timezone, 120),
+    priority,
+    enabled: bool(row.enabled),
+    version: version(row.version),
+  };
+}
+
+async function activePromotions(
+  sql: KnowledgeSqlExecutor,
+  merchantId: string,
+): Promise<CommercePromotionRule[]> {
+  let rows: Record<string, unknown>[];
+  try {
+    rows = (
+      await sql.query(
+        `SELECT id, merchant_id, name, scope, effect, product_id, variant_id,
+                percentage_bps, amount_minor, currency_code, minimum_subtotal_minor,
+                starts_at, ends_at, schedule_timezone, priority, enabled, version
+           FROM commerce_promotions
+          WHERE merchant_id = $1
+            AND enabled = TRUE
+            AND starts_at <= CURRENT_TIMESTAMP
+            AND ends_at > CURRENT_TIMESTAMP
+          ORDER BY priority DESC, id ASC
+          LIMIT 250`,
+        [merchantId],
+      )
+    ).rows;
+  } catch {
+    fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+  }
+  return rows.map((row) => promotionRule(row, merchantId));
 }
 
 async function resolveDeliveryFact(params: {
@@ -191,8 +321,11 @@ async function resolveDeliveryFact(params: {
     params.row.free_delivery_threshold_iqd === undefined
       ? null
       : integer(params.row.free_delivery_threshold_iqd);
+  const currencyCode = merchantCurrency(params.row.merchant_currency_code);
+  legacyIqdCommerceGuard(currencyCode);
   try {
-    const quote = resolveDeliveryQuote({
+    const promotions = await activePromotions(params.sql, params.merchantId);
+    const quote = resolveCommerceDeliveryQuote({
       policy: {
         merchant_id: params.merchantId,
         settings_version: version(params.row.settings_version),
@@ -207,6 +340,8 @@ async function resolveDeliveryFact(params: {
       },
       area: params.customerText,
       subtotal_iqd: 0,
+      currency_code: currencyCode,
+      promotions,
     });
     return {
       answerText: formatDeliveryQuoteText(quote, params.language),
@@ -214,11 +349,15 @@ async function resolveDeliveryFact(params: {
       confidence: 1,
       factType: "delivery_policy",
       recordId:
+        quote.promotion_id ||
         quote.area_rate_id ||
         `${params.merchantId}:settings:${version(params.row.settings_version)}`,
     };
   } catch (error) {
-    if (error instanceof DeliveryPricingPolicyError) {
+    if (
+      error instanceof DeliveryPricingPolicyError ||
+      error instanceof CommercePromotionError
+    ) {
       fail("KNOWLEDGE_POLICY_INVALID", "merchant delivery pricing policy is invalid");
     }
     throw error;
@@ -245,7 +384,8 @@ function localizedPayment(row: Record<string, unknown>, lang: KnowledgeLanguage)
 
 const SETTINGS_SQL = `
 SELECT m.id AS merchant_id, m.store_name, m.status AS merchant_status,
-       m.account_status, ms.version AS settings_version, ms.auto_reply_enabled,
+       m.account_status, m.currency_code AS merchant_currency_code,
+       ms.version AS settings_version, ms.auto_reply_enabled,
        ms.delivery_enabled, ms.delivery_pricing_mode, ms.delivery_fee_iqd,
        ms.free_delivery_threshold_iqd, ms.delivery_areas,
        ms.delivery_estimated_days_min, ms.delivery_estimated_days_max,
@@ -278,16 +418,18 @@ async function settings(
 }
 
 const PRODUCTS_SQL = `
-SELECT id, merchant_id, external_ref, code, name, sku, barcode,
-       current_price_iqd, quantity, low_stock_threshold, variant_stock_mode,
-       weight_g, length_mm, width_mm, height_mm, metadata,
-       version, status, allow_fawri_reply, updated_at
-FROM products
-WHERE merchant_id = $1
-  AND deleted_at IS NULL
-  AND allow_fawri_reply = TRUE
-  AND status IN ('available', 'low_stock', 'out_of_stock')
-  AND version > 0
+SELECT p.id, p.merchant_id, p.external_ref, p.code, p.name, p.sku, p.barcode,
+       p.current_price_iqd, p.quantity, p.low_stock_threshold, p.variant_stock_mode,
+       p.weight_g, p.length_mm, p.width_mm, p.height_mm, p.metadata,
+       p.version, p.status, p.allow_fawri_reply, p.updated_at,
+       m.currency_code AS merchant_currency_code
+FROM products p
+JOIN merchants m ON m.id = p.merchant_id
+WHERE p.merchant_id = $1
+  AND p.deleted_at IS NULL
+  AND p.allow_fawri_reply = TRUE
+  AND p.status IN ('available', 'low_stock', 'out_of_stock')
+  AND p.version > 0
 LIMIT 250`;
 
 const VARIANTS_SQL = `
@@ -505,6 +647,7 @@ async function resolveProductFact(params: {
   let quantity = commerce.track_inventory ? integer(product.quantity) : 0;
   const variantMode = commerce.track_inventory && bool(product.variant_stock_mode);
   let recordId = productId;
+  let variantId: string | undefined;
 
   if (variantMode) {
     const variants = await loadVariants(params.sql, params.merchantId, productId);
@@ -522,21 +665,45 @@ async function resolveProductFact(params: {
     if (!Number.isSafeInteger(unitPrice) || unitPrice < 0) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
     quantity = integer(variant.quantity);
     recordId = text(variant.id, 160);
+    variantId = recordId;
     if (!recordId) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
   }
 
   if (params.kind === "price") {
+    const currencyCode = merchantCurrency(product.merchant_currency_code);
+    legacyIqdCommerceGuard(currencyCode);
+    let resolved;
+    try {
+      resolved = resolveEffectiveCatalogPrice({
+        merchantId: params.merchantId,
+        productId,
+        ...(variantId ? { variantId } : {}),
+        baseAmountMinor: unitPrice,
+        currencyCode,
+        promotions: await activePromotions(params.sql, params.merchantId),
+      });
+    } catch (error) {
+      if (error instanceof CommercePromotionError) {
+        fail("KNOWLEDGE_PROMOTION_STATE_INVALID", "promotion pricing state is invalid");
+      }
+      throw error;
+    }
     return {
       answerText: catalogPriceAnswer({
         language: params.language,
         itemName: productName,
-        unitPriceIqd: unitPrice,
+        unitPriceIqd: resolved.effective_amount_minor,
+        baseUnitPriceIqd: resolved.base_amount_minor,
+        currencyCode,
+        promotionApplied: resolved.promotion_applied,
         commerce,
       }),
       language: params.language,
       confidence: 1,
       factType: commerce.item_type === "service" ? "service_price" : "product_price",
-      recordId,
+      recordId: resolved.promotion_id
+        ? `${recordId}:promotion:${resolved.promotion_id}`
+        : recordId,
     };
   }
 
