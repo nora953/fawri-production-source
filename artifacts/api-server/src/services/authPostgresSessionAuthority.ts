@@ -266,8 +266,6 @@ async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
         FOR UPDATE`,
       [input.accountId, input.accountKind],
     );
-
-    let ownerReplacementIds: string[] = [];
     if (input.accountKind === "admin" && input.adminRole === "owner_admin") {
       if (!input.deviceId) {
         throw new Error("AUTH_POSTGRES_OWNER_DEVICE_REQUIRED");
@@ -276,10 +274,9 @@ async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
       const activeOnDevice = active.filter(
         (row) => row.device_fingerprint_hash === ownerDeviceFingerprint,
       );
-      const replaceCount = Math.max(0, activeOnDevice.length - 1);
-      ownerReplacementIds = activeOnDevice
-        .slice(0, replaceCount)
-        .map((row) => row.id);
+      if (activeOnDevice.length >= 2) {
+        throw new Error("OWNER_SESSION_LIMIT_REACHED");
+      }
     } else {
       const cap = input.accountKind === "admin" ? 2 : 5;
       const revokeCount = Math.max(0, active.length - cap + 1);
@@ -348,35 +345,6 @@ async function issuePostgres(input: IssueInput): Promise<IssuedSession> {
       ],
     );
     if (!inserted[0]) throw new Error("AUTH_POSTGRES_SESSION_INSERT_FAILED");
-
-    if (ownerReplacementIds.length > 0) {
-      const replaced = await queryRows<{ id: string }>(
-        client,
-        `UPDATE account_sessions
-            SET status = 'revoked',
-                revoked_at = $2,
-                revoke_reason = 'owner_session_replaced'
-          WHERE id = ANY($1::text[]) AND status = 'active'
-          RETURNING id`,
-        [ownerReplacementIds, now],
-      );
-      if (replaced.length !== ownerReplacementIds.length) {
-        throw new Error("AUTH_POSTGRES_OWNER_SESSION_REPLACEMENT_LOST_LOCK");
-      }
-      await client.query(
-        `INSERT INTO auth_audit_events
-          (id, event_type, actor_account_id, actor_kind, subject_hash,
-           reason_code, decision_code)
-         VALUES ($1, 'owner_session_auto_replaced', $2, 'admin'::account_kind, $3,
-                 'same_device_session_cap', 'oldest_session_replaced')`,
-        [
-          crypto.randomUUID(),
-          input.accountId,
-          fingerprint("audit-subject", input.accountId),
-        ],
-      );
-    }
-
     return { token: material.token, session: toRecord(inserted[0]) };
   });
 }

@@ -34,6 +34,10 @@ const setupPage = fs.readFileSync(
   new URL("../../fawri/src/pages/OwnerRecoverySetupPage.tsx", import.meta.url),
   "utf8",
 );
+const passwordInput = fs.readFileSync(
+  new URL("../../fawri/src/components/ui/password-input.tsx", import.meta.url),
+  "utf8",
+);
 const recoveryPage = fs.readFileSync(
   new URL("../../fawri/src/pages/OwnerRecoveryPage.tsx", import.meta.url),
   "utf8",
@@ -124,7 +128,9 @@ test("recovery setup is owner-session protected, password reauthenticated, and n
   );
   assert.match(authRouter, /Cache-Control", "no-store, max-age=0"/);
   assert.match(setupPage, /owner_password: ownerPassword/);
-  assert.match(setupPage, /type="password"/);
+  assert.match(setupPage, /<PasswordInput/);
+  assert.match(setupPage, /autoComplete="current-password"/);
+  assert.match(passwordInput, /type=\{isVisible \? 'text' : 'password'\}/);
   assert.doesNotMatch(setupPage, /localStorage/);
   assert.doesNotMatch(recoveryPage, /localStorage/);
 });
