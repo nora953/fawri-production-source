@@ -144,6 +144,7 @@ test("fulfillment disclosure is scoped to the requested quantity", () => {
 test("variant fulfillment discloses only the amount that can satisfy the request", () => {
   const product = createProduct("merchant-a", "variant-fulfillment-0001", {
     name: "Variant Product",
+    stock_quantity: 11,
     variants: [
       {
         id: "variant-limited",
