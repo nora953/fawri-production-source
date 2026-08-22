@@ -28,7 +28,7 @@ test("support ticket status SQL binds the PostgreSQL enum explicitly", () => {
   const typedStatusUses = block.match(/\$2::support_ticket_status/g) || [];
   assert.equal(
     typedStatusUses.length,
-    5,
+    6,
     "every SQL use of the status parameter must keep an explicit support_ticket_status cast",
   );
 });
