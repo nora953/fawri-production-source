@@ -2,9 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { PostgresOperationalFactResolver } from "../src/services/knowledge/postgresOperationalFactResolver";
+import { KnowledgeRuntimeGateError } from "../src/services/knowledge/postgresKnowledgeRuntime";
 import type { KnowledgeSqlExecutor } from "../src/services/knowledge/postgresKnowledgeRuntime";
 
-function productRow(quantity: number) {
+function productRow(quantity: number, currency = "IQD") {
   return {
     id: "prd-shirt",
     merchant_id: "merchant-a",
@@ -26,6 +27,7 @@ function productRow(quantity: number) {
     status: quantity > 0 ? "available" : "out_of_stock",
     allow_fawri_reply: true,
     updated_at: new Date(),
+    merchant_currency_code: currency,
   };
 }
 
@@ -64,13 +66,45 @@ function serviceRow() {
     status: "available",
     allow_fawri_reply: true,
     updated_at: new Date(),
+    merchant_currency_code: "IQD",
   };
 }
 
-function sqlWithProducts(rows: Record<string, unknown>[]): KnowledgeSqlExecutor {
+function percentagePromotion(params: {
+  percentageBps: number;
+  startsAt?: Date;
+  endsAt?: Date;
+}) {
+  const now = Date.now();
+  return {
+    id: "promo-weekend",
+    merchant_id: "merchant-a",
+    name: "عرض نهاية الأسبوع",
+    scope: "catalog_item",
+    effect: "percentage_off",
+    product_id: "prd-shirt",
+    variant_id: null,
+    percentage_bps: params.percentageBps,
+    amount_minor: null,
+    currency_code: "IQD",
+    minimum_subtotal_minor: null,
+    starts_at: params.startsAt || new Date(now - 60_000),
+    ends_at: params.endsAt || new Date(now + 60_000),
+    schedule_timezone: "Asia/Baghdad",
+    priority: 0,
+    enabled: true,
+    version: 1,
+  };
+}
+
+function sqlWithProducts(
+  rows: Record<string, unknown>[],
+  promotions: Record<string, unknown>[] = [],
+): KnowledgeSqlExecutor {
   return {
     async query(sql) {
       if (sql.includes("FROM products")) return { rows };
+      if (sql.includes("FROM commerce_promotions")) return { rows: promotions };
       throw new Error(`unexpected SQL in test: ${sql}`);
     },
   };
@@ -126,4 +160,63 @@ test("service price wording honors starts-from pricing", async () => {
   });
   assert.equal(result?.factType, "service_price");
   assert.equal(result?.answerText, "سعر تنظيف بشرة يبدأ من 25,000 دينار.");
+});
+
+test("active catalog promotion is applied to the price Fawri discloses", async () => {
+  const resolver = new PostgresOperationalFactResolver(
+    sqlWithProducts([productRow(11)], [percentagePromotion({ percentageBps: 1000 })]),
+  );
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "شكد سعر قميص",
+    language: "ar",
+  });
+  assert.equal(result?.factType, "product_price");
+  assert.equal(
+    result?.answerText,
+    "سعر قميص حاليًا ضمن العرض 13,500 دينار بدل 15,000 دينار.",
+  );
+  assert.match(String(result?.recordId), /promo-weekend/);
+});
+
+test("expired promotion cannot leak a stale discounted price", async () => {
+  const now = Date.now();
+  const resolver = new PostgresOperationalFactResolver(
+    sqlWithProducts(
+      [productRow(11)],
+      [
+        percentagePromotion({
+          percentageBps: 1000,
+          startsAt: new Date(now - 120_000),
+          endsAt: new Date(now - 60_000),
+        }),
+      ],
+    ),
+  );
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "شكد سعر قميص",
+    language: "ar",
+  });
+  assert.equal(result?.answerText, "سعر قميص هو 15,000 دينار.");
+  assert.equal(String(result?.recordId).includes("promotion:"), false);
+});
+
+test("legacy IQD catalog fails closed for a non-IQD merchant until money migration", async () => {
+  const resolver = new PostgresOperationalFactResolver(
+    sqlWithProducts([productRow(11, "USD")]),
+  );
+  await assert.rejects(
+    () =>
+      resolver.resolve({
+        merchantId: "merchant-a",
+        customerText: "price قميص",
+        language: "en",
+      }),
+    (error: unknown) => {
+      assert.ok(error instanceof KnowledgeRuntimeGateError);
+      assert.equal(error.code, "CATALOG_CURRENCY_MIGRATION_REQUIRED");
+      return true;
+    },
+  );
 });
