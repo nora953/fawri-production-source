@@ -1,0 +1,10 @@
+{
+  "index": 11,
+  "name": "commerce_promotions_timezone_authority",
+  "when": 1787435160000,
+  "preimage_files": [
+    "commerce-promotions.ts",
+    "index.ts",
+    "merchants.ts"
+  ]
+}
