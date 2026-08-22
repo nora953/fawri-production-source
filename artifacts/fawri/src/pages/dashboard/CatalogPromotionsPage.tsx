@@ -88,7 +88,7 @@ const COPY: Record<Lang, Record<string, string>> = {
     disabled: 'متوقف',
     timezone: 'توقيت العرض',
     currency: 'عملة المتجر',
-    originalSafe: 'السعر الأصلي لا يتغير؛ فوري والكاشير يستخدمان السعر الفعّال فقط أثناء فترة العرض.',
+    originalSafe: 'السعر الأصلي لا يتغير؛ فوري يستخدم السعر الفعّال فقط أثناء فترة العرض.',
   },
   ku: {
     title: 'ئۆفەرەکان',
@@ -135,7 +135,7 @@ const COPY: Record<Lang, Record<string, string>> = {
     disabled: 'وەستێنراوە',
     timezone: 'کاتی ئۆفەر',
     currency: 'دراوی فرۆشگا',
-    originalSafe: 'نرخی بنەڕەتی ناگۆڕدرێت؛ فەوری و POS تەنها لە ماوەی ئۆفەر نرخە کاریگەرەکە بەکاردێنن.',
+    originalSafe: 'نرخی بنەڕەتی ناگۆڕدرێت؛ فەوری تەنها لە ماوەی ئۆفەر نرخە کاریگەرەکە بەکاردێنێت.',
   },
   en: {
     title: 'Promotions',
@@ -182,7 +182,7 @@ const COPY: Record<Lang, Record<string, string>> = {
     disabled: 'Disabled',
     timezone: 'Promotion timezone',
     currency: 'Store currency',
-    originalSafe: 'The base price is never overwritten; Fawri and POS use the effective price only during the promotion window.',
+    originalSafe: 'The base price is never overwritten; Fawri uses the effective price only during the promotion window.',
   },
 };
 
@@ -359,7 +359,7 @@ export default function CatalogPromotionsPage() {
             context.currency_fraction_digits,
           )
         : null;
-      if (draft.minimum_subtotal.trim() && minimum === null) return null;
+      if (draft.minimum_subtotal.trim() && (minimum === null || minimum < 0)) return null;
       return {
         name,
         scope: 'delivery',
@@ -407,7 +407,7 @@ export default function CatalogPromotionsPage() {
       draft.value,
       context.currency_fraction_digits,
     );
-    if (amountMinor === null) return null;
+    if (amountMinor === null || amountMinor < 0) return null;
     if (draft.effect === 'fixed_amount_off' && amountMinor <= 0) return null;
     return {
       name,
