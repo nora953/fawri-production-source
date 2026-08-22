@@ -2,8 +2,11 @@ import type { ProductStatus } from '@/lib/types';
 import type {
   CatalogImageInput,
   CatalogImageReference,
+  CatalogItemType,
   CatalogProduct,
   CatalogProductInput,
+  CatalogServiceLocationMode,
+  CatalogServicePriceType,
   CatalogVariant,
   CatalogVariantInput,
 } from '@/lib/catalogUiApi';
@@ -42,6 +45,13 @@ export type CatalogVariantDraft = CatalogMeasurementDraft & {
 };
 
 export type CatalogProductFormState = CatalogMeasurementDraft & {
+  item_type: CatalogItemType;
+  track_inventory: boolean;
+  service_duration_minutes: string;
+  service_buffer_minutes: string;
+  service_booking_required: boolean;
+  service_price_type: CatalogServicePriceType;
+  service_location_mode: CatalogServiceLocationMode;
   name: string;
   sku: string;
   barcode: string;
@@ -63,6 +73,8 @@ export type CatalogEditorValidationCode =
   | 'quantity'
   | 'measurement'
   | 'partial_dimensions'
+  | 'service_duration'
+  | 'service_buffer'
   | 'image_reference'
   | 'variant_identity'
   | 'variant_price'
@@ -91,6 +103,19 @@ function wholeNumber(value: string): number | null {
   if (!normalized) return 0;
   const parsed = Number(normalized);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function optionalBoundedWholeNumber(
+  value: string,
+  minimum: number,
+  maximum: number,
+): number | null | undefined {
+  const normalized = value.trim();
+  if (!normalized) return undefined;
+  const parsed = Number(normalized);
+  return Number.isSafeInteger(parsed) && parsed >= minimum && parsed <= maximum
+    ? parsed
+    : null;
 }
 
 function canonicalDecimal(value: string, scale: number, max: number): number | null {
@@ -218,6 +243,13 @@ function variantDraftFromVariant(variant?: CatalogVariant): CatalogVariantDraft 
 
 export function createEmptyCatalogProductForm(): CatalogProductFormState {
   return {
+    item_type: 'product',
+    track_inventory: true,
+    service_duration_minutes: '',
+    service_buffer_minutes: '0',
+    service_booking_required: true,
+    service_price_type: 'fixed',
+    service_location_mode: 'merchant',
     name: '',
     sku: '',
     barcode: '',
@@ -249,7 +281,17 @@ export function createEmptyCatalogVariantDraft(): CatalogVariantDraft {
 export function catalogProductFormFromProduct(
   product: CatalogProduct,
 ): CatalogProductFormState {
+  const itemType = product.item_type || 'product';
+  const service = product.service_details;
   return {
+    item_type: itemType,
+    track_inventory: itemType === 'service' ? false : product.track_inventory !== false,
+    service_duration_minutes:
+      service?.duration_minutes === undefined ? '' : String(service.duration_minutes),
+    service_buffer_minutes: String(service?.buffer_minutes ?? 0),
+    service_booking_required: service?.booking_required ?? true,
+    service_price_type: service?.price_type ?? 'fixed',
+    service_location_mode: service?.location_mode ?? 'merchant',
     name: product.name || '',
     sku: product.sku || '',
     barcode: product.barcode || '',
@@ -293,14 +335,26 @@ export function validateCatalogProductForm(
     if (comparePrice === null || comparePrice < currentPrice) return 'compare_price';
   }
 
-  const measurementError = measurementValidation(form);
-  if (measurementError) return measurementError;
-
   const productImageError = validateImages(form.image_refs, 'image_reference');
   if (productImageError) return productImageError;
 
+  if (form.item_type === 'service') {
+    if (
+      optionalBoundedWholeNumber(form.service_duration_minutes, 1, 1_440) === null
+    ) {
+      return 'service_duration';
+    }
+    if (optionalBoundedWholeNumber(form.service_buffer_minutes, 0, 480) === null) {
+      return 'service_buffer';
+    }
+    return null;
+  }
+
+  const measurementError = measurementValidation(form);
+  if (measurementError) return measurementError;
+
   if (form.variants.length === 0) {
-    if (wholeNumber(form.quantity) === null) return 'quantity';
+    if (form.track_inventory && wholeNumber(form.quantity) === null) return 'quantity';
     return null;
   }
 
@@ -313,7 +367,9 @@ export function validateCatalogProductForm(
     if (variant.price_iqd.trim() && wholeNumber(variant.price_iqd) === null) {
       return 'variant_price';
     }
-    if (wholeNumber(variant.stock_quantity) === null) return 'variant_quantity';
+    if (form.track_inventory && wholeNumber(variant.stock_quantity) === null) {
+      return 'variant_quantity';
+    }
 
     const variantMeasurementError = measurementValidation(variant);
     if (variantMeasurementError === 'partial_dimensions') return 'variant_partial_dimensions';
@@ -337,7 +393,10 @@ export function validateCatalogProductForm(
   return null;
 }
 
-function variantInput(variant: CatalogVariantDraft): CatalogVariantInput {
+function variantInput(
+  variant: CatalogVariantDraft,
+  trackInventory: boolean,
+): CatalogVariantInput {
   const options = Object.fromEntries(
     variant.options
       .filter(option => option.name.trim() || option.value.trim())
@@ -350,7 +409,7 @@ function variantInput(variant: CatalogVariantDraft): CatalogVariantInput {
     sku: variant.sku.trim(),
     barcode: variant.barcode.trim(),
     price_iqd: variant.price_iqd.trim() ? wholeNumber(variant.price_iqd) : null,
-    stock_quantity: wholeNumber(variant.stock_quantity) ?? 0,
+    stock_quantity: trackInventory ? wholeNumber(variant.stock_quantity) ?? 0 : 0,
     ...measurementInput(variant),
     options,
     image_refs: imageInputs(variant.image_refs),
@@ -361,25 +420,54 @@ export function catalogProductInputFromForm(
   form: CatalogProductFormState,
   existing?: CatalogProduct,
 ): CatalogProductInput {
-  const variants = form.variants.map(variantInput);
+  const isService = form.item_type === 'service';
+  const trackInventory = !isService && form.track_inventory;
+  const variants = isService
+    ? []
+    : form.variants.map(variant => variantInput(variant, trackInventory));
   const currentPrice = wholeNumber(form.current_price || form.original_price) ?? 0;
   const compareAtPrice = form.original_price.trim()
     ? wholeNumber(form.original_price)
     : null;
 
   return {
+    item_type: form.item_type,
+    track_inventory: trackInventory,
+    ...(isService
+      ? {
+          service_details: {
+            ...(form.service_duration_minutes.trim()
+              ? {
+                  duration_minutes:
+                    optionalBoundedWholeNumber(
+                      form.service_duration_minutes,
+                      1,
+                      1_440,
+                    ) ?? undefined,
+                }
+              : {}),
+            buffer_minutes:
+              optionalBoundedWholeNumber(form.service_buffer_minutes, 0, 480) ?? 0,
+            booking_required: form.service_booking_required,
+            price_type: form.service_price_type,
+            location_mode: form.service_location_mode,
+          },
+        }
+      : {}),
     name: form.name.trim(),
     description: form.description.trim(),
     category: form.category.trim(),
-    sku: form.sku.trim(),
-    barcode: form.barcode.trim(),
+    sku: isService ? '' : form.sku.trim(),
+    barcode: isService ? '' : form.barcode.trim(),
     price_iqd: currentPrice,
     compare_at_price_iqd: compareAtPrice,
-    ...(variants.length === 0
-      ? { stock_quantity: wholeNumber(form.quantity) ?? 0 }
+    ...(!trackInventory || variants.length === 0
+      ? { stock_quantity: trackInventory ? wholeNumber(form.quantity) ?? 0 : 0 }
       : {}),
     ...(existing ? { low_stock_threshold: existing.low_stock_threshold } : {}),
-    ...measurementInput(form),
+    ...(isService
+      ? { weight_g: null, length_mm: null, width_mm: null, height_mm: null }
+      : measurementInput(form)),
     status: form.status,
     allow_fawri_reply: form.allow_fawri_reply,
     image_refs: imageInputs(form.image_refs),
@@ -407,9 +495,15 @@ export function catalogProductHasVariantAuthority(
 }
 
 export function catalogProductStockIsVariantManaged(
-  form: Pick<CatalogProductFormState, 'variants'>,
+  form: Pick<CatalogProductFormState, 'variants' | 'track_inventory' | 'item_type'>,
 ): boolean {
-  return form.variants.length > 0;
+  return form.item_type === 'product' && form.track_inventory && form.variants.length > 0;
+}
+
+export function catalogItemTracksInventory(
+  value: Pick<CatalogProductFormState, 'item_type' | 'track_inventory'> | Pick<CatalogProduct, 'item_type' | 'track_inventory'>,
+): boolean {
+  return value.item_type === 'product' && value.track_inventory !== false;
 }
 
 export function cleanCatalogText(value: unknown): string {
