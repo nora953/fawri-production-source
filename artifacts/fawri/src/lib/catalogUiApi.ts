@@ -1,5 +1,17 @@
 import type { ProductStatus } from '@/lib/types';
 
+export type CatalogItemType = 'product' | 'service';
+export type CatalogServicePriceType = 'fixed' | 'from' | 'free' | 'custom';
+export type CatalogServiceLocationMode = 'merchant' | 'customer' | 'online' | 'flexible';
+
+export type CatalogServiceDetails = {
+  duration_minutes?: number;
+  buffer_minutes: number;
+  booking_required: boolean;
+  price_type: CatalogServicePriceType;
+  location_mode: CatalogServiceLocationMode;
+};
+
 export type CatalogImageReference = {
   id?: string;
   url?: string;
@@ -49,6 +61,9 @@ export type CatalogProduct = {
   id: string;
   merchant_id: string;
   external_ref?: string;
+  item_type: CatalogItemType;
+  track_inventory: boolean;
+  service_details?: CatalogServiceDetails;
   name: string;
   description?: string;
   category?: string;
@@ -73,6 +88,9 @@ export type CatalogProduct = {
 
 export type CatalogProductInput = CatalogPhysicalMeasurementInput & {
   external_ref?: string;
+  item_type?: CatalogItemType;
+  track_inventory?: boolean;
+  service_details?: Partial<CatalogServiceDetails>;
   name: string;
   description?: string;
   category?: string;
