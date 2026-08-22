@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import AdminEarlyWarningWorkspacePageV2 from "./AdminEarlyWarningWorkspacePageV2";
-import ProviderCostSettings from "./ProviderCostSettings";
+import ProviderCostSettingsV2 from "./ProviderCostSettingsV2";
 import "./adminEarlyWarningFinal.css";
 
 function isolateYearMonthText(root: HTMLElement) {
@@ -42,7 +42,7 @@ export default function AdminEarlyWarningWorkspacePageFinal() {
   return (
     <div ref={captureRoot} className="early-warning-final">
       <AdminEarlyWarningWorkspacePageV2 />
-      <ProviderCostSettings root={root} />
+      <ProviderCostSettingsV2 root={root} />
     </div>
   );
 }
