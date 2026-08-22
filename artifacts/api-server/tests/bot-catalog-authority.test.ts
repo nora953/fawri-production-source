@@ -11,6 +11,7 @@ process.env.NODE_ENV = "test";
 import {
   BotCatalogAuthorityError,
   readBotCatalogProducts,
+  resolveCatalogFulfillment,
 } from "../src/services/botCatalogAuthority";
 import { createCatalogProduct } from "../src/services/catalogInventoryRuntime";
 
@@ -41,7 +42,7 @@ function createProduct(
   }).product;
 }
 
-test("bot adapter reads the server catalog contract without losing identifiers, options, images, or inventory", () => {
+test("bot adapter preserves catalog facts without exposing merchant stock counts", () => {
   const canonical = createProduct("merchant-a", "adapter-contract-0001", {
     external_ref: "ERP-1001",
     name: "Running Shoe",
@@ -89,14 +90,18 @@ test("bot adapter reads the server catalog contract without losing identifiers, 
   assert.equal(product.price_iqd, 25_000);
   assert.equal(product.current_price, 25_000);
   assert.equal(product.original_price, 30_000);
-  assert.equal(product.stock_quantity, 3);
-  assert.equal(product.quantity, 3);
+  assert.equal(product.is_available, true);
+  assert.equal(product.availability, "available");
+  assert.equal(product.quantity, 1);
+  assert.equal("stock_quantity" in product, false);
   assert.equal(product.image_refs[0].url, "https://example.test/products/shoe-front.jpg");
   assert.deepEqual(product.variants[0].options, { Color: "Black", Size: "42" });
   assert.equal(product.variants[0].sku, "SHOE-BLK-42");
   assert.equal(product.variants[0].barcode, "VAR-1001");
   assert.equal(product.variants[0].current_price, 27_000);
-  assert.equal(product.variants[0].quantity, 3);
+  assert.equal(product.variants[0].is_available, true);
+  assert.equal(product.variants[0].quantity, 1);
+  assert.equal("stock_quantity" in product.variants[0], false);
   assert.equal(
     product.variants[0].image_refs[0].storage_key,
     "catalog/shoe-black-42.jpg",
@@ -106,6 +111,63 @@ test("bot adapter reads the server catalog contract without losing identifiers, 
   assert.ok(product.catalog_search_terms.includes("VAR-1001"));
   assert.ok(product.catalog_search_terms.includes("Black"));
   assert.ok(product.catalog_search_terms.includes("42"));
+});
+
+test("fulfillment disclosure is scoped to the requested quantity", () => {
+  const product = createProduct("merchant-a", "fulfillment-scope-0001", {
+    name: "Private Stock Product",
+    stock_quantity: 11,
+  });
+
+  const withinStock = resolveCatalogFulfillment(product, 3);
+  assert.deepEqual(withinStock, {
+    requested_quantity: 3,
+    is_available: true,
+    can_fulfill_full_request: true,
+    fulfillable_quantity: 3,
+    inventory_disclosure: "request_scoped",
+  });
+  assert.equal("stock_quantity" in withinStock, false);
+  assert.equal("quantity" in withinStock, false);
+
+  const aboveStock = resolveCatalogFulfillment(product, 12);
+  assert.deepEqual(aboveStock, {
+    requested_quantity: 12,
+    is_available: true,
+    can_fulfill_full_request: false,
+    fulfillable_quantity: 11,
+    inventory_disclosure: "request_scoped",
+  });
+  assert.equal("stock_quantity" in aboveStock, false);
+});
+
+test("variant fulfillment discloses only the amount that can satisfy the request", () => {
+  const product = createProduct("merchant-a", "variant-fulfillment-0001", {
+    name: "Variant Product",
+    variants: [
+      {
+        id: "variant-limited",
+        name: "Limited Variant",
+        stock_quantity: 2,
+        options: { Size: "M" },
+      },
+      {
+        id: "variant-other",
+        name: "Other Variant",
+        stock_quantity: 9,
+        options: { Size: "L" },
+      },
+    ],
+  });
+
+  const resolution = resolveCatalogFulfillment(product, 3, "variant-limited");
+  assert.deepEqual(resolution, {
+    requested_quantity: 3,
+    is_available: true,
+    can_fulfill_full_request: false,
+    fulfillable_quantity: 2,
+    inventory_disclosure: "request_scoped",
+  });
 });
 
 test("bot adapter is tenant-scoped and never searches another merchant catalog", () => {
@@ -128,7 +190,7 @@ test("bot adapter is tenant-scoped and never searches another merchant catalog",
   );
 });
 
-test("hidden, draft, and reply-disabled products are excluded while out-of-stock inventory remains explicit", () => {
+test("hidden, draft, and reply-disabled products are excluded while out-of-stock availability remains explicit", () => {
   createProduct("merchant-a", "visible-product-0001", {
     name: "Visible Product",
     stock_quantity: 5,
@@ -159,7 +221,10 @@ test("hidden, draft, and reply-disabled products are excluded while out-of-stock
     (product) => product.name === "Out Of Stock Product",
   );
   assert.equal(unavailable?.status, "out_of_stock");
+  assert.equal(unavailable?.is_available, false);
+  assert.equal(unavailable?.availability, "unavailable");
   assert.equal(unavailable?.quantity, 0);
+  assert.equal(unavailable ? "stock_quantity" in unavailable : true, false);
 });
 
 test("legacy productsByMerchant JSON is ignored even when it conflicts with the server catalog", () => {
@@ -253,7 +318,7 @@ test("unavailable or invalid server catalog fails closed without legacy fallback
 
 test("generic bot router cannot read or write the legacy productsByMerchant map", () => {
   const routeSource = fs.readFileSync(
-    new URL("../src/routes/index.ts", import.meta.url),
+    new URL("../src/routes/indexModulePart1.ts", import.meta.url),
     "utf8",
   );
 
