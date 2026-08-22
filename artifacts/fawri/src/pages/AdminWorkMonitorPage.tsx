@@ -2,6 +2,7 @@ import {
   ADMIN_WORK_MONITOR_PAGE_LOG_LABELS,
   ADMIN_WORK_MONITOR_PAGE_TEXT,
 } from '@/lib/translations/features/pages/AdminWorkMonitorPage';
+import { ADMIN_SECURITY_ACTION_COPY } from "@/lib/translations/features/admin/AdminSecurityActions";
 import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
@@ -132,7 +133,7 @@ function logLabel(log: LogRecord, lang: InterfaceLanguage): string {
   const known = LOG_LABELS[lang][log.action_type];
   if (known) return known;
   if (lang === "en") return log.details || log.action_type.replace(/_/g, " ");
-  return lang === "ku" ? "کردارێکی بەڕێوەبردن تۆمار کرا" : "تم تسجيل عملية إدارية";
+  return ADMIN_SECURITY_ACTION_COPY[lang].unknownLog;
 }
 
 function formatLimitCount(
@@ -142,10 +143,7 @@ function formatLimitCount(
 ): string {
   const currentNumber = `\u2066${current}\u2069`;
   const limitNumber = `\u2066${limit}\u2069`;
-
-  if (lang === "en") return `${currentNumber} of ${limitNumber}`;
-  if (lang === "ku") return `${currentNumber} لە ${limitNumber}`;
-  return `${currentNumber} من ${limitNumber}`;
+  return `${currentNumber} ${ADMIN_SECURITY_ACTION_COPY[lang].countSeparator} ${limitNumber}`;
 }
 
 export default function AdminWorkMonitorPage({ adminId }: { adminId: string }) {
