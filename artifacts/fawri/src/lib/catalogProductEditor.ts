@@ -327,10 +327,15 @@ export function validateCatalogProductForm(
 ): CatalogEditorValidationCode | null {
   if (!form.name.trim()) return 'name';
 
-  const currentPrice = wholeNumber(form.current_price || form.original_price);
+  const isService = form.item_type === 'service';
+  const serviceUsesAmount =
+    !isService || form.service_price_type === 'fixed' || form.service_price_type === 'from';
+  const currentPrice = serviceUsesAmount
+    ? wholeNumber(form.current_price || form.original_price)
+    : 0;
   if (currentPrice === null) return 'price';
 
-  if (form.original_price.trim()) {
+  if (serviceUsesAmount && form.original_price.trim()) {
     const comparePrice = wholeNumber(form.original_price);
     if (comparePrice === null || comparePrice < currentPrice) return 'compare_price';
   }
@@ -338,7 +343,7 @@ export function validateCatalogProductForm(
   const productImageError = validateImages(form.image_refs, 'image_reference');
   if (productImageError) return productImageError;
 
-  if (form.item_type === 'service') {
+  if (isService) {
     if (
       optionalBoundedWholeNumber(form.service_duration_minutes, 1, 1_440) === null
     ) {
@@ -425,8 +430,12 @@ export function catalogProductInputFromForm(
   const variants = isService
     ? []
     : form.variants.map(variant => variantInput(variant, trackInventory));
-  const currentPrice = wholeNumber(form.current_price || form.original_price) ?? 0;
-  const compareAtPrice = form.original_price.trim()
+  const serviceUsesAmount =
+    !isService || form.service_price_type === 'fixed' || form.service_price_type === 'from';
+  const currentPrice = serviceUsesAmount
+    ? wholeNumber(form.current_price || form.original_price) ?? 0
+    : 0;
+  const compareAtPrice = serviceUsesAmount && form.original_price.trim()
     ? wholeNumber(form.original_price)
     : null;
 
