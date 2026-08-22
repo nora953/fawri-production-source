@@ -97,3 +97,35 @@ test("service price type controls the customer-safe price wording", () => {
   });
   assert.equal(customAnswer.includes("0"), false);
 });
+
+test("active promotion discloses effective price and base comparison without stale pricing", () => {
+  const answer = catalogPriceAnswer({
+    language: "ar",
+    itemName: "قميص",
+    unitPriceIqd: 40_000,
+    baseUnitPriceIqd: 50_000,
+    currencyCode: "IQD",
+    promotionApplied: true,
+    commerce: productCommerce,
+  });
+  assert.equal(
+    answer,
+    "سعر قميص حاليًا ضمن العرض 40,000 دينار بدل 50,000 دينار.",
+  );
+});
+
+test("promotion formatting remains currency-code based for future non-IQD catalogs", () => {
+  const answer = catalogPriceAnswer({
+    language: "en",
+    itemName: "Consultation",
+    unitPriceIqd: 80,
+    baseUnitPriceIqd: 100,
+    currencyCode: "USD",
+    promotionApplied: true,
+    commerce: serviceCommerce,
+  });
+  assert.equal(
+    answer,
+    "Consultation is currently 80 USD on offer, instead of 100 USD.",
+  );
+});
