@@ -56,7 +56,12 @@ export function currencyFractionDigits(currencyValue: unknown): number {
     currency,
   }).resolvedOptions();
   const digits = options.maximumFractionDigits;
-  if (!Number.isInteger(digits) || digits < 0 || digits > 6) {
+  if (
+    typeof digits !== "number" ||
+    !Number.isInteger(digits) ||
+    digits < 0 ||
+    digits > 6
+  ) {
     throw new CurrencyMoneyError(
       "CURRENCY_SCALE_INVALID",
       "currency fraction digit scale is unsupported",
