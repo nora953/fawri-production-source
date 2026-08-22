@@ -15,6 +15,7 @@ import { backgroundJobs, backgroundJobPayloads } from "./jobs";
 import { merchantChannels } from "./channels";
 import { channelInboundEvents, outboundDeliveries, replyRefunds, replyReservations } from "./channel-messaging";
 import { catalogIdempotencyKeys, catalogIdentifiers, catalogImageReferences, catalogVariantOptions, inventoryMutations, products, productVariants } from "./catalog";
+import { commercePromotions } from "./commerce-promotions";
 import { replyLedger, subscriptionReplyBatches, subscriptions } from "./subscriptions";
 import { saasBillingEvents, saasBillingOrders, saasBillingRefunds, saasEntitlementApplications } from "./saas-billing";
 import { conversations, messages } from "./conversations";
@@ -84,6 +85,10 @@ export const catalogIdentifiersTenantPolicy = tenantPolicy("catalog_identifiers_
 export const catalogImageReferencesTenantPolicy = tenantPolicy("catalog_image_references_tenant_boundary", catalogImageReferences);
 export const catalogIdempotencyKeysTenantPolicy = tenantPolicy("catalog_idempotency_keys_tenant_boundary", catalogIdempotencyKeys);
 export const inventoryMutationsTenantPolicy = tenantPolicy("inventory_mutations_tenant_boundary", inventoryMutations);
+export const commercePromotionsTenantPolicy = tenantPolicy(
+  "commerce_promotions_tenant_boundary",
+  commercePromotions,
+);
 export const subscriptionsTenantPolicy = tenantPolicy("subscriptions_tenant_boundary", subscriptions);
 export const subscriptionReplyBatchesTenantPolicy = tenantPolicy("subscription_reply_batches_tenant_boundary", subscriptionReplyBatches);
 export const replyLedgerTenantPolicy = tenantPolicy("reply_ledger_tenant_boundary", replyLedger);
