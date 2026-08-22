@@ -42,13 +42,57 @@
   outline: none;
 }
 
+/* Provider-cost settings is rendered through a body portal, so it sits outside
+   .early-warning-final. Mirror the approved early-warning select treatment here. */
+body > div.fixed.inset-0.z-\[100\] > section.max-w-6xl[dir] select {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 1px solid #dbe4ef;
+  border-radius: 0.7rem;
+  background-color: #ffffff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+body > div.fixed.inset-0.z-\[100\] > section.max-w-6xl[dir="rtl"] select {
+  background-position: left 0.65rem center;
+  padding-left: 2rem !important;
+  padding-right: 0.75rem !important;
+  text-align: right;
+}
+
+body > div.fixed.inset-0.z-\[100\] > section.max-w-6xl[dir="ltr"] select {
+  background-position: right 0.65rem center;
+  padding-right: 2rem !important;
+  padding-left: 0.75rem !important;
+  text-align: left;
+}
+
+body > div.fixed.inset-0.z-\[100\] > section.max-w-6xl[dir] select:hover {
+  background-color: #fbfdff;
+  border-color: #cbd5e1;
+}
+
+body > div.fixed.inset-0.z-\[100\] > section.max-w-6xl[dir] select:focus,
+body > div.fixed.inset-0.z-\[100\] > section.max-w-6xl[dir] select:focus-visible {
+  border-color: rgba(249, 115, 22, 0.55);
+  box-shadow: 0 0 0 2px rgba(249, 115, 22, 0.12);
+  outline: none;
+}
+
 .early-warning-final main .grid.grid-cols-2.xl\:grid-cols-4 > div > p:last-child {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.dark .early-warning-final select {
+.dark .early-warning-final select,
+.dark body > div.fixed.inset-0.z-\[100\] > section.max-w-6xl[dir] select {
   border-color: rgba(148, 163, 184, 0.28);
   background-color: rgba(15, 23, 42, 0.82);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23e2e8f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
