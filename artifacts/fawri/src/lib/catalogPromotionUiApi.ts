@@ -46,8 +46,8 @@ export type CatalogPromotionInput = {
   name: string;
   scope: CatalogPromotionScope;
   effect: CatalogPromotionEffect;
-  product_id?: string;
-  variant_id?: string;
+  product_id?: string | null;
+  variant_id?: string | null;
   percentage_bps?: number | null;
   amount_minor?: number | null;
   minimum_subtotal_minor?: number | null;
