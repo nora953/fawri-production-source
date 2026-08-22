@@ -56,6 +56,10 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { getAdminAuthHeaders } from "@/lib/store";
 import { ADMIN_EARLY_WARNING_PAGE_TEXT } from "@/lib/translations/features/pages/AdminEarlyWarningPage";
+import {
+  ADMIN_EARLY_WARNING_WORKSPACE_COPY,
+  type AdminEarlyWarningWorkspaceCopy,
+} from "@/lib/translations/features/pages/AdminEarlyWarningWorkspace";
 
 type WindowKey = "1h" | "24h" | "7d" | "30d";
 type Health = "healthy" | "warning" | "critical" | "unknown";
@@ -371,385 +375,8 @@ type ApiResponse = {
   error?: string;
 };
 
-type WorkspaceCopy = {
-  openSection: string;
-  layout: string;
-  onePanel: string;
-  twoPanels: string;
-  fourPanels: string;
-  emptyWorkspace: string;
-  emptyWorkspaceHint: string;
-  minimized: string;
-  more: string;
-  restore: string;
-  minimize: string;
-  maximize: string;
-  close: string;
-  alerts: string;
-  active: string;
-  resolved: string;
-  all: string;
-  general: string;
-  merchant: string;
-  started: string;
-  resolvedAt: string;
-  duration: string;
-  ongoing: string;
-  historyUnavailable: string;
-  affectedMerchants: string;
-  monthlyKnownCost: string;
-  projectedCost: string;
-  pricingCoverage: string;
-  pricingUnavailable: string;
-  pricingPartial: string;
-  billingNotice: string;
-  dailyCost: string;
-  dailyTokens: string;
-  merchantReports: string;
-  knownCost: string;
-  outboundMessages: string;
-  unpriced: string;
-  costReportUnavailable: string;
-  month: string;
-  budget: string;
-  budgetRemaining: string;
-  budgetUsage: string;
-  previousMonth: string;
-  connectedUsage: string;
-  disconnectedCosts: string;
-  notConnected: string;
-  actualBilling: string;
-  selectMerchant: string;
-  tokenInput: string;
-  tokenOutput: string;
-  totalTokens: string;
-  dailyMerchantUsage: string;
-  tokenShare: string;
-  messageShare: string;
-  storageShare: string;
-  merchantReason: string;
-  noConnectedChannel: string;
-  channelErrors: string;
-  messageFailures: string;
-  deadLetter: string;
-  uncertainDelivery: string;
-  refundConflict: string;
-  otp: string;
-  databaseStorage: string;
-  networkTransfer: string;
-  objectStorage: string;
-  providerBilling: string;
-  supportStorage: string;
-  addedAttachments: string;
-  messagesMetric: string;
-  storageMetric: string;
-  tokensMetric: string;
-  costMetric: string;
-  statusFilter: string;
-  scopeFilter: string;
-  severityFilter: string;
-  noActiveIncidents: string;
-  noResolvedIncidents: string;
-  noMatchingIncidents: string;
-  noTokenData: string;
-  noMessageData: string;
-  noStorageData: string;
-  noCostData: string;
-  costPricingRequired: string;
-  reportingWindow: string;
-  monthlyScope: string;
-  sortBy: string;
-  highestCost: string;
-  highestTokens: string;
-  highestMessages: string;
-  highestStorage: string;
-  rank: string;
-};
-
-const COPY: Record<"ar" | "ku" | "en", WorkspaceCopy> = {
-  ar: {
-    openSection: "فتح قسم",
-    layout: "تخطيط النوافذ",
-    onePanel: "نافذة واحدة",
-    twoPanels: "نافذتان",
-    fourPanels: "أربع نوافذ",
-    emptyWorkspace: "مساحة المراقبة فارغة",
-    emptyWorkspaceHint: "افتح قسمًا من القائمة أعلاه لبدء المراقبة.",
-    minimized: "النوافذ المصغّرة",
-    more: "المزيد",
-    restore: "استعادة",
-    minimize: "تصغير",
-    maximize: "تكبير",
-    close: "إغلاق",
-    alerts: "مركز التحذيرات",
-    active: "مستمر",
-    resolved: "تمت المعالجة",
-    all: "الكل",
-    general: "عام — فوري",
-    merchant: "متجر",
-    started: "بدأ",
-    resolvedAt: "تمت المعالجة",
-    duration: "المدة",
-    ongoing: "مستمر الآن",
-    historyUnavailable: "سجل دورة حياة التحذيرات غير متاح حاليًا؛ ما زالت التحذيرات اللحظية ظاهرة.",
-    affectedMerchants: "متاجر متأثرة",
-    monthlyKnownCost: "التكلفة المعروفة",
-    projectedCost: "المتوقع لنهاية الشهر",
-    pricingCoverage: "تغطية التسعير",
-    pricingUnavailable: "لا توجد أسعار تشغيل مضبوطة بعد؛ تعرض اللوحة الاستهلاك الحقيقي فقط ولا تفترض تكلفة.",
-    pricingPartial: "بعض الخدمات فقط لها أسعار مضبوطة؛ الإجماليات لا تشمل الخدمات غير المسعّرة.",
-    billingNotice: "فواتير المزودين غير مربوطة مباشرة بعد؛ أي تكلفة ظاهرة تقدير محسوب من أسعار تشغيل مضبوطة صراحة.",
-    dailyCost: "التكلفة اليومية المعروفة",
-    dailyTokens: "استهلاك التوكن اليومي",
-    merchantReports: "تقارير استهلاك المتاجر",
-    knownCost: "تكلفة معروفة",
-    outboundMessages: "رسائل صادرة",
-    unpriced: "غير مسعّر",
-    costReportUnavailable: "تعذر تحميل تقرير الاستهلاك والتكاليف.",
-    month: "الشهر",
-    budget: "ميزانية الشهر",
-    budgetRemaining: "المتبقي من الميزانية",
-    budgetUsage: "استخدام الميزانية",
-    previousMonth: "الشهر السابق",
-    connectedUsage: "مصادر استهلاك موصولة",
-    disconnectedCosts: "تكاليف غير مربوطة بعد",
-    notConnected: "غير مربوط",
-    actualBilling: "الفوترة الفعلية",
-    selectMerchant: "المتجر",
-    tokenInput: "توكن الإدخال",
-    tokenOutput: "توكن الإخراج",
-    totalTokens: "إجمالي التوكن",
-    dailyMerchantUsage: "الاستهلاك اليومي للمتجر",
-    tokenShare: "حصة التوكن من فوري",
-    messageShare: "حصة الرسائل من فوري",
-    storageShare: "حصة التخزين من فوري",
-    merchantReason: "سبب التحذير",
-    noConnectedChannel: "لا توجد قناة متصلة",
-    channelErrors: "أخطاء قنوات حديثة",
-    messageFailures: "فشل رسائل",
-    deadLetter: "مهام DLQ",
-    uncertainDelivery: "إرسال غير مؤكد",
-    refundConflict: "تعارض استرجاع",
-    otp: "OTP / رسائل التحقق",
-    databaseStorage: "تخزين PostgreSQL",
-    networkTransfer: "نقل البيانات",
-    objectStorage: "تخزين الملفات خارج مرفقات الدعم",
-    providerBilling: "فواتير مزودي الخدمات",
-    supportStorage: "تخزين مرفقات الدعم",
-    addedAttachments: "مرفقات مضافة",
-    messagesMetric: "الرسائل",
-    storageMetric: "التخزين",
-    tokensMetric: "التوكن",
-    costMetric: "التكلفة",
-    statusFilter: "الحالة",
-    scopeFilter: "النطاق",
-    severityFilter: "الخطورة",
-    noActiveIncidents: "لا توجد إنذارات مستمرة تطابق الفلاتر المحددة.",
-    noResolvedIncidents: "لا توجد إنذارات تمت معالجتها تطابق الفلاتر المحددة.",
-    noMatchingIncidents: "لا توجد إنذارات تطابق الفلاتر المحددة.",
-    noTokenData: "لا توجد بيانات توكن لهذا الشهر.",
-    noMessageData: "لا توجد بيانات رسائل لهذا الشهر.",
-    noStorageData: "لا توجد بيانات تخزين يومية لهذا الشهر.",
-    noCostData: "لا توجد تكلفة يومية معروفة لهذا الشهر.",
-    costPricingRequired: "اضبط أسعار AI أو الرسائل لعرض التكلفة اليومية المعروفة.",
-    reportingWindow: "بيانات هذا القسم ضمن الفترة المحددة",
-    monthlyScope: "هذا التقرير شهري ولا يتبع فلتر الساعة/الأيام أعلاه.",
-    sortBy: "ترتيب المتاجر حسب",
-    highestCost: "الأعلى تكلفة",
-    highestTokens: "الأعلى توكن",
-    highestMessages: "الأعلى رسائل",
-    highestStorage: "الأعلى تخزينًا",
-    rank: "الترتيب",
-  },
-  ku: {
-    openSection: "کردنەوەی بەش",
-    layout: "ڕێکخستنی پەنجەرەکان",
-    onePanel: "یەک پەنجەرە",
-    twoPanels: "دوو پەنجەرە",
-    fourPanels: "چوار پەنجەرە",
-    emptyWorkspace: "شوێنی چاودێری بەتاڵە",
-    emptyWorkspaceHint: "بەشێک بکەرەوە بۆ دەستپێکردن.",
-    minimized: "پەنجەرە بچووککراوەکان",
-    more: "زیاتر",
-    restore: "گەڕاندنەوە",
-    minimize: "بچووککردنەوە",
-    maximize: "گەورەکردن",
-    close: "داخستن",
-    alerts: "ناوەندی ئاگاداری",
-    active: "بەردەوامە",
-    resolved: "چارەسەر کرا",
-    all: "هەموو",
-    general: "گشتی — فۆری",
-    merchant: "فرۆشیار",
-    started: "دەستی پێکرد",
-    resolvedAt: "چارەسەر کرا",
-    duration: "ماوە",
-    ongoing: "ئێستا بەردەوامە",
-    historyUnavailable: "مێژووی ئاگاداری بەردەست نییە.",
-    affectedMerchants: "فرۆشیاری کاریگەری لەسەر",
-    monthlyKnownCost: "تێچووی ناسراو",
-    projectedCost: "پێشبینی کۆتایی مانگ",
-    pricingCoverage: "داپۆشینی نرخ",
-    pricingUnavailable: "نرخەکان دانەنراون؛ تەنها بەکارهێنانی ڕاستەقینە پیشان دەدرێت.",
-    pricingPartial: "تەنها هەندێک خزمەتگوزاری نرخدارە.",
-    billingNotice: "پسوڵەی دابینکەر هێشتا ڕاستەوخۆ پەیوەست نییە.",
-    dailyCost: "تێچووی ڕۆژانەی ناسراو",
-    dailyTokens: "تۆکنی ڕۆژانە",
-    merchantReports: "ڕاپۆرتی بەکارهێنانی فرۆشیار",
-    knownCost: "تێچووی ناسراو",
-    outboundMessages: "نامەی دەرچوو",
-    unpriced: "بێ نرخ",
-    costReportUnavailable: "ڕاپۆرت بار نەکرا.",
-    month: "مانگ",
-    budget: "بودجەی مانگ",
-    budgetRemaining: "بودجەی ماوە",
-    budgetUsage: "بەکارهێنانی بودجە",
-    previousMonth: "مانگی پێشوو",
-    connectedUsage: "سەرچاوە پەیوەستەکان",
-    disconnectedCosts: "تێچووی نەپەیوەستراو",
-    notConnected: "نەپەیوەستراو",
-    actualBilling: "پسوڵەی ڕاستەقینە",
-    selectMerchant: "فرۆشیار",
-    tokenInput: "تۆکنی هاتنەژوور",
-    tokenOutput: "تۆکنی دەرچوو",
-    totalTokens: "کۆی تۆکن",
-    dailyMerchantUsage: "بەکارهێنانی ڕۆژانەی فرۆشیار",
-    tokenShare: "بەشی تۆکن",
-    messageShare: "بەشی نامە",
-    storageShare: "بەشی هەڵگرتن",
-    merchantReason: "هۆکاری ئاگاداری",
-    noConnectedChannel: "هیچ کەناڵێک پەیوەست نییە",
-    channelErrors: "هەڵەی کەناڵ",
-    messageFailures: "شکستی نامە",
-    deadLetter: "DLQ",
-    uncertainDelivery: "گەیاندنی نادڵنیا",
-    refundConflict: "ناکۆکی گەڕاندنەوە",
-    otp: "OTP",
-    databaseStorage: "هەڵگرتنی PostgreSQL",
-    networkTransfer: "گواستنەوەی داتا",
-    objectStorage: "هەڵگرتنی فایل لە دەرەوەی هاوپێچەکانی پشتگیری",
-    providerBilling: "پسوڵەی دابینکەر",
-    supportStorage: "هەڵگرتنی هاوپێچی پشتگیری",
-    addedAttachments: "هاوپێچی زیادکراو",
-    messagesMetric: "نامە",
-    storageMetric: "هەڵگرتن",
-    tokensMetric: "تۆکن",
-    costMetric: "تێچوو",
-    statusFilter: "دۆخ",
-    scopeFilter: "مەودا",
-    severityFilter: "مەترسی",
-    noActiveIncidents: "هیچ ئاگادارییەکی بەردەوام کە لەگەڵ فلتەرەکان بگونجێت نییە.",
-    noResolvedIncidents: "هیچ ئاگادارییەکی چارەسەرکراو کە لەگەڵ فلتەرەکان بگونجێت نییە.",
-    noMatchingIncidents: "هیچ ئاگادارییەک لەگەڵ فلتەرەکان ناگونجێت.",
-    noTokenData: "داتای تۆکن بۆ ئەم مانگە نییە.",
-    noMessageData: "داتای نامە بۆ ئەم مانگە نییە.",
-    noStorageData: "داتای ڕۆژانەی هەڵگرتن بۆ ئەم مانگە نییە.",
-    noCostData: "تێچووی ڕۆژانەی ناسراو بۆ ئەم مانگە نییە.",
-    costPricingRequired: "نرخی AI یان نامە دابنێ بۆ پیشاندانی تێچووی ڕۆژانە.",
-    reportingWindow: "داتای ئەم بەشە لە ماوەی هەڵبژێردراودایە",
-    monthlyScope: "ئەم ڕاپۆرتە مانگانەیە و بە فلتەری کاتەکەوە نەبەستراوە.",
-    sortBy: "ڕیزکردنی فرۆشیار بە",
-    highestCost: "زۆرترین تێچوو",
-    highestTokens: "زۆرترین تۆکن",
-    highestMessages: "زۆرترین نامە",
-    highestStorage: "زۆرترین هەڵگرتن",
-    rank: "ڕیز",
-  },
-  en: {
-    openSection: "Open section",
-    layout: "Window layout",
-    onePanel: "One panel",
-    twoPanels: "Two panels",
-    fourPanels: "Four panels",
-    emptyWorkspace: "Monitoring workspace is empty",
-    emptyWorkspaceHint: "Open a section above to begin monitoring.",
-    minimized: "Minimized windows",
-    more: "More",
-    restore: "Restore",
-    minimize: "Minimize",
-    maximize: "Maximize",
-    close: "Close",
-    alerts: "Alert center",
-    active: "Ongoing",
-    resolved: "Resolved",
-    all: "All",
-    general: "General — Fawri",
-    merchant: "Merchant",
-    started: "Started",
-    resolvedAt: "Resolved",
-    duration: "Duration",
-    ongoing: "Ongoing now",
-    historyUnavailable: "Incident lifecycle history is unavailable; current alerts are still visible.",
-    affectedMerchants: "Affected merchants",
-    monthlyKnownCost: "Known cost",
-    projectedCost: "Projected month end",
-    pricingCoverage: "Pricing coverage",
-    pricingUnavailable: "Service prices are not configured. Real usage is shown without inventing a cost.",
-    pricingPartial: "Only some services have configured rates; totals exclude unpriced services.",
-    billingNotice: "Provider billing is not connected yet; visible cost is an operating estimate from explicitly configured rates.",
-    dailyCost: "Known daily cost",
-    dailyTokens: "Daily token usage",
-    merchantReports: "Merchant usage reports",
-    knownCost: "Known cost",
-    outboundMessages: "Outbound messages",
-    unpriced: "Unpriced",
-    costReportUnavailable: "Usage and cost report is unavailable.",
-    month: "Month",
-    budget: "Monthly budget",
-    budgetRemaining: "Budget remaining",
-    budgetUsage: "Budget usage",
-    previousMonth: "Previous month",
-    connectedUsage: "Connected usage sources",
-    disconnectedCosts: "Costs not connected yet",
-    notConnected: "Not connected",
-    actualBilling: "Actual billing",
-    selectMerchant: "Merchant",
-    tokenInput: "Input tokens",
-    tokenOutput: "Output tokens",
-    totalTokens: "Total tokens",
-    dailyMerchantUsage: "Daily merchant usage",
-    tokenShare: "Share of Fawri tokens",
-    messageShare: "Share of Fawri messages",
-    storageShare: "Share of Fawri storage",
-    merchantReason: "Warning reason",
-    noConnectedChannel: "No connected channel",
-    channelErrors: "Recent channel errors",
-    messageFailures: "Message failures",
-    deadLetter: "DLQ jobs",
-    uncertainDelivery: "Uncertain delivery",
-    refundConflict: "Refund conflict",
-    otp: "OTP delivery",
-    databaseStorage: "PostgreSQL storage",
-    networkTransfer: "Network transfer",
-    objectStorage: "File/object storage outside support attachments",
-    providerBilling: "Provider invoices",
-    supportStorage: "Support attachment storage",
-    addedAttachments: "Attachments added",
-    messagesMetric: "Messages",
-    storageMetric: "Storage",
-    tokensMetric: "Tokens",
-    costMetric: "Cost",
-    statusFilter: "Status",
-    scopeFilter: "Scope",
-    severityFilter: "Severity",
-    noActiveIncidents: "No ongoing incidents match the selected filters.",
-    noResolvedIncidents: "No resolved incidents match the selected filters.",
-    noMatchingIncidents: "No incidents match the selected filters.",
-    noTokenData: "No token data is available for this month.",
-    noMessageData: "No message data is available for this month.",
-    noStorageData: "No daily storage data is available for this month.",
-    noCostData: "No known daily cost is available for this month.",
-    costPricingRequired: "Configure AI or messaging rates to show known daily cost.",
-    reportingWindow: "This section reflects the selected monitoring window",
-    monthlyScope: "This report is monthly and does not follow the hour/day filter above.",
-    sortBy: "Rank merchants by",
-    highestCost: "Highest cost",
-    highestTokens: "Highest tokens",
-    highestMessages: "Highest messages",
-    highestStorage: "Highest storage",
-    rank: "Rank",
-  },
-};
+type WorkspaceCopy = AdminEarlyWarningWorkspaceCopy;
+const COPY = ADMIN_EARLY_WARNING_WORKSPACE_COPY;
 
 function healthClass(health: Health): string {
   if (health === "critical") return "border-red-300 bg-red-50 text-red-900 dark:border-red-900 dark:bg-red-950/30 dark:text-red-100";
@@ -839,7 +466,7 @@ function ShareBar({ label, value }: { label: string; value: number }) {
   );
 }
 
-function WorkspacePanel({ title, icon: Icon, focused, compact, onMinimize, onFocus, onClose, labels, children }: {
+function WorkspacePanel({ title, icon: Icon, focused, compact, onMinimize, onFocus, onClose, labels, headerSlot, children }: {
   title: string;
   icon: LucideIcon;
   focused: boolean;
@@ -848,6 +475,7 @@ function WorkspacePanel({ title, icon: Icon, focused, compact, onMinimize, onFoc
   onFocus: () => void;
   onClose: () => void;
   labels: WorkspaceCopy;
+  headerSlot?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -856,6 +484,7 @@ function WorkspacePanel({ title, icon: Icon, focused, compact, onMinimize, onFoc
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <span className={`flex shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ${compact ? "h-6 w-6" : "h-7 w-7"}`}><Icon className="h-4 w-4" /></span>
           <h2 className="truncate text-sm font-black">{title}</h2>
+          {headerSlot}
         </div>
         <div className="flex items-center gap-1" dir="ltr">
           <button type="button" title={labels.minimize} onClick={onMinimize} className="flex h-7 w-7 items-center justify-center rounded-lg text-muted-foreground hover:bg-muted"><Minus className="h-3.5 w-3.5" /></button>
@@ -868,7 +497,7 @@ function WorkspacePanel({ title, icon: Icon, focused, compact, onMinimize, onFoc
   );
 }
 
-export default function AdminEarlyWarningWorkspacePageV2() {
+export default function AdminEarlyWarningWorkspacePage() {
   const { lang } = useI18n();
   const text = ADMIN_EARLY_WARNING_PAGE_TEXT[lang];
   const copy = COPY[lang];
@@ -952,14 +581,30 @@ export default function AdminEarlyWarningWorkspacePageV2() {
       timeZone: "Asia/Baghdad",
     }).format(date);
   }, [lang, locale, text.unavailable]);
+  const formatCompactDate = useCallback((value: string | null | undefined) => {
+    if (!value) return text.unavailable;
+    const date = new Date(value);
+    if (!Number.isFinite(date.getTime())) return text.unavailable;
+    return new Intl.DateTimeFormat(locale, {
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: lang === "en",
+      timeZone: "Asia/Baghdad",
+    }).format(date);
+  }, [lang, locale, text.unavailable]);
   const formatDuration = useCallback((seconds: number) => {
     const safe = Math.max(0, Math.round(seconds || 0));
     const hours = Math.floor(safe / 3600);
     const minutes = Math.floor((safe % 3600) / 60);
     const remainder = safe % 60;
-    if (lang === "en") return hours > 0 ? `${hours}h ${minutes}m` : minutes > 0 ? `${minutes}m ${remainder}s` : `${remainder}s`;
-    return hours > 0 ? `${hours} س ${minutes} د` : minutes > 0 ? `${minutes} د ${remainder} ث` : `${remainder} ث`;
-  }, [lang]);
+    return hours > 0
+      ? `${hours}${copy.hoursShort} ${minutes}${copy.minutesShort}`
+      : minutes > 0
+        ? `${minutes}${copy.minutesShort} ${remainder}${copy.secondsShort}`
+        : `${remainder}${copy.secondsShort}`;
+  }, [copy.hoursShort, copy.minutesShort, copy.secondsShort]);
   const moneyValue = useCallback((value: number | null | undefined) => value === null || value === undefined || !Number.isFinite(value) ? text.unavailable : new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
@@ -1012,13 +657,13 @@ export default function AdminEarlyWarningWorkspacePageV2() {
     { key: "messaging", label: text.messaging, icon: MessageCircle },
     { key: "bot", label: text.botQuality, icon: ShieldAlert },
     { key: "ai", label: text.ai, icon: Bot },
-    { key: "costs", label: lang === "en" ? "Usage & costs" : lang === "ku" ? "بەکارهێنان و تێچوو" : "الاستهلاك والتكاليف", icon: WalletCards },
+    { key: "costs", label: copy.costs, icon: WalletCards },
     { key: "credits", label: text.credits, icon: Coins },
     { key: "support", label: text.support, icon: Headphones },
     { key: "data", label: text.dataUsage, icon: HardDrive },
     { key: "coverage", label: text.coverage, icon: LayoutGrid },
     { key: "merchants", label: text.merchantHealth, icon: Users },
-  ], [copy.alerts, lang, text]);
+  ], [copy.alerts, copy.costs, text]);
   const panelByKey = useMemo(() => new Map(panelDefinitions.map((item) => [item.key, item])), [panelDefinitions]);
 
   const openPanel = (key: PanelKey) => {
@@ -1120,12 +765,12 @@ export default function AdminEarlyWarningWorkspacePageV2() {
     );
 
     if (key === "api") return <div className="space-y-2"><div className={metricGrid}>{tile(text.requests, snapshot.http.requests, Network)}{tile(text.errors, snapshot.http.errors, AlertTriangle)}{tile(text.p95, metricValue(snapshot.http.p95_latency_ms, text.unavailable, " ms"), Gauge)}{tile(text.p99, metricValue(snapshot.http.p99_latency_ms, text.unavailable, " ms"), Activity)}{tile(text.rejected, snapshot.http.rejected, XCircle)}{tile(text.errorRate, snapshot.http.error_rate === null ? text.unavailable : `${(snapshot.http.error_rate * 100).toFixed(2)}%`, AlertTriangle)}{tile(text.p50, metricValue(snapshot.http.p50_latency_ms, text.unavailable, " ms"), Gauge)}{tile(text.dataUsage, byteValue((snapshot.http.request_bytes ?? 0) + (snapshot.http.response_bytes ?? 0), text.unavailable), Network)}</div>{!compactMode && <p className="rounded-xl border bg-muted/20 p-3 text-[11px] leading-5 text-muted-foreground">{text.currentProcessNotice}</p>}</div>;
-    if (key === "database") return <div className={metricGrid}>{tile(text.databaseSnapshotLatency, `${snapshot.database_latency_ms.toLocaleString("en-US")} ms`, Database)}{tile(text.oldestReady, `${Math.round(snapshot.queue.oldest_ready_age_seconds).toLocaleString("en-US")} ${text.seconds}`, Clock3)}{tile(text.databaseStorage, text.unavailable, HardDrive)}{tile(text.currentProcess, formatDate(snapshot.generated_at), Clock3)}</div>;
+    if (key === "database") return <div className={metricGrid}>{tile(text.databaseSnapshotLatency, `${snapshot.database_latency_ms.toLocaleString("en-US")} ms`, Database)}{tile(text.oldestReady, `${Math.round(snapshot.queue.oldest_ready_age_seconds).toLocaleString("en-US")} ${text.seconds}`, Clock3)}{tile(text.databaseStorage, text.unavailable, HardDrive)}{tile(text.currentProcess, compactMode ? formatCompactDate(snapshot.generated_at) : formatDate(snapshot.generated_at), Clock3)}</div>;
     if (key === "queue") return <div className={metricGrid}>{tile(text.readyJobs, snapshot.queue.ready, Server)}{tile(text.processingJobs, snapshot.queue.processing, Activity)}{tile(text.deadLetter, snapshot.queue.dead_letter, AlertTriangle)}{tile(text.failedJobs, snapshot.queue.failed_in_window, XCircle)}</div>;
     if (key === "channels") return <div className={metricGrid}>{tile(text.connectedChannels, snapshot.channels.connected, Wifi)}{tile(text.nonConnectedChannels, snapshot.channels.non_connected, Network)}{tile(text.channelErrors, snapshot.channels.recent_errors, AlertTriangle)}{tile(text.expiringCredentials, snapshot.channels.expiring_credentials_7d, KeyRound)}{tile(text.latestWebhook, formatDate(snapshot.channels.latest_webhook_at), Clock3)}</div>;
     if (key === "messaging") return <div className={metricGrid}>{tile(text.inboundEvents, snapshot.messaging.inbound_events, MessageCircle)}{tile(text.messages, snapshot.messaging.messages, MessageCircle)}{tile(text.failedMessages, snapshot.messaging.failed_messages, XCircle)}{tile(text.sent, snapshot.messaging.outbound_sent, CheckCircle2)}{tile(text.confirmedFailed, snapshot.messaging.outbound_confirmed_failed, XCircle)}{tile(text.uncertain, snapshot.messaging.outbound_uncertain, AlertTriangle)}{tile(text.stuckPending, snapshot.messaging.outbound_stuck_pending, Clock3)}{tile(text.deliveryP95, metricValue(snapshot.messaging.outbound_p95_latency_ms, text.unavailable, " ms"), Gauge)}</div>;
     if (key === "bot") return <div className={metricGrid}>{tile(text.decisions, snapshot.bot_quality.knowledge_decisions, Bot)}{tile(text.successfulDecisions, snapshot.bot_quality.successful_decisions, CheckCircle2)}{tile(text.handoffs, snapshot.bot_quality.handoffs, Users)}{tile(text.rejectedDecisions, snapshot.bot_quality.rejected_decisions, AlertTriangle)}{tile(text.injectionBlocks, snapshot.bot_quality.prompt_injection_blocks, ShieldAlert)}{tile(text.dangerousGuardrails, snapshot.bot_quality.dangerous_guardrail_events, XCircle)}</div>;
-    if (key === "ai") return <div className="space-y-3"><div className={metricGrid}>{tile(text.aiCalls, snapshot.ai_runtime.calls, Bot)}{tile(copy.tokenInput, snapshot.ai_runtime.input_tokens, Activity)}{tile(copy.tokenOutput, snapshot.ai_runtime.output_tokens, Activity)}{tile(copy.totalTokens, snapshot.ai_runtime.total_tokens, Gauge)}{tile(text.averageAiLatency, metricValue(snapshot.ai_runtime.average_latency_ms, text.unavailable, " ms"), Clock3)}{tile(text.historicAi, metricValue(snapshot.ai_usage.total_tokens, text.unavailable), Database)}</div>{!compactMode && snapshot.ai_runtime.providers.length > 0 && <div className="overflow-auto rounded-xl border"><table className="w-full min-w-[520px] text-xs"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="px-3 py-2 text-start">Provider</th><th className="px-3 py-2 text-start">Model</th><th>Calls</th><th>Tokens</th></tr></thead><tbody className="divide-y">{snapshot.ai_runtime.providers.map((provider) => <tr key={`${provider.provider_id}:${provider.model}`}><td className="px-3 py-2">{provider.provider_id}</td><td className="px-3 py-2">{provider.model}</td><td className="text-center">{provider.calls}</td><td className="text-center">{provider.total_tokens}</td></tr>)}</tbody></table></div>}</div>;
+    if (key === "ai") return <div className="space-y-3"><div className={metricGrid}>{tile(text.aiCalls, snapshot.ai_runtime.calls, Bot)}{tile(copy.tokenInput, snapshot.ai_runtime.input_tokens, Activity)}{tile(copy.tokenOutput, snapshot.ai_runtime.output_tokens, Activity)}{tile(copy.totalTokens, snapshot.ai_runtime.total_tokens, Gauge)}{tile(text.averageAiLatency, metricValue(snapshot.ai_runtime.average_latency_ms, text.unavailable, " ms"), Clock3)}{tile(text.historicAi, metricValue(snapshot.ai_usage.total_tokens, text.unavailable), Database)}</div>{!compactMode && snapshot.ai_runtime.providers.length > 0 && <div className="overflow-auto rounded-xl border"><table className="w-full min-w-[520px] text-xs"><thead className="bg-muted/50 text-muted-foreground"><tr><th className="px-3 py-2 text-start">{copy.provider}</th><th className="px-3 py-2 text-start">{copy.model}</th><th>{copy.calls}</th><th>{copy.tokens}</th></tr></thead><tbody className="divide-y">{snapshot.ai_runtime.providers.map((provider) => <tr key={`${provider.provider_id}:${provider.model}`}><td className="px-3 py-2">{provider.provider_id}</td><td className="px-3 py-2">{provider.model}</td><td className="text-center">{provider.calls}</td><td className="text-center">{provider.total_tokens}</td></tr>)}</tbody></table></div>}</div>;
 
     if (key === "costs") {
       if (snapshot.cost_report_status === "unavailable" || !cost) return <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm font-semibold text-amber-900">{copy.costReportUnavailable}</div>;
@@ -1177,8 +822,8 @@ export default function AdminEarlyWarningWorkspacePageV2() {
         <p className="rounded-lg border bg-muted/15 px-3 py-2 text-[10px] font-semibold text-muted-foreground">{copy.monthlyScope}</p>
         <div className={`rounded-xl border p-3 text-xs leading-5 ${cost.pricing_status === "configured" ? "border-emerald-300 bg-emerald-50 text-emerald-900" : "border-amber-300 bg-amber-50 text-amber-900"}`}><p className="font-black">{cost.pricing_status === "unconfigured" ? copy.pricingUnavailable : cost.pricing_status === "partial" ? copy.pricingPartial : `${copy.pricingCoverage}: 100%`}</p><p className="mt-1 opacity-80">{copy.billingNotice}</p></div>
         <div className={metricGrid}>{tile(copy.monthlyKnownCost, moneyValue(cost.known_monthly_cost_usd), WalletCards)}{tile(copy.projectedCost, moneyValue(cost.projected_month_end_cost_usd), BarChart3)}{tile(copy.budget, moneyValue(cost.monthly_budget_usd), WalletCards)}{tile(copy.budgetRemaining, moneyValue(cost.budget_remaining_usd), Gauge)}{tile(copy.budgetUsage, cost.budget_utilization_percent === null ? text.unavailable : `${cost.budget_utilization_percent.toFixed(1)}%`, Gauge)}{tile(copy.totalTokens, cost.usage.ai_total_tokens.toLocaleString("en-US"), Activity)}{tile(copy.outboundMessages, cost.usage.outbound_messages.toLocaleString("en-US"), MessageCircle)}{tile(copy.supportStorage, byteValue(cost.usage.support_storage_bytes, text.unavailable), HardDrive)}</div>
-        {cost.previous_month && <div className="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-xl border bg-muted/20 p-3 text-[11px]"><b>{copy.previousMonth}: {cost.previous_month.month}</b><span>{copy.knownCost}: {moneyValue(cost.previous_month.known_monthly_cost_usd)}</span><span>{copy.totalTokens}: {cost.previous_month.ai_total_tokens.toLocaleString("en-US")}</span><span>{copy.outboundMessages}: {cost.previous_month.outbound_messages.toLocaleString("en-US")}</span></div>}
-        <div className="rounded-xl border bg-background p-3"><div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs">{chartUsesCost ? copy.dailyCost : copy.dailyTokens}</strong><span className="text-[10px] text-muted-foreground">{cost.month}</span></div><MiniBarChart rows={cost.daily} values={chartValues} valueLabel={(value) => chartUsesCost ? moneyValue(value) : value.toLocaleString("en-US")} emptyLabel={chartUsesCost ? copy.noCostData : copy.noTokenData} /></div>
+        {cost.previous_month && <div className="flex flex-wrap items-center gap-x-5 gap-y-1 rounded-xl border bg-muted/20 p-3 text-[11px]"><b>{copy.previousMonth}: <span dir="ltr" className="inline-block">{cost.previous_month.month}</span></b><span>{copy.knownCost}: {moneyValue(cost.previous_month.known_monthly_cost_usd)}</span><span>{copy.totalTokens}: {cost.previous_month.ai_total_tokens.toLocaleString("en-US")}</span><span>{copy.outboundMessages}: {cost.previous_month.outbound_messages.toLocaleString("en-US")}</span></div>}
+        <div className="rounded-xl border bg-background p-3"><div className="mb-3 flex items-center justify-between gap-2"><strong className="text-xs">{chartUsesCost ? copy.dailyCost : copy.dailyTokens}</strong><span className="text-[10px] text-muted-foreground" dir="ltr">{cost.month}</span></div><MiniBarChart rows={cost.daily} values={chartValues} valueLabel={(value) => chartUsesCost ? moneyValue(value) : value.toLocaleString("en-US")} emptyLabel={chartUsesCost ? copy.noCostData : copy.noTokenData} /></div>
         <div className="grid gap-3 xl:grid-cols-2">
           <div className="rounded-xl border bg-background p-3"><h3 className="mb-2 text-xs font-black">{copy.connectedUsage}</h3><div className="space-y-1.5">{cost.services.map((service) => { const label = service.id === "ai_input" ? copy.tokenInput : service.id === "ai_output" ? copy.tokenOutput : service.id === "outbound_messages" ? copy.outboundMessages : copy.supportStorage; const usage = service.unit === "bytes" ? byteValue(service.usage, text.unavailable) : service.usage.toLocaleString("en-US"); return <div key={service.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-lg bg-muted/30 px-3 py-2 text-[11px]"><span className="font-bold">{label}</span><span className="tabular-nums text-muted-foreground">{usage}</span><span className="min-w-20 text-end font-black">{service.known_cost_usd === null ? copy.unpriced : moneyValue(service.known_cost_usd)}</span></div>; })}</div></div>
           <div className="rounded-xl border bg-background p-3"><h3 className="mb-2 text-xs font-black">{copy.disconnectedCosts}</h3><div className="grid gap-2 sm:grid-cols-2">{disconnected.map((label) => <div key={label} className="flex items-center justify-between gap-3 rounded-lg border border-dashed bg-muted/20 px-3 py-2 text-[11px]"><span className="font-bold">{label}</span><span className="shrink-0 rounded-full border bg-background px-2 py-1 text-[10px] font-black text-muted-foreground">{copy.notConnected}</span></div>)}</div></div>
@@ -1236,7 +881,7 @@ export default function AdminEarlyWarningWorkspacePageV2() {
 
       {!loading && !loadError && snapshot && <>
         <div className="shrink-0 px-4 py-2 sm:px-6"><div className="grid grid-cols-2 gap-2 lg:grid-cols-4"><div className={`flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2 ${healthClass(snapshot.overall_health)}`}><HealthIcon health={snapshot.overall_health} className="h-4 w-4 shrink-0" /><div className="min-w-0"><p className="text-[9px] opacity-70">{text.systemHealth}</p><p className="truncate text-xs font-black">{healthLabel(snapshot.overall_health)}</p></div></div><div className="flex min-w-0 items-center gap-2 rounded-xl border bg-card px-3 py-2"><Bell className="h-4 w-4 shrink-0 text-primary" /><div><p className="text-[9px] text-muted-foreground">{copy.active}</p><p className="text-xs font-black">{activeIncidents.length}</p></div></div><div className="flex min-w-0 items-center gap-2 rounded-xl border bg-card px-3 py-2"><Users className="h-4 w-4 shrink-0 text-primary" /><div><p className="text-[9px] text-muted-foreground">{copy.affectedMerchants}</p><p className="text-xs font-black">{affectedMerchants}</p></div></div><div className="flex min-w-0 items-center gap-2 rounded-xl border bg-card px-3 py-2"><WalletCards className="h-4 w-4 shrink-0 text-primary" /><div className="min-w-0"><p className="text-[9px] text-muted-foreground">{copy.monthlyKnownCost}</p><p className="truncate text-xs font-black">{moneyValue(snapshot.cost_report?.known_monthly_cost_usd)}</p></div></div></div></div>
-        <div className="min-h-0 min-w-0 flex-1 px-4 pb-2 sm:px-6">{visiblePanels.length === 0 ? <div className="flex h-full items-center justify-center rounded-2xl border border-dashed bg-background/50 text-center"><div><LayoutGrid className="mx-auto h-8 w-8 text-muted-foreground" /><p className="mt-2 text-sm font-black">{copy.emptyWorkspace}</p><p className="mt-1 text-xs text-muted-foreground">{copy.emptyWorkspaceHint}</p></div></div> : <div className={`grid h-full min-h-0 min-w-0 gap-2 ${gridClass} ${!focusedPanel && layoutSlots === 4 ? "grid-rows-2" : "grid-rows-1"}`}>{visiblePanels.map((key) => { const definition = panelByKey.get(key)!; return <WorkspacePanel key={key} title={definition.label} icon={definition.icon} focused={focusedPanel === key} compact={compactMode} onMinimize={() => minimizePanel(key)} onFocus={() => focusPanel(key)} onClose={() => closePanel(key)} labels={copy}>{renderPanelBody(key)}</WorkspacePanel>; })}</div>}</div>
+        <div className="min-h-0 min-w-0 flex-1 px-4 pb-2 sm:px-6">{visiblePanels.length === 0 ? <div className="flex h-full items-center justify-center rounded-2xl border border-dashed bg-background/50 text-center"><div><LayoutGrid className="mx-auto h-8 w-8 text-muted-foreground" /><p className="mt-2 text-sm font-black">{copy.emptyWorkspace}</p><p className="mt-1 text-xs text-muted-foreground">{copy.emptyWorkspaceHint}</p></div></div> : <div className={`grid h-full min-h-0 min-w-0 gap-2 ${gridClass} ${!focusedPanel && layoutSlots === 4 ? "grid-rows-2" : "grid-rows-1"}`}>{visiblePanels.map((key) => { const definition = panelByKey.get(key)!; return <WorkspacePanel key={key} title={definition.label} icon={definition.icon} focused={focusedPanel === key} compact={compactMode} onMinimize={() => minimizePanel(key)} onFocus={() => focusPanel(key)} onClose={() => closePanel(key)} labels={copy} headerSlot={key === "costs" ? <span data-provider-cost-settings-launcher className="ms-auto inline-flex shrink-0" /> : null}>{renderPanelBody(key)}</WorkspacePanel>; })}</div>}</div>
         {minimizedPanels.length > 0 && <div className="shrink-0 border-t bg-background px-4 py-1.5 sm:px-6"><div className="flex min-w-0 items-center gap-2 overflow-hidden"><span className="shrink-0 text-[10px] font-bold text-muted-foreground">{copy.minimized}</span>{trayVisible.map((key) => { const definition = panelByKey.get(key); if (!definition) return null; const Icon = definition.icon; return <button key={key} type="button" onClick={() => openPanel(key)} className="inline-flex h-7 min-w-0 max-w-40 shrink items-center gap-1.5 rounded-lg border bg-card px-2.5 text-[10px] font-bold hover:bg-muted"><Icon className="h-3 w-3 shrink-0 text-primary" /><span className="truncate">{definition.label}</span></button>; })}{trayOverflow.length > 0 && <DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="inline-flex h-7 shrink-0 items-center gap-1 rounded-lg border bg-card px-2.5 text-[10px] font-bold shadow-sm hover:bg-muted"><MoreHorizontal className="h-3 w-3" />{copy.more} +{trayOverflow.length}</button></DropdownMenuTrigger><DropdownMenuContent align={isRtl ? "end" : "start"} className="min-w-56 p-1.5" style={{ direction: isRtl ? "rtl" : "ltr" }}>{trayOverflow.map((key) => { const definition = panelByKey.get(key); if (!definition) return null; const Icon = definition.icon; return <DropdownMenuItem key={key} className="gap-2 rounded-lg py-2" onSelect={() => openPanel(key)}><Icon className="h-4 w-4 text-primary" /><span className="flex-1">{definition.label}</span></DropdownMenuItem>; })}</DropdownMenuContent></DropdownMenu>}</div></div>}
       </>}
     </main>
