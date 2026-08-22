@@ -30,12 +30,17 @@ function product(overrides = {}) {
     status: "available",
     allow_fawri_reply: true,
     updated_at: "2026-08-07T20:00:00.000Z",
+    merchant_currency_code: "IQD",
     ...overrides,
   };
 }
 
 test("product price fact reads only visible tenant PostgreSQL catalog rows", async () => {
-  const sql = new FakeSql(async (query) => query.includes("FROM products") ? [product()] : []);
+  const sql = new FakeSql(async (query) => {
+    if (query.includes("FROM products")) return [product()];
+    if (query.includes("FROM commerce_promotions")) return [];
+    return [];
+  });
   const resolver = new PostgresOperationalFactResolver(sql);
   const result = await resolver.resolve({
     merchantId: "merchant-a",
@@ -89,6 +94,7 @@ test("variant-stock product requires one explicit tenant-safe variant", async ()
         updated_at: "2026-08-07T20:00:00.000Z",
       },
     ];
+    if (query.includes("FROM commerce_promotions")) return [];
     return [];
   });
   const resolver = new PostgresOperationalFactResolver(sql);
