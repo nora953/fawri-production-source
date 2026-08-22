@@ -33,6 +33,7 @@ import { getStableAuthDeviceId } from "@/lib/authClientCutover";
 import { OWNER_RECOVERY_COPY } from "@/lib/ownerRecoveryCopy";
 import { clearSession } from "@/lib/store";
 import { ADMIN_EARLY_WARNING_PAGE_TEXT } from "@/lib/translations/features/pages/AdminEarlyWarningPage";
+import { ADMIN_PAGE_SHELL_TEXT } from "@/lib/translations/features/pages/AdminPageShell";
 import { AdminPageView } from "@/pages/admin/AdminPageView";
 import type { AdminPageViewModel } from "@/pages/admin/useAdminPageController";
 
@@ -69,12 +70,8 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
   const isRTL = adminText.dir === "rtl";
   const ownerRecoveryCopy = OWNER_RECOVERY_COPY[lang];
   const earlyWarningText = ADMIN_EARLY_WARNING_PAGE_TEXT[lang];
-  const securityMenuLabel =
-    lang === "ar"
-      ? "إجراءات الأمان"
-      : lang === "ku"
-        ? "کردارەکانی ئاسایش"
-        : "Security actions";
+  const shellText = ADMIN_PAGE_SHELL_TEXT[lang];
+  const securityMenuLabel = shellText.securityMenu;
 
   const [sidebarOpen, setSidebarOpen] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -181,7 +178,7 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
         <button
           type="button"
           className="fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-[1px] md:hidden"
-          aria-label={lang === "ar" ? "إغلاق القائمة" : lang === "ku" ? "داخستنی لیست" : "Close menu"}
+          aria-label={shellText.closeMenu}
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -266,7 +263,7 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
               type="button"
               onClick={() => setSidebarOpen(false)}
               className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/80 transition hover:bg-white/10 hover:text-white md:hidden"
-              aria-label={lang === "ar" ? "إغلاق القائمة" : lang === "ku" ? "داخستنی لیست" : "Close menu"}
+              aria-label={shellText.closeMenu}
             >
               <X className="h-5 w-5" />
             </button>
@@ -276,9 +273,7 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
         <div className="px-4 pb-2 pt-4">
           <div className="mb-2.5 flex items-center gap-2 px-2 text-[10px] font-extrabold text-orange-200/90">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" aria-hidden="true" />
-            <span>
-              {lang === "ar" ? "أقسام الإدارة" : lang === "ku" ? "بەشەکانی بەڕێوەبردن" : "Administration"}
-            </span>
+            <span>{shellText.administration}</span>
           </div>
           <nav className="space-y-1" aria-label={adminText.mainAdminTitle}>
             {TABS.map((item) => {
@@ -364,20 +359,8 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
               type="button"
               onClick={() => setSidebarOpen((value) => !value)}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:bg-muted"
-              aria-label={
-                sidebarOpen
-                  ? lang === "ar"
-                    ? "إخفاء القائمة الجانبية"
-                    : lang === "ku"
-                      ? "شاردنەوەی لیستی تەنیشت"
-                      : "Hide sidebar"
-                  : lang === "ar"
-                    ? "إظهار القائمة الجانبية"
-                    : lang === "ku"
-                      ? "پیشاندانی لیستی تەنیشت"
-                      : "Show sidebar"
-              }
-              title={sidebarOpen ? "Hide" : "Show"}
+              aria-label={sidebarOpen ? shellText.hideSidebar : shellText.showSidebar}
+              title={sidebarOpen ? shellText.hide : shellText.show}
             >
               {sidebarOpen ? (
                 isRTL ? (
@@ -392,7 +375,7 @@ export function AdminPageShell({ model }: AdminPageShellProps) {
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-[11px] font-bold text-muted-foreground">
-                {lang === "ar" ? "لوحة التحكم" : lang === "ku" ? "کۆنترۆڵ پانێڵ" : "Control panel"}
+                {shellText.controlPanel}
               </p>
               <h1 className="truncate text-base font-black text-foreground md:text-lg">
                 {activeTab?.label || adminText.mainAdminTitle}
