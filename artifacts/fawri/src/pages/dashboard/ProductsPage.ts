@@ -1,1 +1,1 @@
-export { default } from './CommerceCatalogPage.tsx';
+export { default } from './ProductsWorkspacePage.tsx';
