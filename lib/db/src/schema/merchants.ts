@@ -36,6 +36,9 @@ export const merchants = pgTable(
     ownerName: text("owner_name").notNull(),
     storeName: text("store_name").notNull(),
     activityType: text("activity_type").notNull(),
+    countryCode: text("country_code").notNull().default("IQ"),
+    timezone: text("timezone").notNull().default("Asia/Baghdad"),
+    currencyCode: text("currency_code").notNull().default("IQD"),
     status: merchantStatusEnum("status")
       .notNull()
       .default("pending_activation"),
@@ -92,6 +95,18 @@ export const merchants = pgTable(
     statusIndex: index("merchants_status_idx").on(table.status),
     retentionIndex: index("merchants_retention_status_idx").on(
       table.retentionStatus,
+    ),
+    countryCodeCheck: check(
+      "merchants_country_code_check",
+      sql`${table.countryCode} ~ '^[A-Z]{2}$'`,
+    ),
+    timezoneCheck: check(
+      "merchants_timezone_check",
+      sql`char_length(${table.timezone}) BETWEEN 1 AND 100`,
+    ),
+    currencyCodeCheck: check(
+      "merchants_currency_code_check",
+      sql`${table.currencyCode} ~ '^[A-Z]{3}$'`,
     ),
     roleExclusivityCheck: check(
       "merchants_profile_kind_check",
