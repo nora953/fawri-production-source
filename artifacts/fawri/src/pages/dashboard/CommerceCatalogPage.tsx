@@ -41,7 +41,6 @@ import {
 } from '@/lib/catalogUiApi';
 import { catalogImagePreviewUrl } from '@/lib/catalogMediaUiApi';
 import {
-  catalogItemTracksInventory,
   catalogProductFormFromProduct,
   catalogProductInputFromForm,
   createEmptyCatalogProductForm,
