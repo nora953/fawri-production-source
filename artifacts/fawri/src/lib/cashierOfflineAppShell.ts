@@ -2,6 +2,7 @@ export type CashierOfflineShellDiagnostics = {
   service_worker_supported: boolean;
   registration_active: boolean;
   controller_present: boolean;
+  controller_version: string | null;
   cache_api_supported: boolean;
   cashier_shell_cached: boolean;
   loaded_assets_cached: number;
@@ -9,7 +10,8 @@ export type CashierOfflineShellDiagnostics = {
 };
 
 const CASHIER_SW_PATH = '/cashier-sw.js';
-const CASHIER_CACHE_NAME = 'fawri-cashier-shell-v2';
+const CASHIER_SW_VERSION = 'v2';
+const CASHIER_CACHE_NAME = `fawri-cashier-shell-${CASHIER_SW_VERSION}`;
 const FIXED_WARM_URLS = [
   '/cashier.html',
   '/manifest.webmanifest',
@@ -34,6 +36,20 @@ async function sendWarmCacheMessage(registration: ServiceWorkerRegistration): Pr
   worker.postMessage({
     type: 'FAWRI_CASHIER_WARM_CACHE',
     urls: sameOriginWarmUrls(),
+  });
+}
+
+async function getControllerVersion(): Promise<string | null> {
+  const controller = navigator.serviceWorker?.controller;
+  if (!controller) return null;
+  return new Promise<string | null>(resolve => {
+    const channel = new MessageChannel();
+    const timeout = window.setTimeout(() => resolve(null), 1_000);
+    channel.port1.onmessage = event => {
+      window.clearTimeout(timeout);
+      resolve(typeof event.data?.version === 'string' ? event.data.version : null);
+    };
+    controller.postMessage({ type: 'FAWRI_CASHIER_STATUS' }, [channel.port2]);
   });
 }
 
@@ -75,10 +91,12 @@ export async function getCashierOfflineShellDiagnostics(): Promise<CashierOfflin
   }
   const registrationActive = Boolean(registration?.active);
   const controllerPresent = Boolean(navigator.serviceWorker?.controller);
+  const controllerVersion = controllerPresent ? await getControllerVersion() : null;
   return {
     service_worker_supported: serviceWorkerSupported,
     registration_active: registrationActive,
     controller_present: controllerPresent,
+    controller_version: controllerVersion,
     cache_api_supported: cacheSupported,
     cashier_shell_cached: shellCached,
     loaded_assets_cached: loadedAssetsCached,
@@ -87,6 +105,7 @@ export async function getCashierOfflineShellDiagnostics(): Promise<CashierOfflin
       cacheSupported &&
       registrationActive &&
       controllerPresent &&
+      controllerVersion === CASHIER_SW_VERSION &&
       shellCached &&
       loadedAssetsCached > 0,
   };
