@@ -17,6 +17,7 @@ import catalogOperationsRouter from "./routes/catalog-operations";
 import knowledgeOperationsRouter from "./routes/knowledge-operations";
 import conversationOperationsRouter from "./routes/conversation-operations";
 import orderOperationsRouter from "./routes/order-operations";
+import cashierSyncOperationsRouter from "./routes/cashier-sync-operations";
 import merchantSettingsRouter from "./routes/merchant-settings";
 import retentionGuardRouter from "./routes/retention-guard";
 import supportPreviewRouter from "./routes/support-preview";
@@ -323,6 +324,7 @@ app.use(
 );
 app.use("/api", conversationOperationsRouter);
 app.use("/api", orderOperationsRouter);
+app.use("/api", cashierSyncOperationsRouter);
 app.use("/api", merchantSettingsRouter);
 app.use("/api", channelOperationsRouter);
 app.use("/api", channelDurableJobAdminRouter);
