@@ -18,7 +18,10 @@ type SaleSuccess = {
   fractionDigits: number;
 };
 
-const COMPACT_ITEMS_PER_PAGE = 4;
+// Render the whole compact-cart strip. CSS keeps the scrollbar hidden for small carts
+// and exposes a horizontal scrollbar once the cart reaches 10 distinct items
+// (one active item + nine compact cards).
+const COMPACT_ITEMS_PER_PAGE = 100;
 
 function itemKey(item: { product_id: string; variant_id?: string }): string {
   return `${item.product_id}\u0000${item.variant_id || ''}`;
