@@ -16,7 +16,7 @@ New merchant UI must follow these patterns before page-specific polish is added.
 
 Use the shared `fawri-ui-baseline` wrapper for merchant workspaces/forms and reuse the constants exported by `src/lib/fawriUiBaseline.ts` when constructing new fields or actions.
 
-Do not invent a separate font, control height, radius, select arrow, checkbox placement, or field spacing per page.
+Do not invent a separate font, control height, radius, select arrow, checkbox placement, field spacing, or paired-field grid spacing per page.
 
 ## Typography
 
@@ -31,10 +31,14 @@ Do not invent a separate font, control height, radius, select arrow, checkbox pl
 
 - Standard field/control height: 48px (`h-12`).
 - Standard field radius: 12px (`rounded-xl`).
-- Label-to-control gap: 8px.
-- Field groups should normally use `space-y-2`.
+- Every primary field is a field group: header/label, then an 8px gap, then the control.
+- Canonical field groups use `space-y-2`; do not use `space-y-1` for primary merchant fields.
+- Paired/two-column primary field rows use 24px spacing (`gap-6`) between columns and rows, matching Signup.
+- Labels must remain visually attached to their own control and must not appear to merge with a neighboring field label in RTL layouts.
 - Primary form actions should be 48px tall, 12px radius, bold.
 - Modal containers may use the established 32px radius (`rounded-[2rem]`).
+
+Canonical new-field structure should mirror Signup: a field-group container, a dedicated field-header/Label row, then the shared control. Legacy label-wrapped fields inside the dashboard are normalized by the baseline CSS, but new code should use the canonical structure directly.
 
 Compact controls are allowed only when they are intentionally dense tools rather than primary merchant form inputs.
 
@@ -73,6 +77,7 @@ For numeric/time fragments that must remain machine-readable, keep `dir="ltr"` e
 - Native select arrow: left in RTL, right in LTR.
 - Text labels align naturally with the page direction.
 - SKU, barcode, phone, technical codes, currency codes, dates/times, and purely numeric inputs may remain LTR.
+- Paired fields remain separate field groups with `gap-6`; do not visually join their labels.
 - Do not solve RTL problems with one-off margins if the shared baseline can solve them structurally.
 
 ## Color and focus
@@ -89,10 +94,11 @@ A merchant create/edit modal should normally follow:
 
 1. Fixed header with title and optional short context.
 2. Scrollable form body.
-3. Consistent labels and 48px controls.
-4. Fixed footer action area.
-5. Primary save action visually dominant; cancel remains secondary.
-6. Mobile safe-area padding preserved.
+3. Consistent field groups and 48px controls.
+4. Two-column primary field rows use 24px spacing.
+5. Fixed footer action area.
+6. Primary save action visually dominant; cancel remains secondary.
+7. Mobile safe-area padding preserved.
 
 ## New-page checklist
 
@@ -102,6 +108,8 @@ Before considering a generated page visually complete, verify:
 - No page-specific font stack.
 - Standard label size/line-height.
 - Standard control height/radius.
+- Every primary label has a clear 8px relationship to its own control.
+- Paired field groups use 24px separation and do not visually merge in RTL.
 - Select arrow is correct in RTL/LTR.
 - Checkbox/toggle placement matches Fawri patterns.
 - No browser-default `datetime-local` presentation.
@@ -112,4 +120,4 @@ Before considering a generated page visually complete, verify:
 
 ## Current adoption
 
-The Products & Services workspace, Add Product, Add Service, Promotions, and Add Promotion are covered by the shared baseline wrapper. Nested catalog editors inherit the same rules so variants, inventory, service fields, images, status controls, and promotion fields stay visually coherent.
+The merchant DashboardLayout carries the shared baseline, so current and future merchant dashboard pages inherit it automatically. Products & Services, Add Product, Add Service, Promotions, and Add Promotion are covered, including nested catalog editors for variants, inventory, service fields, images, status controls, and promotion fields.
