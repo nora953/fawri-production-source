@@ -57,6 +57,38 @@
   row-gap: var(--fawri-field-column-gap) !important;
 }
 
+/*
+ * Compound schedule ranges stay readable in RTL: start and end are separate
+ * full-width field groups, while date/time remain a compact pair inside each.
+ */
+.fawri-ui-baseline .grid:has(> label > div > input[placeholder="YYYY/MM/DD"]) {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 1rem !important;
+}
+
+.fawri-ui-baseline label:has(> div > input[placeholder="YYYY/MM/DD"]) {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--fawri-field-gap) !important;
+}
+
+.fawri-ui-baseline label:has(> div > input[placeholder="YYYY/MM/DD"]) > span:first-child {
+  display: flex;
+  min-height: 1.25rem;
+  align-items: center;
+  line-height: var(--fawri-label-line-height);
+  font-weight: 600;
+  text-align: start;
+  padding-inline: 0.125rem;
+}
+
+.fawri-ui-baseline label:has(> div > input[placeholder="YYYY/MM/DD"]) > div {
+  grid-template-columns: minmax(0, 1fr) minmax(7rem, 0.35fr) !important;
+  gap: 0.75rem !important;
+  margin-top: 0 !important;
+}
+
 .fawri-ui-baseline :where(
   input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
   select,
@@ -156,5 +188,9 @@
     button[role="combobox"]
   ) {
     max-width: 100%;
+  }
+
+  .fawri-ui-baseline label:has(> div > input[placeholder="YYYY/MM/DD"]) > div {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
