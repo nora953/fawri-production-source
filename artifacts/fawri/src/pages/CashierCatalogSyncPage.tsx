@@ -51,7 +51,7 @@ export default function CashierCatalogSyncPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 p-3 text-slate-900 sm:h-screen sm:overflow-hidden" dir="rtl">
-      <div className="mx-auto max-w-3xl sm:flex sm:h-full sm:flex-col">
+      <div className="mx-auto max-w-3xl sm:flex sm:h-full sm:flex-col sm:justify-center">
         <header className="mb-3 flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <div className="flex min-w-0 items-center gap-3">
             <img src="/fawri-logo.svg" alt="Fawri" className="h-9 w-9 shrink-0 object-contain" />
@@ -66,7 +66,7 @@ export default function CashierCatalogSyncPage() {
           </a>
         </header>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:min-h-0 sm:flex-1">
+        <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
           <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
             <strong>كيف تعمل المزامنة؟</strong>
             <p className="mt-0.5">
