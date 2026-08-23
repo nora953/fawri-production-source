@@ -128,6 +128,25 @@ function normalizeCurrency(value: unknown): string {
   return currency;
 }
 
+function pricingInstant(value: string | Date | number): {
+  at: string | Date | number;
+  iso: string;
+} {
+  const milliseconds =
+    typeof value === 'number'
+      ? value
+      : value instanceof Date
+        ? value.getTime()
+        : new Date(value).getTime();
+  if (!Number.isFinite(milliseconds)) {
+    throw new CashierSalePricingError(
+      'CASHIER_SALE_PRICING_TIME_INVALID',
+      'sale pricing time is invalid',
+    );
+  }
+  return { at: value, iso: new Date(milliseconds).toISOString() };
+}
+
 function promotionSnapshot(
   resolvedPromotionId: string | undefined,
   promotions: CashierPromotionRule[],
@@ -260,20 +279,7 @@ export function resolveCashierSalePricing(input: {
     );
   }
 
-  const at = input.at ?? Date.now();
-  const pricedAt =
-    typeof at === 'number'
-      ? new Date(at).toISOString()
-      : at instanceof Date
-        ? at.toISOString()
-        : new Date(at).toISOString();
-  if (pricedAt === 'Invalid Date') {
-    throw new CashierSalePricingError(
-      'CASHIER_SALE_PRICING_TIME_INVALID',
-      'sale pricing time is invalid',
-    );
-  }
-
+  const timing = pricingInstant(input.at ?? Date.now());
   let discountMinor = 0;
   let totalMinor = 0;
   const lines: CashierResolvedSalePricingLine[] = prepared.map(entry => {
@@ -285,7 +291,7 @@ export function resolveCashierSalePricing(input: {
       currencyCode,
       subtotalMinor,
       promotions: input.promotions,
-      at,
+      at: timing.at,
     });
     const baseLineTotal = safeMultiply(
       entry.item.base_unit_price_minor,
@@ -332,7 +338,7 @@ export function resolveCashierSalePricing(input: {
   return {
     currency_code: currencyCode,
     currency_fraction_digits: fractionDigits,
-    priced_at: pricedAt,
+    priced_at: timing.iso,
     subtotal_minor: subtotalMinor,
     discount_minor: discountMinor,
     total_minor: totalMinor,
