@@ -1,0 +1,94 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
+
+const apiRoot = new URL('../', import.meta.url);
+const webRoot = new URL('../../fawri/', import.meta.url);
+
+async function apiSource(path) {
+  return readFile(new URL(path, apiRoot), 'utf8');
+}
+
+async function webSource(path) {
+  return readFile(new URL(path, webRoot), 'utf8');
+}
+
+test('cashier sale sync is merchant-authenticated and mounted before legacy API fallback', async () => {
+  const route = await apiSource('src/routes/cashier-sync-operations.ts');
+  const app = await apiSource('src/app.ts');
+
+  assert.match(route, /router\.post\(\s*["']\/cashier\/sync\/sale["']/);
+  assert.match(route, /requireMerchantSession/);
+  assert.match(route, /getMerchantIdFromSession\(res\)/);
+  assert.match(route, /syncCashierSaleAuthoritative/);
+
+  const mount = app.indexOf('app.use("/api", cashierSyncOperationsRouter)');
+  const legacy = app.indexOf('app.use("/api", router)');
+  assert.ok(mount >= 0, 'cashier sync router must be mounted');
+  assert.ok(legacy > mount, 'cashier sync must resolve before legacy API fallback');
+});
+
+test('cashier sale reconciliation is one PostgreSQL transaction with durable replay before inventory', async () => {
+  const source = await apiSource('src/services/postgresCashierSyncAuthority.ts');
+
+  assert.match(source, /withMerchantOperationalTransaction\(merchantId/);
+  assert.match(source, /pg_advisory_xact_lock/);
+  assert.match(source, /source_channel = 'cashier'/);
+  assert.match(source, /request_hash/);
+  assert.match(source, /CASHIER_SYNC_IDEMPOTENCY_CONFLICT/);
+  assert.match(source, /movement\.delta !== -line\.quantity/);
+  assert.match(source, /INSERT INTO inventory_mutations/);
+  assert.match(source, /INSERT INTO orders/);
+  assert.match(source, /INSERT INTO order_items/);
+
+  const replayRead = source.indexOf('const existing = await loadExistingOrder');
+  const replayReturn = source.indexOf('replayed: true', replayRead);
+  const inventoryLoop = source.indexOf('for (const line of bundle.sale.lines)', replayRead);
+  const orderInsert = source.indexOf('await insertCanonicalOrder(client, bundle)', inventoryLoop);
+
+  assert.ok(replayRead >= 0, 'existing cashier sale must be checked');
+  assert.ok(replayReturn > replayRead, 'matching existing sale must return an idempotent replay');
+  assert.ok(inventoryLoop > replayReturn, 'replay must resolve before any inventory mutation');
+  assert.ok(orderInsert > inventoryLoop, 'canonical order must be committed in the same transaction after inventory validation');
+});
+
+test('server derives stock decrement from sale lines and rejects extra or missing movement evidence', async () => {
+  const source = await apiSource('src/services/postgresCashierSyncAuthority.ts');
+
+  assert.match(source, /after = before - line\.quantity/);
+  assert.match(source, /movement\.delta !== -line\.quantity/);
+  assert.match(source, /bundle\.movements\.delete\(itemKey\(line\.product_id, line\.variant_id\)\)/);
+  assert.match(source, /bundle\.movements\.size !== 0/);
+  assert.match(source, /CASHIER_SYNC_NEGATIVE_STOCK/);
+  assert.match(source, /CASHIER_SYNC_MOVEMENT_MISMATCH/);
+});
+
+test('browser deletes a local outbox operation only after a complete server acknowledgement', async () => {
+  const source = await webSource('src/lib/cashierCloudOutboxSync.ts');
+
+  assert.match(source, /listPendingSync\(MAX_PENDING_ENVELOPES\)/);
+  assert.match(source, /fetch\('\/api\/cashier\/sync\/sale'/);
+  assert.match(source, /accepted_entity_ids/);
+  assert.match(source, /CASHIER_OUTBOX_ACK_INVALID/);
+  assert.match(source, /acknowledgeSynced\(\[operation\.operationId\]\)/);
+
+  const fetchCall = source.indexOf("fetch('/api/cashier/sync/sale'");
+  const responseAccepted = source.indexOf("payload?.ok !== true", fetchCall);
+  const entityAckValidation = source.indexOf('acceptedEntityIds.size !== expectedEntityIds.size', responseAccepted);
+  const localAck = source.indexOf('acknowledgeSynced([operation.operationId])');
+
+  assert.ok(fetchCall >= 0, 'outbox uploader must call the cashier sale endpoint');
+  assert.ok(responseAccepted > fetchCall, 'server success must be checked after upload');
+  assert.ok(entityAckValidation > responseAccepted, 'complete entity acknowledgement must be verified');
+  assert.ok(localAck > entityAckValidation, 'local outbox acknowledgement must happen only after full server ACK');
+});
+
+test('sync UI exposes explicit pending-sale upload without making normal POS cloud-bound', async () => {
+  const page = await webSource('src/pages/CashierCatalogSyncPage.tsx');
+  const entry = await webSource('src/cashierMain.tsx');
+
+  assert.match(page, /syncCashierOutboxToCloud/);
+  assert.match(page, /مزامنة المبيعات المعلقة/);
+  assert.match(page, /pending_after/);
+  assert.match(entry, /if \(sync\) \{\s*installAuthClientCutover\(\);\s*\}/);
+});
