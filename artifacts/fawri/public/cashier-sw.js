@@ -1,5 +1,6 @@
 const CACHE_PREFIX = 'fawri-cashier-shell-';
-const CACHE_NAME = 'fawri-cashier-shell-v2';
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `fawri-cashier-shell-${CACHE_VERSION}`;
 const FIXED_SHELL = [
   '/cashier.html',
   '/manifest.webmanifest',
@@ -43,6 +44,14 @@ function isAllowedWarmPath(url) {
 }
 
 self.addEventListener('message', event => {
+  if (event.data?.type === 'FAWRI_CASHIER_STATUS') {
+    event.ports?.[0]?.postMessage({
+      cache_name: CACHE_NAME,
+      version: CACHE_VERSION,
+    });
+    return;
+  }
+
   if (event.data?.type !== 'FAWRI_CASHIER_WARM_CACHE') return;
   const urls = Array.isArray(event.data.urls) ? event.data.urls : [];
   event.waitUntil(
