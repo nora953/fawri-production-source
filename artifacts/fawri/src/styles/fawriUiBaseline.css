@@ -2,6 +2,7 @@
   --fawri-control-height: 3rem;
   --fawri-control-radius: 0.75rem;
   --fawri-field-gap: 0.5rem;
+  --fawri-field-column-gap: 1.5rem;
   --fawri-label-size: 0.875rem;
   --fawri-label-line-height: 1.25rem;
   --fawri-hint-size: 0.75rem;
@@ -13,17 +14,47 @@
   line-height: var(--fawri-label-line-height);
 }
 
-.fawri-ui-baseline label > span:first-child {
-  line-height: var(--fawri-label-line-height);
+/*
+ * Canonical merchant field structure. This makes older label-wrapped controls
+ * render like the reviewed Signup/Login field group: header, 8px gap, control.
+ */
+.fawri-ui-baseline label:has(> input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"])),
+.fawri-ui-baseline label:has(> select),
+.fawri-ui-baseline label:has(> textarea),
+.fawri-ui-baseline label:has(> button[role="combobox"]) {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--fawri-field-gap) !important;
 }
 
-.fawri-ui-baseline label > :where(
-  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
-  select,
-  textarea,
-  button[role="combobox"]
-) {
-  margin-top: var(--fawri-field-gap) !important;
+.fawri-ui-baseline label:has(> input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"])) > *,
+.fawri-ui-baseline label:has(> select) > *,
+.fawri-ui-baseline label:has(> textarea) > *,
+.fawri-ui-baseline label:has(> button[role="combobox"]) > * {
+  margin-top: 0 !important;
+}
+
+.fawri-ui-baseline label:has(> input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"])) > span:first-child,
+.fawri-ui-baseline label:has(> select) > span:first-child,
+.fawri-ui-baseline label:has(> textarea) > span:first-child,
+.fawri-ui-baseline label:has(> button[role="combobox"]) > span:first-child {
+  display: flex;
+  min-height: 1.25rem;
+  align-items: center;
+  line-height: var(--fawri-label-line-height);
+  font-weight: 600;
+  text-align: start;
+  padding-inline: 0.125rem;
+}
+
+/* Signup uses gap-6 for paired fields; keep merchant two-column field rows equal. */
+.fawri-ui-baseline .grid:has(> label:has(> input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]))),
+.fawri-ui-baseline .grid:has(> label:has(> select)),
+.fawri-ui-baseline .grid:has(> label:has(> textarea)),
+.fawri-ui-baseline .grid:has(> label:has(> button[role="combobox"])) {
+  column-gap: var(--fawri-field-column-gap) !important;
+  row-gap: var(--fawri-field-column-gap) !important;
 }
 
 .fawri-ui-baseline :where(
