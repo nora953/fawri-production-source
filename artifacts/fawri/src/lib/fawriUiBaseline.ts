@@ -7,6 +7,7 @@ export const FAWRI_UI_BASELINE_CLASS = 'fawri-ui-baseline';
  */
 export const FAWRI_UI = Object.freeze({
   fieldGroup: 'space-y-2',
+  fieldGrid: 'grid gap-6 md:grid-cols-2',
   fieldHeader: 'flex min-h-5 items-center justify-between gap-3',
   fieldLabel: 'leading-5',
   fieldControl: 'h-12 rounded-xl',
