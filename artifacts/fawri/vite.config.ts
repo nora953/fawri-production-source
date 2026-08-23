@@ -52,6 +52,12 @@ export default defineConfig(async ({ command }) => {
     build: {
       outDir: path.resolve(import.meta.dirname, "dist/public"),
       emptyOutDir: true,
+      rollupOptions: {
+        input: {
+          app: path.resolve(import.meta.dirname, "index.html"),
+          cashier: path.resolve(import.meta.dirname, "cashier.html"),
+        },
+      },
     },
     server: {
       port,
