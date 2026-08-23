@@ -154,22 +154,29 @@ export async function runCashierBackupSmoke(): Promise<CashierBackupSmokeReport>
         },
       ],
     });
+
     clock = new Date('2026-08-23T16:10:00.000Z');
-    await source.commitSale({
+    const serviceSale = await source.commitSale({
       operation_id: 'backup-service-sale',
       payment_method: 'cash',
       payment_status: 'paid',
       lines: [{ product_id: service.product_id, quantity: 1 }],
     });
+    clock = new Date('2026-08-23T16:12:00.000Z');
+    await sourceCompensation.voidSale({
+      operation_id: 'backup-service-void',
+      sale_id: serviceSale.sale.sale_id,
+    });
 
     const sourceSales = await source.listSales();
     const sourceHistory = buildCashierLocalHistory(sourceSales);
     const sourceSummary = summarizeCashierLocalHistory(sourceHistory);
-    assert(sourceHistory.length === 3, 'history should contain two sales and one return');
+    assert(sourceHistory.length === 4, 'history should contain two sales, one return, and one void');
     assert(sourceSummary.length === 1, 'history should keep one IQD currency summary');
     assert(sourceSummary[0].gross_sales_minor === 40_000, 'history gross total is incorrect');
     assert(sourceSummary[0].returned_minor === 10_000, 'history returned total is incorrect');
-    assert(sourceSummary[0].net_sales_minor === 30_000, 'history net total is incorrect');
+    assert(sourceSummary[0].voided_minor === 20_000, 'history voided total is incorrect');
+    assert(sourceSummary[0].net_sales_minor === 10_000, 'history net total is incorrect');
 
     const sourceBackupAuthority = new IndexedDbCashierBackupAuthority(sourceConfig);
     const backup = await sourceBackupAuthority.exportBackup();
@@ -218,9 +225,13 @@ export async function runCashierBackupSmoke(): Promise<CashierBackupSmokeReport>
       product.variant_id,
     );
     assert(restoredProduct?.stock_quantity === 3, 'restored stock projection is incorrect');
-    const restoredSale = await destination.getSale(productSale.sale.sale_id);
-    assert((restoredSale?.returns || []).length === 1, 'return evidence was not restored');
-    assert(restoredSale?.returns?.[0].refund_total_minor === 10_000, 'restored return refund is incorrect');
+
+    const restoredProductSale = await destination.getSale(productSale.sale.sale_id);
+    assert((restoredProductSale?.returns || []).length === 1, 'return evidence was not restored');
+    assert(restoredProductSale?.returns?.[0].refund_total_minor === 10_000, 'restored return refund is incorrect');
+    const restoredServiceSale = await destination.getSale(serviceSale.sale.sale_id);
+    assert(restoredServiceSale?.status === 'voided', 'voided sale status was not restored');
+    assert(restoredServiceSale?.void?.refund_total_minor === 20_000, 'void evidence was not restored');
 
     const restoredPending = await destination.listPendingSync();
     assert(
@@ -243,12 +254,14 @@ export async function runCashierBackupSmoke(): Promise<CashierBackupSmokeReport>
     await destination.close();
     destination = null;
     destination = new IndexedDbCashierAuthority(destinationConfig);
-    const reopenedSale = await destination.getSale(productSale.sale.sale_id);
+    const reopenedProductSale = await destination.getSale(productSale.sale.sale_id);
+    const reopenedServiceSale = await destination.getSale(serviceSale.sale.sale_id);
     const reopenedProduct = await destination.getCatalogItem(
       product.product_id,
       product.variant_id,
     );
-    assert((reopenedSale?.returns || []).length === 1, 'restored sale evidence did not survive reopen');
+    assert((reopenedProductSale?.returns || []).length === 1, 'restored return evidence did not survive reopen');
+    assert(reopenedServiceSale?.status === 'voided' && reopenedServiceSale.void?.operation_id === 'backup-service-void', 'restored void evidence did not survive reopen');
     assert(reopenedProduct?.stock_quantity === 3, 'restored stock did not survive reopen');
 
     return {
