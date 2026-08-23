@@ -8,7 +8,7 @@ html[data-cashier-view='pos'] aside > div:nth-child(2) {
 
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) {
   display: grid !important;
-  grid-template-rows: minmax(98px, 1fr) 54px;
+  grid-template-rows: minmax(98px, 1fr) 58px;
   gap: 0.5rem !important;
   overflow: hidden !important;
 }
@@ -19,8 +19,8 @@ html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) >
 }
 
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) {
-  height: 54px !important;
-  min-height: 54px !important;
+  height: 58px !important;
+  min-height: 58px !important;
   padding: 0.35rem !important;
   overflow: hidden !important;
 }
@@ -32,10 +32,58 @@ html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) >
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child {
   height: 100%;
   min-height: 0;
+  overflow: hidden;
 }
 
-html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) button {
+/* Compact cart cards live in one horizontal strip. The native scrollbar stays
+   visually hidden for small carts, then becomes visible once there are nine
+   compact cards (ten distinct cart items including the active card). */
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div {
+  display: flex !important;
+  flex-flow: row nowrap !important;
+  align-items: stretch;
+  gap: 0.375rem !important;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div::-webkit-scrollbar {
+  height: 0;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div > button {
+  flex: 0 0 104px !important;
+  width: 104px;
+  min-width: 104px !important;
   min-height: 40px;
+  scroll-snap-align: start;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div:has(> button:nth-child(9)) {
+  scrollbar-width: thin;
+  scrollbar-color: #94a3b8 #e2e8f0;
+  padding-bottom: 3px;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div:has(> button:nth-child(9))::-webkit-scrollbar {
+  height: 6px;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div:has(> button:nth-child(9))::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-radius: 999px;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div:has(> button:nth-child(9))::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 999px;
 }
 
 html[data-cashier-view='pos'] aside > div:last-child {
