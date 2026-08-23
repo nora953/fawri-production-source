@@ -20,22 +20,14 @@ const STORE_CATALOG = 'catalog';
 const STORE_SALES = 'sales';
 const STORE_MOVEMENTS = 'inventory_movements';
 const STORE_OUTBOX = 'outbox';
-
 const META_DEVICE_SEQUENCE = 'device_sequence';
 
-type MetaRecord = {
-  key: string;
-  value: number | string;
-};
-
+type MetaRecord = { key: string; value: number | string };
 type CatalogRecord = CashierCatalogLookup & {
   key: string;
   local_updated_at: string;
 };
-
-type OutboxRecord = CashierSyncEnvelope & {
-  outbox_id: string;
-};
+type OutboxRecord = CashierSyncEnvelope & { outbox_id: string };
 
 export type IndexedDbCashierConfig = {
   localMerchantId: string;
@@ -57,8 +49,8 @@ export type IndexedDbCashierDurabilityProbe = {
   quota_bytes?: number;
   usage_bytes?: number;
   durability: 'persistent' | 'best_effort' | 'unavailable';
-  production_certified: boolean;
-  reason?: string;
+  production_certified: false;
+  reason: string;
 };
 
 export class CashierIndexedDbError extends Error {
@@ -120,7 +112,8 @@ function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   });
 }
 
-function transactionDone(transaction: IDBTransaction): Promise<void> {
+/** Register this immediately after opening a write transaction. */
+function writeTransactionDone(transaction: IDBTransaction): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     transaction.oncomplete = () => resolve();
     transaction.onerror = () =>
@@ -140,6 +133,18 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
           ),
       );
   });
+}
+
+async function abortAndDrain(
+  transaction: IDBTransaction,
+  completion: Promise<void>,
+): Promise<void> {
+  try {
+    transaction.abort();
+  } catch {
+    // Already committed/aborted.
+  }
+  await completion.catch(() => undefined);
 }
 
 function createSchema(database: IDBDatabase): void {
@@ -188,7 +193,11 @@ function openDatabase(name: string): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(name, DATABASE_VERSION);
     request.onupgradeneeded = () => createSchema(request.result);
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      const database = request.result;
+      database.onversionchange = () => database.close();
+      resolve(database);
+    };
     request.onerror = () =>
       reject(
         request.error ||
@@ -217,17 +226,15 @@ function validateCatalogItem(item: CashierCatalogLookup): void {
   }
   if (
     !isNonNegativeSafeInteger(item.base_unit_price_minor) ||
-    !isNonNegativeSafeInteger(item.effective_unit_price_minor)
+    !isNonNegativeSafeInteger(item.effective_unit_price_minor) ||
+    item.effective_unit_price_minor > item.base_unit_price_minor
   ) {
     throw new CashierIndexedDbError(
       'CASHIER_CATALOG_PRICE_INVALID',
-      'Catalog prices must be non-negative safe integers',
+      'Catalog prices must be safe non-negative minor units and effective price cannot exceed base price',
     );
   }
-  if (
-    !Number.isInteger(item.catalog_version) ||
-    item.catalog_version <= 0
-  ) {
+  if (!Number.isInteger(item.catalog_version) || item.catalog_version <= 0) {
     throw new CashierIndexedDbError(
       'CASHIER_CATALOG_VERSION_INVALID',
       'Catalog version must be a positive integer',
@@ -244,15 +251,15 @@ function validateCatalogItem(item: CashierCatalogLookup): void {
   }
 }
 
-function withoutCatalogRecordMetadata(record: CatalogRecord): CashierCatalogLookup {
+function withoutCatalogMetadata(record: CatalogRecord): CashierCatalogLookup {
   const { key: _key, local_updated_at: _localUpdatedAt, ...item } = record;
   return item;
 }
 
 async function nextDeviceSequence(meta: IDBObjectStore): Promise<number> {
-  const current = (await requestResult(
-    meta.get(META_DEVICE_SEQUENCE),
-  )) as MetaRecord | undefined;
+  const current = (await requestResult(meta.get(META_DEVICE_SEQUENCE))) as
+    | MetaRecord
+    | undefined;
   const previous = Number(current?.value || 0);
   if (!Number.isSafeInteger(previous) || previous < 0) {
     throw new CashierIndexedDbError(
@@ -286,8 +293,7 @@ export async function probeIndexedDbCashierDurability(options?: {
     };
   }
 
-  const storage =
-    typeof navigator !== 'undefined' ? navigator.storage : undefined;
+  const storage = typeof navigator !== 'undefined' ? navigator.storage : undefined;
   let persisted = false;
   let persistenceRequested = false;
   let quota: number | undefined;
@@ -300,11 +306,15 @@ export async function probeIndexedDbCashierDurability(options?: {
       persisted = Boolean(await storage.persist());
     }
     const estimate = await storage?.estimate?.();
-    if (Number.isFinite(estimate?.quota)) quota = estimate?.quota;
-    if (Number.isFinite(estimate?.usage)) usage = estimate?.usage;
+    if (typeof estimate?.quota === 'number' && Number.isFinite(estimate.quota)) {
+      quota = estimate.quota;
+    }
+    if (typeof estimate?.usage === 'number' && Number.isFinite(estimate.usage)) {
+      usage = estimate.usage;
+    }
   } catch {
-    // Storage-manager support is advisory. IndexedDB availability remains usable,
-    // but durability cannot be certified when persistence cannot be confirmed.
+    // Persistence/quota support is advisory. Never promote a failed probe to
+    // production-certified status.
   }
 
   return {
@@ -315,8 +325,10 @@ export async function probeIndexedDbCashierDurability(options?: {
     ...(quota !== undefined ? { quota_bytes: quota } : {}),
     ...(usage !== undefined ? { usage_bytes: usage } : {}),
     durability: persisted ? 'persistent' : 'best_effort',
-    production_certified: persisted,
-    ...(!persisted ? { reason: 'persistent_storage_not_confirmed' } : {}),
+    production_certified: false,
+    reason: persisted
+      ? 'prototype_requires_restart_backup_and_browser_matrix_certification'
+      : 'persistent_storage_not_confirmed',
   };
 }
 
@@ -337,19 +349,18 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       : undefined;
     this.deviceId = requiredIdentifier(config.deviceId, 'device id');
     this.now = config.now || (() => new Date());
-    const databaseName =
-      config.databaseName || `fawri-cashier-${this.localMerchantId}-v1`;
-    this.databasePromise = openDatabase(databaseName);
+    this.databasePromise = openDatabase(
+      config.databaseName || `fawri-cashier-${this.localMerchantId}-v1`,
+    );
   }
 
   async close(): Promise<void> {
-    const database = await this.databasePromise;
-    database.close();
+    (await this.databasePromise).close();
   }
 
   /**
-   * Prototype catalog ingress used before cloud/local catalog reconciliation is
-   * implemented. Existing locally-adjusted stock is preserved by default.
+   * Prototype catalog ingress. It deliberately preserves locally-adjusted stock
+   * by default; cloud/local stock reconciliation is a later sync gate.
    */
   async upsertCatalogSnapshot(
     items: CashierCatalogLookup[],
@@ -357,6 +368,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
   ): Promise<void> {
     const database = await this.databasePromise;
     const transaction = database.transaction(STORE_CATALOG, 'readwrite');
+    const completion = writeTransactionDone(transaction);
     const store = transaction.objectStore(STORE_CATALOG);
     const preserveInventory = options.preserveLocalInventory !== false;
     const timestamp = this.now().toISOString();
@@ -368,23 +380,18 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         const existing = preserveInventory
           ? ((await requestResult(store.get(key))) as CatalogRecord | undefined)
           : undefined;
-        const record: CatalogRecord = {
+        store.put({
           ...item,
           ...(existing?.track_inventory && item.track_inventory
             ? { stock_quantity: existing.stock_quantity }
             : {}),
           key,
           local_updated_at: timestamp,
-        };
-        store.put(record);
+        } satisfies CatalogRecord);
       }
-      await transactionDone(transaction);
+      await completion;
     } catch (error) {
-      try {
-        transaction.abort();
-      } catch {
-        // Transaction may already be completed/aborted.
-      }
+      await abortAndDrain(transaction, completion);
       throw error;
     }
   }
@@ -397,11 +404,18 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     if (!normalized) return null;
     const database = await this.databasePromise;
     const transaction = database.transaction(STORE_CATALOG, 'readonly');
-    const record = (await requestResult(
-      transaction.objectStore(STORE_CATALOG).index(indexName).get(normalized),
-    )) as CatalogRecord | undefined;
-    await transactionDone(transaction);
-    return record ? withoutCatalogRecordMetadata(record) : null;
+    const records = (await requestResult(
+      transaction.objectStore(STORE_CATALOG).index(indexName).getAll(normalized, 2),
+    )) as CatalogRecord[];
+    if (records.length > 1) {
+      throw new CashierIndexedDbError(
+        indexName === 'barcode'
+          ? 'CASHIER_BARCODE_AMBIGUOUS'
+          : 'CASHIER_SKU_AMBIGUOUS',
+        `Local ${indexName} resolves to more than one catalog item`,
+      );
+    }
+    return records[0] ? withoutCatalogMetadata(records[0]) : null;
   }
 
   lookupByBarcode(barcode: string): Promise<CashierCatalogLookup | null> {
@@ -421,8 +435,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     const record = (await requestResult(
       transaction.objectStore(STORE_CATALOG).get(catalogKey(productId, variantId)),
     )) as CatalogRecord | undefined;
-    await transactionDone(transaction);
-    return record ? withoutCatalogRecordMetadata(record) : null;
+    return record ? withoutCatalogMetadata(record) : null;
   }
 
   private async replayCommittedOperation(
@@ -444,7 +457,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     return {
       sale: existing,
       inventory_movements: existingMovements,
-      outbox: existingOutbox.map(({ outbox_id: _outboxId, ...envelope }) => envelope),
+      outbox: existingOutbox.map(({ outbox_id: _id, ...envelope }) => envelope),
     };
   }
 
@@ -456,12 +469,19 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         'At least one sale line is required',
       );
     }
+    if (input.payment_status === 'failed') {
+      throw new CashierIndexedDbError(
+        'CASHIER_FAILED_PAYMENT_NOT_SALE',
+        'A failed payment must not be committed as a completed cashier sale',
+      );
+    }
 
     const database = await this.databasePromise;
     const transaction = database.transaction(
       [STORE_META, STORE_CATALOG, STORE_SALES, STORE_MOVEMENTS, STORE_OUTBOX],
       'readwrite',
     );
+    const completion = writeTransactionDone(transaction);
     const meta = transaction.objectStore(STORE_META);
     const catalog = transaction.objectStore(STORE_CATALOG);
     const sales = transaction.objectStore(STORE_SALES);
@@ -476,13 +496,13 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         operationId,
       );
       if (replay) {
-        await transactionDone(transaction);
+        await completion;
         return replay;
       }
 
       const deviceSequence = await nextDeviceSequence(meta);
       const occurredAt = this.now().toISOString();
-      const lineSnapshots: CashierSaleLineSnapshot[] = [];
+      const saleLines: CashierSaleLineSnapshot[] = [];
       const inventoryMovements: CashierInventoryMovement[] = [];
       let currencyCode: string | undefined;
       let fractionDigits: number | undefined;
@@ -498,10 +518,9 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
           );
         }
 
-        const key = catalogKey(inputLine.product_id, inputLine.variant_id);
-        const record = (await requestResult(catalog.get(key))) as
-          | CatalogRecord
-          | undefined;
+        const record = (await requestResult(
+          catalog.get(catalogKey(inputLine.product_id, inputLine.variant_id)),
+        )) as CatalogRecord | undefined;
         if (!record) {
           throw new CashierIndexedDbError(
             'CASHIER_CATALOG_ITEM_NOT_FOUND',
@@ -574,14 +593,8 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
           );
         }
         const lineDiscount = baseLineTotal - effectiveLineTotal;
-        if (lineDiscount < 0) {
-          throw new CashierIndexedDbError(
-            'CASHIER_EFFECTIVE_PRICE_INVALID',
-            'Effective price cannot exceed the base price in the cashier snapshot',
-          );
-        }
 
-        const line: CashierSaleLineSnapshot = {
+        saleLines.push({
           line_id: lineId(operationId, index),
           product_id: record.product_id,
           ...(record.variant_id ? { variant_id: record.variant_id } : {}),
@@ -597,8 +610,8 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
           discount_minor: lineDiscount,
           line_total_minor: effectiveLineTotal,
           ...(record.promotion ? { promotion: record.promotion } : {}),
-        };
-        lineSnapshots.push(line);
+        });
+
         subtotalMinor += baseLineTotal;
         discountMinor += lineDiscount;
         totalMinor += effectiveLineTotal;
@@ -632,7 +645,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         device_sequence: deviceSequence,
         source: 'cashier',
         status: 'completed',
-        lines: lineSnapshots,
+        lines: saleLines,
         subtotal_minor: subtotalMinor,
         discount_minor: discountMinor,
         total_minor: totalMinor,
@@ -692,18 +705,10 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         envelopes.push(envelope);
       }
 
-      await transactionDone(transaction);
-      return {
-        sale,
-        inventory_movements: inventoryMovements,
-        outbox: envelopes,
-      };
+      await completion;
+      return { sale, inventory_movements: inventoryMovements, outbox: envelopes };
     } catch (error) {
-      try {
-        transaction.abort();
-      } catch {
-        // Transaction may already be completed/aborted.
-      }
+      await abortAndDrain(transaction, completion);
       throw error;
     }
   }
@@ -724,6 +729,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       [STORE_META, STORE_CATALOG, STORE_MOVEMENTS, STORE_OUTBOX],
       'readwrite',
     );
+    const completion = writeTransactionDone(transaction);
     const meta = transaction.objectStore(STORE_META);
     const catalog = transaction.objectStore(STORE_CATALOG);
     const movements = transaction.objectStore(STORE_MOVEMENTS);
@@ -734,14 +740,13 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         movements.index('operation_id').get(operationId),
       )) as CashierInventoryMovement | undefined;
       if (existing) {
-        await transactionDone(transaction);
+        await completion;
         return existing;
       }
 
-      const key = catalogKey(input.product_id, input.variant_id);
-      const record = (await requestResult(catalog.get(key))) as
-        | CatalogRecord
-        | undefined;
+      const record = (await requestResult(
+        catalog.get(catalogKey(input.product_id, input.variant_id)),
+      )) as CatalogRecord | undefined;
       if (!record) {
         throw new CashierIndexedDbError(
           'CASHIER_CATALOG_ITEM_NOT_FOUND',
@@ -754,6 +759,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
           'This catalog item does not track inventory',
         );
       }
+
       const currentStock = Number(record.stock_quantity);
       const nextStock = currentStock + input.delta;
       if (
@@ -813,14 +819,10 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         ),
       } satisfies OutboxRecord);
 
-      await transactionDone(transaction);
+      await completion;
       return movement;
     } catch (error) {
-      try {
-        transaction.abort();
-      } catch {
-        // Transaction may already be completed/aborted.
-      }
+      await abortAndDrain(transaction, completion);
       throw error;
     }
   }
@@ -829,11 +831,11 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     const normalized = requiredIdentifier(saleIdValue, 'sale id');
     const database = await this.databasePromise;
     const transaction = database.transaction(STORE_SALES, 'readonly');
-    const sale = (await requestResult(
-      transaction.objectStore(STORE_SALES).get(normalized),
-    )) as CashierSaleSnapshot | undefined;
-    await transactionDone(transaction);
-    return sale || null;
+    return (
+      ((await requestResult(
+        transaction.objectStore(STORE_SALES).get(normalized),
+      )) as CashierSaleSnapshot | undefined) || null
+    );
   }
 
   async listSales(limit = 100): Promise<CashierSaleSnapshot[]> {
@@ -843,7 +845,6 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     const sales = (await requestResult(
       transaction.objectStore(STORE_SALES).getAll(),
     )) as CashierSaleSnapshot[];
-    await transactionDone(transaction);
     return sales
       .sort((left, right) => right.occurred_at.localeCompare(left.occurred_at))
       .slice(0, safeLimit);
@@ -856,14 +857,13 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     const records = (await requestResult(
       transaction.objectStore(STORE_OUTBOX).getAll(),
     )) as OutboxRecord[];
-    await transactionDone(transaction);
     return records
       .sort((left, right) => {
-        const sequence = left.device_sequence - right.device_sequence;
-        return sequence || left.outbox_id.localeCompare(right.outbox_id);
+        const bySequence = left.device_sequence - right.device_sequence;
+        return bySequence || left.outbox_id.localeCompare(right.outbox_id);
       })
       .slice(0, safeLimit)
-      .map(({ outbox_id: _outboxId, ...envelope }) => envelope);
+      .map(({ outbox_id: _id, ...envelope }) => envelope);
   }
 
   async acknowledgeSynced(operationIds: string[]): Promise<void> {
@@ -873,6 +873,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
 
     const database = await this.databasePromise;
     const transaction = database.transaction(STORE_OUTBOX, 'readwrite');
+    const completion = writeTransactionDone(transaction);
     const outbox = transaction.objectStore(STORE_OUTBOX);
     const operationIndex = outbox.index('operation_id');
 
@@ -881,13 +882,9 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         const keys = await requestResult(operationIndex.getAllKeys(operationId));
         for (const key of keys) outbox.delete(key);
       }
-      await transactionDone(transaction);
+      await completion;
     } catch (error) {
-      try {
-        transaction.abort();
-      } catch {
-        // Transaction may already be completed/aborted.
-      }
+      await abortAndDrain(transaction, completion);
       throw error;
     }
   }
