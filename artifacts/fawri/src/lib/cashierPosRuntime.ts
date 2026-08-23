@@ -288,6 +288,11 @@ export async function createCashierPosRuntime(options?: {
     databaseName,
   };
   const authority = new IndexedDbCashierAuthority(config);
+
+  // Force the authority schema open/upgrade to finish before the browse adapter
+  // opens the same database without a version. This avoids a first-run race.
+  await authority.getCatalogItem('__fawri_pos_schema_probe__');
+
   if (demoMode) await ensureDemoData(authority, databaseName);
 
   return {
