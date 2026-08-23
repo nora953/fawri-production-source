@@ -42,12 +42,6 @@ function getDirection(lang: Lang): 'ltr' | 'rtl' {
   return lang === 'en' ? 'ltr' : 'rtl';
 }
 
-function getDocumentLanguageTag(lang: Lang): string {
-  if (lang === 'ar') return 'ar-IQ';
-  if (lang === 'ku') return 'ku-Arab-IQ';
-  return 'en';
-}
-
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
@@ -57,7 +51,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     const direction = getDirection(lang);
 
     localStorage.setItem(LANG_STORAGE_KEY, lang);
-    document.documentElement.setAttribute('lang', getDocumentLanguageTag(lang));
+    document.documentElement.setAttribute('lang', lang);
     document.documentElement.setAttribute('dir', direction);
     document.body.setAttribute('dir', direction);
 

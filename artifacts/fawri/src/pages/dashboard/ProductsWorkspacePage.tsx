@@ -4,6 +4,7 @@ import { BadgePercent, Package } from 'lucide-react';
 import CommerceCatalogPage from './CommerceCatalogPage';
 import CatalogPromotionsPage from './CatalogPromotionsPage';
 import { useI18n } from '@/lib/i18n';
+import { FAWRI_UI_BASELINE_CLASS } from '@/lib/fawriUiBaseline';
 
 const copy = {
   ar: { catalog: 'المنتجات والخدمات', promotions: 'العروض' },
@@ -17,7 +18,7 @@ export default function ProductsWorkspacePage() {
   const [tab, setTab] = useState<'catalog' | 'promotions'>('catalog');
 
   return (
-    <div dir={dir}>
+    <div dir={dir} className={FAWRI_UI_BASELINE_CLASS}>
       <div className="px-4 pt-4">
         <div className="inline-flex w-full max-w-xl rounded-2xl border bg-card p-1 shadow-sm sm:w-auto">
           <button

@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import "./styles/fawriUiBaseline.css";
 import { I18nProvider } from "@/lib/i18n";
 
 createRoot(document.getElementById("root")!).render(
