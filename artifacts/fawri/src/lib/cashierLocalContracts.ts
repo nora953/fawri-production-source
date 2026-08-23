@@ -79,6 +79,7 @@ export type CashierSaleLineSnapshot = {
   variant_name_snapshot?: string;
   sku_snapshot?: string;
   barcode_snapshot?: string;
+  catalog_version?: number;
   quantity: number;
   base_unit_price_minor: number;
   effective_unit_price_minor: number;
@@ -172,7 +173,12 @@ export type CashierCatalogLookup = CashierMoneyContext & {
   track_inventory: boolean;
   stock_quantity?: number;
   base_unit_price_minor: number;
-  effective_unit_price_minor: number;
+  /**
+   * Legacy/display projection only. Sale commit must resolve effective price
+   * from base price + the current local promotion snapshot at sale time.
+   */
+  effective_unit_price_minor?: number;
+  /** Legacy/display projection only; immutable sale evidence is captured anew. */
   promotion?: CashierPromotionSnapshot;
   catalog_version: number;
 };
@@ -213,8 +219,8 @@ export type CashierInventoryAdjustmentInput = {
  * Provider-neutral contract. Implementations may use IndexedDB, SQLite, or a
  * future durable local provider, but callers must not depend on provider details.
  *
- * `commitSale` must be atomic across the sale snapshot, inventory movements,
- * inventory projection, and sync outbox append.
+ * `commitSale` must be atomic across sale-time pricing evidence, the sale
+ * snapshot, inventory movements/projection, and sync outbox append.
  */
 export interface CashierLocalAuthority {
   lookupByBarcode(barcode: string): Promise<CashierCatalogLookup | null>;
