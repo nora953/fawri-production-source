@@ -14,7 +14,6 @@
 }
 
 .fawri-ui-baseline label > span:first-child {
-  display: block;
   line-height: var(--fawri-label-line-height);
 }
 
