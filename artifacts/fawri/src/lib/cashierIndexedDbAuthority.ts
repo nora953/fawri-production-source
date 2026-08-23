@@ -13,10 +13,19 @@ import {
   isPositiveSafeInteger,
   isValidCashierMoneyContext,
 } from './cashierLocalContracts';
+import {
+  cashierPromotionLifecycleAt,
+  type CashierPromotionRule,
+} from './cashierPromotionRuntime';
+import {
+  resolveCashierSalePricing,
+  type CashierSalePricingCatalogItem,
+} from './cashierSalePricingRuntime';
 
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 const STORE_META = 'meta';
 const STORE_CATALOG = 'catalog';
+const STORE_PROMOTIONS = 'promotions';
 const STORE_SALES = 'sales';
 const STORE_MOVEMENTS = 'inventory_movements';
 const STORE_OUTBOX = 'outbox';
@@ -27,6 +36,7 @@ type CatalogRecord = CashierCatalogLookup & {
   key: string;
   local_updated_at: string;
 };
+type PromotionRecord = CashierPromotionRule & { local_updated_at: string };
 type OutboxRecord = CashierSyncEnvelope & { outbox_id: string };
 
 export type IndexedDbCashierConfig = {
@@ -64,7 +74,7 @@ export class CashierIndexedDbError extends Error {
 }
 
 function requiredIdentifier(value: string, label: string): string {
-  const normalized = String(value || '').trim();
+  const normalized = String(value || '').normalize('NFKC').trim();
   if (!normalized || normalized.length > 200) {
     throw new CashierIndexedDbError(
       'CASHIER_LOCAL_IDENTIFIER_INVALID',
@@ -72,6 +82,16 @@ function requiredIdentifier(value: string, label: string): string {
     );
   }
   return normalized;
+}
+
+function validInstant(value: Date, label: string): string {
+  if (!(value instanceof Date) || !Number.isFinite(value.getTime())) {
+    throw new CashierIndexedDbError(
+      'CASHIER_LOCAL_TIME_INVALID',
+      `${label} is invalid`,
+    );
+  }
+  return value.toISOString();
 }
 
 function catalogKey(productId: string, variantId?: string): string {
@@ -159,6 +179,12 @@ function createSchema(database: IDBDatabase): void {
     catalog.createIndex('product_id', 'product_id', { unique: false });
   }
 
+  if (!database.objectStoreNames.contains(STORE_PROMOTIONS)) {
+    const promotions = database.createObjectStore(STORE_PROMOTIONS, { keyPath: 'id' });
+    promotions.createIndex('merchant_id', 'merchant_id', { unique: false });
+    promotions.createIndex('product_id', 'product_id', { unique: false });
+  }
+
   if (!database.objectStoreNames.contains(STORE_SALES)) {
     const sales = database.createObjectStore(STORE_SALES, { keyPath: 'sale_id' });
     sales.createIndex('operation_id', 'operation_id', { unique: true });
@@ -224,14 +250,20 @@ function validateCatalogItem(item: CashierCatalogLookup): void {
       'Catalog currency context is invalid',
     );
   }
+  if (!isNonNegativeSafeInteger(item.base_unit_price_minor)) {
+    throw new CashierIndexedDbError(
+      'CASHIER_CATALOG_PRICE_INVALID',
+      'Catalog base price must be a safe non-negative minor-unit integer',
+    );
+  }
   if (
-    !isNonNegativeSafeInteger(item.base_unit_price_minor) ||
-    !isNonNegativeSafeInteger(item.effective_unit_price_minor) ||
-    item.effective_unit_price_minor > item.base_unit_price_minor
+    item.effective_unit_price_minor !== undefined &&
+    (!isNonNegativeSafeInteger(item.effective_unit_price_minor) ||
+      item.effective_unit_price_minor > item.base_unit_price_minor)
   ) {
     throw new CashierIndexedDbError(
       'CASHIER_CATALOG_PRICE_INVALID',
-      'Catalog prices must be safe non-negative minor units and effective price cannot exceed base price',
+      'Legacy effective price projection is invalid',
     );
   }
   if (!Number.isInteger(item.catalog_version) || item.catalog_version <= 0) {
@@ -254,6 +286,21 @@ function validateCatalogItem(item: CashierCatalogLookup): void {
 function withoutCatalogMetadata(record: CatalogRecord): CashierCatalogLookup {
   const { key: _key, local_updated_at: _localUpdatedAt, ...item } = record;
   return item;
+}
+
+function pricingCatalogItem(record: CatalogRecord): CashierSalePricingCatalogItem {
+  return {
+    product_id: record.product_id,
+    ...(record.variant_id ? { variant_id: record.variant_id } : {}),
+    product_name: record.name,
+    ...(record.variant_name ? { variant_name: record.variant_name } : {}),
+    ...(record.sku ? { sku: record.sku } : {}),
+    ...(record.barcode ? { barcode: record.barcode } : {}),
+    currency_code: record.currency_code,
+    currency_fraction_digits: record.currency_fraction_digits,
+    base_unit_price_minor: record.base_unit_price_minor,
+    catalog_version: record.catalog_version,
+  };
 }
 
 async function nextDeviceSequence(meta: IDBObjectStore): Promise<number> {
@@ -349,9 +396,14 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       : undefined;
     this.deviceId = requiredIdentifier(config.deviceId, 'device id');
     this.now = config.now || (() => new Date());
+    // Keep the original database name so schema v1 installations upgrade in place.
     this.databasePromise = openDatabase(
       config.databaseName || `fawri-cashier-${this.localMerchantId}-v1`,
     );
+  }
+
+  private get pricingMerchantId(): string {
+    return this.cloudMerchantId || this.localMerchantId;
   }
 
   async close(): Promise<void> {
@@ -359,8 +411,9 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
   }
 
   /**
-   * Prototype catalog ingress. It deliberately preserves locally-adjusted stock
-   * by default; cloud/local stock reconciliation is a later sync gate.
+   * Catalog ingress stores base commerce facts only. Legacy effective-price and
+   * promotion projections are deliberately discarded so sale commit cannot use
+   * stale scheduled/minimum-subtotal promotion results.
    */
   async upsertCatalogSnapshot(
     items: CashierCatalogLookup[],
@@ -371,7 +424,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     const completion = writeTransactionDone(transaction);
     const store = transaction.objectStore(STORE_CATALOG);
     const preserveInventory = options.preserveLocalInventory !== false;
-    const timestamp = this.now().toISOString();
+    const timestamp = validInstant(this.now(), 'catalog snapshot time');
 
     try {
       for (const item of items) {
@@ -380,14 +433,61 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         const existing = preserveInventory
           ? ((await requestResult(store.get(key))) as CatalogRecord | undefined)
           : undefined;
+        const {
+          effective_unit_price_minor: _legacyEffective,
+          promotion: _legacyPromotion,
+          ...baseItem
+        } = item;
         store.put({
-          ...item,
+          ...baseItem,
           ...(existing?.track_inventory && item.track_inventory
             ? { stock_quantity: existing.stock_quantity }
             : {}),
           key,
           local_updated_at: timestamp,
         } satisfies CatalogRecord);
+      }
+      await completion;
+    } catch (error) {
+      await abortAndDrain(transaction, completion);
+      throw error;
+    }
+  }
+
+  /**
+   * Replace the complete local promotion projection atomically. Removed cloud
+   * promotions therefore cannot survive locally as stale pricing rules.
+   */
+  async replacePromotionSnapshot(rules: CashierPromotionRule[]): Promise<void> {
+    const timestampDate = this.now();
+    const timestamp = validInstant(timestampDate, 'promotion snapshot time');
+    const seen = new Set<string>();
+    for (const rule of rules) {
+      const id = requiredIdentifier(rule.id, 'promotion id');
+      if (seen.has(id)) {
+        throw new CashierIndexedDbError(
+          'CASHIER_PROMOTION_SNAPSHOT_DUPLICATE',
+          'Promotion snapshot contains a duplicate promotion id',
+        );
+      }
+      seen.add(id);
+      cashierPromotionLifecycleAt(rule, timestampDate);
+      if (rule.merchant_id !== this.pricingMerchantId) {
+        throw new CashierIndexedDbError(
+          'CASHIER_PROMOTION_MERCHANT_MISMATCH',
+          'Promotion snapshot belongs to a different merchant',
+        );
+      }
+    }
+
+    const database = await this.databasePromise;
+    const transaction = database.transaction(STORE_PROMOTIONS, 'readwrite');
+    const completion = writeTransactionDone(transaction);
+    const store = transaction.objectStore(STORE_PROMOTIONS);
+    try {
+      store.clear();
+      for (const rule of rules) {
+        store.put({ ...rule, local_updated_at: timestamp } satisfies PromotionRecord);
       }
       await completion;
     } catch (error) {
@@ -475,15 +575,31 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         'A failed payment must not be committed as a completed cashier sale',
       );
     }
+    for (const line of input.lines) {
+      if (!isPositiveSafeInteger(line.quantity)) {
+        throw new CashierIndexedDbError(
+          'CASHIER_SALE_QUANTITY_INVALID',
+          'Sale quantity must be a positive safe integer',
+        );
+      }
+    }
 
     const database = await this.databasePromise;
     const transaction = database.transaction(
-      [STORE_META, STORE_CATALOG, STORE_SALES, STORE_MOVEMENTS, STORE_OUTBOX],
+      [
+        STORE_META,
+        STORE_CATALOG,
+        STORE_PROMOTIONS,
+        STORE_SALES,
+        STORE_MOVEMENTS,
+        STORE_OUTBOX,
+      ],
       'readwrite',
     );
     const completion = writeTransactionDone(transaction);
     const meta = transaction.objectStore(STORE_META);
     const catalog = transaction.objectStore(STORE_CATALOG);
+    const promotions = transaction.objectStore(STORE_PROMOTIONS);
     const sales = transaction.objectStore(STORE_SALES);
     const movements = transaction.objectStore(STORE_MOVEMENTS);
     const outbox = transaction.objectStore(STORE_OUTBOX);
@@ -500,27 +616,13 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         return replay;
       }
 
-      const deviceSequence = await nextDeviceSequence(meta);
-      const occurredAt = this.now().toISOString();
-      const saleLines: CashierSaleLineSnapshot[] = [];
-      const inventoryMovements: CashierInventoryMovement[] = [];
-      let currencyCode: string | undefined;
-      let fractionDigits: number | undefined;
-      let subtotalMinor = 0;
-      let discountMinor = 0;
-      let totalMinor = 0;
-
-      for (const [index, inputLine] of input.lines.entries()) {
-        if (!isPositiveSafeInteger(inputLine.quantity)) {
-          throw new CashierIndexedDbError(
-            'CASHIER_SALE_QUANTITY_INVALID',
-            'Sale quantity must be a positive safe integer',
-          );
-        }
-
-        const record = (await requestResult(
-          catalog.get(catalogKey(inputLine.product_id, inputLine.variant_id)),
-        )) as CatalogRecord | undefined;
+      const recordRequests = input.lines.map(line =>
+        requestResult(catalog.get(catalogKey(line.product_id, line.variant_id))),
+      );
+      const rawRecords = (await Promise.all(recordRequests)) as Array<
+        CatalogRecord | undefined
+      >;
+      const records = rawRecords.map((record, index) => {
         if (!record) {
           throw new CashierIndexedDbError(
             'CASHIER_CATALOG_ITEM_NOT_FOUND',
@@ -528,20 +630,6 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
           );
         }
         validateCatalogItem(record);
-
-        if (currencyCode === undefined) {
-          currencyCode = record.currency_code;
-          fractionDigits = record.currency_fraction_digits;
-        } else if (
-          currencyCode !== record.currency_code ||
-          fractionDigits !== record.currency_fraction_digits
-        ) {
-          throw new CashierIndexedDbError(
-            'CASHIER_SALE_CURRENCY_MISMATCH',
-            'All sale lines must use the same currency context',
-          );
-        }
-
         if (record.track_inventory) {
           const currentStock = Number(record.stock_quantity);
           if (!isNonNegativeSafeInteger(currentStock)) {
@@ -550,89 +638,74 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
               'Local stock projection is corrupt',
             );
           }
-          if (currentStock < inputLine.quantity) {
+          if (currentStock < input.lines[index].quantity) {
             throw new CashierIndexedDbError(
               'CASHIER_OUT_OF_STOCK',
               'Insufficient local stock for this sale',
             );
           }
-          record.stock_quantity = currentStock - inputLine.quantity;
-          record.local_updated_at = occurredAt;
-          catalog.put(record);
-
-          const movement: CashierInventoryMovement = {
-            movement_id: movementId(operationId, index),
-            operation_id: operationId,
-            local_merchant_id: this.localMerchantId,
-            ...(this.cloudMerchantId
-              ? { cloud_merchant_id: this.cloudMerchantId }
-              : {}),
-            device_id: this.deviceId,
-            device_sequence: deviceSequence,
-            product_id: record.product_id,
-            ...(record.variant_id ? { variant_id: record.variant_id } : {}),
-            delta: -inputLine.quantity,
-            reason: 'sale',
-            related_sale_id: saleId(operationId),
-            occurred_at: occurredAt,
-          };
-          movements.put(movement);
-          inventoryMovements.push(movement);
         }
+        return record;
+      });
 
-        const baseLineTotal = record.base_unit_price_minor * inputLine.quantity;
-        const effectiveLineTotal =
-          record.effective_unit_price_minor * inputLine.quantity;
-        if (
-          !Number.isSafeInteger(baseLineTotal) ||
-          !Number.isSafeInteger(effectiveLineTotal)
-        ) {
-          throw new CashierIndexedDbError(
-            'CASHIER_SALE_TOTAL_OVERFLOW',
-            'Sale total exceeds the safe integer range',
-          );
-        }
-        const lineDiscount = baseLineTotal - effectiveLineTotal;
+      const promotionRecords = (await requestResult(
+        promotions.getAll(),
+      )) as PromotionRecord[];
+      const promotionRules: CashierPromotionRule[] = promotionRecords.map(
+        ({ local_updated_at: _localUpdatedAt, ...rule }) => rule,
+      );
+      const occurredAtDate = this.now();
+      validInstant(occurredAtDate, 'sale time');
 
-        saleLines.push({
-          line_id: lineId(operationId, index),
+      // Pricing is fully resolved before inventory/sale/outbox writes. Any stale,
+      // corrupt, conflicting, mixed-currency, or time-invalid promotion state
+      // throws here and the transaction is aborted without partial writes.
+      const pricing = resolveCashierSalePricing({
+        merchantId: this.pricingMerchantId,
+        catalog: records.map(pricingCatalogItem),
+        promotions: promotionRules,
+        lines: input.lines,
+        at: occurredAtDate,
+      });
+
+      const deviceSequence = await nextDeviceSequence(meta);
+      const occurredAt = pricing.priced_at;
+      const inventoryMovements: CashierInventoryMovement[] = [];
+
+      for (const [index, record] of records.entries()) {
+        const inputLine = input.lines[index];
+        if (!record.track_inventory) continue;
+        const currentStock = Number(record.stock_quantity);
+        record.stock_quantity = currentStock - inputLine.quantity;
+        record.local_updated_at = occurredAt;
+        catalog.put(record);
+
+        const movement: CashierInventoryMovement = {
+          movement_id: movementId(operationId, index),
+          operation_id: operationId,
+          local_merchant_id: this.localMerchantId,
+          ...(this.cloudMerchantId
+            ? { cloud_merchant_id: this.cloudMerchantId }
+            : {}),
+          device_id: this.deviceId,
+          device_sequence: deviceSequence,
           product_id: record.product_id,
           ...(record.variant_id ? { variant_id: record.variant_id } : {}),
-          product_name_snapshot: record.name,
-          ...(record.variant_name
-            ? { variant_name_snapshot: record.variant_name }
-            : {}),
-          ...(record.sku ? { sku_snapshot: record.sku } : {}),
-          ...(record.barcode ? { barcode_snapshot: record.barcode } : {}),
-          quantity: inputLine.quantity,
-          base_unit_price_minor: record.base_unit_price_minor,
-          effective_unit_price_minor: record.effective_unit_price_minor,
-          discount_minor: lineDiscount,
-          line_total_minor: effectiveLineTotal,
-          ...(record.promotion ? { promotion: record.promotion } : {}),
-        });
-
-        subtotalMinor += baseLineTotal;
-        discountMinor += lineDiscount;
-        totalMinor += effectiveLineTotal;
-        if (
-          !Number.isSafeInteger(subtotalMinor) ||
-          !Number.isSafeInteger(discountMinor) ||
-          !Number.isSafeInteger(totalMinor)
-        ) {
-          throw new CashierIndexedDbError(
-            'CASHIER_SALE_TOTAL_OVERFLOW',
-            'Sale total exceeds the safe integer range',
-          );
-        }
+          delta: -inputLine.quantity,
+          reason: 'sale',
+          related_sale_id: saleId(operationId),
+          occurred_at: occurredAt,
+        };
+        movements.put(movement);
+        inventoryMovements.push(movement);
       }
 
-      if (currencyCode === undefined || fractionDigits === undefined) {
-        throw new CashierIndexedDbError(
-          'CASHIER_SALE_CURRENCY_REQUIRED',
-          'Sale currency context is unavailable',
-        );
-      }
+      const saleLines: CashierSaleLineSnapshot[] = pricing.lines.map(
+        (line, index) => ({
+          line_id: lineId(operationId, index),
+          ...line,
+        }),
+      );
 
       const sale: CashierSaleSnapshot = {
         sale_id: saleId(operationId),
@@ -646,11 +719,11 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         source: 'cashier',
         status: 'completed',
         lines: saleLines,
-        subtotal_minor: subtotalMinor,
-        discount_minor: discountMinor,
-        total_minor: totalMinor,
-        currency_code: currencyCode,
-        currency_fraction_digits: fractionDigits,
+        subtotal_minor: pricing.subtotal_minor,
+        discount_minor: pricing.discount_minor,
+        total_minor: pricing.total_minor,
+        currency_code: pricing.currency_code,
+        currency_fraction_digits: pricing.currency_fraction_digits,
         payment_method: input.payment_method,
         payment_status: input.payment_status,
         ...(input.payment_provider
@@ -773,7 +846,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       }
 
       const deviceSequence = await nextDeviceSequence(meta);
-      const occurredAt = this.now().toISOString();
+      const occurredAt = validInstant(this.now(), 'inventory adjustment time');
       record.stock_quantity = nextStock;
       record.local_updated_at = occurredAt;
       catalog.put(record);
