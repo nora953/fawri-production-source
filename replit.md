@@ -42,6 +42,20 @@ A SaaS web platform for Iraqi online stores — Fawri is a smart sales assistant
 - **Platform icons**: All social platform icons (Instagram, Messenger, Telegram, WhatsApp, TikTok) use react-icons/fa — NOT lucide-react, which doesn't have brand logos.
 - **Orange primary brand**: #f97316 (orange-500). Applied as the primary CSS var throughout.
 
+## Merchant UI generation contract
+
+Before creating or visually editing any merchant-facing page, modal, form, catalog editor, settings surface, or commerce workflow:
+
+1. Read `docs/fawri-ui-baseline.md` first.
+2. Reuse the canonical `fawri-ui-baseline` wrapper and the constants in `artifacts/fawri/src/lib/fawriUiBaseline.ts` instead of inventing page-specific form styling.
+3. Treat SignupPage, LoginPage, and Admin Early Warning as the approved visual references for typography, spacing, controls, RTL/LTR behavior, focus states, and interaction density.
+4. New merchant controls default to 48px height, 12px radius, 14px labels with 20px line-height, 8px label-to-control spacing, and Fawri theme tokens unless the baseline explicitly permits a compact control.
+5. Prefer shared Fawri/shadcn Select and Checkbox primitives. Do not rely on browser-default select arrows or merchant-facing `datetime-local` rendering.
+6. Arabic/Kurdish RTL must place select arrows and control affordances correctly; technical/numeric values may remain LTR where appropriate.
+7. A page is not visually complete until it is checked against the baseline in Arabic, Kurdish, English, desktop, and mobile.
+
+This UI contract is the default for future generated merchant interfaces and should be changed only by an explicit design-system decision, not by one-off page polish.
+
 ## Product
 
 - **Landing page**: Hero, supported channels, Why Fawri features, How it works, Pricing (Silver/Gold/Diamond in IQD), Final CTA
