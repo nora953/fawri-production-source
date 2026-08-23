@@ -3,6 +3,7 @@ import { probeIndexedDbCashierDurability } from '@/lib/cashierIndexedDbAuthority
 import { runCashierIndexedDbSmoke } from '@/lib/cashierIndexedDbSmoke';
 import { runCashierPromotionSmoke } from '@/lib/cashierPromotionSmoke';
 import { runCashierSalePricingSmoke } from '@/lib/cashierSalePricingSmoke';
+import { runCashierCompensationSmoke } from '@/lib/cashierCompensationSmoke';
 
 type SmokeState =
   | { status: 'idle' }
@@ -22,6 +23,7 @@ export default function CashierIndexedDbSmokePage() {
       const indexeddb = await runCashierIndexedDbSmoke();
       const promotion = runCashierPromotionSmoke();
       const sale_time_pricing = runCashierSalePricingSmoke();
+      const compensation = await runCashierCompensationSmoke();
       setState({
         status: 'passed',
         payload: {
@@ -29,6 +31,7 @@ export default function CashierIndexedDbSmokePage() {
           indexeddb,
           promotion,
           sale_time_pricing,
+          compensation,
         },
       });
     } catch (error) {
@@ -45,7 +48,7 @@ export default function CashierIndexedDbSmokePage() {
         <div className="space-y-2">
           <h1 className="text-2xl font-bold">Fawri Cashier Local Commerce Smoke</h1>
           <p className="text-sm text-muted-foreground">
-            Disposable P1B/P1C diagnostic only. It uses a temporary IndexedDB database, validates offline promotion and sale-time pricing rules, and does not touch merchant data.
+            Disposable P1B/P1C/P1D diagnostic only. It uses temporary IndexedDB databases, validates offline pricing plus return/void compensation rules, and does not touch merchant data.
           </p>
         </div>
 
@@ -63,13 +66,13 @@ export default function CashierIndexedDbSmokePage() {
         )}
 
         {state.status === 'running' && (
-          <p className="text-sm font-medium">Running persistence, atomic sale, inventory, restart, outbox, promotion, and sale-time pricing checks…</p>
+          <p className="text-sm font-medium">Running persistence, sale, inventory, pricing, return, void, restart, and outbox checks…</p>
         )}
 
         {state.status === 'passed' && (
           <section className="space-y-3">
             <div className="rounded-xl border border-green-300 bg-green-50 p-4 font-semibold text-green-800">
-              PASS — local cashier storage and commerce pricing checks completed.
+              PASS — local cashier storage, pricing, and compensation checks completed.
             </div>
             <pre className="max-h-[60vh] overflow-auto rounded-xl border bg-muted p-4 text-xs leading-5" dir="ltr">
               {JSON.stringify(state.payload, null, 2)}
