@@ -70,6 +70,12 @@ Use deterministic Fawri date/time UI. The stored/server contract may remain an I
 
 For numeric/time fragments that must remain machine-readable, keep `dir="ltr"` even on RTL pages.
 
+For compound date/time ranges:
+
+- Treat **Start** and **End** as two separate full-width field groups instead of compressing both groups into one four-control row.
+- Each group uses the normal Fawri label-to-control gap, with date and time paired beneath that one label.
+- Use a 12px internal gap between date and time controls; on narrow screens those controls may stack vertically.
+
 ## RTL rules
 
 - Page direction comes from `useI18n()`; do not hardcode per-page direction.
@@ -96,9 +102,10 @@ A merchant create/edit modal should normally follow:
 2. Scrollable form body.
 3. Consistent field groups and 48px controls.
 4. Two-column primary field rows use 24px spacing.
-5. Fixed footer action area.
-6. Primary save action visually dominant; cancel remains secondary.
-7. Mobile safe-area padding preserved.
+5. Compound start/end schedule ranges use stacked full-width field groups.
+6. Fixed footer action area.
+7. Primary save action visually dominant; cancel remains secondary.
+8. Mobile safe-area padding preserved.
 
 ## New-page checklist
 
@@ -110,6 +117,7 @@ Before considering a generated page visually complete, verify:
 - Standard control height/radius.
 - Every primary label has a clear 8px relationship to its own control.
 - Paired field groups use 24px separation and do not visually merge in RTL.
+- Compound start/end date ranges are not compressed into a four-control row.
 - Select arrow is correct in RTL/LTR.
 - Checkbox/toggle placement matches Fawri patterns.
 - No browser-default `datetime-local` presentation.
