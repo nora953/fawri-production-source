@@ -18,6 +18,8 @@ type SaleSuccess = {
   fractionDigits: number;
 };
 
+const COMPACT_ITEMS_PER_PAGE = 4;
+
 function itemKey(item: { product_id: string; variant_id?: string }): string {
   return `${item.product_id}\u0000${item.variant_id || ''}`;
 }
@@ -65,6 +67,8 @@ export default function CashierPosPage() {
   const [catalog, setCatalog] = useState<CashierCatalogLookup[]>([]);
   const [query, setQuery] = useState('');
   const [cart, setCart] = useState<CartLine[]>([]);
+  const [activeCartKey, setActiveCartKey] = useState<string | null>(null);
+  const [compactPage, setCompactPage] = useState(0);
   const [quote, setQuote] = useState<CashierResolvedSalePricing | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<CashierPaymentMethod>('cash');
@@ -118,6 +122,17 @@ export default function CashierPosPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (cart.length === 0) {
+      setActiveCartKey(null);
+      setCompactPage(0);
+      return;
+    }
+    if (!activeCartKey || !cart.some(line => itemKey(line.item) === activeCartKey)) {
+      setActiveCartKey(itemKey(cart[cart.length - 1].item));
+    }
+  }, [activeCartKey, cart]);
+
   const saleLines = useMemo<CashierSaleLineInput[]>(
     () =>
       cart.map(line => ({
@@ -157,10 +172,12 @@ export default function CashierPosPage() {
   }, [runtime, saleLines]);
 
   const addItem = useCallback((item: CashierCatalogLookup) => {
+    const key = itemKey(item);
     setError(null);
     setSuccess(null);
+    setActiveCartKey(key);
+    setCompactPage(0);
     setCart(current => {
-      const key = itemKey(item);
       const existing = current.find(line => itemKey(line.item) === key);
       const currentQuantity = existing?.quantity || 0;
       if (
@@ -240,6 +257,8 @@ export default function CashierPosPage() {
         fractionDigits: result.sale.currency_fraction_digits,
       });
       setCart([]);
+      setActiveCartKey(null);
+      setCompactPage(0);
       setPaymentMethod('cash');
       setExternalConfirmed(false);
       await refreshCatalog(runtime, query);
@@ -259,6 +278,25 @@ export default function CashierPosPage() {
     return map;
   }, [quote]);
 
+  const activeLine = useMemo(
+    () => cart.find(line => itemKey(line.item) === activeCartKey) || cart[cart.length - 1] || null,
+    [activeCartKey, cart],
+  );
+  const compactLines = useMemo(
+    () => cart.filter(line => !activeLine || itemKey(line.item) !== itemKey(activeLine.item)),
+    [activeLine, cart],
+  );
+  const compactPageCount = Math.max(1, Math.ceil(compactLines.length / COMPACT_ITEMS_PER_PAGE));
+
+  useEffect(() => {
+    if (compactPage >= compactPageCount) setCompactPage(compactPageCount - 1);
+  }, [compactPage, compactPageCount]);
+
+  const visibleCompactLines = compactLines.slice(
+    compactPage * COMPACT_ITEMS_PER_PAGE,
+    compactPage * COMPACT_ITEMS_PER_PAGE + COMPACT_ITEMS_PER_PAGE,
+  );
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-[100dvh] lg:overflow-hidden" dir="rtl">
       <div className="mx-auto flex min-h-screen max-w-[1500px] flex-col p-3 lg:h-full lg:min-h-0 lg:p-4">
@@ -268,9 +306,7 @@ export default function CashierPosPage() {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-bold">الكاشير</h1>
-                {demoMode ? (
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">وضع اختبار</span>
-                ) : null}
+                {demoMode ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">وضع اختبار</span> : null}
               </div>
               <p className="text-xs text-slate-500">بيع محلي مستقل عن الاشتراك والخدمات السحابية</p>
             </div>
@@ -279,9 +315,7 @@ export default function CashierPosPage() {
             <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
               {online ? 'متصل بالإنترنت' : 'يعمل دون اتصال'}
             </span>
-            <a href="/cashier.html?diagnostics=1" className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 hover:bg-slate-50">
-              حالة الجهاز
-            </a>
+            <a href="/cashier.html?diagnostics=1" className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 hover:bg-slate-50">حالة الجهاز</a>
           </div>
         </header>
 
@@ -308,19 +342,12 @@ export default function CashierPosPage() {
                   ref={searchRef}
                   value={query}
                   onChange={event => setQuery(event.target.value)}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter') void performSearch();
-                  }}
+                  onKeyDown={event => { if (event.key === 'Enter') void performSearch(); }}
                   placeholder="الاسم، SKU أو الباركود"
                   className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   autoFocus
                 />
-                <button
-                  type="button"
-                  onClick={() => void performSearch()}
-                  disabled={!runtime || searching}
-                  className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                >
+                <button type="button" onClick={() => void performSearch()} disabled={!runtime || searching} className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">
                   {searching ? 'جارٍ البحث...' : 'بحث'}
                 </button>
               </div>
@@ -333,22 +360,14 @@ export default function CashierPosPage() {
                 <div className="flex h-full min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
                   <div className="mb-3 text-3xl">⌁</div>
                   <h3 className="font-bold">لا توجد عناصر في الكتالوج المحلي</h3>
-                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
-                    يحتاج هذا الجهاز إلى تهيئة الكتالوج المحلي مرة واحدة. بعد التهيئة تبقى عمليات البيع متاحة دون اتصال.
-                  </p>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">يحتاج هذا الجهاز إلى تهيئة الكتالوج المحلي مرة واحدة. بعد التهيئة تبقى عمليات البيع متاحة دون اتصال.</p>
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {catalog.map(item => {
                     const soldOut = item.track_inventory && Number(item.stock_quantity || 0) <= 0;
                     return (
-                      <button
-                        type="button"
-                        key={itemKey(item)}
-                        onClick={() => addItem(item)}
-                        disabled={soldOut}
-                        className="rounded-2xl border border-slate-200 p-4 text-right transition hover:border-orange-300 hover:bg-orange-50/40 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
+                      <button type="button" key={itemKey(item)} onClick={() => addItem(item)} disabled={soldOut} className="rounded-2xl border border-slate-200 p-4 text-right transition hover:border-orange-300 hover:bg-orange-50/40 disabled:cursor-not-allowed disabled:opacity-50">
                         <div className="mb-3 flex items-start justify-between gap-3">
                           <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{item.item_type === 'service' ? 'خدمة' : 'منتج'}</span>
                           <span className="text-base font-bold">{formatMoney(item.base_unit_price_minor, item.currency_code, item.currency_fraction_digits)}</span>
@@ -357,9 +376,7 @@ export default function CashierPosPage() {
                         {item.variant_name ? <p className="mt-1 text-xs text-slate-500">{item.variant_name}</p> : null}
                         <div className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-500">
                           <span>{item.sku || item.barcode || 'بدون رمز'}</span>
-                          <span className={soldOut ? 'font-bold text-red-600' : ''}>
-                            {item.track_inventory ? `المخزون: ${item.stock_quantity ?? 0}` : 'لا يتتبع المخزون'}
-                          </span>
+                          <span className={soldOut ? 'font-bold text-red-600' : ''}>{item.track_inventory ? `المخزون: ${item.stock_quantity ?? 0}` : 'لا يتتبع المخزون'}</span>
                         </div>
                       </button>
                     );
@@ -378,88 +395,109 @@ export default function CashierPosPage() {
               {cart.length > 0 ? <button type="button" onClick={() => setCart([])} className="text-xs font-semibold text-red-600 hover:underline">تفريغ السلة</button> : null}
             </div>
 
-            <div className={`min-h-0 flex-1 p-4 ${cart.length === 0 ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain'}`}>
-              {cart.length === 0 ? (
-                <div className="flex h-full min-h-44 flex-col items-center justify-center text-center text-sm text-slate-500">
+            <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3">
+              {!activeLine ? (
+                <div className="flex h-full flex-col items-center justify-center text-center text-sm text-slate-500">
                   <div className="mb-2 text-3xl">🛒</div>
                   اختر منتجًا أو امسح باركود لبدء البيع.
                 </div>
-              ) : (
-                <div className="space-y-3 pb-1">
-                  {cart.map(line => {
-                    const key = itemKey(line.item);
-                    const priced = quoteByKey.get(key);
-                    const unit = priced?.effective_unit_price_minor ?? line.item.base_unit_price_minor;
-                    const lineTotal = priced?.line_total_minor ?? unit * line.quantity;
-                    return (
-                      <div key={key} className="rounded-xl border border-slate-200 bg-white p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <p className="truncate font-semibold">{line.item.name}</p>
-                            {priced?.promotion ? <p className="mt-1 text-xs font-semibold text-emerald-700">{priced.promotion.promotion_name}</p> : null}
-                          </div>
-                          <strong className="whitespace-nowrap text-sm">{formatMoney(lineTotal, line.item.currency_code, line.item.currency_fraction_digits)}</strong>
+              ) : (() => {
+                const activeKey = itemKey(activeLine.item);
+                const activePrice = quoteByKey.get(activeKey);
+                const activeUnit = activePrice?.effective_unit_price_minor ?? activeLine.item.base_unit_price_minor;
+                const activeTotal = activePrice?.line_total_minor ?? activeUnit * activeLine.quantity;
+                return (
+                  <>
+                    <div className="flex min-h-0 flex-1 flex-col justify-between rounded-2xl border-2 border-orange-200 bg-orange-50/30 p-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-bold">{activeLine.item.name}</p>
+                          {activeLine.item.variant_name ? <p className="mt-0.5 truncate text-xs text-slate-500">{activeLine.item.variant_name}</p> : null}
+                          {activePrice?.promotion ? <p className="mt-1 text-xs font-semibold text-emerald-700">{activePrice.promotion.promotion_name}</p> : null}
                         </div>
-                        <div className="mt-3 flex items-center justify-between gap-3">
-                          <span className="text-xs text-slate-500">{formatMoney(unit, line.item.currency_code, line.item.currency_fraction_digits)} للوحدة</span>
-                          <div className="flex items-center overflow-hidden rounded-lg border border-slate-200">
-                            <button type="button" onClick={() => updateQuantity(key, line.quantity - 1)} className="h-8 w-9 text-lg hover:bg-slate-50">−</button>
-                            <span className="min-w-9 text-center text-sm font-bold">{line.quantity}</span>
-                            <button type="button" onClick={() => updateQuantity(key, line.quantity + 1)} className="h-8 w-9 text-lg hover:bg-slate-50">+</button>
-                          </div>
+                        <strong className="whitespace-nowrap text-base">{formatMoney(activeTotal, activeLine.item.currency_code, activeLine.item.currency_fraction_digits)}</strong>
+                      </div>
+                      <div className="mt-2 flex items-end justify-between gap-3">
+                        <div>
+                          <p className="text-[11px] text-slate-500">سعر الوحدة</p>
+                          <p className="text-sm font-semibold">{formatMoney(activeUnit, activeLine.item.currency_code, activeLine.item.currency_fraction_digits)}</p>
+                        </div>
+                        <div className="flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+                          <button type="button" onClick={() => updateQuantity(activeKey, activeLine.quantity - 1)} className="h-10 w-12 text-xl hover:bg-slate-50">−</button>
+                          <span className="min-w-12 text-center text-base font-bold">{activeLine.quantity}</span>
+                          <button type="button" onClick={() => updateQuantity(activeKey, activeLine.quantity + 1)} className="h-10 w-12 text-xl hover:bg-slate-50">+</button>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+                    </div>
+
+                    {compactLines.length > 0 ? (
+                      <div className="shrink-0 rounded-xl border border-slate-100 bg-slate-50/70 p-2">
+                        <div className="mb-1.5 flex items-center justify-between gap-2">
+                          <span className="text-[11px] font-semibold text-slate-500">عناصر أخرى — اضغط للتعديل</span>
+                          {compactPageCount > 1 ? <span className="text-[11px] text-slate-400">{compactPage + 1}/{compactPageCount}</span> : null}
+                        </div>
+                        <div className="flex items-stretch gap-1.5">
+                          {compactPageCount > 1 ? (
+                            <button type="button" onClick={() => setCompactPage(page => (page - 1 + compactPageCount) % compactPageCount)} className="w-7 shrink-0 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-100">›</button>
+                          ) : null}
+                          <div className="grid min-w-0 flex-1 grid-cols-2 gap-1.5 sm:grid-cols-4">
+                            {visibleCompactLines.map(line => {
+                              const key = itemKey(line.item);
+                              const priced = quoteByKey.get(key);
+                              const unit = priced?.effective_unit_price_minor ?? line.item.base_unit_price_minor;
+                              const total = priced?.line_total_minor ?? unit * line.quantity;
+                              return (
+                                <button type="button" key={key} onClick={() => setActiveCartKey(key)} className="min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-right transition hover:border-orange-300 hover:bg-orange-50">
+                                  <p className="truncate text-[11px] font-bold">{line.item.name}</p>
+                                  <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-slate-500">
+                                    <span>×{line.quantity}</span>
+                                    <span className="truncate">{formatMoney(total, line.item.currency_code, line.item.currency_fraction_digits)}</span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {compactPageCount > 1 ? (
+                            <button type="button" onClick={() => setCompactPage(page => (page + 1) % compactPageCount)} className="w-7 shrink-0 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-100">‹</button>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
+                );
+              })()}
             </div>
 
-            <div className="shrink-0 border-t border-slate-100 bg-white p-4">
-              {quoteError ? <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{quoteError}</div> : null}
-              <div className="space-y-1.5 text-sm">
+            <div className="shrink-0 border-t border-slate-100 bg-white p-3">
+              {quoteError ? <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{quoteError}</div> : null}
+              <div className="space-y-1 text-sm">
                 <div className="flex justify-between text-slate-500"><span>المجموع قبل الخصم</span><span>{quote ? formatMoney(quote.subtotal_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
                 <div className="flex justify-between text-emerald-700"><span>الخصم</span><span>{quote ? `− ${formatMoney(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits)}` : '—'}</span></div>
-                <div className="flex justify-between border-t border-slate-100 pt-2 text-lg font-bold"><span>الإجمالي</span><span>{quote ? formatMoney(quote.total_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
+                <div className="flex justify-between border-t border-slate-100 pt-1.5 text-lg font-bold"><span>الإجمالي</span><span>{quote ? formatMoney(quote.total_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
               </div>
 
-              <div className="mt-4">
-                <label className="mb-2 block text-xs font-bold text-slate-600">طريقة الدفع</label>
-                <div className="grid grid-cols-2 gap-2">
+              <div className="mt-2.5">
+                <label className="mb-1.5 block text-xs font-bold text-slate-600">طريقة الدفع</label>
+                <div className="grid grid-cols-2 gap-1.5">
                   {([
                     ['cash', 'نقدي'],
                     ['card', 'بطاقة'],
                     ['electronic', 'إلكتروني'],
                     ['other', 'أخرى'],
                   ] as Array<[CashierPaymentMethod, string]>).map(([method, label]) => (
-                    <button
-                      type="button"
-                      key={method}
-                      onClick={() => {
-                        setPaymentMethod(method);
-                        setExternalConfirmed(false);
-                      }}
-                      className={`rounded-lg border px-3 py-2 text-sm font-semibold ${paymentMethod === method ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
-                    >
-                      {label}
-                    </button>
+                    <button type="button" key={method} onClick={() => { setPaymentMethod(method); setExternalConfirmed(false); }} className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${paymentMethod === method ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>{label}</button>
                   ))}
                 </div>
               </div>
 
               {paymentMethod !== 'cash' ? (
-                <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs leading-5 text-amber-900">
                   <input type="checkbox" checked={externalConfirmed} onChange={event => setExternalConfirmed(event.target.checked)} className="mt-1 h-4 w-4" />
-                  <span>أؤكد أن الدفع تم بنجاح خارج فوري. لا يوجد ربط مباشر ببوابة أو جهاز دفع في هذه المرحلة.</span>
+                  <span>أؤكد أن الدفع تم بنجاح خارج فوري.</span>
                 </label>
               ) : null}
 
-              <button
-                type="button"
-                onClick={() => void completeSale()}
-                disabled={cart.length === 0 || !quote || Boolean(quoteError) || committing || (paymentMethod !== 'cash' && !externalConfirmed)}
-                className="mt-4 h-12 w-full rounded-xl bg-orange-600 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
-              >
+              <button type="button" onClick={() => void completeSale()} disabled={cart.length === 0 || !quote || Boolean(quoteError) || committing || (paymentMethod !== 'cash' && !externalConfirmed)} className="mt-2.5 h-11 w-full rounded-xl bg-orange-600 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
                 {committing ? 'جارٍ حفظ البيع...' : 'إتمام البيع وحفظه محليًا'}
               </button>
             </div>
