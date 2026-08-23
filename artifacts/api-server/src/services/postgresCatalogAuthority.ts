@@ -425,6 +425,12 @@ async function persistProductGraph(
       values,
     );
   } else {
+    const updateValues = [
+      ...values.slice(0, 22),
+      values[23],
+      values[24],
+      expectedVersion,
+    ];
     const result = await operationalQueryRows<{ id: string }>(
       target,
       `UPDATE products
@@ -448,11 +454,11 @@ async function persistProductGraph(
               version = $20,
               status = $21,
               allow_fawri_reply = $22,
-              updated_at = $24,
-              metadata = COALESCE(metadata, '{}'::jsonb) || $25::jsonb
-        WHERE id = $1 AND merchant_id = $2 AND version = $26 AND deleted_at IS NULL
+              updated_at = $23,
+              metadata = COALESCE(metadata, '{}'::jsonb) || $24::jsonb
+        WHERE id = $1 AND merchant_id = $2 AND version = $25 AND deleted_at IS NULL
         RETURNING id`,
-      [...values, expectedVersion],
+      updateValues,
     );
     if (result.length !== 1) {
       throw new CatalogRuntimeError(
