@@ -37,8 +37,10 @@ type PromotionDraft = {
   effect: CatalogPromotionEffect;
   value: string;
   minimum_subtotal: string;
-  starts_local: string;
-  ends_local: string;
+  starts_date: string;
+  starts_time: string;
+  ends_date: string;
+  ends_time: string;
   enabled: boolean;
 };
 
@@ -68,6 +70,9 @@ const COPY: Record<Lang, Record<string, string>> = {
     minimumSubtotalHint: 'اتركه فارغًا إذا كان التوصيل المجاني بدون حد أدنى.',
     starts: 'يبدأ',
     ends: 'ينتهي',
+    datePlaceholder: 'YYYY/MM/DD',
+    timePlaceholder: 'HH:mm',
+    dateTimeFormat: 'صيغة التاريخ والوقت: YYYY/MM/DD · HH:mm',
     localTime: 'تُفسر هذه الأوقات حسب المنطقة الزمنية المحفوظة لمتجرك.',
     enabled: 'العرض مفعّل',
     save: 'حفظ العرض',
@@ -115,6 +120,9 @@ const COPY: Record<Lang, Record<string, string>> = {
     minimumSubtotalHint: 'ئەگەر سنوور نییە بەتاڵی بهێڵە.',
     starts: 'دەستپێک',
     ends: 'کۆتایی',
+    datePlaceholder: 'YYYY/MM/DD',
+    timePlaceholder: 'HH:mm',
+    dateTimeFormat: 'فۆرماتی بەروار و کات: YYYY/MM/DD · HH:mm',
     localTime: 'ئەم کاتانە بە پێی ناوچەی کاتی هەڵگیراوی فرۆشگاکەت لێکدەدرێنەوە.',
     enabled: 'ئۆفەر چالاکە',
     save: 'پاشەکەوتکردنی ئۆفەر',
@@ -162,6 +170,9 @@ const COPY: Record<Lang, Record<string, string>> = {
     minimumSubtotalHint: 'Leave empty for free delivery with no minimum.',
     starts: 'Starts',
     ends: 'Ends',
+    datePlaceholder: 'YYYY/MM/DD',
+    timePlaceholder: 'HH:mm',
+    dateTimeFormat: 'Date and time format: YYYY/MM/DD · HH:mm',
     localTime: 'These times are interpreted in the timezone saved for your store.',
     enabled: 'Promotion enabled',
     save: 'Save promotion',
@@ -195,14 +206,64 @@ function emptyDraft(): PromotionDraft {
     effect: 'percentage_off',
     value: '',
     minimum_subtotal: '',
-    starts_local: '',
-    ends_local: '',
+    starts_date: '',
+    starts_time: '',
+    ends_date: '',
+    ends_time: '',
     enabled: true,
   };
 }
 
-function localInput(value: string): string {
-  return value ? value.slice(0, 16) : '';
+function normalizeDigits(value: string): string {
+  return value
+    .replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+    .replace(/[۰-۹]/g, digit => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
+}
+
+function localParts(value: string): { date: string; time: string } {
+  const local = value ? value.slice(0, 16) : '';
+  const [date = '', time = ''] = local.split('T');
+  return {
+    date: date.replace(/-/g, '/'),
+    time,
+  };
+}
+
+function normalizeLocalDate(value: string): string | null {
+  const normalized = normalizeDigits(value).trim().replace(/[.-]/g, '/');
+  const match = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(normalized);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (year < 2000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+  const candidate = new Date(Date.UTC(year, month - 1, day));
+  if (
+    candidate.getUTCFullYear() !== year ||
+    candidate.getUTCMonth() !== month - 1 ||
+    candidate.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+function normalizeLocalTime(value: string): string | null {
+  const normalized = normalizeDigits(value).trim();
+  const match = /^(\d{1,2}):(\d{2})$/.exec(normalized);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  if (hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+}
+
+function draftLocalDateTime(dateValue: string, timeValue: string): string | null {
+  const date = normalizeLocalDate(dateValue);
+  const time = normalizeLocalTime(timeValue);
+  return date && time ? `${date}T${time}` : null;
 }
 
 function lifecycleClass(lifecycle: CatalogPromotion['lifecycle']): string {
@@ -307,6 +368,8 @@ export default function CatalogPromotionsPage() {
 
   const openEdit = (promotion: CatalogPromotion) => {
     if (!context) return;
+    const starts = localParts(promotion.starts_local);
+    const ends = localParts(promotion.ends_local);
     createKey.current = null;
     setEditing(promotion);
     setDraft({
@@ -331,8 +394,10 @@ export default function CatalogPromotionsPage() {
               promotion.minimum_subtotal_minor,
               context.currency_fraction_digits,
             ),
-      starts_local: localInput(promotion.starts_local),
-      ends_local: localInput(promotion.ends_local),
+      starts_date: starts.date,
+      starts_time: starts.time,
+      ends_date: ends.date,
+      ends_time: ends.time,
       enabled: promotion.enabled,
     });
     setEditorOpen(true);
@@ -349,8 +414,10 @@ export default function CatalogPromotionsPage() {
   const promotionInput = (): CatalogPromotionInput | null => {
     if (!context) return null;
     const name = draft.name.trim();
-    if (!name || !draft.starts_local || !draft.ends_local) return null;
-    if (draft.ends_local <= draft.starts_local) return null;
+    const startsLocal = draftLocalDateTime(draft.starts_date, draft.starts_time);
+    const endsLocal = draftLocalDateTime(draft.ends_date, draft.ends_time);
+    if (!name || !startsLocal || !endsLocal) return null;
+    if (endsLocal <= startsLocal) return null;
 
     if (draft.scope === 'delivery') {
       const minimum = draft.minimum_subtotal.trim()
@@ -369,8 +436,8 @@ export default function CatalogPromotionsPage() {
         percentage_bps: null,
         amount_minor: null,
         minimum_subtotal_minor: minimum,
-        starts_local: draft.starts_local,
-        ends_local: draft.ends_local,
+        starts_local: startsLocal,
+        ends_local: endsLocal,
         priority: 0,
         enabled: draft.enabled,
       };
@@ -396,8 +463,8 @@ export default function CatalogPromotionsPage() {
         percentage_bps: bps,
         amount_minor: null,
         minimum_subtotal_minor: null,
-        starts_local: draft.starts_local,
-        ends_local: draft.ends_local,
+        starts_local: startsLocal,
+        ends_local: endsLocal,
         priority: 0,
         enabled: draft.enabled,
       };
@@ -418,8 +485,8 @@ export default function CatalogPromotionsPage() {
       percentage_bps: null,
       amount_minor: amountMinor,
       minimum_subtotal_minor: null,
-      starts_local: draft.starts_local,
-      ends_local: draft.ends_local,
+      starts_local: startsLocal,
+      ends_local: endsLocal,
       priority: 0,
       enabled: draft.enabled,
     };
@@ -814,41 +881,83 @@ export default function CatalogPromotionsPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-1 text-sm font-semibold">
                   <span>{copy.starts}</span>
-                  <Input
-                    type="datetime-local"
-                    dir="ltr"
-                    value={draft.starts_local}
-                    onChange={event =>
-                      setDraft(current => ({
-                        ...current,
-                        starts_local: event.target.value,
-                      }))
-                    }
-                    className="h-11 rounded-xl"
-                  />
+                  <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,.85fr)] gap-2">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      dir="ltr"
+                      value={draft.starts_date}
+                      onChange={event =>
+                        setDraft(current => ({
+                          ...current,
+                          starts_date: event.target.value,
+                        }))
+                      }
+                      placeholder={copy.datePlaceholder}
+                      maxLength={10}
+                      className="h-11 rounded-xl"
+                    />
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      dir="ltr"
+                      value={draft.starts_time}
+                      onChange={event =>
+                        setDraft(current => ({
+                          ...current,
+                          starts_time: event.target.value,
+                        }))
+                      }
+                      placeholder={copy.timePlaceholder}
+                      maxLength={5}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
                 </label>
                 <label className="space-y-1 text-sm font-semibold">
                   <span>{copy.ends}</span>
-                  <Input
-                    type="datetime-local"
-                    dir="ltr"
-                    value={draft.ends_local}
-                    onChange={event =>
-                      setDraft(current => ({
-                        ...current,
-                        ends_local: event.target.value,
-                      }))
-                    }
-                    className="h-11 rounded-xl"
-                  />
+                  <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,.85fr)] gap-2">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      dir="ltr"
+                      value={draft.ends_date}
+                      onChange={event =>
+                        setDraft(current => ({
+                          ...current,
+                          ends_date: event.target.value,
+                        }))
+                      }
+                      placeholder={copy.datePlaceholder}
+                      maxLength={10}
+                      className="h-11 rounded-xl"
+                    />
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      dir="ltr"
+                      value={draft.ends_time}
+                      onChange={event =>
+                        setDraft(current => ({
+                          ...current,
+                          ends_time: event.target.value,
+                        }))
+                      }
+                      placeholder={copy.timePlaceholder}
+                      maxLength={5}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
                 </label>
               </div>
+              <p className="text-xs leading-5 text-muted-foreground">
+                {copy.dateTimeFormat}
+              </p>
               <p className="text-xs leading-5 text-muted-foreground">
                 {copy.localTime} <span dir="ltr">({context.timezone})</span>
               </p>
 
-              <label className="flex items-center justify-between gap-4 rounded-2xl border p-4 text-sm font-bold">
-                <span>{copy.enabled}</span>
+              <label className="flex items-center gap-3 rounded-2xl border p-4 text-sm font-bold">
                 <input
                   type="checkbox"
                   checked={draft.enabled}
@@ -858,8 +967,9 @@ export default function CatalogPromotionsPage() {
                       enabled: event.target.checked,
                     }))
                   }
-                  className="h-5 w-5 accent-orange-500"
+                  className="h-5 w-5 shrink-0 accent-orange-500"
                 />
+                <span>{copy.enabled}</span>
               </label>
             </div>
             <div className="grid shrink-0 grid-cols-2 gap-3 border-t px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
