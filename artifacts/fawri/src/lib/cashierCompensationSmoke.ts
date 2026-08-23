@@ -57,7 +57,7 @@ export async function runCashierCompensationSmoke(): Promise<CashierCompensation
     localMerchantId: 'comp-smoke-merchant',
     deviceId: 'comp-smoke-device',
     databaseName,
-    now: () => new Date(clock),
+    now: () => new Date(clock.getTime()),
   };
 
   const product: CashierCatalogLookup = {
