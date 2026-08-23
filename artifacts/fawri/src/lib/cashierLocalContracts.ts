@@ -97,6 +97,39 @@ export type CashierPaymentMethod =
 export type CashierPaymentStatus = 'paid' | 'pending' | 'failed';
 export type CashierSaleStatus = 'completed' | 'voided';
 
+export type CashierReturnLineSnapshot = {
+  original_line_id: string;
+  product_id: string;
+  variant_id?: string;
+  quantity: number;
+  effective_unit_price_minor: number;
+  refund_minor: number;
+};
+
+export type CashierReturnSnapshot = CashierMoneyContext & {
+  return_id: string;
+  operation_id: string;
+  sale_id: string;
+  local_merchant_id: string;
+  cloud_merchant_id?: string;
+  device_id: string;
+  device_sequence: number;
+  lines: CashierReturnLineSnapshot[];
+  refund_total_minor: number;
+  note?: string;
+  occurred_at: string;
+};
+
+export type CashierSaleVoidSnapshot = CashierMoneyContext & {
+  operation_id: string;
+  sale_id: string;
+  device_id: string;
+  device_sequence: number;
+  refund_total_minor: number;
+  note?: string;
+  occurred_at: string;
+};
+
 export type CashierSaleSnapshot = CashierMoneyContext & {
   sale_id: string;
   operation_id: string;
@@ -116,6 +149,10 @@ export type CashierSaleSnapshot = CashierMoneyContext & {
   payment_reference?: string;
   note?: string;
   occurred_at: string;
+  /** Append-only compensation evidence; original sale pricing lines never change. */
+  returns?: CashierReturnSnapshot[];
+  /** Full void metadata. A void is forbidden after any partial/full return. */
+  void?: CashierSaleVoidSnapshot;
 };
 
 export type CashierInventoryMovementReason =
@@ -143,6 +180,7 @@ export type CashierInventoryMovement = {
 
 export type CashierSyncEntityType =
   | 'sale'
+  | 'return'
   | 'inventory_movement'
   | 'catalog_item'
   | 'promotion';
@@ -215,6 +253,36 @@ export type CashierInventoryAdjustmentInput = {
   note?: string;
 };
 
+export type CashierReturnSaleInput = {
+  operation_id: string;
+  sale_id: string;
+  lines: Array<{
+    original_line_id: string;
+    quantity: number;
+  }>;
+  note?: string;
+};
+
+export type CashierReturnSaleResult = {
+  sale: CashierSaleSnapshot;
+  return_snapshot: CashierReturnSnapshot;
+  inventory_movements: CashierInventoryMovement[];
+  outbox: CashierSyncEnvelope[];
+};
+
+export type CashierVoidSaleInput = {
+  operation_id: string;
+  sale_id: string;
+  note?: string;
+};
+
+export type CashierVoidSaleResult = {
+  sale: CashierSaleSnapshot;
+  void_snapshot: CashierSaleVoidSnapshot;
+  inventory_movements: CashierInventoryMovement[];
+  outbox: CashierSyncEnvelope[];
+};
+
 /**
  * Provider-neutral contract. Implementations may use IndexedDB, SQLite, or a
  * future durable local provider, but callers must not depend on provider details.
@@ -237,6 +305,16 @@ export interface CashierLocalAuthority {
   listSales(limit?: number): Promise<CashierSaleSnapshot[]>;
   listPendingSync(limit?: number): Promise<CashierSyncEnvelope[]>;
   acknowledgeSynced(operationIds: string[]): Promise<void>;
+}
+
+/**
+ * Compensation is intentionally a separate provider-neutral capability while
+ * P1D is validated. Implementations must transact against the same local sale,
+ * inventory, and outbox authority as the original sale.
+ */
+export interface CashierSaleCompensationAuthority {
+  returnSale(input: CashierReturnSaleInput): Promise<CashierReturnSaleResult>;
+  voidSale(input: CashierVoidSaleInput): Promise<CashierVoidSaleResult>;
 }
 
 export function isNonNegativeSafeInteger(value: number): boolean {
