@@ -1,0 +1,20 @@
+{
+  "name": "Fawri Cashier",
+  "short_name": "Fawri",
+  "description": "Fawri local-first cashier",
+  "start_url": "/cashier.html",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#ff5a00",
+  "lang": "ar",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/fawri-logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
