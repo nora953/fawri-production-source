@@ -1,0 +1,511 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type {
+  CashierCatalogLookup,
+  CashierPaymentMethod,
+  CashierSaleLineInput,
+} from '@/lib/cashierLocalContracts';
+import type { CashierResolvedSalePricing } from '@/lib/cashierSalePricingRuntime';
+import {
+  createCashierPosRuntime,
+  type CashierPosRuntime,
+} from '@/lib/cashierPosRuntime';
+
+type CartLine = {
+  item: CashierCatalogLookup;
+  quantity: number;
+};
+
+type SaleSuccess = {
+  saleId: string;
+  totalMinor: number;
+  currencyCode: string;
+  fractionDigits: number;
+};
+
+function itemKey(item: Pick<CashierCatalogLookup, 'product_id' | 'variant_id'>): string {
+  return `${item.product_id}\u0000${item.variant_id || ''}`;
+}
+
+function formatMoney(amountMinor: number, currencyCode: string, fractionDigits: number): string {
+  const divisor = 10 ** fractionDigits;
+  try {
+    return new Intl.NumberFormat('ar-IQ', {
+      style: 'currency',
+      currency: currencyCode,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    }).format(amountMinor / divisor);
+  } catch {
+    return `${(amountMinor / divisor).toLocaleString('ar-IQ')} ${currencyCode}`;
+  }
+}
+
+function errorMessage(error: unknown): string {
+  const code =
+    typeof error === 'object' && error && 'code' in error
+      ? String((error as { code?: unknown }).code || '')
+      : '';
+  const message = error instanceof Error ? error.message : String(error || '');
+  if (code === 'CASHIER_OUT_OF_STOCK' || message.includes('CASHIER_OUT_OF_STOCK')) {
+    return 'الكمية المطلوبة غير متوفرة في المخزون.';
+  }
+  if (code === 'CASHIER_PROMOTION_CONFLICT' || message.includes('PROMOTION_CONFLICT')) {
+    return 'يوجد تعارض بين العروض الحالية. لم يتم تسجيل البيع حتى تتم معالجة التعارض.';
+  }
+  if (code.includes('CURRENCY') || message.includes('CURRENCY')) {
+    return 'لا يمكن جمع عناصر بعملات مختلفة في عملية بيع واحدة.';
+  }
+  if (message.includes('ITEM_NOT_FOUND')) {
+    return 'أحد عناصر السلة لم يعد موجودًا في الكتالوج المحلي.';
+  }
+  return 'تعذر إكمال العملية محليًا. لم يتم تسجيل بيع جزئي.';
+}
+
+export default function CashierPosPage() {
+  const demoMode =
+    import.meta.env.VITE_CASHIER_SMOKE === '1' &&
+    new URLSearchParams(window.location.search).get('demo') === '1';
+  const [runtime, setRuntime] = useState<CashierPosRuntime | null>(null);
+  const [catalog, setCatalog] = useState<CashierCatalogLookup[]>([]);
+  const [query, setQuery] = useState('');
+  const [cart, setCart] = useState<CartLine[]>([]);
+  const [quote, setQuote] = useState<CashierResolvedSalePricing | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<CashierPaymentMethod>('cash');
+  const [externalConfirmed, setExternalConfirmed] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [committing, setCommitting] = useState(false);
+  const [online, setOnline] = useState(() => navigator.onLine);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<SaleSuccess | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  const refreshCatalog = useCallback(
+    async (activeRuntime: CashierPosRuntime, nextQuery = query) => {
+      setSearching(true);
+      try {
+        setCatalog(await activeRuntime.searchCatalog(nextQuery, 50));
+      } finally {
+        setSearching(false);
+      }
+    },
+    [query],
+  );
+
+  useEffect(() => {
+    let stopped = false;
+    let activeRuntime: CashierPosRuntime | null = null;
+    void createCashierPosRuntime({ demoMode })
+      .then(async created => {
+        activeRuntime = created;
+        if (stopped) return;
+        setRuntime(created);
+        await refreshCatalog(created, '');
+      })
+      .catch(cause => {
+        if (!stopped) setError(errorMessage(cause));
+      })
+      .finally(() => {
+        if (!stopped) setLoading(false);
+      });
+    return () => {
+      stopped = true;
+      if (activeRuntime) void activeRuntime.close().catch(() => undefined);
+    };
+  }, [demoMode, refreshCatalog]);
+
+  useEffect(() => {
+    const update = () => setOnline(navigator.onLine);
+    window.addEventListener('online', update);
+    window.addEventListener('offline', update);
+    return () => {
+      window.removeEventListener('online', update);
+      window.removeEventListener('offline', update);
+    };
+  }, []);
+
+  const saleLines = useMemo<CashierSaleLineInput[]>(
+    () =>
+      cart.map(line => ({
+        product_id: line.item.product_id,
+        ...(line.item.variant_id ? { variant_id: line.item.variant_id } : {}),
+        quantity: line.quantity,
+      })),
+    [cart],
+  );
+
+  useEffect(() => {
+    if (!runtime || saleLines.length === 0) {
+      setQuote(null);
+      setQuoteError(null);
+      return;
+    }
+    let stopped = false;
+    const timer = window.setTimeout(() => {
+      void runtime
+        .quote(saleLines)
+        .then(result => {
+          if (!stopped) {
+            setQuote(result);
+            setQuoteError(null);
+          }
+        })
+        .catch(cause => {
+          if (!stopped) {
+            setQuote(null);
+            setQuoteError(errorMessage(cause));
+          }
+        });
+    }, 80);
+    return () => {
+      stopped = true;
+      window.clearTimeout(timer);
+    };
+  }, [runtime, saleLines]);
+
+  const addItem = useCallback((item: CashierCatalogLookup) => {
+    setError(null);
+    setSuccess(null);
+    setCart(current => {
+      const key = itemKey(item);
+      const existing = current.find(line => itemKey(line.item) === key);
+      const currentQuantity = existing?.quantity || 0;
+      if (
+        item.track_inventory &&
+        typeof item.stock_quantity === 'number' &&
+        currentQuantity >= item.stock_quantity
+      ) {
+        setError('لا توجد كمية إضافية متاحة من هذا العنصر.');
+        return current;
+      }
+      if (existing) {
+        return current.map(line =>
+          itemKey(line.item) === key
+            ? { ...line, quantity: line.quantity + 1 }
+            : line,
+        );
+      }
+      return [...current, { item, quantity: 1 }];
+    });
+  }, []);
+
+  const updateQuantity = useCallback((key: string, next: number) => {
+    setError(null);
+    setCart(current =>
+      current.flatMap(line => {
+        if (itemKey(line.item) !== key) return [line];
+        if (next <= 0) return [];
+        const max = line.item.track_inventory ? line.item.stock_quantity : undefined;
+        if (typeof max === 'number' && next > max) {
+          setError('الكمية المطلوبة أكبر من المخزون المتاح.');
+          return [line];
+        }
+        return [{ ...line, quantity: next }];
+      }),
+    );
+  }, []);
+
+  const performSearch = useCallback(async () => {
+    if (!runtime) return;
+    setError(null);
+    const value = query.trim();
+    if (value) {
+      const exact = await runtime.lookupExact(value).catch(() => null);
+      if (exact) {
+        addItem(exact);
+        setQuery('');
+        await refreshCatalog(runtime, '');
+        searchRef.current?.focus();
+        return;
+      }
+    }
+    await refreshCatalog(runtime, value);
+  }, [addItem, query, refreshCatalog, runtime]);
+
+  const completeSale = useCallback(async () => {
+    if (!runtime || cart.length === 0 || !quote || quoteError) return;
+    if (paymentMethod !== 'cash' && !externalConfirmed) {
+      setError('أكد استلام/نجاح الدفع الخارجي قبل تسجيل البيع كمدفوع.');
+      return;
+    }
+    setCommitting(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const operationId =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const result = await runtime.commitSale({
+        operation_id: operationId,
+        payment_method: paymentMethod,
+        payment_status: 'paid',
+        lines: saleLines,
+      });
+      setSuccess({
+        saleId: result.sale.sale_id,
+        totalMinor: result.sale.total_minor,
+        currencyCode: result.sale.currency_code,
+        fractionDigits: result.sale.currency_fraction_digits,
+      });
+      setCart([]);
+      setPaymentMethod('cash');
+      setExternalConfirmed(false);
+      await refreshCatalog(runtime, query);
+      searchRef.current?.focus();
+    } catch (cause) {
+      setError(errorMessage(cause));
+      await refreshCatalog(runtime, query).catch(() => undefined);
+    } finally {
+      setCommitting(false);
+    }
+  }, [cart.length, externalConfirmed, paymentMethod, query, quote, quoteError, refreshCatalog, runtime, saleLines]);
+
+  const cartCount = cart.reduce((sum, line) => sum + line.quantity, 0);
+  const quoteByKey = useMemo(() => {
+    const map = new Map<string, CashierResolvedSalePricing['lines'][number]>();
+    for (const line of quote?.lines || []) map.set(itemKey(line), line);
+    return map;
+  }, [quote]);
+
+  return (
+    <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-[100dvh] lg:overflow-hidden" dir="rtl">
+      <div className="mx-auto flex min-h-screen max-w-[1500px] flex-col p-3 lg:h-full lg:min-h-0 lg:p-4">
+        <header className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <img src="/fawri-logo.svg" alt="Fawri" className="h-10 w-10 object-contain" />
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold">الكاشير</h1>
+                {demoMode ? (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">وضع اختبار</span>
+                ) : null}
+              </div>
+              <p className="text-xs text-slate-500">بيع محلي مستقل عن الاشتراك والخدمات السحابية</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+              {online ? 'متصل بالإنترنت' : 'يعمل دون اتصال'}
+            </span>
+            <a href="/cashier.html?diagnostics=1" className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 hover:bg-slate-50">
+              حالة الجهاز
+            </a>
+          </div>
+        </header>
+
+        {error ? (
+          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
+        ) : null}
+        {success ? (
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <strong>تم حفظ البيع محليًا بنجاح.</strong>
+            <span>{formatMoney(success.totalMinor, success.currencyCode, success.fractionDigits)} · {success.saleId}</span>
+          </div>
+        ) : null}
+
+        <div className="grid min-h-0 flex-1 gap-3 lg:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.85fr)]">
+          <section className="flex min-h-[520px] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0">
+            <div className="border-b border-slate-100 p-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-bold">المنتجات والخدمات</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">ابحث بالاسم أو SKU، أو امسح الباركود ثم اضغط Enter.</p>
+                </div>
+                <span className="text-xs text-slate-500">{catalog.length} نتيجة</span>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  ref={searchRef}
+                  value={query}
+                  onChange={event => setQuery(event.target.value)}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter') void performSearch();
+                  }}
+                  placeholder="الاسم، SKU أو الباركود"
+                  className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={() => void performSearch()}
+                  disabled={!runtime || searching}
+                  className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {searching ? 'جارٍ البحث...' : 'بحث'}
+                </button>
+              </div>
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              {loading ? (
+                <div className="flex h-full min-h-56 items-center justify-center text-sm text-slate-500">جارٍ فتح الكتالوج المحلي...</div>
+              ) : catalog.length === 0 ? (
+                <div className="flex h-full min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
+                  <div className="mb-3 text-3xl">⌁</div>
+                  <h3 className="font-bold">لا توجد عناصر في الكتالوج المحلي</h3>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">
+                    يحتاج هذا الجهاز إلى تهيئة الكتالوج المحلي مرة واحدة. بعد التهيئة تبقى عمليات البيع متاحة دون اتصال.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {catalog.map(item => {
+                    const soldOut = item.track_inventory && Number(item.stock_quantity || 0) <= 0;
+                    return (
+                      <button
+                        type="button"
+                        key={itemKey(item)}
+                        onClick={() => addItem(item)}
+                        disabled={soldOut}
+                        className="group rounded-2xl border border-slate-200 p-4 text-right transition hover:border-orange-300 hover:bg-orange-50/40 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <div className="mb-3 flex items-start justify-between gap-3">
+                          <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
+                            {item.item_type === 'service' ? 'خدمة' : 'منتج'}
+                          </span>
+                          <span className="text-base font-bold text-slate-900">
+                            {formatMoney(item.base_unit_price_minor, item.currency_code, item.currency_fraction_digits)}
+                          </span>
+                        </div>
+                        <h3 className="font-bold leading-6">{item.name}</h3>
+                        {item.variant_name ? <p className="mt-1 text-xs text-slate-500">{item.variant_name}</p> : null}
+                        <div className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-500">
+                          <span>{item.sku || item.barcode || 'بدون رمز'}</span>
+                          <span className={soldOut ? 'font-bold text-red-600' : ''}>
+                            {item.track_inventory ? `المخزون: ${item.stock_quantity ?? 0}` : 'لا يتتبع المخزون'}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </section>
+
+          <aside className="flex min-h-[520px] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0">
+            <div className="flex items-center justify-between border-b border-slate-100 p-4">
+              <div>
+                <h2 className="font-bold">السلة</h2>
+                <p className="mt-0.5 text-xs text-slate-500">{cartCount} عنصر</p>
+              </div>
+              {cart.length > 0 ? (
+                <button type="button" onClick={() => setCart([])} className="text-xs font-semibold text-red-600 hover:underline">تفريغ السلة</button>
+              ) : null}
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              {cart.length === 0 ? (
+                <div className="flex h-full min-h-44 flex-col items-center justify-center text-center text-sm text-slate-500">
+                  <div className="mb-2 text-3xl">🛒</div>
+                  اختر منتجًا أو امسح باركود لبدء البيع.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {cart.map(line => {
+                    const key = itemKey(line.item);
+                    const priced = quoteByKey.get(key);
+                    const unit = priced?.effective_unit_price_minor ?? line.item.base_unit_price_minor;
+                    const lineTotal = priced?.line_total_minor ?? unit * line.quantity;
+                    return (
+                      <div key={key} className="rounded-xl border border-slate-200 p-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold">{line.item.name}</p>
+                            {priced?.promotion ? (
+                              <p className="mt-1 text-xs font-semibold text-emerald-700">{priced.promotion.promotion_name}</p>
+                            ) : null}
+                          </div>
+                          <strong className="whitespace-nowrap text-sm">
+                            {formatMoney(lineTotal, line.item.currency_code, line.item.currency_fraction_digits)}
+                          </strong>
+                        </div>
+                        <div className="mt-3 flex items-center justify-between gap-3">
+                          <span className="text-xs text-slate-500">
+                            {formatMoney(unit, line.item.currency_code, line.item.currency_fraction_digits)} للوحدة
+                          </span>
+                          <div className="flex items-center overflow-hidden rounded-lg border border-slate-200">
+                            <button type="button" onClick={() => updateQuantity(key, line.quantity - 1)} className="h-8 w-9 text-lg hover:bg-slate-50">−</button>
+                            <span className="min-w-9 text-center text-sm font-bold">{line.quantity}</span>
+                            <button type="button" onClick={() => updateQuantity(key, line.quantity + 1)} className="h-8 w-9 text-lg hover:bg-slate-50">+</button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-slate-100 p-4">
+              {quoteError ? (
+                <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{quoteError}</div>
+              ) : null}
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between text-slate-500">
+                  <span>المجموع قبل الخصم</span>
+                  <span>{quote ? formatMoney(quote.subtotal_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span>
+                </div>
+                <div className="flex justify-between text-emerald-700">
+                  <span>الخصم</span>
+                  <span>{quote ? `− ${formatMoney(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits)}` : '—'}</span>
+                </div>
+                <div className="flex justify-between border-t border-slate-100 pt-2 text-lg font-bold">
+                  <span>الإجمالي</span>
+                  <span>{quote ? formatMoney(quote.total_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="mb-2 block text-xs font-bold text-slate-600">طريقة الدفع</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {([
+                    ['cash', 'نقدي'],
+                    ['card', 'بطاقة'],
+                    ['electronic', 'إلكتروني'],
+                    ['other', 'أخرى'],
+                  ] as Array<[CashierPaymentMethod, string]>).map(([method, label]) => (
+                    <button
+                      type="button"
+                      key={method}
+                      onClick={() => {
+                        setPaymentMethod(method);
+                        setExternalConfirmed(false);
+                      }}
+                      className={`rounded-lg border px-3 py-2 text-sm font-semibold ${paymentMethod === method ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {paymentMethod !== 'cash' ? (
+                <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                  <input
+                    type="checkbox"
+                    checked={externalConfirmed}
+                    onChange={event => setExternalConfirmed(event.target.checked)}
+                    className="mt-1 h-4 w-4"
+                  />
+                  <span>أؤكد أن الدفع تم بنجاح خارج فوري. لا يوجد ربط مباشر ببوابة أو جهاز دفع في هذه المرحلة.</span>
+                </label>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => void completeSale()}
+                disabled={cart.length === 0 || !quote || Boolean(quoteError) || committing || (paymentMethod !== 'cash' && !externalConfirmed)}
+                className="mt-4 h-12 w-full rounded-xl bg-orange-600 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {committing ? 'جارٍ حفظ البيع...' : 'إتمام البيع وحفظه محليًا'}
+              </button>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </main>
+  );
+}
