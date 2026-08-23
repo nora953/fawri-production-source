@@ -30,6 +30,11 @@ const TermsPage = lazy(() => import("@/pages/TermsPage"));
 const OwnerRecoveryPage = lazy(() => import("@/pages/OwnerRecoveryPage"));
 const NotFound = lazy(() => import("@/pages/not-found"));
 
+const cashierSmokeEnabled = import.meta.env.VITE_CASHIER_SMOKE === "1";
+const CashierIndexedDbSmokePage = cashierSmokeEnabled
+  ? lazy(() => import("@/pages/CashierIndexedDbSmokePage"))
+  : null;
+
 // Dashboard Pages - each page loads only when opened
 const OverviewPage = lazy(() => import("@/pages/dashboard/OverviewPage"));
 const NotificationsPage = lazy(
@@ -110,6 +115,11 @@ function AppRouter() {
         <Route path="/owner-recovery/:recoveryId">
           {(params) => <OwnerRecoveryPage recoveryId={params.recoveryId} />}
         </Route>
+        {CashierIndexedDbSmokePage ? (
+          <Route path="/__dev/cashier-indexeddb-smoke">
+            {() => <CashierIndexedDbSmokePage />}
+          </Route>
+        ) : null}
 
         {/* Admin */}
         <Route path="/admin/support-preview/:sessionId">
