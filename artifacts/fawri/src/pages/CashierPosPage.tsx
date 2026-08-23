@@ -10,11 +10,7 @@ import {
   type CashierPosRuntime,
 } from '@/lib/cashierPosRuntime';
 
-type CartLine = {
-  item: CashierCatalogLookup;
-  quantity: number;
-};
-
+type CartLine = { item: CashierCatalogLookup; quantity: number };
 type SaleSuccess = {
   saleId: string;
   totalMinor: number;
@@ -22,7 +18,7 @@ type SaleSuccess = {
   fractionDigits: number;
 };
 
-function itemKey(item: Pick<CashierCatalogLookup, 'product_id' | 'variant_id'>): string {
+function itemKey(item: { product_id: string; variant_id?: string }): string {
   return `${item.product_id}\u0000${item.variant_id || ''}`;
 }
 
@@ -50,7 +46,7 @@ function errorMessage(error: unknown): string {
     return 'الكمية المطلوبة غير متوفرة في المخزون.';
   }
   if (code === 'CASHIER_PROMOTION_CONFLICT' || message.includes('PROMOTION_CONFLICT')) {
-    return 'يوجد تعارض بين العروض الحالية. لم يتم تسجيل البيع حتى تتم معالجة التعارض.';
+    return 'يوجد تعارض بين العروض الحالية. لم يتم تسجيل البيع.';
   }
   if (code.includes('CURRENCY') || message.includes('CURRENCY')) {
     return 'لا يمكن جمع عناصر بعملات مختلفة في عملية بيع واحدة.';
@@ -81,17 +77,14 @@ export default function CashierPosPage() {
   const [success, setSuccess] = useState<SaleSuccess | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const refreshCatalog = useCallback(
-    async (activeRuntime: CashierPosRuntime, nextQuery = query) => {
-      setSearching(true);
-      try {
-        setCatalog(await activeRuntime.searchCatalog(nextQuery, 50));
-      } finally {
-        setSearching(false);
-      }
-    },
-    [query],
-  );
+  const refreshCatalog = useCallback(async (activeRuntime: CashierPosRuntime, nextQuery: string) => {
+    setSearching(true);
+    try {
+      setCatalog(await activeRuntime.searchCatalog(nextQuery, 50));
+    } finally {
+      setSearching(false);
+    }
+  }, []);
 
   useEffect(() => {
     let stopped = false;
@@ -143,8 +136,7 @@ export default function CashierPosPage() {
     }
     let stopped = false;
     const timer = window.setTimeout(() => {
-      void runtime
-        .quote(saleLines)
+      void runtime.quote(saleLines)
         .then(result => {
           if (!stopped) {
             setQuote(result);
@@ -181,9 +173,7 @@ export default function CashierPosPage() {
       }
       if (existing) {
         return current.map(line =>
-          itemKey(line.item) === key
-            ? { ...line, quantity: line.quantity + 1 }
-            : line,
+          itemKey(line.item) === key ? { ...line, quantity: line.quantity + 1 } : line,
         );
       }
       return [...current, { item, quantity: 1 }];
@@ -226,7 +216,7 @@ export default function CashierPosPage() {
   const completeSale = useCallback(async () => {
     if (!runtime || cart.length === 0 || !quote || quoteError) return;
     if (paymentMethod !== 'cash' && !externalConfirmed) {
-      setError('أكد استلام/نجاح الدفع الخارجي قبل تسجيل البيع كمدفوع.');
+      setError('أكد استلام أو نجاح الدفع الخارجي قبل تسجيل البيع كمدفوع.');
       return;
     }
     setCommitting(true);
@@ -295,9 +285,7 @@ export default function CashierPosPage() {
           </div>
         </header>
 
-        {error ? (
-          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div>
-        ) : null}
+        {error ? <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
         {success ? (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             <strong>تم حفظ البيع محليًا بنجاح.</strong>
@@ -359,15 +347,11 @@ export default function CashierPosPage() {
                         key={itemKey(item)}
                         onClick={() => addItem(item)}
                         disabled={soldOut}
-                        className="group rounded-2xl border border-slate-200 p-4 text-right transition hover:border-orange-300 hover:bg-orange-50/40 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="rounded-2xl border border-slate-200 p-4 text-right transition hover:border-orange-300 hover:bg-orange-50/40 disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <div className="mb-3 flex items-start justify-between gap-3">
-                          <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">
-                            {item.item_type === 'service' ? 'خدمة' : 'منتج'}
-                          </span>
-                          <span className="text-base font-bold text-slate-900">
-                            {formatMoney(item.base_unit_price_minor, item.currency_code, item.currency_fraction_digits)}
-                          </span>
+                          <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{item.item_type === 'service' ? 'خدمة' : 'منتج'}</span>
+                          <span className="text-base font-bold">{formatMoney(item.base_unit_price_minor, item.currency_code, item.currency_fraction_digits)}</span>
                         </div>
                         <h3 className="font-bold leading-6">{item.name}</h3>
                         {item.variant_name ? <p className="mt-1 text-xs text-slate-500">{item.variant_name}</p> : null}
@@ -391,9 +375,7 @@ export default function CashierPosPage() {
                 <h2 className="font-bold">السلة</h2>
                 <p className="mt-0.5 text-xs text-slate-500">{cartCount} عنصر</p>
               </div>
-              {cart.length > 0 ? (
-                <button type="button" onClick={() => setCart([])} className="text-xs font-semibold text-red-600 hover:underline">تفريغ السلة</button>
-              ) : null}
+              {cart.length > 0 ? <button type="button" onClick={() => setCart([])} className="text-xs font-semibold text-red-600 hover:underline">تفريغ السلة</button> : null}
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
@@ -414,18 +396,12 @@ export default function CashierPosPage() {
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="truncate font-semibold">{line.item.name}</p>
-                            {priced?.promotion ? (
-                              <p className="mt-1 text-xs font-semibold text-emerald-700">{priced.promotion.promotion_name}</p>
-                            ) : null}
+                            {priced?.promotion ? <p className="mt-1 text-xs font-semibold text-emerald-700">{priced.promotion.promotion_name}</p> : null}
                           </div>
-                          <strong className="whitespace-nowrap text-sm">
-                            {formatMoney(lineTotal, line.item.currency_code, line.item.currency_fraction_digits)}
-                          </strong>
+                          <strong className="whitespace-nowrap text-sm">{formatMoney(lineTotal, line.item.currency_code, line.item.currency_fraction_digits)}</strong>
                         </div>
                         <div className="mt-3 flex items-center justify-between gap-3">
-                          <span className="text-xs text-slate-500">
-                            {formatMoney(unit, line.item.currency_code, line.item.currency_fraction_digits)} للوحدة
-                          </span>
+                          <span className="text-xs text-slate-500">{formatMoney(unit, line.item.currency_code, line.item.currency_fraction_digits)} للوحدة</span>
                           <div className="flex items-center overflow-hidden rounded-lg border border-slate-200">
                             <button type="button" onClick={() => updateQuantity(key, line.quantity - 1)} className="h-8 w-9 text-lg hover:bg-slate-50">−</button>
                             <span className="min-w-9 text-center text-sm font-bold">{line.quantity}</span>
@@ -440,22 +416,11 @@ export default function CashierPosPage() {
             </div>
 
             <div className="border-t border-slate-100 p-4">
-              {quoteError ? (
-                <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{quoteError}</div>
-              ) : null}
+              {quoteError ? <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{quoteError}</div> : null}
               <div className="space-y-1.5 text-sm">
-                <div className="flex justify-between text-slate-500">
-                  <span>المجموع قبل الخصم</span>
-                  <span>{quote ? formatMoney(quote.subtotal_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span>
-                </div>
-                <div className="flex justify-between text-emerald-700">
-                  <span>الخصم</span>
-                  <span>{quote ? `− ${formatMoney(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits)}` : '—'}</span>
-                </div>
-                <div className="flex justify-between border-t border-slate-100 pt-2 text-lg font-bold">
-                  <span>الإجمالي</span>
-                  <span>{quote ? formatMoney(quote.total_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span>
-                </div>
+                <div className="flex justify-between text-slate-500"><span>المجموع قبل الخصم</span><span>{quote ? formatMoney(quote.subtotal_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
+                <div className="flex justify-between text-emerald-700"><span>الخصم</span><span>{quote ? `− ${formatMoney(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits)}` : '—'}</span></div>
+                <div className="flex justify-between border-t border-slate-100 pt-2 text-lg font-bold"><span>الإجمالي</span><span>{quote ? formatMoney(quote.total_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
               </div>
 
               <div className="mt-4">
@@ -484,12 +449,7 @@ export default function CashierPosPage() {
 
               {paymentMethod !== 'cash' ? (
                 <label className="mt-3 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-                  <input
-                    type="checkbox"
-                    checked={externalConfirmed}
-                    onChange={event => setExternalConfirmed(event.target.checked)}
-                    className="mt-1 h-4 w-4"
-                  />
+                  <input type="checkbox" checked={externalConfirmed} onChange={event => setExternalConfirmed(event.target.checked)} className="mt-1 h-4 w-4" />
                   <span>أؤكد أن الدفع تم بنجاح خارج فوري. لا يوجد ربط مباشر ببوابة أو جهاز دفع في هذه المرحلة.</span>
                 </label>
               ) : null}
