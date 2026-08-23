@@ -233,6 +233,110 @@ const DEMO_CATALOG: CashierCatalogLookup[] = [
     base_unit_price_minor: 75000,
     catalog_version: 1,
   },
+  {
+    product_id: 'demo-charger',
+    item_type: 'product',
+    name: 'شاحن سريع',
+    sku: 'DEMO-CHARGER-1',
+    barcode: '990000000103',
+    track_inventory: true,
+    stock_quantity: 20,
+    currency_code: 'IQD',
+    currency_fraction_digits: 0,
+    base_unit_price_minor: 18000,
+    catalog_version: 1,
+  },
+  {
+    product_id: 'demo-cable',
+    item_type: 'product',
+    name: 'كابل USB-C',
+    sku: 'DEMO-CABLE-1',
+    barcode: '990000000104',
+    track_inventory: true,
+    stock_quantity: 25,
+    currency_code: 'IQD',
+    currency_fraction_digits: 0,
+    base_unit_price_minor: 9000,
+    catalog_version: 1,
+  },
+  {
+    product_id: 'demo-mouse',
+    item_type: 'product',
+    name: 'ماوس لاسلكي',
+    sku: 'DEMO-MOUSE-1',
+    barcode: '990000000105',
+    track_inventory: true,
+    stock_quantity: 15,
+    currency_code: 'IQD',
+    currency_fraction_digits: 0,
+    base_unit_price_minor: 22000,
+    catalog_version: 1,
+  },
+  {
+    product_id: 'demo-keyboard',
+    item_type: 'product',
+    name: 'لوحة مفاتيح',
+    sku: 'DEMO-KEYBOARD-1',
+    barcode: '990000000106',
+    track_inventory: true,
+    stock_quantity: 10,
+    currency_code: 'IQD',
+    currency_fraction_digits: 0,
+    base_unit_price_minor: 32000,
+    catalog_version: 1,
+  },
+  {
+    product_id: 'demo-phone-stand',
+    item_type: 'product',
+    name: 'حامل هاتف',
+    sku: 'DEMO-STAND-1',
+    barcode: '990000000107',
+    track_inventory: true,
+    stock_quantity: 18,
+    currency_code: 'IQD',
+    currency_fraction_digits: 0,
+    base_unit_price_minor: 12000,
+    catalog_version: 1,
+  },
+  {
+    product_id: 'demo-powerbank',
+    item_type: 'product',
+    name: 'باور بانك',
+    sku: 'DEMO-POWER-1',
+    barcode: '990000000108',
+    track_inventory: true,
+    stock_quantity: 14,
+    currency_code: 'IQD',
+    currency_fraction_digits: 0,
+    base_unit_price_minor: 38000,
+    catalog_version: 1,
+  },
+  {
+    product_id: 'demo-lamp',
+    item_type: 'product',
+    name: 'مصباح مكتبي',
+    sku: 'DEMO-LAMP-1',
+    barcode: '990000000109',
+    track_inventory: true,
+    stock_quantity: 9,
+    currency_code: 'IQD',
+    currency_fraction_digits: 0,
+    base_unit_price_minor: 27000,
+    catalog_version: 1,
+  },
+  {
+    product_id: 'demo-notebook',
+    item_type: 'product',
+    name: 'دفتر ملاحظات',
+    sku: 'DEMO-NOTEBOOK-1',
+    barcode: '990000000110',
+    track_inventory: true,
+    stock_quantity: 30,
+    currency_code: 'IQD',
+    currency_fraction_digits: 0,
+    base_unit_price_minor: 7000,
+    catalog_version: 1,
+  },
 ];
 
 const DEMO_PROMOTIONS: CashierPromotionRule[] = [
@@ -256,12 +360,10 @@ const DEMO_PROMOTIONS: CashierPromotionRule[] = [
 
 async function ensureDemoData(
   authority: IndexedDbCashierAuthority,
-  databaseName: string,
 ): Promise<void> {
-  const existing = await readCatalog(databaseName);
-  if (existing.length === 0) {
-    await authority.upsertCatalogSnapshot(DEMO_CATALOG, { preserveLocalInventory: false });
-  }
+  // Demo-only: always upsert the full fixture so newly added validation items
+  // become available without resetting inventory already exercised in this browser.
+  await authority.upsertCatalogSnapshot(DEMO_CATALOG, { preserveLocalInventory: true });
   await authority.replacePromotionSnapshot(DEMO_PROMOTIONS);
 }
 
@@ -293,7 +395,7 @@ export async function createCashierPosRuntime(options?: {
   // opens the same database without a version. This avoids a first-run race.
   await authority.getCatalogItem('__fawri_pos_schema_probe__');
 
-  if (demoMode) await ensureDemoData(authority, databaseName);
+  if (demoMode) await ensureDemoData(authority);
 
   return {
     localMerchantId: identity.local_merchant_id,
