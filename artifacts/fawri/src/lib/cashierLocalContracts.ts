@@ -186,6 +186,7 @@ export type CashierSaleLineInput = {
 export type CashierCommitSaleInput = {
   operation_id: string;
   payment_method: CashierPaymentMethod;
+  payment_status: CashierPaymentStatus;
   payment_provider?: string;
   payment_reference?: string;
   note?: string;
