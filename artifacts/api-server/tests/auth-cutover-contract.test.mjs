@@ -22,6 +22,23 @@ test("secure auth router precedes legacy business compatibility", async () => {
   assert.ok(legacyRoot > bridge, "legacy business router must run only after v2 validation bridge");
 });
 
+test("catalog gate reuses an already validated merchant context", async () => {
+  const app = await source("src/app.ts");
+  const start = app.indexOf("function enforceCatalogSecureSession");
+  const end = app.indexOf("\n}\n\napp.use(", start);
+  assert.ok(start >= 0 && end > start, "catalog secure-session gate must exist");
+  const gate = app.slice(start, end);
+
+  assert.match(gate, /getAuthContext\(res\)/);
+  assert.match(gate, /existing\?\.merchantProfile/);
+  assert.match(gate, /requireSecureMerchantSession\(req,\s*res,\s*next\)/);
+
+  const bridgeMount = app.indexOf("app.use(enforceAuthCutoverCompatibility)");
+  const catalogMount = app.indexOf("app.use(enforceCatalogSecureSession)");
+  assert.ok(bridgeMount >= 0, "auth cutover compatibility must be mounted");
+  assert.ok(catalogMount > bridgeMount, "catalog gate must run after v2 validation bridge");
+});
+
 test("client legacy credentials are not accepted as auth authority", async () => {
   const bridge = await source("src/middleware/authCutoverCompatibility.ts");
   assert.match(bridge, /LEGACY_ADMIN_BEARER_DISABLED/);
