@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'fawri-cashier-shell-';
-const CACHE_NAME = 'fawri-cashier-shell-v1';
+const CACHE_NAME = 'fawri-cashier-shell-v2';
 const FIXED_SHELL = [
   '/cashier.html',
   '/manifest.webmanifest',
@@ -64,12 +64,21 @@ self.addEventListener('message', event => {
 
 async function networkWithCacheFallback(request, fallbackKey) {
   const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(fallbackKey);
   try {
     const response = await fetch(request);
-    if (response.ok) await cache.put(fallbackKey, response.clone());
+    if (response.ok) {
+      await cache.put(fallbackKey, response.clone());
+      return response;
+    }
+
+    // Reverse proxies commonly surface an unavailable origin as an HTTP 5xx
+    // response instead of rejecting fetch(). Treat that as an offline-origin
+    // failure for the standalone cashier shell and fall back to the known-good
+    // cached document. Do not mask intentional 4xx responses.
+    if (response.status >= 500 && cached) return cached;
     return response;
   } catch {
-    const cached = await cache.match(fallbackKey);
     if (cached) return cached;
     throw new Error('FAWRI_CASHIER_OFFLINE_SHELL_MISSING');
   }
