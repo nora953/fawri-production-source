@@ -42,23 +42,20 @@ export default function CashierLocalShellPage() {
   const coldReady = Boolean(shell?.ready_for_cold_start && storage?.persisted);
 
   return (
-    <main
-      className="min-h-[100dvh] overflow-y-auto bg-slate-50 px-4 py-4 text-slate-900 md:flex md:h-[100dvh] md:min-h-0 md:items-center md:overflow-hidden md:py-3"
-      dir="rtl"
-    >
-      <section className="mx-auto w-full max-w-3xl space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-        <header className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
+    <main className="bg-slate-50 px-4 py-4 text-slate-900 sm:min-h-screen sm:overflow-visible lg:h-[100dvh] lg:overflow-hidden lg:py-3" dir="rtl">
+      <section className="mx-auto max-w-3xl space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:max-h-[calc(100dvh-1.5rem)] lg:p-6">
+        <header className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
             <p className="text-sm font-semibold text-orange-600">فوري</p>
             <h1 className="mt-1 text-2xl font-bold">الكاشير المحلي</h1>
-            <p className="mt-1.5 text-sm leading-5 text-slate-500">
+            <p className="mt-1 text-sm leading-5 text-slate-500">
               هذه الواجهة مستقلة عن خدمات السحابة، ومصممة لتبقى قابلة للفتح والعمل محليًا عند انقطاع الشبكة.
             </p>
           </div>
-          <img src="/fawri-logo.svg" alt="Fawri" className="h-10 w-10 shrink-0 object-contain" />
+          <img src="/fawri-logo.svg" alt="Fawri" className="h-11 w-11 object-contain" />
         </header>
 
-        <div className={`rounded-2xl border p-3.5 ${coldReady ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+        <div className={`rounded-2xl border p-4 ${coldReady ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
           <p className="font-bold">
             {coldReady ? 'جاهز للإقلاع المحلي بعد انقطاع الشبكة' : 'جارٍ تجهيز التخزين المحلي ونسخة التطبيق'}
           </p>
@@ -101,7 +98,7 @@ function StatusCard({
       ? 'border-emerald-200 bg-emerald-50'
       : 'border-amber-200 bg-amber-50';
   return (
-    <div className={`rounded-2xl border p-3 ${tone}`}>
+    <div className={`rounded-2xl border px-4 py-3 ${tone}`}>
       <p className="text-xs font-semibold text-slate-500">{label}</p>
       <p className="mt-1 font-bold text-slate-900">{value}</p>
     </div>
