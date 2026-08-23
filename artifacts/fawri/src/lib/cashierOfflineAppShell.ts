@@ -9,7 +9,7 @@ export type CashierOfflineShellDiagnostics = {
 };
 
 const CASHIER_SW_PATH = '/cashier-sw.js';
-const CASHIER_CACHE_NAME = 'fawri-cashier-shell-v1';
+const CASHIER_CACHE_NAME = 'fawri-cashier-shell-v2';
 const FIXED_WARM_URLS = [
   '/cashier.html',
   '/manifest.webmanifest',
@@ -45,6 +45,7 @@ export async function registerCashierOfflineAppShell(): Promise<ServiceWorkerReg
       updateViaCache: 'none',
     });
     await navigator.serviceWorker.ready;
+    await registration.update().catch(() => undefined);
     await sendWarmCacheMessage(registration);
     return registration;
   } catch (error) {
