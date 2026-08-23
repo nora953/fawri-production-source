@@ -176,6 +176,18 @@ function enforceCatalogSecureSession(
     return;
   }
 
+  // Auth cutover compatibility has already validated the secure v2 merchant
+  // session for this request and stored its server-derived context on res.locals.
+  // Revalidating here can race the same request's token rotation: req.cookies
+  // still contains the incoming token even after Set-Cookie carries the rotated
+  // replacement. Reuse only a verified merchant context; otherwise remain
+  // fail-closed and perform the normal secure validation.
+  const existing = getAuthContext(res);
+  if (existing?.merchantProfile) {
+    next();
+    return;
+  }
+
   requireSecureMerchantSession(req, res, next);
 }
 
