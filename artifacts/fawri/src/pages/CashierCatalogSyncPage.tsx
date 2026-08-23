@@ -4,6 +4,11 @@ import {
   syncCashierCatalogFromCloud,
   type CashierCloudCatalogSyncResult,
 } from '@/lib/cashierCloudCatalogSync';
+import {
+  CashierCloudOutboxSyncError,
+  syncCashierOutboxToCloud,
+  type CashierCloudOutboxSyncResult,
+} from '@/lib/cashierCloudOutboxSync';
 
 function syncErrorMessage(error: unknown): string {
   if (error instanceof CashierCloudCatalogSyncError) {
@@ -30,10 +35,33 @@ function syncErrorMessage(error: unknown): string {
   return 'تعذر مزامنة الكتالوج بأمان.';
 }
 
+function outboxErrorMessage(error: unknown): string {
+  if (error instanceof CashierCloudOutboxSyncError) {
+    switch (error.code) {
+      case 'CASHIER_OUTBOX_SESSION_REQUIRED':
+        return 'يجب تسجيل الدخول بحساب التاجر قبل رفع المبيعات المعلقة.';
+      case 'CASHIER_OUTBOX_OFFLINE':
+      case 'CASHIER_OUTBOX_NETWORK_FAILED':
+        return 'تعذر الوصول إلى فوري. بقيت العمليات المعلقة محفوظة محليًا لإعادة المحاولة.';
+      case 'CASHIER_OUTBOX_DEVICE_NOT_BOUND':
+      case 'CASHIER_OUTBOX_IDENTITY_MISSING':
+        return 'يجب تهيئة هذا الكاشير من حساب التاجر قبل رفع المبيعات.';
+      case 'CASHIER_OUTBOX_ACK_INVALID':
+        return 'لم يصل تأكيد كامل وآمن من فوري. لم يتم حذف العملية المحلية.';
+      default:
+        return 'تعذر رفع المبيعات المعلقة بأمان. بقيت العمليات المحلية محفوظة لإعادة المحاولة.';
+    }
+  }
+  return 'تعذر رفع المبيعات المعلقة بأمان.';
+}
+
 export default function CashierCatalogSyncPage() {
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<CashierCloudCatalogSyncResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [outboxRunning, setOutboxRunning] = useState(false);
+  const [outboxResult, setOutboxResult] = useState<CashierCloudOutboxSyncResult | null>(null);
+  const [outboxError, setOutboxError] = useState<string | null>(null);
 
   const runSync = async () => {
     setRunning(true);
@@ -49,6 +77,20 @@ export default function CashierCatalogSyncPage() {
     }
   };
 
+  const runOutboxSync = async () => {
+    setOutboxRunning(true);
+    setOutboxError(null);
+    setOutboxResult(null);
+    try {
+      const synced = await syncCashierOutboxToCloud();
+      setOutboxResult(synced);
+    } catch (cause) {
+      setOutboxError(outboxErrorMessage(cause));
+    } finally {
+      setOutboxRunning(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-slate-50 p-3 text-slate-900 sm:h-screen sm:overflow-hidden" dir="rtl">
       <div className="mx-auto max-w-3xl sm:flex sm:h-full sm:flex-col sm:justify-center">
@@ -57,8 +99,8 @@ export default function CashierCatalogSyncPage() {
             <img src="/fawri-logo.svg" alt="Fawri" className="h-9 w-9 shrink-0 object-contain" />
             <div className="min-w-0">
               <p className="text-xs font-bold text-orange-600">فوري</p>
-              <h1 className="text-lg font-bold sm:text-xl">تهيئة كتالوج الكاشير</h1>
-              <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">نسخة محلية للمنتجات والمخزون والعروض حتى يستمر البيع عند انقطاع الشبكة.</p>
+              <h1 className="text-lg font-bold sm:text-xl">مزامنة الكاشير</h1>
+              <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">رفع المبيعات المعلقة وتحديث نسخة المنتجات والمخزون والعروض.</p>
             </div>
           </div>
           <a href="/cashier.html" className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
@@ -70,7 +112,7 @@ export default function CashierCatalogSyncPage() {
           <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
             <strong>كيف تعمل المزامنة؟</strong>
             <p className="mt-0.5">
-              تحتاج الإنترنت وجلسة التاجر فقط أثناء التهيئة أو التحديث. بعد نجاحها، البيع وقراءة الكتالوج المحلي لا يعتمدان على الاشتراك أو الاتصال بالشبكة.
+              البيع يبقى محليًا عند انقطاع الشبكة. عند رجوع الاتصال، ارفع المبيعات المعلقة أولًا ثم حدّث الكتالوج للحصول على الحالة السحابية الأحدث.
             </p>
           </div>
 
@@ -80,9 +122,47 @@ export default function CashierCatalogSyncPage() {
               <p className="mt-0.5 text-sm font-semibold leading-6">الجهاز لا يقبل مزامنة متجر ثانٍ فوق بيانات متجره الحالي.</p>
             </div>
             <div className="rounded-xl border border-slate-200 px-4 py-3">
-              <p className="text-xs text-slate-500">حماية مخزون Offline</p>
-              <p className="mt-0.5 text-sm font-semibold leading-6">إذا توجد عمليات معلقة للرفع، يبقى المخزون المحلي محفوظًا أثناء التحديث.</p>
+              <p className="text-xs text-slate-500">حماية عمليات Offline</p>
+              <p className="mt-0.5 text-sm font-semibold leading-6">لا تُحذف عملية محلية إلا بعد قبول فوري للعملية كاملة أو تأكيد أنها قُبلت سابقًا.</p>
             </div>
+          </div>
+
+          <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-bold">المبيعات المعلقة</p>
+                <p className="mt-0.5 text-xs leading-5 text-slate-500">ارفع عمليات البيع المحفوظة محليًا قبل تحديث المخزون من السحابة.</p>
+              </div>
+              <button
+                type="button"
+                disabled={outboxRunning || running}
+                onClick={() => void runOutboxSync()}
+                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {outboxRunning ? 'جارٍ رفع المبيعات...' : 'مزامنة المبيعات المعلقة'}
+              </button>
+            </div>
+
+            {outboxError ? (
+              <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold leading-5 text-red-700">
+                {outboxError}
+              </div>
+            ) : null}
+
+            {outboxResult ? (
+              <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-900">
+                <strong>تمت معالجة المزامنة بأمان.</strong>
+                <div className="mt-1 grid gap-x-3 sm:grid-cols-4">
+                  <span>معلقات قبل الرفع: {outboxResult.pending_before}</span>
+                  <span>عمليات جديدة: {outboxResult.uploaded_operations}</span>
+                  <span>إعادات آمنة: {outboxResult.replayed_operations}</span>
+                  <span>معلقات بعد الرفع: {outboxResult.pending_after}</span>
+                </div>
+                {outboxResult.skipped_operations > 0 ? (
+                  <p className="mt-1 text-amber-900">بقيت {outboxResult.skipped_operations} عملية غير مدعومة محفوظة محليًا ولم تُحذف.</p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
 
           {error ? (
@@ -115,7 +195,7 @@ export default function CashierCatalogSyncPage() {
 
           <button
             type="button"
-            disabled={running}
+            disabled={running || outboxRunning}
             onClick={() => void runSync()}
             className="mt-3 h-11 w-full rounded-xl bg-orange-600 text-sm font-bold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
