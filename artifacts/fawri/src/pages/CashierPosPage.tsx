@@ -369,8 +369,8 @@ export default function CashierPosPage() {
             </div>
           </section>
 
-          <aside className="flex min-h-[520px] flex-col rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0">
-            <div className="flex items-center justify-between border-b border-slate-100 p-4">
+          <aside className="flex min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:max-h-full">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-100 p-4">
               <div>
                 <h2 className="font-bold">السلة</h2>
                 <p className="mt-0.5 text-xs text-slate-500">{cartCount} عنصر</p>
@@ -378,21 +378,21 @@ export default function CashierPosPage() {
               {cart.length > 0 ? <button type="button" onClick={() => setCart([])} className="text-xs font-semibold text-red-600 hover:underline">تفريغ السلة</button> : null}
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+            <div className={`min-h-0 flex-1 p-4 ${cart.length === 0 ? 'overflow-hidden' : 'overflow-y-auto overscroll-contain'}`}>
               {cart.length === 0 ? (
                 <div className="flex h-full min-h-44 flex-col items-center justify-center text-center text-sm text-slate-500">
                   <div className="mb-2 text-3xl">🛒</div>
                   اختر منتجًا أو امسح باركود لبدء البيع.
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-3 pb-1">
                   {cart.map(line => {
                     const key = itemKey(line.item);
                     const priced = quoteByKey.get(key);
                     const unit = priced?.effective_unit_price_minor ?? line.item.base_unit_price_minor;
                     const lineTotal = priced?.line_total_minor ?? unit * line.quantity;
                     return (
-                      <div key={key} className="rounded-xl border border-slate-200 p-3">
+                      <div key={key} className="rounded-xl border border-slate-200 bg-white p-3">
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <p className="truncate font-semibold">{line.item.name}</p>
@@ -415,7 +415,7 @@ export default function CashierPosPage() {
               )}
             </div>
 
-            <div className="border-t border-slate-100 p-4">
+            <div className="shrink-0 border-t border-slate-100 bg-white p-4">
               {quoteError ? <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{quoteError}</div> : null}
               <div className="space-y-1.5 text-sm">
                 <div className="flex justify-between text-slate-500"><span>المجموع قبل الخصم</span><span>{quote ? formatMoney(quote.subtotal_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
