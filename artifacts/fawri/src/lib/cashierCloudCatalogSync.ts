@@ -314,6 +314,33 @@ async function fetchPromotionEnvelope(): Promise<PromotionEnvelope> {
   };
 }
 
+function cloudReadFailure(error: unknown, code: string): CashierCloudCatalogSyncError {
+  if (error instanceof CashierCloudCatalogSyncError) return error;
+  const status =
+    error && typeof error === 'object' && 'status' in error
+      ? Number((error as { status?: unknown }).status)
+      : undefined;
+  if (status === 401) {
+    return new CashierCloudCatalogSyncError(
+      'CASHIER_CLOUD_SESSION_REQUIRED',
+      'A signed-in merchant session is required to sync the cashier',
+      401,
+    );
+  }
+  if (status === 0) {
+    return new CashierCloudCatalogSyncError(
+      'CASHIER_CLOUD_NETWORK_FAILED',
+      'Could not reach Fawri catalog service',
+      0,
+    );
+  }
+  return new CashierCloudCatalogSyncError(
+    code,
+    'Could not load the authoritative cloud catalog projection',
+    Number.isFinite(status) ? status : undefined,
+  );
+}
+
 function openExistingCashierDatabase(databaseName: string): Promise<IDBDatabase> {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(databaseName);
@@ -407,11 +434,26 @@ export async function syncCashierCatalogFromCloud(): Promise<CashierCloudCatalog
   }
 
   const identity = await getOrCreateIdentity();
-  const [context, products, promotionEnvelope] = await Promise.all([
-    getCatalogCommerceContext(),
-    listCatalogProducts(),
-    fetchPromotionEnvelope(),
-  ]);
+
+  // Authenticated catalog reads are intentionally sequential. The auth layer may
+  // rotate the merchant session token on a successful request; issuing multiple
+  // protected reads concurrently can make a sibling request validate the stale
+  // token and clear the freshly rotated cookie. Awaiting each response lets the
+  // browser apply Set-Cookie before the next protected request begins.
+  const promotionEnvelope = await fetchPromotionEnvelope();
+  let context: CatalogCommerceContext;
+  try {
+    context = await getCatalogCommerceContext();
+  } catch (error) {
+    throw cloudReadFailure(error, 'CASHIER_CLOUD_CONTEXT_FAILED');
+  }
+  let products: CatalogProduct[];
+  try {
+    products = await listCatalogProducts();
+  } catch (error) {
+    throw cloudReadFailure(error, 'CASHIER_CLOUD_PRODUCTS_FAILED');
+  }
+
   const merchantId = promotionEnvelope.merchant_id;
 
   if (identity.cloud_merchant_id && identity.cloud_merchant_id !== merchantId) {
