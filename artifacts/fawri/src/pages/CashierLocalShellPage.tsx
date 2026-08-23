@@ -42,29 +42,32 @@ export default function CashierLocalShellPage() {
   const coldReady = Boolean(shell?.ready_for_cold_start && storage?.persisted);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-900" dir="rtl">
-      <section className="mx-auto max-w-3xl space-y-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-        <header className="flex items-center justify-between gap-4 border-b border-slate-100 pb-5">
+    <main
+      className="min-h-[100dvh] overflow-y-auto bg-slate-50 px-4 py-4 text-slate-900 md:flex md:h-[100dvh] md:min-h-0 md:items-center md:overflow-hidden md:py-3"
+      dir="rtl"
+    >
+      <section className="mx-auto w-full max-w-3xl space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+        <header className="flex items-center justify-between gap-4 border-b border-slate-100 pb-3">
           <div>
             <p className="text-sm font-semibold text-orange-600">فوري</p>
             <h1 className="mt-1 text-2xl font-bold">الكاشير المحلي</h1>
-            <p className="mt-2 text-sm leading-6 text-slate-500">
+            <p className="mt-1.5 text-sm leading-5 text-slate-500">
               هذه الواجهة مستقلة عن خدمات السحابة، ومصممة لتبقى قابلة للفتح والعمل محليًا عند انقطاع الشبكة.
             </p>
           </div>
-          <img src="/fawri-logo.svg" alt="Fawri" className="h-12 w-12 object-contain" />
+          <img src="/fawri-logo.svg" alt="Fawri" className="h-10 w-10 shrink-0 object-contain" />
         </header>
 
-        <div className={`rounded-2xl border p-4 ${coldReady ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
+        <div className={`rounded-2xl border p-3.5 ${coldReady ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
           <p className="font-bold">
             {coldReady ? 'جاهز للإقلاع المحلي بعد انقطاع الشبكة' : 'جارٍ تجهيز التخزين المحلي ونسخة التطبيق'}
           </p>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm leading-5 text-slate-600">
             لا تعتبر هذه الشاشة اعتمادًا إنتاجيًا نهائيًا قبل اجتياز اختبار الإقلاع البارد والمتصفحات المدعومة.
           </p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-2.5 sm:grid-cols-2">
           <StatusCard label="اتصال الجهاز بالإنترنت" value={online ? 'متصل' : 'غير متصل'} ok={online} neutral={!online} />
           <StatusCard label="IndexedDB" value={storage?.available ? 'متاح' : 'غير متاح'} ok={Boolean(storage?.available)} />
           <StatusCard label="التخزين الدائم" value={storage?.persisted ? 'ممنوح' : 'غير مؤكد'} ok={Boolean(storage?.persisted)} />
@@ -73,7 +76,7 @@ export default function CashierLocalShellPage() {
           <StatusCard label="ملفات التطبيق المخزنة" value={String(shell?.loaded_assets_cached ?? 0)} ok={Boolean(shell && shell.loaded_assets_cached > 0)} />
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-600">
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-sm leading-5 text-slate-600">
           <strong className="text-slate-800">حدود هذه المرحلة:</strong> لا توجد هنا بعد واجهة بيع نهائية أو ربط طابعة أو مزامنة سحابية. هذه صفحة اعتماد للبنية المحلية فقط، وتتعمد عدم استدعاء API أو التحقق من الاشتراك حتى لا يصبح تشغيل الكاشير رهين السيرفر.
         </div>
       </section>
@@ -98,7 +101,7 @@ function StatusCard({
       ? 'border-emerald-200 bg-emerald-50'
       : 'border-amber-200 bg-amber-50';
   return (
-    <div className={`rounded-2xl border p-4 ${tone}`}>
+    <div className={`rounded-2xl border p-3 ${tone}`}>
       <p className="text-xs font-semibold text-slate-500">{label}</p>
       <p className="mt-1 font-bold text-slate-900">{value}</p>
     </div>
