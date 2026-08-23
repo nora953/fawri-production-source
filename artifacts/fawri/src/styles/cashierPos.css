@@ -1,0 +1,69 @@
+html[data-cashier-view='pos'] aside > div:first-child {
+  padding-block: 0.75rem !important;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2) {
+  padding: 0.5rem !important;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) {
+  display: grid !important;
+  grid-template-rows: minmax(98px, 1fr) 54px;
+  gap: 0.5rem !important;
+  overflow: hidden !important;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:first-child {
+  min-height: 98px !important;
+  overflow: hidden !important;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) {
+  height: 54px !important;
+  min-height: 54px !important;
+  padding: 0.35rem !important;
+  overflow: hidden !important;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:first-child {
+  display: none !important;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child {
+  height: 100%;
+  min-height: 0;
+}
+
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) button {
+  min-height: 40px;
+}
+
+html[data-cashier-view='pos'] aside > div:last-child {
+  padding: 0.5rem 0.75rem 0.65rem !important;
+}
+
+html[data-cashier-view='pos'] aside > div:last-child > div:nth-of-type(2) {
+  margin-top: 0.45rem !important;
+}
+
+html[data-cashier-view='pos'] aside > div:last-child button:last-child {
+  margin-top: 0.5rem !important;
+  height: 2.5rem !important;
+}
+
+@media (max-width: 1023px) {
+  html[data-cashier-view='pos'] aside > div:nth-child(2),
+  html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) {
+    display: flex !important;
+    padding: 0.75rem !important;
+  }
+
+  html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:first-child {
+    min-height: 128px !important;
+  }
+
+  html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) {
+    height: auto !important;
+    min-height: 64px !important;
+  }
+}
