@@ -4,15 +4,30 @@ on:
   pull_request:
     paths:
       - "artifacts/fawri/src/lib/catalogUiApi.ts"
+      - "artifacts/fawri/src/lib/catalogProductEditor.ts"
+      - "artifacts/fawri/src/lib/catalogVariantMatrix.ts"
+      - "artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx"
+      - "artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx"
       - "artifacts/fawri/src/pages/dashboard/ProductsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ProductsWorkspacePage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/CommerceCatalogPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/catalogEditorFullscreen.css"
       - "artifacts/fawri/src/pages/dashboard/ImportProductsPage.tsx"
       - "artifacts/fawri/tests/product-catalog-ui-cutover.test.ts"
+      - "artifacts/fawri/tests/catalog-editor-logic-hardening.test.ts"
       - "artifacts/api-server/src/routes/catalog-operations.ts"
       - "artifacts/api-server/src/services/catalogInventoryRuntime.ts"
+      - "artifacts/api-server/src/services/catalogProductNormalization.ts"
+      - "artifacts/api-server/src/services/postgresCatalogAuthority.ts"
       - "artifacts/api-server/src/services/botCatalogAuthority.ts"
       - "artifacts/api-server/tests/catalog-inventory.test.ts"
       - "artifacts/api-server/tests/catalog-server-contract.test.mjs"
+      - "artifacts/api-server/tests/catalog-operation-error-classification-static.test.mjs"
+      - "artifacts/api-server/tests/catalog-variant-signature-guard-static.test.mjs"
       - "artifacts/api-server/tests/bot-catalog-authority.test.ts"
+      - "lib/db/drizzle/0012_catalog_variant_signature_guard.sql"
+      - "lib/db/drizzle/meta/_journal.json"
+      - "scripts/validate-catalog-editor.mjs"
       - ".github/workflows/product-catalog-ui-cutover.yml"
   workflow_dispatch:
 
@@ -46,20 +61,5 @@ jobs:
       - name: Install frozen dependencies without lifecycle scripts
         run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Run Products UI canonical authority tests
-        run: pnpm exec tsx --test artifacts/fawri/tests/product-catalog-ui-cutover.test.ts
-
-      - name: Run catalog runtime regressions
-        run: >-
-          pnpm exec tsx --test
-          artifacts/api-server/tests/catalog-inventory.test.ts
-          artifacts/api-server/tests/bot-catalog-authority.test.ts
-
-      - name: Run catalog server contract regression
-        run: node --test artifacts/api-server/tests/catalog-server-contract.test.mjs
-
-      - name: Typecheck Fawri
-        run: pnpm --filter @workspace/fawri run typecheck
-
-      - name: Build Fawri
-        run: pnpm --filter @workspace/fawri run build
+      - name: Run catalog editor validation gate
+        run: node scripts/validate-catalog-editor.mjs
