@@ -10,6 +10,7 @@ import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
 import { installAuthClientCutover } from '@/lib/authClientCutover';
 import { syncCashierOutboxToCloud } from '@/lib/cashierCloudOutboxSync';
 import { syncCashierCatalogFromCloud } from '@/lib/cashierCloudCatalogSync';
+import { publishCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import {
   getCashierSyncUiState,
@@ -95,9 +96,11 @@ function startCashierPosAutoSync(): () => void {
       }
 
       if (reconcileCatalog && result.pending_after === 0) {
-        // After reconnecting or an explicit merchant sync, refresh the local
-        // catalog only after every pending operation has been accepted/replayed.
+        // Refresh the local catalog after pending cashier writes are safely ACKed.
+        // Then tell the mounted POS to reread IndexedDB immediately instead of
+        // requiring a page reload or a second merchant action.
         await syncCashierCatalogFromCloud();
+        publishCashierCatalogRefresh();
         publishCashierDashboardRefresh();
       }
 
@@ -166,7 +169,10 @@ function startCashierPosAutoSync(): () => void {
     });
   };
   const handleFocus = () => {
-    void attempt(false, false, false);
+    // Returning from the merchant product editor should pull the latest catalog
+    // immediately; do not make the merchant press the sync button just to see it.
+    nextAttemptAt = 0;
+    void attempt(true, true, false);
   };
   const unsubscribeManualRequest = subscribeCashierSyncRequests(() => {
     nextAttemptAt = 0;
@@ -180,9 +186,10 @@ function startCashierPosAutoSync(): () => void {
     void attempt(false, false, false);
   }, AUTO_SYNC_INTERVAL_MS);
 
-  // Pick up an operation that may already be pending when the cashier is opened.
+  // On an online open, reconcile both pending cashier writes and the current
+  // authoritative catalog so newly created products/variants are visible.
   window.setTimeout(() => {
-    void attempt(false, false, false);
+    void attempt(true, false, false);
   }, 0);
 
   return () => {
