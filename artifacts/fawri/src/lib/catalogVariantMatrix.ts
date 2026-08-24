@@ -91,9 +91,7 @@ export function catalogVariantOptionSetsFromVariants(
         displayNameByNormalized.set(key, name);
       }
       const values = valuesByName.get(key)!;
-      if (!values.some(item => normalized(item) === normalized(value))) {
-        values.push(value);
-      }
+      if (!values.some(item => normalized(item) === normalized(value))) values.push(value);
     }
   }
 
@@ -120,12 +118,11 @@ export function catalogVariantOptionSetDefinitionsAreValid(
     const name = normalized(set.name);
     if (!name || set.values.length === 0 || names.has(name)) return false;
     names.add(name);
-
     const values = new Set<string>();
     for (const value of set.values) {
-      const normalizedValue = normalized(value);
-      if (!normalizedValue || values.has(normalizedValue)) return false;
-      values.add(normalizedValue);
+      const key = normalized(value);
+      if (!key || values.has(key)) return false;
+      values.add(key);
     }
   }
   return true;
@@ -183,7 +180,6 @@ export function buildCatalogVariantCombinations(
   optionSets: CatalogVariantOptionSetDraft[],
 ): Record<string, string>[] {
   if (catalogVariantCombinationCount(optionSets) === 0) return [];
-
   let combinations: Record<string, string>[] = [{}];
   for (const set of optionSets) {
     const name = clean(set.name);
@@ -215,25 +211,22 @@ export function catalogVariantMatrixCoverage(
   };
 }
 
-function sameTopologyForValueRename(
+function completeCurrentMatrix(
   previousSets: CatalogVariantOptionSetDraft[],
-  nextSets: CatalogVariantOptionSetDraft[],
   currentVariants: CatalogVariantDraft[],
 ): boolean {
-  if (previousSets.length !== nextSets.length || previousSets.length === 0) return false;
-  const previousCount = catalogVariantCombinationCount(previousSets);
-  if (previousCount === 0 || previousCount !== currentVariants.length) return false;
-
+  const count = catalogVariantCombinationCount(previousSets);
+  if (count === 0 || count !== currentVariants.length) return false;
   const signatures = new Set(currentVariants.map(variantDraftSignature).filter(Boolean));
-  if (signatures.size !== currentVariants.length) return false;
+  return signatures.size === currentVariants.length;
+}
 
-  return previousSets.every((set, index) => {
-    const next = nextSets[index];
-    return (
-      normalized(set.name) === normalized(next?.name) &&
-      set.values.length === next?.values.length
-    );
-  });
+function sameCoordinateShape(
+  previousSets: CatalogVariantOptionSetDraft[],
+  nextSets: CatalogVariantOptionSetDraft[],
+): boolean {
+  if (previousSets.length === 0 || previousSets.length !== nextSets.length) return false;
+  return previousSets.every((set, index) => set.values.length === nextSets[index]?.values.length);
 }
 
 export function regenerateCatalogVariantDrafts(
@@ -251,21 +244,17 @@ export function regenerateCatalogVariantDrafts(
   );
 
   const previousSets = catalogVariantOptionSetsFromVariants(currentVariants);
-  const allowPositionalRename = sameTopologyForValueRename(
-    previousSets,
-    optionSets,
-    currentVariants,
-  );
-  const previousCombinations = allowPositionalRename
-    ? buildCatalogVariantCombinations(previousSets)
-    : [];
+  const positionalSafe =
+    completeCurrentMatrix(previousSets, currentVariants) &&
+    sameCoordinateShape(previousSets, optionSets);
+  const previousCombinations = positionalSafe ? buildCatalogVariantCombinations(previousSets) : [];
 
   return combinations.map((options, index) => {
-    const signature = optionRecordSignature(options);
+    const exact = bySignature.get(optionRecordSignature(options));
     const positional = previousCombinations[index]
       ? bySignature.get(optionRecordSignature(previousCombinations[index]))
       : undefined;
-    const matched = bySignature.get(signature) || positional;
+    const matched = exact || positional;
     const base = matched || createEmptyCatalogVariantDraft();
     const optionDrafts = Object.entries(options).map(([name, value]) => ({
       ...createEmptyCatalogOptionDraft(),
