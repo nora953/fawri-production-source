@@ -315,6 +315,9 @@ export default function CashierPosPage() {
             <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
               {online ? 'متصل' : 'غير متصل'}
             </span>
+            <a href="/cashier.html?sync=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
+              مزامنة
+            </a>
           </div>
         </header>
 
