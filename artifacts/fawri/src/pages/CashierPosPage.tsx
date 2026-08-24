@@ -68,11 +68,18 @@ function errorMessage(error: unknown): string {
   return 'تعذر إكمال البيع. لم يتم تسجيل العملية.';
 }
 
+function isSyncSessionRequired(code?: string): boolean {
+  return (
+    code === 'CASHIER_OUTBOX_SESSION_REQUIRED' ||
+    code === 'CASHIER_CLOUD_SESSION_REQUIRED'
+  );
+}
+
 function syncButtonLabel(state: CashierSyncUiState): string {
   if (state.status === 'syncing') return 'جارٍ المزامنة...';
   if (state.status === 'synced') return 'تمت المزامنة';
   if (state.status === 'needs_attention') {
-    return state.code === 'CASHIER_OUTBOX_SESSION_REQUIRED'
+    return isSyncSessionRequired(state.code)
       ? 'تسجيل الدخول مطلوب'
       : 'مزامنة مطلوبة';
   }
