@@ -3,6 +3,7 @@ import { BadgePercent, Package } from 'lucide-react';
 
 import CommerceCatalogPage from './CommerceCatalogPage';
 import CatalogPromotionsPage from './CatalogPromotionsPage';
+import './dashboardMerchantPolish.css';
 import { useI18n } from '@/lib/i18n';
 
 const copy = {
@@ -17,7 +18,7 @@ export default function ProductsWorkspacePage() {
   const [tab, setTab] = useState<'catalog' | 'promotions'>('catalog');
 
   return (
-    <div dir={dir}>
+    <div dir={dir} className="products-workspace-polish">
       <div className="px-4 pt-4">
         <div className="inline-flex w-full max-w-xl rounded-2xl border bg-card p-1 shadow-sm sm:w-auto">
           <button
