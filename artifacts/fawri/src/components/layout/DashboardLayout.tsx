@@ -23,6 +23,41 @@ const PRODUCT_READ_ONLY_STATUSES = new Set([
   'eligible_for_deletion',
 ]);
 
+const DASHBOARD_RETURN_PATH_KEY = 'fawri.dashboard.returnPath';
+
+function isSafeDashboardReturnPath(value: string) {
+  return value === '/dashboard' || value.startsWith('/dashboard/');
+}
+
+function currentDashboardReturnPath() {
+  if (typeof window === 'undefined') return '/dashboard';
+  const candidate = `${window.location.pathname}${window.location.search}`;
+  return isSafeDashboardReturnPath(candidate) ? candidate : '/dashboard';
+}
+
+function rememberDashboardReturnPath() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(
+      DASHBOARD_RETURN_PATH_KEY,
+      currentDashboardReturnPath(),
+    );
+  } catch {
+    // Session storage is a convenience only. Authentication must still fail closed.
+  }
+}
+
+function consumeDashboardReturnPath() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const candidate = window.sessionStorage.getItem(DASHBOARD_RETURN_PATH_KEY);
+    window.sessionStorage.removeItem(DASHBOARD_RETURN_PATH_KEY);
+    return candidate && isSafeDashboardReturnPath(candidate) ? candidate : null;
+  } catch {
+    return null;
+  }
+}
+
 function AuthorizedDashboard({
   children,
   merchant,
@@ -109,9 +144,12 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           clearMerchantTabSession();
           setMerchant(undefined);
           setCheckingAccess(false);
-          setLocation(
-            lifecycle.reason === 'unauthenticated' ? '/login' : '/pending',
-          );
+          if (lifecycle.reason === 'unauthenticated') {
+            rememberDashboardReturnPath();
+            setLocation('/login');
+          } else {
+            setLocation('/pending');
+          }
           return;
         }
 
@@ -135,6 +173,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             setMerchant(updated);
             profileLoaded = true;
             setCheckingAccess(false);
+
+            const returnPath = consumeDashboardReturnPath();
+            if (
+              returnPath &&
+              returnPath !== currentDashboardReturnPath()
+            ) {
+              setLocation(returnPath);
+              return;
+            }
           } catch {
             if (!active) return;
             routeToLifecycle();
