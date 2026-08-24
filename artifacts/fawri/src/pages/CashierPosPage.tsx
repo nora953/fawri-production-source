@@ -57,9 +57,9 @@ function errorMessage(error: unknown): string {
     return 'لا يمكن جمع عناصر بعملات مختلفة في عملية بيع واحدة.';
   }
   if (message.includes('ITEM_NOT_FOUND')) {
-    return 'أحد عناصر السلة لم يعد موجودًا في الكتالوج المحلي.';
+    return 'أحد عناصر السلة لم يعد متاحًا.';
   }
-  return 'تعذر إكمال العملية محليًا. لم يتم تسجيل بيع جزئي.';
+  return 'تعذر إكمال البيع. لم يتم تسجيل العملية.';
 }
 
 export default function CashierPosPage() {
@@ -236,7 +236,7 @@ export default function CashierPosPage() {
   const completeSale = useCallback(async () => {
     if (!runtime || cart.length === 0 || !quote || quoteError) return;
     if (paymentMethod !== 'cash' && !externalConfirmed) {
-      setError('أكد استلام أو نجاح الدفع الخارجي قبل تسجيل البيع كمدفوع.');
+      setError('أكد استلام أو نجاح الدفع قبل إتمام البيع.');
       return;
     }
     setCommitting(true);
@@ -306,27 +306,23 @@ export default function CashierPosPage() {
         <header className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <div className="flex items-center gap-3">
             <img src="/fawri-logo.svg" alt="Fawri" className="h-10 w-10 object-contain" />
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-bold">الكاشير</h1>
-                {demoMode ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">وضع اختبار</span> : null}
-              </div>
-              <p className="text-xs text-slate-500">بيع محلي مستقل عن الاشتراك والخدمات السحابية</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold">الكاشير</h1>
+              {demoMode ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">وضع اختبار</span> : null}
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
-              {online ? 'متصل بالإنترنت' : 'يعمل دون اتصال'}
+              {online ? 'متصل' : 'غير متصل'}
             </span>
-            <a href="/cashier.html?diagnostics=1" className="rounded-lg border border-slate-200 px-3 py-1.5 text-slate-600 hover:bg-slate-50">حالة الجهاز</a>
           </div>
         </header>
 
         {error ? <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
         {success ? (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            <strong>تم حفظ البيع محليًا بنجاح.</strong>
-            <span>{formatMoney(success.totalMinor, success.currencyCode, success.fractionDigits)} · {success.saleId}</span>
+            <strong>تم البيع بنجاح.</strong>
+            <span>{formatMoney(success.totalMinor, success.currencyCode, success.fractionDigits)}</span>
           </div>
         ) : null}
 
@@ -336,7 +332,7 @@ export default function CashierPosPage() {
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <h2 className="font-bold">المنتجات والخدمات</h2>
-                  <p className="mt-0.5 text-xs text-slate-500">ابحث بالاسم أو SKU، أو امسح الباركود ثم اضغط Enter.</p>
+                  <p className="mt-0.5 text-xs text-slate-500">ابحث باسم المنتج أو SKU أو امسح الباركود ثم اضغط Enter.</p>
                 </div>
                 <span className="text-xs text-slate-500">{catalog.length} نتيجة</span>
               </div>
@@ -358,12 +354,12 @@ export default function CashierPosPage() {
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               {loading ? (
-                <div className="flex h-full min-h-56 items-center justify-center text-sm text-slate-500">جارٍ فتح الكتالوج المحلي...</div>
+                <div className="flex h-full min-h-56 items-center justify-center text-sm text-slate-500">جارٍ فتح الكتالوج...</div>
               ) : catalog.length === 0 ? (
                 <div className="flex h-full min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
                   <div className="mb-3 text-3xl">⌁</div>
-                  <h3 className="font-bold">لا توجد عناصر في الكتالوج المحلي</h3>
-                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">يحتاج هذا الجهاز إلى تهيئة الكتالوج المحلي مرة واحدة. بعد التهيئة تبقى عمليات البيع متاحة دون اتصال.</p>
+                  <h3 className="font-bold">لا توجد منتجات جاهزة للبيع</h3>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">حدّث المنتجات عند توفر الاتصال ثم أعد فتح الكاشير.</p>
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -496,12 +492,12 @@ export default function CashierPosPage() {
               {paymentMethod !== 'cash' ? (
                 <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs leading-5 text-amber-900">
                   <input type="checkbox" checked={externalConfirmed} onChange={event => setExternalConfirmed(event.target.checked)} className="mt-1 h-4 w-4" />
-                  <span>أؤكد أن الدفع تم بنجاح خارج فوري.</span>
+                  <span>أؤكد أن الدفع تم بنجاح.</span>
                 </label>
               ) : null}
 
               <button type="button" onClick={() => void completeSale()} disabled={cart.length === 0 || !quote || Boolean(quoteError) || committing || (paymentMethod !== 'cash' && !externalConfirmed)} className="mt-2.5 h-11 w-full rounded-xl bg-orange-600 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
-                {committing ? 'جارٍ حفظ البيع...' : 'إتمام البيع وحفظه محليًا'}
+                {committing ? 'جارٍ إتمام البيع...' : 'إتمام البيع'}
               </button>
             </div>
           </aside>
