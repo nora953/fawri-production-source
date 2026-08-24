@@ -42,6 +42,13 @@ function syncErrorCode(error: unknown): string {
     : '';
 }
 
+function isMerchantSessionRequired(code: string): boolean {
+  return (
+    code === 'CASHIER_OUTBOX_SESSION_REQUIRED' ||
+    code === 'CASHIER_CLOUD_SESSION_REQUIRED'
+  );
+}
+
 function cashierIsOnline(): boolean {
   return navigator.onLine !== false;
 }
@@ -121,21 +128,25 @@ function startCashierPosAutoSync(): () => void {
         }
       }
     } catch (cause) {
-      const code = syncErrorCode(cause);
+      const rawCode = syncErrorCode(cause);
+      const sessionRequired = isMerchantSessionRequired(rawCode);
+      const uiCode = sessionRequired
+        ? 'CASHIER_OUTBOX_SESSION_REQUIRED'
+        : rawCode;
+
       if (!cashierIsOnline()) {
         publishCashierSyncUiState({
           status: 'offline',
-          code,
+          code: uiCode,
           message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
         });
       } else {
         publishCashierSyncUiState({
           status: 'needs_attention',
-          code,
-          message:
-            code === 'CASHIER_OUTBOX_SESSION_REQUIRED'
-              ? 'انتهت جلسة التاجر. سجّل الدخول ثم اضغط المزامنة.'
-              : 'تعذر إكمال المزامنة التلقائية. اضغط للمحاولة مرة أخرى.',
+          code: uiCode,
+          message: sessionRequired
+            ? 'انتهت جلسة التاجر. سجّل الدخول ثم اضغط المزامنة.'
+            : 'تعذر إكمال المزامنة التلقائية. اضغط للمحاولة مرة أخرى.',
         });
       }
       nextAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
