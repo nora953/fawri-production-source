@@ -18,7 +18,9 @@ type CashierDeviceIdentity = {
   last_catalog_sync_at?: string;
 };
 
-type CashierSaleSyncResponse = {
+type CashierOperationKind = 'sale' | 'return' | 'void';
+
+type CashierSyncResponse = {
   ok?: boolean;
   code?: string;
   error?: string;
@@ -26,6 +28,7 @@ type CashierSaleSyncResponse = {
   order_id?: string;
   device_sequence?: number;
   replayed?: boolean;
+  compensation_kind?: 'return' | 'void';
   accepted_entity_ids?: string[];
 };
 
@@ -93,7 +96,7 @@ async function readBoundIdentity(): Promise<CashierDeviceIdentity> {
     if (!identity.cloud_merchant_id) {
       throw new CashierCloudOutboxSyncError(
         'CASHIER_OUTBOX_DEVICE_NOT_BOUND',
-        'Cashier device must be provisioned from Fawri before uploading sales',
+        'Cashier device must be provisioned from Fawri before uploading operations',
       );
     }
     return identity;
@@ -121,7 +124,11 @@ function groupPending(
         if (left.entity_type === right.entity_type) {
           return left.entity_id.localeCompare(right.entity_id);
         }
-        return left.entity_type === 'sale' ? -1 : 1;
+        if (left.entity_type === 'sale') return -1;
+        if (right.entity_type === 'sale') return 1;
+        if (left.entity_type === 'return') return -1;
+        if (right.entity_type === 'return') return 1;
+        return left.entity_type.localeCompare(right.entity_type);
       }),
     }))
     .sort(
@@ -131,25 +138,57 @@ function groupPending(
     );
 }
 
-function isSaleOperation(envelopes: CashierSyncEnvelope[]): boolean {
-  const saleCount = envelopes.filter(item => item.entity_type === 'sale').length;
-  return (
-    saleCount === 1 &&
-    envelopes.every(
-      item => item.entity_type === 'sale' || item.entity_type === 'inventory_movement',
-    )
+function classifyOperation(
+  envelopes: CashierSyncEnvelope[],
+): CashierOperationKind | null {
+  const saleEnvelopes = envelopes.filter(item => item.entity_type === 'sale');
+  const returnEnvelopes = envelopes.filter(item => item.entity_type === 'return');
+  const supported = envelopes.every(
+    item =>
+      item.entity_type === 'sale' ||
+      item.entity_type === 'return' ||
+      item.entity_type === 'inventory_movement',
   );
+  if (!supported) return null;
+
+  if (
+    saleEnvelopes.length === 1 &&
+    returnEnvelopes.length === 0 &&
+    saleEnvelopes[0].operation === 'append'
+  ) {
+    return 'sale';
+  }
+  if (
+    saleEnvelopes.length === 0 &&
+    returnEnvelopes.length === 1 &&
+    returnEnvelopes[0].operation === 'append'
+  ) {
+    return 'return';
+  }
+  if (
+    saleEnvelopes.length === 1 &&
+    returnEnvelopes.length === 0 &&
+    saleEnvelopes[0].operation === 'void'
+  ) {
+    return 'void';
+  }
+  return null;
 }
 
-async function uploadSaleOperation(input: {
+async function uploadOperation(input: {
+  kind: CashierOperationKind;
   identity: CashierDeviceIdentity;
   operationId: string;
   deviceSequence: number;
   envelopes: CashierSyncEnvelope[];
 }): Promise<{ replayed: boolean }> {
+  const endpoint =
+    input.kind === 'sale'
+      ? '/api/cashier/sync/sale'
+      : '/api/cashier/sync/compensation';
   let response: Response;
   try {
-    response = await fetch('/api/cashier/sync/sale', {
+    response = await fetch(endpoint, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -170,7 +209,7 @@ async function uploadSaleOperation(input: {
     );
   }
   const payload = (await response.json().catch(() => null)) as
-    | CashierSaleSyncResponse
+    | CashierSyncResponse
     | null;
   if (!response.ok || payload?.ok !== true) {
     const code =
@@ -180,15 +219,16 @@ async function uploadSaleOperation(input: {
     throw new CashierCloudOutboxSyncError(
       code,
       response.status === 401
-        ? 'A signed-in merchant session is required to upload cashier sales'
-        : String(payload?.error || 'Cashier sale upload failed'),
+        ? 'A signed-in merchant session is required to upload cashier operations'
+        : String(payload?.error || 'Cashier operation upload failed'),
       response.status,
     );
   }
   if (
     payload.operation_id !== input.operationId ||
     Number(payload.device_sequence) !== input.deviceSequence ||
-    !payload.order_id
+    !payload.order_id ||
+    (input.kind !== 'sale' && payload.compensation_kind !== input.kind)
   ) {
     throw new CashierCloudOutboxSyncError(
       'CASHIER_OUTBOX_ACK_INVALID',
@@ -217,7 +257,7 @@ export async function syncCashierOutboxToCloud(): Promise<CashierCloudOutboxSync
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     throw new CashierCloudOutboxSyncError(
       'CASHIER_OUTBOX_OFFLINE',
-      'Internet connection is required to upload pending cashier sales',
+      'Internet connection is required to upload pending cashier operations',
       0,
     );
   }
@@ -240,11 +280,13 @@ export async function syncCashierOutboxToCloud(): Promise<CashierCloudOutboxSync
     let acknowledgedOperations = 0;
 
     for (const operation of operations) {
-      if (!isSaleOperation(operation.envelopes)) {
+      const kind = classifyOperation(operation.envelopes);
+      if (!kind) {
         skippedOperations += 1;
         continue;
       }
-      const result = await uploadSaleOperation({
+      const result = await uploadOperation({
+        kind,
         identity,
         operationId: operation.operationId,
         deviceSequence: operation.deviceSequence,
