@@ -42,6 +42,10 @@ function syncErrorCode(error: unknown): string {
     : '';
 }
 
+function cashierIsOnline(): boolean {
+  return navigator.onLine !== false;
+}
+
 function startCashierPosAutoSync(): () => void {
   let stopped = false;
   let running = false;
@@ -54,7 +58,7 @@ function startCashierPosAutoSync(): () => void {
   ) => {
     if (stopped || running) return;
 
-    if (navigator.onLine === false) {
+    if (!cashierIsOnline()) {
       publishCashierSyncUiState({
         status: 'offline',
         message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
@@ -118,7 +122,7 @@ function startCashierPosAutoSync(): () => void {
       }
     } catch (cause) {
       const code = syncErrorCode(cause);
-      if (navigator.onLine === false) {
+      if (!cashierIsOnline()) {
         publishCashierSyncUiState({
           status: 'offline',
           code,
