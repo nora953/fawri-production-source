@@ -7,23 +7,98 @@ import '@/styles/fawriUiBaseline.css';
 import '@/styles/cashierPos.css';
 import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
 import { installAuthClientCutover } from '@/lib/authClientCutover';
+import { syncCashierOutboxToCloud } from '@/lib/cashierCloudOutboxSync';
+import { syncCashierCatalogFromCloud } from '@/lib/cashierCloudCatalogSync';
+import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 
 const params = new URLSearchParams(window.location.search);
 const diagnosticsRequested = params.get('diagnostics') === '1';
 const diagnostics =
   diagnosticsRequested && import.meta.env.VITE_CASHIER_DIAGNOSTICS === '1';
 const sync = params.get('sync') === '1';
+const demoRequested = params.get('demo') === '1';
 
-// The local POS stays independent from cloud authentication. Diagnostics are
-// internal-only and require an explicit build-time flag so merchant production
-// builds never expose implementation details such as IndexedDB/Service Worker.
-// Provisioning is different: it reads device-bound merchant APIs, so install
-// the same Auth v2 browser transport used by the Fawri dashboard before the
-// sync page can issue any request. This adds the stable X-Fawri-Device-Id that
-// was used when the merchant session was created, without exposing the
-// HttpOnly session credential or making normal cashier operation cloud-bound.
-if (sync) {
+const AUTO_SYNC_INTERVAL_MS = 3_000;
+const AUTO_SYNC_RETRY_BACKOFF_MS = 30_000;
+
+// Installing the Auth v2 transport does not make local POS operation depend on
+// the network. It only equips optional same-origin API calls with the stable
+// device identifier and HttpOnly merchant session when a background/manual
+// sync is attempted. Local browsing, pricing and sale commit remain IndexedDB-first.
+if (!diagnostics) {
   installAuthClientCutover();
+}
+
+function startCashierPosAutoSync(): () => void {
+  let stopped = false;
+  let running = false;
+  let nextAttemptAt = 0;
+
+  const attempt = async (reconcileCatalog = false) => {
+    if (
+      stopped ||
+      running ||
+      navigator.onLine === false ||
+      Date.now() < nextAttemptAt
+    ) {
+      return;
+    }
+
+    running = true;
+    try {
+      const result = await syncCashierOutboxToCloud();
+      const changedCloudState =
+        result.uploaded_operations > 0 || result.replayed_operations > 0;
+
+      if (changedCloudState) {
+        // Orders and inventory are already canonical on the server after ACK.
+        // Tell any open merchant dashboard tabs to refetch their server state.
+        publishCashierDashboardRefresh();
+      }
+
+      if (reconcileCatalog && result.pending_after === 0) {
+        // After reconnecting, refresh the local catalog only after every pending
+        // sale has been accepted/replayed so cloud inventory is authoritative.
+        await syncCashierCatalogFromCloud();
+        publishCashierDashboardRefresh();
+      }
+
+      nextAttemptAt = 0;
+    } catch {
+      // Auto-sync is best-effort only. A missing session, server outage or
+      // network ambiguity must never fail or roll back a locally committed sale.
+      // The durable outbox remains intact for a later automatic/manual retry.
+      nextAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
+    } finally {
+      running = false;
+    }
+  };
+
+  const handleOnline = () => {
+    nextAttemptAt = 0;
+    void attempt(true);
+  };
+  const handleFocus = () => {
+    void attempt(false);
+  };
+
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('focus', handleFocus);
+  const interval = window.setInterval(() => {
+    void attempt(false);
+  }, AUTO_SYNC_INTERVAL_MS);
+
+  // Pick up an operation that may already be pending when the POS is opened.
+  window.setTimeout(() => {
+    void attempt(false);
+  }, 0);
+
+  return () => {
+    stopped = true;
+    window.clearInterval(interval);
+    window.removeEventListener('online', handleOnline);
+    window.removeEventListener('focus', handleFocus);
+  };
 }
 
 document.documentElement.dataset.cashierView = diagnostics
@@ -41,5 +116,12 @@ createRoot(document.getElementById('cashier-root')!).render(
     <CashierPosPage />
   ),
 );
+
+// Demo fixtures intentionally never upload. Real POS tabs keep a small,
+// serialized best-effort sync loop so online sales reach the cloud without a
+// merchant click, while offline sales remain durable until connectivity returns.
+if (!diagnostics && !sync && !demoRequested) {
+  startCashierPosAutoSync();
+}
 
 void registerCashierOfflineAppShell();
