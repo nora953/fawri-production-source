@@ -103,6 +103,52 @@ html[data-cashier-view='pos'] aside > div:last-child > button:last-child {
   height: 2.5rem !important;
 }
 
+/* When automatic/manual sync needs merchant attention, the React button already
+   carries the safe human-readable reason in its title. Surface that reason next
+   to the warning state so the merchant does not have to guess why the button
+   changed colour. This is presentation-only; sync/outbox semantics are untouched. */
+html[data-cashier-view='pos'] header button.bg-amber-500[title] {
+  position: relative;
+  isolation: isolate;
+}
+
+html[data-cashier-view='pos'] header button.bg-amber-500[title]::after {
+  content: attr(title);
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  left: 0;
+  z-index: 30;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 2rem));
+  padding: 0.55rem 0.7rem;
+  border: 1px solid #f59e0b;
+  border-radius: 0.75rem;
+  background: #fffbeb;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 0.12);
+  color: #92400e;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: right;
+  white-space: normal;
+  pointer-events: none;
+}
+
+html[data-cashier-view='pos'] header button.bg-amber-500[title]::before {
+  content: '';
+  position: absolute;
+  top: calc(100% + 0.28rem);
+  left: 1.1rem;
+  z-index: 31;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-top: 1px solid #f59e0b;
+  border-left: 1px solid #f59e0b;
+  background: #fffbeb;
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
 @media (max-width: 1023px) {
   html[data-cashier-view='pos'] aside > div:nth-child(2),
   html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) {
@@ -117,5 +163,15 @@ html[data-cashier-view='pos'] aside > div:last-child > button:last-child {
   html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) {
     height: auto !important;
     min-height: 70px !important;
+  }
+
+  html[data-cashier-view='pos'] header button.bg-amber-500[title]::after {
+    left: auto;
+    right: 0;
+  }
+
+  html[data-cashier-view='pos'] header button.bg-amber-500[title]::before {
+    left: auto;
+    right: 1.1rem;
   }
 }
