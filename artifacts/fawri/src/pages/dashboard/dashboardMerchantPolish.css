@@ -238,4 +238,11 @@
     padding: 0.625rem !important;
     font-size: 1rem !important;
   }
+
+  /* The compact spacing rule above must not push the native order-status select
+   * below its peer payment-status field.
+   */
+  .orders-page-polish .grid.gap-4.md\:grid-cols-2 > label > select {
+    margin-top: 0 !important;
+  }
 }
