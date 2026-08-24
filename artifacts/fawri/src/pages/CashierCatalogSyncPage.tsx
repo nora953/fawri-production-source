@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   CashierCloudCatalogSyncError,
   syncCashierCatalogFromCloud,
@@ -10,201 +10,245 @@ import {
   type CashierCloudOutboxSyncResult,
 } from '@/lib/cashierCloudOutboxSync';
 
-function syncErrorMessage(error: unknown): string {
+type MerchantSyncSummary = {
+  syncedSales: number;
+  products: number;
+  promotions: number;
+  completedAt: Date;
+};
+
+function catalogErrorMessage(error: unknown): string {
   if (error instanceof CashierCloudCatalogSyncError) {
     switch (error.code) {
       case 'CASHIER_CLOUD_SESSION_REQUIRED':
-        return 'يجب تسجيل الدخول بحساب التاجر قبل مزامنة الكتالوج.';
+        return 'يجب تسجيل الدخول إلى حساب التاجر لإكمال المزامنة.';
       case 'CASHIER_CLOUD_OFFLINE':
       case 'CASHIER_CLOUD_NETWORK_FAILED':
-        return 'الاتصال بالإنترنت مطلوب فقط أثناء التهيئة أو تحديث الكتالوج.';
+        return 'لا يوجد اتصال بالإنترنت. يمكنك متابعة البيع ثم المحاولة بعد عودة الاتصال.';
       case 'CASHIER_DEVICE_MERCHANT_MISMATCH':
-        return 'هذا الجهاز مرتبط مسبقًا بمتجر آخر. تم إيقاف المزامنة لمنع خلط بيانات متجرين.';
+        return 'هذا الكاشير مرتبط بمتجر آخر. تواصل مع الدعم إذا كنت تحتاج إلى تغيير المتجر.';
       case 'CASHIER_CLOUD_CURRENCY_NOT_CUT_OVER':
-        return 'عملة هذا المتجر غير مدعومة بعد في مزامنة الكاشير. لم يتم تغيير البيانات المحلية.';
+        return 'عملة هذا المتجر غير مدعومة في الكاشير حاليًا.';
       case 'CASHIER_CLOUD_SKU_AMBIGUOUS':
-        return 'يوجد SKU مكرر في الكتالوج. صححه أولًا حتى لا يختار الكاشير منتجًا خاطئًا.';
+        return 'يوجد SKU مكرر في المنتجات. صححه من صفحة المنتجات ثم أعد المزامنة.';
       case 'CASHIER_CLOUD_BARCODE_AMBIGUOUS':
-        return 'يوجد باركود مكرر في الكتالوج. صححه أولًا حتى لا يختار الكاشير منتجًا خاطئًا.';
+        return 'يوجد باركود مكرر في المنتجات. صححه من صفحة المنتجات ثم أعد المزامنة.';
       case 'CASHIER_CLOUD_TENANT_MISMATCH':
-        return 'تم رفض المزامنة بسبب عدم تطابق هوية التاجر.';
+        return 'تعذر التحقق من المتجر المرتبط بهذا الكاشير. أعد تسجيل الدخول ثم حاول مرة أخرى.';
       default:
-        return 'تعذر مزامنة الكتالوج بأمان. لم يتم اعتماد مزامنة جزئية.';
+        return 'تعذر تحديث بيانات الكاشير. حاول المزامنة مرة أخرى.';
     }
   }
-  return 'تعذر مزامنة الكتالوج بأمان.';
+  return 'تعذر تحديث بيانات الكاشير. حاول المزامنة مرة أخرى.';
 }
 
 function outboxErrorMessage(error: unknown): string {
   if (error instanceof CashierCloudOutboxSyncError) {
     switch (error.code) {
       case 'CASHIER_OUTBOX_SESSION_REQUIRED':
-        return 'يجب تسجيل الدخول بحساب التاجر قبل رفع المبيعات المعلقة.';
+        return 'يجب تسجيل الدخول إلى حساب التاجر لإكمال المزامنة.';
       case 'CASHIER_OUTBOX_OFFLINE':
       case 'CASHIER_OUTBOX_NETWORK_FAILED':
-        return 'تعذر الوصول إلى فوري. بقيت العمليات المعلقة محفوظة محليًا لإعادة المحاولة.';
+        return 'لا يوجد اتصال بالإنترنت. المبيعات محفوظة ويمكنك المحاولة بعد عودة الاتصال.';
       case 'CASHIER_OUTBOX_DEVICE_NOT_BOUND':
       case 'CASHIER_OUTBOX_IDENTITY_MISSING':
-        return 'يجب تهيئة هذا الكاشير من حساب التاجر قبل رفع المبيعات.';
+        return 'يجب ربط هذا الكاشير بحساب التاجر قبل المزامنة.';
       case 'CASHIER_OUTBOX_ACK_INVALID':
-        return 'لم يصل تأكيد كامل وآمن من فوري. لم يتم حذف العملية المحلية.';
+        return 'تعذر تأكيد مزامنة بعض المبيعات. بقيت محفوظة ولم يتم حذفها.';
       default:
-        return 'تعذر رفع المبيعات المعلقة بأمان. بقيت العمليات المحلية محفوظة لإعادة المحاولة.';
+        return 'تعذر مزامنة بعض المبيعات. بقيت محفوظة ويمكنك إعادة المحاولة.';
     }
   }
-  return 'تعذر رفع المبيعات المعلقة بأمان.';
+  return 'تعذر مزامنة بعض المبيعات. بقيت محفوظة ويمكنك إعادة المحاولة.';
+}
+
+function needsInitialBinding(error: unknown): boolean {
+  return (
+    error instanceof CashierCloudOutboxSyncError &&
+    (error.code === 'CASHIER_OUTBOX_DEVICE_NOT_BOUND' ||
+      error.code === 'CASHIER_OUTBOX_IDENTITY_MISSING')
+  );
+}
+
+function formatLastSync(date: Date): string {
+  try {
+    return new Intl.DateTimeFormat('ar-IQ', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    }).format(date);
+  } catch {
+    return date.toLocaleString('ar-IQ');
+  }
 }
 
 export default function CashierCatalogSyncPage() {
   const [running, setRunning] = useState(false);
-  const [result, setResult] = useState<CashierCloudCatalogSyncResult | null>(null);
+  const [online, setOnline] = useState(() => navigator.onLine);
+  const [summary, setSummary] = useState<MerchantSyncSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [outboxRunning, setOutboxRunning] = useState(false);
-  const [outboxResult, setOutboxResult] = useState<CashierCloudOutboxSyncResult | null>(null);
-  const [outboxError, setOutboxError] = useState<string | null>(null);
 
-  const runSync = async () => {
+  useEffect(() => {
+    const updateConnection = () => setOnline(navigator.onLine);
+    window.addEventListener('online', updateConnection);
+    window.addEventListener('offline', updateConnection);
+    return () => {
+      window.removeEventListener('online', updateConnection);
+      window.removeEventListener('offline', updateConnection);
+    };
+  }, []);
+
+  const runMerchantSync = async () => {
     setRunning(true);
     setError(null);
-    setResult(null);
+    setSummary(null);
+
+    let outboxResult: CashierCloudOutboxSyncResult;
+    let catalogResult: CashierCloudCatalogSyncResult;
+
     try {
-      const synced = await syncCashierCatalogFromCloud();
-      setResult(synced);
+      try {
+        outboxResult = await syncCashierOutboxToCloud();
+      } catch (cause) {
+        if (!needsInitialBinding(cause)) throw cause;
+
+        // A new cashier has no cloud binding yet. Provision it once, then run the
+        // same safe sales-first reconciliation and refresh the catalog again so
+        // the merchant ends on the authoritative post-sale inventory state.
+        try {
+          await syncCashierCatalogFromCloud();
+        } catch (catalogCause) {
+          setError(catalogErrorMessage(catalogCause));
+          return;
+        }
+        outboxResult = await syncCashierOutboxToCloud();
+      }
+
+      if (outboxResult.pending_after > 0) {
+        setError(
+          'ما زالت بعض المبيعات بانتظار المزامنة. بقيت محفوظة، ولم يتم تحديث المخزون بعد. حاول مرة أخرى.',
+        );
+        return;
+      }
+
+      try {
+        catalogResult = await syncCashierCatalogFromCloud();
+      } catch (catalogCause) {
+        setError(catalogErrorMessage(catalogCause));
+        return;
+      }
+
+      setSummary({
+        syncedSales:
+          outboxResult.uploaded_operations + outboxResult.replayed_operations,
+        products: catalogResult.product_count,
+        promotions: catalogResult.promotion_count,
+        completedAt: new Date(),
+      });
     } catch (cause) {
-      setError(syncErrorMessage(cause));
+      setError(outboxErrorMessage(cause));
     } finally {
       setRunning(false);
     }
   };
 
-  const runOutboxSync = async () => {
-    setOutboxRunning(true);
-    setOutboxError(null);
-    setOutboxResult(null);
-    try {
-      const synced = await syncCashierOutboxToCloud();
-      setOutboxResult(synced);
-    } catch (cause) {
-      setOutboxError(outboxErrorMessage(cause));
-    } finally {
-      setOutboxRunning(false);
-    }
-  };
-
   return (
     <main className="min-h-screen bg-slate-50 p-3 text-slate-900 sm:h-screen sm:overflow-hidden" dir="rtl">
-      <div className="mx-auto max-w-3xl sm:flex sm:h-full sm:flex-col sm:justify-center">
+      <div className="mx-auto max-w-2xl sm:flex sm:h-full sm:flex-col sm:justify-center">
         <header className="mb-3 flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <div className="flex min-w-0 items-center gap-3">
             <img src="/fawri-logo.svg" alt="Fawri" className="h-9 w-9 shrink-0 object-contain" />
             <div className="min-w-0">
-              <p className="text-xs font-bold text-orange-600">فوري</p>
               <h1 className="text-lg font-bold sm:text-xl">مزامنة الكاشير</h1>
-              <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">رفع المبيعات المعلقة وتحديث نسخة المنتجات والمخزون والعروض.</p>
+              <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
+                حدّث المبيعات والمنتجات والمخزون بين الكاشير وحسابك في فوري.
+              </p>
             </div>
           </div>
-          <a href="/cashier.html" className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <a
+            href="/cashier.html"
+            className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
             العودة للكاشير
           </a>
         </header>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-          <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
-            <strong>كيف تعمل المزامنة؟</strong>
-            <p className="mt-0.5">
-              البيع يبقى محليًا عند انقطاع الشبكة. عند رجوع الاتصال، ارفع المبيعات المعلقة أولًا ثم حدّث الكتالوج للحصول على الحالة السحابية الأحدث.
-            </p>
-          </div>
-
-          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 px-4 py-3">
-              <p className="text-xs text-slate-500">حماية المتجر</p>
-              <p className="mt-0.5 text-sm font-semibold leading-6">الجهاز لا يقبل مزامنة متجر ثانٍ فوق بيانات متجره الحالي.</p>
-            </div>
-            <div className="rounded-xl border border-slate-200 px-4 py-3">
-              <p className="text-xs text-slate-500">حماية عمليات Offline</p>
-              <p className="mt-0.5 text-sm font-semibold leading-6">لا تُحذف عملية محلية إلا بعد قبول فوري للعملية كاملة أو تأكيد أنها قُبلت سابقًا.</p>
-            </div>
-          </div>
-
-          <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div
+            className={`rounded-xl border px-4 py-3 ${
+              online
+                ? 'border-emerald-200 bg-emerald-50'
+                : 'border-amber-200 bg-amber-50'
+            }`}
+          >
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <p className="text-sm font-bold">المبيعات المعلقة</p>
-                <p className="mt-0.5 text-xs leading-5 text-slate-500">ارفع عمليات البيع المحفوظة محليًا قبل تحديث المخزون من السحابة.</p>
+                <p className="text-sm font-bold text-slate-900">
+                  {running
+                    ? 'جارٍ المزامنة...'
+                    : online
+                      ? summary
+                        ? 'تمت المزامنة بنجاح'
+                        : 'جاهز للمزامنة'
+                      : 'لا يوجد اتصال بالإنترنت'}
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">
+                  {online
+                    ? running
+                      ? 'يرجى الانتظار حتى تكتمل العملية.'
+                      : summary
+                        ? 'الكاشير محدث ويمكنك العودة للبيع.'
+                        : 'اضغط مزامنة الآن للحصول على أحدث البيانات.'
+                    : 'يمكنك متابعة البيع، ثم المزامنة عند عودة الاتصال.'}
+                </p>
               </div>
-              <button
-                type="button"
-                disabled={outboxRunning || running}
-                onClick={() => void runOutboxSync()}
-                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-bold ${
+                  online
+                    ? 'bg-white text-emerald-700'
+                    : 'bg-white text-amber-800'
+                }`}
               >
-                {outboxRunning ? 'جارٍ رفع المبيعات...' : 'مزامنة المبيعات المعلقة'}
-              </button>
+                {online ? 'متصل' : 'غير متصل'}
+              </span>
             </div>
-
-            {outboxError ? (
-              <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold leading-5 text-red-700">
-                {outboxError}
-              </div>
-            ) : null}
-
-            {outboxResult ? (
-              <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-900">
-                <strong>تمت معالجة المزامنة بأمان.</strong>
-                <div className="mt-1 grid gap-x-3 sm:grid-cols-4">
-                  <span>معلقات قبل الرفع: {outboxResult.pending_before}</span>
-                  <span>عمليات جديدة: {outboxResult.uploaded_operations}</span>
-                  <span>إعادات آمنة: {outboxResult.replayed_operations}</span>
-                  <span>معلقات بعد الرفع: {outboxResult.pending_after}</span>
-                </div>
-                {outboxResult.skipped_operations > 0 ? (
-                  <p className="mt-1 text-amber-900">بقيت {outboxResult.skipped_operations} عملية غير مدعومة محفوظة محليًا ولم تُحذف.</p>
-                ) : null}
-              </div>
-            ) : null}
           </div>
 
           {error ? (
-            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700">
+            <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold leading-6 text-red-700">
               {error}
             </div>
           ) : null}
 
-          {result ? (
-            <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <strong>تم تحديث الكتالوج المحلي بنجاح.</strong>
-                <a href="/cashier.html" className="inline-flex rounded-xl bg-orange-600 px-4 py-2 font-bold text-white hover:bg-orange-700">
-                  فتح الكاشير
-                </a>
+          {summary ? (
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="grid gap-2 text-sm sm:grid-cols-3">
+                <div>
+                  <p className="text-xs text-slate-500">المبيعات التي تمت مزامنتها</p>
+                  <p className="mt-0.5 font-bold">{summary.syncedSales}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">المنتجات</p>
+                  <p className="mt-0.5 font-bold">{summary.products}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500">العروض</p>
+                  <p className="mt-0.5 font-bold">{summary.promotions}</p>
+                </div>
               </div>
-              <div className="mt-2 grid gap-x-4 gap-y-1 text-xs sm:grid-cols-4 sm:text-sm">
-                <span>منتجات السحابة: {result.product_count}</span>
-                <span>عناصر البيع المحلية: {result.local_item_count}</span>
-                <span>العروض: {result.promotion_count}</span>
-                <span>العملة: {result.currency_code}</span>
-              </div>
-              {result.preserve_local_inventory ? (
-                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-1.5 text-xs leading-5 text-amber-900">
-                  توجد عمليات Offline معلقة، لذلك تم الحفاظ على المخزون المحلي الحالي حتى لا تضيع حركات بيع لم تُرفع بعد.
-                </p>
-              ) : null}
+              <p className="mt-3 border-t border-slate-200 pt-2 text-xs text-slate-500">
+                آخر مزامنة: {formatLastSync(summary.completedAt)}
+              </p>
             </div>
           ) : null}
 
           <button
             type="button"
-            disabled={running || outboxRunning}
-            onClick={() => void runSync()}
-            className="mt-3 h-11 w-full rounded-xl bg-orange-600 text-sm font-bold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+            disabled={running || !online}
+            onClick={() => void runMerchantSync()}
+            className="mt-4 h-12 w-full rounded-xl bg-orange-600 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
-            {running ? 'جارٍ التحقق وتحديث النسخة المحلية...' : 'تهيئة / تحديث الكتالوج من فوري'}
+            {running ? 'جارٍ المزامنة...' : 'مزامنة الآن'}
           </button>
-
-          <p className="mt-2 text-center text-xs leading-5 text-slate-500">
-            لا يتم حذف سجل المبيعات المحلي. المنتجات غير المتاحة في السحابة لا تبقى قابلة للبيع بعد مزامنة ناجحة.
-          </p>
         </section>
       </div>
     </main>
