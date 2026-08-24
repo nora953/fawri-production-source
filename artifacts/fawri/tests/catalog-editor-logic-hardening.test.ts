@@ -245,6 +245,6 @@ test('catalog create/edit workspace is full-screen and responsive', () => {
   assert.match(workspaceSource, /catalogEditorFullscreen\.css/);
   assert.match(fullscreenCss, /height:\s*100dvh/);
   assert.match(fullscreenCss, /max-width:\s*none/);
-  assert.match(fullscreenCss, /grid-template-columns:\s*repeat\(2/);
-  assert.match(fullscreenCss, /@media \(max-width: 900px\)/);
+  assert.match(fullscreenCss, /grid-template-columns:\s*repeat\(12/);
+  assert.match(fullscreenCss, /@media \(max-width: 1000px\)/);
 });
