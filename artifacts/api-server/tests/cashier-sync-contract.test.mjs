@@ -83,12 +83,29 @@ test('browser deletes a local outbox operation only after a complete server ackn
   assert.ok(localAck > entityAckValidation, 'local outbox acknowledgement must happen only after full server ACK');
 });
 
-test('sync UI exposes explicit pending-sale upload without making normal POS cloud-bound', async () => {
+test('cashier keeps one manual sync action and auto-syncs real POS sales while online', async () => {
   const page = await webSource('src/pages/CashierCatalogSyncPage.tsx');
   const entry = await webSource('src/cashierMain.tsx');
 
   assert.match(page, /syncCashierOutboxToCloud/);
-  assert.match(page, /مزامنة المبيعات المعلقة/);
+  assert.match(page, /مزامنة الآن/);
   assert.match(page, /pending_after/);
-  assert.match(entry, /if \(sync\) \{\s*installAuthClientCutover\(\);\s*\}/);
+
+  assert.match(entry, /if \(!diagnostics\) \{\s*installAuthClientCutover\(\);\s*\}/);
+  assert.match(entry, /syncCashierOutboxToCloud/);
+  assert.match(entry, /syncCashierCatalogFromCloud/);
+  assert.match(entry, /publishCashierDashboardRefresh/);
+  assert.match(entry, /window\.addEventListener\('online', handleOnline\)/);
+  assert.match(entry, /window\.setInterval/);
+  assert.match(entry, /AUTO_SYNC_RETRY_BACKOFF_MS/);
+  assert.match(entry, /result\.pending_after === 0/);
+  assert.match(entry, /!diagnostics && !sync && !demoRequested/);
+
+  const upload = entry.indexOf('const result = await syncCashierOutboxToCloud()');
+  const dashboardRefresh = entry.indexOf('publishCashierDashboardRefresh()', upload);
+  const catalogRefresh = entry.indexOf('await syncCashierCatalogFromCloud()', upload);
+
+  assert.ok(upload >= 0, 'normal POS auto-sync must reuse the durable outbox uploader');
+  assert.ok(dashboardRefresh > upload, 'dashboard refresh may only publish after an upload attempt returns');
+  assert.ok(catalogRefresh > dashboardRefresh, 'reconnect reconciliation must happen only after outbox processing');
 });
