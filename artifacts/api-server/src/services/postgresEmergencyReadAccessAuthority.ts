@@ -425,7 +425,7 @@ export async function refreshEmergencyAccessPostgres(now = new Date()) {
     for (const item of active.rows) {
       await client.query(
         `UPDATE emergency_access_requests
-            SET status = 'expired', ended_at = $2::timestamptz,
+            SET status = 'expired', ended_at = expires_at,
                 end_reason = 'duration_expired', updated_at = $2::timestamptz
           WHERE id = $1`,
         [item.id, now.toISOString()],
@@ -440,6 +440,45 @@ export async function refreshEmergencyAccessPostgres(now = new Date()) {
       });
       await createMerchantNotice(client, row);
     }
+
+    // Reconcile rows written by older runtimes that used cleanup time as the
+    // incident end time. The security boundary is expires_at; merchant notices
+    // must report that factual cutoff, not when a later cleanup happened.
+    const reconciled = await client.query<{
+      id: string;
+      merchant_id: string;
+      incident_reference: string;
+    }>(
+      `UPDATE emergency_access_requests
+          SET ended_at = expires_at, updated_at = $1::timestamptz
+        WHERE end_reason = 'duration_expired'
+          AND expires_at IS NOT NULL
+          AND ended_at IS DISTINCT FROM expires_at
+      RETURNING id, merchant_id, incident_reference`,
+      [now.toISOString()],
+    );
+
+    for (const row of reconciled.rows) {
+      await appendAuditEvent(client, {
+        eventType: "emergency_duration_expiry_time_reconciled",
+        requestId: row.id,
+        merchantId: row.merchant_id,
+        incidentReference: row.incident_reference,
+        metadata: {
+          ended_at_source: "expires_at",
+        },
+      });
+    }
+
+    await client.query(
+      `UPDATE emergency_merchant_notices n
+          SET ended_at = r.expires_at
+         FROM emergency_access_requests r
+        WHERE n.request_id = r.id
+          AND r.end_reason = 'duration_expired'
+          AND r.expires_at IS NOT NULL
+          AND n.ended_at IS DISTINCT FROM r.expires_at`,
+    );
 
     return {
       pending_expired: pending.rowCount || 0,
