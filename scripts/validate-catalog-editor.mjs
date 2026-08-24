@@ -44,6 +44,11 @@ const steps = [
     args: ['--filter', '@workspace/api-server', 'run', 'typecheck'],
   },
   {
+    label: 'API production build',
+    command: 'pnpm',
+    args: ['--filter', '@workspace/api-server', 'run', 'build'],
+  },
+  {
     label: 'Fawri production build',
     command: 'pnpm',
     args: ['--filter', '@workspace/fawri', 'run', 'build'],
