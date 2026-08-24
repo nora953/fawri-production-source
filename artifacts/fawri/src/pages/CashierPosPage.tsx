@@ -338,6 +338,8 @@ export default function CashierPosPage() {
   );
 
   const syncDisabled = !online || syncUiState.status === 'syncing';
+  const syncNeedsAttention =
+    syncUiState.status === 'needs_attention' && Boolean(syncUiState.message);
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-[100dvh] lg:overflow-hidden" dir="rtl">
@@ -350,23 +352,34 @@ export default function CashierPosPage() {
               {demoMode ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">وضع اختبار</span> : null}
             </div>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
-              {online ? 'متصل' : 'غير متصل'}
-            </span>
-            <a href="/cashier.html?history=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
-              سجل المبيعات
-            </a>
-            <button
-              type="button"
-              onClick={requestCashierSync}
-              disabled={syncDisabled}
-              title={syncUiState.message || 'مزامنة عمليات الكاشير والمنتجات'}
-              aria-live="polite"
-              className={syncButtonClassName(syncUiState)}
-            >
-              {syncButtonLabel(syncUiState)}
-            </button>
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-2 text-sm">
+              <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+                {online ? 'متصل' : 'غير متصل'}
+              </span>
+              <a href="/cashier.html?history=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
+                سجل المبيعات
+              </a>
+              <button
+                type="button"
+                onClick={requestCashierSync}
+                disabled={syncDisabled}
+                aria-live="polite"
+                aria-describedby={syncNeedsAttention ? 'cashier-sync-message' : undefined}
+                className={syncButtonClassName(syncUiState)}
+              >
+                {syncButtonLabel(syncUiState)}
+              </button>
+            </div>
+            {syncNeedsAttention ? (
+              <p
+                id="cashier-sync-message"
+                role="status"
+                className="max-w-[430px] rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-right text-xs font-medium leading-5 text-amber-800"
+              >
+                {syncUiState.message}
+              </p>
+            ) : null}
           </div>
         </header>
 
