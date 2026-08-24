@@ -33,6 +33,19 @@ const steps = [
       'artifacts/api-server/tests/catalog-variant-signature-guard-static.test.mjs',
     ],
   },
+  ...(process.env.DATABASE_URL
+    ? [{
+        label: 'PostgreSQL catalog readiness (read only)',
+        command: 'pnpm',
+        args: [
+          '--dir',
+          'lib/db',
+          'exec',
+          'node',
+          './scripts/catalog-variant-signature-readiness.mjs',
+        ],
+      }]
+    : []),
   {
     label: 'Fawri typecheck',
     command: 'pnpm',
