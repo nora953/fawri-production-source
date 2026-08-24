@@ -8,13 +8,15 @@ html[data-cashier-view='pos'] aside > div:nth-child(2) {
 
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) {
   display: grid !important;
-  grid-template-rows: minmax(98px, 1fr) 70px;
+  grid-template-rows: minmax(128px, 1fr) 70px;
   gap: 0.5rem !important;
-  overflow: hidden !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior-y: contain;
 }
 
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:first-child {
-  min-height: 98px !important;
+  min-height: 128px !important;
   overflow: hidden !important;
 }
 
