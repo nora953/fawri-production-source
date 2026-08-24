@@ -27,6 +27,7 @@ on:
       - "artifacts/api-server/tests/bot-catalog-authority.test.ts"
       - "lib/db/drizzle/0012_catalog_variant_signature_guard.sql"
       - "lib/db/drizzle/meta/_journal.json"
+      - "lib/db/scripts/catalog-variant-signature-readiness.mjs"
       - "scripts/validate-catalog-editor.mjs"
       - ".github/workflows/product-catalog-ui-cutover.yml"
   workflow_dispatch:
