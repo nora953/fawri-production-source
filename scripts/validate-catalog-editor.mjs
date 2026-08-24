@@ -7,6 +7,8 @@ const steps = [
     args: [
       'exec',
       'tsx',
+      '--tsconfig',
+      'artifacts/fawri/tsconfig.json',
       '--test',
       'artifacts/fawri/tests/product-catalog-ui-cutover.test.ts',
       'artifacts/fawri/tests/catalog-editor-logic-hardening.test.ts',
