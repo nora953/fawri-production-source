@@ -67,23 +67,25 @@ test('browser deletes a local outbox operation only after a complete server ackn
   const source = await webSource('src/lib/cashierCloudOutboxSync.ts');
 
   assert.match(source, /listPendingSync\(MAX_PENDING_ENVELOPES\)/);
-  assert.match(source, /fetch\('\/api\/cashier\/sync\/sale'/);
+  assert.match(source, /'\/api\/cashier\/sync\/sale'/);
+  assert.match(source, /'\/api\/cashier\/sync\/compensation'/);
+  assert.match(source, /response = await fetch\(endpoint/);
   assert.match(source, /accepted_entity_ids/);
   assert.match(source, /CASHIER_OUTBOX_ACK_INVALID/);
   assert.match(source, /acknowledgeSynced\(\[operation\.operationId\]\)/);
 
-  const fetchCall = source.indexOf("fetch('/api/cashier/sync/sale'");
-  const responseAccepted = source.indexOf("payload?.ok !== true", fetchCall);
+  const fetchCall = source.indexOf('response = await fetch(endpoint');
+  const responseAccepted = source.indexOf('payload?.ok !== true', fetchCall);
   const entityAckValidation = source.indexOf('acceptedEntityIds.size !== expectedEntityIds.size', responseAccepted);
   const localAck = source.indexOf('acknowledgeSynced([operation.operationId])');
 
-  assert.ok(fetchCall >= 0, 'outbox uploader must call the cashier sale endpoint');
+  assert.ok(fetchCall >= 0, 'outbox uploader must call the selected cashier sync endpoint');
   assert.ok(responseAccepted > fetchCall, 'server success must be checked after upload');
   assert.ok(entityAckValidation > responseAccepted, 'complete entity acknowledgement must be verified');
   assert.ok(localAck > entityAckValidation, 'local outbox acknowledgement must happen only after full server ACK');
 });
 
-test('cashier keeps one manual sync action and auto-syncs real POS sales while online', async () => {
+test('cashier keeps one manual sync action and auto-syncs real POS operations while online', async () => {
   const page = await webSource('src/pages/CashierCatalogSyncPage.tsx');
   const entry = await webSource('src/cashierMain.tsx');
 
