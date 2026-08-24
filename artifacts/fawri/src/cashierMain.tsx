@@ -11,6 +11,11 @@ import { installAuthClientCutover } from '@/lib/authClientCutover';
 import { syncCashierOutboxToCloud } from '@/lib/cashierCloudOutboxSync';
 import { syncCashierCatalogFromCloud } from '@/lib/cashierCloudCatalogSync';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
+import {
+  getCashierSyncUiState,
+  publishCashierSyncUiState,
+  subscribeCashierSyncRequests,
+} from '@/lib/cashierSyncUiState';
 
 const params = new URLSearchParams(window.location.search);
 const diagnosticsRequested = params.get('diagnostics') === '1';
@@ -31,22 +36,42 @@ if (!diagnostics) {
   installAuthClientCutover();
 }
 
+function syncErrorCode(error: unknown): string {
+  return typeof error === 'object' && error && 'code' in error
+    ? String((error as { code?: unknown }).code || '')
+    : '';
+}
+
 function startCashierPosAutoSync(): () => void {
   let stopped = false;
   let running = false;
   let nextAttemptAt = 0;
 
-  const attempt = async (reconcileCatalog = false) => {
-    if (
-      stopped ||
-      running ||
-      navigator.onLine === false ||
-      Date.now() < nextAttemptAt
-    ) {
+  const attempt = async (
+    reconcileCatalog = false,
+    force = false,
+    visible = false,
+  ) => {
+    if (stopped || running) return;
+
+    if (navigator.onLine === false) {
+      publishCashierSyncUiState({
+        status: 'offline',
+        message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
+      });
       return;
     }
 
+    if (!force && Date.now() < nextAttemptAt) return;
+
     running = true;
+    if (visible) {
+      publishCashierSyncUiState({
+        status: 'syncing',
+        message: 'جارٍ مزامنة عمليات الكاشير.',
+      });
+    }
+
     try {
       const result = await syncCashierOutboxToCloud();
       const changedCloudState =
@@ -59,17 +84,56 @@ function startCashierPosAutoSync(): () => void {
       }
 
       if (reconcileCatalog && result.pending_after === 0) {
-        // After reconnecting, refresh the local catalog only after every pending
-        // operation has been accepted/replayed so cloud inventory is authoritative.
+        // After reconnecting or an explicit merchant sync, refresh the local
+        // catalog only after every pending operation has been accepted/replayed.
         await syncCashierCatalogFromCloud();
         publishCashierDashboardRefresh();
       }
 
       nextAttemptAt = 0;
-    } catch {
-      // Auto-sync is best-effort only. A missing session, server outage or
-      // network ambiguity must never fail or roll back a locally committed
-      // sale/return/void. The durable outbox remains intact for a later retry.
+
+      if (result.pending_after > 0) {
+        publishCashierSyncUiState({
+          status: 'needs_attention',
+          pending: result.pending_after,
+          message: 'بعض عمليات الكاشير ما زالت بانتظار المزامنة. اضغط للمحاولة مرة أخرى.',
+        });
+      } else {
+        const shouldAnnounceSuccess =
+          visible || getCashierSyncUiState().status === 'needs_attention';
+        if (shouldAnnounceSuccess) {
+          publishCashierSyncUiState({
+            status: 'synced',
+            pending: 0,
+            message: 'تمت المزامنة بنجاح.',
+          });
+          window.setTimeout(() => {
+            if (getCashierSyncUiState().status === 'synced') {
+              publishCashierSyncUiState({ status: 'idle', pending: 0 });
+            }
+          }, 2_500);
+        } else if (getCashierSyncUiState().status !== 'idle') {
+          publishCashierSyncUiState({ status: 'idle', pending: 0 });
+        }
+      }
+    } catch (cause) {
+      const code = syncErrorCode(cause);
+      if (navigator.onLine === false) {
+        publishCashierSyncUiState({
+          status: 'offline',
+          code,
+          message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
+        });
+      } else {
+        publishCashierSyncUiState({
+          status: 'needs_attention',
+          code,
+          message:
+            code === 'CASHIER_OUTBOX_SESSION_REQUIRED'
+              ? 'انتهت جلسة التاجر. سجّل الدخول ثم اضغط المزامنة.'
+              : 'تعذر إكمال المزامنة التلقائية. اضغط للمحاولة مرة أخرى.',
+        });
+      }
       nextAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
     } finally {
       running = false;
@@ -78,27 +142,40 @@ function startCashierPosAutoSync(): () => void {
 
   const handleOnline = () => {
     nextAttemptAt = 0;
-    void attempt(true);
+    void attempt(true, true, true);
+  };
+  const handleOffline = () => {
+    publishCashierSyncUiState({
+      status: 'offline',
+      message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
+    });
   };
   const handleFocus = () => {
-    void attempt(false);
+    void attempt(false, false, false);
   };
+  const unsubscribeManualRequest = subscribeCashierSyncRequests(() => {
+    nextAttemptAt = 0;
+    void attempt(true, true, true);
+  });
 
   window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
   window.addEventListener('focus', handleFocus);
   const interval = window.setInterval(() => {
-    void attempt(false);
+    void attempt(false, false, false);
   }, AUTO_SYNC_INTERVAL_MS);
 
   // Pick up an operation that may already be pending when the cashier is opened.
   window.setTimeout(() => {
-    void attempt(false);
+    void attempt(false, false, false);
   }, 0);
 
   return () => {
     stopped = true;
     window.clearInterval(interval);
+    unsubscribeManualRequest();
     window.removeEventListener('online', handleOnline);
+    window.removeEventListener('offline', handleOffline);
     window.removeEventListener('focus', handleFocus);
   };
 }
