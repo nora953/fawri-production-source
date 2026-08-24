@@ -23,7 +23,8 @@
 
 .products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) {
   display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-auto-flow: row dense;
   align-content: start;
   gap: 1.25rem !important;
   width: min(100%, 1500px);
@@ -34,18 +35,46 @@
 .products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > * {
   min-width: 0;
   margin: 0 !important;
+  grid-column: 1 / -1;
 }
 
+/* Item type / Product details stay wide because they drive the form. */
 .products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(1),
 .products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(4),
 .products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(5) {
   grid-column: 1 / -1;
 }
 
+/* Name and category are a natural pair. */
+.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(2) {
+  grid-column: span 6;
+}
+.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(3) {
+  grid-column: span 6;
+}
+
+/* Media deserves room; status remains visible beside it on desktop. */
+.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(6) {
+  grid-column: span 8;
+}
+.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(7) {
+  grid-column: span 4;
+}
+
+/* Description and Fawri-usage control form the final decision row. */
+.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(8) {
+  grid-column: span 8;
+}
+.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(9) {
+  grid-column: span 4;
+  align-self: stretch;
+}
+
 .products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:last-child {
   display: flex;
   justify-content: flex-end;
   padding-inline: clamp(1rem, 3vw, 2.5rem) !important;
+  padding-block: 0.8rem !important;
   background: hsl(var(--background));
 }
 
@@ -53,7 +82,7 @@
   width: min(100%, 440px) !important;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1000px) {
   .products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) {
     grid-template-columns: minmax(0, 1fr);
   }
