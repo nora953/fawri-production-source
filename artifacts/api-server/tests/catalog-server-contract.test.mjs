@@ -60,14 +60,34 @@ test("catalog inventory routes preserve PostgreSQL authority, version, and varia
   assert.match(source, /idempotencyKey: idempotencyKey\(req\)/);
 });
 
-test("catalog runtime does not persist embedded image payloads or invent upload authority", () => {
-  const source = read("api-server/src/services/catalogInventoryRuntime.ts");
-  const page = read("fawri/src/pages/dashboard/CommerceCatalogPage.tsx");
-  assert.match(source, /CATALOG_IMAGE_BINARY_FORBIDDEN/);
-  assert.match(source, /data:|base64|blob:/);
-  assert.match(source, /image_refs/);
-  assert.doesNotMatch(page, /FileReader|FormData|createObjectURL|Cloudinary|S3/);
-  assert.match(page, /imageReferenceOnly/);
+test("catalog media upload is canonical, tenant-scoped, and binary-safe", () => {
+  const runtime = read("api-server/src/services/catalogInventoryRuntime.ts");
+  const route = read("api-server/src/routes/catalog-operations.ts");
+  const storage = read("api-server/src/services/catalogMediaStorage.ts");
+  const mediaUi = read("fawri/src/lib/catalogMediaUiApi.ts");
+  const editor = read("fawri/src/components/catalog/CatalogImageUploadEditor.tsx");
+
+  assert.match(runtime, /CATALOG_IMAGE_BINARY_FORBIDDEN/);
+  assert.match(runtime, /lower\.startsWith\("data:"\)/);
+  assert.match(runtime, /lower\.startsWith\("blob:"\)/);
+  assert.match(runtime, /image_refs/);
+
+  assert.match(route, /\/catalog\/media\/images/);
+  assert.match(route, /storeCatalogImage/);
+  assert.match(route, /readCatalogImage/);
+
+  assert.match(storage, /merchantStoragePrefix/);
+  assert.match(storage, /detectCatalogImageMime/);
+  assert.match(storage, /CATALOG_IMAGE_TYPE_MISMATCH/);
+  assert.match(storage, /CATALOG_MEDIA_ACCESS_FORBIDDEN/);
+
+  assert.match(mediaUi, /uploadCatalogImage/);
+  assert.match(mediaUi, /body:\s*file/);
+  assert.doesNotMatch(mediaUi, /FileReader|FormData|createObjectURL/);
+
+  assert.match(editor, /uploadCatalogImage\(file\)/);
+  assert.match(editor, /storage_key:\s*asset\.storage_key/);
+  assert.doesNotMatch(editor, /FileReader|FormData|createObjectURL/);
 });
 
 test("variant-managed product stock remains derived from variant stock", () => {
