@@ -239,10 +239,12 @@
     font-size: 1rem !important;
   }
 
-  /* The compact spacing rule above must not push the native order-status select
-   * below its peer payment-status field.
+  /* Only the order-status select is visually lower than the payment-status box
+   * because of native select rendering. Move that control up to the exact peer
+   * baseline without moving either label or the payment field.
    */
   .orders-page-polish .grid.gap-4.md\:grid-cols-2 > label > select {
     margin-top: 0 !important;
+    transform: translateY(-10px);
   }
 }
