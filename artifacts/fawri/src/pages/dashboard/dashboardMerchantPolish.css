@@ -119,8 +119,8 @@
     height: 100%;
     min-height: 0 !important;
     overflow: hidden;
-    padding: 0.875rem !important;
-    padding-bottom: 0.875rem !important;
+    padding: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
   }
 
   .orders-page-polish > div > div {
@@ -128,7 +128,7 @@
     height: 100%;
     min-height: 0;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.625rem;
   }
 
   .orders-page-polish > div > div > .grid {
@@ -136,7 +136,7 @@
     min-height: 0 !important;
     height: auto !important;
     flex: 1 1 auto;
-    gap: 0.75rem !important;
+    gap: 0.625rem !important;
     overflow: hidden;
   }
 
@@ -151,23 +151,63 @@
     flex-direction: column;
   }
 
+  .orders-page-polish > div > div > .grid > :first-child > div:first-child {
+    padding: 0.75rem !important;
+  }
+
   .orders-page-polish > div > div > .grid > :first-child > div:last-child {
     min-height: 0;
     max-height: none !important;
     flex: 1 1 auto;
     overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .orders-page-polish > div > div > .grid > :first-child > div:last-child::-webkit-scrollbar {
+    display: none;
   }
 
   .orders-page-polish > div > div > .grid > :last-child {
     min-height: 0;
     overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .orders-page-polish > div > div > .grid > :last-child::-webkit-scrollbar {
+    display: none;
+  }
+
+  .orders-page-polish > div > div > .grid > :last-child > div:first-child {
+    padding: 0.75rem 1rem !important;
   }
 
   .orders-page-polish .space-y-6 > :not([hidden]) ~ :not([hidden]) {
-    margin-top: 0.75rem !important;
+    margin-top: 0.5rem !important;
   }
 
   .orders-page-polish .p-5 {
-    padding: 0.875rem !important;
+    padding: 0.75rem !important;
+  }
+
+  .orders-page-polish .grid.gap-3.sm\:grid-cols-3 {
+    gap: 0.5rem !important;
+  }
+
+  .orders-page-polish .grid.gap-3.sm\:grid-cols-3 > div {
+    padding: 0.625rem !important;
+  }
+
+  .orders-page-polish .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.375rem !important;
+  }
+
+  .orders-page-polish .mt-3.flex.justify-between.rounded-xl {
+    margin-top: 0.5rem !important;
+    padding: 0.75rem !important;
+    font-size: 1rem !important;
+  }
+
+  .orders-page-polish .grid.gap-4.md\:grid-cols-2 {
+    gap: 0.625rem !important;
   }
 }
