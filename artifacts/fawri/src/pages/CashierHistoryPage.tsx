@@ -82,7 +82,7 @@ function saleState(sale: CashierSaleSnapshot): {
   className: string;
 } {
   if (sale.status === 'voided' || sale.void) {
-    return { label: 'ملغي', className: 'bg-red-50 text-red-700 border-red-200' };
+    return { label: 'ملغى', className: 'bg-red-50 text-red-700 border-red-200' };
   }
   const sold = sale.lines.reduce((sum, line) => sum + line.quantity, 0);
   const returned = totalReturnedQuantity(sale);
@@ -90,7 +90,7 @@ function saleState(sale: CashierSaleSnapshot): {
     return { label: 'مرتجع بالكامل', className: 'bg-amber-50 text-amber-800 border-amber-200' };
   }
   if (returned > 0) {
-    return { label: 'مرتجع جزئيًا', className: 'bg-amber-50 text-amber-800 border-amber-200' };
+    return { label: 'مرتجع جزئي', className: 'bg-amber-50 text-amber-800 border-amber-200' };
   }
   return { label: 'مكتمل', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
 }
@@ -261,12 +261,12 @@ export default function CashierHistoryPage() {
       });
       setReturnDraft({});
       setConfirmAction(null);
-      setNotice('تم تسجيل الإرجاع.');
+      setNotice('تم الإرجاع.');
       await refresh(runtime);
       void syncAfterLocalChange(runtime);
     } catch {
       setConfirmAction(null);
-      setError('تعذر تنفيذ الإرجاع. راجع الكميات وحاول مرة أخرى.');
+      setError('تعذر الإرجاع. تحقق من الكمية وحاول مجددًا.');
     } finally {
       setBusy(false);
     }
@@ -287,7 +287,7 @@ export default function CashierHistoryPage() {
       void syncAfterLocalChange(runtime);
     } catch {
       setConfirmAction(null);
-      setError('تعذر إلغاء البيع. قد تكون عليه عملية إرجاع سابقة.');
+      setError('تعذر إلغاء البيع.');
     } finally {
       setBusy(false);
     }
@@ -314,7 +314,7 @@ export default function CashierHistoryPage() {
             <img src="/fawri-logo.svg" alt="Fawri" className="h-10 w-10 object-contain" />
             <div>
               <h1 className="text-xl font-bold">سجل الكاشير</h1>
-              <p className="mt-0.5 text-xs text-slate-500">راجع مبيعات الكاشير والإرجاعات والإلغاءات.</p>
+              <p className="mt-0.5 text-xs text-slate-500">راجع المبيعات والإرجاعات والإلغاءات.</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm">
@@ -330,8 +330,8 @@ export default function CashierHistoryPage() {
         {authRequired ? (
           <div className="mb-3 shrink-0 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <div>
-              <strong className="block">تحتاج المزامنة إلى تسجيل الدخول</strong>
-              <span className="text-amber-800">عملياتك محفوظة على الجهاز وستُرفع تلقائيًا بعد تسجيل الدخول.</span>
+              <strong className="block">سجّل الدخول للمزامنة</strong>
+              <span className="text-amber-800">عملياتك محفوظة وستتم مزامنتها بعد تسجيل الدخول.</span>
             </div>
             <a href="/login" className="rounded-xl bg-slate-900 px-4 py-2 font-bold text-white">تسجيل الدخول</a>
           </div>
@@ -339,7 +339,7 @@ export default function CashierHistoryPage() {
 
         {!online ? (
           <div className="mb-3 shrink-0 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-            أنت غير متصل بالإنترنت. يمكنك مراجعة السجل وإجراء الإرجاع أو الإلغاء، وستتم المزامنة تلقائيًا عند عودة الاتصال.
+            غير متصل. يمكنك الاستمرار، وستتم المزامنة عند عودة الاتصال.
           </div>
         ) : null}
 
@@ -361,7 +361,7 @@ export default function CashierHistoryPage() {
             <div className="p-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
               {loading ? <div className="p-6 text-center text-sm text-slate-500">جارٍ تحميل السجل...</div> : null}
               {!loading && sales.length === 0 ? (
-                <div className="p-8 text-center text-sm text-slate-500">لا توجد مبيعات مسجلة بعد.</div>
+                <div className="p-8 text-center text-sm text-slate-500">لا توجد مبيعات بعد.</div>
               ) : null}
               {sales.map(sale => {
                 const state = saleState(sale);
@@ -384,7 +384,7 @@ export default function CashierHistoryPage() {
                     <div className="flex items-end justify-between gap-3">
                       <strong>{formatMoney(sale.total_minor, sale.currency_code, sale.currency_fraction_digits)}</strong>
                       <span className={`text-xs font-semibold ${pending ? 'text-amber-700' : 'text-emerald-700'}`}>
-                        {pending ? (online ? 'بانتظار المزامنة' : 'محفوظ محليًا') : 'متزامن'}
+                        {pending ? (online ? 'بانتظار المزامنة' : 'محفوظ على الجهاز') : 'متزامن'}
                       </span>
                     </div>
                   </button>
@@ -395,7 +395,7 @@ export default function CashierHistoryPage() {
 
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:overflow-y-auto">
             {!selectedSale ? (
-              <div className="flex min-h-[420px] items-center justify-center p-8 text-center text-sm text-slate-500">اختر عملية بيع لعرض التفاصيل.</div>
+              <div className="flex min-h-[420px] items-center justify-center p-8 text-center text-sm text-slate-500">اختر عملية لعرض التفاصيل.</div>
             ) : (
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-4">
@@ -404,7 +404,7 @@ export default function CashierHistoryPage() {
                       <h2 className="text-lg font-bold">تفاصيل البيع</h2>
                       <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${saleState(selectedSale).className}`}>{saleState(selectedSale).label}</span>
                       <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${selectedPending ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
-                        {selectedPending ? (online ? 'بانتظار المزامنة' : 'محفوظ محليًا') : 'متزامن'}
+                        {selectedPending ? (online ? 'بانتظار المزامنة' : 'محفوظ على الجهاز') : 'متزامن'}
                       </span>
                     </div>
                     <p className="text-xs text-slate-500">عملية بيع #{saleReference(selectedSale.sale_id)}</p>
@@ -422,7 +422,7 @@ export default function CashierHistoryPage() {
                   </div>
                   <div className="rounded-xl bg-slate-50 px-3 py-2.5">
                     <span className="block text-xs text-slate-500">حالة الدفع</span>
-                    <strong className="mt-1 block text-sm">{selectedSale.payment_status === 'paid' ? 'مدفوع' : selectedSale.payment_status === 'pending' ? 'معلّق' : 'فشل'}</strong>
+                    <strong className="mt-1 block text-sm">{selectedSale.payment_status === 'paid' ? 'مدفوع' : selectedSale.payment_status === 'pending' ? 'معلق' : 'فشل'}</strong>
                   </div>
                   <div className="rounded-xl bg-slate-50 px-3 py-2.5">
                     <span className="block text-xs text-slate-500">عدد العناصر</span>
@@ -434,7 +434,7 @@ export default function CashierHistoryPage() {
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <h3 className="font-bold">المنتجات</h3>
                     {returnableLines.length > 0 ? (
-                      <button type="button" onClick={selectAllReturnable} className="text-xs font-bold text-orange-600 hover:text-orange-700">تحديد الكمية المتاحة للإرجاع</button>
+                      <button type="button" onClick={selectAllReturnable} className="text-xs font-bold text-orange-600 hover:text-orange-700">إرجاع الكل</button>
                     ) : null}
                   </div>
 
@@ -487,13 +487,13 @@ export default function CashierHistoryPage() {
 
                   {selectedFullyReturned ? (
                     <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
-                      تم إرجاع كامل هذا البيع.
+                      تم إرجاع البيع بالكامل.
                     </div>
                   ) : null}
 
                   {selectedSale.void ? (
                     <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                      <strong>تم إلغاء هذا البيع</strong>
+                      <strong>تم إلغاء البيع</strong>
                       <span className="mt-1 block text-xs">{formatDate(selectedSale.void.occurred_at)} · {formatMoney(selectedSale.void.refund_total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</span>
                     </div>
                   ) : null}
@@ -504,12 +504,12 @@ export default function CashierHistoryPage() {
                         {requestedReturnLines.length > 0 ? (
                           <span className="text-sm text-slate-600">قيمة الإرجاع: <strong className="text-slate-900">{formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong></span>
                         ) : (
-                          <span className="text-xs text-slate-500">حدد الكمية التي تريد إرجاعها.</span>
+                          <span className="text-xs text-slate-500">حدد الكمية للإرجاع.</span>
                         )}
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {canVoid ? (
-                          <button type="button" onClick={() => setConfirmAction('void')} disabled={busy} className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-50">إلغاء البيع بالكامل</button>
+                          <button type="button" onClick={() => setConfirmAction('void')} disabled={busy} className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-50">إلغاء البيع</button>
                         ) : null}
                         <button type="button" onClick={() => setConfirmAction('return')} disabled={busy || requestedReturnLines.length === 0} className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40">إرجاع المحدد</button>
                       </div>
@@ -525,11 +525,11 @@ export default function CashierHistoryPage() {
       {confirmAction && selectedSale ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" dir="rtl">
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
-            <h3 className="text-lg font-bold">{confirmAction === 'void' ? 'تأكيد إلغاء البيع' : 'تأكيد الإرجاع'}</h3>
+            <h3 className="text-lg font-bold">{confirmAction === 'void' ? 'تأكيد الإلغاء' : 'تأكيد الإرجاع'}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {confirmAction === 'void'
-                ? 'سيتم إلغاء البيع بالكامل وإعادة مخزونه. لا يمكن إلغاء بيع بعد تنفيذ إرجاع جزئي عليه.'
-                : `سيتم إرجاع العناصر المحددة بقيمة ${formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits)}.`}
+                ? 'سيتم إلغاء البيع وإعادة الكمية إلى المخزون.'
+                : `سيتم إرجاع المحدد بقيمة ${formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits)}.`}
             </p>
             <div className="mt-5 flex gap-2">
               <button type="button" onClick={() => setConfirmAction(null)} disabled={busy} className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700">رجوع</button>
