@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 import {
+  buildCatalogVariantCombinations,
   catalogVariantCombinationCount,
   catalogVariantOptionSetsFromVariants,
   createCatalogVariantOptionSetDraft,
@@ -32,6 +33,21 @@ test('option sets generate the cartesian variant matrix', () => {
     variants[0].options.map(option => [option.name, option.value]),
     [['Color', 'Black'], ['Size', 'S']],
   );
+});
+
+test('duplicate option-set names and values fail closed before combinations are emitted', () => {
+  const duplicateNames = [
+    createCatalogVariantOptionSetDraft('Color', ['Black']),
+    createCatalogVariantOptionSetDraft('color', ['Blue']),
+  ];
+  assert.equal(catalogVariantCombinationCount(duplicateNames), 0);
+  assert.deepEqual(buildCatalogVariantCombinations(duplicateNames), []);
+
+  const duplicateValues = [
+    createCatalogVariantOptionSetDraft('Size', ['M', 'm']),
+  ];
+  assert.equal(catalogVariantCombinationCount(duplicateValues), 0);
+  assert.deepEqual(buildCatalogVariantCombinations(duplicateValues), []);
 });
 
 test('matching generated combinations preserve canonical variant identity and merchant overrides', () => {
