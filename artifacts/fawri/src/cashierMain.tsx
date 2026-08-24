@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import CashierCatalogSyncPage from '@/pages/CashierCatalogSyncPage';
+import CashierHistoryPage from '@/pages/CashierHistoryPage';
 import CashierLocalShellPage from '@/pages/CashierLocalShellPage';
 import CashierPosPage from '@/pages/CashierPosPage';
 import '@/index.css';
@@ -16,6 +17,7 @@ const diagnosticsRequested = params.get('diagnostics') === '1';
 const diagnostics =
   diagnosticsRequested && import.meta.env.VITE_CASHIER_DIAGNOSTICS === '1';
 const sync = params.get('sync') === '1';
+const history = params.get('history') === '1';
 const demoRequested = params.get('demo') === '1';
 
 const AUTO_SYNC_INTERVAL_MS = 3_000;
@@ -58,7 +60,7 @@ function startCashierPosAutoSync(): () => void {
 
       if (reconcileCatalog && result.pending_after === 0) {
         // After reconnecting, refresh the local catalog only after every pending
-        // sale has been accepted/replayed so cloud inventory is authoritative.
+        // operation has been accepted/replayed so cloud inventory is authoritative.
         await syncCashierCatalogFromCloud();
         publishCashierDashboardRefresh();
       }
@@ -66,8 +68,8 @@ function startCashierPosAutoSync(): () => void {
       nextAttemptAt = 0;
     } catch {
       // Auto-sync is best-effort only. A missing session, server outage or
-      // network ambiguity must never fail or roll back a locally committed sale.
-      // The durable outbox remains intact for a later automatic/manual retry.
+      // network ambiguity must never fail or roll back a locally committed
+      // sale/return/void. The durable outbox remains intact for a later retry.
       nextAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
     } finally {
       running = false;
@@ -88,7 +90,7 @@ function startCashierPosAutoSync(): () => void {
     void attempt(false);
   }, AUTO_SYNC_INTERVAL_MS);
 
-  // Pick up an operation that may already be pending when the POS is opened.
+  // Pick up an operation that may already be pending when the cashier is opened.
   window.setTimeout(() => {
     void attempt(false);
   }, 0);
@@ -105,21 +107,26 @@ document.documentElement.dataset.cashierView = diagnostics
   ? 'diagnostics'
   : sync
     ? 'sync'
-    : 'pos';
+    : history
+      ? 'history'
+      : 'pos';
 
 createRoot(document.getElementById('cashier-root')!).render(
   diagnostics ? (
     <CashierLocalShellPage />
   ) : sync ? (
     <CashierCatalogSyncPage />
+  ) : history ? (
+    <CashierHistoryPage />
   ) : (
     <CashierPosPage />
   ),
 );
 
-// Demo fixtures intentionally never upload. Real POS tabs keep a small,
-// serialized best-effort sync loop so online sales reach the cloud without a
-// merchant click, while offline sales remain durable until connectivity returns.
+// Demo fixtures intentionally never upload. Real cashier operational views keep
+// a small serialized best-effort sync loop so online operations reach the cloud
+// without a merchant click, while offline operations remain durable until
+// connectivity or an authenticated merchant session returns.
 if (!diagnostics && !sync && !demoRequested) {
   startCashierPosAutoSync();
 }
