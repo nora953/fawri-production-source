@@ -45,7 +45,6 @@ type OriginalSale = {
   currency_fraction_digits: 0;
   total_minor: number;
   lines: OriginalSaleLine[];
-  [key: string]: unknown;
 };
 
 type ReturnLine = {
@@ -114,7 +113,6 @@ type ValidatedCompensationBundle = {
   occurredAt: string;
   returnSnapshot?: ReturnSnapshot;
   voidSnapshot?: VoidSnapshot;
-  voidSalePayload?: Record<string, unknown>;
   movements: Map<string, CompensationMovement>;
   envelopes: CashierEnvelope[];
   requestHash: string;
@@ -122,9 +120,7 @@ type ValidatedCompensationBundle = {
 
 type ExistingOrderRow = {
   id: string;
-  status: string;
   source_channel: string;
-  version: number;
   metadata: Record<string, unknown> | null;
 };
 
@@ -389,7 +385,10 @@ function parseVoidSnapshot(value: unknown): VoidSnapshot {
   };
 }
 
-function parseMovement(value: unknown, expectedReason: CompensationMovement["reason"]): CompensationMovement {
+function parseMovement(
+  value: unknown,
+  expectedReason: CompensationMovement["reason"],
+): CompensationMovement {
   const raw = record(value);
   const reason = identifier(raw.reason, "movement.reason", 64);
   if (reason !== expectedReason) {
@@ -420,18 +419,20 @@ function parseMovement(value: unknown, expectedReason: CompensationMovement["rea
 
 function parseOriginalSale(value: unknown): OriginalSale {
   const raw = record(value);
-  const source = identifier(raw.source, "sale.source", 32);
-  const status = identifier(raw.status, "sale.status", 32);
-  if (source !== "cashier" || status !== "completed") {
+  if (
+    identifier(raw.source, "sale.source", 32) !== "cashier" ||
+    identifier(raw.status, "sale.status", 32) !== "completed"
+  ) {
     throw new CashierSyncError(
       "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
       "original cashier sale lifecycle is invalid",
       409,
     );
   }
-  const currencyCode = identifier(raw.currency_code, "sale.currency_code", 3);
-  const fractionDigits = Number(raw.currency_fraction_digits);
-  if (currencyCode !== "IQD" || fractionDigits !== 0) {
+  if (
+    identifier(raw.currency_code, "sale.currency_code", 3) !== "IQD" ||
+    Number(raw.currency_fraction_digits) !== 0
+  ) {
     throw new CashierSyncError(
       "CASHIER_SYNC_CURRENCY_UNSUPPORTED",
       "original cashier sale currency is unsupported",
@@ -460,8 +461,20 @@ function parseOriginalSale(value: unknown): OriginalSale {
       ),
     } satisfies OriginalSaleLine;
   });
+  const lineIds = new Set<string>();
+  const itemKeys = new Set<string>();
+  for (const line of lines) {
+    if (lineIds.has(line.line_id) || itemKeys.has(itemKey(line.product_id, line.variant_id))) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
+        "original cashier sale contains duplicate lines",
+        409,
+      );
+    }
+    lineIds.add(line.line_id);
+    itemKeys.add(itemKey(line.product_id, line.variant_id));
+  }
   return {
-    ...raw,
     sale_id: identifier(raw.sale_id, "sale.sale_id"),
     operation_id: identifier(raw.operation_id, "sale.operation_id"),
     local_merchant_id: identifier(raw.local_merchant_id, "sale.local_merchant_id"),
@@ -479,14 +492,6 @@ function parseOriginalSale(value: unknown): OriginalSale {
   };
 }
 
-function normalizedVoidOriginalEvidence(value: Record<string, unknown>): Record<string, unknown> {
-  const normalized = { ...value };
-  delete normalized.void;
-  delete normalized.returns;
-  normalized.status = "completed";
-  return normalized;
-}
-
 export function validateCashierCompensationSyncBundle(
   body: unknown,
 ): ValidatedCompensationBundle {
@@ -500,6 +505,7 @@ export function validateCashierCompensationSyncBundle(
     throw new CashierSyncError("CASHIER_SYNC_INVALID", "sync envelopes are invalid", 400);
   }
   const envelopes = raw.envelopes.map(parseEnvelope);
+  const envelopeIds = new Set<string>();
   for (const envelope of envelopes) {
     if (
       envelope.operation_id !== operationId ||
@@ -512,13 +518,26 @@ export function validateCashierCompensationSyncBundle(
         400,
       );
     }
-    if (envelope.entity_type !== "return" && envelope.entity_type !== "sale" && envelope.entity_type !== "inventory_movement") {
+    if (
+      envelope.entity_type !== "return" &&
+      envelope.entity_type !== "sale" &&
+      envelope.entity_type !== "inventory_movement"
+    ) {
       throw new CashierSyncError(
         "CASHIER_SYNC_ENTITY_UNSUPPORTED",
         "compensation sync bundle contains an unsupported entity",
         409,
       );
     }
+    const envelopeKey = `${envelope.entity_type}\u0000${envelope.entity_id}`;
+    if (envelopeIds.has(envelopeKey)) {
+      throw new CashierSyncError(
+        "CASHIER_SYNC_INVALID",
+        "compensation bundle contains duplicate entity evidence",
+        400,
+      );
+    }
+    envelopeIds.add(envelopeKey);
   }
 
   const returnEnvelopes = envelopes.filter((item) => item.entity_type === "return");
@@ -528,7 +547,6 @@ export function validateCashierCompensationSyncBundle(
   let occurredAt: string;
   let returnSnapshot: ReturnSnapshot | undefined;
   let voidSnapshot: VoidSnapshot | undefined;
-  let voidSalePayload: Record<string, unknown> | undefined;
 
   if (returnEnvelopes.length === 1 && saleEnvelopes.length === 0) {
     kind = "return";
@@ -579,7 +597,6 @@ export function validateCashierCompensationSyncBundle(
     voidSnapshot = parseVoidSnapshot(salePayload.void);
     saleId = identifier(salePayload.sale_id, "void.sale.sale_id");
     occurredAt = voidSnapshot.occurred_at;
-    voidSalePayload = salePayload;
     if (
       envelope.entity_id !== saleId ||
       envelope.occurred_at !== voidSnapshot.occurred_at ||
@@ -669,7 +686,7 @@ export function validateCashierCompensationSyncBundle(
     operation_id: operationId,
     sale_id: saleId,
     ...(returnSnapshot ? { return_snapshot: returnSnapshot } : {}),
-    ...(voidSalePayload ? { void_sale_payload: voidSalePayload } : {}),
+    ...(voidSnapshot ? { void_snapshot: voidSnapshot } : {}),
     movements: [...movements.values()].sort((left, right) =>
       itemKey(left.product_id, left.variant_id).localeCompare(
         itemKey(right.product_id, right.variant_id),
@@ -688,7 +705,6 @@ export function validateCashierCompensationSyncBundle(
     occurredAt,
     ...(returnSnapshot ? { returnSnapshot } : {}),
     ...(voidSnapshot ? { voidSnapshot } : {}),
-    ...(voidSalePayload ? { voidSalePayload } : {}),
     movements,
     envelopes,
     requestHash: sha256(normalizedForHash),
@@ -734,7 +750,7 @@ async function loadOriginalOrder(
 ): Promise<ExistingOrderRow | null> {
   const rows = await operationalQueryRows<ExistingOrderRow>(
     target,
-    `SELECT id, status, source_channel, version, metadata
+    `SELECT id, source_channel, metadata
        FROM orders
       WHERE merchant_id = $1 AND id = $2
       LIMIT 1
@@ -751,7 +767,7 @@ async function findOperationUsage(
 ): Promise<ExistingOrderRow | null> {
   const rows = await operationalQueryRows<ExistingOrderRow>(
     target,
-    `SELECT id, status, source_channel, version, metadata
+    `SELECT id, source_channel, metadata
        FROM orders
       WHERE merchant_id = $1
         AND source_channel = 'cashier'
@@ -890,11 +906,90 @@ async function loadOriginalInventoryMutations(
   return result;
 }
 
+function validateOriginalInventoryEvidence(
+  originalSale: OriginalSale,
+  mutations: Map<string, OriginalInventoryMutation>,
+): void {
+  const lines = new Map(
+    originalSale.lines.map((line) => [itemKey(line.product_id, line.variant_id), line]),
+  );
+  for (const [key, mutation] of mutations) {
+    const line = lines.get(key);
+    if (!line) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_ORIGINAL_MOVEMENT_CORRUPT",
+        "original cashier inventory evidence has no matching sale line",
+        409,
+      );
+    }
+    const removed =
+      Number(mutation.before_quantity) - Number(mutation.after_quantity);
+    if (!Number.isSafeInteger(removed) || removed !== line.quantity) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_ORIGINAL_MOVEMENT_CORRUPT",
+        "original cashier inventory evidence does not match sale quantity",
+        409,
+      );
+    }
+  }
+}
+
 function inventoryStatus(currentStatus: string, quantity: number, lowStockThreshold: number): string {
   if (currentStatus === "draft" || currentStatus === "hidden_from_fawri") return currentStatus;
   if (quantity === 0) return "out_of_stock";
   if (quantity <= lowStockThreshold) return "low_stock";
   return "available";
+}
+
+function sumVariantStock(
+  variants: VariantRow[],
+  replacedVariantId: string,
+  replacementQuantity: number,
+): number {
+  let total = 0;
+  for (const variant of variants) {
+    const quantity =
+      variant.id === replacedVariantId
+        ? replacementQuantity
+        : Number(variant.quantity);
+    if (!Number.isSafeInteger(quantity) || quantity < 0) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_STOCK_INVALID",
+        "cashier compensation encountered invalid variant stock",
+        409,
+      );
+    }
+    total += quantity;
+    if (!Number.isSafeInteger(total)) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_STOCK_INVALID",
+        "cashier compensation stock total overflow",
+        409,
+      );
+    }
+  }
+  return total;
+}
+
+function assertMovementMatches(
+  bundle: ValidatedCompensationBundle,
+  line: OriginalSaleLine,
+  quantity: number,
+  movement: CompensationMovement,
+): void {
+  if (
+    movement.product_id !== line.product_id ||
+    movement.variant_id !== line.variant_id ||
+    movement.delta !== quantity ||
+    movement.related_sale_id !== bundle.saleId ||
+    movement.reason !== (bundle.kind === "return" ? "return" : "sale_void")
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_MOVEMENT_MISMATCH",
+      "cashier compensation inventory movement does not match server-derived stock restoration",
+      409,
+    );
+  }
 }
 
 async function applyRestock(
@@ -904,6 +999,7 @@ async function applyRestock(
   quantity: number,
   movement: CompensationMovement,
 ): Promise<void> {
+  assertMovementMatches(bundle, line, quantity, movement);
   const products = await operationalQueryRows<ProductRow>(
     target,
     `SELECT id, quantity, low_stock_threshold, version, status
@@ -954,15 +1050,12 @@ async function applyRestock(
         409,
       );
     }
+    productQuantityAfter = sumVariantStock(variants, line.variant_id, after);
     await target.query(
       `UPDATE product_variants
           SET quantity = $4, updated_at = now()
         WHERE merchant_id = $1 AND product_id = $2 AND id = $3`,
       [bundle.cloudMerchantId, line.product_id, line.variant_id, after],
-    );
-    productQuantityAfter = variants.reduce(
-      (total, item) => total + (item.id === line.variant_id ? after : Number(item.quantity)),
-      0,
     );
   } else {
     if (variants.length > 0) {
@@ -987,10 +1080,29 @@ async function applyRestock(
 
   const expectedVersion = Number(product.version);
   const resultingVersion = expectedVersion + 1;
+  if (
+    !Number.isSafeInteger(expectedVersion) ||
+    expectedVersion <= 0 ||
+    !Number.isSafeInteger(resultingVersion)
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_PRODUCT_VERSION_INVALID",
+      "cashier compensation encountered an invalid catalog version",
+      409,
+    );
+  }
+  const lowStockThreshold = Number(product.low_stock_threshold);
+  if (!Number.isSafeInteger(lowStockThreshold) || lowStockThreshold < 0) {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_STOCK_INVALID",
+      "cashier compensation encountered an invalid low-stock threshold",
+      409,
+    );
+  }
   const nextStatus = inventoryStatus(
     product.status,
     productQuantityAfter,
-    Number(product.low_stock_threshold),
+    lowStockThreshold,
   );
   const updated = await operationalQueryRows<{ id: string }>(
     target,
@@ -1037,19 +1149,6 @@ async function applyRestock(
       new Date(bundle.occurredAt),
     ],
   );
-
-  if (
-    movement.product_id !== line.product_id ||
-    movement.variant_id !== line.variant_id ||
-    movement.delta !== quantity ||
-    movement.related_sale_id !== bundle.saleId
-  ) {
-    throw new CashierSyncError(
-      "CASHIER_SYNC_MOVEMENT_MISMATCH",
-      "cashier compensation inventory movement identity mismatch",
-      409,
-    );
-  }
 }
 
 function originalLineById(sale: OriginalSale, lineId: string): OriginalSaleLine {
@@ -1077,7 +1176,11 @@ function returnedQuantity(
     for (const value of lines) {
       const line = record(value);
       if (String(line.original_line_id || "") !== lineId) continue;
-      total = safeAdd(total, positiveInteger(line.quantity, "stored_return.quantity"), "returned quantity");
+      total = safeAdd(
+        total,
+        positiveInteger(line.quantity, "stored_return.quantity"),
+        "returned quantity",
+      );
     }
   }
   return total;
@@ -1149,7 +1252,7 @@ async function applyReturn(
     }
     const alreadyReturned = returnedQuantity(previousCompensations, line.line_id);
     const remaining = line.quantity - alreadyReturned;
-    if (!Number.isSafeInteger(remaining) || requested.quantity > remaining) {
+    if (!Number.isSafeInteger(remaining) || remaining < 0 || requested.quantity > remaining) {
       throw new CashierSyncError(
         "CASHIER_RETURN_QUANTITY_EXCEEDS_SOLD",
         "return quantity exceeds the remaining returnable quantity",
@@ -1169,7 +1272,11 @@ async function applyReturn(
         409,
       );
     }
-    expectedRefundTotal = safeAdd(expectedRefundTotal, expectedRefund, "return refund total");
+    expectedRefundTotal = safeAdd(
+      expectedRefundTotal,
+      expectedRefund,
+      "return refund total",
+    );
 
     const key = itemKey(line.product_id, line.variant_id);
     const originalMutation = originalMutations.get(key);
@@ -1184,19 +1291,10 @@ async function applyReturn(
       }
       continue;
     }
-    const originallyRemoved =
-      Number(originalMutation.before_quantity) - Number(originalMutation.after_quantity);
-    if (!Number.isSafeInteger(originallyRemoved) || originallyRemoved !== line.quantity) {
-      throw new CashierSyncError(
-        "CASHIER_COMPENSATION_ORIGINAL_MOVEMENT_CORRUPT",
-        "original cashier inventory evidence does not match sale quantity",
-        409,
-      );
-    }
-    if (!movement || movement.delta !== requested.quantity || movement.reason !== "return") {
+    if (!movement) {
       throw new CashierSyncError(
         "CASHIER_SYNC_MOVEMENT_MISMATCH",
-        "return inventory movement does not match returned quantity",
+        "tracked return is missing its inventory movement evidence",
         409,
       );
     }
@@ -1217,7 +1315,6 @@ async function applyReturn(
 async function applyVoid(
   target: OperationalQueryTarget,
   bundle: ValidatedCompensationBundle,
-  originalSaleRaw: Record<string, unknown>,
   originalSale: OriginalSale,
   originalMutations: Map<string, OriginalInventoryMutation>,
   previousCompensations: StoredCompensation[],
@@ -1242,14 +1339,6 @@ async function applyVoid(
       409,
     );
   }
-  const clientOriginalEvidence = normalizedVoidOriginalEvidence(bundle.voidSalePayload!);
-  if (sha256(clientOriginalEvidence) !== sha256(originalSaleRaw)) {
-    throw new CashierSyncError(
-      "CASHIER_COMPENSATION_ORIGINAL_SALE_MISMATCH",
-      "void sale snapshot was changed from the original sale evidence",
-      409,
-    );
-  }
 
   let mutationCount = 0;
   for (const line of originalSale.lines) {
@@ -1266,19 +1355,10 @@ async function applyVoid(
       }
       continue;
     }
-    const originallyRemoved =
-      Number(originalMutation.before_quantity) - Number(originalMutation.after_quantity);
-    if (!Number.isSafeInteger(originallyRemoved) || originallyRemoved !== line.quantity) {
-      throw new CashierSyncError(
-        "CASHIER_COMPENSATION_ORIGINAL_MOVEMENT_CORRUPT",
-        "original cashier inventory evidence does not match sale quantity",
-        409,
-      );
-    }
-    if (!movement || movement.delta !== line.quantity || movement.reason !== "sale_void") {
+    if (!movement) {
       throw new CashierSyncError(
         "CASHIER_SYNC_MOVEMENT_MISMATCH",
-        "void inventory movement does not match original sale quantity",
+        "tracked void is missing its inventory movement evidence",
         409,
       );
     }
@@ -1316,7 +1396,11 @@ export async function syncCashierCompensationAuthoritative(params: {
       [`cashier-device:${merchantId}:${bundle.deviceId}`],
     );
 
-    const operationUsage = await findOperationUsage(client, merchantId, bundle.operationId);
+    const operationUsage = await findOperationUsage(
+      client,
+      merchantId,
+      bundle.operationId,
+    );
     if (operationUsage) {
       const replay = replayFromUsage(operationUsage, bundle);
       if (replay) return replay;
@@ -1331,8 +1415,7 @@ export async function syncCashierCompensationAuthoritative(params: {
       );
     }
     const metadata = cashierMetadata(order.metadata);
-    const originalSaleRaw = record(metadata.sale_snapshot);
-    const originalSale = parseOriginalSale(originalSaleRaw);
+    const originalSale = parseOriginalSale(metadata.sale_snapshot);
     if (
       originalSale.sale_id !== order.id ||
       originalSale.local_merchant_id !== bundle.localMerchantId ||
@@ -1350,6 +1433,13 @@ export async function syncCashierCompensationAuthoritative(params: {
       "cashier_sync.request_hash",
       128,
     );
+    if (!/^[a-f0-9]{64}$/.test(originalRequestHash)) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
+        "original cashier sale request hash is invalid",
+        409,
+      );
+    }
     const previousCompensations = storedCompensations(metadata);
 
     await assertDeviceSequenceUnused(client, bundle);
@@ -1358,6 +1448,7 @@ export async function syncCashierCompensationAuthoritative(params: {
       merchantId,
       originalRequestHash,
     );
+    validateOriginalInventoryEvidence(originalSale, originalMutations);
 
     let inventoryMutationCount = 0;
     if (bundle.kind === "return") {
@@ -1372,7 +1463,6 @@ export async function syncCashierCompensationAuthoritative(params: {
       inventoryMutationCount = await applyVoid(
         client,
         bundle,
-        originalSaleRaw,
         originalSale,
         originalMutations,
         previousCompensations,
@@ -1401,27 +1491,19 @@ export async function syncCashierCompensationAuthoritative(params: {
       cashier_sync: nextCashierMetadata,
     };
 
-    if (bundle.kind === "void") {
-      await client.query(
-        `UPDATE orders
-            SET status = 'cancelled',
-                cancelled_at = $3,
-                version = version + 1,
-                metadata = $4::jsonb,
-                updated_at = now()
-          WHERE merchant_id = $1 AND id = $2`,
-        [merchantId, order.id, new Date(bundle.occurredAt), JSON.stringify(nextMetadata)],
-      );
-    } else {
-      await client.query(
-        `UPDATE orders
-            SET version = version + 1,
-                metadata = $3::jsonb,
-                updated_at = now()
-          WHERE merchant_id = $1 AND id = $2`,
-        [merchantId, order.id, JSON.stringify(nextMetadata)],
-      );
-    }
+    // Cashier orders are recorded as delivered at sale time. The canonical order
+    // lifecycle treats delivered as terminal, so compensation must not bypass it
+    // by rewriting the generic order status to cancelled. Return/void state is
+    // append-only cashier evidence in metadata; merchant cashier history renders
+    // that evidence directly.
+    await client.query(
+      `UPDATE orders
+          SET version = version + 1,
+              metadata = $3::jsonb,
+              updated_at = now()
+        WHERE merchant_id = $1 AND id = $2`,
+      [merchantId, order.id, JSON.stringify(nextMetadata)],
+    );
 
     return {
       operation_id: bundle.operationId,
