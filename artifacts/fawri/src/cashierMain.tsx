@@ -1,5 +1,6 @@
 import { createRoot } from 'react-dom/client';
 import CashierCatalogSyncPage from '@/pages/CashierCatalogSyncPage';
+import CashierHistoryPage from '@/pages/CashierHistoryPage';
 import CashierLocalShellPage from '@/pages/CashierLocalShellPage';
 import CashierPosPage from '@/pages/CashierPosPage';
 import '@/index.css';
@@ -9,13 +10,20 @@ import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
 import { installAuthClientCutover } from '@/lib/authClientCutover';
 import { syncCashierOutboxToCloud } from '@/lib/cashierCloudOutboxSync';
 import { syncCashierCatalogFromCloud } from '@/lib/cashierCloudCatalogSync';
+import { publishCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
+import {
+  getCashierSyncUiState,
+  publishCashierSyncUiState,
+  subscribeCashierSyncRequests,
+} from '@/lib/cashierSyncUiState';
 
 const params = new URLSearchParams(window.location.search);
 const diagnosticsRequested = params.get('diagnostics') === '1';
 const diagnostics =
   diagnosticsRequested && import.meta.env.VITE_CASHIER_DIAGNOSTICS === '1';
 const sync = params.get('sync') === '1';
+const history = params.get('history') === '1';
 const demoRequested = params.get('demo') === '1';
 
 const AUTO_SYNC_INTERVAL_MS = 3_000;
@@ -29,22 +37,53 @@ if (!diagnostics) {
   installAuthClientCutover();
 }
 
+function syncErrorCode(error: unknown): string {
+  return typeof error === 'object' && error && 'code' in error
+    ? String((error as { code?: unknown }).code || '')
+    : '';
+}
+
+function isMerchantSessionRequired(code: string): boolean {
+  return (
+    code === 'CASHIER_OUTBOX_SESSION_REQUIRED' ||
+    code === 'CASHIER_CLOUD_SESSION_REQUIRED'
+  );
+}
+
+function cashierIsOnline(): boolean {
+  return navigator.onLine !== false;
+}
+
 function startCashierPosAutoSync(): () => void {
   let stopped = false;
   let running = false;
   let nextAttemptAt = 0;
 
-  const attempt = async (reconcileCatalog = false) => {
-    if (
-      stopped ||
-      running ||
-      navigator.onLine === false ||
-      Date.now() < nextAttemptAt
-    ) {
+  const attempt = async (
+    reconcileCatalog = false,
+    force = false,
+    visible = false,
+  ) => {
+    if (stopped || running) return;
+
+    if (!cashierIsOnline()) {
+      publishCashierSyncUiState({
+        status: 'offline',
+        message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
+      });
       return;
     }
 
+    if (!force && Date.now() < nextAttemptAt) return;
+
     running = true;
+    if (visible) {
+      publishCashierSyncUiState({
+        status: 'syncing',
+        message: 'جارٍ مزامنة عمليات الكاشير.',
+      });
+    }
+
     try {
       const result = await syncCashierOutboxToCloud();
       const changedCloudState =
@@ -57,17 +96,62 @@ function startCashierPosAutoSync(): () => void {
       }
 
       if (reconcileCatalog && result.pending_after === 0) {
-        // After reconnecting, refresh the local catalog only after every pending
-        // sale has been accepted/replayed so cloud inventory is authoritative.
+        // Refresh the local catalog after pending cashier writes are safely ACKed.
+        // Then tell the mounted POS to reread IndexedDB immediately instead of
+        // requiring a page reload or a second merchant action.
         await syncCashierCatalogFromCloud();
+        publishCashierCatalogRefresh();
         publishCashierDashboardRefresh();
       }
 
       nextAttemptAt = 0;
-    } catch {
-      // Auto-sync is best-effort only. A missing session, server outage or
-      // network ambiguity must never fail or roll back a locally committed sale.
-      // The durable outbox remains intact for a later automatic/manual retry.
+
+      if (result.pending_after > 0) {
+        publishCashierSyncUiState({
+          status: 'needs_attention',
+          pending: result.pending_after,
+          message: 'بعض عمليات الكاشير ما زالت بانتظار المزامنة. اضغط للمحاولة مرة أخرى.',
+        });
+      } else {
+        const shouldAnnounceSuccess =
+          visible || getCashierSyncUiState().status === 'needs_attention';
+        if (shouldAnnounceSuccess) {
+          publishCashierSyncUiState({
+            status: 'synced',
+            pending: 0,
+            message: 'تمت المزامنة بنجاح.',
+          });
+          window.setTimeout(() => {
+            if (getCashierSyncUiState().status === 'synced') {
+              publishCashierSyncUiState({ status: 'idle', pending: 0 });
+            }
+          }, 2_500);
+        } else if (getCashierSyncUiState().status !== 'idle') {
+          publishCashierSyncUiState({ status: 'idle', pending: 0 });
+        }
+      }
+    } catch (cause) {
+      const rawCode = syncErrorCode(cause);
+      const sessionRequired = isMerchantSessionRequired(rawCode);
+      const uiCode = sessionRequired
+        ? 'CASHIER_OUTBOX_SESSION_REQUIRED'
+        : rawCode;
+
+      if (!cashierIsOnline()) {
+        publishCashierSyncUiState({
+          status: 'offline',
+          code: uiCode,
+          message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
+        });
+      } else {
+        publishCashierSyncUiState({
+          status: 'needs_attention',
+          code: uiCode,
+          message: sessionRequired
+            ? 'انتهت جلسة التاجر. سجّل الدخول ثم اضغط المزامنة.'
+            : 'تعذر إكمال المزامنة التلقائية. اضغط للمحاولة مرة أخرى.',
+        });
+      }
       nextAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
     } finally {
       running = false;
@@ -76,27 +160,44 @@ function startCashierPosAutoSync(): () => void {
 
   const handleOnline = () => {
     nextAttemptAt = 0;
-    void attempt(true);
+    void attempt(true, true, true);
+  };
+  const handleOffline = () => {
+    publishCashierSyncUiState({
+      status: 'offline',
+      message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
+    });
   };
   const handleFocus = () => {
-    void attempt(false);
+    // Returning from the merchant product editor should pull the latest catalog
+    // immediately; do not make the merchant press the sync button just to see it.
+    nextAttemptAt = 0;
+    void attempt(true, true, false);
   };
+  const unsubscribeManualRequest = subscribeCashierSyncRequests(() => {
+    nextAttemptAt = 0;
+    void attempt(true, true, true);
+  });
 
   window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
   window.addEventListener('focus', handleFocus);
   const interval = window.setInterval(() => {
-    void attempt(false);
+    void attempt(false, false, false);
   }, AUTO_SYNC_INTERVAL_MS);
 
-  // Pick up an operation that may already be pending when the POS is opened.
+  // On an online open, reconcile both pending cashier writes and the current
+  // authoritative catalog so newly created products/variants are visible.
   window.setTimeout(() => {
-    void attempt(false);
+    void attempt(true, false, false);
   }, 0);
 
   return () => {
     stopped = true;
     window.clearInterval(interval);
+    unsubscribeManualRequest();
     window.removeEventListener('online', handleOnline);
+    window.removeEventListener('offline', handleOffline);
     window.removeEventListener('focus', handleFocus);
   };
 }
@@ -105,21 +206,26 @@ document.documentElement.dataset.cashierView = diagnostics
   ? 'diagnostics'
   : sync
     ? 'sync'
-    : 'pos';
+    : history
+      ? 'history'
+      : 'pos';
 
 createRoot(document.getElementById('cashier-root')!).render(
   diagnostics ? (
     <CashierLocalShellPage />
   ) : sync ? (
     <CashierCatalogSyncPage />
+  ) : history ? (
+    <CashierHistoryPage />
   ) : (
     <CashierPosPage />
   ),
 );
 
-// Demo fixtures intentionally never upload. Real POS tabs keep a small,
-// serialized best-effort sync loop so online sales reach the cloud without a
-// merchant click, while offline sales remain durable until connectivity returns.
+// Demo fixtures intentionally never upload. Real cashier operational views keep
+// a small serialized best-effort sync loop so online operations reach the cloud
+// without a merchant click, while offline operations remain durable until
+// connectivity or an authenticated merchant session returns.
 if (!diagnostics && !sync && !demoRequested) {
   startCashierPosAutoSync();
 }

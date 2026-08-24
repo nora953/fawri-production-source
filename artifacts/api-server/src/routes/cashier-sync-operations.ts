@@ -7,6 +7,7 @@ import {
   CashierSyncError,
   syncCashierSaleAuthoritative,
 } from "../services/postgresCashierSyncAuthority";
+import { syncCashierCompensationAuthoritative } from "../services/postgresCashierCompensationSyncAuthority";
 
 const router = Router();
 
@@ -38,6 +39,24 @@ router.post(
     try {
       const merchantId = getMerchantIdFromSession(res);
       const result = await syncCashierSaleAuthoritative({
+        merchantId,
+        body: req.body,
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/cashier/sync/compensation",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const result = await syncCashierCompensationAuthoritative({
         merchantId,
         body: req.body,
       });

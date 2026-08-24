@@ -9,6 +9,13 @@ import {
   createCashierPosRuntime,
   type CashierPosRuntime,
 } from '@/lib/cashierPosRuntime';
+import { subscribeCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
+import {
+  getCashierSyncUiState,
+  requestCashierSync,
+  subscribeCashierSyncUiState,
+  type CashierSyncUiState,
+} from '@/lib/cashierSyncUiState';
 
 type CartLine = { item: CashierCatalogLookup; quantity: number };
 type SaleSuccess = {
@@ -62,6 +69,39 @@ function errorMessage(error: unknown): string {
   return 'تعذر إكمال البيع. لم يتم تسجيل العملية.';
 }
 
+function isSyncSessionRequired(code?: string): boolean {
+  return (
+    code === 'CASHIER_OUTBOX_SESSION_REQUIRED' ||
+    code === 'CASHIER_CLOUD_SESSION_REQUIRED'
+  );
+}
+
+function syncButtonLabel(state: CashierSyncUiState): string {
+  if (state.status === 'syncing') return 'جارٍ المزامنة...';
+  if (state.status === 'synced') return 'تمت المزامنة';
+  if (state.status === 'needs_attention') {
+    return isSyncSessionRequired(state.code)
+      ? 'تسجيل الدخول مطلوب'
+      : 'مزامنة مطلوبة';
+  }
+  return 'مزامنة';
+}
+
+function syncButtonClassName(state: CashierSyncUiState): string {
+  const base =
+    'rounded-lg border px-3 py-1.5 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60';
+  if (state.status === 'needs_attention') {
+    return `${base} border-amber-500 bg-amber-500 text-white hover:bg-amber-600`;
+  }
+  if (state.status === 'syncing') {
+    return `${base} border-slate-900 bg-slate-900 text-white`;
+  }
+  if (state.status === 'synced') {
+    return `${base} border-emerald-300 bg-emerald-50 text-emerald-700`;
+  }
+  return `${base} border-slate-200 bg-white text-slate-700 hover:bg-slate-50`;
+}
+
 export default function CashierPosPage() {
   const demoMode =
     import.meta.env.VITE_CASHIER_SMOKE === '1' &&
@@ -80,6 +120,9 @@ export default function CashierPosPage() {
   const [searching, setSearching] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
+  const [syncUiState, setSyncUiState] = useState<CashierSyncUiState>(() =>
+    getCashierSyncUiState(),
+  );
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SaleSuccess | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
@@ -124,6 +167,15 @@ export default function CashierPosPage() {
       window.removeEventListener('offline', update);
     };
   }, []);
+
+  useEffect(() => subscribeCashierSyncUiState(setSyncUiState), []);
+
+  useEffect(() => {
+    if (!runtime) return;
+    return subscribeCashierCatalogRefresh(() => {
+      void refreshCatalog(runtime, query).catch(() => undefined);
+    });
+  }, [query, refreshCatalog, runtime]);
 
   useEffect(() => {
     if (cart.length === 0) {
@@ -300,6 +352,10 @@ export default function CashierPosPage() {
     compactPage * COMPACT_ITEMS_PER_PAGE + COMPACT_ITEMS_PER_PAGE,
   );
 
+  const syncDisabled = !online || syncUiState.status === 'syncing';
+  const syncNeedsAttention =
+    syncUiState.status === 'needs_attention' && Boolean(syncUiState.message);
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-[100dvh] lg:overflow-hidden" dir="rtl">
       <div className="mx-auto flex min-h-screen max-w-[1500px] flex-col p-3 lg:h-full lg:min-h-0 lg:p-4">
@@ -311,13 +367,34 @@ export default function CashierPosPage() {
               {demoMode ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">وضع اختبار</span> : null}
             </div>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
-              {online ? 'متصل' : 'غير متصل'}
-            </span>
-            <a href="/cashier.html?sync=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
-              مزامنة
-            </a>
+          <div className="flex flex-col items-end gap-1.5">
+            <div className="flex items-center gap-2 text-sm">
+              <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
+                {online ? 'متصل' : 'غير متصل'}
+              </span>
+              <a href="/cashier.html?history=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
+                سجل المبيعات
+              </a>
+              <button
+                type="button"
+                onClick={requestCashierSync}
+                disabled={syncDisabled}
+                aria-live="polite"
+                aria-describedby={syncNeedsAttention ? 'cashier-sync-message' : undefined}
+                className={syncButtonClassName(syncUiState)}
+              >
+                {syncButtonLabel(syncUiState)}
+              </button>
+            </div>
+            {syncNeedsAttention ? (
+              <p
+                id="cashier-sync-message"
+                role="status"
+                className="max-w-[430px] rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-right text-xs font-medium leading-5 text-amber-800"
+              >
+                {syncUiState.message}
+              </p>
+            ) : null}
           </div>
         </header>
 

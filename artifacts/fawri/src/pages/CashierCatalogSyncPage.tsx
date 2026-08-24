@@ -12,7 +12,7 @@ import {
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 
 type MerchantSyncSummary = {
-  syncedSales: number;
+  syncedOperations: number;
   products: number;
   promotions: number;
   completedAt: Date;
@@ -50,17 +50,17 @@ function outboxErrorMessage(error: unknown): string {
         return 'يجب تسجيل الدخول إلى حساب التاجر لإكمال المزامنة.';
       case 'CASHIER_OUTBOX_OFFLINE':
       case 'CASHIER_OUTBOX_NETWORK_FAILED':
-        return 'لا يوجد اتصال بالإنترنت. المبيعات محفوظة ويمكنك المحاولة بعد عودة الاتصال.';
+        return 'لا يوجد اتصال بالإنترنت. عمليات الكاشير محفوظة ويمكنك المحاولة بعد عودة الاتصال.';
       case 'CASHIER_OUTBOX_DEVICE_NOT_BOUND':
       case 'CASHIER_OUTBOX_IDENTITY_MISSING':
         return 'يجب ربط هذا الكاشير بحساب التاجر قبل المزامنة.';
       case 'CASHIER_OUTBOX_ACK_INVALID':
-        return 'تعذر تأكيد مزامنة بعض المبيعات. بقيت محفوظة ولم يتم حذفها.';
+        return 'تعذر تأكيد مزامنة بعض عمليات الكاشير. بقيت محفوظة ولم يتم حذفها.';
       default:
-        return 'تعذر مزامنة بعض المبيعات. بقيت محفوظة ويمكنك إعادة المحاولة.';
+        return 'تعذر مزامنة بعض عمليات الكاشير. بقيت محفوظة ويمكنك إعادة المحاولة.';
     }
   }
-  return 'تعذر مزامنة بعض المبيعات. بقيت محفوظة ويمكنك إعادة المحاولة.';
+  return 'تعذر مزامنة بعض عمليات الكاشير. بقيت محفوظة ويمكنك إعادة المحاولة.';
 }
 
 function needsInitialBinding(error: unknown): boolean {
@@ -113,8 +113,8 @@ export default function CashierCatalogSyncPage() {
         if (!needsInitialBinding(cause)) throw cause;
 
         // A new cashier has no cloud binding yet. Provision it once, then run the
-        // same safe sales-first reconciliation and refresh the catalog again so
-        // the merchant ends on the authoritative post-sale inventory state.
+        // same safe operations-first reconciliation and refresh the catalog again
+        // so the merchant ends on the authoritative post-operation inventory state.
         try {
           await syncCashierCatalogFromCloud();
         } catch (catalogCause) {
@@ -126,7 +126,7 @@ export default function CashierCatalogSyncPage() {
 
       if (outboxResult.pending_after > 0) {
         setError(
-          'ما زالت بعض المبيعات بانتظار المزامنة. بقيت محفوظة، ولم يتم تحديث المخزون بعد. حاول مرة أخرى.',
+          'ما زالت بعض عمليات الكاشير بانتظار المزامنة. بقيت محفوظة، ولم يتم تحديث المخزون بعد. حاول مرة أخرى.',
         );
         return;
       }
@@ -141,7 +141,7 @@ export default function CashierCatalogSyncPage() {
       const completedAt = new Date();
       publishCashierDashboardRefresh();
       setSummary({
-        syncedSales:
+        syncedOperations:
           outboxResult.uploaded_operations + outboxResult.replayed_operations,
         products: catalogResult.product_count,
         promotions: catalogResult.promotion_count,
@@ -163,7 +163,7 @@ export default function CashierCatalogSyncPage() {
             <div className="min-w-0">
               <h1 className="text-lg font-bold sm:text-xl">مزامنة الكاشير</h1>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
-                حدّث المبيعات والمنتجات والمخزون بين الكاشير وحسابك في فوري.
+                حدّث عمليات الكاشير والمنتجات والمخزون بين الكاشير وحسابك في فوري.
               </p>
             </div>
           </div>
@@ -226,8 +226,8 @@ export default function CashierCatalogSyncPage() {
             <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
               <div className="grid gap-2 text-sm sm:grid-cols-3">
                 <div>
-                  <p className="text-xs text-slate-500">المبيعات التي تمت مزامنتها</p>
-                  <p className="mt-0.5 font-bold">{summary.syncedSales}</p>
+                  <p className="text-xs text-slate-500">عمليات الكاشير التي تمت مزامنتها</p>
+                  <p className="mt-0.5 font-bold">{summary.syncedOperations}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500">المنتجات</p>
