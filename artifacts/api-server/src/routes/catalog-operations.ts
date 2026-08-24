@@ -18,6 +18,7 @@ import {
 import { CommercePromotionError } from "../services/commercePromotionRuntime";
 import { CurrencyMoneyError } from "../services/currencyMoneyRuntime";
 import { MerchantRegionalError } from "../services/merchantRegionalRuntime";
+import { OperationalPostgresAuthorityError } from "../services/operationalPostgresAuthority";
 import {
   createCommercePromotionAuthoritative,
   deleteCommercePromotionAuthoritative,
@@ -92,6 +93,12 @@ function rejectMerchantOverride(
   return false;
 }
 
+function postgresErrorCode(error: unknown): string {
+  if (!error || typeof error !== "object") return "";
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" ? code.trim() : "";
+}
+
 function sendError(res: Response, error: unknown): void {
   res.setHeader("Cache-Control", "no-store");
   if (
@@ -100,7 +107,8 @@ function sendError(res: Response, error: unknown): void {
     error instanceof CommercePromotionError ||
     error instanceof MerchantRegionalError ||
     error instanceof CurrencyMoneyError ||
-    error instanceof MerchantCommerceContextError
+    error instanceof MerchantCommerceContextError ||
+    error instanceof OperationalPostgresAuthorityError
   ) {
     res.status(error.status).json({
       ok: false,
@@ -112,6 +120,39 @@ function sendError(res: Response, error: unknown): void {
       error instanceof CurrencyMoneyError
         ? error.details || {}
         : {}),
+    });
+    return;
+  }
+
+  const databaseCode = postgresErrorCode(error);
+  if (databaseCode === "23514") {
+    console.error("Catalog database constraint failed:", error);
+    res.status(409).json({
+      ok: false,
+      code: "CATALOG_DATABASE_CONSTRAINT_FAILED",
+      error: "catalog data violates a database constraint",
+    });
+    return;
+  }
+  if (databaseCode === "42P01" || databaseCode === "42703") {
+    console.error("Catalog database schema is not ready:", error);
+    res.status(503).json({
+      ok: false,
+      code: "CATALOG_SCHEMA_NOT_READY",
+      error: "catalog database schema is not ready",
+    });
+    return;
+  }
+  if (
+    databaseCode.startsWith("08") ||
+    databaseCode === "28P01" ||
+    databaseCode === "3D000"
+  ) {
+    console.error("Catalog database is unavailable:", error);
+    res.status(503).json({
+      ok: false,
+      code: "CATALOG_DATABASE_UNAVAILABLE",
+      error: "catalog database is unavailable",
     });
     return;
   }

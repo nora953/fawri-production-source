@@ -4,15 +4,26 @@ on:
   pull_request:
     paths:
       - "artifacts/fawri/src/lib/catalogUiApi.ts"
+      - "artifacts/fawri/src/lib/catalogProductEditor.ts"
+      - "artifacts/fawri/src/lib/catalogVariantMatrix.ts"
+      - "artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx"
       - "artifacts/fawri/src/pages/dashboard/ProductsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/CommerceCatalogPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ImportProductsPage.tsx"
       - "artifacts/fawri/tests/product-catalog-ui-cutover.test.ts"
+      - "artifacts/fawri/tests/catalog-variant-matrix.test.ts"
       - "artifacts/api-server/src/routes/catalog-operations.ts"
       - "artifacts/api-server/src/services/catalogInventoryRuntime.ts"
+      - "artifacts/api-server/src/services/catalogProductNormalization.ts"
+      - "artifacts/api-server/src/services/postgresCatalogAuthority.ts"
       - "artifacts/api-server/src/services/botCatalogAuthority.ts"
       - "artifacts/api-server/tests/catalog-inventory.test.ts"
       - "artifacts/api-server/tests/catalog-server-contract.test.mjs"
+      - "artifacts/api-server/tests/catalog-variant-signature-guard-static.test.mjs"
+      - "artifacts/api-server/tests/catalog-operation-error-classification-static.test.mjs"
       - "artifacts/api-server/tests/bot-catalog-authority.test.ts"
+      - "lib/db/drizzle/0012_catalog_variant_signature_guard.sql"
+      - "lib/db/drizzle/meta/_journal.json"
       - ".github/workflows/product-catalog-ui-cutover.yml"
   workflow_dispatch:
 
@@ -47,7 +58,10 @@ jobs:
         run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Run Products UI canonical authority tests
-        run: pnpm exec tsx --test artifacts/fawri/tests/product-catalog-ui-cutover.test.ts
+        run: >-
+          pnpm exec tsx --test
+          artifacts/fawri/tests/product-catalog-ui-cutover.test.ts
+          artifacts/fawri/tests/catalog-variant-matrix.test.ts
 
       - name: Run catalog runtime regressions
         run: >-
@@ -56,7 +70,11 @@ jobs:
           artifacts/api-server/tests/bot-catalog-authority.test.ts
 
       - name: Run catalog server contract regression
-        run: node --test artifacts/api-server/tests/catalog-server-contract.test.mjs
+        run: >-
+          node --test
+          artifacts/api-server/tests/catalog-server-contract.test.mjs
+          artifacts/api-server/tests/catalog-variant-signature-guard-static.test.mjs
+          artifacts/api-server/tests/catalog-operation-error-classification-static.test.mjs
 
       - name: Typecheck Fawri
         run: pnpm --filter @workspace/fawri run typecheck
