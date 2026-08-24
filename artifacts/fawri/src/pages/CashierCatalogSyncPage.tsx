@@ -9,6 +9,7 @@ import {
   syncCashierOutboxToCloud,
   type CashierCloudOutboxSyncResult,
 } from '@/lib/cashierCloudOutboxSync';
+import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 
 type MerchantSyncSummary = {
   syncedSales: number;
@@ -137,12 +138,14 @@ export default function CashierCatalogSyncPage() {
         return;
       }
 
+      const completedAt = new Date();
+      publishCashierDashboardRefresh();
       setSummary({
         syncedSales:
           outboxResult.uploaded_operations + outboxResult.replayed_operations,
         products: catalogResult.product_count,
         promotions: catalogResult.promotion_count,
-        completedAt: new Date(),
+        completedAt,
       });
     } catch (cause) {
       setError(outboxErrorMessage(cause));
