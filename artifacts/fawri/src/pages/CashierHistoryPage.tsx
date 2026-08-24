@@ -307,9 +307,9 @@ export default function CashierHistoryPage() {
   }, [returnableLines]);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900" dir="rtl">
-      <div className="mx-auto max-w-[1450px] p-3 lg:p-5">
-        <header className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+    <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-screen lg:overflow-hidden" dir="rtl">
+      <div className="mx-auto flex min-h-screen max-w-[1450px] flex-col p-3 lg:h-screen lg:min-h-0 lg:p-5">
+        <header className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <div className="flex items-center gap-3">
             <img src="/fawri-logo.svg" alt="Fawri" className="h-10 w-10 object-contain" />
             <div>
@@ -328,7 +328,7 @@ export default function CashierHistoryPage() {
         </header>
 
         {authRequired ? (
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <div className="mb-3 shrink-0 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <div>
               <strong className="block">تحتاج المزامنة إلى تسجيل الدخول</strong>
               <span className="text-amber-800">عملياتك محفوظة على الجهاز وستُرفع تلقائيًا بعد تسجيل الدخول.</span>
@@ -338,17 +338,17 @@ export default function CashierHistoryPage() {
         ) : null}
 
         {!online ? (
-          <div className="mb-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+          <div className="mb-3 shrink-0 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
             أنت غير متصل بالإنترنت. يمكنك مراجعة السجل وإجراء الإرجاع أو الإلغاء، وستتم المزامنة تلقائيًا عند عودة الاتصال.
           </div>
         ) : null}
 
-        {notice ? <div className="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{notice}</div> : null}
-        {error ? <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
+        {notice ? <div className="mb-3 shrink-0 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{notice}</div> : null}
+        {error ? <div className="mb-3 shrink-0 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
 
-        <div className="grid gap-3 lg:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)]">
-          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+        <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)]">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-col">
+            <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3">
               <div>
                 <h2 className="font-bold">المبيعات</h2>
                 <p className="mt-0.5 text-xs text-slate-500">{sales.length} عملية</p>
@@ -358,7 +358,7 @@ export default function CashierHistoryPage() {
               ) : null}
             </div>
 
-            <div className={`${sales.length > 6 ? 'max-h-[70vh] overflow-y-auto' : ''} p-2`}>
+            <div className="p-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
               {loading ? <div className="p-6 text-center text-sm text-slate-500">جارٍ تحميل السجل...</div> : null}
               {!loading && sales.length === 0 ? (
                 <div className="p-8 text-center text-sm text-slate-500">لا توجد مبيعات مسجلة بعد.</div>
@@ -393,7 +393,7 @@ export default function CashierHistoryPage() {
             </div>
           </section>
 
-          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <section className="rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:overflow-y-auto">
             {!selectedSale ? (
               <div className="flex min-h-[420px] items-center justify-center p-8 text-center text-sm text-slate-500">اختر عملية بيع لعرض التفاصيل.</div>
             ) : (
