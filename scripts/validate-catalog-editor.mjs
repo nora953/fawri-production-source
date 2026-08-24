@@ -38,14 +38,8 @@ const steps = [
   ...(process.env.DATABASE_URL
     ? [{
         label: 'PostgreSQL catalog readiness (read only)',
-        command: 'pnpm',
-        args: [
-          '--dir',
-          'lib/db',
-          'exec',
-          'node',
-          './scripts/catalog-variant-signature-readiness.mjs',
-        ],
+        command: 'node',
+        args: ['lib/db/scripts/catalog-variant-signature-readiness.mjs'],
       }]
     : []),
   {
