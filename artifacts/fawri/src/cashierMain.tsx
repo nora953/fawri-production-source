@@ -9,10 +9,14 @@ import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
 import { installAuthClientCutover } from '@/lib/authClientCutover';
 
 const params = new URLSearchParams(window.location.search);
-const diagnostics = params.get('diagnostics') === '1';
+const diagnosticsRequested = params.get('diagnostics') === '1';
+const diagnostics =
+  diagnosticsRequested && import.meta.env.VITE_CASHIER_DIAGNOSTICS === '1';
 const sync = params.get('sync') === '1';
 
-// The local POS and diagnostics stay independent from cloud authentication.
+// The local POS stays independent from cloud authentication. Diagnostics are
+// internal-only and require an explicit build-time flag so merchant production
+// builds never expose implementation details such as IndexedDB/Service Worker.
 // Provisioning is different: it reads device-bound merchant APIs, so install
 // the same Auth v2 browser transport used by the Fawri dashboard before the
 // sync page can issue any request. This adds the stable X-Fawri-Device-Id that
