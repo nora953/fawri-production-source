@@ -57,28 +57,29 @@ test('return reconciliation derives refund and restock from immutable original s
 
   assert.match(source, /metadata\.sale_snapshot/);
   assert.match(source, /reason_code = 'cashier_sale_sync'/);
+  assert.match(source, /validateOriginalInventoryEvidence/);
   assert.match(source, /requested\.effective_unit_price_minor !== line\.effective_unit_price_minor/);
   assert.match(source, /safeMultiply\(\s*line\.effective_unit_price_minor,\s*requested\.quantity/);
   assert.match(source, /returnedQuantity\(previousCompensations, line\.line_id\)/);
   assert.match(source, /requested\.quantity > remaining/);
-  assert.match(source, /movement\.delta !== requested\.quantity/);
   assert.match(source, /cashier_return_sync/);
   assert.match(source, /bundle\.movements\.size !== 0/);
 });
 
-test('void reconciliation restores original tracked stock and cancels canonical cashier order', async () => {
+test('void reconciliation restores original tracked stock without bypassing terminal order lifecycle', async () => {
   const source = await apiSource(
     'src/services/postgresCashierCompensationSyncAuthority.ts',
   );
 
-  assert.match(source, /normalizedVoidOriginalEvidence/);
   assert.match(source, /snapshot\.refund_total_minor !== originalSale\.total_minor/);
   assert.match(source, /previousCompensations\.length > 0/);
-  assert.match(source, /movement\.delta !== line\.quantity/);
+  assert.match(source, /assertMovementMatches/);
   assert.match(source, /cashier_void_sync/);
-  assert.match(source, /SET status = 'cancelled'/);
-  assert.match(source, /cancelled_at = \$3/);
+  assert.match(source, /current_sale_status: "voided"/);
   assert.match(source, /compensations: nextCompensations/);
+  assert.doesNotMatch(source, /SET status = 'cancelled'/);
+  assert.doesNotMatch(source, /cancelled_at/);
+  assert.match(source, /delivered as terminal/);
 });
 
 test('browser classifies return and void outbox operations and ACKs only after complete server acceptance', async () => {
