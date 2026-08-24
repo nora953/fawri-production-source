@@ -94,11 +94,31 @@ function variantDraftSignature(variant: CatalogVariantDraft): string {
   );
 }
 
+function optionSetDefinitionsAreUnique(
+  optionSets: CatalogVariantOptionSetDraft[],
+): boolean {
+  const names = new Set<string>();
+  for (const set of optionSets) {
+    const name = normalized(set.name);
+    if (!name || names.has(name)) return false;
+    names.add(name);
+
+    const values = new Set<string>();
+    for (const value of set.values) {
+      const normalizedValue = normalized(value);
+      if (!normalizedValue || values.has(normalizedValue)) return false;
+      values.add(normalizedValue);
+    }
+  }
+  return true;
+}
+
 export function catalogVariantCombinationCount(
   optionSets: CatalogVariantOptionSetDraft[],
 ): number {
   const usable = optionSets.filter(set => clean(set.name) && set.values.length > 0);
   if (usable.length !== optionSets.length || usable.length === 0) return 0;
+  if (!optionSetDefinitionsAreUnique(usable)) return 0;
   return usable.reduce((count, set) => count * set.values.length, 1);
 }
 
