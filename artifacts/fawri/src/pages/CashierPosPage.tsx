@@ -9,6 +9,7 @@ import {
   createCashierPosRuntime,
   type CashierPosRuntime,
 } from '@/lib/cashierPosRuntime';
+import { subscribeCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import {
   getCashierSyncUiState,
   requestCashierSync,
@@ -168,6 +169,13 @@ export default function CashierPosPage() {
   }, []);
 
   useEffect(() => subscribeCashierSyncUiState(setSyncUiState), []);
+
+  useEffect(() => {
+    if (!runtime) return;
+    return subscribeCashierCatalogRefresh(() => {
+      void refreshCatalog(runtime, query).catch(() => undefined);
+    });
+  }, [query, refreshCatalog, runtime]);
 
   useEffect(() => {
     if (cart.length === 0) {
