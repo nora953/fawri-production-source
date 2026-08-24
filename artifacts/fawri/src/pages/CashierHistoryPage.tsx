@@ -44,6 +44,10 @@ function formatDate(value: string): string {
   }
 }
 
+function saleReference(saleId: string): string {
+  return saleId.replace(/^sale:/, '').slice(0, 8).toUpperCase();
+}
+
 function paymentMethodLabel(value: CashierSaleSnapshot['payment_method']): string {
   if (value === 'cash') return 'نقدي';
   if (value === 'card') return 'بطاقة';
@@ -191,6 +195,12 @@ export default function CashierHistoryPage() {
       .filter(item => item.remaining > 0);
   }, [selectedSale]);
 
+  const selectedFullyReturned = useMemo(() => {
+    if (!selectedSale || selectedSale.status === 'voided' || selectedSale.void) return false;
+    const sold = selectedSale.lines.reduce((sum, line) => sum + line.quantity, 0);
+    return sold > 0 && totalReturnedQuantity(selectedSale) >= sold;
+  }, [selectedSale]);
+
   const canVoid = Boolean(
     selectedSale &&
       selectedSale.status === 'completed' &&
@@ -304,7 +314,7 @@ export default function CashierHistoryPage() {
             <img src="/fawri-logo.svg" alt="Fawri" className="h-10 w-10 object-contain" />
             <div>
               <h1 className="text-xl font-bold">سجل الكاشير</h1>
-              <p className="mt-0.5 text-xs text-slate-500">المبيعات والإرجاعات والإلغاءات من هذا الجهاز.</p>
+              <p className="mt-0.5 text-xs text-slate-500">راجع مبيعات الكاشير والإرجاعات والإلغاءات.</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm">
@@ -348,7 +358,7 @@ export default function CashierHistoryPage() {
               ) : null}
             </div>
 
-            <div className="max-h-[70vh] overflow-y-auto p-2">
+            <div className={`${sales.length > 6 ? 'max-h-[70vh] overflow-y-auto' : ''} p-2`}>
               {loading ? <div className="p-6 text-center text-sm text-slate-500">جارٍ تحميل السجل...</div> : null}
               {!loading && sales.length === 0 ? (
                 <div className="p-8 text-center text-sm text-slate-500">لا توجد مبيعات مسجلة بعد.</div>
@@ -362,11 +372,11 @@ export default function CashierHistoryPage() {
                     key={sale.sale_id}
                     type="button"
                     onClick={() => setSelectedSaleId(sale.sale_id)}
-                    className={`mb-2 w-full rounded-xl border p-3 text-right transition ${active ? 'border-orange-300 bg-orange-50/50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                    className={`mb-1.5 w-full rounded-xl border px-3 py-2.5 text-right transition ${active ? 'border-orange-300 bg-orange-50/50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
                   >
-                    <div className="mb-2 flex items-start justify-between gap-3">
+                    <div className="mb-1 flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <strong className="block truncate text-sm">بيع #{sale.sale_id.replace(/^sale:/, '').slice(0, 8)}</strong>
+                        <strong className="block truncate text-sm">عملية بيع #{saleReference(sale.sale_id)}</strong>
                         <span className="mt-0.5 block text-xs text-slate-500">{formatDate(sale.occurred_at)}</span>
                       </div>
                       <span className={`shrink-0 rounded-full border px-2 py-1 text-[11px] font-bold ${state.className}`}>{state.label}</span>
@@ -397,7 +407,7 @@ export default function CashierHistoryPage() {
                         {selectedPending ? (online ? 'بانتظار المزامنة' : 'محفوظ محليًا') : 'متزامن'}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500">#{selectedSale.sale_id.replace(/^sale:/, '')}</p>
+                    <p className="text-xs text-slate-500">عملية بيع #{saleReference(selectedSale.sale_id)}</p>
                   </div>
                   <div className="text-left">
                     <strong className="block text-xl">{formatMoney(selectedSale.total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong>
@@ -475,6 +485,12 @@ export default function CashierHistoryPage() {
                     </div>
                   ) : null}
 
+                  {selectedFullyReturned ? (
+                    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
+                      تم إرجاع كامل هذا البيع.
+                    </div>
+                  ) : null}
+
                   {selectedSale.void ? (
                     <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                       <strong>تم إلغاء هذا البيع</strong>
@@ -482,7 +498,7 @@ export default function CashierHistoryPage() {
                     </div>
                   ) : null}
 
-                  {selectedSale.status === 'completed' && !selectedSale.void ? (
+                  {selectedSale.status === 'completed' && !selectedSale.void && returnableLines.length > 0 ? (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
                       <div>
                         {requestedReturnLines.length > 0 ? (
@@ -495,9 +511,7 @@ export default function CashierHistoryPage() {
                         {canVoid ? (
                           <button type="button" onClick={() => setConfirmAction('void')} disabled={busy} className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-50">إلغاء البيع بالكامل</button>
                         ) : null}
-                        {returnableLines.length > 0 ? (
-                          <button type="button" onClick={() => setConfirmAction('return')} disabled={busy || requestedReturnLines.length === 0} className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40">إرجاع المحدد</button>
-                        ) : null}
+                        <button type="button" onClick={() => setConfirmAction('return')} disabled={busy || requestedReturnLines.length === 0} className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40">إرجاع المحدد</button>
                       </div>
                     </div>
                   ) : null}
