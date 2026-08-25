@@ -8,6 +8,7 @@ on:
       - "artifacts/api-server/src/services/merchantSettingsRuntime.ts"
       - "artifacts/api-server/src/services/metaWebhookWorker.ts"
       - "artifacts/api-server/tests/merchant-settings*.test.*"
+      - "artifacts/api-server/tests/orders-settings-static-contract.test.mjs"
       - "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/SettingsPage.tsx"
       - "scripts/audit-merchant-settings.mjs"
@@ -26,6 +27,7 @@ on:
       - "artifacts/api-server/src/services/merchantSettingsRuntime.ts"
       - "artifacts/api-server/src/services/metaWebhookWorker.ts"
       - "artifacts/api-server/tests/merchant-settings*.test.*"
+      - "artifacts/api-server/tests/orders-settings-static-contract.test.mjs"
       - "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/SettingsPage.tsx"
       - "scripts/audit-merchant-settings.mjs"
@@ -83,6 +85,9 @@ jobs:
           artifacts/api-server/tests/merchant-settings-meta-worker.test.ts
           scripts/tests/audit-merchant-settings.test.mjs
           scripts/tests/server-authoritative-settings-contract.test.mjs
+
+      - name: Test store currency settings UI contract
+        run: node --test artifacts/api-server/tests/orders-settings-static-contract.test.mjs
 
       - name: Build API server and frontend
         run: |
