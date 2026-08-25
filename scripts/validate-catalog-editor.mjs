@@ -12,6 +12,7 @@ const steps = [
       '--test',
       'artifacts/fawri/tests/product-catalog-ui-cutover.test.ts',
       'artifacts/fawri/tests/catalog-editor-logic-hardening.test.ts',
+      'artifacts/fawri/tests/catalog-editor-ux-hardening.test.ts',
     ],
   },
   {
