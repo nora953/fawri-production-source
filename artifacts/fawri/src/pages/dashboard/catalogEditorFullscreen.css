@@ -20,8 +20,22 @@
   color: hsl(var(--foreground));
 }
 
-[dir="rtl"] .products-workspace-polish .catalog-editor-shell.fawri-ui-baseline {
+/* Arabic follows the reviewed Arabic UI font stack. */
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell.fawri-ui-baseline {
   font-family: "Noto Sans Arabic", "Noto Naskh Arabic", Tahoma, Arial, sans-serif;
+  letter-spacing: 0 !important;
+}
+
+/* Kurdish keeps the dedicated project-wide Kurdish typography authority. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell.fawri-ui-baseline {
+  font-family: "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, Arial, sans-serif;
+  letter-spacing: 0 !important;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell.fawri-ui-baseline :where(h1, h2, h3, h4, .font-black, .font-extrabold) {
+  font-family: "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, Arial, sans-serif;
   letter-spacing: 0 !important;
 }
 
