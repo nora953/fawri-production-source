@@ -1,12 +1,11 @@
-.products-workspace-polish .fixed.inset-0.z-\[100\] {
-  align-items: stretch !important;
-  justify-content: stretch !important;
+.products-workspace-polish .catalog-editor-shell {
+  inset: 0 !important;
   padding: 0 !important;
   background: hsl(var(--background)) !important;
   backdrop-filter: none !important;
 }
 
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div {
+.products-workspace-polish .catalog-editor-frame {
   width: 100vw !important;
   height: 100dvh !important;
   max-width: none !important;
@@ -15,83 +14,100 @@
   box-shadow: none !important;
 }
 
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:first-child {
-  padding-inline: clamp(1rem, 3vw, 2.5rem) !important;
-  padding-block: 1rem !important;
-  background: hsl(var(--background));
+.products-workspace-polish .catalog-editor-header,
+.products-workspace-polish .catalog-editor-footer {
+  position: relative;
+  z-index: 3;
 }
 
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) {
-  display: grid !important;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-auto-flow: row dense;
-  align-content: start;
-  gap: 1.25rem !important;
-  width: min(100%, 1500px);
-  margin-inline: auto;
-  padding: clamp(1rem, 2.5vw, 2rem) !important;
+.products-workspace-polish .catalog-editor-body {
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
 }
 
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > * {
+.products-workspace-polish .catalog-editor-body-grid > * {
   min-width: 0;
   margin: 0 !important;
   grid-column: 1 / -1;
 }
 
-/* Item type / Product details stay wide because they drive the form. */
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(1),
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(4),
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(5) {
+/* Item type and product-specific configuration are primary workspace sections. */
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(1),
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(4),
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(5) {
   grid-column: 1 / -1;
 }
 
-/* Name and category are a natural pair. */
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(2) {
-  grid-column: span 6;
-}
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(3) {
+/* Name and category belong together. */
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(2),
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(3) {
   grid-column: span 6;
 }
 
-/* Media deserves room; status remains visible beside it on desktop. */
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(6) {
+/* Media is the dominant visual section; status stays beside it. */
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(6) {
   grid-column: span 8;
 }
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(7) {
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(7) {
   grid-column: span 4;
+  align-self: start;
 }
 
-/* Description and Fawri-usage control form the final decision row. */
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(8) {
+/* Description and Fawri availability finish the form as a decision row. */
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(8) {
   grid-column: span 8;
 }
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > :nth-child(9) {
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) {
   grid-column: span 4;
   align-self: stretch;
 }
 
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:last-child {
-  display: flex;
-  justify-content: flex-end;
-  padding-inline: clamp(1rem, 3vw, 2.5rem) !important;
-  padding-block: 0.8rem !important;
-  background: hsl(var(--background));
-}
-
-.products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:last-child > button {
-  width: min(100%, 440px) !important;
+.products-workspace-polish .catalog-editor-footer > div {
+  justify-content: flex-start;
 }
 
 @media (max-width: 1000px) {
-  .products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) {
-    grid-template-columns: minmax(0, 1fr);
+  .products-workspace-polish .catalog-editor-body-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 
-  .products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:nth-child(2) > * {
+  .products-workspace-polish .catalog-editor-body-grid > * {
     grid-column: 1 !important;
   }
 
-  .products-workspace-polish .fixed.inset-0.z-\[100\] > div > div:last-child > button {
-    width: 100% !important;
+  .products-workspace-polish .catalog-editor-footer > div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .products-workspace-polish .catalog-editor-footer button:first-child {
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 560px) {
+  .products-workspace-polish .catalog-editor-header {
+    padding-block: 0.7rem;
+  }
+
+  .products-workspace-polish .catalog-editor-body {
+    padding: 0.9rem !important;
+  }
+
+  .products-workspace-polish .catalog-editor-body-grid {
+    gap: 0.9rem !important;
+  }
+
+  .products-workspace-polish .catalog-editor-footer {
+    padding: 0.75rem !important;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom)) !important;
+  }
+
+  .products-workspace-polish .catalog-editor-footer > div {
+    grid-template-columns: 1fr;
+  }
+
+  .products-workspace-polish .catalog-editor-footer button {
+    width: 100%;
   }
 }
