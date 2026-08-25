@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { useI18n } from '@/lib/i18n';
 import {
   getMerchantRegionalContext,
@@ -11,22 +12,8 @@ import {
   updateMerchantCurrency,
   type MerchantRegionalContext,
 } from '@/lib/merchantRegionalUiApi';
+import { merchantCurrencyOptions } from '@/lib/supportedMerchantCurrencies';
 import type { Lang } from '@/lib/types';
-
-const CURRENCIES = [
-  'IQD',
-  'USD',
-  'AED',
-  'SAR',
-  'KWD',
-  'QAR',
-  'BHD',
-  'OMR',
-  'JOD',
-  'TRY',
-  'EUR',
-  'GBP',
-] as const;
 
 const COPY: Record<Lang, {
   title: string;
@@ -127,11 +114,10 @@ export default function MerchantCurrencySettingsCard() {
     };
   }, [reload]);
 
-  const options = useMemo(() => {
-    const values = new Set<string>(CURRENCIES);
-    if (context?.currency_code) values.add(context.currency_code);
-    return [...values];
-  }, [context?.currency_code]);
+  const options = useMemo(
+    () => merchantCurrencyOptions(context?.currency_code),
+    [context?.currency_code],
+  );
 
   const save = async () => {
     if (!context || !selected || saving || selected === context.currency_code) return;
@@ -160,7 +146,7 @@ export default function MerchantCurrencySettingsCard() {
     <Card>
       <CardHeader>
         <CardTitle>{copy.title}</CardTitle>
-        <p className="text-sm leading-6 text-muted-foreground">{copy.description}</p>
+        <p className="mt-1 text-sm leading-6 text-muted-foreground">{copy.description}</p>
       </CardHeader>
       <CardContent className="space-y-4">
         {loading ? (
@@ -175,29 +161,37 @@ export default function MerchantCurrencySettingsCard() {
           </div>
         ) : (
           <>
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid items-start gap-4 md:grid-cols-3">
               <label className="space-y-2 text-sm font-medium">
-                <span>{copy.currency}</span>
+                <span className="block leading-5">{copy.currency}</span>
                 <select
                   value={selected}
                   onChange={event => setSelected(event.target.value)}
-                  className="h-11 w-full rounded-md border bg-background px-3"
+                  className="h-11 w-full rounded-md border border-input bg-background px-3 text-sm font-normal shadow-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   {options.map(code => <option key={code} value={code}>{code}</option>)}
                 </select>
               </label>
-              <div className="space-y-2 text-sm font-medium">
-                <span>{copy.country}</span>
-                <div className="flex h-11 items-center rounded-md border bg-muted/20 px-3" dir="ltr">
-                  {context.country_code}
-                </div>
-              </div>
-              <div className="space-y-2 text-sm font-medium">
-                <span>{copy.timezone}</span>
-                <div className="flex h-11 items-center rounded-md border bg-muted/20 px-3" dir="ltr">
-                  {context.timezone}
-                </div>
-              </div>
+              <label className="space-y-2 text-sm font-medium">
+                <span className="block leading-5">{copy.country}</span>
+                <Input
+                  value={context.country_code}
+                  readOnly
+                  aria-readonly="true"
+                  className="h-11 bg-muted/20 font-normal"
+                  dir="ltr"
+                />
+              </label>
+              <label className="space-y-2 text-sm font-medium">
+                <span className="block leading-5">{copy.timezone}</span>
+                <Input
+                  value={context.timezone}
+                  readOnly
+                  aria-readonly="true"
+                  className="h-11 bg-muted/20 font-normal"
+                  dir="ltr"
+                />
+              </label>
             </div>
 
             <div className="flex flex-col gap-3 rounded-xl border bg-muted/10 p-3 sm:flex-row sm:items-center sm:justify-between">
