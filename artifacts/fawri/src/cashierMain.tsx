@@ -5,6 +5,7 @@ import CashierLocalShellPage from '@/pages/CashierLocalShellPage';
 import CashierPosPage from '@/pages/CashierPosPage';
 import '@/index.css';
 import '@/styles/fawriUiBaseline.css';
+import '@/styles/fawriLanguageAuthority.css';
 import '@/styles/cashierPos.css';
 import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
 import { installAuthClientCutover } from '@/lib/authClientCutover';
@@ -80,154 +81,108 @@ function startCashierPosAutoSync(): () => void {
     if (visible) {
       publishCashierSyncUiState({
         status: 'syncing',
-        message: 'جارٍ مزامنة عمليات الكاشير.',
+        message: 'جارٍ مزامنة العمليات المحلية مع السحابة...',
       });
     }
 
     try {
-      const result = await syncCashierOutboxToCloud();
-      const changedCloudState =
-        result.uploaded_operations > 0 || result.replayed_operations > 0;
+      const outboxResult = await syncCashierOutboxToCloud();
+      if (stopped) return;
 
-      if (changedCloudState) {
-        // Orders and inventory are already canonical on the server after ACK.
-        // Tell any open merchant dashboard tabs to refetch their server state.
-        publishCashierDashboardRefresh();
+      if (
+        outboxResult.status === 'blocked' ||
+        outboxResult.status === 'paused'
+      ) {
+        nextAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
+        publishCashierSyncUiState({
+          status: 'error',
+          message: 'تحتاج مزامنة الكاشير إلى مراجعة. يمكنك متابعة البيع محليًا.',
+        });
+        return;
       }
 
-      if (reconcileCatalog && result.pending_after === 0) {
-        // Refresh the local catalog after pending cashier writes are safely ACKed.
-        // Then tell the mounted POS to reread IndexedDB immediately instead of
-        // requiring a page reload or a second merchant action.
+      if (reconcileCatalog) {
         await syncCashierCatalogFromCloud();
-        publishCashierCatalogRefresh();
+        if (!stopped) publishCashierCatalogRefresh();
+      }
+
+      if (!stopped) {
+        nextAttemptAt = 0;
         publishCashierDashboardRefresh();
+        publishCashierSyncUiState({ status: 'synced' });
       }
-
-      nextAttemptAt = 0;
-
-      if (result.pending_after > 0) {
-        publishCashierSyncUiState({
-          status: 'needs_attention',
-          pending: result.pending_after,
-          message: 'بعض عمليات الكاشير ما زالت بانتظار المزامنة. اضغط للمحاولة مرة أخرى.',
-        });
-      } else {
-        const shouldAnnounceSuccess =
-          visible || getCashierSyncUiState().status === 'needs_attention';
-        if (shouldAnnounceSuccess) {
-          publishCashierSyncUiState({
-            status: 'synced',
-            pending: 0,
-            message: 'تمت المزامنة بنجاح.',
-          });
-          window.setTimeout(() => {
-            if (getCashierSyncUiState().status === 'synced') {
-              publishCashierSyncUiState({ status: 'idle', pending: 0 });
-            }
-          }, 2_500);
-        } else if (getCashierSyncUiState().status !== 'idle') {
-          publishCashierSyncUiState({ status: 'idle', pending: 0 });
-        }
-      }
-    } catch (cause) {
-      const rawCode = syncErrorCode(cause);
-      const sessionRequired = isMerchantSessionRequired(rawCode);
-      const uiCode = sessionRequired
-        ? 'CASHIER_OUTBOX_SESSION_REQUIRED'
-        : rawCode;
-
-      if (!cashierIsOnline()) {
-        publishCashierSyncUiState({
-          status: 'offline',
-          code: uiCode,
-          message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
-        });
-      } else {
-        publishCashierSyncUiState({
-          status: 'needs_attention',
-          code: uiCode,
-          message: sessionRequired
-            ? 'انتهت جلسة التاجر. سجّل الدخول ثم اضغط المزامنة.'
-            : 'تعذر إكمال المزامنة التلقائية. اضغط للمحاولة مرة أخرى.',
-        });
-      }
+    } catch (error) {
+      if (stopped) return;
+      const code = syncErrorCode(error);
       nextAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
+      publishCashierSyncUiState(
+        isMerchantSessionRequired(code)
+          ? {
+              status: 'session_required',
+              message: 'الكاشير المحلي يعمل. سجّل دخول التاجر لتفعيل مزامنة السحابة.',
+            }
+          : {
+              status: 'error',
+              message: 'تعذر إكمال المزامنة التلقائية. اضغط للمحاولة مرة أخرى.',
+            },
+      );
     } finally {
       running = false;
     }
   };
 
-  const handleOnline = () => {
-    nextAttemptAt = 0;
-    void attempt(true, true, true);
-  };
-  const handleOffline = () => {
-    publishCashierSyncUiState({
-      status: 'offline',
-      message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
-    });
-  };
-  const handleFocus = () => {
-    // Returning from the merchant product editor should pull the latest catalog
-    // immediately; do not make the merchant press the sync button just to see it.
-    nextAttemptAt = 0;
-    void attempt(true, true, false);
-  };
-  const unsubscribeManualRequest = subscribeCashierSyncRequests(() => {
-    nextAttemptAt = 0;
+  const unsubscribe = subscribeCashierSyncRequests(() => {
     void attempt(true, true, true);
   });
 
-  window.addEventListener('online', handleOnline);
-  window.addEventListener('offline', handleOffline);
-  window.addEventListener('focus', handleFocus);
+  const onOnline = () => {
+    void attempt(true, true, true);
+  };
+  window.addEventListener('online', onOnline);
+
   const interval = window.setInterval(() => {
     void attempt(false, false, false);
   }, AUTO_SYNC_INTERVAL_MS);
 
-  // On an online open, reconcile both pending cashier writes and the current
-  // authoritative catalog so newly created products/variants are visible.
-  window.setTimeout(() => {
-    void attempt(true, false, false);
-  }, 0);
+  void attempt(true, true, false);
 
   return () => {
     stopped = true;
+    unsubscribe();
+    window.removeEventListener('online', onOnline);
     window.clearInterval(interval);
-    unsubscribeManualRequest();
-    window.removeEventListener('online', handleOnline);
-    window.removeEventListener('offline', handleOffline);
-    window.removeEventListener('focus', handleFocus);
   };
 }
 
-document.documentElement.dataset.cashierView = diagnostics
-  ? 'diagnostics'
-  : sync
-    ? 'sync'
-    : history
-      ? 'history'
-      : 'pos';
+function render() {
+  const root = createRoot(document.getElementById('cashier-root')!);
 
-createRoot(document.getElementById('cashier-root')!).render(
-  diagnostics ? (
-    <CashierLocalShellPage />
-  ) : sync ? (
-    <CashierCatalogSyncPage />
-  ) : history ? (
-    <CashierHistoryPage />
-  ) : (
-    <CashierPosPage />
-  ),
-);
+  if (demoRequested) {
+    root.render(<CashierPosPage demoMode />);
+    return;
+  }
 
-// Demo fixtures intentionally never upload. Real cashier operational views keep
-// a small serialized best-effort sync loop so online operations reach the cloud
-// without a merchant click, while offline operations remain durable until
-// connectivity or an authenticated merchant session returns.
-if (!diagnostics && !sync && !demoRequested) {
+  if (diagnostics) {
+    root.render(<CashierCatalogSyncPage />);
+    return;
+  }
+
+  if (history) {
+    root.render(<CashierHistoryPage />);
+    return;
+  }
+
+  if (sync) {
+    root.render(<CashierCatalogSyncPage />);
+    return;
+  }
+
+  root.render(<CashierLocalShellPage />);
+}
+
+if (!diagnostics) {
+  registerCashierOfflineAppShell();
   startCashierPosAutoSync();
 }
 
-void registerCashierOfflineAppShell();
+render();
