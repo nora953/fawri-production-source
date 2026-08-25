@@ -18,14 +18,25 @@ test('catalog cards never hide variant inventory behind nested scrolling', () =>
   assert.doesNotMatch(cardCss, /max-height:\s*11rem/);
 });
 
-test('desktop variant inventory rows use compact side-by-side layout', () => {
+test('variant products stay short until merchant explicitly opens details', () => {
+  assert.match(pageSource, /expandedVariantProducts/);
+  assert.match(pageSource, /const variantsExpanded = Boolean\(expandedVariantProducts\[product\.id\]\)/);
+  assert.match(pageSource, /aria-expanded=\{variantsExpanded\}/);
+  assert.match(pageSource, /onClick=\{\(\) => toggleVariantDetails\(product\.id\)\}/);
+  assert.match(pageSource, /variantsExpanded \? \(/);
+  assert.match(pageSource, /product\.variants\.length/);
+});
+
+test('expanded variant rows stay compact and responsive', () => {
   assert.match(cardCss, /grid-template-columns:\s*minmax\(7\.5rem, 0\.8fr\) minmax\(14rem, 1\.2fr\)/);
   assert.match(cardCss, /grid-template-columns:\s*2\.25rem minmax\(4\.75rem, 1fr\) auto 2\.25rem/);
   assert.match(cardCss, /@media \(max-width: 720px\)/);
 });
 
-test('inventory operations remain canonical and fully rendered for every variant', () => {
+test('inventory operations remain canonical for every disclosed variant', () => {
   assert.match(pageSource, /product\.variants\.map\(variant =>/);
   assert.match(pageSource, /setInventory\(product, variant\)/);
   assert.match(pageSource, /adjustInventory\(product, delta, variant\)/);
+  assert.match(pageSource, /setCatalogInventory/);
+  assert.match(pageSource, /adjustCatalogInventory/);
 });
