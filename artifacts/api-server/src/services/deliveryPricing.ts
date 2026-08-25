@@ -1,3 +1,8 @@
+import {
+  formatMinorCurrencyNumber,
+  normalizeCurrencyCode,
+} from "./currencyMoneyRuntime.js";
+
 export type DeliveryPricingMode = "flat" | "per_area";
 
 export type DeliveryAreaRate = {
@@ -326,9 +331,27 @@ export function resolveDeliveryQuote(input: {
 
 export type DeliveryLanguage = "ar" | "ku" | "en";
 
+function deliveryCurrencyLabel(
+  currencyCodeValue: string,
+  language: DeliveryLanguage,
+): string {
+  const currencyCode = normalizeCurrencyCode(currencyCodeValue);
+  if (currencyCode === "IQD") return language === "en" ? "IQD" : "دينار";
+  return currencyCode;
+}
+
+function formatDeliveryMoney(
+  amountMinor: number,
+  currencyCode: string,
+  language: DeliveryLanguage,
+): string {
+  return `${formatMinorCurrencyNumber(amountMinor, currencyCode)} ${deliveryCurrencyLabel(currencyCode, language)}`;
+}
+
 export function formatDeliveryQuoteText(
   quote: DeliveryQuote,
   language: DeliveryLanguage,
+  currencyCode = "IQD",
 ): string {
   if (!quote.available) {
     if (quote.reason === "delivery_disabled") {
@@ -351,33 +374,40 @@ export function formatDeliveryQuoteText(
     return "يرجى إرسال منطقتك حتى أعطيك أجرة التوصيل.";
   }
 
-  const fee = quote.effective_fee_iqd.toLocaleString("en-US");
+  const fee = formatDeliveryMoney(
+    quote.effective_fee_iqd,
+    currencyCode,
+    language,
+  );
   const days =
     quote.estimated_days_min === quote.estimated_days_max
       ? String(quote.estimated_days_min)
       : `${quote.estimated_days_min}-${quote.estimated_days_max}`;
   const area = quote.matched_area ? ` ${quote.matched_area}` : "";
   const threshold = quote.free_delivery_threshold_iqd;
+  const thresholdMoney = threshold === null
+    ? null
+    : formatDeliveryMoney(threshold, currencyCode, language);
   if (language === "en") {
     const free = quote.free_delivery_applied
       ? " Free delivery applies to this subtotal."
-      : threshold !== null
-        ? ` Delivery is free from ${threshold.toLocaleString("en-US")} IQD.`
+      : thresholdMoney
+        ? ` Delivery is free from ${thresholdMoney}.`
         : "";
-    return `Delivery${area ? ` to${area}` : ""} is ${fee} IQD. Estimated time is ${days} day(s).${free}`;
+    return `Delivery${area ? ` to${area}` : ""} is ${fee}. Estimated time is ${days} day(s).${free}`;
   }
   if (language === "ku") {
     const free = quote.free_delivery_applied
       ? " گەیاندن بۆ ئەم کۆیە بەخۆڕاییە."
-      : threshold !== null
-        ? ` گەیاندن لە ${threshold.toLocaleString("en-US")} دینارەوە بەخۆڕاییە.`
+      : thresholdMoney
+        ? ` گەیاندن لە ${thresholdMoney}ەوە بەخۆڕاییە.`
         : "";
-    return `کرێی گەیاندن${area ? ` بۆ${area}` : ""} ${fee} دینارە. ماوەی خەمڵێنراو ${days} ڕۆژە.${free}`;
+    return `کرێی گەیاندن${area ? ` بۆ${area}` : ""} ${fee}. ماوەی خەمڵێنراو ${days} ڕۆژە.${free}`;
   }
   const free = quote.free_delivery_applied
     ? " التوصيل مجاني لهذا المجموع."
-    : threshold !== null
-      ? ` التوصيل مجاني ابتداءً من ${threshold.toLocaleString("en-US")} دينار.`
+    : thresholdMoney
+      ? ` التوصيل مجاني ابتداءً من ${thresholdMoney}.`
       : "";
-  return `أجرة التوصيل${area ? ` إلى${area}` : ""} ${fee} دينار. المدة التقديرية ${days} يوم.${free}`;
+  return `أجرة التوصيل${area ? ` إلى${area}` : ""} ${fee}. المدة التقديرية ${days} يوم.${free}`;
 }
