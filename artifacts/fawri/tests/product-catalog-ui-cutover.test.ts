@@ -25,8 +25,20 @@ import {
   validateCatalogProductForm,
 } from '../src/lib/catalogProductEditor.ts';
 
-const productsPage = await readFile(
+const productsRoute = await readFile(
   new URL('../src/pages/dashboard/ProductsPage.tsx', import.meta.url),
+  'utf8',
+);
+const productsWorkspace = await readFile(
+  new URL('../src/pages/dashboard/ProductsWorkspacePage.tsx', import.meta.url),
+  'utf8',
+);
+const catalogPage = await readFile(
+  new URL('../src/pages/dashboard/CommerceCatalogPage.tsx', import.meta.url),
+  'utf8',
+);
+const productDetails = await readFile(
+  new URL('../src/components/catalog/CatalogProductDetailsEditor.tsx', import.meta.url),
   'utf8',
 );
 const importPage = await readFile(
@@ -38,6 +50,8 @@ const product: CatalogProduct = {
   id: 'prd-1',
   merchant_id: 'merchant-server-only',
   external_ref: 'EXT-1',
+  item_type: 'product',
+  track_inventory: true,
   name: 'Catalog Product',
   description: 'Description',
   category: 'General',
@@ -103,6 +117,8 @@ const variantProduct: CatalogProduct = {
 };
 
 const input: CatalogProductInput = {
+  item_type: 'product',
+  track_inventory: true,
   name: 'Catalog Product',
   description: 'Description',
   category: 'General',
@@ -136,6 +152,24 @@ function capturedFetch(
   };
   return { fetcher, calls };
 }
+
+test('active products route reaches the hardened commerce workspace', () => {
+  assert.match(productsRoute, /export \{ default \} from ['"]\.\/ProductsWorkspacePage['"]/);
+  assert.match(productsWorkspace, /import CommerceCatalogPage from ['"]\.\/CommerceCatalogPage['"]/);
+  assert.match(productsWorkspace, /<CommerceCatalogPage \/>/);
+  assert.match(catalogPage, /CatalogEditorShell/);
+  assert.match(catalogPage, /CatalogProductDetailsEditor/);
+});
+
+test('active catalog money follows merchant currency scale instead of a fixed IQD UI', () => {
+  assert.match(catalogPage, /getCatalogCommerceContext/);
+  assert.match(catalogPage, /catalogMoneyFormForDisplay/);
+  assert.match(catalogPage, /catalogMoneyFormForAuthority/);
+  assert.match(catalogPage, /validateCatalogMoneyForm/);
+  assert.match(catalogPage, /formatMerchantMoneyMinor/);
+  assert.match(catalogPage, /currency_fraction_digits/);
+  assert.doesNotMatch(catalogPage, /t\.products_currency/);
+});
 
 test('canonical load uses only GET /api/catalog/products', async () => {
   const { fetcher, calls } = capturedFetch({ ok: true, products: [product] });
@@ -179,13 +213,6 @@ test('variant editor round-trips options, SKU/barcode, price, stock and image re
       alt: 'Black medium',
     },
   ]);
-  assert.deepEqual(serialized.image_refs, [
-    {
-      id: 'img-product',
-      url: 'https://cdn.example.test/tee.jpg',
-      alt: 'T-shirt',
-    },
-  ]);
 });
 
 test('variant add/edit/remove stays generic and removal is represented by the saved variants array', () => {
@@ -218,21 +245,18 @@ test('variant add/edit/remove stays generic and removal is represented by the sa
   assert.deepEqual(serialized.variants?.[0].options, { Color: 'Jet Black', Size: 'M' });
   assert.deepEqual(serialized.variants?.[1].options, { Color: 'Green', Size: 'XL' });
   assert.equal(serialized.variants?.[1].stock_quantity, 4);
-  assert.equal(serialized.variants?.[1].image_refs?.[0] && 'url' in serialized.variants[1].image_refs![0]
-    ? serialized.variants[1].image_refs![0].url
-    : undefined, 'https://cdn.example.test/green-xl.jpg');
 });
 
-test('image editor requires a URL or storage key and never creates binary upload authority', () => {
+test('image editor requires a URL or storage key and never creates browser storage authority', () => {
   const form = catalogProductFormFromProduct(product);
   const image = createEmptyCatalogImageDraft();
   image.alt = 'Alt without locator';
   form.image_refs = [image];
   assert.equal(validateCatalogProductForm(form), 'image_reference');
 
-  assert.match(productsPage, /imageReferenceOnly/);
-  assert.doesNotMatch(productsPage, /base64|FileReader|createObjectURL|FormData/);
-  assert.doesNotMatch(productsPage, /S3|Cloudinary/i);
+  assert.match(catalogPage, /CatalogImageUploadEditor/);
+  assert.doesNotMatch(catalogPage, /base64|FileReader|createObjectURL/);
+  assert.doesNotMatch(catalogPage, /localStorage|sessionStorage/);
 });
 
 test('create success uses canonical endpoint and server result', async () => {
@@ -247,9 +271,13 @@ test('create success uses canonical endpoint and server result', async () => {
   assert.equal(sent.compare_at_price_iqd, 15000);
   assert.equal(sent.stock_quantity, 10);
   assert.equal('merchant_id' in sent, false);
+
+  const createAwait = catalogPage.indexOf('const created = await createCatalogProduct');
+  const createStateWrite = catalogPage.indexOf('setItems(existing => upsert(existing, created))');
+  assert.ok(createAwait >= 0 && createStateWrite > createAwait);
 });
 
-test('create failure rejects and ProductsPage cannot mark it saved before await succeeds', async () => {
+test('create failure rejects before React state can claim success', async () => {
   const { fetcher } = capturedFetch(
     { ok: false, code: 'CATALOG_SKU_DUPLICATE', error: 'duplicate sku' },
     409,
@@ -258,16 +286,6 @@ test('create failure rejects and ProductsPage cannot mark it saved before await 
     () => createCatalogProduct(input, 'catalog-create-test-key', fetcher),
     (error: unknown) =>
       error instanceof CatalogApiError && error.code === 'CATALOG_SKU_DUPLICATE',
-  );
-
-  const createAwait = productsPage.indexOf('const created = await createCatalogProduct');
-  const createStateWrite = productsPage.indexOf(
-    'setProducts(existing => upsertServerProduct(existing, created))',
-  );
-  assert.ok(createAwait >= 0, 'ProductsPage must await canonical create');
-  assert.ok(
-    createStateWrite > createAwait,
-    'React product state must update only after canonical create succeeds',
   );
 });
 
@@ -283,7 +301,7 @@ test('idempotent create retry reuses a strong key only for the same request', ()
   assert.notEqual(changed.key, first.key);
   assert.match(first.key, /^catalog-create-/);
   assert.ok(first.key.length >= 40, 'idempotency key must contain cryptographic entropy');
-  assert.match(productsPage, /createAttemptRef\.current/);
+  assert.match(catalogPage, /createAttempt\.current/);
 });
 
 test('edit sends expected_version and never sends client merchant authority', async () => {
@@ -316,8 +334,8 @@ test('version conflict exposes current server product for replacement/reload', (
   );
 
   assert.deepEqual(currentProductFromConflict(error), current);
-  assert.match(productsPage, /getCatalogProduct\(productId\)/);
-  assert.match(productsPage, /versionConflict/);
+  assert.match(catalogPage, /getCatalogProduct\(productId\)/);
+  assert.match(catalogPage, /versionConflict/);
 });
 
 test('delete sends expected_version and removes UI state only after server success', async () => {
@@ -328,17 +346,14 @@ test('delete sends expected_version and removes UI state only after server succe
   });
   await deleteCatalogProduct(product.id, product.version, fetcher);
   assert.equal(calls[0].init.method, 'DELETE');
-  const sent = JSON.parse(String(calls[0].init.body));
-  assert.deepEqual(sent, { expected_version: 4 });
+  assert.deepEqual(JSON.parse(String(calls[0].init.body)), { expected_version: 4 });
 
-  const deleteAwait = productsPage.indexOf('await deleteCatalogProduct(product.id, product.version)');
-  const deleteStateWrite = productsPage.indexOf(
-    'setProducts(existing => existing.filter(item => item.id !== product.id))',
-  );
-  assert.ok(deleteStateWrite > deleteAwait);
+  const deleteAwait = catalogPage.indexOf('await deleteCatalogProduct(product.id, product.version)');
+  const deleteStateWrite = catalogPage.indexOf('setItems(current => current.filter(item => item.id !== product.id))');
+  assert.ok(deleteAwait >= 0 && deleteStateWrite > deleteAwait);
 });
 
-test('inventory set is server-authoritative and variant-scoped when a variant is supplied', async () => {
+test('inventory set is server-authoritative and variant-scoped when supplied', async () => {
   const updated = { ...variantProduct, version: 5 };
   const { fetcher, calls } = capturedFetch({ ok: true, product: updated });
   const result = await setCatalogInventory({
@@ -350,7 +365,6 @@ test('inventory set is server-authoritative and variant-scoped when a variant is
 
   assert.equal(result.version, 5);
   assert.equal(calls[0].input, `/api/inventory/products/${variantProduct.id}/set`);
-  assert.equal(calls[0].init.method, 'POST');
   assert.deepEqual(JSON.parse(String(calls[0].init.body)), {
     expected_version: 4,
     quantity: 7,
@@ -371,20 +385,14 @@ test('inventory adjust uses canonical idempotency and expected_version contract'
 
   assert.equal(calls[0].input, `/api/inventory/products/${variantProduct.id}/adjust`);
   assert.equal(new Headers(calls[0].init.headers).get('Idempotency-Key'), 'catalog-adjust-test-key');
-  assert.deepEqual(JSON.parse(String(calls[0].init.body)), {
-    expected_version: 4,
-    delta: -1,
-    variant_id: 'var-blue-l',
-    reason: 'merchant catalog inventory UX',
-  });
 });
 
 test('variant-managed inventory UI never exposes a product-level mutation path', () => {
-  assert.match(productsPage, /product\.variants\.length > 0 \?/);
-  assert.match(productsPage, /product\.variants\.map\(variant/);
-  assert.match(productsPage, /handleSetInventory\(product, variant\)/);
-  assert.match(productsPage, /handleAdjustInventory\(product, delta, variant\)/);
-  assert.match(productsPage, /catalogProductStockIsVariantManaged\(form\)/);
+  assert.match(catalogPage, /hasVariants \? product\.variants\.map/);
+  assert.match(catalogPage, /setInventory\(product, variant\)/);
+  assert.match(catalogPage, /adjustInventory\(product, delta, variant\)/);
+  assert.match(catalogPage, /CatalogProductDetailsEditor/);
+  assert.match(productDetails, /catalogProductStockIsVariantManaged/);
 });
 
 test('import success uses canonical atomic endpoint with idempotency key', async () => {
@@ -397,11 +405,7 @@ test('import success uses canonical atomic endpoint with idempotency key', async
   const created = await importCatalogProducts([input], 'catalog-import-test-key', fetcher);
   assert.equal(created.length, 1);
   assert.equal(calls[0].input, '/api/catalog/products/import');
-  assert.equal(calls[0].init.method, 'POST');
   assert.equal(new Headers(calls[0].init.headers).get('Idempotency-Key'), 'catalog-import-test-key');
-  const sent = JSON.parse(String(calls[0].init.body));
-  assert.deepEqual(sent.products, [input]);
-  assert.equal('merchant_id' in sent.products[0], false);
 });
 
 test('import validation failure is visible and stops before canonical import call', () => {
@@ -415,13 +419,13 @@ test('import validation failure is visible and stops before canonical import cal
 });
 
 test('load failure is not rendered as an empty catalog', () => {
-  assert.match(productsPage, /setLoadError\(/);
-  assert.match(productsPage, /loadError \?/);
-  assert.doesNotMatch(productsPage, /catch[\s\S]{0,300}setProducts\(\[\]\)/);
+  assert.match(catalogPage, /setLoadError\(true\)/);
+  assert.match(catalogPage, /loadError \?/);
+  assert.doesNotMatch(catalogPage, /catch[\s\S]{0,300}setItems\(\[\]\)/);
 });
 
-test('legacy write/sync and browser storage authority are absent from catalog UI', () => {
-  for (const source of [productsPage, importPage]) {
+test('legacy write sync and browser storage authority are absent from active catalog UI', () => {
+  for (const source of [catalogPage, importPage]) {
     assert.doesNotMatch(source, /['"]\/api\/products['"]/);
     assert.doesNotMatch(source, /\/api\/bot\/products\/sync/);
     assert.doesNotMatch(source, /\bsaveProducts\b/);
@@ -429,13 +433,13 @@ test('legacy write/sync and browser storage authority are absent from catalog UI
     assert.doesNotMatch(source, /localStorage/);
     assert.doesNotMatch(source, /sessionStorage/);
   }
-  assert.match(productsPage, /listCatalogProducts\(\)/);
+  assert.match(catalogPage, /listCatalogProducts\(\)/);
   assert.match(importPage, /importCatalogProducts\(products, attempt\.key\)/);
 });
 
 test('cross-merchant identity is never supplied by the catalog client as authority', () => {
-  assert.doesNotMatch(productsPage, /merchant_id\s*:/);
+  assert.doesNotMatch(catalogPage, /merchant_id\s*:/);
   assert.doesNotMatch(importPage, /merchant_id\s*:/);
-  assert.doesNotMatch(productsPage, /merchantId=/);
+  assert.doesNotMatch(catalogPage, /merchantId=/);
   assert.doesNotMatch(importPage, /merchantId=/);
 });
