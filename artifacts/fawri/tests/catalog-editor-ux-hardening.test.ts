@@ -35,6 +35,10 @@ const fullscreenCss = await readFile(
   new URL('../src/pages/dashboard/catalogEditorFullscreen.css', import.meta.url),
   'utf8',
 );
+const cardHarmonyCss = await readFile(
+  new URL('../src/pages/dashboard/catalogEditorCardHarmony.css', import.meta.url),
+  'utf8',
+);
 const compactCardCss = await readFile(
   new URL('../src/pages/dashboard/productCardCompact.css', import.meta.url),
   'utf8',
@@ -122,13 +126,25 @@ test('desktop item type selection stays compact and keeps inventory beside produ
   assert.doesNotMatch(itemTypeSource, /space-y-4 rounded-2xl border bg-muted\/10 p-4/);
 });
 
-test('product cards cannot be stretched or dominated by long variant inventory blocks', () => {
+test('product cards stay compact without nested inventory scrolling', () => {
   assert.match(workspaceSource, /productCardCompact\.css/);
   assert.match(compactCardCss, /\.grid:has\(> article\)[\s\S]*align-items:\s*start/);
   assert.match(compactCardCss, /article[\s\S]*align-self:\s*start/);
-  assert.match(compactCardCss, /max-height:\s*11rem/);
-  assert.match(compactCardCss, /overflow-y:\s*auto/);
+  assert.match(compactCardCss, /max-height:\s*none !important/);
+  assert.match(compactCardCss, /overflow:\s*visible !important/);
+  assert.doesNotMatch(compactCardCss, /overflow-y:\s*auto/);
   assert.match(compactCardCss, /-webkit-line-clamp:\s*3/);
+});
+
+test('Fawri availability card follows the same field geometry as the status card', () => {
+  assert.match(workspaceSource, /catalogEditorCardHarmony\.css/);
+  assert.match(cardHarmonyCss, /nth-child\(9\)[\s\S]*flex-direction:\s*column/);
+  assert.match(cardHarmonyCss, /background:\s*hsl\(var\(--muted\) \/ 0\.1\) !important/);
+  assert.match(cardHarmonyCss, /button\[aria-pressed\][\s\S]*width:\s*100% !important/);
+  assert.match(cardHarmonyCss, /height:\s*3rem !important/);
+  assert.match(cardHarmonyCss, /border-radius:\s*0\.75rem !important/);
+  assert.match(cardHarmonyCss, /inset-inline-end/);
+  assert.match(cardHarmonyCss, /button\[aria-pressed="true"\]::before[\s\S]*var\(--primary\)/);
 });
 
 test('RTL examples remain readable inside LTR technical and numeric fields', () => {
