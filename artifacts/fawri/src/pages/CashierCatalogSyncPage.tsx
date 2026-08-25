@@ -10,6 +10,9 @@ import {
   type CashierCloudOutboxSyncResult,
 } from '@/lib/cashierCloudOutboxSync';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
+import { CASHIER_UI_COPY, cashierLocale } from '@/lib/cashierUiCopy';
+import { useI18n } from '@/lib/i18n';
+import type { Lang } from '@/lib/types';
 
 type MerchantSyncSummary = {
   syncedOperations: number;
@@ -18,49 +21,51 @@ type MerchantSyncSummary = {
   completedAt: Date;
 };
 
-function catalogErrorMessage(error: unknown): string {
+type SyncLabels = (typeof CASHIER_UI_COPY)[Lang]['sync'];
+
+function catalogErrorMessage(error: unknown, labels: SyncLabels): string {
   if (error instanceof CashierCloudCatalogSyncError) {
     switch (error.code) {
       case 'CASHIER_CLOUD_SESSION_REQUIRED':
-        return 'يجب تسجيل الدخول إلى حساب التاجر لإكمال المزامنة.';
+        return labels.sessionRequired;
       case 'CASHIER_CLOUD_OFFLINE':
       case 'CASHIER_CLOUD_NETWORK_FAILED':
-        return 'لا يوجد اتصال بالإنترنت. يمكنك متابعة البيع ثم المحاولة بعد عودة الاتصال.';
+        return labels.offlineCatalog;
       case 'CASHIER_DEVICE_MERCHANT_MISMATCH':
-        return 'هذا الكاشير مرتبط بمتجر آخر. تواصل مع الدعم إذا كنت تحتاج إلى تغيير المتجر.';
+        return labels.merchantMismatch;
       case 'CASHIER_CLOUD_CURRENCY_NOT_CUT_OVER':
-        return 'عملة هذا المتجر غير مدعومة في الكاشير حاليًا.';
+        return labels.currencyUnsupported;
       case 'CASHIER_CLOUD_SKU_AMBIGUOUS':
-        return 'يوجد SKU مكرر في المنتجات. صححه من صفحة المنتجات ثم أعد المزامنة.';
+        return labels.skuAmbiguous;
       case 'CASHIER_CLOUD_BARCODE_AMBIGUOUS':
-        return 'يوجد باركود مكرر في المنتجات. صححه من صفحة المنتجات ثم أعد المزامنة.';
+        return labels.barcodeAmbiguous;
       case 'CASHIER_CLOUD_TENANT_MISMATCH':
-        return 'تعذر التحقق من المتجر المرتبط بهذا الكاشير. أعد تسجيل الدخول ثم حاول مرة أخرى.';
+        return labels.tenantMismatch;
       default:
-        return 'تعذر تحديث بيانات الكاشير. حاول المزامنة مرة أخرى.';
+        return labels.catalogFailed;
     }
   }
-  return 'تعذر تحديث بيانات الكاشير. حاول المزامنة مرة أخرى.';
+  return labels.catalogFailed;
 }
 
-function outboxErrorMessage(error: unknown): string {
+function outboxErrorMessage(error: unknown, labels: SyncLabels): string {
   if (error instanceof CashierCloudOutboxSyncError) {
     switch (error.code) {
       case 'CASHIER_OUTBOX_SESSION_REQUIRED':
-        return 'يجب تسجيل الدخول إلى حساب التاجر لإكمال المزامنة.';
+        return labels.sessionRequired;
       case 'CASHIER_OUTBOX_OFFLINE':
       case 'CASHIER_OUTBOX_NETWORK_FAILED':
-        return 'لا يوجد اتصال بالإنترنت. عمليات الكاشير محفوظة ويمكنك المحاولة بعد عودة الاتصال.';
+        return labels.offlineOutbox;
       case 'CASHIER_OUTBOX_DEVICE_NOT_BOUND':
       case 'CASHIER_OUTBOX_IDENTITY_MISSING':
-        return 'يجب ربط هذا الكاشير بحساب التاجر قبل المزامنة.';
+        return labels.deviceBindingRequired;
       case 'CASHIER_OUTBOX_ACK_INVALID':
-        return 'تعذر تأكيد مزامنة بعض عمليات الكاشير. بقيت محفوظة ولم يتم حذفها.';
+        return labels.ackInvalid;
       default:
-        return 'تعذر مزامنة بعض عمليات الكاشير. بقيت محفوظة ويمكنك إعادة المحاولة.';
+        return labels.outboxFailed;
     }
   }
-  return 'تعذر مزامنة بعض عمليات الكاشير. بقيت محفوظة ويمكنك إعادة المحاولة.';
+  return labels.outboxFailed;
 }
 
 function needsInitialBinding(error: unknown): boolean {
@@ -71,18 +76,20 @@ function needsInitialBinding(error: unknown): boolean {
   );
 }
 
-function formatLastSync(date: Date): string {
+function formatLastSync(date: Date, lang: Lang): string {
   try {
-    return new Intl.DateTimeFormat('ar-IQ', {
+    return new Intl.DateTimeFormat(cashierLocale(lang), {
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(date);
   } catch {
-    return date.toLocaleString('ar-IQ');
+    return date.toLocaleString(cashierLocale(lang));
   }
 }
 
 export default function CashierCatalogSyncPage() {
+  const { lang, dir } = useI18n();
+  const labels = CASHIER_UI_COPY[lang].sync;
   const [running, setRunning] = useState(false);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [summary, setSummary] = useState<MerchantSyncSummary | null>(null);
@@ -112,29 +119,24 @@ export default function CashierCatalogSyncPage() {
       } catch (cause) {
         if (!needsInitialBinding(cause)) throw cause;
 
-        // A new cashier has no cloud binding yet. Provision it once, then run the
-        // same safe operations-first reconciliation and refresh the catalog again
-        // so the merchant ends on the authoritative post-operation inventory state.
         try {
           await syncCashierCatalogFromCloud();
         } catch (catalogCause) {
-          setError(catalogErrorMessage(catalogCause));
+          setError(catalogErrorMessage(catalogCause, labels));
           return;
         }
         outboxResult = await syncCashierOutboxToCloud();
       }
 
       if (outboxResult.pending_after > 0) {
-        setError(
-          'ما زالت بعض عمليات الكاشير بانتظار المزامنة. بقيت محفوظة، ولم يتم تحديث المخزون بعد. حاول مرة أخرى.',
-        );
+        setError(labels.pendingOperations);
         return;
       }
 
       try {
         catalogResult = await syncCashierCatalogFromCloud();
       } catch (catalogCause) {
-        setError(catalogErrorMessage(catalogCause));
+        setError(catalogErrorMessage(catalogCause, labels));
         return;
       }
 
@@ -148,22 +150,22 @@ export default function CashierCatalogSyncPage() {
         completedAt,
       });
     } catch (cause) {
-      setError(outboxErrorMessage(cause));
+      setError(outboxErrorMessage(cause, labels));
     } finally {
       setRunning(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 p-3 text-slate-900 sm:h-screen sm:overflow-hidden" dir="rtl">
+    <main className="min-h-screen bg-slate-50 p-3 text-slate-900 sm:h-screen sm:overflow-hidden" dir={dir}>
       <div className="mx-auto max-w-2xl sm:flex sm:h-full sm:flex-col sm:justify-center">
         <header className="mb-3 flex shrink-0 items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <div className="flex min-w-0 items-center gap-3">
             <img src="/fawri-logo.svg" alt="Fawri" className="h-9 w-9 shrink-0 object-contain" />
             <div className="min-w-0">
-              <h1 className="text-lg font-bold sm:text-xl">مزامنة الكاشير</h1>
+              <h1 className="text-lg font-bold sm:text-xl">{labels.title}</h1>
               <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">
-                حدّث عمليات الكاشير والمنتجات والمخزون بين الكاشير وحسابك في فوري.
+                {labels.subtitle}
               </p>
             </div>
           </div>
@@ -171,7 +173,7 @@ export default function CashierCatalogSyncPage() {
             href="/cashier.html"
             className="shrink-0 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            العودة للكاشير
+            {labels.back}
           </a>
         </header>
 
@@ -187,21 +189,21 @@ export default function CashierCatalogSyncPage() {
               <div>
                 <p className="text-sm font-bold text-slate-900">
                   {running
-                    ? 'جارٍ المزامنة...'
+                    ? labels.syncing
                     : online
                       ? summary
-                        ? 'تمت المزامنة بنجاح'
-                        : 'جاهز للمزامنة'
-                      : 'لا يوجد اتصال بالإنترنت'}
+                        ? labels.syncSuccess
+                        : labels.ready
+                      : labels.offline}
                 </p>
                 <p className="mt-1 text-xs leading-5 text-slate-600">
                   {online
                     ? running
-                      ? 'يرجى الانتظار حتى تكتمل العملية.'
+                      ? labels.wait
                       : summary
-                        ? 'الكاشير محدث ويمكنك العودة للبيع.'
-                        : 'اضغط مزامنة الآن للحصول على أحدث البيانات.'
-                    : 'يمكنك متابعة البيع، ثم المزامنة عند عودة الاتصال.'}
+                        ? labels.updated
+                        : labels.readyHint
+                    : labels.offlineHint}
                 </p>
               </div>
               <span
@@ -211,7 +213,7 @@ export default function CashierCatalogSyncPage() {
                     : 'bg-white text-amber-800'
                 }`}
               >
-                {online ? 'متصل' : 'غير متصل'}
+                {online ? labels.onlineBadge : labels.offlineBadge}
               </span>
             </div>
           </div>
@@ -226,20 +228,20 @@ export default function CashierCatalogSyncPage() {
             <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
               <div className="grid gap-2 text-sm sm:grid-cols-3">
                 <div>
-                  <p className="text-xs text-slate-500">عمليات الكاشير التي تمت مزامنتها</p>
+                  <p className="text-xs text-slate-500">{labels.syncedOperations}</p>
                   <p className="mt-0.5 font-bold">{summary.syncedOperations}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">المنتجات</p>
+                  <p className="text-xs text-slate-500">{labels.products}</p>
                   <p className="mt-0.5 font-bold">{summary.products}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">العروض</p>
+                  <p className="text-xs text-slate-500">{labels.promotions}</p>
                   <p className="mt-0.5 font-bold">{summary.promotions}</p>
                 </div>
               </div>
               <p className="mt-3 border-t border-slate-200 pt-2 text-xs text-slate-500">
-                آخر مزامنة: {formatLastSync(summary.completedAt)}
+                {labels.lastSync} {formatLastSync(summary.completedAt, lang)}
               </p>
             </div>
           ) : null}
@@ -250,7 +252,7 @@ export default function CashierCatalogSyncPage() {
             onClick={() => void runMerchantSync()}
             className="mt-4 h-12 w-full rounded-xl bg-orange-600 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
-            {running ? 'جارٍ المزامنة...' : 'مزامنة الآن'}
+            {running ? labels.syncing : labels.syncNow}
           </button>
         </section>
       </div>
