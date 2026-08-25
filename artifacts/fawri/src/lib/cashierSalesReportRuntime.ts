@@ -234,7 +234,7 @@ export function buildCashierSalesReport(
 ): CashierSalesReport {
   const from = validInstant(options.from, 'from');
   const to = validInstant(options.to, 'to');
-  if (from && to && from.getTime() > to.getTime()) {
+  if (from && to && from.getTime() >= to.getTime()) {
     throw new Error('CASHIER_REPORT_INVALID_RANGE');
   }
   const topProductsLimit = Math.max(
@@ -276,6 +276,9 @@ export function buildCashierSalesReport(
       ? safeNonNegativeInteger(sale.void.refund_total_minor, 'void_refund')
       : 0;
     const refund = isVoided ? Math.max(saleTotal, voidRefund) : returnRefund;
+    if (refund > saleTotal) {
+      throw new Error('CASHIER_REPORT_REFUND_EXCEEDS_SALE');
+    }
 
     accumulator.refunds_minor = safeAdd(
       accumulator.refunds_minor,
