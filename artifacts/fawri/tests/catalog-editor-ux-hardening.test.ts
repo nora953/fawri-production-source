@@ -136,15 +136,19 @@ test('product cards stay compact without nested inventory scrolling', () => {
   assert.match(compactCardCss, /-webkit-line-clamp:\s*3/);
 });
 
-test('variant inventory is collapsed by default and opens only from an explicit details control', () => {
-  assert.match(pageSource, /expandedVariantProducts/);
-  assert.match(pageSource, /toggleVariantDetails/);
-  assert.match(pageSource, /aria-expanded=\{variantsExpanded\}/);
-  assert.match(pageSource, /aria-controls=\{variantsPanelId\}/);
+test('all tracked product cards share one collapsed inventory disclosure pattern', () => {
+  assert.match(pageSource, /expandedInventoryProducts/);
+  assert.match(pageSource, /toggleInventoryDetails/);
+  assert.match(pageSource, /aria-expanded=\{inventoryExpanded\}/);
+  assert.match(pageSource, /aria-controls=\{inventoryPanelId\}/);
+  assert.match(pageSource, /copy\.inventoryDetails/);
+  assert.match(pageSource, /copy\.hideInventoryDetails/);
   assert.match(pageSource, /copy\.variantDetails/);
   assert.match(pageSource, /copy\.hideVariantDetails/);
-  assert.match(pageSource, /variantsExpanded \? \(/);
+  assert.match(pageSource, /inventoryExpanded && \(/);
   assert.match(pageSource, /product\.variants\.map\(variant =>/);
+  assert.doesNotMatch(pageSource, /expandedVariantProducts/);
+  assert.doesNotMatch(pageSource, /toggleVariantDetails/);
 });
 
 test('Fawri availability aligns as a canonical field beside Description', () => {
