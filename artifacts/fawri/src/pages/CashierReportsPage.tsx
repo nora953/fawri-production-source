@@ -262,7 +262,7 @@ export default function CashierReportsPage() {
                             </div>
                             <div className="shrink-0 text-end">
                               <p className="font-bold">{product.net_units} {labels.sold}</p>
-                              <p className="mt-0.5 text-xs text-slate-500" dir="ltr">{labels.revenue}: {money(product.net_revenue_minor)}</p>
+                              <p className="mt-0.5 text-xs text-slate-500">{labels.revenue}: <bdi dir="ltr">{money(product.net_revenue_minor)}</bdi></p>
                             </div>
                           </div>
                         ))}
