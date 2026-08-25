@@ -16,10 +16,13 @@ test('cashier and catalog do not use Arabic thousands separators for merchant mo
   assert.doesNotMatch(pos, /Intl\.NumberFormat\('ar-IQ'/);
   assert.doesNotMatch(catalog, /price_iqd\.toLocaleString\(lang === 'en' \? 'en-US' : 'ar-IQ'\)/);
   assert.match(pos, /formatMerchantMoneyMinor/);
-  assert.match(catalog, /formatMerchantIqd/);
+  assert.match(catalog, /formatMerchantMoneyMinor/);
 });
 
-test('catalog price inputs keep currency inline instead of absolutely overlaying the input', () => {
-  assert.match(catalog, /className="flex items-center gap-2" dir="ltr"/);
+test('catalog price inputs do not overlay a legacy hardcoded currency label', () => {
+  assert.match(catalog, /const moneyStep = catalogCurrencyStep\(fractionDigits\)/);
+  assert.match(catalog, /step=\{moneyStep\} inputMode="decimal" dir="ltr" value=\{form\.current_price\}/);
+  assert.match(catalog, /step=\{moneyStep\} inputMode="decimal" dir="ltr" value=\{form\.original_price\}/);
   assert.doesNotMatch(catalog, /pointer-events-none absolute end-3 top-1\/2/);
+  assert.doesNotMatch(catalog, /<span[^>]*>\{copy\.currency\}<\/span>/);
 });
