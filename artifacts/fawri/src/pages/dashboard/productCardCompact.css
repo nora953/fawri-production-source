@@ -1,7 +1,7 @@
 /*
  * Product-card visual containment.
- * Inventory authority and controls remain unchanged; this file only prevents
- * a product with many variants from distorting the entire catalog grid.
+ * Inventory authority and controls remain unchanged; this file only keeps
+ * variant inventory visually compact without creating a nested scroll area.
  */
 
 .products-workspace-polish .grid:has(> article) {
@@ -14,22 +14,54 @@
   min-height: 0 !important;
 }
 
-/* Inventory blocks are operational detail, not the visual height authority of a card. */
+/* Never solve tall cards with a scroll area inside the card. All inventory rows
+ * stay visible; the rows themselves are made compact on desktop instead. */
 .products-workspace-polish article > div.px-4 > div.rounded-2xl:has(> p.mb-3) {
-  max-height: 11rem;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
+  max-height: none !important;
+  overflow: visible !important;
+  scrollbar-gutter: auto;
 }
 
-.products-workspace-polish article > div.px-4 > div.rounded-2xl:has(> p.mb-3)::-webkit-scrollbar {
-  width: 0.4rem;
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 {
+  display: grid;
+  grid-template-columns: minmax(7.5rem, 0.8fr) minmax(14rem, 1.2fr);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem !important;
 }
 
-.products-workspace-polish article > div.px-4 > div.rounded-2xl:has(> p.mb-3)::-webkit-scrollbar-thumb {
-  border-radius: 9999px;
-  background: hsl(var(--muted-foreground) / 0.24);
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 > .mb-2 {
+  min-width: 0;
+  margin-bottom: 0 !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 > .mb-2 > div {
+  min-width: 0;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 > .grid {
+  min-width: 0;
+  grid-template-columns: 2.25rem minmax(4.75rem, 1fr) auto 2.25rem !important;
+  gap: 0.375rem !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 .h-10 {
+  height: 2.25rem !important;
+  min-height: 2.25rem !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 .w-10 {
+  width: 2.25rem !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 input {
+  min-width: 0;
+  padding-inline: 0.625rem !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 button:not(.w-10) {
+  white-space: nowrap;
+  padding-inline: 0.65rem !important;
 }
 
 /* Keep descriptions useful without letting prose create an oversized card. */
@@ -40,9 +72,13 @@
   -webkit-line-clamp: 3;
 }
 
-@media (max-width: 640px) {
-  /* On mobile the card owns the full width, so give inventory slightly more room. */
-  .products-workspace-polish article > div.px-4 > div.rounded-2xl:has(> p.mb-3) {
-    max-height: 13rem;
+@media (max-width: 720px) {
+  .products-workspace-polish article .rounded-xl.border.bg-background.p-3 {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .products-workspace-polish article .rounded-xl.border.bg-background.p-3 > .mb-2 {
+    margin-bottom: 0.25rem !important;
   }
 }
