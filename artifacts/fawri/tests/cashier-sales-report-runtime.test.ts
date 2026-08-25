@@ -345,10 +345,10 @@ test('corrupt over-return evidence fails closed instead of producing negative re
           product_id: 'p',
           quantity: 2,
           effective_unit_price_minor: 10,
-          refund_minor: 20,
+          refund_minor: 10,
         },
       ],
-      refund_total_minor: 20,
+      refund_total_minor: 10,
       occurred_at: '2026-08-25T14:05:00.000Z',
     },
   ];
