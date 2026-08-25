@@ -3,10 +3,12 @@ import CashierCatalogSyncPage from '@/pages/CashierCatalogSyncPage';
 import CashierHistoryPage from '@/pages/CashierHistoryPage';
 import CashierLocalShellPage from '@/pages/CashierLocalShellPage';
 import CashierPosPage from '@/pages/CashierPosPage';
+import CashierReportsPage from '@/pages/CashierReportsPage';
 import '@/index.css';
 import '@/styles/fawriUiBaseline.css';
 import '@/styles/fawriLanguageAuthority.css';
 import '@/styles/cashierPos.css';
+import { I18nProvider } from '@/lib/i18n';
 import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
 import { installAuthClientCutover } from '@/lib/authClientCutover';
 import { syncCashierOutboxToCloud } from '@/lib/cashierCloudOutboxSync';
@@ -25,6 +27,7 @@ const diagnostics =
   diagnosticsRequested && import.meta.env.VITE_CASHIER_DIAGNOSTICS === '1';
 const sync = params.get('sync') === '1';
 const history = params.get('history') === '1';
+const reports = params.get('reports') === '1';
 const demoRequested = params.get('demo') === '1';
 
 const AUTO_SYNC_INTERVAL_MS = 3_000;
@@ -207,20 +210,26 @@ document.documentElement.dataset.cashierView = diagnostics
   ? 'diagnostics'
   : sync
     ? 'sync'
-    : history
-      ? 'history'
-      : 'pos';
+    : reports
+      ? 'reports'
+      : history
+        ? 'history'
+        : 'pos';
 
 createRoot(document.getElementById('cashier-root')!).render(
-  diagnostics ? (
-    <CashierLocalShellPage />
-  ) : sync ? (
-    <CashierCatalogSyncPage />
-  ) : history ? (
-    <CashierHistoryPage />
-  ) : (
-    <CashierPosPage />
-  ),
+  <I18nProvider>
+    {diagnostics ? (
+      <CashierLocalShellPage />
+    ) : sync ? (
+      <CashierCatalogSyncPage />
+    ) : reports ? (
+      <CashierReportsPage />
+    ) : history ? (
+      <CashierHistoryPage />
+    ) : (
+      <CashierPosPage />
+    )}
+  </I18nProvider>,
 );
 
 // Demo fixtures intentionally never upload. Real cashier operational views keep
