@@ -1,0 +1,95 @@
+/*
+ * Keep the Fawri availability setting in the same visual family as the Status
+ * card beside it. This layer is presentation-only; it does not change the
+ * allow_fawri_reply authority or save semantics.
+ */
+
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 0.75rem !important;
+  min-height: 7.25rem;
+  padding: 1rem !important;
+  border-radius: 1rem !important;
+  border-color: hsl(var(--border)) !important;
+  background: hsl(var(--muted) / 0.1) !important;
+}
+
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) > div:first-child {
+  min-width: 0;
+}
+
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) > div:first-child > p:first-child {
+  color: hsl(var(--foreground));
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+  font-weight: 600 !important;
+}
+
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) > div:first-child > p:last-child {
+  margin-top: 0.5rem !important;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem !important;
+  line-height: 1.25rem !important;
+  font-weight: 400 !important;
+}
+
+/* The existing switch remains the single interactive control, but its click
+ * target becomes a canonical 48px control row like the Status select above. */
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) > button[aria-pressed] {
+  position: relative !important;
+  align-self: stretch !important;
+  width: 100% !important;
+  height: 3rem !important;
+  min-height: 3rem !important;
+  border: 1px solid hsl(var(--input)) !important;
+  border-radius: 0.75rem !important;
+  background: hsl(var(--background)) !important;
+  box-shadow: none !important;
+}
+
+/* Draw the switch track at inline-end so Arabic/Kurdish/English all follow the
+ * direction of their own reviewed UI instead of hard-coded left/right offsets. */
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) > button[aria-pressed]::before {
+  content: "";
+  position: absolute;
+  inset-inline-end: 0.75rem;
+  top: 50%;
+  width: 3.5rem;
+  height: 2rem;
+  transform: translateY(-50%);
+  border-radius: 9999px;
+  background: hsl(var(--muted-foreground) / 0.3);
+  transition: background-color 160ms ease;
+}
+
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) > button[aria-pressed="true"]::before {
+  background: hsl(var(--primary));
+}
+
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) > button[aria-pressed] > span {
+  top: 50% !important;
+  right: auto !important;
+  left: auto !important;
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  transform: translateY(-50%) !important;
+  transition: inset-inline-end 160ms ease !important;
+  z-index: 1;
+}
+
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) > button[aria-pressed="true"] > span {
+  inset-inline-end: 1rem !important;
+}
+
+.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) > button[aria-pressed="false"] > span {
+  inset-inline-end: 2.75rem !important;
+}
+
+@media (max-width: 1000px) {
+  .products-workspace-polish .catalog-editor-body-grid > :nth-child(9) {
+    min-height: 0;
+  }
+}
