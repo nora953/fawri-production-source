@@ -228,6 +228,15 @@ function translateDatabaseError(error: unknown): never {
 function commerceInputRequiresPostgres(input: unknown): boolean {
   if (!input || typeof input !== "object" || Array.isArray(input)) return false;
   const record = input as Record<string, unknown>;
+  const variantHasReportingCost =
+    Array.isArray(record.variants) &&
+    record.variants.some(
+      (variant) =>
+        Boolean(variant) &&
+        typeof variant === "object" &&
+        !Array.isArray(variant) &&
+        Object.prototype.hasOwnProperty.call(variant, "cost_iqd"),
+    );
   return (
     Object.prototype.hasOwnProperty.call(record, "item_type") ||
     Object.prototype.hasOwnProperty.call(record, "track_inventory") ||
@@ -236,7 +245,9 @@ function commerceInputRequiresPostgres(input: unknown): boolean {
     Object.prototype.hasOwnProperty.call(record, "buffer_minutes") ||
     Object.prototype.hasOwnProperty.call(record, "booking_required") ||
     Object.prototype.hasOwnProperty.call(record, "price_type") ||
-    Object.prototype.hasOwnProperty.call(record, "location_mode")
+    Object.prototype.hasOwnProperty.call(record, "location_mode") ||
+    Object.prototype.hasOwnProperty.call(record, "cost_iqd") ||
+    variantHasReportingCost
   );
 }
 
