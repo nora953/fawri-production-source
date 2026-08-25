@@ -5,10 +5,13 @@ import fs from 'node:fs';
 const pos = fs.readFileSync(new URL('../src/pages/CashierPosPage.tsx', import.meta.url), 'utf8');
 const history = fs.readFileSync(new URL('../src/pages/CashierHistoryPage.tsx', import.meta.url), 'utf8');
 const syncPage = fs.readFileSync(new URL('../src/pages/CashierCatalogSyncPage.tsx', import.meta.url), 'utf8');
+const productsRoute = fs.readFileSync(new URL('../src/pages/dashboard/ProductsPage.tsx', import.meta.url), 'utf8');
+const productsWorkspace = fs.readFileSync(new URL('../src/pages/dashboard/ProductsWorkspacePage.tsx', import.meta.url), 'utf8');
 const catalog = fs.readFileSync(new URL('../src/pages/dashboard/CommerceCatalogPage.tsx', import.meta.url), 'utf8');
 const productDetails = fs.readFileSync(new URL('../src/components/catalog/CatalogProductDetailsEditor.tsx', import.meta.url), 'utf8');
 const dashboardLayout = fs.readFileSync(new URL('../src/components/layout/DashboardLayout.tsx', import.meta.url), 'utf8');
 const sidebar = fs.readFileSync(new URL('../src/components/layout/Sidebar.tsx', import.meta.url), 'utf8');
+const bottomNav = fs.readFileSync(new URL('../src/components/layout/BottomNav.tsx', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const cashierMain = fs.readFileSync(new URL('../src/cashierMain.tsx', import.meta.url), 'utf8');
 const cashierCopy = fs.readFileSync(new URL('../src/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
@@ -22,14 +25,17 @@ test('automatic cashier catalog refresh stays silent and preserves unchanged cat
   assert.match(pos, /if \(visible\) setSearching\(false\)/);
 });
 
-test('cashier and catalog do not use Arabic thousands separators for merchant money', () => {
+test('cashier and active catalog do not use Arabic thousands separators for merchant money', () => {
   assert.doesNotMatch(pos, /Intl\.NumberFormat\('ar-IQ'/);
-  assert.doesNotMatch(catalog, /price_iqd\.toLocaleString\(lang === 'en' \? 'en-US' : 'ar-IQ'\)/);
   assert.match(pos, /formatMerchantMoneyMinor\(amountMinor, currencyCode, fractionDigits, lang\)/);
   assert.match(catalog, /formatMerchantMoneyMinor/);
+  assert.match(catalog, /catalogMoneyFormForDisplay/);
+  assert.match(catalog, /catalogMoneyFormForAuthority/);
 });
 
-test('catalog price inputs do not overlay a legacy hardcoded currency label', () => {
+test('active catalog price inputs follow merchant currency fraction digits', () => {
+  assert.match(productsRoute, /ProductsWorkspacePage/);
+  assert.match(productsWorkspace, /CommerceCatalogPage/);
   assert.match(catalog, /const moneyStep = catalogCurrencyStep\(fractionDigits\)/);
   assert.match(catalog, /step=\{moneyStep\} inputMode="decimal" dir="ltr" value=\{form\.current_price\}/);
   assert.match(catalog, /step=\{moneyStep\} inputMode="decimal" dir="ltr" value=\{form\.original_price\}/);
@@ -37,16 +43,32 @@ test('catalog price inputs do not overlay a legacy hardcoded currency label', ()
   assert.doesNotMatch(catalog, /<span[^>]*>\{copy\.currency\}<\/span>/);
 });
 
-test('cashier opens beside the merchant dashboard and cashier refresh never reloads the browser', () => {
-  assert.match(sidebar, /target="_blank"/);
-  assert.match(sidebar, /rel="noopener noreferrer"/);
-  assert.match(sidebar, /href=\{item\.href\}/);
+test('cashier opens beside merchant dashboard on desktop and mobile without dashboard remounts', () => {
+  for (const navigation of [sidebar, bottomNav]) {
+    assert.match(navigation, /href=\{item\.href\}/);
+    assert.match(navigation, /target="_blank"/);
+    assert.match(navigation, /rel="noopener noreferrer"/);
+  }
+  assert.match(bottomNav, /href: "\/cashier\.html"/);
   assert.doesNotMatch(dashboardLayout, /window\.location\.reload\(\)/);
-  assert.match(dashboardLayout, /setCashierContentRevision\(value => value \+ 1\)/);
-  assert.match(dashboardLayout, /key=\{`\$\{location\}:\$\{cashierContentRevision\}`\}/);
+  assert.doesNotMatch(dashboardLayout, /cashierContentRevision/);
+  assert.doesNotMatch(dashboardLayout, /subscribeCashierDashboardRefresh/);
 });
 
-test('shipping measurement hint spans above aligned weight and dimensions fields', () => {
+test('cashier catalog refresh is in-place and never discards an open product editor', () => {
+  assert.match(catalog, /subscribeCashierDashboardRefresh/);
+  assert.match(catalog, /if \(formOpen \|\| saving\)/);
+  assert.match(catalog, /pendingCashierRefresh\.current = true/);
+  assert.match(catalog, /if \(formOpen \|\| saving \|\| !pendingCashierRefresh\.current\) return/);
+  assert.match(catalog, /setReload\(value => value \+ 1\)/);
+  assert.match(catalog, /if \(!loadedOnce\.current\) setLoading\(true\)/);
+});
+
+test('shipping measurement hint belongs to the active workspace and spans above aligned fields', () => {
+  assert.match(productsRoute, /ProductsWorkspacePage/);
+  assert.match(productsWorkspace, /CommerceCatalogPage/);
+  assert.match(catalog, /CatalogProductDetailsEditor/);
+
   const hint = '<p className="text-xs leading-5 text-muted-foreground">{labels.physicalHint}</p>';
   const fieldsGrid = '<div className="grid items-start gap-4 lg:grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)]">';
   const weight = '<span>{labels.weight}</span>';
@@ -97,5 +119,4 @@ test('cashier language follows merchant language changes across tabs and localiz
   assert.match(pos, /dir=\{dir\}/);
   assert.match(history, /dir=\{dir\}/);
   assert.match(syncPage, /dir=\{dir\}/);
-}
-);
+});
