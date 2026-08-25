@@ -27,6 +27,28 @@ test("active order and settings pages are server-only", async () => {
   assert.doesNotMatch(combined, /fallback.*local|local.*fallback/i);
 });
 
+test("orders and delivery settings use authoritative store currency", async () => {
+  const ordersPage = await source(
+    "artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx",
+  );
+  const settingsPage = await source(
+    "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx",
+  );
+
+  assert.match(ordersPage, /getMerchantRegionalContext/);
+  assert.match(ordersPage, /formatMerchantMoneyMinor/);
+  assert.match(ordersPage, /regional\.currency_code/);
+  assert.match(ordersPage, /regional\.currency_fraction_digits/);
+  assert.doesNotMatch(ordersPage, /toLocaleString\([^)]*\).*IQD/);
+
+  assert.match(settingsPage, /getMerchantRegionalContext/);
+  assert.match(settingsPage, /catalogMajorAmountToMinor/);
+  assert.match(settingsPage, /catalogMinorAmountToMajor/);
+  assert.match(settingsPage, /catalogCurrencyStep/);
+  assert.match(settingsPage, /regional\.currency_code/);
+  assert.match(settingsPage, /regional\.currency_fraction_digits/);
+});
+
 test("generic payment endpoint cannot write terminal states", async () => {
   const runtime = await source(
     "artifacts/api-server/src/services/orderOperationsRuntime.ts",
