@@ -107,6 +107,8 @@ type PageCopy = {
   inventorySet: string;
   inventorySaved: string;
   inventoryFailed: string;
+  inventoryDetails: string;
+  hideInventoryDetails: string;
   variantDetails: string;
   hideVariantDetails: string;
   save: string;
@@ -175,6 +177,8 @@ const COPY: Record<Lang, PageCopy> = {
     inventorySet: 'تعيين',
     inventorySaved: 'تم تحديث المخزون.',
     inventoryFailed: 'تعذر تحديث المخزون.',
+    inventoryDetails: 'تفاصيل المخزون',
+    hideInventoryDetails: 'إخفاء المخزون',
     variantDetails: 'تفاصيل الأنواع',
     hideVariantDetails: 'إخفاء الأنواع',
     save: 'حفظ',
@@ -241,6 +245,8 @@ const COPY: Record<Lang, PageCopy> = {
     inventorySet: 'دانان',
     inventorySaved: 'کۆگا نوێکرایەوە.',
     inventoryFailed: 'نوێکردنەوەی کۆگا سەرکەوتوو نەبوو.',
+    inventoryDetails: 'وردەکاری کۆگا',
+    hideInventoryDetails: 'شاردنەوەی کۆگا',
     variantDetails: 'وردەکاری جۆرەکان',
     hideVariantDetails: 'شاردنەوەی جۆرەکان',
     save: 'پاشەکەوتکردن',
@@ -307,6 +313,8 @@ const COPY: Record<Lang, PageCopy> = {
     inventorySet: 'Set',
     inventorySaved: 'Inventory updated.',
     inventoryFailed: 'Could not update inventory.',
+    inventoryDetails: 'Inventory details',
+    hideInventoryDetails: 'Hide inventory',
     variantDetails: 'Variant details',
     hideVariantDetails: 'Hide variants',
     save: 'Save',
@@ -415,7 +423,7 @@ export default function CommerceCatalogPage() {
   const [saving, setSaving] = useState(false);
   const [inventoryValues, setInventoryValues] = useState<Record<string, string>>({});
   const [inventoryBusy, setInventoryBusy] = useState<string | null>(null);
-  const [expandedVariantProducts, setExpandedVariantProducts] = useState<Record<string, boolean>>({});
+  const [expandedInventoryProducts, setExpandedInventoryProducts] = useState<Record<string, boolean>>({});
 
   const statusOptions = useMemo(() => [
     { value: 'available' as const, label: copy.available },
@@ -518,8 +526,8 @@ export default function CommerceCatalogPage() {
 
   const patchForm = (patch: Partial<CatalogProductFormState>) => setForm(current => ({ ...current, ...patch }));
 
-  const toggleVariantDetails = (productId: string) => {
-    setExpandedVariantProducts(current => ({ ...current, [productId]: !current[productId] }));
+  const toggleInventoryDetails = (productId: string) => {
+    setExpandedInventoryProducts(current => ({ ...current, [productId]: !current[productId] }));
   };
 
   const validate = () => {
@@ -593,7 +601,7 @@ export default function CommerceCatalogPage() {
     try {
       await deleteCatalogProduct(product.id, product.version);
       setItems(current => current.filter(item => item.id !== product.id));
-      setExpandedVariantProducts(current => {
+      setExpandedInventoryProducts(current => {
         const next = { ...current };
         delete next[product.id];
         return next;
@@ -697,8 +705,8 @@ export default function CommerceCatalogPage() {
             const primary = imageUrl(product);
             const service = product.service_details;
             const hasVariants = product.variants.length > 0;
-            const variantsExpanded = Boolean(expandedVariantProducts[product.id]);
-            const variantsPanelId = `catalog-variants-${product.id}`;
+            const inventoryExpanded = Boolean(expandedInventoryProducts[product.id]);
+            const inventoryPanelId = `catalog-inventory-${product.id}`;
             return (
               <article key={product.id} className="overflow-hidden rounded-3xl border bg-card shadow-sm transition hover:shadow-md">
                 {primary && <div className="h-44 overflow-hidden border-b bg-muted/20"><img src={primary} alt={product.image_refs[0]?.alt || product.name} className="h-full w-full object-cover" /></div>}
@@ -738,36 +746,34 @@ export default function CommerceCatalogPage() {
                     <div className="rounded-2xl bg-muted/20 p-3">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-bold">{copy.inventory}</p>
-                        {hasVariants && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-9 rounded-xl px-3 text-xs font-bold"
-                            aria-expanded={variantsExpanded}
-                            aria-controls={variantsPanelId}
-                            onClick={() => toggleVariantDetails(product.id)}
-                          >
-                            {variantsExpanded ? copy.hideVariantDetails : copy.variantDetails}
-                            <Badge variant="outline" className="mx-2 rounded-full bg-background">{product.variants.length}</Badge>
-                            {variantsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                          </Button>
-                        )}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-9 rounded-xl px-3 text-xs font-bold"
+                          aria-expanded={inventoryExpanded}
+                          aria-controls={inventoryPanelId}
+                          onClick={() => toggleInventoryDetails(product.id)}
+                        >
+                          {hasVariants
+                            ? (inventoryExpanded ? copy.hideVariantDetails : copy.variantDetails)
+                            : (inventoryExpanded ? copy.hideInventoryDetails : copy.inventoryDetails)}
+                          {hasVariants && <Badge variant="outline" className="mx-2 rounded-full bg-background">{product.variants.length}</Badge>}
+                          {inventoryExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                        </Button>
                       </div>
 
-                      {hasVariants ? (
-                        variantsExpanded ? (
-                          <div id={variantsPanelId} className="mt-3 space-y-2">
-                            {product.variants.map(variant => {
-                              const key = inventoryKey(product.id, variant.id);
-                              return <InventoryControl key={variant.id} copy={copy} product={product} variant={variant} value={inventoryValues[key] ?? String(variant.stock_quantity)} busy={inventoryBusy === key} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product, variant)} onAdjust={delta => void adjustInventory(product, delta, variant)} />;
-                            })}
-                          </div>
-                        ) : null
-                      ) : (() => {
-                        const key = inventoryKey(product.id);
-                        return <div className="mt-3"><InventoryControl copy={copy} product={product} value={inventoryValues[key] ?? String(product.stock_quantity)} busy={inventoryBusy === key} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product)} onAdjust={delta => void adjustInventory(product, delta)} /></div>;
-                      })()}
+                      {inventoryExpanded && (
+                        <div id={inventoryPanelId} className="mt-3 space-y-2">
+                          {hasVariants ? product.variants.map(variant => {
+                            const key = inventoryKey(product.id, variant.id);
+                            return <InventoryControl key={variant.id} copy={copy} product={product} variant={variant} value={inventoryValues[key] ?? String(variant.stock_quantity)} busy={inventoryBusy === key} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product, variant)} onAdjust={delta => void adjustInventory(product, delta, variant)} />;
+                          }) : (() => {
+                            const key = inventoryKey(product.id);
+                            return <InventoryControl copy={copy} product={product} value={inventoryValues[key] ?? String(product.stock_quantity)} busy={inventoryBusy === key} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product)} onAdjust={delta => void adjustInventory(product, delta)} />;
+                          })()}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
