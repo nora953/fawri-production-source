@@ -3,6 +3,10 @@ name: Product catalog UI cutover
 on:
   pull_request:
     paths:
+      - "artifacts/fawri/src/main.tsx"
+      - "artifacts/fawri/src/styles/fawriLanguageAuthority.css"
+      - "artifacts/fawri/src/styles/fawriUiBaseline.css"
+      - "artifacts/fawri/src/lib/i18n.tsx"
       - "artifacts/fawri/src/lib/catalogUiApi.ts"
       - "artifacts/fawri/src/lib/catalogProductEditor.ts"
       - "artifacts/fawri/src/lib/catalogVariantMatrix.ts"
@@ -16,10 +20,12 @@ on:
       - "artifacts/fawri/src/pages/dashboard/ProductsWorkspacePage.tsx"
       - "artifacts/fawri/src/pages/dashboard/CommerceCatalogPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/catalogEditorFullscreen.css"
+      - "artifacts/fawri/src/pages/dashboard/productCardCompact.css"
       - "artifacts/fawri/src/pages/dashboard/ImportProductsPage.tsx"
       - "artifacts/fawri/tests/product-catalog-ui-cutover.test.ts"
       - "artifacts/fawri/tests/catalog-editor-logic-hardening.test.ts"
       - "artifacts/fawri/tests/catalog-editor-ux-hardening.test.ts"
+      - "artifacts/fawri/tests/fawri-language-ui-authority.test.ts"
       - "artifacts/api-server/src/routes/catalog-operations.ts"
       - "artifacts/api-server/src/services/catalogInventoryRuntime.ts"
       - "artifacts/api-server/src/services/catalogMediaStorage.ts"
