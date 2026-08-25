@@ -16,6 +16,7 @@ import {
   subscribeCashierSyncUiState,
   type CashierSyncUiState,
 } from '@/lib/cashierSyncUiState';
+import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
 
 type CartLine = { item: CashierCatalogLookup; quantity: number };
 type SaleSuccess = {
@@ -35,17 +36,30 @@ function itemKey(item: { product_id: string; variant_id?: string }): string {
 }
 
 function formatMoney(amountMinor: number, currencyCode: string, fractionDigits: number): string {
-  const divisor = 10 ** fractionDigits;
-  try {
-    return new Intl.NumberFormat('ar-IQ', {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
-    }).format(amountMinor / divisor);
-  } catch {
-    return `${(amountMinor / divisor).toLocaleString('ar-IQ')} ${currencyCode}`;
-  }
+  return formatMerchantMoneyMinor(amountMinor, currencyCode, fractionDigits, 'ar');
+}
+
+function catalogMatches(
+  current: CashierCatalogLookup[],
+  next: CashierCatalogLookup[],
+): boolean {
+  if (current.length !== next.length) return false;
+  return current.every((item, index) => {
+    const candidate = next[index];
+    return Boolean(candidate) &&
+      itemKey(item) === itemKey(candidate) &&
+      item.name === candidate.name &&
+      item.variant_name === candidate.variant_name &&
+      item.sku === candidate.sku &&
+      item.barcode === candidate.barcode &&
+      item.item_type === candidate.item_type &&
+      item.track_inventory === candidate.track_inventory &&
+      item.stock_quantity === candidate.stock_quantity &&
+      item.base_unit_price_minor === candidate.base_unit_price_minor &&
+      item.currency_code === candidate.currency_code &&
+      item.currency_fraction_digits === candidate.currency_fraction_digits &&
+      item.catalog_version === candidate.catalog_version;
+  });
 }
 
 function errorMessage(error: unknown): string {
@@ -127,12 +141,17 @@ export default function CashierPosPage() {
   const [success, setSuccess] = useState<SaleSuccess | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const refreshCatalog = useCallback(async (activeRuntime: CashierPosRuntime, nextQuery: string) => {
-    setSearching(true);
+  const refreshCatalog = useCallback(async (
+    activeRuntime: CashierPosRuntime,
+    nextQuery: string,
+    visible = true,
+  ) => {
+    if (visible) setSearching(true);
     try {
-      setCatalog(await activeRuntime.searchCatalog(nextQuery, 50));
+      const next = await activeRuntime.searchCatalog(nextQuery, 50);
+      setCatalog(current => catalogMatches(current, next) ? current : next);
     } finally {
-      setSearching(false);
+      if (visible) setSearching(false);
     }
   }, []);
 
@@ -173,7 +192,7 @@ export default function CashierPosPage() {
   useEffect(() => {
     if (!runtime) return;
     return subscribeCashierCatalogRefresh(() => {
-      void refreshCatalog(runtime, query).catch(() => undefined);
+      void refreshCatalog(runtime, query, false).catch(() => undefined);
     });
   }, [query, refreshCatalog, runtime]);
 
@@ -277,7 +296,7 @@ export default function CashierPosPage() {
       if (exact) {
         addItem(exact);
         setQuery('');
-        await refreshCatalog(runtime, '');
+        await refreshCatalog(runtime, '', false);
         searchRef.current?.focus();
         return;
       }
@@ -316,11 +335,11 @@ export default function CashierPosPage() {
       setCompactPage(0);
       setPaymentMethod('cash');
       setExternalConfirmed(false);
-      await refreshCatalog(runtime, query);
+      await refreshCatalog(runtime, query, false);
       searchRef.current?.focus();
     } catch (cause) {
       setError(errorMessage(cause));
-      await refreshCatalog(runtime, query).catch(() => undefined);
+      await refreshCatalog(runtime, query, false).catch(() => undefined);
     } finally {
       setCommitting(false);
     }
@@ -405,7 +424,7 @@ export default function CashierPosPage() {
         {success ? (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             <strong>تم البيع بنجاح.</strong>
-            <span>{formatMoney(success.totalMinor, success.currencyCode, success.fractionDigits)}</span>
+            <span dir="ltr">{formatMoney(success.totalMinor, success.currencyCode, success.fractionDigits)}</span>
           </div>
         ) : null}
 
@@ -452,7 +471,7 @@ export default function CashierPosPage() {
                       <button type="button" key={itemKey(item)} onClick={() => addItem(item)} disabled={soldOut} className="rounded-2xl border border-slate-200 p-4 text-right transition hover:border-orange-300 hover:bg-orange-50/40 disabled:cursor-not-allowed disabled:opacity-50">
                         <div className="mb-3 flex items-start justify-between gap-3">
                           <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{item.item_type === 'service' ? 'خدمة' : 'منتج'}</span>
-                          <span className="text-base font-bold">{formatMoney(item.base_unit_price_minor, item.currency_code, item.currency_fraction_digits)}</span>
+                          <span className="text-base font-bold" dir="ltr">{formatMoney(item.base_unit_price_minor, item.currency_code, item.currency_fraction_digits)}</span>
                         </div>
                         <h3 className="font-bold leading-6">{item.name}</h3>
                         {item.variant_name ? <p className="mt-1 text-xs text-slate-500">{item.variant_name}</p> : null}
@@ -497,12 +516,12 @@ export default function CashierPosPage() {
                           {activeLine.item.variant_name ? <p className="mt-0.5 truncate text-xs text-slate-500">{activeLine.item.variant_name}</p> : null}
                           {activePrice?.promotion ? <p className="mt-1 text-xs font-semibold text-emerald-700">{activePrice.promotion.promotion_name}</p> : null}
                         </div>
-                        <strong className="whitespace-nowrap text-base">{formatMoney(activeTotal, activeLine.item.currency_code, activeLine.item.currency_fraction_digits)}</strong>
+                        <strong className="whitespace-nowrap text-base" dir="ltr">{formatMoney(activeTotal, activeLine.item.currency_code, activeLine.item.currency_fraction_digits)}</strong>
                       </div>
                       <div className="mt-2 flex items-end justify-between gap-3">
                         <div>
                           <p className="text-[11px] text-slate-500">سعر الوحدة</p>
-                          <p className="text-sm font-semibold">{formatMoney(activeUnit, activeLine.item.currency_code, activeLine.item.currency_fraction_digits)}</p>
+                          <p className="text-sm font-semibold" dir="ltr">{formatMoney(activeUnit, activeLine.item.currency_code, activeLine.item.currency_fraction_digits)}</p>
                         </div>
                         <div className="flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
                           <button type="button" onClick={() => updateQuantity(activeKey, activeLine.quantity - 1)} className="h-10 w-12 text-xl hover:bg-slate-50">−</button>
@@ -533,7 +552,7 @@ export default function CashierPosPage() {
                                   <p className="truncate text-[11px] font-bold">{line.item.name}</p>
                                   <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-slate-500">
                                     <span>×{line.quantity}</span>
-                                    <span className="truncate">{formatMoney(total, line.item.currency_code, line.item.currency_fraction_digits)}</span>
+                                    <span className="truncate" dir="ltr">{formatMoney(total, line.item.currency_code, line.item.currency_fraction_digits)}</span>
                                   </div>
                                 </button>
                               );
@@ -553,9 +572,9 @@ export default function CashierPosPage() {
             <div className="shrink-0 border-t border-slate-100 bg-white p-3">
               {quoteError ? <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{quoteError}</div> : null}
               <div className="space-y-1 text-sm">
-                <div className="flex justify-between text-slate-500"><span>المجموع قبل الخصم</span><span>{quote ? formatMoney(quote.subtotal_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
-                <div className="flex justify-between text-emerald-700"><span>الخصم</span><span>{quote ? `− ${formatMoney(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits)}` : '—'}</span></div>
-                <div className="flex justify-between border-t border-slate-100 pt-1.5 text-lg font-bold"><span>الإجمالي</span><span>{quote ? formatMoney(quote.total_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
+                <div className="flex justify-between text-slate-500"><span>المجموع قبل الخصم</span><span dir="ltr">{quote ? formatMoney(quote.subtotal_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
+                <div className="flex justify-between text-emerald-700"><span>الخصم</span><span dir="ltr">{quote ? `− ${formatMoney(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits)}` : '—'}</span></div>
+                <div className="flex justify-between border-t border-slate-100 pt-1.5 text-lg font-bold"><span>الإجمالي</span><span dir="ltr">{quote ? formatMoney(quote.total_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
               </div>
 
               <div className="mt-2.5">
