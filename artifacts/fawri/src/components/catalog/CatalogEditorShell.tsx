@@ -115,7 +115,7 @@ export function CatalogEditorShell({
   }, [dirty, labels.discard, saving]);
 
   return (
-    <div ref={shellRef} className="catalog-editor-shell fixed inset-0 z-[100] bg-background" role="dialog" aria-modal="true" aria-label={title}>
+    <div ref={shellRef} className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background" role="dialog" aria-modal="true" aria-label={title}>
       <div className="catalog-editor-frame flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
         <header className="catalog-editor-header shrink-0 border-b bg-background/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-10">
           <div className="mx-auto flex w-full max-w-[1500px] items-start justify-between gap-4">
@@ -128,7 +128,7 @@ export function CatalogEditorShell({
               </div>
               <p className="mt-1 max-w-4xl text-xs leading-5 text-muted-foreground sm:text-sm">{subtitle}</p>
             </div>
-            <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-2xl" onClick={requestClose} disabled={saving} aria-label={labels.cancel}>
+            <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0 rounded-xl" onClick={requestClose} disabled={saving} aria-label={labels.cancel}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -140,10 +140,10 @@ export function CatalogEditorShell({
 
         <footer className="catalog-editor-footer shrink-0 border-t bg-background/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-10">
           <div className="mx-auto flex w-full max-w-[1500px] items-center gap-3">
-            <Button type="button" onClick={onSave} disabled={saving} className="h-12 min-w-0 flex-1 rounded-2xl bg-orange-500 px-8 text-base font-bold text-white hover:bg-orange-600 disabled:opacity-60 sm:max-w-[360px]">
+            <Button type="button" onClick={onSave} disabled={saving} className="h-12 min-w-0 flex-1 rounded-xl bg-orange-500 px-8 text-base font-bold text-white hover:bg-orange-600 disabled:opacity-60 sm:max-w-[360px]">
               {saving ? savingLabel : saveLabel}
             </Button>
-            <Button type="button" variant="outline" onClick={requestClose} disabled={saving} className="h-12 rounded-2xl px-6 font-bold">{labels.cancel}</Button>
+            <Button type="button" variant="outline" onClick={requestClose} disabled={saving} className="h-12 rounded-xl px-6 font-bold">{labels.cancel}</Button>
           </div>
         </footer>
       </div>
