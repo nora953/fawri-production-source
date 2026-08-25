@@ -1,0 +1,63 @@
+name: Commerce cashier closeout
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/fawri/src/cashierMain.tsx"
+      - "artifacts/fawri/src/pages/CashierPosPage.tsx"
+      - "artifacts/fawri/src/pages/CashierReportsPage.tsx"
+      - "artifacts/fawri/src/lib/cashierCloudCatalogSync.ts"
+      - "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts"
+      - "artifacts/fawri/src/lib/cashierLocalContracts.ts"
+      - "artifacts/fawri/src/lib/cashierReportsRuntime.ts"
+      - "artifacts/fawri/src/lib/cashierSalesReportRuntime.ts"
+      - "artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx"
+      - "artifacts/fawri/src/lib/catalogProductEditor.ts"
+      - "artifacts/fawri/src/lib/catalogUiApi.ts"
+      - "artifacts/fawri/src/pages/dashboard/CommerceCatalogPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/catalogEditorCardHarmony.css"
+      - "artifacts/fawri/tests/cashier-sales-report-runtime.test.ts"
+      - "artifacts/fawri/tests/catalog-editor-ux-hardening.test.ts"
+      - "artifacts/fawri/tests/catalog-product-card-layout.test.ts"
+      - "artifacts/api-server/src/services/catalogCommerceMetadata.ts"
+      - "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts"
+      - "artifacts/api-server/tests/cashier-reporting-cost-contract.test.mjs"
+      - "artifacts/api-server/tests/cashier-reporting-cost-runtime.test.ts"
+      - "artifacts/api-server/tests/postgres-catalog-reporting-cost-disclosure.test.ts"
+      - "artifacts/api-server/tests/catalog-commerce-metadata.test.ts"
+      - "scripts/validate-commerce-cashier-closeout.mjs"
+      - ".github/workflows/commerce-cashier-closeout.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: commerce-cashier-closeout-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run commerce cashier closeout validation gate
+        run: node scripts/validate-commerce-cashier-closeout.mjs
