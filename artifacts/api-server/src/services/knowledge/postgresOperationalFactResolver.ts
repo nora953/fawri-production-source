@@ -719,7 +719,7 @@ async function resolveProductFact(params: {
 
 function extractOrderId(customerText: string): string | null {
   const patterns = [
-    /(?:order|order\s*id)\s*[#:\-]?\s*([a-z0-9][a-z0-9_-]{2,80})/i,
+    /(?:order\s+(?:status|id)|order)\s*[#:\-]?\s*([a-z0-9][a-z0-9_-]{2,80})/i,
     /(?:طلب|الطلب|رقم\s*الطلب)\s*[#:\-]?\s*([A-Za-z0-9][A-Za-z0-9_-]{2,80})/u,
   ];
   for (const pattern of patterns) {
