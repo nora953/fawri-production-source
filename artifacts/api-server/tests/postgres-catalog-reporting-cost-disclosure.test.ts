@@ -68,7 +68,7 @@ test("merchant reporting cost never appears in Fawri stock replies", async () =>
     language: "ar",
   });
 
-  assert.equal(result?.factType, "stock_availability");
+  assert.equal(result?.factType, "product_stock");
   assert.equal(result?.answerText, "قميص متوفر حاليًا.");
   assert.equal(result?.answerText.includes("6000"), false);
   assert.equal(result?.answerText.includes("5500"), false);
