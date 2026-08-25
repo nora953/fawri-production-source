@@ -3,7 +3,9 @@ name: Product catalog UI cutover
 on:
   pull_request:
     paths:
+      - "artifacts/fawri/cashier.html"
       - "artifacts/fawri/src/main.tsx"
+      - "artifacts/fawri/src/cashierMain.tsx"
       - "artifacts/fawri/src/styles/fawriLanguageAuthority.css"
       - "artifacts/fawri/src/styles/fawriUiBaseline.css"
       - "artifacts/fawri/src/lib/i18n.tsx"
