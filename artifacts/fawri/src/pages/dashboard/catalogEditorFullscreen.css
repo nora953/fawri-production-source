@@ -5,6 +5,107 @@
   backdrop-filter: none !important;
 }
 
+/*
+ * Catalog editor typography and fields must follow the same reviewed authority
+ * as Signup/Login/Admin: 14px labels, 8px label-to-control gap, 48px controls,
+ * 12px radius, canonical foreground/muted colors, and no per-script tracking.
+ */
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline {
+  --fawri-control-height: 3rem;
+  --fawri-control-radius: 0.75rem;
+  --fawri-field-gap: 0.5rem;
+  --fawri-field-column-gap: 1.5rem;
+  --fawri-label-size: 0.875rem;
+  --fawri-label-line-height: 1.25rem;
+  color: hsl(var(--foreground));
+}
+
+[dir="rtl"] .products-workspace-polish .catalog-editor-shell.fawri-ui-baseline {
+  font-family: "Noto Sans Arabic", "Noto Naskh Arabic", Tahoma, Arial, sans-serif;
+  letter-spacing: 0 !important;
+}
+
+[dir="ltr"] .products-workspace-polish .catalog-editor-shell.fawri-ui-baseline {
+  font-family: "Inter", Arial, sans-serif;
+  letter-spacing: 0 !important;
+}
+
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline :where(
+  h1, h2, h3, h4, p, label, span, button, input, textarea, select
+) {
+  letter-spacing: 0 !important;
+}
+
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline label {
+  color: hsl(var(--foreground));
+  font-size: var(--fawri-label-size) !important;
+  line-height: var(--fawri-label-line-height) !important;
+  font-weight: 600;
+}
+
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline label > span:first-child {
+  display: flex;
+  min-height: 1.25rem;
+  align-items: center;
+  color: hsl(var(--foreground));
+  font-size: var(--fawri-label-size) !important;
+  line-height: var(--fawri-label-line-height) !important;
+  font-weight: 600;
+  padding-inline: 0.125rem;
+}
+
+/* Price fields wrap the input in a currency container; keep the same 8px field rhythm. */
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline label:has(> div > input) {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--fawri-field-gap) !important;
+}
+
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline label:has(> div > input) > div {
+  margin-top: 0 !important;
+}
+
+/* One canonical input/select geometry for Arabic, Kurdish, English and technical fields. */
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+  select,
+  button[role="combobox"]
+) {
+  height: var(--fawri-control-height) !important;
+  min-height: var(--fawri-control-height) !important;
+  border-radius: var(--fawri-control-radius) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+  color: hsl(var(--foreground));
+}
+
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline textarea {
+  border-radius: var(--fawri-control-radius) !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5rem !important;
+  color: hsl(var(--foreground));
+}
+
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline :where(input, textarea)::placeholder {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem !important;
+  font-weight: 400 !important;
+  opacity: 1;
+}
+
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+  select,
+  textarea,
+  button[role="combobox"]
+):focus-visible,
+.products-workspace-polish .catalog-editor-shell.fawri-ui-baseline select:focus {
+  border-color: hsl(var(--primary)) !important;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.12) !important;
+  outline: none !important;
+}
+
 .products-workspace-polish .catalog-editor-frame {
   width: 100vw !important;
   height: 100dvh !important;
