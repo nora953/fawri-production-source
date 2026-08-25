@@ -33,6 +33,7 @@ const steps = [
       'artifacts/api-server/tests/catalog-server-contract.test.mjs',
       'artifacts/api-server/tests/catalog-operation-error-classification-static.test.mjs',
       'artifacts/api-server/tests/catalog-variant-signature-guard-static.test.mjs',
+      'artifacts/api-server/tests/catalog-variant-signature-apply-guard-static.test.mjs',
     ],
   },
   ...(process.env.DATABASE_URL
