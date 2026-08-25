@@ -11,6 +11,7 @@ const steps = [
       '--test-concurrency=1',
       'artifacts/api-server/tests/currency-money-runtime.test.ts',
       'artifacts/api-server/tests/catalog-fact-currency-formatting.test.ts',
+      'artifacts/api-server/tests/postgres-catalog-fact-disclosure.test.ts',
       'artifacts/api-server/tests/commerce-delivery-pricing.test.ts',
       'artifacts/api-server/tests/delivery-fee-per-area.test.ts',
       'artifacts/api-server/tests/knowledge-delivery-area-rates.test.ts',
