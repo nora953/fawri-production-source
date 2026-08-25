@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import { subscribeCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import {
   getMerchantRegionalContext,
   type MerchantRegionalContext,
@@ -292,6 +293,12 @@ export default function ServerOrdersPage() {
       if (!pendingOrderId) void loadOrders(true);
     }, 10_000);
     return () => window.clearInterval(interval);
+  }, [pendingOrderId, language]);
+
+  useEffect(() => {
+    return subscribeCashierDashboardRefresh(() => {
+      if (!pendingOrderId) void loadOrders(true);
+    });
   }, [pendingOrderId, language]);
 
   const filteredOrders = useMemo(() => {
