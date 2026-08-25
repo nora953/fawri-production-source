@@ -8,6 +8,7 @@ import type {
   CashierSaleSnapshot,
 } from '@/lib/cashierLocalContracts';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
+import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
 
 type ConfirmAction = 'return' | 'void' | null;
 
@@ -20,17 +21,7 @@ function operationId(prefix: 'return' | 'void'): string {
 }
 
 function formatMoney(amountMinor: number, currencyCode: string, fractionDigits: number): string {
-  const divisor = 10 ** fractionDigits;
-  try {
-    return new Intl.NumberFormat('ar-IQ', {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
-    }).format(amountMinor / divisor);
-  } catch {
-    return `${(amountMinor / divisor).toLocaleString('ar-IQ')} ${currencyCode}`;
-  }
+  return formatMerchantMoneyMinor(amountMinor, currencyCode, fractionDigits, 'ar');
 }
 
 function formatDate(value: string): string {
@@ -382,7 +373,7 @@ export default function CashierHistoryPage() {
                       <span className={`shrink-0 rounded-full border px-2 py-1 text-[11px] font-bold ${state.className}`}>{state.label}</span>
                     </div>
                     <div className="flex items-end justify-between gap-3">
-                      <strong>{formatMoney(sale.total_minor, sale.currency_code, sale.currency_fraction_digits)}</strong>
+                      <strong dir="ltr">{formatMoney(sale.total_minor, sale.currency_code, sale.currency_fraction_digits)}</strong>
                       <span className={`text-xs font-semibold ${pending ? 'text-amber-700' : 'text-emerald-700'}`}>
                         {pending ? (online ? 'بانتظار المزامنة' : 'محفوظ على الجهاز') : 'متزامن'}
                       </span>
@@ -410,7 +401,7 @@ export default function CashierHistoryPage() {
                     <p className="text-xs text-slate-500">عملية بيع #{saleReference(selectedSale.sale_id)}</p>
                   </div>
                   <div className="text-left">
-                    <strong className="block text-xl">{formatMoney(selectedSale.total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong>
+                    <strong className="block text-xl" dir="ltr">{formatMoney(selectedSale.total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong>
                     <span className="text-xs text-slate-500">{formatDate(selectedSale.occurred_at)}</span>
                   </div>
                 </div>
@@ -456,7 +447,7 @@ export default function CashierHistoryPage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
-                              <strong>{formatMoney(line.line_total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong>
+                              <strong dir="ltr">{formatMoney(line.line_total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong>
                               {remaining > 0 && selectedSale.status === 'completed' && !selectedSale.void ? (
                                 <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1">
                                   <button type="button" onClick={() => chooseReturnQuantity(line.line_id, draft - 1, remaining)} className="h-8 w-8 rounded-lg text-lg font-bold hover:bg-slate-50">−</button>
@@ -478,7 +469,7 @@ export default function CashierHistoryPage() {
                         {(selectedSale.returns || []).map(item => (
                           <div key={item.return_id} className="flex flex-wrap justify-between gap-2">
                             <span>{formatDate(item.occurred_at)}</span>
-                            <strong>{formatMoney(item.refund_total_minor, item.currency_code, item.currency_fraction_digits)}</strong>
+                            <strong dir="ltr">{formatMoney(item.refund_total_minor, item.currency_code, item.currency_fraction_digits)}</strong>
                           </div>
                         ))}
                       </div>
@@ -494,7 +485,7 @@ export default function CashierHistoryPage() {
                   {selectedSale.void ? (
                     <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
                       <strong>تم إلغاء البيع</strong>
-                      <span className="mt-1 block text-xs">{formatDate(selectedSale.void.occurred_at)} · {formatMoney(selectedSale.void.refund_total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</span>
+                      <span className="mt-1 block text-xs">{formatDate(selectedSale.void.occurred_at)} · <bdi dir="ltr">{formatMoney(selectedSale.void.refund_total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</bdi></span>
                     </div>
                   ) : null}
 
@@ -502,7 +493,7 @@ export default function CashierHistoryPage() {
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
                       <div>
                         {requestedReturnLines.length > 0 ? (
-                          <span className="text-sm text-slate-600">قيمة الإرجاع: <strong className="text-slate-900">{formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong></span>
+                          <span className="text-sm text-slate-600">قيمة الإرجاع: <strong className="text-slate-900" dir="ltr">{formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong></span>
                         ) : (
                           <span className="text-xs text-slate-500">حدد الكمية للإرجاع.</span>
                         )}
@@ -529,7 +520,7 @@ export default function CashierHistoryPage() {
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {confirmAction === 'void'
                 ? 'سيتم إلغاء البيع وإعادة الكمية إلى المخزون.'
-                : `سيتم إرجاع المحدد بقيمة ${formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits)}.`}
+                : <>سيتم إرجاع المحدد بقيمة <bdi dir="ltr">{formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</bdi>.</>}
             </p>
             <div className="mt-5 flex gap-2">
               <button type="button" onClick={() => setConfirmAction(null)} disabled={busy} className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700">رجوع</button>
