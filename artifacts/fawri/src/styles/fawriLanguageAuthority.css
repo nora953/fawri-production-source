@@ -1,0 +1,50 @@
+/*
+ * Fawri project-wide language typography authority.
+ *
+ * Rule: each UI language follows its own reviewed source, never a generic RTL
+ * approximation. Arabic follows the Arabic Signup/Login/Dashboard presentation,
+ * Kurdish follows the dedicated Kurdish typography already established in Fawri,
+ * and English follows the English Inter-based UI.
+ *
+ * Geometry (control height/radius/field spacing) remains in fawriUiBaseline.css.
+ * Special display faces such as .fowri-header-brand-font continue to override
+ * these body defaults intentionally.
+ */
+
+html[lang="ar"],
+html[lang="ar"] body {
+  --fawri-language-font: "Noto Sans Arabic", "Noto Naskh Arabic", Tahoma, Arial, sans-serif;
+  font-family: var(--fawri-language-font);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+html[lang="ku"],
+html[lang="ku"] body {
+  --fawri-language-font: "Noto Naskh Arabic", "Noto Sans Arabic", Tahoma, Arial, sans-serif;
+  font-family: var(--fawri-language-font);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+html[lang="en"],
+html[lang="en"] body {
+  --fawri-language-font: "Inter", Arial, sans-serif;
+  font-family: var(--fawri-language-font);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Native form controls do not inherit typography consistently across browsers. */
+html[lang="ar"] :where(button, input, textarea, select, option),
+html[lang="ku"] :where(button, input, textarea, select, option),
+html[lang="en"] :where(button, input, textarea, select, option) {
+  font-family: var(--fawri-language-font);
+}
+
+/* Technical values may switch direction, but never switch visual typography. */
+html[lang="ar"] :where([dir="ltr"], code, kbd, samp),
+html[lang="ku"] :where([dir="ltr"], code, kbd, samp),
+html[lang="en"] :where([dir="ltr"], code, kbd, samp) {
+  font-family: var(--fawri-language-font);
+}
