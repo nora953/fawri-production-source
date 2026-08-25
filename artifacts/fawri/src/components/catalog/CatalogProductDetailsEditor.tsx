@@ -39,7 +39,7 @@ const copy = {
     reportingCost: 'تكلفة المنتج',
     reportingCostHint: 'اختياري ومخصص للتاجر فقط. يُستخدم لحساب الربح ولا يظهر للزبائن أو في ردود فوري.',
     variantCost: 'تكلفة خاصة',
-    inheritedCost: (cost: string) => cost ? `فارغ = يرث تكلفة المنتج (${cost} د.ع)` : 'فارغ = يرث تكلفة المنتج (غير محددة)',
+    inheritedCost: (cost: string) => cost ? `فارغ = يرث تكلفة المنتج (${cost})` : 'فارغ = يرث تكلفة المنتج (غير محددة)',
     variants: 'المتغيرات',
     variantsHint: 'عرّف اللون أو المقاس أو أي خيار مرة واحدة، وسيُنشئ فوري التركيبات تلقائيًا ويحافظ على بيانات التركيبات الموجودة.',
     optionSets: 'خيارات المنتج',
@@ -65,8 +65,8 @@ const copy = {
     duplicateValue: 'هذه القيمة موجودة بالفعل.',
     optionRequired: 'أدخل اسم الخيار وأول قيمة.',
     variantPrice: 'سعر خاص',
-    inheritedPrice: (price: string) => `فارغ = يرث سعر المنتج (${price || '0'} د.ع)`,
-    zeroInheritedPrice: 'تنبيه: سعر المنتج الأساسي صفر. أي تركيبة بدون سعر خاص ستُحفظ بسعر 0 د.ع.',
+    inheritedPrice: (price: string) => `فارغ = يرث سعر المنتج (${price || '0'})`,
+    zeroInheritedPrice: 'تنبيه: سعر المنتج الأساسي صفر. أي تركيبة بدون سعر خاص ستُحفظ بسعر 0.',
     variantSku: 'SKU',
     details: 'تفاصيل إضافية',
     hideDetails: 'إخفاء التفاصيل',
@@ -96,7 +96,7 @@ const copy = {
     reportingCost: 'تێچووی بەرهەم',
     reportingCostHint: 'ئارەزوومەندانە و تەنها بۆ بازرگانە. بۆ هەژمارکردنی قازانج بەکاردێت و بە کڕیار یان وەڵامەکانی فەوری پیشان نادرێت.',
     variantCost: 'تێچووی تایبەت',
-    inheritedCost: (cost: string) => cost ? `بەتاڵ = تێچووی بەرهەم (${cost} IQD)` : 'بەتاڵ = تێچووی بەرهەم (دیاری نەکراوە)',
+    inheritedCost: (cost: string) => cost ? `بەتاڵ = تێچووی بەرهەم (${cost})` : 'بەتاڵ = تێچووی بەرهەم (دیاری نەکراوە)',
     variants: 'جۆراوجۆرییەکان',
     variantsHint: 'هەڵبژاردەکان جارێک دیاری بکە؛ فەوری تێکەڵەکان خۆکار دروست دەکات و داتای هەبوو دەپارێزێت.',
     optionSets: 'هەڵبژاردەکانی بەرهەم',
@@ -122,8 +122,8 @@ const copy = {
     duplicateValue: 'ئەم بەهایە پێشتر هەیە.',
     optionRequired: 'ناو و یەکەم بەهای هەڵبژاردە بنووسە.',
     variantPrice: 'نرخی تایبەت',
-    inheritedPrice: (price: string) => `بەتاڵ = نرخی بەرهەم (${price || '0'} IQD)`,
-    zeroInheritedPrice: 'ئاگاداری: نرخی سەرەکی صفرە. هەر تێکەڵەیەکی بێ نرخی تایبەت بە 0 IQD پاشەکەوت دەکرێت.',
+    inheritedPrice: (price: string) => `بەتاڵ = نرخی بەرهەم (${price || '0'})`,
+    zeroInheritedPrice: 'ئاگاداری: نرخی سەرەکی صفرە. هەر تێکەڵەیەکی بێ نرخی تایبەت بە 0 پاشەکەوت دەکرێت.',
     variantSku: 'SKU',
     details: 'وردەکاری زیاتر',
     hideDetails: 'شاردنەوەی وردەکاری',
@@ -153,7 +153,7 @@ const copy = {
     reportingCost: 'Product cost',
     reportingCostHint: 'Optional and merchant-private. Used for profit reporting; never shown to customers or included in Fawri replies.',
     variantCost: 'Custom cost',
-    inheritedCost: (cost: string) => cost ? `Blank = inherit product cost (${cost} IQD)` : 'Blank = inherit product cost (not set)',
+    inheritedCost: (cost: string) => cost ? `Blank = inherit product cost (${cost})` : 'Blank = inherit product cost (not set)',
     variants: 'Variants',
     variantsHint: 'Define Color, Size, or another option once and Fawri will build combinations while preserving matching saved data.',
     optionSets: 'Product options',
@@ -179,8 +179,8 @@ const copy = {
     duplicateValue: 'This value already exists.',
     optionRequired: 'Enter an option name and its first value.',
     variantPrice: 'Custom price',
-    inheritedPrice: (price: string) => `Blank = inherit product price (${price || '0'} IQD)`,
-    zeroInheritedPrice: 'Warning: the base product price is zero. Any combination without a custom price will save at 0 IQD.',
+    inheritedPrice: (price: string) => `Blank = inherit product price (${price || '0'})`,
+    zeroInheritedPrice: 'Warning: the base product price is zero. Any combination without a custom price will save at 0.',
     variantSku: 'SKU',
     details: 'More details',
     hideDetails: 'Hide details',
@@ -269,11 +269,12 @@ function OptionSummary({ variant }: { variant: CatalogVariantDraft }) {
   );
 }
 
-function LegacyVariantEditor({ lang, variant, index, trackInventory, onChange, onRemove }: {
+function LegacyVariantEditor({ lang, variant, index, trackInventory, moneyStep, onChange, onRemove }: {
   lang: Lang;
   variant: CatalogVariantDraft;
   index: number;
   trackInventory: boolean;
+  moneyStep: string;
   onChange: (variant: CatalogVariantDraft) => void;
   onRemove: () => void;
 }) {
@@ -289,8 +290,8 @@ function LegacyVariantEditor({ lang, variant, index, trackInventory, onChange, o
       </div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
         <label className="space-y-1 text-xs font-semibold text-muted-foreground"><span>{labels.variantName}</span><Input value={variant.name} onChange={event => patch({ name: event.target.value })} className="h-10 rounded-xl" /></label>
-        <label className="space-y-1 text-xs font-semibold text-muted-foreground"><span>{labels.variantPrice}</span><Input dir="ltr" value={variant.price_iqd} onChange={event => patch({ price_iqd: event.target.value })} className="h-10 rounded-xl" /></label>
-        <label className="space-y-1 text-xs font-semibold text-muted-foreground"><span>{labels.variantCost}</span><Input type="number" min={0} step={1} dir="ltr" value={variant.cost_iqd} onChange={event => patch({ cost_iqd: event.target.value })} className="h-10 rounded-xl" /></label>
+        <label className="space-y-1 text-xs font-semibold text-muted-foreground"><span>{labels.variantPrice}</span><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => patch({ price_iqd: event.target.value })} className="h-10 rounded-xl" /></label>
+        <label className="space-y-1 text-xs font-semibold text-muted-foreground"><span>{labels.variantCost}</span><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => patch({ cost_iqd: event.target.value })} className="h-10 rounded-xl" /></label>
         <label className="space-y-1 text-xs font-semibold text-muted-foreground"><span>{labels.variantSku}</span><Input dir="ltr" value={variant.sku} onChange={event => patch({ sku: event.target.value })} className="h-10 rounded-xl" /></label>
         <label className="space-y-1 text-xs font-semibold text-muted-foreground"><span>{labels.barcode}</span><Input dir="ltr" value={variant.barcode} onChange={event => patch({ barcode: event.target.value })} className="h-10 rounded-xl" /></label>
       </div>
@@ -321,12 +322,13 @@ function LegacyVariantEditor({ lang, variant, index, trackInventory, onChange, o
   );
 }
 
-function VariantCombinationEditor({ lang, variant, trackInventory, inheritedPrice, inheritedCost, expanded, onToggle, onChange }: {
+function VariantCombinationEditor({ lang, variant, trackInventory, inheritedPrice, inheritedCost, moneyStep, expanded, onToggle, onChange }: {
   lang: Lang;
   variant: CatalogVariantDraft;
   trackInventory: boolean;
   inheritedPrice: string;
   inheritedCost: string;
+  moneyStep: string;
   expanded: boolean;
   onToggle: () => void;
   onChange: (variant: CatalogVariantDraft) => void;
@@ -348,12 +350,12 @@ function VariantCombinationEditor({ lang, variant, trackInventory, inheritedPric
       <div className={`mt-4 grid gap-3 ${trackInventory ? 'md:grid-cols-2 xl:grid-cols-4' : 'md:grid-cols-3'}`}>
         <label className="space-y-1 text-xs font-semibold text-muted-foreground">
           <span>{labels.variantPrice}</span>
-          <Input dir="ltr" value={variant.price_iqd} onChange={event => patch({ price_iqd: event.target.value })} placeholder={labels.variantPrice} className="h-10 rounded-xl" />
+          <Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => patch({ price_iqd: event.target.value })} placeholder={labels.variantPrice} className="h-10 rounded-xl" />
           <span className="block font-normal">{labels.inheritedPrice(inheritedPrice)}</span>
         </label>
         <label className="space-y-1 text-xs font-semibold text-muted-foreground">
           <span>{labels.variantCost}</span>
-          <Input type="number" min={0} step={1} dir="ltr" value={variant.cost_iqd} onChange={event => patch({ cost_iqd: event.target.value })} placeholder={labels.variantCost} className="h-10 rounded-xl" />
+          <Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => patch({ cost_iqd: event.target.value })} placeholder={labels.variantCost} className="h-10 rounded-xl" />
           <span className="block font-normal">{labels.inheritedCost(inheritedCost)}</span>
         </label>
         <label className="space-y-1 text-xs font-semibold text-muted-foreground">
@@ -396,10 +398,11 @@ function variantStructureSignature(variants: CatalogVariantDraft[]): string {
   );
 }
 
-export function CatalogProductDetailsEditor({ lang, form, editing, onChange }: {
+export function CatalogProductDetailsEditor({ lang, form, editing, moneyStep, onChange }: {
   lang: Lang;
   form: CatalogProductFormState;
   editing: boolean;
+  moneyStep: string;
   onChange: (patch: Partial<CatalogProductFormState>) => void;
 }) {
   const labels = copy[lang] || copy.en;
@@ -532,7 +535,7 @@ export function CatalogProductDetailsEditor({ lang, form, editing, onChange }: {
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <label className="space-y-1 text-sm font-semibold">
           <span>{labels.reportingCost}</span>
-          <Input type="number" min={0} step={1} inputMode="numeric" dir="ltr" value={form.cost_iqd} onChange={event => onChange({ cost_iqd: event.target.value })} placeholder="0" className="h-11 rounded-xl" />
+          <Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={form.cost_iqd} onChange={event => onChange({ cost_iqd: event.target.value })} placeholder="0" className="h-11 rounded-xl" />
           <span className="block text-xs font-normal leading-5 text-muted-foreground">{labels.reportingCostHint}</span>
         </label>
         <label className="space-y-1 text-sm font-semibold">
@@ -570,6 +573,7 @@ export function CatalogProductDetailsEditor({ lang, form, editing, onChange }: {
                 variant={variant}
                 index={index}
                 trackInventory={form.track_inventory}
+                moneyStep={moneyStep}
                 onChange={nextVariant => updateVariant(index, nextVariant)}
                 onRemove={() => onChange({ variants: form.variants.filter((_, itemIndex) => itemIndex !== index) })}
               />
@@ -673,6 +677,7 @@ export function CatalogProductDetailsEditor({ lang, form, editing, onChange }: {
                       trackInventory={form.track_inventory}
                       inheritedPrice={inheritedPrice}
                       inheritedCost={inheritedCost}
+                      moneyStep={moneyStep}
                       expanded={expanded.has(variant.key)}
                       onToggle={() => setExpanded(current => {
                         const next = new Set(current);
