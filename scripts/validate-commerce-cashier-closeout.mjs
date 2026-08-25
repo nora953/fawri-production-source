@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 
 const steps = [
   {
-    label: 'Cashier sales reporting runtime tests',
+    label: 'Cashier sales and pricing runtime tests',
     command: 'pnpm',
     args: [
       'exec',
@@ -11,6 +11,8 @@ const steps = [
       'artifacts/fawri/tsconfig.json',
       '--test',
       'artifacts/fawri/tests/cashier-sales-report-runtime.test.ts',
+      'artifacts/fawri/tests/cashier-sales-report-corruption.test.ts',
+      'artifacts/fawri/tests/cashier-sale-pricing-duplicate-lines.test.ts',
     ],
   },
   {
