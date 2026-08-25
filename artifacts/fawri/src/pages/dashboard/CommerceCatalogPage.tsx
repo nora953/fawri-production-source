@@ -14,10 +14,10 @@ import {
   Tag,
   Trash2,
   Upload,
-  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { CatalogEditorShell } from '@/components/catalog/CatalogEditorShell';
 import { CatalogImageUploadEditor } from '@/components/catalog/CatalogImageUploadEditor';
 import { CatalogItemTypeEditor } from '@/components/catalog/CatalogItemTypeEditor';
 import { CatalogProductDetailsEditor } from '@/components/catalog/CatalogProductDetailsEditor';
@@ -173,8 +173,8 @@ const COPY: Record<Lang, PageCopy> = {
     inventoryFailed: 'تعذر تحديث المخزون.',
     save: 'حفظ',
     saving: 'جارٍ الحفظ...',
-    edit: 'تعديل العنصر',
-    create: 'إضافة عنصر',
+    edit: 'تعديل المنتج أو الخدمة',
+    create: 'إضافة منتج أو خدمة',
     available: 'متوفر',
     lowStock: 'مخزون منخفض',
     unavailable: 'غير متوفر',
@@ -237,8 +237,8 @@ const COPY: Record<Lang, PageCopy> = {
     inventoryFailed: 'نوێکردنەوەی کۆگا سەرکەوتوو نەبوو.',
     save: 'پاشەکەوتکردن',
     saving: 'پاشەکەوت دەکرێت...',
-    edit: 'دەستکاری بابەت',
-    create: 'زیادکردنی بابەت',
+    edit: 'دەستکاری بەرهەم یان خزمەتگوزاری',
+    create: 'زیادکردنی بەرهەم یان خزمەتگوزاری',
     available: 'بەردەست',
     lowStock: 'کۆگای کەم',
     unavailable: 'بەردەست نییە',
@@ -301,8 +301,8 @@ const COPY: Record<Lang, PageCopy> = {
     inventoryFailed: 'Could not update inventory.',
     save: 'Save',
     saving: 'Saving...',
-    edit: 'Edit item',
-    create: 'Add item',
+    edit: 'Edit product or service',
+    create: 'Add product or service',
     available: 'Available',
     lowStock: 'Low stock',
     unavailable: 'Unavailable',
@@ -342,34 +342,18 @@ function inventoryKey(productId: string, variantId?: string): string {
 
 function upsert(items: CatalogProduct[], product: CatalogProduct): CatalogProduct[] {
   const found = items.some(item => item.id === product.id);
-  return found
-    ? items.map(item => (item.id === product.id ? product : item))
-    : [product, ...items];
+  return found ? items.map(item => (item.id === product.id ? product : item)) : [product, ...items];
 }
 
 function FawriToggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
   return (
-    <button
-      type="button"
-      aria-pressed={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${checked ? 'bg-orange-500' : 'bg-zinc-300'}`}
-    >
+    <button type="button" aria-pressed={checked} onClick={() => onChange(!checked)} className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${checked ? 'bg-orange-500' : 'bg-zinc-300'}`}>
       <span className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-all ${checked ? 'right-7' : 'right-1'}`} />
     </button>
   );
 }
 
-function InventoryControl({
-  copy,
-  product,
-  variant,
-  value,
-  busy,
-  onValue,
-  onSet,
-  onAdjust,
-}: {
+function InventoryControl({ copy, product, variant, value, busy, onValue, onSet, onAdjust }: {
   copy: PageCopy;
   product: CatalogProduct;
   variant?: CatalogVariant;
@@ -384,21 +368,15 @@ function InventoryControl({
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm font-bold">{variant?.name || product.name}</p>
-          {variant && variantOptionSummary(variant) && (
-            <p className="text-xs text-muted-foreground">{variantOptionSummary(variant)}</p>
-          )}
+          {variant && variantOptionSummary(variant) && <p className="text-xs text-muted-foreground" dir="auto">{variantOptionSummary(variant)}</p>}
         </div>
         <Badge variant="outline" className="rounded-full">{variant?.stock_quantity ?? product.stock_quantity}</Badge>
       </div>
       <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2">
-        <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={busy} onClick={() => onAdjust(-1)}>
-          <Minus className="h-4 w-4" />
-        </Button>
+        <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={busy} onClick={() => onAdjust(-1)}><Minus className="h-4 w-4" /></Button>
         <Input type="number" min={0} dir="ltr" value={value} onChange={event => onValue(event.target.value)} className="h-10 rounded-xl" />
         <Button type="button" variant="outline" className="h-10 rounded-xl" disabled={busy} onClick={onSet}>{copy.inventorySet}</Button>
-        <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={busy} onClick={() => onAdjust(1)}>
-          <Plus className="h-4 w-4" />
-        </Button>
+        <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={busy} onClick={() => onAdjust(1)}><Plus className="h-4 w-4" /></Button>
       </div>
     </div>
   );
@@ -408,6 +386,9 @@ export default function CommerceCatalogPage() {
   const { lang, dir, isRTL } = useI18n();
   const copy = COPY[lang] || COPY.en;
   const merchant = getCurrentMerchant();
+  const fawriBrand = lang === 'ar' ? 'فوري' : lang === 'ku' ? 'فەوری' : 'Fawri';
+  const priceExample = lang === 'ar' ? 'مثال: 15000' : lang === 'ku' ? 'نموونە: 15000' : 'e.g. 15000';
+  const comparePriceExample = lang === 'ar' ? 'مثال: 20000' : lang === 'ku' ? 'نموونە: 20000' : 'e.g. 20000';
 
   const createAttempt = useRef<CatalogIdempotencyAttempt | null>(null);
   const inventoryAttempt = useRef<CatalogIdempotencyAttempt | null>(null);
@@ -433,17 +414,8 @@ export default function CommerceCatalogPage() {
     { value: 'hidden_from_fawri' as const, label: copy.hidden },
   ], [copy]);
 
-  const statusLabels = useMemo(
-    () => Object.fromEntries(statusOptions.map(option => [option.value, option.label])) as Record<ProductStatus, string>,
-    [statusOptions],
-  );
-
-  const editorStatusOptions = useMemo(
-    () => form.item_type === 'service'
-      ? statusOptions.filter(option => option.value !== 'low_stock')
-      : statusOptions,
-    [form.item_type, statusOptions],
-  );
+  const statusLabels = useMemo(() => Object.fromEntries(statusOptions.map(option => [option.value, option.label])) as Record<ProductStatus, string>, [statusOptions]);
+  const editorStatusOptions = useMemo(() => form.item_type === 'service' ? statusOptions.filter(option => option.value !== 'low_stock') : statusOptions, [form.item_type, statusOptions]);
 
   const syncInventory = (product: CatalogProduct) => {
     if (!tracksInventory(product)) return;
@@ -493,9 +465,7 @@ export default function CommerceCatalogPage() {
       }
     }
     void load();
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [merchant?.id, reload, copy.loadFailed]);
 
   const visible = useMemo(() => {
@@ -504,14 +474,7 @@ export default function CommerceCatalogPage() {
       const type = itemType(product);
       if (filter !== 'all' && type !== filter) return false;
       if (!needle) return true;
-      const values = [
-        product.name,
-        product.category,
-        product.external_ref,
-        product.sku,
-        product.barcode,
-        ...product.variants.flatMap(variant => [variant.name, variant.sku, variant.barcode, ...Object.values(variant.options)]),
-      ];
+      const values = [product.name, product.category, product.external_ref, product.sku, product.barcode, ...product.variants.flatMap(variant => [variant.name, variant.sku, variant.barcode, ...Object.values(variant.options)])];
       return values.filter(Boolean).some(value => String(value).toLocaleLowerCase().includes(needle));
     });
   }, [items, filter, query]);
@@ -529,9 +492,7 @@ export default function CommerceCatalogPage() {
     createAttempt.current = null;
     setEditingId(product.id);
     const nextForm = catalogProductFormFromProduct(product);
-    if (nextForm.item_type === 'service' && nextForm.status === 'low_stock') {
-      nextForm.status = 'available';
-    }
+    if (nextForm.item_type === 'service' && nextForm.status === 'low_stock') nextForm.status = 'available';
     setForm(nextForm);
     setFormOpen(true);
   };
@@ -544,9 +505,7 @@ export default function CommerceCatalogPage() {
     setFormOpen(false);
   };
 
-  const patchForm = (patch: Partial<CatalogProductFormState>) => {
-    setForm(current => ({ ...current, ...patch }));
-  };
+  const patchForm = (patch: Partial<CatalogProductFormState>) => setForm(current => ({ ...current, ...patch }));
 
   const validate = () => {
     const code = validateCatalogProductForm(form);
@@ -640,12 +599,7 @@ export default function CommerceCatalogPage() {
     }
     setInventoryBusy(key);
     try {
-      const updated = await setCatalogInventory({
-        productId: product.id,
-        expectedVersion: product.version,
-        quantity,
-        ...(variant ? { variantId: variant.id } : {}),
-      });
+      const updated = await setCatalogInventory({ productId: product.id, expectedVersion: product.version, quantity, ...(variant ? { variantId: variant.id } : {}) });
       setItems(current => upsert(current, updated));
       syncInventory(updated);
       toast.success(copy.inventorySaved);
@@ -659,13 +613,7 @@ export default function CommerceCatalogPage() {
 
   const adjustInventory = async (product: CatalogProduct, delta: number, variant?: CatalogVariant) => {
     const key = inventoryKey(product.id, variant?.id);
-    const request = {
-      productId: product.id,
-      expectedVersion: product.version,
-      delta,
-      ...(variant ? { variantId: variant.id } : {}),
-      reason: 'merchant commerce catalog inventory UX',
-    };
+    const request = { productId: product.id, expectedVersion: product.version, delta, ...(variant ? { variantId: variant.id } : {}), reason: 'merchant commerce catalog inventory UX' };
     let attempt: CatalogIdempotencyAttempt;
     try {
       attempt = idempotencyAttemptForRequest(inventoryAttempt.current, 'catalog-inventory-adjust', request);
@@ -698,14 +646,8 @@ export default function CommerceCatalogPage() {
             <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{copy.subtitle}</p>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-            <Button type="button" onClick={openCreate} className="h-11 rounded-xl bg-orange-500 px-4 font-bold text-white hover:bg-orange-600">
-              <Plus className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />
-              {copy.add}
-            </Button>
-            <Button type="button" variant="outline" onClick={() => { window.location.href = '/dashboard/products/import'; }} className="h-11 rounded-xl px-4 font-bold">
-              <Upload className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />
-              {copy.import}
-            </Button>
+            <Button type="button" onClick={openCreate} className="h-11 rounded-xl bg-orange-500 px-4 font-bold text-white hover:bg-orange-600"><Plus className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />{copy.add}</Button>
+            <Button type="button" variant="outline" onClick={() => { window.location.href = '/dashboard/products/import'; }} className="h-11 rounded-xl px-4 font-bold"><Upload className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />{copy.import}</Button>
           </div>
         </div>
 
@@ -715,43 +657,19 @@ export default function CommerceCatalogPage() {
             <Input value={query} onChange={event => setQuery(event.target.value)} placeholder={copy.search} className={`h-12 rounded-2xl ${isRTL ? 'pr-10' : 'pl-10'}`} />
           </div>
           <div className="flex rounded-2xl border bg-card p-1">
-            {([
-              ['all', copy.all],
-              ['product', copy.products],
-              ['service', copy.services],
-            ] as const).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => setFilter(value)}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${filter === value ? 'bg-orange-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted'}`}
-              >
-                {label}
-              </button>
+            {([['all', copy.all], ['product', copy.products], ['service', copy.services]] as const).map(([value, label]) => (
+              <button key={value} type="button" onClick={() => setFilter(value)} className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${filter === value ? 'bg-orange-500 text-white shadow-sm' : 'text-muted-foreground hover:bg-muted'}`}>{label}</button>
             ))}
           </div>
         </div>
       </header>
 
       {loading ? (
-        <div className="rounded-3xl border bg-card p-10 text-center shadow-sm">
-          <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" />
-          <p className="text-lg text-muted-foreground">{copy.loading}</p>
-        </div>
+        <div className="rounded-3xl border bg-card p-10 text-center shadow-sm"><Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" /><p className="text-lg text-muted-foreground">{copy.loading}</p></div>
       ) : loadError ? (
-        <div className="rounded-3xl border border-destructive/30 bg-card p-10 text-center shadow-sm">
-          <p className="font-semibold text-destructive">{copy.loadFailed}</p>
-          <Button type="button" variant="outline" className="mt-4 rounded-xl" onClick={() => setReload(value => value + 1)}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            {copy.retry}
-          </Button>
-        </div>
+        <div className="rounded-3xl border border-destructive/30 bg-card p-10 text-center shadow-sm"><p className="font-semibold text-destructive">{copy.loadFailed}</p><Button type="button" variant="outline" className="mt-4 rounded-xl" onClick={() => setReload(value => value + 1)}><RefreshCw className="mr-2 h-4 w-4" />{copy.retry}</Button></div>
       ) : visible.length === 0 ? (
-        <div className="rounded-3xl border bg-card p-10 text-center shadow-sm">
-          <Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" />
-          <p className="text-lg font-semibold text-muted-foreground">{copy.noItems}</p>
-          <p className="mt-2 text-sm text-muted-foreground">{copy.noItemsHint}</p>
-        </div>
+        <div className="rounded-3xl border bg-card p-10 text-center shadow-sm"><Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" /><p className="text-lg font-semibold text-muted-foreground">{copy.noItems}</p><p className="mt-2 text-sm text-muted-foreground">{copy.noItemsHint}</p></div>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           {visible.map(product => {
@@ -760,28 +678,15 @@ export default function CommerceCatalogPage() {
             const service = product.service_details;
             return (
               <article key={product.id} className="overflow-hidden rounded-3xl border bg-card shadow-sm transition hover:shadow-md">
-                {primary && (
-                  <div className="h-44 overflow-hidden border-b bg-muted/20">
-                    <img src={primary} alt={product.image_refs[0]?.alt || product.name} className="h-full w-full object-cover" />
-                  </div>
-                )}
+                {primary && <div className="h-44 overflow-hidden border-b bg-muted/20"><img src={primary} alt={product.image_refs[0]?.alt || product.name} className="h-full w-full object-cover" /></div>}
                 <div className="border-b p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="mb-2 flex flex-wrap gap-2">
-                        <Badge variant="outline" className="rounded-full">
-                          {type === 'service' ? <BriefcaseBusiness className="mr-1 h-3 w-3" /> : <Package className="mr-1 h-3 w-3" />}
-                          {type === 'service' ? copy.service : copy.product}
-                        </Badge>
+                        <Badge variant="outline" className="rounded-full">{type === 'service' ? <BriefcaseBusiness className="mr-1 h-3 w-3" /> : <Package className="mr-1 h-3 w-3" />}{type === 'service' ? copy.service : copy.product}</Badge>
                         <Badge variant="outline" className={`rounded-full ${statusClass(product.status)}`}>{statusLabels[product.status]}</Badge>
-                        {product.allow_fawri_reply && (
-                          <Badge variant="outline" className="rounded-full border-orange-200 bg-orange-50 text-orange-700">
-                            <Bot className="mr-1 h-3 w-3" /> Fawri
-                          </Badge>
-                        )}
-                        {product.image_refs.length > 0 && (
-                          <Badge variant="outline" className="rounded-full"><ImageIcon className="mr-1 h-3 w-3" />{product.image_refs.length}</Badge>
-                        )}
+                        {product.allow_fawri_reply && <Badge variant="outline" className="rounded-full border-orange-200 bg-orange-50 text-orange-700"><Bot className="mr-1 h-3 w-3" />{fawriBrand}</Badge>}
+                        {product.image_refs.length > 0 && <Badge variant="outline" className="rounded-full"><ImageIcon className="mr-1 h-3 w-3" />{product.image_refs.length}</Badge>}
                       </div>
                       <h2 className="line-clamp-2 text-xl font-extrabold">{product.name}</h2>
                       {product.category && <p className="mt-1 text-sm text-muted-foreground">{product.category}</p>}
@@ -796,74 +701,27 @@ export default function CommerceCatalogPage() {
                 <div className="grid grid-cols-2 gap-3 p-4">
                   <div className="rounded-2xl bg-muted/40 p-3">
                     <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Tag className="h-4 w-4" />{copy.price}</div>
-                    <p className="text-xl font-extrabold">
-                      {service?.price_type === 'custom'
-                        ? copy.customPrice
-                        : service?.price_type === 'free'
-                          ? copy.freePrice
-                          : `${product.price_iqd.toLocaleString(lang === 'en' ? 'en-US' : 'ar-IQ')} ${copy.currency}`}
-                    </p>
+                    <p className="text-xl font-extrabold">{service?.price_type === 'custom' ? copy.customPrice : service?.price_type === 'free' ? copy.freePrice : `${product.price_iqd.toLocaleString(lang === 'en' ? 'en-US' : 'ar-IQ')} ${copy.currency}`}</p>
                   </div>
                   <div className="rounded-2xl bg-muted/40 p-3">
-                    {type === 'service' ? (
-                      <>
-                        <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{copy.duration}</div>
-                        <p className="text-xl font-extrabold">{service?.duration_minutes ? `${service.duration_minutes} ${copy.minute}` : '—'}</p>
-                      </>
-                    ) : (
-                      <>
-                        <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Boxes className="h-4 w-4" />{copy.quantity}</div>
-                        <p className="text-xl font-extrabold">{tracksInventory(product) ? product.stock_quantity.toLocaleString() : copy.inventoryNotTracked}</p>
-                      </>
-                    )}
+                    {type === 'service' ? <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{copy.duration}</div><p className="text-xl font-extrabold">{service?.duration_minutes ? `${service.duration_minutes} ${copy.minute}` : '—'}</p></> : <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Boxes className="h-4 w-4" />{copy.quantity}</div><p className="text-xl font-extrabold">{tracksInventory(product) ? product.stock_quantity.toLocaleString() : copy.inventoryNotTracked}</p></>}
                   </div>
                 </div>
 
-                {type === 'service' && (
-                  <div className="px-4 pb-4">
-                    <div className="rounded-2xl bg-muted/20 p-3 text-sm">
-                      <span className="font-bold">{copy.booking}: </span>
-                      <span className="text-muted-foreground">{service?.booking_required === false ? copy.bookingOptional : copy.bookingRequired}</span>
-                    </div>
-                  </div>
-                )}
+                {type === 'service' && <div className="px-4 pb-4"><div className="rounded-2xl bg-muted/20 p-3 text-sm"><span className="font-bold">{copy.booking}: </span><span className="text-muted-foreground">{service?.booking_required === false ? copy.bookingOptional : copy.bookingRequired}</span></div></div>}
 
                 {tracksInventory(product) && (
                   <div className="px-4 pb-4">
                     <div className="rounded-2xl bg-muted/20 p-3">
                       <p className="mb-3 text-sm font-bold">{copy.inventory}</p>
                       <div className="space-y-2">
-                        {product.variants.length > 0
-                          ? product.variants.map(variant => {
-                              const key = inventoryKey(product.id, variant.id);
-                              return (
-                                <InventoryControl
-                                  key={variant.id}
-                                  copy={copy}
-                                  product={product}
-                                  variant={variant}
-                                  value={inventoryValues[key] ?? String(variant.stock_quantity)}
-                                  busy={inventoryBusy === key}
-                                  onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
-                                  onSet={() => void setInventory(product, variant)}
-                                  onAdjust={delta => void adjustInventory(product, delta, variant)}
-                                />
-                              );
-                            })
-                          : (() => {
-                              const key = inventoryKey(product.id);
-                              return (
-                                <InventoryControl
-                                  copy={copy}
-                                  product={product}
-                                  value={inventoryValues[key] ?? String(product.stock_quantity)}
-                                  busy={inventoryBusy === key}
-                                  onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
-                                  onSet={() => void setInventory(product)}
-                                  onAdjust={delta => void adjustInventory(product, delta)}
-                                />
-                              );
-                            })()}
+                        {product.variants.length > 0 ? product.variants.map(variant => {
+                          const key = inventoryKey(product.id, variant.id);
+                          return <InventoryControl key={variant.id} copy={copy} product={product} variant={variant} value={inventoryValues[key] ?? String(variant.stock_quantity)} busy={inventoryBusy === key} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product, variant)} onAdjust={delta => void adjustInventory(product, delta, variant)} />;
+                        }) : (() => {
+                          const key = inventoryKey(product.id);
+                          return <InventoryControl copy={copy} product={product} value={inventoryValues[key] ?? String(product.stock_quantity)} busy={inventoryBusy === key} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product)} onAdjust={delta => void adjustInventory(product, delta)} />;
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -877,83 +735,69 @@ export default function CommerceCatalogPage() {
       )}
 
       {formOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/50 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-6 backdrop-blur-[2px] md:items-center md:px-4 md:py-6">
-          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-4xl flex-col overflow-hidden rounded-[2rem] bg-background shadow-2xl md:max-h-[calc(100dvh-4rem)]">
-            <div className="shrink-0 border-b px-5 py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-extrabold">{editingId ? copy.edit : copy.create}</h2>
-                  <p className="mt-1 text-xs text-muted-foreground">{copy.subtitle}</p>
-                </div>
-                <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-2xl" onClick={() => closeForm()} disabled={saving}><X className="h-4 w-4" /></Button>
+        <CatalogEditorShell
+          lang={lang}
+          form={form}
+          title={editingId ? copy.edit : copy.create}
+          subtitle={copy.subtitle}
+          saveLabel={copy.save}
+          savingLabel={copy.saving}
+          saving={saving}
+          onClose={() => closeForm(true)}
+          onSave={() => void save()}
+        >
+          <CatalogItemTypeEditor lang={lang} form={form} onChange={patchForm} />
+
+          <label className="space-y-1 text-sm font-semibold">
+            <span>{copy.name}</span>
+            <Input data-catalog-primary-input="true" value={form.name} onChange={event => patchForm({ name: event.target.value })} placeholder={copy.namePlaceholder} className="h-11 rounded-xl" />
+          </label>
+
+          <label className="space-y-1 text-sm font-semibold">
+            <span>{copy.category}</span>
+            <Input value={form.category} onChange={event => patchForm({ category: event.target.value })} placeholder={copy.categoryPlaceholder} className="h-11 rounded-xl" />
+          </label>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="space-y-1 text-sm font-semibold">
+              <span>{copy.salePrice}</span>
+              <div className="relative">
+                <Input type="number" min={0} dir="ltr" value={form.current_price} onChange={event => patchForm({ current_price: event.target.value })} disabled={form.item_type === 'service' && (form.service_price_type === 'free' || form.service_price_type === 'custom')} placeholder={priceExample} className="h-11 rounded-xl pe-14" />
+                <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">{copy.currency}</span>
               </div>
-            </div>
-
-            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5">
-              <CatalogItemTypeEditor lang={lang} form={form} onChange={patchForm} />
-
-              <label className="space-y-1 text-sm font-semibold">
-                <span>{copy.name}</span>
-                <Input value={form.name} onChange={event => patchForm({ name: event.target.value })} placeholder={copy.namePlaceholder} className="h-11 rounded-xl" />
-              </label>
-
-              <label className="space-y-1 text-sm font-semibold">
-                <span>{copy.category}</span>
-                <Input value={form.category} onChange={event => patchForm({ category: event.target.value })} placeholder={copy.categoryPlaceholder} className="h-11 rounded-xl" />
-              </label>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-1 text-sm font-semibold">
-                  <span>{copy.salePrice}</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    dir="ltr"
-                    value={form.current_price}
-                    onChange={event => patchForm({ current_price: event.target.value })}
-                    disabled={form.item_type === 'service' && (form.service_price_type === 'free' || form.service_price_type === 'custom')}
-                    placeholder="15000"
-                    className="h-11 rounded-xl"
-                  />
-                </label>
-                <label className="space-y-1 text-sm font-semibold">
-                  <span>{copy.originalPrice}</span>
-                  <Input type="number" min={0} dir="ltr" value={form.original_price} onChange={event => patchForm({ original_price: event.target.value })} placeholder="20000" className="h-11 rounded-xl" />
-                </label>
+            </label>
+            <label className="space-y-1 text-sm font-semibold">
+              <span>{copy.originalPrice}</span>
+              <div className="relative">
+                <Input type="number" min={0} dir="ltr" value={form.original_price} onChange={event => patchForm({ original_price: event.target.value })} placeholder={comparePriceExample} className="h-11 rounded-xl pe-14" />
+                <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">{copy.currency}</span>
               </div>
-
-              <CatalogProductDetailsEditor lang={lang} form={form} editing={Boolean(editingId)} onChange={patchForm} />
-
-              <CatalogImageUploadEditor images={form.image_refs} onChange={image_refs => patchForm({ image_refs })} maxImages={20} />
-
-              <label className="space-y-1 text-sm font-semibold">
-                <span>{copy.status}</span>
-                <select value={form.status} onChange={event => patchForm({ status: event.target.value as ProductStatus })} className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
-                  {editorStatusOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-                </select>
-              </label>
-
-              <label className="space-y-1 text-sm font-semibold">
-                <span>{copy.description}</span>
-                <Textarea value={form.description} onChange={event => patchForm({ description: event.target.value })} placeholder={copy.descriptionPlaceholder} rows={4} className="rounded-xl" />
-              </label>
-
-              <div className="flex items-start justify-between gap-4 rounded-2xl border bg-muted/20 p-4">
-                <div>
-                  <p className="text-sm font-bold">{copy.fawri}</p>
-                  <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.fawriHint}</p>
-                </div>
-                <FawriToggle checked={form.allow_fawri_reply} onChange={allow_fawri_reply => patchForm({ allow_fawri_reply })} />
-              </div>
-            </div>
-
-            <div className="shrink-0 border-t px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-              <Button type="button" onClick={() => void save()} disabled={saving} className="h-12 w-full rounded-2xl bg-orange-500 text-base font-bold text-white hover:bg-orange-600 disabled:opacity-60">
-                {saving ? copy.saving : copy.save}
-              </Button>
-            </div>
+            </label>
           </div>
-        </div>
+
+          <CatalogProductDetailsEditor lang={lang} form={form} editing={Boolean(editingId)} onChange={patchForm} />
+          <CatalogImageUploadEditor images={form.image_refs} onChange={image_refs => patchForm({ image_refs })} maxImages={20} />
+
+          <label className="space-y-1 text-sm font-semibold rounded-2xl border bg-muted/10 p-4">
+            <span>{copy.status}</span>
+            <select value={form.status} onChange={event => patchForm({ status: event.target.value as ProductStatus })} className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
+              {editorStatusOptions.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+
+          <label className="space-y-1 text-sm font-semibold">
+            <span>{copy.description}</span>
+            <Textarea value={form.description} onChange={event => patchForm({ description: event.target.value })} placeholder={copy.descriptionPlaceholder} rows={5} className="rounded-xl" />
+          </label>
+
+          <div className="flex items-start justify-between gap-4 rounded-2xl border bg-muted/20 p-4">
+            <div>
+              <p className="text-sm font-bold">{copy.fawri}</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.fawriHint}</p>
+            </div>
+            <FawriToggle checked={form.allow_fawri_reply} onChange={allow_fawri_reply => patchForm({ allow_fawri_reply })} />
+          </div>
+        </CatalogEditorShell>
       )}
     </div>
   );
