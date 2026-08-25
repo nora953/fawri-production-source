@@ -16,6 +16,8 @@ type Translations = typeof en;
 interface I18nContextType {
   t: Translations;
   lang: Lang;
+  /** Backward-compatible alias for older page helpers. */
+  language: Lang;
   setLang: (lang: Lang) => void;
   dir: 'ltr' | 'rtl';
   isRTL: boolean;
@@ -93,6 +95,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     return {
       t: translations[lang] || ar,
       lang,
+      language: lang,
       setLang,
       dir,
       isRTL: dir === 'rtl',
