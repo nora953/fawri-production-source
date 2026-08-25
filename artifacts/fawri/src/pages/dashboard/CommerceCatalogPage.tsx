@@ -51,6 +51,7 @@ import {
   type CatalogProductFormState,
 } from '@/lib/catalogProductEditor';
 import { useI18n } from '@/lib/i18n';
+import { formatMerchantIqd } from '@/lib/moneyUi';
 import { getCurrentMerchant } from '@/lib/store';
 import type { Lang, ProductStatus } from '@/lib/types';
 
@@ -732,10 +733,10 @@ export default function CommerceCatalogPage() {
                 <div className="grid grid-cols-2 gap-3 p-4">
                   <div className="rounded-2xl bg-muted/40 p-3">
                     <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Tag className="h-4 w-4" />{copy.price}</div>
-                    <p className="text-xl font-extrabold">{service?.price_type === 'custom' ? copy.customPrice : service?.price_type === 'free' ? copy.freePrice : `${product.price_iqd.toLocaleString(lang === 'en' ? 'en-US' : 'ar-IQ')} ${copy.currency}`}</p>
+                    <p className="text-xl font-extrabold" dir="ltr">{service?.price_type === 'custom' ? copy.customPrice : service?.price_type === 'free' ? copy.freePrice : formatMerchantIqd(product.price_iqd, lang)}</p>
                   </div>
                   <div className="rounded-2xl bg-muted/40 p-3">
-                    {type === 'service' ? <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{copy.duration}</div><p className="text-xl font-extrabold">{service?.duration_minutes ? `${service.duration_minutes} ${copy.minute}` : '—'}</p></> : <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Boxes className="h-4 w-4" />{copy.quantity}</div><p className="text-xl font-extrabold">{tracksInventory(product) ? product.stock_quantity.toLocaleString() : copy.inventoryNotTracked}</p></>}
+                    {type === 'service' ? <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{copy.duration}</div><p className="text-xl font-extrabold">{service?.duration_minutes ? `${service.duration_minutes} ${copy.minute}` : '—'}</p></> : <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Boxes className="h-4 w-4" />{copy.quantity}</div><p className="text-xl font-extrabold">{tracksInventory(product) ? product.stock_quantity.toLocaleString('en-US') : copy.inventoryNotTracked}</p></>}
                   </div>
                 </div>
 
@@ -812,16 +813,16 @@ export default function CommerceCatalogPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-1 text-sm font-semibold">
               <span>{copy.salePrice}</span>
-              <div className="relative">
-                <Input type="number" min={0} dir="ltr" value={form.current_price} onChange={event => patchForm({ current_price: event.target.value })} disabled={form.item_type === 'service' && (form.service_price_type === 'free' || form.service_price_type === 'custom')} placeholder={priceExample} className="h-11 rounded-xl pe-14" />
-                <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">{copy.currency}</span>
+              <div className="flex items-center gap-2" dir="ltr">
+                <Input type="number" min={0} dir="ltr" value={form.current_price} onChange={event => patchForm({ current_price: event.target.value })} disabled={form.item_type === 'service' && (form.service_price_type === 'free' || form.service_price_type === 'custom')} placeholder={priceExample} className="h-11 min-w-0 flex-1 rounded-xl" />
+                <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-muted-foreground">{copy.currency}</span>
               </div>
             </label>
             <label className="space-y-1 text-sm font-semibold">
               <span>{copy.originalPrice}</span>
-              <div className="relative">
-                <Input type="number" min={0} dir="ltr" value={form.original_price} onChange={event => patchForm({ original_price: event.target.value })} placeholder={comparePriceExample} className="h-11 rounded-xl pe-14" />
-                <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">{copy.currency}</span>
+              <div className="flex items-center gap-2" dir="ltr">
+                <Input type="number" min={0} dir="ltr" value={form.original_price} onChange={event => patchForm({ original_price: event.target.value })} placeholder={comparePriceExample} className="h-11 min-w-0 flex-1 rounded-xl" />
+                <span className="shrink-0 whitespace-nowrap text-xs font-semibold text-muted-foreground">{copy.currency}</span>
               </div>
             </label>
           </div>
