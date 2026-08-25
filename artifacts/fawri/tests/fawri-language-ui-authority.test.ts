@@ -4,6 +4,8 @@ import test from 'node:test';
 
 const i18nSource = await readFile(new URL('../src/lib/i18n.tsx', import.meta.url), 'utf8');
 const mainSource = await readFile(new URL('../src/main.tsx', import.meta.url), 'utf8');
+const cashierMainSource = await readFile(new URL('../src/cashierMain.tsx', import.meta.url), 'utf8');
+const cashierHtmlSource = await readFile(new URL('../cashier.html', import.meta.url), 'utf8');
 const languageCss = await readFile(new URL('../src/styles/fawriLanguageAuthority.css', import.meta.url), 'utf8');
 const baselineCss = await readFile(new URL('../src/styles/fawriUiBaseline.css', import.meta.url), 'utf8');
 const indexCss = await readFile(new URL('../src/index.css', import.meta.url), 'utf8');
@@ -20,6 +22,8 @@ test('language selection is explicit and drives document language plus direction
 
 test('Arabic, Kurdish, and English each keep a dedicated project-wide font authority', () => {
   assert.match(mainSource, /fawriLanguageAuthority\.css/);
+  assert.match(cashierMainSource, /fawriLanguageAuthority\.css/);
+  assert.match(cashierHtmlSource, /<html lang="ar" dir="rtl">/);
   assert.match(languageCss, /html\[lang="ar"\][\s\S]*Noto Sans Arabic/);
   assert.match(languageCss, /html\[lang="ku"\][\s\S]*Noto Naskh Arabic/);
   assert.match(languageCss, /html\[lang="en"\][\s\S]*Inter/);
