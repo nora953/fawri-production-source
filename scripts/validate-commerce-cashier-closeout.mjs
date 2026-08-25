@@ -23,6 +23,7 @@ const steps = [
       'tsx',
       '--test',
       'artifacts/api-server/tests/cashier-reporting-cost-runtime.test.ts',
+      'artifacts/api-server/tests/catalog-reporting-cost-postgres-guard.test.ts',
       'artifacts/api-server/tests/postgres-catalog-reporting-cost-disclosure.test.ts',
       'artifacts/api-server/tests/catalog-commerce-metadata.test.ts',
     ],
