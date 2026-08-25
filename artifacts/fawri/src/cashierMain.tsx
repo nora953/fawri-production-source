@@ -217,19 +217,19 @@ document.documentElement.dataset.cashierView = diagnostics
         : 'pos';
 
 createRoot(document.getElementById('cashier-root')!).render(
-  <I18nProvider>
-    {diagnostics ? (
-      <CashierLocalShellPage />
-    ) : sync ? (
-      <CashierCatalogSyncPage />
-    ) : reports ? (
+  diagnostics ? (
+    <CashierLocalShellPage />
+  ) : sync ? (
+    <CashierCatalogSyncPage />
+  ) : reports ? (
+    <I18nProvider>
       <CashierReportsPage />
-    ) : history ? (
-      <CashierHistoryPage />
-    ) : (
-      <CashierPosPage />
-    )}
-  </I18nProvider>,
+    </I18nProvider>
+  ) : history ? (
+    <CashierHistoryPage />
+  ) : (
+    <CashierPosPage />
+  ),
 );
 
 // Demo fixtures intentionally never upload. Real cashier operational views keep
