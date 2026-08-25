@@ -136,22 +136,36 @@ test('product cards stay compact without nested inventory scrolling', () => {
   assert.match(compactCardCss, /-webkit-line-clamp:\s*3/);
 });
 
-test('Fawri availability card follows the same field geometry as the status card', () => {
+test('variant inventory is collapsed by default and opens only from an explicit details control', () => {
+  assert.match(pageSource, /expandedVariantProducts/);
+  assert.match(pageSource, /toggleVariantDetails/);
+  assert.match(pageSource, /aria-expanded=\{variantsExpanded\}/);
+  assert.match(pageSource, /aria-controls=\{variantsPanelId\}/);
+  assert.match(pageSource, /copy\.variantDetails/);
+  assert.match(pageSource, /copy\.hideVariantDetails/);
+  assert.match(pageSource, /variantsExpanded \? \(/);
+  assert.match(pageSource, /product\.variants\.map\(variant =>/);
+});
+
+test('Fawri availability aligns as a canonical field beside Description', () => {
   assert.match(workspaceSource, /catalogEditorCardHarmony\.css/);
-  assert.match(cardHarmonyCss, /nth-child\(9\)[\s\S]*flex-direction:\s*column/);
-  assert.match(cardHarmonyCss, /background:\s*hsl\(var\(--muted\) \/ 0\.1\) !important/);
-  assert.match(cardHarmonyCss, /button\[aria-pressed\][\s\S]*width:\s*100% !important/);
-  assert.match(cardHarmonyCss, /height:\s*3rem !important/);
-  assert.match(cardHarmonyCss, /border-radius:\s*0\.75rem !important/);
-  assert.match(cardHarmonyCss, /inset-inline-end/);
-  assert.match(cardHarmonyCss, /button\[aria-pressed="true"\]::before[\s\S]*var\(--primary\)/);
+  assert.match(pageSource, /catalog-editor-description-field/);
+  assert.match(pageSource, /catalog-editor-fawri-field/);
+  assert.match(pageSource, /catalog-editor-fawri-control/);
+  assert.match(pageSource, /checked \? 'end-1' : 'start-1'/);
+  assert.match(cardHarmonyCss, /catalog-editor-description-field[\s\S]*catalog-editor-fawri-field/);
+  assert.match(cardHarmonyCss, /align-self:\s*stretch !important/);
+  assert.match(cardHarmonyCss, /min-height:\s*8\.5rem !important/);
+  assert.match(cardHarmonyCss, /catalog-editor-fawri-field[\s\S]*padding:\s*0 !important/);
+  assert.match(cardHarmonyCss, /catalog-editor-fawri-control[\s\S]*border-radius:\s*0\.75rem !important/);
+  assert.match(cardHarmonyCss, /button\[aria-pressed\][\s\S]*width:\s*3\.5rem !important/);
 });
 
 test('RTL examples remain readable inside LTR technical and numeric fields', () => {
   assert.match(fullscreenCss, /input\[dir="ltr"\]::placeholder/);
   assert.match(fullscreenCss, /direction:\s*rtl/);
   assert.match(fullscreenCss, /unicode-bidi:\s*plaintext/);
-  assert.match(fullscreenCss, /nth-child\(9\)[\s\S]*align-self:\s*start/);
+  assert.match(cardHarmonyCss, /catalog-editor-fawri-field[\s\S]*align-items:\s*stretch !important/);
 });
 
 test('variant UX is truthful, bidi-safe, compact, and warns about zero inherited prices', () => {
