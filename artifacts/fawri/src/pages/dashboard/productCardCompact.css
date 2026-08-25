@@ -1,0 +1,48 @@
+/*
+ * Product-card visual containment.
+ * Inventory authority and controls remain unchanged; this file only prevents
+ * a product with many variants from distorting the entire catalog grid.
+ */
+
+.products-workspace-polish .grid:has(> article) {
+  align-items: start;
+}
+
+.products-workspace-polish article {
+  align-self: start;
+  height: auto !important;
+  min-height: 0 !important;
+}
+
+/* Inventory blocks are operational detail, not the visual height authority of a card. */
+.products-workspace-polish article > div.px-4 > div.rounded-2xl:has(> p.mb-3) {
+  max-height: 11rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.products-workspace-polish article > div.px-4 > div.rounded-2xl:has(> p.mb-3)::-webkit-scrollbar {
+  width: 0.4rem;
+}
+
+.products-workspace-polish article > div.px-4 > div.rounded-2xl:has(> p.mb-3)::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background: hsl(var(--muted-foreground) / 0.24);
+}
+
+/* Keep descriptions useful without letting prose create an oversized card. */
+.products-workspace-polish article > div.px-4 > p.rounded-2xl {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+@media (max-width: 640px) {
+  /* On mobile the card owns the full width, so give inventory slightly more room. */
+  .products-workspace-polish article > div.px-4 > div.rounded-2xl:has(> p.mb-3) {
+    max-height: 13rem;
+  }
+}
