@@ -8,6 +8,7 @@ const syncPage = fs.readFileSync(new URL('../src/pages/CashierCatalogSyncPage.ts
 const productsRoute = fs.readFileSync(new URL('../src/pages/dashboard/ProductsPage.tsx', import.meta.url), 'utf8');
 const productsWorkspace = fs.readFileSync(new URL('../src/pages/dashboard/ProductsWorkspacePage.tsx', import.meta.url), 'utf8');
 const catalog = fs.readFileSync(new URL('../src/pages/dashboard/CommerceCatalogPage.tsx', import.meta.url), 'utf8');
+const orders = fs.readFileSync(new URL('../src/pages/dashboard/ServerOrdersPage.tsx', import.meta.url), 'utf8');
 const productDetails = fs.readFileSync(new URL('../src/components/catalog/CatalogProductDetailsEditor.tsx', import.meta.url), 'utf8');
 const dashboardLayout = fs.readFileSync(new URL('../src/components/layout/DashboardLayout.tsx', import.meta.url), 'utf8');
 const sidebar = fs.readFileSync(new URL('../src/components/layout/Sidebar.tsx', import.meta.url), 'utf8');
@@ -55,13 +56,15 @@ test('cashier opens beside merchant dashboard on desktop and mobile without dash
   assert.doesNotMatch(dashboardLayout, /subscribeCashierDashboardRefresh/);
 });
 
-test('cashier catalog refresh is in-place and never discards an open product editor', () => {
+test('cashier dashboard refresh refetches catalog and orders in place without discarding merchant work', () => {
   assert.match(catalog, /subscribeCashierDashboardRefresh/);
   assert.match(catalog, /if \(formOpen \|\| saving\)/);
   assert.match(catalog, /pendingCashierRefresh\.current = true/);
   assert.match(catalog, /if \(formOpen \|\| saving \|\| !pendingCashierRefresh\.current\) return/);
   assert.match(catalog, /setReload\(value => value \+ 1\)/);
   assert.match(catalog, /if \(!loadedOnce\.current\) setLoading\(true\)/);
+  assert.match(orders, /subscribeCashierDashboardRefresh/);
+  assert.match(orders, /if \(!pendingOrderId\) void loadOrders\(true\)/);
 });
 
 test('shipping measurement hint belongs to the active workspace and spans above aligned fields', () => {
@@ -107,9 +110,10 @@ test('all operational cashier views inherit merchant Arabic Kurdish or English l
   assert.doesNotMatch(cashierMain, /[\u0600-\u06ff]/, 'cashier runtime messages must come from the language authority');
 });
 
-test('cashier language follows merchant language changes across tabs and localizes date direction and money', () => {
+test('cashier language follows merchant language changes across tabs and merchant pages expose the same language alias', () => {
   assert.match(i18n, /window\.addEventListener\('storage', handleStorage\)/);
   assert.match(i18n, /event\.key !== LANG_STORAGE_KEY/);
+  assert.match(i18n, /language:\s*lang/);
   assert.match(cashierCopy, /ar:\s*\{/);
   assert.match(cashierCopy, /ku:\s*\{/);
   assert.match(cashierCopy, /en:\s*\{/);
