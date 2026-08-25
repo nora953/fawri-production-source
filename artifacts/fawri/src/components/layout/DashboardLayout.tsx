@@ -1,5 +1,5 @@
 import { COMMON_UI_COPY } from '@/lib/translations/commonUi';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
@@ -15,10 +15,6 @@ import { useI18n } from '@/lib/i18n';
 import { FAWRI_UI_BASELINE_CLASS } from '@/lib/fawriUiBaseline';
 import type { Merchant } from '@/lib/types';
 import { useMerchantRealtimeConnection } from '@/hooks/useMerchantRealtime';
-import {
-  readCashierDashboardRefreshToken,
-  subscribeCashierDashboardRefresh,
-} from '@/lib/cashierDashboardRefresh';
 
 const PRODUCT_READ_ONLY_STATUSES = new Set([
   'warning_2',
@@ -72,40 +68,9 @@ function AuthorizedDashboard({
   useMerchantRealtimeConnection();
   const { t, dir } = useI18n();
   const [location] = useLocation();
-  const [cashierContentRevision, setCashierContentRevision] = useState(0);
   const productsReadOnly =
     location.startsWith('/dashboard/products') &&
     PRODUCT_READ_ONLY_STATUSES.has(merchant.retention_status || '');
-  const lastCashierRefreshToken = useRef(readCashierDashboardRefreshToken());
-
-  useEffect(() => {
-    const refreshTarget =
-      location.startsWith('/dashboard/products') ||
-      location.startsWith('/dashboard/orders');
-
-    const refreshForToken = (token: string | null) => {
-      if (!token || token === lastCashierRefreshToken.current) return;
-      lastCashierRefreshToken.current = token;
-      if (!refreshTarget) return;
-
-      // Remount only the active operational page. The dashboard shell, merchant
-      // session and navigation stay mounted, so a cashier update never causes a
-      // browser-level reload or throws the merchant out of their dashboard tab.
-      setCashierContentRevision(value => value + 1);
-    };
-
-    const unsubscribe = subscribeCashierDashboardRefresh(refreshForToken);
-    const checkLatestToken = () => {
-      refreshForToken(readCashierDashboardRefreshToken());
-    };
-
-    window.addEventListener('focus', checkLatestToken);
-
-    return () => {
-      unsubscribe();
-      window.removeEventListener('focus', checkLatestToken);
-    };
-  }, [location]);
 
   return (
     <div className="flex min-h-[100dvh] bg-background">
@@ -125,10 +90,7 @@ function AuthorizedDashboard({
               </div>
             )}
 
-            <div
-              key={`${location}:${cashierContentRevision}`}
-              className={productsReadOnly ? 'pointer-events-none select-text opacity-80' : ''}
-            >
+            <div className={productsReadOnly ? 'pointer-events-none select-text opacity-80' : ''}>
               {children}
             </div>
           </div>
