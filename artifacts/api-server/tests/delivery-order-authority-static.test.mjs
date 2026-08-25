@@ -5,10 +5,15 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const source = fs.readFileSync(path.join(root, "src", "routes", "index.ts"), "utf8");
+const source = fs.readFileSync(
+  path.join(root, "src", "routes", "indexModulePart3.ts"),
+  "utf8",
+);
 
 test("legacy order creation snapshots the shared authoritative delivery quote", () => {
+  assert.match(source, /const subtotal = params\.unitPrice \* params\.quantity/);
   assert.match(source, /getMerchantDeliveryQuote\(\{/);
+  assert.match(source, /subtotalIqd:\s*subtotal/);
   assert.match(source, /subtotal_iqd:\s*subtotal/);
   assert.match(source, /delivery_fee_iqd:\s*deliveryQuote\.effective_fee_iqd/);
   assert.match(source, /total_iqd:\s*deliveryQuote\.total_iqd/);
