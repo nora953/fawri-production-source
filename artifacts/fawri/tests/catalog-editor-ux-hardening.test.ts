@@ -15,6 +15,10 @@ const shellSource = await readFile(
   new URL('../src/components/catalog/CatalogEditorShell.tsx', import.meta.url),
   'utf8',
 );
+const itemTypeSource = await readFile(
+  new URL('../src/components/catalog/CatalogItemTypeEditor.tsx', import.meta.url),
+  'utf8',
+);
 const pageSource = await readFile(
   new URL('../src/pages/dashboard/CommerceCatalogPage.tsx', import.meta.url),
   'utf8',
@@ -69,6 +73,20 @@ test('create and edit routes use the hardened shell and explicit actions', () =>
   assert.match(pageSource, /saveLabel=\{copy\.save\}/);
   assert.match(pageSource, /onClose=\{\(\) => closeForm\(true\)\}/);
   assert.doesNotMatch(pageSource, /max-w-4xl flex-col overflow-hidden rounded-\[2rem\]/);
+});
+
+test('desktop item type selection stays compact and keeps inventory beside product/service choices', () => {
+  assert.match(itemTypeSource, /lg:grid-cols-3/);
+  assert.match(itemTypeSource, /sm:col-span-2 lg:col-span-1/);
+  assert.match(itemTypeSource, /trackInventory/);
+  assert.doesNotMatch(itemTypeSource, /space-y-4 rounded-2xl border bg-muted\/10 p-4/);
+});
+
+test('RTL examples remain readable inside LTR technical and numeric fields', () => {
+  assert.match(fullscreenCss, /input\[dir="ltr"\]::placeholder/);
+  assert.match(fullscreenCss, /direction:\s*rtl/);
+  assert.match(fullscreenCss, /unicode-bidi:\s*plaintext/);
+  assert.match(fullscreenCss, /nth-child\(9\)[\s\S]*align-self:\s*start/);
 });
 
 test('variant UX is truthful, bidi-safe, compact, and warns about zero inherited prices', () => {
