@@ -3,12 +3,16 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
 const pos = fs.readFileSync(new URL('../src/pages/CashierPosPage.tsx', import.meta.url), 'utf8');
+const history = fs.readFileSync(new URL('../src/pages/CashierHistoryPage.tsx', import.meta.url), 'utf8');
+const syncPage = fs.readFileSync(new URL('../src/pages/CashierCatalogSyncPage.tsx', import.meta.url), 'utf8');
 const catalog = fs.readFileSync(new URL('../src/pages/dashboard/CommerceCatalogPage.tsx', import.meta.url), 'utf8');
 const productDetails = fs.readFileSync(new URL('../src/components/catalog/CatalogProductDetailsEditor.tsx', import.meta.url), 'utf8');
 const dashboardLayout = fs.readFileSync(new URL('../src/components/layout/DashboardLayout.tsx', import.meta.url), 'utf8');
 const sidebar = fs.readFileSync(new URL('../src/components/layout/Sidebar.tsx', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const cashierMain = fs.readFileSync(new URL('../src/cashierMain.tsx', import.meta.url), 'utf8');
+const cashierCopy = fs.readFileSync(new URL('../src/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
+const i18n = fs.readFileSync(new URL('../src/lib/i18n.tsx', import.meta.url), 'utf8');
 const merchantCommerceUx = fs.readFileSync(new URL('../src/styles/merchantCommerceUxFixes.css', import.meta.url), 'utf8');
 
 test('automatic cashier catalog refresh stays silent and preserves unchanged catalog state', () => {
@@ -21,7 +25,7 @@ test('automatic cashier catalog refresh stays silent and preserves unchanged cat
 test('cashier and catalog do not use Arabic thousands separators for merchant money', () => {
   assert.doesNotMatch(pos, /Intl\.NumberFormat\('ar-IQ'/);
   assert.doesNotMatch(catalog, /price_iqd\.toLocaleString\(lang === 'en' \? 'en-US' : 'ar-IQ'\)/);
-  assert.match(pos, /formatMerchantMoneyMinor/);
+  assert.match(pos, /formatMerchantMoneyMinor\(amountMinor, currencyCode, fractionDigits, lang\)/);
   assert.match(catalog, /formatMerchantMoneyMinor/);
 });
 
@@ -64,4 +68,34 @@ test('confirmation primary action remains direction-aware', () => {
   assert.match(app, /merchantCommerceUxFixes\.css/);
   assert.match(cashierMain, /merchantCommerceUxFixes\.css/);
   assert.match(merchantCommerceUx, /data-cashier-view="history"[\s\S]*flex-direction:\s*row-reverse/);
+  assert.match(history, /dir=\{dir\}/);
 });
+
+test('all operational cashier views inherit merchant Arabic Kurdish or English language', () => {
+  assert.match(cashierMain, /<I18nProvider>\{operationalPage\}<\/I18nProvider>/);
+  assert.match(pos, /const \{ lang, dir \} = useI18n\(\)/);
+  assert.match(history, /const \{ lang, dir \} = useI18n\(\)/);
+  assert.match(syncPage, /const \{ lang, dir \} = useI18n\(\)/);
+  assert.match(pos, /CASHIER_UI_COPY\[lang\]\.pos/);
+  assert.match(history, /CASHIER_UI_COPY\[lang\]\.history/);
+  assert.match(syncPage, /CASHIER_UI_COPY\[lang\]\.sync/);
+  assert.doesNotMatch(pos, /[\u0600-\u06ff]/, 'POS component must not keep Arabic-only UI literals');
+  assert.doesNotMatch(history, /[\u0600-\u06ff]/, 'history component must not keep Arabic-only UI literals');
+  assert.doesNotMatch(syncPage, /[\u0600-\u06ff]/, 'sync component must not keep Arabic-only UI literals');
+  assert.doesNotMatch(cashierMain, /[\u0600-\u06ff]/, 'cashier runtime messages must come from the language authority');
+});
+
+test('cashier language follows merchant language changes across tabs and localizes date direction and money', () => {
+  assert.match(i18n, /window\.addEventListener\('storage', handleStorage\)/);
+  assert.match(i18n, /event\.key !== LANG_STORAGE_KEY/);
+  assert.match(cashierCopy, /ar:\s*\{/);
+  assert.match(cashierCopy, /ku:\s*\{/);
+  assert.match(cashierCopy, /en:\s*\{/);
+  assert.match(cashierCopy, /if \(lang === 'ku'\) return 'ckb-IQ'/);
+  assert.match(history, /cashierLocale\(lang\)/);
+  assert.match(syncPage, /cashierLocale\(lang\)/);
+  assert.match(pos, /dir=\{dir\}/);
+  assert.match(history, /dir=\{dir\}/);
+  assert.match(syncPage, /dir=\{dir\}/);
+}
+);
