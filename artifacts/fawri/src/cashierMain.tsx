@@ -8,6 +8,7 @@ import '@/index.css';
 import '@/styles/fawriUiBaseline.css';
 import '@/styles/fawriLanguageAuthority.css';
 import '@/styles/cashierPos.css';
+import '@/styles/merchantCommerceUxFixes.css';
 import { I18nProvider } from '@/lib/i18n';
 import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
 import { installAuthClientCutover } from '@/lib/authClientCutover';

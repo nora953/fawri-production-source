@@ -72,11 +72,11 @@ function AuthorizedDashboard({
   useMerchantRealtimeConnection();
   const { t, dir } = useI18n();
   const [location] = useLocation();
+  const [cashierContentRevision, setCashierContentRevision] = useState(0);
   const productsReadOnly =
     location.startsWith('/dashboard/products') &&
     PRODUCT_READ_ONLY_STATUSES.has(merchant.retention_status || '');
   const lastCashierRefreshToken = useRef(readCashierDashboardRefreshToken());
-  const pendingCashierRefresh = useRef(false);
 
   useEffect(() => {
     const refreshTarget =
@@ -88,31 +88,21 @@ function AuthorizedDashboard({
       lastCashierRefreshToken.current = token;
       if (!refreshTarget) return;
 
-      if (document.visibilityState === 'hidden') {
-        pendingCashierRefresh.current = true;
-        return;
-      }
-
-      window.location.reload();
+      // Remount only the active operational page. The dashboard shell, merchant
+      // session and navigation stay mounted, so a cashier update never causes a
+      // browser-level reload or throws the merchant out of their dashboard tab.
+      setCashierContentRevision(value => value + 1);
     };
 
     const unsubscribe = subscribeCashierDashboardRefresh(refreshForToken);
     const checkLatestToken = () => {
-      if (document.visibilityState !== 'visible') return;
-      if (pendingCashierRefresh.current) {
-        pendingCashierRefresh.current = false;
-        window.location.reload();
-        return;
-      }
       refreshForToken(readCashierDashboardRefreshToken());
     };
 
-    document.addEventListener('visibilitychange', checkLatestToken);
     window.addEventListener('focus', checkLatestToken);
 
     return () => {
       unsubscribe();
-      document.removeEventListener('visibilitychange', checkLatestToken);
       window.removeEventListener('focus', checkLatestToken);
     };
   }, [location]);
@@ -135,7 +125,10 @@ function AuthorizedDashboard({
               </div>
             )}
 
-            <div className={productsReadOnly ? 'pointer-events-none select-text opacity-80' : ''}>
+            <div
+              key={`${location}:${cashierContentRevision}`}
+              className={productsReadOnly ? 'pointer-events-none select-text opacity-80' : ''}
+            >
               {children}
             </div>
           </div>

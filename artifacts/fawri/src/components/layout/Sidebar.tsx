@@ -171,7 +171,13 @@ export function Sidebar() {
 
             if (item.fullPage) {
               return (
-                <a key={item.href} href={item.href} className={className}>
+                <a
+                  key={item.href}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={className}
+                >
                   {content}
                 </a>
               );

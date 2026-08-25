@@ -1,0 +1,51 @@
+/* Merchant commerce UX refinements discovered during live closeout QA. */
+
+/* Keep the shipping/measurement card on the same field rhythm as the rest of
+   the merchant product editor without changing its data contract. */
+.fawri-ui-baseline div:has(> div > input[placeholder="1.25"]) > * + * {
+  margin-top: 1rem !important;
+}
+
+.fawri-ui-baseline div:has(> input[placeholder="1.25"]) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fawri-ui-baseline div:has(> input[placeholder="1.25"]) > label {
+  margin-bottom: 0 !important;
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+}
+
+.fawri-ui-baseline div:has(> div > input[placeholder$="(cm)"]) {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.fawri-ui-baseline div:has(> div > input[placeholder$="(cm)"]) > p {
+  margin-bottom: 0 !important;
+  color: hsl(var(--foreground));
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+}
+
+.fawri-ui-baseline div:has(> div > input[placeholder$="(cm)"]) > div {
+  gap: 1rem;
+}
+
+.fawri-ui-baseline input[placeholder="1.25"],
+.fawri-ui-baseline input[placeholder$="(cm)"] {
+  height: 2.75rem;
+}
+
+/* Cashier history currently renders the secondary action first in the DOM.
+   Reversing the flex row puts the primary confirmation on inline-start:
+   right for RTL Arabic/Kurdish and left for LTR English. */
+html[data-cashier-view="history"] .fixed.inset-0.z-50 .mt-5.flex.gap-2 {
+  flex-direction: row-reverse;
+}
