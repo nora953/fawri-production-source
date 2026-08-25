@@ -227,9 +227,9 @@ function Measurements({
         </div>
         <ChevronDown className="h-4 w-4 text-muted-foreground transition group-open:rotate-180" />
       </summary>
-      <div className="grid gap-4 border-t p-4 lg:grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)]">
-        <div>
-          <p className="mb-3 text-xs leading-5 text-muted-foreground">{labels.physicalHint}</p>
+      <div className="space-y-3 border-t p-4">
+        <p className="text-xs leading-5 text-muted-foreground">{labels.physicalHint}</p>
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)]">
           <label className="block space-y-1 text-xs font-semibold text-muted-foreground">
             <span>{labels.weight}</span>
             <Input
@@ -241,13 +241,13 @@ function Measurements({
               className="h-10 rounded-xl"
             />
           </label>
-        </div>
-        <div>
-          <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.dimensions}</p>
-          <div className="grid gap-2 sm:grid-cols-3">
-            <Input inputMode="decimal" dir="ltr" value={value.length_cm} onChange={event => onChange({ length_cm: event.target.value })} placeholder={labels.length} className="h-10 rounded-xl" />
-            <Input inputMode="decimal" dir="ltr" value={value.width_cm} onChange={event => onChange({ width_cm: event.target.value })} placeholder={labels.width} className="h-10 rounded-xl" />
-            <Input inputMode="decimal" dir="ltr" value={value.height_cm} onChange={event => onChange({ height_cm: event.target.value })} placeholder={labels.height} className="h-10 rounded-xl" />
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground">{labels.dimensions}</p>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <Input inputMode="decimal" dir="ltr" value={value.length_cm} onChange={event => onChange({ length_cm: event.target.value })} placeholder={labels.length} className="h-10 rounded-xl" />
+              <Input inputMode="decimal" dir="ltr" value={value.width_cm} onChange={event => onChange({ width_cm: event.target.value })} placeholder={labels.width} className="h-10 rounded-xl" />
+              <Input inputMode="decimal" dir="ltr" value={value.height_cm} onChange={event => onChange({ height_cm: event.target.value })} placeholder={labels.height} className="h-10 rounded-xl" />
+            </div>
           </div>
         </div>
       </div>
