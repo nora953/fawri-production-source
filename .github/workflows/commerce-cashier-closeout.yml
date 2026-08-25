@@ -43,6 +43,7 @@ on:
       - "artifacts/api-server/tests/postgres-catalog-reporting-cost-disclosure.test.ts"
       - "artifacts/api-server/tests/catalog-commerce-metadata.test.ts"
       - "artifacts/api-server/tests/catalog-fact-currency-formatting.test.ts"
+      - "artifacts/api-server/tests/postgres-catalog-fact-disclosure.test.ts"
       - "artifacts/api-server/tests/currency-money-runtime.test.ts"
       - "artifacts/api-server/tests/commerce-delivery-pricing.test.ts"
       - "artifacts/api-server/tests/delivery-fee-per-area.test.ts"
