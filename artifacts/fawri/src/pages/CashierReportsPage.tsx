@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
+import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
 import {
   createCashierReportsRuntime,
   type CashierReportRuntimeResult,
@@ -129,21 +130,6 @@ function rangeOptions(key: RangeKey) {
   return {};
 }
 
-function formatMoney(value: number, currency: string, digits: number, lang: Lang): string {
-  const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
-  const divisor = 10 ** digits;
-  try {
-    return new Intl.NumberFormat(locale, {
-      style: 'currency',
-      currency,
-      minimumFractionDigits: digits,
-      maximumFractionDigits: digits,
-    }).format(value / divisor);
-  } catch {
-    return `${new Intl.NumberFormat(locale).format(value / divisor)} ${currency}`;
-  }
-}
-
 export default function CashierReportsPage() {
   const { lang, dir } = useI18n();
   const labels = COPY[lang] || COPY.en;
@@ -238,7 +224,7 @@ export default function CashierReportsPage() {
         {!loading && !error && result && result.report.sale_count > 0 ? (
           <div className="space-y-5">
             {result.report.by_currency.map(currency => {
-              const money = (value: number) => formatMoney(value, currency.currency_code, currency.currency_fraction_digits, lang);
+              const money = (value: number) => formatMerchantMoneyMinor(value, currency.currency_code, currency.currency_fraction_digits, lang);
               const profit = currency.profit_status === 'unavailable'
                 ? null
                 : currency.gross_profit_minor ?? 0;
@@ -276,7 +262,7 @@ export default function CashierReportsPage() {
                             </div>
                             <div className="shrink-0 text-end">
                               <p className="font-bold">{product.net_units} {labels.sold}</p>
-                              <p className="mt-0.5 text-xs text-slate-500">{labels.revenue}: {money(product.net_revenue_minor)}</p>
+                              <p className="mt-0.5 text-xs text-slate-500" dir="ltr">{labels.revenue}: {money(product.net_revenue_minor)}</p>
                             </div>
                           </div>
                         ))}
@@ -298,7 +284,7 @@ function Metric({ title, value }: { title: string; value: string }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-xs font-semibold text-slate-500">{title}</p>
-      <p className="mt-2 truncate text-xl font-extrabold" dir="auto">{value}</p>
+      <p className="mt-2 truncate text-xl font-extrabold" dir="ltr">{value}</p>
     </div>
   );
 }
