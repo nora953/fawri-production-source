@@ -5,6 +5,7 @@ import CommerceCatalogPage from './CommerceCatalogPage';
 import CatalogPromotionsPage from './CatalogPromotionsPage';
 import './dashboardMerchantPolish.css';
 import './catalogEditorFullscreen.css';
+import './productCardCompact.css';
 import { useI18n } from '@/lib/i18n';
 
 const copy = {
