@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const pos = fs.readFileSync(new URL('../src/pages/CashierPosPage.tsx', import.meta.url), 'utf8');
 const catalog = fs.readFileSync(new URL('../src/pages/dashboard/CommerceCatalogPage.tsx', import.meta.url), 'utf8');
+const productDetails = fs.readFileSync(new URL('../src/components/catalog/CatalogProductDetailsEditor.tsx', import.meta.url), 'utf8');
 const dashboardLayout = fs.readFileSync(new URL('../src/components/layout/DashboardLayout.tsx', import.meta.url), 'utf8');
 const sidebar = fs.readFileSync(new URL('../src/components/layout/Sidebar.tsx', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
@@ -41,12 +42,26 @@ test('cashier opens beside the merchant dashboard and cashier refresh never relo
   assert.match(dashboardLayout, /key=\{`\$\{location\}:\$\{cashierContentRevision\}`\}/);
 });
 
-test('commerce visual fixes keep measurement fields aligned and confirmation primary action direction-aware', () => {
+test('shipping measurement hint spans above aligned weight and dimensions fields', () => {
+  const hint = '<p className="text-xs leading-5 text-muted-foreground">{labels.physicalHint}</p>';
+  const fieldsGrid = '<div className="grid items-start gap-4 lg:grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)]">';
+  const weight = '<span>{labels.weight}</span>';
+  const dimensions = '<p className="text-xs font-semibold text-muted-foreground">{labels.dimensions}</p>';
+
+  const hintIndex = productDetails.indexOf(hint);
+  const fieldsGridIndex = productDetails.indexOf(fieldsGrid);
+  const weightIndex = productDetails.indexOf(weight);
+  const dimensionsIndex = productDetails.indexOf(dimensions);
+
+  assert.ok(hintIndex >= 0, 'measurement hint must remain visible');
+  assert.ok(fieldsGridIndex > hintIndex, 'measurement fields must start after the full-width hint');
+  assert.ok(weightIndex > fieldsGridIndex, 'weight must render inside the aligned fields grid');
+  assert.ok(dimensionsIndex > fieldsGridIndex, 'dimensions must render inside the aligned fields grid');
+  assert.doesNotMatch(merchantCommerceUx, /input\[placeholder=/, 'measurement geometry must not depend on placeholder CSS selectors');
+});
+
+test('confirmation primary action remains direction-aware', () => {
   assert.match(app, /merchantCommerceUxFixes\.css/);
   assert.match(cashierMain, /merchantCommerceUxFixes\.css/);
-  assert.match(merchantCommerceUx, /input\[placeholder="1\.25"\]/);
-  assert.match(merchantCommerceUx, /input\[placeholder\$="\(cm\)"\]/);
-  assert.match(merchantCommerceUx, /height:\s*2\.75rem/);
-  assert.match(merchantCommerceUx, /gap:\s*1rem/);
   assert.match(merchantCommerceUx, /data-cashier-view="history"[\s\S]*flex-direction:\s*row-reverse/);
 });
