@@ -42,6 +42,7 @@ type CashierSaleLine = {
   sku_snapshot?: string;
   barcode_snapshot?: string;
   catalog_version?: number;
+  unit_cost_minor?: number;
   quantity: number;
   base_unit_price_minor: number;
   effective_unit_price_minor: number;
@@ -299,6 +300,9 @@ function parseSaleLine(value: unknown): CashierSaleLine {
       : {}),
     ...(raw.catalog_version !== undefined
       ? { catalog_version: positiveInteger(raw.catalog_version, "line.catalog_version") }
+      : {}),
+    ...(raw.unit_cost_minor !== undefined
+      ? { unit_cost_minor: nonNegativeInteger(raw.unit_cost_minor, "line.unit_cost_minor") }
       : {}),
     quantity,
     base_unit_price_minor: base,
@@ -853,6 +857,7 @@ async function insertCanonicalOrder(
           ...(line.sku_snapshot ? { sku: line.sku_snapshot } : {}),
           ...(line.barcode_snapshot ? { barcode: line.barcode_snapshot } : {}),
           ...(line.catalog_version ? { catalog_version: line.catalog_version } : {}),
+          ...(line.unit_cost_minor !== undefined ? { unit_cost_minor: line.unit_cost_minor } : {}),
           base_unit_price_minor: line.base_unit_price_minor,
           effective_unit_price_minor: line.effective_unit_price_minor,
           discount_minor: line.discount_minor,
