@@ -39,6 +39,7 @@ export type CatalogVariantDraft = CatalogMeasurementDraft & {
   sku: string;
   barcode: string;
   price_iqd: string;
+  cost_iqd: string;
   stock_quantity: string;
   options: CatalogOptionDraft[];
   image_refs: CatalogImageDraft[];
@@ -59,6 +60,7 @@ export type CatalogProductFormState = CatalogMeasurementDraft & {
   description: string;
   original_price: string;
   current_price: string;
+  cost_iqd: string;
   quantity: string;
   status: ProductStatus;
   allow_fawri_reply: boolean;
@@ -69,6 +71,7 @@ export type CatalogProductFormState = CatalogMeasurementDraft & {
 export type CatalogEditorValidationCode =
   | 'name'
   | 'price'
+  | 'cost'
   | 'compare_price'
   | 'quantity'
   | 'measurement'
@@ -78,6 +81,7 @@ export type CatalogEditorValidationCode =
   | 'image_reference'
   | 'variant_identity'
   | 'variant_price'
+  | 'variant_cost'
   | 'variant_quantity'
   | 'variant_measurement'
   | 'variant_partial_dimensions'
@@ -232,6 +236,7 @@ function variantDraftFromVariant(variant?: CatalogVariant): CatalogVariantDraft 
     sku: variant?.sku || '',
     barcode: variant?.barcode || '',
     price_iqd: variant?.price_iqd === undefined ? '' : String(variant.price_iqd),
+    cost_iqd: variant?.cost_iqd === undefined ? '' : String(variant.cost_iqd),
     stock_quantity: String(variant?.stock_quantity ?? 0),
     ...measurementDraft(variant),
     options: variant
@@ -257,6 +262,7 @@ export function createEmptyCatalogProductForm(): CatalogProductFormState {
     description: '',
     original_price: '',
     current_price: '',
+    cost_iqd: '',
     quantity: '',
     ...measurementDraft(),
     status: 'available',
@@ -302,6 +308,7 @@ export function catalogProductFormFromProduct(
         ? ''
         : String(product.compare_at_price_iqd),
     current_price: String(product.price_iqd),
+    cost_iqd: product.cost_iqd === undefined ? '' : String(product.cost_iqd),
     quantity: String(product.stock_quantity),
     ...measurementDraft(product),
     status: product.status,
@@ -334,6 +341,7 @@ export function validateCatalogProductForm(
     ? wholeNumber(form.current_price || form.original_price)
     : 0;
   if (currentPrice === null) return 'price';
+  if (form.cost_iqd.trim() && wholeNumber(form.cost_iqd) === null) return 'cost';
 
   if (serviceUsesAmount && form.original_price.trim()) {
     const comparePrice = wholeNumber(form.original_price);
@@ -371,6 +379,9 @@ export function validateCatalogProductForm(
 
     if (variant.price_iqd.trim() && wholeNumber(variant.price_iqd) === null) {
       return 'variant_price';
+    }
+    if (variant.cost_iqd.trim() && wholeNumber(variant.cost_iqd) === null) {
+      return 'variant_cost';
     }
     if (form.track_inventory && wholeNumber(variant.stock_quantity) === null) {
       return 'variant_quantity';
@@ -414,6 +425,7 @@ function variantInput(
     sku: variant.sku.trim(),
     barcode: variant.barcode.trim(),
     price_iqd: variant.price_iqd.trim() ? wholeNumber(variant.price_iqd) : null,
+    cost_iqd: variant.cost_iqd.trim() ? wholeNumber(variant.cost_iqd) : null,
     stock_quantity: trackInventory ? wholeNumber(variant.stock_quantity) ?? 0 : 0,
     ...measurementInput(variant),
     options,
@@ -469,6 +481,7 @@ export function catalogProductInputFromForm(
     sku: isService ? '' : form.sku.trim(),
     barcode: isService ? '' : form.barcode.trim(),
     price_iqd: currentPrice,
+    cost_iqd: form.cost_iqd.trim() ? wholeNumber(form.cost_iqd) : null,
     compare_at_price_iqd: compareAtPrice,
     ...(!trackInventory || variants.length === 0
       ? { stock_quantity: trackInventory ? wholeNumber(form.quantity) ?? 0 : 0 }
