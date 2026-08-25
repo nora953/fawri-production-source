@@ -244,6 +244,18 @@ export function resolveCashierSalePricing(input: {
     return { productId, variantId, quantity, item };
   });
 
+  const seenSaleLines = new Set<string>();
+  for (const entry of prepared) {
+    const key = catalogKey(entry.productId, entry.variantId);
+    if (seenSaleLines.has(key)) {
+      throw new CashierSalePricingError(
+        'CASHIER_SALE_PRICING_DUPLICATE_LINE',
+        'a product/variant may appear only once in a cashier sale',
+      );
+    }
+    seenSaleLines.add(key);
+  }
+
   let currencyCode: string | undefined;
   let fractionDigits: number | undefined;
   let subtotalMinor = 0;
