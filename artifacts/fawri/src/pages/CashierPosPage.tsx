@@ -375,6 +375,9 @@ export default function CashierPosPage() {
               <a href="/cashier.html?history=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
                 سجل المبيعات
               </a>
+              <a href="/cashier.html?reports=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
+                التقارير
+              </a>
               <button
                 type="button"
                 onClick={requestCashierSync}
