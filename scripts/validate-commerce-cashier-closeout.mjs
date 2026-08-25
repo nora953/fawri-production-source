@@ -52,6 +52,11 @@ const steps = [
     ],
   },
   {
+    label: 'Store currency validation gate',
+    command: 'node',
+    args: ['scripts/validate-store-currency.mjs'],
+  },
+  {
     label: 'Catalog editor and production build gate',
     command: 'node',
     args: ['scripts/validate-catalog-editor.mjs'],
