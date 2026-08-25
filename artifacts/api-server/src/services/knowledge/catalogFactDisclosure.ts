@@ -1,4 +1,9 @@
 import type { CatalogCommerceFields } from "../catalogCommerceMetadata.js";
+import {
+  currencyFractionDigits,
+  minorUnitsToMajorCurrencyString,
+  normalizeCurrencyCode,
+} from "../currencyMoneyRuntime.js";
 
 export function requestedCatalogQuantity(customerText: string): number | null {
   const normalized = String(customerText || "")
@@ -86,21 +91,35 @@ function currencyLabel(language: "ar" | "ku" | "en", currencyCode: string): stri
   return currencyCode;
 }
 
+function formatMinorNumber(amountMinor: number, currencyCodeValue: string): string {
+  const currencyCode = normalizeCurrencyCode(currencyCodeValue);
+  const digits = currencyFractionDigits(currencyCode);
+  const major = minorUnitsToMajorCurrencyString(amountMinor, currencyCode);
+  const numeric = Number(major);
+  return new Intl.NumberFormat("en-US", {
+    useGrouping: true,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(numeric);
+}
+
 export function catalogPriceAnswer(params: {
   language: "ar" | "ku" | "en";
   itemName: string;
+  /** Legacy field name; value is merchant-currency minor units. */
   unitPriceIqd: number;
+  /** Legacy field name; value is merchant-currency minor units. */
   baseUnitPriceIqd?: number;
   currencyCode?: string;
   promotionApplied?: boolean;
   commerce: CatalogCommerceFields;
 }): string {
   const priceType = params.commerce.service_details?.price_type || "fixed";
-  const currencyCode = String(params.currencyCode || "IQD").toUpperCase();
+  const currencyCode = normalizeCurrencyCode(params.currencyCode || "IQD");
   const currency = currencyLabel(params.language, currencyCode);
-  const amount = params.unitPriceIqd.toLocaleString("en-US");
+  const amount = formatMinorNumber(params.unitPriceIqd, currencyCode);
   const basePrice = params.baseUnitPriceIqd ?? params.unitPriceIqd;
-  const baseAmount = basePrice.toLocaleString("en-US");
+  const baseAmount = formatMinorNumber(basePrice, currencyCode);
   const promoted =
     params.promotionApplied === true &&
     basePrice > params.unitPriceIqd;
