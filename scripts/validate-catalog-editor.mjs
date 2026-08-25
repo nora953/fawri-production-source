@@ -13,6 +13,7 @@ const steps = [
       'artifacts/fawri/tests/product-catalog-ui-cutover.test.ts',
       'artifacts/fawri/tests/catalog-editor-logic-hardening.test.ts',
       'artifacts/fawri/tests/catalog-editor-ux-hardening.test.ts',
+      'artifacts/fawri/tests/fawri-language-ui-authority.test.ts',
     ],
   },
   {
