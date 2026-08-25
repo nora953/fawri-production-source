@@ -35,6 +35,13 @@
   grid-column: 1 / -1;
 }
 
+/* Keep Arabic/Kurdish examples readable even when the actual field value is LTR. */
+[dir="rtl"] .products-workspace-polish .catalog-editor-shell input[dir="ltr"]::placeholder {
+  direction: rtl;
+  text-align: right;
+  unicode-bidi: plaintext;
+}
+
 /* Item type and product-specific configuration are primary workspace sections. */
 .products-workspace-polish .catalog-editor-body-grid > :nth-child(1),
 .products-workspace-polish .catalog-editor-body-grid > :nth-child(4),
@@ -63,7 +70,7 @@
 }
 .products-workspace-polish .catalog-editor-body-grid > :nth-child(9) {
   grid-column: span 4;
-  align-self: stretch;
+  align-self: start;
 }
 
 .products-workspace-polish .catalog-editor-footer > div {
