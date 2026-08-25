@@ -8,9 +8,13 @@ import type {
   CashierSaleSnapshot,
 } from '@/lib/cashierLocalContracts';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
+import { CASHIER_UI_COPY, cashierLocale } from '@/lib/cashierUiCopy';
+import { useI18n } from '@/lib/i18n';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import type { Lang } from '@/lib/types';
 
 type ConfirmAction = 'return' | 'void' | null;
+type HistoryLabels = (typeof CASHIER_UI_COPY)[Lang]['history'];
 
 function operationId(prefix: 'return' | 'void'): string {
   const random =
@@ -20,13 +24,18 @@ function operationId(prefix: 'return' | 'void'): string {
   return `${prefix}-${random}`;
 }
 
-function formatMoney(amountMinor: number, currencyCode: string, fractionDigits: number): string {
-  return formatMerchantMoneyMinor(amountMinor, currencyCode, fractionDigits, 'ar');
+function formatMoney(
+  amountMinor: number,
+  currencyCode: string,
+  fractionDigits: number,
+  lang: Lang,
+): string {
+  return formatMerchantMoneyMinor(amountMinor, currencyCode, fractionDigits, lang);
 }
 
-function formatDate(value: string): string {
+function formatDate(value: string, lang: Lang): string {
   try {
-    return new Intl.DateTimeFormat('ar-IQ', {
+    return new Intl.DateTimeFormat(cashierLocale(lang), {
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(new Date(value));
@@ -39,11 +48,23 @@ function saleReference(saleId: string): string {
   return saleId.replace(/^sale:/, '').slice(0, 8).toUpperCase();
 }
 
-function paymentMethodLabel(value: CashierSaleSnapshot['payment_method']): string {
-  if (value === 'cash') return 'نقدي';
-  if (value === 'card') return 'بطاقة';
-  if (value === 'electronic') return 'إلكتروني';
-  return 'أخرى';
+function paymentMethodLabel(
+  value: CashierSaleSnapshot['payment_method'],
+  labels: HistoryLabels,
+): string {
+  if (value === 'cash') return labels.cash;
+  if (value === 'card') return labels.card;
+  if (value === 'electronic') return labels.electronic;
+  return labels.other;
+}
+
+function paymentStatusLabel(
+  value: CashierSaleSnapshot['payment_status'],
+  labels: HistoryLabels,
+): string {
+  if (value === 'paid') return labels.paid;
+  if (value === 'pending') return labels.pending;
+  return labels.failed;
 }
 
 function returnedQuantity(sale: CashierSaleSnapshot, lineId: string): number {
@@ -68,22 +89,22 @@ function totalReturnedQuantity(sale: CashierSaleSnapshot): number {
   );
 }
 
-function saleState(sale: CashierSaleSnapshot): {
+function saleState(sale: CashierSaleSnapshot, labels: HistoryLabels): {
   label: string;
   className: string;
 } {
   if (sale.status === 'voided' || sale.void) {
-    return { label: 'ملغى', className: 'bg-red-50 text-red-700 border-red-200' };
+    return { label: labels.stateVoided, className: 'bg-red-50 text-red-700 border-red-200' };
   }
   const sold = sale.lines.reduce((sum, line) => sum + line.quantity, 0);
   const returned = totalReturnedQuantity(sale);
   if (returned >= sold && sold > 0) {
-    return { label: 'مرتجع بالكامل', className: 'bg-amber-50 text-amber-800 border-amber-200' };
+    return { label: labels.stateFullyReturned, className: 'bg-amber-50 text-amber-800 border-amber-200' };
   }
   if (returned > 0) {
-    return { label: 'مرتجع جزئي', className: 'bg-amber-50 text-amber-800 border-amber-200' };
+    return { label: labels.statePartialReturn, className: 'bg-amber-50 text-amber-800 border-amber-200' };
   }
-  return { label: 'مكتمل', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+  return { label: labels.stateCompleted, className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
 }
 
 function saleOperationIds(sale: CashierSaleSnapshot): string[] {
@@ -100,7 +121,18 @@ function syncErrorCode(error: unknown): string {
     : '';
 }
 
+function syncStateLabel(
+  pending: boolean,
+  online: boolean,
+  labels: HistoryLabels,
+): string {
+  if (!pending) return labels.synced;
+  return online ? labels.pendingSync : labels.savedOnDevice;
+}
+
 export default function CashierHistoryPage() {
+  const { lang, dir } = useI18n();
+  const labels = CASHIER_UI_COPY[lang].history;
   const [runtime, setRuntime] = useState<CashierHistoryRuntime | null>(null);
   const [sales, setSales] = useState<CashierSaleSnapshot[]>([]);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
@@ -135,7 +167,7 @@ export default function CashierHistoryPage() {
         await refresh(created);
       })
       .catch(() => {
-        if (!stopped) setError('تعذر فتح سجل الكاشير على هذا الجهاز.');
+        if (!stopped) setError(labels.historyFailed);
       })
       .finally(() => {
         if (!stopped) setLoading(false);
@@ -144,7 +176,7 @@ export default function CashierHistoryPage() {
       stopped = true;
       if (activeRuntime) void activeRuntime.close().catch(() => undefined);
     };
-  }, [refresh]);
+  }, [labels.historyFailed, refresh]);
 
   useEffect(() => {
     if (!runtime) return;
@@ -231,8 +263,6 @@ export default function CashierHistoryPage() {
         if (syncErrorCode(cause) === 'CASHIER_OUTBOX_SESSION_REQUIRED') {
           setAuthRequired(true);
         }
-        // The local operation is already durable. Any cloud failure leaves the
-        // outbox untouched for the automatic retry loop.
       } finally {
         await refresh(activeRuntime).catch(() => undefined);
       }
@@ -252,16 +282,16 @@ export default function CashierHistoryPage() {
       });
       setReturnDraft({});
       setConfirmAction(null);
-      setNotice('تم الإرجاع.');
+      setNotice(labels.returnedNotice);
       await refresh(runtime);
       void syncAfterLocalChange(runtime);
     } catch {
       setConfirmAction(null);
-      setError('تعذر الإرجاع. تحقق من الكمية وحاول مجددًا.');
+      setError(labels.returnFailed);
     } finally {
       setBusy(false);
     }
-  }, [refresh, requestedReturnLines, runtime, selectedSale, syncAfterLocalChange]);
+  }, [labels, refresh, requestedReturnLines, runtime, selectedSale, syncAfterLocalChange]);
 
   const performVoid = useCallback(async () => {
     if (!runtime || !selectedSale || !canVoid) return;
@@ -273,16 +303,16 @@ export default function CashierHistoryPage() {
         sale_id: selectedSale.sale_id,
       });
       setConfirmAction(null);
-      setNotice('تم إلغاء البيع.');
+      setNotice(labels.voidedSaleNotice);
       await refresh(runtime);
       void syncAfterLocalChange(runtime);
     } catch {
       setConfirmAction(null);
-      setError('تعذر إلغاء البيع.');
+      setError(labels.voidFailed);
     } finally {
       setBusy(false);
     }
-  }, [canVoid, refresh, runtime, selectedSale, syncAfterLocalChange]);
+  }, [canVoid, labels, refresh, runtime, selectedSale, syncAfterLocalChange]);
 
   const chooseReturnQuantity = useCallback((lineId: string, next: number, max: number) => {
     setReturnDraft(current => ({
@@ -298,22 +328,22 @@ export default function CashierHistoryPage() {
   }, [returnableLines]);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-screen lg:overflow-hidden" dir="rtl">
+    <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-screen lg:overflow-hidden" dir={dir}>
       <div className="mx-auto flex min-h-screen max-w-[1450px] flex-col p-3 lg:h-screen lg:min-h-0 lg:p-5">
         <header className="mb-3 flex shrink-0 flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <div className="flex items-center gap-3">
             <img src="/fawri-logo.svg" alt="Fawri" className="h-10 w-10 object-contain" />
             <div>
-              <h1 className="text-xl font-bold">سجل الكاشير</h1>
-              <p className="mt-0.5 text-xs text-slate-500">راجع المبيعات والإرجاعات والإلغاءات.</p>
+              <h1 className="text-xl font-bold">{labels.title}</h1>
+              <p className="mt-0.5 text-xs text-slate-500">{labels.subtitle}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
-              {online ? 'متصل' : 'غير متصل'}
+              {online ? labels.online : labels.offline}
             </span>
             <a href="/cashier.html" className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-bold text-slate-700 transition hover:bg-slate-50">
-              العودة للكاشير
+              {labels.back}
             </a>
           </div>
         </header>
@@ -321,16 +351,16 @@ export default function CashierHistoryPage() {
         {authRequired ? (
           <div className="mb-3 shrink-0 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <div>
-              <strong className="block">سجّل الدخول للمزامنة</strong>
-              <span className="text-amber-800">عملياتك محفوظة وستتم مزامنتها بعد تسجيل الدخول.</span>
+              <strong className="block">{labels.signInToSync}</strong>
+              <span className="text-amber-800">{labels.savedUntilLogin}</span>
             </div>
-            <a href="/login" className="rounded-xl bg-slate-900 px-4 py-2 font-bold text-white">تسجيل الدخول</a>
+            <a href="/login" className="rounded-xl bg-slate-900 px-4 py-2 font-bold text-white">{labels.signIn}</a>
           </div>
         ) : null}
 
         {!online ? (
           <div className="mb-3 shrink-0 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-            غير متصل. يمكنك الاستمرار، وستتم المزامنة عند عودة الاتصال.
+            {labels.offlineNotice}
           </div>
         ) : null}
 
@@ -341,21 +371,21 @@ export default function CashierHistoryPage() {
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-col">
             <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3">
               <div>
-                <h2 className="font-bold">المبيعات</h2>
-                <p className="mt-0.5 text-xs text-slate-500">{sales.length} عملية</p>
+                <h2 className="font-bold">{labels.sales}</h2>
+                <p className="mt-0.5 text-xs text-slate-500">{labels.operationCount(sales.length)}</p>
               </div>
               {pendingIds.size > 0 ? (
-                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800">{pendingIds.size} بانتظار المزامنة</span>
+                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800">{labels.pendingCount(pendingIds.size)}</span>
               ) : null}
             </div>
 
             <div className="p-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-              {loading ? <div className="p-6 text-center text-sm text-slate-500">جارٍ تحميل السجل...</div> : null}
+              {loading ? <div className="p-6 text-center text-sm text-slate-500">{labels.loading}</div> : null}
               {!loading && sales.length === 0 ? (
-                <div className="p-8 text-center text-sm text-slate-500">لا توجد مبيعات بعد.</div>
+                <div className="p-8 text-center text-sm text-slate-500">{labels.empty}</div>
               ) : null}
               {sales.map(sale => {
-                const state = saleState(sale);
+                const state = saleState(sale, labels);
                 const pending = saleOperationIds(sale).some(id => pendingIds.has(id));
                 const active = sale.sale_id === selectedSaleId;
                 return (
@@ -363,19 +393,19 @@ export default function CashierHistoryPage() {
                     key={sale.sale_id}
                     type="button"
                     onClick={() => setSelectedSaleId(sale.sale_id)}
-                    className={`mb-1.5 w-full rounded-xl border px-3 py-2.5 text-right transition ${active ? 'border-orange-300 bg-orange-50/50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                    className={`mb-1.5 w-full rounded-xl border px-3 py-2.5 text-start transition ${active ? 'border-orange-300 bg-orange-50/50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
                   >
                     <div className="mb-1 flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <strong className="block truncate text-sm">عملية بيع #{saleReference(sale.sale_id)}</strong>
-                        <span className="mt-0.5 block text-xs text-slate-500">{formatDate(sale.occurred_at)}</span>
+                        <strong className="block truncate text-sm">{labels.saleReference(saleReference(sale.sale_id))}</strong>
+                        <span className="mt-0.5 block text-xs text-slate-500">{formatDate(sale.occurred_at, lang)}</span>
                       </div>
                       <span className={`shrink-0 rounded-full border px-2 py-1 text-[11px] font-bold ${state.className}`}>{state.label}</span>
                     </div>
                     <div className="flex items-end justify-between gap-3">
-                      <strong dir="ltr">{formatMoney(sale.total_minor, sale.currency_code, sale.currency_fraction_digits)}</strong>
+                      <strong dir="ltr">{formatMoney(sale.total_minor, sale.currency_code, sale.currency_fraction_digits, lang)}</strong>
                       <span className={`text-xs font-semibold ${pending ? 'text-amber-700' : 'text-emerald-700'}`}>
-                        {pending ? (online ? 'بانتظار المزامنة' : 'محفوظ على الجهاز') : 'متزامن'}
+                        {syncStateLabel(pending, online, labels)}
                       </span>
                     </div>
                   </button>
@@ -386,46 +416,46 @@ export default function CashierHistoryPage() {
 
           <section className="rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:overflow-y-auto">
             {!selectedSale ? (
-              <div className="flex min-h-[420px] items-center justify-center p-8 text-center text-sm text-slate-500">اختر عملية لعرض التفاصيل.</div>
+              <div className="flex min-h-[420px] items-center justify-center p-8 text-center text-sm text-slate-500">{labels.chooseSale}</div>
             ) : (
               <div>
                 <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-4 py-4">
                   <div>
                     <div className="mb-1 flex flex-wrap items-center gap-2">
-                      <h2 className="text-lg font-bold">تفاصيل البيع</h2>
-                      <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${saleState(selectedSale).className}`}>{saleState(selectedSale).label}</span>
+                      <h2 className="text-lg font-bold">{labels.saleDetails}</h2>
+                      <span className={`rounded-full border px-2.5 py-1 text-xs font-bold ${saleState(selectedSale, labels).className}`}>{saleState(selectedSale, labels).label}</span>
                       <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${selectedPending ? 'bg-amber-50 text-amber-800' : 'bg-emerald-50 text-emerald-700'}`}>
-                        {selectedPending ? (online ? 'بانتظار المزامنة' : 'محفوظ على الجهاز') : 'متزامن'}
+                        {syncStateLabel(selectedPending, online, labels)}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500">عملية بيع #{saleReference(selectedSale.sale_id)}</p>
+                    <p className="text-xs text-slate-500">{labels.saleReference(saleReference(selectedSale.sale_id))}</p>
                   </div>
-                  <div className="text-left">
-                    <strong className="block text-xl" dir="ltr">{formatMoney(selectedSale.total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong>
-                    <span className="text-xs text-slate-500">{formatDate(selectedSale.occurred_at)}</span>
+                  <div className="text-end">
+                    <strong className="block text-xl" dir="ltr">{formatMoney(selectedSale.total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits, lang)}</strong>
+                    <span className="text-xs text-slate-500">{formatDate(selectedSale.occurred_at, lang)}</span>
                   </div>
                 </div>
 
                 <div className="grid gap-3 border-b border-slate-100 p-4 sm:grid-cols-3">
                   <div className="rounded-xl bg-slate-50 px-3 py-2.5">
-                    <span className="block text-xs text-slate-500">طريقة الدفع</span>
-                    <strong className="mt-1 block text-sm">{paymentMethodLabel(selectedSale.payment_method)}</strong>
+                    <span className="block text-xs text-slate-500">{labels.paymentMethod}</span>
+                    <strong className="mt-1 block text-sm">{paymentMethodLabel(selectedSale.payment_method, labels)}</strong>
                   </div>
                   <div className="rounded-xl bg-slate-50 px-3 py-2.5">
-                    <span className="block text-xs text-slate-500">حالة الدفع</span>
-                    <strong className="mt-1 block text-sm">{selectedSale.payment_status === 'paid' ? 'مدفوع' : selectedSale.payment_status === 'pending' ? 'معلق' : 'فشل'}</strong>
+                    <span className="block text-xs text-slate-500">{labels.paymentStatus}</span>
+                    <strong className="mt-1 block text-sm">{paymentStatusLabel(selectedSale.payment_status, labels)}</strong>
                   </div>
                   <div className="rounded-xl bg-slate-50 px-3 py-2.5">
-                    <span className="block text-xs text-slate-500">عدد العناصر</span>
+                    <span className="block text-xs text-slate-500">{labels.itemCount}</span>
                     <strong className="mt-1 block text-sm">{selectedSale.lines.reduce((sum, line) => sum + line.quantity, 0)}</strong>
                   </div>
                 </div>
 
                 <div className="p-4">
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3 className="font-bold">المنتجات</h3>
+                    <h3 className="font-bold">{labels.products}</h3>
                     {returnableLines.length > 0 ? (
-                      <button type="button" onClick={selectAllReturnable} className="text-xs font-bold text-orange-600 hover:text-orange-700">إرجاع الكل</button>
+                      <button type="button" onClick={selectAllReturnable} className="text-xs font-bold text-orange-600 hover:text-orange-700">{labels.returnAll}</button>
                     ) : null}
                   </div>
 
@@ -441,15 +471,15 @@ export default function CashierHistoryPage() {
                               <strong className="block text-sm">{line.product_name_snapshot}</strong>
                               {line.variant_name_snapshot ? <span className="text-xs text-slate-500">{line.variant_name_snapshot}</span> : null}
                               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
-                                <span>مباع: {line.quantity}</span>
-                                {returned > 0 ? <span>مرتجع: {returned}</span> : null}
-                                <span>متاح للإرجاع: {remaining}</span>
+                                <span>{labels.sold(line.quantity)}</span>
+                                {returned > 0 ? <span>{labels.returned(returned)}</span> : null}
+                                <span>{labels.returnable(remaining)}</span>
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
-                              <strong dir="ltr">{formatMoney(line.line_total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong>
+                              <strong dir="ltr">{formatMoney(line.line_total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits, lang)}</strong>
                               {remaining > 0 && selectedSale.status === 'completed' && !selectedSale.void ? (
-                                <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1">
+                                <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1" dir="ltr">
                                   <button type="button" onClick={() => chooseReturnQuantity(line.line_id, draft - 1, remaining)} className="h-8 w-8 rounded-lg text-lg font-bold hover:bg-slate-50">−</button>
                                   <span className="min-w-8 text-center text-sm font-bold">{draft}</span>
                                   <button type="button" onClick={() => chooseReturnQuantity(line.line_id, draft + 1, remaining)} className="h-8 w-8 rounded-lg text-lg font-bold hover:bg-slate-50">+</button>
@@ -464,12 +494,12 @@ export default function CashierHistoryPage() {
 
                   {(selectedSale.returns || []).length > 0 ? (
                     <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-                      <strong>الإرجاعات السابقة</strong>
+                      <strong>{labels.previousReturns}</strong>
                       <div className="mt-2 space-y-1 text-xs">
                         {(selectedSale.returns || []).map(item => (
                           <div key={item.return_id} className="flex flex-wrap justify-between gap-2">
-                            <span>{formatDate(item.occurred_at)}</span>
-                            <strong dir="ltr">{formatMoney(item.refund_total_minor, item.currency_code, item.currency_fraction_digits)}</strong>
+                            <span>{formatDate(item.occurred_at, lang)}</span>
+                            <strong dir="ltr">{formatMoney(item.refund_total_minor, item.currency_code, item.currency_fraction_digits, lang)}</strong>
                           </div>
                         ))}
                       </div>
@@ -478,14 +508,14 @@ export default function CashierHistoryPage() {
 
                   {selectedFullyReturned ? (
                     <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-900">
-                      تم إرجاع البيع بالكامل.
+                      {labels.fullyReturnedNotice}
                     </div>
                   ) : null}
 
                   {selectedSale.void ? (
                     <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-                      <strong>تم إلغاء البيع</strong>
-                      <span className="mt-1 block text-xs">{formatDate(selectedSale.void.occurred_at)} · <bdi dir="ltr">{formatMoney(selectedSale.void.refund_total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</bdi></span>
+                      <strong>{labels.voidedNotice}</strong>
+                      <span className="mt-1 block text-xs">{formatDate(selectedSale.void.occurred_at, lang)} · <bdi dir="ltr">{formatMoney(selectedSale.void.refund_total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits, lang)}</bdi></span>
                     </div>
                   ) : null}
 
@@ -493,16 +523,16 @@ export default function CashierHistoryPage() {
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
                       <div>
                         {requestedReturnLines.length > 0 ? (
-                          <span className="text-sm text-slate-600">قيمة الإرجاع: <strong className="text-slate-900" dir="ltr">{formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</strong></span>
+                          <span className="text-sm text-slate-600">{labels.returnValue} <strong className="text-slate-900" dir="ltr">{formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits, lang)}</strong></span>
                         ) : (
-                          <span className="text-xs text-slate-500">حدد الكمية للإرجاع.</span>
+                          <span className="text-xs text-slate-500">{labels.selectReturnQuantity}</span>
                         )}
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {canVoid ? (
-                          <button type="button" onClick={() => setConfirmAction('void')} disabled={busy} className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-50">إلغاء البيع</button>
+                          <button type="button" onClick={() => setConfirmAction('void')} disabled={busy} className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-50">{labels.voidSale}</button>
                         ) : null}
-                        <button type="button" onClick={() => setConfirmAction('return')} disabled={busy || requestedReturnLines.length === 0} className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40">إرجاع المحدد</button>
+                        <button type="button" onClick={() => setConfirmAction('return')} disabled={busy || requestedReturnLines.length === 0} className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40">{labels.returnSelected}</button>
                       </div>
                     </div>
                   ) : null}
@@ -514,23 +544,23 @@ export default function CashierHistoryPage() {
       </div>
 
       {confirmAction && selectedSale ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" dir="rtl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" dir={dir}>
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
-            <h3 className="text-lg font-bold">{confirmAction === 'void' ? 'تأكيد الإلغاء' : 'تأكيد الإرجاع'}</h3>
+            <h3 className="text-lg font-bold">{confirmAction === 'void' ? labels.confirmVoid : labels.confirmReturn}</h3>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {confirmAction === 'void'
-                ? 'سيتم إلغاء البيع وإعادة الكمية إلى المخزون.'
-                : <>سيتم إرجاع المحدد بقيمة <bdi dir="ltr">{formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits)}</bdi>.</>}
+                ? labels.voidConfirmText
+                : <>{labels.returnConfirmPrefix} <bdi dir="ltr">{formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits, lang)}</bdi>.</>}
             </p>
             <div className="mt-5 flex gap-2">
-              <button type="button" onClick={() => setConfirmAction(null)} disabled={busy} className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700">رجوع</button>
+              <button type="button" onClick={() => setConfirmAction(null)} disabled={busy} className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold text-slate-700">{labels.backAction}</button>
               <button
                 type="button"
                 onClick={() => void (confirmAction === 'void' ? performVoid() : performReturn())}
                 disabled={busy}
                 className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50 ${confirmAction === 'void' ? 'bg-red-600 hover:bg-red-700' : 'bg-orange-500 hover:bg-orange-600'}`}
               >
-                {busy ? 'جارٍ التنفيذ...' : confirmAction === 'void' ? 'تأكيد الإلغاء' : 'تأكيد الإرجاع'}
+                {busy ? labels.executing : confirmAction === 'void' ? labels.confirmVoid : labels.confirmReturn}
               </button>
             </div>
           </div>
