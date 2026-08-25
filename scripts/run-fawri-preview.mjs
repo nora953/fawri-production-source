@@ -12,6 +12,15 @@ const apiDir = path.join(workspaceDir, "artifacts", "api-server");
 const webDir = path.join(workspaceDir, "artifacts", "fawri");
 const webDistDir = path.join(webDir, "dist", "public");
 const apiEntry = path.join(apiDir, "dist", "index.mjs");
+const cashierHtml = path.join(webDir, "cashier.html");
+const cashierMain = path.join(webDir, "src", "cashierMain.tsx");
+const catalogReadinessScript = path.join(
+  workspaceDir,
+  "lib",
+  "db",
+  "scripts",
+  "catalog-variant-signature-readiness.mjs",
+);
 const lockId = crypto.createHash("sha256").update(workspaceDir).digest("hex").slice(0, 16);
 const lockPath = path.join(os.tmpdir(), `fawri-preview-${lockId}.pid`);
 
@@ -28,6 +37,39 @@ function processAlive(pid) {
     return true;
   } catch {
     return false;
+  }
+}
+
+function requirePreviewPrerequisites() {
+  if (!fs.existsSync(cashierHtml) || !fs.existsSync(cashierMain)) {
+    throw new Error(
+      "Modern cashier files are missing. Refusing to start a preview from an incomplete/stale Fawri tree.",
+    );
+  }
+
+  if (!String(process.env.DATABASE_URL || "").trim()) {
+    throw new Error(
+      "DATABASE_URL is required for the Fawri preview. Refusing to fall back to non-PostgreSQL catalog authority.",
+    );
+  }
+
+  const configuredAuthority = String(
+    process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY || "",
+  )
+    .trim()
+    .toLowerCase();
+  if (configuredAuthority && configuredAuthority !== "required") {
+    throw new Error(
+      `FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=${configuredAuthority} is unsafe for this preview; expected required.`,
+    );
+  }
+
+  process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = "required";
+
+  if (!fs.existsSync(catalogReadinessScript)) {
+    throw new Error(
+      "Catalog PostgreSQL readiness check is missing. Refusing to start the preview without the database safety gate.",
+    );
   }
 }
 
@@ -101,6 +143,11 @@ function runCommand(command, args, options = {}) {
   });
 }
 
+async function verifyCatalogPostgresReadiness() {
+  console.log("[preview] Verifying PostgreSQL catalog authority and variant signature guard...");
+  await runCommand(process.execPath, [catalogReadinessScript]);
+}
+
 async function buildPreview() {
   console.log("[preview] Building API server...");
   await runCommand("pnpm", ["--dir", apiDir, "run", "build"]);
@@ -120,6 +167,7 @@ function previewServerEnv() {
     ...process.env,
     PORT: "8081",
     FAWRI_WEB_DIST_DIR: webDistDir,
+    FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
   };
 
   if (process.env.NODE_ENV !== "production") {
@@ -139,6 +187,7 @@ function startServer() {
       restartCount > 0 ? ` (restart ${restartCount})` : ""
     }...`,
   );
+  console.log("[preview] PostgreSQL operational authority is REQUIRED.");
 
   if (process.env.NODE_ENV !== "production") {
     console.log(
@@ -216,7 +265,9 @@ process.on("SIGHUP", () => stop("SIGHUP"));
 process.on("exit", releasePreviewLock);
 
 try {
+  requirePreviewPrerequisites();
   acquirePreviewLock();
+  await verifyCatalogPostgresReadiness();
   await buildPreview();
   startServer();
 } catch (error) {
