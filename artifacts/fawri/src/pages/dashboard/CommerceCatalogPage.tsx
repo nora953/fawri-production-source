@@ -52,6 +52,7 @@ import {
   getCatalogCommerceContext,
   type CatalogCommerceContext,
 } from '@/lib/catalogPromotionUiApi';
+import { subscribeCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import {
   catalogProductFormFromProduct,
   catalogProductInputFromForm,
@@ -419,6 +420,8 @@ export default function CommerceCatalogPage() {
 
   const createAttempt = useRef<CatalogIdempotencyAttempt | null>(null);
   const inventoryAttempt = useRef<CatalogIdempotencyAttempt | null>(null);
+  const pendingCashierRefresh = useRef(false);
+  const loadedOnce = useRef(false);
 
   const [items, setItems] = useState<CatalogProduct[]>([]);
   const [commerceContext, setCommerceContext] = useState<CatalogCommerceContext | null>(null);
@@ -476,7 +479,7 @@ export default function CommerceCatalogPage() {
         if (active) setLoading(false);
         return;
       }
-      setLoading(true);
+      if (!loadedOnce.current) setLoading(true);
       setLoadError(false);
       try {
         const [loaded, context] = await Promise.all([
@@ -504,12 +507,31 @@ export default function CommerceCatalogPage() {
           toast.error(copy.loadFailed);
         }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          loadedOnce.current = true;
+          setLoading(false);
+        }
       }
     }
     void load();
     return () => { active = false; };
   }, [merchant?.id, reload, copy.loadFailed]);
+
+  useEffect(() => {
+    return subscribeCashierDashboardRefresh(() => {
+      if (formOpen || saving) {
+        pendingCashierRefresh.current = true;
+        return;
+      }
+      setReload(value => value + 1);
+    });
+  }, [formOpen, saving]);
+
+  useEffect(() => {
+    if (formOpen || saving || !pendingCashierRefresh.current) return;
+    pendingCashierRefresh.current = false;
+    setReload(value => value + 1);
+  }, [formOpen, saving]);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
