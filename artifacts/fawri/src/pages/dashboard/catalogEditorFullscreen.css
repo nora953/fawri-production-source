@@ -25,6 +25,10 @@
   overscroll-behavior: contain;
 }
 
+.products-workspace-polish .catalog-editor-body-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
 .products-workspace-polish .catalog-editor-body-grid > * {
   min-width: 0;
   margin: 0 !important;
