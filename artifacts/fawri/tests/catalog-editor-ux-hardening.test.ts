@@ -2,6 +2,15 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
+import {
+  catalogEditorFormFingerprint,
+  catalogEditorHasUnsavedChanges,
+} from '../src/lib/catalogEditorSession.ts';
+import {
+  createEmptyCatalogProductForm,
+  createEmptyCatalogVariantDraft,
+} from '../src/lib/catalogProductEditor.ts';
+
 const shellSource = await readFile(
   new URL('../src/components/catalog/CatalogEditorShell.tsx', import.meta.url),
   'utf8',
@@ -19,10 +28,33 @@ const fullscreenCss = await readFile(
   'utf8',
 );
 
+test('dirty-state contract detects field and variant changes without false positives', () => {
+  const form = createEmptyCatalogProductForm();
+  const initial = catalogEditorFormFingerprint(form);
+  assert.equal(catalogEditorHasUnsavedChanges(initial, form), false);
+
+  const renamed = { ...form, name: 'منتج جديد' };
+  assert.equal(catalogEditorHasUnsavedChanges(initial, renamed), true);
+
+  const variant = createEmptyCatalogVariantDraft();
+  variant.name = 'Black / S';
+  variant.options = [
+    { key: 'color', name: 'Color', value: 'Black' },
+    { key: 'size', name: 'Size', value: 'S' },
+  ];
+  const withVariant = { ...form, variants: [variant] };
+  assert.equal(catalogEditorHasUnsavedChanges(initial, withVariant), true);
+  assert.equal(
+    catalogEditorHasUnsavedChanges(catalogEditorFormFingerprint(withVariant), withVariant),
+    false,
+  );
+});
+
 test('full-screen catalog shell owns scrolling and protects unsaved work', () => {
   assert.match(shellSource, /h-\[100dvh\]/);
   assert.match(shellSource, /document\.documentElement/);
   assert.match(shellSource, /body\.style\.overflow = 'hidden'/);
+  assert.match(shellSource, /catalogEditorHasUnsavedChanges/);
   assert.match(shellSource, /window\.confirm\(labels\.discard\)/);
   assert.match(shellSource, /event\.key !== 'Escape'/);
   assert.match(shellSource, /data-catalog-primary-input/);
