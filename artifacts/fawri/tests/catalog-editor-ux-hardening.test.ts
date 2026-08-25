@@ -31,6 +31,18 @@ const fullscreenCss = await readFile(
   new URL('../src/pages/dashboard/catalogEditorFullscreen.css', import.meta.url),
   'utf8',
 );
+const baselineCss = await readFile(
+  new URL('../src/styles/fawriUiBaseline.css', import.meta.url),
+  'utf8',
+);
+const signupSource = await readFile(
+  new URL('../src/pages/SignupPage.tsx', import.meta.url),
+  'utf8',
+);
+const loginSource = await readFile(
+  new URL('../src/pages/LoginPage.tsx', import.meta.url),
+  'utf8',
+);
 
 test('dirty-state contract detects field and variant changes without false positives', () => {
   const form = createEmptyCatalogProductForm();
@@ -64,6 +76,26 @@ test('full-screen catalog shell owns scrolling and protects unsaved work', () =>
   assert.match(shellSource, /data-catalog-primary-input/);
   assert.match(shellSource, /Unsaved changes|تغييرات غير محفوظة/);
   assert.match(fullscreenCss, /overscroll-behavior:\s*contain/);
+});
+
+test('catalog fields inherit the reviewed Signup/Login Fawri UI authority', () => {
+  assert.match(signupSource, /fieldInputClass = "h-12 rounded-xl"/);
+  assert.match(signupSource, /fieldHeaderClass = "flex min-h-5 items-center justify-between gap-3"/);
+  assert.match(signupSource, /className="space-y-2"/);
+  assert.match(loginSource, /className="h-12 rounded-xl"/);
+  assert.match(loginSource, /className="flex min-h-5 items-center justify-between gap-3"/);
+  assert.match(baselineCss, /--fawri-control-height:\s*3rem/);
+  assert.match(baselineCss, /--fawri-control-radius:\s*0\.75rem/);
+  assert.match(baselineCss, /--fawri-field-gap:\s*0\.5rem/);
+  assert.match(baselineCss, /--fawri-label-size:\s*0\.875rem/);
+  assert.match(shellSource, /catalog-editor-shell fawri-ui-baseline/);
+  assert.match(fullscreenCss, /height:\s*var\(--fawri-control-height\) !important/);
+  assert.match(fullscreenCss, /font-size:\s*var\(--fawri-label-size\) !important/);
+  assert.match(fullscreenCss, /color:\s*hsl\(var\(--foreground\)\)/);
+  assert.match(fullscreenCss, /font-family:\s*"Noto Sans Arabic"/);
+  assert.match(fullscreenCss, /font-family:\s*"Inter"/);
+  assert.match(fullscreenCss, /letter-spacing:\s*0 !important/);
+  assert.match(fullscreenCss, /label:has\(> div > input\)/);
 });
 
 test('create and edit routes use the hardened shell and explicit actions', () => {
