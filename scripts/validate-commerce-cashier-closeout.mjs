@@ -16,6 +16,19 @@ const steps = [
     ],
   },
   {
+    label: 'Merchant money and cashier refresh UX tests',
+    command: 'pnpm',
+    args: [
+      'exec',
+      'tsx',
+      '--tsconfig',
+      'artifacts/fawri/tsconfig.json',
+      '--test',
+      'artifacts/fawri/tests/merchant-money-ui.test.ts',
+      'artifacts/fawri/tests/cashier-refresh-ux-contract.test.mjs',
+    ],
+  },
+  {
     label: 'Cashier reporting cost runtime and disclosure tests',
     command: 'pnpm',
     args: [
