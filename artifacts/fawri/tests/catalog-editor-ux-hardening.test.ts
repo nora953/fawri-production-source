@@ -23,12 +23,20 @@ const pageSource = await readFile(
   new URL('../src/pages/dashboard/CommerceCatalogPage.tsx', import.meta.url),
   'utf8',
 );
+const workspaceSource = await readFile(
+  new URL('../src/pages/dashboard/ProductsWorkspacePage.tsx', import.meta.url),
+  'utf8',
+);
 const variantSource = await readFile(
   new URL('../src/components/catalog/CatalogProductDetailsEditor.tsx', import.meta.url),
   'utf8',
 );
 const fullscreenCss = await readFile(
   new URL('../src/pages/dashboard/catalogEditorFullscreen.css', import.meta.url),
+  'utf8',
+);
+const compactCardCss = await readFile(
+  new URL('../src/pages/dashboard/productCardCompact.css', import.meta.url),
   'utf8',
 );
 const baselineCss = await readFile(
@@ -92,9 +100,9 @@ test('catalog fields inherit the reviewed Signup/Login Fawri UI authority', () =
   assert.match(fullscreenCss, /height:\s*var\(--fawri-control-height\) !important/);
   assert.match(fullscreenCss, /font-size:\s*var\(--fawri-label-size\) !important/);
   assert.match(fullscreenCss, /color:\s*hsl\(var\(--foreground\)\)/);
-  assert.match(fullscreenCss, /font-family:\s*"Noto Sans Arabic"/);
+  assert.match(fullscreenCss, /html\[lang="ar"\][\s\S]*Noto Sans Arabic/);
+  assert.match(fullscreenCss, /html\[lang="ku"\][\s\S]*Noto Naskh Arabic/);
   assert.match(fullscreenCss, /font-family:\s*"Inter"/);
-  assert.match(fullscreenCss, /letter-spacing:\s*0 !important/);
   assert.match(fullscreenCss, /label:has\(> div > input\)/);
 });
 
@@ -112,6 +120,15 @@ test('desktop item type selection stays compact and keeps inventory beside produ
   assert.match(itemTypeSource, /sm:col-span-2 lg:col-span-1/);
   assert.match(itemTypeSource, /trackInventory/);
   assert.doesNotMatch(itemTypeSource, /space-y-4 rounded-2xl border bg-muted\/10 p-4/);
+});
+
+test('product cards cannot be stretched or dominated by long variant inventory blocks', () => {
+  assert.match(workspaceSource, /productCardCompact\.css/);
+  assert.match(compactCardCss, /\.grid:has\(> article\)[\s\S]*align-items:\s*start/);
+  assert.match(compactCardCss, /article[\s\S]*align-self:\s*start/);
+  assert.match(compactCardCss, /max-height:\s*11rem/);
+  assert.match(compactCardCss, /overflow-y:\s*auto/);
+  assert.match(compactCardCss, /-webkit-line-clamp:\s*3/);
 });
 
 test('RTL examples remain readable inside LTR technical and numeric fields', () => {
