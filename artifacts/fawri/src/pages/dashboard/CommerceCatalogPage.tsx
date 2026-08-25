@@ -4,6 +4,8 @@ import {
   Boxes,
   BriefcaseBusiness,
   CalendarClock,
+  ChevronDown,
+  ChevronUp,
   Image as ImageIcon,
   Minus,
   Package,
@@ -105,6 +107,8 @@ type PageCopy = {
   inventorySet: string;
   inventorySaved: string;
   inventoryFailed: string;
+  variantDetails: string;
+  hideVariantDetails: string;
   save: string;
   saving: string;
   edit: string;
@@ -171,6 +175,8 @@ const COPY: Record<Lang, PageCopy> = {
     inventorySet: 'تعيين',
     inventorySaved: 'تم تحديث المخزون.',
     inventoryFailed: 'تعذر تحديث المخزون.',
+    variantDetails: 'تفاصيل الأنواع',
+    hideVariantDetails: 'إخفاء الأنواع',
     save: 'حفظ',
     saving: 'جارٍ الحفظ...',
     edit: 'تعديل المنتج أو الخدمة',
@@ -235,6 +241,8 @@ const COPY: Record<Lang, PageCopy> = {
     inventorySet: 'دانان',
     inventorySaved: 'کۆگا نوێکرایەوە.',
     inventoryFailed: 'نوێکردنەوەی کۆگا سەرکەوتوو نەبوو.',
+    variantDetails: 'وردەکاری جۆرەکان',
+    hideVariantDetails: 'شاردنەوەی جۆرەکان',
     save: 'پاشەکەوتکردن',
     saving: 'پاشەکەوت دەکرێت...',
     edit: 'دەستکاری بەرهەم یان خزمەتگوزاری',
@@ -299,6 +307,8 @@ const COPY: Record<Lang, PageCopy> = {
     inventorySet: 'Set',
     inventorySaved: 'Inventory updated.',
     inventoryFailed: 'Could not update inventory.',
+    variantDetails: 'Variant details',
+    hideVariantDetails: 'Hide variants',
     save: 'Save',
     saving: 'Saving...',
     edit: 'Edit product or service',
@@ -348,7 +358,7 @@ function upsert(items: CatalogProduct[], product: CatalogProduct): CatalogProduc
 function FawriToggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <button type="button" aria-pressed={checked} onClick={() => onChange(!checked)} className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${checked ? 'bg-orange-500' : 'bg-zinc-300'}`}>
-      <span className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-all ${checked ? 'right-7' : 'right-1'}`} />
+      <span className={`absolute top-1 h-6 w-6 rounded-full bg-white shadow transition-[inset] ${checked ? 'end-1' : 'start-1'}`} />
     </button>
   );
 }
@@ -405,6 +415,7 @@ export default function CommerceCatalogPage() {
   const [saving, setSaving] = useState(false);
   const [inventoryValues, setInventoryValues] = useState<Record<string, string>>({});
   const [inventoryBusy, setInventoryBusy] = useState<string | null>(null);
+  const [expandedVariantProducts, setExpandedVariantProducts] = useState<Record<string, boolean>>({});
 
   const statusOptions = useMemo(() => [
     { value: 'available' as const, label: copy.available },
@@ -507,6 +518,10 @@ export default function CommerceCatalogPage() {
 
   const patchForm = (patch: Partial<CatalogProductFormState>) => setForm(current => ({ ...current, ...patch }));
 
+  const toggleVariantDetails = (productId: string) => {
+    setExpandedVariantProducts(current => ({ ...current, [productId]: !current[productId] }));
+  };
+
   const validate = () => {
     const code = validateCatalogProductForm(form);
     if (!code) return true;
@@ -578,6 +593,11 @@ export default function CommerceCatalogPage() {
     try {
       await deleteCatalogProduct(product.id, product.version);
       setItems(current => current.filter(item => item.id !== product.id));
+      setExpandedVariantProducts(current => {
+        const next = { ...current };
+        delete next[product.id];
+        return next;
+      });
       toast.success(copy.deleted);
     } catch (error) {
       if (await loadConflict(product.id, error)) return;
@@ -676,6 +696,9 @@ export default function CommerceCatalogPage() {
             const type = itemType(product);
             const primary = imageUrl(product);
             const service = product.service_details;
+            const hasVariants = product.variants.length > 0;
+            const variantsExpanded = Boolean(expandedVariantProducts[product.id]);
+            const variantsPanelId = `catalog-variants-${product.id}`;
             return (
               <article key={product.id} className="overflow-hidden rounded-3xl border bg-card shadow-sm transition hover:shadow-md">
                 {primary && <div className="h-44 overflow-hidden border-b bg-muted/20"><img src={primary} alt={product.image_refs[0]?.alt || product.name} className="h-full w-full object-cover" /></div>}
@@ -713,16 +736,38 @@ export default function CommerceCatalogPage() {
                 {tracksInventory(product) && (
                   <div className="px-4 pb-4">
                     <div className="rounded-2xl bg-muted/20 p-3">
-                      <p className="mb-3 text-sm font-bold">{copy.inventory}</p>
-                      <div className="space-y-2">
-                        {product.variants.length > 0 ? product.variants.map(variant => {
-                          const key = inventoryKey(product.id, variant.id);
-                          return <InventoryControl key={variant.id} copy={copy} product={product} variant={variant} value={inventoryValues[key] ?? String(variant.stock_quantity)} busy={inventoryBusy === key} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product, variant)} onAdjust={delta => void adjustInventory(product, delta, variant)} />;
-                        }) : (() => {
-                          const key = inventoryKey(product.id);
-                          return <InventoryControl copy={copy} product={product} value={inventoryValues[key] ?? String(product.stock_quantity)} busy={inventoryBusy === key} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product)} onAdjust={delta => void adjustInventory(product, delta)} />;
-                        })()}
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-bold">{copy.inventory}</p>
+                        {hasVariants && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-9 rounded-xl px-3 text-xs font-bold"
+                            aria-expanded={variantsExpanded}
+                            aria-controls={variantsPanelId}
+                            onClick={() => toggleVariantDetails(product.id)}
+                          >
+                            {variantsExpanded ? copy.hideVariantDetails : copy.variantDetails}
+                            <Badge variant="outline" className="mx-2 rounded-full bg-background">{product.variants.length}</Badge>
+                            {variantsExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                          </Button>
+                        )}
                       </div>
+
+                      {hasVariants ? (
+                        variantsExpanded ? (
+                          <div id={variantsPanelId} className="mt-3 space-y-2">
+                            {product.variants.map(variant => {
+                              const key = inventoryKey(product.id, variant.id);
+                              return <InventoryControl key={variant.id} copy={copy} product={product} variant={variant} value={inventoryValues[key] ?? String(variant.stock_quantity)} busy={inventoryBusy === key} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product, variant)} onAdjust={delta => void adjustInventory(product, delta, variant)} />;
+                            })}
+                          </div>
+                        ) : null
+                      ) : (() => {
+                        const key = inventoryKey(product.id);
+                        return <div className="mt-3"><InventoryControl copy={copy} product={product} value={inventoryValues[key] ?? String(product.stock_quantity)} busy={inventoryBusy === key} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product)} onAdjust={delta => void adjustInventory(product, delta)} /></div>;
+                      })()}
                     </div>
                   </div>
                 )}
@@ -785,17 +830,17 @@ export default function CommerceCatalogPage() {
             </select>
           </label>
 
-          <label className="space-y-1 text-sm font-semibold">
+          <label className="catalog-editor-description-field space-y-2 text-sm font-semibold">
             <span>{copy.description}</span>
-            <Textarea value={form.description} onChange={event => patchForm({ description: event.target.value })} placeholder={copy.descriptionPlaceholder} rows={5} className="rounded-xl" />
+            <Textarea value={form.description} onChange={event => patchForm({ description: event.target.value })} placeholder={copy.descriptionPlaceholder} rows={5} className="min-h-[8.5rem] flex-1 rounded-xl" />
           </label>
 
-          <div className="flex items-start justify-between gap-4 rounded-2xl border bg-muted/20 p-4">
-            <div>
-              <p className="text-sm font-bold">{copy.fawri}</p>
-              <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.fawriHint}</p>
+          <div className="catalog-editor-fawri-field space-y-2 text-sm font-semibold">
+            <span className="catalog-editor-fawri-label">{copy.fawri}</span>
+            <div className="catalog-editor-fawri-control flex min-h-[8.5rem] flex-1 items-center justify-between gap-4 rounded-xl border border-input bg-background px-4 py-4">
+              <p className="max-w-sm text-xs font-normal leading-5 text-muted-foreground">{copy.fawriHint}</p>
+              <FawriToggle checked={form.allow_fawri_reply} onChange={allow_fawri_reply => patchForm({ allow_fawri_reply })} />
             </div>
-            <FawriToggle checked={form.allow_fawri_reply} onChange={allow_fawri_reply => patchForm({ allow_fawri_reply })} />
           </div>
         </CatalogEditorShell>
       )}
