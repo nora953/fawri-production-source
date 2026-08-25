@@ -14,6 +14,7 @@ const steps = [
       'artifacts/fawri/tests/catalog-editor-logic-hardening.test.ts',
       'artifacts/fawri/tests/catalog-editor-ux-hardening.test.ts',
       'artifacts/fawri/tests/fawri-language-ui-authority.test.ts',
+      'artifacts/fawri/tests/catalog-product-card-layout.test.ts',
     ],
   },
   {
