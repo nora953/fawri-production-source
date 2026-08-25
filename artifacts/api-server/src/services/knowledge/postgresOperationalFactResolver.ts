@@ -4,6 +4,10 @@ import {
   normalizeDeliveryAreaName,
   type DeliveryAreaRate,
 } from "../deliveryPricing.js";
+import {
+  formatMinorCurrencyNumber,
+  normalizeCurrencyCode,
+} from "../currencyMoneyRuntime.js";
 import { resolveCommerceDeliveryQuote } from "../commerceDeliveryPricing.js";
 import {
   CommercePromotionError,
@@ -110,20 +114,10 @@ function tenant(row: Record<string, unknown>, merchantId: string): void {
 }
 
 function merchantCurrency(value: unknown): string {
-  const currency = text(value, 3).toUpperCase();
-  if (!/^[A-Z]{3}$/.test(currency)) {
+  try {
+    return normalizeCurrencyCode(text(value, 3));
+  } catch {
     fail("KNOWLEDGE_STATE_INVALID", "merchant currency state is invalid");
-  }
-  return currency;
-}
-
-function legacyIqdCommerceGuard(currencyCode: string): void {
-  if (currencyCode !== "IQD") {
-    fail(
-      "CATALOG_CURRENCY_MIGRATION_REQUIRED",
-      "catalog monetary authority must be migrated before non-IQD pricing can be disclosed",
-      503,
-    );
   }
 }
 
@@ -322,7 +316,6 @@ async function resolveDeliveryFact(params: {
       ? null
       : integer(params.row.free_delivery_threshold_iqd);
   const currencyCode = merchantCurrency(params.row.merchant_currency_code);
-  legacyIqdCommerceGuard(currencyCode);
   try {
     const promotions = await activePromotions(params.sql, params.merchantId);
     const quote = resolveCommerceDeliveryQuote({
@@ -344,7 +337,7 @@ async function resolveDeliveryFact(params: {
       promotions,
     });
     return {
-      answerText: formatDeliveryQuoteText(quote, params.language),
+      answerText: formatDeliveryQuoteText(quote, params.language, currencyCode),
       language: params.language,
       confidence: 1,
       factType: "delivery_policy",
@@ -671,7 +664,6 @@ async function resolveProductFact(params: {
 
   if (params.kind === "price") {
     const currencyCode = merchantCurrency(product.merchant_currency_code);
-    legacyIqdCommerceGuard(currencyCode);
     let resolved;
     try {
       resolved = resolveEffectiveCatalogPrice({
@@ -737,11 +729,22 @@ function extractOrderId(customerText: string): string | null {
   return null;
 }
 
+function localizedMoney(
+  amountMinor: number,
+  currencyCode: string,
+  language: KnowledgeLanguage,
+): string {
+  const amount = formatMinorCurrencyNumber(amountMinor, currencyCode);
+  const currency = currencyCode === "IQD" && language !== "en" ? "دينار" : currencyCode;
+  return `${amount} ${currency}`;
+}
+
 const ORDER_SQL = `
-SELECT id, merchant_id, status, payment_method, payment_status, total_iqd,
-       version, updated_at
-FROM orders
-WHERE merchant_id = $1 AND id = $2
+SELECT o.id, o.merchant_id, o.status, o.payment_method, o.payment_status, o.total_iqd,
+       o.version, o.updated_at, m.currency_code AS merchant_currency_code
+FROM orders o
+JOIN merchants m ON m.id = o.merchant_id
+WHERE o.merchant_id = $1 AND o.id = $2
 LIMIT 2`;
 
 async function resolveOrderFact(
@@ -766,12 +769,14 @@ async function resolveOrderFact(
   const status = text(row.status, 60);
   const paymentStatus = text(row.payment_status, 60);
   const total = integer(row.total_iqd);
+  const currencyCode = merchantCurrency(row.merchant_currency_code);
   if (!status || !paymentStatus) fail("KNOWLEDGE_STATE_INVALID", "order fact state is invalid");
+  const totalText = localizedMoney(total, currencyCode, language);
   const answer = language === "en"
-    ? `Order ${orderId}: status ${status}; payment ${paymentStatus}; total ${total.toLocaleString("en-US")} IQD.`
+    ? `Order ${orderId}: status ${status}; payment ${paymentStatus}; total ${totalText}.`
     : language === "ku"
-      ? `داواکاری ${orderId}: دۆخ ${status}؛ پارەدان ${paymentStatus}؛ کۆی گشتی ${total.toLocaleString("en-US")} دینار.`
-      : `الطلب ${orderId}: الحالة ${status}؛ الدفع ${paymentStatus}؛ المجموع ${total.toLocaleString("en-US")} دينار.`;
+      ? `داواکاری ${orderId}: دۆخ ${status}؛ پارەدان ${paymentStatus}؛ کۆی گشتی ${totalText}.`
+      : `الطلب ${orderId}: الحالة ${status}؛ الدفع ${paymentStatus}؛ المجموع ${totalText}.`;
   return { answerText: answer, language, confidence: 1, factType: "order_status", recordId: orderId };
 }
 
