@@ -14,16 +14,20 @@ async function source(relativePath) {
 test("active order and settings pages are server-only", async () => {
   const files = await Promise.all([
     source("artifacts/fawri/src/pages/dashboard/OrdersPage.ts"),
+    source("artifacts/fawri/src/pages/dashboard/OrdersWorkspacePage.tsx"),
     source("artifacts/fawri/src/pages/dashboard/SettingsPage.ts"),
+    source("artifacts/fawri/src/pages/dashboard/MerchantSettingsPage.tsx"),
     source("artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx"),
     source("artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx"),
   ]);
   const combined = files.join("\n");
   assert.doesNotMatch(combined, /localStorage|sessionStorage/i);
-  assert.match(files[0], /ServerOrdersPage/);
-  assert.match(files[1], /ServerSettingsPage/);
-  assert.match(files[2], /fetch\('\/api\/orders'/);
-  assert.match(files[3], /fetch\('\/api\/settings'/);
+  assert.match(files[0], /OrdersWorkspacePage/);
+  assert.match(files[1], /ServerOrdersPage/);
+  assert.match(files[2], /MerchantSettingsPage/);
+  assert.match(files[3], /ServerSettingsPage/);
+  assert.match(files[4], /fetch\('\/api\/orders'/);
+  assert.match(files[5], /fetch\('\/api\/settings'/);
   assert.doesNotMatch(combined, /fallback.*local|local.*fallback/i);
 });
 
