@@ -151,6 +151,30 @@ export function minorUnitsToMajorCurrencyString(
   return `${whole.toString()}.${fraction}`;
 }
 
+export function formatMinorCurrencyNumber(
+  minorValue: unknown,
+  currencyValue: unknown,
+  locale = "en-US",
+): string {
+  const currency = normalizeCurrencyCode(currencyValue);
+  const fractionDigits = currencyFractionDigits(currency);
+  const major = minorUnitsToMajorCurrencyString(minorValue, currency);
+  const numeric = Number(major);
+  if (!Number.isFinite(numeric)) {
+    throw new CurrencyMoneyError(
+      "CURRENCY_AMOUNT_INVALID",
+      "currency amount could not be formatted",
+      500,
+      { currency_code: currency },
+    );
+  }
+  return new Intl.NumberFormat(locale, {
+    useGrouping: true,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(numeric);
+}
+
 export function formatMinorCurrencyAmount(
   minorValue: unknown,
   currencyValue: unknown,
