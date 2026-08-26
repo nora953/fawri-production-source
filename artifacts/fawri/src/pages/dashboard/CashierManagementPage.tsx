@@ -8,10 +8,8 @@ type StaffPermission =
   | 'sale.view_all'
   | 'sale.return'
   | 'sale.void'
-  | 'inventory.adjust'
   | 'reports.sales'
-  | 'reports.profit'
-  | 'shifts.manage';
+  | 'reports.profit';
 
 type StaffView = {
   id: string;
@@ -61,8 +59,6 @@ const COPY: Record<Lang, Record<string, string>> = {
     voids: 'إلغاء عملية بيع كاملة',
     salesReports: 'عرض تقارير المبيعات',
     profitReports: 'عرض الأرباح',
-    inventory: 'تعديل المخزون',
-    shifts: 'إدارة الورديات',
     profitWarning: 'صلاحية الأرباح حساسة. لا تمنحها إلا لموظف موثوق.',
     active: 'نشط',
     disabled: 'معطل',
@@ -107,8 +103,6 @@ const COPY: Record<Lang, Record<string, string>> = {
     voids: 'هەڵوەشاندنەوەی فرۆشتن',
     salesReports: 'بینینی ڕاپۆرتی فرۆشتن',
     profitReports: 'بینینی قازانج',
-    inventory: 'گۆڕینی کۆگا',
-    shifts: 'بەڕێوەبردنی شیفت',
     profitWarning: 'دەسەڵاتی قازانج هەستیارە. تەنها بە کارمەندی متمانەپێکراو بدرێت.',
     active: 'چالاک',
     disabled: 'ناچالاک',
@@ -153,8 +147,6 @@ const COPY: Record<Lang, Record<string, string>> = {
     voids: 'Void complete sales',
     salesReports: 'View sales reports',
     profitReports: 'View profit',
-    inventory: 'Adjust inventory',
-    shifts: 'Manage shifts',
     profitWarning: 'Profit access is sensitive. Grant it only to trusted staff.',
     active: 'Active',
     disabled: 'Disabled',
@@ -208,7 +200,7 @@ async function api(path: string, init: RequestInit = {}) {
 function recommended(role: 'cashier' | 'manager'): Set<StaffPermission> {
   return new Set<StaffPermission>(
     role === 'manager'
-      ? ['sale.create', 'sale.view_own', 'sale.view_all', 'sale.return', 'sale.void', 'inventory.adjust', 'reports.sales', 'shifts.manage']
+      ? ['sale.create', 'sale.view_own', 'sale.view_all', 'sale.return', 'sale.void', 'reports.sales']
       : ['sale.create', 'sale.view_own'],
   );
 }
@@ -276,10 +268,8 @@ export default function CashierManagementPage() {
     ['sale.view_all', l.allSales],
     ['sale.return', l.returns],
     ['sale.void', l.voids],
-    ['inventory.adjust', l.inventory],
     ['reports.sales', l.salesReports],
     ['reports.profit', l.profitReports],
-    ['shifts.manage', l.shifts],
   ] as Array<[StaffPermission, string]>, [l]);
 
   const addStaff = async () => {
