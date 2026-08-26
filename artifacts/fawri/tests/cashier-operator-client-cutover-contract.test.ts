@@ -69,18 +69,32 @@ test('operator client stores opaque cost evidence separately and never persists 
     readFile(cloudPath, 'utf8'),
   ]);
   assert.match(local, /COST_EVIDENCE_STORE = 'cost_evidence'/);
-  assert.match(cloud, /Protected cashier cost evidence is unavailable for this sale line/);
+  assert.match(cloud, /Opaque cost evidence for this sale version is missing/);
   assert.match(cloud, /delete line\.unit_cost_minor;[\s\S]*line\.cost_evidence = token/);
   assert.doesNotMatch(cloud, /unit_cost_minor: product\.cost_iqd|unit_cost_minor: variant\.cost_iqd/);
 });
 
 test('every pending operator operation must match the current staff station shift and device binding', async () => {
   const cloud = await readFile(cloudPath, 'utf8');
-  assert.match(cloud, /binding\.station_id !== session\.context\.station_id/);
-  assert.match(cloud, /binding\.staff_id !== session\.context\.staff_id/);
-  assert.match(cloud, /binding\.shift_id !== session\.context\.shift_id/);
-  assert.match(cloud, /binding\.device_id !== session\.context\.device_id/);
-  assert.match(cloud, /CASHIER_OPERATION_BINDING_REQUIRED/);
+  assert.match(cloud, /binding\.station_id === session\.context\.station_id/);
+  assert.match(cloud, /binding\.staff_id === session\.context\.staff_id/);
+  assert.match(cloud, /binding\.shift_id === session\.context\.shift_id/);
+  assert.match(cloud, /binding\.device_id === session\.context\.device_id/);
+  assert.match(cloud, /CASHIER_OPERATOR_OPERATION_BINDING_MISSING/);
+});
+
+test('full outbox windows never upload a possibly split final operation', async () => {
+  const cloud = await readFile(cloudPath, 'utf8');
+  assert.match(cloud, /function completeOperationWindow/);
+  assert.match(cloud, /pending\.length < MAX_PENDING_ENVELOPES/);
+  assert.match(cloud, /boundaryOperationId/);
+  assert.match(cloud, /pending\.findIndex/);
+  assert.match(cloud, /pending\.slice\(0, firstBoundaryIndex\)/);
+  assert.match(cloud, /CASHIER_OPERATOR_OPERATION_TOO_LARGE/);
+  const readIndex = cloud.indexOf('listPendingSync(MAX_PENDING_ENVELOPES)');
+  const boundaryIndex = cloud.indexOf('completeOperationWindow(pending)');
+  const groupIndex = cloud.indexOf('groupByOperation(uploadable)');
+  assert.ok(readIndex >= 0 && boundaryIndex > readIndex && groupIndex > boundaryIndex);
 });
 
 test('operator client commerce uses only station and operator APIs, never merchant catalog or legacy sync routes', async () => {
