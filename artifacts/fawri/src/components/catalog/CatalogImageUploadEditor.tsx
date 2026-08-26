@@ -133,22 +133,14 @@ function ResilientImage({
     );
   }
 
-  return (
-    <img
-      src={source}
-      alt={alt}
-      className={className}
-      onError={() => void recover()}
-      onClick={onClick}
-    />
-  );
+  return <img src={source} alt={alt} className={className} onError={() => void recover()} onClick={onClick} />;
 }
 
 export function CatalogImageUploadEditor({
   images,
   onChange,
   maxImages = 20,
-  compact = false,
+  compact = true,
   hideHeading = false,
 }: CatalogImageUploadEditorProps) {
   const { lang } = useI18n();
@@ -177,10 +169,7 @@ export function CatalogImageUploadEditor({
     const incoming = Array.from(files);
     if (incoming.length === 0 || isUploading) return;
     const remaining = Math.max(0, maxImages - images.length);
-    if (remaining === 0) {
-      toast.error(labels.limit);
-      return;
-    }
+    if (remaining === 0) { toast.error(labels.limit); return; }
     const selected = incoming.slice(0, remaining);
     if (incoming.length > remaining) toast.error(labels.limit);
 
@@ -191,7 +180,6 @@ export function CatalogImageUploadEditor({
         const asset = await uploadCatalogImage(file);
         uploaded.push({
           key: `uploaded-${asset.sha256.slice(0, 16)}-${Date.now()}-${uploaded.length}`,
-          // Persist the canonical storage key. The preview URL is derived at render time.
           url: '',
           storage_key: asset.storage_key,
           alt: file.name.replace(/\.[^.]+$/, '').trim(),
@@ -212,24 +200,15 @@ export function CatalogImageUploadEditor({
     onDragOver: (event: React.DragEvent) => { event.preventDefault(); setIsDragging(true); },
     onDragLeave: (event: React.DragEvent) => { event.preventDefault(); setIsDragging(false); },
     onDrop: (event: React.DragEvent) => {
-      event.preventDefault();
-      setIsDragging(false);
+      event.preventDefault(); setIsDragging(false);
       if (event.dataTransfer.files) void handleFiles(event.dataTransfer.files);
     },
   };
-
   const selectedLightbox = lightboxIndex === null ? null : images[lightboxIndex];
 
   return (
     <section className={`${compact ? 'space-y-2 rounded-xl border bg-muted/10 p-2.5' : 'space-y-3 rounded-2xl border bg-muted/10 p-4'}`}>
-      <input
-        ref={inputRef}
-        type="file"
-        accept={CATALOG_IMAGE_ACCEPT}
-        multiple
-        className="hidden"
-        onChange={event => { if (event.target.files) void handleFiles(event.target.files); }}
-      />
+      <input ref={inputRef} type="file" accept={CATALOG_IMAGE_ACCEPT} multiple className="hidden" onChange={event => { if (event.target.files) void handleFiles(event.target.files); }} />
 
       {!hideHeading && (
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -237,14 +216,7 @@ export function CatalogImageUploadEditor({
             <h3 className="text-sm font-bold">{labels.title}</h3>
             {!compact && <p className="mt-1 text-xs leading-5 text-muted-foreground">{labels.help}</p>}
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-9 rounded-xl"
-            disabled={isUploading || images.length >= maxImages}
-            onClick={() => inputRef.current?.click()}
-          >
+          <Button type="button" variant="outline" size="sm" className="h-9 rounded-xl" disabled={isUploading || images.length >= maxImages} onClick={() => inputRef.current?.click()}>
             {isUploading ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Upload className="me-1 h-4 w-4" />}
             {isUploading ? labels.uploading : labels.upload}
           </Button>
@@ -252,15 +224,7 @@ export function CatalogImageUploadEditor({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <button
-          type="button"
-          disabled={isUploading || images.length >= maxImages}
-          onClick={() => inputRef.current?.click()}
-          {...dropHandlers}
-          className={`${compact ? 'h-20 w-24 shrink-0 px-2' : 'min-h-20 min-w-[12rem] flex-1 px-4'} flex flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${
-            isDragging ? 'border-orange-500 bg-orange-50/60' : 'border-muted-foreground/25 bg-background hover:border-orange-400/70'
-          } disabled:cursor-not-allowed disabled:opacity-60`}
-        >
+        <button type="button" disabled={isUploading || images.length >= maxImages} onClick={() => inputRef.current?.click()} {...dropHandlers} className={`${compact ? 'h-20 w-24 shrink-0 px-2' : 'min-h-20 min-w-[12rem] flex-1 px-4'} flex flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${isDragging ? 'border-orange-500 bg-orange-50/60' : 'border-muted-foreground/25 bg-background hover:border-orange-400/70'} disabled:cursor-not-allowed disabled:opacity-60`}>
           {isUploading ? <Loader2 className="mb-1 h-5 w-5 animate-spin text-orange-500" /> : <Upload className="mb-1 h-5 w-5 text-muted-foreground" />}
           <span className="text-xs font-semibold">{isUploading ? labels.uploading : labels.upload}</span>
           {!compact && <span className="mt-1 text-[11px] text-muted-foreground">{labels.formats}</span>}
@@ -268,25 +232,9 @@ export function CatalogImageUploadEditor({
 
         {images.map((image, index) => (
           <div key={image.key} className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-background">
-            <ResilientImage
-              image={image}
-              alt={image.alt || labels.title}
-              className="h-full w-full cursor-zoom-in object-cover"
-              onClick={() => setLightboxIndex(index)}
-            />
-            {index === 0 && (
-              <span className="absolute start-1 top-1 inline-flex items-center rounded-full bg-background/95 px-1.5 py-0.5 text-[9px] font-bold shadow-sm">
-                <Star className="me-0.5 h-2.5 w-2.5 fill-current text-orange-500" />{labels.primary}
-              </span>
-            )}
-            <button
-              type="button"
-              aria-label={labels.remove}
-              onClick={() => removeImage(index)}
-              className="absolute end-1 bottom-1 rounded-full bg-background/95 p-1 text-destructive shadow"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            <ResilientImage image={image} alt={image.alt || labels.title} className="h-full w-full cursor-zoom-in object-cover" onClick={() => setLightboxIndex(index)} />
+            {index === 0 && <span className="absolute start-1 top-1 inline-flex items-center rounded-full bg-background/95 px-1.5 py-0.5 text-[9px] font-bold shadow-sm"><Star className="me-0.5 h-2.5 w-2.5 fill-current text-orange-500" />{labels.primary}</span>}
+            <button type="button" aria-label={labels.remove} onClick={() => removeImage(index)} className="absolute end-1 bottom-1 rounded-full bg-background/95 p-1 text-destructive shadow"><Trash2 className="h-3.5 w-3.5" /></button>
           </div>
         ))}
       </div>
@@ -296,11 +244,7 @@ export function CatalogImageUploadEditor({
           {images.map((image, index) => (
             <div key={`${image.key}-meta`} className="flex items-center gap-2 rounded-xl border bg-background p-2">
               <Input value={image.alt} onChange={event => updateAlt(index, event.target.value)} placeholder={labels.alt} className="h-8 min-w-0 flex-1 rounded-lg text-xs" />
-              {index > 0 && (
-                <Button type="button" variant="ghost" size="sm" className="h-8 rounded-lg px-2 text-xs" onClick={() => makePrimary(index)}>
-                  <Star className="me-1 h-3 w-3" />{labels.makePrimary}
-                </Button>
-              )}
+              {index > 0 && <Button type="button" variant="ghost" size="sm" className="h-8 rounded-lg px-2 text-xs" onClick={() => makePrimary(index)}><Star className="me-1 h-3 w-3" />{labels.makePrimary}</Button>}
             </div>
           ))}
         </div>
@@ -309,9 +253,7 @@ export function CatalogImageUploadEditor({
       {selectedLightbox && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4" onClick={() => setLightboxIndex(null)}>
           <div className="relative max-h-[92vh] max-w-5xl" onClick={event => event.stopPropagation()}>
-            <button type="button" aria-label={labels.close} onClick={() => setLightboxIndex(null)} className="absolute -end-2 -top-2 z-10 rounded-full bg-background p-2 shadow-lg">
-              <X className="h-5 w-5" />
-            </button>
+            <button type="button" aria-label={labels.close} onClick={() => setLightboxIndex(null)} className="absolute -end-2 -top-2 z-10 rounded-full bg-background p-2 shadow-lg"><X className="h-5 w-5" /></button>
             <ResilientImage image={selectedLightbox} alt={selectedLightbox.alt || labels.title} className="max-h-[88vh] max-w-full rounded-2xl bg-background object-contain shadow-2xl" />
           </div>
         </div>
