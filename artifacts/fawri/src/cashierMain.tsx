@@ -4,6 +4,7 @@ import CashierHistoryPage from '@/pages/CashierHistoryPage';
 import CashierLocalShellPage from '@/pages/CashierLocalShellPage';
 import CashierPosPage from '@/pages/CashierPosPage';
 import CashierReportsPage from '@/pages/CashierReportsPage';
+import CashierOperatorGate from '@/components/cashier/CashierOperatorGate';
 import '@/index.css';
 import '@/styles/fawriUiBaseline.css';
 import '@/styles/fawriLanguageAuthority.css';
@@ -12,9 +13,11 @@ import '@/styles/merchantCommerceUxFixes.css';
 import { I18nProvider } from '@/lib/i18n';
 import { storedCashierCopy } from '@/lib/cashierUiCopy';
 import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
-import { installAuthClientCutover } from '@/lib/authClientCutover';
-import { syncCashierOutboxToCloud } from '@/lib/cashierCloudOutboxSync';
-import { syncCashierCatalogFromCloud } from '@/lib/cashierCloudCatalogSync';
+import {
+  syncCashierOperatorCatalogFromCloud,
+  syncCashierOperatorOutboxToCloud,
+} from '@/lib/cashierOperatorCloudSync';
+import { getCashierOperatorSession } from '@/lib/cashierOperatorSessionRuntime';
 import { publishCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import {
@@ -35,20 +38,18 @@ const demoRequested = params.get('demo') === '1';
 const AUTO_SYNC_INTERVAL_MS = 3_000;
 const AUTO_SYNC_RETRY_BACKOFF_MS = 30_000;
 
-if (!diagnostics) {
-  installAuthClientCutover();
-}
-
 function syncErrorCode(error: unknown): string {
   return typeof error === 'object' && error && 'code' in error
     ? String((error as { code?: unknown }).code || '')
     : '';
 }
 
-function isMerchantSessionRequired(code: string): boolean {
+function isOperatorSessionRequired(code: string): boolean {
   return (
-    code === 'CASHIER_OUTBOX_SESSION_REQUIRED' ||
-    code === 'CASHIER_CLOUD_SESSION_REQUIRED'
+    code === 'CASHIER_OPERATOR_LOGIN_REQUIRED' ||
+    code === 'CASHIER_OPERATOR_SESSION_INVALID' ||
+    code === 'CASHIER_STATION_PAIRING_REQUIRED' ||
+    code === 'CASHIER_STATION_CREDENTIAL_INVALID'
   );
 }
 
@@ -67,6 +68,8 @@ function startCashierPosAutoSync(): () => void {
     visible = false,
   ) => {
     if (stopped || running) return;
+    const activeSession = await getCashierOperatorSession().catch(() => null);
+    if (!activeSession) return;
     const labels = storedCashierCopy().runtime;
 
     if (!cashierIsOnline()) {
@@ -88,7 +91,7 @@ function startCashierPosAutoSync(): () => void {
     }
 
     try {
-      const result = await syncCashierOutboxToCloud();
+      const result = await syncCashierOperatorOutboxToCloud();
       const changedCloudState =
         result.uploaded_operations > 0 || result.replayed_operations > 0;
 
@@ -97,7 +100,7 @@ function startCashierPosAutoSync(): () => void {
       }
 
       if (reconcileCatalog && result.pending_after === 0) {
-        await syncCashierCatalogFromCloud();
+        await syncCashierOperatorCatalogFromCloud();
         publishCashierCatalogRefresh();
         publishCashierDashboardRefresh();
       }
@@ -130,9 +133,9 @@ function startCashierPosAutoSync(): () => void {
       }
     } catch (cause) {
       const rawCode = syncErrorCode(cause);
-      const sessionRequired = isMerchantSessionRequired(rawCode);
+      const sessionRequired = isOperatorSessionRequired(rawCode);
       const uiCode = sessionRequired
-        ? 'CASHIER_OUTBOX_SESSION_REQUIRED'
+        ? 'CASHIER_OPERATOR_LOGIN_REQUIRED'
         : rawCode;
       const latestLabels = storedCashierCopy().runtime;
 
@@ -171,6 +174,10 @@ function startCashierPosAutoSync(): () => void {
     nextAttemptAt = 0;
     void attempt(true, true, false);
   };
+  const handleSessionChange = () => {
+    nextAttemptAt = 0;
+    void attempt(true, true, false);
+  };
   const unsubscribeManualRequest = subscribeCashierSyncRequests(() => {
     nextAttemptAt = 0;
     void attempt(true, true, true);
@@ -179,6 +186,7 @@ function startCashierPosAutoSync(): () => void {
   window.addEventListener('online', handleOnline);
   window.addEventListener('offline', handleOffline);
   window.addEventListener('focus', handleFocus);
+  window.addEventListener('fawri:cashier-operator-session-changed', handleSessionChange);
   const interval = window.setInterval(() => {
     void attempt(false, false, false);
   }, AUTO_SYNC_INTERVAL_MS);
@@ -194,6 +202,7 @@ function startCashierPosAutoSync(): () => void {
     window.removeEventListener('online', handleOnline);
     window.removeEventListener('offline', handleOffline);
     window.removeEventListener('focus', handleFocus);
+    window.removeEventListener('fawri:cashier-operator-session-changed', handleSessionChange);
   };
 }
 
@@ -221,7 +230,11 @@ createRoot(document.getElementById('cashier-root')!).render(
   diagnostics ? (
     <CashierLocalShellPage />
   ) : (
-    <I18nProvider>{operationalPage}</I18nProvider>
+    <I18nProvider>
+      <CashierOperatorGate bypass={demoRequested}>
+        {operationalPage}
+      </CashierOperatorGate>
+    </I18nProvider>
   ),
 );
 
