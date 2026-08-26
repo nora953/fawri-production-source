@@ -80,6 +80,16 @@ test("merchant management routes and station/operator routes use separate author
   assert.match(routes, /requireCashierOperatorSession\(\)/);
 });
 
+test("offline inventory authority accepts only an actual boolean at the merchant API boundary", () => {
+  assert.match(routes, /function optionalBoolean\(value: unknown, field: string\)/);
+  assert.match(routes, /typeof value !== "boolean"/);
+  assert.match(routes, /offlineInventoryAuthority: optionalBoolean\([\s\S]{0,140}"offline_inventory_authority"/);
+  assert.doesNotMatch(
+    routes,
+    /offlineInventoryAuthority:\s*req\.body\?\.offline_inventory_authority/,
+  );
+});
+
 test("cashier credentials come from dedicated headers and never merchant account sessions", () => {
   assert.match(middleware, /x-fawri-cashier-station-token/);
   assert.match(middleware, /x-fawri-cashier-operator-token/);
