@@ -10,6 +10,14 @@ const authSource = await readFile(
   new URL('../../api-server/src/middleware/authSession.ts', import.meta.url),
   'utf8',
 );
+const dashboardSource = await readFile(
+  new URL('../src/components/layout/DashboardLayout.tsx', import.meta.url),
+  'utf8',
+);
+const fullscreenCss = await readFile(
+  new URL('../src/pages/dashboard/catalogEditorFullscreen.css', import.meta.url),
+  'utf8',
+);
 
 test('protected catalog images are fetched through authenticated fetch before img rendering', () => {
   assert.match(imageSource, /function protectedPreviewRequest/);
@@ -31,4 +39,33 @@ test('a lost concurrent rotation race does not clear an already validated browse
   assert.match(rotationBlock, /setAuthSessionCookie/);
   assert.doesNotMatch(rotationBlock, /clearAuthSessionCookie/);
   assert.doesNotMatch(rotationBlock, /SESSION_ROTATION_FAILED/);
+});
+
+test('a stale SESSION_INVALID response cannot delete a fresher rotated cookie', () => {
+  const invalidStart = authSource.indexOf('if (!validated)');
+  const accountLookup = authSource.indexOf('\n  const authAccount =', invalidStart);
+  assert.ok(invalidStart >= 0 && accountLookup > invalidStart);
+  const invalidBlock = authSource.slice(invalidStart, accountLookup);
+
+  assert.match(invalidBlock, /SESSION_INVALID/);
+  assert.match(invalidBlock, /stale 401 response/);
+  assert.doesNotMatch(invalidBlock, /clearAuthSessionCookie/);
+
+  // Confirmed security/account revocations still clear their cookies.
+  assert.match(authSource, /SESSION_ACCOUNT_INVALID[\s\S]*clearAuthSessionCookie|clearAuthSessionCookie[\s\S]*SESSION_ACCOUNT_INVALID/);
+  assert.match(authSource, /SESSION_VERSION_REVOKED/);
+});
+
+test('merchant dashboard confirms an unauthenticated lifecycle result before routing to login', () => {
+  assert.match(dashboardSource, /SESSION_401_CONFIRM_DELAYS_MS = \[150, 650\]/);
+  assert.match(dashboardSource, /for \(const delay of SESSION_401_CONFIRM_DELAYS_MS\)/);
+  assert.match(dashboardSource, /lifecycle = await checkMerchantLifecycle\(controller\.signal\)/);
+  assert.match(dashboardSource, /if \(lifecycle\.reason === 'unauthenticated'\)[\s\S]*routeToLogin\(\)/);
+});
+
+test('simplified catalog editor top-level sections use the full workspace width', () => {
+  assert.match(fullscreenCss, /catalog-editor-body-grid > \*/);
+  assert.match(fullscreenCss, /grid-column:\s*1 \/ -1 !important/);
+  assert.doesNotMatch(fullscreenCss, /catalog-editor-body-grid > :nth-child\(6\)/);
+  assert.doesNotMatch(fullscreenCss, /catalog-editor-body-grid > :nth-child\(7\)/);
 });
