@@ -131,8 +131,8 @@ export async function buildCashierOperatorReportAuthoritative(input: {
           )
           AND (
             (
-              ($7::text IS NULL OR o.created_at >= ($7::text)::timestamptz)
-              AND ($8::text IS NULL OR o.created_at < ($8::text)::timestamptz)
+              ($7::text IS NULL OR o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' >= $7::text)
+              AND ($8::text IS NULL OR o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' < $8::text)
             )
             OR EXISTS (
               SELECT 1
@@ -147,7 +147,7 @@ export async function buildCashierOperatorReportAuthoritative(input: {
                  AND ($8::text IS NULL OR compensation->>'occurred_at' < $8::text)
             )
           )
-        ORDER BY o.created_at DESC, o.id
+        ORDER BY o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' DESC, o.id
         LIMIT $9`,
       [
         context.merchant_id,
