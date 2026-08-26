@@ -133,7 +133,7 @@ type Copy = {
 const COPY: Record<Lang, Copy> = {
   ar: {
     title: 'تقرير الكاشير المركزي',
-    subtitle: 'جميع مبيعات الكاشيرات والموظفين والمحطات من سجل PostgreSQL المركزي.',
+    subtitle: 'المبيعات والمرتجعات والإلغاءات لكل الكاشيرات والموظفين والمحطات من سجل PostgreSQL المركزي.',
     back: 'إدارة الكاشيرات',
     today: 'اليوم',
     seven: '7 أيام',
@@ -141,25 +141,25 @@ const COPY: Record<Lang, Copy> = {
     all: 'الكل',
     loading: 'جارٍ إعداد التقرير المركزي...',
     failed: 'تعذر تحميل تقرير الكاشير المركزي.',
-    empty: 'لا توجد مبيعات كاشير ضمن هذه الفترة.',
+    empty: 'لا توجد عمليات كاشير ضمن هذه الفترة.',
     netSales: 'صافي المبيعات',
     profit: 'الربح الإجمالي',
     operations: 'عمليات البيع',
     units: 'صافي القطع',
     refunds: 'المرتجعات والإلغاءات',
-    average: 'متوسط العملية',
-    voided: 'ملغاة',
-    returns: 'مرتجعات',
+    average: 'متوسط عملية البيع',
+    voided: 'عمليات الإلغاء',
+    returns: 'عمليات المرتجع',
     partialProfit: 'الربح جزئي لأن تكلفة بعض الوحدات غير مسجلة.',
     unavailableProfit: 'الربح غير متاح لأن تكلفة الوحدات غير مسجلة. لن يفترض فوري أن التكلفة صفر.',
     topProducts: 'الأكثر مبيعًا',
-    noTop: 'لا توجد منتجات صافية مباعة.',
-    salesByStaff: 'صافي المبيعات حسب موظف البيع',
-    salesByStation: 'صافي المبيعات حسب محطة البيع',
+    noTop: 'لا توجد منتجات بصافي بيع موجب في هذه الفترة.',
+    salesByStaff: 'الأثر المالي حسب موظف البيع',
+    salesByStation: 'الأثر المالي حسب محطة البيع',
     activityByStaff: 'العمليات المنفذة حسب الموظف',
     activityByStation: 'العمليات المنفذة حسب المحطة',
-    noGroupSales: 'لا توجد مبيعات.',
-    sales: 'مبيعات',
+    noGroupSales: 'لا يوجد أثر مالي ضمن هذه الفترة.',
+    sales: 'عمليات بيع',
     saleOps: 'بيع',
     returnOps: 'مرتجع',
     voidOps: 'إلغاء',
@@ -170,7 +170,7 @@ const COPY: Record<Lang, Copy> = {
   },
   ku: {
     title: 'ڕاپۆرتی ناوەندی کاشێر',
-    subtitle: 'هەموو فرۆشتنەکانی کاشێر و کارمەند و وێستگەکان لە تۆماری ناوەندی PostgreSQL.',
+    subtitle: 'فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوەی هەموو کاشێر و کارمەند و وێستگەکان لە تۆماری ناوەندی PostgreSQL.',
     back: 'بەڕێوەبردنی کاشێر',
     today: 'ئەمڕۆ',
     seven: '7 ڕۆژ',
@@ -178,24 +178,24 @@ const COPY: Record<Lang, Copy> = {
     all: 'هەموو',
     loading: 'ڕاپۆرتی ناوەندی ئامادە دەکرێت...',
     failed: 'بارکردنی ڕاپۆرتی ناوەندی کاشێر سەرکەوتوو نەبوو.',
-    empty: 'لەو ماوەیەدا هیچ فرۆشتنی کاشێر نییە.',
+    empty: 'لەو ماوەیەدا هیچ کرداری کاشێر نییە.',
     netSales: 'فرۆشتنی خاوێن',
     profit: 'قازانجی گشتی',
     operations: 'مامەڵەکانی فرۆشتن',
     units: 'دانەی خاوێن',
     refunds: 'گەڕاندنەوە و هەڵوەشاندنەوە',
-    average: 'ناوەندی مامەڵە',
-    voided: 'هەڵوەشاوە',
-    returns: 'گەڕاندنەوە',
+    average: 'ناوەندی مامەڵەی فرۆشتن',
+    voided: 'کرداری هەڵوەشاندنەوە',
+    returns: 'کرداری گەڕاندنەوە',
     partialProfit: 'قازانج بەشێکییە چونکە تێچووی هەندێک دانە تۆمار نەکراوە.',
     unavailableProfit: 'قازانج بەردەست نییە چونکە تێچووی دانەکان تۆمار نەکراوە. فەوری تێچوو بە سفر دانانێت.',
     topProducts: 'زۆرترین فرۆشراو',
-    noTop: 'هیچ بەرهەمێکی خاوێن نەفرۆشراوە.',
-    salesByStaff: 'فرۆشتنی خاوێن بەپێی کارمەندی فرۆشیار',
-    salesByStation: 'فرۆشتنی خاوێن بەپێی وێستگەی فرۆشتن',
+    noTop: 'لەو ماوەیەدا هیچ بەرهەمێک بە فرۆشتنی خاوێنی پۆزەتیڤ نییە.',
+    salesByStaff: 'کاریگەری دارایی بەپێی کارمەندی فرۆشیار',
+    salesByStation: 'کاریگەری دارایی بەپێی وێستگەی فرۆشتن',
     activityByStaff: 'کردارە جێبەجێکراوەکان بەپێی کارمەند',
     activityByStation: 'کردارە جێبەجێکراوەکان بەپێی وێستگە',
-    noGroupSales: 'هیچ فرۆشتنێک نییە.',
+    noGroupSales: 'لەو ماوەیەدا کاریگەری دارایی نییە.',
     sales: 'فرۆشتن',
     saleOps: 'فرۆشتن',
     returnOps: 'گەڕاندنەوە',
@@ -207,7 +207,7 @@ const COPY: Record<Lang, Copy> = {
   },
   en: {
     title: 'Central Cashier Report',
-    subtitle: 'All cashier, employee and station sales from the central PostgreSQL record.',
+    subtitle: 'Sales, returns and voids for every cashier, employee and station from the central PostgreSQL record.',
     back: 'Cashier management',
     today: 'Today',
     seven: '7 days',
@@ -215,24 +215,24 @@ const COPY: Record<Lang, Copy> = {
     all: 'All',
     loading: 'Building central cashier report...',
     failed: 'Could not load the central cashier report.',
-    empty: 'No cashier sales in this period.',
+    empty: 'No cashier operations in this period.',
     netSales: 'Net sales',
     profit: 'Gross profit',
     operations: 'Sales operations',
     units: 'Net units',
     refunds: 'Returns & voids',
-    average: 'Average ticket',
-    voided: 'Voided',
-    returns: 'Returns',
+    average: 'Average sale ticket',
+    voided: 'Void operations',
+    returns: 'Return operations',
     partialProfit: 'Profit is partial because cost is missing for some units.',
     unavailableProfit: 'Profit is unavailable because unit cost is missing. Fawri will not assume missing cost is zero.',
     topProducts: 'Top products',
-    noTop: 'No net product sales.',
-    salesByStaff: 'Net sales by selling employee',
-    salesByStation: 'Net sales by selling station',
+    noTop: 'No products have positive net sales in this period.',
+    salesByStaff: 'Financial impact by selling employee',
+    salesByStation: 'Financial impact by selling station',
     activityByStaff: 'Executed operations by employee',
     activityByStation: 'Executed operations by station',
-    noGroupSales: 'No sales.',
+    noGroupSales: 'No financial impact in this period.',
     sales: 'sales',
     saleOps: 'Sales',
     returnOps: 'Returns',
@@ -289,7 +289,9 @@ function moneyValues(
   return report.by_currency.map(currency => ({
     code: currency.currency_code,
     digits: currency.currency_fraction_digits,
-    value: currency[field],
+    value: field === 'average_ticket_minor' && currency.sale_count === 0
+      ? null
+      : currency[field],
   }));
 }
 
@@ -354,15 +356,11 @@ function GroupCard({
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <div className="rounded-lg border bg-card px-3 py-2">
           <p className="text-[11px] font-semibold text-muted-foreground">{labels.netSales}</p>
-          <div className="mt-1 text-sm font-bold">
-            <MoneyStack values={moneyValues(report, 'net_revenue_minor')} lang={lang} />
-          </div>
+          <div className="mt-1 text-sm font-bold"><MoneyStack values={moneyValues(report, 'net_revenue_minor')} lang={lang} /></div>
         </div>
         <div className="rounded-lg border bg-card px-3 py-2">
           <p className="text-[11px] font-semibold text-muted-foreground">{labels.profit}</p>
-          <div className="mt-1 text-sm font-bold">
-            <MoneyStack values={profitValues(report)} lang={lang} />
-          </div>
+          <div className="mt-1 text-sm font-bold"><MoneyStack values={profitValues(report)} lang={lang} /></div>
         </div>
       </div>
     </div>
@@ -397,6 +395,13 @@ function ActivityCard({
         <div className="rounded-lg border bg-card px-2 py-2"><p className="text-muted-foreground">{labels.voidOps}</p><p className="mt-1 text-base font-bold" dir="ltr">{activity.void_count}</p></div>
       </div>
     </div>
+  );
+}
+
+function activityTotal(result: CentralReportResult): number {
+  return result.activity.by_staff.reduce(
+    (sum, item) => sum + item.operation_count,
+    0,
   );
 }
 
@@ -439,12 +444,13 @@ export default function CashierCentralReportsPage() {
   ], [labels]);
 
   const currencies = result?.report.by_currency || [];
-  const hasSales = Boolean(result && result.report.sale_count > 0);
+  const hasData = Boolean(
+    result && (currencies.length > 0 || activityTotal(result) > 0),
+  );
   const totalNet = result ? moneyValues(result.report, 'net_revenue_minor') : [];
   const totalRefunds = result ? moneyValues(result.report, 'refunds_minor') : [];
   const totalProfit = result ? profitValues(result.report) : [];
   const netUnits = currencies.reduce((sum, currency) => sum + currency.net_units, 0);
-  const activeSales = currencies.reduce((sum, currency) => sum + currency.active_sale_count, 0);
   const voidedSales = currencies.reduce((sum, currency) => sum + currency.voided_sale_count, 0);
   const returnCount = currencies.reduce((sum, currency) => sum + currency.return_count, 0);
 
@@ -455,9 +461,7 @@ export default function CashierCentralReportsPage() {
           <h1 className="text-2xl font-bold text-foreground">{labels.title}</h1>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{labels.subtitle}</p>
         </div>
-        <Link href="/dashboard/cashiers" className="rounded-xl border bg-card px-4 py-2 text-sm font-bold hover:bg-accent">
-          {labels.back}
-        </Link>
+        <Link href="/dashboard/cashiers" className="rounded-xl border bg-card px-4 py-2 text-sm font-bold hover:bg-accent">{labels.back}</Link>
       </header>
 
       <div className="flex flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-sm">
@@ -475,14 +479,14 @@ export default function CashierCentralReportsPage() {
 
       {error ? <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm font-semibold text-destructive">{error}</div> : null}
       {loading ? <div className="rounded-2xl border bg-card p-10 text-center text-sm text-muted-foreground">{labels.loading}</div> : null}
-      {!loading && !error && result && !hasSales ? <div className="rounded-2xl border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">{labels.empty}</div> : null}
+      {!loading && !error && result && !hasData ? <div className="rounded-2xl border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">{labels.empty}</div> : null}
 
-      {!loading && !error && result && hasSales ? (
+      {!loading && !error && result && hasData ? (
         <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
             <Metric title={labels.netSales}><MoneyStack values={totalNet} lang={lang} /></Metric>
             <Metric title={labels.profit}><MoneyStack values={totalProfit} lang={lang} /></Metric>
-            <Metric title={labels.operations}><span dir="ltr">{activeSales}</span></Metric>
+            <Metric title={labels.operations}><span dir="ltr">{result.report.sale_count}</span></Metric>
             <Metric title={labels.units}><span dir="ltr">{netUnits}</span></Metric>
             <Metric title={labels.refunds}><MoneyStack values={totalRefunds} lang={lang} /></Metric>
             <Metric title={labels.average}><MoneyStack values={moneyValues(result.report, 'average_ticket_minor')} lang={lang} /></Metric>
@@ -554,14 +558,14 @@ export default function CashierCentralReportsPage() {
             <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
               <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStaff}</h2><span className="text-sm text-muted-foreground">{result.activity.by_staff.length}</span></div>
               <div className="space-y-2">
-                {result.activity.by_staff.map(group => <ActivityCard key={group.staff_id} name={group.staff_name} activity={group} labels={labels} />)}
+                {result.activity.by_staff.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_staff.map(group => <ActivityCard key={group.staff_id} name={group.staff_name} activity={group} labels={labels} />)}
               </div>
             </section>
 
             <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
               <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_station.length}</span></div>
               <div className="space-y-2">
-                {result.activity.by_station.map(group => (
+                {result.activity.by_station.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_station.map(group => (
                   <ActivityCard
                     key={group.station_id}
                     name={group.station_name}
