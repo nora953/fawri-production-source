@@ -525,6 +525,39 @@ function groupByOperation(
   return groups;
 }
 
+/**
+ * listPendingSync is envelope-count limited. When it returns a full window we
+ * cannot know whether the final operation continues just beyond that window.
+ * Never upload that final operation partially: process only operations that end
+ * before the boundary and leave the boundary operation intact for the next sync.
+ */
+function completeOperationWindow(
+  pending: CashierSyncEnvelope[],
+): CashierSyncEnvelope[] {
+  if (pending.length < MAX_PENDING_ENVELOPES) return pending;
+  const boundaryOperationId = String(
+    pending[pending.length - 1]?.operation_id || '',
+  ).trim();
+  if (!boundaryOperationId) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_OUTBOX_CORRUPT',
+      'Pending cashier operation identity is missing',
+      409,
+    );
+  }
+  const firstBoundaryIndex = pending.findIndex(
+    (envelope) => envelope.operation_id === boundaryOperationId,
+  );
+  if (firstBoundaryIndex <= 0) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_OPERATION_TOO_LARGE',
+      'A single pending cashier operation exceeds the safe synchronization window',
+      409,
+    );
+  }
+  return pending.slice(0, firstBoundaryIndex);
+}
+
 function operationKind(
   envelopes: CashierSyncEnvelope[],
 ): 'sale' | 'return' | 'void' | 'skip' {
@@ -674,7 +707,8 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
   });
   try {
     const pending = await authority.listPendingSync(MAX_PENDING_ENVELOPES);
-    const groups = groupByOperation(pending);
+    const uploadable = completeOperationWindow(pending);
+    const groups = groupByOperation(uploadable);
     let uploaded = 0;
     let replayed = 0;
     let skipped = 0;
