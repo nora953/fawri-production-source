@@ -1,3 +1,3 @@
 export * from './cashierOperatorLocalSecurity';
-export * from './cashierOperatorSessionClient';
+export * from './cashierOperatorSessionRuntime';
 export * from './cashierOperatorCloudSync';
