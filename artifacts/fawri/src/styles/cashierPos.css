@@ -37,9 +37,6 @@ html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) >
   overflow: hidden;
 }
 
-/* Compact cart cards live in one horizontal strip. Four compact cards fit
-   without a visible scrollbar. Starting with the fifth compact card, a
-   dedicated scrollbar lane appears below the cards and never overlaps them. */
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div {
   display: flex !important;
   flex-flow: row nowrap !important;
@@ -103,6 +100,12 @@ html[data-cashier-view='pos'] aside > div:last-child > div:nth-of-type(2) {
 html[data-cashier-view='pos'] aside > div:last-child > button:last-child {
   margin-top: 0.5rem !important;
   height: 2.5rem !important;
+}
+
+/* A permission that is denied server-side should not be advertised as an
+   available cashier action. The gate publishes this server-derived snapshot. */
+html[data-cashier-can-reports='0'] a[href*='reports=1'] {
+  display: none !important;
 }
 
 /* When automatic/manual sync needs merchant attention, the React button already
