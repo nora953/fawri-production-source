@@ -6,6 +6,10 @@ const management = await readFile(
   new URL('../src/pages/dashboard/CashierManagementPage.tsx', import.meta.url),
   'utf8',
 );
+const dashboardLayout = await readFile(
+  new URL('../src/components/layout/DashboardLayout.tsx', import.meta.url),
+  'utf8',
+);
 
 test('merchant cashier staff UI offers only currently implemented employee permissions', () => {
   assert.match(management, /'sale\.view_all'/);
@@ -34,7 +38,7 @@ test('staff cards localize permission codes instead of rendering internal permis
   assert.doesNotMatch(management, /member\.permissions\.map\(permission =>\s*<span[^>]*>\{permission\}/);
 });
 
-test('merchant can edit existing staff permissions and optional PIN with optimistic versioning', () => {
+test('merchant can edit existing staff permissions and optional access code with optimistic versioning', () => {
   assert.match(management, /editingStaffId/);
   assert.match(management, /saveStaffEdit/);
   assert.match(management, /expected_version: member\.version/);
@@ -43,7 +47,7 @@ test('merchant can edit existing staff permissions and optional PIN with optimis
   assert.match(management, /method: 'PATCH'/);
 });
 
-test('successful staff creation resets name PIN role and permissions to cashier defaults', () => {
+test('successful staff creation resets name access code role and permissions to cashier defaults', () => {
   assert.match(management, /const resetAddStaff/);
   assert.match(management, /setStaffName\(''\)/);
   assert.match(management, /setPin\(''\)/);
@@ -53,19 +57,29 @@ test('successful staff creation resets name PIN role and permissions to cashier 
 });
 
 test('cashier staff creation and editing are modal so forms cannot starve the staff lists', () => {
-  assert.match(management, /function Modal/);
   assert.match(management, /addStaffOpen/);
   assert.match(management, /addStationOpen/);
-  assert.match(management, /editingMember \?/);
+  assert.match(management, /function Modal/);
+  assert.match(management, /\{addStaffOpen \? \(/);
+  assert.match(management, /\{editingMember \? \(/);
+  assert.match(management, /\{addStationOpen \? \(/);
   assert.match(management, /max-h-\[calc\(100dvh-2rem\)\]/);
 });
 
-test('cashier staff identity and PIN fields resist browser credential autofill', () => {
-  assert.match(management, /name="cashier-staff-display-name-new"[\s\S]{0,180}autoComplete="off"/);
-  assert.match(management, /name="cashier-staff-pin-new"[\s\S]{0,180}autoComplete="new-password"/);
-  assert.match(management, /name="cashier-staff-pin-edit"[\s\S]{0,180}autoComplete="new-password"/);
+test('cashier staff identity and access-code fields resist browser credential autofill', () => {
+  assert.match(management, /name="cashier-staff-display-name-new"[\s\S]*autoComplete="off"/);
+  assert.match(management, /name="cashier-staff-pin-new"[\s\S]*autoComplete="new-password"/);
+  assert.match(management, /name="cashier-staff-display-name-edit"[\s\S]*autoComplete="off"/);
+  assert.match(management, /name="cashier-staff-pin-edit"[\s\S]*autoComplete="new-password"/);
   assert.match(management, /data-1p-ignore="true"/);
   assert.match(management, /data-lpignore="true"/);
+});
+
+test('Arabic and Kurdish cashier staff UI do not expose PIN as an untranslated label', () => {
+  assert.match(management, /pin: 'رمز الدخول من 4 إلى 8 أرقام'/);
+  assert.match(management, /newPin: 'رمز دخول جديد \(اختياري\)'/);
+  assert.match(management, /pin: 'کۆدی چوونەژوورەوە لە 4 تا 8 ژمارە'/);
+  assert.doesNotMatch(management, /ar:\s*\{[\s\S]{0,800}\bPIN\b/);
 });
 
 test('pairing modal keeps long code LTR and provides explicit clipboard copy feedback', () => {
@@ -80,6 +94,9 @@ test('desktop staff management keeps the dashboard page fixed and scrolls only g
   assert.match(management, /xl:h-\[calc\(100dvh-4rem\)\]/);
   assert.match(management, /xl:overflow-hidden/);
   assert.match(management, /min-h-0 flex-1 space-y-2 overflow-y-auto/);
+  assert.match(dashboardLayout, /lockCashierManagementViewport = location === '\/dashboard\/cashiers'/);
+  assert.match(dashboardLayout, /xl:h-\[100dvh\] xl:overflow-hidden/);
+  assert.match(dashboardLayout, /xl:min-h-0 xl:overflow-hidden/);
 });
 
 test('known merchant session errors are localized instead of displaying raw API English', () => {
