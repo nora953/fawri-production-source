@@ -21,11 +21,25 @@ const migrationPath = new URL(
 const journalPath = new URL('../../../lib/db/drizzle/meta/_journal.json', import.meta.url);
 const enumsPath = new URL('../../../lib/db/src/schema/enums.ts', import.meta.url);
 
-test('cashier and manager presets do not disclose merchant profit or cost', () => {
+test('cashier and manager presets expose only implemented non-sensitive cashier capabilities', () => {
+  assert.deepEqual(recommendedCashierStaffPermissions('cashier'), [
+    'sale.create',
+    'sale.view_own',
+  ]);
+  assert.deepEqual(recommendedCashierStaffPermissions('manager'), [
+    'sale.create',
+    'sale.view_own',
+    'sale.view_all',
+    'sale.return',
+    'sale.void',
+    'reports.sales',
+  ]);
   for (const role of ['cashier', 'manager'] as const) {
     const permissions = recommendedCashierStaffPermissions(role);
     assert.equal(cashierStaffMayViewProfit(permissions), false);
     assert.equal(cashierStaffMayReceiveCatalogCost(permissions), false);
+    assert.equal(permissions.includes('inventory.adjust'), false);
+    assert.equal(permissions.includes('shifts.manage'), false);
     assert.equal(permissions.includes('staff.manage'), false);
     assert.equal(permissions.includes('stations.manage'), false);
   }
