@@ -10,7 +10,7 @@ import {
   getCurrentMerchant,
   refreshCurrentMerchantFromApi,
 } from '@/lib/store';
-import { checkMerchantLifecycle } from '@/lib/merchantLifecycle';
+import { checkMerchantLifecycle, lifecyclePollDelay } from '@/lib/merchantLifecycle';
 import { useI18n } from '@/lib/i18n';
 import { FAWRI_UI_BASELINE_CLASS } from '@/lib/fawriUiBaseline';
 import type { Merchant } from '@/lib/types';
@@ -43,7 +43,7 @@ function rememberDashboardReturnPath() {
       currentDashboardReturnPath(),
     );
   } catch {
-    // Session storage is a convenience only. Authentication must still fail closed.
+    // Session storage is a navigation convenience only.
   }
 }
 
@@ -115,6 +115,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     let timer: number | undefined;
     let controller: AbortController | null = null;
     let profileLoaded = false;
+    let transientFailures = 0;
 
     if (getAdminSessionToken()) {
       clearMerchantTabSession();
@@ -125,11 +126,25 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       };
     }
 
+    const scheduleRetry = () => {
+      if (!active) return;
+      const delay = lifecyclePollDelay(transientFailures);
+      timer = window.setTimeout(() => void verifyAccess(), delay);
+    };
+
     const routeToLifecycle = () => {
       clearMerchantTabSession();
       setMerchant(undefined);
       setCheckingAccess(false);
       setLocation('/pending');
+    };
+
+    const routeToLogin = () => {
+      rememberDashboardReturnPath();
+      clearMerchantTabSession();
+      setMerchant(undefined);
+      setCheckingAccess(false);
+      setLocation('/login');
     };
 
     async function verifyAccess() {
@@ -141,17 +156,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (!active) return;
 
         if (!lifecycle.ok) {
-          clearMerchantTabSession();
-          setMerchant(undefined);
-          setCheckingAccess(false);
           if (lifecycle.reason === 'unauthenticated') {
-            rememberDashboardReturnPath();
-            setLocation('/login');
-          } else {
-            setLocation('/pending');
+            routeToLogin();
+            return;
           }
+
+          // Connectivity/server failures are not authentication decisions.
+          // Keep an already-authorized merchant in place and retry instead of
+          // clearing the tab session and throwing away in-progress merchant work.
+          transientFailures += 1;
+          scheduleRetry();
           return;
         }
+
+        transientFailures = 0;
 
         if (lifecycle.lifecycle.account_status !== 'approved') {
           routeToLifecycle();
@@ -184,7 +202,21 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             }
           } catch {
             if (!active) return;
-            routeToLifecycle();
+            // The lifecycle endpoint has already authenticated the merchant and
+            // confirmed an approved account. A temporary profile refresh failure
+            // must not manufacture a logout. Keep/reuse the cached profile when
+            // available and retry the server refresh on the next poll.
+            const cached = getCurrentMerchant();
+            if (
+              cached &&
+              cached.is_admin !== true &&
+              cached.status === 'approved'
+            ) {
+              setMerchant(cached);
+              setCheckingAccess(false);
+            }
+            transientFailures += 1;
+            scheduleRetry();
             return;
           }
         }
@@ -196,7 +228,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         if (!active || (error instanceof Error && error.name === 'AbortError')) {
           return;
         }
-        routeToLifecycle();
+        transientFailures += 1;
+        scheduleRetry();
       }
     }
 
