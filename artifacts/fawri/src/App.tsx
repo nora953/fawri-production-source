@@ -47,6 +47,7 @@ const SubscriptionPage = lazy(() => import("@/pages/dashboard/SubscriptionPage")
 const SettingsPage = lazy(() => import("@/pages/dashboard/SettingsPage"));
 const SupportPage = lazy(() => import("@/pages/dashboard/SupportPage"));
 const CashierManagementPage = lazy(() => import("@/pages/dashboard/CashierManagementPage"));
+const CashierCentralReportsPage = lazy(() => import("@/pages/dashboard/CashierCentralReportsPage"));
 
 const AdminPage = lazy(() => import("@/pages/AdminPage"));
 const AdminEarlyWarningPage = lazy(() => import("@/pages/AdminEarlyWarningPage"));
@@ -97,6 +98,7 @@ function AppRouter() {
         <Route path="/dashboard/import-products">{() => <DashboardRoute Page={ImportProductsPage} />}</Route>
         <Route path="/dashboard/products">{() => <DashboardRoute Page={ProductsPage} />}</Route>
         <Route path="/dashboard/orders">{() => <DashboardRoute Page={OrdersPage} />}</Route>
+        <Route path="/dashboard/cashiers/reports">{() => <DashboardRoute Page={CashierCentralReportsPage} />}</Route>
         <Route path="/dashboard/cashiers">{() => <DashboardRoute Page={CashierManagementPage} />}</Route>
         <Route path="/dashboard/saved-answers">{() => <DashboardRoute Page={SavedAnswersPage} />}</Route>
         <Route path="/dashboard/bot-training">{() => <DashboardRoute Page={TrainingPage} />}</Route>
