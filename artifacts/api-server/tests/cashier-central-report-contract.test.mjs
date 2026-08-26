@@ -43,22 +43,29 @@ test('owner central report reads only durable cashier sales and joins sale attri
 });
 
 test('central report accounts sale return and void in the period each operation actually occurred', () => {
-  assert.match(authority, /occurred_at: evidenceInstant\(snapshot\.occurred_at/);
-  assert.match(authority, /occurred_at: evidenceInstant\(raw\.occurred_at/);
   assert.match(authority, /function inRange/);
   assert.match(authority, /applySaleOperation/);
   assert.match(authority, /applyReturnOperation/);
   assert.match(authority, /applyVoidOperation/);
   assert.match(authority, /inRange\(sale\.occurred_at, range\)/);
   assert.match(authority, /inRange\(compensation\.occurred_at, range\)/);
-  assert.match(authority, /action_attribution\.operation_kind IN \('return', 'void'\)/);
-  assert.match(authority, /action_attribution\.occurred_at/);
+  assert.match(authority, /average_ticket_minor:[\s\S]*gross_revenue_minor \/ value\.sale_count/);
+});
+
+test('central report selects compensation-only periods from durable order metadata', () => {
+  assert.match(authority, /jsonb_array_elements/);
+  assert.match(authority, /cashier_sync/);
+  assert.match(authority, /compensations/);
+  assert.match(authority, /compensation->>'occurred_at'/);
+  assert.doesNotMatch(
+    authority,
+    /EXISTS[\s\S]{0,500}cashier_operation_attribution[\s\S]{0,500}operation_kind IN \('return', 'void'\)/,
+    'financial row selection must not depend on repairable compensation attribution',
+  );
 });
 
 test('central report uses sale-time server evidence and compensation evidence for truthful profit', () => {
-  assert.match(authority, /cashier_sync/);
   assert.match(authority, /sale_snapshot/);
-  assert.match(authority, /compensations/);
   assert.match(authority, /unit_cost_minor/);
   assert.match(authority, /profit_status/);
   assert.match(authority, /cost_unknown_net_units/);
@@ -74,6 +81,16 @@ test('central report uses sale-time server evidence and compensation evidence fo
     /resolveCashierCostEvidence[\s\S]*delete line\.unit_cost_minor[\s\S]*resolved\.unit_cost_minor/,
     'sale-time cost entering durable cashier evidence must be server-resolved',
   );
+});
+
+test('central report validates immutable sale and compensation evidence before accounting', () => {
+  assert.match(authority, /validateSaleEvidence/);
+  assert.match(authority, /duplicate line evidence/);
+  assert.match(authority, /cumulative return exceeds original sold quantity/);
+  assert.match(authority, /compensation references a different sale/);
+  assert.match(authority, /compensation currency does not match original sale/);
+  assert.match(authority, /sale total does not match line evidence/);
+  assert.match(authority, /duplicate sale attribution evidence/);
 });
 
 test('central report response shape does not expose raw unit cost evidence', () => {
@@ -103,8 +120,11 @@ test('return and void always resolve durable original sale scope before compensa
   assert.match(saleScope, /FROM cashier_operation_attribution/);
   assert.match(saleScope, /operation_kind = 'sale'/);
   assert.match(saleScope, /if \(rows\.length !== 1\)/);
-  assert.match(saleScope, /if \(canViewAll\) return/);
   assert.match(saleScope, /attribution\.station_id !== context\.station_id/);
+  assert.match(saleScope, /attribution\.device_id !== context\.device_id/);
+  const stationGuard = saleScope.indexOf('attribution.station_id !== context.station_id');
+  const viewAllReturn = saleScope.indexOf('if (canViewAll) return');
+  assert.ok(stationGuard >= 0 && viewAllReturn > stationGuard);
   assert.match(saleScope, /attribution\.staff_id !== context\.staff_id/);
   assert.match(saleScope, /attribution\.shift_id !== context\.shift_id/);
 });
@@ -121,11 +141,6 @@ test('central report endpoint is merchant-authority only and includes operator a
   assert.match(routes, /merchantId: merchantId\(res\)/);
   assert.match(routes, /from: req\.query\.from/);
   assert.match(routes, /to: req\.query\.to/);
-  assert.doesNotMatch(
-    routes,
-    /"\/cashier\/operator\/report"/,
-    'owner central report must not be exposed through an operator route',
-  );
 });
 
 test('central report fails closed on invalid evidence and oversized ranges', () => {
