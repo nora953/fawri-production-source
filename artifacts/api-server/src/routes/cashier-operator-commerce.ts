@@ -8,6 +8,7 @@ import {
   syncCashierOperatorCompensationAuthoritative,
   syncCashierOperatorSaleAuthoritative,
 } from "../services/cashierOperatorCommerceAuthority";
+import { buildCashierOperatorReportAuthoritative } from "../services/postgresCashierOperatorReportAuthority";
 import { assertCashierOperatorCompensationScope } from "../services/cashierOperatorSaleScope";
 import { CashierStaffAuthorityError } from "../services/postgresCashierStaffAuthority";
 import { CashierSyncError } from "../services/postgresCashierSyncAuthority";
@@ -68,6 +69,24 @@ router.get(
       );
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, ...snapshot });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/cashier/operator/report",
+  requireCashierOperatorSession("reports.sales"),
+  async (req: Request, res: Response) => {
+    try {
+      const result = await buildCashierOperatorReportAuthoritative({
+        context: operatorContext(res),
+        from: req.query.from,
+        to: req.query.to,
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, ...result });
     } catch (error) {
       sendError(res, error);
     }
