@@ -1,10 +1,14 @@
 import { useMemo, useState } from 'react';
-import { Boxes, ChevronDown, Layers3, Plus, Ruler, Trash2 } from 'lucide-react';
+import { Boxes, ChevronDown, Copy, Layers3, Plus, Ruler, Trash2 } from 'lucide-react';
 
 import { CatalogImageUploadEditor } from '@/components/catalog/CatalogImageUploadEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { CatalogProductFormState, CatalogVariantDraft } from '@/lib/catalogProductEditor';
+import type {
+  CatalogImageDraft,
+  CatalogProductFormState,
+  CatalogVariantDraft,
+} from '@/lib/catalogProductEditor';
 import {
   catalogVariantCombinationCount,
   catalogVariantDraftHasStructuredOptions,
@@ -33,6 +37,27 @@ type BuilderForm = CatalogProductFormState & {
   variant_option_rows?: BulkOptionRow[];
 };
 
+type VariantGroup = {
+  key: string;
+  optionName: string;
+  optionValue: string;
+  indexes: number[];
+};
+
+type GroupDraft = {
+  sale: string;
+  cost: string;
+  stock: string;
+  copyTarget: string;
+};
+
+const EMPTY_GROUP_DRAFT: GroupDraft = {
+  sale: '',
+  cost: '',
+  stock: '',
+  copyTarget: '',
+};
+
 const copy = {
   ar: {
     quantity: 'الكمية',
@@ -55,10 +80,11 @@ const copy = {
     generate: 'إنشاء / تحديث التركيبات',
     combinations: 'تركيبات المنتج',
     combination: 'التركيبة',
+    variantWithinGroup: 'باقي الخيارات',
     salePrice: 'سعر بيع خاص — اختياري',
     cost: 'كلفة خاصة — اختياري',
     stock: 'المخزون',
-    images: 'صورة خاصة — اختياري',
+    images: 'صورة التركيبة — اختياري',
     inheritedSale: (value: string) => `العام: ${value || 'سعر المنتج'}`,
     inheritedCost: (value: string) => `العام: ${value || 'كلفة المنتج'}`,
     inheritedImage: 'بدون صورة خاصة = يستخدم صور المنتج',
@@ -81,6 +107,19 @@ const copy = {
     width: 'العرض (سم)',
     height: 'الارتفاع (سم)',
     currentInventoryLocked: 'بعد الحفظ',
+    groupCount: (count: number) => `${count} تركيبة`,
+    groupSale: 'سعر بيع لكل هذه المجموعة',
+    groupCost: 'كلفة لكل هذه المجموعة',
+    groupStock: 'مخزون لكل تركيبة في المجموعة',
+    groupImages: 'صور هذه المجموعة',
+    groupImagesHint: 'الصورة التي تضيفها هنا تطبق على كل التركيبات داخل هذه المجموعة. تستطيع تغيير صورة تركيبة واحدة من صفها.',
+    applyGroup: 'تطبيق',
+    clearOverrideHint: 'اتركه فارغًا واضغط تطبيق للرجوع إلى القيمة العامة.',
+    copyGroup: 'نسخ بيانات المجموعة',
+    copyTo: 'اختر المجموعة الهدف',
+    copyAction: 'نسخ',
+    copyHint: 'ينسخ السعر والكلفة والصور والمخزون للتركيبات المناظرة فقط. لا ينسخ SKU أو الباركود.',
+    mixedGroupImages: 'بعض التركيبات داخل هذه المجموعة لها صور مختلفة. إضافة صور هنا ستوحّد صور المجموعة.',
   },
   ku: {
     quantity: 'بڕ',
@@ -103,10 +142,11 @@ const copy = {
     generate: 'دروستکردن / نوێکردنەوەی تێکەڵەکان',
     combinations: 'تێکەڵەکانی بەرهەم',
     combination: 'تێکەڵە',
+    variantWithinGroup: 'هەڵبژاردەکانی تر',
     salePrice: 'نرخی فرۆشتنی تایبەت — ئارەزوومەندانە',
     cost: 'تێچووی تایبەت — ئارەزوومەندانە',
     stock: 'کۆگا',
-    images: 'وێنەی تایبەت — ئارەزوومەندانە',
+    images: 'وێنەی تێکەڵە — ئارەزوومەندانە',
     inheritedSale: (value: string) => `گشتی: ${value || 'نرخی بەرهەم'}`,
     inheritedCost: (value: string) => `گشتی: ${value || 'تێچووی بەرهەم'}`,
     inheritedImage: 'بێ وێنەی تایبەت = وێنەکانی بەرهەم',
@@ -129,6 +169,19 @@ const copy = {
     width: 'پانی (سم)',
     height: 'بەرزی (سم)',
     currentInventoryLocked: 'دوای پاشەکەوتکردن',
+    groupCount: (count: number) => `${count} تێکەڵە`,
+    groupSale: 'نرخی فرۆشتن بۆ ئەم گرووپە',
+    groupCost: 'تێچوو بۆ ئەم گرووپە',
+    groupStock: 'کۆگا بۆ هەر تێکەڵەی گرووپەکە',
+    groupImages: 'وێنەکانی ئەم گرووپە',
+    groupImagesHint: 'وێنەکانی لێرە بۆ هەموو تێکەڵەکانی گرووپەکە جێبەجێ دەبن. دەتوانیت وێنەی یەک تێکەڵە لە ڕیزەکەی بگۆڕیت.',
+    applyGroup: 'جێبەجێکردن',
+    clearOverrideHint: 'بە بەتاڵی بهێڵەوە و جێبەجێ بکە بۆ گەڕانەوە بۆ نرخی گشتی.',
+    copyGroup: 'کۆپیکردنی داتای گرووپ',
+    copyTo: 'گرووپی ئامانج هەڵبژێرە',
+    copyAction: 'کۆپی',
+    copyHint: 'نرخ و تێچوو و وێنە و کۆگا بۆ تێکەڵە هاوشێوەکان کۆپی دەکات. SKU و بارکۆد کۆپی ناکات.',
+    mixedGroupImages: 'هەندێک تێکەڵەی ئەم گرووپە وێنەی جیاواز هەیە. زیادکردنی وێنە لێرە وێنەکانی گرووپەکە یەکسان دەکات.',
   },
   en: {
     quantity: 'Quantity',
@@ -151,10 +204,11 @@ const copy = {
     generate: 'Generate / update combinations',
     combinations: 'Product combinations',
     combination: 'Combination',
+    variantWithinGroup: 'Other options',
     salePrice: 'Special sale price — optional',
     cost: 'Special cost — optional',
     stock: 'Stock',
-    images: 'Special image — optional',
+    images: 'Combination image — optional',
     inheritedSale: (value: string) => `Default: ${value || 'product price'}`,
     inheritedCost: (value: string) => `Default: ${value || 'product cost'}`,
     inheritedImage: 'No special image = use product images',
@@ -177,6 +231,19 @@ const copy = {
     width: 'Width (cm)',
     height: 'Height (cm)',
     currentInventoryLocked: 'after save',
+    groupCount: (count: number) => `${count} combinations`,
+    groupSale: 'Sale price for this group',
+    groupCost: 'Cost for this group',
+    groupStock: 'Stock for each combination in group',
+    groupImages: 'Images for this group',
+    groupImagesHint: 'Images added here apply to every combination in this group. You can override one combination from its row.',
+    applyGroup: 'Apply',
+    clearOverrideHint: 'Leave blank and apply to return to the general value.',
+    copyGroup: 'Copy group data',
+    copyTo: 'Choose target group',
+    copyAction: 'Copy',
+    copyHint: 'Copies price, cost, images, and stock to matching combinations only. SKU and barcode are never copied.',
+    mixedGroupImages: 'Some combinations in this group have different images. Adding images here will unify the group images.',
   },
 } as const;
 
@@ -203,11 +270,78 @@ function rowsFromVariants(variants: CatalogVariantDraft[]): BulkOptionRow[] {
   }));
 }
 
+function structuredOptions(variant: CatalogVariantDraft) {
+  return variant.options.filter(option => option.name.trim() && option.value.trim());
+}
+
 function optionSummary(variant: CatalogVariantDraft): string {
-  const values = variant.options
-    .filter(option => option.name.trim() && option.value.trim())
-    .map(option => option.value.trim());
+  const values = structuredOptions(variant).map(option => option.value.trim());
   return values.join(' / ') || variant.name || '—';
+}
+
+function optionSummaryWithinGroup(variant: CatalogVariantDraft): string {
+  const values = structuredOptions(variant).slice(1).map(option => option.value.trim());
+  return values.join(' / ') || variant.name || '—';
+}
+
+function normalized(value: string): string {
+  return value.trim().normalize('NFKC').toLocaleLowerCase('en-US');
+}
+
+function variantGroups(variants: CatalogVariantDraft[]): VariantGroup[] {
+  const ordered: VariantGroup[] = [];
+  const byKey = new Map<string, VariantGroup>();
+  variants.forEach((variant, index) => {
+    const first = structuredOptions(variant)[0];
+    if (!first) return;
+    const key = `${normalized(first.name)}=${normalized(first.value)}`;
+    let group = byKey.get(key);
+    if (!group) {
+      group = {
+        key,
+        optionName: first.name.trim(),
+        optionValue: first.value.trim(),
+        indexes: [],
+      };
+      byKey.set(key, group);
+      ordered.push(group);
+    }
+    group.indexes.push(index);
+  });
+  return ordered;
+}
+
+function secondarySignature(variant: CatalogVariantDraft): string {
+  return structuredOptions(variant)
+    .slice(1)
+    .map(option => `${normalized(option.name)}=${normalized(option.value)}`)
+    .join('|');
+}
+
+function cloneImages(images: CatalogImageDraft[]): CatalogImageDraft[] {
+  return images.map(image => ({ ...image }));
+}
+
+function imageSignature(images: CatalogImageDraft[]): string {
+  return JSON.stringify(images.map(image => ({
+    id: image.id || '',
+    url: image.url.trim(),
+    storage_key: image.storage_key.trim(),
+    alt: image.alt.trim(),
+  })));
+}
+
+function sharedGroupImages(group: VariantGroup, variants: CatalogVariantDraft[]): {
+  images: CatalogImageDraft[];
+  mixed: boolean;
+} {
+  const first = variants[group.indexes[0]]?.image_refs || [];
+  const signature = imageSignature(first);
+  const mixed = group.indexes.some(index => imageSignature(variants[index]?.image_refs || []) !== signature);
+  return {
+    images: mixed ? [] : cloneImages(first),
+    mixed,
+  };
 }
 
 function cleanSkuPrefix(value: string): string {
@@ -272,6 +406,7 @@ export function CatalogProductDetailsEditor({
   const optionRows = builderForm.variant_option_rows ?? rowsFromVariants(form.variants);
   const [feedback, setFeedback] = useState('');
   const [bulkStock, setBulkStock] = useState('');
+  const [groupDrafts, setGroupDrafts] = useState<Record<string, GroupDraft>>({});
 
   const legacy = form.variants.length > 0 && form.variants.some(variant => !catalogVariantDraftHasStructuredOptions(variant));
   const multiEnabled = form.variants.length > 0 || optionRows.length > 0;
@@ -279,6 +414,7 @@ export function CatalogProductDetailsEditor({
     .filter(row => row.name.trim() || row.values.trim())
     .map(row => createCatalogVariantOptionSetDraft(row.name, splitValues(row.values))), [optionRows]);
   const combinationCount = useMemo(() => catalogVariantCombinationCount(structuredDefinitions), [structuredDefinitions]);
+  const groups = useMemo(() => legacy ? [] : variantGroups(form.variants), [form.variants, legacy]);
 
   if (form.item_type !== 'product') return null;
 
@@ -288,6 +424,13 @@ export function CatalogProductDetailsEditor({
 
   const updateVariant = (index: number, patch: Partial<CatalogVariantDraft>) => {
     onChange({ variants: form.variants.map((variant, itemIndex) => itemIndex === index ? { ...variant, ...patch } : variant) });
+  };
+
+  const updateGroupDraft = (groupKey: string, patch: Partial<GroupDraft>) => {
+    setGroupDrafts(current => ({
+      ...current,
+      [groupKey]: { ...(current[groupKey] || EMPTY_GROUP_DRAFT), ...patch },
+    }));
   };
 
   const setMultiEnabled = (enabled: boolean) => {
@@ -315,7 +458,7 @@ export function CatalogProductDetailsEditor({
       setFeedback(labels.invalidOptions);
       return;
     }
-    const names = structuredDefinitions.map(set => set.name.trim().normalize('NFKC').toLocaleLowerCase('en-US'));
+    const names = structuredDefinitions.map(set => normalized(set.name));
     if (new Set(names).size !== names.length) {
       setFeedback(labels.invalidOptions);
       return;
@@ -339,6 +482,7 @@ export function CatalogProductDetailsEditor({
       variants: withSku,
       variant_option_rows: optionRows,
     } as unknown as Partial<CatalogProductFormState>);
+    setGroupDrafts({});
     setFeedback('');
   };
 
@@ -355,6 +499,101 @@ export function CatalogProductDetailsEditor({
       sku: variant.sku.trim() || `${prefix}-${String(index + 1).padStart(2, '0')}`,
     })) });
   };
+
+  const applyGroupField = (
+    group: VariantGroup,
+    field: 'price_iqd' | 'cost_iqd' | 'stock_quantity',
+    raw: string,
+  ) => {
+    const value = raw.trim();
+    if (field === 'stock_quantity' && !/^\d+$/.test(value)) return;
+    const memberIndexes = new Set(group.indexes);
+    onChange({
+      variants: form.variants.map((variant, index) => {
+        if (!memberIndexes.has(index)) return variant;
+        if (field === 'stock_quantity' && variant.id) return variant;
+        return { ...variant, [field]: value };
+      }),
+    });
+  };
+
+  const applyGroupImages = (group: VariantGroup, images: CatalogImageDraft[]) => {
+    const memberIndexes = new Set(group.indexes);
+    onChange({
+      variants: form.variants.map((variant, index) => memberIndexes.has(index)
+        ? { ...variant, image_refs: cloneImages(images) }
+        : variant),
+    });
+  };
+
+  const copyGroupData = (source: VariantGroup, targetKey: string) => {
+    const target = groups.find(group => group.key === targetKey);
+    if (!target) return;
+    const sourceBySecondary = new Map<string, CatalogVariantDraft>();
+    for (const index of source.indexes) {
+      const variant = form.variants[index];
+      if (variant) sourceBySecondary.set(secondarySignature(variant), variant);
+    }
+    const targetIndexes = new Set(target.indexes);
+    onChange({
+      variants: form.variants.map((variant, index) => {
+        if (!targetIndexes.has(index)) return variant;
+        const matching = sourceBySecondary.get(secondarySignature(variant));
+        if (!matching) return variant;
+        return {
+          ...variant,
+          price_iqd: matching.price_iqd,
+          cost_iqd: matching.cost_iqd,
+          image_refs: cloneImages(matching.image_refs),
+          ...(!variant.id && form.track_inventory ? { stock_quantity: matching.stock_quantity } : {}),
+        };
+      }),
+    });
+  };
+
+  const variantTable = (indexes: number[], grouped: boolean) => (
+    <div className="overflow-x-auto rounded-2xl border bg-background">
+      <table className="w-full min-w-[1120px] border-collapse text-sm">
+        <thead className="bg-muted/40 text-xs text-muted-foreground">
+          <tr>
+            <th className="p-3 text-start">{legacy ? labels.name : grouped ? labels.variantWithinGroup : labels.combination}</th>
+            <th className="p-3 text-start">{labels.salePrice}</th>
+            <th className="p-3 text-start">{labels.cost}</th>
+            {form.track_inventory && <th className="p-3 text-start">{labels.stock}</th>}
+            <th className="p-3 text-start">{labels.sku}</th>
+            <th className="p-3 text-start">{labels.barcode}</th>
+            <th className="p-3 text-start">{labels.images}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {indexes.map(index => {
+            const variant = form.variants[index];
+            if (!variant) return null;
+            return (
+              <tr key={variant.key} className="border-t align-top">
+                <td className="p-2.5">
+                  {legacy
+                    ? <Input value={variant.name} onChange={event => updateVariant(index, { name: event.target.value })} className="h-10 min-w-36 rounded-xl" />
+                    : <div className="min-w-36 rounded-xl bg-muted/30 px-3 py-2.5 font-bold" dir="auto">{grouped ? optionSummaryWithinGroup(variant) : optionSummary(variant)}</div>}
+                </td>
+                <td className="p-2.5"><Input type="text" inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => updateVariant(index, { price_iqd: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className="h-10 min-w-36 rounded-xl" /></td>
+                <td className="p-2.5"><Input type="text" inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => updateVariant(index, { cost_iqd: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className="h-10 min-w-36 rounded-xl" /></td>
+                {form.track_inventory && <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.stock_quantity} onChange={event => updateVariant(index, { stock_quantity: event.target.value })} disabled={Boolean(editing && variant.id)} placeholder={editing && variant.id ? labels.currentInventoryLocked : '0'} className="h-10 w-24 rounded-xl" /></td>}
+                <td className="p-2.5"><Input type="text" dir="ltr" value={variant.sku} onChange={event => updateVariant(index, { sku: event.target.value })} className="h-10 min-w-36 rounded-xl" /></td>
+                <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.barcode} onChange={event => updateVariant(index, { barcode: event.target.value })} className="h-10 min-w-36 rounded-xl" /></td>
+                <td className="p-2.5">
+                  <div className="min-w-44">
+                    <CatalogImageUploadEditor images={variant.image_refs} onChange={image_refs => updateVariant(index, { image_refs })} maxImages={5} compact hideHeading />
+                    {variant.image_refs.length === 0 && <p className="mt-1 text-[10px] text-muted-foreground">{labels.inheritedImage}</p>}
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
 
   return (
     <div className="space-y-4">
@@ -441,41 +680,85 @@ export function CatalogProductDetailsEditor({
                   </div>
                 </div>
 
-                <div className="overflow-x-auto rounded-2xl border bg-background">
-                  <table className="w-full min-w-[1120px] border-collapse text-sm">
-                    <thead className="bg-muted/40 text-xs text-muted-foreground">
-                      <tr>
-                        <th className="p-3 text-start">{legacy ? labels.name : labels.combination}</th>
-                        <th className="p-3 text-start">{labels.salePrice}</th>
-                        <th className="p-3 text-start">{labels.cost}</th>
-                        {form.track_inventory && <th className="p-3 text-start">{labels.stock}</th>}
-                        <th className="p-3 text-start">{labels.sku}</th>
-                        <th className="p-3 text-start">{labels.barcode}</th>
-                        <th className="p-3 text-start">{labels.images}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {form.variants.map((variant, index) => (
-                        <tr key={variant.key} className="border-t align-top">
-                          <td className="p-2.5">
-                            {legacy ? <Input value={variant.name} onChange={event => updateVariant(index, { name: event.target.value })} className="h-10 min-w-36 rounded-xl" /> : <div className="min-w-36 rounded-xl bg-muted/30 px-3 py-2.5 font-bold" dir="auto">{optionSummary(variant)}</div>}
-                          </td>
-                          <td className="p-2.5"><Input type="text" inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => updateVariant(index, { price_iqd: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className="h-10 min-w-36 rounded-xl" /></td>
-                          <td className="p-2.5"><Input type="text" inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => updateVariant(index, { cost_iqd: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className="h-10 min-w-36 rounded-xl" /></td>
-                          {form.track_inventory && <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.stock_quantity} onChange={event => updateVariant(index, { stock_quantity: event.target.value })} disabled={Boolean(editing && variant.id)} placeholder={editing && variant.id ? labels.currentInventoryLocked : '0'} className="h-10 w-24 rounded-xl" /></td>}
-                          <td className="p-2.5"><Input type="text" dir="ltr" value={variant.sku} onChange={event => updateVariant(index, { sku: event.target.value })} className="h-10 min-w-36 rounded-xl" /></td>
-                          <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.barcode} onChange={event => updateVariant(index, { barcode: event.target.value })} className="h-10 min-w-36 rounded-xl" /></td>
-                          <td className="p-2.5">
-                            <div className="min-w-44">
-                              <CatalogImageUploadEditor images={variant.image_refs} onChange={image_refs => updateVariant(index, { image_refs })} maxImages={5} compact hideHeading />
-                              {variant.image_refs.length === 0 && <p className="mt-1 text-[10px] text-muted-foreground">{labels.inheritedImage}</p>}
+                {legacy || groups.length === 0 ? (
+                  variantTable(form.variants.map((_, index) => index), false)
+                ) : (
+                  <div className="space-y-4">
+                    {groups.map(group => {
+                      const draft = groupDrafts[group.key] || EMPTY_GROUP_DRAFT;
+                      const shared = sharedGroupImages(group, form.variants);
+                      const canSetGroupStock = group.indexes.some(index => !form.variants[index]?.id);
+                      return (
+                        <section key={group.key} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+                          <div className="space-y-3 border-b bg-muted/20 p-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <p className="text-base font-extrabold" dir="auto">{group.optionName}: {group.optionValue}</p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">{labels.groupCount(group.indexes.length)}</p>
+                              </div>
                             </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+
+                            <div className="grid gap-3 xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]">
+                              <label className="space-y-1 text-xs font-semibold">
+                                <span>{labels.groupSale}</span>
+                                <div className="flex gap-1.5">
+                                  <Input type="text" inputMode="decimal" dir="ltr" value={draft.sale} onChange={event => updateGroupDraft(group.key, { sale: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className="h-10 rounded-xl" />
+                                  <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => applyGroupField(group, 'price_iqd', draft.sale)}>{labels.applyGroup}</Button>
+                                </div>
+                                <span className="block text-[10px] font-normal text-muted-foreground">{labels.clearOverrideHint}</span>
+                              </label>
+
+                              <label className="space-y-1 text-xs font-semibold">
+                                <span>{labels.groupCost}</span>
+                                <div className="flex gap-1.5">
+                                  <Input type="text" inputMode="decimal" dir="ltr" value={draft.cost} onChange={event => updateGroupDraft(group.key, { cost: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className="h-10 rounded-xl" />
+                                  <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => applyGroupField(group, 'cost_iqd', draft.cost)}>{labels.applyGroup}</Button>
+                                </div>
+                                <span className="block text-[10px] font-normal text-muted-foreground">{labels.clearOverrideHint}</span>
+                              </label>
+
+                              {form.track_inventory ? (
+                                <label className="space-y-1 text-xs font-semibold">
+                                  <span>{labels.groupStock}</span>
+                                  <div className="flex gap-1.5">
+                                    <Input type="text" inputMode="numeric" dir="ltr" value={draft.stock} onChange={event => updateGroupDraft(group.key, { stock: event.target.value })} placeholder={canSetGroupStock ? '0' : labels.currentInventoryLocked} disabled={!canSetGroupStock} className="h-10 rounded-xl" />
+                                    <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" disabled={!canSetGroupStock} onClick={() => applyGroupField(group, 'stock_quantity', draft.stock)}>{labels.applyGroup}</Button>
+                                  </div>
+                                </label>
+                              ) : <div />}
+
+                              <div className="space-y-1 text-xs font-semibold">
+                                <span>{labels.groupImages}</span>
+                                <CatalogImageUploadEditor images={shared.images} onChange={images => applyGroupImages(group, images)} maxImages={5} compact hideHeading />
+                                <span className="block text-[10px] font-normal leading-4 text-muted-foreground">{shared.mixed ? labels.mixedGroupImages : labels.groupImagesHint}</span>
+                              </div>
+                            </div>
+
+                            {groups.length > 1 && (
+                              <div className="flex flex-col gap-2 rounded-xl border bg-background p-2.5 lg:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                  <p className="flex items-center gap-1.5 text-xs font-bold"><Copy className="h-3.5 w-3.5" />{labels.copyGroup}</p>
+                                  <p className="mt-0.5 text-[10px] leading-4 text-muted-foreground">{labels.copyHint}</p>
+                                </div>
+                                <div className="flex min-w-0 flex-1 gap-2 lg:max-w-md">
+                                  <select value={draft.copyTarget} onChange={event => updateGroupDraft(group.key, { copyTarget: event.target.value })} className="h-10 min-w-0 flex-1 rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
+                                    <option value="">{labels.copyTo}</option>
+                                    {groups.filter(candidate => candidate.key !== group.key).map(candidate => <option key={candidate.key} value={candidate.key}>{candidate.optionValue}</option>)}
+                                  </select>
+                                  <Button type="button" variant="outline" className="h-10 rounded-xl" disabled={!draft.copyTarget} onClick={() => copyGroupData(group, draft.copyTarget)}>{labels.copyAction}</Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="p-2.5">
+                            {variantTable(group.indexes, true)}
+                          </div>
+                        </section>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </>
