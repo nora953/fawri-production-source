@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'wouter';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
@@ -41,20 +41,18 @@ type Report = {
   by_currency: CurrencyReport[];
 };
 
-type GroupReport = {
+type StaffReport = {
+  staff_id: string | null;
+  staff_name: string;
   report: Report;
 };
 
-type StaffReport = GroupReport & {
-  staff_id: string | null;
-  staff_name: string;
-};
-
-type StationReport = GroupReport & {
+type StationReport = {
   station_id: string | null;
   station_name: string;
   branch_key?: string;
   branch_label?: string;
+  report: Report;
 };
 
 type CentralReportResult = {
@@ -63,6 +61,12 @@ type CentralReportResult = {
   report: Report;
   by_staff: StaffReport[];
   by_station: StationReport[];
+};
+
+type MoneyValue = {
+  code: string;
+  digits: number;
+  value: number | null;
 };
 
 type Copy = {
@@ -226,39 +230,43 @@ function parseResult(value: unknown): CentralReportResult {
   };
 }
 
-function aggregateMoney(
+function moneyValues(
   report: Report,
-  field: 'net_revenue_minor' | 'refunds_minor' | 'gross_profit_minor',
-): { code: string; digits: number; value: number }[] {
+  field: 'net_revenue_minor' | 'refunds_minor' | 'average_ticket_minor',
+): MoneyValue[] {
   return report.by_currency.map(currency => ({
     code: currency.currency_code,
     digits: currency.currency_fraction_digits,
-    value: field === 'gross_profit_minor'
-      ? currency.gross_profit_minor ?? 0
-      : currency[field],
+    value: currency[field],
   }));
 }
 
-function MoneyStack({
-  values,
-  lang,
-}: {
-  values: { code: string; digits: number; value: number }[];
-  lang: Lang;
-}) {
+function profitValues(report: Report): MoneyValue[] {
+  return report.by_currency.map(currency => ({
+    code: currency.currency_code,
+    digits: currency.currency_fraction_digits,
+    value: currency.profit_status === 'unavailable'
+      ? null
+      : currency.gross_profit_minor ?? null,
+  }));
+}
+
+function MoneyStack({ values, lang }: { values: MoneyValue[]; lang: Lang }) {
   if (values.length === 0) return <span>—</span>;
   return (
     <span className="flex flex-col gap-0.5" dir="ltr">
       {values.map(value => (
         <span key={`${value.code}:${value.digits}`}>
-          {formatMerchantMoneyMinor(value.value, value.code, value.digits, lang)}
+          {value.value === null
+            ? `— ${value.code}`
+            : formatMerchantMoneyMinor(value.value, value.code, value.digits, lang)}
         </span>
       ))}
     </span>
   );
 }
 
-function Metric({ title, children }: { title: string; children: React.ReactNode }) {
+function Metric({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="rounded-2xl border bg-card p-4 shadow-sm">
       <p className="text-xs font-semibold text-muted-foreground">{title}</p>
@@ -295,13 +303,13 @@ function GroupCard({
         <div className="rounded-lg border bg-card px-3 py-2">
           <p className="text-[11px] font-semibold text-muted-foreground">{labels.netSales}</p>
           <div className="mt-1 text-sm font-bold">
-            <MoneyStack values={aggregateMoney(report, 'net_revenue_minor')} lang={lang} />
+            <MoneyStack values={moneyValues(report, 'net_revenue_minor')} lang={lang} />
           </div>
         </div>
         <div className="rounded-lg border bg-card px-3 py-2">
           <p className="text-[11px] font-semibold text-muted-foreground">{labels.profit}</p>
           <div className="mt-1 text-sm font-bold">
-            <MoneyStack values={aggregateMoney(report, 'gross_profit_minor')} lang={lang} />
+            <MoneyStack values={profitValues(report)} lang={lang} />
           </div>
         </div>
       </div>
@@ -349,9 +357,9 @@ export default function CashierCentralReportsPage() {
 
   const currencies = result?.report.by_currency || [];
   const hasSales = Boolean(result && result.report.sale_count > 0);
-  const totalNet = result ? aggregateMoney(result.report, 'net_revenue_minor') : [];
-  const totalRefunds = result ? aggregateMoney(result.report, 'refunds_minor') : [];
-  const totalProfit = result ? aggregateMoney(result.report, 'gross_profit_minor') : [];
+  const totalNet = result ? moneyValues(result.report, 'net_revenue_minor') : [];
+  const totalRefunds = result ? moneyValues(result.report, 'refunds_minor') : [];
+  const totalProfit = result ? profitValues(result.report) : [];
   const netUnits = currencies.reduce((sum, currency) => sum + currency.net_units, 0);
   const activeSales = currencies.reduce((sum, currency) => sum + currency.active_sale_count, 0);
   const voidedSales = currencies.reduce((sum, currency) => sum + currency.voided_sale_count, 0);
@@ -364,7 +372,7 @@ export default function CashierCentralReportsPage() {
           <h1 className="text-2xl font-bold text-foreground">{labels.title}</h1>
           <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{labels.subtitle}</p>
         </div>
-        <Link href="/dashboard/cashier" className="rounded-xl border bg-card px-4 py-2 text-sm font-bold hover:bg-accent">
+        <Link href="/dashboard/cashiers" className="rounded-xl border bg-card px-4 py-2 text-sm font-bold hover:bg-accent">
           {labels.back}
         </Link>
       </header>
@@ -394,16 +402,7 @@ export default function CashierCentralReportsPage() {
             <Metric title={labels.operations}><span dir="ltr">{activeSales}</span></Metric>
             <Metric title={labels.units}><span dir="ltr">{netUnits}</span></Metric>
             <Metric title={labels.refunds}><MoneyStack values={totalRefunds} lang={lang} /></Metric>
-            <Metric title={labels.average}>
-              <MoneyStack
-                values={currencies.map(currency => ({
-                  code: currency.currency_code,
-                  digits: currency.currency_fraction_digits,
-                  value: currency.average_ticket_minor,
-                }))}
-                lang={lang}
-              />
-            </Metric>
+            <Metric title={labels.average}><MoneyStack values={moneyValues(result.report, 'average_ticket_minor')} lang={lang} /></Metric>
           </div>
 
           <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
