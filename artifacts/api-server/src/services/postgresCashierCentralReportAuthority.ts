@@ -968,8 +968,8 @@ export async function buildCashierCentralReportAuthoritative(input: {
           AND o.source_channel = 'cashier'
           AND (
             (
-              ($2::text IS NULL OR o.created_at >= ($2::text)::timestamptz)
-              AND ($3::text IS NULL OR o.created_at < ($3::text)::timestamptz)
+              ($2::text IS NULL OR o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' >= $2::text)
+              AND ($3::text IS NULL OR o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' < $3::text)
             )
             OR EXISTS (
               SELECT 1
@@ -984,7 +984,7 @@ export async function buildCashierCentralReportAuthoritative(input: {
                  AND ($3::text IS NULL OR compensation->>'occurred_at' < $3::text)
             )
           )
-        ORDER BY o.created_at DESC, o.id
+        ORDER BY o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' DESC, o.id
         LIMIT $4`,
       [merchantId, range.from || null, range.to || null, MAX_REPORT_SALES + 1],
     );
