@@ -8,6 +8,7 @@ export * from "./saas-billing";
 export * from "./provider-costs";
 export * from "./catalog";
 export * from "./commerce-promotions";
+export * from "./cashier-staff";
 export * from "./channels";
 export * from "./conversations";
 export * from "./manual-conversations";

@@ -92,6 +92,13 @@
       "when": 1787600400000,
       "tag": "0012_catalog_variant_signature_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787706000000,
+      "tag": "0013_cashier_staff_station_authority",
+      "breakpoints": true
     }
   ]
 }
