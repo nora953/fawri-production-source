@@ -192,7 +192,12 @@ async function authenticate(
     ...(deviceId ? { deviceId } : {}),
   });
   if (!validated) {
-    clearAuthSessionCookie(res, expectedKind);
+    // Do not emit a Set-Cookie deletion for a generic validation miss.
+    // A request can legitimately arrive with the just-rotated token while a
+    // concurrent response is carrying the fresh replacement cookie. Clearing
+    // here would allow the stale 401 response to erase that newer valid cookie.
+    // The invalid credential still fails closed with 401; explicit logout and
+    // authoritative account/security revocations continue to clear the cookie.
     sendAuthError(
       res,
       401,
