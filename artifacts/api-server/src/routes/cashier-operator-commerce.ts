@@ -8,6 +8,7 @@ import {
   syncCashierOperatorCompensationAuthoritative,
   syncCashierOperatorSaleAuthoritative,
 } from "../services/cashierOperatorCommerceAuthority";
+import { assertCashierOperatorCompensationScope } from "../services/cashierOperatorSaleScope";
 import { CashierStaffAuthorityError } from "../services/postgresCashierStaffAuthority";
 import { CashierSyncError } from "../services/postgresCashierSyncAuthority";
 
@@ -95,8 +96,14 @@ router.post(
   requireCashierOperatorSession("sale.return"),
   async (req: Request, res: Response) => {
     try {
+      const context = operatorContext(res);
+      await assertCashierOperatorCompensationScope({
+        context,
+        body: req.body,
+        kind: "return",
+      });
       const result = await syncCashierOperatorCompensationAuthoritative({
-        context: operatorContext(res),
+        context,
         body: req.body,
         kind: "return",
       });
@@ -113,8 +120,14 @@ router.post(
   requireCashierOperatorSession("sale.void"),
   async (req: Request, res: Response) => {
     try {
+      const context = operatorContext(res);
+      await assertCashierOperatorCompensationScope({
+        context,
+        body: req.body,
+        kind: "void",
+      });
       const result = await syncCashierOperatorCompensationAuthoritative({
-        context: operatorContext(res),
+        context,
         body: req.body,
         kind: "void",
       });
