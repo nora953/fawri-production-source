@@ -45,6 +45,22 @@ test('sale.view_all widens employee visibility only inside the current station',
   assert.ok(stationCheck >= 0 && viewAllCheck > stationCheck);
 });
 
+test('operator SQL selects offline sales by sale operation time, not PostgreSQL receipt time', () => {
+  assert.match(
+    reportAuthority,
+    /o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' >= \$7::text/,
+  );
+  assert.match(
+    reportAuthority,
+    /o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' < \$8::text/,
+  );
+  assert.match(
+    reportAuthority,
+    /ORDER BY o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' DESC/,
+  );
+  assert.doesNotMatch(reportAuthority, /o\.created_at\s*(?:>=|<)/);
+});
+
 test('reports.profit returns aggregate profit only and never raw cost evidence', () => {
   assert.match(reportAuthority, /context\.permissions\.includes\("reports\.profit"\)/);
   assert.match(reportAuthority, /can_view_profit: canViewProfit/);
