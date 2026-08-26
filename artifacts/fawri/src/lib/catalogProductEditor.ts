@@ -1,3 +1,4 @@
+import { peekCatalogCreateRecoveryDraft } from '@/lib/catalogEditorRecovery';
 import type { ProductStatus } from '@/lib/types';
 import type {
   CatalogImageInput,
@@ -247,6 +248,8 @@ function variantDraftFromVariant(variant?: CatalogVariant): CatalogVariantDraft 
 }
 
 export function createEmptyCatalogProductForm(): CatalogProductFormState {
+  const recovered = peekCatalogCreateRecoveryDraft();
+  if (recovered) return recovered;
   return {
     item_type: 'product',
     track_inventory: true,
