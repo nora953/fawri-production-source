@@ -83,6 +83,7 @@ function returnedQuantity(sale: CashierSaleSnapshot, lineId: string): number {
 }
 
 function remainingQuantity(sale: CashierSaleSnapshot, line: CashierSaleLineSnapshot): number {
+  if (sale.status === 'voided' || sale.void) return 0;
   return Math.max(0, line.quantity - returnedQuantity(sale, line.line_id));
 }
 
@@ -499,7 +500,7 @@ export default function CashierHistoryPage() {
                               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
                                 <span>{labels.sold(line.quantity)}</span>
                                 {returned > 0 ? <span>{labels.returned(returned)}</span> : null}
-                                <span>{labels.returnable(remaining)}</span>
+                                {selectedSale.status !== 'voided' && !selectedSale.void ? <span>{labels.returnable(remaining)}</span> : null}
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
