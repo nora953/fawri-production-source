@@ -160,6 +160,24 @@ test('variant rows inherit general price, cost and images unless explicitly over
   assert.match(variantSource, /applyBulkStock/);
 });
 
+test('generated combinations are grouped by the first option with safe group bulk actions', () => {
+  assert.match(variantSource, /function variantGroups/);
+  assert.match(variantSource, /structuredOptions\(variant\)\[0\]/);
+  assert.match(variantSource, /group\.optionName/);
+  assert.match(variantSource, /group\.optionValue/);
+  assert.match(variantSource, /applyGroupField/);
+  assert.match(variantSource, /applyGroupImages/);
+  assert.match(variantSource, /copyGroupData/);
+  assert.match(variantSource, /secondarySignature/);
+  assert.match(variantSource, /price_iqd: matching\.price_iqd/);
+  assert.match(variantSource, /cost_iqd: matching\.cost_iqd/);
+  assert.match(variantSource, /image_refs: cloneImages\(matching\.image_refs\)/);
+  assert.doesNotMatch(variantSource, /sku: matching\.sku/);
+  assert.doesNotMatch(variantSource, /barcode: matching\.barcode/);
+  assert.match(variantSource, /groupImagesHint/);
+  assert.match(variantSource, /variantTable\(group\.indexes, true\)/);
+});
+
 test('catalog image editor stays compact and fetches protected previews before rendering img', () => {
   assert.match(imageSource, /catalogImagePreviewUrl/);
   assert.match(imageSource, /protectedPreviewRequest/);
