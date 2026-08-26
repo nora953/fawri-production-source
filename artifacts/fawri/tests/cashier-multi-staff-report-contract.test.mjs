@@ -8,6 +8,7 @@ const bottomNav = fs.readFileSync(new URL('../src/components/layout/BottomNav.ts
 const ownerReport = fs.readFileSync(new URL('../src/pages/dashboard/CashierCentralReportsPage.tsx', import.meta.url), 'utf8');
 const employeeReport = fs.readFileSync(new URL('../src/pages/CashierReportsPage.tsx', import.meta.url), 'utf8');
 const operatorReport = fs.readFileSync(new URL('../src/lib/cashierOperatorReportsRuntime.ts', import.meta.url), 'utf8');
+const localReport = fs.readFileSync(new URL('../src/lib/cashierSalesReportRuntime.ts', import.meta.url), 'utf8');
 
 test('merchant dashboard exposes a separate central multi-cashier report', () => {
   assert.match(app, /CashierCentralReportsPage/);
@@ -31,15 +32,42 @@ test('owner report never reconstructs cost or profit from client catalog state',
   assert.match(ownerReport, /value\.value === null[\s\S]{0,120}`— \$\{value\.code\}`/);
 });
 
-test('employee reports remain directly operator-session and permission gated', () => {
+test('employee reports remain operator-session and permission gated', () => {
   assert.match(operatorReport, /getCashierOperatorSession/);
   assert.match(operatorReport, /reports\.sales/);
   assert.match(operatorReport, /reports\.profit/);
-  assert.match(operatorReport, /can_view_profit: canViewProfit/);
+  assert.match(operatorReport, /cashierOperatorHeaders/);
+  assert.match(operatorReport, /\/api\/cashier\/operator\/report/);
+  assert.match(operatorReport, /source: 'server_cashier'/);
+  assert.match(operatorReport, /can_view_profit: payload\.can_view_profit/);
   assert.match(employeeReport, /cashierOperatorReportsRuntime/);
   assert.match(employeeReport, /createCashierOperatorReportsRuntime/);
   assert.match(employeeReport, /result\.can_view_profit/);
   assert.doesNotMatch(employeeReport, /createCashierReportsRuntime/);
+});
+
+test('operator report falls back locally only for offline or transport failure', () => {
+  assert.match(operatorReport, /navigator\.onLine === false/);
+  assert.match(operatorReport, /cause instanceof TypeError\) return null/);
+  assert.match(operatorReport, /if \(!response\.ok \|\| payload\.ok !== true\)/);
+  assert.match(operatorReport, /throw new CashierOperatorReportsError/);
+  assert.match(operatorReport, /buildCashierSalesReport\(visibleSales, options\)/);
+});
+
+test('local cashier reporting uses sale return and void operation time', () => {
+  assert.match(localReport, /applySale\(currencies, sale, from, to\)/);
+  assert.match(localReport, /applyReturn\(currencies, sale, snapshot, from, to\)/);
+  assert.match(localReport, /applyVoid\(currencies, sale, saleInRange, from, to\)/);
+  assert.match(localReport, /requiredInstant\(snapshot\.occurred_at, 'return_time'\)/);
+  assert.match(localReport, /requiredInstant\(sale\.void\.occurred_at, 'void_time'\)/);
+});
+
+test('employee UI renders compensation-only periods and distinguishes server from offline source', () => {
+  assert.match(employeeReport, /const hasData = Boolean\(result && result\.report\.by_currency\.length > 0\)/);
+  assert.match(employeeReport, /result\.source === 'server_cashier'/);
+  assert.match(employeeReport, /labels\.serverSource/);
+  assert.match(employeeReport, /labels\.localSource/);
+  assert.match(employeeReport, /currency\.sale_count > 0 \? money\(currency\.average_ticket_minor\) : '—'/);
 });
 
 test('cashier management and report navigation do not collide', () => {
@@ -55,4 +83,9 @@ test('central UI separates sale ownership from executed return and void activity
   assert.match(ownerReport, /return_count/);
   assert.match(ownerReport, /void_count/);
   assert.match(ownerReport, /ActivityCard/);
+});
+
+test('central UI does not hide a return-only or void-only period', () => {
+  assert.match(ownerReport, /currencies\.length > 0 \|\| activityTotal\(result\) > 0/);
+  assert.doesNotMatch(ownerReport, /hasSales/);
 });
