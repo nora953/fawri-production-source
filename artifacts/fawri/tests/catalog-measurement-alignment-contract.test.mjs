@@ -8,7 +8,7 @@ const alignment = fs.readFileSync(new URL('../src/pages/dashboard/catalogMeasure
 
 test('measurement inputs share one vertical rhythm without changing the established width split', () => {
   assert.match(workspace, /catalogMeasurementAlignment\.css/);
-  assert.match(productDetails, /lg:grid-cols-\[minmax\(0,1fr\)_minmax\(0,3fr\)\]/);
+  assert.match(productDetails, /lg:grid-cols-\[minmax\(220px,0\.7fr\)_minmax\(0,1\.3fr\)\]/);
   assert.match(alignment, /grid-template-rows:\s*1\.25rem 3rem/);
   assert.match(alignment, /row-gap:\s*0\.5rem/);
   assert.match(alignment, /margin-top:\s*0 !important/);
