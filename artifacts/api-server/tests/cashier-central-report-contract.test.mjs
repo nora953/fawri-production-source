@@ -18,6 +18,10 @@ const operatorCommerce = await readFile(
   new URL('../src/services/cashierOperatorCommerceAuthority.ts', import.meta.url),
   'utf8',
 );
+const saleScope = await readFile(
+  new URL('../src/services/cashierOperatorSaleScope.ts', import.meta.url),
+  'utf8',
+);
 
 function section(source, start, end) {
   const from = source.indexOf(start);
@@ -30,12 +34,25 @@ function section(source, start, end) {
 test('owner central report reads only durable cashier sales and joins sale attribution', () => {
   assert.match(authority, /FROM orders o/);
   assert.match(authority, /o\.source_channel = 'cashier'/);
-  assert.match(authority, /LEFT JOIN cashier_operation_attribution attribution/);
-  assert.match(authority, /attribution\.operation_kind = 'sale'/);
+  assert.match(authority, /LEFT JOIN cashier_operation_attribution sale_attribution/);
+  assert.match(authority, /sale_attribution\.operation_kind = 'sale'/);
   assert.match(authority, /LEFT JOIN merchant_cashier_staff staff/);
   assert.match(authority, /LEFT JOIN merchant_cashier_stations station/);
   assert.match(authority, /by_staff/);
   assert.match(authority, /by_station/);
+});
+
+test('central report accounts sale return and void in the period each operation actually occurred', () => {
+  assert.match(authority, /occurred_at: evidenceInstant\(snapshot\.occurred_at/);
+  assert.match(authority, /occurred_at: evidenceInstant\(raw\.occurred_at/);
+  assert.match(authority, /function inRange/);
+  assert.match(authority, /applySaleOperation/);
+  assert.match(authority, /applyReturnOperation/);
+  assert.match(authority, /applyVoidOperation/);
+  assert.match(authority, /inRange\(sale\.occurred_at, range\)/);
+  assert.match(authority, /inRange\(compensation\.occurred_at, range\)/);
+  assert.match(authority, /action_attribution\.operation_kind IN \('return', 'void'\)/);
+  assert.match(authority, /action_attribution\.occurred_at/);
 });
 
 test('central report uses sale-time server evidence and compensation evidence for truthful profit', () => {
@@ -46,6 +63,7 @@ test('central report uses sale-time server evidence and compensation evidence fo
   assert.match(authority, /profit_status/);
   assert.match(authority, /cost_unknown_net_units/);
   assert.match(authority, /gross_profit_minor/);
+  assert.match(authority, /direction \* profitContribution/);
   assert.match(
     authority,
     /profitStatus !== "unavailable"[\s\S]*gross_profit_minor/,
@@ -78,6 +96,17 @@ test('operator activity attributes sale return and void to the employee and stat
   assert.match(activityAuthority, /GROUP BY attribution\.station_id/);
   assert.match(activityAuthority, /attribution\.occurred_at/);
   assert.match(activityAuthority, /operation_count !==[\s\S]*sale_count \+ result\.return_count \+ result\.void_count/);
+});
+
+test('return and void always resolve durable original sale scope before compensation', () => {
+  assert.match(saleScope, /const saleId = compensationSaleId/);
+  assert.match(saleScope, /FROM cashier_operation_attribution/);
+  assert.match(saleScope, /operation_kind = 'sale'/);
+  assert.match(saleScope, /if \(rows\.length !== 1\)/);
+  assert.match(saleScope, /if \(canViewAll\) return/);
+  assert.match(saleScope, /attribution\.station_id !== context\.station_id/);
+  assert.match(saleScope, /attribution\.staff_id !== context\.staff_id/);
+  assert.match(saleScope, /attribution\.shift_id !== context\.shift_id/);
 });
 
 test('central report endpoint is merchant-authority only and includes operator activity', () => {
