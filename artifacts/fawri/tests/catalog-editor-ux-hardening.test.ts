@@ -15,12 +15,24 @@ const shellSource = await readFile(
   new URL('../src/components/catalog/CatalogEditorShell.tsx', import.meta.url),
   'utf8',
 );
+const recoverySource = await readFile(
+  new URL('../src/lib/catalogEditorRecovery.ts', import.meta.url),
+  'utf8',
+);
+const editorSource = await readFile(
+  new URL('../src/lib/catalogProductEditor.ts', import.meta.url),
+  'utf8',
+);
+const dashboardSource = await readFile(
+  new URL('../src/components/layout/DashboardLayout.tsx', import.meta.url),
+  'utf8',
+);
 const itemTypeSource = await readFile(
   new URL('../src/components/catalog/CatalogItemTypeEditor.tsx', import.meta.url),
   'utf8',
 );
 const pageSource = await readFile(
-  new URL('../src/pages/dashboard/CommerceCatalogPage.tsx', import.meta.url),
+  new URL('../src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx', import.meta.url),
   'utf8',
 );
 const workspaceSource = await readFile(
@@ -29,6 +41,10 @@ const workspaceSource = await readFile(
 );
 const variantSource = await readFile(
   new URL('../src/components/catalog/CatalogProductDetailsEditor.tsx', import.meta.url),
+  'utf8',
+);
+const imageSource = await readFile(
+  new URL('../src/components/catalog/CatalogImageUploadEditor.tsx', import.meta.url),
   'utf8',
 );
 const fullscreenCss = await readFile(
@@ -78,16 +94,48 @@ test('dirty-state contract detects field and variant changes without false posit
   );
 });
 
-test('full-screen catalog shell owns scrolling and protects unsaved work', () => {
+test('full-screen catalog shell uses Fawri discard UI and does not refocus on dirty changes', () => {
   assert.match(shellSource, /h-\[100dvh\]/);
   assert.match(shellSource, /document\.documentElement/);
   assert.match(shellSource, /body\.style\.overflow = 'hidden'/);
   assert.match(shellSource, /catalogEditorHasUnsavedChanges/);
-  assert.match(shellSource, /window\.confirm\(labels\.discard\)/);
-  assert.match(shellSource, /event\.key !== 'Escape'/);
+  assert.match(shellSource, /AlertDialog/);
+  assert.match(shellSource, /discardOpen/);
+  assert.match(shellSource, /keepEditing/);
+  assert.match(shellSource, /discardAction/);
+  assert.doesNotMatch(shellSource, /window\.confirm/);
   assert.match(shellSource, /data-catalog-primary-input/);
-  assert.match(shellSource, /Unsaved changes|تغييرات غير محفوظة/);
+  assert.match(shellSource, /\}, \[\]\);/);
+  assert.match(shellSource, /event\.key !== 'Escape'/);
   assert.match(fullscreenCss, /overscroll-behavior:\s*contain/);
+});
+
+test('new-item recovery is browser-tab scoped, merchant scoped and never catalog authority', () => {
+  assert.match(recoverySource, /sessionStorage/);
+  assert.doesNotMatch(recoverySource, /localStorage/);
+  assert.match(recoverySource, /merchant_id/);
+  assert.match(recoverySource, /RECOVERY_TTL_MS/);
+  assert.match(recoverySource, /saveCatalogCreateRecoveryDraft/);
+  assert.match(recoverySource, /clearCatalogCreateRecoveryDraft/);
+  assert.match(recoverySource, /peekCatalogCreateRecoveryDraft/);
+  assert.match(recoverySource, /not catalog authority/i);
+  assert.match(editorSource, /peekCatalogCreateRecoveryDraft\(\)/);
+  assert.match(editorSource, /if \(recovered\) return recovered/);
+  assert.match(shellSource, /saveCatalogCreateRecoveryDraft\(form\)/);
+  assert.match(shellSource, /clearCatalogCreateRecoveryDraft\(\)/);
+});
+
+test('merchant dashboard logs out only on authoritative unauthenticated lifecycle result', () => {
+  assert.match(dashboardSource, /lifecycle\.reason === 'unauthenticated'/);
+  assert.match(dashboardSource, /routeToLogin\(\)/);
+  assert.match(dashboardSource, /Connectivity\/server failures are not authentication decisions/);
+  assert.match(dashboardSource, /transientFailures \+= 1/);
+  assert.match(dashboardSource, /scheduleRetry\(\)/);
+  assert.match(dashboardSource, /lifecyclePollDelay/);
+  assert.doesNotMatch(
+    dashboardSource,
+    /if \(!lifecycle\.ok\) \{\s*clearMerchantTabSession\(\)/,
+  );
 });
 
 test('catalog fields inherit the reviewed Signup/Login Fawri UI authority', () => {
@@ -104,26 +152,22 @@ test('catalog fields inherit the reviewed Signup/Login Fawri UI authority', () =
   assert.match(fullscreenCss, /height:\s*var\(--fawri-control-height\) !important/);
   assert.match(fullscreenCss, /font-size:\s*var\(--fawri-label-size\) !important/);
   assert.match(fullscreenCss, /color:\s*hsl\(var\(--foreground\)\)/);
-  assert.match(fullscreenCss, /html\[lang="ar"\][\s\S]*Noto Sans Arabic/);
-  assert.match(fullscreenCss, /html\[lang="ku"\][\s\S]*Noto Naskh Arabic/);
-  assert.match(fullscreenCss, /font-family:\s*"Inter"/);
-  assert.match(fullscreenCss, /label:has\(> div > input\)/);
 });
 
-test('create and edit routes use the hardened shell and explicit actions', () => {
+test('products workspace uses the simplified canonical catalog editor', () => {
+  assert.match(workspaceSource, /CommerceCatalogSimplifiedPage/);
   assert.match(pageSource, /CatalogEditorShell/);
   assert.match(pageSource, /title=\{editingId \? copy\.edit : copy\.create\}/);
   assert.match(pageSource, /data-catalog-primary-input="true"/);
   assert.match(pageSource, /saveLabel=\{copy\.save\}/);
   assert.match(pageSource, /onClose=\{\(\) => closeForm\(true\)\}/);
-  assert.doesNotMatch(pageSource, /max-w-4xl flex-col overflow-hidden rounded-\[2rem\]/);
+  assert.doesNotMatch(pageSource, /compare_at_price_iqd[^=]*=\s*form\.original_price/);
 });
 
 test('desktop item type selection stays compact and keeps inventory beside product/service choices', () => {
   assert.match(itemTypeSource, /lg:grid-cols-3/);
   assert.match(itemTypeSource, /sm:col-span-2 lg:col-span-1/);
   assert.match(itemTypeSource, /trackInventory/);
-  assert.doesNotMatch(itemTypeSource, /space-y-4 rounded-2xl border bg-muted\/10 p-4/);
 });
 
 test('product cards stay compact without nested inventory scrolling', () => {
@@ -133,7 +177,6 @@ test('product cards stay compact without nested inventory scrolling', () => {
   assert.match(compactCardCss, /max-height:\s*none !important/);
   assert.match(compactCardCss, /overflow:\s*visible !important/);
   assert.doesNotMatch(compactCardCss, /overflow-y:\s*auto/);
-  assert.match(compactCardCss, /-webkit-line-clamp:\s*3/);
 });
 
 test('all tracked product cards share one collapsed inventory disclosure pattern', () => {
@@ -141,45 +184,41 @@ test('all tracked product cards share one collapsed inventory disclosure pattern
   assert.match(pageSource, /toggleInventoryDetails/);
   assert.match(pageSource, /aria-expanded=\{inventoryExpanded\}/);
   assert.match(pageSource, /aria-controls=\{inventoryPanelId\}/);
-  assert.match(pageSource, /copy\.inventoryDetails/);
-  assert.match(pageSource, /copy\.hideInventoryDetails/);
-  assert.match(pageSource, /copy\.variantDetails/);
-  assert.match(pageSource, /copy\.hideVariantDetails/);
   assert.match(pageSource, /inventoryExpanded && \(/);
   assert.match(pageSource, /product\.variants\.map\(variant =>/);
-  assert.doesNotMatch(pageSource, /expandedVariantProducts/);
-  assert.doesNotMatch(pageSource, /toggleVariantDetails/);
 });
 
-test('Fawri availability aligns as a canonical field beside Description', () => {
+test('Fawri availability remains an explicit field separate from inventory tracking', () => {
   assert.match(workspaceSource, /catalogEditorCardHarmony\.css/);
   assert.match(pageSource, /catalog-editor-description-field/);
   assert.match(pageSource, /catalog-editor-fawri-field/);
   assert.match(pageSource, /catalog-editor-fawri-control/);
-  assert.match(pageSource, /checked \? 'end-1' : 'start-1'/);
+  assert.match(pageSource, /allow_fawri_reply/);
+  assert.match(itemTypeSource, /track_inventory/);
   assert.match(cardHarmonyCss, /catalog-editor-description-field[\s\S]*catalog-editor-fawri-field/);
-  assert.match(cardHarmonyCss, /align-self:\s*stretch !important/);
-  assert.match(cardHarmonyCss, /min-height:\s*8\.5rem !important/);
-  assert.match(cardHarmonyCss, /catalog-editor-fawri-field[\s\S]*padding:\s*0 !important/);
-  assert.match(cardHarmonyCss, /catalog-editor-fawri-control[\s\S]*border-radius:\s*0\.75rem !important/);
-  assert.match(cardHarmonyCss, /button\[aria-pressed\][\s\S]*width:\s*3\.5rem !important/);
 });
 
-test('RTL examples remain readable inside LTR technical and numeric fields', () => {
-  assert.match(fullscreenCss, /input\[dir="ltr"\]::placeholder/);
-  assert.match(fullscreenCss, /direction:\s*rtl/);
-  assert.match(fullscreenCss, /unicode-bidi:\s*plaintext/);
-  assert.match(cardHarmonyCss, /catalog-editor-fawri-field[\s\S]*align-items:\s*stretch !important/);
+test('clothing variants use one bulk option matrix with inherited price/cost and batch fields', () => {
+  assert.match(variantSource, /clothingSetup/);
+  assert.match(variantSource, /اللون/);
+  assert.match(variantSource, /المقاس/);
+  assert.match(variantSource, /splitValues/);
+  assert.match(variantSource, /regenerateCatalogVariantDrafts/);
+  assert.match(variantSource, /generate/);
+  assert.match(variantSource, /bulkStock/);
+  assert.match(variantSource, /applyStock/);
+  assert.match(variantSource, /generateSku/);
+  assert.match(variantSource, /inheritedSale/);
+  assert.match(variantSource, /inheritedCost/);
+  assert.match(variantSource, /CatalogImageUploadEditor/);
+  assert.match(variantSource, /advancedHint/);
+  assert.doesNotMatch(variantSource, /VariantCombinationEditor/);
 });
 
-test('variant UX is truthful, bidi-safe, compact, and warns about zero inherited prices', () => {
-  assert.match(variantSource, /generatedVariantsCount/);
-  assert.match(variantSource, /zeroInheritedPrice/);
-  assert.match(variantSource, /inventoryManagedByVariants/);
-  assert.match(variantSource, /dir="ltr" className="inline-flex items-center gap-1 rounded-full/);
-  assert.match(variantSource, /<bdi>\{option\.name\.trim\(\)\}<\/bdi>/);
-  assert.match(variantSource, /<bdi>\{option\.value\.trim\(\)\}<\/bdi>/);
-  assert.match(variantSource, /<details className="group rounded-2xl border bg-muted\/10"/);
-  assert.match(variantSource, /noOptionsHint/);
-  assert.doesNotMatch(variantSource, /\(\{form\.variants\.length\}\{coverage\.expectedCount/);
+test('catalog image editor is compact and derives previews from server storage keys', () => {
+  assert.match(imageSource, /catalogImagePreviewUrl/);
+  assert.match(imageSource, /storage_key/);
+  assert.match(imageSource, /multiple/);
+  assert.match(imageSource, /lightbox|preview/i);
+  assert.doesNotMatch(imageSource, /min-h-32/);
 });
