@@ -4,8 +4,7 @@ import {
 } from './cashierIndexedDbAuthority';
 
 const OPERATOR_LOCAL_DATABASE = 'fawri-cashier-operator-local-v1';
-const OPERATOR_LOCAL_VERSION = 1;
-const COST_EVIDENCE_STORE = 'cost_evidence';
+const OPERATOR_LOCAL_VERSION = 2;
 const OPERATION_BINDING_STORE = 'operation_bindings';
 const CATALOG_STORE = 'catalog';
 const SALES_STORE = 'sales';
@@ -26,16 +25,6 @@ export type CashierOperationBinding = {
   shift_id: string;
   device_id: string;
   bound_at: string;
-};
-
-export type CashierCostEvidenceRecord = {
-  key: string;
-  merchant_id: string;
-  product_id: string;
-  variant_id: string;
-  catalog_version: number;
-  token: string;
-  stored_at: string;
 };
 
 export class CashierOperatorLocalSecurityError extends Error {
@@ -74,13 +63,19 @@ function openOperatorLocalDatabase(): Promise<IDBDatabase> {
     const request = indexedDB.open(OPERATOR_LOCAL_DATABASE, OPERATOR_LOCAL_VERSION);
     request.onupgradeneeded = () => {
       const database = request.result;
-      if (!database.objectStoreNames.contains(COST_EVIDENCE_STORE)) {
-        database.createObjectStore(COST_EVIDENCE_STORE, { keyPath: 'key' });
-      }
+      let store: IDBObjectStore;
       if (!database.objectStoreNames.contains(OPERATION_BINDING_STORE)) {
-        database.createObjectStore(OPERATION_BINDING_STORE, {
+        store = database.createObjectStore(OPERATION_BINDING_STORE, {
           keyPath: 'operation_id',
         });
+      } else {
+        store = request.transaction!.objectStore(OPERATION_BINDING_STORE);
+      }
+      if (!store.indexNames.contains('staff_id')) {
+        store.createIndex('staff_id', 'staff_id', { unique: false });
+      }
+      if (!store.indexNames.contains('shift_id')) {
+        store.createIndex('shift_id', 'shift_id', { unique: false });
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -96,20 +91,20 @@ function openExistingCashierDatabase(
     const request = indexedDB.open(databaseName);
     let created = false;
     request.onupgradeneeded = () => {
-      // No version was supplied. An upgrade here means the database did not
-      // previously exist; close/delete the accidental empty database.
+      // Opening without a version upgrades only when the database did not exist.
+      // Delete that accidental empty database instead of treating it as cashier data.
       created = true;
     };
     request.onsuccess = () => {
-      if (created) {
-        request.result.close();
-        const deletion = indexedDB.deleteDatabase(databaseName);
-        deletion.onsuccess = () => resolve(null);
-        deletion.onerror = () => resolve(null);
-        deletion.onblocked = () => resolve(null);
+      if (!created) {
+        resolve(request.result);
         return;
       }
-      resolve(request.result);
+      request.result.close();
+      const deletion = indexedDB.deleteDatabase(databaseName);
+      deletion.onsuccess = () => resolve(null);
+      deletion.onerror = () => resolve(null);
+      deletion.onblocked = () => resolve(null);
     };
     request.onerror = () => reject(request.error || new Error('Could not open cashier database'));
   });
@@ -142,6 +137,11 @@ export async function getCashierPendingEnvelopeCountForIdentity(
   }
 }
 
+/**
+ * Remove raw merchant cost left by the pre-staff cashier implementation.
+ * Pairing is blocked while the outbox is non-empty, so this cannot erase cost
+ * evidence required by an unsynchronized operation.
+ */
 export async function scrubCashierRawCostsForIdentity(
   identity: CashierLocalDeviceIdentity,
 ): Promise<void> {
@@ -162,6 +162,7 @@ export async function scrubCashierRawCostsForIdentity(
         Record<string, unknown>
       >;
       for (const record of records) {
+        if (!Object.prototype.hasOwnProperty.call(record, 'unit_cost_minor')) continue;
         delete record.unit_cost_minor;
         catalog.put(record);
       }
@@ -173,66 +174,24 @@ export async function scrubCashierRawCostsForIdentity(
         Record<string, unknown>
       >;
       for (const sale of records) {
-        if (Array.isArray(sale.lines)) {
-          sale.lines = sale.lines.map((value) => {
-            const line =
-              value && typeof value === 'object' && !Array.isArray(value)
-                ? { ...(value as Record<string, unknown>) }
-                : {};
+        if (!Array.isArray(sale.lines)) continue;
+        let changed = false;
+        sale.lines = sale.lines.map((value) => {
+          const line =
+            value && typeof value === 'object' && !Array.isArray(value)
+              ? { ...(value as Record<string, unknown>) }
+              : {};
+          if (Object.prototype.hasOwnProperty.call(line, 'unit_cost_minor')) {
             delete line.unit_cost_minor;
-            return line;
-          });
-        }
-        sales.put(sale);
+            changed = true;
+          }
+          return line;
+        });
+        if (changed) sales.put(sale);
       }
     }
 
     await completion;
-  } finally {
-    database.close();
-  }
-}
-
-export function cashierCostEvidenceKey(input: {
-  merchantId: string;
-  productId: string;
-  variantId?: string;
-  catalogVersion: number;
-}): string {
-  return `${input.merchantId}\u0000${input.productId}\u0000${input.variantId || ''}\u0000${input.catalogVersion}`;
-}
-
-export async function replaceCashierCostEvidence(
-  records: CashierCostEvidenceRecord[],
-): Promise<void> {
-  const database = await openOperatorLocalDatabase();
-  try {
-    const transaction = database.transaction(COST_EVIDENCE_STORE, 'readwrite');
-    const completion = transactionDone(transaction);
-    const store = transaction.objectStore(COST_EVIDENCE_STORE);
-    store.clear();
-    for (const record of records) store.put(record);
-    await completion;
-  } finally {
-    database.close();
-  }
-}
-
-export async function getCashierCostEvidence(input: {
-  merchantId: string;
-  productId: string;
-  variantId?: string;
-  catalogVersion: number;
-}): Promise<string | null> {
-  const database = await openOperatorLocalDatabase();
-  try {
-    const transaction = database.transaction(COST_EVIDENCE_STORE, 'readonly');
-    const record = (await requestResult(
-      transaction
-        .objectStore(COST_EVIDENCE_STORE)
-        .get(cashierCostEvidenceKey(input)),
-    )) as CashierCostEvidenceRecord | undefined;
-    return record?.token || null;
   } finally {
     database.close();
   }
@@ -273,9 +232,10 @@ export async function bindCashierOperation(
       await completion;
       return existing;
     }
-    store.put({ ...binding, operation_id: operationId });
+    const stored = { ...binding, operation_id: operationId };
+    store.put(stored);
     await completion;
-    return { ...binding, operation_id: operationId };
+    return stored;
   } finally {
     database.close();
   }
@@ -284,16 +244,49 @@ export async function bindCashierOperation(
 export async function getCashierOperationBinding(
   operationId: string,
 ): Promise<CashierOperationBinding | null> {
+  const normalized = String(operationId || '').trim();
+  if (!normalized) return null;
   const database = await openOperatorLocalDatabase();
   try {
     const transaction = database.transaction(OPERATION_BINDING_STORE, 'readonly');
     return (
       ((await requestResult(
-        transaction
-          .objectStore(OPERATION_BINDING_STORE)
-          .get(String(operationId || '').trim()),
+        transaction.objectStore(OPERATION_BINDING_STORE).get(normalized),
       )) as CashierOperationBinding | undefined) || null
     );
+  } finally {
+    database.close();
+  }
+}
+
+export async function getCashierOperationBindings(
+  operationIds: readonly string[],
+): Promise<Map<string, CashierOperationBinding>> {
+  const normalized = [
+    ...new Set(
+      operationIds
+        .map((value) => String(value || '').trim())
+        .filter(Boolean),
+    ),
+  ];
+  const result = new Map<string, CashierOperationBinding>();
+  if (normalized.length === 0) return result;
+  const database = await openOperatorLocalDatabase();
+  try {
+    const transaction = database.transaction(OPERATION_BINDING_STORE, 'readonly');
+    const store = transaction.objectStore(OPERATION_BINDING_STORE);
+    const records = await Promise.all(
+      normalized.map(
+        (operationId) =>
+          requestResult(store.get(operationId)) as Promise<
+            CashierOperationBinding | undefined
+          >,
+      ),
+    );
+    for (const record of records) {
+      if (record) result.set(record.operation_id, record);
+    }
+    return result;
   } finally {
     database.close();
   }
