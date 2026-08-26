@@ -1,4 +1,4 @@
-import { BriefcaseBusiness, Boxes, CalendarClock, MapPin, Package } from 'lucide-react';
+import { Bot, BriefcaseBusiness, Boxes, CalendarClock, MapPin, Package, SlidersHorizontal } from 'lucide-react';
 
 import { Input } from '@/components/ui/input';
 import type { Lang } from '@/lib/types';
@@ -16,8 +16,12 @@ type Copy = {
   productHint: string;
   service: string;
   serviceHint: string;
+  itemSettings: string;
+  itemSettingsHint: string;
   trackInventory: string;
   trackInventoryHint: string;
+  fawriReplies: string;
+  fawriRepliesHint: string;
   serviceDetails: string;
   serviceDetailsHint: string;
   duration: string;
@@ -43,11 +47,15 @@ const COPY: Record<Lang, Copy> = {
     chooseType: 'نوع العنصر',
     chooseTypeHint: 'اختر منتجًا يباع أو خدمة يقدمها نشاطك. يمكنك التبديل قبل الحفظ من دون فقدان البيانات التي أدخلتها.',
     product: 'منتج',
-    productHint: 'سلعة يمكن بيعها وتتبع مخزونها وباركودها ومتغيراتها.',
+    productHint: 'سلعة يمكن بيعها وتتبع مخزونها وباركودها وخياراتها.',
     service: 'خدمة',
     serviceHint: 'خدمة يمكن لفوري شرحها والمساعدة في طلبها أو حجزها.',
+    itemSettings: 'إعدادات العنصر',
+    itemSettingsHint: 'إعدادات تشغيل مختصرة لهذا العنصر.',
     trackInventory: 'تتبع المخزون',
-    trackInventoryHint: 'حدّث الكمية مع المبيعات تلقائيًا واجعل فوري ينبهك عند انخفاض المخزون أو نفاده.',
+    trackInventoryHint: 'حدّث الكمية تلقائيًا مع المبيعات ونبّه عند انخفاض المخزون أو نفاده.',
+    fawriReplies: 'استخدامه في ردود فوري',
+    fawriRepliesHint: 'اسمح لفوري باستخدام معلومات هذا العنصر عند الرد على العملاء.',
     serviceDetails: 'تفاصيل الخدمة',
     serviceDetailsHint: 'هذه المعلومات تساعد فوري على إعطاء العميل تفاصيل دقيقة عن الخدمة.',
     duration: 'مدة الخدمة بالدقائق',
@@ -71,11 +79,15 @@ const COPY: Record<Lang, Copy> = {
     chooseType: 'جۆری بابەت',
     chooseTypeHint: 'بەرهەم یان خزمەتگوزاری هەڵبژێرە. پێش پاشەکەوتکردن دەتوانیت بگۆڕیت بەبێ لەدەستدانی داتای نووسراو.',
     product: 'بەرهەم',
-    productHint: 'کاڵایەک بۆ فرۆشتن و بەدواداچوونی کۆگا و بارکۆد و جۆراوجۆری.',
+    productHint: 'کاڵایەک بۆ فرۆشتن و بەدواداچوونی کۆگا و بارکۆد و هەڵبژاردەکان.',
     service: 'خزمەتگوزاری',
     serviceHint: 'خزمەتگوزارییەک کە فەوری دەتوانێت ڕوونی بکاتەوە و بۆ داواکاری یان حجز یارمەتی بدات.',
+    itemSettings: 'ڕێکخستنەکانی بابەت',
+    itemSettingsHint: 'ڕێکخستنە سەرەکییەکانی ئەم بابەتە.',
     trackInventory: 'بەدواداچوونی کۆگا',
-    trackInventoryHint: 'بڕ لەگەڵ فرۆشتن خۆکار نوێ بکەرەوە و فەوری ئاگادارت بکاتەوە کاتێک کۆگا کەم دەبێت یان تەواو دەبێت.',
+    trackInventoryHint: 'بڕ لەگەڵ فرۆشتن خۆکار نوێ بکەرەوە و لە کەمبوون یان تەواوبوونی کۆگا ئاگادار بە.',
+    fawriReplies: 'بەکارهێنان لە وەڵامەکانی فەوری',
+    fawriRepliesHint: 'ڕێگە بدە فەوری زانیارییەکانی ئەم بابەتە لە وەڵامەکاندا بەکاربهێنێت.',
     serviceDetails: 'وردەکاریی خزمەتگوزاری',
     serviceDetailsHint: 'ئەم زانیارییانە یارمەتی فەوری دەدەن وەڵامی ورد بدات.',
     duration: 'ماوەی خزمەتگوزاری بە خولەک',
@@ -99,11 +111,15 @@ const COPY: Record<Lang, Copy> = {
     chooseType: 'Item type',
     chooseTypeHint: 'Choose a product or service. You can switch before saving without losing the data you already entered.',
     product: 'Product',
-    productHint: 'A sellable item with optional inventory, barcode, and variants.',
+    productHint: 'A sellable item with optional inventory, barcode, and product options.',
     service: 'Service',
     serviceHint: 'A service Fawri can explain and help customers request or book.',
+    itemSettings: 'Item settings',
+    itemSettingsHint: 'Compact operating settings for this item.',
     trackInventory: 'Track inventory',
-    trackInventoryHint: 'Update quantity automatically with sales and let Fawri warn you when stock is low or runs out.',
+    trackInventoryHint: 'Update quantity automatically with sales and warn when stock is low or runs out.',
+    fawriReplies: 'Use in Fawri replies',
+    fawriRepliesHint: 'Allow Fawri to use this item information when answering customers.',
     serviceDetails: 'Service details',
     serviceDetailsHint: 'These facts help Fawri answer service questions accurately.',
     duration: 'Service duration (minutes)',
@@ -139,6 +155,30 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boo
   );
 }
 
+function SettingRow({
+  icon,
+  title,
+  hint,
+  checked,
+  onChange,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  hint: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-3 py-2 first:pt-0 last:pb-0">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 text-sm font-bold">{icon}{title}</div>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">{hint}</p>
+      </div>
+      <Toggle checked={checked} onChange={onChange} />
+    </div>
+  );
+}
+
 export function CatalogItemTypeEditor({
   lang,
   form,
@@ -169,12 +209,12 @@ export function CatalogItemTypeEditor({
         <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.chooseTypeHint}</p>
       </div>
 
-      <div className={`grid gap-3 sm:grid-cols-2 ${form.item_type === 'product' ? 'lg:grid-cols-3' : ''}`}>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <button
           type="button"
           aria-pressed={form.item_type === 'product'}
           onClick={() => chooseType('product')}
-          className={`rounded-2xl border p-3 text-start transition ${form.item_type === 'product' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
+          className={`h-full rounded-2xl border p-3 text-start transition ${form.item_type === 'product' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
         >
           <div className="flex items-center gap-2 font-bold"><Package className="h-5 w-5" />{copy.product}</div>
           <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.productHint}</p>
@@ -184,21 +224,34 @@ export function CatalogItemTypeEditor({
           type="button"
           aria-pressed={form.item_type === 'service'}
           onClick={() => chooseType('service')}
-          className={`rounded-2xl border p-3 text-start transition ${form.item_type === 'service' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
+          className={`h-full rounded-2xl border p-3 text-start transition ${form.item_type === 'service' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
         >
           <div className="flex items-center gap-2 font-bold"><BriefcaseBusiness className="h-5 w-5" />{copy.service}</div>
           <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.serviceHint}</p>
         </button>
 
-        {form.item_type === 'product' && (
-          <div className="flex items-start justify-between gap-3 rounded-2xl border bg-background p-3 sm:col-span-2 lg:col-span-1">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-sm font-bold"><Boxes className="h-4 w-4" />{copy.trackInventory}</div>
-              <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.trackInventoryHint}</p>
-            </div>
-            <Toggle checked={form.track_inventory} onChange={track_inventory => onChange({ track_inventory })} />
+        <div className="h-full rounded-2xl border bg-background p-3 sm:col-span-2 lg:col-span-1">
+          <div className="flex items-center gap-2 text-sm font-bold"><SlidersHorizontal className="h-4 w-4" />{copy.itemSettings}</div>
+          <p className="mt-1 text-xs text-muted-foreground">{copy.itemSettingsHint}</p>
+          <div className="mt-2 divide-y">
+            {form.item_type === 'product' && (
+              <SettingRow
+                icon={<Boxes className="h-4 w-4" />}
+                title={copy.trackInventory}
+                hint={copy.trackInventoryHint}
+                checked={form.track_inventory}
+                onChange={track_inventory => onChange({ track_inventory })}
+              />
+            )}
+            <SettingRow
+              icon={<Bot className="h-4 w-4" />}
+              title={copy.fawriReplies}
+              hint={copy.fawriRepliesHint}
+              checked={form.allow_fawri_reply}
+              onChange={allow_fawri_reply => onChange({ allow_fawri_reply })}
+            />
           </div>
-        )}
+        </div>
       </div>
 
       {form.item_type === 'service' && (
