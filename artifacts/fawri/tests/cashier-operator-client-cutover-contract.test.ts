@@ -6,6 +6,7 @@ const aggregatePath = new URL('../src/lib/cashierOperatorClientRuntime.ts', impo
 const sessionPath = new URL('../src/lib/cashierOperatorSessionRuntime.ts', import.meta.url);
 const localPath = new URL('../src/lib/cashierOperatorLocalSecurity.ts', import.meta.url);
 const cloudPath = new URL('../src/lib/cashierOperatorCloudSync.ts', import.meta.url);
+const historyPagePath = new URL('../src/pages/CashierHistoryPage.tsx', import.meta.url);
 const routePath = new URL('../../api-server/src/routes/cashier-staff-operations.ts', import.meta.url);
 
 test('paired station exposes only minimal active staff identities for PIN selection', async () => {
@@ -86,6 +87,25 @@ test('every pending operator operation must match the current staff station shif
   assert.match(cloud, /binding\.shift_id === session\.context\.shift_id/);
   assert.match(cloud, /binding\.device_id === session\.context\.device_id/);
   assert.match(cloud, /CASHIER_OPERATOR_OPERATION_BINDING_MISSING/);
+});
+
+test('operator outbox forwards local merchant identity required by sale return and void authorities', async () => {
+  const cloud = await readFile(cloudPath, 'utf8');
+  assert.match(cloud, /function commonBody\([\s\S]*localMerchantId: string/);
+  assert.match(cloud, /local_merchant_id: normalizedLocalMerchantId/);
+  assert.match(cloud, /identity\.local_merchant_id,[\s\S]*kind,[\s\S]*envelopes/);
+  assert.match(cloud, /CASHIER_OPERATOR_LOCAL_IDENTITY_INVALID/);
+  assert.match(cloud, /credentials: 'omit'/);
+});
+
+test('cashier history hides return and void controls unless current operator has explicit permission', async () => {
+  const history = await readFile(historyPagePath, 'utf8');
+  assert.match(history, /cashierOperatorCan\(session, 'sale\.return'\)/);
+  assert.match(history, /cashierOperatorCan\(session, 'sale\.void'\)/);
+  assert.match(history, /canReturnPermission && returnableLines\.length > 0/);
+  assert.match(history, /canReturnPermission && remaining > 0/);
+  assert.match(history, /canVoidPermission && canVoidSale/);
+  assert.match(history, /confirmationAllowed/);
 });
 
 test('full outbox windows never upload a possibly split final operation', async () => {
