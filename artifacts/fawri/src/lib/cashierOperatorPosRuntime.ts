@@ -4,7 +4,7 @@ import {
 import {
   createCashierPosRuntime,
   type CashierPosRuntime,
-} from './cashierPosRuntime';
+} from './cashierPosBaseRuntime';
 import type { CashierCommitSaleInput } from './cashierLocalContracts';
 import {
   bindCashierOperationToCurrentOperator,
