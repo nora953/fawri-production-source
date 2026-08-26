@@ -180,6 +180,8 @@ const copy = {
   },
 } as const;
 
+type VariantEditorCopy = (typeof copy)[keyof typeof copy];
+
 function splitValues(raw: string): string[] {
   const seen = new Set<string>();
   const result: string[] = [];
@@ -231,7 +233,7 @@ function Measurements({
   form,
   onChange,
 }: {
-  labels: typeof copy.ar;
+  labels: VariantEditorCopy;
   form: CatalogProductFormState;
   onChange: (patch: Partial<CatalogProductFormState>) => void;
 }) {
