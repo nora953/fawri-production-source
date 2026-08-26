@@ -418,6 +418,7 @@ export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOper
   }
   const response = await fetch('/api/cashier/operator/catalog-snapshot', {
     headers: cashierOperatorHeaders(session),
+    credentials: 'omit',
   });
   const payload = record(await response.json().catch(() => null));
   if (!response.ok || payload.ok !== true) {
@@ -594,12 +595,22 @@ function operationKind(
 
 function commonBody(
   session: CashierOperatorSession,
+  localMerchantId: string,
   envelopes: CashierSyncEnvelope[],
 ): Record<string, unknown> {
   const first = envelopes[0];
+  const normalizedLocalMerchantId = text(localMerchantId);
+  if (!normalizedLocalMerchantId) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_LOCAL_IDENTITY_INVALID',
+      'Cashier local merchant identity is missing',
+      409,
+    );
+  }
   return {
     schema_version: first.schema_version,
     cloud_merchant_id: session.context.merchant_id,
+    local_merchant_id: normalizedLocalMerchantId,
     device_id: session.context.device_id,
     operation_id: first.operation_id,
     device_sequence: first.device_sequence,
@@ -660,6 +671,7 @@ async function saleEnvelopesWithEvidence(
 
 async function postOperation(
   session: CashierOperatorSession,
+  localMerchantId: string,
   kind: 'sale' | 'return' | 'void',
   envelopes: CashierSyncEnvelope[],
 ): Promise<{ replayed: boolean; operation_id: string }> {
@@ -670,7 +682,8 @@ async function postOperation(
   const response = await fetch(`/api/cashier/operator/sync/${kind}`, {
     method: 'POST',
     headers: cashierOperatorHeaders(session),
-    body: JSON.stringify(commonBody(session, prepared)),
+    credentials: 'omit',
+    body: JSON.stringify(commonBody(session, localMerchantId, prepared)),
   });
   const payload = record(await response.json().catch(() => null));
   if (!response.ok || payload.ok !== true) {
@@ -749,7 +762,12 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
           409,
         );
       }
-      const uploadedResult = await postOperation(session, kind, envelopes);
+      const uploadedResult = await postOperation(
+        session,
+        identity.local_merchant_id,
+        kind,
+        envelopes,
+      );
       if (!uploadedResult.operation_id || uploadedResult.operation_id !== operationId) {
         throw new CashierOperatorCloudSyncError(
           'CASHIER_OPERATOR_ACK_INVALID',
