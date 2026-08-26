@@ -53,18 +53,9 @@ test('central report accounts sale return and void in the period each operation 
 });
 
 test('central SQL selects offline sales by immutable operation time, never server receipt time', () => {
-  assert.match(
-    authority,
-    /o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' >= \$2::text/,
-  );
-  assert.match(
-    authority,
-    /o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' < \$3::text/,
-  );
-  assert.match(
-    authority,
-    /ORDER BY o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' DESC/,
-  );
+  assert.match(authority, /o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' >= \$2::text/);
+  assert.match(authority, /o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' < \$3::text/);
+  assert.match(authority, /ORDER BY o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' DESC/);
   const reportQuery = authority.slice(authority.indexOf('`SELECT o.id,'));
   assert.doesNotMatch(reportQuery, /o\.created_at\s*(?:>=|<)/);
 });
@@ -88,16 +79,8 @@ test('central report uses sale-time server evidence and compensation evidence fo
   assert.match(authority, /cost_unknown_net_units/);
   assert.match(authority, /gross_profit_minor/);
   assert.match(authority, /direction \* profitContribution/);
-  assert.match(
-    authority,
-    /profitStatus !== "unavailable"[\s\S]*gross_profit_minor/,
-    'unknown cost must never be converted into a zero-profit claim',
-  );
-  assert.match(
-    operatorCommerce,
-    /resolveCashierCostEvidence[\s\S]*delete line\.unit_cost_minor[\s\S]*resolved\.unit_cost_minor/,
-    'sale-time cost entering durable cashier evidence must be server-resolved',
-  );
+  assert.match(authority, /profitStatus !== "unavailable"[\s\S]*gross_profit_minor/);
+  assert.match(operatorCommerce, /resolveCashierCostEvidence[\s\S]*delete line\.unit_cost_minor[\s\S]*resolved\.unit_cost_minor/);
 });
 
 test('central report validates immutable sale and compensation evidence before accounting', () => {
@@ -111,11 +94,7 @@ test('central report validates immutable sale and compensation evidence before a
 });
 
 test('central report response shape does not expose raw unit cost evidence', () => {
-  const publicCurrencyType = section(
-    authority,
-    'export type CashierCentralCurrencyReport = {',
-    'export type CashierCentralReport = {',
-  );
+  const publicCurrencyType = section(authority, 'export type CashierCentralCurrencyReport = {', 'export type CashierCentralReport = {');
   assert.doesNotMatch(publicCurrencyType, /unit_cost_minor/);
   assert.doesNotMatch(publicCurrencyType, /cost_evidence/);
   assert.match(publicCurrencyType, /gross_profit_minor\?: number/);
@@ -130,6 +109,23 @@ test('operator activity attributes sale return and void to the employee and stat
   assert.match(activityAuthority, /GROUP BY attribution\.station_id/);
   assert.match(activityAuthority, /attribution\.occurred_at/);
   assert.match(activityAuthority, /operation_count !==[\s\S]*sale_count \+ result\.return_count \+ result\.void_count/);
+});
+
+test('central activity exposes a bounded detailed ledger from immutable attribution and durable sale evidence', () => {
+  assert.match(activityAuthority, /CashierCentralOperationActivityRow/);
+  assert.match(activityAuthority, /operations: CashierCentralOperationActivityRow\[\]/);
+  assert.match(activityAuthority, /operation_detail_limit/);
+  assert.match(activityAuthority, /MAX_ACTIVITY_OPERATIONS = 500/);
+  assert.match(activityAuthority, /attribution\.staff_id/);
+  assert.match(activityAuthority, /staff\.display_name AS staff_name/);
+  assert.match(activityAuthority, /station\.name AS station_name/);
+  assert.match(activityAuthority, /attribution\.shift_id/);
+  assert.match(activityAuthority, /attribution\.occurred_at/);
+  assert.match(activityAuthority, /sale_snapshot'->>'total_minor'/);
+  assert.match(activityAuthority, /compensation\.entry->'snapshot'->>'refund_total_minor'/);
+  assert.match(activityAuthority, /ORDER BY attribution\.occurred_at DESC/);
+  assert.match(activityAuthority, /LIMIT \$\{MAX_ACTIVITY_OPERATIONS\}/);
+  assert.doesNotMatch(activityAuthority, /unit_cost_minor|cost_evidence/);
 });
 
 test('return and void always resolve durable original sale scope before compensation', () => {
@@ -147,10 +143,7 @@ test('return and void always resolve durable original sale scope before compensa
 });
 
 test('central report endpoint is merchant-authority only and includes operator activity', () => {
-  assert.match(
-    routes,
-    /"\/cashier\/management\/report"[\s\S]{0,120}requireMerchantAuthority/,
-  );
+  assert.match(routes, /"\/cashier\/management\/report"[\s\S]{0,120}requireMerchantAuthority/);
   assert.match(routes, /buildCashierCentralReportAuthoritative/);
   assert.match(routes, /buildCashierCentralActivityAuthoritative/);
   assert.match(routes, /Promise\.all/);
