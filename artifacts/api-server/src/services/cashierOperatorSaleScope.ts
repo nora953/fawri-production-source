@@ -9,6 +9,7 @@ type SaleAttributionRow = {
   station_id: string;
   staff_id: string;
   shift_id: string;
+  device_id: string;
 };
 
 function record(value: unknown): Record<string, unknown> {
@@ -64,9 +65,10 @@ function compensationSaleId(
 
 /**
  * A return/void grant controls the action, while sale.view_* controls which
- * original sales the operator may act on. Every compensation must resolve to
- * durable sale attribution first. sale.view_own is restricted to the active
- * station/staff/shift; sale.view_all is the explicit merchant-wide override.
+ * original sales the operator may act on. Compensation is always restricted to
+ * the active paired station/device. sale.view_all widens employee/shift
+ * visibility only inside that station; it never becomes a cross-station void or
+ * return capability.
  */
 export async function assertCashierOperatorCompensationScope(input: {
   context: CashierOperatorContext;
@@ -91,7 +93,7 @@ export async function assertCashierOperatorCompensationScope(input: {
     (client) =>
       operationalQueryRows<SaleAttributionRow>(
         client,
-        `SELECT station_id, staff_id, shift_id
+        `SELECT station_id, staff_id, shift_id, device_id
            FROM cashier_operation_attribution
           WHERE merchant_id = $1
             AND sale_id = $2
@@ -109,11 +111,20 @@ export async function assertCashierOperatorCompensationScope(input: {
     );
   }
 
-  if (canViewAll) return;
-
   const attribution = rows[0];
   if (
     attribution.station_id !== context.station_id ||
+    attribution.device_id !== context.device_id
+  ) {
+    throw new CashierSyncError(
+      'CASHIER_OPERATOR_SALE_SCOPE_FORBIDDEN',
+      'cashier sale belongs to another station or device',
+      403,
+    );
+  }
+
+  if (canViewAll) return;
+  if (
     attribution.staff_id !== context.staff_id ||
     attribution.shift_id !== context.shift_id
   ) {
