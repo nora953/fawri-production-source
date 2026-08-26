@@ -1,80 +1,26 @@
 /*
- * Description and Fawri availability form one visual row. Both follow the same
- * field rhythm: label above, 8px gap, then a same-height rounded input surface.
- * This is presentation-only; allow_fawri_reply authority is unchanged.
+ * Fawri reply availability now lives beside inventory tracking inside the
+ * compact Item Settings card. Keep the older page field hidden while the
+ * canonical page is progressively simplified; it reads/writes the same
+ * allow_fawri_reply form authority and must not appear twice to merchants.
  */
-
-.products-workspace-polish .catalog-editor-body-grid > .catalog-editor-description-field,
-.products-workspace-polish .catalog-editor-body-grid > .catalog-editor-fawri-field {
-  align-self: stretch !important;
-  min-height: 0;
+.products-workspace-polish .catalog-editor-fawri-field {
+  display: none !important;
 }
 
-.products-workspace-polish .catalog-editor-description-field,
-.products-workspace-polish .catalog-editor-fawri-field {
+.products-workspace-polish .catalog-editor-description-field {
   display: flex !important;
   flex-direction: column;
   align-items: stretch !important;
   gap: 0.5rem !important;
+  align-self: stretch !important;
+  min-height: 0;
 }
 
-.products-workspace-polish .catalog-editor-description-field > textarea,
-.products-workspace-polish .catalog-editor-fawri-control {
+.products-workspace-polish .catalog-editor-description-field > textarea {
   flex: 1 1 auto;
-  min-height: 8.5rem !important;
+  min-height: 7rem !important;
   border-radius: 0.75rem !important;
   border: 1px solid hsl(var(--input));
   background: hsl(var(--background));
-}
-
-/* Undo the old card treatment. This element now behaves like a canonical form
- * field beside Description rather than a separate settings card. */
-.products-workspace-polish .catalog-editor-fawri-field {
-  padding: 0 !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-}
-
-.products-workspace-polish .catalog-editor-fawri-label {
-  display: flex;
-  min-height: 1.25rem;
-  align-items: center;
-  padding-inline: 0.125rem;
-  color: hsl(var(--foreground));
-  font-size: 0.875rem !important;
-  line-height: 1.25rem !important;
-  font-weight: 600 !important;
-}
-
-.products-workspace-polish .catalog-editor-fawri-control {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem !important;
-}
-
-.products-workspace-polish .catalog-editor-fawri-control > p {
-  margin: 0 !important;
-  color: hsl(var(--muted-foreground));
-  font-size: 0.75rem !important;
-  line-height: 1.25rem !important;
-  font-weight: 400 !important;
-}
-
-.products-workspace-polish .catalog-editor-fawri-control > button[aria-pressed] {
-  width: 3.5rem !important;
-  height: 2rem !important;
-  min-height: 2rem !important;
-  flex: 0 0 3.5rem;
-  border: 0 !important;
-  border-radius: 9999px !important;
-  padding: 0 !important;
-}
-
-@media (max-width: 700px) {
-  .products-workspace-polish .catalog-editor-fawri-control {
-    min-height: 7rem !important;
-  }
 }
