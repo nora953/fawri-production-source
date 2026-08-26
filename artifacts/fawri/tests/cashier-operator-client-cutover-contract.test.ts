@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const aggregatePath = new URL('../src/lib/cashierOperatorClientRuntime.ts', import.meta.url);
-const sessionPath = new URL('../src/lib/cashierOperatorSessionClient.ts', import.meta.url);
+const sessionPath = new URL('../src/lib/cashierOperatorSessionRuntime.ts', import.meta.url);
 const localPath = new URL('../src/lib/cashierOperatorLocalSecurity.ts', import.meta.url);
 const cloudPath = new URL('../src/lib/cashierOperatorCloudSync.ts', import.meta.url);
 const routePath = new URL('../../api-server/src/routes/cashier-staff-operations.ts', import.meta.url);
@@ -22,7 +22,7 @@ test('paired station exposes only minimal active staff identities for PIN select
 test('operator client runtime is split into session local-security and cloud-sync authorities', async () => {
   const aggregate = await readFile(aggregatePath, 'utf8');
   assert.match(aggregate, /cashierOperatorLocalSecurity/);
-  assert.match(aggregate, /cashierOperatorSessionClient/);
+  assert.match(aggregate, /cashierOperatorSessionRuntime/);
   assert.match(aggregate, /cashierOperatorCloudSync/);
 });
 
@@ -55,12 +55,17 @@ test('operator logout cannot close a shift with pending outbox or while offline'
   assert.match(session, /getCashierPendingEnvelopeCountForIdentity\(identity\)/);
 });
 
-test('operator catalog refresh cannot rotate cost evidence while pending operations exist', async () => {
-  const cloud = await readFile(cloudPath, 'utf8');
-  const pendingIndex = cloud.indexOf('CASHIER_OPERATOR_PENDING_SYNC');
-  const catalogFetchIndex = cloud.indexOf("fetch('/api/cashier/operator/catalog-snapshot'");
-  assert.ok(pendingIndex >= 0 && catalogFetchIndex > pendingIndex);
-  assert.match(cloud, /Never rotate protected cost evidence/);
+test('operator catalog refresh preserves versioned cost evidence required by pending sales', async () => {
+  const [local, cloud] = await Promise.all([
+    readFile(localPath, 'utf8'),
+    readFile(cloudPath, 'utf8'),
+  ]);
+  assert.match(local, /Evidence is append\/upsert by catalog version, never wholesale-replaced/);
+  assert.match(local, /cashierCostEvidenceKey/);
+  assert.match(local, /catalogVersion/);
+  assert.match(cloud, /upsertCashierCostEvidence\(evidence\)/);
+  assert.match(cloud, /const preserveLocalInventory = pending\.length > 0/);
+  assert.doesNotMatch(cloud, /clear\(\)[\s\S]{0,120}COST_EVIDENCE_STORE/);
 });
 
 test('operator client stores opaque cost evidence separately and never persists raw catalog cost', async () => {
@@ -104,9 +109,11 @@ test('operator client commerce uses only station and operator APIs, never mercha
   ]);
   const combined = `${session}\n${cloud}`;
   assert.match(combined, /\/api\/cashier\/operator\/catalog-snapshot/);
-  assert.match(combined, /\/api\/cashier\/operator\/sync\/sale/);
-  assert.match(combined, /\/api\/cashier\/operator\/sync\/return/);
-  assert.match(combined, /\/api\/cashier\/operator\/sync\/void/);
+  assert.match(cloud, /fetch\(`\/api\/cashier\/operator\/sync\/\$\{kind\}`/);
+  assert.match(cloud, /kind: 'sale' \| 'return' \| 'void'/);
+  assert.match(session, /\/api\/cashier\/station\/pair/);
+  assert.match(session, /\/api\/cashier\/operator\/login/);
+  assert.match(session, /\/api\/cashier\/operator\/logout/);
   assert.doesNotMatch(combined, /\/api\/catalog\/products|\/api\/catalog\/promotions|\/api\/cashier\/sync\/sale|\/api\/cashier\/sync\/compensation/);
   assert.doesNotMatch(combined, /credentials:\s*['"]include['"]/);
 });
