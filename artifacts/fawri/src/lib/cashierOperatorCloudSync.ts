@@ -150,7 +150,14 @@ function localPromotion(
       'Promotion currency does not match merchant commerce context',
     );
   }
-  const scope = raw.scope === 'catalog_item' ? 'catalog_item' : 'order';
+  const rawScope = text(raw.scope);
+  if (rawScope !== 'catalog_item' && rawScope !== 'delivery') {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_PROMOTION_SCOPE_INVALID',
+      'Operator promotion scope is invalid',
+    );
+  }
+  const scope: CashierPromotionRule['scope'] = rawScope;
   const effect = text(raw.effect) as CashierPromotionRule['effect'];
   const rule: CashierPromotionRule = {
     id: text(raw.id),
