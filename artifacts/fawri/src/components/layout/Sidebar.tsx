@@ -7,6 +7,7 @@ import {
   ShoppingBag,
   Calculator,
   Users,
+  BarChart3,
   BookOpen,
   Brain,
   Radio,
@@ -52,13 +53,15 @@ export function Sidebar() {
   const notificationsActive = isActiveRoute(location, "/dashboard/notifications");
   const cashierLabel = lang === "en" ? "Cashier" : lang === "ku" ? "کاشێر" : "الكاشير";
   const cashierManagementLabel = lang === "en" ? "Cashiers & Staff" : lang === "ku" ? "کاشێر و کارمەندان" : "الكاشيرات والموظفون";
+  const cashierReportsLabel = lang === "en" ? "Cashier Reports" : lang === "ku" ? "ڕاپۆرتی کاشێر" : "تقارير الكاشير";
 
   const navItems: SidebarItem[] = [
     { href: "/dashboard", label: t.overview, icon: LayoutDashboard, exact: true },
     { href: "/dashboard/conversations", label: t.conversations, icon: MessageSquare },
     { href: "/dashboard/products", label: t.products, icon: Package },
     { href: "/dashboard/orders", label: t.orders, icon: ShoppingBag },
-    { href: "/dashboard/cashiers", label: cashierManagementLabel, icon: Users },
+    { href: "/dashboard/cashiers", label: cashierManagementLabel, icon: Users, exact: true },
+    { href: "/dashboard/cashiers/reports", label: cashierReportsLabel, icon: BarChart3 },
     { href: "/cashier.html", label: cashierLabel, icon: Calculator, fullPage: true },
     { href: "/dashboard/saved-answers", label: t.saved_answers, icon: BookOpen },
     { href: "/dashboard/bot-training", label: t.sidebar_bot_training, icon: Brain },
