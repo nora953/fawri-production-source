@@ -55,12 +55,35 @@ type StationReport = {
   report: Report;
 };
 
+type ActivityCounts = {
+  operation_count: number;
+  sale_count: number;
+  return_count: number;
+  void_count: number;
+};
+
+type StaffActivity = ActivityCounts & {
+  staff_id: string;
+  staff_name: string;
+};
+
+type StationActivity = ActivityCounts & {
+  station_id: string;
+  station_name: string;
+  branch_key?: string;
+  branch_label?: string;
+};
+
 type CentralReportResult = {
   generated_at: string;
   sales_scanned: number;
   report: Report;
   by_staff: StaffReport[];
   by_station: StationReport[];
+  activity: {
+    by_staff: StaffActivity[];
+    by_station: StationActivity[];
+  };
 };
 
 type MoneyValue = {
@@ -92,10 +115,16 @@ type Copy = {
   unavailableProfit: string;
   topProducts: string;
   noTop: string;
-  byStaff: string;
-  byStation: string;
+  salesByStaff: string;
+  salesByStation: string;
+  activityByStaff: string;
+  activityByStation: string;
   noGroupSales: string;
   sales: string;
+  saleOps: string;
+  returnOps: string;
+  voidOps: string;
+  totalOps: string;
   branch: string;
   generated: string;
   source: string;
@@ -125,10 +154,16 @@ const COPY: Record<Lang, Copy> = {
     unavailableProfit: 'الربح غير متاح لأن تكلفة الوحدات غير مسجلة. لن يفترض فوري أن التكلفة صفر.',
     topProducts: 'الأكثر مبيعًا',
     noTop: 'لا توجد منتجات صافية مباعة.',
-    byStaff: 'حسب الموظف',
-    byStation: 'حسب محطة الكاشير',
+    salesByStaff: 'صافي المبيعات حسب موظف البيع',
+    salesByStation: 'صافي المبيعات حسب محطة البيع',
+    activityByStaff: 'العمليات المنفذة حسب الموظف',
+    activityByStation: 'العمليات المنفذة حسب المحطة',
     noGroupSales: 'لا توجد مبيعات.',
     sales: 'مبيعات',
+    saleOps: 'بيع',
+    returnOps: 'مرتجع',
+    voidOps: 'إلغاء',
+    totalOps: 'الإجمالي',
     branch: 'الفرع',
     generated: 'آخر تحديث',
     source: 'المصدر: سجل الكاشير المركزي الموثوق على السيرفر',
@@ -156,10 +191,16 @@ const COPY: Record<Lang, Copy> = {
     unavailableProfit: 'قازانج بەردەست نییە چونکە تێچووی دانەکان تۆمار نەکراوە. فەوری تێچوو بە سفر دانانێت.',
     topProducts: 'زۆرترین فرۆشراو',
     noTop: 'هیچ بەرهەمێکی خاوێن نەفرۆشراوە.',
-    byStaff: 'بەپێی کارمەند',
-    byStation: 'بەپێی وێستگەی کاشێر',
+    salesByStaff: 'فرۆشتنی خاوێن بەپێی کارمەندی فرۆشیار',
+    salesByStation: 'فرۆشتنی خاوێن بەپێی وێستگەی فرۆشتن',
+    activityByStaff: 'کردارە جێبەجێکراوەکان بەپێی کارمەند',
+    activityByStation: 'کردارە جێبەجێکراوەکان بەپێی وێستگە',
     noGroupSales: 'هیچ فرۆشتنێک نییە.',
     sales: 'فرۆشتن',
+    saleOps: 'فرۆشتن',
+    returnOps: 'گەڕاندنەوە',
+    voidOps: 'هەڵوەشاندنەوە',
+    totalOps: 'کۆی گشتی',
     branch: 'لق',
     generated: 'دوایین نوێکردنەوە',
     source: 'سەرچاوە: تۆماری ناوەندی متمانەپێکراوی کاشێر لە سێرڤەر',
@@ -187,10 +228,16 @@ const COPY: Record<Lang, Copy> = {
     unavailableProfit: 'Profit is unavailable because unit cost is missing. Fawri will not assume missing cost is zero.',
     topProducts: 'Top products',
     noTop: 'No net product sales.',
-    byStaff: 'By employee',
-    byStation: 'By cashier station',
+    salesByStaff: 'Net sales by selling employee',
+    salesByStation: 'Net sales by selling station',
+    activityByStaff: 'Executed operations by employee',
+    activityByStation: 'Executed operations by station',
     noGroupSales: 'No sales.',
     sales: 'sales',
+    saleOps: 'Sales',
+    returnOps: 'Returns',
+    voidOps: 'Voids',
+    totalOps: 'Total',
     branch: 'Branch',
     generated: 'Last updated',
     source: 'Source: trusted central cashier record on the server',
@@ -221,12 +268,17 @@ function queryForRange(range: RangeKey): string {
 
 function parseResult(value: unknown): CentralReportResult {
   const raw = record(value);
+  const activity = record(raw.activity);
   return {
     generated_at: String(raw.generated_at || ''),
     sales_scanned: Number(raw.sales_scanned || 0),
     report: raw.report as Report,
     by_staff: Array.isArray(raw.by_staff) ? raw.by_staff as StaffReport[] : [],
     by_station: Array.isArray(raw.by_station) ? raw.by_station as StationReport[] : [],
+    activity: {
+      by_staff: Array.isArray(activity.by_staff) ? activity.by_staff as StaffActivity[] : [],
+      by_station: Array.isArray(activity.by_station) ? activity.by_station as StationActivity[] : [],
+    },
   };
 }
 
@@ -312,6 +364,37 @@ function GroupCard({
             <MoneyStack values={profitValues(report)} lang={lang} />
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ActivityCard({
+  name,
+  secondary,
+  activity,
+  labels,
+}: {
+  name: string;
+  secondary?: string;
+  activity: ActivityCounts;
+  labels: Copy;
+}) {
+  return (
+    <div className="rounded-xl border bg-background p-3">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="font-bold">{name}</p>
+          {secondary ? <p className="mt-0.5 text-xs text-muted-foreground">{secondary}</p> : null}
+        </div>
+        <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">
+          {labels.totalOps}: <b dir="ltr">{activity.operation_count}</b>
+        </span>
+      </div>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+        <div className="rounded-lg border bg-card px-2 py-2"><p className="text-muted-foreground">{labels.saleOps}</p><p className="mt-1 text-base font-bold" dir="ltr">{activity.sale_count}</p></div>
+        <div className="rounded-lg border bg-card px-2 py-2"><p className="text-muted-foreground">{labels.returnOps}</p><p className="mt-1 text-base font-bold" dir="ltr">{activity.return_count}</p></div>
+        <div className="rounded-lg border bg-card px-2 py-2"><p className="text-muted-foreground">{labels.voidOps}</p><p className="mt-1 text-base font-bold" dir="ltr">{activity.void_count}</p></div>
       </div>
     </div>
   );
@@ -442,7 +525,7 @@ export default function CashierCentralReportsPage() {
 
           <div className="grid gap-5 xl:grid-cols-2">
             <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
-              <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.byStaff}</h2><span className="text-sm text-muted-foreground">{result.by_staff.length}</span></div>
+              <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByStaff}</h2><span className="text-sm text-muted-foreground">{result.by_staff.length}</span></div>
               <div className="space-y-2">
                 {result.by_staff.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_staff.map(group => (
                   <GroupCard key={group.staff_id || '__legacy_staff__'} name={group.staff_name} report={group.report} lang={lang} labels={labels} />
@@ -451,7 +534,7 @@ export default function CashierCentralReportsPage() {
             </section>
 
             <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
-              <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.byStation}</h2><span className="text-sm text-muted-foreground">{result.by_station.length}</span></div>
+              <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByStation}</h2><span className="text-sm text-muted-foreground">{result.by_station.length}</span></div>
               <div className="space-y-2">
                 {result.by_station.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_station.map(group => (
                   <GroupCard
@@ -460,6 +543,30 @@ export default function CashierCentralReportsPage() {
                     secondary={group.branch_label || (group.branch_key ? `${labels.branch}: ${group.branch_key}` : undefined)}
                     report={group.report}
                     lang={lang}
+                    labels={labels}
+                  />
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-2">
+            <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+              <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStaff}</h2><span className="text-sm text-muted-foreground">{result.activity.by_staff.length}</span></div>
+              <div className="space-y-2">
+                {result.activity.by_staff.map(group => <ActivityCard key={group.staff_id} name={group.staff_name} activity={group} labels={labels} />)}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+              <div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_station.length}</span></div>
+              <div className="space-y-2">
+                {result.activity.by_station.map(group => (
+                  <ActivityCard
+                    key={group.station_id}
+                    name={group.station_name}
+                    secondary={group.branch_label || (group.branch_key ? `${labels.branch}: ${group.branch_key}` : undefined)}
+                    activity={group}
                     labels={labels}
                   />
                 ))}
