@@ -85,6 +85,22 @@ test('central UI separates sale ownership from executed return and void activity
   assert.match(ownerReport, /ActivityCard/);
 });
 
+test('central UI provides filterable detailed operations without exposing internal ids as primary labels', () => {
+  assert.match(ownerReport, /activity\.operations/);
+  assert.match(ownerReport, /operation_detail_limit/);
+  assert.match(ownerReport, /staffFilter/);
+  assert.match(ownerReport, /stationFilter/);
+  assert.match(ownerReport, /kindFilter/);
+  assert.match(ownerReport, /operationDetails/);
+  assert.match(ownerReport, /filteredOperations/);
+  assert.match(ownerReport, /item\.staff_name \|\| labels\.formerEmployee/);
+  assert.match(ownerReport, /item\.station_name \|\| labels\.formerStation/);
+  assert.match(ownerReport, /item\.shift_id/);
+  assert.match(ownerReport, /item\.occurred_at/);
+  assert.match(ownerReport, /operationMoney\(item, lang\)/);
+  assert.match(ownerReport, /shortReference\(item\.sale_id/);
+});
+
 test('central UI does not hide a return-only or void-only period', () => {
   assert.match(ownerReport, /currencies\.length > 0 \|\| activityTotal\(result\) > 0/);
   assert.doesNotMatch(ownerReport, /hasSales/);
