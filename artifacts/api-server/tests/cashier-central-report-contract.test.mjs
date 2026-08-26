@@ -6,6 +6,10 @@ const authority = await readFile(
   new URL('../src/services/postgresCashierCentralReportAuthority.ts', import.meta.url),
   'utf8',
 );
+const activityAuthority = await readFile(
+  new URL('../src/services/postgresCashierCentralActivityAuthority.ts', import.meta.url),
+  'utf8',
+);
 const routes = await readFile(
   new URL('../src/routes/cashier-staff-operations.ts', import.meta.url),
   'utf8',
@@ -23,7 +27,7 @@ function section(source, start, end) {
   return source.slice(from, to);
 }
 
-test('owner central report reads only durable cashier sales and joins operator attribution', () => {
+test('owner central report reads only durable cashier sales and joins sale attribution', () => {
   assert.match(authority, /FROM orders o/);
   assert.match(authority, /o\.source_channel = 'cashier'/);
   assert.match(authority, /LEFT JOIN cashier_operation_attribution attribution/);
@@ -65,12 +69,26 @@ test('central report response shape does not expose raw unit cost evidence', () 
   assert.match(publicCurrencyType, /gross_profit_minor\?: number/);
 });
 
-test('central report endpoint is merchant-authority only', () => {
+test('operator activity attributes sale return and void to the employee and station that executed them', () => {
+  assert.match(activityAuthority, /FROM cashier_operation_attribution attribution/);
+  assert.match(activityAuthority, /operation_kind = 'sale'/);
+  assert.match(activityAuthority, /operation_kind = 'return'/);
+  assert.match(activityAuthority, /operation_kind = 'void'/);
+  assert.match(activityAuthority, /GROUP BY attribution\.staff_id/);
+  assert.match(activityAuthority, /GROUP BY attribution\.station_id/);
+  assert.match(activityAuthority, /attribution\.occurred_at/);
+  assert.match(activityAuthority, /operation_count !==[\s\S]*sale_count \+ result\.return_count \+ result\.void_count/);
+});
+
+test('central report endpoint is merchant-authority only and includes operator activity', () => {
   assert.match(
     routes,
     /"\/cashier\/management\/report"[\s\S]{0,120}requireMerchantAuthority/,
   );
   assert.match(routes, /buildCashierCentralReportAuthoritative/);
+  assert.match(routes, /buildCashierCentralActivityAuthoritative/);
+  assert.match(routes, /Promise\.all/);
+  assert.match(routes, /res\.json\(\{ ok: true, \.\.\.report, activity \}\)/);
   assert.match(routes, /merchantId: merchantId\(res\)/);
   assert.match(routes, /from: req\.query\.from/);
   assert.match(routes, /to: req\.query\.to/);
@@ -87,4 +105,5 @@ test('central report fails closed on invalid evidence and oversized ranges', () 
   assert.match(authority, /CASHIER_REPORT_RANGE_TOO_LARGE/);
   assert.match(authority, /MAX_REPORT_SALES \+ 1/);
   assert.match(authority, /operationalPostgresAuthorityRequired\(\)/);
+  assert.match(activityAuthority, /operationalPostgresAuthorityRequired\(\)/);
 });
