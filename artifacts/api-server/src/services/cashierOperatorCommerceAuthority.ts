@@ -1,5 +1,9 @@
 import crypto from "node:crypto";
 import {
+  issueCashierCostEvidence,
+  resolveCashierCostEvidence,
+} from "./cashierCostEvidence";
+import {
   getMerchantCommerceContextAuthoritative,
 } from "./postgresMerchantRegionalAuthority";
 import { listCatalogProductsAuthoritative } from "./postgresCatalogAuthority";
@@ -179,12 +183,37 @@ function assertOperatorIdentity(
   }
 }
 
+function rawOptionalCost(value: unknown): number | undefined {
+  if (value === undefined || value === null || value === "") return undefined;
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_CATALOG_COST_INVALID",
+      "cashier catalog reporting cost is invalid",
+      503,
+    );
+  }
+  return parsed;
+}
+
 export function sanitizeCashierCatalogProduct(
   productValue: unknown,
   includeRawCost: boolean,
 ): Record<string, unknown> {
   const product = record(productValue);
-  const result: Record<string, unknown> = { ...product };
+  const productId = identifier(product.id, "product.id");
+  const merchantId = identifier(product.merchant_id, "product.merchant_id");
+  const catalogVersion = positiveInteger(product.version, "product.version");
+  const productCost = rawOptionalCost(product.cost_iqd);
+  const result: Record<string, unknown> = {
+    ...product,
+    cost_evidence: issueCashierCostEvidence({
+      merchantId,
+      productId,
+      catalogVersion,
+      unitCostMinor: productCost,
+    }),
+  };
   if (!includeRawCost) {
     delete result.cost_iqd;
     delete result.variant_costs_iqd;
@@ -192,6 +221,15 @@ export function sanitizeCashierCatalogProduct(
   if (Array.isArray(product.variants)) {
     result.variants = product.variants.map((value) => {
       const variant = { ...record(value) };
+      const variantId = identifier(variant.id, "variant.id");
+      const variantCost = rawOptionalCost(variant.cost_iqd) ?? productCost;
+      variant.cost_evidence = issueCashierCostEvidence({
+        merchantId,
+        productId,
+        variantId,
+        catalogVersion,
+        unitCostMinor: variantCost,
+      });
       if (!includeRawCost) delete variant.cost_iqd;
       return variant;
     });
@@ -221,6 +259,66 @@ export async function getCashierOperatorCatalogSnapshotAuthoritative(
     ),
     promotions,
   };
+}
+
+function prepareOperatorSaleBody(
+  context: CashierOperatorContext,
+  body: unknown,
+): Record<string, unknown> {
+  const raw = record(body);
+  if (!Array.isArray(raw.envelopes)) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_SYNC_INVALID",
+      "cashier sync envelopes are required",
+      400,
+    );
+  }
+  const envelopes = raw.envelopes.map((value) => {
+    const envelope = { ...record(value) };
+    if (envelope.entity_type !== "sale" || envelope.operation !== "append") {
+      return envelope;
+    }
+    const payload = { ...record(envelope.payload) };
+    if (!Array.isArray(payload.lines)) {
+      throw new CashierSyncError(
+        "CASHIER_OPERATOR_SYNC_INVALID",
+        "operator sale lines are required",
+        400,
+      );
+    }
+    payload.lines = payload.lines.map((value) => {
+      const line = { ...record(value) };
+      const productId = identifier(line.product_id, "line.product_id");
+      const variantId = line.variant_id
+        ? identifier(line.variant_id, "line.variant_id")
+        : undefined;
+      const catalogVersion = positiveInteger(
+        line.catalog_version,
+        "line.catalog_version",
+      );
+      const token = identifier(
+        line.cost_evidence,
+        "line.cost_evidence",
+        4096,
+      );
+      const resolved = resolveCashierCostEvidence({
+        token,
+        merchantId: context.merchant_id,
+        productId,
+        ...(variantId ? { variantId } : {}),
+        catalogVersion,
+      });
+      delete line.unit_cost_minor;
+      delete line.cost_evidence;
+      if (resolved.unit_cost_minor !== null) {
+        line.unit_cost_minor = resolved.unit_cost_minor;
+      }
+      return line;
+    });
+    envelope.payload = payload;
+    return envelope;
+  });
+  return { ...raw, envelopes };
 }
 
 async function recordAttribution(
@@ -312,9 +410,10 @@ export async function syncCashierOperatorSaleAuthoritative(input: {
 }) {
   const identity = cashierOperatorBundleIdentity(input.body, "sale");
   assertOperatorIdentity(input.context, identity);
+  const verifiedBody = prepareOperatorSaleBody(input.context, input.body);
   const result = await syncCashierSaleAuthoritative({
     merchantId: input.context.merchant_id,
-    body: input.body,
+    body: verifiedBody,
   });
   // Attribution is deliberately idempotent and repairable. If this write fails
   // after the core sale transaction commits, the client receives no success and

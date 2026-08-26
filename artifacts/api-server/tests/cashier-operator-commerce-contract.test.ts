@@ -14,6 +14,8 @@ const journalPath = new URL('../../../lib/db/drizzle/meta/_journal.json', import
 test('operator catalog projection strips raw merchant costs unless explicitly granted', () => {
   const product = {
     id: 'p1',
+    merchant_id: 'm1',
+    version: 7,
     name: 'Product',
     price_iqd: 10000,
     cost_iqd: 6000,
@@ -25,12 +27,16 @@ test('operator catalog projection strips raw merchant costs unless explicitly gr
   const restricted = sanitizeCashierCatalogProduct(product, false);
   assert.equal(Object.prototype.hasOwnProperty.call(restricted, 'cost_iqd'), false);
   assert.equal(Object.prototype.hasOwnProperty.call(restricted, 'variant_costs_iqd'), false);
+  assert.equal(typeof restricted.cost_evidence, 'string');
   const restrictedVariants = restricted.variants as Array<Record<string, unknown>>;
   assert.equal(Object.prototype.hasOwnProperty.call(restrictedVariants[0], 'cost_iqd'), false);
+  assert.equal(typeof restrictedVariants[0].cost_evidence, 'string');
+  assert.doesNotMatch(String(restricted.cost_evidence), /6000|5500/);
 
   const privileged = sanitizeCashierCatalogProduct(product, true);
   assert.equal(privileged.cost_iqd, 6000);
   assert.equal((privileged.variants as Array<Record<string, unknown>>)[0].cost_iqd, 5500);
+  assert.equal(typeof privileged.cost_evidence, 'string');
 });
 
 test('operator commerce routes bind sale return and void to distinct server permissions', async () => {
@@ -51,6 +57,16 @@ test('operator sync validates paired device identity and persists repairable att
   assert.match(authority, /station_credential_id, operator_session_id/);
   assert.match(authority, /ON CONFLICT \(merchant_id, operation_id\) DO NOTHING/);
   assert.match(authority, /client receives no success[\s\S]*retry replays the sale and repairs the missing attribution/);
+});
+
+test('operator sale ignores raw client cost and requires encrypted cost evidence per line', async () => {
+  const authority = await readFile(authorityPath, 'utf8');
+  assert.match(authority, /resolveCashierCostEvidence/);
+  assert.match(authority, /delete line\.unit_cost_minor/);
+  assert.match(authority, /line\.cost_evidence/);
+  assert.match(authority, /delete line\.cost_evidence/);
+  assert.match(authority, /verifiedBody = prepareOperatorSaleBody/);
+  assert.match(authority, /body: verifiedBody/);
 });
 
 test('return and void kind are checked before core compensation authority executes', async () => {
