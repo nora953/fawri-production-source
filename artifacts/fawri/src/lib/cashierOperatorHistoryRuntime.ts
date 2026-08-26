@@ -2,7 +2,7 @@ import {
   createCashierHistoryRuntime,
   type CashierHistoryRuntime,
   type CashierHistorySnapshot,
-} from './cashierHistoryRuntime';
+} from './cashierHistoryBaseRuntime';
 import type {
   CashierReturnSaleInput,
   CashierSaleSnapshot,
