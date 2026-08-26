@@ -72,68 +72,109 @@ export type CatalogImageUploadEditorProps = {
   hideHeading?: boolean;
 };
 
-function previewFor(image: CatalogImageDraft): string {
+function protectedPreviewRequest(image: CatalogImageDraft): string {
   const storage = image.storage_key.trim();
   if (storage) return catalogImagePreviewUrl(storage);
-  return image.url.trim();
+  const direct = image.url.trim();
+  return direct.startsWith('/api/') ? direct : '';
 }
 
 function ResilientImage({
   image,
   alt,
   className,
+  failureLabel,
   onClick,
 }: {
   image: CatalogImageDraft;
   alt: string;
   className: string;
+  failureLabel: string;
   onClick?: () => void;
 }) {
-  const direct = previewFor(image);
+  const protectedRequest = protectedPreviewRequest(image);
+  const direct = protectedRequest ? '' : image.url.trim();
   const [source, setSource] = useState(direct);
+  const [loading, setLoading] = useState(Boolean(protectedRequest));
   const [failed, setFailed] = useState(false);
   const objectUrl = useRef<string | null>(null);
 
   useEffect(() => {
-    setSource(direct);
+    let active = true;
+    if (objectUrl.current) {
+      URL.revokeObjectURL(objectUrl.current);
+      objectUrl.current = null;
+    }
     setFailed(false);
+
+    if (!protectedRequest) {
+      setSource(direct);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setSource('');
+    setLoading(true);
+    void (async () => {
+      try {
+        const response = await fetch(protectedRequest, {
+          method: 'GET',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { Accept: 'image/avif,image/webp,image/png,image/jpeg,image/*' },
+        });
+        if (!response.ok) throw new Error(`preview failed: ${response.status}`);
+        const blob = await response.blob();
+        if (!blob.type.startsWith('image/')) throw new Error('preview is not an image');
+        const nextObjectUrl = URL.createObjectURL(blob);
+        if (!active) {
+          URL.revokeObjectURL(nextObjectUrl);
+          return;
+        }
+        objectUrl.current = nextObjectUrl;
+        setSource(nextObjectUrl);
+      } catch {
+        if (active) setFailed(true);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+
     return () => {
+      active = false;
       if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
       objectUrl.current = null;
     };
-  }, [direct]);
+  }, [protectedRequest, direct]);
 
-  const recover = async () => {
-    if (!image.storage_key.trim() || failed) {
-      setFailed(true);
-      return;
-    }
-    try {
-      const response = await fetch(catalogImagePreviewUrl(image.storage_key), {
-        credentials: 'include',
-        cache: 'no-store',
-      });
-      if (!response.ok) throw new Error('preview failed');
-      const blob = await response.blob();
-      if (!blob.type.startsWith('image/')) throw new Error('preview is not an image');
-      if (objectUrl.current) URL.revokeObjectURL(objectUrl.current);
-      objectUrl.current = URL.createObjectURL(blob);
-      setSource(objectUrl.current);
-      setFailed(false);
-    } catch {
-      setFailed(true);
-    }
-  };
+  if (loading) {
+    return (
+      <div className={`${className} flex min-h-20 min-w-20 items-center justify-center bg-muted/30`} aria-label={alt}>
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!source || failed) {
     return (
-      <button type="button" onClick={onClick} className={`${className} flex items-center justify-center bg-muted/30`}>
+      <button type="button" onClick={onClick} className={`${className} flex min-h-20 min-w-20 flex-col items-center justify-center gap-1 bg-muted/30 px-2 text-center`}>
         <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
+        <span className="text-[10px] font-medium text-muted-foreground">{failureLabel}</span>
       </button>
     );
   }
 
-  return <img src={source} alt={alt} className={className} onError={() => void recover()} onClick={onClick} />;
+  return (
+    <img
+      src={source}
+      alt={alt}
+      className={className}
+      onError={() => setFailed(true)}
+      onClick={onClick}
+    />
+  );
 }
 
 export function CatalogImageUploadEditor({
@@ -169,7 +210,10 @@ export function CatalogImageUploadEditor({
     const incoming = Array.from(files);
     if (incoming.length === 0 || isUploading) return;
     const remaining = Math.max(0, maxImages - images.length);
-    if (remaining === 0) { toast.error(labels.limit); return; }
+    if (remaining === 0) {
+      toast.error(labels.limit);
+      return;
+    }
     const selected = incoming.slice(0, remaining);
     if (incoming.length > remaining) toast.error(labels.limit);
 
@@ -196,11 +240,21 @@ export function CatalogImageUploadEditor({
   };
 
   const dropHandlers = {
-    onDragEnter: (event: React.DragEvent) => { event.preventDefault(); setIsDragging(true); },
-    onDragOver: (event: React.DragEvent) => { event.preventDefault(); setIsDragging(true); },
-    onDragLeave: (event: React.DragEvent) => { event.preventDefault(); setIsDragging(false); },
+    onDragEnter: (event: React.DragEvent) => {
+      event.preventDefault();
+      setIsDragging(true);
+    },
+    onDragOver: (event: React.DragEvent) => {
+      event.preventDefault();
+      setIsDragging(true);
+    },
+    onDragLeave: (event: React.DragEvent) => {
+      event.preventDefault();
+      setIsDragging(false);
+    },
     onDrop: (event: React.DragEvent) => {
-      event.preventDefault(); setIsDragging(false);
+      event.preventDefault();
+      setIsDragging(false);
       if (event.dataTransfer.files) void handleFiles(event.dataTransfer.files);
     },
   };
@@ -208,7 +262,16 @@ export function CatalogImageUploadEditor({
 
   return (
     <section className={`${compact ? 'space-y-2 rounded-xl border bg-muted/10 p-2.5' : 'space-y-3 rounded-2xl border bg-muted/10 p-4'}`}>
-      <input ref={inputRef} type="file" accept={CATALOG_IMAGE_ACCEPT} multiple className="hidden" onChange={event => { if (event.target.files) void handleFiles(event.target.files); }} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept={CATALOG_IMAGE_ACCEPT}
+        multiple
+        className="hidden"
+        onChange={event => {
+          if (event.target.files) void handleFiles(event.target.files);
+        }}
+      />
 
       {!hideHeading && (
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -216,7 +279,14 @@ export function CatalogImageUploadEditor({
             <h3 className="text-sm font-bold">{labels.title}</h3>
             {!compact && <p className="mt-1 text-xs leading-5 text-muted-foreground">{labels.help}</p>}
           </div>
-          <Button type="button" variant="outline" size="sm" className="h-9 rounded-xl" disabled={isUploading || images.length >= maxImages} onClick={() => inputRef.current?.click()}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-9 rounded-xl"
+            disabled={isUploading || images.length >= maxImages}
+            onClick={() => inputRef.current?.click()}
+          >
             {isUploading ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Upload className="me-1 h-4 w-4" />}
             {isUploading ? labels.uploading : labels.upload}
           </Button>
@@ -224,7 +294,13 @@ export function CatalogImageUploadEditor({
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" disabled={isUploading || images.length >= maxImages} onClick={() => inputRef.current?.click()} {...dropHandlers} className={`${compact ? 'h-20 w-24 shrink-0 px-2' : 'min-h-20 min-w-[12rem] flex-1 px-4'} flex flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${isDragging ? 'border-orange-500 bg-orange-50/60' : 'border-muted-foreground/25 bg-background hover:border-orange-400/70'} disabled:cursor-not-allowed disabled:opacity-60`}>
+        <button
+          type="button"
+          disabled={isUploading || images.length >= maxImages}
+          onClick={() => inputRef.current?.click()}
+          {...dropHandlers}
+          className={`${compact ? 'h-20 w-24 shrink-0 px-2' : 'min-h-20 min-w-[12rem] flex-1 px-4'} flex flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${isDragging ? 'border-orange-500 bg-orange-50/60' : 'border-muted-foreground/25 bg-background hover:border-orange-400/70'} disabled:cursor-not-allowed disabled:opacity-60`}
+        >
           {isUploading ? <Loader2 className="mb-1 h-5 w-5 animate-spin text-orange-500" /> : <Upload className="mb-1 h-5 w-5 text-muted-foreground" />}
           <span className="text-xs font-semibold">{isUploading ? labels.uploading : labels.upload}</span>
           {!compact && <span className="mt-1 text-[11px] text-muted-foreground">{labels.formats}</span>}
@@ -232,9 +308,27 @@ export function CatalogImageUploadEditor({
 
         {images.map((image, index) => (
           <div key={image.key} className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-background">
-            <ResilientImage image={image} alt={image.alt || labels.title} className="h-full w-full cursor-zoom-in object-cover" onClick={() => setLightboxIndex(index)} />
-            {index === 0 && <span className="absolute start-1 top-1 inline-flex items-center rounded-full bg-background/95 px-1.5 py-0.5 text-[9px] font-bold shadow-sm"><Star className="me-0.5 h-2.5 w-2.5 fill-current text-orange-500" />{labels.primary}</span>}
-            <button type="button" aria-label={labels.remove} onClick={() => removeImage(index)} className="absolute end-1 bottom-1 rounded-full bg-background/95 p-1 text-destructive shadow"><Trash2 className="h-3.5 w-3.5" /></button>
+            <ResilientImage
+              image={image}
+              alt={image.alt || labels.title}
+              failureLabel={labels.previewFailed}
+              className="h-full w-full cursor-zoom-in object-cover"
+              onClick={() => setLightboxIndex(index)}
+            />
+            {index === 0 && (
+              <span className="absolute start-1 top-1 inline-flex items-center rounded-full bg-background/95 px-1.5 py-0.5 text-[9px] font-bold shadow-sm">
+                <Star className="me-0.5 h-2.5 w-2.5 fill-current text-orange-500" />
+                {labels.primary}
+              </span>
+            )}
+            <button
+              type="button"
+              aria-label={labels.remove}
+              onClick={() => removeImage(index)}
+              className="absolute end-1 bottom-1 rounded-full bg-background/95 p-1 text-destructive shadow"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
           </div>
         ))}
       </div>
@@ -243,8 +337,18 @@ export function CatalogImageUploadEditor({
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {images.map((image, index) => (
             <div key={`${image.key}-meta`} className="flex items-center gap-2 rounded-xl border bg-background p-2">
-              <Input value={image.alt} onChange={event => updateAlt(index, event.target.value)} placeholder={labels.alt} className="h-8 min-w-0 flex-1 rounded-lg text-xs" />
-              {index > 0 && <Button type="button" variant="ghost" size="sm" className="h-8 rounded-lg px-2 text-xs" onClick={() => makePrimary(index)}><Star className="me-1 h-3 w-3" />{labels.makePrimary}</Button>}
+              <Input
+                value={image.alt}
+                onChange={event => updateAlt(index, event.target.value)}
+                placeholder={labels.alt}
+                className="h-8 min-w-0 flex-1 rounded-lg text-xs"
+              />
+              {index > 0 && (
+                <Button type="button" variant="ghost" size="sm" className="h-8 rounded-lg px-2 text-xs" onClick={() => makePrimary(index)}>
+                  <Star className="me-1 h-3 w-3" />
+                  {labels.makePrimary}
+                </Button>
+              )}
             </div>
           ))}
         </div>
@@ -252,9 +356,21 @@ export function CatalogImageUploadEditor({
 
       {selectedLightbox && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4" onClick={() => setLightboxIndex(null)}>
-          <div className="relative max-h-[92vh] max-w-5xl" onClick={event => event.stopPropagation()}>
-            <button type="button" aria-label={labels.close} onClick={() => setLightboxIndex(null)} className="absolute -end-2 -top-2 z-10 rounded-full bg-background p-2 shadow-lg"><X className="h-5 w-5" /></button>
-            <ResilientImage image={selectedLightbox} alt={selectedLightbox.alt || labels.title} className="max-h-[88vh] max-w-full rounded-2xl bg-background object-contain shadow-2xl" />
+          <div className="relative flex min-h-64 min-w-64 max-h-[92vh] max-w-[94vw] items-center justify-center" onClick={event => event.stopPropagation()}>
+            <button
+              type="button"
+              aria-label={labels.close}
+              onClick={() => setLightboxIndex(null)}
+              className="absolute -end-2 -top-2 z-10 rounded-full bg-background p-2 shadow-lg"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <ResilientImage
+              image={selectedLightbox}
+              alt={selectedLightbox.alt || labels.title}
+              failureLabel={labels.previewFailed}
+              className="max-h-[88vh] max-w-[92vw] rounded-2xl bg-background object-contain shadow-2xl"
+            />
           </div>
         </div>
       )}
