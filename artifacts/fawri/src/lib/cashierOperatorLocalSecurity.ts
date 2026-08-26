@@ -4,7 +4,8 @@ import {
 } from './cashierIndexedDbAuthority';
 
 const OPERATOR_LOCAL_DATABASE = 'fawri-cashier-operator-local-v1';
-const OPERATOR_LOCAL_VERSION = 2;
+const OPERATOR_LOCAL_VERSION = 3;
+const COST_EVIDENCE_STORE = 'cost_evidence';
 const OPERATION_BINDING_STORE = 'operation_bindings';
 const CATALOG_STORE = 'catalog';
 const SALES_STORE = 'sales';
@@ -25,6 +26,16 @@ export type CashierOperationBinding = {
   shift_id: string;
   device_id: string;
   bound_at: string;
+};
+
+export type CashierCostEvidenceRecord = {
+  key: string;
+  merchant_id: string;
+  product_id: string;
+  variant_id: string;
+  catalog_version: number;
+  token: string;
+  stored_at: string;
 };
 
 export class CashierOperatorLocalSecurityError extends Error {
@@ -63,19 +74,22 @@ function openOperatorLocalDatabase(): Promise<IDBDatabase> {
     const request = indexedDB.open(OPERATOR_LOCAL_DATABASE, OPERATOR_LOCAL_VERSION);
     request.onupgradeneeded = () => {
       const database = request.result;
-      let store: IDBObjectStore;
+      if (!database.objectStoreNames.contains(COST_EVIDENCE_STORE)) {
+        database.createObjectStore(COST_EVIDENCE_STORE, { keyPath: 'key' });
+      }
+      let bindingStore: IDBObjectStore;
       if (!database.objectStoreNames.contains(OPERATION_BINDING_STORE)) {
-        store = database.createObjectStore(OPERATION_BINDING_STORE, {
+        bindingStore = database.createObjectStore(OPERATION_BINDING_STORE, {
           keyPath: 'operation_id',
         });
       } else {
-        store = request.transaction!.objectStore(OPERATION_BINDING_STORE);
+        bindingStore = request.transaction!.objectStore(OPERATION_BINDING_STORE);
       }
-      if (!store.indexNames.contains('staff_id')) {
-        store.createIndex('staff_id', 'staff_id', { unique: false });
+      if (!bindingStore.indexNames.contains('staff_id')) {
+        bindingStore.createIndex('staff_id', 'staff_id', { unique: false });
       }
-      if (!store.indexNames.contains('shift_id')) {
-        store.createIndex('shift_id', 'shift_id', { unique: false });
+      if (!bindingStore.indexNames.contains('shift_id')) {
+        bindingStore.createIndex('shift_id', 'shift_id', { unique: false });
       }
     };
     request.onsuccess = () => resolve(request.result);
@@ -91,8 +105,6 @@ function openExistingCashierDatabase(
     const request = indexedDB.open(databaseName);
     let created = false;
     request.onupgradeneeded = () => {
-      // Opening without a version upgrades only when the database did not exist.
-      // Delete that accidental empty database instead of treating it as cashier data.
       created = true;
     };
     request.onsuccess = () => {
@@ -192,6 +204,56 @@ export async function scrubCashierRawCostsForIdentity(
     }
 
     await completion;
+  } finally {
+    database.close();
+  }
+}
+
+export function cashierCostEvidenceKey(input: {
+  merchantId: string;
+  productId: string;
+  variantId?: string;
+  catalogVersion: number;
+}): string {
+  return `${input.merchantId}\u0000${input.productId}\u0000${input.variantId || ''}\u0000${input.catalogVersion}`;
+}
+
+/**
+ * Evidence is append/upsert by catalog version, never wholesale-replaced. An
+ * offline sale may therefore keep using the exact evidence issued for the
+ * catalog version it sold even after later catalog refreshes arrive.
+ */
+export async function upsertCashierCostEvidence(
+  records: CashierCostEvidenceRecord[],
+): Promise<void> {
+  if (records.length === 0) return;
+  const database = await openOperatorLocalDatabase();
+  try {
+    const transaction = database.transaction(COST_EVIDENCE_STORE, 'readwrite');
+    const completion = transactionDone(transaction);
+    const store = transaction.objectStore(COST_EVIDENCE_STORE);
+    for (const record of records) store.put(record);
+    await completion;
+  } finally {
+    database.close();
+  }
+}
+
+export async function getCashierCostEvidence(input: {
+  merchantId: string;
+  productId: string;
+  variantId?: string;
+  catalogVersion: number;
+}): Promise<string | null> {
+  const database = await openOperatorLocalDatabase();
+  try {
+    const transaction = database.transaction(COST_EVIDENCE_STORE, 'readonly');
+    const record = (await requestResult(
+      transaction
+        .objectStore(COST_EVIDENCE_STORE)
+        .get(cashierCostEvidenceKey(input)),
+    )) as CashierCostEvidenceRecord | undefined;
+    return record?.token || null;
   } finally {
     database.close();
   }
