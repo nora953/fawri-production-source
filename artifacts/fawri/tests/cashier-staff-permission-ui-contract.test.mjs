@@ -49,7 +49,23 @@ test('successful staff creation resets name PIN role and permissions to cashier 
   assert.match(management, /setPin\(''\)/);
   assert.match(management, /setRole\('cashier'\)/);
   assert.match(management, /setPermissions\(recommended\('cashier'\)\)/);
-  assert.match(management, /resetAddStaff\(\); await load\(\)/);
+  assert.match(management, /resetAddStaff\(\)[\s\S]*setAddStaffOpen\(false\)[\s\S]*await load\(\)/);
+});
+
+test('cashier staff creation and editing are modal so forms cannot starve the staff lists', () => {
+  assert.match(management, /function Modal/);
+  assert.match(management, /addStaffOpen/);
+  assert.match(management, /addStationOpen/);
+  assert.match(management, /editingMember \?/);
+  assert.match(management, /max-h-\[calc\(100dvh-2rem\)\]/);
+});
+
+test('cashier staff identity and PIN fields resist browser credential autofill', () => {
+  assert.match(management, /name="cashier-staff-display-name-new"[\s\S]{0,180}autoComplete="off"/);
+  assert.match(management, /name="cashier-staff-pin-new"[\s\S]{0,180}autoComplete="new-password"/);
+  assert.match(management, /name="cashier-staff-pin-edit"[\s\S]{0,180}autoComplete="new-password"/);
+  assert.match(management, /data-1p-ignore="true"/);
+  assert.match(management, /data-lpignore="true"/);
 });
 
 test('pairing modal keeps long code LTR and provides explicit clipboard copy feedback', () => {
@@ -60,10 +76,10 @@ test('pairing modal keeps long code LTR and provides explicit clipboard copy fee
   assert.match(management, /overflow-x-auto[\s\S]*font-mono[\s\S]*dir="ltr"/);
 });
 
-test('desktop staff management keeps page fixed and scrolls growing staff and station lists internally', () => {
-  assert.match(management, /xl:h-\[calc\(100dvh-7rem\)\]/);
+test('desktop staff management keeps the dashboard page fixed and scrolls only growing lists', () => {
+  assert.match(management, /xl:h-\[calc\(100dvh-4rem\)\]/);
   assert.match(management, /xl:overflow-hidden/);
-  assert.match(management, /xl:overflow-y-auto/);
+  assert.match(management, /min-h-0 flex-1 space-y-2 overflow-y-auto/);
 });
 
 test('known merchant session errors are localized instead of displaying raw API English', () => {
