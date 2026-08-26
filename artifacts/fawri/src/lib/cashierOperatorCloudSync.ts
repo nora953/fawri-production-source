@@ -1,8 +1,3 @@
-import type { CatalogProduct } from './catalogUiApi';
-import type {
-  CatalogCommerceContext,
-  CatalogPromotion,
-} from './catalogPromotionUiApi';
 import {
   IndexedDbCashierAuthority,
   type IndexedDbCashierConfig,
@@ -19,32 +14,21 @@ import {
   cashierCostEvidenceKey,
   getCashierCostEvidence,
   getCashierOperationBinding,
-  getCashierPendingEnvelopeCountForIdentity,
-  replaceCashierCostEvidence,
+  upsertCashierCostEvidence,
   type CashierCostEvidenceRecord,
-  type CashierOperationBinding,
 } from './cashierOperatorLocalSecurity';
 import {
+  cashierOperatorCan,
   cashierOperatorHeaders,
   getCashierOperatorSession,
   getOrCreateCashierDeviceIdentity,
   writeCashierDeviceIdentity,
-  type CashierDeviceIdentity,
   type CashierOperatorSession,
-} from './cashierOperatorSessionClient';
+} from './cashierOperatorSessionRuntime';
 
 const CATALOG_STORE = 'catalog';
 const PROMOTION_STORE = 'promotions';
 const MAX_PENDING_ENVELOPES = 1000;
-
-type OperatorCatalogVariant = CatalogProduct['variants'][number] & {
-  cost_evidence?: string;
-};
-
-type OperatorCatalogProduct = Omit<CatalogProduct, 'variants'> & {
-  cost_evidence?: string;
-  variants: OperatorCatalogVariant[];
-};
 
 export type CashierOperatorCatalogSyncResult = {
   merchant_id: string;
@@ -52,7 +36,7 @@ export type CashierOperatorCatalogSyncResult = {
   product_count: number;
   local_item_count: number;
   promotion_count: number;
-  preserve_local_inventory: false;
+  preserve_local_inventory: boolean;
   synced_at: string;
 };
 
@@ -77,6 +61,38 @@ export class CashierOperatorCloudSyncError extends Error {
   }
 }
 
+function record(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function safeNonNegative(value: unknown, field: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_CATALOG_INVALID',
+      `${field} must be a non-negative safe integer`,
+    );
+  }
+  return parsed;
+}
+
+function positiveInteger(value: unknown, field: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_CATALOG_INVALID',
+      `${field} must be a positive integer`,
+    );
+  }
+  return parsed;
+}
+
+function text(value: unknown): string {
+  return String(value ?? '').normalize('NFKC').trim();
+}
+
 function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     request.onsuccess = () => resolve(request.result);
@@ -92,146 +108,203 @@ function transactionDone(transaction: IDBTransaction): Promise<void> {
   });
 }
 
-async function responsePayload(
-  response: Response,
-): Promise<Record<string, unknown>> {
-  const payload = await response.json().catch(() => null);
-  return payload && typeof payload === 'object' && !Array.isArray(payload)
-    ? (payload as Record<string, unknown>)
-    : {};
-}
-
-function apiError(
-  response: Response,
-  payload: Record<string, unknown>,
-  fallbackCode: string,
-  fallbackMessage: string,
-): CashierOperatorCloudSyncError {
-  return new CashierOperatorCloudSyncError(
-    String(payload.code || fallbackCode),
-    String(payload.error || fallbackMessage),
-    response.status,
-  );
-}
-
-function assertSafeMinor(value: unknown, label: string): number {
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed) || parsed < 0) {
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_CATALOG_INVALID',
-      `${label} must be a non-negative safe integer`,
-      409,
-    );
-  }
-  return parsed;
-}
-
 function catalogKey(item: { product_id: string; variant_id?: string }): string {
   return `${item.product_id}\u0000${item.variant_id || ''}`;
 }
 
-function localItemsFromProduct(
-  product: OperatorCatalogProduct,
-  context: CatalogCommerceContext,
-): { items: CashierCatalogLookup[]; evidence: CashierCostEvidenceRecord[] } {
-  if (product.status !== 'available' && product.status !== 'low_stock') {
-    return { items: [], evidence: [] };
-  }
-  if (!Number.isSafeInteger(product.version) || product.version <= 0) {
+function openExistingCashierDatabase(databaseName: string): Promise<IDBDatabase> {
+  return new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open(databaseName);
+    request.onsuccess = () => {
+      const database = request.result;
+      if (
+        !database.objectStoreNames.contains(CATALOG_STORE) ||
+        !database.objectStoreNames.contains(PROMOTION_STORE)
+      ) {
+        database.close();
+        reject(
+          new CashierOperatorCloudSyncError(
+            'CASHIER_LOCAL_SCHEMA_MISSING',
+            'Local cashier schema is not initialized',
+          ),
+        );
+        return;
+      }
+      resolve(database);
+    };
+    request.onerror = () =>
+      reject(request.error || new Error('Could not open local cashier database'));
+  });
+}
+
+function localPromotion(
+  rawValue: unknown,
+  localMerchantId: string,
+  currencyCode: string,
+): CashierPromotionRule {
+  const raw = record(rawValue);
+  const promotionCurrency = text(raw.currency_code).toUpperCase();
+  if (promotionCurrency !== currencyCode) {
     throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_CATALOG_INVALID',
-      'Catalog product version is invalid',
-      409,
+      'CASHIER_OPERATOR_PROMOTION_CURRENCY_MISMATCH',
+      'Promotion currency does not match merchant commerce context',
     );
   }
-  const base = {
-    product_id: product.id,
-    item_type: product.item_type,
-    name: product.name,
-    track_inventory: product.track_inventory,
-    currency_code: context.currency_code,
-    currency_fraction_digits: context.currency_fraction_digits,
-    catalog_version: product.version,
-  } as const;
-  const storedAt = new Date().toISOString();
+  const scope = raw.scope === 'catalog_item' ? 'catalog_item' : 'order';
+  const effect = text(raw.effect) as CashierPromotionRule['effect'];
+  const rule: CashierPromotionRule = {
+    id: text(raw.id),
+    merchant_id: localMerchantId,
+    name: text(raw.name),
+    scope,
+    effect,
+    ...(raw.product_id ? { product_id: text(raw.product_id) } : {}),
+    ...(raw.variant_id ? { variant_id: text(raw.variant_id) } : {}),
+    ...(raw.percentage_bps !== undefined
+      ? { percentage_bps: Number(raw.percentage_bps) }
+      : {}),
+    ...(raw.amount_minor !== undefined
+      ? { amount_minor: Number(raw.amount_minor) }
+      : {}),
+    currency_code: promotionCurrency,
+    ...(raw.minimum_subtotal_minor !== undefined
+      ? { minimum_subtotal_minor: Number(raw.minimum_subtotal_minor) }
+      : {}),
+    starts_at: text(raw.starts_at),
+    ends_at: text(raw.ends_at),
+    schedule_timezone: text(raw.schedule_timezone),
+    priority: Number(raw.priority || 0),
+    enabled: raw.enabled === true,
+    version: positiveInteger(raw.version, 'promotion version'),
+  };
+  cashierPromotionLifecycleAt(rule, new Date());
+  return rule;
+}
 
-  if (Array.isArray(product.variants) && product.variants.length > 0) {
+function mapOperatorProduct(input: {
+  productValue: unknown;
+  merchantId: string;
+  currencyCode: string;
+  fractionDigits: number;
+  syncedAt: string;
+}): {
+  items: CashierCatalogLookup[];
+  evidence: CashierCostEvidenceRecord[];
+} {
+  const product = record(input.productValue);
+  const productId = text(product.id);
+  const productMerchantId = text(product.merchant_id);
+  if (!productId || productMerchantId !== input.merchantId) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_CATALOG_TENANT_MISMATCH',
+      'Catalog product belongs to another merchant',
+    );
+  }
+  const status = text(product.status);
+  if (status !== 'available' && status !== 'low_stock') {
+    return { items: [], evidence: [] };
+  }
+  const version = positiveInteger(product.version, 'catalog version');
+  const itemType = product.item_type === 'service' ? 'service' : 'product';
+  const trackInventory = itemType === 'product' && product.track_inventory !== false;
+  const base = {
+    product_id: productId,
+    item_type: itemType,
+    name: text(product.name),
+    track_inventory: trackInventory,
+    currency_code: input.currencyCode,
+    currency_fraction_digits: input.fractionDigits,
+    catalog_version: version,
+  } as const;
+  const productEvidence = text(product.cost_evidence);
+  if (!productEvidence) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_COST_EVIDENCE_MISSING',
+      'Operator catalog is missing opaque cost evidence',
+    );
+  }
+
+  const variants = Array.isArray(product.variants) ? product.variants : [];
+  if (variants.length > 0) {
     const items: CashierCatalogLookup[] = [];
     const evidence: CashierCostEvidenceRecord[] = [];
-    for (const variant of product.variants) {
-      const token = String(variant.cost_evidence || '').trim();
-      if (!token) {
+    for (const value of variants) {
+      const variant = record(value);
+      const variantId = text(variant.id);
+      const token = text(variant.cost_evidence);
+      if (!variantId || !token) {
         throw new CashierOperatorCloudSyncError(
-          'CASHIER_COST_EVIDENCE_MISSING',
-          'Catalog variant is missing protected cost evidence',
-          409,
+          'CASHIER_OPERATOR_COST_EVIDENCE_MISSING',
+          'Operator variant catalog is missing opaque cost evidence',
         );
       }
       items.push({
         ...base,
-        variant_id: variant.id,
-        variant_name: variant.name || undefined,
-        sku: variant.sku || product.sku || undefined,
-        barcode: variant.barcode || undefined,
-        stock_quantity: product.track_inventory
-          ? assertSafeMinor(variant.stock_quantity, 'variant stock')
-          : undefined,
-        base_unit_price_minor: assertSafeMinor(
+        variant_id: variantId,
+        variant_name: text(variant.name) || undefined,
+        sku: text(variant.sku || product.sku) || undefined,
+        barcode: text(variant.barcode) || undefined,
+        ...(trackInventory
+          ? {
+              stock_quantity: safeNonNegative(
+                variant.stock_quantity,
+                'variant stock',
+              ),
+            }
+          : {}),
+        base_unit_price_minor: safeNonNegative(
           variant.price_iqd ?? product.price_iqd,
           'variant price',
         ),
       });
       evidence.push({
         key: cashierCostEvidenceKey({
-          merchantId: product.merchant_id,
-          productId: product.id,
-          variantId: variant.id,
-          catalogVersion: product.version,
+          merchantId: input.merchantId,
+          productId,
+          variantId,
+          catalogVersion: version,
         }),
-        merchant_id: product.merchant_id,
-        product_id: product.id,
-        variant_id: variant.id,
-        catalog_version: product.version,
+        merchant_id: input.merchantId,
+        product_id: productId,
+        variant_id: variantId,
+        catalog_version: version,
         token,
-        stored_at: storedAt,
+        stored_at: input.syncedAt,
       });
     }
     return { items, evidence };
   }
 
-  const token = String(product.cost_evidence || '').trim();
-  if (!token) {
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_COST_EVIDENCE_MISSING',
-      'Catalog product is missing protected cost evidence',
-      409,
-    );
-  }
   return {
     items: [
       {
         ...base,
-        sku: product.sku || undefined,
-        barcode: product.barcode || undefined,
-        stock_quantity: product.track_inventory
-          ? assertSafeMinor(product.stock_quantity, 'product stock')
-          : undefined,
-        base_unit_price_minor: assertSafeMinor(product.price_iqd, 'product price'),
+        sku: text(product.sku) || undefined,
+        barcode: text(product.barcode) || undefined,
+        ...(trackInventory
+          ? {
+              stock_quantity: safeNonNegative(
+                product.stock_quantity,
+                'product stock',
+              ),
+            }
+          : {}),
+        base_unit_price_minor: safeNonNegative(product.price_iqd, 'product price'),
       },
     ],
     evidence: [
       {
         key: cashierCostEvidenceKey({
-          merchantId: product.merchant_id,
-          productId: product.id,
-          catalogVersion: product.version,
+          merchantId: input.merchantId,
+          productId,
+          catalogVersion: version,
         }),
-        merchant_id: product.merchant_id,
-        product_id: product.id,
+        merchant_id: input.merchantId,
+        product_id: productId,
         variant_id: '',
-        catalog_version: product.version,
-        token,
-        stored_at: storedAt,
+        catalog_version: version,
+        token: productEvidence,
+        stored_at: input.syncedAt,
       },
     ],
   };
@@ -241,17 +314,16 @@ function assertUniqueLookupValues(items: CashierCatalogLookup[]): void {
   for (const field of ['sku', 'barcode'] as const) {
     const seen = new Map<string, string>();
     for (const item of items) {
-      const value = String(item[field] || '').trim();
+      const value = text(item[field]);
       if (!value) continue;
-      const prior = seen.get(value);
       const key = catalogKey(item);
+      const prior = seen.get(value);
       if (prior && prior !== key) {
         throw new CashierOperatorCloudSyncError(
           field === 'sku'
             ? 'CASHIER_OPERATOR_SKU_AMBIGUOUS'
             : 'CASHIER_OPERATOR_BARCODE_AMBIGUOUS',
-          `Cloud catalog contains duplicate ${field}`,
-          409,
+          `Operator catalog contains duplicate ${field}`,
         );
       }
       seen.set(value, key);
@@ -259,113 +331,15 @@ function assertUniqueLookupValues(items: CashierCatalogLookup[]): void {
   }
 }
 
-function localPromotion(
-  promotion: CatalogPromotion,
-  localMerchantId: string,
-  currencyCode: string,
-): CashierPromotionRule {
-  if (promotion.currency_code !== currencyCode) {
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_PROMOTION_CURRENCY_MISMATCH',
-      'Promotion currency does not match merchant commerce context',
-      409,
-    );
-  }
-  const rule: CashierPromotionRule = {
-    id: promotion.id,
-    merchant_id: localMerchantId,
-    name: promotion.name,
-    scope: promotion.scope,
-    effect: promotion.effect,
-    ...(promotion.product_id ? { product_id: promotion.product_id } : {}),
-    ...(promotion.variant_id ? { variant_id: promotion.variant_id } : {}),
-    ...(promotion.percentage_bps !== undefined
-      ? { percentage_bps: promotion.percentage_bps }
-      : {}),
-    ...(promotion.amount_minor !== undefined
-      ? { amount_minor: promotion.amount_minor }
-      : {}),
-    currency_code: promotion.currency_code,
-    ...(promotion.minimum_subtotal_minor !== undefined
-      ? { minimum_subtotal_minor: promotion.minimum_subtotal_minor }
-      : {}),
-    starts_at: promotion.starts_at,
-    ends_at: promotion.ends_at,
-    schedule_timezone: promotion.schedule_timezone,
-    priority: promotion.priority,
-    enabled: promotion.enabled,
-    version: promotion.version,
-  };
-  cashierPromotionLifecycleAt(rule, new Date());
-  return rule;
-}
-
-function openExistingCashierDatabase(databaseName: string): Promise<IDBDatabase> {
-  if (typeof indexedDB === 'undefined') {
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_INDEXEDDB_UNAVAILABLE',
-      'IndexedDB is unavailable on this device',
-    );
-  }
-  return new Promise<IDBDatabase>((resolve, reject) => {
-    const request = indexedDB.open(databaseName);
-    let created = false;
-    request.onupgradeneeded = () => {
-      created = true;
-    };
-    request.onsuccess = () => {
-      if (created) {
-        request.result.close();
-        void indexedDB.deleteDatabase(databaseName);
-        reject(
-          new CashierOperatorCloudSyncError(
-            'CASHIER_LOCAL_SCHEMA_MISSING',
-            'Local cashier schema is not initialized',
-            409,
-          ),
-        );
-        return;
-      }
-      resolve(request.result);
-    };
-    request.onerror = () => reject(request.error || new Error('Could not open cashier database'));
-  });
-}
-
-async function createLocalAuthority(
-  identity: CashierDeviceIdentity,
-): Promise<IndexedDbCashierAuthority> {
-  const config: IndexedDbCashierConfig = {
-    localMerchantId: identity.local_merchant_id,
-    ...(identity.cloud_merchant_id
-      ? { cloudMerchantId: identity.cloud_merchant_id }
-      : {}),
-    deviceId: identity.device_id,
-    databaseName: `fawri-cashier-${identity.local_merchant_id}-v1`,
-  };
-  const authority = new IndexedDbCashierAuthority(config);
-  await authority.getCatalogItem('__fawri_operator_cloud_schema_probe__');
-  return authority;
-}
-
 async function replaceLocalCommerceSnapshot(input: {
   databaseName: string;
   items: CashierCatalogLookup[];
   promotions: CashierPromotionRule[];
+  preserveLocalInventory: boolean;
   syncedAt: string;
 }): Promise<void> {
   const database = await openExistingCashierDatabase(input.databaseName);
   try {
-    if (
-      !database.objectStoreNames.contains(CATALOG_STORE) ||
-      !database.objectStoreNames.contains(PROMOTION_STORE)
-    ) {
-      throw new CashierOperatorCloudSyncError(
-        'CASHIER_LOCAL_SCHEMA_MISSING',
-        'Local cashier schema is not initialized',
-        409,
-      );
-    }
     const transaction = database.transaction(
       [CATALOG_STORE, PROMOTION_STORE],
       'readwrite',
@@ -373,12 +347,21 @@ async function replaceLocalCommerceSnapshot(input: {
     const completion = transactionDone(transaction);
     const catalog = transaction.objectStore(CATALOG_STORE);
     const promotions = transaction.objectStore(PROMOTION_STORE);
+    const existing = (await requestResult(catalog.getAll())) as Array<
+      CashierCatalogLookup & { key: string; local_updated_at: string }
+    >;
+    const existingByKey = new Map(existing.map((item) => [item.key, item]));
     catalog.clear();
     promotions.clear();
     for (const item of input.items) {
+      const key = catalogKey(item);
+      const prior = existingByKey.get(key);
       catalog.put({
         ...item,
-        key: catalogKey(item),
+        ...(input.preserveLocalInventory && prior?.track_inventory && item.track_inventory
+          ? { stock_quantity: prior.stock_quantity }
+          : {}),
+        key,
         local_updated_at: input.syncedAt,
       });
     }
@@ -391,15 +374,9 @@ async function replaceLocalCommerceSnapshot(input: {
   }
 }
 
-export async function syncCashierCatalogAsOperator(): Promise<CashierOperatorCatalogSyncResult> {
-  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_CATALOG_OFFLINE',
-      'Internet connection is required to synchronize the cashier catalog',
-      0,
-    );
-  }
-  const session = await getCashierOperatorSession();
+function operatorSessionRequired(
+  session: CashierOperatorSession | null,
+): CashierOperatorSession {
   if (!session) {
     throw new CashierOperatorCloudSyncError(
       'CASHIER_OPERATOR_LOGIN_REQUIRED',
@@ -407,406 +384,354 @@ export async function syncCashierCatalogAsOperator(): Promise<CashierOperatorCat
       401,
     );
   }
-  const identity = await getOrCreateCashierDeviceIdentity();
-  const pending = await getCashierPendingEnvelopeCountForIdentity(identity);
-  if (pending > 0) {
-    // Never rotate protected cost evidence while an offline sale still depends
-    // on the exact catalog version/evidence that existed at commit time.
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_PENDING_SYNC',
-      'Pending cashier operations must synchronize before catalog refresh',
-      409,
-    );
-  }
+  return session;
+}
 
-  const response = await fetch('/api/cashier/operator/catalog-snapshot', {
-    headers: cashierOperatorHeaders(session),
-  });
-  const payload = await responsePayload(response);
-  if (!response.ok || payload.ok !== true) {
-    throw apiError(
-      response,
-      payload,
-      'CASHIER_OPERATOR_CATALOG_FAILED',
-      'Could not synchronize cashier catalog',
+export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOperatorCatalogSyncResult> {
+  if (typeof indexedDB === 'undefined') {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_INDEXEDDB_UNAVAILABLE',
+      'IndexedDB is unavailable on this device',
     );
   }
-  const merchantId = String(payload.merchant_id || '').trim();
-  if (merchantId !== session.context.merchant_id) {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_TENANT_MISMATCH',
-      'Cashier catalog belongs to another merchant',
+      'CASHIER_OPERATOR_CLOUD_OFFLINE',
+      'Internet connection is required for catalog synchronization',
+      0,
+    );
+  }
+  const session = operatorSessionRequired(await getCashierOperatorSession());
+  if (!cashierOperatorCan(session, 'sale.create')) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_PERMISSION_REQUIRED',
+      'Sale permission is required to synchronize the cashier catalog',
       403,
     );
   }
-  const context = payload.context as CatalogCommerceContext;
-  const products = Array.isArray(payload.products)
-    ? (payload.products as OperatorCatalogProduct[])
-    : [];
-  const promotions = Array.isArray(payload.promotions)
-    ? (payload.promotions as CatalogPromotion[])
-    : [];
-  if (!context?.currency_code || !Number.isInteger(context.currency_fraction_digits)) {
+  const response = await fetch('/api/cashier/operator/catalog-snapshot', {
+    headers: cashierOperatorHeaders(session),
+  });
+  const payload = record(await response.json().catch(() => null));
+  if (!response.ok || payload.ok !== true) {
     throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_CONTEXT_INVALID',
-      'Cashier commerce context is invalid',
+      text(payload.code) || 'CASHIER_OPERATOR_CATALOG_FAILED',
+      text(payload.error) || 'Could not load cashier operator catalog',
+      response.status,
+    );
+  }
+  if (
+    text(payload.merchant_id) !== session.context.merchant_id ||
+    text(payload.station_id) !== session.context.station_id ||
+    text(payload.staff_id) !== session.context.staff_id ||
+    text(payload.shift_id) !== session.context.shift_id
+  ) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_CONTEXT_MISMATCH',
+      'Operator catalog response does not match the active shift',
       409,
     );
   }
-  if (context.currency_code !== 'IQD' || context.currency_fraction_digits !== 0) {
+  const commerceContext = record(payload.context);
+  const currencyCode = text(commerceContext.currency_code).toUpperCase();
+  const fractionDigits = Number(commerceContext.currency_fraction_digits);
+  if (
+    !/^[A-Z]{3}$/.test(currencyCode) ||
+    !Number.isInteger(fractionDigits) ||
+    fractionDigits < 0 ||
+    fractionDigits > 6
+  ) {
     throw new CashierOperatorCloudSyncError(
-      'CASHIER_CLOUD_CURRENCY_NOT_CUT_OVER',
-      'Cashier cloud sync currently supports IQD catalog prices only',
-      409,
-    );
-  }
-  if (identity.cloud_merchant_id && identity.cloud_merchant_id !== merchantId) {
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_DEVICE_MERCHANT_MISMATCH',
-      'This cashier device is bound to another merchant',
-      409,
+      'CASHIER_OPERATOR_MONEY_CONTEXT_INVALID',
+      'Cashier money context is invalid',
     );
   }
 
-  const projections = products.map((product) => {
-    if (product.merchant_id !== merchantId) {
-      throw new CashierOperatorCloudSyncError(
-        'CASHIER_OPERATOR_TENANT_MISMATCH',
-        'Cashier catalog contains cross-merchant data',
-        403,
-      );
-    }
-    return localItemsFromProduct(product, context);
-  });
-  const items = projections.flatMap((item) => item.items);
-  const evidence = projections.flatMap((item) => item.evidence);
-  assertUniqueLookupValues(items);
-  const localPromotions = promotions.map((promotion) => {
-    if (promotion.merchant_id !== merchantId) {
-      throw new CashierOperatorCloudSyncError(
-        'CASHIER_OPERATOR_TENANT_MISMATCH',
-        'Cashier promotions contain cross-merchant data',
-        403,
-      );
-    }
-    return localPromotion(
-      promotion,
-      identity.local_merchant_id,
-      context.currency_code,
+  const identity = await getOrCreateCashierDeviceIdentity();
+  if (
+    identity.cloud_merchant_id !== session.context.merchant_id ||
+    identity.device_id !== session.context.device_id
+  ) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_DEVICE_MISMATCH',
+      'Cashier local identity does not match the paired operator station',
+      409,
     );
-  });
-
-  // Ensure the local cashier schema exists before opening it without a version.
-  const authority = await createLocalAuthority(identity);
+  }
+  const authority = new IndexedDbCashierAuthority({
+    localMerchantId: identity.local_merchant_id,
+    cloudMerchantId: identity.cloud_merchant_id,
+    deviceId: identity.device_id,
+    databaseName: `fawri-cashier-${identity.local_merchant_id}-v1`,
+  } satisfies IndexedDbCashierConfig);
+  await authority.getCatalogItem('__fawri_operator_catalog_schema_probe__');
+  const pending = await authority.listPendingSync(1);
   await authority.close();
+  const preserveLocalInventory = pending.length > 0;
 
   const syncedAt = new Date().toISOString();
+  const items: CashierCatalogLookup[] = [];
+  const evidence: CashierCostEvidenceRecord[] = [];
+  const productValues = Array.isArray(payload.products) ? payload.products : [];
+  for (const productValue of productValues) {
+    const mapped = mapOperatorProduct({
+      productValue,
+      merchantId: session.context.merchant_id,
+      currencyCode,
+      fractionDigits,
+      syncedAt,
+    });
+    items.push(...mapped.items);
+    evidence.push(...mapped.evidence);
+  }
+  assertUniqueLookupValues(items);
+  const promotionValues = Array.isArray(payload.promotions) ? payload.promotions : [];
+  const localPromotions = promotionValues.map((promotion) =>
+    localPromotion(promotion, identity.local_merchant_id, currencyCode),
+  );
+  await upsertCashierCostEvidence(evidence);
   await replaceLocalCommerceSnapshot({
     databaseName: `fawri-cashier-${identity.local_merchant_id}-v1`,
     items,
     promotions: localPromotions,
+    preserveLocalInventory,
     syncedAt,
   });
-  await replaceCashierCostEvidence(evidence);
   await writeCashierDeviceIdentity({
     ...identity,
-    cloud_merchant_id: merchantId,
-    cloud_bound_at: identity.cloud_bound_at || syncedAt,
     last_catalog_sync_at: syncedAt,
   });
+
   return {
-    merchant_id: merchantId,
-    currency_code: context.currency_code,
-    product_count: products.length,
+    merchant_id: session.context.merchant_id,
+    currency_code: currencyCode,
+    product_count: productValues.length,
     local_item_count: items.length,
     promotion_count: localPromotions.length,
-    preserve_local_inventory: false,
+    preserve_local_inventory: preserveLocalInventory,
     synced_at: syncedAt,
   };
 }
 
-function groupPending(
+function groupByOperation(
   envelopes: CashierSyncEnvelope[],
-): Array<{
-  operationId: string;
-  deviceSequence: number;
-  envelopes: CashierSyncEnvelope[];
-}> {
-  const grouped = new Map<string, CashierSyncEnvelope[]>();
+): Map<string, CashierSyncEnvelope[]> {
+  const groups = new Map<string, CashierSyncEnvelope[]>();
   for (const envelope of envelopes) {
-    const operationId = String(envelope.operation_id || '').trim();
-    if (!operationId) continue;
-    const current = grouped.get(operationId) || [];
-    current.push(envelope);
-    grouped.set(operationId, current);
+    const list = groups.get(envelope.operation_id) || [];
+    list.push(envelope);
+    groups.set(envelope.operation_id, list);
   }
-  return [...grouped.entries()]
-    .map(([operationId, items]) => ({
-      operationId,
-      deviceSequence: Math.min(
-        ...items.map((item) => Number(item.device_sequence)),
-      ),
-      envelopes: items,
-    }))
-    .sort(
-      (left, right) =>
-        left.deviceSequence - right.deviceSequence ||
-        left.operationId.localeCompare(right.operationId),
-    );
+  return groups;
 }
 
-function classifyOperation(
+function operationKind(
   envelopes: CashierSyncEnvelope[],
-): CashierOperationBinding['operation_kind'] | null {
-  const sale = envelopes.filter(
-    (item) => item.entity_type === 'sale' && item.operation === 'append',
-  );
-  const returns = envelopes.filter(
-    (item) => item.entity_type === 'return' && item.operation === 'append',
-  );
-  const voids = envelopes.filter(
-    (item) => item.entity_type === 'sale' && item.operation === 'void',
-  );
-  if (sale.length === 1 && returns.length === 0 && voids.length === 0) {
-    return 'sale';
-  }
-  if (sale.length === 0 && returns.length === 1 && voids.length === 0) {
+): 'sale' | 'return' | 'void' | 'skip' {
+  if (
+    envelopes.some(
+      (item) => item.entity_type === 'return' && item.operation === 'append',
+    )
+  ) {
     return 'return';
   }
-  if (sale.length === 0 && returns.length === 0 && voids.length === 1) {
+  if (
+    envelopes.some(
+      (item) => item.entity_type === 'sale' && item.operation === 'void',
+    )
+  ) {
     return 'void';
   }
-  return null;
-}
-
-function assertOperationBinding(
-  session: CashierOperatorSession,
-  binding: CashierOperationBinding | null,
-  kind: CashierOperationBinding['operation_kind'],
-): void {
   if (
-    !binding ||
-    binding.operation_kind !== kind ||
-    binding.merchant_id !== session.context.merchant_id ||
-    binding.station_id !== session.context.station_id ||
-    binding.staff_id !== session.context.staff_id ||
-    binding.shift_id !== session.context.shift_id ||
-    binding.device_id !== session.context.device_id
+    envelopes.some(
+      (item) => item.entity_type === 'sale' && item.operation === 'append',
+    )
   ) {
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATION_BINDING_REQUIRED',
-      'Pending cashier operation belongs to another or unavailable operator shift',
-      409,
-    );
+    return 'sale';
   }
+  return 'skip';
 }
 
-async function enrichSaleCostEvidence(input: {
-  merchantId: string;
-  envelopes: CashierSyncEnvelope[];
-}): Promise<CashierSyncEnvelope[]> {
-  return Promise.all(
-    input.envelopes.map(async (envelope) => {
-      if (envelope.entity_type !== 'sale' || envelope.operation !== 'append') {
-        return envelope;
-      }
-      const payload =
-        envelope.payload &&
-        typeof envelope.payload === 'object' &&
-        !Array.isArray(envelope.payload)
-          ? { ...(envelope.payload as Record<string, unknown>) }
-          : {};
-      if (!Array.isArray(payload.lines)) {
+function commonBody(
+  session: CashierOperatorSession,
+  envelopes: CashierSyncEnvelope[],
+): Record<string, unknown> {
+  const first = envelopes[0];
+  return {
+    schema_version: first.schema_version,
+    cloud_merchant_id: session.context.merchant_id,
+    device_id: session.context.device_id,
+    operation_id: first.operation_id,
+    device_sequence: first.device_sequence,
+    envelopes,
+  };
+}
+
+async function saleEnvelopesWithEvidence(
+  session: CashierOperatorSession,
+  envelopes: CashierSyncEnvelope[],
+): Promise<CashierSyncEnvelope[]> {
+  const result: CashierSyncEnvelope[] = [];
+  for (const envelope of envelopes) {
+    if (envelope.entity_type !== 'sale' || envelope.operation !== 'append') {
+      result.push(envelope);
+      continue;
+    }
+    const payload = record(envelope.payload);
+    if (!Array.isArray(payload.lines)) {
+      throw new CashierOperatorCloudSyncError(
+        'CASHIER_OPERATOR_SALE_EVIDENCE_INVALID',
+        'Cashier sale lines are missing',
+      );
+    }
+    const lines: Array<Record<string, unknown>> = [];
+    for (const value of payload.lines) {
+      const line = { ...record(value) } as Record<string, unknown>;
+      const productId = text(line.product_id);
+      const variantId = text(line.variant_id) || undefined;
+      const catalogVersion = positiveInteger(
+        line.catalog_version,
+        'sale catalog version',
+      );
+      const token = await getCashierCostEvidence({
+        merchantId: session.context.merchant_id,
+        productId,
+        ...(variantId ? { variantId } : {}),
+        catalogVersion,
+      });
+      if (!token) {
         throw new CashierOperatorCloudSyncError(
-          'CASHIER_COST_EVIDENCE_MISSING',
-          'Cashier sale lines are missing protected cost evidence identity',
+          'CASHIER_OPERATOR_COST_EVIDENCE_MISSING',
+          'Opaque cost evidence for this sale version is missing',
           409,
         );
       }
-      payload.lines = await Promise.all(
-        payload.lines.map(async (value) => {
-          const line =
-            value && typeof value === 'object' && !Array.isArray(value)
-              ? { ...(value as Record<string, unknown>) }
-              : {};
-          const productId = String(line.product_id || '').trim();
-          const variantId = String(line.variant_id || '').trim() || undefined;
-          const catalogVersion = Number(line.catalog_version);
-          if (
-            !productId ||
-            !Number.isSafeInteger(catalogVersion) ||
-            catalogVersion <= 0
-          ) {
-            throw new CashierOperatorCloudSyncError(
-              'CASHIER_COST_EVIDENCE_MISSING',
-              'Cashier sale line catalog identity is incomplete',
-              409,
-            );
-          }
-          const token = await getCashierCostEvidence({
-            merchantId: input.merchantId,
-            productId,
-            ...(variantId ? { variantId } : {}),
-            catalogVersion,
-          });
-          if (!token) {
-            throw new CashierOperatorCloudSyncError(
-              'CASHIER_COST_EVIDENCE_MISSING',
-              'Protected cashier cost evidence is unavailable for this sale line',
-              409,
-            );
-          }
-          delete line.unit_cost_minor;
-          line.cost_evidence = token;
-          return line;
-        }),
-      );
-      return { ...envelope, payload } as CashierSyncEnvelope;
-    }),
-  );
-}
-
-async function uploadOperatorOperation(input: {
-  session: CashierOperatorSession;
-  kind: CashierOperationBinding['operation_kind'];
-  identity: CashierDeviceIdentity;
-  operationId: string;
-  deviceSequence: number;
-  envelopes: CashierSyncEnvelope[];
-}): Promise<{ replayed: boolean }> {
-  const endpoint =
-    input.kind === 'sale'
-      ? '/api/cashier/operator/sync/sale'
-      : input.kind === 'return'
-        ? '/api/cashier/operator/sync/return'
-        : '/api/cashier/operator/sync/void';
-  const envelopes =
-    input.kind === 'sale'
-      ? await enrichSaleCostEvidence({
-          merchantId: input.session.context.merchant_id,
-          envelopes: input.envelopes,
-        })
-      : input.envelopes;
-
-  let response: Response;
-  try {
-    response = await fetch(endpoint, {
-      method: 'POST',
-      headers: cashierOperatorHeaders(input.session),
-      body: JSON.stringify({
-        cloud_merchant_id: input.session.context.merchant_id,
-        local_merchant_id: input.identity.local_merchant_id,
-        device_id: input.identity.device_id,
-        device_sequence: input.deviceSequence,
-        operation_id: input.operationId,
-        envelopes,
-      }),
+      delete line.unit_cost_minor;
+      line.cost_evidence = token;
+      lines.push(line);
+    }
+    result.push({
+      ...envelope,
+      payload: { ...payload, lines },
     });
-  } catch {
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_SYNC_NETWORK_FAILED',
-      'Could not reach Fawri cashier sync service',
-      0,
-    );
   }
-  const payload = await responsePayload(response);
-  if (!response.ok || payload.ok !== true) {
-    throw apiError(
-      response,
-      payload,
-      'CASHIER_OPERATOR_SYNC_FAILED',
-      'Cashier operator sync failed',
-    );
-  }
-  if (
-    String(payload.operation_id || '') !== input.operationId ||
-    Number(payload.device_sequence) !== input.deviceSequence ||
-    !String(payload.order_id || '').trim() ||
-    (input.kind !== 'sale' && payload.compensation_kind !== input.kind)
-  ) {
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_ACK_INVALID',
-      'Fawri returned an invalid cashier sync acknowledgement',
-      response.status,
-    );
-  }
-  const expectedEntityIds = new Set(envelopes.map((item) => item.entity_id));
-  const accepted = new Set(
-    Array.isArray(payload.accepted_entity_ids)
-      ? payload.accepted_entity_ids.map((value) => String(value))
-      : [],
-  );
-  if (
-    expectedEntityIds.size !== accepted.size ||
-    [...expectedEntityIds].some((id) => !accepted.has(id))
-  ) {
-    throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_ACK_INVALID',
-      'Fawri did not acknowledge the complete cashier operation',
-      response.status,
-    );
-  }
-  return { replayed: payload.replayed === true };
+  return result;
 }
 
-export async function syncCashierOutboxAsOperator(): Promise<CashierOperatorOutboxSyncResult> {
+async function postOperation(
+  session: CashierOperatorSession,
+  kind: 'sale' | 'return' | 'void',
+  envelopes: CashierSyncEnvelope[],
+): Promise<{ replayed: boolean; operation_id: string }> {
+  const prepared =
+    kind === 'sale'
+      ? await saleEnvelopesWithEvidence(session, envelopes)
+      : envelopes;
+  const response = await fetch(`/api/cashier/operator/sync/${kind}`, {
+    method: 'POST',
+    headers: cashierOperatorHeaders(session),
+    body: JSON.stringify(commonBody(session, prepared)),
+  });
+  const payload = record(await response.json().catch(() => null));
+  if (!response.ok || payload.ok !== true) {
+    throw new CashierOperatorCloudSyncError(
+      text(payload.code) || 'CASHIER_OPERATOR_OUTBOX_UPLOAD_FAILED',
+      text(payload.error) || 'Cashier operation could not be synchronized',
+      response.status,
+    );
+  }
+  return {
+    replayed: payload.replayed === true,
+    operation_id: text(payload.operation_id),
+  };
+}
+
+export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperatorOutboxSyncResult> {
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_SYNC_OFFLINE',
-      'Internet connection is required to upload pending cashier operations',
+      'CASHIER_OPERATOR_OUTBOX_OFFLINE',
+      'Internet connection is required to synchronize pending cashier operations',
       0,
     );
   }
-  const session = await getCashierOperatorSession();
-  if (!session) {
+  const session = operatorSessionRequired(await getCashierOperatorSession());
+  const identity = await getOrCreateCashierDeviceIdentity();
+  if (
+    identity.cloud_merchant_id !== session.context.merchant_id ||
+    identity.device_id !== session.context.device_id
+  ) {
     throw new CashierOperatorCloudSyncError(
-      'CASHIER_OPERATOR_LOGIN_REQUIRED',
-      'Cashier operator login is required',
-      401,
+      'CASHIER_OPERATOR_DEVICE_MISMATCH',
+      'Cashier local identity does not match the active operator session',
+      409,
     );
   }
-  const identity = await getOrCreateCashierDeviceIdentity();
-  const authority = await createLocalAuthority(identity);
+  const authority = new IndexedDbCashierAuthority({
+    localMerchantId: identity.local_merchant_id,
+    cloudMerchantId: identity.cloud_merchant_id,
+    deviceId: identity.device_id,
+    databaseName: `fawri-cashier-${identity.local_merchant_id}-v1`,
+  });
   try {
     const pending = await authority.listPendingSync(MAX_PENDING_ENVELOPES);
-    const operations = groupPending(pending);
-    let uploadedOperations = 0;
-    let replayedOperations = 0;
-    let skippedOperations = 0;
-    let acknowledgedOperations = 0;
+    const groups = groupByOperation(pending);
+    let uploaded = 0;
+    let replayed = 0;
+    let skipped = 0;
+    let acknowledged = 0;
 
-    for (const operation of operations) {
-      const kind = classifyOperation(operation.envelopes);
-      if (!kind) {
-        skippedOperations += 1;
+    for (const [operationId, envelopes] of groups) {
+      const kind = operationKind(envelopes);
+      if (kind === 'skip') {
+        skipped += 1;
         continue;
       }
-      const binding = await getCashierOperationBinding(operation.operationId);
-      assertOperationBinding(session, binding, kind);
-      const result = await uploadOperatorOperation({
-        session,
-        kind,
-        identity,
-        operationId: operation.operationId,
-        deviceSequence: operation.deviceSequence,
-        envelopes: operation.envelopes,
-      });
-      if (result.replayed) replayedOperations += 1;
-      else uploadedOperations += 1;
-      // Local outbox is acknowledged only after complete server acceptance or a
-      // proven idempotent replay. Ambiguous network failures keep evidence local.
-      await authority.acknowledgeSynced([operation.operationId]);
-      acknowledgedOperations += 1;
+      const binding = await getCashierOperationBinding(operationId);
+      if (!binding) {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_OPERATION_BINDING_MISSING',
+          'Pending cashier operation has no operator binding',
+          409,
+        );
+      }
+      const bindingMatches =
+        binding.operation_kind === kind &&
+        binding.merchant_id === session.context.merchant_id &&
+        binding.station_id === session.context.station_id &&
+        binding.staff_id === session.context.staff_id &&
+        binding.shift_id === session.context.shift_id &&
+        binding.device_id === session.context.device_id;
+      if (!bindingMatches) {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT',
+          'Pending cashier operation belongs to another operator or shift',
+          409,
+        );
+      }
+      const uploadedResult = await postOperation(session, kind, envelopes);
+      if (!uploadedResult.operation_id || uploadedResult.operation_id !== operationId) {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_ACK_INVALID',
+          'Cashier sync acknowledgement does not match the pending operation',
+          409,
+        );
+      }
+      await authority.acknowledgeSynced([operationId]);
+      acknowledged += 1;
+      if (uploadedResult.replayed) replayed += 1;
+      else uploaded += 1;
     }
 
-    const pendingAfter = await authority.listPendingSync(MAX_PENDING_ENVELOPES);
+    const pendingAfter = (
+      await authority.listPendingSync(MAX_PENDING_ENVELOPES)
+    ).length;
     return {
       pending_before: pending.length,
-      uploaded_operations: uploadedOperations,
-      replayed_operations: replayedOperations,
-      skipped_operations: skippedOperations,
-      acknowledged_operations: acknowledgedOperations,
-      pending_after: pendingAfter.length,
+      uploaded_operations: uploaded,
+      replayed_operations: replayed,
+      skipped_operations: skipped,
+      acknowledged_operations: acknowledged,
+      pending_after: pendingAfter,
     };
   } finally {
     await authority.close().catch(() => undefined);
