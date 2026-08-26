@@ -12,6 +12,10 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import {
+  clearCatalogCreateRecoveryDraft,
+  saveCatalogCreateRecoveryDraft,
+} from '@/lib/catalogEditorRecovery';
 import { catalogEditorFormFingerprint, catalogEditorHasUnsavedChanges } from '@/lib/catalogEditorSession';
 import type { CatalogProductFormState } from '@/lib/catalogProductEditor';
 import type { Lang } from '@/lib/types';
@@ -64,6 +68,12 @@ function focusableElements(root: HTMLElement | null): HTMLElement[] {
   )).filter(element => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true');
 }
 
+function isCreateTitle(lang: Lang, title: string): boolean {
+  if (lang === 'ar') return title.trim().startsWith('إضافة');
+  if (lang === 'ku') return title.trim().startsWith('زیادکردنی');
+  return title.trim().toLocaleLowerCase('en-US').startsWith('add ');
+}
+
 export function CatalogEditorShell({
   lang,
   form,
@@ -80,8 +90,10 @@ export function CatalogEditorShell({
   const labels = copy[lang] || copy.en;
   const shellRef = useRef<HTMLDivElement | null>(null);
   const initialFingerprint = useRef(catalogEditorFormFingerprint(form)).current;
+  const previousSaving = useRef(saving);
   const [discardOpen, setDiscardOpen] = useState(false);
   const dirty = catalogEditorHasUnsavedChanges(initialFingerprint, form);
+  const createMode = isCreateTitle(lang, title);
 
   const requestClose = () => {
     if (saving) return;
@@ -89,13 +101,39 @@ export function CatalogEditorShell({
       setDiscardOpen(true);
       return;
     }
+    if (createMode) clearCatalogCreateRecoveryDraft();
     onClose();
   };
 
   const confirmDiscard = () => {
     setDiscardOpen(false);
+    if (createMode) clearCatalogCreateRecoveryDraft();
     (onDiscard || onClose)();
   };
+
+  useEffect(() => {
+    if (!createMode || !dirty || saving) return;
+    saveCatalogCreateRecoveryDraft(form);
+  }, [createMode, dirty, form, saving]);
+
+  useEffect(() => {
+    if (!createMode) {
+      previousSaving.current = saving;
+      return;
+    }
+    const wasSaving = previousSaving.current;
+    previousSaving.current = saving;
+    if (!wasSaving && saving) {
+      // A real save attempt has passed client validation. Clear the recovery
+      // copy so a successful save cannot reopen a stale draft later.
+      clearCatalogCreateRecoveryDraft();
+      return;
+    }
+    if (wasSaving && !saving && dirty) {
+      // The editor stayed mounted, so the save failed. Restore the recovery copy.
+      saveCatalogCreateRecoveryDraft(form);
+    }
+  }, [createMode, dirty, form, saving]);
 
   useEffect(() => {
     if (typeof document === 'undefined') return undefined;
