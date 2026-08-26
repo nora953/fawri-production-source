@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BadgePercent, Package } from 'lucide-react';
 
-import CommerceCatalogPage from './CommerceCatalogPage';
+import CommerceCatalogPage from './CommerceCatalogSimplifiedPage';
 import CatalogPromotionsPage from './CatalogPromotionsPage';
 import './dashboardMerchantPolish.css';
 import './catalogEditorFullscreen.css';
