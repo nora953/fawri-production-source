@@ -18,6 +18,7 @@ const cashierMain = fs.readFileSync(new URL('../src/cashierMain.tsx', import.met
 const cashierCopy = fs.readFileSync(new URL('../src/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
 const i18n = fs.readFileSync(new URL('../src/lib/i18n.tsx', import.meta.url), 'utf8');
 const merchantCommerceUx = fs.readFileSync(new URL('../src/styles/merchantCommerceUxFixes.css', import.meta.url), 'utf8');
+const catalogEditorFullscreen = fs.readFileSync(new URL('../src/pages/dashboard/catalogEditorFullscreen.css', import.meta.url), 'utf8');
 
 test('automatic cashier catalog refresh stays silent and preserves unchanged catalog state', () => {
   assert.match(pos, /refreshCatalog\(runtime, query, false\)/);
@@ -67,7 +68,7 @@ test('cashier dashboard refresh refetches catalog and orders in place without di
   assert.match(orders, /if \(!pendingOrderId\) void loadOrders\(true\)/);
 });
 
-test('shipping measurement hint belongs to the active workspace and spans above aligned fields', () => {
+test('shipping measurement hint belongs to the active workspace and desktop fields stay visually balanced', () => {
   assert.match(productsRoute, /ProductsWorkspacePage/);
   assert.match(productsWorkspace, /CommerceCatalogPage/);
   assert.match(catalog, /CatalogProductDetailsEditor/);
@@ -86,6 +87,11 @@ test('shipping measurement hint belongs to the active workspace and spans above 
   assert.ok(fieldsGridIndex > hintIndex, 'measurement fields must start after the full-width hint');
   assert.ok(weightIndex > fieldsGridIndex, 'weight must render inside the aligned fields grid');
   assert.ok(dimensionsIndex > fieldsGridIndex, 'dimensions must render inside the aligned fields grid');
+  assert.match(
+    catalogEditorFullscreen,
+    /details\.group[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)\s+minmax\(0,\s*3fr\)/,
+    'desktop measurement layout must give weight one share and dimensions three equal shares',
+  );
   assert.doesNotMatch(merchantCommerceUx, /input\[placeholder=/, 'measurement geometry must not depend on placeholder CSS selectors');
 });
 
