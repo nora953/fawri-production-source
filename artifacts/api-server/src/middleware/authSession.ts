@@ -320,18 +320,15 @@ async function authenticate(
       expectedKind,
       ...(deviceId ? { deviceId } : {}),
     });
-    if (!rotated) {
-      clearAuthSessionCookie(res, expectedKind);
-      sendAuthError(
-        res,
-        401,
-        "SESSION_ROTATION_FAILED",
-        "session rotation failed closed",
-      );
-      return;
+    if (rotated) {
+      setAuthSessionCookie(res, expectedKind, rotated);
+      context.session = rotated.session;
     }
-    setAuthSessionCookie(res, expectedKind, rotated);
-    context.session = rotated.session;
+    // A concurrent request can rotate the same already-validated session first.
+    // In that race rotateSession() returns null because the old row is now marked
+    // as rotated. Do not clear the browser cookie or turn this already-authenticated
+    // request into a 401: the winning response carries the replacement cookie.
+    // Genuine invalid/expired sessions are still rejected by validateSession above.
   }
 
   next();
