@@ -52,6 +52,23 @@ test('central report accounts sale return and void in the period each operation 
   assert.match(authority, /average_ticket_minor:[\s\S]*gross_revenue_minor \/ value\.sale_count/);
 });
 
+test('central SQL selects offline sales by immutable operation time, never server receipt time', () => {
+  assert.match(
+    authority,
+    /o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' >= \$2::text/,
+  );
+  assert.match(
+    authority,
+    /o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' < \$3::text/,
+  );
+  assert.match(
+    authority,
+    /ORDER BY o\.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' DESC/,
+  );
+  const reportQuery = authority.slice(authority.indexOf('`SELECT o.id,'));
+  assert.doesNotMatch(reportQuery, /o\.created_at\s*(?:>=|<)/);
+});
+
 test('central report selects compensation-only periods from durable order metadata', () => {
   assert.match(authority, /jsonb_array_elements/);
   assert.match(authority, /cashier_sync/);
