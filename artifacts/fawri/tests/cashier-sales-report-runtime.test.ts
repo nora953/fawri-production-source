@@ -59,6 +59,42 @@ function sale(input: {
   };
 }
 
+function addReturn(input: {
+  original: CashierSaleSnapshot;
+  occurredAt: string;
+  quantity: number;
+  operationId?: string;
+}) {
+  const line = input.original.lines[0];
+  const refund = line.effective_unit_price_minor * input.quantity;
+  input.original.returns = [
+    ...(input.original.returns || []),
+    {
+      return_id: `return:${input.operationId || 'return-op'}`,
+      operation_id: input.operationId || 'return-op',
+      sale_id: input.original.sale_id,
+      local_merchant_id: input.original.local_merchant_id,
+      cloud_merchant_id: input.original.cloud_merchant_id,
+      device_id: input.original.device_id,
+      device_sequence: 2,
+      currency_code: input.original.currency_code,
+      currency_fraction_digits: input.original.currency_fraction_digits,
+      lines: [
+        {
+          original_line_id: line.line_id,
+          product_id: line.product_id,
+          ...(line.variant_id ? { variant_id: line.variant_id } : {}),
+          quantity: input.quantity,
+          effective_unit_price_minor: line.effective_unit_price_minor,
+          refund_minor: refund,
+        },
+      ],
+      refund_total_minor: refund,
+      occurred_at: input.occurredAt,
+    },
+  ];
+}
+
 test('sales report derives revenue, units and profit from immutable sale evidence', () => {
   const report = buildCashierSalesReport([
     sale({
@@ -115,30 +151,12 @@ test('partial return reduces net revenue, units and profit at original sale valu
       },
     ],
   });
-  original.returns = [
-    {
-      return_id: 'return-1',
-      operation_id: 'return-op-1',
-      sale_id: original.sale_id,
-      local_merchant_id: original.local_merchant_id,
-      cloud_merchant_id: original.cloud_merchant_id,
-      device_id: original.device_id,
-      device_sequence: 2,
-      currency_code: 'IQD',
-      currency_fraction_digits: 0,
-      lines: [
-        {
-          original_line_id: 'line-returnable',
-          product_id: 'shirt',
-          quantity: 1,
-          effective_unit_price_minor: 15_000,
-          refund_minor: 15_000,
-        },
-      ],
-      refund_total_minor: 15_000,
-      occurred_at: '2026-08-25T10:15:00.000Z',
-    },
-  ];
+  addReturn({
+    original,
+    occurredAt: '2026-08-25T10:15:00.000Z',
+    quantity: 1,
+    operationId: 'return-op-1',
+  });
 
   const iq = buildCashierSalesReport([original]).by_currency[0];
   assert.equal(iq.return_count, 1);
@@ -149,6 +167,7 @@ test('partial return reduces net revenue, units and profit at original sale valu
   assert.equal(iq.returned_units, 1);
   assert.equal(iq.net_units, 1);
   assert.equal(iq.gross_profit_minor, 6_000);
+  assert.equal(iq.average_ticket_minor, 30_000);
   assert.equal(iq.top_products[0].net_units, 1);
   assert.equal(iq.top_products[0].net_revenue_minor, 15_000);
 });
@@ -190,8 +209,91 @@ test('voided sale is retained as evidence but contributes zero net revenue and u
   assert.equal(iq.sold_units, 1);
   assert.equal(iq.returned_units, 1);
   assert.equal(iq.net_units, 0);
+  assert.equal(iq.average_ticket_minor, 40_000);
   assert.equal(iq.gross_profit_minor, 0);
   assert.equal(iq.top_products.length, 0);
+});
+
+test('return-only period uses return operation time and does not invent a sale operation', () => {
+  const original = sale({
+    id: 'older-sale',
+    occurredAt: '2026-08-25T10:00:00.000Z',
+    lines: [
+      {
+        lineId: 'older-line',
+        productId: 'older-product',
+        productName: 'Older product',
+        quantity: 2,
+        unitPrice: 5_000,
+        unitCost: 3_000,
+      },
+    ],
+  });
+  addReturn({
+    original,
+    occurredAt: '2026-08-26T09:00:00.000Z',
+    quantity: 1,
+  });
+
+  const report = buildCashierSalesReport([original], {
+    from: '2026-08-26T00:00:00.000Z',
+    to: '2026-08-27T00:00:00.000Z',
+  });
+  assert.equal(report.sale_count, 0);
+  assert.equal(report.by_currency.length, 1);
+  const iq = report.by_currency[0];
+  assert.equal(iq.sale_count, 0);
+  assert.equal(iq.return_count, 1);
+  assert.equal(iq.gross_revenue_minor, 0);
+  assert.equal(iq.refunds_minor, 5_000);
+  assert.equal(iq.net_revenue_minor, -5_000);
+  assert.equal(iq.sold_units, 0);
+  assert.equal(iq.returned_units, 1);
+  assert.equal(iq.net_units, -1);
+  assert.equal(iq.average_ticket_minor, 0);
+  assert.equal(iq.gross_profit_minor, -2_000);
+});
+
+test('void-only period uses void operation time and reverses profit in that period', () => {
+  const original = sale({
+    id: 'older-void-sale',
+    occurredAt: '2026-08-25T11:00:00.000Z',
+    lines: [
+      {
+        lineId: 'older-void-line',
+        productId: 'older-void-product',
+        productName: 'Older void product',
+        quantity: 1,
+        unitPrice: 10_000,
+        unitCost: 6_000,
+      },
+    ],
+  });
+  original.status = 'voided';
+  original.void = {
+    operation_id: 'void-next-day',
+    sale_id: original.sale_id,
+    device_id: original.device_id,
+    device_sequence: 2,
+    currency_code: 'IQD',
+    currency_fraction_digits: 0,
+    refund_total_minor: 10_000,
+    occurred_at: '2026-08-26T11:00:00.000Z',
+  };
+
+  const report = buildCashierSalesReport([original], {
+    from: '2026-08-26T00:00:00.000Z',
+    to: '2026-08-27T00:00:00.000Z',
+  });
+  assert.equal(report.sale_count, 0);
+  const iq = report.by_currency[0];
+  assert.equal(iq.voided_sale_count, 1);
+  assert.equal(iq.active_sale_count, 0);
+  assert.equal(iq.gross_revenue_minor, 0);
+  assert.equal(iq.refunds_minor, 10_000);
+  assert.equal(iq.net_revenue_minor, -10_000);
+  assert.equal(iq.net_units, -1);
+  assert.equal(iq.gross_profit_minor, -4_000);
 });
 
 test('reports never merge currencies', () => {
@@ -288,7 +390,7 @@ test('profit is partial or unavailable when sale-time cost evidence is missing',
   assert.equal(unavailable.cost_unknown_net_units, 1);
 });
 
-test('date range is [from, to) and excludes sales outside the requested period', () => {
+test('date range is [from, to) and excludes operations outside the requested period', () => {
   const sales = [
     sale({
       id: 'before',
@@ -345,13 +447,46 @@ test('corrupt over-return evidence fails closed instead of producing negative re
           product_id: 'p',
           quantity: 2,
           effective_unit_price_minor: 10,
-          refund_minor: 10,
+          refund_minor: 20,
         },
       ],
-      refund_total_minor: 10,
+      refund_total_minor: 20,
       occurred_at: '2026-08-25T14:05:00.000Z',
     },
   ];
+
+  assert.throws(
+    () => buildCashierSalesReport([corrupt]),
+    /CASHIER_REPORT_RETURN_EXCEEDS_SALE/,
+  );
+});
+
+test('cumulative returns across multiple operations cannot exceed sold quantity', () => {
+  const corrupt = sale({
+    id: 'cumulative-corrupt',
+    occurredAt: '2026-08-25T15:00:00.000Z',
+    lines: [
+      {
+        lineId: 'cumulative-line',
+        productId: 'cumulative-product',
+        productName: 'Cumulative',
+        quantity: 2,
+        unitPrice: 10,
+      },
+    ],
+  });
+  addReturn({
+    original: corrupt,
+    occurredAt: '2026-08-25T15:05:00.000Z',
+    quantity: 2,
+    operationId: 'return-first',
+  });
+  addReturn({
+    original: corrupt,
+    occurredAt: '2026-08-25T15:10:00.000Z',
+    quantity: 1,
+    operationId: 'return-second',
+  });
 
   assert.throws(
     () => buildCashierSalesReport([corrupt]),
