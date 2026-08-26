@@ -37,7 +37,7 @@ const COPY: Record<Lang, {
   localSource: string;
 }> = {
   ar: {
-    title: 'تقارير المبيعات والأرباح',
+    title: 'تقارير المبيعات',
     subtitle: 'تقارير مبنية على عمليات الكاشير الفعلية والمرتجعات والإلغاءات.',
     back: 'العودة للكاشير',
     history: 'سجل المبيعات',
@@ -59,11 +59,11 @@ const COPY: Record<Lang, {
     sold: 'قطعة',
     revenue: 'صافي المبيعات',
     partialProfit: 'الربح الظاهر جزئي لأن تكلفة بعض القطع غير مسجلة.',
-    unavailableProfit: 'أدخل تكلفة المنتجات لعرض الربح. لن يفترض فوري أن التكلفة صفر.',
+    unavailableProfit: 'بيانات الربح غير متاحة لهذا النطاق.',
     localSource: 'المصدر: سجل الكاشير المحلي الموثوق',
   },
   ku: {
-    title: 'ڕاپۆرتی فرۆشتن و قازانج',
+    title: 'ڕاپۆرتی فرۆشتن',
     subtitle: 'ڕاپۆرتەکان لە فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوەی ڕاستەقینەی کاشێر دروست دەبن.',
     back: 'گەڕانەوە بۆ کاشێر',
     history: 'تۆماری فرۆشتن',
@@ -85,11 +85,11 @@ const COPY: Record<Lang, {
     sold: 'دانە',
     revenue: 'فرۆشتنی خاوێن',
     partialProfit: 'قازانجی پیشاندراو بەشێکییە چونکە تێچووی هەندێک دانە تۆمار نەکراوە.',
-    unavailableProfit: 'تێچووی بەرهەمەکان داخڵ بکە بۆ پیشاندانی قازانج. فەوری تێچوو بە سفر دانانێت.',
+    unavailableProfit: 'زانیاری قازانج بۆ ئەم مەودایە بەردەست نییە.',
     localSource: 'سەرچاوە: تۆماری متمانەپێکراوی کاشێری ناوخۆیی',
   },
   en: {
-    title: 'Sales & Profit Reports',
+    title: 'Sales Reports',
     subtitle: 'Reports derived from actual cashier sales, returns, and voids.',
     back: 'Back to cashier',
     history: 'Sales history',
@@ -111,7 +111,7 @@ const COPY: Record<Lang, {
     sold: 'units',
     revenue: 'Net sales',
     partialProfit: 'Shown profit is partial because cost is missing for some units.',
-    unavailableProfit: 'Enter product costs to show profit. Fawri will not assume missing cost is zero.',
+    unavailableProfit: 'Profit data is unavailable for this scope.',
     localSource: 'Source: trusted local cashier sale history',
   },
 };
@@ -203,14 +203,7 @@ export default function CashierReportsPage() {
 
         <div className="mb-4 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
           {ranges.map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => setRange(key)}
-              className={`rounded-xl px-4 py-2 text-sm font-bold transition ${range === key ? 'bg-orange-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
-            >
-              {label}
-            </button>
+            <button key={key} type="button" onClick={() => setRange(key)} className={`rounded-xl px-4 py-2 text-sm font-bold transition ${range === key ? 'bg-orange-500 text-white' : 'text-slate-600 hover:bg-slate-50'}`}>{label}</button>
           ))}
         </div>
 
@@ -225,31 +218,27 @@ export default function CashierReportsPage() {
           <div className="space-y-5">
             {result.report.by_currency.map(currency => {
               const money = (value: number) => formatMerchantMoneyMinor(value, currency.currency_code, currency.currency_fraction_digits, lang);
-              const profit = currency.profit_status === 'unavailable'
-                ? null
-                : currency.gross_profit_minor ?? 0;
+              const profit = currency.profit_status === 'unavailable' ? null : currency.gross_profit_minor ?? 0;
               return (
                 <section key={`${currency.currency_code}:${currency.currency_fraction_digits}`} className="space-y-4">
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+                  <div className={`grid gap-3 sm:grid-cols-2 ${result.can_view_profit ? 'xl:grid-cols-6' : 'xl:grid-cols-5'}`}>
                     <Metric title={labels.netSales} value={money(currency.net_revenue_minor)} />
-                    <Metric title={labels.profit} value={profit === null ? '—' : money(profit)} />
+                    {result.can_view_profit ? <Metric title={labels.profit} value={profit === null ? '—' : money(profit)} /> : null}
                     <Metric title={labels.operations} value={String(currency.active_sale_count)} />
                     <Metric title={labels.units} value={String(currency.net_units)} />
                     <Metric title={labels.refunds} value={money(currency.refunds_minor)} />
                     <Metric title={labels.average} value={money(currency.average_ticket_minor)} />
                   </div>
 
-                  {currency.profit_status === 'partial' ? (
+                  {result.can_view_profit && currency.profit_status === 'partial' ? (
                     <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900">{labels.partialProfit}</div>
                   ) : null}
-                  {currency.profit_status === 'unavailable' ? (
+                  {result.can_view_profit && currency.profit_status === 'unavailable' ? (
                     <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600">{labels.unavailableProfit}</div>
                   ) : null}
 
                   <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-                    <div className="border-b border-slate-100 px-4 py-3">
-                      <h2 className="font-bold">{labels.topProducts}</h2>
-                    </div>
+                    <div className="border-b border-slate-100 px-4 py-3"><h2 className="font-bold">{labels.topProducts}</h2></div>
                     {currency.top_products.length === 0 ? (
                       <p className="p-5 text-sm text-slate-500">{labels.noTop}</p>
                     ) : (
