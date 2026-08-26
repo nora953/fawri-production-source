@@ -3,10 +3,10 @@ import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
 import {
-  createCashierReportsRuntime,
-  type CashierReportRuntimeResult,
-  type CashierReportsRuntime,
-} from '@/lib/cashierReportsRuntime';
+  createCashierOperatorReportsRuntime,
+  type CashierOperatorReportRuntimeResult,
+  type CashierOperatorReportsRuntime,
+} from '@/lib/cashierOperatorReportsRuntime';
 
 type RangeKey = 'today' | '7d' | '30d' | 'all';
 
@@ -133,16 +133,16 @@ function rangeOptions(key: RangeKey) {
 export default function CashierReportsPage() {
   const { lang, dir } = useI18n();
   const labels = COPY[lang] || COPY.en;
-  const [runtime, setRuntime] = useState<CashierReportsRuntime | null>(null);
+  const [runtime, setRuntime] = useState<CashierOperatorReportsRuntime | null>(null);
   const [range, setRange] = useState<RangeKey>('today');
-  const [result, setResult] = useState<CashierReportRuntimeResult | null>(null);
+  const [result, setResult] = useState<CashierOperatorReportRuntimeResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     let stopped = false;
-    let active: CashierReportsRuntime | null = null;
-    void createCashierReportsRuntime()
+    let active: CashierOperatorReportsRuntime | null = null;
+    void createCashierOperatorReportsRuntime()
       .then(created => {
         active = created;
         if (!stopped) setRuntime(created);
