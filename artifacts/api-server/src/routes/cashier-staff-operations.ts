@@ -23,6 +23,7 @@ import {
   updateCashierStaffAuthoritative,
   updateCashierStationAuthoritative,
 } from "../services/postgresCashierStaffAuthority";
+import { buildCashierCentralReportAuthoritative } from "../services/postgresCashierCentralReportAuthority";
 
 const router = Router();
 
@@ -65,6 +66,24 @@ function requireMerchantAuthority(
 function merchantId(res: Response): string {
   return getMerchantIdFromSecureSession(res);
 }
+
+router.get(
+  "/cashier/management/report",
+  requireMerchantAuthority,
+  async (req: Request, res: Response) => {
+    try {
+      const report = await buildCashierCentralReportAuthoritative({
+        merchantId: merchantId(res),
+        from: req.query.from,
+        to: req.query.to,
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, ...report });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
 
 router.get(
   "/cashier/management/staff",
