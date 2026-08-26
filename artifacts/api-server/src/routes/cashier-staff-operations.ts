@@ -68,6 +68,19 @@ function merchantId(res: Response): string {
   return getMerchantIdFromSecureSession(res);
 }
 
+function optionalBoolean(value: unknown, field: string): boolean | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== "boolean") {
+    throw new CashierStaffAuthorityError(
+      "CASHIER_STAFF_INPUT_INVALID",
+      `${field} must be a boolean`,
+      400,
+      { field },
+    );
+  }
+  return value;
+}
+
 router.get(
   "/cashier/management/report",
   requireMerchantAuthority,
@@ -171,7 +184,10 @@ router.post(
         name: req.body?.name,
         branchKey: req.body?.branch_key,
         branchLabel: req.body?.branch_label,
-        offlineInventoryAuthority: req.body?.offline_inventory_authority,
+        offlineInventoryAuthority: optionalBoolean(
+          req.body?.offline_inventory_authority,
+          "offline_inventory_authority",
+        ),
       });
       res.setHeader("Cache-Control", "no-store");
       res.status(201).json({ ok: true, station });
@@ -193,7 +209,10 @@ router.patch(
         branchKey: req.body?.branch_key,
         branchLabel: req.body?.branch_label,
         status: req.body?.status,
-        offlineInventoryAuthority: req.body?.offline_inventory_authority,
+        offlineInventoryAuthority: optionalBoolean(
+          req.body?.offline_inventory_authority,
+          "offline_inventory_authority",
+        ),
       });
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, station });
