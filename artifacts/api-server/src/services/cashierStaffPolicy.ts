@@ -21,6 +21,11 @@ export type CashierStaffPermission =
 
 const PERMISSION_SET = new Set<string>(CASHIER_STAFF_PERMISSIONS);
 
+/**
+ * Presets include only permissions that the current staff cashier UI/API can
+ * actually exercise. Future capabilities may stay in the permission schema,
+ * but are never silently granted before their operational route exists.
+ */
 const RECOMMENDED_ROLE_PERMISSIONS: Record<
   CashierStaffRole,
   readonly CashierStaffPermission[]
@@ -32,9 +37,7 @@ const RECOMMENDED_ROLE_PERMISSIONS: Record<
     'sale.view_all',
     'sale.return',
     'sale.void',
-    'inventory.adjust',
     'reports.sales',
-    'shifts.manage',
   ],
 };
 
