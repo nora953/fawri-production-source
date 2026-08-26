@@ -64,8 +64,9 @@ function compensationSaleId(
 
 /**
  * A return/void grant controls the action, while sale.view_* controls which
- * original sales the operator may act on. Ordinary cashiers are restricted to
- * their own current shift; sale.view_all is the explicit cross-operator grant.
+ * original sales the operator may act on. Every compensation must resolve to
+ * durable sale attribution first. sale.view_own is restricted to the active
+ * station/staff/shift; sale.view_all is the explicit merchant-wide override.
  */
 export async function assertCashierOperatorCompensationScope(input: {
   context: CashierOperatorContext;
@@ -73,8 +74,9 @@ export async function assertCashierOperatorCompensationScope(input: {
   kind: 'return' | 'void';
 }): Promise<void> {
   const { context } = input;
-  if (context.permissions.includes('sale.view_all')) return;
-  if (!context.permissions.includes('sale.view_own')) {
+  const canViewAll = context.permissions.includes('sale.view_all');
+  const canViewOwn = context.permissions.includes('sale.view_own');
+  if (!canViewAll && !canViewOwn) {
     throw new CashierSyncError(
       'CASHIER_OPERATOR_PERMISSION_REQUIRED',
       'cashier operator sale visibility permission is required',
@@ -82,6 +84,7 @@ export async function assertCashierOperatorCompensationScope(input: {
       { required_permission: 'sale.view_own' },
     );
   }
+
   const saleId = compensationSaleId(input.body, input.kind);
   const rows = await withMerchantOperationalTransaction(
     context.merchant_id,
@@ -94,13 +97,22 @@ export async function assertCashierOperatorCompensationScope(input: {
             AND sale_id = $2
             AND operation_kind = 'sale'
           ORDER BY created_at
-          LIMIT 1`,
+          LIMIT 2`,
         [context.merchant_id, saleId],
       ),
   );
+  if (rows.length !== 1) {
+    throw new CashierSyncError(
+      'CASHIER_OPERATOR_SALE_SCOPE_FORBIDDEN',
+      'cashier sale is unavailable to the active operator',
+      403,
+    );
+  }
+
+  if (canViewAll) return;
+
   const attribution = rows[0];
   if (
-    !attribution ||
     attribution.station_id !== context.station_id ||
     attribution.staff_id !== context.staff_id ||
     attribution.shift_id !== context.shift_id
