@@ -222,6 +222,34 @@ router.get(
   },
 );
 
+router.get(
+  "/cashier/station/staff",
+  requireCashierStationCredential,
+  async (_req: Request, res: Response) => {
+    try {
+      const station = getCashierStationContext(res);
+      if (!station) {
+        throw new CashierStaffAuthorityError(
+          "CASHIER_STATION_CREDENTIAL_INVALID",
+          "cashier station credential is unavailable",
+          401,
+        );
+      }
+      const staff = (await listCashierStaffAuthoritative(station.merchant_id))
+        .filter((member) => member.status === "active")
+        .map((member) => ({
+          id: member.id,
+          display_name: member.display_name,
+          role: member.role,
+        }));
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, staff });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
 router.post(
   "/cashier/operator/login",
   requireCashierStationCredential,
