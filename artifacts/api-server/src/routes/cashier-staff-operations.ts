@@ -24,6 +24,7 @@ import {
   updateCashierStationAuthoritative,
 } from "../services/postgresCashierStaffAuthority";
 import { buildCashierCentralReportAuthoritative } from "../services/postgresCashierCentralReportAuthority";
+import { buildCashierCentralActivityAuthoritative } from "../services/postgresCashierCentralActivityAuthority";
 
 const router = Router();
 
@@ -72,13 +73,17 @@ router.get(
   requireMerchantAuthority,
   async (req: Request, res: Response) => {
     try {
-      const report = await buildCashierCentralReportAuthoritative({
+      const input = {
         merchantId: merchantId(res),
         from: req.query.from,
         to: req.query.to,
-      });
+      };
+      const [report, activity] = await Promise.all([
+        buildCashierCentralReportAuthoritative(input),
+        buildCashierCentralActivityAuthoritative(input),
+      ]);
       res.setHeader("Cache-Control", "no-store");
-      res.json({ ok: true, ...report });
+      res.json({ ok: true, ...report, activity });
     } catch (error) {
       sendError(res, error);
     }
