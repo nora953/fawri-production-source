@@ -29,6 +29,31 @@ function clearLegacyMerchantCookie(req: Request, res: Response): void {
   }
 }
 
+function isCashierDeviceAuthorityPath(path: string): boolean {
+  return (
+    path === "/api/cashier/station/pair" ||
+    path.startsWith("/api/cashier/station/") ||
+    path === "/api/cashier/operator/login" ||
+    path.startsWith("/api/cashier/operator/")
+  );
+}
+
+/**
+ * Cashier station/operator authentication is a separate authority from merchant
+ * and administrator account sessions. Browser tabs share same-origin cookies,
+ * so a cashier request can carry an unrelated (or expired) account cookie even
+ * though the cashier client never intentionally uses it. Strip those cookies
+ * from this request only before the account cutover/retention middleware sees
+ * them. This does not clear the browser cookie and therefore does not log the
+ * merchant out of the dashboard.
+ */
+function isolateCashierDeviceAuthority(req: Request, path: string): void {
+  if (!isCashierDeviceAuthorityPath(path) || !req.cookies) return;
+  delete req.cookies[MERCHANT_SESSION_COOKIE];
+  delete req.cookies[ADMIN_SESSION_COOKIE];
+  delete req.cookies[LEGACY_MERCHANT_COOKIE];
+}
+
 function legacyMerchantSecret(): string {
   const configured = String(
     process.env.FAWRI_MERCHANT_SESSION_SECRET ||
@@ -158,6 +183,7 @@ export function enforceAuthCutoverCompatibility(
   const suppliedLegacyBearer = /^Bearer\s+/i.test(suppliedAuthorization);
 
   clearLegacyMerchantCookie(req, res);
+  isolateCashierDeviceAuthority(req, path);
 
   if (path.startsWith("/api/auth") && suppliedLegacyBearer) {
     delete req.headers.authorization;
