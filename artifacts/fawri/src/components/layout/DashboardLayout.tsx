@@ -24,6 +24,7 @@ const PRODUCT_READ_ONLY_STATUSES = new Set([
 ]);
 
 const DASHBOARD_RETURN_PATH_KEY = 'fawri.dashboard.returnPath';
+const SESSION_401_CONFIRM_DELAYS_MS = [150, 650] as const;
 
 function isSafeDashboardReturnPath(value: string) {
   return value === '/dashboard' || value.startsWith('/dashboard/');
@@ -152,9 +153,24 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       controller = new AbortController();
 
       try {
-        const lifecycle = await checkMerchantLifecycle(controller.signal);
+        let lifecycle = await checkMerchantLifecycle(controller.signal);
         if (!active) return;
 
+        // Session rotation can briefly leave an already-started request carrying
+        // the superseded cookie while another response is delivering the fresh
+        // replacement. A single 401 is therefore not enough to destroy an active
+        // merchant workspace. Confirm it twice, using the browser's newest cookie,
+        // before treating it as an authoritative logout decision.
+        if (!lifecycle.ok && lifecycle.reason === 'unauthenticated') {
+          for (const delay of SESSION_401_CONFIRM_DELAYS_MS) {
+            await new Promise<void>(resolve => window.setTimeout(resolve, delay));
+            if (!active) return;
+            lifecycle = await checkMerchantLifecycle(controller.signal);
+            if (lifecycle.ok || lifecycle.reason !== 'unauthenticated') break;
+          }
+        }
+
+        if (!active) return;
         if (!lifecycle.ok) {
           if (lifecycle.reason === 'unauthenticated') {
             routeToLogin();
