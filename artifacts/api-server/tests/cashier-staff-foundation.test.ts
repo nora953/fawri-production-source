@@ -102,6 +102,9 @@ test('PostgreSQL foundation is tenant-scoped and separates staff from merchant a
   assert.doesNotMatch(sessionEnum, /cashier|staff|operator/);
 
   for (const permission of CASHIER_STAFF_PERMISSIONS) {
-    assert.match(schema, new RegExp(permission.replace('.', '\\.')));
+    assert.ok(
+      schema.includes(permission),
+      `schema must allow cashier permission ${permission}`,
+    );
   }
 });
