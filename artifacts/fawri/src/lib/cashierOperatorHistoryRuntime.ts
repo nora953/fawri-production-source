@@ -10,6 +10,7 @@ import type {
 } from './cashierLocalContracts';
 import {
   getCashierOperationBindings,
+  type CashierOperationBinding,
 } from './cashierOperatorLocalSecurity';
 import {
   bindCashierOperationToCurrentOperator,
@@ -32,7 +33,7 @@ export class CashierOperatorHistoryError extends Error {
 function canSeeSale(
   session: CashierOperatorSession,
   sale: CashierSaleSnapshot,
-  bindings: Map<string, Awaited<ReturnType<typeof getCashierOperationBindings>> extends Map<string, infer T> ? T : never>,
+  bindings: Map<string, CashierOperationBinding>,
 ): boolean {
   const binding = bindings.get(sale.operation_id);
   if (!binding) return false;
