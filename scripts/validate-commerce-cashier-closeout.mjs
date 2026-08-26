@@ -26,6 +26,7 @@ const steps = [
       '--test',
       'artifacts/fawri/tests/merchant-money-ui.test.ts',
       'artifacts/fawri/tests/cashier-refresh-ux-contract.test.mjs',
+      'artifacts/fawri/tests/catalog-measurement-alignment-contract.test.mjs',
     ],
   },
   {
