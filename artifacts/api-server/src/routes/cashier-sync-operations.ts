@@ -4,6 +4,7 @@ import {
   requireMerchantSession,
 } from "./auth";
 import cashierStaffOperationsRouter from "./cashier-staff-operations";
+import cashierOperatorCommerceRouter from "./cashier-operator-commerce";
 import {
   CashierSyncError,
   syncCashierSaleAuthoritative,
@@ -12,10 +13,11 @@ import { syncCashierCompensationAuthoritative } from "../services/postgresCashie
 
 const router = Router();
 
-// Compose the new station/operator authority with the existing merchant-session
-// sync routes. Sale/return/void cutover happens only after the cashier client can
-// present station + operator credentials, so current Commerce remains usable.
+// Compose station/operator management and the permission-bound operator commerce
+// authority with the existing merchant-session sync routes. The old sync routes
+// remain only as a compatibility bridge until the cashier client finishes 3B.
 router.use(cashierStaffOperationsRouter);
+router.use(cashierOperatorCommerceRouter);
 
 function sendError(res: Response, error: unknown): void {
   res.setHeader("Cache-Control", "no-store");
