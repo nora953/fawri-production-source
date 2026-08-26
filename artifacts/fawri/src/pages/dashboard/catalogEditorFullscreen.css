@@ -144,10 +144,17 @@ html[lang="ku"] .products-workspace-polish .catalog-editor-shell.fawri-ui-baseli
   grid-template-columns: repeat(12, minmax(0, 1fr));
 }
 
+/*
+ * The simplified catalog editor composes its own internal field grids. Every
+ * top-level editor section must therefore span the full workspace. Historical
+ * nth-child column rules from the old editor squeezed the product-details /
+ * variants section into 8/12 columns, leaving a blank rail and clipping the
+ * wide variant matrix.
+ */
 .products-workspace-polish .catalog-editor-body-grid > * {
   min-width: 0;
   margin: 0 !important;
-  grid-column: 1 / -1;
+  grid-column: 1 / -1 !important;
 }
 
 /* Keep Arabic/Kurdish examples readable even when the actual field value is LTR. */
@@ -155,37 +162,6 @@ html[lang="ku"] .products-workspace-polish .catalog-editor-shell.fawri-ui-baseli
   direction: rtl;
   text-align: right;
   unicode-bidi: plaintext;
-}
-
-/* Item type and product-specific configuration are primary workspace sections. */
-.products-workspace-polish .catalog-editor-body-grid > :nth-child(1),
-.products-workspace-polish .catalog-editor-body-grid > :nth-child(4),
-.products-workspace-polish .catalog-editor-body-grid > :nth-child(5) {
-  grid-column: 1 / -1;
-}
-
-/* Name and category belong together. */
-.products-workspace-polish .catalog-editor-body-grid > :nth-child(2),
-.products-workspace-polish .catalog-editor-body-grid > :nth-child(3) {
-  grid-column: span 6;
-}
-
-/* Media is the dominant visual section; status stays beside it. */
-.products-workspace-polish .catalog-editor-body-grid > :nth-child(6) {
-  grid-column: span 8;
-}
-.products-workspace-polish .catalog-editor-body-grid > :nth-child(7) {
-  grid-column: span 4;
-  align-self: start;
-}
-
-/* Description and Fawri availability finish the form as a decision row. */
-.products-workspace-polish .catalog-editor-body-grid > :nth-child(8) {
-  grid-column: span 8;
-}
-.products-workspace-polish .catalog-editor-body-grid > :nth-child(9) {
-  grid-column: span 4;
-  align-self: start;
 }
 
 .products-workspace-polish .catalog-editor-footer > div {
