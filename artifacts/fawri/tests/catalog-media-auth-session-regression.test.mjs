@@ -6,6 +6,14 @@ const imageSource = await readFile(
   new URL('../src/components/catalog/CatalogImageUploadEditor.tsx', import.meta.url),
   'utf8',
 );
+const protectedCardImageSource = await readFile(
+  new URL('../src/components/catalog/CatalogProtectedImage.tsx', import.meta.url),
+  'utf8',
+);
+const catalogPageSource = await readFile(
+  new URL('../src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx', import.meta.url),
+  'utf8',
+);
 const authSource = await readFile(
   new URL('../../api-server/src/middleware/authSession.ts', import.meta.url),
   'utf8',
@@ -26,6 +34,18 @@ test('protected catalog images are fetched through authenticated fetch before im
   assert.match(imageSource, /URL\.createObjectURL\(blob\)/);
   assert.match(imageSource, /src=\{source\}/);
   assert.doesNotMatch(imageSource, /<img[^>]+src=\{catalogImagePreviewUrl/);
+});
+
+test('saved product cards also fetch protected media before assigning img src', () => {
+  assert.match(protectedCardImageSource, /catalogImagePreviewUrl/);
+  assert.match(protectedCardImageSource, /fetch\(protectedRequest/);
+  assert.match(protectedCardImageSource, /credentials: 'same-origin'/);
+  assert.match(protectedCardImageSource, /blob\.type\.startsWith\('image\/'\)/);
+  assert.match(protectedCardImageSource, /URL\.createObjectURL\(blob\)/);
+  assert.match(protectedCardImageSource, /src=\{source\}/);
+  assert.match(catalogPageSource, /CatalogProtectedImage/);
+  assert.doesNotMatch(catalogPageSource, /<img src=\{primary\}/);
+  assert.doesNotMatch(catalogPageSource, /const primary = imageUrl\(product\)/);
 });
 
 test('a lost concurrent rotation race does not clear an already validated browser session', () => {
