@@ -12,6 +12,10 @@ function isDatePlaceholder(placeholder: string | undefined): boolean {
   return placeholder === 'YYYY/MM/DD' || placeholder === 'DD/MM/YYYY';
 }
 
+export function normalizeDecimalTextInput(value: string): string {
+  return normalizeDigits(value).replace(/[%٪]/g, '').replace(/\s+/g, '');
+}
+
 export function formatDateInputMask(value: string): string {
   const digits = onlyDigits(value, 8);
   if (digits.length <= 2) return digits;
