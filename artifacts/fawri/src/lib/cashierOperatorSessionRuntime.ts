@@ -214,6 +214,12 @@ function parseOperatorSession(value: string | null): CashierOperatorSession | nu
   }
 }
 
+export function invalidateCashierOperatorSession(): void {
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
+  }
+}
+
 export async function getCashierOperatorSession(): Promise<CashierOperatorSession | null> {
   if (typeof sessionStorage === 'undefined') return null;
   const session = parseOperatorSession(
