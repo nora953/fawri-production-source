@@ -1,9 +1,18 @@
 import * as React from "react"
 
+import { formatKnownDateTimeInput } from "@/lib/dateTimeInputMask"
 import { cn } from "@/lib/utils"
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, onChange, placeholder, ...props }, ref) => {
+    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const formatted = formatKnownDateTimeInput(event.currentTarget.value, placeholder)
+      if (formatted !== event.currentTarget.value) {
+        event.currentTarget.value = formatted
+      }
+      onChange?.(event)
+    }
+
     return (
       <input
         type={type}
@@ -12,6 +21,8 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className
         )}
         ref={ref}
+        placeholder={placeholder}
+        onChange={handleChange}
         {...props}
       />
     )
