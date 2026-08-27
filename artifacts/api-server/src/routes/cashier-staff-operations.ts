@@ -28,17 +28,51 @@ import { buildCashierCentralActivityAuthoritative } from "../services/postgresCa
 
 const router = Router();
 
+function mapCashierRuntimeUniqueConflict(
+  error: unknown,
+): CashierStaffAuthorityError | null {
+  const candidate = error as { code?: unknown; constraint?: unknown };
+  if (String(candidate?.code || "") !== "23505") return null;
+  const constraint = String(candidate?.constraint || "");
+  if (constraint.includes("cashier_shifts_open_station_unique")) {
+    return new CashierStaffAuthorityError(
+      "CASHIER_STATION_SHIFT_OCCUPIED",
+      "cashier station has an open shift for another operator",
+      409,
+    );
+  }
+  if (constraint.includes("cashier_shifts_open_staff_unique")) {
+    return new CashierStaffAuthorityError(
+      "CASHIER_OPERATOR_SHIFT_OCCUPIED",
+      "cashier operator already has an open shift on another station",
+      409,
+    );
+  }
+  if (constraint.includes("cashier_operator_sessions_live_station_unique")) {
+    return new CashierStaffAuthorityError(
+      "CASHIER_STATION_IN_USE",
+      "cashier station already has an active operator",
+      409,
+    );
+  }
+  return null;
+}
+
 function sendError(res: Response, error: unknown): void {
   res.setHeader("Cache-Control", "no-store");
-  if (error instanceof CashierStaffAuthorityError) {
-    if (error.status === 429 && error.details?.retry_after_seconds) {
-      res.setHeader("Retry-After", String(error.details.retry_after_seconds));
+  const mapped =
+    error instanceof CashierStaffAuthorityError
+      ? error
+      : mapCashierRuntimeUniqueConflict(error);
+  if (mapped) {
+    if (mapped.status === 429 && mapped.details?.retry_after_seconds) {
+      res.setHeader("Retry-After", String(mapped.details.retry_after_seconds));
     }
-    res.status(error.status).json({
+    res.status(mapped.status).json({
       ok: false,
-      code: error.code,
-      error: error.message,
-      ...(error.details || {}),
+      code: mapped.code,
+      error: mapped.message,
+      ...(mapped.details || {}),
     });
     return;
   }
