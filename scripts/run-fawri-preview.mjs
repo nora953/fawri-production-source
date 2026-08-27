@@ -21,6 +21,13 @@ const catalogReadinessScript = path.join(
   "scripts",
   "catalog-variant-signature-readiness.mjs",
 );
+const cashierReadinessScript = path.join(
+  workspaceDir,
+  "lib",
+  "db",
+  "scripts",
+  "cashier-staff-authority-readiness.mjs",
+);
 const lockId = crypto.createHash("sha256").update(workspaceDir).digest("hex").slice(0, 16);
 const lockPath = path.join(os.tmpdir(), `fawri-preview-${lockId}.pid`);
 
@@ -66,9 +73,30 @@ function requirePreviewPrerequisites() {
 
   process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY = "required";
 
+  for (const authorityName of [
+    "FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY",
+    "FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY",
+  ]) {
+    const configured = String(process.env[authorityName] || "")
+      .trim()
+      .toLowerCase();
+    if (configured && configured !== "required") {
+      throw new Error(
+        `${authorityName}=${configured} is unsafe for this PostgreSQL preview; expected required.`,
+      );
+    }
+    process.env[authorityName] = "required";
+  }
+
   if (!fs.existsSync(catalogReadinessScript)) {
     throw new Error(
       "Catalog PostgreSQL readiness check is missing. Refusing to start the preview without the database safety gate.",
+    );
+  }
+
+  if (!fs.existsSync(cashierReadinessScript)) {
+    throw new Error(
+      "Cashier PostgreSQL readiness check is missing. Refusing to start the preview without the cashier database safety gate.",
     );
   }
 }
@@ -148,6 +176,11 @@ async function verifyCatalogPostgresReadiness() {
   await runCommand(process.execPath, [catalogReadinessScript]);
 }
 
+async function verifyCashierPostgresReadiness() {
+  console.log("[preview] Verifying PostgreSQL cashier staff/station authority...");
+  await runCommand(process.execPath, [cashierReadinessScript]);
+}
+
 async function buildPreview() {
   console.log("[preview] Building API server...");
   await runCommand("pnpm", ["--dir", apiDir, "run", "build"]);
@@ -168,6 +201,8 @@ function previewServerEnv() {
     PORT: "8081",
     FAWRI_WEB_DIST_DIR: webDistDir,
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
+    FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
+    FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY: "required",
   };
 
   if (process.env.NODE_ENV !== "production") {
@@ -187,7 +222,7 @@ function startServer() {
       restartCount > 0 ? ` (restart ${restartCount})` : ""
     }...`,
   );
-  console.log("[preview] PostgreSQL operational authority is REQUIRED.");
+  console.log("[preview] PostgreSQL operational/auth/subscription authorities are REQUIRED.");
 
   if (process.env.NODE_ENV !== "production") {
     console.log(
@@ -268,6 +303,7 @@ try {
   requirePreviewPrerequisites();
   acquirePreviewLock();
   await verifyCatalogPostgresReadiness();
+  await verifyCashierPostgresReadiness();
   await buildPreview();
   startServer();
 } catch (error) {
