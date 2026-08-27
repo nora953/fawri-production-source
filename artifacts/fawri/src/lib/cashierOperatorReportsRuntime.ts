@@ -233,14 +233,7 @@ async function serverReport(
   };
 }
 
-export async function createCashierOperatorReportsRuntime(): Promise<CashierOperatorReportsRuntime> {
-  const session = await getCashierOperatorSession();
-  if (!session) {
-    throw new CashierOperatorReportsError(
-      'CASHIER_OPERATOR_LOGIN_REQUIRED',
-      'Cashier operator login is required',
-    );
-  }
+function assertReportPermissions(session: CashierOperatorSession): void {
   if (!cashierOperatorCan(session, 'reports.sales')) {
     throw new CashierOperatorReportsError(
       'CASHIER_OPERATOR_PERMISSION_REQUIRED',
@@ -256,6 +249,17 @@ export async function createCashierOperatorReportsRuntime(): Promise<CashierOper
       'Sale visibility permission is required for reports',
     );
   }
+}
+
+export async function createCashierOperatorReportsRuntime(): Promise<CashierOperatorReportsRuntime> {
+  const session = await getCashierOperatorSession();
+  if (!session) {
+    throw new CashierOperatorReportsError(
+      'CASHIER_OPERATOR_LOGIN_REQUIRED',
+      'Cashier operator login is required',
+    );
+  }
+  assertReportPermissions(session);
 
   const identity = await getOrCreateCashierDeviceIdentity();
   if (
@@ -277,12 +281,34 @@ export async function createCashierOperatorReportsRuntime(): Promise<CashierOper
       'Cashier sales store is unavailable',
     );
   }
-  const canViewProfit = cashierOperatorCan(session, 'reports.profit');
 
   return {
     localMerchantId: identity.local_merchant_id,
     async buildReport(options = {}) {
-      const online = await serverReport(session, options);
+      const currentSession = await getCashierOperatorSession();
+      if (!currentSession) {
+        throw new CashierOperatorReportsError(
+          'CASHIER_OPERATOR_LOGIN_REQUIRED',
+          'Cashier operator login is required',
+        );
+      }
+      if (!cashierOperatorCan(currentSession, 'reports.sales')) {
+        throw new CashierOperatorReportsError(
+          'CASHIER_OPERATOR_PERMISSION_REQUIRED',
+          'Sales report permission is required',
+        );
+      }
+      if (
+        !cashierOperatorCan(currentSession, 'sale.view_own') &&
+        !cashierOperatorCan(currentSession, 'sale.view_all')
+      ) {
+        throw new CashierOperatorReportsError(
+          'CASHIER_OPERATOR_PERMISSION_REQUIRED',
+          'Sale visibility permission is required for reports',
+        );
+      }
+      const canViewProfit = cashierOperatorCan(currentSession, 'reports.profit');
+      const online = await serverReport(currentSession, options);
       if (online) return online;
 
       normalizedRange(options);
@@ -291,13 +317,13 @@ export async function createCashierOperatorReportsRuntime(): Promise<CashierOper
         allSales.map((sale) => sale.operation_id),
       );
       const visibleSales = allSales.filter((sale) =>
-        bindingVisible(session, bindings.get(sale.operation_id)),
+        bindingVisible(currentSession, bindings.get(sale.operation_id)),
       );
       const report = buildCashierSalesReport(visibleSales, options);
       return {
         report: canViewProfit ? report : redactProfit(report),
         source: 'local_cashier',
-        scope: cashierOperatorCan(session, 'sale.view_all') ? 'station' : 'own_shift',
+        scope: cashierOperatorCan(currentSession, 'sale.view_all') ? 'station' : 'own_shift',
         sales_scanned: visibleSales.length,
         generated_at: new Date().toISOString(),
         can_view_profit: canViewProfit,
