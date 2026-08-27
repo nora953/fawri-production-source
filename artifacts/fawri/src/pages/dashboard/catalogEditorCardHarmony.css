@@ -117,6 +117,11 @@
   color: rgb(185 28 28) !important;
 }
 
+/* Promotion modal: hide the duplicate Promotions badge in the editor header. */
+.products-workspace-polish [class~="z-[110]"] > div > div:first-child > div > div:last-child {
+  display: none !important;
+}
+
 /*
  * Promotion discount editor: mirror the visual language already used by the
  * Promotion period cards. Each control is its own rounded-2xl, bordered,
