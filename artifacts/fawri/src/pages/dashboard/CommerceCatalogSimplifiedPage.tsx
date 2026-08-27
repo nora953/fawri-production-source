@@ -23,6 +23,7 @@ import { CatalogEditorShell } from '@/components/catalog/CatalogEditorShell';
 import { CatalogImageUploadEditor } from '@/components/catalog/CatalogImageUploadEditor';
 import { CatalogItemTypeEditor } from '@/components/catalog/CatalogItemTypeEditor';
 import { CatalogProductDetailsEditor } from '@/components/catalog/CatalogProductDetailsEditor';
+import { CatalogProtectedImage } from '@/components/catalog/CatalogProtectedImage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,7 +44,6 @@ import {
   type CatalogProductInput,
   type CatalogVariant,
 } from '@/lib/catalogUiApi';
-import { catalogImagePreviewUrl } from '@/lib/catalogMediaUiApi';
 import {
   catalogMoneyFormForAuthority,
   catalogMoneyFormForDisplay,
@@ -370,14 +370,6 @@ function statusClass(status: ProductStatus): string {
   if (status === 'out_of_stock') return 'border-red-200 bg-red-50 text-red-700';
   if (status === 'draft') return 'border-slate-200 bg-slate-50 text-slate-700';
   return 'border-zinc-200 bg-zinc-50 text-zinc-700';
-}
-
-function imageUrl(product: CatalogProduct): string | null {
-  const primary = product.image_refs[0];
-  if (!primary) return null;
-  if (primary.url?.trim()) return primary.url.trim();
-  if (primary.storage_key?.trim()) return catalogImagePreviewUrl(primary.storage_key);
-  return null;
 }
 
 function itemType(product: CatalogProduct): 'product' | 'service' {
@@ -891,7 +883,6 @@ export default function CommerceCatalogSimplifiedPage() {
         <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           {visible.map(product => {
             const type = itemType(product);
-            const primary = imageUrl(product);
             const service = product.service_details;
             const hasVariants = product.variants.length > 0;
             const inventoryExpanded = Boolean(expandedInventoryProducts[product.id]);
@@ -901,7 +892,15 @@ export default function CommerceCatalogSimplifiedPage() {
 
             return (
               <article key={product.id} className="overflow-hidden rounded-3xl border bg-card shadow-sm transition hover:shadow-md">
-                {primary && <div className="h-44 overflow-hidden border-b bg-muted/20"><img src={primary} alt={product.image_refs[0]?.alt || product.name} className="h-full w-full object-cover" /></div>}
+                {product.image_refs[0] && (
+                  <div className="h-44 overflow-hidden border-b bg-muted/20">
+                    <CatalogProtectedImage
+                      image={product.image_refs[0]}
+                      alt={product.image_refs[0]?.alt || product.name}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                )}
                 <div className="border-b p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
