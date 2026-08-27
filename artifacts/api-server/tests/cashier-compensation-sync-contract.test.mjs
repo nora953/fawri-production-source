@@ -82,28 +82,27 @@ test('void reconciliation restores original tracked stock without bypassing term
   assert.match(source, /delivered as terminal/);
 });
 
-test('browser classifies return and void outbox operations and ACKs only after complete server acceptance', async () => {
-  const source = await webSource('src/lib/cashierCloudOutboxSync.ts');
+test('operator browser classifies return and void and ACKs only after complete server acceptance', async () => {
+  const source = await webSource('src/lib/cashierOperatorCloudSync.ts');
 
-  assert.match(source, /type CashierOperationKind = 'sale' \| 'return' \| 'void'/);
-  assert.match(source, /function classifyOperation/);
-  assert.match(source, /return 'return'/);
-  assert.match(source, /return 'void'/);
-  assert.match(source, /'\/api\/cashier\/sync\/compensation'/);
-  assert.match(source, /payload\.compensation_kind !== input\.kind/);
-  assert.match(source, /accepted_entity_ids/);
-  assert.match(source, /acknowledgeSynced\(\[operation\.operationId\]\)/);
+  assert.match(source, /kind: 'sale' \| 'return' \| 'void'/);
+  assert.match(source, /operationKind\(envelopes\)/);
+  assert.match(source, /`\/api\/cashier\/operator\/sync\/\$\{kind\}`/);
+  assert.match(source, /payload\.compensation_kind/);
+  assert.match(source, /compensationKind !== kind/);
+  assert.match(source, /payload\.accepted_entity_ids/);
+  assert.match(source, /CASHIER_OPERATOR_ACK_INVALID/);
+  assert.match(source, /authority\.acknowledgeSynced\(\[operationId\]\)/);
 
-  const fetchCall = source.indexOf('response = await fetch(endpoint');
-  const responseAccepted = source.indexOf('payload?.ok !== true', fetchCall);
-  const entityAckValidation = source.indexOf(
-    'acceptedEntityIds.size !== expectedEntityIds.size',
-    responseAccepted,
-  );
-  const localAck = source.indexOf('acknowledgeSynced([operation.operationId])');
+  const fetchCall = source.indexOf('fetch(`/api/cashier/operator/sync/${kind}`');
+  const responseAccepted = source.indexOf('payload.ok !== true', fetchCall);
+  const entityAckValidation = source.indexOf('acceptedEntityIds.length !== expectedEntityIds.length', responseAccepted);
+  const compensationAckValidation = source.indexOf("kind !== 'sale' && compensationKind !== kind", entityAckValidation);
+  const localAck = source.indexOf('authority.acknowledgeSynced([operationId])');
 
-  assert.ok(fetchCall >= 0, 'outbox uploader must call the selected sync endpoint');
+  assert.ok(fetchCall >= 0, 'operator outbox uploader must call the operator sync endpoint');
   assert.ok(responseAccepted > fetchCall, 'server success must be checked after upload');
   assert.ok(entityAckValidation > responseAccepted, 'complete entity acknowledgement must be verified');
-  assert.ok(localAck > entityAckValidation, 'local outbox must be deleted only after full ACK');
+  assert.ok(compensationAckValidation > entityAckValidation, 'return/void kind must be verified before ACK');
+  assert.ok(localAck > compensationAckValidation, 'local outbox must be deleted only after full operator ACK');
 });
