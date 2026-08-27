@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import {
+  normalizeDecimalTextInput,
   placeholderForDisplay,
   valueForKnownDateTimeInputAuthority,
   valueForKnownDateTimeInputDisplay,
@@ -8,15 +9,18 @@ import {
 import { cn } from "@/lib/utils"
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, onChange, placeholder, value, ...props }, ref) => {
+  ({ className, type, onChange, placeholder, value, inputMode, ...props }, ref) => {
     const displayedPlaceholder = placeholderForDisplay(placeholder)
     const displayedValue = typeof value === "string"
       ? valueForKnownDateTimeInputDisplay(value, placeholder)
       : value
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const rawValue = inputMode === "decimal"
+        ? normalizeDecimalTextInput(event.currentTarget.value)
+        : event.currentTarget.value
       const authorityValue = valueForKnownDateTimeInputAuthority(
-        event.currentTarget.value,
+        rawValue,
         placeholder,
       )
       if (authorityValue !== event.currentTarget.value) {
@@ -35,6 +39,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
         ref={ref}
         placeholder={displayedPlaceholder}
         value={displayedValue}
+        inputMode={inputMode}
         onChange={handleChange}
         {...props}
       />
