@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Boxes, ChevronDown, Copy, Layers3, Plus, Ruler, Trash2 } from 'lucide-react';
+import { Boxes, ChevronDown, Copy, Layers3, Plus, Ruler, Trash2, Undo2 } from 'lucide-react';
 
 import { CatalogImageUploadEditor } from '@/components/catalog/CatalogImageUploadEditor';
 import { Button } from '@/components/ui/button';
@@ -33,8 +33,15 @@ type BulkOptionRow = {
   values: string;
 };
 
+type ExcludedVariantDraft = {
+  signature: string;
+  label: string;
+  variant: CatalogVariantDraft;
+};
+
 type BuilderForm = CatalogProductFormState & {
   variant_option_rows?: BulkOptionRow[];
+  excluded_variant_combinations?: ExcludedVariantDraft[];
 };
 
 type VariantGroup = {
@@ -85,6 +92,7 @@ const copy = {
     cost: 'كلفة خاصة — اختياري',
     stock: 'المخزون',
     images: 'صورة التركيبة — اختياري',
+    actions: 'إجراء',
     inheritedSale: (value: string) => `العام: ${value || 'سعر المنتج'}`,
     inheritedCost: (value: string) => `العام: ${value || 'كلفة المنتج'}`,
     inheritedImage: 'بدون صورة خاصة = يستخدم صور المنتج',
@@ -93,7 +101,6 @@ const copy = {
     bulkStock: 'كمية لكل تركيبة',
     applyStock: 'تطبيق على الكل',
     generateSku: 'توليد SKU للتركيبات',
-    startOptions: 'إضافة خيارات للمنتج',
     noVariants: 'أضف خيارًا مثل اللون أو السعة أو النكهة أو المقاس، ثم اكتب كل القيم في سطر واحد.',
     invalidOptions: 'أدخل اسمًا وقيمة واحدة على الأقل لكل خيار، ولا تكرر أسماء الخيارات.',
     tooMany: 'عدد التركيبات أكبر من 100. قلل عدد القيم.',
@@ -120,6 +127,11 @@ const copy = {
     copyAction: 'نسخ',
     copyHint: 'ينسخ السعر والكلفة والصور والمخزون للتركيبات المناظرة فقط. لا ينسخ SKU أو الباركود.',
     mixedGroupImages: 'بعض التركيبات داخل هذه المجموعة لها صور مختلفة. إضافة صور هنا ستوحّد صور المجموعة.',
+    excludeCombination: 'استبعاد التركيبة',
+    excludedTitle: 'تركيبات غير متوفرة',
+    excludedHint: 'هذه الاحتمالات لن تُنشأ حتى لو حدّثت التركيبات مرة أخرى. يمكنك استعادتها قبل الحفظ.',
+    restoreCombination: 'استعادة',
+    savedVariantProtected: 'هذه تركيبة محفوظة. لا نحذفها من محرر الإنشاء حتى لا نفقد سجل المخزون.',
   },
   ku: {
     quantity: 'بڕ',
@@ -147,6 +159,7 @@ const copy = {
     cost: 'تێچووی تایبەت — ئارەزوومەندانە',
     stock: 'کۆگا',
     images: 'وێنەی تێکەڵە — ئارەزوومەندانە',
+    actions: 'کردار',
     inheritedSale: (value: string) => `گشتی: ${value || 'نرخی بەرهەم'}`,
     inheritedCost: (value: string) => `گشتی: ${value || 'تێچووی بەرهەم'}`,
     inheritedImage: 'بێ وێنەی تایبەت = وێنەکانی بەرهەم',
@@ -155,7 +168,6 @@ const copy = {
     bulkStock: 'بڕ بۆ هەر تێکەڵە',
     applyStock: 'جێبەجێکردن بۆ هەموو',
     generateSku: 'دروستکردنی SKU بۆ تێکەڵەکان',
-    startOptions: 'زیادکردنی هەڵبژاردە',
     noVariants: 'هەڵبژاردەیەک وەک ڕەنگ، قەبارە یان تام زیاد بکە و هەموو بەهاکان لە یەک ڕیز بنووسە.',
     invalidOptions: 'بۆ هەر هەڵبژاردە ناو و لانیکەم یەک بەها بنووسە و ناوەکان دووبارە مەکە.',
     tooMany: 'ژمارەی تێکەڵەکان لە 100 زیاترە.',
@@ -182,6 +194,11 @@ const copy = {
     copyAction: 'کۆپی',
     copyHint: 'نرخ و تێچوو و وێنە و کۆگا بۆ تێکەڵە هاوشێوەکان کۆپی دەکات. SKU و بارکۆد کۆپی ناکات.',
     mixedGroupImages: 'هەندێک تێکەڵەی ئەم گرووپە وێنەی جیاواز هەیە. زیادکردنی وێنە لێرە وێنەکانی گرووپەکە یەکسان دەکات.',
+    excludeCombination: 'لابردنی تێکەڵە',
+    excludedTitle: 'تێکەڵە بەردەست نییەکان',
+    excludedHint: 'ئەم تێکەڵانە لە نوێکردنەوەدا دووبارە دروست نابن. پێش پاشەکەوتکردن دەتوانیت بیانگەڕێنیتەوە.',
+    restoreCombination: 'گەڕاندنەوە',
+    savedVariantProtected: 'ئەم تێکەڵەیە پاشەکەوتکراوە و لێرە ناسڕدرێتەوە بۆ پاراستنی مێژووی کۆگا.',
   },
   en: {
     quantity: 'Quantity',
@@ -209,6 +226,7 @@ const copy = {
     cost: 'Special cost — optional',
     stock: 'Stock',
     images: 'Combination image — optional',
+    actions: 'Action',
     inheritedSale: (value: string) => `Default: ${value || 'product price'}`,
     inheritedCost: (value: string) => `Default: ${value || 'product cost'}`,
     inheritedImage: 'No special image = use product images',
@@ -217,7 +235,6 @@ const copy = {
     bulkStock: 'Stock per combination',
     applyStock: 'Apply to all',
     generateSku: 'Generate combination SKUs',
-    startOptions: 'Add product options',
     noVariants: 'Add an option such as color, capacity, flavor, or size, then enter all values on one row.',
     invalidOptions: 'Give every option a name and at least one value, with no duplicate option names.',
     tooMany: 'More than 100 combinations. Reduce the number of values.',
@@ -244,6 +261,11 @@ const copy = {
     copyAction: 'Copy',
     copyHint: 'Copies price, cost, images, and stock to matching combinations only. SKU and barcode are never copied.',
     mixedGroupImages: 'Some combinations in this group have different images. Adding images here will unify the group images.',
+    excludeCombination: 'Exclude combination',
+    excludedTitle: 'Unavailable combinations',
+    excludedHint: 'These combinations stay excluded when you regenerate. You can restore them before saving.',
+    restoreCombination: 'Restore',
+    savedVariantProtected: 'This is a saved combination. It is protected here so inventory history is not discarded.',
   },
 } as const;
 
@@ -274,6 +296,10 @@ function structuredOptions(variant: CatalogVariantDraft) {
   return variant.options.filter(option => option.name.trim() && option.value.trim());
 }
 
+function normalized(value: string): string {
+  return value.trim().normalize('NFKC').toLocaleLowerCase('en-US');
+}
+
 function optionSummary(variant: CatalogVariantDraft): string {
   const values = structuredOptions(variant).map(option => option.value.trim());
   return values.join(' / ') || variant.name || '—';
@@ -284,8 +310,22 @@ function optionSummaryWithinGroup(variant: CatalogVariantDraft): string {
   return values.join(' / ') || variant.name || '—';
 }
 
-function normalized(value: string): string {
-  return value.trim().normalize('NFKC').toLocaleLowerCase('en-US');
+function variantSignature(variant: CatalogVariantDraft): string {
+  return structuredOptions(variant)
+    .map(option => `${normalized(option.name)}=${normalized(option.value)}`)
+    .join('|');
+}
+
+function cloneImages(images: CatalogImageDraft[]): CatalogImageDraft[] {
+  return images.map(image => ({ ...image }));
+}
+
+function cloneVariant(variant: CatalogVariantDraft): CatalogVariantDraft {
+  return {
+    ...variant,
+    options: variant.options.map(option => ({ ...option })),
+    image_refs: cloneImages(variant.image_refs),
+  };
 }
 
 function variantGroups(variants: CatalogVariantDraft[]): VariantGroup[] {
@@ -316,10 +356,6 @@ function secondarySignature(variant: CatalogVariantDraft): string {
     .slice(1)
     .map(option => `${normalized(option.name)}=${normalized(option.value)}`)
     .join('|');
-}
-
-function cloneImages(images: CatalogImageDraft[]): CatalogImageDraft[] {
-  return images.map(image => ({ ...image }));
 }
 
 function imageSignature(images: CatalogImageDraft[]): string {
@@ -379,10 +415,10 @@ function Measurements({
       </summary>
       <p className="mt-2 text-xs leading-5 text-muted-foreground">{labels.advancedHint}</p>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <label className="space-y-1 text-xs font-semibold"><span>{labels.weight}</span><Input type="text" inputMode="decimal" dir="ltr" value={form.weight_kg} onChange={e => onChange({ weight_kg: e.target.value })} className="h-10 rounded-xl" /></label>
-        <label className="space-y-1 text-xs font-semibold"><span>{labels.length}</span><Input type="text" inputMode="decimal" dir="ltr" value={form.length_cm} onChange={e => onChange({ length_cm: e.target.value })} className="h-10 rounded-xl" /></label>
-        <label className="space-y-1 text-xs font-semibold"><span>{labels.width}</span><Input type="text" inputMode="decimal" dir="ltr" value={form.width_cm} onChange={e => onChange({ width_cm: e.target.value })} className="h-10 rounded-xl" /></label>
-        <label className="space-y-1 text-xs font-semibold"><span>{labels.height}</span><Input type="text" inputMode="decimal" dir="ltr" value={form.height_cm} onChange={e => onChange({ height_cm: e.target.value })} className="h-10 rounded-xl" /></label>
+        <label className="space-y-1 text-xs font-semibold"><span>{labels.weight}</span><Input type="text" inputMode="decimal" dir="ltr" value={form.weight_kg} onChange={e => onChange({ weight_kg: e.target.value })} className="h-10 rounded-xl text-center tabular-nums" /></label>
+        <label className="space-y-1 text-xs font-semibold"><span>{labels.length}</span><Input type="text" inputMode="decimal" dir="ltr" value={form.length_cm} onChange={e => onChange({ length_cm: e.target.value })} className="h-10 rounded-xl text-center tabular-nums" /></label>
+        <label className="space-y-1 text-xs font-semibold"><span>{labels.width}</span><Input type="text" inputMode="decimal" dir="ltr" value={form.width_cm} onChange={e => onChange({ width_cm: e.target.value })} className="h-10 rounded-xl text-center tabular-nums" /></label>
+        <label className="space-y-1 text-xs font-semibold"><span>{labels.height}</span><Input type="text" inputMode="decimal" dir="ltr" value={form.height_cm} onChange={e => onChange({ height_cm: e.target.value })} className="h-10 rounded-xl text-center tabular-nums" /></label>
       </div>
     </details>
   );
@@ -404,12 +440,13 @@ export function CatalogProductDetailsEditor({
   const labels = copy[lang] || copy.en;
   const builderForm = form as BuilderForm;
   const optionRows = builderForm.variant_option_rows ?? rowsFromVariants(form.variants);
+  const excluded = builderForm.excluded_variant_combinations ?? [];
   const [feedback, setFeedback] = useState('');
   const [bulkStock, setBulkStock] = useState('');
   const [groupDrafts, setGroupDrafts] = useState<Record<string, GroupDraft>>({});
 
   const legacy = form.variants.length > 0 && form.variants.some(variant => !catalogVariantDraftHasStructuredOptions(variant));
-  const multiEnabled = form.variants.length > 0 || optionRows.length > 0;
+  const multiEnabled = form.variants.length > 0 || optionRows.length > 0 || excluded.length > 0;
   const structuredDefinitions = useMemo(() => optionRows
     .filter(row => row.name.trim() || row.values.trim())
     .map(row => createCatalogVariantOptionSetDraft(row.name, splitValues(row.values))), [optionRows]);
@@ -418,8 +455,12 @@ export function CatalogProductDetailsEditor({
 
   if (form.item_type !== 'product') return null;
 
+  const patchBuilder = (patch: Partial<BuilderForm>) => {
+    onChange(patch as unknown as Partial<CatalogProductFormState>);
+  };
+
   const patchOptionRows = (next: BulkOptionRow[]) => {
-    onChange({ variant_option_rows: next } as unknown as Partial<CatalogProductFormState>);
+    patchBuilder({ variant_option_rows: next });
   };
 
   const updateVariant = (index: number, patch: Partial<CatalogVariantDraft>) => {
@@ -443,13 +484,30 @@ export function CatalogProductDetailsEditor({
       setFeedback(labels.existingVariants);
       return;
     }
-    patchOptionRows([]);
+    patchBuilder({ variant_option_rows: [], excluded_variant_combinations: [] });
     setFeedback('');
   };
 
   const addOptionRow = () => {
     patchOptionRows([...optionRows, { key: nextBulkRowKey(), name: '', values: '' }]);
     setFeedback('');
+  };
+
+  const generatedFromDefinitions = (
+    exclusionInput: ExcludedVariantDraft[],
+    preservationPool: CatalogVariantDraft[],
+  ) => {
+    const all = regenerateCatalogVariantDrafts(structuredDefinitions, preservationPool, form.track_inventory);
+    const validSignatures = new Set(all.map(variantSignature));
+    const nextExcluded = exclusionInput.filter(item => validSignatures.has(item.signature));
+    const excludedSignatures = new Set(nextExcluded.map(item => item.signature));
+    const filtered = all.filter(variant => !excludedSignatures.has(variantSignature(variant)));
+    const prefix = cleanSkuPrefix(form.sku);
+    const variants = filtered.map((variant, index) => ({
+      ...variant,
+      sku: variant.sku.trim() || `${prefix}-${String(index + 1).padStart(2, '0')}`,
+    }));
+    return { variants, excluded: nextExcluded };
   };
 
   const generate = () => {
@@ -472,17 +530,50 @@ export function CatalogProductDetailsEditor({
       setFeedback(labels.tooMany);
       return;
     }
-    const regenerated = regenerateCatalogVariantDrafts(structuredDefinitions, form.variants, form.track_inventory);
-    const prefix = cleanSkuPrefix(form.sku);
-    const withSku = regenerated.map((variant, index) => ({
-      ...variant,
-      sku: variant.sku.trim() || `${prefix}-${String(index + 1).padStart(2, '0')}`,
-    }));
-    onChange({
-      variants: withSku,
+    const preservationPool = [...form.variants, ...excluded.map(item => cloneVariant(item.variant))];
+    const generated = generatedFromDefinitions(excluded, preservationPool);
+    patchBuilder({
+      variants: generated.variants,
       variant_option_rows: optionRows,
-    } as unknown as Partial<CatalogProductFormState>);
+      excluded_variant_combinations: generated.excluded,
+    });
     setGroupDrafts({});
+    setFeedback('');
+  };
+
+  const excludeVariant = (index: number) => {
+    const variant = form.variants[index];
+    if (!variant) return;
+    if (variant.id) {
+      setFeedback(labels.savedVariantProtected);
+      return;
+    }
+    const signature = variantSignature(variant);
+    if (!signature) return;
+    const nextExcluded = excluded.some(item => item.signature === signature)
+      ? excluded
+      : [...excluded, { signature, label: optionSummary(variant), variant: cloneVariant(variant) }];
+    patchBuilder({
+      variants: form.variants.filter((_, itemIndex) => itemIndex !== index),
+      excluded_variant_combinations: nextExcluded,
+    });
+    setFeedback('');
+  };
+
+  const restoreExcluded = (signature: string) => {
+    const record = excluded.find(item => item.signature === signature);
+    if (!record) return;
+    if (structuredDefinitions.length === 0 || !catalogVariantOptionSetDefinitionsAreValid(structuredDefinitions)) {
+      setFeedback(labels.invalidOptions);
+      return;
+    }
+    const nextExcluded = excluded.filter(item => item.signature !== signature);
+    const preservationPool = [...form.variants, cloneVariant(record.variant), ...nextExcluded.map(item => cloneVariant(item.variant))];
+    const generated = generatedFromDefinitions(nextExcluded, preservationPool);
+    patchBuilder({
+      variants: generated.variants,
+      excluded_variant_combinations: generated.excluded,
+    });
     setFeedback('');
   };
 
@@ -551,18 +642,21 @@ export function CatalogProductDetailsEditor({
     });
   };
 
+  const numericClass = 'h-10 rounded-xl text-center tabular-nums';
+
   const variantTable = (indexes: number[], grouped: boolean) => (
     <div className="overflow-x-auto rounded-2xl border bg-background">
-      <table className="w-full min-w-[1120px] border-collapse text-sm">
+      <table className="w-full min-w-[1080px] border-collapse text-sm">
         <thead className="bg-muted/40 text-xs text-muted-foreground">
           <tr>
             <th className="p-3 text-start">{legacy ? labels.name : grouped ? labels.variantWithinGroup : labels.combination}</th>
-            <th className="p-3 text-start">{labels.salePrice}</th>
-            <th className="p-3 text-start">{labels.cost}</th>
-            {form.track_inventory && <th className="p-3 text-start">{labels.stock}</th>}
-            <th className="p-3 text-start">{labels.sku}</th>
-            <th className="p-3 text-start">{labels.barcode}</th>
-            <th className="p-3 text-start">{labels.images}</th>
+            <th className="p-3 text-center">{labels.salePrice}</th>
+            <th className="p-3 text-center">{labels.cost}</th>
+            {form.track_inventory && <th className="p-3 text-center">{labels.stock}</th>}
+            <th className="p-3 text-center">{labels.sku}</th>
+            <th className="p-3 text-center">{labels.barcode}</th>
+            <th className="p-3 text-center">{labels.images}</th>
+            <th className="w-16 p-3 text-center">{labels.actions}</th>
           </tr>
         </thead>
         <tbody>
@@ -570,22 +664,36 @@ export function CatalogProductDetailsEditor({
             const variant = form.variants[index];
             if (!variant) return null;
             return (
-              <tr key={variant.key} className="border-t align-top">
+              <tr key={variant.key} className="border-t align-middle">
                 <td className="p-2.5">
                   {legacy
-                    ? <Input value={variant.name} onChange={event => updateVariant(index, { name: event.target.value })} className="h-10 min-w-36 rounded-xl" />
-                    : <div className="min-w-36 rounded-xl bg-muted/30 px-3 py-2.5 font-bold" dir="auto">{grouped ? optionSummaryWithinGroup(variant) : optionSummary(variant)}</div>}
+                    ? <Input value={variant.name} onChange={event => updateVariant(index, { name: event.target.value })} className="h-10 min-w-32 rounded-xl" />
+                    : <div className="min-w-28 rounded-xl bg-muted/30 px-3 py-2.5 font-bold" dir="auto">{grouped ? optionSummaryWithinGroup(variant) : optionSummary(variant)}</div>}
                 </td>
-                <td className="p-2.5"><Input type="text" inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => updateVariant(index, { price_iqd: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className="h-10 min-w-36 rounded-xl" /></td>
-                <td className="p-2.5"><Input type="text" inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => updateVariant(index, { cost_iqd: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className="h-10 min-w-36 rounded-xl" /></td>
-                {form.track_inventory && <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.stock_quantity} onChange={event => updateVariant(index, { stock_quantity: event.target.value })} disabled={Boolean(editing && variant.id)} placeholder={editing && variant.id ? labels.currentInventoryLocked : '0'} className="h-10 w-24 rounded-xl" /></td>}
-                <td className="p-2.5"><Input type="text" dir="ltr" value={variant.sku} onChange={event => updateVariant(index, { sku: event.target.value })} className="h-10 min-w-36 rounded-xl" /></td>
-                <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.barcode} onChange={event => updateVariant(index, { barcode: event.target.value })} className="h-10 min-w-36 rounded-xl" /></td>
-                <td className="p-2.5">
-                  <div className="min-w-44">
-                    <CatalogImageUploadEditor images={variant.image_refs} onChange={image_refs => updateVariant(index, { image_refs })} maxImages={5} compact hideHeading />
-                    {variant.image_refs.length === 0 && <p className="mt-1 text-[10px] text-muted-foreground">{labels.inheritedImage}</p>}
+                <td className="p-2.5"><Input type="text" inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => updateVariant(index, { price_iqd: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className={`${numericClass} min-w-32`} /></td>
+                <td className="p-2.5"><Input type="text" inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => updateVariant(index, { cost_iqd: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className={`${numericClass} min-w-32`} /></td>
+                {form.track_inventory && <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.stock_quantity} onChange={event => updateVariant(index, { stock_quantity: event.target.value })} disabled={Boolean(editing && variant.id)} placeholder={editing && variant.id ? labels.currentInventoryLocked : '0'} className={`${numericClass} w-24`} /></td>}
+                <td className="p-2.5"><Input type="text" dir="ltr" value={variant.sku} onChange={event => updateVariant(index, { sku: event.target.value })} className="h-10 min-w-36 rounded-xl text-center font-mono text-xs" /></td>
+                <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.barcode} onChange={event => updateVariant(index, { barcode: event.target.value })} className={`${numericClass} min-w-32`} /></td>
+                <td className="p-2.5 align-middle">
+                  <div className="mx-auto w-fit max-w-28">
+                    <CatalogImageUploadEditor images={variant.image_refs} onChange={image_refs => updateVariant(index, { image_refs })} maxImages={5} compact dense hideHeading />
+                    {variant.image_refs.length === 0 && <p className="mt-1 max-w-28 text-center text-[9px] leading-3 text-muted-foreground">{labels.inheritedImage}</p>}
                   </div>
+                </td>
+                <td className="p-2.5 text-center align-middle">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    disabled={Boolean(variant.id)}
+                    title={variant.id ? labels.savedVariantProtected : labels.excludeCombination}
+                    aria-label={variant.id ? labels.savedVariantProtected : labels.excludeCombination}
+                    className="h-9 w-9 rounded-xl text-destructive disabled:text-muted-foreground"
+                    onClick={() => excludeVariant(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </td>
               </tr>
             );
@@ -600,7 +708,7 @@ export function CatalogProductDetailsEditor({
       {form.track_inventory && form.variants.length === 0 && (
         <label className="space-y-1 text-sm font-semibold">
           <span>{labels.quantity}</span>
-          <Input type="text" inputMode="numeric" dir="ltr" value={form.quantity} onChange={event => onChange({ quantity: event.target.value })} disabled={editing} className="h-11 rounded-xl" />
+          <Input type="text" inputMode="numeric" dir="ltr" value={form.quantity} onChange={event => onChange({ quantity: event.target.value })} disabled={editing} className="h-11 rounded-xl text-center tabular-nums" />
           {editing && <span className="block text-xs font-normal text-muted-foreground">{labels.inventoryAfterSave}</span>}
         </label>
       )}
@@ -610,11 +718,11 @@ export function CatalogProductDetailsEditor({
         <div className="grid gap-3 md:grid-cols-3">
           <label className="space-y-1 text-sm font-semibold">
             <span>{labels.reportingCost}</span>
-            <Input type="text" inputMode="decimal" dir="ltr" value={form.cost_iqd} onChange={event => onChange({ cost_iqd: event.target.value })} placeholder="0" className="h-11 rounded-xl" />
+            <Input type="text" inputMode="decimal" dir="ltr" value={form.cost_iqd} onChange={event => onChange({ cost_iqd: event.target.value })} placeholder="0" className="h-11 rounded-xl text-center tabular-nums" />
             <span className="block text-xs font-normal leading-5 text-muted-foreground">{labels.reportingCostHint}</span>
           </label>
-          <label className="space-y-1 text-sm font-semibold"><span>{labels.sku}</span><Input type="text" dir="ltr" value={form.sku} onChange={event => onChange({ sku: event.target.value })} className="h-11 rounded-xl" /></label>
-          <label className="space-y-1 text-sm font-semibold"><span>{labels.barcode}</span><Input type="text" inputMode="numeric" dir="ltr" value={form.barcode} onChange={event => onChange({ barcode: event.target.value })} className="h-11 rounded-xl" /></label>
+          <label className="space-y-1 text-sm font-semibold"><span>{labels.sku}</span><Input type="text" dir="ltr" value={form.sku} onChange={event => onChange({ sku: event.target.value })} className="h-11 rounded-xl text-center font-mono" /></label>
+          <label className="space-y-1 text-sm font-semibold"><span>{labels.barcode}</span><Input type="text" inputMode="numeric" dir="ltr" value={form.barcode} onChange={event => onChange({ barcode: event.target.value })} className="h-11 rounded-xl text-center tabular-nums" /></label>
         </div>
       </section>
 
@@ -662,6 +770,20 @@ export function CatalogProductDetailsEditor({
               </div>
             )}
 
+            {excluded.length > 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3">
+                <p className="text-sm font-bold text-amber-950">{labels.excludedTitle} — {excluded.length}</p>
+                <p className="mt-1 text-xs leading-5 text-amber-900/80">{labels.excludedHint}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {excluded.map(item => (
+                    <Button key={item.signature} type="button" variant="outline" size="sm" className="h-8 rounded-xl bg-background text-xs" onClick={() => restoreExcluded(item.signature)}>
+                      <Undo2 className="me-1 h-3.5 w-3.5" />{item.label} · {labels.restoreCombination}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {form.variants.length > 0 && (
               <div className="space-y-3">
                 <div className="rounded-xl border border-orange-200 bg-orange-50/60 p-3">
@@ -675,7 +797,7 @@ export function CatalogProductDetailsEditor({
                     {editing && form.track_inventory && <p className="mt-1 text-xs text-muted-foreground">{labels.inventoryAfterSave}</p>}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    {form.track_inventory && <><Input type="text" inputMode="numeric" dir="ltr" value={bulkStock} onChange={event => setBulkStock(event.target.value)} placeholder={labels.bulkStock} className="h-9 w-40 rounded-xl" /><Button type="button" variant="outline" size="sm" className="h-9 rounded-xl" onClick={applyBulkStock}>{labels.applyStock}</Button></>}
+                    {form.track_inventory && <><Input type="text" inputMode="numeric" dir="ltr" value={bulkStock} onChange={event => setBulkStock(event.target.value)} placeholder={labels.bulkStock} className="h-9 w-40 rounded-xl text-center tabular-nums" /><Button type="button" variant="outline" size="sm" className="h-9 rounded-xl" onClick={applyBulkStock}>{labels.applyStock}</Button></>}
                     <Button type="button" variant="outline" size="sm" className="h-9 rounded-xl" onClick={generateMissingSkus}>{labels.generateSku}</Button>
                   </div>
                 </div>
@@ -702,7 +824,7 @@ export function CatalogProductDetailsEditor({
                               <label className="space-y-1 text-xs font-semibold">
                                 <span>{labels.groupSale}</span>
                                 <div className="flex gap-1.5">
-                                  <Input type="text" inputMode="decimal" dir="ltr" value={draft.sale} onChange={event => updateGroupDraft(group.key, { sale: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className="h-10 rounded-xl" />
+                                  <Input type="text" inputMode="decimal" dir="ltr" value={draft.sale} onChange={event => updateGroupDraft(group.key, { sale: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className="h-10 rounded-xl text-center tabular-nums" />
                                   <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => applyGroupField(group, 'price_iqd', draft.sale)}>{labels.applyGroup}</Button>
                                 </div>
                                 <span className="block text-[10px] font-normal text-muted-foreground">{labels.clearOverrideHint}</span>
@@ -711,7 +833,7 @@ export function CatalogProductDetailsEditor({
                               <label className="space-y-1 text-xs font-semibold">
                                 <span>{labels.groupCost}</span>
                                 <div className="flex gap-1.5">
-                                  <Input type="text" inputMode="decimal" dir="ltr" value={draft.cost} onChange={event => updateGroupDraft(group.key, { cost: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className="h-10 rounded-xl" />
+                                  <Input type="text" inputMode="decimal" dir="ltr" value={draft.cost} onChange={event => updateGroupDraft(group.key, { cost: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className="h-10 rounded-xl text-center tabular-nums" />
                                   <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => applyGroupField(group, 'cost_iqd', draft.cost)}>{labels.applyGroup}</Button>
                                 </div>
                                 <span className="block text-[10px] font-normal text-muted-foreground">{labels.clearOverrideHint}</span>
@@ -721,7 +843,7 @@ export function CatalogProductDetailsEditor({
                                 <label className="space-y-1 text-xs font-semibold">
                                   <span>{labels.groupStock}</span>
                                   <div className="flex gap-1.5">
-                                    <Input type="text" inputMode="numeric" dir="ltr" value={draft.stock} onChange={event => updateGroupDraft(group.key, { stock: event.target.value })} placeholder={canSetGroupStock ? '0' : labels.currentInventoryLocked} disabled={!canSetGroupStock} className="h-10 rounded-xl" />
+                                    <Input type="text" inputMode="numeric" dir="ltr" value={draft.stock} onChange={event => updateGroupDraft(group.key, { stock: event.target.value })} placeholder={canSetGroupStock ? '0' : labels.currentInventoryLocked} disabled={!canSetGroupStock} className="h-10 rounded-xl text-center tabular-nums" />
                                     <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" disabled={!canSetGroupStock} onClick={() => applyGroupField(group, 'stock_quantity', draft.stock)}>{labels.applyGroup}</Button>
                                   </div>
                                 </label>
