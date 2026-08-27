@@ -70,6 +70,7 @@ export type CatalogImageUploadEditorProps = {
   maxImages?: number;
   compact?: boolean;
   hideHeading?: boolean;
+  dense?: boolean;
 };
 
 function protectedPreviewRequest(image: CatalogImageDraft): string {
@@ -151,7 +152,7 @@ function ResilientImage({
 
   if (loading) {
     return (
-      <div className={`${className} flex min-h-20 min-w-20 items-center justify-center bg-muted/30`} aria-label={alt}>
+      <div className={`${className} flex min-h-12 min-w-12 items-center justify-center bg-muted/30`} aria-label={alt}>
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
@@ -159,9 +160,9 @@ function ResilientImage({
 
   if (!source || failed) {
     return (
-      <button type="button" onClick={onClick} className={`${className} flex min-h-20 min-w-20 flex-col items-center justify-center gap-1 bg-muted/30 px-2 text-center`}>
-        <ImageIcon className="h-6 w-6 text-muted-foreground/40" />
-        <span className="text-[10px] font-medium text-muted-foreground">{failureLabel}</span>
+      <button type="button" onClick={onClick} className={`${className} flex min-h-12 min-w-12 flex-col items-center justify-center gap-1 bg-muted/30 px-1 text-center`}>
+        <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+        <span className="text-[9px] font-medium text-muted-foreground">{failureLabel}</span>
       </button>
     );
   }
@@ -183,6 +184,7 @@ export function CatalogImageUploadEditor({
   maxImages = 20,
   compact = true,
   hideHeading = false,
+  dense = false,
 }: CatalogImageUploadEditorProps) {
   const { lang } = useI18n();
   const labels = copy[lang] || copy.en;
@@ -259,9 +261,11 @@ export function CatalogImageUploadEditor({
     },
   };
   const selectedLightbox = lightboxIndex === null ? null : images[lightboxIndex];
+  const compactUploadSize = dense ? 'h-14 w-16 shrink-0 px-1' : 'h-20 w-24 shrink-0 px-2';
+  const compactThumbSize = dense ? 'h-14 w-14' : 'h-20 w-20';
 
   return (
-    <section className={`${compact ? 'space-y-2 rounded-xl border bg-muted/10 p-2.5' : 'space-y-3 rounded-2xl border bg-muted/10 p-4'}`}>
+    <section className={`${compact ? `${dense ? 'space-y-1 rounded-lg p-1.5' : 'space-y-2 rounded-xl p-2.5'} border bg-muted/10` : 'space-y-3 rounded-2xl border bg-muted/10 p-4'}`}>
       <input
         ref={inputRef}
         type="file"
@@ -299,15 +303,15 @@ export function CatalogImageUploadEditor({
           disabled={isUploading || images.length >= maxImages}
           onClick={() => inputRef.current?.click()}
           {...dropHandlers}
-          className={`${compact ? 'h-20 w-24 shrink-0 px-2' : 'min-h-20 min-w-[12rem] flex-1 px-4'} flex flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${isDragging ? 'border-orange-500 bg-orange-50/60' : 'border-muted-foreground/25 bg-background hover:border-orange-400/70'} disabled:cursor-not-allowed disabled:opacity-60`}
+          className={`${compact ? compactUploadSize : 'min-h-20 min-w-[12rem] flex-1 px-4'} flex flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${isDragging ? 'border-orange-500 bg-orange-50/60' : 'border-muted-foreground/25 bg-background hover:border-orange-400/70'} disabled:cursor-not-allowed disabled:opacity-60`}
         >
-          {isUploading ? <Loader2 className="mb-1 h-5 w-5 animate-spin text-orange-500" /> : <Upload className="mb-1 h-5 w-5 text-muted-foreground" />}
-          <span className="text-xs font-semibold">{isUploading ? labels.uploading : labels.upload}</span>
+          {isUploading ? <Loader2 className={`${dense ? 'mb-0.5 h-4 w-4' : 'mb-1 h-5 w-5'} animate-spin text-orange-500`} /> : <Upload className={`${dense ? 'mb-0.5 h-4 w-4' : 'mb-1 h-5 w-5'} text-muted-foreground`} />}
+          <span className={`${dense ? 'text-[10px]' : 'text-xs'} font-semibold`}>{isUploading ? labels.uploading : labels.upload}</span>
           {!compact && <span className="mt-1 text-[11px] text-muted-foreground">{labels.formats}</span>}
         </button>
 
         {images.map((image, index) => (
-          <div key={image.key} className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border bg-background">
+          <div key={image.key} className={`group relative ${compactThumbSize} shrink-0 overflow-hidden rounded-xl border bg-background`}>
             <ResilientImage
               image={image}
               alt={image.alt || labels.title}
