@@ -1,9 +1,11 @@
 /*
  * Product-card visual containment.
  * Inventory authority and controls remain unchanged; this file only keeps
- * variant inventory visually compact without creating a nested scroll area.
+ * catalog cards visually compact and predictable without nested scroll areas.
  */
 
+/* Other article grids may keep their natural compact height. Product cards get
+ * a stronger, card-specific stretch rule below so rows line up consistently. */
 .products-workspace-polish .grid:has(> article) {
   align-items: start;
 }
@@ -12,6 +14,122 @@
   align-self: start;
   height: auto !important;
   min-height: 0 !important;
+}
+
+/*
+ * Merchant product-card skeleton.
+ * A collapsed product/service card always follows the same visual rhythm:
+ * media slot -> identity/status -> metrics -> management -> description.
+ * Expanded inventory is the only state intentionally allowed to grow taller.
+ */
+.products-workspace-polish .grid:has(> article > .border-b.p-4) {
+  align-items: stretch !important;
+}
+
+.products-workspace-polish article:has(> .border-b.p-4) {
+  position: relative;
+  display: flex;
+  align-self: stretch;
+  min-height: 22rem !important;
+  height: 100% !important;
+  flex-direction: column;
+}
+
+/* Reserve one compact media slot on every card. Cards with a real image place
+ * the authenticated preview on top of this neutral placeholder. */
+.products-workspace-polish article:has(> .border-b.p-4)::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: 1rem;
+  inset-inline-start: 1rem;
+  width: 4.75rem;
+  height: 4.75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  background: hsl(var(--muted) / 0.22);
+}
+
+.products-workspace-polish article:has(> .border-b.p-4) > .h-44 {
+  position: absolute !important;
+  z-index: 2;
+  top: 1rem;
+  inset-inline-start: 1rem;
+  width: 4.75rem !important;
+  height: 4.75rem !important;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 1rem;
+  background: hsl(var(--muted) / 0.2);
+}
+
+.products-workspace-polish article:has(> .border-b.p-4) > .border-b.p-4 {
+  min-height: 10.25rem;
+  padding-inline-start: 6.75rem !important;
+}
+
+/* Keep status badges in a predictable two-line zone so product names start at
+ * the same visual level even when one card has more status badges than another. */
+.products-workspace-polish article:has(> .border-b.p-4) > .border-b.p-4 .mb-2.flex.flex-wrap {
+  min-height: 3rem;
+  align-content: flex-start;
+  gap: 0.375rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.products-workspace-polish article:has(> .border-b.p-4) > .border-b.p-4 .mb-2.flex.flex-wrap > * {
+  min-height: 1.5rem;
+  white-space: nowrap;
+}
+
+.products-workspace-polish article:has(> .border-b.p-4) > .border-b.p-4 h2 {
+  min-height: 3rem;
+  font-size: 1.125rem !important;
+  line-height: 1.5rem !important;
+}
+
+.products-workspace-polish article:has(> .border-b.p-4) > .border-b.p-4 p[dir='ltr'] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Price / stock metrics use identical internal sizing on every card. */
+.products-workspace-polish article:has(> .border-b.p-4) > .grid.grid-cols-2.gap-3.p-4 {
+  align-items: stretch;
+}
+
+.products-workspace-polish article:has(> .border-b.p-4) > .grid.grid-cols-2.gap-3.p-4 > div {
+  display: flex;
+  min-height: 5.25rem;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.products-workspace-polish article:has(> .border-b.p-4) > .grid.grid-cols-2.gap-3.p-4 > div > p {
+  min-height: 1.75rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Inventory / booking blocks share one minimum rhythm while remaining free to
+ * expand when the merchant explicitly opens inventory details. */
+.products-workspace-polish article:has(> .border-b.p-4) > div.px-4.pb-4:has(> div.rounded-2xl) {
+  min-height: 4.5rem;
+}
+
+/* Keep descriptions useful but stable; long prose cannot make one collapsed
+ * card dramatically taller than its neighbors. */
+.products-workspace-polish article:has(> .border-b.p-4) > div.px-4.pb-4:has(> p.rounded-2xl) {
+  margin-top: auto;
+}
+
+.products-workspace-polish article:has(> .border-b.p-4) > div.px-4.pb-4 > p.rounded-2xl {
+  display: -webkit-box;
+  min-height: 4.25rem;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 /* Never solve tall cards with a scroll area inside the card. All inventory rows
@@ -64,15 +182,23 @@
   padding-inline: 0.65rem !important;
 }
 
-/* Keep descriptions useful without letting prose create an oversized card. */
-.products-workspace-polish article > div.px-4 > p.rounded-2xl {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
 @media (max-width: 720px) {
+  .products-workspace-polish article:has(> .border-b.p-4)::before,
+  .products-workspace-polish article:has(> .border-b.p-4) > .h-44 {
+    width: 3.75rem !important;
+    height: 3.75rem !important;
+    border-radius: 0.875rem;
+  }
+
+  .products-workspace-polish article:has(> .border-b.p-4) > .border-b.p-4 {
+    min-height: 10rem;
+    padding-inline-start: 5.5rem !important;
+  }
+
+  .products-workspace-polish article:has(> .border-b.p-4) > .border-b.p-4 .mb-2.flex.flex-wrap {
+    min-height: 0;
+  }
+
   .products-workspace-polish article .rounded-xl.border.bg-background.p-3 {
     grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
