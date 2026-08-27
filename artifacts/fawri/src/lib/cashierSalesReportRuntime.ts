@@ -1,10 +1,11 @@
 import type {
+  CashierReturnSnapshot,
   CashierSaleLineSnapshot,
   CashierSaleSnapshot,
 } from './cashierLocalContracts';
 
 type CostAwareSaleLine = CashierSaleLineSnapshot & {
-  /** Optional sale-time cost snapshot. Added by the catalog/cashier cost cutover. */
+  /** Optional owner-only sale-time cost snapshot. Staff devices normally omit it. */
   unit_cost_minor?: number;
 };
 
@@ -71,6 +72,28 @@ function safeNonNegativeInteger(value: unknown, label: string): number {
   return parsed;
 }
 
+function safePositiveInteger(value: unknown, label: string): number {
+  const parsed = safeNonNegativeInteger(value, label);
+  if (parsed === 0) throw new Error(`CASHIER_REPORT_INVALID_${label.toUpperCase()}`);
+  return parsed;
+}
+
+function safeAdd(current: number, delta: number, label: string): number {
+  const next = current + delta;
+  if (!Number.isSafeInteger(next)) {
+    throw new Error(`CASHIER_REPORT_OVERFLOW_${label.toUpperCase()}`);
+  }
+  return next;
+}
+
+function safeMultiply(left: number, right: number, label: string): number {
+  const value = left * right;
+  if (!Number.isSafeInteger(value)) {
+    throw new Error(`CASHIER_REPORT_OVERFLOW_${label.toUpperCase()}`);
+  }
+  return value;
+}
+
 function validInstant(value: string | Date | undefined, label: string): Date | undefined {
   if (value === undefined) return undefined;
   const date = value instanceof Date ? value : new Date(value);
@@ -80,30 +103,22 @@ function validInstant(value: string | Date | undefined, label: string): Date | u
   return date;
 }
 
-function saleInstant(sale: CashierSaleSnapshot): Date {
-  const date = new Date(sale.occurred_at);
+function requiredInstant(value: string, label: string): Date {
+  const date = new Date(value);
   if (!Number.isFinite(date.getTime())) {
-    throw new Error('CASHIER_REPORT_INVALID_SALE_TIME');
+    throw new Error(`CASHIER_REPORT_INVALID_${label.toUpperCase()}`);
   }
   return date;
 }
 
-function lineKey(line: Pick<CashierSaleLineSnapshot, 'product_id' | 'variant_id'>): string {
-  return `${line.product_id}\u0000${line.variant_id || ''}`;
+function inRange(date: Date, from?: Date, to?: Date): boolean {
+  if (from && date.getTime() < from.getTime()) return false;
+  if (to && date.getTime() >= to.getTime()) return false;
+  return true;
 }
 
-function returnedQuantity(sale: CashierSaleSnapshot, lineId: string): number {
-  return (sale.returns || []).reduce(
-    (total, snapshot) =>
-      total +
-      snapshot.lines
-        .filter(line => line.original_line_id === lineId)
-        .reduce(
-          (sum, line) => sum + safeNonNegativeInteger(line.quantity, 'return_quantity'),
-          0,
-        ),
-    0,
-  );
+function lineKey(line: Pick<CashierSaleLineSnapshot, 'product_id' | 'variant_id'>): string {
+  return `${line.product_id}\u0000${line.variant_id || ''}`;
 }
 
 function reportCurrencyKey(sale: CashierSaleSnapshot): string {
@@ -136,21 +151,23 @@ function createCurrencyAccumulator(sale: CashierSaleSnapshot): CurrencyAccumulat
   };
 }
 
-function safeAdd(current: number, delta: number, label: string): number {
-  const next = current + delta;
-  if (!Number.isSafeInteger(next)) {
-    throw new Error(`CASHIER_REPORT_OVERFLOW_${label.toUpperCase()}`);
-  }
-  return next;
+function currencyFor(
+  currencies: Map<string, CurrencyAccumulator>,
+  sale: CashierSaleSnapshot,
+): CurrencyAccumulator {
+  const key = reportCurrencyKey(sale);
+  const accumulator = currencies.get(key) || createCurrencyAccumulator(sale);
+  currencies.set(key, accumulator);
+  return accumulator;
 }
 
 function addProductRow(
   accumulator: CurrencyAccumulator,
   line: CashierSaleLineSnapshot,
-  netUnits: number,
-  netRevenueMinor: number,
+  unitsDelta: number,
+  revenueDelta: number,
 ): void {
-  if (netUnits <= 0 && netRevenueMinor <= 0) return;
+  if (unitsDelta === 0 && revenueDelta === 0) return;
   const key = lineKey(line);
   const existing = accumulator.products.get(key);
   const row: ProductAccumulator = existing || {
@@ -163,13 +180,283 @@ function addProductRow(
     net_units: 0,
     net_revenue_minor: 0,
   };
-  row.net_units = safeAdd(row.net_units, netUnits, 'product_units');
+  row.net_units = safeAdd(row.net_units, unitsDelta, 'product_units');
   row.net_revenue_minor = safeAdd(
     row.net_revenue_minor,
-    netRevenueMinor,
+    revenueDelta,
     'product_revenue',
   );
   accumulator.products.set(key, row);
+}
+
+function addCostContribution(
+  accumulator: CurrencyAccumulator,
+  line: CostAwareSaleLine,
+  quantity: number,
+  revenueContribution: number,
+  direction: 1 | -1,
+): void {
+  if (line.unit_cost_minor === undefined || line.unit_cost_minor === null) {
+    accumulator.cost_unknown_net_units = safeAdd(
+      accumulator.cost_unknown_net_units,
+      quantity,
+      'unknown_cost_units',
+    );
+    return;
+  }
+  const cost = safeNonNegativeInteger(line.unit_cost_minor, 'unit_cost');
+  accumulator.cost_known_net_units = safeAdd(
+    accumulator.cost_known_net_units,
+    quantity,
+    'known_cost_units',
+  );
+  const profit = revenueContribution - safeMultiply(cost, quantity, 'cost');
+  accumulator.profit_minor = safeAdd(
+    accumulator.profit_minor,
+    direction * profit,
+    'profit',
+  );
+}
+
+function validateSale(sale: CashierSaleSnapshot): void {
+  if (sale.source !== 'cashier' || !Array.isArray(sale.lines) || sale.lines.length === 0) {
+    throw new Error('CASHIER_REPORT_INVALID_SALE');
+  }
+  reportCurrencyKey(sale);
+  const lineIds = new Set<string>();
+  const itemKeys = new Set<string>();
+  let total = 0;
+  for (const line of sale.lines) {
+    const quantity = safePositiveInteger(line.quantity, 'sold_quantity');
+    const price = safeNonNegativeInteger(
+      line.effective_unit_price_minor,
+      'effective_price',
+    );
+    const lineTotal = safeNonNegativeInteger(line.line_total_minor, 'line_total');
+    if (lineTotal !== safeMultiply(price, quantity, 'line_revenue')) {
+      throw new Error('CASHIER_REPORT_INVALID_LINE_TOTAL');
+    }
+    if (lineIds.has(line.line_id) || itemKeys.has(lineKey(line))) {
+      throw new Error('CASHIER_REPORT_DUPLICATE_SALE_LINE');
+    }
+    lineIds.add(line.line_id);
+    itemKeys.add(lineKey(line));
+    total = safeAdd(total, lineTotal, 'sale_total');
+    if (line.unit_cost_minor !== undefined) {
+      safeNonNegativeInteger(line.unit_cost_minor, 'unit_cost');
+    }
+  }
+  if (total !== safeNonNegativeInteger(sale.total_minor, 'sale_total')) {
+    throw new Error('CASHIER_REPORT_INVALID_SALE_TOTAL');
+  }
+
+  const returns = sale.returns || [];
+  if (sale.void && returns.length > 0) {
+    throw new Error('CASHIER_REPORT_VOID_AFTER_RETURN');
+  }
+  if (sale.status === 'voided' && !sale.void) {
+    throw new Error('CASHIER_REPORT_VOID_EVIDENCE_MISSING');
+  }
+  const operationIds = new Set<string>([sale.operation_id]);
+  const returnedByLine = new Map<string, number>();
+  for (const snapshot of returns) {
+    if (operationIds.has(snapshot.operation_id)) {
+      throw new Error('CASHIER_REPORT_DUPLICATE_OPERATION');
+    }
+    operationIds.add(snapshot.operation_id);
+    validateReturnSnapshot(sale, snapshot, returnedByLine);
+  }
+  if (sale.void) {
+    if (operationIds.has(sale.void.operation_id)) {
+      throw new Error('CASHIER_REPORT_DUPLICATE_OPERATION');
+    }
+    if (
+      sale.void.sale_id !== sale.sale_id ||
+      sale.void.currency_code !== sale.currency_code ||
+      sale.void.currency_fraction_digits !== sale.currency_fraction_digits ||
+      safeNonNegativeInteger(sale.void.refund_total_minor, 'void_refund') !== sale.total_minor
+    ) {
+      throw new Error('CASHIER_REPORT_INVALID_VOID');
+    }
+    requiredInstant(sale.void.occurred_at, 'void_time');
+  }
+  requiredInstant(sale.occurred_at, 'sale_time');
+}
+
+function validateReturnSnapshot(
+  sale: CashierSaleSnapshot,
+  snapshot: CashierReturnSnapshot,
+  returnedByLine: Map<string, number>,
+): void {
+  if (
+    snapshot.sale_id !== sale.sale_id ||
+    snapshot.currency_code !== sale.currency_code ||
+    snapshot.currency_fraction_digits !== sale.currency_fraction_digits ||
+    !Array.isArray(snapshot.lines) ||
+    snapshot.lines.length === 0
+  ) {
+    throw new Error('CASHIER_REPORT_INVALID_RETURN');
+  }
+  requiredInstant(snapshot.occurred_at, 'return_time');
+  const lineIds = new Set<string>();
+  let refundTotal = 0;
+  for (const returned of snapshot.lines) {
+    if (lineIds.has(returned.original_line_id)) {
+      throw new Error('CASHIER_REPORT_DUPLICATE_RETURN_LINE');
+    }
+    lineIds.add(returned.original_line_id);
+    const original = sale.lines.find(
+      line => line.line_id === returned.original_line_id,
+    );
+    if (!original) throw new Error('CASHIER_REPORT_RETURN_LINE_NOT_FOUND');
+    const quantity = safePositiveInteger(returned.quantity, 'return_quantity');
+    const refund = safeNonNegativeInteger(returned.refund_minor, 'return_refund');
+    const originalPrice = safeNonNegativeInteger(
+      original.effective_unit_price_minor,
+      'effective_price',
+    );
+    if (
+      returned.product_id !== original.product_id ||
+      returned.variant_id !== original.variant_id ||
+      returned.effective_unit_price_minor !== originalPrice ||
+      refund !== safeMultiply(originalPrice, quantity, 'return_refund')
+    ) {
+      throw new Error('CASHIER_REPORT_RETURN_MISMATCH');
+    }
+    const alreadyReturned = returnedByLine.get(original.line_id) || 0;
+    const cumulative = safeAdd(alreadyReturned, quantity, 'returned_quantity');
+    if (cumulative > original.quantity) {
+      throw new Error('CASHIER_REPORT_RETURN_EXCEEDS_SALE');
+    }
+    returnedByLine.set(original.line_id, cumulative);
+    refundTotal = safeAdd(refundTotal, refund, 'return_refund');
+  }
+  if (refundTotal !== safeNonNegativeInteger(snapshot.refund_total_minor, 'return_refund')) {
+    throw new Error('CASHIER_REPORT_INVALID_RETURN_TOTAL');
+  }
+}
+
+function applySale(
+  currencies: Map<string, CurrencyAccumulator>,
+  sale: CashierSaleSnapshot,
+  from?: Date,
+  to?: Date,
+): boolean {
+  const occurredAt = requiredInstant(sale.occurred_at, 'sale_time');
+  if (!inRange(occurredAt, from, to)) return false;
+  const accumulator = currencyFor(currencies, sale);
+  accumulator.sale_count = safeAdd(accumulator.sale_count, 1, 'sale_count');
+  accumulator.active_sale_count = safeAdd(
+    accumulator.active_sale_count,
+    1,
+    'active_sale_count',
+  );
+  const saleTotal = safeNonNegativeInteger(sale.total_minor, 'sale_total');
+  accumulator.gross_revenue_minor = safeAdd(
+    accumulator.gross_revenue_minor,
+    saleTotal,
+    'gross_revenue',
+  );
+  accumulator.net_revenue_minor = safeAdd(
+    accumulator.net_revenue_minor,
+    saleTotal,
+    'net_revenue',
+  );
+  for (const rawLine of sale.lines) {
+    const line = rawLine as CostAwareSaleLine;
+    const quantity = safePositiveInteger(line.quantity, 'sold_quantity');
+    const revenue = safeNonNegativeInteger(line.line_total_minor, 'line_total');
+    accumulator.sold_units = safeAdd(accumulator.sold_units, quantity, 'sold_units');
+    accumulator.net_units = safeAdd(accumulator.net_units, quantity, 'net_units');
+    addProductRow(accumulator, line, quantity, revenue);
+    addCostContribution(accumulator, line, quantity, revenue, 1);
+  }
+  return true;
+}
+
+function applyReturn(
+  currencies: Map<string, CurrencyAccumulator>,
+  sale: CashierSaleSnapshot,
+  snapshot: CashierReturnSnapshot,
+  from?: Date,
+  to?: Date,
+): void {
+  const occurredAt = requiredInstant(snapshot.occurred_at, 'return_time');
+  if (!inRange(occurredAt, from, to)) return;
+  const accumulator = currencyFor(currencies, sale);
+  accumulator.return_count = safeAdd(accumulator.return_count, 1, 'return_count');
+  const refundTotal = safeNonNegativeInteger(snapshot.refund_total_minor, 'return_refund');
+  accumulator.refunds_minor = safeAdd(
+    accumulator.refunds_minor,
+    refundTotal,
+    'refunds',
+  );
+  accumulator.net_revenue_minor = safeAdd(
+    accumulator.net_revenue_minor,
+    -refundTotal,
+    'net_revenue',
+  );
+  for (const returned of snapshot.lines) {
+    const original = sale.lines.find(
+      line => line.line_id === returned.original_line_id,
+    ) as CostAwareSaleLine | undefined;
+    if (!original) throw new Error('CASHIER_REPORT_RETURN_LINE_NOT_FOUND');
+    const quantity = safePositiveInteger(returned.quantity, 'return_quantity');
+    const refund = safeNonNegativeInteger(returned.refund_minor, 'return_refund');
+    accumulator.returned_units = safeAdd(
+      accumulator.returned_units,
+      quantity,
+      'returned_units',
+    );
+    accumulator.net_units = safeAdd(accumulator.net_units, -quantity, 'net_units');
+    addProductRow(accumulator, original, -quantity, -refund);
+    addCostContribution(accumulator, original, quantity, refund, -1);
+  }
+}
+
+function applyVoid(
+  currencies: Map<string, CurrencyAccumulator>,
+  sale: CashierSaleSnapshot,
+  saleInRange: boolean,
+  from?: Date,
+  to?: Date,
+): void {
+  if (!sale.void) return;
+  const occurredAt = requiredInstant(sale.void.occurred_at, 'void_time');
+  if (!inRange(occurredAt, from, to)) return;
+  const accumulator = currencyFor(currencies, sale);
+  accumulator.voided_sale_count = safeAdd(
+    accumulator.voided_sale_count,
+    1,
+    'voided_sale_count',
+  );
+  if (saleInRange) {
+    accumulator.active_sale_count = safeAdd(
+      accumulator.active_sale_count,
+      -1,
+      'active_sale_count',
+    );
+  }
+  const refund = safeNonNegativeInteger(sale.void.refund_total_minor, 'void_refund');
+  accumulator.refunds_minor = safeAdd(accumulator.refunds_minor, refund, 'refunds');
+  accumulator.net_revenue_minor = safeAdd(
+    accumulator.net_revenue_minor,
+    -refund,
+    'net_revenue',
+  );
+  for (const rawLine of sale.lines) {
+    const line = rawLine as CostAwareSaleLine;
+    const quantity = safePositiveInteger(line.quantity, 'sold_quantity');
+    const revenue = safeNonNegativeInteger(line.line_total_minor, 'line_total');
+    accumulator.returned_units = safeAdd(
+      accumulator.returned_units,
+      quantity,
+      'returned_units',
+    );
+    accumulator.net_units = safeAdd(accumulator.net_units, -quantity, 'net_units');
+    addProductRow(accumulator, line, -quantity, -revenue);
+    addCostContribution(accumulator, line, quantity, revenue, -1);
+  }
 }
 
 function finalizeCurrency(
@@ -183,10 +470,11 @@ function finalizeCurrency(
         ? 'partial'
         : 'unavailable';
   const averageTicketMinor =
-    accumulator.active_sale_count > 0
-      ? Math.round(accumulator.net_revenue_minor / accumulator.active_sale_count)
+    accumulator.sale_count > 0
+      ? Math.round(accumulator.gross_revenue_minor / accumulator.sale_count)
       : 0;
   const topProducts = [...accumulator.products.values()]
+    .filter(item => item.net_units > 0 || item.net_revenue_minor > 0)
     .sort(
       (left, right) =>
         right.net_revenue_minor - left.net_revenue_minor ||
@@ -220,13 +508,10 @@ function finalizeCurrency(
 }
 
 /**
- * Build cashier sales reporting strictly from immutable local sale evidence.
- *
- * - Currencies are never merged.
- * - Returns reduce revenue/units using original sale-time pricing.
- * - A void makes the sale net-zero.
- * - Profit is reported only for net units that have a sale-time cost snapshot.
- *   Missing costs are surfaced as partial/unavailable instead of invented as zero.
+ * Build cashier reporting from immutable local sale evidence using operation
+ * time. A sale contributes when sold; each return/void contributes when that
+ * compensation was executed. This keeps historical ranges stable and makes a
+ * return-only day visible without rewriting the original sale date.
  */
 export function buildCashierSalesReport(
   sales: CashierSaleSnapshot[],
@@ -245,106 +530,13 @@ export function buildCashierSalesReport(
   let includedSales = 0;
 
   for (const sale of sales) {
-    const occurredAt = saleInstant(sale);
-    if (from && occurredAt.getTime() < from.getTime()) continue;
-    if (to && occurredAt.getTime() >= to.getTime()) continue;
-
-    const key = reportCurrencyKey(sale);
-    const accumulator = currencies.get(key) || createCurrencyAccumulator(sale);
-    currencies.set(key, accumulator);
-    includedSales += 1;
-    accumulator.sale_count += 1;
-
-    const saleTotal = safeNonNegativeInteger(sale.total_minor, 'sale_total');
-    accumulator.gross_revenue_minor = safeAdd(
-      accumulator.gross_revenue_minor,
-      saleTotal,
-      'gross_revenue',
-    );
-
-    const isVoided = sale.status === 'voided' || Boolean(sale.void);
-    const returnRefund = (sale.returns || []).reduce(
-      (sum, snapshot) =>
-        safeAdd(
-          sum,
-          safeNonNegativeInteger(snapshot.refund_total_minor, 'return_refund'),
-          'return_refund',
-        ),
-      0,
-    );
-    const voidRefund = sale.void
-      ? safeNonNegativeInteger(sale.void.refund_total_minor, 'void_refund')
-      : 0;
-    const refund = isVoided ? Math.max(saleTotal, voidRefund) : returnRefund;
-    if (refund > saleTotal) {
-      throw new Error('CASHIER_REPORT_REFUND_EXCEEDS_SALE');
+    validateSale(sale);
+    const saleInRange = applySale(currencies, sale, from, to);
+    if (saleInRange) includedSales += 1;
+    for (const snapshot of sale.returns || []) {
+      applyReturn(currencies, sale, snapshot, from, to);
     }
-
-    accumulator.refunds_minor = safeAdd(
-      accumulator.refunds_minor,
-      refund,
-      'refunds',
-    );
-    accumulator.net_revenue_minor = safeAdd(
-      accumulator.net_revenue_minor,
-      saleTotal - refund,
-      'net_revenue',
-    );
-    accumulator.return_count += (sale.returns || []).length;
-    if (isVoided) accumulator.voided_sale_count += 1;
-    else accumulator.active_sale_count += 1;
-
-    for (const rawLine of sale.lines) {
-      const line = rawLine as CostAwareSaleLine;
-      const sold = safeNonNegativeInteger(line.quantity, 'sold_quantity');
-      const returned = isVoided ? sold : returnedQuantity(sale, line.line_id);
-      if (returned > sold) {
-        throw new Error('CASHIER_REPORT_RETURN_EXCEEDS_SALE');
-      }
-      const netUnits = sold - returned;
-      const unitRevenue = safeNonNegativeInteger(
-        line.effective_unit_price_minor,
-        'effective_price',
-      );
-      const netRevenue = unitRevenue * netUnits;
-      if (!Number.isSafeInteger(netRevenue)) {
-        throw new Error('CASHIER_REPORT_OVERFLOW_LINE_REVENUE');
-      }
-
-      accumulator.sold_units = safeAdd(accumulator.sold_units, sold, 'sold_units');
-      accumulator.returned_units = safeAdd(
-        accumulator.returned_units,
-        returned,
-        'returned_units',
-      );
-      accumulator.net_units = safeAdd(accumulator.net_units, netUnits, 'net_units');
-      addProductRow(accumulator, line, netUnits, netRevenue);
-
-      if (netUnits === 0) continue;
-      if (line.unit_cost_minor === undefined || line.unit_cost_minor === null) {
-        accumulator.cost_unknown_net_units = safeAdd(
-          accumulator.cost_unknown_net_units,
-          netUnits,
-          'unknown_cost_units',
-        );
-        continue;
-      }
-      const unitCost = safeNonNegativeInteger(line.unit_cost_minor, 'unit_cost');
-      accumulator.cost_known_net_units = safeAdd(
-        accumulator.cost_known_net_units,
-        netUnits,
-        'known_cost_units',
-      );
-      const profit = (unitRevenue - unitCost) * netUnits;
-      if (!Number.isSafeInteger(profit)) {
-        throw new Error('CASHIER_REPORT_OVERFLOW_PROFIT');
-      }
-      accumulator.profit_minor = safeAdd(
-        accumulator.profit_minor,
-        profit,
-        'profit',
-      );
-    }
+    applyVoid(currencies, sale, saleInRange, from, to);
   }
 
   return {

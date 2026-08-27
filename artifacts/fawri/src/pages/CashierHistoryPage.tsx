@@ -7,6 +7,10 @@ import type {
   CashierSaleLineSnapshot,
   CashierSaleSnapshot,
 } from '@/lib/cashierLocalContracts';
+import {
+  cashierOperatorCan,
+  getCashierOperatorSession,
+} from '@/lib/cashierOperatorSessionRuntime';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import { CASHIER_UI_COPY, cashierLocale } from '@/lib/cashierUiCopy';
 import { useI18n } from '@/lib/i18n';
@@ -79,6 +83,7 @@ function returnedQuantity(sale: CashierSaleSnapshot, lineId: string): number {
 }
 
 function remainingQuantity(sale: CashierSaleSnapshot, line: CashierSaleLineSnapshot): number {
+  if (sale.status === 'voided' || sale.void) return 0;
   return Math.max(0, line.quantity - returnedQuantity(sale, line.line_id));
 }
 
@@ -145,6 +150,8 @@ export default function CashierHistoryPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
+  const [canReturnPermission, setCanReturnPermission] = useState(false);
+  const [canVoidPermission, setCanVoidPermission] = useState(false);
 
   const refresh = useCallback(async (activeRuntime: CashierHistoryRuntime) => {
     const snapshot = await activeRuntime.snapshot(120);
@@ -159,10 +166,15 @@ export default function CashierHistoryPage() {
   useEffect(() => {
     let stopped = false;
     let activeRuntime: CashierHistoryRuntime | null = null;
-    void createCashierHistoryRuntime()
-      .then(async created => {
+    void Promise.all([
+      createCashierHistoryRuntime(),
+      getCashierOperatorSession(),
+    ])
+      .then(async ([created, session]) => {
         activeRuntime = created;
         if (stopped) return;
+        setCanReturnPermission(cashierOperatorCan(session, 'sale.return'));
+        setCanVoidPermission(cashierOperatorCan(session, 'sale.void'));
         setRuntime(created);
         await refresh(created);
       })
@@ -224,7 +236,7 @@ export default function CashierHistoryPage() {
     return sold > 0 && totalReturnedQuantity(selectedSale) >= sold;
   }, [selectedSale]);
 
-  const canVoid = Boolean(
+  const canVoidSale = Boolean(
     selectedSale &&
       selectedSale.status === 'completed' &&
       !selectedSale.void &&
@@ -271,7 +283,7 @@ export default function CashierHistoryPage() {
   );
 
   const performReturn = useCallback(async () => {
-    if (!runtime || !selectedSale || requestedReturnLines.length === 0) return;
+    if (!canReturnPermission || !runtime || !selectedSale || requestedReturnLines.length === 0) return;
     setBusy(true);
     setError(null);
     try {
@@ -291,10 +303,10 @@ export default function CashierHistoryPage() {
     } finally {
       setBusy(false);
     }
-  }, [labels, refresh, requestedReturnLines, runtime, selectedSale, syncAfterLocalChange]);
+  }, [canReturnPermission, labels, refresh, requestedReturnLines, runtime, selectedSale, syncAfterLocalChange]);
 
   const performVoid = useCallback(async () => {
-    if (!runtime || !selectedSale || !canVoid) return;
+    if (!canVoidPermission || !runtime || !selectedSale || !canVoidSale) return;
     setBusy(true);
     setError(null);
     try {
@@ -312,7 +324,7 @@ export default function CashierHistoryPage() {
     } finally {
       setBusy(false);
     }
-  }, [canVoid, labels, refresh, runtime, selectedSale, syncAfterLocalChange]);
+  }, [canVoidPermission, canVoidSale, labels, refresh, runtime, selectedSale, syncAfterLocalChange]);
 
   const chooseReturnQuantity = useCallback((lineId: string, next: number, max: number) => {
     setReturnDraft(current => ({
@@ -326,6 +338,21 @@ export default function CashierHistoryPage() {
       Object.fromEntries(returnableLines.map(({ line, remaining }) => [line.line_id, remaining])),
     );
   }, [returnableLines]);
+
+  const compensationControlsVisible = Boolean(
+    selectedSale &&
+      selectedSale.status === 'completed' &&
+      !selectedSale.void &&
+      ((canReturnPermission && returnableLines.length > 0) ||
+        (canVoidPermission && canVoidSale)),
+  );
+
+  const confirmationAllowed =
+    confirmAction === 'return'
+      ? canReturnPermission
+      : confirmAction === 'void'
+        ? canVoidPermission
+        : false;
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-screen lg:overflow-hidden" dir={dir}>
@@ -454,7 +481,7 @@ export default function CashierHistoryPage() {
                 <div className="p-4">
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <h3 className="font-bold">{labels.products}</h3>
-                    {returnableLines.length > 0 ? (
+                    {canReturnPermission && returnableLines.length > 0 ? (
                       <button type="button" onClick={selectAllReturnable} className="text-xs font-bold text-orange-600 hover:text-orange-700">{labels.returnAll}</button>
                     ) : null}
                   </div>
@@ -473,12 +500,12 @@ export default function CashierHistoryPage() {
                               <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
                                 <span>{labels.sold(line.quantity)}</span>
                                 {returned > 0 ? <span>{labels.returned(returned)}</span> : null}
-                                <span>{labels.returnable(remaining)}</span>
+                                {selectedSale.status !== 'voided' && !selectedSale.void ? <span>{labels.returnable(remaining)}</span> : null}
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
                               <strong dir="ltr">{formatMoney(line.line_total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits, lang)}</strong>
-                              {remaining > 0 && selectedSale.status === 'completed' && !selectedSale.void ? (
+                              {canReturnPermission && remaining > 0 && selectedSale.status === 'completed' && !selectedSale.void ? (
                                 <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1" dir="ltr">
                                   <button type="button" onClick={() => chooseReturnQuantity(line.line_id, draft - 1, remaining)} className="h-8 w-8 rounded-lg text-lg font-bold hover:bg-slate-50">−</button>
                                   <span className="min-w-8 text-center text-sm font-bold">{draft}</span>
@@ -519,20 +546,24 @@ export default function CashierHistoryPage() {
                     </div>
                   ) : null}
 
-                  {selectedSale.status === 'completed' && !selectedSale.void && returnableLines.length > 0 ? (
+                  {compensationControlsVisible ? (
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
                       <div>
-                        {requestedReturnLines.length > 0 ? (
-                          <span className="text-sm text-slate-600">{labels.returnValue} <strong className="text-slate-900" dir="ltr">{formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits, lang)}</strong></span>
-                        ) : (
-                          <span className="text-xs text-slate-500">{labels.selectReturnQuantity}</span>
-                        )}
+                        {canReturnPermission ? (
+                          requestedReturnLines.length > 0 ? (
+                            <span className="text-sm text-slate-600">{labels.returnValue} <strong className="text-slate-900" dir="ltr">{formatMoney(returnTotal, selectedSale.currency_code, selectedSale.currency_fraction_digits, lang)}</strong></span>
+                          ) : (
+                            <span className="text-xs text-slate-500">{labels.selectReturnQuantity}</span>
+                          )
+                        ) : null}
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        {canVoid ? (
+                        {canVoidPermission && canVoidSale ? (
                           <button type="button" onClick={() => setConfirmAction('void')} disabled={busy} className="rounded-xl border border-red-200 bg-white px-4 py-2.5 text-sm font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-50">{labels.voidSale}</button>
                         ) : null}
-                        <button type="button" onClick={() => setConfirmAction('return')} disabled={busy || requestedReturnLines.length === 0} className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40">{labels.returnSelected}</button>
+                        {canReturnPermission ? (
+                          <button type="button" onClick={() => setConfirmAction('return')} disabled={busy || requestedReturnLines.length === 0} className="rounded-xl bg-orange-500 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40">{labels.returnSelected}</button>
+                        ) : null}
                       </div>
                     </div>
                   ) : null}
@@ -543,7 +574,7 @@ export default function CashierHistoryPage() {
         </div>
       </div>
 
-      {confirmAction && selectedSale ? (
+      {confirmAction && selectedSale && confirmationAllowed ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4" dir={dir}>
           <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl">
             <h3 className="text-lg font-bold">{confirmAction === 'void' ? labels.confirmVoid : labels.confirmReturn}</h3>
