@@ -12,18 +12,18 @@ const harmonyCss = await readFile(
   'utf8',
 );
 
-test('promotion discount type and value stay visually aligned without changing discount authority', () => {
-  assert.match(harmonyCss, /Present Discount type and/);
-  assert.match(harmonyCss, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
-  assert.match(harmonyCss, /gap:\s*0 !important/);
-  assert.match(harmonyCss, /label \+ label/);
-  assert.match(harmonyCss, /border-inline-start:\s*1px solid/);
-  assert.match(harmonyCss, /height:\s*2\.875rem !important/);
-  assert.match(harmonyCss, /padding-right:\s*3\.25rem/);
+test('promotion discount controls mirror promotion-period card styling without changing discount authority', () => {
+  assert.match(harmonyCss, /mirror the visual language already used by the/);
+  assert.match(harmonyCss, /gap:\s*1rem !important/);
+  assert.match(harmonyCss, /padding:\s*0\.75rem !important/);
+  assert.match(harmonyCss, /border:\s*1px solid hsl\(var\(--border\)\) !important/);
+  assert.match(harmonyCss, /border-radius:\s*1rem !important/);
+  assert.match(harmonyCss, /background:\s*hsl\(var\(--muted\) \/ 0\.1\) !important/);
+  assert.match(harmonyCss, /height:\s*2\.75rem !important/);
   assert.match(harmonyCss, /display:\s*none !important/);
 
+  assert.match(promotionSource, /rounded-2xl border bg-muted\/10 p-3/);
   assert.match(promotionSource, /effect:\s*event\.target\.value as CatalogPromotionEffect/);
   assert.match(promotionSource, /const bps = percentageBps\(draft\.value\)/);
   assert.match(promotionSource, /event\.target\.value\.replace\(\/%\/g, ''\)\.trim\(\)/);
-  assert.match(promotionSource, /draft\.effect === 'percentage_off' \? '0\.01 – 100'/);
 });
