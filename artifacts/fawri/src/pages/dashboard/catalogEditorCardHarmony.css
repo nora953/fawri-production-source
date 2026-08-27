@@ -118,29 +118,30 @@
 }
 
 /*
- * Promotion discount editor: visual-only alignment. The second modal section is
- * Discount details. Keep discount authority in CatalogPromotionsPage untouched
- * while giving Discount type and Discount value equal visual weight.
+ * Promotion discount editor: visual-only alignment. Keep the section calm and
+ * flat: one section border, two equal controls, and one shared helper line.
+ * Discount authority remains entirely in CatalogPromotionsPage.
  */
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid {
-  align-items: stretch !important;
-  gap: 0.75rem !important;
+  position: relative;
+  align-items: start !important;
+  gap: 1rem !important;
+  padding-bottom: 1.5rem;
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label {
-  display: grid !important;
-  grid-template-rows: auto 2.75rem 1.15rem;
-  gap: 0.5rem !important;
+  display: flex !important;
   min-width: 0;
-  min-height: 6.75rem;
-  padding: 0.75rem;
-  border: 1px solid hsl(var(--border));
-  border-radius: 1rem;
-  background: hsl(var(--muted) / 0.14);
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.5rem !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > span:first-child {
-  align-self: end;
+  min-height: 1.25rem;
   font-size: 0.8125rem;
   font-weight: 800;
   line-height: 1.25rem;
@@ -151,15 +152,15 @@
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > .relative,
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > .relative > input {
   width: 100% !important;
-  height: 2.75rem !important;
-  min-height: 2.75rem !important;
+  height: 2.875rem !important;
+  min-height: 2.875rem !important;
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > select,
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > .relative > input {
-  border-radius: 0.75rem !important;
+  border-radius: 0.875rem !important;
   background: hsl(var(--background)) !important;
-  box-shadow: 0 2px 8px -7px rgb(15 23 42 / 0.4);
+  box-shadow: 0 3px 10px -9px rgb(15 23 42 / 0.5);
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label:nth-child(2) > .relative > input {
@@ -174,18 +175,22 @@
   width: 2.75rem;
   justify-content: center;
   border-left: 1px solid rgb(249 115 22 / 0.18);
-  border-radius: 0 0.75rem 0.75rem 0;
-  background: rgb(249 115 22 / 0.08);
+  border-radius: 0 0.875rem 0.875rem 0;
+  background: rgb(249 115 22 / 0.07);
   color: rgb(234 88 12) !important;
   font-size: 0.875rem;
   font-weight: 900 !important;
 }
 
-.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > span:last-child:not(:first-child) {
-  align-self: center;
-  justify-self: center;
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label:nth-child(2) > span:last-child:not(:first-child) {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   margin: 0 !important;
+  text-align: center;
   font-size: 0.6875rem !important;
+  font-weight: 500 !important;
   line-height: 1rem;
   color: hsl(var(--muted-foreground));
 }
@@ -196,7 +201,8 @@
     justify-content: center;
   }
 
-  .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label {
-    min-height: 6.5rem;
+  .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid {
+    gap: 0.875rem !important;
+    padding-bottom: 1.5rem;
   }
 }
