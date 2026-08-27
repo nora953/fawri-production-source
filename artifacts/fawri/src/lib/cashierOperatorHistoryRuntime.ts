@@ -116,24 +116,38 @@ export async function createCashierOperatorHistoryRuntime(): Promise<CashierHist
       return filterSnapshot(session, await base.snapshot(limit));
     },
     async returnSale(input: CashierReturnSaleInput) {
-      if (!cashierOperatorCan(session, 'sale.return')) {
+      const currentSession = await getCashierOperatorSession();
+      if (!currentSession) {
+        throw new CashierOperatorHistoryError(
+          'CASHIER_OPERATOR_LOGIN_REQUIRED',
+          'Cashier operator login is required',
+        );
+      }
+      if (!cashierOperatorCan(currentSession, 'sale.return')) {
         throw new CashierOperatorHistoryError(
           'CASHIER_OPERATOR_PERMISSION_REQUIRED',
           'Return permission is required',
         );
       }
-      await visibleSaleOrThrow(base, session, input.sale_id);
+      await visibleSaleOrThrow(base, currentSession, input.sale_id);
       await bindCashierOperationToCurrentOperator(input.operation_id, 'return');
       return base.returnSale(input);
     },
     async voidSale(input: CashierVoidSaleInput) {
-      if (!cashierOperatorCan(session, 'sale.void')) {
+      const currentSession = await getCashierOperatorSession();
+      if (!currentSession) {
+        throw new CashierOperatorHistoryError(
+          'CASHIER_OPERATOR_LOGIN_REQUIRED',
+          'Cashier operator login is required',
+        );
+      }
+      if (!cashierOperatorCan(currentSession, 'sale.void')) {
         throw new CashierOperatorHistoryError(
           'CASHIER_OPERATOR_PERMISSION_REQUIRED',
           'Void permission is required',
         );
       }
-      await visibleSaleOrThrow(base, session, input.sale_id);
+      await visibleSaleOrThrow(base, currentSession, input.sale_id);
       await bindCashierOperationToCurrentOperator(input.operation_id, 'void');
       return base.voidSale(input);
     },
