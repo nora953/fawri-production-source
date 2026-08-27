@@ -21,6 +21,10 @@ import {
   type CashierOperatorSession,
   type CashierStationBinding,
 } from '@/lib/cashierOperatorSessionRuntime';
+import {
+  clearInvalidCashierStationBinding,
+  isCashierStationBindingInvalidError,
+} from '@/lib/cashierStationBindingRecovery';
 import { syncCashierOperatorCatalogFromCloud } from '@/lib/cashierOperatorCloudSync';
 import { publishCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 
@@ -218,6 +222,18 @@ export default function CashierOperatorGate({ children, bypass = false }: { chil
 
   const roleLabel = useMemo(() => (role: 'cashier' | 'manager') => role === 'manager' ? labels.roleManager : labels.roleCashier, [labels]);
 
+  const recoverStationBinding = async (error: unknown): Promise<boolean> => {
+    if (!isCashierStationBindingInvalidError(error)) return false;
+    await clearInvalidCashierStationBinding();
+    await getCashierOperatorSession().catch(() => null);
+    setOperatorName('');
+    setSelectedStaffId('');
+    setPin('');
+    setNotice('');
+    setState({ kind: 'pair', binding: null });
+    return true;
+  };
+
   const load = async () => {
     if (bypass) return;
     setState({ kind: 'loading' });
@@ -240,6 +256,7 @@ export default function CashierOperatorGate({ children, bypass = false }: { chil
       setSelectedStaffId(current => staff.some(member => member.id === current) ? current : staff[0]?.id || '');
       setState({ kind: 'login', binding, staff });
     } catch (error) {
+      if (await recoverStationBinding(error)) return;
       const binding = await getCashierStationBinding().catch(() => null);
       setState({ kind: 'error', binding, message: errorText(error, labels) });
     }
@@ -300,6 +317,7 @@ export default function CashierOperatorGate({ children, bypass = false }: { chil
       setState({ kind: 'ready', binding, session });
       window.dispatchEvent(new CustomEvent('fawri:cashier-operator-session-changed'));
     } catch (error) {
+      if (await recoverStationBinding(error)) return;
       setNotice('');
       setState({ kind: 'error', binding: state.binding, message: errorText(error, labels) });
     } finally {
@@ -317,6 +335,7 @@ export default function CashierOperatorGate({ children, bypass = false }: { chil
       setOperatorName('');
       await load();
     } catch (error) {
+      if (await recoverStationBinding(error)) return;
       setState(current => ({
         kind: 'error',
         binding: current.kind === 'ready' || current.kind === 'login' ? current.binding : null,
