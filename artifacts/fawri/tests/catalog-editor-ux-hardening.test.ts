@@ -103,6 +103,7 @@ test('new-item recovery remains browser-tab scoped and can carry option-builder 
   assert.match(editorSource, /peekCatalogCreateRecoveryDraft\(\)/);
   assert.match(shellSource, /saveCatalogCreateRecoveryDraft\(form\)/);
   assert.match(variantSource, /variant_option_rows/);
+  assert.match(variantSource, /excluded_variant_combinations/);
 });
 
 test('merchant dashboard logs out only on authoritative unauthenticated lifecycle result', () => {
@@ -176,6 +177,29 @@ test('generated combinations are grouped by the first option with safe group bul
   assert.doesNotMatch(variantSource, /barcode: matching\.barcode/);
   assert.match(variantSource, /groupImagesHint/);
   assert.match(variantSource, /variantTable\(group\.indexes, true\)/);
+});
+
+test('unavailable generated combinations can be excluded and restored without unsafe saved-variant deletion', () => {
+  assert.match(variantSource, /excluded_variant_combinations/);
+  assert.match(variantSource, /function variantSignature/);
+  assert.match(variantSource, /generatedFromDefinitions/);
+  assert.match(variantSource, /excludeVariant/);
+  assert.match(variantSource, /restoreExcluded/);
+  assert.match(variantSource, /excludedSignatures/);
+  assert.match(variantSource, /filter\(variant => !excludedSignatures\.has\(variantSignature\(variant\)\)\)/);
+  assert.match(variantSource, /if \(variant\.id\)/);
+  assert.match(variantSource, /savedVariantProtected/);
+  assert.match(variantSource, /استبعاد التركيبة/);
+  assert.match(variantSource, /تركيبات غير متوفرة/);
+});
+
+test('variant numeric cells and compact image controls stay visually aligned', () => {
+  assert.match(variantSource, /text-center tabular-nums/);
+  assert.match(variantSource, /compact dense hideHeading/);
+  assert.match(variantSource, /align-middle/);
+  assert.match(imageSource, /dense\?: boolean/);
+  assert.match(imageSource, /h-14 w-16/);
+  assert.match(imageSource, /h-14 w-14/);
 });
 
 test('catalog image editor stays compact and fetches protected previews before rendering img', () => {
