@@ -13,18 +13,17 @@ const harmonyCss = await readFile(
 );
 
 test('promotion discount type and value stay visually aligned without changing discount authority', () => {
-  assert.match(harmonyCss, /Promotion discount editor: visual-only alignment/);
-  assert.match(harmonyCss, /position:\s*relative/);
-  assert.match(harmonyCss, /padding-bottom:\s*1\.5rem/);
-  assert.match(harmonyCss, /padding:\s*0 !important/);
-  assert.match(harmonyCss, /border:\s*0 !important/);
-  assert.match(harmonyCss, /background:\s*transparent !important/);
+  assert.match(harmonyCss, /Present Discount type and/);
+  assert.match(harmonyCss, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(harmonyCss, /gap:\s*0 !important/);
+  assert.match(harmonyCss, /label \+ label/);
+  assert.match(harmonyCss, /border-inline-start:\s*1px solid/);
   assert.match(harmonyCss, /height:\s*2\.875rem !important/);
-  assert.match(harmonyCss, /padding-right:\s*3\.35rem/);
-  assert.match(harmonyCss, /position:\s*absolute/);
-  assert.match(harmonyCss, /text-align:\s*center/);
+  assert.match(harmonyCss, /padding-right:\s*3\.25rem/);
+  assert.match(harmonyCss, /display:\s*none !important/);
 
   assert.match(promotionSource, /effect:\s*event\.target\.value as CatalogPromotionEffect/);
   assert.match(promotionSource, /const bps = percentageBps\(draft\.value\)/);
   assert.match(promotionSource, /event\.target\.value\.replace\(\/%\/g, ''\)\.trim\(\)/);
+  assert.match(promotionSource, /draft\.effect === 'percentage_off' \? '0\.01 – 100'/);
 });

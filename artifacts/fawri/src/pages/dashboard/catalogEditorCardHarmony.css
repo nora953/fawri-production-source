@@ -118,26 +118,34 @@
 }
 
 /*
- * Promotion discount editor: visual-only alignment. Keep the section calm and
- * flat: one section border, two equal controls, and one shared helper line.
+ * Promotion discount editor: visual-only alignment. Present Discount type and
+ * Discount value as one compound control so both halves read as one setting.
  * Discount authority remains entirely in CatalogPromotionsPage.
  */
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid {
-  position: relative;
-  align-items: start !important;
-  gap: 1rem !important;
-  padding-bottom: 1.5rem;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 !important;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  background: hsl(var(--muted) / 0.12);
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label {
   display: flex !important;
   min-width: 0;
-  min-height: 0;
+  min-height: 5.75rem;
   flex-direction: column;
+  justify-content: center;
   gap: 0.5rem !important;
-  padding: 0 !important;
+  padding: 0.75rem 0.875rem !important;
   border: 0 !important;
   background: transparent !important;
+}
+
+.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label + label {
+  border-inline-start: 1px solid hsl(var(--border)) !important;
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > span:first-child {
@@ -158,13 +166,13 @@
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > select,
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > .relative > input {
-  border-radius: 0.875rem !important;
+  border-radius: 0.75rem !important;
   background: hsl(var(--background)) !important;
-  box-shadow: 0 3px 10px -9px rgb(15 23 42 / 0.5);
+  box-shadow: 0 3px 10px -9px rgb(15 23 42 / 0.45);
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label:nth-child(2) > .relative > input {
-  padding-right: 3.35rem !important;
+  padding-right: 3.25rem !important;
   padding-left: 1rem !important;
 }
 
@@ -175,24 +183,17 @@
   width: 2.75rem;
   justify-content: center;
   border-left: 1px solid rgb(249 115 22 / 0.18);
-  border-radius: 0 0.875rem 0.875rem 0;
+  border-radius: 0 0.75rem 0.75rem 0;
   background: rgb(249 115 22 / 0.07);
   color: rgb(234 88 12) !important;
   font-size: 0.875rem;
   font-weight: 900 !important;
 }
 
+/* The numeric validity range is enforced by promotionInput/percentageBps; do not
+ * leave a one-sided helper line that visually misaligns the paired controls. */
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label:nth-child(2) > span:last-child:not(:first-child) {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  margin: 0 !important;
-  text-align: center;
-  font-size: 0.6875rem !important;
-  font-weight: 500 !important;
-  line-height: 1rem;
-  color: hsl(var(--muted-foreground));
+  display: none !important;
 }
 
 @media (max-width: 639px) {
@@ -202,7 +203,11 @@
   }
 
   .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid {
-    gap: 0.875rem !important;
-    padding-bottom: 1.5rem;
+    grid-template-columns: 1fr;
+  }
+
+  .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label + label {
+    border-inline-start: 0 !important;
+    border-top: 1px solid hsl(var(--border)) !important;
   }
 }
