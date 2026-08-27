@@ -24,23 +24,27 @@ test('cashier schema enforces one open shift per station and staff plus one live
   assert.match(migration, /\("merchant_id", "station_id"\) WHERE "status" = 'active'/);
 });
 
-test('concurrent operator login unique conflicts map to stable cashier 409 errors', async () => {
-  const source = await apiSource('src/services/postgresCashierStaffAuthority.ts');
+test('concurrent operator login unique conflicts map to stable cashier 409 errors at the API boundary', async () => {
+  const route = await apiSource('src/routes/cashier-staff-operations.ts');
+  const authority = await apiSource('src/services/postgresCashierStaffAuthority.ts');
 
-  assert.match(source, /constraint\.includes\("cashier_shifts_open_station_unique"\)/);
-  assert.match(source, /"CASHIER_STATION_SHIFT_OCCUPIED"/);
-  assert.match(source, /constraint\.includes\("cashier_shifts_open_staff_unique"\)/);
-  assert.match(source, /"CASHIER_OPERATOR_SHIFT_OCCUPIED"/);
-  assert.match(source, /constraint\.includes\("cashier_operator_sessions_live_station_unique"\)/);
-  assert.match(source, /"CASHIER_STATION_IN_USE"/);
+  assert.match(route, /candidate\?\.code/);
+  assert.match(route, /23505/);
+  assert.match(route, /cashier_shifts_open_station_unique/);
+  assert.match(route, /CASHIER_STATION_SHIFT_OCCUPIED/);
+  assert.match(route, /cashier_shifts_open_staff_unique/);
+  assert.match(route, /CASHIER_OPERATOR_SHIFT_OCCUPIED/);
+  assert.match(route, /cashier_operator_sessions_live_station_unique/);
+  assert.match(route, /CASHIER_STATION_IN_USE/);
+  assert.match(route, /res\.status\(mapped\.status\)/);
 
-  const loginStart = source.indexOf('export async function loginCashierOperatorAuthoritative');
-  const transaction = source.indexOf('withMerchantOperationalTransaction(', loginStart);
-  const translatedCatch = source.indexOf(').catch(translateDatabaseError)', transaction);
-  const decisionCheck = source.indexOf('if (!decision.ok) throw decision.error', transaction);
+  const loginStart = authority.indexOf('export async function loginCashierOperatorAuthoritative');
+  const transaction = authority.indexOf('withMerchantOperationalTransaction(', loginStart);
+  const shiftInsert = authority.indexOf('INSERT INTO cashier_shifts', transaction);
+  const sessionInsert = authority.indexOf('INSERT INTO cashier_operator_sessions', shiftInsert);
 
   assert.ok(loginStart >= 0, 'operator login authority must exist');
-  assert.ok(transaction > loginStart, 'operator login must use the merchant transaction');
-  assert.ok(translatedCatch > transaction, 'operator login transaction conflicts must use database error translation');
-  assert.ok(decisionCheck > translatedCatch, 'PIN decision handling must occur after transaction error translation');
+  assert.ok(transaction > loginStart, 'operator login must use one merchant transaction');
+  assert.ok(shiftInsert > transaction, 'open shift creation must stay inside the login transaction');
+  assert.ok(sessionInsert > shiftInsert, 'operator session creation must follow shift creation');
 });
