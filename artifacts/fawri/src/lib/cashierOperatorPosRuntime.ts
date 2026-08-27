@@ -10,6 +10,7 @@ import {
   bindCashierOperationToCurrentOperator,
   cashierOperatorCan,
   getCashierOperatorSession,
+  type CashierOperatorSession,
 } from './cashierOperatorSessionRuntime';
 
 export class CashierOperatorPosError extends Error {
@@ -25,10 +26,10 @@ export class CashierOperatorPosError extends Error {
 async function assertOfflineInventoryPermission(
   runtime: CashierPosRuntime,
   input: CashierCommitSaleInput,
+  session: CashierOperatorSession,
 ): Promise<void> {
   if (typeof navigator === 'undefined' || navigator.onLine !== false) return;
-  const session = await getCashierOperatorSession();
-  if (!session || session.context.offline_inventory_authority) return;
+  if (session.context.offline_inventory_authority) return;
 
   const authority = new IndexedDbCashierAuthority({
     localMerchantId: runtime.localMerchantId,
@@ -72,7 +73,20 @@ export async function createCashierOperatorPosRuntime(options?: {
   return {
     ...base,
     async commitSale(input) {
-      await assertOfflineInventoryPermission(base, input);
+      const currentSession = await getCashierOperatorSession();
+      if (!currentSession) {
+        throw new CashierOperatorPosError(
+          'CASHIER_OPERATOR_LOGIN_REQUIRED',
+          'Cashier operator login is required',
+        );
+      }
+      if (!cashierOperatorCan(currentSession, 'sale.create')) {
+        throw new CashierOperatorPosError(
+          'CASHIER_OPERATOR_PERMISSION_REQUIRED',
+          'This operator is not allowed to create sales',
+        );
+      }
+      await assertOfflineInventoryPermission(base, input, currentSession);
       await bindCashierOperationToCurrentOperator(input.operation_id, 'sale');
       return base.commitSale(input);
     },
