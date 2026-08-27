@@ -17,7 +17,10 @@ import {
   syncCashierOperatorCatalogFromCloud,
   syncCashierOperatorOutboxToCloud,
 } from '@/lib/cashierOperatorCloudSync';
-import { getCashierOperatorSession } from '@/lib/cashierOperatorSessionRuntime';
+import {
+  getCashierOperatorSession,
+  invalidateCashierOperatorSession,
+} from '@/lib/cashierOperatorSessionRuntime';
 import { publishCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import {
@@ -138,6 +141,13 @@ function startCashierPosAutoSync(): () => void {
         ? 'CASHIER_OPERATOR_LOGIN_REQUIRED'
         : rawCode;
       const latestLabels = storedCashierCopy().runtime;
+
+      if (sessionRequired) {
+        invalidateCashierOperatorSession();
+        window.dispatchEvent(
+          new CustomEvent('fawri:cashier-operator-session-invalidated'),
+        );
+      }
 
       if (!cashierIsOnline()) {
         publishCashierSyncUiState({
