@@ -2,23 +2,23 @@ import { useEffect, useMemo, useState } from 'react';
 import { Image as ImageIcon } from 'lucide-react';
 
 import { catalogImagePreviewUrl } from '@/lib/catalogMediaUiApi';
-import type { CatalogImageRef } from '@/lib/catalogUiApi';
+import type { CatalogImageReference } from '@/lib/catalogUiApi';
 
 type CatalogProtectedImageProps = {
-  image?: CatalogImageRef | null;
+  image?: CatalogImageReference | null;
   alt: string;
   className?: string;
   fallbackClassName?: string;
 };
 
-function protectedPreviewRequest(image?: CatalogImageRef | null): string {
+function protectedPreviewRequest(image?: CatalogImageReference | null): string {
   if (!image) return '';
   if (image.storage_key?.trim()) return catalogImagePreviewUrl(image.storage_key.trim());
   const direct = image.url?.trim() || '';
   return direct.startsWith('/api/') ? direct : '';
 }
 
-function publicImageUrl(image?: CatalogImageRef | null): string {
+function publicImageUrl(image?: CatalogImageReference | null): string {
   if (!image) return '';
   const direct = image.url?.trim() || '';
   return direct && !direct.startsWith('/api/') ? direct : '';
@@ -30,7 +30,10 @@ export function CatalogProtectedImage({
   className = 'h-full w-full object-cover',
   fallbackClassName = 'flex h-full w-full items-center justify-center bg-muted/20 text-muted-foreground/50',
 }: CatalogProtectedImageProps) {
-  const protectedRequest = useMemo(() => protectedPreviewRequest(image), [image?.storage_key, image?.url]);
+  const protectedRequest = useMemo(
+    () => protectedPreviewRequest(image),
+    [image?.storage_key, image?.url],
+  );
   const publicUrl = useMemo(() => publicImageUrl(image), [image?.url]);
   const [source, setSource] = useState(publicUrl);
   const [failed, setFailed] = useState(false);
@@ -59,6 +62,7 @@ export function CatalogProtectedImage({
         });
         if (!response.ok) throw new Error(`catalog image preview failed (${response.status})`);
         const blob = await response.blob();
+        if (!blob.type.startsWith('image/')) throw new Error('catalog preview is not an image');
         if (!active) return;
         objectUrl = URL.createObjectURL(blob);
         setSource(objectUrl);
