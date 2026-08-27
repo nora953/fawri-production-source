@@ -218,3 +218,12 @@ test('product cards remain compact without nested inventory scrolling', () => {
   assert.match(compactCardCss, /align-self:\s*start/);
   assert.doesNotMatch(compactCardCss, /overflow-y:\s*auto/);
 });
+
+test('merchant action buttons stay visually consistent across catalog and promotions', () => {
+  assert.match(cardHarmonyCss, /one strong orange primary action/);
+  assert.match(cardHarmonyCss, /min-height:\s*2\.875rem/);
+  assert.match(cardHarmonyCss, /Product-card edit\/delete controls/);
+  assert.match(cardHarmonyCss, /flex-direction:\s*row\s*!important/);
+  assert.match(cardHarmonyCss, /background:\s*rgb\(239 68 68 \/ 0\.07\)/);
+  assert.match(cardHarmonyCss, /background:\s*rgb\(249 115 22\)/);
+});
