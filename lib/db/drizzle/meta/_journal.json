@@ -2,20 +2,110 @@
   "version": "7",
   "dialect": "postgresql",
   "entries": [
-    { "idx": 0, "version": "7", "when": 1786021331544, "tag": "0000_even_kulan_gath", "breakpoints": true },
-    { "idx": 1, "version": "7", "when": 1786100550622, "tag": "0001_military_proteus", "breakpoints": true },
-    { "idx": 2, "version": "7", "when": 1786120375361, "tag": "0002_cross_lane_stage", "breakpoints": true },
-    { "idx": 3, "version": "7", "when": 1786120376886, "tag": "0003_cross_lane_cleanup", "breakpoints": true },
-    { "idx": 4, "version": "7", "when": 1786314600000, "tag": "0004_product_shipping_measurements", "breakpoints": true },
-    { "idx": 5, "version": "7", "when": 1786393740000, "tag": "0005_delivery_fee_per_area", "breakpoints": true },
-    { "idx": 6, "version": "7", "when": 1786400580000, "tag": "0006_saas_billing_authority", "breakpoints": true },
-    { "idx": 7, "version": "7", "when": 1786488600000, "tag": "0007_merchant_customer_payment_confirmation_authority", "breakpoints": true },
-    { "idx": 8, "version": "7", "when": 1786722600000, "tag": "0008_admin_device_verification_auth", "breakpoints": true },
-    { "idx": 9, "version": "7", "when": 1786752000000, "tag": "0009_merchant_management_lifecycle_authority", "breakpoints": true },
-    { "idx": 10, "version": "7", "when": 1787356800000, "tag": "0010_provider_cost_authority", "breakpoints": true },
-    { "idx": 11, "version": "7", "when": 1787435160000, "tag": "0011_commerce_promotions_timezone_authority", "breakpoints": true },
-    { "idx": 12, "version": "7", "when": 1787600400000, "tag": "0012_catalog_variant_signature_guard", "breakpoints": true },
-    { "idx": 13, "version": "7", "when": 1787706000000, "tag": "0013_cashier_staff_station_authority", "breakpoints": true },
-    { "idx": 14, "version": "7", "when": 1787710800000, "tag": "0014_cashier_operation_attribution", "breakpoints": true }
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1786021331544,
+      "tag": "0000_even_kulan_gath",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786100550622,
+      "tag": "0001_military_proteus",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786120375361,
+      "tag": "0002_cross_lane_stage",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786120376886,
+      "tag": "0003_cross_lane_cleanup",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786314600000,
+      "tag": "0004_product_shipping_measurements",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1786393740000,
+      "tag": "0005_delivery_fee_per_area",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786400580000,
+      "tag": "0006_saas_billing_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786488600000,
+      "tag": "0007_merchant_customer_payment_confirmation_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1786722600000,
+      "tag": "0008_admin_device_verification_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786752000000,
+      "tag": "0009_merchant_management_lifecycle_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787356800000,
+      "tag": "0010_provider_cost_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787435160000,
+      "tag": "0011_commerce_promotions_timezone_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1787600400000,
+      "tag": "0012_catalog_variant_signature_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1787706000000,
+      "tag": "0013_cashier_staff_station_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1787710800000,
+      "tag": "0014_cashier_operation_attribution",
+      "breakpoints": true
+    }
   ]
 }
