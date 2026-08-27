@@ -118,39 +118,38 @@
 }
 
 /*
- * Promotion discount editor: visual-only alignment. Present Discount type and
- * Discount value as one compound control so both halves read as one setting.
- * Discount authority remains entirely in CatalogPromotionsPage.
+ * Promotion discount editor: mirror the visual language already used by the
+ * Promotion period cards. Each control is its own rounded-2xl, bordered,
+ * muted/10 card with p-3 spacing. Discount authority stays untouched.
  */
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid {
-  display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 !important;
-  overflow: hidden;
-  border: 1px solid hsl(var(--border));
-  border-radius: 1rem;
-  background: hsl(var(--muted) / 0.12);
+  align-items: stretch !important;
+  gap: 1rem !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label {
   display: flex !important;
   min-width: 0;
-  min-height: 5.75rem;
+  min-height: 7rem;
   flex-direction: column;
-  justify-content: center;
-  gap: 0.5rem !important;
-  padding: 0.75rem 0.875rem !important;
-  border: 0 !important;
-  background: transparent !important;
-}
-
-.products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label + label {
-  border-inline-start: 1px solid hsl(var(--border)) !important;
+  justify-content: flex-start;
+  gap: 0.75rem !important;
+  padding: 0.75rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 1rem !important;
+  background: hsl(var(--muted) / 0.1) !important;
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > span:first-child {
+  display: flex;
   min-height: 1.25rem;
-  font-size: 0.8125rem;
+  align-items: center;
+  margin: 0 !important;
+  font-size: 0.875rem;
   font-weight: 800;
   line-height: 1.25rem;
   color: hsl(var(--foreground));
@@ -160,38 +159,38 @@
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > .relative,
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > .relative > input {
   width: 100% !important;
-  height: 2.875rem !important;
-  min-height: 2.875rem !important;
+  height: 2.75rem !important;
+  min-height: 2.75rem !important;
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > select,
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label > .relative > input {
   border-radius: 0.75rem !important;
   background: hsl(var(--background)) !important;
-  box-shadow: 0 3px 10px -9px rgb(15 23 42 / 0.45);
+  box-shadow: none !important;
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label:nth-child(2) > .relative > input {
-  padding-right: 3.25rem !important;
+  padding-right: 2.5rem !important;
   padding-left: 1rem !important;
 }
 
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label:nth-child(2) > .relative > span {
-  right: 0 !important;
+  right: 0.75rem !important;
   top: 0 !important;
   bottom: 0 !important;
-  width: 2.75rem;
+  width: auto !important;
   justify-content: center;
-  border-left: 1px solid rgb(249 115 22 / 0.18);
-  border-radius: 0 0.75rem 0.75rem 0;
-  background: rgb(249 115 22 / 0.07);
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
   color: rgb(234 88 12) !important;
   font-size: 0.875rem;
   font-weight: 900 !important;
 }
 
-/* The numeric validity range is enforced by promotionInput/percentageBps; do not
- * leave a one-sided helper line that visually misaligns the paired controls. */
+/* The promotion period cards do not carry a one-sided helper below one field.
+ * Keep the discount pair visually identical and leave validation to authority. */
 .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label:nth-child(2) > span:last-child:not(:first-child) {
   display: none !important;
 }
@@ -200,14 +199,5 @@
   .products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button {
     width: 100%;
     justify-content: center;
-  }
-
-  .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid {
-    grid-template-columns: 1fr;
-  }
-
-  .products-workspace-polish [class~="z-[110]"] section:nth-of-type(2) > .grid > label + label {
-    border-inline-start: 0 !important;
-    border-top: 1px solid hsl(var(--border)) !important;
   }
 }
