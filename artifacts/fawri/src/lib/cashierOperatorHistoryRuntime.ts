@@ -92,14 +92,7 @@ async function visibleSaleOrThrow(
   return sale;
 }
 
-export async function createCashierOperatorHistoryRuntime(): Promise<CashierHistoryRuntime> {
-  const session = await getCashierOperatorSession();
-  if (!session) {
-    throw new CashierOperatorHistoryError(
-      'CASHIER_OPERATOR_LOGIN_REQUIRED',
-      'Cashier operator login is required',
-    );
-  }
+function assertHistoryVisibility(session: CashierOperatorSession): void {
   if (
     !cashierOperatorCan(session, 'sale.view_own') &&
     !cashierOperatorCan(session, 'sale.view_all')
@@ -109,11 +102,38 @@ export async function createCashierOperatorHistoryRuntime(): Promise<CashierHist
       'Sale history permission is required',
     );
   }
+}
+
+export async function createCashierOperatorHistoryRuntime(): Promise<CashierHistoryRuntime> {
+  const session = await getCashierOperatorSession();
+  if (!session) {
+    throw new CashierOperatorHistoryError(
+      'CASHIER_OPERATOR_LOGIN_REQUIRED',
+      'Cashier operator login is required',
+    );
+  }
+  assertHistoryVisibility(session);
   const base = await createCashierHistoryRuntime();
   return {
     ...base,
     async snapshot(limit) {
-      return filterSnapshot(session, await base.snapshot(limit));
+      const currentSession = await getCashierOperatorSession();
+      if (!currentSession) {
+        throw new CashierOperatorHistoryError(
+          'CASHIER_OPERATOR_LOGIN_REQUIRED',
+          'Cashier operator login is required',
+        );
+      }
+      if (
+        !cashierOperatorCan(currentSession, 'sale.view_own') &&
+        !cashierOperatorCan(currentSession, 'sale.view_all')
+      ) {
+        throw new CashierOperatorHistoryError(
+          'CASHIER_OPERATOR_PERMISSION_REQUIRED',
+          'Sale history permission is required',
+        );
+      }
+      return filterSnapshot(currentSession, await base.snapshot(limit));
     },
     async returnSale(input: CashierReturnSaleInput) {
       const currentSession = await getCashierOperatorSession();
