@@ -341,12 +341,26 @@ const unexportedSchemaFiles = schemaFiles.filter((name) => {
   const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   return !new RegExp(`export\\s+\\*\\s+from\\s+[\"']\\./${escaped}[\"']`).test(schemaIndex);
 });
-for (const name of unexportedSchemaFiles) {
+
+// These modules are intentionally outside the runtime schema barrel. Drizzle
+// migration generation is anchored to src/schema/*.ts, so they remain part of
+// the canonical migration authority without expanding the runtime relational
+// schema exported by @workspace/db.
+const documentedNonBarrelSchemaFiles = new Set([
+  "auth-security",
+  "channel-messaging",
+  "merchant-settings",
+  "tenant-security",
+]);
+const unexpectedUnexportedSchemaFiles = unexportedSchemaFiles.filter(
+  (name) => !documentedNonBarrelSchemaFiles.has(name),
+);
+for (const name of unexpectedUnexportedSchemaFiles) {
   issues.push(
     issue(
       "review",
       "DB_SCHEMA_FILE_NOT_EXPORTED",
-      `Schema file is not re-exported from lib/db/src/schema/index.ts: ${name}.ts`,
+      `Schema file is unexpectedly absent from lib/db/src/schema/index.ts: ${name}.ts`,
       { file: `lib/db/src/schema/${name}.ts` },
     ),
   );
@@ -415,7 +429,10 @@ const report = {
   },
   schema: {
     file_count: schemaFiles.length,
-    unexported: unexportedSchemaFiles,
+    documented_non_barrel: unexportedSchemaFiles.filter((name) =>
+      documentedNonBarrelSchemaFiles.has(name),
+    ),
+    unexpected_unexported: unexpectedUnexportedSchemaFiles,
   },
   issues,
   writes_performed: false,
@@ -450,10 +467,17 @@ if (jsonMode) {
   console.log(`API paths needing static review: ${uncoveredFrontendApi.length}`);
   console.log(`Migration SQL files: ${sqlMigrations.length}`);
   console.log(`Migration journal entries: ${journalTags.length}`);
-  console.log(`Unexported schema files: ${unexportedSchemaFiles.length}`);
-  if (unexportedSchemaFiles.length) {
-    console.log(`Unexported schema names: ${unexportedSchemaFiles.join(", ")}`);
+  console.log(
+    `Documented non-barrel schema files: ${report.schema.documented_non_barrel.length}`,
+  );
+  if (report.schema.documented_non_barrel.length) {
+    console.log(
+      `Documented non-barrel schema names: ${report.schema.documented_non_barrel.join(", ")}`,
+    );
   }
+  console.log(
+    `Unexpected unexported schema files: ${unexpectedUnexportedSchemaFiles.length}`,
+  );
   console.log("\n--- First API Review Findings ---");
   for (const item of uncoveredFrontendApi.slice(0, 25)) {
     console.log(`REVIEW ${item.endpoint} <- ${item.files.join(", ")}`);
