@@ -24,3 +24,102 @@
   border: 1px solid hsl(var(--input));
   background: hsl(var(--background));
 }
+
+/*
+ * Keep the merchant action language consistent across Products and Promotions:
+ * one strong orange primary action, one calm secondary action, and compact
+ * edit/delete controls with equal visual weight.
+ */
+.products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button,
+.products-workspace-polish > .min-h-screen > .mx-auto > header > div:first-child > button {
+  min-height: 2.875rem !important;
+  border-radius: 0.875rem !important;
+  padding-inline: 1.15rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.01em;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease !important;
+}
+
+.products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button:first-child,
+.products-workspace-polish > .min-h-screen > .mx-auto > header > div:first-child > button {
+  border: 1px solid rgb(249 115 22 / 0.28) !important;
+  background: rgb(249 115 22) !important;
+  color: white !important;
+  box-shadow: 0 8px 18px -12px rgb(249 115 22 / 0.9) !important;
+}
+
+.products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button:first-child:hover,
+.products-workspace-polish > .min-h-screen > .mx-auto > header > div:first-child > button:hover {
+  transform: translateY(-1px);
+  background: rgb(234 88 12) !important;
+  box-shadow: 0 10px 22px -13px rgb(249 115 22 / 0.95) !important;
+}
+
+.products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button:last-child {
+  border-color: hsl(var(--border)) !important;
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  box-shadow: 0 4px 14px -12px rgb(15 23 42 / 0.45) !important;
+}
+
+.products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button:last-child:hover {
+  transform: translateY(-1px);
+  border-color: rgb(249 115 22 / 0.32) !important;
+  background: rgb(249 115 22 / 0.05) !important;
+}
+
+/* Product-card edit/delete controls: horizontal, equal size, no oversized red pill. */
+.products-workspace-polish article > .border-b > .flex > .flex.shrink-0.flex-col {
+  flex-direction: row !important;
+  gap: 0.5rem !important;
+}
+
+.products-workspace-polish article > .border-b > .flex > .flex.shrink-0.flex-col > button,
+.products-workspace-polish article > .p-5 > .flex > .flex.shrink-0.gap-2 > button {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  min-width: 2.5rem !important;
+  border-radius: 0.75rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  background: hsl(var(--card)) !important;
+  color: hsl(var(--foreground)) !important;
+  box-shadow: 0 4px 12px -11px rgb(15 23 42 / 0.5) !important;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease !important;
+}
+
+.products-workspace-polish article > .border-b > .flex > .flex.shrink-0.flex-col > button:hover,
+.products-workspace-polish article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:hover {
+  transform: translateY(-1px);
+  border-color: rgb(249 115 22 / 0.28) !important;
+  background: rgb(249 115 22 / 0.05) !important;
+  box-shadow: 0 7px 16px -12px rgb(15 23 42 / 0.55) !important;
+}
+
+.products-workspace-polish article > .border-b > .flex > .flex.shrink-0.flex-col > button:last-child,
+.products-workspace-polish article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:last-child {
+  border-color: rgb(239 68 68 / 0.2) !important;
+  background: rgb(239 68 68 / 0.07) !important;
+  color: rgb(220 38 38) !important;
+}
+
+.products-workspace-polish article > .border-b > .flex > .flex.shrink-0.flex-col > button:last-child:hover,
+.products-workspace-polish article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:last-child:hover {
+  border-color: rgb(239 68 68 / 0.34) !important;
+  background: rgb(239 68 68 / 0.12) !important;
+  color: rgb(185 28 28) !important;
+}
+
+@media (max-width: 639px) {
+  .products-workspace-polish > .min-h-screen > header > div:first-child > div:last-child > button {
+    width: 100%;
+    justify-content: center;
+  }
+}
