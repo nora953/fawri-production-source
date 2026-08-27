@@ -27,3 +27,13 @@ test('promotion discount controls mirror promotion-period card styling without c
   assert.match(promotionSource, /const bps = percentageBps\(draft\.value\)/);
   assert.match(promotionSource, /event\.target\.value\.replace\(\/%\/g, ''\)\.trim\(\)/);
 });
+
+test('promotion editor hides the duplicate modal title badge without changing the page title', () => {
+  assert.ok(
+    harmonyCss.includes(
+      '.products-workspace-polish [class~="z-[110]"] > div > div:first-child > div > div:last-child {',
+    ),
+  );
+  assert.match(harmonyCss, /Promotion modal: hide the duplicate Promotions badge/);
+  assert.match(promotionSource, /<h1 className="text-3xl font-extrabold tracking-tight">\{copy\.title\}<\/h1>/);
+});
