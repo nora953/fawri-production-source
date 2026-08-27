@@ -265,6 +265,23 @@ export default function CashierOperatorGate({ children, bypass = false }: { chil
   useEffect(() => { if (!bypass) void load(); }, [bypass]);
 
   useEffect(() => {
+    if (bypass) return;
+    const handleOperatorSessionInvalidated = () => {
+      void load();
+    };
+    window.addEventListener(
+      'fawri:cashier-operator-session-invalidated',
+      handleOperatorSessionInvalidated,
+    );
+    return () => {
+      window.removeEventListener(
+        'fawri:cashier-operator-session-invalidated',
+        handleOperatorSessionInvalidated,
+      );
+    };
+  }, [bypass]);
+
+  useEffect(() => {
     const session = state.kind === 'ready' ? state.session : null;
     document.documentElement.dataset.cashierOperatorReady = session ? '1' : '0';
     document.documentElement.dataset.cashierCanReports = session && cashierOperatorCan(session, 'reports.sales') ? '1' : '0';
