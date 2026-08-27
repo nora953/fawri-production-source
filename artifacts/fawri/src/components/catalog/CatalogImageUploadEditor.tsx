@@ -263,9 +263,12 @@ export function CatalogImageUploadEditor({
   const selectedLightbox = lightboxIndex === null ? null : images[lightboxIndex];
   const compactUploadSize = dense ? 'h-14 w-16 shrink-0 px-1' : 'h-20 w-24 shrink-0 px-2';
   const compactThumbSize = dense ? 'h-14 w-14' : 'h-20 w-20';
+  const compactShellClass = hideHeading
+    ? (dense ? 'space-y-1' : 'space-y-2')
+    : `${dense ? 'space-y-1 rounded-lg p-1.5' : 'space-y-2 rounded-xl p-2.5'} border bg-muted/10`;
 
   return (
-    <section className={`${compact ? `${dense ? 'space-y-1 rounded-lg p-1.5' : 'space-y-2 rounded-xl p-2.5'} border bg-muted/10` : 'space-y-3 rounded-2xl border bg-muted/10 p-4'}`}>
+    <section className={compact ? compactShellClass : 'space-y-3 rounded-2xl border bg-muted/10 p-4'}>
       <input
         ref={inputRef}
         type="file"
