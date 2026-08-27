@@ -185,7 +185,6 @@ for (const requiredRoute of [
   }
 }
 
-// Verify lazy page imports referenced by App.tsx resolve to real source files.
 const lazyImports = [...app.matchAll(/lazy\(\(\)\s*=>\s*import\(["'](@\/[^"']+)["']\)\)/g)]
   .map((m) => m[1]);
 for (const alias of lazyImports) {
@@ -230,22 +229,40 @@ for (const file of serverFiles) {
     backendRouteLiterals.push({ file, route: match[1].replace(/\/$/, "") });
   }
 }
+
+const serverApp = sources.get("artifacts/api-server/src/app.ts") || "";
+const apiMountPrefixes = unique([
+  "/api",
+  ...[...serverApp.matchAll(/app\.use\(\s*["'](\/api[^"']*)["']/g)].map((m) =>
+    m[1].replace(/\/$/, ""),
+  ),
+]);
+
 function endpointCovered(endpoint) {
-  const clean = endpoint.replace(/^\/api/, "") || "/";
   return backendRouteLiterals.some(({ route }) => {
     if (!route.startsWith("/")) return false;
-    if (endpoint === route || clean === route) return true;
-    if (endpoint.endsWith(route) && route.split("/").filter(Boolean).length >= 2) return true;
+    if (endpoint === route) return true;
+
+    for (const prefix of apiMountPrefixes) {
+      if (endpoint !== prefix && !endpoint.startsWith(`${prefix}/`)) continue;
+      const remainder = endpoint.slice(prefix.length) || "/";
+      if (remainder === route) return true;
+      if (
+        remainder.endsWith(route) &&
+        route.split("/").filter(Boolean).length >= 2
+      ) {
+        return true;
+      }
+    }
     return false;
   });
 }
+
 const uncoveredFrontendApi = [...frontendApi.entries()]
   .filter(([endpoint]) => !endpointCovered(endpoint))
   .map(([endpoint, refs]) => ({ endpoint, files: unique([...refs]) }))
   .sort((a, b) => a.endpoint.localeCompare(b.endpoint));
 
-// Heuristic results are warnings, not hard failures, because dynamic/mounted routers
-// can make literal static matching incomplete.
 for (const item of uncoveredFrontendApi.slice(0, 50)) {
   issues.push(
     issue(
@@ -387,6 +404,7 @@ const report = {
   routing: {
     app_routes: appRoutes,
     dashboard_nav_hrefs: navHrefs,
+    api_mount_prefixes: apiMountPrefixes,
     frontend_literal_api_count: frontendApi.size,
     backend_literal_route_count: backendRouteLiterals.length,
     uncovered_frontend_api_count: uncoveredFrontendApi.length,
@@ -426,12 +444,16 @@ if (jsonMode) {
   console.log("\n--- Route/Migration Summary ---");
   console.log(`App routes: ${appRoutes.length}`);
   console.log(`Dashboard nav hrefs: ${navHrefs.length}`);
+  console.log(`API mount prefixes: ${apiMountPrefixes.join(", ")}`);
   console.log(`Frontend literal API paths: ${frontendApi.size}`);
   console.log(`Backend literal router paths: ${backendRouteLiterals.length}`);
   console.log(`API paths needing static review: ${uncoveredFrontendApi.length}`);
   console.log(`Migration SQL files: ${sqlMigrations.length}`);
   console.log(`Migration journal entries: ${journalTags.length}`);
   console.log(`Unexported schema files: ${unexportedSchemaFiles.length}`);
+  if (unexportedSchemaFiles.length) {
+    console.log(`Unexported schema names: ${unexportedSchemaFiles.join(", ")}`);
+  }
   console.log("\n--- First API Review Findings ---");
   for (const item of uncoveredFrontendApi.slice(0, 25)) {
     console.log(`REVIEW ${item.endpoint} <- ${item.files.join(", ")}`);
