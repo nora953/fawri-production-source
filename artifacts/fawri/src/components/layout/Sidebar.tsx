@@ -6,6 +6,8 @@ import {
   Package,
   ShoppingBag,
   Calculator,
+  Users,
+  BarChart3,
   BookOpen,
   Brain,
   Radio,
@@ -75,6 +77,18 @@ export function Sidebar() {
 
   const cashierLabel =
     lang === "en" ? "Cashier" : lang === "ku" ? "کاشێر" : "الكاشير";
+  const cashierManagementLabel =
+    lang === "en"
+      ? "Cashiers & Staff"
+      : lang === "ku"
+        ? "کاشێر و کارمەندان"
+        : "الكاشيرات والموظفون";
+  const cashierReportsLabel =
+    lang === "en"
+      ? "Cashier Reports"
+      : lang === "ku"
+        ? "ڕاپۆرتی کاشێر"
+        : "تقارير الكاشير";
 
   const navItems: SidebarItem[] = [
     {
@@ -90,6 +104,17 @@ export function Sidebar() {
     },
     { href: "/dashboard/products", label: t.products, icon: Package },
     { href: "/dashboard/orders", label: t.orders, icon: ShoppingBag },
+    {
+      href: "/dashboard/cashiers",
+      label: cashierManagementLabel,
+      icon: Users,
+      exact: true,
+    },
+    {
+      href: "/dashboard/cashiers/reports",
+      label: cashierReportsLabel,
+      icon: BarChart3,
+    },
     {
       href: "/cashier.html",
       label: cashierLabel,

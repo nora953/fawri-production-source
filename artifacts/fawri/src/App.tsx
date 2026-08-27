@@ -49,6 +49,12 @@ const ImportProductsPage = lazy(
   () => import("@/pages/dashboard/ImportProductsPage"),
 );
 const OrdersPage = lazy(() => import("@/pages/dashboard/OrdersPage"));
+const CashierManagementPage = lazy(
+  () => import("@/pages/dashboard/CashierManagementPage"),
+);
+const CashierCentralReportsPage = lazy(
+  () => import("@/pages/dashboard/CashierCentralReportsPage"),
+);
 const SavedAnswersPage = lazy(
   () => import("@/pages/dashboard/SavedAnswersPage.ts"),
 );
@@ -172,6 +178,14 @@ function AppRouter() {
 
         <Route path="/dashboard/orders">
           {() => <DashboardRoute Page={OrdersPage} />}
+        </Route>
+
+        <Route path="/dashboard/cashiers/reports">
+          {() => <DashboardRoute Page={CashierCentralReportsPage} />}
+        </Route>
+
+        <Route path="/dashboard/cashiers">
+          {() => <DashboardRoute Page={CashierManagementPage} />}
         </Route>
 
         <Route path="/dashboard/saved-answers">

@@ -83,8 +83,10 @@ export type CashierSaleLineSnapshot = {
   quantity: number;
   base_unit_price_minor: number;
   effective_unit_price_minor: number;
-  /** Merchant-private sale-time cost evidence used only for profit reporting. */
+  /** Legacy owner-only raw cost. Staff cashier cutover never writes this field. */
   unit_cost_minor?: number;
+  /** Opaque server-issued evidence. It carries no readable merchant cost. */
+  cost_evidence?: string;
   discount_minor: number;
   line_total_minor: number;
   promotion?: CashierPromotionSnapshot;
@@ -213,8 +215,10 @@ export type CashierCatalogLookup = CashierMoneyContext & {
   track_inventory: boolean;
   stock_quantity?: number;
   base_unit_price_minor: number;
-  /** Merchant-private cost projection. It is snapshotted into a sale, never shown to customers. */
+  /** Legacy owner-only raw cost. Staff cashier projections must omit it. */
   unit_cost_minor?: number;
+  /** Opaque cost evidence copied into immutable sale evidence for offline sync. */
+  cost_evidence?: string;
   /**
    * Legacy/display projection only. Sale commit must resolve effective price
    * from base price + the current local promotion snapshot at sale time.

@@ -12,6 +12,8 @@ import {
   Radio,
   CreditCard,
   Calculator,
+  Users,
+  BarChart3,
   LogOut,
   Bell,
   Headphones,
@@ -78,6 +80,18 @@ export function BottomNav() {
   const unreadNotifications = useUnreadMerchantNotificationCount();
   const cashierLabel =
     lang === "en" ? "Cashier" : lang === "ku" ? "کاشێر" : "الكاشير";
+  const cashierManagementLabel =
+    lang === "en"
+      ? "Cashiers & Staff"
+      : lang === "ku"
+        ? "کاشێر و کارمەندان"
+        : "الكاشيرات والموظفون";
+  const cashierReportsLabel =
+    lang === "en"
+      ? "Cashier Reports"
+      : lang === "ku"
+        ? "ڕاپۆرتی کاشێر"
+        : "تقارير الكاشير";
 
   const mainItems: NavItem[] = [
     {
@@ -104,6 +118,17 @@ export function BottomNav() {
   ];
 
   const moreItems: NavItem[] = [
+    {
+      href: "/dashboard/cashiers",
+      label: cashierManagementLabel,
+      icon: Users,
+      exact: true,
+    },
+    {
+      href: "/dashboard/cashiers/reports",
+      label: cashierReportsLabel,
+      icon: BarChart3,
+    },
     {
       href: "/cashier.html",
       label: cashierLabel,
