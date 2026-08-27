@@ -7,6 +7,7 @@ import {
   formatDateInputMask,
   formatKnownDateTimeInput,
   formatTimeInputMask,
+  normalizeDecimalTextInput,
   placeholderForDisplay,
   valueForKnownDateTimeInputAuthority,
   valueForKnownDateTimeInputDisplay,
@@ -36,6 +37,13 @@ test('time input inserts the colon while the merchant types digits', () => {
   assert.equal(formatTimeInputMask('1530'), '15:30');
   assert.equal(formatTimeInputMask('15:30'), '15:30');
   assert.equal(formatTimeInputMask('١٥٣٠'), '15:30');
+});
+
+test('decimal text input accepts pasted percent symbols without poisoning numeric values', () => {
+  assert.equal(normalizeDecimalTextInput('5 %'), '5');
+  assert.equal(normalizeDecimalTextInput('5%'), '5');
+  assert.equal(normalizeDecimalTextInput('٥ ٪'), '5');
+  assert.equal(normalizeDecimalTextInput('12.5'), '12.5');
 });
 
 test('masking is limited to known date and time placeholders', () => {
