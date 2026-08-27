@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { CalendarClock, Pencil, Plus, RefreshCw, Tag, Trash2, Truck } from 'lucide-react';
+import {
+  CalendarClock,
+  CheckCircle2,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Tag,
+  Trash2,
+  Truck,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Badge } from '@/components/ui/badge';
@@ -58,8 +67,8 @@ const COPY: Record<Lang, Record<string, string>> = {
     catalog: 'منتج أو خدمة',
     delivery: 'توصيل مجاني',
     item: 'المنتج أو الخدمة',
-    variant: 'المتغير (اختياري)',
-    allVariants: 'كل المتغيرات / العنصر بالكامل',
+    variant: 'التركيبة (اختياري)',
+    allVariants: 'كل التركيبات / العنصر بالكامل',
     effect: 'نوع الخصم',
     percentage: 'نسبة خصم',
     amountOff: 'مبلغ خصم',
@@ -72,7 +81,7 @@ const COPY: Record<Lang, Record<string, string>> = {
     ends: 'ينتهي',
     datePlaceholder: 'YYYY/MM/DD',
     timePlaceholder: 'HH:mm',
-    dateTimeFormat: 'صيغة التاريخ والوقت: YYYY/MM/DD · HH:mm',
+    dateTimeFormat: 'اكتب التاريخ بالأرقام فقط، مثال: 12112026 ← 12/11/2026. والوقت: 1530 ← 15:30.',
     localTime: 'تُفسر هذه الأوقات حسب المنطقة الزمنية المحفوظة لمتجرك.',
     enabled: 'العرض مفعّل',
     save: 'حفظ العرض',
@@ -94,6 +103,15 @@ const COPY: Record<Lang, Record<string, string>> = {
     timezone: 'توقيت العرض',
     currency: 'عملة المتجر',
     originalSafe: 'السعر الأصلي لا يتغير؛ فوري يستخدم السعر الفعّال فقط أثناء فترة العرض.',
+    basicsSection: 'معلومات العرض',
+    basicsHint: 'سمّ العرض وحدد أين سيُطبّق.',
+    discountSection: 'تفاصيل الخصم',
+    discountHint: 'حدد نوع الخصم وقيمته.',
+    scheduleSection: 'مدة العرض',
+    scheduleHint: 'حدد وقت البداية والنهاية حسب توقيت المتجر.',
+    statusSection: 'حالة العرض',
+    statusHint: 'يمكنك حفظ العرض متوقفًا وتشغيله لاحقًا.',
+    discountBadge: 'خصم',
   },
   ku: {
     title: 'ئۆفەرەکان',
@@ -108,8 +126,8 @@ const COPY: Record<Lang, Record<string, string>> = {
     catalog: 'بەرهەم یان خزمەتگوزاری',
     delivery: 'گەیاندنی بەخۆڕایی',
     item: 'بەرهەم یان خزمەتگوزاری',
-    variant: 'جۆراوجۆری (ئارەزوومەندانە)',
-    allVariants: 'هەموو جۆراوجۆرییەکان / تەواوی بابەت',
+    variant: 'تێکەڵە (ئارەزوومەندانە)',
+    allVariants: 'هەموو تێکەڵەکان / تەواوی بابەت',
     effect: 'جۆری داشکاندن',
     percentage: 'ڕێژەی داشکاندن',
     amountOff: 'بڕی داشکاندن',
@@ -122,7 +140,7 @@ const COPY: Record<Lang, Record<string, string>> = {
     ends: 'کۆتایی',
     datePlaceholder: 'YYYY/MM/DD',
     timePlaceholder: 'HH:mm',
-    dateTimeFormat: 'فۆرماتی بەروار و کات: YYYY/MM/DD · HH:mm',
+    dateTimeFormat: 'بەروار بە ژمارە بنووسە، نموونە: 12112026 ← 12/11/2026. کات: 1530 ← 15:30.',
     localTime: 'ئەم کاتانە بە پێی ناوچەی کاتی هەڵگیراوی فرۆشگاکەت لێکدەدرێنەوە.',
     enabled: 'ئۆفەر چالاکە',
     save: 'پاشەکەوتکردنی ئۆفەر',
@@ -144,6 +162,15 @@ const COPY: Record<Lang, Record<string, string>> = {
     timezone: 'کاتی ئۆفەر',
     currency: 'دراوی فرۆشگا',
     originalSafe: 'نرخی بنەڕەتی ناگۆڕدرێت؛ فەوری تەنها لە ماوەی ئۆفەر نرخە کاریگەرەکە بەکاردێنێت.',
+    basicsSection: 'زانیاریی ئۆفەر',
+    basicsHint: 'ناوی ئۆفەر و شوێنی جێبەجێبوونی دیاری بکە.',
+    discountSection: 'وردەکاری داشکاندن',
+    discountHint: 'جۆر و بەهای داشکاندن دیاری بکە.',
+    scheduleSection: 'ماوەی ئۆفەر',
+    scheduleHint: 'کاتی دەستپێک و کۆتایی دیاری بکە.',
+    statusSection: 'دۆخی ئۆفەر',
+    statusHint: 'دەتوانیت ئۆفەر وەستاو پاشەکەوت بکەیت.',
+    discountBadge: 'داشکاندن',
   },
   en: {
     title: 'Promotions',
@@ -158,8 +185,8 @@ const COPY: Record<Lang, Record<string, string>> = {
     catalog: 'Product or service',
     delivery: 'Free delivery',
     item: 'Product or service',
-    variant: 'Variant (optional)',
-    allVariants: 'All variants / whole item',
+    variant: 'Combination (optional)',
+    allVariants: 'All combinations / whole item',
     effect: 'Discount type',
     percentage: 'Percentage off',
     amountOff: 'Amount off',
@@ -172,7 +199,7 @@ const COPY: Record<Lang, Record<string, string>> = {
     ends: 'Ends',
     datePlaceholder: 'YYYY/MM/DD',
     timePlaceholder: 'HH:mm',
-    dateTimeFormat: 'Date and time format: YYYY/MM/DD · HH:mm',
+    dateTimeFormat: 'Type digits only, e.g. 12112026 → 12/11/2026 and 1530 → 15:30.',
     localTime: 'These times are interpreted in the timezone saved for your store.',
     enabled: 'Promotion enabled',
     save: 'Save promotion',
@@ -194,6 +221,15 @@ const COPY: Record<Lang, Record<string, string>> = {
     timezone: 'Promotion timezone',
     currency: 'Store currency',
     originalSafe: 'The base price is never overwritten; Fawri uses the effective price only during the promotion window.',
+    basicsSection: 'Promotion details',
+    basicsHint: 'Name the promotion and choose where it applies.',
+    discountSection: 'Discount details',
+    discountHint: 'Choose the discount type and value.',
+    scheduleSection: 'Promotion period',
+    scheduleHint: 'Set the start and end using the store timezone.',
+    statusSection: 'Promotion status',
+    statusHint: 'You can save it disabled and enable it later.',
+    discountBadge: 'Discount',
   },
 };
 
@@ -229,6 +265,13 @@ function localParts(value: string): { date: string; time: string } {
   };
 }
 
+function displayLocalDateTime(value: string): string {
+  const normalized = value.trim().replace(' ', 'T');
+  const match = /^(\d{4})[-/](\d{2})[-/](\d{2})T(\d{2}):(\d{2})/.exec(normalized);
+  if (!match) return value.replace('T', ' ');
+  return `${match[3]}/${match[2]}/${match[1]} · ${match[4]}:${match[5]}`;
+}
+
 function normalizeLocalDate(value: string): string | null {
   const normalized = normalizeDigits(value).trim().replace(/[.-]/g, '/');
   const match = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(normalized);
@@ -236,17 +279,13 @@ function normalizeLocalDate(value: string): string | null {
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-  if (year < 2000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
-    return null;
-  }
+  if (year < 2000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) return null;
   const candidate = new Date(Date.UTC(year, month - 1, day));
   if (
     candidate.getUTCFullYear() !== year ||
     candidate.getUTCMonth() !== month - 1 ||
     candidate.getUTCDate() !== day
-  ) {
-    return null;
-  }
+  ) return null;
   return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
@@ -291,9 +330,7 @@ function promotionValueText(
 ): string {
   const digits = context?.currency_fraction_digits ?? 0;
   const currency = promotion.currency_code || context?.currency_code || '';
-  if (promotion.effect === 'percentage_off') {
-    return `${percentageText(promotion.percentage_bps)}%`;
-  }
+  if (promotion.effect === 'percentage_off') return `${percentageText(promotion.percentage_bps)}%`;
   if (promotion.effect === 'free_delivery') {
     if (promotion.minimum_subtotal_minor === undefined) return '';
     return `≥ ${catalogMinorAmountToMajor(promotion.minimum_subtotal_minor, digits)} ${currency}`;
@@ -301,6 +338,15 @@ function promotionValueText(
   if (promotion.amount_minor === undefined) return '';
   const prefix = promotion.effect === 'fixed_amount_off' ? '− ' : '';
   return `${prefix}${catalogMinorAmountToMajor(promotion.amount_minor, digits)} ${currency}`;
+}
+
+function sectionHeading(title: string, hint: string) {
+  return (
+    <div className="mb-4">
+      <h3 className="text-sm font-extrabold text-foreground">{title}</h3>
+      <p className="mt-1 text-xs leading-5 text-muted-foreground">{hint}</p>
+    </div>
+  );
 }
 
 export default function CatalogPromotionsPage() {
@@ -349,10 +395,7 @@ export default function CatalogPromotionsPage() {
     };
   }, [reload, copy.loadFailed]);
 
-  const productMap = useMemo(
-    () => new Map(products.map(product => [product.id, product])),
-    [products],
-  );
+  const productMap = useMemo(() => new Map(products.map(product => [product.id, product])), [products]);
   const selectedProduct = productMap.get(draft.product_id);
   const currencyDigits = context?.currency_fraction_digits ?? 0;
   const currencyCode = context?.currency_code || '';
@@ -383,17 +426,11 @@ export default function CatalogPromotionsPage() {
           ? percentageText(promotion.percentage_bps)
           : promotion.amount_minor === undefined
             ? ''
-            : catalogMinorAmountToMajor(
-                promotion.amount_minor,
-                context.currency_fraction_digits,
-              ),
+            : catalogMinorAmountToMajor(promotion.amount_minor, context.currency_fraction_digits),
       minimum_subtotal:
         promotion.minimum_subtotal_minor === undefined
           ? ''
-          : catalogMinorAmountToMajor(
-              promotion.minimum_subtotal_minor,
-              context.currency_fraction_digits,
-            ),
+          : catalogMinorAmountToMajor(promotion.minimum_subtotal_minor, context.currency_fraction_digits),
       starts_date: starts.date,
       starts_time: starts.time,
       ends_date: ends.date,
@@ -416,15 +453,11 @@ export default function CatalogPromotionsPage() {
     const name = draft.name.trim();
     const startsLocal = draftLocalDateTime(draft.starts_date, draft.starts_time);
     const endsLocal = draftLocalDateTime(draft.ends_date, draft.ends_time);
-    if (!name || !startsLocal || !endsLocal) return null;
-    if (endsLocal <= startsLocal) return null;
+    if (!name || !startsLocal || !endsLocal || endsLocal <= startsLocal) return null;
 
     if (draft.scope === 'delivery') {
       const minimum = draft.minimum_subtotal.trim()
-        ? catalogMajorAmountToMinor(
-            draft.minimum_subtotal,
-            context.currency_fraction_digits,
-          )
+        ? catalogMajorAmountToMinor(draft.minimum_subtotal, context.currency_fraction_digits)
         : null;
       if (draft.minimum_subtotal.trim() && (minimum === null || minimum < 0)) return null;
       return {
@@ -444,12 +477,7 @@ export default function CatalogPromotionsPage() {
     }
 
     if (!draft.product_id) return null;
-    if (
-      draft.variant_id &&
-      !selectedProduct?.variants.some(variant => variant.id === draft.variant_id)
-    ) {
-      return null;
-    }
+    if (draft.variant_id && !selectedProduct?.variants.some(variant => variant.id === draft.variant_id)) return null;
 
     if (draft.effect === 'percentage_off') {
       const bps = percentageBps(draft.value);
@@ -470,10 +498,7 @@ export default function CatalogPromotionsPage() {
       };
     }
 
-    const amountMinor = catalogMajorAmountToMinor(
-      draft.value,
-      context.currency_fraction_digits,
-    );
+    const amountMinor = catalogMajorAmountToMinor(draft.value, context.currency_fraction_digits);
     if (amountMinor === null || amountMinor < 0) return null;
     if (draft.effect === 'fixed_amount_off' && amountMinor <= 0) return null;
     return {
@@ -502,36 +527,22 @@ export default function CatalogPromotionsPage() {
     setSaving(true);
     try {
       if (editing) {
-        const updated = await updateCatalogPromotion(
-          editing.id,
-          editing.version,
-          input,
-        );
-        setPromotions(current =>
-          current.map(item => (item.id === updated.id ? updated : item)),
-        );
+        const updated = await updateCatalogPromotion(editing.id, editing.version, input);
+        setPromotions(current => current.map(item => (item.id === updated.id ? updated : item)));
         toast.success(copy.updated);
       } else {
-        const key =
-          createKey.current ||
-          createStrongIdempotencyKey('catalog-promotion-create');
+        const key = createKey.current || createStrongIdempotencyKey('catalog-promotion-create');
         createKey.current = key;
         const result = await createCatalogPromotion(input, key);
         createKey.current = null;
-        setPromotions(current => [
-          result.promotion,
-          ...current.filter(item => item.id !== result.promotion.id),
-        ]);
+        setPromotions(current => [result.promotion, ...current.filter(item => item.id !== result.promotion.id)]);
         toast.success(copy.created);
       }
       setSaving(false);
       closeEditor(true);
     } catch (error) {
       console.error('Promotion save failed:', error);
-      if (
-        error instanceof CatalogPromotionApiError &&
-        error.code === 'COMMERCE_PROMOTION_IDEMPOTENCY_CONFLICT'
-      ) {
+      if (error instanceof CatalogPromotionApiError && error.code === 'COMMERCE_PROMOTION_IDEMPOTENCY_CONFLICT') {
         createKey.current = null;
       }
       toast.error(
@@ -562,432 +573,369 @@ export default function CatalogPromotionsPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 pb-28" dir={dir}>
-      <header className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className={isRTL ? 'text-right' : 'text-left'}>
-          <h1 className="text-3xl font-extrabold tracking-tight">{copy.title}</h1>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">
-            {copy.subtitle}
-          </p>
-          <p className="mt-2 max-w-3xl rounded-xl border border-orange-200 bg-orange-50 px-3 py-2 text-xs leading-5 text-orange-900">
-            {copy.originalSafe}
-          </p>
-          {context && (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {copy.currency}: <span dir="ltr">{context.currency_code}</span>
-              {' · '}
-              {copy.timezone}: <span dir="ltr">{context.timezone}</span>
-            </p>
-          )}
-        </div>
-        <Button
-          type="button"
-          onClick={openCreate}
-          disabled={!context || loading}
-          className="h-11 rounded-xl bg-orange-500 px-4 font-bold text-white hover:bg-orange-600"
-        >
-          <Plus className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />
-          {copy.add}
-        </Button>
-      </header>
+      <div className="mx-auto w-full max-w-6xl">
+        <header className="mb-5 rounded-3xl border bg-card p-5 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className={isRTL ? 'text-right' : 'text-left'}>
+              <h1 className="text-3xl font-extrabold tracking-tight">{copy.title}</h1>
+              <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{copy.subtitle}</p>
+            </div>
+            <Button
+              type="button"
+              onClick={openCreate}
+              disabled={!context || loading}
+              className="h-11 shrink-0 rounded-xl bg-orange-500 px-5 font-bold text-white hover:bg-orange-600"
+            >
+              <Plus className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />
+              {copy.add}
+            </Button>
+          </div>
+          <div className="mt-4 flex flex-col gap-2 rounded-2xl border border-orange-200 bg-orange-50/70 px-4 py-3 text-xs leading-5 text-orange-900 sm:flex-row sm:items-center sm:justify-between">
+            <span>{copy.originalSafe}</span>
+            {context && (
+              <span className="shrink-0 text-muted-foreground">
+                {copy.currency}: <span dir="ltr">{context.currency_code}</span>
+                {' · '}
+                {copy.timezone}: <span dir="ltr">{context.timezone}</span>
+              </span>
+            )}
+          </div>
+        </header>
 
-      {loading ? (
-        <div className="rounded-3xl border bg-card p-10 text-center text-muted-foreground">
-          {copy.loading}
-        </div>
-      ) : loadFailed ? (
-        <div className="rounded-3xl border bg-card p-10 text-center">
-          <p className="text-destructive">{copy.loadFailed}</p>
-          <Button
-            type="button"
-            variant="outline"
-            className="mt-4 rounded-xl"
-            onClick={() => setReload(value => value + 1)}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
-            {copy.retry}
-          </Button>
-        </div>
-      ) : promotions.length === 0 ? (
-        <div className="rounded-3xl border bg-card p-10 text-center text-muted-foreground">
-          {copy.empty}
-        </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {promotions.map(promotion => {
-            const product = promotion.product_id
-              ? productMap.get(promotion.product_id)
-              : undefined;
-            const variant = promotion.variant_id
-              ? product?.variants.find(item => item.id === promotion.variant_id)
-              : undefined;
-            const valueText = promotionValueText(promotion, context);
-            return (
-              <article
-                key={promotion.id}
-                className="rounded-3xl border bg-card p-5 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0">
-                    <div className="mb-2 flex flex-wrap gap-2">
-                      <Badge
-                        variant="outline"
-                        className={`rounded-full ${lifecycleClass(promotion.lifecycle)}`}
-                      >
-                        {lifecycleLabel(promotion)}
-                      </Badge>
-                      <Badge variant="outline" className="rounded-full">
-                        {promotion.scope === 'delivery' ? (
-                          <Truck className="mr-1 h-3 w-3" />
-                        ) : (
-                          <Tag className="mr-1 h-3 w-3" />
+        {loading ? (
+          <div className="rounded-3xl border bg-card p-10 text-center text-muted-foreground">{copy.loading}</div>
+        ) : loadFailed ? (
+          <div className="rounded-3xl border bg-card p-10 text-center">
+            <p className="text-destructive">{copy.loadFailed}</p>
+            <Button type="button" variant="outline" className="mt-4 rounded-xl" onClick={() => setReload(value => value + 1)}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {copy.retry}
+            </Button>
+          </div>
+        ) : promotions.length === 0 ? (
+          <div className="rounded-3xl border bg-card p-10 text-center text-muted-foreground">{copy.empty}</div>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            {promotions.map(promotion => {
+              const product = promotion.product_id ? productMap.get(promotion.product_id) : undefined;
+              const variant = promotion.variant_id
+                ? product?.variants.find(item => item.id === promotion.variant_id)
+                : undefined;
+              const valueText = promotionValueText(promotion, context);
+              return (
+                <article key={promotion.id} className="overflow-hidden rounded-3xl border bg-card shadow-sm">
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                          <Badge variant="outline" className={`rounded-full ${lifecycleClass(promotion.lifecycle)}`}>
+                            {lifecycleLabel(promotion)}
+                          </Badge>
+                          <Badge variant="outline" className="rounded-full bg-background">
+                            {promotion.scope === 'delivery' ? (
+                              <Truck className="mr-1 h-3 w-3" />
+                            ) : (
+                              <Tag className="mr-1 h-3 w-3" />
+                            )}
+                            {promotion.scope === 'delivery' ? copy.delivery : copy.catalog}
+                          </Badge>
+                        </div>
+                        <h2 className="text-lg font-extrabold">{promotion.name}</h2>
+                        {promotion.scope === 'catalog_item' && (
+                          <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                            {product?.name || promotion.product_id}
+                            {variant ? ` — ${variant.name}` : ''}
+                          </p>
                         )}
-                        {promotion.scope === 'delivery' ? copy.delivery : copy.catalog}
-                      </Badge>
+                      </div>
+                      <div className="flex shrink-0 gap-2">
+                        <Button type="button" variant="outline" size="icon" className="h-9 w-9 rounded-xl" title={copy.edit} onClick={() => openEdit(promotion)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-destructive" title={copy.delete} onClick={() => void remove(promotion)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <h2 className="text-lg font-extrabold">{promotion.name}</h2>
-                    {promotion.scope === 'catalog_item' && (
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {product?.name || promotion.product_id}
-                        {variant ? ` — ${variant.name}` : ''}
-                      </p>
-                    )}
-                    {valueText && (
-                      <p className="mt-2 text-base font-extrabold text-orange-600" dir="ltr">
-                        {valueText}
-                      </p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      className="h-9 w-9 rounded-xl"
-                      title={copy.edit}
-                      onClick={() => openEdit(promotion)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 rounded-xl text-destructive"
-                      title={copy.delete}
-                      onClick={() => void remove(promotion)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-2xl bg-muted/30 p-3 text-sm">
-                    <div className="mb-1 flex items-center gap-2 font-semibold">
-                      <CalendarClock className="h-4 w-4" />
-                      {copy.starts}
+                    {valueText && (
+                      <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-2 text-orange-700">
+                        <Tag className="h-4 w-4" />
+                        <span className="text-sm font-bold">{copy.discountBadge}</span>
+                        <strong className="text-lg font-extrabold tabular-nums" dir="ltr">{valueText}</strong>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid border-t bg-muted/10 sm:grid-cols-2 sm:divide-x rtl:sm:divide-x-reverse">
+                    <div className="p-4 text-sm">
+                      <div className="mb-2 flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                        <CalendarClock className="h-4 w-4" />
+                        {copy.starts}
+                      </div>
+                      <div dir="ltr" className="font-bold tabular-nums">{displayLocalDateTime(promotion.starts_local)}</div>
                     </div>
-                    <div dir="ltr" className={isRTL ? 'text-right' : 'text-left'}>
-                      {promotion.starts_local.replace('T', ' ')}
+                    <div className="border-t p-4 text-sm sm:border-t-0">
+                      <div className="mb-2 flex items-center gap-2 text-xs font-bold text-muted-foreground">
+                        <CalendarClock className="h-4 w-4" />
+                        {copy.ends}
+                      </div>
+                      <div dir="ltr" className="font-bold tabular-nums">{displayLocalDateTime(promotion.ends_local)}</div>
                     </div>
                   </div>
-                  <div className="rounded-2xl bg-muted/30 p-3 text-sm">
-                    <div className="mb-1 flex items-center gap-2 font-semibold">
-                      <CalendarClock className="h-4 w-4" />
-                      {copy.ends}
-                    </div>
-                    <div dir="ltr" className={isRTL ? 'text-right' : 'text-left'}>
-                      {promotion.ends_local.replace('T', ' ')}
-                    </div>
+                  <div className="border-t px-5 py-3 text-xs text-muted-foreground">
+                    {copy.timezone}: <span dir="ltr">{promotion.schedule_timezone}</span>
                   </div>
-                </div>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  {copy.timezone}: <span dir="ltr">{promotion.schedule_timezone}</span>
-                </p>
-              </article>
-            );
-          })}
-        </div>
-      )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {editorOpen && context && (
         <div className="fixed inset-0 z-[110] flex items-end justify-center bg-black/50 px-3 pb-[calc(.75rem+env(safe-area-inset-bottom))] pt-6 backdrop-blur-[2px] md:items-center md:px-4 md:py-6">
-          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[2rem] bg-background shadow-2xl md:max-h-[calc(100dvh-4rem)]">
-            <div className="shrink-0 border-b px-5 py-4">
-              <h2 className="text-xl font-extrabold">
-                {editing ? copy.edit : copy.add}
-              </h2>
-              <p className="mt-1 text-xs text-muted-foreground">
-                <span dir="ltr">{currencyCode}</span>
-                {' · '}
-                <span dir="ltr">{context.timezone}</span>
-              </p>
+          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[2rem] border bg-background shadow-2xl md:max-h-[calc(100dvh-4rem)]">
+            <div className="shrink-0 border-b px-5 py-4 sm:px-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-extrabold">{editing ? copy.edit : copy.add}</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    <span dir="ltr">{currencyCode}</span>
+                    {' · '}
+                    <span dir="ltr">{context.timezone}</span>
+                  </p>
+                </div>
+                <div className="rounded-full bg-orange-50 px-3 py-1 text-xs font-bold text-orange-700">{copy.title}</div>
+              </div>
             </div>
-            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5">
-              <label className="space-y-1 text-sm font-semibold">
-                <span>{copy.name}</span>
-                <Input
-                  value={draft.name}
-                  onChange={event =>
-                    setDraft(current => ({ ...current, name: event.target.value }))
-                  }
-                  placeholder={copy.namePlaceholder}
-                  className="h-11 rounded-xl"
-                />
-              </label>
 
-              <label className="space-y-1 text-sm font-semibold">
-                <span>{copy.scope}</span>
-                <select
-                  value={draft.scope}
-                  onChange={event => {
-                    const scope = event.target.value as CatalogPromotionScope;
-                    setDraft(current => ({
-                      ...current,
-                      scope,
-                      effect:
-                        scope === 'delivery'
-                          ? 'free_delivery'
-                          : current.effect === 'free_delivery'
-                            ? 'percentage_off'
-                            : current.effect,
-                      product_id: scope === 'delivery' ? '' : current.product_id,
-                      variant_id: scope === 'delivery' ? '' : current.variant_id,
-                      value: scope === 'delivery' ? '' : current.value,
-                    }));
-                  }}
-                  className="h-11 w-full rounded-xl border border-input bg-background px-3"
-                >
-                  <option value="catalog_item">{copy.catalog}</option>
-                  <option value="delivery">{copy.delivery}</option>
-                </select>
-              </label>
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-muted/10 px-4 py-4 sm:px-6 sm:py-5">
+              <section className="rounded-3xl border bg-card p-4 sm:p-5">
+                {sectionHeading(copy.basicsSection, copy.basicsHint)}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="space-y-1 text-sm font-semibold sm:col-span-2">
+                    <span>{copy.name}</span>
+                    <Input
+                      value={draft.name}
+                      onChange={event => setDraft(current => ({ ...current, name: event.target.value }))}
+                      placeholder={copy.namePlaceholder}
+                      className="h-11 rounded-xl"
+                    />
+                  </label>
 
-              {draft.scope === 'catalog_item' ? (
-                <>
                   <label className="space-y-1 text-sm font-semibold">
-                    <span>{copy.item}</span>
+                    <span>{copy.scope}</span>
                     <select
-                      value={draft.product_id}
-                      onChange={event =>
+                      value={draft.scope}
+                      onChange={event => {
+                        const scope = event.target.value as CatalogPromotionScope;
                         setDraft(current => ({
                           ...current,
-                          product_id: event.target.value,
-                          variant_id: '',
-                        }))
-                      }
+                          scope,
+                          effect:
+                            scope === 'delivery'
+                              ? 'free_delivery'
+                              : current.effect === 'free_delivery'
+                                ? 'percentage_off'
+                                : current.effect,
+                          product_id: scope === 'delivery' ? '' : current.product_id,
+                          variant_id: scope === 'delivery' ? '' : current.variant_id,
+                          value: scope === 'delivery' ? '' : current.value,
+                        }));
+                      }}
                       className="h-11 w-full rounded-xl border border-input bg-background px-3"
                     >
-                      <option value="">—</option>
-                      {products.map(product => (
-                        <option key={product.id} value={product.id}>
-                          {product.name}
-                        </option>
-                      ))}
+                      <option value="catalog_item">{copy.catalog}</option>
+                      <option value="delivery">{copy.delivery}</option>
                     </select>
                   </label>
-                  {selectedProduct && selectedProduct.variants.length > 0 && (
+
+                  {draft.scope === 'catalog_item' && (
                     <label className="space-y-1 text-sm font-semibold">
-                      <span>{copy.variant}</span>
+                      <span>{copy.item}</span>
                       <select
-                        value={draft.variant_id}
-                        onChange={event =>
-                          setDraft(current => ({
-                            ...current,
-                            variant_id: event.target.value,
-                          }))
-                        }
+                        value={draft.product_id}
+                        onChange={event => setDraft(current => ({ ...current, product_id: event.target.value, variant_id: '' }))}
                         className="h-11 w-full rounded-xl border border-input bg-background px-3"
                       >
-                        <option value="">{copy.allVariants}</option>
-                        {selectedProduct.variants.map(variant => (
-                          <option key={variant.id} value={variant.id}>
-                            {variant.name}
-                          </option>
+                        <option value="">—</option>
+                        {products.map(product => (
+                          <option key={product.id} value={product.id}>{product.name}</option>
                         ))}
                       </select>
                     </label>
                   )}
-                  <label className="space-y-1 text-sm font-semibold">
-                    <span>{copy.effect}</span>
-                    <select
-                      value={draft.effect}
-                      onChange={event =>
-                        setDraft(current => ({
+
+                  {draft.scope === 'catalog_item' && selectedProduct && selectedProduct.variants.length > 0 && (
+                    <label className="space-y-1 text-sm font-semibold sm:col-span-2">
+                      <span>{copy.variant}</span>
+                      <select
+                        value={draft.variant_id}
+                        onChange={event => setDraft(current => ({ ...current, variant_id: event.target.value }))}
+                        className="h-11 w-full rounded-xl border border-input bg-background px-3"
+                      >
+                        <option value="">{copy.allVariants}</option>
+                        {selectedProduct.variants.map(variant => (
+                          <option key={variant.id} value={variant.id}>{variant.name}</option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </div>
+              </section>
+
+              <section className="rounded-3xl border bg-card p-4 sm:p-5">
+                {sectionHeading(copy.discountSection, copy.discountHint)}
+                {draft.scope === 'catalog_item' ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <label className="space-y-1 text-sm font-semibold">
+                      <span>{copy.effect}</span>
+                      <select
+                        value={draft.effect}
+                        onChange={event => setDraft(current => ({
                           ...current,
                           effect: event.target.value as CatalogPromotionEffect,
                           value: '',
-                        }))
-                      }
-                      className="h-11 w-full rounded-xl border border-input bg-background px-3"
-                    >
-                      <option value="percentage_off">{copy.percentage}</option>
-                      <option value="fixed_amount_off">{copy.amountOff}</option>
-                      <option value="fixed_price">{copy.fixedPrice}</option>
-                    </select>
-                  </label>
+                        }))}
+                        className="h-11 w-full rounded-xl border border-input bg-background px-3"
+                      >
+                        <option value="percentage_off">{copy.percentage}</option>
+                        <option value="fixed_amount_off">{copy.amountOff}</option>
+                        <option value="fixed_price">{copy.fixedPrice}</option>
+                      </select>
+                    </label>
+                    <label className="space-y-1 text-sm font-semibold">
+                      <span>{draft.effect === 'percentage_off' ? copy.percentage : `${copy.valueCurrency} (${currencyCode})`}</span>
+                      <div className="relative">
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          dir="ltr"
+                          value={draft.value}
+                          onChange={event => setDraft(current => ({
+                            ...current,
+                            value: draft.effect === 'percentage_off'
+                              ? event.target.value.replace(/%/g, '').trim()
+                              : event.target.value,
+                          }))}
+                          placeholder={draft.effect === 'percentage_off' ? '10' : currencyDigits > 0 ? `0.${'0'.repeat(currencyDigits)}` : '0'}
+                          className={`h-11 rounded-xl text-center font-bold tabular-nums ${draft.effect === 'percentage_off' ? 'pr-9' : ''}`}
+                        />
+                        {draft.effect === 'percentage_off' && (
+                          <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center font-extrabold text-orange-600">%</span>
+                        )}
+                      </div>
+                      <span className="block text-xs font-normal text-muted-foreground" dir="ltr">
+                        {draft.effect === 'percentage_off' ? '0.01 – 100' : `${currencyCode} · step ${moneyStep}`}
+                      </span>
+                    </label>
+                  </div>
+                ) : (
                   <label className="space-y-1 text-sm font-semibold">
-                    <span>
-                      {draft.effect === 'percentage_off'
-                        ? `${copy.value} (%)`
-                        : `${copy.valueCurrency} (${currencyCode})`}
-                    </span>
+                    <span>{copy.minimumSubtotal} ({currencyCode})</span>
                     <Input
                       type="text"
                       inputMode="decimal"
                       dir="ltr"
-                      value={draft.value}
-                      onChange={event =>
-                        setDraft(current => ({ ...current, value: event.target.value }))
-                      }
-                      placeholder={
-                        draft.effect === 'percentage_off'
-                          ? '10'
-                          : currencyDigits > 0
-                            ? `0.${'0'.repeat(currencyDigits)}`
-                            : '0'
-                      }
-                      className="h-11 rounded-xl"
+                      value={draft.minimum_subtotal}
+                      onChange={event => setDraft(current => ({ ...current, minimum_subtotal: event.target.value }))}
+                      className="h-11 rounded-xl text-center tabular-nums"
                     />
-                    <span className="block text-xs font-normal text-muted-foreground" dir="ltr">
-                      {draft.effect === 'percentage_off' ? '0.01% – 100%' : `${currencyCode} · step ${moneyStep}`}
-                    </span>
+                    <span className="block text-xs font-normal text-muted-foreground">{copy.minimumSubtotalHint}</span>
                   </label>
-                </>
-              ) : (
-                <label className="space-y-1 text-sm font-semibold">
-                  <span>
-                    {copy.minimumSubtotal} ({currencyCode})
+                )}
+              </section>
+
+              <section className="rounded-3xl border bg-card p-4 sm:p-5">
+                {sectionHeading(copy.scheduleSection, copy.scheduleHint)}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-2xl border bg-muted/10 p-3">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-extrabold">
+                      <CalendarClock className="h-4 w-4 text-orange-600" />
+                      {copy.starts}
+                    </div>
+                    <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,.85fr)] gap-2">
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        dir="ltr"
+                        value={draft.starts_date}
+                        onChange={event => setDraft(current => ({ ...current, starts_date: event.target.value }))}
+                        placeholder={copy.datePlaceholder}
+                        maxLength={10}
+                        className="h-11 rounded-xl text-center tabular-nums"
+                      />
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        dir="ltr"
+                        value={draft.starts_time}
+                        onChange={event => setDraft(current => ({ ...current, starts_time: event.target.value }))}
+                        placeholder={copy.timePlaceholder}
+                        maxLength={5}
+                        className="h-11 rounded-xl text-center tabular-nums"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border bg-muted/10 p-3">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-extrabold">
+                      <CalendarClock className="h-4 w-4 text-orange-600" />
+                      {copy.ends}
+                    </div>
+                    <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,.85fr)] gap-2">
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        dir="ltr"
+                        value={draft.ends_date}
+                        onChange={event => setDraft(current => ({ ...current, ends_date: event.target.value }))}
+                        placeholder={copy.datePlaceholder}
+                        maxLength={10}
+                        className="h-11 rounded-xl text-center tabular-nums"
+                      />
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        dir="ltr"
+                        value={draft.ends_time}
+                        onChange={event => setDraft(current => ({ ...current, ends_time: event.target.value }))}
+                        placeholder={copy.timePlaceholder}
+                        maxLength={5}
+                        className="h-11 rounded-xl text-center tabular-nums"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 rounded-xl bg-muted/20 px-3 py-2 text-xs leading-5 text-muted-foreground">
+                  <p>{copy.dateTimeFormat}</p>
+                  <p className="mt-1">{copy.localTime} <span dir="ltr">({context.timezone})</span></p>
+                </div>
+              </section>
+
+              <section className="rounded-3xl border bg-card p-4 sm:p-5">
+                {sectionHeading(copy.statusSection, copy.statusHint)}
+                <label className="flex cursor-pointer items-center justify-between gap-4 rounded-2xl border bg-muted/10 p-4 text-sm font-bold">
+                  <span className="flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-orange-600" />
+                    {copy.enabled}
                   </span>
-                  <Input
-                    type="text"
-                    inputMode="decimal"
-                    dir="ltr"
-                    value={draft.minimum_subtotal}
-                    onChange={event =>
-                      setDraft(current => ({
-                        ...current,
-                        minimum_subtotal: event.target.value,
-                      }))
-                    }
-                    className="h-11 rounded-xl"
+                  <input
+                    type="checkbox"
+                    checked={draft.enabled}
+                    onChange={event => setDraft(current => ({ ...current, enabled: event.target.checked }))}
+                    className="h-5 w-5 shrink-0 accent-orange-500"
                   />
-                  <span className="block text-xs font-normal text-muted-foreground">
-                    {copy.minimumSubtotalHint}
-                  </span>
                 </label>
-              )}
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="space-y-1 text-sm font-semibold">
-                  <span>{copy.starts}</span>
-                  <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,.85fr)] gap-2">
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      dir="ltr"
-                      value={draft.starts_date}
-                      onChange={event =>
-                        setDraft(current => ({
-                          ...current,
-                          starts_date: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.datePlaceholder}
-                      maxLength={10}
-                      className="h-11 rounded-xl"
-                    />
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      dir="ltr"
-                      value={draft.starts_time}
-                      onChange={event =>
-                        setDraft(current => ({
-                          ...current,
-                          starts_time: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.timePlaceholder}
-                      maxLength={5}
-                      className="h-11 rounded-xl"
-                    />
-                  </div>
-                </label>
-                <label className="space-y-1 text-sm font-semibold">
-                  <span>{copy.ends}</span>
-                  <div className="grid grid-cols-[minmax(0,1.35fr)_minmax(0,.85fr)] gap-2">
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      dir="ltr"
-                      value={draft.ends_date}
-                      onChange={event =>
-                        setDraft(current => ({
-                          ...current,
-                          ends_date: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.datePlaceholder}
-                      maxLength={10}
-                      className="h-11 rounded-xl"
-                    />
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      dir="ltr"
-                      value={draft.ends_time}
-                      onChange={event =>
-                        setDraft(current => ({
-                          ...current,
-                          ends_time: event.target.value,
-                        }))
-                      }
-                      placeholder={copy.timePlaceholder}
-                      maxLength={5}
-                      className="h-11 rounded-xl"
-                    />
-                  </div>
-                </label>
-              </div>
-              <p className="text-xs leading-5 text-muted-foreground">
-                {copy.dateTimeFormat}
-              </p>
-              <p className="text-xs leading-5 text-muted-foreground">
-                {copy.localTime} <span dir="ltr">({context.timezone})</span>
-              </p>
-
-              <label className="flex items-center gap-3 rounded-2xl border p-4 text-sm font-bold">
-                <input
-                  type="checkbox"
-                  checked={draft.enabled}
-                  onChange={event =>
-                    setDraft(current => ({
-                      ...current,
-                      enabled: event.target.checked,
-                    }))
-                  }
-                  className="h-5 w-5 shrink-0 accent-orange-500"
-                />
-                <span>{copy.enabled}</span>
-              </label>
+              </section>
             </div>
-            <div className="grid shrink-0 grid-cols-2 gap-3 border-t px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 rounded-xl"
-                disabled={saving}
-                onClick={() => closeEditor()}
-              >
+
+            <div className="grid shrink-0 grid-cols-2 gap-3 border-t bg-background px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6">
+              <Button type="button" variant="outline" className="h-11 rounded-xl" disabled={saving} onClick={() => closeEditor()}>
                 {copy.cancel}
               </Button>
-              <Button
-                type="button"
-                className="h-11 rounded-xl bg-orange-500 font-bold text-white hover:bg-orange-600"
-                disabled={saving}
-                onClick={() => void save()}
-              >
+              <Button type="button" className="h-11 rounded-xl bg-orange-500 font-bold text-white hover:bg-orange-600" disabled={saving} onClick={() => void save()}>
                 {saving ? copy.saving : copy.save}
               </Button>
             </div>
