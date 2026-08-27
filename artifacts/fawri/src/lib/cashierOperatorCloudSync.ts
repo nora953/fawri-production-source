@@ -679,6 +679,13 @@ async function postOperation(
     kind === 'sale'
       ? await saleEnvelopesWithEvidence(session, envelopes)
       : envelopes;
+
+  const expectedOperationId = text(envelopes[0]?.operation_id);
+  const expectedDeviceSequence = Number(envelopes[0]?.device_sequence);
+  const expectedEntityIds = envelopes
+    .map((item) => text(item.entity_id))
+    .sort();
+
   const response = await fetch(`/api/cashier/operator/sync/${kind}`, {
     method: 'POST',
     headers: cashierOperatorHeaders(session),
@@ -693,9 +700,40 @@ async function postOperation(
       response.status,
     );
   }
+
+  const operationId = text(payload.operation_id);
+  const deviceSequence = Number(payload.device_sequence);
+  const orderId = text(payload.order_id);
+  const acceptedEntityIds = Array.isArray(payload.accepted_entity_ids)
+    ? payload.accepted_entity_ids.map((value) => text(value)).sort()
+    : [];
+  const compensationKind = text(payload.compensation_kind);
+
+  const acknowledgementInvalid =
+    !expectedOperationId ||
+    operationId !== expectedOperationId ||
+    !Number.isSafeInteger(expectedDeviceSequence) ||
+    !Number.isSafeInteger(deviceSequence) ||
+    deviceSequence !== expectedDeviceSequence ||
+    !orderId ||
+    acceptedEntityIds.length !== expectedEntityIds.length ||
+    acceptedEntityIds.some(
+      (entityId, index) =>
+        !entityId || entityId !== expectedEntityIds[index],
+    ) ||
+    (kind !== 'sale' && compensationKind !== kind);
+
+  if (acknowledgementInvalid) {
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_ACK_INVALID',
+      'Cashier sync acknowledgement does not completely match the pending operation',
+      409,
+    );
+  }
+
   return {
     replayed: payload.replayed === true,
-    operation_id: text(payload.operation_id),
+    operation_id: operationId,
   };
 }
 
