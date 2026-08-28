@@ -13,33 +13,15 @@ This file separates confirmed blockers from completed readiness work. A blocker 
 
 ## Open blockers
 
-### POS Global Hardening
+### Merchant Dashboard Global Hardening
 
 Severity: HIGH
 
 Status: OPEN
 
-The cashier/POS is operational again, but final production hardening has not yet been completed across the whole lifecycle.
+All major merchant surfaces must be validated together against server/PostgreSQL authority, including dashboard overview, products, orders, conversations, cashier management, cashier reports, settings, channels, subscription, support, navigation, and related loading/error/unavailable states.
 
-Required closure evidence includes:
-
-- station pairing/re-pairing behavior,
-- staff/manager permission enforcement,
-- PIN lock/recovery behavior,
-- shift lifecycle,
-- operator session expiry/re-authentication,
-- multi-device and station contention behavior,
-- offline/online transitions,
-- catalog synchronization,
-- sale creation,
-- inventory impact,
-- retry/idempotency behavior,
-- return/void/compensation behavior,
-- pending-operation recovery,
-- process/browser restart recovery,
-- reporting/profit/cost authorization,
-- tenant isolation,
-- no duplicate sale or double inventory mutation under retry/race conditions.
+Closure must also prove that no operational surface silently falls back to stale/local authority when a canonical server authority exists.
 
 ### Catalog / Variants / Inventory Finalization
 
@@ -50,28 +32,6 @@ Status: OPEN
 The current Catalog/Variants implementation is preserved, but final product-editor and authority hardening remains part of the finishing plan.
 
 Closure requires validation of product media, variant/options UX, SKU/barcode uniqueness, variant pricing, inventory set/adjust flows, error states, and Catalog-to-POS continuity.
-
-### Global Merchant Journey / End-to-End Gate
-
-Severity: HIGH
-
-Status: OPEN
-
-The project now has static and runtime consistency gates, but the final golden end-to-end journey suite has not yet been completed.
-
-The target journey must prove, at minimum:
-
-merchant authentication -> product/variant -> inventory -> cashier staff/station -> cashier login -> sale -> inventory effect -> reporting/order visibility -> safe session/shift completion.
-
-Equivalent golden journeys are also required for Admin and Subscription lifecycle behavior.
-
-### Merchant Dashboard Global Hardening
-
-Severity: HIGH
-
-Status: OPEN
-
-All major merchant surfaces must be validated together against server/PostgreSQL authority, including dashboard overview, products, orders, conversations, cashier management, cashier reports, settings, channels, subscription, support, and related error/loading/unavailable states.
 
 ### Auth / Admin / Subscription Final Hardening
 
@@ -97,6 +57,20 @@ Status: OPEN
 
 Final release validation must include migration/schema continuity, tenant isolation, idempotency/concurrency, observability, backup/restore rehearsal, security/supply-chain gates, and log/secret hygiene.
 
+### Global Merchant Journey / End-to-End Gate
+
+Severity: HIGH
+
+Status: OPEN
+
+The project has static/runtime consistency gates and the POS subsystem now has a completed golden lifecycle, but the final cross-subsystem golden journey suite has not yet been completed.
+
+The target merchant journey must prove, at minimum:
+
+merchant authentication -> product/variant -> inventory -> cashier staff/station -> cashier login -> sale -> inventory effect -> reporting/order visibility -> safe session/shift completion.
+
+Equivalent golden journeys are also required for Admin and Subscription lifecycle behavior.
+
 ### UI/UX Final Polish
 
 Severity: MEDIUM
@@ -104,6 +78,8 @@ Severity: MEDIUM
 Status: OPEN
 
 Final responsive and interaction polish remains after authority/runtime hardening. It must cover desktop/tablet/mobile, RTL/LTR, Arabic/Kurdish/English, overflow, forms, loading/empty/error states, accessibility, and performance-sensitive large bundles.
+
+Known non-blocking candidates include existing production-build sourcemap reporting warnings and large-chunk advisory warnings; these are not current POS correctness blockers but should be assessed during final polish/performance work.
 
 ## External blockers
 
@@ -125,11 +101,49 @@ Meta connection/live-send behavior remains activation-gated. Production-safe OAu
 
 ## Closed blockers at current checkpoint
 
+### POS Global Hardening
+
+Severity: HIGH
+
+Status: CLOSED at operational close SHA `596333f3aad459f8e4fdc96a5837bfd7c9c9395d`
+
+Closure evidence recorded in `docs/FAWRI_CURRENT_CHECKPOINT.md` includes:
+
+- station pairing and stable binding behavior,
+- staff/manager permission enforcement,
+- PIN login and operator-session authorization,
+- one-open-shift and one-live-session concurrency protection,
+- server-mapped concurrent login conflicts,
+- session expiry/invalidation behavior without deleting pending local operations,
+- existing-station offline inventory authority management,
+- heartbeat-independent optimistic configuration ETag and stale-write rejection,
+- prevention of legacy endpoint bypass around versioned station configuration,
+- offline tracked-inventory sale authority,
+- local-first sale commit while disconnected,
+- full operation outbox boundaries,
+- strict ACK validation before durable local deletion,
+- reconnect and automatic outbox upload,
+- inventory reconciliation after ACK,
+- no duplicate sale in the browser golden journey,
+- online sale, return, and void lifecycle,
+- returnability/void mutual consistency,
+- report/profit/cost permission boundaries,
+- History read-side operator visibility checks,
+- Offline History navigation without generic failure,
+- one cashier connectivity authority shared by POS/History/runtime,
+- truthful Online/Offline browser state after actual cashier transport evidence.
+
+Final browser golden evidence includes the tracked-inventory journey:
+
+`stock 2 -> Offline sale 12,000 IQD -> reconnect -> auto-sync -> one completed/synced sale -> stock 1 -> Offline History opens and shows غير متصل`.
+
+Focused validations in the closing sequence included `21/21`, `12/12`, and final connectivity `26/26` regression passes, successful Fawri typecheck/build, applicable API typecheck/build passes earlier in the phase, and clean `git diff --check` results.
+
 ### Preview PostgreSQL authority mismatch
 
 Status: CLOSED at `4cb6e262517841cea0174f31dd2693791e03d4e0`
 
-The unified preview now requires operational, Auth session, and Subscription PostgreSQL authority rather than depending on manual exports that could leave the runtime in a partial cutover state.
+The unified preview requires operational, Auth session, and Subscription PostgreSQL authority rather than depending on manual exports that could leave the runtime in a partial cutover state.
 
 ### Cashier dashboard surfaces missing from active tree
 
@@ -141,7 +155,7 @@ Cashier staff management, cashier central reports, cashier operator routes, and 
 
 Status: CLOSED at `4cb6e262517841cea0174f31dd2693791e03d4e0`
 
-Expired pairing challenges, station credentials, and operator sessions now have deterministic reconciliation. Open shifts are not closed merely because an authentication session expires.
+Expired pairing challenges, station credentials, and operator sessions have deterministic reconciliation. Open shifts are not closed merely because an authentication session expires.
 
 ### Invalid local cashier station binding produced generic failure
 
@@ -151,14 +165,14 @@ The cashier client can recover from an invalid station credential by clearing on
 
 ### Static and runtime global consistency findings
 
-Status: CLOSED for current checkpoint
+Status: CLOSED for the recorded checkpoint baseline
 
-Validated result at the checkpoint:
+Validated baseline result:
 
 - Static: `critical=0 warning=0 review=0`
 - PostgreSQL runtime: `critical=0 warning=0 review=0`
 
-These audits must remain repeatable gates; a future non-zero result reopens the relevant blocker.
+These audits remain repeatable gates; a future non-zero result reopens the relevant blocker.
 
 ## Release candidate rule
 
