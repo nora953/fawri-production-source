@@ -267,17 +267,22 @@ router.patch(
   requireMerchantAuthority,
   async (req: Request, res: Response) => {
     try {
+      const configurationPatchPresent =
+        req.body?.name !== undefined ||
+        req.body?.branch_key !== undefined ||
+        req.body?.branch_label !== undefined ||
+        req.body?.offline_inventory_authority !== undefined;
+      if (configurationPatchPresent) {
+        throw new CashierStaffAuthorityError(
+          "CASHIER_STATION_CONFIGURATION_ETAG_REQUIRED",
+          "cashier station configuration must be changed through the versioned configuration endpoint",
+          409,
+        );
+      }
       const station = await updateCashierStationAuthoritative({
         merchantId: merchantId(res),
         stationId: req.params.stationId,
-        name: req.body?.name,
-        branchKey: req.body?.branch_key,
-        branchLabel: req.body?.branch_label,
         status: req.body?.status,
-        offlineInventoryAuthority: optionalBoolean(
-          req.body?.offline_inventory_authority,
-          "offline_inventory_authority",
-        ),
       });
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, station });
