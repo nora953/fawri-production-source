@@ -24,7 +24,7 @@ test('merchant conversations page does not depend on local merchant cache to loa
   assert.match(page, /cache:\s*'no-store'/);
 });
 
-test('conversation loading, unavailable, stale, and empty states remain truthful', async () => {
+test('conversation loading, unavailable, stale, selection, and empty states remain truthful', async () => {
   const page = await read('src/pages/dashboard/ConversationsPage.tsx');
 
   assert.match(page, /loadStatus/);
@@ -36,6 +36,8 @@ test('conversation loading, unavailable, stale, and empty states remain truthful
   assert.match(page, /loadStatus === 'ready' && conversations\.length === 0/);
   assert.match(page, /authorityCopy\.retry/);
   assert.match(page, /authorityCopy\.staleBody/);
+  assert.match(page, /authorityCopy\.selectTitle/);
+  assert.match(page, /authorityCopy\.selectBody/);
 });
 
 test('conversation authority copy exists in Arabic, English, and Sorani Kurdish', async () => {
@@ -47,6 +49,8 @@ test('conversation authority copy exists in Arabic, English, and Sorani Kurdish'
     'unavailableBody',
     'staleBody',
     'retry',
+    'selectTitle',
+    'selectBody',
   ]) {
     const matches = copy.match(new RegExp(`${key}:\\s*'`, 'g')) || [];
     assert.equal(matches.length, 3, `${key} must exist for Arabic, English, and Sorani Kurdish`);
