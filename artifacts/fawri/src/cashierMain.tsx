@@ -22,6 +22,10 @@ import {
   invalidateCashierOperatorSession,
 } from '@/lib/cashierOperatorSessionRuntime';
 import { refreshCashierOperatorPolicyFromCloud } from '@/lib/cashierOperatorPolicyRefresh';
+import {
+  cashierNetworkAttemptAllowed,
+  installCashierConnectivityAuthority,
+} from '@/lib/cashierConnectivity';
 import { publishCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import {
@@ -38,6 +42,8 @@ const sync = params.get('sync') === '1';
 const history = params.get('history') === '1';
 const reports = params.get('reports') === '1';
 const demoRequested = params.get('demo') === '1';
+
+installCashierConnectivityAuthority();
 
 const AUTO_SYNC_INTERVAL_MS = 3_000;
 const AUTO_SYNC_RETRY_BACKOFF_MS = 30_000;
@@ -76,7 +82,7 @@ function startCashierPosAutoSync(): () => void {
     if (!activeSession) return;
     const labels = storedCashierCopy().runtime;
 
-    if (!cashierIsOnline()) {
+    if (!cashierNetworkAttemptAllowed()) {
       publishCashierSyncUiState({
         status: 'offline',
         message: labels.offlineUpload,
