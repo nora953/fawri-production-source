@@ -1,0 +1,70 @@
+name: POS Connectivity Authority Apply
+
+on:
+  push:
+    branches:
+      - parallel/pos-connectivity-authority-hardening
+    paths:
+      - scripts/apply-pos-connectivity-authority.mjs
+      - .github/workflows/pos-connectivity-authority-apply.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout isolated branch
+        uses: actions/checkout@v4
+        with:
+          ref: parallel/pos-connectivity-authority-hardening
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Activate pnpm
+        run: corepack prepare pnpm@10.26.1 --activate
+
+      - name: Apply guarded transform
+        run: node scripts/apply-pos-connectivity-authority.mjs
+
+      - name: Diff check
+        run: git diff --check
+
+      - name: Focused regression tests
+        run: |
+          node --test \
+            artifacts/fawri/tests/cashier-connectivity-authority-hardening.test.mjs \
+            artifacts/fawri/tests/cashier-offline-navigation-session-fallback.test.mjs \
+            artifacts/fawri/tests/cashier-offline-policy-management-hardening.test.mjs \
+            artifacts/fawri/tests/cashier-operator-session-invalidation-hardening.test.mjs \
+            artifacts/fawri/tests/cashier-operator-read-session-hardening.test.mjs \
+            artifacts/fawri/tests/cashier-operator-outbox-hardening.test.mjs \
+            artifacts/fawri/tests/cashier-dashboard-surface-regression.test.mjs
+
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Typecheck Fawri
+        run: pnpm --filter @workspace/fawri typecheck
+
+      - name: Build Fawri
+        run: pnpm --filter @workspace/fawri build
+
+      - name: Commit validated runtime changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts \
+            artifacts/fawri/src/lib/cashierOperatorPolicyRefresh.ts \
+            artifacts/fawri/src/pages/CashierHistoryPage.tsx \
+            artifacts/fawri/src/pages/CashierPosPage.tsx \
+            artifacts/fawri/src/cashierMain.tsx
+          git diff --cached --check
+          git commit -m "Unify cashier connectivity authority"
+          git push origin HEAD:parallel/pos-connectivity-authority-hardening
