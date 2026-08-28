@@ -24,6 +24,14 @@ test('merchant conversations page does not depend on local merchant cache to loa
   assert.match(page, /cache:\s*'no-store'/);
 });
 
+test('conversation polling only applies the newest authority read', async () => {
+  const page = await read('src/pages/dashboard/ConversationsPage.tsx');
+
+  assert.match(page, /loadRequestIdRef/);
+  assert.match(page, /const requestId = \+\+loadRequestIdRef\.current/);
+  assert.match(page, /requestId !== loadRequestIdRef\.current/);
+});
+
 test('conversation loading, unavailable, stale, selection, and empty states remain truthful', async () => {
   const page = await read('src/pages/dashboard/ConversationsPage.tsx');
 
