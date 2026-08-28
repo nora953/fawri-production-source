@@ -220,7 +220,9 @@ export default function OverviewPage() {
   return (
     <div className="bg-background" dir={dir}>
       <div className="space-y-4">
-        <SubscriptionRetentionCard compact />
+        {subscriptionStatus !== 'unavailable' && (
+          <SubscriptionRetentionCard compact />
+        )}
 
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">{t.overview}</h1>
