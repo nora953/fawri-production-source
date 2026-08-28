@@ -190,6 +190,7 @@ router.get("/lifecycle", async (req, res) => {
   res.json({
     ok: true,
     lifecycle: {
+      merchant_id: validated.session.account_id,
       account_status: accountStatus,
       merchant_status:
         accountStatus === "pending_review"
