@@ -15,6 +15,11 @@ export const saasBillingCopy: Record<Lang, {
   sandboxNotice: string;
   fastPayNotice: string;
   merchantSetupRequired: string;
+  authorityUnavailableTitle: string;
+  authorityUnavailableBody: string;
+  retry: string;
+  recentUnavailable: string;
+  recentEmpty: string;
 }> = {
   ar: {
     title: 'خطط اشتراك فوري',
@@ -31,6 +36,11 @@ export const saasBillingCopy: Record<Lang, {
     sandboxNotice: 'أنت تستخدم بيئة اختبار SuperQi. لا يتم استخدام أموال حقيقية في هذا الوضع.',
     fastPayNotice: 'FastPay سيكون متاحًا بعد إكمال حساب التاجر والحصول على بيانات الربط الرسمية من FastPay.',
     merchantSetupRequired: 'يتطلب إعداد حساب تاجر',
+    authorityUnavailableTitle: 'تعذر تحميل خيارات الاشتراك والدفع',
+    authorityUnavailableBody: 'تعذر الوصول إلى خدمة الفوترة الآن. لم نفترض أن الدفع غير مفعّل أو أن الخطط غير موجودة. حاول مرة أخرى.',
+    retry: 'إعادة المحاولة',
+    recentUnavailable: 'تعذر تحميل سجل عمليات الاشتراك. خيارات الخطط أدناه ما زالت مأخوذة من خدمة الفوترة الحالية.',
+    recentEmpty: 'لا توجد عمليات اشتراك سابقة لهذا الحساب.',
   },
   en: {
     title: 'Fawri subscription plans',
@@ -47,6 +57,11 @@ export const saasBillingCopy: Record<Lang, {
     sandboxNotice: 'SuperQi sandbox is active. No real money is used in this mode.',
     fastPayNotice: 'FastPay will become available after merchant onboarding and official integration credentials are provided.',
     merchantSetupRequired: 'Merchant setup required',
+    authorityUnavailableTitle: 'Unable to load subscription billing',
+    authorityUnavailableBody: 'The billing service could not be reached. We have not assumed that checkout is disabled or that plans are missing. Please try again.',
+    retry: 'Try again',
+    recentUnavailable: 'Recent subscription billing could not be loaded. The plan options below still come from the current billing catalog.',
+    recentEmpty: 'There are no previous subscription billing operations for this account.',
   },
   ku: {
     title: 'پلانی بەشداری فەوری',
@@ -63,5 +78,10 @@ export const saasBillingCopy: Record<Lang, {
     sandboxNotice: 'ژینگەی تاقیکردنەوەی SuperQi چالاکە. لەم دۆخەدا پارەی ڕاستەقینە بەکارناهێنرێت.',
     fastPayNotice: 'FastPay دوای تەواوکردنی هەژماری بازرگان و وەرگرتنی زانیارییە فەرمییەکانی بەستنەوە بەردەست دەبێت.',
     merchantSetupRequired: 'پێویستی بە ڕێکخستنی هەژماری بازرگان هەیە',
+    authorityUnavailableTitle: 'نەتوانرا پلانی بەشداری و پارەدان باربکرێت',
+    authorityUnavailableBody: 'لە ئێستادا نەتوانرا دەست بە خزمەتگوزاری پارەدان بگات. وانەزانراوە کە پارەدان ناچالاکە یان پلانەکان بوونیان نییە. دووبارە هەوڵ بدەوە.',
+    retry: 'دووبارە هەوڵدانەوە',
+    recentUnavailable: 'نەتوانرا دوایین مامەڵەکانی بەشداری باربکرێن. هەڵبژاردەکانی پلان لە خوارەوە هێشتا لە کاتەلۆگی ئێستای پارەدان وەرگیراون.',
+    recentEmpty: 'هیچ مامەڵەی پێشووی بەشداری بۆ ئەم هەژمارە نییە.',
   },
 };

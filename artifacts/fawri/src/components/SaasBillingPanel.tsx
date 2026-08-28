@@ -48,12 +48,19 @@ type BillingOrder = {
 };
 
 type CatalogResponse = {
-  ok: boolean;
+  ok: true;
   catalog_version: string;
   currency: 'IQD';
   plans: BillingPlan[];
   provider: ProviderState;
   providers: ProviderState[];
+};
+
+type AuthorityStatus = 'loading' | 'ready' | 'unavailable';
+
+type BillingOrdersResponse = {
+  ok?: unknown;
+  orders?: unknown;
 };
 
 function makeIdempotencyKey() {
@@ -63,37 +70,128 @@ function makeIdempotencyKey() {
   return `billing-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+async function fetchBillingCatalog(): Promise<CatalogResponse> {
+  const response = await fetch('/api/auth/billing/catalog', {
+    cache: 'no-store',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  const data = await response.json().catch(() => null);
+
+  if (
+    !response.ok ||
+    data?.ok !== true ||
+    typeof data.catalog_version !== 'string' ||
+    data.currency !== 'IQD' ||
+    !Array.isArray(data.plans) ||
+    !data.provider ||
+    !Array.isArray(data.providers)
+  ) {
+    throw new Error('Billing catalog authority unavailable');
+  }
+
+  return data as CatalogResponse;
+}
+
+async function fetchBillingOrders(): Promise<BillingOrder[]> {
+  const response = await fetch('/api/auth/billing/orders', {
+    cache: 'no-store',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
+  const data = (await response.json().catch(() => null)) as BillingOrdersResponse | null;
+
+  if (!response.ok || data?.ok !== true || !Array.isArray(data.orders)) {
+    throw new Error('Billing orders authority unavailable');
+  }
+
+  return data.orders as BillingOrder[];
+}
+
 export function SaasBillingPanel({ subscription }: { subscription: Subscription | null }) {
   const { lang, t } = useI18n();
   const text = saasBillingCopy[lang];
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
   const [catalog, setCatalog] = React.useState<CatalogResponse | null>(null);
   const [orders, setOrders] = React.useState<BillingOrder[]>([]);
-  const [loading, setLoading] = React.useState(true);
+  const [catalogStatus, setCatalogStatus] = React.useState<AuthorityStatus>('loading');
+  const [ordersStatus, setOrdersStatus] = React.useState<AuthorityStatus>('loading');
   const [submitting, setSubmitting] = React.useState<string | null>(null);
+  const loadSequence = React.useRef(0);
 
   const load = React.useCallback(async () => {
-    try {
-      const [catalogResponse, ordersResponse] = await Promise.all([
-        fetch('/api/auth/billing/catalog', { cache: 'no-store' }),
-        fetch('/api/auth/billing/orders', { cache: 'no-store' }),
-      ]);
-      const catalogData = await catalogResponse.json().catch(() => null);
-      const ordersData = await ordersResponse.json().catch(() => null);
-      if (catalogResponse.ok && catalogData?.ok) setCatalog(catalogData as CatalogResponse);
-      if (ordersResponse.ok && ordersData?.ok && Array.isArray(ordersData.orders)) {
-        setOrders(ordersData.orders as BillingOrder[]);
-      }
-    } finally {
-      setLoading(false);
+    const sequence = ++loadSequence.current;
+    setCatalogStatus('loading');
+    setOrdersStatus('loading');
+    setCatalog(null);
+    setOrders([]);
+
+    const [catalogResult, ordersResult] = await Promise.allSettled([
+      fetchBillingCatalog(),
+      fetchBillingOrders(),
+    ]);
+
+    if (sequence !== loadSequence.current) return;
+
+    if (catalogResult.status === 'fulfilled') {
+      setCatalog(catalogResult.value);
+      setCatalogStatus('ready');
+    } else {
+      setCatalog(null);
+      setCatalogStatus('unavailable');
+    }
+
+    if (ordersResult.status === 'fulfilled') {
+      setOrders(ordersResult.value);
+      setOrdersStatus('ready');
+    } else {
+      setOrders([]);
+      setOrdersStatus('unavailable');
     }
   }, []);
 
   React.useEffect(() => {
     void load();
+    return () => {
+      loadSequence.current += 1;
+    };
   }, [load]);
 
-  if (loading || !catalog) return null;
+  if (catalogStatus === 'loading') {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{text.title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground" role="status">
+            {t.overview_loading}
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (catalogStatus === 'unavailable' || !catalog) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>{text.title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Alert className="border-orange-500/70" role="alert">
+            <AlertTitle>{text.authorityUnavailableTitle}</AlertTitle>
+            <AlertDescription className="space-y-3">
+              <p>{text.authorityUnavailableBody}</p>
+              <Button type="button" variant="outline" onClick={() => void load()}>
+                {text.retry}
+              </Button>
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const baseRemaining = subscription?.base_replies_remaining ?? subscription?.replies_remaining ?? 0;
   const expired = subscription
@@ -108,7 +206,7 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
   );
 
   const beginCheckout = async (plan: Plan, provider: ProviderState) => {
-    if (!provider.checkout_available || !canStartCycle) return;
+    if (!provider.checkout_available || !canStartCycle || catalogStatus !== 'ready') return;
     const operation: 'activate' | 'renew' | 'change' = !subscription
       ? 'activate'
       : subscription.plan_name === plan
@@ -119,7 +217,11 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
     try {
       const response = await fetch('/api/auth/billing/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           operation,
           plan,
@@ -163,10 +265,10 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
         {providers.some(
           (provider) => provider.provider === 'superqi_sandbox' && provider.checkout_available,
         ) && (
-            <Alert>
-              <AlertDescription>{text.sandboxNotice}</AlertDescription>
-            </Alert>
-          )}
+          <Alert>
+            <AlertDescription>{text.sandboxNotice}</AlertDescription>
+          </Alert>
+        )}
         {fastPayPending && (
           <Alert>
             <AlertDescription>{text.fastPayNotice}</AlertDescription>
@@ -224,10 +326,28 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
           })}
         </div>
 
-        {orders.length > 0 && (
-          <div className="space-y-2">
-            <h3 className="text-sm font-bold">{text.recent}</h3>
-            {orders.slice(0, 5).map((order) => (
+        <div className="space-y-2">
+          <h3 className="text-sm font-bold">{text.recent}</h3>
+          {ordersStatus === 'loading' && (
+            <p className="text-sm text-muted-foreground" role="status">
+              {t.overview_loading}
+            </p>
+          )}
+          {ordersStatus === 'unavailable' && (
+            <Alert className="border-orange-500/70" role="alert">
+              <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <span>{text.recentUnavailable}</span>
+                <Button type="button" variant="outline" className="shrink-0" onClick={() => void load()}>
+                  {text.retry}
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+          {ordersStatus === 'ready' && orders.length === 0 && (
+            <p className="text-sm text-muted-foreground">{text.recentEmpty}</p>
+          )}
+          {ordersStatus === 'ready' && orders.length > 0 &&
+            orders.slice(0, 5).map((order) => (
               <div key={order.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm">
                 <span>
                   {order.requested_plan.toUpperCase()} · {order.amount_iqd.toLocaleString(locale)} {COMMON_UI_LABELS.technical.currencyIqd}
@@ -237,8 +357,7 @@ export function SaasBillingPanel({ subscription }: { subscription: Subscription 
                 </Badge>
               </div>
             ))}
-          </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

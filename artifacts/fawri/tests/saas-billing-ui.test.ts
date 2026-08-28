@@ -35,3 +35,47 @@ test('subscription page uses server billing catalog and does not invent paid sta
   assert.match(panel, /checkout\?\.redirect_url/);
   assert.doesNotMatch(panel, /[?&]paid=true/);
 });
+
+test('billing catalog and order history fail independently and visibly', async () => {
+  const panel = await read('src/components/SaasBillingPanel.tsx');
+
+  assert.match(panel, /Promise\.allSettled/);
+  assert.match(panel, /catalogStatus/);
+  assert.match(panel, /ordersStatus/);
+  assert.match(panel, /setCatalogStatus\('unavailable'\)/);
+  assert.match(panel, /setOrdersStatus\('unavailable'\)/);
+  assert.match(panel, /text\.authorityUnavailableTitle/);
+  assert.match(panel, /text\.authorityUnavailableBody/);
+  assert.match(panel, /text\.retry/);
+  assert.match(panel, /text\.recentUnavailable/);
+  assert.match(panel, /text\.recentEmpty/);
+  assert.doesNotMatch(panel, /if \(loading \|\| !catalog\) return null/);
+
+  const catalogRequest = panel.slice(
+    panel.indexOf("fetch('/api/auth/billing/catalog'"),
+    panel.indexOf("fetch('/api/auth/billing/orders'"),
+  );
+  assert.match(catalogRequest, /credentials:\s*'include'/);
+  assert.match(catalogRequest, /cache:\s*'no-store'/);
+
+  const ordersStart = panel.indexOf("fetch('/api/auth/billing/orders'");
+  const ordersEnd = panel.indexOf(']);', ordersStart);
+  const ordersRequest = panel.slice(ordersStart, ordersEnd);
+  assert.match(ordersRequest, /credentials:\s*'include'/);
+  assert.match(ordersRequest, /cache:\s*'no-store'/);
+});
+
+test('billing authority state copy exists in all supported languages', async () => {
+  const copy = await read('src/lib/translations/saasBilling.ts');
+
+  for (const key of [
+    'authorityUnavailableTitle',
+    'authorityUnavailableBody',
+    'retry',
+    'recentUnavailable',
+    'recentEmpty',
+  ]) {
+    const matches = copy.match(new RegExp(`${key}:\\s*'`, 'g')) || [];
+    assert.equal(matches.length, 3, `${key} must exist for Arabic, English, and Sorani Kurdish`);
+  }
+});
