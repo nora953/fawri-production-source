@@ -4,10 +4,16 @@ on:
   pull_request:
     paths:
       - "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/SubscriptionPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ChannelsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ServerChannelsPage.tsx"
+      - "artifacts/fawri/src/components/SubscriptionRetentionCard.tsx"
+      - "artifacts/fawri/src/lib/currentSubscriptionAuthority.ts"
+      - "artifacts/fawri/src/lib/subscriptionStateMessages.ts"
+      - "artifacts/fawri/src/lib/translations/features/lib/subscriptionStateMessages.ts"
       - "artifacts/fawri/src/pages/LandingPage.tsx"
       - "artifacts/fawri/tests/dashboard-channel-coherence.test.mjs"
+      - "artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs"
       - ".github/workflows/dashboard-channel-coherence.yml"
   workflow_dispatch:
 
@@ -42,8 +48,12 @@ jobs:
       - name: Install frozen dependencies without lifecycle scripts
         run: node scripts/ci-run-redacted.mjs --label dashboard-channel-frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Test dashboard and channel authority contracts
-        run: node scripts/ci-run-redacted.mjs --label dashboard-channel-focused-test -- node --test artifacts/fawri/tests/dashboard-channel-coherence.test.mjs
+      - name: Test dashboard authority coherence contracts
+        run: >-
+          node scripts/ci-run-redacted.mjs --label dashboard-authority-focused-test --
+          node --test
+          artifacts/fawri/tests/dashboard-channel-coherence.test.mjs
+          artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs
 
       - name: Type-check Fawri
         run: node scripts/ci-run-redacted.mjs --label fawri-typecheck -- pnpm --filter @workspace/fawri run typecheck
