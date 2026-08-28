@@ -19,7 +19,10 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { clearSession } from "@/lib/store";
-import { useUnreadMerchantNotificationCount } from "@/hooks/useMerchantNotifications";
+import {
+  useUnreadMerchantNotificationCount,
+  type MerchantNotificationCountState,
+} from "@/hooks/useMerchantNotifications";
 
 type SidebarItem = {
   href: string;
@@ -48,20 +51,26 @@ function isActiveRoute(
 function NotificationBadge({
   count,
   isKurdish,
+  unavailableLabel,
 }: {
-  count: number;
+  count: MerchantNotificationCountState;
   isKurdish: boolean;
+  unavailableLabel: string;
 }) {
-  if (count <= 0) return null;
+  if (count === "loading") return null;
+  const unavailable = count === "unavailable";
+  if (!unavailable && count <= 0) return null;
 
   return (
     <span
       dir="ltr"
+      aria-label={unavailable ? unavailableLabel : undefined}
+      title={unavailable ? unavailableLabel : undefined}
       className={`absolute -end-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[9px] leading-none tabular-nums text-white shadow-sm ring-2 ring-sidebar ${
         isKurdish ? "font-sans font-bold" : "font-black"
       }`}
     >
-      {count >= 50 ? "50+" : count}
+      {unavailable ? "!" : count >= 50 ? "50+" : count}
     </span>
   );
 }
@@ -174,6 +183,7 @@ export function Sidebar() {
           <NotificationBadge
             count={unreadNotifications}
             isKurdish={lang === "ku"}
+            unavailableLabel={t.notifications_load_error}
           />
         </Link>
       </div>
