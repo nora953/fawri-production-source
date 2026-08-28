@@ -13,8 +13,14 @@ const messages = read('../src/lib/translations/features/lib/subscriptionStateMes
 const serverRoute = read('../../api-server/src/routes/subscription-entitlement-pg.ts');
 
 test('current subscription authority distinguishes absence from authority failure', () => {
-  assert.match(serverRoute, /sendAuthError\(res, 404, "SUBSCRIPTION_NOT_FOUND"/);
-  assert.match(serverRoute, /503,[\s\S]*"SUBSCRIPTION_ENTITLEMENT_UNAVAILABLE"/);
+  assert.match(
+    serverRoute,
+    /sendAuthError\(res,\s*404,\s*"SUBSCRIPTION_NOT_FOUND"/,
+  );
+  assert.match(
+    serverRoute,
+    /503,[\s\S]*"SUBSCRIPTION_ENTITLEMENT_UNAVAILABLE"/,
+  );
 
   assert.match(authority, /response\.status === 404/);
   assert.match(authority, /data\?\.code === 'SUBSCRIPTION_NOT_FOUND'/);
