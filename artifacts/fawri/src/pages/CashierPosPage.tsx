@@ -87,6 +87,12 @@ function errorMessage(error: unknown, labels: PosLabels): string {
   if (message.includes('ITEM_NOT_FOUND')) {
     return labels.errorItemNotFound;
   }
+  if (
+    code === 'CASHIER_OFFLINE_INVENTORY_AUTHORITY_REQUIRED' ||
+    message.includes('CASHIER_OFFLINE_INVENTORY_AUTHORITY_REQUIRED')
+  ) {
+    return labels.errorOfflineInventoryAuthorityRequired;
+  }
   return labels.errorSaleFailed;
 }
 
