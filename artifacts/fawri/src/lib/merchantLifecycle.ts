@@ -22,6 +22,7 @@ const ONBOARDING_STATUSES = new Set<OnboardingStatus>([
 ]);
 
 export type MerchantLifecycleSnapshot = {
+  merchant_id: string;
   account_status: AccountStatus;
   merchant_status: MerchantStatus;
   onboarding_status: OnboardingStatus;
@@ -49,10 +50,13 @@ export async function checkMerchantLifecycle(
       return { ok: false, reason: 'unavailable' };
     }
 
+    const merchantId = String(result.lifecycle.merchant_id || '').trim();
     const accountStatus = result.lifecycle.account_status as AccountStatus;
     const merchantStatus = result.lifecycle.merchant_status as MerchantStatus;
     const onboardingStatus = result.lifecycle.onboarding_status as OnboardingStatus;
     if (
+      !merchantId ||
+      merchantId.length > 180 ||
       !ACCOUNT_STATUSES.has(accountStatus) ||
       !MERCHANT_STATUSES.has(merchantStatus) ||
       !ONBOARDING_STATUSES.has(onboardingStatus)
@@ -63,6 +67,7 @@ export async function checkMerchantLifecycle(
     return {
       ok: true,
       lifecycle: {
+        merchant_id: merchantId,
         account_status: accountStatus,
         merchant_status: merchantStatus,
         onboarding_status: onboardingStatus,
