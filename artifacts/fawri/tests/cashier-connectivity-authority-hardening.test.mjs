@@ -8,57 +8,56 @@ async function source(path) {
   return readFile(new URL(path, fawriRoot), 'utf8');
 }
 
-test('cashier connectivity authority combines browser and actual network evidence', async () => {
+test('cashier connectivity authority combines browser and actual cashier API transport evidence', async () => {
   const authority = await source('src/lib/cashierConnectivity.ts');
 
   assert.match(authority, /CashierConnectivityState/);
-  assert.match(authority, /navigator\.onLine !== false/);
-  assert.match(authority, /markCashierNetworkFailure/);
-  assert.match(authority, /markCashierNetworkResponse/);
-  assert.match(authority, /subscribeCashierConnectivity/);
   assert.match(authority, /network_failure/);
   assert.match(authority, /network_response/);
+  assert.match(authority, /readNativeNavigatorOnline/);
+  assert.match(authority, /url\.pathname\.startsWith\('\/api\/cashier\/'\)/);
+  assert.match(authority, /window\.fetch = wrappedFetch/);
+  assert.match(authority, /cause instanceof TypeError/);
+  assert.match(authority, /markCashierNetworkFailure\(\)/);
+  assert.match(authority, /markCashierNetworkResponse\(\)/);
 });
 
-test('operator validation records transport truth without weakening 401 rejection', async () => {
-  const session = await source('src/lib/cashierOperatorSessionRuntime.ts');
+test('cashier connectivity bridge makes existing navigator consumers read authoritative transport truth', async () => {
+  const authority = await source('src/lib/cashierConnectivity.ts');
 
-  assert.match(session, /cashierNetworkAttemptAllowed/);
-  assert.match(session, /markCashierNetworkFailure/);
-  assert.match(session, /markCashierNetworkResponse/);
-  assert.match(session, /response = await fetch\('\/api\/cashier\/operator\/me'/);
-  assert.match(session, /response\.status === 401/);
-  assert.match(session, /sessionStorage\.removeItem\(OPERATOR_STORAGE_KEY\)/);
+  assert.match(authority, /Object\.defineProperty\(navigator, 'onLine'/);
+  assert.match(authority, /get: \(\) => currentState\.online/);
+  assert.match(authority, /broadcastingCompatibilityEvent/);
+  assert.match(authority, /new Event\(next\.online \? 'online' : 'offline'\)/);
+  assert.match(authority, /next\.source !== 'browser'/);
 });
 
-test('policy refresh updates the same connectivity authority', async () => {
-  const policy = await source('src/lib/cashierOperatorPolicyRefresh.ts');
-
-  assert.match(policy, /cashierNetworkAttemptAllowed/);
-  assert.match(policy, /markCashierNetworkFailure/);
-  assert.match(policy, /markCashierNetworkResponse/);
-  assert.match(policy, /\/api\/cashier\/operator\/me/);
-});
-
-test('POS and History consume shared cashier connectivity instead of raw navigator status', async () => {
-  const pos = await source('src/pages/CashierPosPage.tsx');
-  const history = await source('src/pages/CashierHistoryPage.tsx');
-
-  for (const page of [pos, history]) {
-    assert.match(page, /cashierConnectivityIsOnline/);
-    assert.match(page, /subscribeCashierConnectivity/);
-    assert.doesNotMatch(page, /setOnline\(navigator\.onLine\)/);
-    assert.doesNotMatch(page, /useState\(\(\) => navigator\.onLine\)/);
-  }
-  assert.match(history, /cashierNetworkAttemptAllowed/);
-  assert.doesNotMatch(history, /if \(navigator\.onLine === false\) return;/);
-});
-
-test('cashier auto sync uses shared connectivity truth for UI and coarse browser signal only for retry eligibility', async () => {
+test('cashier entry installs connectivity authority before rendering and keeps retry eligibility on native browser signal', async () => {
   const entry = await source('src/cashierMain.tsx');
 
-  assert.match(entry, /cashierConnectivityIsOnline/);
+  assert.match(entry, /installCashierConnectivityAuthority/);
   assert.match(entry, /cashierNetworkAttemptAllowed/);
-  assert.match(entry, /function cashierIsOnline\(\): boolean/);
-  assert.doesNotMatch(entry, /return navigator\.onLine !== false;/);
+  assert.match(entry, /if \(!cashierNetworkAttemptAllowed\(\)\)/);
+
+  const installIndex = entry.indexOf('installCashierConnectivityAuthority();');
+  const renderIndex = entry.indexOf("createRoot(document.getElementById('cashier-root')!).render");
+  assert.ok(installIndex >= 0 && renderIndex > installIndex);
+});
+
+test('POS, History and Reports remain on one navigator contract now owned by cashier connectivity authority', async () => {
+  const pos = await source('src/pages/CashierPosPage.tsx');
+  const history = await source('src/pages/CashierHistoryPage.tsx');
+  const reports = await source('src/lib/cashierOperatorReportsRuntime.ts');
+
+  assert.match(pos, /navigator\.onLine/);
+  assert.match(history, /navigator\.onLine/);
+  assert.match(reports, /navigator\.onLine/);
+});
+
+test('connectivity observation does not weaken operator-session HTTP rejection semantics', async () => {
+  const session = await source('src/lib/cashierOperatorSessionRuntime.ts');
+
+  assert.match(session, /response\.status === 401/);
+  assert.match(session, /sessionStorage\.removeItem\(OPERATOR_STORAGE_KEY\)/);
+  assert.match(session, /CASHIER_OPERATOR_VALIDATE_FAILED/);
 });
