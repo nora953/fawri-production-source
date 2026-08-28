@@ -13,16 +13,21 @@ async function repoSource(path) {
   return readFile(new URL(path, repoRoot), 'utf8');
 }
 
-test('cashier station configuration uses an independent optimistic etag', async () => {
-  const authority = await repoSource('artifacts/api-server/src/services/postgresCashierStaffAuthority.ts');
+test('cashier station configuration uses a heartbeat-independent optimistic etag', async () => {
+  const authority = await repoSource('artifacts/api-server/src/services/cashierStationConfigurationAuthority.ts');
   const route = await repoSource('artifacts/api-server/src/routes/cashier-staff-operations.ts');
 
   assert.match(authority, /configuration_etag:\s*string/);
   assert.match(authority, /cashierStationConfigurationEtag/);
   assert.match(authority, /expectedConfigurationEtag:\s*unknown/);
   assert.match(authority, /CASHIER_STATION_VERSION_CONFLICT/);
-  assert.match(authority, /getStationRow\(client, merchantId, stationId, true\)/);
+  assert.match(authority, /FOR UPDATE/);
   assert.match(authority, /currentEtag !== expectedConfigurationEtag/);
+  assert.doesNotMatch(
+    authority,
+    /updated_at[^\n]*configuration_etag|last_seen_at[^\n]*configuration_etag/,
+    'configuration etag must not depend on heartbeat timestamps',
+  );
   assert.match(route, /expectedConfigurationEtag:\s*req\.body\?\.expected_configuration_etag/);
 });
 
@@ -39,28 +44,26 @@ test('merchant dashboard exposes safe station editing including offline inventor
   assert.match(page, /editStation/);
 });
 
-test('online operator validation refreshes station policy without replacing shift identity', async () => {
-  const runtime = await fawriSource('src/lib/cashierOperatorSessionRuntime.ts');
+test('online policy refresh preserves operator and shift identity before outbox upload', async () => {
+  const policy = await fawriSource('src/lib/cashierOperatorPolicyRefresh.ts');
   const entry = await fawriSource('src/cashierMain.tsx');
 
-  const validateStart = runtime.indexOf('export async function validateCashierOperatorSession');
-  const validateEnd = runtime.indexOf('\nexport function cashierOperatorCan', validateStart);
-  const validateBody = runtime.slice(validateStart, validateEnd);
-
-  assert.match(validateBody, /payload\.operator/);
-  assert.match(validateBody, /offline_inventory_authority/);
-  assert.match(validateBody, /writeCashierDeviceIdentity/);
-  assert.match(validateBody, /sessionStorage\.setItem\(OPERATOR_STORAGE_KEY/);
-  assert.match(validateBody, /operator_session_id/);
-  assert.match(validateBody, /shift_id/);
+  assert.match(policy, /\/api\/cashier\/operator\/me/);
+  assert.match(policy, /offline_inventory_authority/);
+  assert.match(policy, /writeCashierDeviceIdentity/);
+  assert.match(policy, /sessionStorage\.setItem\(OPERATOR_STORAGE_KEY/);
+  assert.match(policy, /operator_session_id/);
+  assert.match(policy, /shift_id/);
+  assert.match(policy, /sameImmutableContext/);
+  assert.doesNotMatch(policy, /logoutCashierOperator|\/operator\/login/);
 
   const attemptStart = entry.indexOf('const attempt = async');
   const attemptEnd = entry.indexOf('const handleOnline', attemptStart);
   const attemptBody = entry.slice(attemptStart, attemptEnd);
-  assert.match(attemptBody, /validateCashierOperatorSession/);
+  assert.match(attemptBody, /refreshCashierOperatorPolicyFromCloud/);
   assert.ok(
-    attemptBody.indexOf('validateCashierOperatorSession') < attemptBody.indexOf('syncCashierOperatorOutboxToCloud'),
-    'online reconciliation must refresh authoritative operator context before outbox upload',
+    attemptBody.indexOf('refreshCashierOperatorPolicyFromCloud') < attemptBody.indexOf('syncCashierOperatorOutboxToCloud'),
+    'online reconciliation must refresh authoritative station policy before outbox upload',
   );
 });
 
