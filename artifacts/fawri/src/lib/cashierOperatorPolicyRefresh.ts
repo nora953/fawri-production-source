@@ -177,7 +177,11 @@ export async function refreshCashierOperatorPolicyFromCloud(): Promise<CashierOp
   if (!response.ok || payload.ok !== true) {
     if (response.status === 401) {
       invalidateCashierOperatorSession();
-      return null;
+      throw new CashierOperatorPolicyRefreshError(
+        text(payload.code) || 'CASHIER_OPERATOR_SESSION_INVALID',
+        text(payload.error) || 'Cashier operator session is no longer valid',
+        401,
+      );
     }
     throw new CashierOperatorPolicyRefreshError(
       text(payload.code) || 'CASHIER_OPERATOR_VALIDATE_FAILED',
