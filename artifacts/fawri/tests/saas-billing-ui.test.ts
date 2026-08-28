@@ -75,7 +75,7 @@ test('billing authority state copy exists in all supported languages', async () 
     'recentUnavailable',
     'recentEmpty',
   ]) {
-    const matches = copy.match(new RegExp(`${key}:`, 'g')) || [];
+    const matches = copy.match(new RegExp(`${key}:\\s*'`, 'g')) || [];
     assert.equal(matches.length, 3, `${key} must exist for Arabic, English, and Sorani Kurdish`);
   }
 });
