@@ -8,6 +8,8 @@ export const CONVERSATIONS_PAGE_AUTHORITY_COPY = {
     unavailableBody: 'تعذر الوصول إلى خدمة المحادثات الآن. لم نعتبر الحساب بلا محادثات. حاول مرة أخرى.',
     staleBody: 'تعذر تحديث المحادثات الآن. يتم عرض آخر بيانات تم تحميلها حتى تنجح المحاولة التالية.',
     retry: 'إعادة المحاولة',
+    selectTitle: 'اختر محادثة',
+    selectBody: 'اختر محادثة من القائمة لعرض الرسائل والتفاصيل.',
   },
   ku: {
     loading: 'گفتوگۆکان بار دەکرێن…',
@@ -15,6 +17,8 @@ export const CONVERSATIONS_PAGE_AUTHORITY_COPY = {
     unavailableBody: 'لە ئێستادا نەتوانرا دەست بە خزمەتگوزاری گفتوگۆ بگات. هەژمارەکە بە بێ گفتوگۆ دانەنراوە. دووبارە هەوڵ بدەوە.',
     staleBody: 'لە ئێستادا نەتوانرا گفتوگۆکان نوێ بکرێنەوە. تا هەوڵی داهاتوو سەرکەوتوو دەبێت، دوایین زانیاری بارکراو پیشان دەدرێت.',
     retry: 'دووبارە هەوڵدانەوە',
+    selectTitle: 'گفتوگۆیەک هەڵبژێرە',
+    selectBody: 'گفتوگۆیەک لە لیستەکە هەڵبژێرە بۆ بینینی پەیام و وردەکارییەکان.',
   },
   en: {
     loading: 'Loading conversations…',
@@ -22,6 +26,8 @@ export const CONVERSATIONS_PAGE_AUTHORITY_COPY = {
     unavailableBody: 'The conversation service could not be reached. This account has not been treated as having no conversations. Please try again.',
     staleBody: 'Conversations could not be refreshed. The last successfully loaded data is shown until the next refresh succeeds.',
     retry: 'Try again',
+    selectTitle: 'Select a conversation',
+    selectBody: 'Select a conversation from the list to view its messages and details.',
   },
 } as const;
 
