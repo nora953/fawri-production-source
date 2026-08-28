@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { SaasBillingPanel } from '@/components/SaasBillingPanel';
 import { SubscriptionCard } from '@/components/SubscriptionCard';
+import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n';
-import { getCurrentMerchant, saveSubscriptions } from '@/lib/store';
+import { loadCurrentSubscriptionAuthority } from '@/lib/currentSubscriptionAuthority';
+import { saveSubscriptions } from '@/lib/store';
 import { subscriptionStateMessages } from '@/lib/subscriptionStateMessages';
 import { Subscription } from '@/lib/types';
 import {
@@ -12,61 +15,56 @@ import {
   type MerchantRealtimeDetail,
 } from '@/hooks/useMerchantRealtime';
 
+type SubscriptionAuthorityStatus =
+  | 'loading'
+  | 'ready'
+  | 'missing'
+  | 'unavailable';
+
 export default function SubscriptionPage() {
   const { t, lang } = useI18n();
-  const merchant = getCurrentMerchant();
-  const merchantId = merchant?.id ?? null;
   const messages = subscriptionStateMessages[lang];
 
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authorityStatus, setAuthorityStatus] =
+    useState<SubscriptionAuthorityStatus>('loading');
+  const [reloadVersion, setReloadVersion] = useState(0);
 
   useEffect(() => {
     let active = true;
 
-    if (!merchantId) {
-      setSubscription(null);
-      setLoading(false);
-      return () => {
-        active = false;
-      };
-    }
-
     const applySubscription = (nextSubscription: Subscription | null) => {
       if (!active) return;
-      if (nextSubscription) saveSubscriptions([nextSubscription]);
-      else saveSubscriptions([]);
+      if (nextSubscription) {
+        saveSubscriptions([nextSubscription]);
+        setAuthorityStatus('ready');
+      } else {
+        saveSubscriptions([]);
+        setAuthorityStatus('missing');
+      }
       setSubscription(nextSubscription);
-      setLoading(false);
     };
 
     const loadSubscription = async () => {
-      try {
-        const response = await fetch('/api/auth/subscription/current', {
-          cache: 'no-store',
-        });
-        const data = await response.json().catch(() => null);
-        if (!active) return;
-        applySubscription(
-          response.ok && data?.ok && data.subscription
-            ? (data.subscription as Subscription)
-            : null,
-        );
-      } catch (error) {
-        console.error('Could not load the current subscription:', error);
-        if (active) setLoading(false);
+      const result = await loadCurrentSubscriptionAuthority();
+      if (!active) return;
+
+      if (result.status === 'unavailable') {
+        setSubscription(null);
+        setAuthorityStatus('unavailable');
+        return;
       }
+
+      applySubscription(result.subscription);
     };
 
     const handleFocus = () => void loadSubscription();
     const handleRealtime = (event: Event) => {
       const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
-      const nextSubscription = detail?.subscription ?? null;
-      if (nextSubscription && nextSubscription.merchant_id !== merchantId) return;
-      applySubscription(nextSubscription);
+      applySubscription(detail?.subscription ?? null);
     };
 
-    setLoading(true);
+    setAuthorityStatus('loading');
     void loadSubscription();
     window.addEventListener('focus', handleFocus);
     window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
@@ -76,14 +74,15 @@ export default function SubscriptionPage() {
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     };
-  }, [merchantId]);
+  }, [reloadVersion]);
 
   const handleActivateEmergency = async () => {
     const canRequestEmergency =
-      subscription?.status === 'active' ||
-      subscription?.status === 'replies_exhausted';
+      authorityStatus === 'ready' &&
+      (subscription?.status === 'active' ||
+        subscription?.status === 'replies_exhausted');
 
-    if (!merchantId || !subscription || !canRequestEmergency) return;
+    if (!subscription || !canRequestEmergency) return;
 
     try {
       const response = await fetch('/api/auth/subscription/emergency', {
@@ -99,6 +98,7 @@ export default function SubscriptionPage() {
       const updatedSubscription = data.subscription as Subscription;
       saveSubscriptions([updatedSubscription]);
       setSubscription(updatedSubscription);
+      setAuthorityStatus('ready');
       toast.success(t.subscription_emergency_success);
     } catch (error) {
       console.error('Emergency credit activation failed:', error);
@@ -108,9 +108,7 @@ export default function SubscriptionPage() {
     }
   };
 
-  if (!merchantId) return null;
-
-  if (loading) {
+  if (authorityStatus === 'loading') {
     return (
       <div className="mx-auto max-w-3xl p-8 text-center text-muted-foreground">
         {t.overview_loading}
@@ -122,21 +120,53 @@ export default function SubscriptionPage() {
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-2xl font-bold">{t.subscription}</h1>
 
-      {!subscription && (
-        <div className="space-y-2 rounded-xl border p-4">
-          <h2 className="font-bold">{messages.noSubscriptionTitle}</h2>
-          <p className="text-sm text-muted-foreground">{messages.noSubscriptionBody}</p>
+      {authorityStatus === 'unavailable' ? (
+        <div
+          className="flex flex-col gap-4 rounded-xl border border-orange-500/70 p-4 sm:flex-row sm:items-center sm:justify-between"
+          role="alert"
+        >
+          <div className="flex min-w-0 items-start gap-3">
+            <AlertTriangle
+              className="mt-0.5 h-5 w-5 shrink-0 text-orange-600"
+              aria-hidden="true"
+            />
+            <div className="min-w-0 space-y-1">
+              <h2 className="font-bold">{messages.authorityUnavailableTitle}</h2>
+              <p className="text-sm leading-6 text-muted-foreground">
+                {messages.authorityUnavailableBody}
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="shrink-0"
+            onClick={() => setReloadVersion((version) => version + 1)}
+          >
+            {messages.authorityRetry}
+          </Button>
         </div>
-      )}
+      ) : (
+        <>
+          {!subscription && (
+            <div className="space-y-2 rounded-xl border p-4">
+              <h2 className="font-bold">{messages.noSubscriptionTitle}</h2>
+              <p className="text-sm text-muted-foreground">
+                {messages.noSubscriptionBody}
+              </p>
+            </div>
+          )}
 
-      {subscription && (
-        <SubscriptionCard
-          subscription={subscription}
-          onEmergencyActivate={handleActivateEmergency}
-        />
-      )}
+          {subscription && (
+            <SubscriptionCard
+              subscription={subscription}
+              onEmergencyActivate={handleActivateEmergency}
+            />
+          )}
 
-      <SaasBillingPanel subscription={subscription} />
+          <SaasBillingPanel subscription={subscription} />
+        </>
+      )}
     </div>
   );
 }
