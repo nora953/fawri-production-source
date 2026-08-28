@@ -69,6 +69,7 @@ export default function ConversationsPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loadStatus, setLoadStatus] = useState<ConversationLoadStatus>('loading');
   const linkedConversationIdRef = useRef(requestedConversationId());
+  const loadRequestIdRef = useRef(0);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [pendingAction, setPendingAction] = useState<string | null>(null);
@@ -88,6 +89,7 @@ export default function ConversationsPage() {
   };
 
   const loadConversations = async (showLoading = false) => {
+    const requestId = ++loadRequestIdRef.current;
     if (showLoading && conversations.length === 0) {
       setLoadStatus('loading');
     }
@@ -103,6 +105,7 @@ export default function ConversationsPage() {
       if (!response.ok || !data?.ok || !Array.isArray(data.conversations)) {
         throw new Error(data?.error || 'Could not load conversations');
       }
+      if (requestId !== loadRequestIdRef.current) return;
 
       const apiConversations = data.conversations as Conversation[];
       setConversations(apiConversations);
@@ -125,6 +128,7 @@ export default function ConversationsPage() {
         return null;
       });
     } catch (error) {
+      if (requestId !== loadRequestIdRef.current) return;
       console.error('Failed to load conversations:', error);
       setLoadStatus('unavailable');
     }
@@ -289,7 +293,7 @@ export default function ConversationsPage() {
               <h1 className="text-2xl font-extrabold tracking-tight">
                 {t.conversations_title}
               </h1>
-              {loadStatus === 'unavailable' ? (
+              {authorityUnavailableWithData ? (
                 <Button
                   type="button"
                   variant="outline"
