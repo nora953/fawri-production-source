@@ -14,6 +14,9 @@ export const SUBSCRIPTION_STATE_MESSAGES_SUBSCRIPTION_STATE_MESSAGES = {
     repliesExhaustedTitle: 'نفدت الردود',
     repliesExhaustedBody: 'توقفت الردود التلقائية لأن رصيد الردود انتهى، بينما تبقى الخطة مسجلة حتى تاريخ انتهائها.',
     emergencyUnavailable: 'تعذر تفعيل رصيد الطوارئ. حاول مرة أخرى.',
+    authorityUnavailableTitle: 'تعذر التحقق من الاشتراك',
+    authorityUnavailableBody: 'تعذر الوصول إلى خدمة الاشتراك الآن. لم نعتبر الحساب بلا اشتراك. حاول مرة أخرى.',
+    authorityRetry: 'إعادة المحاولة',
   },
   ku: {
     noSubscriptionTitle: 'هیچ بەشدارییەک نییە',
@@ -27,6 +30,9 @@ export const SUBSCRIPTION_STATE_MESSAGES_SUBSCRIPTION_STATE_MESSAGES = {
     repliesExhaustedTitle: 'وەڵامەکان تەواو بوون',
     repliesExhaustedBody: 'وەڵامدانەوەی خۆکار وەستاوە چونکە کرێدیتی وەڵام تەواو بووە، بەڵام پلانەکە تا بەرواری بەسەرچوون تۆمارکراو دەمێنێتەوە.',
     emergencyUnavailable: 'نەتوانرا کرێدیتی فریاکەوتن چالاک بکرێت. دووبارە هەوڵ بدە.',
+    authorityUnavailableTitle: 'نەتوانرا بەشدارییەکە پشتڕاست بکرێتەوە',
+    authorityUnavailableBody: 'لە ئێستادا نەتوانرا دەست بە خزمەتگوزاری بەشداری بگات. هەژمارەکە بە بێ بەشداری دانەنراوە. دووبارە هەوڵ بدەوە.',
+    authorityRetry: 'دووبارە هەوڵدانەوە',
   },
   en: {
     noSubscriptionTitle: 'No subscription',
@@ -40,5 +46,8 @@ export const SUBSCRIPTION_STATE_MESSAGES_SUBSCRIPTION_STATE_MESSAGES = {
     repliesExhaustedTitle: 'Replies exhausted',
     repliesExhaustedBody: 'Automatic replies have stopped because the reply balance is exhausted. The plan remains registered until its expiry date.',
     emergencyUnavailable: 'Emergency credit could not be activated. Please try again.',
+    authorityUnavailableTitle: 'Unable to verify subscription',
+    authorityUnavailableBody: 'The subscription service could not be reached. This account has not been treated as having no subscription. Please try again.',
+    authorityRetry: 'Try again',
   },
 };
