@@ -12,6 +12,9 @@ on:
       - "artifacts/fawri/src/components/SubscriptionRetentionCard.tsx"
       - "artifacts/fawri/src/components/SaasBillingPanel.tsx"
       - "artifacts/fawri/src/components/layout/DashboardLayout.tsx"
+      - "artifacts/fawri/src/components/layout/Sidebar.tsx"
+      - "artifacts/fawri/src/components/layout/BottomNav.tsx"
+      - "artifacts/fawri/src/hooks/useMerchantNotifications.ts"
       - "artifacts/fawri/src/lib/currentSubscriptionAuthority.ts"
       - "artifacts/fawri/src/lib/merchantLifecycle.ts"
       - "artifacts/fawri/src/lib/subscriptionStateMessages.ts"
@@ -21,6 +24,7 @@ on:
       - "artifacts/fawri/src/pages/LandingPage.tsx"
       - "artifacts/fawri/tests/dashboard-channel-coherence.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs"
+      - "artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs"
       - "artifacts/fawri/tests/saas-billing-ui.test.ts"
@@ -64,6 +68,7 @@ jobs:
           node --test
           artifacts/fawri/tests/dashboard-channel-coherence.test.mjs
           artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs
+          artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs
           artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs
 
