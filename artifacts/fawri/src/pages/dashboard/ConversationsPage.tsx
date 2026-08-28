@@ -1,8 +1,10 @@
 import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
-import { CONVERSATIONS_PAGE_SAVE_ANSWER_COPY } from '@/lib/translations/features/pages/dashboard/ConversationsPage';
+import {
+  CONVERSATIONS_PAGE_AUTHORITY_COPY,
+  CONVERSATIONS_PAGE_SAVE_ANSWER_COPY,
+} from '@/lib/translations/features/pages/dashboard/ConversationsPage';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
-import { getCurrentMerchant } from '@/lib/store';
 import { Conversation } from '@/lib/types';
 import {
   buildConversationSavedAnswerSeed,
@@ -42,6 +44,8 @@ type SaveAnswerCopy = {
   noSource: string;
 };
 
+type ConversationLoadStatus = 'loading' | 'ready' | 'unavailable';
+
 const SAVE_ANSWER_COPY: Record<KnowledgeLanguage, SaveAnswerCopy> = CONVERSATIONS_PAGE_SAVE_ANSWER_COPY;
 
 function requestedConversationId(): string {
@@ -60,15 +64,13 @@ export default function ConversationsPage() {
   const { t, dir, isRTL, lang } = useI18n();
   const knowledgeLanguage: KnowledgeLanguage = lang === 'ku' || lang === 'en' ? lang : 'ar';
   const saveAnswerCopy = SAVE_ANSWER_COPY[knowledgeLanguage];
-
-  const merchant = getCurrentMerchant();
-  const merchantId = merchant?.id || '';
+  const authorityCopy = CONVERSATIONS_PAGE_AUTHORITY_COPY[knowledgeLanguage];
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loadStatus, setLoadStatus] = useState<ConversationLoadStatus>('loading');
   const linkedConversationIdRef = useRef(requestedConversationId());
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
-  const [loadError, setLoadError] = useState('');
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [saveAnswerDraft, setSaveAnswerDraft] = useState<SaveAnswerDraft | null>(null);
   const [savingAnswer, setSavingAnswer] = useState(false);
@@ -85,11 +87,15 @@ export default function ConversationsPage() {
     return statusLabels[status];
   };
 
-  const loadConversations = async () => {
-    if (!merchantId) return;
+  const loadConversations = async (showLoading = false) => {
+    if (showLoading && conversations.length === 0) {
+      setLoadStatus('loading');
+    }
 
     try {
       const response = await fetch('/api/conversations', {
+        credentials: 'same-origin',
+        cache: 'no-store',
         headers: { Accept: 'application/json' },
       });
       const data = await response.json().catch(() => null);
@@ -100,7 +106,7 @@ export default function ConversationsPage() {
 
       const apiConversations = data.conversations as Conversation[];
       setConversations(apiConversations);
-      setLoadError('');
+      setLoadStatus('ready');
       setActiveConvId(currentActiveId => {
         const linkedConversationId = linkedConversationIdRef.current;
         linkedConversationIdRef.current = '';
@@ -120,28 +126,27 @@ export default function ConversationsPage() {
       });
     } catch (error) {
       console.error('Failed to load conversations:', error);
-      setLoadError(
-        error instanceof Error ? error.message : 'Could not load conversations'
-      );
+      setLoadStatus('unavailable');
     }
   };
 
   useEffect(() => {
-    void loadConversations();
+    void loadConversations(true);
 
     const interval = window.setInterval(() => {
       void loadConversations();
     }, 5000);
 
     return () => window.clearInterval(interval);
-  }, [merchantId]);
+    // Polling deliberately uses the mounted server-authority reader; language copy
+    // is selected only while rendering and does not affect the authority request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const activeConv = useMemo(
     () => conversations.find(conversation => conversation.id === activeConvId),
     [conversations, activeConvId]
   );
-
-  if (!merchant) return null;
 
   const replaceConversation = (conversation: Conversation) => {
     setConversations(current =>
@@ -268,6 +273,8 @@ export default function ConversationsPage() {
   };
 
   const actionPending = Boolean(pendingAction);
+  const authorityUnavailableWithData =
+    loadStatus === 'unavailable' && conversations.length > 0;
 
   return (
     <div className="min-h-screen bg-background p-4 pb-28" dir={dir}>
@@ -278,18 +285,53 @@ export default function ConversationsPage() {
           } ${activeConvId ? 'hidden md:flex' : 'flex'}`}
         >
           <div className="border-b p-4">
-            <h1 className="text-2xl font-extrabold tracking-tight">
-              {t.conversations_title}
-            </h1>
-            {loadError ? (
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-2xl font-extrabold tracking-tight">
+                {t.conversations_title}
+              </h1>
+              {loadStatus === 'unavailable' ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void loadConversations(true)}
+                >
+                  {authorityCopy.retry}
+                </Button>
+              ) : null}
+            </div>
+            {authorityUnavailableWithData ? (
               <p className="mt-2 text-xs font-medium text-destructive">
-                {loadError}
+                {authorityCopy.staleBody}
               </p>
             ) : null}
           </div>
 
           <div className="min-h-0 flex-1 overflow-y-auto">
-            {conversations.length === 0 ? (
+            {loadStatus === 'loading' ? (
+              <div className="flex h-full flex-col items-center justify-center p-6 text-center text-muted-foreground">
+                <MessageSquare className="mb-4 h-16 w-16 opacity-20" />
+                <p className="text-sm font-semibold">{authorityCopy.loading}</p>
+              </div>
+            ) : loadStatus === 'unavailable' && conversations.length === 0 ? (
+              <div className="flex h-full flex-col items-center justify-center p-6 text-center text-muted-foreground">
+                <MessageSquare className="mb-4 h-16 w-16 opacity-20" />
+                <p className="text-lg font-semibold text-foreground">
+                  {authorityCopy.unavailableTitle}
+                </p>
+                <p className="mt-2 max-w-xs text-sm leading-6">
+                  {authorityCopy.unavailableBody}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => void loadConversations(true)}
+                >
+                  {authorityCopy.retry}
+                </Button>
+              </div>
+            ) : loadStatus === 'ready' && conversations.length === 0 ? (
               <div className="flex h-full flex-col items-center justify-center p-6 text-center text-muted-foreground">
                 <MessageSquare className="mb-4 h-16 w-16 opacity-20" />
                 <p className="text-lg font-semibold">{t.conversations_noConversations}</p>
@@ -492,10 +534,34 @@ export default function ConversationsPage() {
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center p-6 text-center text-muted-foreground">
               <MessageSquare className="mb-4 h-16 w-16 opacity-20" />
-              <p className="text-lg font-semibold">{t.conversations_noConversations}</p>
-              <p className="mt-2 max-w-xs text-sm leading-6">
-                {t.conversations_noConversationsDesc}
-              </p>
+              {loadStatus === 'loading' ? (
+                <p className="text-sm font-semibold">{authorityCopy.loading}</p>
+              ) : loadStatus === 'unavailable' && conversations.length === 0 ? (
+                <>
+                  <p className="text-lg font-semibold text-foreground">
+                    {authorityCopy.unavailableTitle}
+                  </p>
+                  <p className="mt-2 max-w-sm text-sm leading-6">
+                    {authorityCopy.unavailableBody}
+                  </p>
+                </>
+              ) : conversations.length > 0 ? (
+                <>
+                  <p className="text-lg font-semibold text-foreground">
+                    {authorityCopy.selectTitle}
+                  </p>
+                  <p className="mt-2 max-w-sm text-sm leading-6">
+                    {authorityCopy.selectBody}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-lg font-semibold">{t.conversations_noConversations}</p>
+                  <p className="mt-2 max-w-xs text-sm leading-6">
+                    {t.conversations_noConversationsDesc}
+                  </p>
+                </>
+              )}
             </div>
           )}
         </div>
