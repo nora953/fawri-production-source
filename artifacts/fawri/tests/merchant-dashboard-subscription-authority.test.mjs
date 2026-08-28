@@ -9,6 +9,7 @@ function read(relativePath) {
 const authority = read('../src/lib/currentSubscriptionAuthority.ts');
 const overview = read('../src/pages/dashboard/OverviewPage.tsx');
 const subscriptionPage = read('../src/pages/dashboard/SubscriptionPage.tsx');
+const retentionCard = read('../src/components/SubscriptionRetentionCard.tsx');
 const messages = read('../src/lib/translations/features/lib/subscriptionStateMessages.ts');
 const serverRoute = read('../../api-server/src/routes/subscription-entitlement-pg.ts');
 
@@ -29,14 +30,22 @@ test('current subscription authority distinguishes absence from authority failur
   assert.match(authority, /credentials: 'include'/);
 });
 
-test('merchant dashboard surfaces consume the shared subscription authority', () => {
-  assert.match(overview, /loadCurrentSubscriptionAuthority/);
-  assert.match(subscriptionPage, /loadCurrentSubscriptionAuthority/);
-  assert.doesNotMatch(overview, /fetch\('\/api\/auth\/subscription\/current'/);
-  assert.doesNotMatch(subscriptionPage, /fetch\('\/api\/auth\/subscription\/current'/);
+test('merchant dashboard subscription surfaces consume the shared authority', () => {
+  for (const source of [overview, subscriptionPage, retentionCard]) {
+    assert.match(source, /loadCurrentSubscriptionAuthority/);
+    assert.doesNotMatch(source, /fetch\('\/api\/auth\/subscription\/current'/);
+  }
 
   assert.match(overview, /status === 'unavailable'/);
   assert.match(subscriptionPage, /status === 'unavailable'/);
+  assert.match(retentionCard, /status === "unavailable"/);
+});
+
+test('retention card does not use a cached merchant as operational truth', () => {
+  assert.doesNotMatch(retentionCard, /\bgetCurrentMerchant\b/);
+  assert.match(retentionCard, /refreshCurrentMerchantFromApi/);
+  assert.match(retentionCard, /Promise\.allSettled/);
+  assert.match(retentionCard, /setAuthorityStatus\("unavailable"\)/);
 });
 
 test('subscription authority unavailable copy exists in all supported languages', () => {
