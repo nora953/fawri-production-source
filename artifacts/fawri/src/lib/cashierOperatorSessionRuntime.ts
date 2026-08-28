@@ -530,9 +530,25 @@ export async function validateCashierOperatorSession(): Promise<CashierOperatorS
   if (typeof navigator !== 'undefined' && navigator.onLine === false) {
     return session;
   }
-  const response = await fetch('/api/cashier/operator/me', {
-    headers: cashierOperatorHeaders(session),
-  });
+
+  let response: Response;
+  try {
+    response = await fetch('/api/cashier/operator/me', {
+      headers: cashierOperatorHeaders(session),
+    });
+  } catch (cause) {
+    if (!(cause instanceof TypeError)) throw cause;
+    const fallback = await getCashierOperatorSession();
+    if (
+      fallback &&
+      fallback.operator_token === session.operator_token &&
+      fallback.context.operator_session_id === session.context.operator_session_id
+    ) {
+      return fallback;
+    }
+    return null;
+  }
+
   const payload = await responsePayload(response);
   if (!response.ok || payload.ok !== true) {
     if (response.status === 401 && typeof sessionStorage !== 'undefined') {
