@@ -29,6 +29,19 @@ test('cashier station configuration uses a heartbeat-independent optimistic etag
     'configuration etag must not depend on heartbeat timestamps',
   );
   assert.match(route, /expectedConfigurationEtag:\s*req\.body\?\.expected_configuration_etag/);
+
+  const lifecycleStart = route.indexOf('"/cashier/management/stations/:stationId",');
+  const lifecycleEnd = route.indexOf(
+    '"/cashier/management/stations/:stationId/pairing"',
+    lifecycleStart,
+  );
+  const lifecycleRoute = route.slice(lifecycleStart, lifecycleEnd);
+  assert.ok(lifecycleStart >= 0 && lifecycleEnd > lifecycleStart);
+  assert.match(lifecycleRoute, /CASHIER_STATION_CONFIGURATION_ETAG_REQUIRED/);
+  assert.doesNotMatch(lifecycleRoute, /name:\s*req\.body\?\.name/);
+  assert.doesNotMatch(lifecycleRoute, /branchKey:\s*req\.body\?\.branch_key/);
+  assert.doesNotMatch(lifecycleRoute, /branchLabel:\s*req\.body\?\.branch_label/);
+  assert.doesNotMatch(lifecycleRoute, /offlineInventoryAuthority:\s*optionalBoolean/);
 });
 
 test('merchant dashboard exposes safe station editing including offline inventory policy', async () => {
@@ -65,6 +78,22 @@ test('online policy refresh preserves operator and shift identity before outbox 
     attemptBody.indexOf('refreshCashierOperatorPolicyFromCloud') < attemptBody.indexOf('syncCashierOperatorOutboxToCloud'),
     'online reconciliation must refresh authoritative station policy before outbox upload',
   );
+});
+
+test('server-rejected policy refresh fails closed into the operator authorization flow', async () => {
+  const policy = await fawriSource('src/lib/cashierOperatorPolicyRefresh.ts');
+  const entry = await fawriSource('src/cashierMain.tsx');
+
+  const rejectedStart = policy.indexOf('if (response.status === 401)');
+  const rejectedEnd = policy.indexOf("text(payload.code) || 'CASHIER_OPERATOR_VALIDATE_FAILED'", rejectedStart);
+  const rejectedBlock = policy.slice(rejectedStart, rejectedEnd);
+  assert.ok(rejectedStart >= 0 && rejectedEnd > rejectedStart);
+  assert.match(rejectedBlock, /invalidateCashierOperatorSession/);
+  assert.match(rejectedBlock, /CASHIER_OPERATOR_SESSION_INVALID/);
+  assert.match(rejectedBlock, /throw new CashierOperatorPolicyRefreshError/);
+  assert.doesNotMatch(rejectedBlock, /return null/);
+  assert.match(entry, /code === 'CASHIER_OPERATOR_SESSION_INVALID'/);
+  assert.match(entry, /fawri:cashier-operator-session-invalidated/);
 });
 
 test('offline tracked-inventory rejection has a specific cashier message', async () => {
