@@ -25,14 +25,17 @@ import {
 } from "@/components/ui/popover";
 import { useI18n } from "@/lib/i18n";
 import { clearSession } from "@/lib/store";
-import { useUnreadMerchantNotificationCount } from "@/hooks/useMerchantNotifications";
+import {
+  useUnreadMerchantNotificationCount,
+  type MerchantNotificationCountState,
+} from "@/hooks/useMerchantNotifications";
 
 type NavItem = {
   href: string;
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   exact?: boolean;
-  badge?: number;
+  badge?: MerchantNotificationCountState;
   fullPage?: boolean;
 };
 
@@ -55,20 +58,26 @@ function isActiveRoute(
 function NavBadge({
   count,
   isKurdish,
+  unavailableLabel,
 }: {
-  count?: number;
+  count?: MerchantNotificationCountState;
   isKurdish: boolean;
+  unavailableLabel: string;
 }) {
-  if (!count || count <= 0) return null;
+  if (count === undefined || count === "loading") return null;
+  const unavailable = count === "unavailable";
+  if (!unavailable && count <= 0) return null;
 
   return (
     <span
       dir="ltr"
+      aria-label={unavailable ? unavailableLabel : undefined}
+      title={unavailable ? unavailableLabel : undefined}
       className={`absolute -end-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-orange-500 px-1 text-[8px] leading-none tabular-nums text-white shadow-sm ring-2 ring-background ${
         isKurdish ? "font-sans font-bold" : "font-black"
       }`}
     >
-      {count >= 50 ? "50+" : count}
+      {unavailable ? "!" : count >= 50 ? "50+" : count}
     </span>
   );
 }
@@ -236,6 +245,7 @@ export function BottomNav() {
               <NavBadge
                 count={unreadNotifications}
                 isKurdish={lang === "ku"}
+                unavailableLabel={t.notifications_load_error}
               />
             </span>
             <span className="text-[10px]">{currentMoreLabel}</span>
@@ -263,6 +273,7 @@ export function BottomNav() {
                     <NavBadge
                       count={item.badge}
                       isKurdish={lang === "ku"}
+                      unavailableLabel={t.notifications_load_error}
                     />
                   </span>
                   <span className="truncate">{item.label}</span>
