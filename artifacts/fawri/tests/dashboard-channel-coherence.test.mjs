@@ -10,6 +10,7 @@ const overview = read("../src/pages/dashboard/OverviewPage.tsx");
 const channelsEntry = read("../src/pages/dashboard/ChannelsPage.tsx");
 const serverChannels = read("../src/pages/dashboard/ServerChannelsPage.tsx");
 const landing = read("../src/pages/LandingPage.tsx");
+const landingTruthCopy = read("../src/lib/translations/features/pages/LandingPage.ts");
 
 test("overview metrics come from independent server authorities", () => {
   assert.match(overview, /Promise\.allSettled/);
@@ -45,10 +46,13 @@ test("landing does not advertise unavailable Meta or Android activation", () => 
   assert.ok(pendingStatuses.length >= 2, "Instagram and Messenger must both be activation pending");
   assert.doesNotMatch(landing, /href=["']#["']/);
   assert.doesNotMatch(landing, /t\.download_now/);
-  assert.match(landing, /Activation pending/);
-  assert.match(landing, /التفعيل قيد الانتظار/);
-  assert.match(landing, /چالاککردن چاوەڕوانە/);
-  assert.match(landing, /In development/);
-  assert.match(landing, /قيد التطوير/);
-  assert.match(landing, /لە ژێر پەرەپێدان/);
+  assert.match(landing, /truth\.activationPending/);
+  assert.match(landing, /truth\.inDevelopment/);
+
+  assert.match(landingTruthCopy, /Activation pending/);
+  assert.match(landingTruthCopy, /التفعيل قيد الانتظار/);
+  assert.match(landingTruthCopy, /چالاککردن چاوەڕوانە/);
+  assert.match(landingTruthCopy, /In development/);
+  assert.match(landingTruthCopy, /قيد التطوير/);
+  assert.match(landingTruthCopy, /لە ژێر پەرەپێدان/);
 });
