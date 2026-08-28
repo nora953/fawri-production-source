@@ -10,38 +10,90 @@ export type CashierConnectivityState = {
 
 const CONNECTIVITY_EVENT = 'fawri:cashier-connectivity';
 
+function nativeNavigatorOnlineReader(): () => boolean {
+  if (typeof navigator === 'undefined') return () => true;
+  let prototype: object | null = Object.getPrototypeOf(navigator);
+  while (prototype) {
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, 'onLine');
+    if (descriptor?.get) {
+      return () => {
+        try {
+          return descriptor.get!.call(navigator) !== false;
+        } catch {
+          return true;
+        }
+      };
+    }
+    prototype = Object.getPrototypeOf(prototype);
+  }
+  const initial = navigator.onLine !== false;
+  return () => initial;
+}
+
+const readNativeNavigatorOnline = nativeNavigatorOnlineReader();
+
 let currentState: CashierConnectivityState = {
-  online: typeof navigator === 'undefined' ? true : navigator.onLine !== false,
+  online: readNativeNavigatorOnline(),
   source: 'browser',
 };
+let installed = false;
+let broadcastingCompatibilityEvent = false;
 
 function publishCashierConnectivity(next: CashierConnectivityState): void {
-  if (
-    currentState.online === next.online &&
-    currentState.source === next.source
-  ) {
-    return;
-  }
+  const onlineChanged = currentState.online !== next.online;
+  const stateChanged =
+    onlineChanged || currentState.source !== next.source;
+  if (!stateChanged) return;
+
   currentState = next;
   if (typeof window === 'undefined') return;
+
   window.dispatchEvent(
     new CustomEvent<CashierConnectivityState>(CONNECTIVITY_EVENT, {
       detail: next,
     }),
   );
+
+  if (onlineChanged && next.source !== 'browser') {
+    broadcastingCompatibilityEvent = true;
+    try {
+      window.dispatchEvent(new Event(next.online ? 'online' : 'offline'));
+    } finally {
+      broadcastingCompatibilityEvent = false;
+    }
+  }
 }
 
 function browserOnline(): void {
+  if (broadcastingCompatibilityEvent) return;
   publishCashierConnectivity({ online: true, source: 'browser' });
 }
 
 function browserOffline(): void {
+  if (broadcastingCompatibilityEvent) return;
   publishCashierConnectivity({ online: false, source: 'browser' });
 }
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('online', browserOnline);
-  window.addEventListener('offline', browserOffline);
+function requestUrl(input: unknown): string {
+  if (typeof input === 'string') return input;
+  if (typeof URL !== 'undefined' && input instanceof URL) return input.href;
+  if (typeof Request !== 'undefined' && input instanceof Request) return input.url;
+  return '';
+}
+
+function isCashierApiRequest(input: unknown): boolean {
+  if (typeof window === 'undefined') return false;
+  const value = requestUrl(input);
+  if (!value) return false;
+  try {
+    const url = new URL(value, window.location.origin);
+    return (
+      url.origin === window.location.origin &&
+      url.pathname.startsWith('/api/cashier/')
+    );
+  } catch {
+    return false;
+  }
 }
 
 export function getCashierConnectivityState(): CashierConnectivityState {
@@ -53,7 +105,7 @@ export function cashierConnectivityIsOnline(): boolean {
 }
 
 export function cashierNetworkAttemptAllowed(): boolean {
-  return typeof navigator === 'undefined' || navigator.onLine !== false;
+  return readNativeNavigatorOnline();
 }
 
 export function markCashierOffline(): void {
@@ -79,4 +131,46 @@ export function subscribeCashierConnectivity(
   };
   window.addEventListener(CONNECTIVITY_EVENT, handler);
   return () => window.removeEventListener(CONNECTIVITY_EVENT, handler);
+}
+
+export function installCashierConnectivityAuthority(): void {
+  if (installed || typeof window === 'undefined') return;
+  installed = true;
+
+  currentState = {
+    online: readNativeNavigatorOnline(),
+    source: 'browser',
+  };
+
+  if (typeof navigator !== 'undefined') {
+    try {
+      Object.defineProperty(navigator, 'onLine', {
+        configurable: true,
+        enumerable: true,
+        get: () => currentState.online,
+      });
+    } catch {
+      installed = false;
+      throw new Error('CASHIER_CONNECTIVITY_BRIDGE_UNAVAILABLE');
+    }
+  }
+
+  window.addEventListener('online', browserOnline);
+  window.addEventListener('offline', browserOffline);
+
+  const originalFetch = window.fetch.bind(window);
+  const wrappedFetch: typeof window.fetch = async (...args) => {
+    const cashierRequest = isCashierApiRequest(args[0]);
+    try {
+      const response = await originalFetch(...args);
+      if (cashierRequest) markCashierNetworkResponse();
+      return response;
+    } catch (cause) {
+      if (cashierRequest && cause instanceof TypeError) {
+        markCashierNetworkFailure();
+      }
+      throw cause;
+    }
+  };
+  window.fetch = wrappedFetch;
 }
