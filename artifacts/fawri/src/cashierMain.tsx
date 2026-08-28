@@ -20,6 +20,7 @@ import {
 import {
   getCashierOperatorSession,
   invalidateCashierOperatorSession,
+  validateCashierOperatorSession,
 } from '@/lib/cashierOperatorSessionRuntime';
 import { publishCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
@@ -94,6 +95,9 @@ function startCashierPosAutoSync(): () => void {
     }
 
     try {
+      if (reconcileCatalog || force) {
+        await validateCashierOperatorSession();
+      }
       const result = await syncCashierOperatorOutboxToCloud();
       const changedCloudState =
         result.uploaded_operations > 0 || result.replayed_operations > 0;
