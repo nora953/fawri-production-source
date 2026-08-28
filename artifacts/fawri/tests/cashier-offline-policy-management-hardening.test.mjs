@@ -13,32 +13,27 @@ async function repoSource(path) {
   return readFile(new URL(path, repoRoot), 'utf8');
 }
 
-test('cashier station configuration uses an independent optimistic version', async () => {
-  const schema = await repoSource('lib/db/src/schema/cashier-staff.ts');
-  const migration = await repoSource('lib/db/drizzle/0015_cashier_station_configuration_version.sql');
+test('cashier station configuration uses an independent optimistic etag', async () => {
   const authority = await repoSource('artifacts/api-server/src/services/postgresCashierStaffAuthority.ts');
   const route = await repoSource('artifacts/api-server/src/routes/cashier-staff-operations.ts');
 
-  assert.match(schema, /merchantCashierStations[\s\S]*version:\s*integer\("version"\)\.notNull\(\)\.default\(1\)/);
-  assert.match(migration, /ADD COLUMN "version" integer DEFAULT 1 NOT NULL/);
-  assert.match(migration, /merchant_cashier_stations_version_check/);
-  assert.match(authority, /type StationRow = \{[\s\S]*version:\s*number;/);
-  assert.match(authority, /type CashierStationView = \{[\s\S]*version:\s*number;/);
-  assert.match(authority, /expectedVersion:\s*unknown/);
+  assert.match(authority, /configuration_etag:\s*string/);
+  assert.match(authority, /cashierStationConfigurationEtag/);
+  assert.match(authority, /expectedConfigurationEtag:\s*unknown/);
   assert.match(authority, /CASHIER_STATION_VERSION_CONFLICT/);
-  assert.match(authority, /version = version \+ 1/);
-  assert.match(authority, /WHERE merchant_id = \$1 AND id = \$2 AND version = \$3/);
-  assert.match(route, /expectedVersion:\s*req\.body\?\.expected_version/);
+  assert.match(authority, /getStationRow\(client, merchantId, stationId, true\)/);
+  assert.match(authority, /currentEtag !== expectedConfigurationEtag/);
+  assert.match(route, /expectedConfigurationEtag:\s*req\.body\?\.expected_configuration_etag/);
 });
 
 test('merchant dashboard exposes safe station editing including offline inventory policy', async () => {
   const page = await fawriSource('src/pages/dashboard/CashierManagementPage.tsx');
 
-  assert.match(page, /type StationView = \{[\s\S]*version:\s*number;/);
+  assert.match(page, /configuration_etag:\s*string/);
   assert.match(page, /editingStationId/);
   assert.match(page, /startStationEdit/);
   assert.match(page, /saveStationEdit/);
-  assert.match(page, /expected_version:\s*station\.version/);
+  assert.match(page, /expected_configuration_etag:\s*station\.configuration_etag/);
   assert.match(page, /offline_inventory_authority:\s*editOfflineAuthority/);
   assert.match(page, /CASHIER_STATION_VERSION_CONFLICT/);
   assert.match(page, /editStation/);
