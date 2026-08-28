@@ -24,6 +24,10 @@ import {
   updateCashierStationAuthoritative,
 } from "../services/postgresCashierStaffAuthority";
 import { buildCashierCentralReportAuthoritative } from "../services/postgresCashierCentralReportAuthority";
+import {
+  listCashierStationConfigurationsAuthoritative,
+  updateCashierStationConfigurationAuthoritative,
+} from "../services/cashierStationConfigurationAuthority";
 import { buildCashierCentralActivityAuthoritative } from "../services/postgresCashierCentralActivityAuthority";
 
 const router = Router();
@@ -199,7 +203,9 @@ router.get(
   requireMerchantAuthority,
   async (_req: Request, res: Response) => {
     try {
-      const stations = await listCashierStationsAuthoritative(merchantId(res));
+      const stations = await listCashierStationConfigurationsAuthoritative(
+        merchantId(res),
+      );
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, stations });
     } catch (error) {
@@ -225,6 +231,31 @@ router.post(
       });
       res.setHeader("Cache-Control", "no-store");
       res.status(201).json({ ok: true, station });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.patch(
+  "/cashier/management/stations/:stationId/configuration",
+  requireMerchantAuthority,
+  async (req: Request, res: Response) => {
+    try {
+      const station = await updateCashierStationConfigurationAuthoritative({
+        merchantId: merchantId(res),
+        stationId: req.params.stationId,
+        expectedConfigurationEtag: req.body?.expected_configuration_etag,
+        name: req.body?.name,
+        branchKey: req.body?.branch_key,
+        branchLabel: req.body?.branch_label,
+        offlineInventoryAuthority: optionalBoolean(
+          req.body?.offline_inventory_authority,
+          "offline_inventory_authority",
+        ),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, station });
     } catch (error) {
       sendError(res, error);
     }
