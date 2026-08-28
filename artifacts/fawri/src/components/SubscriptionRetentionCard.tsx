@@ -8,10 +8,10 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import {
-  getCurrentMerchant,
   refreshCurrentMerchantFromApi,
   saveSubscriptions,
 } from "@/lib/store";
+import { loadCurrentSubscriptionAuthority } from "@/lib/currentSubscriptionAuthority";
 import { Merchant, Subscription } from "@/lib/types";
 import { subscriptionStateMessages } from "@/lib/subscriptionStateMessages";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ import {
 } from "@/hooks/useMerchantRealtime";
 
 type RetentionStatus = NonNullable<Merchant["retention_status"]>;
+type RetentionAuthorityStatus = "loading" | "ready" | "unavailable";
 
 type SubscriptionRetentionCardProps = {
   compact?: boolean;
@@ -37,9 +38,10 @@ function daysUntil(value?: string): number | undefined {
 export default function SubscriptionRetentionCard({ compact = false }: SubscriptionRetentionCardProps) {
   const { t, lang, dir } = useI18n();
   const [, setLocation] = useLocation();
-  const [merchant, setMerchant] = useState<Merchant | undefined>(getCurrentMerchant());
+  const [merchant, setMerchant] = useState<Merchant | undefined>();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [authorityStatus, setAuthorityStatus] =
+    useState<RetentionAuthorityStatus>("loading");
 
   useEffect(() => {
     let active = true;
@@ -49,34 +51,30 @@ export default function SubscriptionRetentionCard({ compact = false }: Subscript
       if (nextSubscription) saveSubscriptions([nextSubscription]);
       else saveSubscriptions([]);
       setSubscription(nextSubscription);
-      setLoading(false);
     };
 
     const loadState = async () => {
-      try {
-        const [updatedMerchant, subscriptionResult] = await Promise.all([
-          refreshCurrentMerchantFromApi(),
-          fetch('/api/auth/subscription/current', { cache: 'no-store' }).then(
-            async response => ({
-              response,
-              data: await response.json().catch(() => null),
-            }),
-          ),
-        ]);
-        if (!active) return;
-        if (updatedMerchant) setMerchant(updatedMerchant);
+      const [merchantResult, subscriptionResult] = await Promise.allSettled([
+        refreshCurrentMerchantFromApi(),
+        loadCurrentSubscriptionAuthority(),
+      ]);
+      if (!active) return;
 
-        applySubscription(
-          subscriptionResult.response.ok &&
-            subscriptionResult.data?.ok &&
-            subscriptionResult.data.subscription
-            ? (subscriptionResult.data.subscription as Subscription)
-            : null,
-        );
-      } catch (error) {
-        console.error("Merchant subscription state refresh failed:", error);
-        if (active) setLoading(false);
+      if (
+        merchantResult.status !== "fulfilled" ||
+        !merchantResult.value ||
+        subscriptionResult.status !== "fulfilled" ||
+        subscriptionResult.value.status === "unavailable"
+      ) {
+        setMerchant(undefined);
+        setSubscription(null);
+        setAuthorityStatus("unavailable");
+        return;
       }
+
+      setMerchant(merchantResult.value);
+      applySubscription(subscriptionResult.value.subscription);
+      setAuthorityStatus("ready");
     };
 
     const handleFocus = () => void loadState();
@@ -93,21 +91,49 @@ export default function SubscriptionRetentionCard({ compact = false }: Subscript
       applySubscription(nextSubscription);
     };
 
-    window.addEventListener('focus', handleFocus);
+    window.addEventListener("focus", handleFocus);
     window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     void loadState();
 
     return () => {
       active = false;
-      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener("focus", handleFocus);
       window.removeEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     };
   }, [merchant?.id]);
 
-  if (!merchant || loading) return null;
+  if (authorityStatus === "loading") return null;
+
+  const messages = subscriptionStateMessages[lang];
+
+  if (authorityStatus === "unavailable" || !merchant) {
+    return (
+      <Card
+        className={`${compact ? "rounded-2xl" : "rounded-3xl"} border-orange-500/50 bg-orange-50 text-orange-950 dark:bg-orange-950/20 dark:text-orange-100`}
+        dir={dir}
+      >
+        <CardContent
+          className={`flex items-start ${compact ? "gap-3 p-4" : "gap-4 p-5"}`}
+          role="alert"
+        >
+          <AlertTriangle
+            className={`${compact ? "h-5 w-5" : "h-6 w-6"} mt-0.5 shrink-0`}
+            aria-hidden="true"
+          />
+          <div className="min-w-0">
+            <h2 className={`${compact ? "text-sm" : "text-base"} font-extrabold`}>
+              {messages.authorityUnavailableTitle}
+            </h2>
+            <p className={`${compact ? "mt-0.5 text-xs leading-5" : "mt-1 text-sm leading-6"} opacity-85`}>
+              {messages.authorityUnavailableBody}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const locale = lang === "en" ? "en-US" : lang === "ku" ? "ckb-IQ" : "ar-IQ";
-  const messages = subscriptionStateMessages[lang];
   const retentionStatus: RetentionStatus = merchant.retention_status || "protected";
   const subscriptionIsActive =
     subscription?.status === "active" &&
