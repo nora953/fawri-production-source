@@ -11,6 +11,7 @@ import {
   CreditCard,
 } from 'lucide-react';
 import { Subscription } from '@/lib/types';
+import { loadCurrentSubscriptionAuthority } from '@/lib/currentSubscriptionAuthority';
 import SubscriptionRetentionCard from '@/components/SubscriptionRetentionCard';
 import { subscriptionStateMessages } from '@/lib/subscriptionStateMessages';
 import { MERCHANT_REALTIME_EVENT, type MerchantRealtimeDetail } from '@/hooks/useMerchantRealtime';
@@ -30,6 +31,12 @@ type CountResponse = {
   ok?: unknown;
   count?: unknown;
 };
+
+type SubscriptionAuthorityStatus =
+  | 'loading'
+  | 'ready'
+  | 'missing'
+  | 'unavailable';
 
 function loadingStats(): OverviewStats {
   return {
@@ -69,7 +76,8 @@ export default function OverviewPage() {
   const { t, dir, lang } = useI18n();
 
   const [sub, setSub] = useState<Subscription | null>(null);
-  const [loadingSubscription, setLoadingSubscription] = useState(true);
+  const [subscriptionStatus, setSubscriptionStatus] =
+    useState<SubscriptionAuthorityStatus>('loading');
   const [stats, setStats] = useState<OverviewStats>(loadingStats);
 
   useEffect(() => {
@@ -78,27 +86,20 @@ export default function OverviewPage() {
     const applySubscription = (subscription: Subscription | null) => {
       if (!active) return;
       setSub(subscription);
-      setLoadingSubscription(false);
+      setSubscriptionStatus(subscription ? 'ready' : 'missing');
     };
 
     const loadSubscription = async () => {
-      try {
-        const response = await fetch('/api/auth/subscription/current', {
-          cache: 'no-store',
-          credentials: 'include',
-          headers: { Accept: 'application/json' },
-        });
-        const data = await response.json().catch(() => null);
-        if (!active) return;
-        applySubscription(
-          response.ok && data?.ok && data.subscription
-            ? (data.subscription as Subscription)
-            : null,
-        );
-      } catch (error) {
-        console.error('Could not load overview subscription:', error);
-        if (active) setLoadingSubscription(false);
+      const result = await loadCurrentSubscriptionAuthority();
+      if (!active) return;
+
+      if (result.status === 'unavailable') {
+        setSub(null);
+        setSubscriptionStatus('unavailable');
+        return;
       }
+
+      applySubscription(result.subscription);
     };
 
     const loadStats = async () => {
@@ -144,14 +145,19 @@ export default function OverviewPage() {
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
   const unavailableLabel =
     lang === 'ar' ? 'غير متاح' : lang === 'ku' ? 'بەردەست نییە' : 'Unavailable';
-  const planName = sub
-    ? {
-        silver: t.plan_silver,
-        gold: t.plan_gold,
-        diamond: t.plan_diamond,
-        trial: t.plan_trial,
-      }[sub.plan_name]
-    : messages.noSubscriptionTitle;
+  const planName =
+    subscriptionStatus === 'loading'
+      ? t.overview_loading
+      : subscriptionStatus === 'unavailable'
+        ? messages.authorityUnavailableTitle
+        : sub
+          ? {
+              silver: t.plan_silver,
+              gold: t.plan_gold,
+              diamond: t.plan_diamond,
+              trial: t.plan_trial,
+            }[sub.plan_name]
+          : messages.noSubscriptionTitle;
 
   const statusLabel = sub
     ? {
@@ -214,15 +220,34 @@ export default function OverviewPage() {
   return (
     <div className="bg-background" dir={dir}>
       <div className="space-y-4">
-        <SubscriptionRetentionCard compact />
+        {subscriptionStatus !== 'unavailable' && (
+          <SubscriptionRetentionCard compact />
+        )}
 
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">{t.overview}</h1>
         </div>
 
-        {loadingSubscription && (
+        {subscriptionStatus === 'loading' && (
           <div className="rounded-2xl border bg-card p-4 text-center text-sm text-muted-foreground">
             {t.overview_loading}
+          </div>
+        )}
+
+        {subscriptionStatus === 'unavailable' && (
+          <div
+            className="flex min-h-11 items-start gap-3 rounded-lg border border-orange-500 px-3 py-2 text-orange-700"
+            role="alert"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold leading-5">
+                {messages.authorityUnavailableTitle}
+              </p>
+              <p className="mt-0.5 text-xs leading-5 text-muted-foreground">
+                {messages.authorityUnavailableBody}
+              </p>
+            </div>
           </div>
         )}
 

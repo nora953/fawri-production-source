@@ -13,6 +13,9 @@ type SubscriptionStateMessages = {
   repliesExhaustedTitle: string;
   repliesExhaustedBody: string;
   emergencyUnavailable: string;
+  authorityUnavailableTitle: string;
+  authorityUnavailableBody: string;
+  authorityRetry: string;
 };
 
 export const subscriptionStateMessages: Record<Lang, SubscriptionStateMessages> = SUBSCRIPTION_STATE_MESSAGES_SUBSCRIPTION_STATE_MESSAGES;
