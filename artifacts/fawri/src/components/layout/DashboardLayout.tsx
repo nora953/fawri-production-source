@@ -116,6 +116,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     let timer: number | undefined;
     let controller: AbortController | null = null;
     let profileLoaded = false;
+    let profileMerchantId: string | null = null;
     let transientFailures = 0;
 
     if (getAdminSessionToken()) {
@@ -192,20 +193,37 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           return;
         }
 
+        const lifecycleMerchantId = lifecycle.lifecycle.merchant_id;
+        if (profileLoaded && profileMerchantId !== lifecycleMerchantId) {
+          profileLoaded = false;
+          profileMerchantId = null;
+          setMerchant(undefined);
+          setCheckingAccess(true);
+        }
+
         if (!profileLoaded) {
           try {
             const updated = await refreshCurrentMerchantFromApi();
             if (!active) return;
             if (
               !updated ||
+              updated.id !== lifecycleMerchantId ||
               updated.is_admin === true ||
               updated.status !== 'approved'
             ) {
+              if (updated?.id && updated.id !== lifecycleMerchantId) {
+                setMerchant(undefined);
+                setCheckingAccess(true);
+                transientFailures += 1;
+                scheduleRetry();
+                return;
+              }
               routeToLifecycle();
               return;
             }
             setMerchant(updated);
             profileLoaded = true;
+            profileMerchantId = updated.id;
             setCheckingAccess(false);
 
             const returnPath = consumeDashboardReturnPath();
@@ -220,16 +238,20 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             if (!active) return;
             // The lifecycle endpoint has already authenticated the merchant and
             // confirmed an approved account. A temporary profile refresh failure
-            // must not manufacture a logout. Keep/reuse the cached profile when
-            // available and retry the server refresh on the next poll.
+            // may reuse only a cache entry that is bound to that same authoritative
+            // merchant identity. Otherwise keep the dashboard hidden and retry.
             const cached = getCurrentMerchant();
             if (
               cached &&
+              cached.id === lifecycleMerchantId &&
               cached.is_admin !== true &&
               cached.status === 'approved'
             ) {
               setMerchant(cached);
               setCheckingAccess(false);
+            } else {
+              setMerchant(undefined);
+              setCheckingAccess(true);
             }
             transientFailures += 1;
             scheduleRetry();
