@@ -6,6 +6,7 @@ on:
       - "artifacts/api-server/src/routes/auth-session-routes.ts"
       - "artifacts/api-server/src/routes/auth-support-postgres-routes.ts"
       - "artifacts/api-server/src/routes/merchant-realtime-pg.ts"
+      - "artifacts/api-server/src/routes/merchant-settings.ts"
       - "artifacts/api-server/src/routes/saved-answer-operations.ts"
       - "artifacts/api-server/src/routes/training-operations.ts"
       - "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx"
@@ -17,6 +18,7 @@ on:
       - "artifacts/fawri/src/pages/dashboard/SavedAnswersPage.ts"
       - "artifacts/fawri/src/pages/dashboard/SavedAnswersPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ServerSavedAnswersPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/TrainingPage.ts"
       - "artifacts/fawri/src/pages/dashboard/ServerTrainingPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/SupportPage.tsx"
@@ -46,6 +48,7 @@ on:
       - "artifacts/fawri/tests/merchant-dashboard-realtime-subscription-cache.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs"
+      - "artifacts/fawri/tests/merchant-dashboard-settings-authority-freshness.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-support-authority-freshness.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-training-authority.test.mjs"
@@ -95,6 +98,7 @@ jobs:
           artifacts/fawri/tests/merchant-dashboard-realtime-subscription-cache.test.mjs
           artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs
+          artifacts/fawri/tests/merchant-dashboard-settings-authority-freshness.test.mjs
           artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-support-authority-freshness.test.mjs
           artifacts/fawri/tests/merchant-dashboard-training-authority.test.mjs
