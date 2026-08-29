@@ -344,10 +344,8 @@ export default function ServerOrdersPage() {
 
   const loadOrders = async (silent = false) => {
     const requestId = ++loadRequestIdRef.current;
-    if (!silent) {
-      setLoading(true);
-      setAuthorityStatus('loading');
-    }
+    setAuthorityStatus('loading');
+    if (!silent) setLoading(true);
     try {
       const [response, regionalContext] = await Promise.all([
         fetch('/api/orders', {
