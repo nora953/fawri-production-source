@@ -20,18 +20,6 @@ export type SavedAnswerInput = {
   active: boolean;
 };
 
-type CanonicalSavedAnswer = {
-  id: string;
-  category: string;
-  questionPattern: string;
-  answerText: string;
-  language: SavedAnswerLanguage;
-  active: boolean;
-  version: number;
-  createdAt: string;
-  updatedAt: string;
-};
-
 type AuthorityBody = {
   ok?: boolean;
   answers?: unknown[];
@@ -77,8 +65,9 @@ function normalizeCanonicalSavedAnswer(value: unknown): MerchantSavedAnswer | nu
     typeof answer.answerText !== 'string' ||
     !isLanguage(answer.language) ||
     typeof answer.active !== 'boolean' ||
+    typeof answer.version !== 'number' ||
     !Number.isInteger(answer.version) ||
-    Number(answer.version) <= 0 ||
+    answer.version <= 0 ||
     typeof answer.createdAt !== 'string' ||
     typeof answer.updatedAt !== 'string'
   ) {
@@ -92,7 +81,7 @@ function normalizeCanonicalSavedAnswer(value: unknown): MerchantSavedAnswer | nu
     answer_text: answer.answerText,
     language: answer.language,
     active: answer.active,
-    version: Number(answer.version),
+    version: answer.version,
     created_at: answer.createdAt,
     updated_at: answer.updatedAt,
   };
@@ -102,7 +91,10 @@ async function readBody(response: Response): Promise<AuthorityBody | null> {
   return response.json().catch(() => null) as Promise<AuthorityBody | null>;
 }
 
-function makeAuthorityError(response: Response, body: AuthorityBody | null): SavedAnswersAuthorityError {
+function makeAuthorityError(
+  response: Response,
+  body: AuthorityBody | null,
+): SavedAnswersAuthorityError {
   const current = normalizeCanonicalSavedAnswer(body?.current);
   return new SavedAnswersAuthorityError({
     status: response.status,
@@ -116,18 +108,19 @@ function makeAuthorityError(response: Response, body: AuthorityBody | null): Sav
 }
 
 function requestInit(init?: RequestInit): RequestInit {
+  const headers = new Headers(init?.headers);
+  headers.set('Accept', 'application/json');
   return {
     ...init,
     credentials: 'same-origin',
     cache: 'no-store',
-    headers: {
-      Accept: 'application/json',
-      ...(init?.headers || {}),
-    },
+    headers,
   };
 }
 
-export async function listSavedAnswers(fetchImpl: typeof fetch = fetch): Promise<MerchantSavedAnswer[]> {
+export async function listSavedAnswers(
+  fetchImpl: typeof fetch = fetch,
+): Promise<MerchantSavedAnswer[]> {
   const response = await fetchImpl(API_PATH, requestInit());
   const body = await readBody(response);
   if (!response.ok || body?.ok !== true || !Array.isArray(body.answers)) {
@@ -143,8 +136,8 @@ export async function listSavedAnswers(fetchImpl: typeof fetch = fetch): Promise
     });
   }
 
-  return (answers as MerchantSavedAnswer[]).sort((left, right) =>
-    Date.parse(right.created_at) - Date.parse(left.created_at)
+  return (answers as MerchantSavedAnswer[]).sort(
+    (left, right) => Date.parse(right.created_at) - Date.parse(left.created_at),
   );
 }
 
@@ -186,11 +179,15 @@ export async function updateSavedAnswer(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         expectedVersion: answer.version,
-        ...(patch.category === undefined ? {} : { category: patch.category.trim() }),
+        ...(patch.category === undefined
+          ? {}
+          : { category: patch.category.trim() }),
         ...(patch.question_pattern === undefined
           ? {}
           : { questionPattern: patch.question_pattern.trim() }),
-        ...(patch.answer_text === undefined ? {} : { answerText: patch.answer_text.trim() }),
+        ...(patch.answer_text === undefined
+          ? {}
+          : { answerText: patch.answer_text.trim() }),
         ...(patch.language === undefined ? {} : { language: patch.language }),
         ...(patch.active === undefined ? {} : { active: patch.active }),
       }),
