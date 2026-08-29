@@ -1,14 +1,16 @@
-import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
-import { SERVER_SAVED_ANSWERS_PAGE_COPY } from '@/lib/translations/features/pages/dashboard/ServerSavedAnswersPage';
-import { useCallback, useEffect, useMemo, useState, type ChangeEvent, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent, type FormEvent } from "react";
 import { BookOpen, Pencil, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
-import { useI18n } from "@/lib/i18n";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { KnowledgeStatusBadge } from "@/components/knowledge/KnowledgeStatusBadge";
+import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/lib/i18n";
+import { COMMON_UI_LABELS } from "@/lib/translations/commonUi";
+import { SERVER_SAVED_ANSWERS_PAGE_COPY } from "@/lib/translations/features/pages/dashboard/ServerSavedAnswersPage";
 
 type Language = "ar" | "ku" | "en";
+type LoadStatus = "loading" | "ready" | "unavailable";
 
 type SavedAnswer = {
   id: string;
@@ -27,37 +29,12 @@ type ApiError = {
   code?: string;
   error?: string;
   current?: SavedAnswer;
+  status?: number;
 };
 
-type Copy = {
-  title: string;
-  subtitle: string;
-  add: string;
-  refresh: string;
-  search: string;
-  empty: string;
-  loading: string;
-  question: string;
-  answer: string;
-  category: string;
-  language: string;
-  active: string;
-  inactive: string;
-  approved: string;
-  save: string;
-  saving: string;
-  cancel: string;
-  edit: string;
-  remove: string;
-  confirmDelete: string;
-  loadFailed: string;
-  saveFailed: string;
-  conflict: string;
-  required: string;
-};
+type Copy = (typeof SERVER_SAVED_ANSWERS_PAGE_COPY)[Language];
 
 const COPY: Record<Language, Copy> = SERVER_SAVED_ANSWERS_PAGE_COPY;
-
 const EMPTY_FORM = {
   category: "custom",
   questionPattern: "",
@@ -66,9 +43,33 @@ const EMPTY_FORM = {
   active: true,
 };
 
-async function readJson<T>(response: Response): Promise<T> {
-  const body = (await response.json().catch(() => ({}))) as T & ApiError;
-  if (!response.ok) throw Object.assign(new Error(body.error || "Request failed"), body);
+function isSavedAnswer(value: unknown): value is SavedAnswer {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const answer = value as Record<string, unknown>;
+  return (
+    typeof answer.id === "string" &&
+    answer.id.length > 0 &&
+    typeof answer.category === "string" &&
+    typeof answer.questionPattern === "string" &&
+    typeof answer.answerText === "string" &&
+    (answer.language === "ar" || answer.language === "ku" || answer.language === "en") &&
+    answer.source === "merchant_approved" &&
+    typeof answer.active === "boolean" &&
+    typeof answer.version === "number" &&
+    Number.isInteger(answer.version) &&
+    answer.version > 0 &&
+    typeof answer.createdAt === "string" &&
+    typeof answer.updatedAt === "string"
+  );
+}
+
+async function readJson<T extends { ok?: boolean }>(response: Response): Promise<T> {
+  const body = (await response.json().catch(() => null)) as (T & ApiError) | null;
+  if (!response.ok || body?.ok !== true) {
+    throw Object.assign(new Error(body?.error || "Request failed"), body || {}, {
+      status: response.status,
+    });
+  }
   return body;
 }
 
@@ -78,30 +79,45 @@ export default function ServerSavedAnswersPage() {
   const copy = COPY[language];
   const [answers, setAnswers] = useState<SavedAnswer[]>([]);
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SavedAnswer | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM, language });
+  const loadRequestIdRef = useRef(0);
 
   const load = useCallback(async () => {
-    setLoading(true);
+    const requestId = ++loadRequestIdRef.current;
+    setLoadStatus("loading");
     setNotice("");
     try {
-      const result = await readJson<{ answers: SavedAnswer[] }>(
-        await fetch("/api/knowledge/saved-answers", { credentials: "same-origin" }),
+      const result = await readJson<{ ok: true; answers: unknown }>(
+        await fetch("/api/knowledge/saved-answers", {
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        }),
       );
-      setAnswers(Array.isArray(result.answers) ? result.answers : []);
-    } catch {
+      if (!Array.isArray(result.answers) || !result.answers.every(isSavedAnswer)) {
+        throw new Error("Saved answers authority returned an invalid response");
+      }
+      if (requestId !== loadRequestIdRef.current) return;
+      setAnswers(result.answers);
+      setLoadStatus("ready");
+    } catch (error) {
+      if (requestId !== loadRequestIdRef.current) return;
+      console.error("Load saved answers failed:", error);
       setNotice(copy.loadFailed);
-    } finally {
-      setLoading(false);
+      setLoadStatus("unavailable");
     }
   }, [copy.loadFailed]);
 
   useEffect(() => {
     void load();
+    return () => {
+      loadRequestIdRef.current += 1;
+    };
   }, [load]);
 
   const filtered = useMemo(() => {
@@ -115,7 +131,10 @@ export default function ServerSavedAnswersPage() {
     );
   }, [answers, query]);
 
+  const mutationsAllowed = loadStatus === "ready" && !saving;
+
   function startCreate() {
+    if (!mutationsAllowed) return;
     setEditing(null);
     setForm({ ...EMPTY_FORM, language });
     setNotice("");
@@ -123,6 +142,7 @@ export default function ServerSavedAnswersPage() {
   }
 
   function startEdit(answer: SavedAnswer) {
+    if (!mutationsAllowed) return;
     setEditing(answer);
     setForm({
       category: answer.category,
@@ -137,10 +157,12 @@ export default function ServerSavedAnswersPage() {
 
   async function save(event: FormEvent) {
     event.preventDefault();
+    if (!mutationsAllowed) return;
     if (!form.questionPattern.trim() || !form.answerText.trim()) {
       setNotice(copy.required);
       return;
     }
+
     setSaving(true);
     setNotice("");
     try {
@@ -151,14 +173,13 @@ export default function ServerSavedAnswersPage() {
         {
           method: editing ? "PATCH" : "POST",
           credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            ...form,
-            expectedVersion: editing?.version,
-          }),
+          cache: "no-store",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({ ...form, expectedVersion: editing?.version }),
         },
       );
-      const result = await readJson<{ answer: SavedAnswer }>(response);
+      const result = await readJson<{ ok: true; answer: unknown }>(response);
+      if (!isSavedAnswer(result.answer)) throw new Error("Invalid saved answer response");
       setAnswers((current) =>
         editing
           ? current.map((item) => (item.id === result.answer.id ? result.answer : item))
@@ -168,7 +189,7 @@ export default function ServerSavedAnswersPage() {
       setEditing(null);
     } catch (error) {
       const apiError = error as ApiError;
-      if (apiError.code === "VERSION_CONFLICT" && apiError.current) {
+      if (apiError.code === "VERSION_CONFLICT" && isSavedAnswer(apiError.current)) {
         setAnswers((current) =>
           current.map((item) => (item.id === apiError.current?.id ? apiError.current : item)),
         );
@@ -190,22 +211,23 @@ export default function ServerSavedAnswersPage() {
   }
 
   async function remove(answer: SavedAnswer) {
-    if (!window.confirm(copy.confirmDelete)) return;
+    if (!mutationsAllowed || !window.confirm(copy.confirmDelete)) return;
     setSaving(true);
     setNotice("");
     try {
-      await readJson(
+      await readJson<{ ok: true }>(
         await fetch(`/api/knowledge/saved-answers/${encodeURIComponent(answer.id)}`, {
           method: "DELETE",
           credentials: "same-origin",
-          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          headers: { Accept: "application/json", "Content-Type": "application/json" },
           body: JSON.stringify({ expectedVersion: answer.version }),
         }),
       );
       setAnswers((current) => current.filter((item) => item.id !== answer.id));
     } catch (error) {
       const apiError = error as ApiError;
-      if (apiError.code === "VERSION_CONFLICT" && apiError.current) {
+      if (apiError.code === "VERSION_CONFLICT" && isSavedAnswer(apiError.current)) {
         setAnswers((current) =>
           current.map((item) => (item.id === apiError.current?.id ? apiError.current : item)),
         );
@@ -218,6 +240,9 @@ export default function ServerSavedAnswersPage() {
     }
   }
 
+  const unavailableWithoutData = loadStatus === "unavailable" && answers.length === 0;
+  const staleData = loadStatus === "unavailable" && answers.length > 0;
+
   return (
     <main className="min-h-screen bg-background p-4 pb-24 md:p-6" dir={dir}>
       <section className="mx-auto max-w-6xl space-y-5">
@@ -227,10 +252,10 @@ export default function ServerSavedAnswersPage() {
             <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">{copy.subtitle}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => void load()} disabled={loading || saving}>
+            <Button variant="outline" onClick={() => void load()} disabled={loadStatus === "loading" || saving}>
               <RefreshCw className="me-2 h-4 w-4" />{copy.refresh}
             </Button>
-            <Button onClick={startCreate} disabled={saving} className="bg-orange-500 text-white hover:bg-orange-600">
+            <Button onClick={startCreate} disabled={!mutationsAllowed} className="bg-orange-500 text-white hover:bg-orange-600">
               <Plus className="me-2 h-4 w-4" />{copy.add}
             </Button>
           </div>
@@ -242,10 +267,19 @@ export default function ServerSavedAnswersPage() {
         </div>
 
         {notice ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{notice}</div> : null}
+        {staleData ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{copy.loadFailed}</div> : null}
 
-        {loading ? (
+        {loadStatus === "loading" ? (
           <div className="rounded-3xl border bg-card p-12 text-center text-muted-foreground">{copy.loading}</div>
-        ) : filtered.length === 0 ? (
+        ) : unavailableWithoutData ? (
+          <div className="rounded-3xl border border-amber-200 bg-card p-12 text-center">
+            <BookOpen className="mx-auto mb-3 h-12 w-12 text-amber-500/60" />
+            <p className="font-semibold text-amber-900">{copy.loadFailed}</p>
+            <Button className="mt-4" variant="outline" onClick={() => void load()}>
+              <RefreshCw className="me-2 h-4 w-4" />{copy.refresh}
+            </Button>
+          </div>
+        ) : loadStatus === "ready" && filtered.length === 0 ? (
           <div className="rounded-3xl border bg-card p-12 text-center">
             <BookOpen className="mx-auto mb-3 h-12 w-12 text-muted-foreground/30" />
             <p className="font-semibold text-muted-foreground">{copy.empty}</p>
@@ -266,10 +300,10 @@ export default function ServerSavedAnswersPage() {
                 <p className="mt-4 text-xs font-semibold text-muted-foreground">{copy.answer}</p>
                 <p className="mt-1 whitespace-pre-wrap text-sm leading-6">{answer.answerText}</p>
                 <div className="mt-5 flex gap-2 border-t pt-4">
-                  <Button variant="outline" size="sm" onClick={() => startEdit(answer)} disabled={saving}>
+                  <Button variant="outline" size="sm" onClick={() => startEdit(answer)} disabled={!mutationsAllowed}>
                     <Pencil className="me-2 h-4 w-4" />{copy.edit}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => void remove(answer)} disabled={saving}>
+                  <Button variant="outline" size="sm" onClick={() => void remove(answer)} disabled={!mutationsAllowed}>
                     <Trash2 className="me-2 h-4 w-4" />{copy.remove}
                   </Button>
                 </div>
@@ -312,7 +346,7 @@ export default function ServerSavedAnswersPage() {
             </label>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>{copy.cancel}</Button>
-              <Button type="submit" disabled={saving} className="bg-orange-500 text-white hover:bg-orange-600">
+              <Button type="submit" disabled={saving || loadStatus !== "ready"} className="bg-orange-500 text-white hover:bg-orange-600">
                 {saving ? copy.saving : copy.save}
               </Button>
             </div>
