@@ -32,6 +32,15 @@ test('collapsed merchant product cards use one stable visual skeleton', () => {
   assert.match(cardCss, /min-height:\s*5\.25rem/);
   assert.match(cardCss, /text-align:\s*start/);
 
+  // One localized user-facing details control drives the existing canonical
+  // inventory/variant disclosure state, and the ambiguous image-count badge is
+  // removed from the compact card header.
+  assert.match(cardCss, /button\[aria-controls\^='catalog-inventory-'\]/);
+  assert.match(cardCss, /html\[lang='ar'\][\s\S]*content:\s*'التفاصيل'/);
+  assert.match(cardCss, /html\[lang='ku'\][\s\S]*content:\s*'وردەکارییەکان'/);
+  assert.match(cardCss, /html\[lang='en'\][\s\S]*content:\s*'Details'/);
+  assert.match(cardCss, /:has\(svg\.lucide-image\)[\s\S]*display:\s*none !important/);
+
   // Description is collapsed with inventory/variant details and fully returns
   // when that one disclosure panel is opened.
   assert.match(cardCss, /:has\(> p\.rounded-2xl\) \{[\s\S]*display:\s*none/);
