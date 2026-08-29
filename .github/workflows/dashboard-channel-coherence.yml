@@ -5,6 +5,7 @@ on:
     paths:
       - "artifacts/api-server/src/routes/auth-session-routes.ts"
       - "artifacts/api-server/src/routes/auth-support-postgres-routes.ts"
+      - "artifacts/api-server/src/routes/merchant-realtime-pg.ts"
       - "artifacts/api-server/src/routes/saved-answer-operations.ts"
       - "artifacts/api-server/src/routes/training-operations.ts"
       - "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx"
@@ -25,6 +26,7 @@ on:
       - "artifacts/fawri/src/components/layout/Sidebar.tsx"
       - "artifacts/fawri/src/components/layout/BottomNav.tsx"
       - "artifacts/fawri/src/hooks/useMerchantNotifications.ts"
+      - "artifacts/fawri/src/hooks/useMerchantRealtime.ts"
       - "artifacts/fawri/src/lib/currentSubscriptionAuthority.ts"
       - "artifacts/fawri/src/lib/merchantLifecycle.ts"
       - "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts"
@@ -41,6 +43,7 @@ on:
       - "artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-notifications-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts"
+      - "artifacts/fawri/tests/merchant-dashboard-realtime-subscription-cache.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs"
@@ -89,6 +92,7 @@ jobs:
           artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-notifications-authority.test.mjs
+          artifacts/fawri/tests/merchant-dashboard-realtime-subscription-cache.test.mjs
           artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs
           artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs

@@ -7,7 +7,6 @@ import { SubscriptionCard } from '@/components/SubscriptionCard';
 import { Button } from '@/components/ui/button';
 import { useI18n } from '@/lib/i18n';
 import { loadCurrentSubscriptionAuthority } from '@/lib/currentSubscriptionAuthority';
-import { saveSubscriptions } from '@/lib/store';
 import { subscriptionStateMessages } from '@/lib/subscriptionStateMessages';
 import { Subscription } from '@/lib/types';
 import {
@@ -35,13 +34,7 @@ export default function SubscriptionPage() {
 
     const applySubscription = (nextSubscription: Subscription | null) => {
       if (!active) return;
-      if (nextSubscription) {
-        saveSubscriptions([nextSubscription]);
-        setAuthorityStatus('ready');
-      } else {
-        saveSubscriptions([]);
-        setAuthorityStatus('missing');
-      }
+      setAuthorityStatus(nextSubscription ? 'ready' : 'missing');
       setSubscription(nextSubscription);
     };
 
@@ -96,7 +89,6 @@ export default function SubscriptionPage() {
       }
 
       const updatedSubscription = data.subscription as Subscription;
-      saveSubscriptions([updatedSubscription]);
       setSubscription(updatedSubscription);
       setAuthorityStatus('ready');
       toast.success(t.subscription_emergency_success);
