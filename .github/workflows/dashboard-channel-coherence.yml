@@ -12,6 +12,7 @@ on:
       - "artifacts/fawri/src/pages/dashboard/ChannelsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ServerChannelsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/SavedAnswersPage.ts"
       - "artifacts/fawri/src/pages/dashboard/SavedAnswersPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ServerSavedAnswersPage.tsx"
@@ -26,9 +27,11 @@ on:
       - "artifacts/fawri/src/hooks/useMerchantNotifications.ts"
       - "artifacts/fawri/src/lib/currentSubscriptionAuthority.ts"
       - "artifacts/fawri/src/lib/merchantLifecycle.ts"
+      - "artifacts/fawri/src/lib/merchantNotificationsAuthority.ts"
       - "artifacts/fawri/src/lib/subscriptionStateMessages.ts"
       - "artifacts/fawri/src/lib/translations/features/lib/subscriptionStateMessages.ts"
       - "artifacts/fawri/src/lib/translations/features/pages/dashboard/ConversationsPage.ts"
+      - "artifacts/fawri/src/lib/translations/features/pages/dashboard/NotificationsPage.ts"
       - "artifacts/fawri/src/lib/translations/features/pages/dashboard/ServerTrainingPage.ts"
       - "artifacts/fawri/src/lib/translations/features/pages/dashboard/SupportPage.ts"
       - "artifacts/fawri/src/lib/translations/saasBilling.ts"
@@ -36,6 +39,8 @@ on:
       - "artifacts/fawri/tests/dashboard-channel-coherence.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs"
+      - "artifacts/fawri/tests/merchant-dashboard-notifications-authority.test.mjs"
+      - "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts"
       - "artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs"
@@ -83,11 +88,17 @@ jobs:
           artifacts/fawri/tests/dashboard-channel-coherence.test.mjs
           artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs
+          artifacts/fawri/tests/merchant-dashboard-notifications-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs
           artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-support-authority-freshness.test.mjs
           artifacts/fawri/tests/merchant-dashboard-training-authority.test.mjs
+
+      - name: Test notifications authority client
+        run: >-
+          node scripts/ci-run-redacted.mjs --label notifications-authority-client-test --
+          pnpm --filter @workspace/fawri exec tsx --test ./tests/merchant-notifications-authority-client.test.ts
 
       - name: Test subscription billing UI authority contract
         run: >-
