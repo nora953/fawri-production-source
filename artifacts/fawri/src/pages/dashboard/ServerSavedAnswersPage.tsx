@@ -180,10 +180,11 @@ export default function ServerSavedAnswersPage() {
       );
       const result = await readJson<{ ok: true; answer: unknown }>(response);
       if (!isSavedAnswer(result.answer)) throw new Error("Invalid saved answer response");
+      const savedAnswer = result.answer;
       setAnswers((current) =>
         editing
-          ? current.map((item) => (item.id === result.answer.id ? result.answer : item))
-          : [result.answer, ...current],
+          ? current.map((item) => (item.id === savedAnswer.id ? savedAnswer : item))
+          : [savedAnswer, ...current],
       );
       setOpen(false);
       setEditing(null);
