@@ -65,7 +65,6 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
-      FAWRI_GENERATED_DRIZZLE_DIR: ${{ runner.temp }}/fawri-drizzle-generated
 
     steps:
       - name: Checkout repository
@@ -118,19 +117,19 @@ jobs:
 
       - name: Generate and verify canonical Drizzle history
         run: >-
-          FAWRI_MIGRATION_OUTPUT_DIR="$FAWRI_GENERATED_DRIZZLE_DIR"
+          FAWRI_MIGRATION_OUTPUT_DIR="$RUNNER_TEMP/fawri-drizzle-generated"
           pnpm --filter @workspace/db run schema:generate
 
       - name: Verify committed migration is reproducible
         run: |
           test -n "$(find lib/db/drizzle -maxdepth 1 -type f -name '*.sql' -print -quit)"
           test -f lib/db/drizzle/meta/_journal.json
-          test -f "$FAWRI_GENERATED_DRIZZLE_DIR/meta/0014_snapshot.json"
+          test -f "$RUNNER_TEMP/fawri-drizzle-generated/meta/0014_snapshot.json"
           git diff --exit-code -- lib/db/drizzle
 
       - name: Restore generated snapshots for disposable smoke expectations
         run: |
-          for snapshot in "$FAWRI_GENERATED_DRIZZLE_DIR"/meta/*_snapshot.json; do
+          for snapshot in "$RUNNER_TEMP/fawri-drizzle-generated"/meta/*_snapshot.json; do
             name="$(basename "$snapshot")"
             if [ ! -f "lib/db/drizzle/meta/$name" ]; then
               cp "$snapshot" "lib/db/drizzle/meta/$name"
