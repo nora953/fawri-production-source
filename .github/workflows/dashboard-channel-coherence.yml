@@ -22,6 +22,8 @@ on:
       - "artifacts/fawri/src/pages/dashboard/TrainingPage.ts"
       - "artifacts/fawri/src/pages/dashboard/ServerTrainingPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/SupportPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx"
       - "artifacts/fawri/src/components/SubscriptionRetentionCard.tsx"
       - "artifacts/fawri/src/components/SaasBillingPanel.tsx"
       - "artifacts/fawri/src/components/layout/DashboardLayout.tsx"
@@ -44,6 +46,7 @@ on:
       - "artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-notifications-authority.test.mjs"
+      - "artifacts/fawri/tests/merchant-dashboard-products-orders-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts"
       - "artifacts/fawri/tests/merchant-dashboard-realtime-subscription-cache.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs"
@@ -95,6 +98,7 @@ jobs:
           artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-notifications-authority.test.mjs
+          artifacts/fawri/tests/merchant-dashboard-products-orders-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-realtime-subscription-cache.test.mjs
           artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs

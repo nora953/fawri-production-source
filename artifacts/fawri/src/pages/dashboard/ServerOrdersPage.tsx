@@ -40,6 +40,7 @@ type ServerOrder = Order & {
 };
 
 type LanguageCode = 'ar' | 'ku' | 'en';
+type OrdersAuthorityStatus = 'loading' | 'ready' | 'unavailable';
 
 const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   pending_confirmation: [
@@ -72,6 +73,24 @@ const ORDER_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
 const STATUS_LABELS: Record<LanguageCode, Record<OrderStatus, string>> = SERVER_ORDERS_PAGE_STATUS_LABELS;
 
 const PAYMENT_LABELS: Record<LanguageCode, Record<PaymentStatus, string>> = SERVER_ORDERS_PAGE_PAYMENT_LABELS;
+
+const ORDER_STATUS_VALUES = new Set<OrderStatus>(
+  Object.keys(ORDER_TRANSITIONS) as OrderStatus[],
+);
+const PAYMENT_STATUS_VALUES = new Set<PaymentStatus>([
+  'cash_on_delivery',
+  'electronic_pending',
+  'paid',
+  'failed',
+  'manual_review',
+]);
+const PAYMENT_METHOD_VALUES = new Set([
+  'cash_on_delivery',
+  'superqi',
+  'fastpay',
+  'zaincash',
+  'other',
+]);
 
 function languageCode(i18n: ReturnType<typeof useI18n>): LanguageCode {
   const value = String(
@@ -193,6 +212,75 @@ function textFor(language: LanguageCode) {
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isServerOrder(value: unknown): value is ServerOrder {
+  if (!isRecord(value)) return false;
+  if (
+    typeof value.id !== 'string' ||
+    typeof value.merchant_id !== 'string' ||
+    typeof value.customer_name !== 'string' ||
+    typeof value.phone !== 'string' ||
+    typeof value.address !== 'string' ||
+    typeof value.created_at !== 'string' ||
+    typeof value.updated_at !== 'string' ||
+    typeof value.version !== 'number' ||
+    !Number.isInteger(value.version) ||
+    !ORDER_STATUS_VALUES.has(value.status as OrderStatus) ||
+    !PAYMENT_STATUS_VALUES.has(value.payment_status as PaymentStatus) ||
+    !PAYMENT_METHOD_VALUES.has(String(value.payment_method)) ||
+    !Array.isArray(value.items)
+  ) {
+    return false;
+  }
+
+  if (
+    !value.items.every(item =>
+      isRecord(item) &&
+      typeof item.product_id === 'string' &&
+      typeof item.product_name === 'string' &&
+      typeof item.quantity === 'number' &&
+      Number.isFinite(item.quantity) &&
+      typeof item.price === 'number' &&
+      Number.isFinite(item.price),
+    )
+  ) {
+    return false;
+  }
+
+  if (
+    value.total_price !== undefined &&
+    (typeof value.total_price !== 'number' || !Number.isFinite(value.total_price))
+  ) {
+    return false;
+  }
+
+  if (value.source_channel !== undefined && typeof value.source_channel !== 'string') {
+    return false;
+  }
+
+  if (value.last_payment_decision !== undefined) {
+    const decision = value.last_payment_decision;
+    if (
+      !isRecord(decision) ||
+      (decision.operation !== 'confirm' && decision.operation !== 'reject') ||
+      (decision.outcome !== 'paid' && decision.outcome !== 'failed') ||
+      typeof decision.actor_id !== 'string' ||
+      typeof decision.decided_at !== 'string' ||
+      (decision.reason !== undefined && typeof decision.reason !== 'string') ||
+      (decision.confirmation_source !== undefined &&
+        decision.confirmation_source !== 'merchant_confirmed' &&
+        decision.confirmation_source !== 'provider_verified')
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function orderTotal(order: ServerOrder): number {
   if (Number.isFinite(order.total_price)) return Number(order.total_price);
   return order.items.reduce(
@@ -236,9 +324,13 @@ export default function ServerOrdersPage() {
   const [orders, setOrders] = useState<ServerOrder[]>([]);
   const [regional, setRegional] = useState<MerchantRegionalContext | null>(null);
   const linkedOrderIdRef = useRef(requestedOrderId());
+  const loadRequestIdRef = useRef(0);
+  const loadFailedRef = useRef(labels.loadFailed);
+  loadFailedRef.current = labels.loadFailed;
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [authorityStatus, setAuthorityStatus] = useState<OrdersAuthorityStatus>('loading');
   const [loadError, setLoadError] = useState('');
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -251,22 +343,38 @@ export default function ServerOrdersPage() {
   };
 
   const loadOrders = async (silent = false) => {
+    const requestId = ++loadRequestIdRef.current;
+    setAuthorityStatus('loading');
     if (!silent) setLoading(true);
     try {
       const [response, regionalContext] = await Promise.all([
         fetch('/api/orders', {
+          credentials: 'same-origin',
           headers: { Accept: 'application/json' },
           cache: 'no-store',
         }),
         getMerchantRegionalContext(),
       ]);
       const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.ok || !Array.isArray(data.orders)) {
-        throw new Error(data?.error || labels.loadFailed);
+      if (
+        !response.ok ||
+        !isRecord(data) ||
+        data.ok !== true ||
+        !Array.isArray(data.orders) ||
+        !data.orders.every(isServerOrder)
+      ) {
+        throw new Error(
+          isRecord(data) && typeof data.error === 'string'
+            ? data.error
+            : loadFailedRef.current,
+        );
       }
-      const nextOrders = data.orders as ServerOrder[];
+      if (requestId !== loadRequestIdRef.current) return;
+
+      const nextOrders = data.orders;
       setRegional(regionalContext);
       setOrders(nextOrders);
+      setAuthorityStatus('ready');
       setLoadError('');
       setSelectedOrderId(current => {
         const linkedOrderId = linkedOrderIdRef.current;
@@ -279,27 +387,35 @@ export default function ServerOrdersPage() {
           : nextOrders[0]?.id || null;
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : labels.loadFailed;
+      if (requestId !== loadRequestIdRef.current) return;
+      const message = error instanceof Error ? error.message : loadFailedRef.current;
+      setAuthorityStatus('unavailable');
       setLoadError(message);
       if (!silent) toast.error(message);
     } finally {
-      if (!silent) setLoading(false);
+      if (requestId === loadRequestIdRef.current && !silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     void loadOrders();
+    return () => {
+      loadRequestIdRef.current += 1;
+    };
+  }, []);
+
+  useEffect(() => {
     const interval = window.setInterval(() => {
       if (!pendingOrderId) void loadOrders(true);
     }, 10_000);
     return () => window.clearInterval(interval);
-  }, [pendingOrderId, language]);
+  }, [pendingOrderId]);
 
   useEffect(() => {
     return subscribeCashierDashboardRefresh(() => {
       if (!pendingOrderId) void loadOrders(true);
     });
-  }, [pendingOrderId, language]);
+  }, [pendingOrderId]);
 
   const filteredOrders = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -323,11 +439,14 @@ export default function ServerOrdersPage() {
     body: Record<string, unknown>,
     method: 'PATCH' | 'POST',
   ) => {
-    if (pendingOrderId) return;
+    if (pendingOrderId || authorityStatus !== 'ready') return;
+    loadRequestIdRef.current += 1;
     setPendingOrderId(order.id);
     try {
       const response = await fetch(endpoint, {
         method,
+        credentials: 'same-origin',
+        cache: 'no-store',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
@@ -335,19 +454,36 @@ export default function ServerOrdersPage() {
         body: JSON.stringify({ expected_version: order.version, ...body }),
       });
       const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.ok || !data.order) {
-        if (data?.code === 'ORDER_VERSION_CONFLICT' && data.current_order) {
-          replaceOrder(data.current_order as ServerOrder);
+      if (
+        !response.ok ||
+        !isRecord(data) ||
+        data.ok !== true ||
+        !isServerOrder(data.order)
+      ) {
+        if (
+          isRecord(data) &&
+          data.code === 'ORDER_VERSION_CONFLICT' &&
+          isServerOrder(data.current_order)
+        ) {
+          replaceOrder(data.current_order);
+          setAuthorityStatus('ready');
           toast.error(labels.conflict);
           return;
         }
-        throw new Error(data?.error || labels.updateFailed);
+        throw new Error(
+          isRecord(data) && typeof data.error === 'string'
+            ? data.error
+            : labels.updateFailed,
+        );
       }
-      replaceOrder(data.order as ServerOrder);
+      replaceOrder(data.order);
+      setAuthorityStatus('ready');
+      setLoadError('');
       setRejectionReason('');
       setConflictResolutionNote('');
       toast.success(labels.updated);
     } catch (error) {
+      setAuthorityStatus('unavailable');
       toast.error(error instanceof Error ? error.message : labels.updateFailed);
       await loadOrders(true);
     } finally {
@@ -410,6 +546,7 @@ export default function ServerOrdersPage() {
     );
   };
 
+  const authorityBlocked = authorityStatus !== 'ready';
   const busy = selectedOrder ? pendingOrderId === selectedOrder.id : false;
   const electronicPending =
     selectedOrder?.payment_method !== 'cash_on_delivery' &&
@@ -449,7 +586,10 @@ export default function ServerOrdersPage() {
         </div>
 
         {loadError ? (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <div
+            role="status"
+            className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+          >
             {loadError}
           </div>
         ) : null}
@@ -595,7 +735,7 @@ export default function ServerOrdersPage() {
                           event.target.value as OrderStatus,
                         )
                       }
-                      disabled={busy}
+                      disabled={busy || authorityBlocked}
                       className="h-11 w-full rounded-md border bg-background px-3"
                     >
                       {ORDER_TRANSITIONS[selectedOrder.status].map(status => (
@@ -648,13 +788,13 @@ export default function ServerOrdersPage() {
                       onChange={event => setConflictResolutionNote(event.target.value)}
                       placeholder={labels.resolutionNote}
                       maxLength={500}
-                      disabled={busy}
+                      disabled={busy || authorityBlocked}
                       className="mt-3"
                     />
                     <Button
                       className="mt-3"
                       variant="outline"
-                      disabled={busy || !conflictResolutionNote.trim()}
+                      disabled={busy || authorityBlocked || !conflictResolutionNote.trim()}
                       onClick={() => resolvePaymentConflict(selectedOrder)}
                     >
                       {labels.resolveConflict}
@@ -676,7 +816,7 @@ export default function ServerOrdersPage() {
                       {selectedOrder.payment_status === 'electronic_pending' ? (
                         <Button
                           variant="outline"
-                          disabled={busy}
+                          disabled={busy || authorityBlocked}
                           onClick={() =>
                             updateNonTerminalPaymentStatus(
                               selectedOrder,
@@ -689,7 +829,7 @@ export default function ServerOrdersPage() {
                       ) : (
                         <Button
                           variant="outline"
-                          disabled={busy}
+                          disabled={busy || authorityBlocked}
                           onClick={() =>
                             updateNonTerminalPaymentStatus(
                               selectedOrder,
@@ -706,12 +846,12 @@ export default function ServerOrdersPage() {
                       onChange={event => setRejectionReason(event.target.value)}
                       placeholder={labels.rejectionReason}
                       maxLength={500}
-                      disabled={busy}
+                      disabled={busy || authorityBlocked}
                     />
                     <div className="mt-3 grid gap-2 sm:grid-cols-2">
                       <Button
                         onClick={() => confirmPayment(selectedOrder)}
-                        disabled={busy}
+                        disabled={busy || authorityBlocked}
                       >
                         {busy ? (
                           <Loader2 className="me-2 h-4 w-4 animate-spin" />
@@ -723,7 +863,7 @@ export default function ServerOrdersPage() {
                       <Button
                         variant="destructive"
                         onClick={() => rejectPayment(selectedOrder)}
-                        disabled={busy || !rejectionReason.trim()}
+                        disabled={busy || authorityBlocked || !rejectionReason.trim()}
                       >
                         <XCircle className="me-2 h-4 w-4" />
                         {labels.reject}
@@ -735,7 +875,7 @@ export default function ServerOrdersPage() {
                 {cashCanConfirm ? (
                   <Button
                     onClick={() => confirmPayment(selectedOrder)}
-                    disabled={busy}
+                    disabled={busy || authorityBlocked}
                   >
                     <CheckCircle2 className="me-2 h-4 w-4" />
                     {labels.confirmCash}
