@@ -5,18 +5,26 @@ on:
     paths:
       - "artifacts/api-server/src/routes/auth-session-routes.ts"
       - "artifacts/api-server/src/routes/auth-support-postgres-routes.ts"
+      - "artifacts/api-server/src/routes/catalog-operations.ts"
       - "artifacts/api-server/src/routes/merchant-realtime-pg.ts"
       - "artifacts/api-server/src/routes/merchant-settings.ts"
+      - "artifacts/api-server/src/routes/order-operations.ts"
       - "artifacts/api-server/src/routes/saved-answer-operations.ts"
       - "artifacts/api-server/src/routes/training-operations.ts"
       - "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/SubscriptionPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ChannelsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ServerChannelsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/NotificationsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/OrdersPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/OrdersWorkspacePage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ProductsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ProductsWorkspacePage.tsx"
       - "artifacts/fawri/src/pages/dashboard/SavedAnswersPage.ts"
       - "artifacts/fawri/src/pages/dashboard/SavedAnswersPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ServerSavedAnswersPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/TrainingPage.ts"
@@ -44,6 +52,7 @@ on:
       - "artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-notifications-authority.test.mjs"
+      - "artifacts/fawri/tests/merchant-dashboard-products-orders-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts"
       - "artifacts/fawri/tests/merchant-dashboard-realtime-subscription-cache.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs"
@@ -95,6 +104,7 @@ jobs:
           artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-notifications-authority.test.mjs
+          artifacts/fawri/tests/merchant-dashboard-products-orders-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-realtime-subscription-cache.test.mjs
           artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs
