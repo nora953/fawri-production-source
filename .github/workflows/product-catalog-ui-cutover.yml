@@ -21,6 +21,7 @@ on:
       - "artifacts/fawri/src/pages/dashboard/ProductsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ProductsWorkspacePage.tsx"
       - "artifacts/fawri/src/pages/dashboard/CommerceCatalogPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/catalogEditorFullscreen.css"
       - "artifacts/fawri/src/pages/dashboard/catalogEditorCardHarmony.css"
       - "artifacts/fawri/src/pages/dashboard/productCardCompact.css"
