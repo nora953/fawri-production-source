@@ -1,6 +1,27 @@
 // Centralized localized copy extracted from pages/dashboard/SupportPage.tsx.
 // Keep runtime behavior in the source component; keep language copy here.
 
+export const SUPPORT_PAGE_AUTHORITY_TEXT = {
+  ar: {
+    unavailableTitle: 'تعذر التحقق من حالة الدعم',
+    unavailableBody: 'لا يمكن تأكيد حالة تذاكر الدعم الآن. أعد المحاولة قبل إرسال أي تغيير.',
+    staleTitle: 'تعذر تحديث تذاكر الدعم',
+    staleBody: 'البيانات المعروضة هي آخر نسخة مؤكدة من الخادم وقد لا تكون الأحدث. تم إيقاف التعديلات مؤقتًا حتى ينجح التحديث.',
+  },
+  ku: {
+    unavailableTitle: 'دۆخی پشتگیری پشتڕاست نەکرایەوە',
+    unavailableBody: 'ئێستا ناتوانرێت دۆخی تیکێتەکانی پشتگیری پشتڕاست بکرێتەوە. پێش هەر گۆڕانکارییەک دووبارە هەوڵ بدە.',
+    staleTitle: 'نوێکردنەوەی تیکێتەکانی پشتگیری سەرکەوتوو نەبوو',
+    staleBody: 'زانیارییە پیشاندراوەکان دوا وەشانی پشتڕاستکراونەتەوە لە سێرڤەر و ڕەنگە نوێترین نەبن. گۆڕانکارییەکان تا سەرکەوتنی نوێکردنەوە وەستێنراون.',
+  },
+  en: {
+    unavailableTitle: 'Support status could not be verified',
+    unavailableBody: 'The current support ticket state cannot be confirmed. Retry before sending any change.',
+    staleTitle: 'Support tickets could not be refreshed',
+    staleBody: 'The displayed data is the last server-confirmed version and may be out of date. Changes are temporarily disabled until refresh succeeds.',
+  },
+} as const;
+
 export const SUPPORT_PAGE_SUPPORT_LIFECYCLE_TEXT = {
   ar: {
     waitingForYou: 'بانتظار ردك',
