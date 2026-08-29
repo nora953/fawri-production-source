@@ -114,6 +114,15 @@
   white-space: nowrap;
 }
 
+/* Image count is available in the editor; it is redundant and visually unclear
+ * on the compact merchant card, so keep it out of the identity/status row. */
+.products-workspace-polish article:has(> .border-b.p-4)
+  > .border-b.p-4
+  .mb-2.flex.flex-wrap
+  > :has(svg.lucide-image) {
+  display: none !important;
+}
+
 .products-workspace-polish article:has(> .border-b.p-4) > .border-b.p-4 h2 {
   min-height: 3rem;
   font-size: 1.125rem !important;
@@ -153,6 +162,55 @@
  * expand when the merchant explicitly opens details. */
 .products-workspace-polish article:has(> .border-b.p-4) > div.px-4.pb-4:has(> div.rounded-2xl) {
   min-height: 4.5rem;
+}
+
+/* Present the existing inventory/variant disclosure as one user-facing details
+ * control. The underlying button/state remains canonical and unchanged. */
+.products-workspace-polish article:has(> .border-b.p-4)
+  > div.px-4.pb-4
+  > div.rounded-2xl
+  > .flex.items-center.justify-between.gap-3
+  > button[aria-controls^='catalog-inventory-'] {
+  font-size: 0 !important;
+}
+
+.products-workspace-polish article:has(> .border-b.p-4)
+  > div.px-4.pb-4
+  > div.rounded-2xl
+  > .flex.items-center.justify-between.gap-3
+  > button[aria-controls^='catalog-inventory-']::before {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+html[lang='ar'] .products-workspace-polish article:has(> .border-b.p-4)
+  > div.px-4.pb-4
+  > div.rounded-2xl
+  > .flex.items-center.justify-between.gap-3
+  > button[aria-controls^='catalog-inventory-']::before {
+  content: 'التفاصيل';
+}
+
+html[lang='ku'] .products-workspace-polish article:has(> .border-b.p-4)
+  > div.px-4.pb-4
+  > div.rounded-2xl
+  > .flex.items-center.justify-between.gap-3
+  > button[aria-controls^='catalog-inventory-']::before {
+  content: 'وردەکارییەکان';
+}
+
+html[lang='en'] .products-workspace-polish article:has(> .border-b.p-4)
+  > div.px-4.pb-4
+  > div.rounded-2xl
+  > .flex.items-center.justify-between.gap-3
+  > button[aria-controls^='catalog-inventory-']::before {
+  content: 'Details';
+}
+
+/* Keep the variant-count badge legible after the parent button text is replaced. */
+.products-workspace-polish article:has(> .border-b.p-4)
+  button[aria-controls^='catalog-inventory-'] > span {
+  font-size: 0.75rem;
 }
 
 /*
