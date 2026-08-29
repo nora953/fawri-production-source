@@ -1,0 +1,9 @@
+{
+  "index": 14,
+  "name": "cashier_operation_attribution",
+  "when": 1787710800000,
+  "preimage_files": [
+    "cashier-operation-attribution.ts",
+    "index.ts"
+  ]
+}
