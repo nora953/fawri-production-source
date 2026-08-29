@@ -1,0 +1,9 @@
+{
+  "index": 13,
+  "name": "cashier_staff_station_authority",
+  "when": 1787706000000,
+  "preimage_files": [
+    "cashier-staff.ts",
+    "index.ts"
+  ]
+}
