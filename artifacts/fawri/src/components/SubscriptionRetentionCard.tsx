@@ -7,10 +7,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
-import {
-  refreshCurrentMerchantFromApi,
-  saveSubscriptions,
-} from "@/lib/store";
+import { refreshCurrentMerchantFromApi } from "@/lib/store";
 import { loadCurrentSubscriptionAuthority } from "@/lib/currentSubscriptionAuthority";
 import { Merchant, Subscription } from "@/lib/types";
 import { subscriptionStateMessages } from "@/lib/subscriptionStateMessages";
@@ -48,8 +45,6 @@ export default function SubscriptionRetentionCard({ compact = false }: Subscript
 
     const applySubscription = (nextSubscription: Subscription | null) => {
       if (!active) return;
-      if (nextSubscription) saveSubscriptions([nextSubscription]);
-      else saveSubscriptions([]);
       setSubscription(nextSubscription);
     };
 
