@@ -1,16 +1,19 @@
-import { NOTIFICATIONS_PAGE_INSPECTION_NOTIFICATION_TEXT, NOTIFICATIONS_PAGE_OPERATIONAL_NOTIFICATION_TEXT, NOTIFICATIONS_PAGE_SUPPORT_REPLY_REMINDER_TEXT } from '@/lib/translations/features/pages/dashboard/NotificationsPage';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { NOTIFICATIONS_PAGE_AUTHORITY_TEXT, NOTIFICATIONS_PAGE_INSPECTION_NOTIFICATION_TEXT, NOTIFICATIONS_PAGE_OPERATIONAL_NOTIFICATION_TEXT, NOTIFICATIONS_PAGE_SUPPORT_REPLY_REMINDER_TEXT } from '@/lib/translations/features/pages/dashboard/NotificationsPage';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Bell, Check, ExternalLink, Loader2, MessageCircle, Package, RefreshCw, ShieldCheck } from 'lucide-react';
 
 import { useI18n } from '@/lib/i18n';
-import type {
-  MerchantBalanceNotification,
-  MerchantInspectionNotification,
-  MerchantNotification,
-  MerchantOperationalNotification,
-  MerchantSubscriptionNotification,
-  MerchantSupportReplyReminderNotification,
-} from '@/lib/types';
+import {
+  isSafeMerchantNotificationActionUrl,
+  markMerchantNotificationReadAuthority,
+  readMerchantNotificationsAuthority,
+  type MerchantBalanceNotificationRecord,
+  type MerchantInspectionNotificationRecord,
+  type MerchantNotificationRecord,
+  type MerchantOperationalNotificationRecord,
+  type MerchantSubscriptionNotificationRecord,
+  type MerchantSupportReplyReminderNotificationRecord,
+} from '@/lib/merchantNotificationsAuthority';
 import { notifyMerchantNotificationsChanged } from '@/hooks/useMerchantNotifications';
 import { MERCHANT_REALTIME_EVENT, type MerchantRealtimeDetail } from '@/hooks/useMerchantRealtime';
 
@@ -35,8 +38,8 @@ function getArabicAvailabilityWord(count: number): 'متاح' | 'متاحة' {
 }
 
 function isSubscriptionNotification(
-  notification: MerchantNotification,
-): notification is MerchantSubscriptionNotification {
+  notification: MerchantNotificationRecord,
+): notification is MerchantSubscriptionNotificationRecord {
   return (
     notification.type === 'subscription_plan_event' ||
     notification.type === 'subscription_emergency_activated' ||
@@ -52,12 +55,18 @@ const OPERATIONAL_NOTIFICATION_TEXT = NOTIFICATIONS_PAGE_OPERATIONAL_NOTIFICATIO
 
 const SUPPORT_REPLY_REMINDER_TEXT = NOTIFICATIONS_PAGE_SUPPORT_REPLY_REMINDER_TEXT;
 
+const AUTHORITY_TEXT = NOTIFICATIONS_PAGE_AUTHORITY_TEXT;
+
 export default function NotificationsPage() {
   const { t, lang } = useI18n();
-  const [notifications, setNotifications] = useState<MerchantNotification[]>([]);
+  const [notifications, setNotifications] = useState<MerchantNotificationRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [authorityStale, setAuthorityStale] = useState(false);
+  const [actionError, setActionError] = useState('');
   const [markingId, setMarkingId] = useState<string | null>(null);
+  const latestReadIdRef = useRef(0);
+  const hasConfirmedReadRef = useRef(false);
 
   const locale = lang === 'en' ? 'en-US' : lang === 'ku' ? 'ckb-IQ' : 'ar-IQ';
   const inspectionText =
@@ -78,40 +87,53 @@ export default function NotificationsPage() {
       : lang === 'ku'
         ? OPERATIONAL_NOTIFICATION_TEXT.ku
         : OPERATIONAL_NOTIFICATION_TEXT.ar;
+  const authorityText =
+    lang === 'en'
+      ? AUTHORITY_TEXT.en
+      : lang === 'ku'
+        ? AUTHORITY_TEXT.ku
+        : AUTHORITY_TEXT.ar;
 
-  const loadNotifications = useCallback(async () => {
-    setLoading(true);
-    setLoadError(false);
+  const loadNotifications = useCallback(async (silent = false) => {
+    const requestId = ++latestReadIdRef.current;
+    if (!silent) {
+      setLoading(true);
+      setLoadError(false);
+    }
+    setActionError('');
 
     try {
-      const response = await fetch('/api/auth/notifications?limit=50', {
-        cache: 'no-store',
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.ok || !Array.isArray(data.notifications)) {
-        throw new Error('invalid notification response');
-      }
+      const nextNotifications = await readMerchantNotificationsAuthority();
+      if (requestId !== latestReadIdRef.current) return;
 
-      setNotifications(data.notifications as MerchantNotification[]);
+      setNotifications(nextNotifications);
+      hasConfirmedReadRef.current = true;
+      setLoadError(false);
+      setAuthorityStale(false);
     } catch (error) {
+      if (requestId !== latestReadIdRef.current) return;
       console.error('Could not load merchant notifications:', error);
-      setLoadError(true);
+      if (hasConfirmedReadRef.current) {
+        setAuthorityStale(true);
+      } else {
+        setLoadError(true);
+      }
     } finally {
-      setLoading(false);
+      if (requestId === latestReadIdRef.current && !silent) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void loadNotifications();
 
-    const handleFocus = () => void loadNotifications();
+    const handleFocus = () => void loadNotifications(true);
     const handleRealtime = (event: Event) => {
       const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
       if (
         detail?.event === 'subscription_updated' ||
         detail?.event === 'notifications_updated'
       ) {
-        void loadNotifications();
+        void loadNotifications(true);
       }
     };
 
@@ -127,30 +149,30 @@ export default function NotificationsPage() {
     () => notifications.filter((item) => !item.read_at).length,
     [notifications],
   );
+  const authorityActionsAllowed = !loading && !loadError && !authorityStale;
 
-  const markAsRead = async (notificationId: string) => {
+  const markAsRead = async (notificationId: string): Promise<boolean> => {
+    if (!authorityActionsAllowed) {
+      setActionError(authorityText.actionFailed);
+      return false;
+    }
+
     setMarkingId(notificationId);
+    setActionError('');
 
     try {
-      const response = await fetch(
-        `/api/auth/notifications/${encodeURIComponent(notificationId)}/read`,
-        { method: 'PATCH' },
-      );
-      const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.ok || !data.notification) {
-        throw new Error('could not mark notification as read');
-      }
-
+      const currentNotification = await markMerchantNotificationReadAuthority(notificationId);
       setNotifications((current) =>
         current.map((item) =>
-          item.id === notificationId
-            ? { ...item, read_at: data.notification.read_at }
-            : item,
+          item.id === notificationId ? currentNotification : item,
         ),
       );
       notifyMerchantNotificationsChanged();
+      return true;
     } catch (error) {
       console.error('Could not mark merchant notification as read:', error);
+      setActionError(authorityText.actionFailed);
+      return false;
     } finally {
       setMarkingId(null);
     }
@@ -158,15 +180,19 @@ export default function NotificationsPage() {
 
   const openNotificationAction = async (
     notification:
-      | MerchantInspectionNotification
-      | MerchantSupportReplyReminderNotification
-      | MerchantOperationalNotification,
+      | MerchantInspectionNotificationRecord
+      | MerchantSupportReplyReminderNotificationRecord
+      | MerchantOperationalNotificationRecord,
   ) => {
-    if (!notification.read_at) await markAsRead(notification.id);
+    if (!authorityActionsAllowed || !isSafeMerchantNotificationActionUrl(notification.action_url)) {
+      setActionError(authorityText.actionFailed);
+      return;
+    }
+    if (!notification.read_at && !(await markAsRead(notification.id))) return;
     window.location.assign(notification.action_url);
   };
 
-  const renderBalanceMessage = (notification: MerchantBalanceNotification) => {
+  const renderBalanceMessage = (notification: MerchantBalanceNotificationRecord) => {
     const template =
       notification.emergency_debt_paid > 0
         ? notification.addon_replies_added > 0
@@ -189,7 +215,7 @@ export default function NotificationsPage() {
   const getPlanLabel = (plan: 'silver' | 'gold' | 'diamond' | 'trial') =>
     ({ silver: t.plan_silver, gold: t.plan_gold, diamond: t.plan_diamond, trial: t.plan_trial })[plan];
 
-  const renderSubscriptionNotification = (notification: MerchantSubscriptionNotification) => {
+  const renderSubscriptionNotification = (notification: MerchantSubscriptionNotificationRecord) => {
     const formatDate = (value: string) => new Date(value).toLocaleDateString(locale);
     if (notification.type === 'subscription_plan_event') {
       const title = notification.operation === 'activate'
@@ -267,7 +293,7 @@ export default function NotificationsPage() {
     };
   };
 
-  const renderBalanceSummary = (notification: MerchantBalanceNotification) =>
+  const renderBalanceSummary = (notification: MerchantBalanceNotificationRecord) =>
     formatNotificationText(t.balance_notification_summary, {
       base: notification.base_replies_remaining.toLocaleString(locale),
       addon: notification.addon_replies_remaining.toLocaleString(locale),
@@ -301,21 +327,41 @@ export default function NotificationsPage() {
         )}
       </div>
 
+      {actionError && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-bold text-red-900 dark:border-red-900/70 dark:bg-red-950/30 dark:text-red-100">
+          {actionError}
+        </div>
+      )}
+
+      {authorityStale && notifications.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+          <span>{authorityText.stale}</span>
+          <button
+            type="button"
+            onClick={() => void loadNotifications()}
+            className="inline-flex items-center gap-2 rounded-xl border border-amber-300 bg-background px-3 py-2 text-xs font-bold text-foreground"
+          >
+            <RefreshCw className="h-4 w-4" />
+            {authorityText.retry}
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex min-h-64 items-center justify-center rounded-2xl border border-border bg-card text-muted-foreground shadow-sm">
           <Loader2 className="me-2 h-5 w-5 animate-spin" />
           <span className="text-sm font-semibold">{t.notifications_loading}</span>
         </div>
-      ) : loadError ? (
+      ) : loadError || (authorityStale && notifications.length === 0) ? (
         <div className="flex min-h-64 flex-col items-center justify-center gap-4 rounded-2xl border border-border bg-card p-6 text-center shadow-sm">
-          <p className="font-bold text-foreground">{t.notifications_load_error}</p>
+          <p className="font-bold text-foreground">{authorityText.unavailable}</p>
           <button
             type="button"
             onClick={() => void loadNotifications()}
             className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
           >
             <RefreshCw className="h-4 w-4" />
-            {t.notifications_retry}
+            {authorityText.retry}
           </button>
         </div>
       ) : notifications.length === 0 ? (
@@ -335,6 +381,7 @@ export default function NotificationsPage() {
           {notifications.map((notification) => {
             const unread = !notification.read_at;
             const marking = markingId === notification.id;
+            const actionsDisabled = marking || !authorityActionsAllowed;
 
             if (isSubscriptionNotification(notification)) {
               const content = renderSubscriptionNotification(notification);
@@ -363,7 +410,7 @@ export default function NotificationsPage() {
                         {unread ? (
                           <button
                             type="button"
-                            disabled={marking}
+                            disabled={actionsDisabled}
                             onClick={() => void markAsRead(notification.id)}
                             className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground hover:bg-muted disabled:opacity-60"
                           >
@@ -444,7 +491,7 @@ export default function NotificationsPage() {
                       <div className="mt-3 flex justify-end">
                         <button
                           type="button"
-                          disabled={marking}
+                          disabled={actionsDisabled}
                           onClick={() => void openNotificationAction(notification)}
                           className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                         >
@@ -490,7 +537,7 @@ export default function NotificationsPage() {
                       <div className="mt-3 flex justify-end">
                         <button
                           type="button"
-                          disabled={marking}
+                          disabled={actionsDisabled}
                           onClick={() => void openNotificationAction(notification)}
                           className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                         >
@@ -616,7 +663,7 @@ export default function NotificationsPage() {
                       <div className="mt-3 flex justify-end">
                         <button
                           type="button"
-                          disabled={marking}
+                          disabled={actionsDisabled}
                           onClick={() => void openNotificationAction(notification)}
                           className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-3 py-2 text-xs font-bold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                         >
@@ -689,7 +736,7 @@ export default function NotificationsPage() {
                       {unread ? (
                         <button
                           type="button"
-                          disabled={marking}
+                          disabled={actionsDisabled}
                           onClick={() => void markAsRead(notification.id)}
                           className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-xs font-bold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
                         >
