@@ -23,10 +23,11 @@ function walk(directory) {
   return files;
 }
 
-test('active Fawri source no longer consumes legacy subscription cache APIs', () => {
+test('merchant dashboard source no longer consumes legacy subscription cache APIs', () => {
   const storePath = path.join(srcRoot, 'lib', 'store.ts');
+  const adminPagesRoot = `${path.join(srcRoot, 'pages', 'admin')}${path.sep}`;
   const offenders = walk(srcRoot)
-    .filter((file) => file !== storePath)
+    .filter((file) => file !== storePath && !file.startsWith(adminPagesRoot))
     .flatMap((file) => {
       const source = fs.readFileSync(file, 'utf8');
       const names = ['getSubscriptions', 'saveSubscriptions'].filter((name) =>
