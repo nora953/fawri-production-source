@@ -4,13 +4,15 @@ on:
   pull_request:
     paths:
       - "artifacts/api-server/src/routes/auth-session-routes.ts"
+      - "artifacts/api-server/src/routes/saved-answer-operations.ts"
       - "artifacts/fawri/src/pages/dashboard/OverviewPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/SubscriptionPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ChannelsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ServerChannelsPage.tsx"
       - "artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/SavedAnswersPage.ts"
       - "artifacts/fawri/src/pages/dashboard/SavedAnswersPage.tsx"
-      - "artifacts/fawri/src/pages/dashboard/CanonicalSavedAnswersPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ServerSavedAnswersPage.tsx"
       - "artifacts/fawri/src/components/SubscriptionRetentionCard.tsx"
       - "artifacts/fawri/src/components/SaasBillingPanel.tsx"
       - "artifacts/fawri/src/components/layout/DashboardLayout.tsx"
@@ -19,20 +21,18 @@ on:
       - "artifacts/fawri/src/hooks/useMerchantNotifications.ts"
       - "artifacts/fawri/src/lib/currentSubscriptionAuthority.ts"
       - "artifacts/fawri/src/lib/merchantLifecycle.ts"
-      - "artifacts/fawri/src/lib/savedAnswersAuthority.ts"
       - "artifacts/fawri/src/lib/subscriptionStateMessages.ts"
       - "artifacts/fawri/src/lib/translations/features/lib/subscriptionStateMessages.ts"
       - "artifacts/fawri/src/lib/translations/features/pages/dashboard/ConversationsPage.ts"
-      - "artifacts/fawri/src/lib/translations/features/pages/dashboard/SavedAnswersAuthority.ts"
       - "artifacts/fawri/src/lib/translations/saasBilling.ts"
       - "artifacts/fawri/src/pages/LandingPage.tsx"
       - "artifacts/fawri/tests/dashboard-channel-coherence.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs"
+      - "artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs"
       - "artifacts/fawri/tests/saas-billing-ui.test.ts"
-      - "artifacts/fawri/tests/saved-answers-authority-ui.test.ts"
       - ".github/workflows/dashboard-channel-coherence.yml"
   workflow_dispatch:
 
@@ -74,15 +74,14 @@ jobs:
           artifacts/fawri/tests/dashboard-channel-coherence.test.mjs
           artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs
+          artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs
           artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs
 
-      - name: Test dashboard TypeScript authority contracts
+      - name: Test subscription billing UI authority contract
         run: >-
-          node scripts/ci-run-redacted.mjs --label dashboard-typescript-authority-focused-test --
-          pnpm --filter @workspace/fawri exec tsx --test
-          ./tests/saas-billing-ui.test.ts
-          ./tests/saved-answers-authority-ui.test.ts
+          node scripts/ci-run-redacted.mjs --label billing-authority-focused-test --
+          pnpm --filter @workspace/fawri exec tsx --test ./tests/saas-billing-ui.test.ts
 
       - name: Type-check API server
         run: node scripts/ci-run-redacted.mjs --label api-server-typecheck -- pnpm --filter @workspace/api-server run typecheck
