@@ -1,1 +1,1 @@
-export { default } from './CanonicalSavedAnswersPage';
+export { default } from "./ServerSavedAnswersPage";
