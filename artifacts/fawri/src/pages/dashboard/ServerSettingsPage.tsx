@@ -158,6 +158,7 @@ function isMerchantSettings(value: unknown): value is MerchantSettings {
 
   return (
     typeof value.merchant_id === 'string' &&
+    typeof value.version === 'number' &&
     Number.isInteger(value.version) &&
     typeof value.auto_reply_enabled === 'boolean' &&
     (value.reply_language === 'auto' ||
@@ -509,345 +510,345 @@ export default function ServerSettingsPage() {
         ) : null}
 
         <fieldset disabled={authorityStatus !== 'ready' || saving} className="contents">
-          <Card>
-            <CardHeader>
-              <CardTitle>{copy.autoReply}</CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
-                {copy.autoReply}
-                <input
-                  type="checkbox"
-                  checked={draft.auto_reply_enabled}
-                  onChange={event =>
-                    updateDraft(current => ({
-                      ...current,
-                      auto_reply_enabled: event.target.checked,
-                    }))
-                  }
-                  className="h-5 w-5 accent-primary"
-                />
-              </label>
-              <label className="space-y-2 rounded-xl border p-4 font-semibold">
-                <span>{copy.replyLanguage}</span>
-                <select
-                  value={draft.reply_language}
-                  onChange={event =>
-                    updateDraft(current => ({
-                      ...current,
-                      reply_language: event.target.value as ReplyLanguage,
-                    }))
-                  }
-                  className="h-11 w-full rounded-md border bg-background px-3"
-                >
-                  <option value="auto">{commonCopy.auto}</option>
-                  <option value="ar">{COMMON_UI_LABELS.languageNames.ar}</option>
-                  <option value="ku">{COMMON_UI_LABELS.languageNames.ku}</option>
-                  <option value="en">{COMMON_UI_LABELS.languageNames.en}</option>
-                </select>
-              </label>
-            </CardContent>
-          </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>{copy.autoReply}</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
+              {copy.autoReply}
+              <input
+                type="checkbox"
+                checked={draft.auto_reply_enabled}
+                onChange={event =>
+                  updateDraft(current => ({
+                    ...current,
+                    auto_reply_enabled: event.target.checked,
+                  }))
+                }
+                className="h-5 w-5 accent-primary"
+              />
+            </label>
+            <label className="space-y-2 rounded-xl border p-4 font-semibold">
+              <span>{copy.replyLanguage}</span>
+              <select
+                value={draft.reply_language}
+                onChange={event =>
+                  updateDraft(current => ({
+                    ...current,
+                    reply_language: event.target.value as ReplyLanguage,
+                  }))
+                }
+                className="h-11 w-full rounded-md border bg-background px-3"
+              >
+                <option value="auto">{commonCopy.auto}</option>
+                <option value="ar">{COMMON_UI_LABELS.languageNames.ar}</option>
+                <option value="ku">{COMMON_UI_LABELS.languageNames.ku}</option>
+                <option value="en">{COMMON_UI_LABELS.languageNames.en}</option>
+              </select>
+            </label>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{copy.delivery}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
-                {copy.deliveryEnabled}
-                <input
-                  type="checkbox"
-                  checked={draft.delivery.enabled}
-                  onChange={event =>
+        <Card>
+          <CardHeader>
+            <CardTitle>{copy.delivery}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
+              {copy.deliveryEnabled}
+              <input
+                type="checkbox"
+                checked={draft.delivery.enabled}
+                onChange={event =>
+                  updateDraft(current => ({
+                    ...current,
+                    delivery: { ...current.delivery, enabled: event.target.checked },
+                  }))
+                }
+                className="h-5 w-5 accent-primary"
+              />
+            </label>
+            <label className="block space-y-2 rounded-xl border p-4 text-sm font-semibold">
+              <span>{copy.pricingMode}</span>
+              <select
+                value={draft.delivery.pricing_mode}
+                onChange={event =>
+                  updateDraft(current => ({
+                    ...current,
+                    delivery: {
+                      ...current.delivery,
+                      pricing_mode: event.target.value as DeliveryPricingMode,
+                    },
+                  }))
+                }
+                className="h-11 w-full rounded-md border bg-background px-3"
+              >
+                <option value="flat">{copy.flatPricing}</option>
+                <option value="per_area">{copy.perAreaPricing}</option>
+              </select>
+            </label>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <label className="space-y-2 text-sm font-medium">
+                <span>{copy.deliveryFee} ({currencyCode})</span>
+                <Input
+                  type="number"
+                  min={0}
+                  step={currencyStep}
+                  disabled={draft.delivery.pricing_mode === 'per_area'}
+                  value={displayMoney(draft.delivery.fee_iqd)}
+                  onChange={event => {
+                    const minor = parseMoney(event.target.value || '0');
+                    if (minor === null) return;
                     updateDraft(current => ({
                       ...current,
-                      delivery: { ...current.delivery, enabled: event.target.checked },
-                    }))
-                  }
-                  className="h-5 w-5 accent-primary"
+                      delivery: {
+                        ...current.delivery,
+                        fee_iqd: minor,
+                      },
+                    }));
+                  }}
                 />
               </label>
-              <label className="block space-y-2 rounded-xl border p-4 text-sm font-semibold">
-                <span>{copy.pricingMode}</span>
-                <select
-                  value={draft.delivery.pricing_mode}
+              <label className="space-y-2 text-sm font-medium">
+                <span>{copy.freeThreshold} ({currencyCode})</span>
+                <Input
+                  type="number"
+                  min={0}
+                  step={currencyStep}
+                  value={
+                    draft.delivery.free_delivery_threshold_iqd === null
+                      ? ''
+                      : displayMoney(draft.delivery.free_delivery_threshold_iqd)
+                  }
+                  onChange={event => {
+                    if (!event.target.value) {
+                      updateDraft(current => ({
+                        ...current,
+                        delivery: {
+                          ...current.delivery,
+                          free_delivery_threshold_iqd: null,
+                        },
+                      }));
+                      return;
+                    }
+                    const minor = parseMoney(event.target.value);
+                    if (minor === null) return;
+                    updateDraft(current => ({
+                      ...current,
+                      delivery: {
+                        ...current.delivery,
+                        free_delivery_threshold_iqd: minor,
+                      },
+                    }));
+                  }}
+                />
+              </label>
+              <label className="space-y-2 text-sm font-medium">
+                <span>{copy.minDays}</span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={draft.delivery.estimated_days_min}
                   onChange={event =>
                     updateDraft(current => ({
                       ...current,
                       delivery: {
                         ...current.delivery,
-                        pricing_mode: event.target.value as DeliveryPricingMode,
+                        estimated_days_min: Math.max(1, Number(event.target.value || 1)),
                       },
                     }))
                   }
-                  className="h-11 w-full rounded-md border bg-background px-3"
-                >
-                  <option value="flat">{copy.flatPricing}</option>
-                  <option value="per_area">{copy.perAreaPricing}</option>
-                </select>
+                />
               </label>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <label className="space-y-2 text-sm font-medium">
-                  <span>{copy.deliveryFee} ({currencyCode})</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={currencyStep}
-                    disabled={draft.delivery.pricing_mode === 'per_area'}
-                    value={displayMoney(draft.delivery.fee_iqd)}
-                    onChange={event => {
-                      const minor = parseMoney(event.target.value || '0');
-                      if (minor === null) return;
-                      updateDraft(current => ({
-                        ...current,
-                        delivery: {
-                          ...current.delivery,
-                          fee_iqd: minor,
-                        },
-                      }));
-                    }}
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium">
-                  <span>{copy.freeThreshold} ({currencyCode})</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={currencyStep}
-                    value={
-                      draft.delivery.free_delivery_threshold_iqd === null
-                        ? ''
-                        : displayMoney(draft.delivery.free_delivery_threshold_iqd)
-                    }
-                    onChange={event => {
-                      if (!event.target.value) {
-                        updateDraft(current => ({
-                          ...current,
-                          delivery: {
-                            ...current.delivery,
-                            free_delivery_threshold_iqd: null,
-                          },
-                        }));
-                        return;
-                      }
-                      const minor = parseMoney(event.target.value);
-                      if (minor === null) return;
-                      updateDraft(current => ({
-                        ...current,
-                        delivery: {
-                          ...current.delivery,
-                          free_delivery_threshold_iqd: minor,
-                        },
-                      }));
-                    }}
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium">
-                  <span>{copy.minDays}</span>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={draft.delivery.estimated_days_min}
-                    onChange={event =>
-                      updateDraft(current => ({
-                        ...current,
-                        delivery: {
-                          ...current.delivery,
-                          estimated_days_min: Math.max(1, Number(event.target.value || 1)),
-                        },
-                      }))
-                    }
-                  />
-                </label>
-                <label className="space-y-2 text-sm font-medium">
-                  <span>{copy.maxDays}</span>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={365}
-                    value={draft.delivery.estimated_days_max}
-                    onChange={event =>
-                      updateDraft(current => ({
-                        ...current,
-                        delivery: {
-                          ...current.delivery,
-                          estimated_days_max: Math.max(1, Number(event.target.value || 1)),
-                        },
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-              {draft.delivery.pricing_mode === 'per_area' ? (
-                <div className="space-y-3 rounded-xl border p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-semibold">{copy.perAreaPricing}</span>
-                    <Button type="button" variant="outline" onClick={addAreaRate}>
-                      {copy.addArea}
+              <label className="space-y-2 text-sm font-medium">
+                <span>{copy.maxDays}</span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={365}
+                  value={draft.delivery.estimated_days_max}
+                  onChange={event =>
+                    updateDraft(current => ({
+                      ...current,
+                      delivery: {
+                        ...current.delivery,
+                        estimated_days_max: Math.max(1, Number(event.target.value || 1)),
+                      },
+                    }))
+                  }
+                />
+              </label>
+            </div>
+            {draft.delivery.pricing_mode === 'per_area' ? (
+              <div className="space-y-3 rounded-xl border p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm font-semibold">{copy.perAreaPricing}</span>
+                  <Button type="button" variant="outline" onClick={addAreaRate}>
+                    {copy.addArea}
+                  </Button>
+                </div>
+                {draft.delivery.area_rates.map((rate, index) => (
+                  <div
+                    key={rate.id || index}
+                    className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_180px_auto]"
+                  >
+                    <label className="space-y-1 text-sm font-medium">
+                      <span>{copy.areaName}</span>
+                      <Input
+                        value={rate.area_name}
+                        maxLength={100}
+                        onChange={event =>
+                          updateAreaRate(index, { area_name: event.target.value })
+                        }
+                      />
+                    </label>
+                    <label className="space-y-1 text-sm font-medium">
+                      <span>{copy.areaFee} ({currencyCode})</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={currencyStep}
+                        value={displayMoney(rate.fee_iqd)}
+                        onChange={event => {
+                          const minor = parseMoney(event.target.value || '0');
+                          if (minor === null) return;
+                          updateAreaRate(index, { fee_iqd: minor });
+                        }}
+                      />
+                    </label>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="self-end"
+                      onClick={() => removeAreaRate(index)}
+                    >
+                      {copy.removeArea}
                     </Button>
                   </div>
-                  {draft.delivery.area_rates.map((rate, index) => (
-                    <div
-                      key={rate.id || index}
-                      className="grid gap-3 rounded-lg border p-3 sm:grid-cols-[1fr_180px_auto]"
-                    >
-                      <label className="space-y-1 text-sm font-medium">
-                        <span>{copy.areaName}</span>
-                        <Input
-                          value={rate.area_name}
-                          maxLength={100}
-                          onChange={event =>
-                            updateAreaRate(index, { area_name: event.target.value })
-                          }
-                        />
-                      </label>
-                      <label className="space-y-1 text-sm font-medium">
-                        <span>{copy.areaFee} ({currencyCode})</span>
-                        <Input
-                          type="number"
-                          min={0}
-                          step={currencyStep}
-                          value={displayMoney(rate.fee_iqd)}
-                          onChange={event => {
-                            const minor = parseMoney(event.target.value || '0');
-                            if (minor === null) return;
-                            updateAreaRate(index, { fee_iqd: minor });
-                          }}
-                        />
-                      </label>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="self-end"
-                        onClick={() => removeAreaRate(index)}
-                      >
-                        {copy.removeArea}
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : null}
-              <label className="block space-y-2 text-sm font-medium">
-                <span>{copy.areas}</span>
-                <textarea
-                  value={areasText}
-                  disabled={draft.delivery.pricing_mode === 'per_area'}
-                  onChange={event => setAreasText(event.target.value)}
-                  rows={4}
-                  maxLength={10000}
-                  className="w-full rounded-md border bg-background p-3 text-sm"
-                />
-              </label>
-              <label className="block space-y-2 text-sm font-medium">
-                <span>{copy.notes}</span>
-                <textarea
-                  value={draft.delivery.notes}
-                  onChange={event =>
-                    updateDraft(current => ({
-                      ...current,
-                      delivery: {
-                        ...current.delivery,
-                        notes: event.target.value.slice(0, 1000),
-                      },
-                    }))
-                  }
-                  rows={3}
-                  maxLength={1000}
-                  className="w-full rounded-md border bg-background p-3 text-sm"
-                />
-              </label>
-            </CardContent>
-          </Card>
+                ))}
+              </div>
+            ) : null}
+            <label className="block space-y-2 text-sm font-medium">
+              <span>{copy.areas}</span>
+              <textarea
+                value={areasText}
+                disabled={draft.delivery.pricing_mode === 'per_area'}
+                onChange={event => setAreasText(event.target.value)}
+                rows={4}
+                maxLength={10000}
+                className="w-full rounded-md border bg-background p-3 text-sm"
+              />
+            </label>
+            <label className="block space-y-2 text-sm font-medium">
+              <span>{copy.notes}</span>
+              <textarea
+                value={draft.delivery.notes}
+                onChange={event =>
+                  updateDraft(current => ({
+                    ...current,
+                    delivery: {
+                      ...current.delivery,
+                      notes: event.target.value.slice(0, 1000),
+                    },
+                  }))
+                }
+                rows={3}
+                maxLength={1000}
+                className="w-full rounded-md border bg-background p-3 text-sm"
+              />
+            </label>
+          </CardContent>
+        </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>{copy.payment}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
-                  {copy.cash}
-                  <input
-                    type="checkbox"
-                    checked={draft.payment.cash_on_delivery_enabled}
-                    onChange={event => {
-                      const enabled = event.target.checked;
-                      updateDraft(current => {
-                        const methods = new Set(current.payment.methods);
-                        enabled ? methods.add('cash_on_delivery') : methods.delete('cash_on_delivery');
-                        return {
-                          ...current,
-                          payment: {
-                            ...current.payment,
-                            cash_on_delivery_enabled: enabled,
-                            methods: [...methods],
-                          },
-                        };
-                      });
-                    }}
-                    className="h-5 w-5 accent-primary"
-                  />
-                </label>
-                <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
-                  {copy.electronic}
-                  <input
-                    type="checkbox"
-                    checked={draft.payment.electronic_payment_enabled}
-                    onChange={event => {
-                      const enabled = event.target.checked;
-                      updateDraft(current => ({
+        <Card>
+          <CardHeader>
+            <CardTitle>{copy.payment}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
+                {copy.cash}
+                <input
+                  type="checkbox"
+                  checked={draft.payment.cash_on_delivery_enabled}
+                  onChange={event => {
+                    const enabled = event.target.checked;
+                    updateDraft(current => {
+                      const methods = new Set(current.payment.methods);
+                      enabled ? methods.add('cash_on_delivery') : methods.delete('cash_on_delivery');
+                      return {
                         ...current,
                         payment: {
                           ...current.payment,
-                          electronic_payment_enabled: enabled,
-                          methods: enabled
-                            ? current.payment.methods
-                            : current.payment.methods.filter(
-                                method => method === 'cash_on_delivery',
-                              ),
+                          cash_on_delivery_enabled: enabled,
+                          methods: [...methods],
                         },
-                      }));
-                    }}
-                    className="h-5 w-5 accent-primary"
-                  />
-                </label>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {ELECTRONIC_METHODS.map(method => (
-                  <label key={method} className="flex items-center gap-3 rounded-xl border p-3">
-                    <input
-                      type="checkbox"
-                      checked={draft.payment.methods.includes(method)}
-                      disabled={!draft.payment.electronic_payment_enabled}
-                      onChange={event => toggleMethod(method, event.target.checked)}
-                      className="h-4 w-4 accent-primary"
-                    />
-                    <span className="text-sm font-medium">{method}</span>
-                  </label>
-                ))}
-              </div>
-              <label className="block space-y-2 text-sm font-medium">
-                <span>{copy.instructions}</span>
-                <textarea
-                  value={draft.payment.instructions}
-                  onChange={event =>
+                      };
+                    });
+                  }}
+                  className="h-5 w-5 accent-primary"
+                />
+              </label>
+              <label className="flex items-center justify-between rounded-xl border p-4 font-semibold">
+                {copy.electronic}
+                <input
+                  type="checkbox"
+                  checked={draft.payment.electronic_payment_enabled}
+                  onChange={event => {
+                    const enabled = event.target.checked;
                     updateDraft(current => ({
                       ...current,
                       payment: {
                         ...current.payment,
-                        instructions: event.target.value.slice(0, 2000),
+                        electronic_payment_enabled: enabled,
+                        methods: enabled
+                          ? current.payment.methods
+                          : current.payment.methods.filter(
+                              method => method === 'cash_on_delivery',
+                            ),
                       },
-                    }))
-                  }
-                  rows={4}
-                  maxLength={2000}
-                  className="w-full rounded-md border bg-background p-3 text-sm"
+                    }));
+                  }}
+                  className="h-5 w-5 accent-primary"
                 />
               </label>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {ELECTRONIC_METHODS.map(method => (
+                <label key={method} className="flex items-center gap-3 rounded-xl border p-3">
+                  <input
+                    type="checkbox"
+                    checked={draft.payment.methods.includes(method)}
+                    disabled={!draft.payment.electronic_payment_enabled}
+                    onChange={event => toggleMethod(method, event.target.checked)}
+                    className="h-4 w-4 accent-primary"
+                  />
+                  <span className="text-sm font-medium">{method}</span>
+                </label>
+              ))}
+            </div>
+            <label className="block space-y-2 text-sm font-medium">
+              <span>{copy.instructions}</span>
+              <textarea
+                value={draft.payment.instructions}
+                onChange={event =>
+                  updateDraft(current => ({
+                    ...current,
+                    payment: {
+                      ...current.payment,
+                      instructions: event.target.value.slice(0, 2000),
+                    },
+                  }))
+                }
+                rows={4}
+                maxLength={2000}
+                className="w-full rounded-md border bg-background p-3 text-sm"
+              />
+            </label>
+          </CardContent>
+        </Card>
         </fieldset>
       </div>
     </main>
