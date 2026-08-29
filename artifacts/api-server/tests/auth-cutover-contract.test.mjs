@@ -59,6 +59,34 @@ test("merchant operational authority uses the secure server session context", as
   );
 });
 
+test("business compatibility guard prefers the validated PostgreSQL merchant context", async () => {
+  const auth = await source("src/routes/auth.ts");
+  const legacyRuntime = await source("src/routes/authRuntimePart4.ts");
+
+  assert.match(auth, /getAuthContext/);
+  assert.match(auth, /getAuthContext\(res\)\?\.merchantProfile\?\.merchantId/);
+  assert.match(auth, /res\.locals\.merchantId = merchantId/);
+  assert.match(auth, /requireLegacyMerchantSession\(req, res, next\)/);
+
+  const contextRead = auth.indexOf("getAuthContext(res)?.merchantProfile?.merchantId");
+  const legacyFallback = auth.indexOf("requireLegacyMerchantSession(req, res, next)");
+  assert.ok(contextRead >= 0, "secure merchant context must be read");
+  assert.ok(
+    legacyFallback > contextRead,
+    "legacy guard may run only after the secure server-derived context is absent",
+  );
+
+  assert.doesNotMatch(
+    auth,
+    /notifyMerchantNewOrder,\s*requireMerchantSession,\s*verifyMerchantOAuthState/s,
+  );
+  assert.match(
+    legacyRuntime,
+    /!payload \|\| !merchantSessionAccountExists\(payload\.merchantId\)/,
+    "legacy fallback must retain its existing account-existence fail-closed check",
+  );
+});
+
 test("production password pepper fails closed", async () => {
   const passwordService = await source("src/services/authPasswordService.ts");
   assert.match(passwordService, /NODE_ENV === "production"/);
