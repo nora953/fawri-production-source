@@ -71,8 +71,10 @@ test("settings UI loads and saves only through versioned server authority", () =
   assert.match(page, /method: 'PATCH'/);
   assert.match(page, /expected_version: settings\.version/);
   assert.match(page, /MERCHANT_SETTINGS_VERSION_CONFLICT/);
-  assert.match(page, /applyServerState\(data\.current_settings as MerchantSettings\)/);
-  assert.match(page, /applyServerState\(data\.settings as MerchantSettings\)/);
+  assert.match(page, /isMerchantSettings\(data\.current_settings\)/);
+  assert.match(page, /applyServerState\(data\.current_settings\)/);
+  assert.match(page, /isMerchantSettings\(data\.settings\)/);
+  assert.match(page, /applyServerState\(data\.settings\)/);
 
   const patchStart = page.indexOf("method: 'PATCH'");
   const responseValidation = page.indexOf("if (!response.ok", patchStart);
