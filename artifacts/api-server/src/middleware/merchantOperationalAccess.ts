@@ -5,7 +5,7 @@ import {
 } from "./authSession";
 import { verifyMerchantOAuthState } from "../routes/auth";
 import {
-  getMerchantOperationalDecision,
+  getMerchantOperationalDecisionAuthoritative,
   type MerchantOperationalDecision,
 } from "../services/merchantOperationalAccess";
 
@@ -64,16 +64,19 @@ export function enforceMerchantOperationalAccess(
   }
 
   requireMerchantSession(req, res, () => {
-    const decision = getMerchantOperationalDecision(
+    void getMerchantOperationalDecisionAuthoritative(
       getMerchantIdFromSession(res),
-    );
-    if (!decision.allowed) {
-      sendDeniedDecision(res, decision);
-      return;
-    }
+    )
+      .then((decision) => {
+        if (!decision.allowed) {
+          sendDeniedDecision(res, decision);
+          return;
+        }
 
-    res.setHeader("Cache-Control", "no-store");
-    next();
+        res.setHeader("Cache-Control", "no-store");
+        next();
+      })
+      .catch(next);
   });
 }
 
@@ -94,11 +97,14 @@ export function enforceMerchantOAuthCallbackOperationalAccess(
     return;
   }
 
-  const decision = getMerchantOperationalDecision(state.merchantId);
-  if (!decision.allowed) {
-    sendDeniedDecision(res, decision);
-    return;
-  }
+  void getMerchantOperationalDecisionAuthoritative(state.merchantId)
+    .then((decision) => {
+      if (!decision.allowed) {
+        sendDeniedDecision(res, decision);
+        return;
+      }
 
-  next();
+      next();
+    })
+    .catch(next);
 }
