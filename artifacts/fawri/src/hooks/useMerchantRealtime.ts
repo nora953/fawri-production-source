@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 
-import { saveSubscriptions } from '@/lib/store';
 import type { Subscription } from '@/lib/types';
 
 export const MERCHANT_REALTIME_EVENT = 'fawri:merchant-realtime';
@@ -53,12 +52,6 @@ function dispatchRealtimeData(
       typeof payload.emitted_at !== 'string'
     ) {
       return;
-    }
-
-    if (payload.subscription) {
-      saveSubscriptions([payload.subscription]);
-    } else {
-      saveSubscriptions([]);
     }
 
     window.dispatchEvent(
