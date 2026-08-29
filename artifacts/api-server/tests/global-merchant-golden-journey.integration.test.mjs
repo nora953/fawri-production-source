@@ -235,10 +235,16 @@ test(
     const runtimeDirectory = path.join(dataDirectory, "runtime");
 
     await mkdir(runtimeDirectory, { recursive: true });
-    await pool.query("DELETE FROM accounts WHERE id = $1 OR phone = $2", [
-      merchantId,
-      phone,
-    ]);
+    await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]);
+    const phoneCollision = await pool.query(
+      "SELECT id FROM accounts WHERE phone = $1 LIMIT 1",
+      [phone],
+    );
+    assert.equal(
+      phoneCollision.rows.length,
+      0,
+      "generated golden journey phone must not collide with an existing account",
+    );
     await pool.query(
       `INSERT INTO accounts (
          id, kind, phone, password_hash, password_version, security_version,
