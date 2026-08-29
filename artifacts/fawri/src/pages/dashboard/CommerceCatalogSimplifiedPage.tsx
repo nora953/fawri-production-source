@@ -333,7 +333,7 @@ const COPY: Record<Lang, PageCopy> = {
     description: 'Description',
     descriptionPlaceholder: 'Clear information Fawri can rely on when answering customers.',
     fawri: 'Use this item in Fawri replies',
-    fawriHint: 'When disabled, the item stays in catalog and cashier, but Fawri will not use it in automated replies.',
+    fawriHint: 'When disabled, the item stays in catalog and cashier, but Fawri will not use its information in automated replies.',
     inventory: 'Inventory management',
     inventorySet: 'Set',
     inventorySaved: 'Inventory updated.',
@@ -476,7 +476,9 @@ export default function CommerceCatalogSimplifiedPage() {
   const [saving, setSaving] = useState(false);
   const [inventoryValues, setInventoryValues] = useState<Record<string, string>>({});
   const [inventoryBusy, setInventoryBusy] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [expandedInventoryProducts, setExpandedInventoryProducts] = useState<Record<string, boolean>>({});
+  const mutationBusy = saving || inventoryBusy !== null || deletingId !== null;
 
   const fractionDigits = commerceContext?.currency_fraction_digits ?? 0;
   const moneyStep = catalogCurrencyStep(fractionDigits);
@@ -544,19 +546,19 @@ export default function CommerceCatalogSimplifiedPage() {
 
   useEffect(() => {
     return subscribeCashierDashboardRefresh(() => {
-      if (formOpen || saving || inventoryBusy || !authorityReady) {
+      if (formOpen || mutationBusy || !authorityReady) {
         pendingCashierRefresh.current = true;
         return;
       }
       setReload(value => value + 1);
     });
-  }, [formOpen, saving, inventoryBusy, authorityReady]);
+  }, [formOpen, mutationBusy, authorityReady]);
 
   useEffect(() => {
-    if (formOpen || saving || inventoryBusy || !authorityReady || !pendingCashierRefresh.current) return;
+    if (formOpen || mutationBusy || !authorityReady || !pendingCashierRefresh.current) return;
     pendingCashierRefresh.current = false;
     setReload(value => value + 1);
-  }, [formOpen, saving, inventoryBusy, authorityReady]);
+  }, [formOpen, mutationBusy, authorityReady]);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
@@ -612,6 +614,7 @@ export default function CommerceCatalogSimplifiedPage() {
       toast.error(copy.loadFailed);
       return;
     }
+    if (mutationBusy) return;
     createAttempt.current = null;
     setEditingId(null);
     try {
@@ -627,6 +630,7 @@ export default function CommerceCatalogSimplifiedPage() {
       toast.error(copy.loadFailed);
       return;
     }
+    if (mutationBusy) return;
     createAttempt.current = null;
     setEditingId(product.id);
     try {
@@ -717,6 +721,8 @@ export default function CommerceCatalogSimplifiedPage() {
     } catch (reloadError) {
       console.error('Catalog conflict reload failed:', reloadError);
       setAuthorityReady(false);
+      setCommerceContext(null);
+      setLoadError(true);
       toast.error(loadFailedRef.current);
     }
     toast.error(copy.versionConflict);
@@ -724,10 +730,11 @@ export default function CommerceCatalogSimplifiedPage() {
   };
 
   const save = async () => {
-    if (saving || !authorityReady) {
-      if (!authorityReady) toast.error(copy.loadFailed);
+    if (!authorityReady) {
+      toast.error(copy.loadFailed);
       return;
     }
+    if (mutationBusy) return;
     const authorityForm = validate();
     if (!authorityForm) return;
     setSaving(true);
@@ -740,12 +747,10 @@ export default function CommerceCatalogSimplifiedPage() {
       if (editingId) {
         const current = existing;
         if (!current) throw new Error('catalog item missing');
-        setAuthorityReady(false);
         try {
           const updated = await updateCatalogProduct(current.id, current.version, input);
           setItems(currentItems => upsert(currentItems, updated));
           syncInventory(updated);
-          setAuthorityReady(true);
           toast.success(copy.updated);
           closeForm(true);
         } catch (error) {
@@ -761,17 +766,14 @@ export default function CommerceCatalogSimplifiedPage() {
           return;
         }
         createAttempt.current = attempt;
-        setAuthorityReady(false);
         const created = await createCatalogProduct(input, attempt.key);
         createAttempt.current = null;
         setItems(currentItems => upsert(currentItems, created));
         syncInventory(created);
-        setAuthorityReady(true);
         toast.success(copy.saved);
         closeForm(true);
       }
     } catch (error) {
-      setAuthorityReady(false);
       console.error('Catalog save failed:', error);
       toast.error(error instanceof CatalogApiError ? `${copy.saveFailed} (${error.code})` : copy.saveFailed);
     } finally {
@@ -784,8 +786,9 @@ export default function CommerceCatalogSimplifiedPage() {
       toast.error(copy.loadFailed);
       return;
     }
+    if (mutationBusy) return;
     if (!window.confirm(copy.deleteConfirm)) return;
-    setAuthorityReady(false);
+    setDeletingId(product.id);
     try {
       await deleteCatalogProduct(product.id, product.version);
       setItems(current => current.filter(item => item.id !== product.id));
@@ -794,12 +797,12 @@ export default function CommerceCatalogSimplifiedPage() {
         delete next[product.id];
         return next;
       });
-      setAuthorityReady(true);
       toast.success(copy.deleted);
     } catch (error) {
       if (await loadConflict(product.id, error)) return;
-      setAuthorityReady(false);
       toast.error(copy.saveFailed);
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -813,13 +816,13 @@ export default function CommerceCatalogSimplifiedPage() {
       toast.error(copy.loadFailed);
       return;
     }
+    if (mutationBusy) return;
     const key = inventoryKey(product.id, variant?.id);
     const quantity = parseQuantity(inventoryValues[key] ?? '');
     if (quantity === null) {
       toast.error(copy.invalidQuantity);
       return;
     }
-    setAuthorityReady(false);
     setInventoryBusy(key);
     try {
       const updated = await setCatalogInventory({
@@ -830,11 +833,9 @@ export default function CommerceCatalogSimplifiedPage() {
       });
       setItems(current => upsert(current, updated));
       syncInventory(updated);
-      setAuthorityReady(true);
       toast.success(copy.inventorySaved);
     } catch (error) {
       if (await loadConflict(product.id, error)) return;
-      setAuthorityReady(false);
       toast.error(copy.inventoryFailed);
     } finally {
       setInventoryBusy(null);
@@ -846,6 +847,7 @@ export default function CommerceCatalogSimplifiedPage() {
       toast.error(copy.loadFailed);
       return;
     }
+    if (mutationBusy) return;
     const key = inventoryKey(product.id, variant?.id);
     const request = {
       productId: product.id,
@@ -862,18 +864,15 @@ export default function CommerceCatalogSimplifiedPage() {
       return;
     }
     inventoryAttempt.current = attempt;
-    setAuthorityReady(false);
     setInventoryBusy(key);
     try {
       const updated = await adjustCatalogInventory(request, attempt.key);
       inventoryAttempt.current = null;
       setItems(current => upsert(current, updated));
       syncInventory(updated);
-      setAuthorityReady(true);
       toast.success(copy.inventorySaved);
     } catch (error) {
       if (await loadConflict(product.id, error)) return;
-      setAuthorityReady(false);
       toast.error(copy.inventoryFailed);
     } finally {
       setInventoryBusy(null);
@@ -889,7 +888,7 @@ export default function CommerceCatalogSimplifiedPage() {
             <p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">{copy.subtitle}</p>
           </div>
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-            <Button type="button" onClick={openCreate} disabled={!authorityReady || !commerceContext || loading} className="h-11 rounded-xl bg-orange-500 px-4 font-bold text-white hover:bg-orange-600"><Plus className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />{copy.add}</Button>
+            <Button type="button" onClick={openCreate} disabled={!authorityReady || !commerceContext || loading || mutationBusy} className="h-11 rounded-xl bg-orange-500 px-4 font-bold text-white hover:bg-orange-600"><Plus className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />{copy.add}</Button>
             <Button type="button" variant="outline" onClick={() => { window.location.href = '/dashboard/products/import'; }} className="h-11 rounded-xl px-4 font-bold"><Upload className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />{copy.import}</Button>
           </div>
         </div>
@@ -950,8 +949,8 @@ export default function CommerceCatalogSimplifiedPage() {
                       {product.sku && <p className="mt-1 text-xs font-medium text-muted-foreground" dir="ltr">SKU: {product.sku}</p>}
                     </div>
                     <div className="flex shrink-0 flex-col gap-2">
-                      <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={!authorityReady} onClick={() => openEdit(product)}><Pencil className="h-4 w-4" /></Button>
-                      <Button type="button" variant="destructive" size="icon" className="h-10 w-10 rounded-xl" disabled={!authorityReady} onClick={() => void remove(product)}><Trash2 className="h-4 w-4" /></Button>
+                      <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={!authorityReady || mutationBusy} onClick={() => openEdit(product)}><Pencil className="h-4 w-4" /></Button>
+                      <Button type="button" variant="destructive" size="icon" className="h-10 w-10 rounded-xl" disabled={!authorityReady || mutationBusy} onClick={() => void remove(product)}><Trash2 className="h-4 w-4" /></Button>
                     </div>
                   </div>
                 </div>
@@ -994,10 +993,10 @@ export default function CommerceCatalogSimplifiedPage() {
                         <div id={inventoryPanelId} className="mt-3 space-y-2">
                           {hasVariants ? product.variants.map(variant => {
                             const key = inventoryKey(product.id, variant.id);
-                            return <InventoryControl key={variant.id} copy={copy} product={product} variant={variant} value={inventoryValues[key] ?? String(variant.stock_quantity)} busy={inventoryBusy === key || !authorityReady} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product, variant)} onAdjust={delta => void adjustInventory(product, delta, variant)} />;
+                            return <InventoryControl key={variant.id} copy={copy} product={product} variant={variant} value={inventoryValues[key] ?? String(variant.stock_quantity)} busy={mutationBusy || !authorityReady} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product, variant)} onAdjust={delta => void adjustInventory(product, delta, variant)} />;
                           }) : (() => {
                             const key = inventoryKey(product.id);
-                            return <InventoryControl copy={copy} product={product} value={inventoryValues[key] ?? String(product.stock_quantity)} busy={inventoryBusy === key || !authorityReady} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product)} onAdjust={delta => void adjustInventory(product, delta)} />;
+                            return <InventoryControl copy={copy} product={product} value={inventoryValues[key] ?? String(product.stock_quantity)} busy={mutationBusy || !authorityReady} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product)} onAdjust={delta => void adjustInventory(product, delta)} />;
                           })()}
                         </div>
                       )}
