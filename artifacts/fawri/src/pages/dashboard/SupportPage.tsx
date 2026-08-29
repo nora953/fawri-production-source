@@ -1,6 +1,11 @@
-import { SUPPORT_PAGE_SUPPORT_LIFECYCLE_TEXT, SUPPORT_PAGE_INSPECTION_TEXT } from '@/lib/translations/features/pages/dashboard/SupportPage';
+import {
+  SUPPORT_PAGE_AUTHORITY_TEXT,
+  SUPPORT_PAGE_SUPPORT_LIFECYCLE_TEXT,
+  SUPPORT_PAGE_INSPECTION_TEXT,
+} from '@/lib/translations/features/pages/dashboard/SupportPage';
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
+  AlertTriangle,
   ChevronDown,
   Eye,
   Headphones,
@@ -89,8 +94,8 @@ type SupportTicket = {
 };
 
 const INSPECTION_TEXT = SUPPORT_PAGE_INSPECTION_TEXT;
-
 const SUPPORT_LIFECYCLE_TEXT = SUPPORT_PAGE_SUPPORT_LIFECYCLE_TEXT;
+const SUPPORT_AUTHORITY_TEXT = SUPPORT_PAGE_AUTHORITY_TEXT;
 
 const categoryValues: SupportCategory[] = [
   'technical',
@@ -106,6 +111,7 @@ export default function SupportPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [staleAuthority, setStaleAuthority] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [subject, setSubject] = useState('');
   const [category, setCategory] = useState<SupportCategory>('technical');
@@ -120,6 +126,8 @@ export default function SupportPage() {
   const [showInspectionDetails, setShowInspectionDetails] = useState(false);
   const [formError, setFormError] = useState('');
   const conversationRef = useRef<HTMLDivElement | null>(null);
+  const loadRequestIdRef = useRef(0);
+  const hasConfirmedAuthorityRef = useRef(false);
   const requestedTicketIdRef = useRef<string | null>(
     new URLSearchParams(window.location.search).get('ticket'),
   );
@@ -160,6 +168,12 @@ export default function SupportPage() {
     return `${part('year')}/${part('month')}/${part('day')} — ${part('hour')}:${part('minute')}`;
   };
   const inspectionText = lang === 'en' ? INSPECTION_TEXT.en : lang === 'ku' ? INSPECTION_TEXT.ku : INSPECTION_TEXT.ar;
+  const authorityText =
+    lang === 'en'
+      ? SUPPORT_AUTHORITY_TEXT.en
+      : lang === 'ku'
+        ? SUPPORT_AUTHORITY_TEXT.ku
+        : SUPPORT_AUTHORITY_TEXT.ar;
   const lifecycleText =
     lang === 'en'
       ? SUPPORT_LIFECYCLE_TEXT.en
@@ -233,18 +247,30 @@ export default function SupportPage() {
   }, [loading, selectedId, selectedLastMessageId]);
 
   const loadTickets = useCallback(async (silent = false) => {
-    if (!silent) {
+    const requestId = ++loadRequestIdRef.current;
+    if (!silent && !hasConfirmedAuthorityRef.current) {
       setLoading(true);
       setLoadError(false);
     }
+
     try {
-      const response = await fetch('/api/auth/support/tickets', { cache: 'no-store' });
+      const response = await fetch('/api/auth/support/tickets', {
+        credentials: 'same-origin',
+        cache: 'no-store',
+        headers: { Accept: 'application/json' },
+      });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok || !Array.isArray(data.tickets)) {
         throw new Error('invalid support tickets response');
       }
+      if (requestId !== loadRequestIdRef.current) return;
+
       const nextTickets = data.tickets as SupportTicket[];
       setTickets(nextTickets);
+      hasConfirmedAuthorityRef.current = true;
+      setLoadError(false);
+      setStaleAuthority(false);
+
       const requestedTicketId = requestedTicketIdRef.current;
       const requestedTicketExists = Boolean(
         requestedTicketId &&
@@ -262,10 +288,16 @@ export default function SupportPage() {
             : nextTickets[0]?.id ?? null,
       );
     } catch (error) {
+      if (requestId !== loadRequestIdRef.current) return;
       console.error('Could not load support tickets:', error);
-      if (!silent) setLoadError(true);
+      if (hasConfirmedAuthorityRef.current) {
+        setStaleAuthority(true);
+        setLoadError(false);
+      } else {
+        setLoadError(true);
+      }
     } finally {
-      if (!silent) setLoading(false);
+      if (requestId === loadRequestIdRef.current) setLoading(false);
     }
   }, []);
 
@@ -280,11 +312,14 @@ export default function SupportPage() {
     window.addEventListener('focus', handleFocus);
     window.addEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     return () => {
+      loadRequestIdRef.current += 1;
       window.clearInterval(intervalId);
       window.removeEventListener('focus', handleFocus);
       window.removeEventListener(MERCHANT_REALTIME_EVENT, handleRealtime);
     };
   }, [loadTickets]);
+
+  const mutationsAllowed = !loading && !loadError && !staleAuthority;
 
   const categoryLabel = (value: SupportCategory) =>
     ({
@@ -344,7 +379,14 @@ export default function SupportPage() {
   };
 
   const respondToInspectionRequest = async (decision: 'approve' | 'reject') => {
-    if (!selectedTicket || !latestInspectionRequest || latestInspectionRequest.status !== 'pending') return;
+    if (
+      !mutationsAllowed ||
+      !selectedTicket ||
+      !latestInspectionRequest ||
+      latestInspectionRequest.status !== 'pending'
+    ) {
+      return;
+    }
 
     setInspectionDecision(decision);
     setFormError('');
@@ -372,6 +414,7 @@ export default function SupportPage() {
 
   const terminateInspectionRequest = async () => {
     if (
+      !mutationsAllowed ||
       !selectedTicket ||
       !latestInspectionRequest ||
       latestInspectionDecision !== 'approved' ||
@@ -404,6 +447,8 @@ export default function SupportPage() {
 
   const createTicket = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!mutationsAllowed) return;
+
     const cleanSubject = subject.trim();
     const cleanMessage = newMessage.trim();
     setFormError('');
@@ -448,7 +493,7 @@ export default function SupportPage() {
   const sendReply = async (event: React.FormEvent) => {
     event.preventDefault();
     const body = reply.trim();
-    if (!selectedTicket || !body) return;
+    if (!mutationsAllowed || !selectedTicket || !body) return;
     setReplying(true);
     try {
       const response = await fetch(
@@ -495,6 +540,7 @@ export default function SupportPage() {
         </div>
         <button
           type="button"
+          disabled={!mutationsAllowed && !showCreate}
           onClick={() => {
             setFormError('');
             setShowCreate((current) => !current);
@@ -502,7 +548,7 @@ export default function SupportPage() {
           className={
             showCreate
               ? 'flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-card text-muted-foreground shadow-sm transition hover:bg-muted'
-              : 'inline-flex h-10 w-fit items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground'
+              : 'inline-flex h-10 w-fit items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50'
           }
           aria-label={showCreate ? t.support_cancel : t.support_new_ticket}
           title={showCreate ? t.support_cancel : t.support_new_ticket}
@@ -531,9 +577,9 @@ export default function SupportPage() {
               <input
                 value={subject}
                 maxLength={120}
-                disabled={creating}
+                disabled={creating || !mutationsAllowed}
                 onChange={(event) => setSubject(event.target.value)}
-                className="h-10 w-full rounded-xl border bg-background px-3 text-start text-sm outline-none focus:ring-2 focus:ring-orange-500/20"
+                className="h-10 w-full rounded-xl border bg-background px-3 text-start text-sm outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
               />
             </label>
             <label className="block min-w-0">
@@ -543,11 +589,11 @@ export default function SupportPage() {
               <div className="relative">
                 <select
                   value={category}
-                  disabled={creating}
+                  disabled={creating || !mutationsAllowed}
                   onChange={(event) =>
                     setCategory(event.target.value as SupportCategory)
                   }
-                  className="h-10 w-full appearance-none rounded-xl border bg-background ps-3 pe-10 text-start text-sm outline-none focus:ring-2 focus:ring-orange-500/20"
+                  className="h-10 w-full appearance-none rounded-xl border bg-background ps-3 pe-10 text-start text-sm outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
                 >
                   {categoryValues.map((value) => (
                     <option key={value} value={value}>
@@ -571,16 +617,16 @@ export default function SupportPage() {
               value={newMessage}
               maxLength={4000}
               rows={3}
-              disabled={creating}
+              disabled={creating || !mutationsAllowed}
               onChange={(event) => setNewMessage(event.target.value)}
-              className="min-h-[82px] w-full resize-none rounded-xl border bg-background px-3 py-2 text-start text-sm leading-5 outline-none focus:ring-2 focus:ring-orange-500/20"
+              className="min-h-[82px] w-full resize-none rounded-xl border bg-background px-3 py-2 text-start text-sm leading-5 outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
             />
           </label>
 
           <div className="mt-3 flex min-h-10 flex-wrap items-center justify-start gap-3">
             <button
               type="submit"
-              disabled={creating}
+              disabled={creating || !mutationsAllowed}
               className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60"
             >
               {creating && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -593,14 +639,38 @@ export default function SupportPage() {
         </form>
       )}
 
+      {staleAuthority && tickets.length > 0 ? (
+        <div className="flex shrink-0 flex-col gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-3 text-amber-950 sm:flex-row sm:items-center sm:justify-between dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+          <div className="flex min-w-0 items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-black">{authorityText.staleTitle}</p>
+              <p className="mt-1 text-xs leading-5">{authorityText.staleBody}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadTickets()}
+            className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-xl border border-amber-400 bg-background px-3 text-xs font-bold"
+          >
+            <RefreshCw className="h-4 w-4" />
+            {t.support_retry}
+          </button>
+        </div>
+      ) : null}
+
       {loading ? (
         <div className="flex min-h-52 flex-1 items-center justify-center rounded-2xl border bg-card text-muted-foreground md:min-h-0">
           <Loader2 className="me-2 h-5 w-5 animate-spin" />
           {t.support_loading}
         </div>
-      ) : loadError ? (
+      ) : loadError || (staleAuthority && tickets.length === 0) ? (
         <div className="flex min-h-52 flex-1 flex-col items-center justify-center gap-3 rounded-2xl border bg-card p-4 text-center md:min-h-0">
-          <p className="font-bold">{t.support_load_error}</p>
+          <AlertTriangle className="h-9 w-9 text-amber-500" />
+          <p className="font-black">{authorityText.unavailableTitle}</p>
+          <p className="max-w-lg text-sm leading-6 text-muted-foreground">
+            {authorityText.unavailableBody}
+          </p>
           <button
             type="button"
             onClick={() => void loadTickets()}
@@ -716,7 +786,7 @@ export default function SupportPage() {
                           <>
                             <button
                               type="button"
-                              disabled={inspectionDecision !== null}
+                              disabled={!mutationsAllowed || inspectionDecision !== null}
                               onClick={() => void respondToInspectionRequest('approve')}
                               className="inline-flex h-8 shrink-0 items-center justify-center rounded-xl bg-green-600 px-3 text-xs font-bold text-white transition hover:bg-green-700 disabled:opacity-60"
                             >
@@ -724,7 +794,7 @@ export default function SupportPage() {
                             </button>
                             <button
                               type="button"
-                              disabled={inspectionDecision !== null}
+                              disabled={!mutationsAllowed || inspectionDecision !== null}
                               onClick={() => void respondToInspectionRequest('reject')}
                               className="inline-flex h-8 shrink-0 items-center justify-center rounded-xl bg-red-600 px-3 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
                             >
@@ -738,7 +808,7 @@ export default function SupportPage() {
                           !latestInspectionRequest.ended_at && (
                             <button
                               type="button"
-                              disabled={terminatingInspection}
+                              disabled={!mutationsAllowed || terminatingInspection}
                               onClick={() => {
                                 setInspectionTerminationError('');
                                 setConfirmInspectionTermination(true);
@@ -827,7 +897,7 @@ export default function SupportPage() {
                                 <div className="mt-3 flex flex-wrap gap-2">
                                   <button
                                     type="button"
-                                    disabled={terminatingInspection}
+                                    disabled={!mutationsAllowed || terminatingInspection}
                                     onClick={() => void terminateInspectionRequest()}
                                     className="inline-flex h-9 items-center justify-center rounded-xl bg-red-600 px-4 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
                                   >
@@ -913,7 +983,7 @@ export default function SupportPage() {
                     <MerchantSupportImageButton<SupportTicket>
                       ticketId={selectedTicket.id}
                       lang={lang}
-                      disabled={replying}
+                      disabled={replying || !mutationsAllowed}
                       onUploaded={(ticket) => {
                         replaceTicket(ticket);
                         setFormError('');
@@ -924,14 +994,14 @@ export default function SupportPage() {
                       value={reply}
                       rows={2}
                       maxLength={4000}
-                      disabled={replying}
+                      disabled={replying || !mutationsAllowed}
                       placeholder={t.support_reply_placeholder}
                       onChange={(event) => setReply(event.target.value)}
-                      className="min-h-12 flex-1 resize-none rounded-xl border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500/20"
+                      className="min-h-12 flex-1 resize-none rounded-xl border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 disabled:opacity-50"
                     />
                     <button
                       type="submit"
-                      disabled={replying || !reply.trim()}
+                      disabled={!mutationsAllowed || replying || !reply.trim()}
                       aria-label={t.support_reply}
                       className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:opacity-50"
                     >
