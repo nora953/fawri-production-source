@@ -15,6 +15,7 @@ on:
       - "artifacts/api-server/src/routes/saved-answers.ts"
       - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs"
       - "artifacts/api-server/tests/meta-webhook-security.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
       - "artifacts/api-server/tests/durable-job-queue.test.ts"
@@ -38,6 +39,7 @@ on:
       - "artifacts/api-server/src/routes/saved-answers.ts"
       - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs"
       - "artifacts/api-server/tests/meta-webhook-security.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
       - "artifacts/api-server/tests/durable-job-queue.test.ts"
@@ -79,6 +81,7 @@ jobs:
         run: |
           node --check artifacts/api-server/tests/merchant-session.integration.test.mjs
           node --check artifacts/api-server/tests/merchant-status-access.integration.test.mjs
+          node --check artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs
           node --check artifacts/api-server/tests/meta-webhook-security.integration.test.mjs
 
       - name: Type-check API server
@@ -98,4 +101,5 @@ jobs:
           node --test
           artifacts/api-server/tests/merchant-session.integration.test.mjs
           artifacts/api-server/tests/merchant-status-access.integration.test.mjs
+          artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs
           artifacts/api-server/tests/meta-webhook-security.integration.test.mjs
