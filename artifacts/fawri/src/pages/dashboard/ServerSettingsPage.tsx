@@ -1,7 +1,7 @@
 import { COMMON_UI_COPY } from '@/lib/translations/commonUi';
 import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import { SERVER_SETTINGS_PAGE_COPY } from '@/lib/translations/features/pages/dashboard/ServerSettingsPage';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -61,6 +61,7 @@ type MerchantSettings = {
 };
 
 type LanguageCode = 'ar' | 'ku' | 'en';
+type AuthorityStatus = 'loading' | 'ready' | 'unavailable';
 
 type Copy = {
   title: string;
@@ -130,6 +131,69 @@ function normalizeAreas(value: string): string[] {
   return result;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isPaymentMethod(value: unknown): value is PaymentMethod {
+  return (
+    value === 'cash_on_delivery' ||
+    value === 'superqi' ||
+    value === 'fastpay' ||
+    value === 'zaincash' ||
+    value === 'other'
+  );
+}
+
+function isMerchantSettings(value: unknown): value is MerchantSettings {
+  if (!isRecord(value) || !isRecord(value.delivery) || !isRecord(value.payment)) {
+    return false;
+  }
+
+  const delivery = value.delivery;
+  const payment = value.payment;
+  const areaRates = delivery.area_rates;
+  const areas = delivery.areas;
+  const methods = payment.methods;
+
+  return (
+    typeof value.merchant_id === 'string' &&
+    typeof value.version === 'number' &&
+    Number.isInteger(value.version) &&
+    typeof value.auto_reply_enabled === 'boolean' &&
+    (value.reply_language === 'auto' ||
+      value.reply_language === 'ar' ||
+      value.reply_language === 'ku' ||
+      value.reply_language === 'en') &&
+    typeof delivery.enabled === 'boolean' &&
+    (delivery.pricing_mode === 'flat' || delivery.pricing_mode === 'per_area') &&
+    typeof delivery.fee_iqd === 'number' &&
+    (delivery.free_delivery_threshold_iqd === null ||
+      typeof delivery.free_delivery_threshold_iqd === 'number') &&
+    typeof delivery.estimated_days_min === 'number' &&
+    typeof delivery.estimated_days_max === 'number' &&
+    Array.isArray(areas) &&
+    areas.every(area => typeof area === 'string') &&
+    Array.isArray(areaRates) &&
+    areaRates.every(rate =>
+      isRecord(rate) &&
+      typeof rate.id === 'string' &&
+      typeof rate.area_name === 'string' &&
+      typeof rate.normalized_area_name === 'string' &&
+      typeof rate.fee_iqd === 'number' &&
+      typeof rate.enabled === 'boolean',
+    ) &&
+    typeof delivery.notes === 'string' &&
+    typeof payment.cash_on_delivery_enabled === 'boolean' &&
+    typeof payment.electronic_payment_enabled === 'boolean' &&
+    Array.isArray(methods) &&
+    methods.every(isPaymentMethod) &&
+    typeof payment.instructions === 'string' &&
+    typeof value.created_at === 'string' &&
+    typeof value.updated_at === 'string'
+  );
+}
+
 export default function ServerSettingsPage() {
   const i18n = useI18n();
   const language = languageCode(i18n);
@@ -140,8 +204,10 @@ export default function ServerSettingsPage() {
   const [regional, setRegional] = useState<MerchantRegionalContext | null>(null);
   const [areasText, setAreasText] = useState('');
   const [loading, setLoading] = useState(true);
+  const [authorityStatus, setAuthorityStatus] = useState<AuthorityStatus>('loading');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const loadRequestIdRef = useRef(0);
 
   const dirty = useMemo(
     () =>
@@ -161,34 +227,49 @@ export default function ServerSettingsPage() {
   };
 
   const loadSettings = async (silent = false) => {
-    if (!silent) setLoading(true);
+    const requestId = ++loadRequestIdRef.current;
+    setAuthorityStatus('loading');
+    if (!silent) {
+      setLoading(true);
+      setError('');
+    }
+
     try {
       const [response, regionalContext] = await Promise.all([
         fetch('/api/settings', {
+          credentials: 'same-origin',
           headers: { Accept: 'application/json' },
           cache: 'no-store',
         }),
         getMerchantRegionalContext(),
       ]);
       const data = await response.json().catch(() => null);
-      if (!response.ok || data?.ok !== true || !data.settings) {
+      if (!response.ok || data?.ok !== true || !isMerchantSettings(data.settings)) {
         throw new Error(data?.error || copy.loadFailed);
       }
+      if (requestId !== loadRequestIdRef.current) return;
+
       setRegional(regionalContext);
-      applyServerState(data.settings as MerchantSettings);
+      applyServerState(data.settings);
+      setAuthorityStatus('ready');
       setError('');
     } catch (loadError) {
+      if (requestId !== loadRequestIdRef.current) return;
       const message = loadError instanceof Error ? loadError.message : copy.loadFailed;
+      setAuthorityStatus('unavailable');
       setError(message);
       if (!silent) toast.error(message);
     } finally {
-      if (!silent) setLoading(false);
+      if (requestId === loadRequestIdRef.current && !silent) setLoading(false);
     }
   };
 
   useEffect(() => {
     void loadSettings();
-  }, [language]);
+    return () => {
+      loadRequestIdRef.current += 1;
+    };
+  }, []);
 
   const updateDraft = (mutator: (current: MerchantSettings) => MerchantSettings) => {
     setDraft(current => (current ? mutator(current) : current));
@@ -246,7 +327,7 @@ export default function ServerSettingsPage() {
   };
 
   const persistSettings = async () => {
-    if (!settings || !draft || saving) return;
+    if (!settings || !draft || saving || authorityStatus !== 'ready') return;
 
     const normalized: MerchantSettings = {
       ...draft,
@@ -311,6 +392,8 @@ export default function ServerSettingsPage() {
     try {
       const response = await fetch('/api/settings', {
         method: 'PATCH',
+        credentials: 'same-origin',
+        cache: 'no-store',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
@@ -326,18 +409,21 @@ export default function ServerSettingsPage() {
         }),
       });
       const data = await response.json().catch(() => null);
-      if (!response.ok || data?.ok !== true || !data.settings) {
+      if (!response.ok || data?.ok !== true || !isMerchantSettings(data.settings)) {
         if (
           data?.code === 'MERCHANT_SETTINGS_VERSION_CONFLICT' &&
-          data.current_settings
+          isMerchantSettings(data.current_settings)
         ) {
-          applyServerState(data.current_settings as MerchantSettings);
+          applyServerState(data.current_settings);
+          setAuthorityStatus('ready');
+          setError('');
           toast.error(copy.conflict);
           return;
         }
         throw new Error(data?.error || copy.persistFailed);
       }
-      applyServerState(data.settings as MerchantSettings);
+      applyServerState(data.settings);
+      setAuthorityStatus('ready');
       setError('');
       toast.success(copy.persisted);
     } catch (persistError) {
@@ -402,7 +488,7 @@ export default function ServerSettingsPage() {
             <Button
               type="button"
               onClick={() => void persistSettings()}
-              disabled={!dirty || saving}
+              disabled={!dirty || saving || loading || authorityStatus !== 'ready'}
             >
               {saving ? (
                 <Loader2 className="me-2 h-4 w-4 animate-spin" />
@@ -415,11 +501,15 @@ export default function ServerSettingsPage() {
         </header>
 
         {error ? (
-          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+          <div
+            role="status"
+            className="rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
+          >
             {error}
           </div>
         ) : null}
 
+        <fieldset disabled={authorityStatus !== 'ready' || saving} className="contents">
         <Card>
           <CardHeader>
             <CardTitle>{copy.autoReply}</CardTitle>
@@ -759,6 +849,7 @@ export default function ServerSettingsPage() {
             </label>
           </CardContent>
         </Card>
+        </fieldset>
       </div>
     </main>
   );
