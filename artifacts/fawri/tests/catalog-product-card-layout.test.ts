@@ -7,7 +7,7 @@ const cardCss = await readFile(
   'utf8',
 );
 const pageSource = await readFile(
-  new URL('../src/pages/dashboard/CommerceCatalogPage.tsx', import.meta.url),
+  new URL('../src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx', import.meta.url),
   'utf8',
 );
 
@@ -27,6 +27,18 @@ test('every tracked product uses the same collapsed inventory disclosure', () =>
   assert.match(pageSource, /inventoryDetails: 'تفاصيل المخزون'/);
   assert.match(pageSource, /variantDetails: 'تفاصيل الأنواع'/);
   assert.doesNotMatch(pageSource, /hasVariants && \(\s*<Button/);
+});
+
+test('description shares the same disclosure instead of changing collapsed card height', () => {
+  assert.match(
+    cardCss,
+    /article:has\(> \.border-b\.p-4\) > div\.px-4\.pb-4:has\(> p\.rounded-2xl\) \{[\s\S]*display:\s*none/,
+  );
+  assert.match(
+    cardCss,
+    /article:has\(\[id\^='catalog-inventory-'\]\)[\s\S]*> div\.px-4\.pb-4:has\(> p\.rounded-2xl\) \{[\s\S]*display:\s*block/,
+  );
+  assert.match(pageSource, /product\.description &&/);
 });
 
 test('variant and simple product controls render only inside the disclosed inventory panel', () => {
