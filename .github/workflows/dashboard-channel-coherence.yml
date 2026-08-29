@@ -40,6 +40,7 @@ on:
       - "artifacts/fawri/tests/merchant-dashboard-conversations-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-notification-count-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-notifications-authority.test.mjs"
+      - "artifacts/fawri/tests/merchant-notifications-authority-client.test.ts"
       - "artifacts/fawri/tests/merchant-dashboard-saved-answers-authority.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-session-identity.test.mjs"
       - "artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs"
@@ -93,6 +94,11 @@ jobs:
           artifacts/fawri/tests/merchant-dashboard-subscription-authority.test.mjs
           artifacts/fawri/tests/merchant-dashboard-support-authority-freshness.test.mjs
           artifacts/fawri/tests/merchant-dashboard-training-authority.test.mjs
+
+      - name: Test notifications authority client
+        run: >-
+          node scripts/ci-run-redacted.mjs --label notifications-authority-client-test --
+          pnpm --filter @workspace/fawri exec tsx --test ./tests/merchant-notifications-authority-client.test.ts
 
       - name: Test subscription billing UI authority contract
         run: >-
