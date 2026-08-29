@@ -123,3 +123,24 @@ export const NOTIFICATIONS_PAGE_SUPPORT_REPLY_REMINDER_TEXT = {
     open: 'Open ticket',
   },
 } as const;
+
+export const NOTIFICATIONS_PAGE_AUTHORITY_TEXT = {
+  ar: {
+    stale: 'تعذر تحديث الإشعارات. المعروض هو آخر بيانات مؤكدة، وتم إيقاف الإجراءات حتى ينجح التحديث.',
+    unavailable: 'تعذر التحقق من الإشعارات من الخادم.',
+    actionFailed: 'تعذر تحديث حالة الإشعار. لم يتم فتح الرابط حفاظًا على اتساق الحالة.',
+    retry: 'إعادة المحاولة',
+  },
+  ku: {
+    stale: 'نوێکردنەوەی ئاگادارکردنەوەکان سەرکەوتوو نەبوو. ئەوەی پیشان دەدرێت دوا داتای پشتڕاستکراوە و کردارەکان تا نوێکردنەوەی سەرکەوتوو وەستێنراون.',
+    unavailable: 'پشتڕاستکردنەوەی ئاگادارکردنەوەکان لە سێرڤەر سەرکەوتوو نەبوو.',
+    actionFailed: 'نوێکردنەوەی دۆخی ئاگادارکردنەوەکە سەرکەوتوو نەبوو. بۆ پاراستنی یەکگرتوویی دۆخەکە لینکەکە نەکرایەوە.',
+    retry: 'هەوڵدانەوە',
+  },
+  en: {
+    stale: 'Notifications could not be refreshed. The last confirmed data is shown and actions are disabled until refresh succeeds.',
+    unavailable: 'Notifications could not be verified with the server.',
+    actionFailed: 'The notification state could not be updated. The link was not opened to keep the state consistent.',
+    retry: 'Retry',
+  },
+} as const;
