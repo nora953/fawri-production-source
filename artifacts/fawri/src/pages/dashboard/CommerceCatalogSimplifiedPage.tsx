@@ -333,7 +333,7 @@ const COPY: Record<Lang, PageCopy> = {
     description: 'Description',
     descriptionPlaceholder: 'Clear information Fawri can rely on when answering customers.',
     fawri: 'Use this item in Fawri replies',
-    fawriHint: 'When disabled, the item stays in catalog and cashier, but Fawri will not use its information in automated replies.',
+    fawriHint: 'When disabled, the item stays in catalog and cashier, but Fawri will not use it in automated replies.',
     inventory: 'Inventory management',
     inventorySet: 'Set',
     inventorySaved: 'Inventory updated.',
