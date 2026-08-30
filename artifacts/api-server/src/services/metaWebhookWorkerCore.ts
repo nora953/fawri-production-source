@@ -187,6 +187,15 @@ async function releaseAndSuppress(input: {
   return completedSuppression(input.eventId, input.code);
 }
 
+function isOperationalReleaseCode(code: string): code is MerchantReplyReleaseCode {
+  return (
+    code === "MERCHANT_APPROVAL_REQUIRED" ||
+    code === "MERCHANT_REJECTED" ||
+    code === "MERCHANT_SUSPENDED" ||
+    code === "MERCHANT_ACCESS_STATE_UNAVAILABLE"
+  );
+}
+
 export async function processMetaReplyJob(
   job: DurableJob,
   options: {
@@ -252,6 +261,26 @@ export async function processMetaReplyJob(
     job,
     settings: claimedSettings,
   });
+
+  const beforeReservationAccess =
+    await getMerchantOperationalDecisionAuthoritative(merchantId);
+  if (!beforeReservationAccess.allowed) {
+    if (beforeReservationAccess.code === "MERCHANT_ACCESS_STATE_UNAVAILABLE") {
+      throw jobError(
+        beforeReservationAccess.code,
+        beforeReservationAccess.error,
+        true,
+        true,
+      );
+    }
+    transport.markSuppressed({
+      eventId,
+      merchantId,
+      settingsVersion: claimedSettings.version,
+      code: beforeReservationAccess.code,
+    });
+    return completedSuppression(eventId, beforeReservationAccess.code);
+  }
 
   const beforeReservation = await readSettings(merchantId);
   const beforeReservationCode = settingsSuppressionCode(
@@ -355,6 +384,20 @@ export async function processMetaReplyJob(
             false,
           );
         }
+
+        // Re-read the canonical merchant state at the final provider boundary.
+        // A reservation must never authorize a send after the merchant becomes
+        // rejected/suspended or otherwise operationally unavailable.
+        const immediatelyBeforeSendAccess =
+          await getMerchantOperationalDecisionAuthoritative(merchantId);
+        if (!immediatelyBeforeSendAccess.allowed) {
+          throw jobError(
+            immediatelyBeforeSendAccess.code,
+            immediatelyBeforeSendAccess.error,
+            false,
+            false,
+          );
+        }
       },
     });
   } catch (error) {
@@ -382,7 +425,8 @@ export async function processMetaReplyJob(
     if (
       code === "MERCHANT_AUTO_REPLY_DISABLED" ||
       code === "MERCHANT_SETTINGS_VERSION_CHANGED" ||
-      code === "MERCHANT_SETTINGS_UNAVAILABLE"
+      code === "MERCHANT_SETTINGS_UNAVAILABLE" ||
+      isOperationalReleaseCode(code)
     ) {
       return await releaseAndSuppress({
         eventId,
