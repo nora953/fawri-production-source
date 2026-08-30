@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import fs from "node:fs";
+import type { Server } from "node:http";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -19,11 +21,14 @@ assert.equal(
 );
 
 const AUTH_SECRET = "regional-pg-proof-security-secret-at-least-32-characters";
-const merchantAId = "regional-pg-merchant-a";
-const merchantBId = "regional-pg-merchant-b";
-const merchantAPhone = "07987333001";
-const merchantBPhone = "07987333002";
-const productAId = "regional-pg-product-a";
+
+function suffix(): string {
+  return crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+}
+
+function randomPhone(): string {
+  return `07${String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0")}`;
+}
 
 function cookie(name: string, token: string): string {
   return `${name}=${token}`;
@@ -46,6 +51,14 @@ function assertNoLegacyJson(dataDirectory: string): void {
 }
 
 test("merchant regional currency routes are secure PostgreSQL authority and tenant isolated", async (t) => {
+  const proofId = suffix();
+  const merchantAId = `regional-pg-merchant-a-${proofId}`;
+  const merchantBId = `regional-pg-merchant-b-${proofId}`;
+  const productAId = `regional-pg-product-a-${proofId}`;
+  const merchantAPhone = randomPhone();
+  let merchantBPhone = randomPhone();
+  while (merchantBPhone === merchantAPhone) merchantBPhone = randomPhone();
+
   const runtimeDirectory = await mkdtemp(
     path.join(os.tmpdir(), "fawri-regional-pg-proof-"),
   );
@@ -76,6 +89,9 @@ test("merchant regional currency routes are secure PostgreSQL authority and tena
     import("../src/routes/merchant-regional.js"),
   ]);
 
+  let seeded = false;
+  let server: Server | null = null;
+
   async function cleanup(): Promise<void> {
     await pool
       .query("DELETE FROM products WHERE merchant_id = ANY($1::text[])", [
@@ -83,14 +99,34 @@ test("merchant regional currency routes are secure PostgreSQL authority and tena
       ])
       .catch(() => undefined);
     await pool
-      .query(
-        "DELETE FROM accounts WHERE id = ANY($1::text[]) OR phone = ANY($2::text[])",
-        [[merchantAId, merchantBId], [merchantAPhone, merchantBPhone]],
-      )
+      .query("DELETE FROM accounts WHERE id = ANY($1::text[])", [
+        [merchantAId, merchantBId],
+      ])
       .catch(() => undefined);
   }
 
-  await cleanup();
+  t.after(async () => {
+    if (server) {
+      await new Promise<void>((resolve) => server?.close(() => resolve()));
+    }
+    if (seeded) await cleanup();
+    await pool.end();
+    await rm(runtimeDirectory, { recursive: true, force: true });
+  });
+
+  const collision = await pool.query(
+    `SELECT id
+       FROM accounts
+      WHERE id = ANY($1::text[])
+         OR phone = ANY($2::text[])
+      LIMIT 1`,
+    [[merchantAId, merchantBId], [merchantAPhone, merchantBPhone]],
+  );
+  assert.equal(
+    collision.rows.length,
+    0,
+    "generated regional proof identities must not collide with existing accounts",
+  );
 
   await pool.query(
     `INSERT INTO accounts (
@@ -101,6 +137,8 @@ test("merchant regional currency routes are secure PostgreSQL authority and tena
        ($3, 'merchant', $4, 'regional-proof-hash-b', 'active', 'en', true, now(), now(), now())`,
     [merchantAId, merchantAPhone, merchantBId, merchantBPhone],
   );
+  seeded = true;
+
   await pool.query(
     `INSERT INTO merchants (
        id, account_id, profile_kind, owner_name, store_name, activity_type,
@@ -134,7 +172,7 @@ test("merchant regional currency routes are secure PostgreSQL authority and tena
   app.use(cookieParser());
   app.use(express.json());
   app.use("/api", merchantRegionalRouter);
-  const server = await new Promise<ReturnType<typeof app.listen>>((resolve, reject) => {
+  server = await new Promise<Server>((resolve, reject) => {
     const listening = app.listen(0, "127.0.0.1", () => resolve(listening));
     listening.once("error", reject);
   });
@@ -143,13 +181,6 @@ test("merchant regional currency routes are secure PostgreSQL authority and tena
   const baseUrl = `http://127.0.0.1:${address.port}`;
   const merchantACookie = cookie(MERCHANT_SESSION_COOKIE, merchantASession.token);
   const merchantBCookie = cookie(MERCHANT_SESSION_COOKIE, merchantBSession.token);
-
-  t.after(async () => {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-    await cleanup();
-    await pool.end();
-    await rm(runtimeDirectory, { recursive: true, force: true });
-  });
 
   assertNoLegacyJson(dataDirectory);
 
@@ -185,7 +216,11 @@ test("merchant regional currency routes are secure PostgreSQL authority and tena
     headers: { Cookie: merchantACookie, "Content-Type": "application/json" },
     body: JSON.stringify({ currency_code: "USD" }),
   });
-  assert.equal(changeA.status, 200, JSON.stringify(await changeA.clone().json().catch(() => null)));
+  assert.equal(
+    changeA.status,
+    200,
+    JSON.stringify(await changeA.clone().json().catch(() => null)),
+  );
   const changedA = await json(changeA);
   assert.equal(changedA.changed, true);
   assert.deepEqual(changedA.context, {
