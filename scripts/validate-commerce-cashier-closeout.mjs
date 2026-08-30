@@ -51,6 +51,7 @@ const steps = [
       'artifacts/api-server/tests/cashier-sync-contract.test.mjs',
       'artifacts/api-server/tests/cashier-compensation-sync-contract.test.mjs',
       'artifacts/api-server/tests/cashier-order-separation-contract.test.mjs',
+      'artifacts/api-server/tests/cashier-http-route-reachability.test.mjs',
     ],
   },
   {
