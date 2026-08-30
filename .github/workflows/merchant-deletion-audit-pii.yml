@@ -1,0 +1,44 @@
+name: Merchant deletion audit PII
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/tests/merchant-deletion-audit-pii-contract.test.mjs"
+      - "lib/db/src/schema/audit.ts"
+      - ".github/workflows/merchant-deletion-audit-pii.yml"
+  push:
+    branches:
+      - "foundation/**"
+    paths:
+      - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/tests/merchant-deletion-audit-pii-contract.test.mjs"
+      - "lib/db/src/schema/audit.ts"
+      - ".github/workflows/merchant-deletion-audit-pii.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merchant-deletion-audit-pii-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-audit-pii-retirement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check regression syntax
+        run: node --check artifacts/api-server/tests/merchant-deletion-audit-pii-contract.test.mjs
+
+      - name: Prove retained audit evidence removes merchant PII
+        run: node --test artifacts/api-server/tests/merchant-deletion-audit-pii-contract.test.mjs
