@@ -1,0 +1,46 @@
+name: Merchant deletion cashier lifecycle
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/tests/merchant-deletion-cashier-lifecycle-contract.test.mjs"
+      - "lib/db/src/schema/cashier-staff.ts"
+      - "lib/db/src/schema/cashier-operation-attribution.ts"
+      - ".github/workflows/merchant-deletion-cashier-lifecycle.yml"
+  push:
+    branches:
+      - "foundation/**"
+    paths:
+      - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/tests/merchant-deletion-cashier-lifecycle-contract.test.mjs"
+      - "lib/db/src/schema/cashier-staff.ts"
+      - "lib/db/src/schema/cashier-operation-attribution.ts"
+      - ".github/workflows/merchant-deletion-cashier-lifecycle.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merchant-deletion-cashier-lifecycle-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-cashier-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check regression syntax
+        run: node --check artifacts/api-server/tests/merchant-deletion-cashier-lifecycle-contract.test.mjs
+
+      - name: Prove merchant deletion owns cashier lifecycle retirement
+        run: node --test artifacts/api-server/tests/merchant-deletion-cashier-lifecycle-contract.test.mjs
