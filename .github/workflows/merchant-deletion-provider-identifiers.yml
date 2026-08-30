@@ -1,0 +1,50 @@
+name: Merchant deletion provider identifiers
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/src/middleware/metaWebhookSecurity.ts"
+      - "artifacts/api-server/tests/merchant-deletion-provider-identifiers-contract.test.mjs"
+      - "lib/db/src/schema/jobs.ts"
+      - "lib/db/src/schema/channel-messaging.ts"
+      - "lib/db/src/schema/subscriptions.ts"
+      - ".github/workflows/merchant-deletion-provider-identifiers.yml"
+  push:
+    branches:
+      - "foundation/**"
+    paths:
+      - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/src/middleware/metaWebhookSecurity.ts"
+      - "artifacts/api-server/tests/merchant-deletion-provider-identifiers-contract.test.mjs"
+      - "lib/db/src/schema/jobs.ts"
+      - "lib/db/src/schema/channel-messaging.ts"
+      - "lib/db/src/schema/subscriptions.ts"
+      - ".github/workflows/merchant-deletion-provider-identifiers.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merchant-deletion-provider-identifiers-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-provider-identifier-retirement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Check regression syntax
+        run: node --check artifacts/api-server/tests/merchant-deletion-provider-identifiers-contract.test.mjs
+
+      - name: Prove retained evidence removes raw provider identifiers
+        run: node --test artifacts/api-server/tests/merchant-deletion-provider-identifiers-contract.test.mjs
