@@ -1,0 +1,42 @@
+name: Merchant deletion physical media lifecycle
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/src/services/catalogMediaStorage.ts"
+      - "artifacts/api-server/src/services/postgresSupportImageAuthority.ts"
+      - "artifacts/api-server/tests/merchant-deletion-physical-media-contract.test.mjs"
+      - ".github/workflows/merchant-deletion-physical-media.yml"
+  push:
+    branches:
+      - "foundation/**"
+    paths:
+      - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/src/services/catalogMediaStorage.ts"
+      - "artifacts/api-server/src/services/postgresSupportImageAuthority.ts"
+      - "artifacts/api-server/tests/merchant-deletion-physical-media-contract.test.mjs"
+      - ".github/workflows/merchant-deletion-physical-media.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merchant-deletion-physical-media-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-physical-media-lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check regression syntax
+        run: node --check artifacts/api-server/tests/merchant-deletion-physical-media-contract.test.mjs
+
+      - name: Prove irreversible deletion owns physical media cleanup
+        run: node --test artifacts/api-server/tests/merchant-deletion-physical-media-contract.test.mjs
