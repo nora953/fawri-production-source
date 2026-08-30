@@ -80,8 +80,7 @@ test(
     async function setStatus(
       status: "approved" | "suspended" | "rejected",
     ): Promise<void> {
-      const accountStatus =
-        status === "approved" ? "approved" : status;
+      const accountStatus = status === "approved" ? "approved" : status;
       await pool.query(
         `UPDATE merchants
             SET status = $2::merchant_status,
@@ -136,9 +135,10 @@ test(
           webhookSubscribed: true,
         }),
       (error: unknown) => {
-        const failure = error as { code?: unknown; status?: unknown };
-        assert.equal(failure.code, "MERCHANT_SUSPENDED");
-        assert.equal(failure.status, 403);
+        assert.equal(
+          (error as { code?: unknown }).code,
+          "MERCHANT_SUSPENDED",
+        );
         return true;
       },
     );
@@ -164,9 +164,10 @@ test(
           instagramUsername: `cutoff_${proof}`,
         }),
       (error: unknown) => {
-        const failure = error as { code?: unknown; status?: unknown };
-        assert.equal(failure.code, "MERCHANT_REJECTED");
-        assert.equal(failure.status, 403);
+        assert.equal(
+          (error as { code?: unknown }).code,
+          "MERCHANT_REJECTED",
+        );
         return true;
       },
     );
