@@ -27,7 +27,7 @@ concurrency:
 jobs:
   prove-audit-pii-retirement:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,6 +36,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 24
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
 
       - name: Check regression syntax
         run: node --check artifacts/api-server/tests/merchant-deletion-audit-pii-contract.test.mjs
