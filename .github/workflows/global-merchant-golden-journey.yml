@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "artifacts/api-server/src/**"
+      - "artifacts/api-server/tests/global-merchant-auth-bootstrap-postgres.integration.test.mjs"
       - "artifacts/api-server/tests/global-merchant-golden-journey.integration.test.mjs"
       - "artifacts/api-server/package.json"
       - "lib/db/src/**"
@@ -72,5 +73,5 @@ jobs:
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
 
-      - name: Run connected merchant journey
+      - name: Run secure auth bootstrap and connected merchant journey
         run: pnpm --filter @workspace/api-server run test:global-merchant-journey
