@@ -361,6 +361,20 @@ test("admin auth router is end-to-end PostgreSQL authoritative", async (t) => {
   assert.equal(assistantMeAfterChange.response.status, 200);
   assert.equal(assistantMeAfterChange.body?.admin_profile?.mustChangePassword, false);
 
+  const allowedMerchantList = await json(await fetch(
+    `${baseUrl}/api/auth/merchants`,
+    { headers: adminHeaders(assistantNextCookie, assistantDeviceId) },
+  ));
+  assert.equal(allowedMerchantList.response.status, 200);
+  assert.ok(Array.isArray(allowedMerchantList.body?.merchants));
+
+  const deniedAdminLogs = await json(await fetch(
+    `${baseUrl}/api/auth/admin/logs`,
+    { headers: adminHeaders(assistantNextCookie, assistantDeviceId) },
+  ));
+  assert.equal(deniedAdminLogs.response.status, 403);
+  assert.equal(deniedAdminLogs.body?.code, "ADMIN_PERMISSION_REQUIRED");
+
   const workMonitor = await json(await fetch(
     `${baseUrl}/api/auth/admins/${encodeURIComponent(assistantId)}/work-monitor`,
     { headers: adminHeaders(ownerCookie, ownerDeviceId) },
@@ -368,6 +382,57 @@ test("admin auth router is end-to-end PostgreSQL authoritative", async (t) => {
   assert.equal(workMonitor.response.status, 200);
   assert.equal(workMonitor.body?.admin?.id, assistantId);
   assert.ok(Number(workMonitor.body?.summary?.trusted_device_count) >= 1);
+
+  const disableAssistant = await json(await fetch(
+    `${baseUrl}/api/auth/admins/${encodeURIComponent(assistantId)}/enabled`,
+    {
+      method: "PATCH",
+      headers: {
+        ...adminHeaders(ownerCookie, ownerDeviceId),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ enabled: false }),
+    },
+  ));
+  assert.equal(disableAssistant.response.status, 200);
+
+  const sessionAfterDisable = await fetch(`${baseUrl}/api/auth/admin/me`, {
+    headers: adminHeaders(assistantNextCookie, assistantDeviceId),
+  });
+  assert.equal(sessionAfterDisable.status, 401);
+
+  const ownerAfterAssistantDisable = await fetch(`${baseUrl}/api/auth/admin/me`, {
+    headers: adminHeaders(ownerCookie, ownerDeviceId),
+  });
+  assert.equal(ownerAfterAssistantDisable.status, 200);
+
+  const reenableAssistant = await json(await fetch(
+    `${baseUrl}/api/auth/admins/${encodeURIComponent(assistantId)}/enabled`,
+    {
+      method: "PATCH",
+      headers: {
+        ...adminHeaders(ownerCookie, ownerDeviceId),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ enabled: true }),
+    },
+  ));
+  assert.equal(reenableAssistant.response.status, 200);
+
+  const assistantRelogin = await json(await fetch(`${baseUrl}/api/auth/admin/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-fawri-device-id": assistantDeviceId,
+    },
+    body: JSON.stringify({
+      phone: assistantPhone,
+      password: assistantNextPassword,
+      device_label: "Assistant PostgreSQL Proof Device",
+    }),
+  }));
+  assert.equal(assistantRelogin.response.status, 200);
+  const assistantReenabledCookie = adminCookie(assistantRelogin.response);
 
   const revokeAssistantDevice = await json(await fetch(
     `${baseUrl}/api/auth/admins/${encodeURIComponent(assistantId)}/devices/${encodeURIComponent(assistantDeviceRecordId)}/revoke`,
@@ -383,7 +448,7 @@ test("admin auth router is end-to-end PostgreSQL authoritative", async (t) => {
   assert.equal(revokeAssistantDevice.response.status, 200);
 
   const sessionAfterDeviceRevoke = await fetch(`${baseUrl}/api/auth/admin/me`, {
-    headers: adminHeaders(assistantNextCookie, assistantDeviceId),
+    headers: adminHeaders(assistantReenabledCookie, assistantDeviceId),
   });
   assert.equal(sessionAfterDeviceRevoke.status, 401);
 
