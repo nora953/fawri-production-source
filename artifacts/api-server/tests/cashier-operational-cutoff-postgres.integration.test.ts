@@ -119,42 +119,21 @@ test(
       pairingCode: activePairing.pairing_code,
       deviceId,
     });
+    const stationContext = await cashier.authenticateCashierStationAuthoritative({
+      stationToken: paired.station_token,
+      deviceId,
+    });
+    assert.equal(stationContext.merchant_id, merchantId);
+    assert.equal(stationContext.station_id, activeStation.id);
+
     const operator = await cashier.loginCashierOperatorAuthoritative({
-      station: {
-        credential_id: String(
-          (
-            await pool.query(
-              `SELECT id
-                 FROM cashier_station_credentials
-                WHERE merchant_id = $1 AND station_id = $2 AND status = 'active'
-                ORDER BY issued_at DESC
-                LIMIT 1`,
-              [merchantId, activeStation.id],
-            )
-          ).rows[0]?.id || "",
-        ),
-        merchant_id: merchantId,
-        station_id: activeStation.id,
-        station_name: paired.station_name,
-        branch_key: paired.branch_key,
-        ...(paired.branch_label ? { branch_label: paired.branch_label } : {}),
-        offline_inventory_authority: paired.offline_inventory_authority,
-        credential_version: Number(
-          (
-            await pool.query(
-              `SELECT credential_version
-                 FROM merchant_cashier_stations
-                WHERE merchant_id = $1 AND id = $2`,
-              [merchantId, activeStation.id],
-            )
-          ).rows[0]?.credential_version,
-        ),
-        credential_expires_at: paired.credential_expires_at,
-        device_id: deviceId,
-      },
+      station: stationContext,
       staffId: staff.id,
       pin: "2468",
     });
+    assert.equal(operator.context.merchant_id, merchantId);
+    assert.equal(operator.context.station_id, activeStation.id);
+    assert.equal(operator.context.staff_id, staff.id);
 
     const stalePairing = await cashier.beginCashierStationPairingAuthoritative({
       merchantId,
