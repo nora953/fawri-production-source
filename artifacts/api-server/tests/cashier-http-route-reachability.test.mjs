@@ -80,9 +80,9 @@ test("mounted operator commerce router owns live catalog, reporting and compensa
   for (const route of [
     "/cashier/operator/catalog-snapshot",
     "/cashier/operator/report",
-    "/cashier/operator/sales",
-    "/cashier/operator/returns",
-    "/cashier/operator/voids",
+    "/cashier/operator/sync/sale",
+    "/cashier/operator/sync/return",
+    "/cashier/operator/sync/void",
   ]) {
     assert.ok(operatorCommerceSource.includes(`"${route}"`), `missing operator commerce route ${route}`);
   }
