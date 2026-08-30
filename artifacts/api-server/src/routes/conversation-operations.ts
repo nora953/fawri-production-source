@@ -5,6 +5,9 @@ import {
 } from "../middleware/authSession";
 import { ManualConversationError } from "../services/manualConversationRuntime";
 import {
+  getMerchantOperationalDecisionAuthoritative,
+} from "../services/merchantOperationalAccess";
+import {
   completeManualReplyAuthoritative,
   failManualReplyAuthoritative,
   getServerConversationAuthoritative,
@@ -185,6 +188,25 @@ router.post(
           ),
         });
         return;
+      }
+
+      // Preparation may outlive the merchant session state by a few milliseconds.
+      // Re-read canonical operational access at the provider boundary so a newly
+      // rejected/suspended merchant cannot send through a prepared request.
+      const access = await getMerchantOperationalDecisionAuthoritative(merchantId);
+      if (!access.allowed) {
+        await failManualReplyAuthoritative({
+          merchantId,
+          conversationId,
+          idempotencyKey: requestKey,
+          errorCode: access.code,
+          uncertain: false,
+        });
+        throw new ManualConversationError(
+          access.code,
+          access.error,
+          access.statusCode,
+        );
       }
 
       let response: globalThis.Response;
