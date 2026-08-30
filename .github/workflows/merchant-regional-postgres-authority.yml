@@ -1,0 +1,81 @@
+name: Merchant regional PostgreSQL authority
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/routes/merchant-regional.ts"
+      - "artifacts/api-server/src/services/currencyMoneyRuntime.ts"
+      - "artifacts/api-server/src/services/merchantRegionalRuntime.ts"
+      - "artifacts/api-server/src/services/postgresMerchantRegionalAuthority.ts"
+      - "artifacts/api-server/src/services/postgresMerchantCurrencyAuthority.ts"
+      - "artifacts/api-server/src/services/operationalPostgresAuthority.ts"
+      - "artifacts/api-server/src/middleware/authSession.ts"
+      - "artifacts/api-server/src/services/authPostgresSessionAuthority.ts"
+      - "artifacts/api-server/tests/merchant-regional-runtime.test.ts"
+      - "artifacts/api-server/tests/merchant-regional-postgres-http.integration.test.ts"
+      - "lib/db/src/**"
+      - "lib/db/package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - ".github/workflows/merchant-regional-postgres-authority.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merchant-regional-postgres-authority-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regional-authority:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Initialize disposable PostgreSQL runtime schema
+        run: pnpm --filter @workspace/db run push-force
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Run regional runtime unit contract
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/merchant-regional-runtime.test.ts
+
+      - name: Run secure regional PostgreSQL HTTP authority proof
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/merchant-regional-postgres-http.integration.test.ts
