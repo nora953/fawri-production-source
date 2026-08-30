@@ -166,7 +166,7 @@ test("merchant regional currency routes are secure PostgreSQL authority and tena
     country_code: "IQ",
     timezone: "Asia/Baghdad",
     currency_code: "IQD",
-    currency_fraction_digits: 3,
+    currency_fraction_digits: 0,
   });
 
   const readB = await fetch(`${baseUrl}/api/merchant/regional`, {
