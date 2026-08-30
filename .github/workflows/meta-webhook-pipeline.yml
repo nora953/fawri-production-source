@@ -94,6 +94,7 @@ jobs:
           artifacts/api-server/tests/durable-job-nonretryable.test.ts
           artifacts/api-server/tests/meta-webhook-outcome-refund.test.ts
           artifacts/api-server/tests/meta-webhook-worker-core.test.ts
+          artifacts/api-server/tests/meta-webhook-operational-cutoff.test.ts
           artifacts/api-server/tests/manual-conversation-runtime.test.ts
 
       - name: Build API server
