@@ -105,4 +105,5 @@ jobs:
           node --test
           artifacts/api-server/tests/meta-webhook-security.integration.test.mjs
           artifacts/api-server/tests/meta-webhook-queue.integration.test.mjs
+          artifacts/api-server/tests/manual-conversation-operational-cutoff-contract.test.mjs
           artifacts/api-server/tests/manual-conversation-operations.integration.test.mjs
