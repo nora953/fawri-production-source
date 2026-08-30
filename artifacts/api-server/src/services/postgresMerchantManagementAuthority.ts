@@ -1010,6 +1010,7 @@ async function purgeMerchantOperationalData(
     [merchantId],
   );
 
+  await target.query(`DELETE FROM commerce_promotions WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM catalog_idempotency_keys WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM inventory_mutations WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM catalog_identifiers WHERE merchant_id = $1`, [merchantId]);
