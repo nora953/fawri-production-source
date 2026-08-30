@@ -19,9 +19,11 @@ function between(text, startMarker, endMarker) {
   return text.slice(start, end);
 }
 
-test("legacy bot debug surface must be retired from required-PostgreSQL production runtime", () => {
+test("legacy bot debug surface is retired before compatibility routes in required-PostgreSQL or non-debug runtime", () => {
   const legacyRoutes = source("src/routes/indexModulePart3.ts");
-  const guard = source("src/middleware/legacyProductionFallbackGuard.ts");
+  const debugGuard = source("src/routes/legacyBotDebugRouteGuard.ts");
+  const routeIndex = source("src/routes/index.ts");
+  const legacyFallbackGuard = source("src/middleware/legacyProductionFallbackGuard.ts");
 
   const debugRoute = between(
     legacyRoutes,
@@ -32,33 +34,44 @@ test("legacy bot debug surface must be retired from required-PostgreSQL producti
   assert.match(
     debugRoute,
     /db_path:\s*DB_PATH/,
-    "proof expects the current debug endpoint to expose an internal runtime filesystem path",
+    "the retained local-only debug implementation still contains internal diagnostics and therefore must remain guarded",
   );
   assert.match(
     debugRoute,
     /product_names:/,
-    "proof expects the current endpoint to expose diagnostic catalog detail",
+    "the retained local-only debug implementation still exposes catalog diagnostics and therefore must remain guarded",
   );
 
   assert.match(
-    guard,
+    legacyFallbackGuard,
     /pathname === "\/api\/auth" \|\| pathname\.startsWith\("\/api\/auth\/"\)/,
-    "the global legacy fallback guard is auth-scoped and does not retire /api/bot/debug",
+    "the existing global legacy fallback guard remains auth-scoped; bot debug retirement is intentionally explicit",
   );
 
+  assert.match(debugGuard, /router\.use\("\/bot\/debug"/);
   assert.match(
-    debugRoute,
-    /operationalPostgresAuthorityRequired\(\)/,
-    "legacy /api/bot/debug remains reachable in required PostgreSQL mode instead of being explicitly retired",
+    debugGuard,
+    /operationalPostgresAuthorityRequired\(\)\s*\|\|\s*!BOT_DEBUG/,
+    "required PostgreSQL or disabled debug mode must fail closed before the legacy route executes",
   );
+  assert.match(debugGuard, /res\.status\(410\)/);
+  assert.match(debugGuard, /LEGACY_BOT_DEBUG_DISABLED/);
   assert.match(
-    debugRoute,
-    /BOT_DEBUG/,
-    "the route must honor the debug enablement contract rather than remaining reachable when BOT_DEBUG is disabled in production",
+    debugGuard,
+    /return next\(\)/,
+    "only the explicitly enabled non-required local/test debug path may reach the legacy implementation",
   );
-  assert.match(
-    debugRoute,
-    /(?:410|LEGACY_BOT_DEBUG|DEBUG_ROUTE_DISABLED)/,
-    "production retirement should fail closed with an explicit non-success response/code",
+
+  const guardImport = routeIndex.indexOf("./legacyBotDebugRouteGuard");
+  const compatibilityImport = routeIndex.indexOf("./indexModulePart4");
+  assert.notEqual(guardImport, -1, "route index must install the bot debug retirement guard");
+  assert.notEqual(
+    compatibilityImport,
+    -1,
+    "route index must continue loading the compatibility route graph",
+  );
+  assert.ok(
+    guardImport < compatibilityImport,
+    "bot debug retirement guard must register before compatibility route side effects",
   );
 });
