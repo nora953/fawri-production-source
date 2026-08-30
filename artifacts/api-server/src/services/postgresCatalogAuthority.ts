@@ -481,6 +481,20 @@ async function persistProductGraph(
     }
   }
 
+  const existingVariants = await operationalQueryRows<{ id: string }>(
+    target,
+    `SELECT id
+       FROM product_variants
+      WHERE merchant_id = $1 AND product_id = $2
+      ORDER BY id ASC
+      FOR UPDATE`,
+    [product.merchant_id, product.id],
+  );
+  const incomingVariantIds = new Set(product.variants.map((variant) => variant.id));
+  const removedVariantIds = existingVariants
+    .map((variant) => variant.id)
+    .filter((variantId) => !incomingVariantIds.has(variantId));
+
   await target.query(
     "DELETE FROM catalog_identifiers WHERE merchant_id = $1 AND product_id = $2",
     [product.merchant_id, product.id],
@@ -493,20 +507,100 @@ async function persistProductGraph(
     "DELETE FROM catalog_variant_options WHERE merchant_id = $1 AND product_id = $2",
     [product.merchant_id, product.id],
   );
-  await target.query(
-    "DELETE FROM product_variants WHERE merchant_id = $1 AND product_id = $2",
-    [product.merchant_id, product.id],
-  );
+
+  for (const existingVariant of existingVariants) {
+    await target.query(
+      `UPDATE product_variants
+          SET option_signature = $4
+        WHERE merchant_id = $1 AND product_id = $2 AND id = $3`,
+      [
+        product.merchant_id,
+        product.id,
+        existingVariant.id,
+        hashId(
+          "variant_rebuild",
+          `${product.merchant_id}\0${product.id}\0${existingVariant.id}\0${product.version}`,
+        ),
+      ],
+    );
+  }
+
+  if (removedVariantIds.length > 0) {
+    const dependencies = await operationalQueryRows<{
+      variant_id: string;
+      dependency: string;
+    }>(
+      target,
+      `SELECT variant_id, 'inventory_mutations'::text AS dependency
+         FROM inventory_mutations
+        WHERE merchant_id = $1 AND product_id = $2
+          AND variant_id = ANY($3::text[])
+       UNION
+       SELECT product_variant_id AS variant_id, 'order_items'::text AS dependency
+         FROM order_items
+        WHERE merchant_id = $1
+          AND product_variant_id = ANY($3::text[])
+       UNION
+       SELECT variant_id, 'commerce_promotions'::text AS dependency
+         FROM commerce_promotions
+        WHERE merchant_id = $1 AND product_id = $2
+          AND variant_id = ANY($3::text[])`,
+      [product.merchant_id, product.id, removedVariantIds],
+    );
+    if (dependencies.length > 0) {
+      throw new CatalogRuntimeError(
+        "CATALOG_VARIANT_HISTORY_CONFLICT",
+        "variant cannot be removed while referenced by historical or active commerce records",
+        409,
+        {
+          variant_ids: removedVariantIds,
+          dependencies: dependencies.map((dependency) => ({
+            variant_id: dependency.variant_id,
+            kind: dependency.dependency,
+          })),
+        },
+      );
+    }
+    await target.query(
+      `DELETE FROM product_variants
+        WHERE merchant_id = $1 AND product_id = $2
+          AND id = ANY($3::text[])`,
+      [product.merchant_id, product.id, removedVariantIds],
+    );
+  }
 
   for (const variant of product.variants) {
-    await target.query(
+    const persisted = await operationalQueryRows<{ id: string }>(
+      target,
       `INSERT INTO product_variants (
          id, product_id, merchant_id, name, sku, barcode, quantity,
          price_adjustment_iqd, price_override_iqd, weight_g, length_mm,
          width_mm, height_mm, option_signature, version, created_at, updated_at
        ) VALUES (
          $1,$2,$3,$4,$5,$6,$7,0,$8,$9,$10,$11,$12,$13,1,$14,$15
-       )`,
+       )
+       ON CONFLICT (id) DO UPDATE
+          SET external_ref = NULL,
+              normalized_external_ref = NULL,
+              name = EXCLUDED.name,
+              color = NULL,
+              size = NULL,
+              sku = EXCLUDED.sku,
+              barcode = EXCLUDED.barcode,
+              quantity = EXCLUDED.quantity,
+              price_adjustment_iqd = 0,
+              price_override_iqd = EXCLUDED.price_override_iqd,
+              weight_g = EXCLUDED.weight_g,
+              length_mm = EXCLUDED.length_mm,
+              width_mm = EXCLUDED.width_mm,
+              height_mm = EXCLUDED.height_mm,
+              option_signature = EXCLUDED.option_signature,
+              version = 1,
+              metadata = '{}'::jsonb,
+              updated_at = EXCLUDED.updated_at
+        WHERE product_variants.product_id = EXCLUDED.product_id
+          AND product_variants.merchant_id = EXCLUDED.merchant_id
+       RETURNING id`,
       [
         variant.id,
         product.id,
@@ -525,6 +619,14 @@ async function persistProductGraph(
         new Date(variant.updated_at),
       ],
     );
+    if (persisted.length !== 1) {
+      throw new CatalogRuntimeError(
+        "CATALOG_VARIANT_ID_CONFLICT",
+        "variant ID is already owned by another catalog product",
+        409,
+        { variant_id: variant.id },
+      );
+    }
     let ordinal = 0;
     for (const [name, value] of Object.entries(variant.options)) {
       const normalizedName = normalizeCatalogIdentifier(name);
