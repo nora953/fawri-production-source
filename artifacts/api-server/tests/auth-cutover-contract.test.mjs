@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import { spawn } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import net from "node:net";
@@ -135,9 +136,11 @@ test(
   { skip: !process.env.DATABASE_URL },
   async (t) => {
     const { pool } = await import("@workspace/db");
-    const merchantId = "auth-cutover-business-proof";
-    const phone = "07899999991";
+    const proof = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+    const merchantId = `auth-cutover-business-${proof}`;
+    const phone = `07${String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0")}`;
     const password = "BridgePass1!";
+    const deviceId = `auth-cutover-proof-device-${proof}`;
     const runtimeDirectory = await mkdtemp(
       path.join(os.tmpdir(), "fawri-auth-cutover-business-"),
     );
@@ -158,11 +161,16 @@ test(
       }),
     );
 
-    await pool.query("DELETE FROM merchants WHERE id = $1", [merchantId]);
-    await pool.query("DELETE FROM accounts WHERE id = $1 OR phone = $2", [
-      merchantId,
-      phone,
-    ]);
+    const collision = await pool.query(
+      "SELECT id FROM accounts WHERE id = $1 OR phone = $2 LIMIT 1",
+      [merchantId, phone],
+    );
+    assert.equal(
+      collision.rows.length,
+      0,
+      "generated auth cutover identity must not collide with an existing account",
+    );
+
     await pool.query(
       `INSERT INTO accounts (
          id, kind, phone, password_hash, password_version, security_version,
@@ -231,11 +239,7 @@ test(
           new Promise((resolve) => setTimeout(resolve, 2_000)),
         ]);
       }
-      await pool.query("DELETE FROM merchants WHERE id = $1", [merchantId]);
-      await pool.query("DELETE FROM accounts WHERE id = $1 OR phone = $2", [
-        merchantId,
-        phone,
-      ]);
+      await pool.query("DELETE FROM accounts WHERE id = $1", [merchantId]);
       await pool.end();
       await rm(runtimeDirectory, { recursive: true, force: true });
     });
@@ -246,7 +250,7 @@ test(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-Fawri-Device-Id": "auth-cutover-proof-device",
+        "X-Fawri-Device-Id": deviceId,
       },
       body: JSON.stringify({
         phone,
@@ -266,7 +270,7 @@ test(
     const catalog = await fetch(`${baseUrl}/api/catalog/products`, {
       headers: {
         Cookie: merchantCookie,
-        "X-Fawri-Device-Id": "auth-cutover-proof-device",
+        "X-Fawri-Device-Id": deviceId,
       },
     });
     const catalogBody = await catalog.json().catch(() => null);
