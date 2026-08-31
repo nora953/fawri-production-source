@@ -2,16 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const workspace = fs.readFileSync(new URL('../src/pages/dashboard/ProductsWorkspacePage.tsx', import.meta.url), 'utf8');
 const productDetails = fs.readFileSync(new URL('../src/components/catalog/CatalogProductDetailsEditor.tsx', import.meta.url), 'utf8');
-const alignment = fs.readFileSync(new URL('../src/pages/dashboard/catalogMeasurementAlignment.css', import.meta.url), 'utf8');
 
-test('measurement inputs share one vertical rhythm without changing the established width split', () => {
-  assert.match(workspace, /catalogMeasurementAlignment\.css/);
-  assert.match(productDetails, /lg:grid-cols-\[minmax\(220px,0\.7fr\)_minmax\(0,1\.3fr\)\]/);
-  assert.match(alignment, /grid-template-rows:\s*1\.25rem 3rem/);
-  assert.match(alignment, /row-gap:\s*0\.5rem/);
-  assert.match(alignment, /margin-top:\s*0 !important/);
-  assert.match(alignment, /min-height:\s*1\.25rem/);
-  assert.match(alignment, /min-height:\s*3rem/);
+test('measurement inputs share one responsive grid and one control rhythm', () => {
+  assert.match(
+    productDetails,
+    /<p className="mt-2 text-xs leading-5 text-muted-foreground">\{labels\.advancedHint\}<\/p>/,
+  );
+  assert.match(
+    productDetails,
+    /<div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">/,
+  );
+
+  for (const field of ['weight', 'length', 'width', 'height']) {
+    assert.match(
+      productDetails,
+      new RegExp(`<label className="space-y-1 text-xs font-semibold"><span>\\{labels\\.${field}\\}</span><Input[^>]*className="h-10 rounded-xl text-center tabular-nums" \\/></label>`),
+      `${field} measurement must keep the common label/input geometry`,
+    );
+  }
 });
