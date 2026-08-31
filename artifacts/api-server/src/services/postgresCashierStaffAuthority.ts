@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { hashPassword, verifyPassword } from "./authPasswordService";
+import { evaluateMerchantOperationalAccess } from "./merchantOperationalAccess";
 import {
   isCashierStaffRole,
   normalizeCashierStaffPermissions,
@@ -90,6 +91,13 @@ type OperatorAuthRow = {
   session_expires_at: DbInstant;
 };
 
+type MerchantOperationalRow = {
+  id: string;
+  phone_verified: boolean;
+  merchant_status: string;
+  account_status: string;
+};
+
 export type CashierStaffView = {
   id: string;
   display_name: string;
@@ -157,6 +165,44 @@ export class CashierStaffAuthorityError extends Error {
     this.code = code;
     this.status = status;
     this.details = details;
+  }
+}
+
+async function assertMerchantOperationalAccessForCashier(
+  target: OperationalQueryTarget,
+  merchantId: string,
+  lock = false,
+): Promise<void> {
+  const rows = await operationalQueryRows<MerchantOperationalRow>(
+    target,
+    `SELECT a.id,
+            a.phone_verified,
+            m.status::text AS merchant_status,
+            m.account_status::text AS account_status
+       FROM accounts AS a
+       JOIN merchants AS m ON m.id = a.id AND m.account_id = a.id
+      WHERE a.id = $1 AND a.kind = 'merchant'
+      LIMIT 1${lock ? " FOR UPDATE OF a, m" : ""}`,
+    [merchantId],
+  );
+  const row = rows[0];
+  const decision = evaluateMerchantOperationalAccess(
+    row
+      ? {
+          id: row.id,
+          is_admin: false,
+          otp_verified: row.phone_verified,
+          status: row.merchant_status,
+          account_status: row.account_status,
+        }
+      : undefined,
+  );
+  if (!decision.allowed) {
+    throw new CashierStaffAuthorityError(
+      decision.code,
+      decision.error,
+      decision.statusCode,
+    );
   }
 }
 
@@ -575,6 +621,7 @@ export async function createCashierStaffAuthoritative(input: {
   const pinHash = hashPassword(pin);
 
   return withMerchantOperationalTransaction(merchantId, async (client) => {
+    await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     await client.query(
       `INSERT INTO merchant_cashier_staff (
          id, merchant_id, display_name, role, status, pin_hash,
@@ -641,6 +688,7 @@ export async function updateCashierStaffAuthoritative(input: {
   }
 
   return withMerchantOperationalTransaction(merchantId, async (client) => {
+    await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const current = await getStaffRow(client, merchantId, staffId, true);
     if (!current) {
       throw new CashierStaffAuthorityError(
@@ -775,6 +823,7 @@ export async function createCashierStationAuthoritative(input: {
   const stationId = randomId("cashier_station");
 
   return withMerchantOperationalTransaction(merchantId, async (client) => {
+    await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     await client.query(
       `INSERT INTO merchant_cashier_stations (
          id, merchant_id, name, branch_key, branch_label, status,
@@ -843,6 +892,7 @@ export async function updateCashierStationAuthoritative(input: {
   }
 
   return withMerchantOperationalTransaction(merchantId, async (client) => {
+    await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const current = await getStationRow(client, merchantId, stationId, true);
     if (!current) {
       throw new CashierStaffAuthorityError(
@@ -930,6 +980,7 @@ export async function beginCashierStationPairingAuthoritative(input: {
   const expiresAt = new Date(Date.now() + PAIRING_TTL_MS);
 
   return withMerchantOperationalTransaction(merchantId, async (client) => {
+    await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const station = await getStationRow(client, merchantId, stationId, true);
     if (!station) {
       throw new CashierStaffAuthorityError(
@@ -1014,6 +1065,7 @@ export async function redeemCashierStationPairingAuthoritative(input: {
     }
     const merchantId = identifier(challenge.merchant_id, "merchant_id");
     await client.query("SELECT set_config('fawri.tenant_id', $1, true)", [merchantId]);
+    await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     const station = await getStationRow(
       client,
       merchantId,
@@ -1116,6 +1168,7 @@ export async function authenticateCashierStationAuthoritative(input: {
       401,
     );
   }
+  await assertMerchantOperationalAccessForCashier(pool, row.merchant_id);
   await pool.query(
     `UPDATE cashier_station_credentials
         SET last_used_at = now()
@@ -1152,6 +1205,11 @@ async function verifyOperatorPinInTransaction(
   staffId: string,
   pin: string,
 ): Promise<PinDecision> {
+  await assertMerchantOperationalAccessForCashier(
+    client,
+    station.merchant_id,
+    true,
+  );
   const credentialRows = await operationalQueryRows<{ id: string }>(
     client,
     `SELECT c.id
@@ -1464,6 +1522,7 @@ export async function authenticateCashierOperatorAuthoritative(input: {
       401,
     );
   }
+  await assertMerchantOperationalAccessForCashier(pool, row.merchant_id);
   const permissions = normalizePermissionSnapshot(row.permission_snapshot);
   if (
     input.requiredPermission &&
