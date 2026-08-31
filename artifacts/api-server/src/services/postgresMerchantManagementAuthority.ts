@@ -1100,7 +1100,15 @@ async function purgeMerchantOperationalData(
   // Retained financial/entitlement/audit rows keep only non-PII proof fields.
   await target.query(`UPDATE reply_ledger SET message_id = NULL, metadata = '{}'::jsonb WHERE merchant_id = $1`, [merchantId]);
   await target.query(`UPDATE saas_billing_orders SET metadata = '{}'::jsonb WHERE merchant_id = $1`, [merchantId]);
-  await target.query(`UPDATE audit_events SET details = NULL, metadata = '{}'::jsonb WHERE merchant_id = $1`, [merchantId]);
+  await target.query(
+    `UPDATE audit_events
+        SET details = NULL,
+            metadata = '{}'::jsonb,
+            ip_address = NULL,
+            user_agent = NULL
+      WHERE merchant_id = $1`,
+    [merchantId],
+  );
 }
 
 export async function completeMerchantDeletionPostgres(input: {
