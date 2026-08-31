@@ -996,6 +996,17 @@ export default function CommerceCatalogSimplifiedPage() {
                       {type === 'service' ? copy.service : copy.product}
                     </Badge>
                     <Badge variant="outline" className={`rounded-full px-2 py-0.5 text-[11px] ${statusClass(product.status)}`}>{itemStatusShortLabel(product, copy)}</Badge>
+                    {type === 'service' ? (
+                      <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground">
+                        <CalendarClock className="me-1 h-3 w-3" />
+                        {copy.booking}: {service?.booking_required === false ? copy.bookingOptional : copy.bookingRequired}
+                      </Badge>
+                    ) : hasVariants ? (
+                      <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px] text-muted-foreground">
+                        <Boxes className="me-1 h-3 w-3" />
+                        {copy.variants}: {product.variants.length}
+                      </Badge>
+                    ) : null}
                     {partialVariantOutage && (
                       <Badge variant="outline" title={copy.someVariantsOut} className="rounded-full border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800">
                         <Boxes className="me-1 h-3 w-3" />{soldOutVariants}/{product.variants.length}
@@ -1025,14 +1036,6 @@ export default function CommerceCatalogSimplifiedPage() {
                       )}
                     </div>
                   </div>
-
-                  <p className="mt-2 min-h-5 truncate text-xs text-muted-foreground">
-                    {type === 'service'
-                      ? `${copy.booking}: ${service?.booking_required === false ? copy.bookingOptional : copy.bookingRequired}`
-                      : hasVariants
-                        ? `${copy.variants}: ${product.variants.length}`
-                        : '\u00a0'}
-                  </p>
 
                   <div className="mt-auto flex items-center gap-2 border-t pt-3">
                     <Button
