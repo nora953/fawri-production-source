@@ -262,6 +262,42 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
     ),
   );
 
+  const blockedPlanChange = await responseJson(await fetch(
+    `${baseUrl}/api/auth/merchants/${encodeURIComponent(merchantId)}/subscription`,
+    {
+      method: "PUT",
+      headers: {
+        Cookie: allowedAdminCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ operation: "change", plan: "gold" }),
+    },
+  ));
+  assert.equal(blockedPlanChange.response.status, 409);
+  assert.equal(blockedPlanChange.body?.code, "SUBSCRIPTION_CYCLE_STILL_ACTIVE");
+
+  const baseRepliesToExhaust = Number(
+    merchantCurrent.body?.subscription?.base_replies_remaining || 0,
+  );
+  assert.ok(baseRepliesToExhaust > 0);
+  const exhausted = await responseJson(await fetch(
+    `${baseUrl}/api/auth/merchants/${encodeURIComponent(merchantId)}/subscription`,
+    {
+      method: "PATCH",
+      headers: {
+        Cookie: allowedAdminCookie,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "deduct_replies",
+        amount: baseRepliesToExhaust,
+      }),
+    },
+  ));
+  assert.equal(exhausted.response.status, 200);
+  assert.equal(exhausted.body?.subscription?.merchant_id, merchantId);
+  assert.equal(exhausted.body?.subscription?.base_replies_remaining, 0);
+
   const planChange = await responseJson(await fetch(
     `${baseUrl}/api/auth/merchants/${encodeURIComponent(merchantId)}/subscription`,
     {
