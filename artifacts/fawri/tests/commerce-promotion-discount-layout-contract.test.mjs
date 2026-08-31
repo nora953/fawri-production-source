@@ -12,6 +12,11 @@ const harmonyCss = await readFile(
   'utf8',
 );
 
+const promotionActionCss = await readFile(
+  new URL('../src/pages/dashboard/promotionCardActionAlignment.css', import.meta.url),
+  'utf8',
+);
+
 test('promotion discount controls mirror promotion-period card styling without changing discount authority', () => {
   assert.match(harmonyCss, /mirror the visual language already used by the/);
   assert.match(harmonyCss, /gap:\s*1rem !important/);
@@ -67,4 +72,13 @@ test('promotion summary polish matches product action size, discount weight, and
   assert.match(harmonyCss, /background:\s*rgb\(249 115 22 \/ 0\.04\) !important/);
   assert.match(harmonyCss, /> article > \.grid\.border-t \{[\s\S]*?bottom:\s*4\.5rem/);
   assert.match(harmonyCss, /> article > \.grid\.border-t > div \{[\s\S]*?height:\s*4rem/);
+});
+
+test('promotion edit action keeps the pencil and localized label separated on desktop', () => {
+  assert.match(promotionActionCss, /display:\s*inline-flex !important/);
+  assert.match(promotionActionCss, /align-items:\s*center !important/);
+  assert.match(promotionActionCss, /justify-content:\s*center !important/);
+  assert.match(promotionActionCss, /gap:\s*0\.45rem !important/);
+  assert.match(promotionActionCss, /> button:first-child > svg \{[\s\S]*?flex:\s*0 0 auto/);
+  assert.match(promotionActionCss, /> button:first-child::after \{[\s\S]*?margin:\s*0 !important/);
 });
