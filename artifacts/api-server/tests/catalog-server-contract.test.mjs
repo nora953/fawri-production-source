@@ -24,13 +24,13 @@ test("catalog router derives the tenant from the authenticated session", () => {
 test("active products workspace exposes the canonical server-authoritative catalog UI", () => {
   const activation = read("fawri/src/pages/dashboard/ProductsPage.ts");
   const workspace = read("fawri/src/pages/dashboard/ProductsWorkspacePage.tsx");
-  const page = read("fawri/src/pages/dashboard/CommerceCatalogPage.tsx");
+  const page = read("fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx");
 
   assert.equal(
     activation.trim(),
     "export { default } from './ProductsWorkspacePage.tsx';",
   );
-  assert.match(workspace, /import CommerceCatalogPage from ['"]\.\/CommerceCatalogPage['"]/);
+  assert.match(workspace, /import CommerceCatalogPage from ['"]\.\/CommerceCatalogSimplifiedPage['"]/);
   assert.match(workspace, /<CommerceCatalogPage\s*\/>/);
 
   assert.doesNotMatch(page, /localStorage|sessionStorage/);
@@ -87,7 +87,12 @@ test("catalog media upload is canonical, tenant-scoped, and binary-safe", () => 
 
   assert.match(editor, /uploadCatalogImage\(file\)/);
   assert.match(editor, /storage_key:\s*asset\.storage_key/);
-  assert.doesNotMatch(editor, /FileReader|FormData|createObjectURL/);
+  assert.doesNotMatch(editor, /FileReader|FormData/);
+  assert.doesNotMatch(editor, /createObjectURL\(file\)/);
+  assert.match(editor, /fetch\(protectedRequest/);
+  assert.match(editor, /const blob = await response\.blob\(\)/);
+  assert.match(editor, /URL\.createObjectURL\(blob\)/);
+  assert.match(editor, /URL\.revokeObjectURL/);
 });
 
 test("variant-managed product stock remains derived from variant stock", () => {
