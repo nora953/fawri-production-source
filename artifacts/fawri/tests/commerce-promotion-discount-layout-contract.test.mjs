@@ -74,13 +74,20 @@ test('promotion summary polish matches product action size, discount weight, and
   assert.match(harmonyCss, /> article > \.grid\.border-t > div \{[\s\S]*?height:\s*4rem/);
 });
 
-test('promotion edit action keeps the pencil and localized label separated on desktop', () => {
-  assert.match(promotionActionCss, /display:\s*inline-flex !important/);
-  assert.match(promotionActionCss, /align-items:\s*center !important/);
-  assert.match(promotionActionCss, /justify-content:\s*center !important/);
-  assert.match(promotionActionCss, /gap:\s*0\.45rem !important/);
-  assert.match(promotionActionCss, /> button:first-child > svg \{[\s\S]*?flex:\s*0 0 auto/);
-  assert.match(promotionActionCss, /> button:first-child::after \{[\s\S]*?margin:\s*0 !important/);
+test('promotion edit action is icon-only and matches the product card control size on desktop', () => {
+  assert.match(
+    promotionActionCss,
+    /> \.flex\.shrink-0\.gap-2 \{[\s\S]*?display:\s*flex !important;[\s\S]*?grid-template-columns:\s*none !important/,
+  );
+  assert.match(
+    promotionActionCss,
+    /> button:first-child,[\s\S]*?> button:last-child \{[\s\S]*?width:\s*2\.5rem !important;[\s\S]*?height:\s*2\.5rem !important;[\s\S]*?min-width:\s*2\.5rem !important;[\s\S]*?min-height:\s*2\.5rem !important/,
+  );
+  assert.match(promotionActionCss, /> button:first-child > svg \{[\s\S]*?margin:\s*0 !important/);
+  assert.match(
+    promotionActionCss,
+    /> button:first-child::after \{[\s\S]*?content:\s*none !important;[\s\S]*?display:\s*none !important/,
+  );
 });
 
 test('promotion scope icon keeps breathing room and discount summary lifts away from timing metrics', () => {
