@@ -44,7 +44,7 @@ test('promotion summary cards mirror product-card density and vertical rhythm wi
   assert.match(harmonyCss, /height:\s*18\.75rem !important/);
   assert.match(harmonyCss, /min-height:\s*18\.75rem !important/);
   assert.match(harmonyCss, /bottom:\s*3\.75rem/);
-  assert.match(harmonyCss, /grid-template-columns:\s*minmax\(0, 1fr\) 2\.5rem/);
+  assert.match(harmonyCss, /grid-template-columns:\s*minmax\(0, 1fr\) 2\.25rem/);
   assert.match(harmonyCss, /content:\s*attr\(title\)/);
   assert.match(harmonyCss, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\) !important/);
   assert.match(harmonyCss, /> article > \.border-t\.px-5\.py-3 \{\s*display:\s*none !important/);
@@ -56,4 +56,15 @@ test('promotion summary cards mirror product-card density and vertical rhythm wi
   assert.match(promotionSource, /promotionValueText\(promotion, context\)/);
   assert.match(promotionSource, /displayLocalDateTime\(promotion\.starts_local\)/);
   assert.match(promotionSource, /displayLocalDateTime\(promotion\.ends_local\)/);
+});
+
+test('promotion summary polish matches product action size, discount weight, and metric breathing room', () => {
+  assert.match(harmonyCss, /> article > \.p-5 \{\s*min-height:\s*9rem/);
+  assert.match(harmonyCss, /> article > \.p-5 > \.flex \{\s*min-height:\s*6\.6rem/);
+  assert.match(harmonyCss, /grid-template-columns:\s*minmax\(0, 1fr\) 2\.25rem/);
+  assert.match(harmonyCss, /> button \{\s*height:\s*2\.25rem !important;\s*min-height:\s*2\.25rem !important;\s*border-radius:\s*0\.75rem !important/);
+  assert.match(harmonyCss, /> article > \.p-5 > \.inline-flex \{[\s\S]*?height:\s*2\.25rem/);
+  assert.match(harmonyCss, /background:\s*rgb\(249 115 22 \/ 0\.04\) !important/);
+  assert.match(harmonyCss, /> article > \.grid\.border-t \{[\s\S]*?bottom:\s*4\.5rem/);
+  assert.match(harmonyCss, /> article > \.grid\.border-t > div \{[\s\S]*?height:\s*4rem/);
 });
