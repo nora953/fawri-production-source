@@ -32,18 +32,19 @@ test('summary cards hide product media while the details dialog keeps the produc
   assert.match(dialog, /<CatalogProtectedImage/);
 });
 
-test('summary cards keep SKU out of sight and keep compact variant facts adjacent without empty pills', () => {
+test('summary cards keep SKU out of sight and variant facts inside the wrapping badge row', () => {
   assert.match(cardStyles, /> :first-child > p\[dir="ltr"\][\s\S]*display:\s*none/);
-  assert.match(cardStyles, /grid-template-columns:\s*auto auto minmax\(0, 1fr\)/);
-  assert.match(cardStyles, /> :nth-child\(2\)[\s\S]*grid-column:\s*1[\s\S]*grid-row:\s*2/);
-  assert.match(cardStyles, /> \[dir\] > p\s*\{[\s\S]*grid-column:\s*2[\s\S]*grid-row:\s*2/);
-  assert.match(cardStyles, /> \[dir\] > p\s*\{[\s\S]*background:\s*transparent !important[\s\S]*padding:\s*0 !important/);
+  assert.match(cardStyles, /grid-template-columns:\s*minmax\(0, 1fr\)/);
+  assert.match(cardStyles, /> :nth-child\(2\)[\s\S]*grid-column:\s*1[\s\S]*grid-row:\s*2[\s\S]*width:\s*100%/);
 
   const cardStart = pageSource.indexOf('data-catalog-summary-card="true"');
   const dialogStart = pageSource.indexOf('<Dialog open={Boolean(detailsProduct)}');
   assert.ok(cardStart >= 0 && dialogStart > cardStart);
   const cards = pageSource.slice(cardStart, dialogStart);
-  assert.match(cards, /product\.sku/);
+
+  assert.match(cards, /hasVariants \? \([\s\S]*<Badge[\s\S]*\{copy\.variants\}: \{product\.variants\.length\}/);
+  assert.match(cards, /type === 'service' \? \([\s\S]*\{copy\.booking\}:/);
+  assert.doesNotMatch(cards, /'\\u00a0'/);
 
   const dialog = pageSource.slice(dialogStart);
   assert.match(dialog, /detailsProduct\.sku/);
