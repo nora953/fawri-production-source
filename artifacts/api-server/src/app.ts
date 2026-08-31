@@ -17,6 +17,8 @@ import catalogOperationsRouter from "./routes/catalog-operations";
 import knowledgeOperationsRouter from "./routes/knowledge-operations";
 import conversationOperationsRouter from "./routes/conversation-operations";
 import orderOperationsRouter from "./routes/order-operations";
+import cashierStaffOperationsRouter from "./routes/cashier-staff-operations";
+import cashierOperatorCommerceRouter from "./routes/cashier-operator-commerce";
 import cashierSyncOperationsRouter from "./routes/cashier-sync-operations";
 import merchantSettingsRouter from "./routes/merchant-settings";
 import merchantRegionalRouter from "./routes/merchant-regional";
@@ -325,6 +327,8 @@ app.use(
 );
 app.use("/api", conversationOperationsRouter);
 app.use("/api", orderOperationsRouter);
+app.use("/api", cashierStaffOperationsRouter);
+app.use("/api", cashierOperatorCommerceRouter);
 app.use("/api", cashierSyncOperationsRouter);
 app.use("/api", merchantSettingsRouter);
 app.use("/api", merchantRegionalRouter);
