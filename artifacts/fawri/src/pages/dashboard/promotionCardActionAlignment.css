@@ -48,3 +48,41 @@
     transform: translateY(-0.35rem);
   }
 }
+
+/*
+ * Promotion header context: keep the pricing notice and store authority facts
+ * visually distinct without introducing another card. Desktop keeps one clean
+ * row; narrow screens stack the authority facts with a subtle divider.
+ */
+.products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] {
+  column-gap: 1.5rem !important;
+  row-gap: 0.5rem !important;
+}
+
+.products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 650;
+  color: rgb(154 52 18);
+}
+
+.products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:last-child {
+  flex: 0 0 auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:last-child > [dir="ltr"] {
+  color: hsl(var(--foreground));
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 639px) {
+  .products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:last-child {
+    width: 100%;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgb(249 115 22 / 0.14);
+    white-space: normal;
+  }
+}
