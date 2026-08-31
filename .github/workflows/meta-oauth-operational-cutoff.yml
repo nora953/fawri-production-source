@@ -66,8 +66,14 @@ jobs:
       - name: Install frozen dependencies without lifecycle scripts
         run: node scripts/ci-run-redacted.mjs --label meta-oauth-operational-cutoff-frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
 
+      - name: Check callback contract syntax
+        run: node --check artifacts/api-server/tests/meta-oauth-callback-operational-cutoff-contract.test.mjs
+
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Build API server
+        run: pnpm --filter @workspace/api-server run build
 
       - name: Initialize disposable PostgreSQL runtime schema
         run: pnpm --filter @workspace/db run push-force
