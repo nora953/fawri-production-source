@@ -4,10 +4,11 @@ import { Boxes, ChevronDown, Copy, Layers3, Plus, Ruler, Trash2, Undo2 } from 'l
 import { CatalogImageUploadEditor } from '@/components/catalog/CatalogImageUploadEditor';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type {
-  CatalogImageDraft,
-  CatalogProductFormState,
-  CatalogVariantDraft,
+import {
+  catalogProductStockIsVariantManaged,
+  type CatalogImageDraft,
+  type CatalogProductFormState,
+  type CatalogVariantDraft,
 } from '@/lib/catalogProductEditor';
 import {
   catalogVariantCombinationCount,
@@ -428,7 +429,7 @@ export function CatalogProductDetailsEditor({
   lang,
   form,
   editing,
-  moneyStep: _moneyStep,
+  moneyStep,
   onChange,
 }: {
   lang: Lang;
@@ -452,6 +453,7 @@ export function CatalogProductDetailsEditor({
     .map(row => createCatalogVariantOptionSetDraft(row.name, splitValues(row.values))), [optionRows]);
   const combinationCount = useMemo(() => catalogVariantCombinationCount(structuredDefinitions), [structuredDefinitions]);
   const groups = useMemo(() => legacy ? [] : variantGroups(form.variants), [form.variants, legacy]);
+  const variantManagedInventory = catalogProductStockIsVariantManaged(form);
 
   if (form.item_type !== 'product') return null;
 
@@ -670,8 +672,8 @@ export function CatalogProductDetailsEditor({
                     ? <Input value={variant.name} onChange={event => updateVariant(index, { name: event.target.value })} className="h-10 min-w-32 rounded-xl" />
                     : <div className="min-w-28 rounded-xl bg-muted/30 px-3 py-2.5 font-bold" dir="auto">{grouped ? optionSummaryWithinGroup(variant) : optionSummary(variant)}</div>}
                 </td>
-                <td className="p-2.5"><Input type="text" inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => updateVariant(index, { price_iqd: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className={`${numericClass} min-w-32`} /></td>
-                <td className="p-2.5"><Input type="text" inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => updateVariant(index, { cost_iqd: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className={`${numericClass} min-w-32`} /></td>
+                <td className="p-2.5"><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => updateVariant(index, { price_iqd: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className={`${numericClass} min-w-32`} /></td>
+                <td className="p-2.5"><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => updateVariant(index, { cost_iqd: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className={`${numericClass} min-w-32`} /></td>
                 {form.track_inventory && <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.stock_quantity} onChange={event => updateVariant(index, { stock_quantity: event.target.value })} disabled={Boolean(editing && variant.id)} placeholder={editing && variant.id ? labels.currentInventoryLocked : '0'} className={`${numericClass} w-24`} /></td>}
                 <td className="p-2.5"><Input type="text" dir="ltr" value={variant.sku} onChange={event => updateVariant(index, { sku: event.target.value })} className="h-10 min-w-36 rounded-xl text-center font-mono text-xs" /></td>
                 <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.barcode} onChange={event => updateVariant(index, { barcode: event.target.value })} className={`${numericClass} min-w-32`} /></td>
@@ -705,7 +707,7 @@ export function CatalogProductDetailsEditor({
 
   return (
     <div className="space-y-4">
-      {form.track_inventory && form.variants.length === 0 && (
+      {form.track_inventory && !variantManagedInventory && (
         <label className="space-y-1 text-sm font-semibold">
           <span>{labels.quantity}</span>
           <Input type="text" inputMode="numeric" dir="ltr" value={form.quantity} onChange={event => onChange({ quantity: event.target.value })} disabled={editing} className="h-11 rounded-xl text-center tabular-nums" />
@@ -718,7 +720,7 @@ export function CatalogProductDetailsEditor({
         <div className="grid gap-3 md:grid-cols-3">
           <label className="space-y-1 text-sm font-semibold">
             <span>{labels.reportingCost}</span>
-            <Input type="text" inputMode="decimal" dir="ltr" value={form.cost_iqd} onChange={event => onChange({ cost_iqd: event.target.value })} placeholder="0" className="h-11 rounded-xl text-center tabular-nums" />
+            <Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={form.cost_iqd} onChange={event => onChange({ cost_iqd: event.target.value })} placeholder="0" className="h-11 rounded-xl text-center tabular-nums" />
             <span className="block text-xs font-normal leading-5 text-muted-foreground">{labels.reportingCostHint}</span>
           </label>
           <label className="space-y-1 text-sm font-semibold"><span>{labels.sku}</span><Input type="text" dir="ltr" value={form.sku} onChange={event => onChange({ sku: event.target.value })} className="h-11 rounded-xl text-center font-mono" /></label>
@@ -824,7 +826,7 @@ export function CatalogProductDetailsEditor({
                               <label className="space-y-1 text-xs font-semibold">
                                 <span>{labels.groupSale}</span>
                                 <div className="flex gap-1.5">
-                                  <Input type="text" inputMode="decimal" dir="ltr" value={draft.sale} onChange={event => updateGroupDraft(group.key, { sale: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className="h-10 rounded-xl text-center tabular-nums" />
+                                  <Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={draft.sale} onChange={event => updateGroupDraft(group.key, { sale: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className="h-10 rounded-xl text-center tabular-nums" />
                                   <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => applyGroupField(group, 'price_iqd', draft.sale)}>{labels.applyGroup}</Button>
                                 </div>
                                 <span className="block text-[10px] font-normal text-muted-foreground">{labels.clearOverrideHint}</span>
@@ -833,7 +835,7 @@ export function CatalogProductDetailsEditor({
                               <label className="space-y-1 text-xs font-semibold">
                                 <span>{labels.groupCost}</span>
                                 <div className="flex gap-1.5">
-                                  <Input type="text" inputMode="decimal" dir="ltr" value={draft.cost} onChange={event => updateGroupDraft(group.key, { cost: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className="h-10 rounded-xl text-center tabular-nums" />
+                                  <Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={draft.cost} onChange={event => updateGroupDraft(group.key, { cost: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className="h-10 rounded-xl text-center tabular-nums" />
                                   <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => applyGroupField(group, 'cost_iqd', draft.cost)}>{labels.applyGroup}</Button>
                                 </div>
                                 <span className="block text-[10px] font-normal text-muted-foreground">{labels.clearOverrideHint}</span>
