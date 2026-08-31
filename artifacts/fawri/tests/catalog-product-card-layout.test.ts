@@ -16,6 +16,11 @@ test('catalog summary cards keep one stable compact footprint and three-column d
   assert.match(cardStyles, /\[data-catalog-summary-card="true"\]\s*\{[\s\S]*min-height:\s*12\.25rem/);
   assert.match(cardStyles, /@media \(min-width: 1280px\)/);
   assert.match(cardStyles, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(cardStyles, /@media \(min-width: 1280px\)[\s\S]*\[data-catalog-summary-card="true"\]\s*\{[\s\S]*height:\s*18\.75rem !important[\s\S]*min-height:\s*18\.75rem !important/);
+  assert.match(cardStyles, /grid-template-rows:\s*4\.75rem 3\.25rem 4rem 0\.75rem 3rem/);
+  assert.match(cardStyles, /> :nth-child\(2\)[\s\S]*height:\s*3\.25rem[\s\S]*align-content:\s*start/);
+  assert.match(cardStyles, /> :nth-child\(3\)[\s\S]*height:\s*4rem/);
+  assert.match(cardStyles, /> :last-child[\s\S]*height:\s*3rem/);
   assert.doesNotMatch(pageSource, /expandedInventoryProducts/);
   assert.doesNotMatch(pageSource, /toggleInventoryDetails/);
 });
