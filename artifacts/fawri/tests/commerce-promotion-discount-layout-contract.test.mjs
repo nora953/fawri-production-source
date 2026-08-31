@@ -37,3 +37,23 @@ test('promotion editor hides the duplicate modal title badge without changing th
   assert.match(harmonyCss, /Promotion modal: hide the duplicate Promotions badge/);
   assert.match(promotionSource, /<h1 className="text-3xl font-extrabold tracking-tight">\{copy\.title\}<\/h1>/);
 });
+
+test('promotion summary cards mirror product-card density and vertical rhythm without changing promotion authority', () => {
+  assert.match(harmonyCss, /Promotion summary cards mirror the compact Product summary-card rhythm/);
+  assert.match(harmonyCss, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\) !important/);
+  assert.match(harmonyCss, /height:\s*18\.75rem !important/);
+  assert.match(harmonyCss, /min-height:\s*18\.75rem !important/);
+  assert.match(harmonyCss, /bottom:\s*3\.75rem/);
+  assert.match(harmonyCss, /grid-template-columns:\s*minmax\(0, 1fr\) 2\.5rem/);
+  assert.match(harmonyCss, /content:\s*attr\(title\)/);
+  assert.match(harmonyCss, /grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\) !important/);
+  assert.match(harmonyCss, /> article > \.border-t\.px-5\.py-3 \{\s*display:\s*none !important/);
+
+  assert.match(promotionSource, /listCatalogPromotions/);
+  assert.match(promotionSource, /createCatalogPromotion/);
+  assert.match(promotionSource, /updateCatalogPromotion/);
+  assert.match(promotionSource, /deleteCatalogPromotion/);
+  assert.match(promotionSource, /promotionValueText\(promotion, context\)/);
+  assert.match(promotionSource, /displayLocalDateTime\(promotion\.starts_local\)/);
+  assert.match(promotionSource, /displayLocalDateTime\(promotion\.ends_local\)/);
+});
