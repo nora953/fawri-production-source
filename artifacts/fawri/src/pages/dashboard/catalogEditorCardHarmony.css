@@ -236,11 +236,12 @@
   }
 
   .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 {
+    min-height: 9rem;
     padding: 0 !important;
   }
 
   .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex {
-    min-height: 7.15rem;
+    min-height: 6.6rem;
     align-items: stretch !important;
   }
 
@@ -283,8 +284,15 @@
     inset-inline: 0.875rem;
     bottom: 0.875rem;
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 2.5rem;
+    grid-template-columns: minmax(0, 1fr) 2.25rem;
+    align-items: center;
     gap: 0.5rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button {
+    height: 2.25rem !important;
+    min-height: 2.25rem !important;
+    border-radius: 0.75rem !important;
   }
 
   .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child {
@@ -293,10 +301,15 @@
     padding-inline: 0.875rem !important;
   }
 
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:last-child {
+    width: 2.25rem !important;
+    min-width: 2.25rem !important;
+  }
+
   .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child::after {
     content: attr(title);
     margin-inline-start: 0.45rem;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 800;
   }
 
@@ -304,19 +317,40 @@
     display: flex !important;
     width: fit-content;
     max-width: 100%;
-    height: 2.75rem;
-    margin-top: 0.35rem !important;
-    padding: 0.55rem 0.8rem !important;
-    border-radius: 0.875rem !important;
+    height: 2.25rem;
+    margin-top: 0.2rem !important;
+    gap: 0.4rem !important;
+    padding: 0.35rem 0.65rem !important;
+    border-color: rgb(249 115 22 / 0.18) !important;
+    border-radius: 0.75rem !important;
+    background: rgb(249 115 22 / 0.04) !important;
+    color: rgb(194 65 12) !important;
     overflow: hidden;
     white-space: nowrap;
   }
 
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .inline-flex > svg {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .inline-flex > span {
+    font-size: 0.75rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .inline-flex > strong {
+    font-size: 0.95rem !important;
+    line-height: 1rem !important;
+  }
+
   .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .grid.border-t {
+    position: absolute;
+    inset-inline: 0.875rem;
+    bottom: 4.5rem;
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 0.625rem;
-    margin-top: auto;
+    margin-top: 0 !important;
     border: 0 !important;
     background: transparent !important;
   }
