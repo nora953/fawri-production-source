@@ -1,0 +1,23 @@
+/*
+ * Promotion cards reuse the icon-only edit button from the original markup and
+ * add its localized label through the summary-card CSS. Keep both pieces in one
+ * centered flex row so the pencil never overlaps the label in RTL or LTR.
+ */
+@media (min-width: 1280px) {
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.45rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child > svg {
+    flex: 0 0 auto;
+    margin: 0 !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child::after {
+    margin: 0 !important;
+    line-height: 1rem;
+  }
+}
