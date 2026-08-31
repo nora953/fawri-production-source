@@ -6,20 +6,30 @@ const pageSource = await readFile(
   new URL('../src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx', import.meta.url),
   'utf8',
 );
+const cardStyles = await readFile(
+  new URL('../src/styles/catalogSummaryCards.css', import.meta.url),
+  'utf8',
+);
 
-test('catalog summary cards keep one stable compact footprint', () => {
-  assert.match(pageSource, /grid auto-rows-fr gap-4 lg:grid-cols-2 2xl:grid-cols-3/);
+test('catalog summary cards keep one stable compact footprint and three-column desktop density', () => {
   assert.match(pageSource, /data-catalog-summary-card="true"/);
-  assert.match(pageSource, /className="flex h-full min-h-\[17rem\]/);
+  assert.match(cardStyles, /\[data-catalog-summary-card="true"\]\s*\{[\s\S]*min-height:\s*13\.5rem/);
+  assert.match(cardStyles, /@media \(min-width: 1280px\)/);
+  assert.match(cardStyles, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.doesNotMatch(pageSource, /expandedInventoryProducts/);
   assert.doesNotMatch(pageSource, /toggleInventoryDetails/);
 });
 
-test('product media stays physically left while localized content keeps its own direction', () => {
-  assert.match(pageSource, /data-catalog-summary-card="true"[\s\S]*dir="ltr"/);
-  assert.match(pageSource, /className="relative w-32 shrink-0 overflow-hidden border-r bg-muted\/20 sm:w-36"/);
-  assert.match(pageSource, /<div dir=\{dir\} className=\{`flex min-w-0 flex-1 flex-col p-4/);
-  assert.match(pageSource, /className="h-full w-full object-cover"/);
+test('summary cards hide product media while the details dialog keeps the product image', () => {
+  assert.match(cardStyles, /\[data-catalog-summary-card="true"\] > :first-child\s*\{[\s\S]*display:\s*none/);
+
+  const cardStart = pageSource.indexOf('data-catalog-summary-card="true"');
+  const dialogStart = pageSource.indexOf('<Dialog open={Boolean(detailsProduct)}');
+  assert.ok(cardStart >= 0 && dialogStart > cardStart);
+
+  const dialog = pageSource.slice(dialogStart);
+  assert.match(dialog, /detailsProduct\.image_refs\[0\]/);
+  assert.match(dialog, /<CatalogProtectedImage/);
 });
 
 test('card keeps only summary facts and opens product details in a dialog', () => {
