@@ -11,74 +11,79 @@ function source(relativePath) {
   return fs.readFileSync(path.join(apiRoot, relativePath), "utf8");
 }
 
-function between(text, startMarker, endMarker) {
-  const start = text.indexOf(startMarker);
-  const end = text.indexOf(endMarker, start + startMarker.length);
-  assert.notEqual(start, -1, `missing source marker: ${startMarker}`);
-  assert.notEqual(end, -1, `missing source marker: ${endMarker}`);
-  return text.slice(start, end);
-}
-
-test("irreversible merchant deletion must retire physical catalog and support media, not only PostgreSQL references", () => {
-  const management = source("src/services/postgresMerchantManagementAuthority.ts");
+test("irreversible merchant deletion owns durable post-commit physical media retirement", () => {
+  const route = source("src/routes/auth-merchant-management-postgres-routes.ts");
+  const coordinator = source("src/services/merchantPhysicalMediaCleanup.ts");
   const catalogMedia = source("src/services/catalogMediaStorage.ts");
-  const supportMedia = source("src/services/postgresSupportImageAuthority.ts");
+  const supportStorage = source("src/services/supportImageStorage.ts");
+  const runtime = source("src/index.ts");
 
-  const purge = between(
-    management,
-    "async function purgeMerchantOperationalData(",
-    "export async function completeMerchantDeletionPostgres(",
+  assert.match(
+    route,
+    /completeMerchantDeletionWithPhysicalMediaCleanup\(/,
+    "the production irreversible-delete route must use the media cleanup coordinator",
+  );
+
+  assert.match(
+    coordinator,
+    /catalog_image_references[\s\S]*storage_key IS NOT NULL/,
+    "catalog storage keys must be captured while PostgreSQL references still exist",
+  );
+  assert.match(
+    coordinator,
+    /support_attachments[\s\S]*storage_provider, storage_key/,
+    "support storage provider/key pairs must be captured before relational purge",
+  );
+  assert.match(
+    coordinator,
+    /support_tickets[\s\S]*WHERE merchant_id = \$1/,
+    "support ticket prefixes must be captured so racing files under a deleted ticket are also retired",
+  );
+  assert.match(
+    coordinator,
+    /writeManifest\(manifest\)[\s\S]*completeMerchantDeletionPostgres\(input\)/,
+    "cleanup intent must be persisted before the database deletion transaction is attempted",
+  );
+  assert.match(
+    coordinator,
+    /deletionIsCommitted[\s\S]*account_state === "closed"[\s\S]*retention_status === "deleted"/,
+    "physical deletion must require a committed irreversible merchant tombstone",
+  );
+  assert.match(
+    coordinator,
+    /state: remaining\.length === 0 \? "complete" : "pending"/,
+    "failed provider deletion must remain explicitly pending for retry",
+  );
+  assert.match(
+    coordinator,
+    /reconcileMerchantPhysicalMediaCleanup\(input\.merchantId\)\.catch\(\(\) => null\)/,
+    "post-commit provider failure must not restore or roll back deleted merchant access",
   );
 
   assert.match(
     catalogMedia,
-    /catalog-media/,
-    "catalog media must remain a physical storage concern in this proof",
+    /removeCatalogMerchantMedia/,
+    "catalog storage must expose provider-level merchant-prefix retirement",
   );
   assert.match(
     catalogMedia,
-    /fs\.(?:writeFileSync|renameSync)/,
-    "catalog media proof expects the current filesystem-backed provider",
+    /removePrefix/,
+    "catalog cleanup must remain behind the storage-provider abstraction",
   );
   assert.match(
-    purge,
-    /DELETE FROM catalog_image_references WHERE merchant_id = \$1/,
-    "merchant deletion is expected to delete catalog media references",
+    supportStorage,
+    /removeSupportImageStorageObject/,
+    "support object deletion must remain behind a storage-provider boundary",
   );
-
-  const catalogPhysicalCleanup =
-    /(?:remove|delete|purge)[A-Za-z0-9_]*(?:Catalog|catalog)[A-Za-z0-9_]*(?:Media|Image|media|image)|(?:Catalog|catalog)[A-Za-z0-9_]*(?:Media|Image|media|image)[A-Za-z0-9_]*(?:remove|delete|purge)/.test(
-      purge,
-    );
-  assert.equal(
-    catalogPhysicalCleanup,
-    true,
-    "merchant deletion removes catalog_image_references from PostgreSQL but has no catalog-media physical cleanup step; stored product images can remain orphaned after irreversible merchant deletion",
+  assert.match(
+    supportStorage,
+    /removeSupportTicketImageStoragePrefix/,
+    "support ticket-prefix retirement must be idempotent and provider-owned",
   );
 
   assert.match(
-    supportMedia,
-    /SUPPORT_IMAGE_DIR/,
-    "support images must remain a physical storage concern in this proof",
-  );
-  assert.match(
-    supportMedia,
-    /fs\.(?:writeFileSync|renameSync)/,
-    "support media proof expects the current filesystem-backed provider",
-  );
-  assert.match(
-    purge,
-    /DELETE FROM support_attachments WHERE merchant_id = \$1/,
-    "merchant deletion is expected to delete support attachment references",
-  );
-
-  const supportPhysicalCleanup =
-    /(?:remove|delete|purge)[A-Za-z0-9_]*(?:Support|support)[A-Za-z0-9_]*(?:Media|Image|Attachment|media|image|attachment)|(?:Support|support)[A-Za-z0-9_]*(?:Media|Image|Attachment|media|image|attachment)[A-Za-z0-9_]*(?:remove|delete|purge)/.test(
-      purge,
-    );
-  assert.equal(
-    supportPhysicalCleanup,
-    true,
-    "merchant deletion removes support_attachments from PostgreSQL but has no support-image physical cleanup step; uploaded support images can remain on disk after irreversible merchant deletion",
+    runtime,
+    /startMerchantPhysicalMediaCleanupReconciler/,
+    "runtime startup must retry persisted cleanup work instead of silently forgetting failed physical deletion",
   );
 });
