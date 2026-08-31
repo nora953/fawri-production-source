@@ -105,7 +105,7 @@ export async function updateMerchantCurrencyAuthoritative(input: {
     const blockerRows = await operationalQueryRows<CurrencyBlockerRow>(
       client,
       `SELECT
-         EXISTS (SELECT 1 FROM catalog_products WHERE merchant_id = $1 LIMIT 1) AS has_catalog,
+         EXISTS (SELECT 1 FROM products WHERE merchant_id = $1 LIMIT 1) AS has_catalog,
          EXISTS (SELECT 1 FROM orders WHERE merchant_id = $1 LIMIT 1) AS has_orders,
          EXISTS (SELECT 1 FROM commerce_promotions WHERE merchant_id = $1 LIMIT 1) AS has_promotions,
          EXISTS (
