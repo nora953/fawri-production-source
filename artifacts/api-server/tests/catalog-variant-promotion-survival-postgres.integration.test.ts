@@ -63,6 +63,8 @@ test("variant promotion survives an ordinary catalog rebuild that preserves the 
       ],
     },
   });
+  assert.equal(created.product.version, 1);
+  assert.equal(created.product.variants[0]?.id, variantId);
 
   const promotion = await promotions.createCommercePromotionAuthoritative({
     merchantId,
@@ -81,29 +83,35 @@ test("variant promotion survives an ordinary catalog rebuild that preserves the 
     },
   });
   assert.equal(promotion.replayed, false);
+  assert.equal(promotion.promotion.product_id, productId);
+  assert.equal(promotion.promotion.variant_id, variantId);
 
-  const current = (
-    await catalog.listCatalogProductsAuthoritative(merchantId)
-  ).find((item) => item.id === productId);
-  assert.ok(current);
+  const before = await promotions.listCommercePromotionsAuthoritative(merchantId);
+  const beforeRow = before.find((item) => item.id === promotion.promotion.id);
+  assert.ok(beforeRow);
+  assert.equal(beforeRow.variant_id, variantId);
 
-  const updated = await catalog.updateCatalogProductAuthoritative({
+  const current = await catalog.listCatalogProductsAuthoritative(merchantId);
+  const currentProduct = current.find((item) => item.id === productId);
+  assert.ok(currentProduct);
+
+  const rebuilt = await catalog.updateCatalogProductAuthoritative({
     merchantId,
     productId,
-    expectedVersion: current.version,
+    expectedVersion: currentProduct.version,
     input: {
-      name: `${current.name} renamed`,
-      description: current.description,
-      category: current.category,
-      sku: current.sku,
-      barcode: current.barcode,
-      price_iqd: current.price_iqd,
-      compare_at_price_iqd: current.compare_at_price_iqd,
-      low_stock_threshold: current.low_stock_threshold,
-      status: current.status,
-      allow_fawri_reply: current.allow_fawri_reply,
-      image_refs: current.image_refs,
-      variants: current.variants.map((variant) => ({
+      name: `${currentProduct.name} renamed`,
+      description: currentProduct.description,
+      category: currentProduct.category,
+      sku: currentProduct.sku,
+      barcode: currentProduct.barcode,
+      price_iqd: currentProduct.price_iqd,
+      compare_at_price_iqd: currentProduct.compare_at_price_iqd,
+      low_stock_threshold: currentProduct.low_stock_threshold,
+      status: currentProduct.status,
+      allow_fawri_reply: currentProduct.allow_fawri_reply,
+      image_refs: currentProduct.image_refs,
+      variants: currentProduct.variants.map((variant) => ({
         id: variant.id,
         name: variant.name,
         sku: variant.sku,
@@ -115,13 +123,13 @@ test("variant promotion survives an ordinary catalog rebuild that preserves the 
       })),
     },
   });
-  assert.equal(updated.variants[0]?.id, variantId);
+  assert.equal(rebuilt.product.variants[0]?.id, variantId);
 
   const after = await promotions.listCommercePromotionsAuthoritative(merchantId);
   const preserved = after.find((item) => item.id === promotion.promotion.id);
   assert.ok(
     preserved,
-    "catalog updates must not cascade-delete promotions that still target the retained variant",
+    "an ordinary catalog rebuild must not cascade-delete a promotion that still targets the same variant",
   );
   assert.equal(preserved.product_id, productId);
   assert.equal(preserved.variant_id, variantId);
