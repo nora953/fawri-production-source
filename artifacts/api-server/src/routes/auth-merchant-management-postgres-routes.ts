@@ -14,7 +14,6 @@ import {
   merchantAdminLogActionAllowed,
 } from "../services/postgresMerchantAdminLogAuthority";
 import {
-  completeMerchantDeletionPostgres,
   createDeletionRequestPostgres,
   getMerchantAdminNotePostgres,
   importLegacyAdminDataPostgres,
@@ -29,6 +28,7 @@ import {
   updateMerchantStatusPostgres,
   type ManagedMerchantStatus,
 } from "../services/postgresMerchantManagementAuthority";
+import { completeMerchantDeletionWithPhysicalMediaCleanup } from "../services/merchantPhysicalMediaCleanup";
 import { findAdminByIdAuthoritative } from "../services/postgresAdminAccountAuthority";
 import { verifyPassword } from "../services/authPasswordService";
 
@@ -351,7 +351,7 @@ router.post(
       return;
     }
     try {
-      const result = await completeMerchantDeletionPostgres({
+      const result = await completeMerchantDeletionWithPhysicalMediaCleanup({
         merchantId,
         deletionRequestId,
         actorAdminId: owner.account.id,

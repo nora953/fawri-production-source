@@ -2,6 +2,7 @@ import { logger } from "./lib/logger";
 import { getFawriDataDir } from "./lib/dataPaths";
 import type { DurableJobWorker } from "./services/durableJobQueue";
 import type { EarlyWarningIncidentMonitor } from "./services/earlyWarningIncidentMonitor";
+import type { MerchantPhysicalMediaCleanupReconciler } from "./services/merchantPhysicalMediaCleanup";
 import { assertProductionRuntimeConfiguration } from "./services/productionReleaseReadiness";
 import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminProvisioning";
 import { bootstrapRuntimeAndLoadApplication } from "./services/runtimeProviderBootstrap";
@@ -43,18 +44,31 @@ async function main(): Promise<void> {
         { default: app },
         { startMetaWebhookWorker },
         { startEarlyWarningIncidentMonitor },
+        { startMerchantPhysicalMediaCleanupReconciler },
       ] = await Promise.all([
         import("./app"),
         import("./services/metaWebhookWorker"),
         import("./services/earlyWarningIncidentMonitor"),
+        import("./services/merchantPhysicalMediaCleanup"),
       ]);
-      return { app, startMetaWebhookWorker, startEarlyWarningIncidentMonitor };
+      return {
+        app,
+        startMetaWebhookWorker,
+        startEarlyWarningIncidentMonitor,
+        startMerchantPhysicalMediaCleanupReconciler,
+      };
     },
   });
-  const { app, startMetaWebhookWorker, startEarlyWarningIncidentMonitor } = application;
+  const {
+    app,
+    startMetaWebhookWorker,
+    startEarlyWarningIncidentMonitor,
+    startMerchantPhysicalMediaCleanupReconciler,
+  } = application;
 
   let metaWebhookWorker: DurableJobWorker | null = null;
   let earlyWarningMonitor: EarlyWarningIncidentMonitor | null = null;
+  let merchantMediaCleanupReconciler: MerchantPhysicalMediaCleanupReconciler | null = null;
   let shuttingDown = false;
 
   const server = app.listen(port, () => {
@@ -73,12 +87,26 @@ async function main(): Promise<void> {
     const workersExplicitlyDisabled = process.env.FAWRI_DISABLE_JOB_WORKERS === "1";
     const metaCutoverReady = process.env.FAWRI_META_CUTOVER_READY === "1";
 
+    if (!workersExplicitlyDisabled) {
+      try {
+        merchantMediaCleanupReconciler =
+          startMerchantPhysicalMediaCleanupReconciler();
+        logger.info("Merchant physical media cleanup reconciler started");
+      } catch (error) {
+        logger.warn(
+          { code: safeStartupErrorCode(error) },
+          "Merchant physical media cleanup reconciler failed to start",
+        );
+      }
+    }
+
     if (!workersExplicitlyDisabled && metaCutoverReady) {
       try {
         metaWebhookWorker = startMetaWebhookWorker(port);
         logger.info("Meta webhook durable worker started");
       } catch (error) {
         logger.fatal({ err: error }, "Meta webhook durable worker failed to start");
+        merchantMediaCleanupReconciler?.stop();
         earlyWarningMonitor?.stop();
         runtime.dispose();
         server.close(() => process.exit(1));
@@ -93,6 +121,7 @@ async function main(): Promise<void> {
   });
 
   server.on("error", (error) => {
+    merchantMediaCleanupReconciler?.stop();
     earlyWarningMonitor?.stop();
     runtime.dispose();
     logger.fatal({ err: error, port }, "Error listening on port");
@@ -104,6 +133,7 @@ async function main(): Promise<void> {
     shuttingDown = true;
     logger.info({ signal }, "Shutting down API server");
     metaWebhookWorker?.stop();
+    merchantMediaCleanupReconciler?.stop();
     earlyWarningMonitor?.stop();
     runtime.dispose();
 
