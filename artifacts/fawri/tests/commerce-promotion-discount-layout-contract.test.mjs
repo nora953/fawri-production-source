@@ -82,3 +82,18 @@ test('promotion edit action keeps the pencil and localized label separated on de
   assert.match(promotionActionCss, /> button:first-child > svg \{[\s\S]*?flex:\s*0 0 auto/);
   assert.match(promotionActionCss, /> button:first-child::after \{[\s\S]*?margin:\s*0 !important/);
 });
+
+test('promotion scope icon keeps breathing room and discount summary lifts away from timing metrics', () => {
+  assert.match(
+    promotionActionCss,
+    /\.rounded-full\.bg-background \{[\s\S]*?display:\s*inline-flex !important;[\s\S]*?gap:\s*0\.35rem !important/,
+  );
+  assert.match(
+    promotionActionCss,
+    /\.rounded-full\.bg-background > svg \{[\s\S]*?margin:\s*0 !important/,
+  );
+  assert.match(
+    promotionActionCss,
+    /> article > \.p-5 > \.inline-flex \{\s*transform:\s*translateY\(-0\.35rem\)/,
+  );
+});
