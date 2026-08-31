@@ -102,7 +102,7 @@ const COPY: Record<Lang, Record<string, string>> = {
     disabled: 'متوقف',
     timezone: 'توقيت العرض',
     currency: 'عملة المتجر',
-    originalSafe: 'السعر الأصلي لا يتغير؛ فوري يستخدم السعر الفعّال فقط أثناء فترة العرض.',
+    originalSafe: 'السعر الأصلي لا يتغير، فوري يستخدم السعر الفعّال فقط أثناء فترة العرض.',
     basicsSection: 'معلومات العرض',
     basicsHint: 'سمّ العرض وحدد أين سيُطبّق.',
     discountSection: 'تفاصيل الخصم',
@@ -593,10 +593,16 @@ export default function CatalogPromotionsPage() {
           <div className="mt-4 flex flex-col gap-2 rounded-2xl border border-orange-200 bg-orange-50/70 px-4 py-3 text-xs leading-5 text-orange-900 sm:flex-row sm:items-center sm:justify-between">
             <span>{copy.originalSafe}</span>
             {context && (
-              <span className="shrink-0 text-muted-foreground">
-                {copy.currency}: <span dir="ltr">{context.currency_code}</span>
-                {' · '}
-                {copy.timezone}: <span dir="ltr">{context.timezone}</span>
+              <span className="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 text-muted-foreground sm:flex-nowrap">
+                <span className="inline-flex items-center gap-1.5">
+                  <span>{copy.currency}:</span>
+                  <strong dir="ltr" className="font-extrabold text-foreground">{context.currency_code}</strong>
+                </span>
+                <span aria-hidden="true" className="text-orange-400">•</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <span>{copy.timezone}:</span>
+                  <strong dir="ltr" className="font-extrabold text-foreground">{context.timezone}</strong>
+                </span>
               </span>
             )}
           </div>
