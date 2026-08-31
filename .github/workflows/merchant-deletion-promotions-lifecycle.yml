@@ -1,0 +1,53 @@
+name: Merchant deletion promotions lifecycle
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/tests/merchant-deletion-promotions-lifecycle-contract.test.mjs"
+      - "lib/db/src/schema/commerce-promotions.ts"
+      - ".github/workflows/merchant-deletion-promotions-lifecycle.yml"
+  push:
+    branches:
+      - "foundation/**"
+    paths:
+      - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/tests/merchant-deletion-promotions-lifecycle-contract.test.mjs"
+      - "lib/db/src/schema/commerce-promotions.ts"
+      - ".github/workflows/merchant-deletion-promotions-lifecycle.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merchant-deletion-promotions-lifecycle-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-promotions-retirement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Check regression syntax
+        run: node --check artifacts/api-server/tests/merchant-deletion-promotions-lifecycle-contract.test.mjs
+
+      - name: Prove merchant deletion retires delivery promotions
+        run: node --test artifacts/api-server/tests/merchant-deletion-promotions-lifecycle-contract.test.mjs

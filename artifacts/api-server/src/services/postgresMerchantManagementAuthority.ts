@@ -12,6 +12,7 @@ import {
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import { refreshMerchantRetentionPostgres } from "./postgresMerchantRetentionAuthority";
+import { retireMerchantProviderIdentifiers } from "./merchantDeletionProviderIdentifierRetirement";
 
 export type ManagedMerchantStatus =
   | "pending_activation"
@@ -1033,6 +1034,11 @@ async function purgeMerchantOperationalData(
     [merchantId],
   );
 
+  // Retained exactly-once/refund evidence keeps only Fawri-owned internal
+  // linkage; raw Meta/provider Page, event, message, and dedupe identifiers are
+  // retired before terminal job/ledger anchors are preserved.
+  await retireMerchantProviderIdentifiers(target, merchantId);
+
   // Remove encrypted payloads. Completed/dead-letter jobs referenced by inbound
   // event history stay as non-sensitive anchors; unreferenced jobs are deleted.
   await target.query(`DELETE FROM background_job_payloads WHERE merchant_id = $1`, [merchantId]);
@@ -1066,6 +1072,7 @@ async function purgeMerchantOperationalData(
     [merchantId],
   );
 
+  await target.query(`DELETE FROM commerce_promotions WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM catalog_idempotency_keys WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM inventory_mutations WHERE merchant_id = $1`, [merchantId]);
   await target.query(`DELETE FROM catalog_identifiers WHERE merchant_id = $1`, [merchantId]);
