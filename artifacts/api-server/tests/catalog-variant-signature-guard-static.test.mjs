@@ -18,9 +18,13 @@ test('variant signature guard normalizes short and long signatures before databa
   assert.match(migration, /left\(value, 220\) \|\| '\|h=' \|\| md5\(value\)/);
 });
 
-test('variant signature guard migration is registered once after 0011', () => {
+test('variant signature guard migration is registered once immediately after 0011', () => {
   const entries = journal.entries.filter(entry => entry.tag === '0012_catalog_variant_signature_guard');
   assert.equal(entries.length, 1);
   assert.equal(entries[0].idx, 12);
-  assert.equal(journal.entries.at(-1).tag, '0012_catalog_variant_signature_guard');
+
+  const previous = journal.entries.find(entry => entry.idx === entries[0].idx - 1);
+  const registered = journal.entries.find(entry => entry.idx === entries[0].idx);
+  assert.equal(previous?.tag, '0011_commerce_promotions_timezone_authority');
+  assert.equal(registered?.tag, '0012_catalog_variant_signature_guard');
 });
