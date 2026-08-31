@@ -19,6 +19,24 @@ function supportImageRoot(): string {
   return path.join(getFawriDataDir(), "support-images");
 }
 
+function assertSinglePathSegment(value: unknown): string {
+  const segment = String(value || "").trim();
+  if (
+    !segment ||
+    segment === "." ||
+    segment === ".." ||
+    segment.includes("/") ||
+    segment.includes("\\") ||
+    path.basename(segment) !== segment
+  ) {
+    throw new SupportImageStorageError(
+      "SUPPORT_IMAGE_STORAGE_INVALID",
+      "support image storage key is invalid",
+    );
+  }
+  return segment;
+}
+
 function resolveStoragePath(storageKeyValue: unknown): string {
   const storageKey = String(storageKeyValue || "").trim().replace(/\\/g, "/");
   const pieces = storageKey.split("/").filter(Boolean);
@@ -48,16 +66,37 @@ function resolveStoragePath(storageKeyValue: unknown): string {
   return resolved;
 }
 
-export async function removeSupportImageStorageObject(input: {
-  storageProvider: unknown;
-  storageKey: unknown;
-}): Promise<void> {
-  const provider = String(input.storageProvider || "").trim().toLowerCase();
+function assertFilesystemProvider(value: unknown): void {
+  const provider = String(value || "").trim().toLowerCase();
   if (provider !== "filesystem") {
     throw new SupportImageStorageError(
       "SUPPORT_IMAGE_PROVIDER_UNAVAILABLE",
       "support image storage provider is unavailable",
     );
   }
+}
+
+export async function removeSupportImageStorageObject(input: {
+  storageProvider: unknown;
+  storageKey: unknown;
+}): Promise<void> {
+  assertFilesystemProvider(input.storageProvider);
   fs.rmSync(resolveStoragePath(input.storageKey), { force: true });
+}
+
+export async function removeSupportTicketImageStoragePrefix(input: {
+  storageProvider: unknown;
+  ticketId: unknown;
+}): Promise<void> {
+  assertFilesystemProvider(input.storageProvider);
+  const ticketId = assertSinglePathSegment(input.ticketId);
+  const root = path.resolve(supportImageRoot());
+  const directory = path.resolve(root, ticketId);
+  if (!directory.startsWith(`${root}${path.sep}`)) {
+    throw new SupportImageStorageError(
+      "SUPPORT_IMAGE_STORAGE_INVALID",
+      "support image storage key is invalid",
+    );
+  }
+  fs.rmSync(directory, { recursive: true, force: true });
 }
