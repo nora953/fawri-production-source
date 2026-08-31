@@ -123,7 +123,7 @@ test("variant promotion survives an ordinary catalog rebuild that preserves the 
       })),
     },
   });
-  assert.equal(rebuilt.product.variants[0]?.id, variantId);
+  assert.equal(rebuilt.variants[0]?.id, variantId);
 
   const after = await promotions.listCommercePromotionsAuthoritative(merchantId);
   const preserved = after.find((item) => item.id === promotion.promotion.id);
