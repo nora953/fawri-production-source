@@ -38,7 +38,7 @@ function sale(): CashierSaleSnapshot {
   };
 }
 
-test('cashier report rejects refund totals that exceed the original sale', () => {
+test('cashier report rejects refund evidence that does not match the immutable sale price', () => {
   const corrupt = sale();
   corrupt.returns = [
     {
@@ -67,7 +67,7 @@ test('cashier report rejects refund totals that exceed the original sale', () =>
 
   assert.throws(
     () => buildCashierSalesReport([corrupt]),
-    /CASHIER_REPORT_REFUND_EXCEEDS_SALE/,
+    /CASHIER_REPORT_RETURN_MISMATCH/,
   );
 });
 
