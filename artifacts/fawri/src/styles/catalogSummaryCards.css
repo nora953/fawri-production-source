@@ -54,4 +54,41 @@
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 0.875rem !important;
   }
+
+  /*
+   * Desktop cards use one deterministic internal template. Reserving the same
+   * height for title/category, badges, metrics, breathing room, and actions
+   * keeps the divider and action row on one horizontal baseline even when one
+   * product has a category or several variant badges and another does not.
+   */
+  [data-catalog-summary-card="true"] {
+    height: 18.75rem !important;
+    min-height: 18.75rem !important;
+  }
+
+  [data-catalog-summary-card="true"] > [dir] {
+    grid-template-rows: 4.75rem 3.25rem 4rem 0.75rem 3rem;
+    row-gap: 0.3rem;
+  }
+
+  [data-catalog-summary-card="true"] > [dir] > :first-child {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  [data-catalog-summary-card="true"] > [dir] > :nth-child(2) {
+    height: 3.25rem;
+    overflow: hidden;
+    align-content: start;
+  }
+
+  [data-catalog-summary-card="true"] > [dir] > :nth-child(3) {
+    height: 4rem;
+    margin-top: 0 !important;
+  }
+
+  [data-catalog-summary-card="true"] > [dir] > :last-child {
+    height: 3rem;
+    margin-top: 0 !important;
+  }
 }
