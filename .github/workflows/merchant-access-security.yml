@@ -13,6 +13,7 @@ on:
       - "artifacts/api-server/src/routes/index.ts"
       - "artifacts/api-server/src/routes/bot-training.ts"
       - "artifacts/api-server/src/routes/saved-answers.ts"
+      - "artifacts/api-server/tests/auth-cutover-contract.test.mjs"
       - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs"
@@ -37,6 +38,7 @@ on:
       - "artifacts/api-server/src/routes/index.ts"
       - "artifacts/api-server/src/routes/bot-training.ts"
       - "artifacts/api-server/src/routes/saved-answers.ts"
+      - "artifacts/api-server/tests/auth-cutover-contract.test.mjs"
       - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
       - "artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs"
@@ -79,6 +81,7 @@ jobs:
 
       - name: Check JavaScript test syntax
         run: |
+          node --check artifacts/api-server/tests/auth-cutover-contract.test.mjs
           node --check artifacts/api-server/tests/merchant-session.integration.test.mjs
           node --check artifacts/api-server/tests/merchant-status-access.integration.test.mjs
           node --check artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs
@@ -96,9 +99,10 @@ jobs:
       - name: Build API server
         run: pnpm --filter @workspace/api-server run build
 
-      - name: Test merchant session, status, and webhook enforcement
+      - name: Test merchant session, cutover, status, and webhook enforcement
         run: >-
           node --test
+          artifacts/api-server/tests/auth-cutover-contract.test.mjs
           artifacts/api-server/tests/merchant-session.integration.test.mjs
           artifacts/api-server/tests/merchant-status-access.integration.test.mjs
           artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs
