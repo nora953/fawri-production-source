@@ -31,7 +31,7 @@ test("irreversible merchant deletion owns durable post-commit physical media ret
   );
   assert.match(
     coordinator,
-    /support_attachments[\s\S]*storage_provider, storage_key/,
+    /SELECT storage_provider, storage_key[\s\S]*FROM support_attachments/,
     "support storage provider/key pairs must be captured before relational purge",
   );
   assert.match(
