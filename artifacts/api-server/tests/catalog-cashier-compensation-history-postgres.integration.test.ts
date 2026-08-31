@@ -196,9 +196,9 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
       })),
     },
   });
-  assert.equal(rebuilt.product.version, 3);
-  assert.equal(rebuilt.product.variants[0]?.id, variantId);
-  assert.equal(rebuilt.product.variants[0]?.stock_quantity, 4);
+  assert.equal(rebuilt.version, 3);
+  assert.equal(rebuilt.variants[0]?.id, variantId);
+  assert.equal(rebuilt.variants[0]?.stock_quantity, 4);
 
   const returnOperationId = `return-op-${suffix}`;
   const returnId = `return-${suffix}`;
