@@ -305,8 +305,8 @@ test("cashier sale variant mutation survives a later catalog graph rebuild", asy
       })),
     },
   });
-  assert.equal(rebuilt.product.version, 3);
-  assert.equal(rebuilt.product.variants[0]?.stock_quantity, 4);
+  assert.equal(rebuilt.version, 3);
+  assert.equal(rebuilt.variants[0]?.stock_quantity, 4);
 
   const evidenceAfterRebuild = await raw(
     `SELECT id, request_hash, before_quantity, after_quantity
