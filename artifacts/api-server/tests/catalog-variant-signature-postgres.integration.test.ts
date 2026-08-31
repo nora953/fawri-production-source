@@ -97,7 +97,7 @@ test("short canonical variant options persist with a schema-safe deterministic s
       })),
     },
   });
-  assert.equal(updated.product.variants[0]?.id, variantId);
+  assert.equal(updated.variants[0]?.id, variantId);
 
   const second = await pool.query(
     `SELECT option_signature
