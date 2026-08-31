@@ -104,3 +104,18 @@ test('promotion scope icon keeps breathing room and discount summary lifts away 
     /> article > \.p-5 > \.inline-flex \{\s*transform:\s*translateY\(-0\.35rem\)/,
   );
 });
+
+test('promotion header separates the pricing notice from store currency and timezone facts', () => {
+  assert.match(
+    promotionSource,
+    /sm:flex-row sm:items-center sm:justify-between[\s\S]*?<span>\{copy\.originalSafe\}<\/span>/,
+  );
+  assert.match(promotionSource, /\{copy\.currency\}: <span dir="ltr">\{context\.currency_code\}<\/span>/);
+  assert.match(promotionSource, /\{copy\.timezone\}: <span dir="ltr">\{context\.timezone\}<\/span>/);
+  assert.match(promotionActionCss, /Promotion header context:/);
+  assert.match(promotionActionCss, /column-gap:\s*1\.5rem !important/);
+  assert.match(promotionActionCss, /> span:first-child \{[\s\S]*?flex:\s*1 1 auto;[\s\S]*?font-weight:\s*650/);
+  assert.match(promotionActionCss, /> span:last-child \{[\s\S]*?white-space:\s*nowrap/);
+  assert.match(promotionActionCss, /> span:last-child > \[dir="ltr"\] \{[\s\S]*?font-weight:\s*800/);
+  assert.match(promotionActionCss, /@media \(max-width: 639px\)[\s\S]*?border-top:\s*1px solid rgb\(249 115 22 \/ 0\.14\)/);
+});
