@@ -4,6 +4,7 @@ import {
   MerchantDeleteReason,
   MerchantRetentionStatus,
 } from "./merchantLifecycle";
+import { retireMerchantProviderIdentifiers } from "./merchantDeletionProviderIdentifierRetirement";
 import {
   operationalDatabasePool,
   operationalPostgresAuthorityRequired,
@@ -976,6 +977,11 @@ async function purgeMerchantOperationalData(
       WHERE merchant_id = $1`,
     [merchantId],
   );
+
+  // Retained exactly-once/refund evidence keeps only Fawri-owned internal
+  // linkage; raw Meta/provider Page, event, message, and dedupe identifiers are
+  // retired before terminal job/ledger anchors are preserved.
+  await retireMerchantProviderIdentifiers(target, merchantId);
 
   // Remove encrypted payloads. Completed/dead-letter jobs referenced by inbound
   // event history stay as non-sensitive anchors; unreferenced jobs are deleted.
