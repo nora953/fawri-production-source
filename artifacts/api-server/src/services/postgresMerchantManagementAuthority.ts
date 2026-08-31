@@ -977,6 +977,62 @@ async function purgeMerchantOperationalData(
     [merchantId],
   );
 
+  // Cashier/POS retained rows keep only the minimum non-PII accounting anchors.
+  // Live authentication state is removed before retained shift/staff/station rows
+  // are closed and anonymized so tombstoned merchants cannot leave reusable POS
+  // credentials or device identity behind.
+  await target.query(`DELETE FROM cashier_operator_sessions WHERE merchant_id = $1`, [merchantId]);
+  await target.query(`DELETE FROM cashier_station_credentials WHERE merchant_id = $1`, [merchantId]);
+  await target.query(`DELETE FROM cashier_station_pairing_challenges WHERE merchant_id = $1`, [merchantId]);
+  await target.query(`DELETE FROM merchant_cashier_staff_permissions WHERE merchant_id = $1`, [merchantId]);
+  await target.query(
+    `UPDATE cashier_shifts
+        SET status = 'closed',
+            ended_at = COALESCE(ended_at, GREATEST(now(), started_at)),
+            close_reason = 'merchant_deleted'
+      WHERE merchant_id = $1`,
+    [merchantId],
+  );
+  await target.query(
+    `UPDATE cashier_operation_attribution
+        SET device_id = '[deleted device]',
+            station_credential_id = '[deleted credential]',
+            operator_session_id = '[deleted operator session]'
+      WHERE merchant_id = $1`,
+    [merchantId],
+  );
+  await target.query(
+    `UPDATE merchant_cashier_staff
+        SET display_name = '[deleted cashier]',
+            status = 'revoked',
+            pin_hash = repeat('0', 64),
+            pin_version = pin_version + 1,
+            failed_pin_attempts = 0,
+            pin_locked_until = NULL,
+            pin_changed_at = now(),
+            version = version + 1,
+            revoked_at = COALESCE(revoked_at, now()),
+            updated_at = now()
+      WHERE merchant_id = $1`,
+    [merchantId],
+  );
+  await target.query(
+    `UPDATE merchant_cashier_stations
+        SET name = '[deleted station]',
+            branch_key = 'deleted',
+            branch_label = NULL,
+            status = 'revoked',
+            paired_device_id = NULL,
+            offline_inventory_authority = false,
+            credential_version = credential_version + 1,
+            paired_at = NULL,
+            last_seen_at = NULL,
+            revoked_at = COALESCE(revoked_at, now()),
+            updated_at = now()
+      WHERE merchant_id = $1`,
+    [merchantId],
+  );
+
   // Remove encrypted payloads. Completed/dead-letter jobs referenced by inbound
   // event history stay as non-sensitive anchors; unreferenced jobs are deleted.
   await target.query(`DELETE FROM background_job_payloads WHERE merchant_id = $1`, [merchantId]);
