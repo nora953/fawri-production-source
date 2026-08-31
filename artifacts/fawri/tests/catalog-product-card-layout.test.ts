@@ -13,7 +13,7 @@ const cardStyles = await readFile(
 
 test('catalog summary cards keep one stable compact footprint and three-column desktop density', () => {
   assert.match(pageSource, /data-catalog-summary-card="true"/);
-  assert.match(cardStyles, /\[data-catalog-summary-card="true"\]\s*\{[\s\S]*min-height:\s*13\.5rem/);
+  assert.match(cardStyles, /\[data-catalog-summary-card="true"\]\s*\{[\s\S]*min-height:\s*12\.25rem/);
   assert.match(cardStyles, /@media \(min-width: 1280px\)/);
   assert.match(cardStyles, /grid-template-columns:\s*repeat\(3, minmax\(0, 1fr\)\)/);
   assert.doesNotMatch(pageSource, /expandedInventoryProducts/);
@@ -30,6 +30,22 @@ test('summary cards hide product media while the details dialog keeps the produc
   const dialog = pageSource.slice(dialogStart);
   assert.match(dialog, /detailsProduct\.image_refs\[0\]/);
   assert.match(dialog, /<CatalogProtectedImage/);
+});
+
+test('summary cards keep SKU out of sight and align compact variant facts with status chips', () => {
+  assert.match(cardStyles, /> :first-child > p\[dir="ltr"\][\s\S]*display:\s*none/);
+  assert.match(cardStyles, /> :nth-child\(2\)[\s\S]*grid-row:\s*2/);
+  assert.match(cardStyles, /> \[dir\] > p\s*\{[\s\S]*grid-column:\s*2[\s\S]*grid-row:\s*2/);
+  assert.match(cardStyles, /border-radius:\s*9999px/);
+
+  const cardStart = pageSource.indexOf('data-catalog-summary-card="true"');
+  const dialogStart = pageSource.indexOf('<Dialog open={Boolean(detailsProduct)}');
+  assert.ok(cardStart >= 0 && dialogStart > cardStart);
+  const cards = pageSource.slice(cardStart, dialogStart);
+  assert.match(cards, /product\.sku/);
+
+  const dialog = pageSource.slice(dialogStart);
+  assert.match(dialog, /detailsProduct\.sku/);
 });
 
 test('card keeps only summary facts and opens product details in a dialog', () => {
