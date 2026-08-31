@@ -20,9 +20,12 @@ function between(text, startMarker, endMarker) {
   return text.slice(start, end);
 }
 
-test("irreversible merchant deletion must retire raw Meta/provider identifiers from retained evidence", () => {
+test("irreversible merchant deletion retires raw Meta/provider identifiers from retained evidence", () => {
   const management = source(
     "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
+  );
+  const retirement = source(
+    "artifacts/api-server/src/services/merchantDeletionProviderIdentifierRetirement.ts",
   );
   const webhookSecurity = source(
     "artifacts/api-server/src/middleware/metaWebhookSecurity.ts",
@@ -48,6 +51,11 @@ test("irreversible merchant deletion must retire raw Meta/provider identifiers f
   );
   assert.match(
     channelSchema,
+    /replyReservations[\s\S]*externalEventId:\s*text\("external_event_id"\)\.notNull\(\)/,
+    "reply reservations store the external event ID",
+  );
+  assert.match(
+    channelSchema,
     /providerMessageId:\s*text\("provider_message_id"\)/,
     "outbound delivery evidence stores the provider message ID",
   );
@@ -65,43 +73,39 @@ test("irreversible merchant deletion must retire raw Meta/provider identifiers f
 
   assert.match(
     purge,
-    /Completed\/dead-letter jobs referenced by inbound[\s\S]*stay as non-sensitive anchors/,
-    "merchant deletion explicitly classifies retained job anchors as non-sensitive",
-  );
-  assert.match(
-    purge,
-    /Retained financial\/entitlement\/audit rows keep only non-PII proof fields/,
-    "merchant deletion explicitly classifies retained entitlement evidence as non-PII",
-  );
-
-  const backgroundJobUpdate = purge.match(
-    /UPDATE background_jobs[\s\S]*?WHERE merchant_id = \$1/,
-  )?.[0];
-  assert.ok(backgroundJobUpdate, "merchant deletion must scrub retained background jobs");
-  assert.match(
-    backgroundJobUpdate,
-    /dedupe_key\s*=/,
-    "retained Meta background jobs can keep a raw meta:<pageId>:<provider-id> dedupe key after merchant deletion",
-  );
-
-  const replyLedgerUpdate = purge.match(
-    /UPDATE reply_ledger[\s\S]*?WHERE merchant_id = \$1/,
-  )?.[0];
-  assert.ok(replyLedgerUpdate, "merchant deletion must scrub retained reply ledger rows");
-  assert.match(
-    replyLedgerUpdate,
-    /external_event_id\s*=/,
-    "retained reply ledger rows can keep a raw Meta Page/provider event identifier after merchant deletion",
+    /retireMerchantProviderIdentifiers\(target, merchantId\)/,
+    "canonical merchant deletion must invoke provider-identifier retirement inside its transaction",
   );
 
   assert.match(
-    purge,
-    /UPDATE channel_inbound_events[\s\S]*?external_event_id\s*=/,
-    "retained channel inbound evidence must replace raw provider event identity with non-reversible linkage",
+    retirement,
+    /UPDATE channel_inbound_events[\s\S]*external_event_id = 'deleted:event:' \|\| id[\s\S]*WHERE merchant_id = \$1/,
+    "retained inbound evidence must replace raw provider event identity with an internal deletion token",
   );
   assert.match(
-    purge,
-    /UPDATE outbound_deliveries[\s\S]*?provider_message_id\s*=\s*NULL/,
-    "retained outbound delivery evidence must not keep the provider message ID after irreversible deletion",
+    retirement,
+    /UPDATE reply_reservations[\s\S]*external_event_id = 'deleted:event:' \|\| inbound_event_id[\s\S]*WHERE merchant_id = \$1/,
+    "retained reservations must replace raw provider event identity with the inbound internal token",
+  );
+  assert.match(
+    retirement,
+    /UPDATE reply_ledger l[\s\S]*'deleted:event:' \|\| r\.inbound_event_id[\s\S]*'deleted:ledger:' \|\| l\.id[\s\S]*WHERE l\.merchant_id = \$1/,
+    "reply ledger evidence must retain only internal deletion-safe linkage",
+  );
+  assert.match(
+    retirement,
+    /UPDATE background_jobs[\s\S]*dedupe_key = 'deleted:job:' \|\| id[\s\S]*WHERE merchant_id = \$1/,
+    "retained durable jobs must not keep provider-derived dedupe keys",
+  );
+  assert.match(
+    retirement,
+    /UPDATE outbound_deliveries[\s\S]*provider_message_id = NULL[\s\S]*WHERE merchant_id = \$1/,
+    "retained outbound delivery evidence must not keep the provider message ID",
+  );
+
+  assert.doesNotMatch(
+    retirement,
+    /sha256|md5|digest\s*\(/i,
+    "deletion tokens should derive from Fawri-owned internal row identifiers, not hashed provider identifiers",
   );
 });
