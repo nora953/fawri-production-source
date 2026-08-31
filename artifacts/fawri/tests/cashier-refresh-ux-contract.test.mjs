@@ -18,7 +18,6 @@ const cashierMain = fs.readFileSync(new URL('../src/cashierMain.tsx', import.met
 const cashierCopy = fs.readFileSync(new URL('../src/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
 const i18n = fs.readFileSync(new URL('../src/lib/i18n.tsx', import.meta.url), 'utf8');
 const merchantCommerceUx = fs.readFileSync(new URL('../src/styles/merchantCommerceUxFixes.css', import.meta.url), 'utf8');
-const catalogEditorFullscreen = fs.readFileSync(new URL('../src/pages/dashboard/catalogEditorFullscreen.css', import.meta.url), 'utf8');
 
 test('automatic cashier catalog refresh stays silent and preserves unchanged catalog state', () => {
   assert.match(pos, /refreshCatalog\(runtime, query, false\)/);
@@ -68,30 +67,31 @@ test('cashier dashboard refresh refetches catalog and orders in place without di
   assert.match(orders, /if \(!pendingOrderId\) void loadOrders\(true\)/);
 });
 
-test('shipping measurement hint belongs to the active workspace and desktop fields share one horizontal baseline', () => {
+test('shipping measurement hint belongs to the active simplified workspace and fields stay on one responsive grid', () => {
   assert.match(productsRoute, /ProductsWorkspacePage/);
   assert.match(productsWorkspace, /CommerceCatalogPage/);
   assert.match(catalog, /CatalogProductDetailsEditor/);
 
-  const hint = '<p className="text-xs leading-5 text-muted-foreground">{labels.physicalHint}</p>';
-  const fieldsGrid = '<div className="grid items-start gap-4 lg:grid-cols-[minmax(220px,0.7fr)_minmax(0,1.3fr)]">';
-  const weight = '<span>{labels.weight}</span>';
-  const dimensions = '<p className="text-xs font-semibold text-muted-foreground">{labels.dimensions}</p>';
+  const hint = '<p className="mt-2 text-xs leading-5 text-muted-foreground">{labels.advancedHint}</p>';
+  const fieldsGrid = '<div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">';
+  const fieldLabels = [
+    '<span>{labels.weight}</span>',
+    '<span>{labels.length}</span>',
+    '<span>{labels.width}</span>',
+    '<span>{labels.height}</span>',
+  ];
 
   const hintIndex = productDetails.indexOf(hint);
   const fieldsGridIndex = productDetails.indexOf(fieldsGrid);
-  const weightIndex = productDetails.indexOf(weight);
-  const dimensionsIndex = productDetails.indexOf(dimensions);
 
   assert.ok(hintIndex >= 0, 'measurement hint must remain visible');
   assert.ok(fieldsGridIndex > hintIndex, 'measurement fields must start after the full-width hint');
-  assert.ok(weightIndex > fieldsGridIndex, 'weight must render inside the aligned fields grid');
-  assert.ok(dimensionsIndex > fieldsGridIndex, 'dimensions must render inside the aligned fields grid');
-  assert.match(
-    catalogEditorFullscreen,
-    /details\.group[\s\S]*grid-template-columns:\s*minmax\(220px,\s*0\.7fr\)\s+minmax\(0,\s*1\.3fr\)[\s\S]*align-items:\s*end/,
-    'desktop measurements must preserve their original width proportions and align all controls on one horizontal baseline',
-  );
+  for (const fieldLabel of fieldLabels) {
+    assert.ok(
+      productDetails.indexOf(fieldLabel, fieldsGridIndex) > fieldsGridIndex,
+      `${fieldLabel} must render inside the responsive measurement grid`,
+    );
+  }
   assert.doesNotMatch(merchantCommerceUx, /input\[placeholder=/, 'measurement geometry must not depend on placeholder CSS selectors');
 });
 
@@ -103,7 +103,10 @@ test('confirmation primary action remains direction-aware', () => {
 });
 
 test('all operational cashier views inherit merchant Arabic Kurdish or English language', () => {
-  assert.match(cashierMain, /<I18nProvider>\{operationalPage\}<\/I18nProvider>/);
+  assert.match(
+    cashierMain,
+    /<I18nProvider>[\s\S]*<CashierOperatorGate[^>]*>[\s\S]*\{operationalPage\}[\s\S]*<\/CashierOperatorGate>[\s\S]*<\/I18nProvider>/,
+  );
   assert.match(pos, /const \{ lang, dir \} = useI18n\(\)/);
   assert.match(history, /const \{ lang, dir \} = useI18n\(\)/);
   assert.match(syncPage, /const \{ lang, dir \} = useI18n\(\)/);
