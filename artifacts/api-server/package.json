@@ -24,7 +24,7 @@
     "test:data-path": "node ./build.mjs && node --test ./tests/data-path.integration.test.mjs",
     "test:role-session-isolation": "node ./build.mjs && node --test ./tests/role-session-isolation.integration.test.mjs",
     "test:support-preview": "node ./build.mjs && node --test ./tests/support-preview.integration.test.mjs",
-    "test:global-merchant-journey": "node ./build.mjs && pnpm exec tsx --test ./tests/global-merchant-auth-bootstrap-postgres.integration.test.mjs && node --test ./tests/global-merchant-golden-journey.integration.test.mjs"
+    "test:global-merchant-journey": "node ./build.mjs && pnpm exec tsx --test ./tests/global-merchant-auth-bootstrap-postgres.integration.test.mjs && pnpm exec tsx --test ./tests/global-merchant-golden-journey.integration.test.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-kms": "^3.1097.0",
