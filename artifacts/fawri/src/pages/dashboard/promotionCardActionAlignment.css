@@ -72,7 +72,7 @@
   white-space: nowrap;
 }
 
-.products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:last-child > [dir="ltr"] {
+.products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:last-child [dir="ltr"] {
   color: hsl(var(--foreground));
   font-weight: 800;
   letter-spacing: 0.01em;
