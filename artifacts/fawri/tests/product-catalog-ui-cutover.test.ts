@@ -34,7 +34,7 @@ const productsWorkspace = await readFile(
   'utf8',
 );
 const catalogPage = await readFile(
-  new URL('../src/pages/dashboard/CommerceCatalogPage.tsx', import.meta.url),
+  new URL('../src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx', import.meta.url),
   'utf8',
 );
 const productDetails = await readFile(
@@ -153,9 +153,9 @@ function capturedFetch(
   return { fetcher, calls };
 }
 
-test('active products route reaches the hardened commerce workspace', () => {
+test('active products route reaches the canonical simplified commerce workspace', () => {
   assert.match(productsRoute, /export \{ default \} from ['"]\.\/ProductsWorkspacePage['"]/);
-  assert.match(productsWorkspace, /import CommerceCatalogPage from ['"]\.\/CommerceCatalogPage['"]/);
+  assert.match(productsWorkspace, /import CommerceCatalogPage from ['"]\.\/CommerceCatalogSimplifiedPage['"]/);
   assert.match(productsWorkspace, /<CommerceCatalogPage \/>/);
   assert.match(catalogPage, /CatalogEditorShell/);
   assert.match(catalogPage, /CatalogProductDetailsEditor/);
@@ -273,7 +273,7 @@ test('create success uses canonical endpoint and server result', async () => {
   assert.equal('merchant_id' in sent, false);
 
   const createAwait = catalogPage.indexOf('const created = await createCatalogProduct');
-  const createStateWrite = catalogPage.indexOf('setItems(existing => upsert(existing, created))');
+  const createStateWrite = catalogPage.indexOf('setItems(currentItems => upsert(currentItems, created))');
   assert.ok(createAwait >= 0 && createStateWrite > createAwait);
 });
 
