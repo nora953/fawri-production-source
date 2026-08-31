@@ -1,6 +1,6 @@
-/* Catalog summary cards are intentionally text-first. Product media belongs in the details dialog. */
+/* Catalog summary cards are intentionally text-first. Product media and long identifiers belong in the details dialog. */
 [data-catalog-summary-card="true"] {
-  min-height: 13.5rem !important;
+  min-height: 12.25rem !important;
 }
 
 [data-catalog-summary-card="true"] > :first-child {
@@ -10,6 +10,63 @@
 [data-catalog-summary-card="true"] > [dir] {
   width: 100%;
   padding: 0.875rem !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto 1fr auto;
+  column-gap: 0.5rem;
+  row-gap: 0.45rem;
+}
+
+/* SKU stays available in the details dialog but no longer consumes summary-card space. */
+[data-catalog-summary-card="true"] > [dir] > :first-child {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+[data-catalog-summary-card="true"] > [dir] > :first-child > p[dir="ltr"] {
+  display: none !important;
+}
+
+/* Status chips and the compact variant/service fact share the same visual row. */
+[data-catalog-summary-card="true"] > [dir] > :nth-child(2) {
+  grid-column: 1;
+  grid-row: 2;
+  margin-top: 0 !important;
+  min-height: 0 !important;
+  align-self: start;
+}
+
+[data-catalog-summary-card="true"] > [dir] > p {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
+  width: max-content;
+  max-width: 7.5rem;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 9999px;
+  background: hsl(var(--muted) / 0.6);
+  padding-block: 0.125rem;
+  padding-inline: 0.25rem;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+}
+
+[data-catalog-summary-card="true"] > [dir] > :nth-child(3) {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  margin-top: 0.35rem !important;
+}
+
+[data-catalog-summary-card="true"] > [dir] > :last-child {
+  grid-column: 1 / -1;
+  grid-row: 5;
+  margin-top: 0.35rem !important;
 }
 
 @media (min-width: 1280px) {
