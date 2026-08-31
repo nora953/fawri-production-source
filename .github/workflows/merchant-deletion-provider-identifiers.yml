@@ -4,23 +4,29 @@ on:
   pull_request:
     paths:
       - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/src/services/merchantDeletionProviderIdentifierRetirement.ts"
       - "artifacts/api-server/src/middleware/metaWebhookSecurity.ts"
       - "artifacts/api-server/tests/merchant-deletion-provider-identifiers-contract.test.mjs"
-      - "lib/db/src/schema/jobs.ts"
-      - "lib/db/src/schema/channel-messaging.ts"
-      - "lib/db/src/schema/subscriptions.ts"
+      - "artifacts/api-server/tests/merchant-deletion-provider-identifiers-postgres.integration.test.ts"
+      - "lib/db/**"
       - ".github/workflows/merchant-deletion-provider-identifiers.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
   push:
     branches:
       - "foundation/**"
     paths:
       - "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts"
+      - "artifacts/api-server/src/services/merchantDeletionProviderIdentifierRetirement.ts"
       - "artifacts/api-server/src/middleware/metaWebhookSecurity.ts"
       - "artifacts/api-server/tests/merchant-deletion-provider-identifiers-contract.test.mjs"
-      - "lib/db/src/schema/jobs.ts"
-      - "lib/db/src/schema/channel-messaging.ts"
-      - "lib/db/src/schema/subscriptions.ts"
+      - "artifacts/api-server/tests/merchant-deletion-provider-identifiers-postgres.integration.test.ts"
+      - "lib/db/**"
       - ".github/workflows/merchant-deletion-provider-identifiers.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
   workflow_dispatch:
 
 permissions:
@@ -31,9 +37,26 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  prove-provider-identifier-retirement:
+  validate-provider-identifier-retirement:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,8 +66,28 @@ jobs:
         with:
           node-version: 24
 
-      - name: Check regression syntax
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Build API server
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Check provider-identifier contract syntax
         run: node --check artifacts/api-server/tests/merchant-deletion-provider-identifiers-contract.test.mjs
 
-      - name: Prove retained evidence removes raw provider identifiers
+      - name: Prove provider-identifier source contract
         run: node --test artifacts/api-server/tests/merchant-deletion-provider-identifiers-contract.test.mjs
+
+      - name: Initialize disposable PostgreSQL runtime schema
+        run: pnpm --filter @workspace/db run push-force
+
+      - name: Prove provider identifiers are retired after irreversible deletion
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/merchant-deletion-provider-identifiers-postgres.integration.test.ts
