@@ -4,8 +4,7 @@ import {
   Boxes,
   BriefcaseBusiness,
   CalendarClock,
-  ChevronDown,
-  ChevronUp,
+  Eye,
   Image as ImageIcon,
   Minus,
   Package,
@@ -26,6 +25,13 @@ import { CatalogProductDetailsEditor } from '@/components/catalog/CatalogProduct
 import { CatalogProtectedImage } from '@/components/catalog/CatalogProtectedImage';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -111,6 +117,10 @@ type PageCopy = {
   bookingOptional: string;
   description: string;
   descriptionPlaceholder: string;
+  descriptionMissing: string;
+  details: string;
+  detailsTitle: string;
+  variants: string;
   fawri: string;
   fawriHint: string;
   inventory: string;
@@ -186,6 +196,10 @@ const COPY: Record<Lang, PageCopy> = {
     bookingOptional: 'غير مطلوب',
     description: 'الوصف',
     descriptionPlaceholder: 'معلومات واضحة يمكن لفوري الاعتماد عليها عند الرد على العميل.',
+    descriptionMissing: 'لا يوجد وصف مضاف لهذا العنصر.',
+    details: 'التفاصيل',
+    detailsTitle: 'تفاصيل المنتج',
+    variants: 'الأنواع',
     fawri: 'استخدام هذا العنصر في ردود فوري',
     fawriHint: 'عند الإيقاف يبقى العنصر في الكتالوج والكاشير، لكن فوري لا يستخدم معلوماته في الردود الآلية.',
     inventory: 'إدارة المخزون',
@@ -259,6 +273,10 @@ const COPY: Record<Lang, PageCopy> = {
     bookingOptional: 'پێویست نییە',
     description: 'وەسف',
     descriptionPlaceholder: 'زانیارییەکی ڕوون کە فەوری بتوانێت پشتی پێ ببەستێت.',
+    descriptionMissing: 'هیچ وەسفێک بۆ ئەم بابەتە زیاد نەکراوە.',
+    details: 'وردەکاری',
+    detailsTitle: 'وردەکاری بەرهەم',
+    variants: 'جۆرەکان',
     fawri: 'بەکارهێنانی ئەم بابەتە لە وەڵامەکانی فەوری',
     fawriHint: 'کاتێک ناچالاکە، بابەتەکە لە کەتەلۆگ و کاشێر دەمێنێتەوە بەڵام فەوری لە وەڵامە ئۆتۆماتیکییەکان بەکاری ناهێنێت.',
     inventory: 'بەڕێوەبردنی کۆگا',
@@ -332,6 +350,10 @@ const COPY: Record<Lang, PageCopy> = {
     bookingOptional: 'Not required',
     description: 'Description',
     descriptionPlaceholder: 'Clear information Fawri can rely on when answering customers.',
+    descriptionMissing: 'No description has been added for this item.',
+    details: 'Details',
+    detailsTitle: 'Product details',
+    variants: 'Variants',
     fawri: 'Use this item in Fawri replies',
     fawriHint: 'When disabled, the item stays in catalog and cashier, but Fawri will not use it in automated replies.',
     inventory: 'Inventory management',
@@ -407,6 +429,15 @@ function itemStatusLabel(product: CatalogProduct, copy: PageCopy): string {
   return `${copy.available} · ${product.stock_quantity.toLocaleString('en-US')} ${copy.units}`;
 }
 
+function itemStatusShortLabel(product: CatalogProduct, copy: PageCopy): string {
+  if (product.status === 'draft') return copy.draft;
+  if (product.status === 'hidden_from_fawri') return copy.hidden;
+  if (!tracksInventory(product)) return product.status === 'out_of_stock' ? copy.unavailable : copy.available;
+  if (product.status === 'out_of_stock') return copy.inventoryOut;
+  if (product.status === 'low_stock') return copy.lowStock;
+  return copy.available;
+}
+
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <button
@@ -477,7 +508,7 @@ export default function CommerceCatalogSimplifiedPage() {
   const [inventoryValues, setInventoryValues] = useState<Record<string, string>>({});
   const [inventoryBusy, setInventoryBusy] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [expandedInventoryProducts, setExpandedInventoryProducts] = useState<Record<string, boolean>>({});
+  const [detailsProductId, setDetailsProductId] = useState<string | null>(null);
   const mutationBusy = saving || inventoryBusy !== null || deletingId !== null;
 
   const fractionDigits = commerceContext?.currency_fraction_digits ?? 0;
@@ -583,6 +614,10 @@ export default function CommerceCatalogSimplifiedPage() {
     });
   }, [items, filter, query]);
 
+  const detailsProduct = detailsProductId
+    ? items.find(product => product.id === detailsProductId) ?? null
+    : null;
+
   const freshForm = (): CatalogProductFormState => {
     const next = createEmptyCatalogProductForm();
     next.sku = automaticSku();
@@ -650,10 +685,6 @@ export default function CommerceCatalogSimplifiedPage() {
   };
 
   const patchForm = (patch: Partial<CatalogProductFormState>) => setForm(current => ({ ...current, ...patch }));
-
-  const toggleInventoryDetails = (productId: string) => {
-    setExpandedInventoryProducts(current => ({ ...current, [productId]: !current[productId] }));
-  };
 
   const validate = (): CatalogProductFormState | null => {
     if (!authorityReady || !commerceContext) {
@@ -792,11 +823,7 @@ export default function CommerceCatalogSimplifiedPage() {
     try {
       await deleteCatalogProduct(product.id, product.version);
       setItems(current => current.filter(item => item.id !== product.id));
-      setExpandedInventoryProducts(current => {
-        const next = { ...current };
-        delete next[product.id];
-        return next;
-      });
+      if (detailsProductId === product.id) setDetailsProductId(null);
       toast.success(copy.deleted);
     } catch (error) {
       if (await loadConflict(product.id, error)) return;
@@ -879,6 +906,20 @@ export default function CommerceCatalogSimplifiedPage() {
     }
   };
 
+  const formatPrice = (product: CatalogProduct) => {
+    const service = product.service_details;
+    if (service?.price_type === 'custom') return copy.customPrice;
+    if (service?.price_type === 'free') return copy.freePrice;
+    return commerceContext
+      ? formatMerchantMoneyMinor(
+          product.price_iqd,
+          commerceContext.currency_code,
+          commerceContext.currency_fraction_digits,
+          lang,
+        )
+      : '—';
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 pb-28" dir={dir}>
       <header className="mb-5 space-y-4">
@@ -913,103 +954,231 @@ export default function CommerceCatalogSimplifiedPage() {
       ) : visible.length === 0 ? (
         <div className="rounded-3xl border bg-card p-10 text-center shadow-sm"><Package className="mx-auto mb-4 h-16 w-16 text-muted-foreground/20" /><p className="text-lg font-semibold text-muted-foreground">{copy.noItems}</p><p className="mt-2 text-sm text-muted-foreground">{copy.noItemsHint}</p></div>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
+        <div className="grid auto-rows-fr gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           {visible.map(product => {
             const type = itemType(product);
             const service = product.service_details;
             const hasVariants = product.variants.length > 0;
-            const inventoryExpanded = Boolean(expandedInventoryProducts[product.id]);
-            const inventoryPanelId = `catalog-inventory-${product.id}`;
             const soldOutVariants = hasVariants ? product.variants.filter(variant => variant.stock_quantity === 0).length : 0;
             const partialVariantOutage = tracksInventory(product) && soldOutVariants > 0 && soldOutVariants < product.variants.length;
 
             return (
-              <article key={product.id} className="overflow-hidden rounded-3xl border bg-card shadow-sm transition hover:shadow-md">
-                {product.image_refs[0] && (
-                  <div className="h-44 overflow-hidden border-b bg-muted/20">
+              <div
+                key={product.id}
+                data-catalog-summary-card="true"
+                dir="ltr"
+                className="flex h-full min-h-[17rem] overflow-hidden rounded-3xl border bg-card shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+              >
+                <div className="relative w-32 shrink-0 overflow-hidden border-r bg-muted/20 sm:w-36">
+                  {product.image_refs[0] ? (
                     <CatalogProtectedImage
                       image={product.image_refs[0]}
                       alt={product.image_refs[0]?.alt || product.name}
                       className="h-full w-full object-cover"
                     />
-                  </div>
-                )}
-                <div className="border-b p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-2 flex flex-wrap gap-2">
-                        <Badge variant="outline" className="rounded-full">{type === 'service' ? <BriefcaseBusiness className="mr-1 h-3 w-3" /> : <Package className="mr-1 h-3 w-3" />}{type === 'service' ? copy.service : copy.product}</Badge>
-                        <Badge variant="outline" className={`rounded-full ${statusClass(product.status)}`}>{itemStatusLabel(product, copy)}</Badge>
-                        {partialVariantOutage && <Badge variant="outline" className="rounded-full border-amber-200 bg-amber-50 text-amber-800">{copy.someVariantsOut} · {soldOutVariants}</Badge>}
-                        {product.allow_fawri_reply && <Badge variant="outline" className="rounded-full border-orange-200 bg-orange-50 text-orange-700"><Bot className="mr-1 h-3 w-3" />{fawriBrand}</Badge>}
-                        {product.image_refs.length > 0 && <Badge variant="outline" className="rounded-full"><ImageIcon className="mr-1 h-3 w-3" />{product.image_refs.length}</Badge>}
-                      </div>
-                      <h2 className="line-clamp-2 text-xl font-extrabold">{product.name}</h2>
-                      {product.category && <p className="mt-1 text-sm text-muted-foreground">{product.category}</p>}
-                      {product.sku && <p className="mt-1 text-xs font-medium text-muted-foreground" dir="ltr">SKU: {product.sku}</p>}
+                  ) : (
+                    <div className="flex h-full min-h-[17rem] items-center justify-center bg-gradient-to-br from-muted/50 to-muted/10">
+                      <ImageIcon className="h-10 w-10 text-muted-foreground/25" />
                     </div>
-                    <div className="flex shrink-0 flex-col gap-2">
-                      <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={!authorityReady || mutationBusy} onClick={() => openEdit(product)}><Pencil className="h-4 w-4" /></Button>
-                      <Button type="button" variant="destructive" size="icon" className="h-10 w-10 rounded-xl" disabled={!authorityReady || mutationBusy} onClick={() => void remove(product)}><Trash2 className="h-4 w-4" /></Button>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 p-4">
-                  <div className="rounded-2xl bg-muted/40 p-3">
-                    <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Tag className="h-4 w-4" />{copy.price}</div>
-                    <p className="text-xl font-extrabold" dir="ltr">{service?.price_type === 'custom' ? copy.customPrice : service?.price_type === 'free' ? copy.freePrice : commerceContext ? formatMerchantMoneyMinor(product.price_iqd, commerceContext.currency_code, commerceContext.currency_fraction_digits, lang) : '—'}</p>
+                <div dir={dir} className={`flex min-w-0 flex-1 flex-col p-4 ${isRTL ? 'text-right' : 'text-left'}`}>
+                  <div className="min-w-0">
+                    <h2 className="line-clamp-2 min-h-12 text-lg font-extrabold leading-6">{product.name}</h2>
+                    {product.category && <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{product.category}</p>}
+                    {product.sku && <p className="mt-1 truncate text-xs font-medium text-muted-foreground" dir="ltr">SKU: {product.sku}</p>}
                   </div>
-                  <div className="rounded-2xl bg-muted/40 p-3">
-                    {type === 'service' ? <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{copy.duration}</div><p className="text-xl font-extrabold">{service?.duration_minutes ? `${service.duration_minutes} ${copy.minute}` : '—'}</p></> : <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Boxes className="h-4 w-4" />{copy.quantity}</div><p className="text-xl font-extrabold">{tracksInventory(product) ? product.stock_quantity.toLocaleString('en-US') : copy.inventoryNotTracked}</p></>}
+
+                  <div className="mt-3 flex min-h-7 flex-wrap content-start gap-1.5">
+                    <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">
+                      {type === 'service' ? <BriefcaseBusiness className="me-1 h-3 w-3" /> : <Package className="me-1 h-3 w-3" />}
+                      {type === 'service' ? copy.service : copy.product}
+                    </Badge>
+                    <Badge variant="outline" className={`rounded-full px-2 py-0.5 text-[11px] ${statusClass(product.status)}`}>{itemStatusShortLabel(product, copy)}</Badge>
+                    {partialVariantOutage && (
+                      <Badge variant="outline" title={copy.someVariantsOut} className="rounded-full border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] text-amber-800">
+                        <Boxes className="me-1 h-3 w-3" />{soldOutVariants}/{product.variants.length}
+                      </Badge>
+                    )}
+                    {product.allow_fawri_reply && (
+                      <Badge variant="outline" className="rounded-full border-orange-200 bg-orange-50 px-2 py-0.5 text-[11px] text-orange-700"><Bot className="me-1 h-3 w-3" />{fawriBrand}</Badge>
+                    )}
                   </div>
-                </div>
 
-                {type === 'service' && <div className="px-4 pb-4"><div className="rounded-2xl bg-muted/20 p-3 text-sm"><span className="font-bold">{copy.booking}: </span><span className="text-muted-foreground">{service?.booking_required === false ? copy.bookingOptional : copy.bookingRequired}</span></div></div>}
-
-                {tracksInventory(product) && (
-                  <div className="px-4 pb-4">
-                    <div className="rounded-2xl bg-muted/20 p-3">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="text-sm font-bold">{copy.inventory}</p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-9 rounded-xl px-3 text-xs font-bold"
-                          aria-expanded={inventoryExpanded}
-                          aria-controls={inventoryPanelId}
-                          onClick={() => toggleInventoryDetails(product.id)}
-                        >
-                          {hasVariants
-                            ? (inventoryExpanded ? copy.hideVariantDetails : copy.variantDetails)
-                            : (inventoryExpanded ? copy.hideInventoryDetails : copy.inventoryDetails)}
-                          {hasVariants && <Badge variant="outline" className="mx-2 rounded-full bg-background">{product.variants.length}</Badge>}
-                          {inventoryExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                        </Button>
-                      </div>
-
-                      {inventoryExpanded && (
-                        <div id={inventoryPanelId} className="mt-3 space-y-2">
-                          {hasVariants ? product.variants.map(variant => {
-                            const key = inventoryKey(product.id, variant.id);
-                            return <InventoryControl key={variant.id} copy={copy} product={product} variant={variant} value={inventoryValues[key] ?? String(variant.stock_quantity)} busy={mutationBusy || !authorityReady} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product, variant)} onAdjust={delta => void adjustInventory(product, delta, variant)} />;
-                          }) : (() => {
-                            const key = inventoryKey(product.id);
-                            return <InventoryControl copy={copy} product={product} value={inventoryValues[key] ?? String(product.stock_quantity)} busy={mutationBusy || !authorityReady} onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))} onSet={() => void setInventory(product)} onAdjust={delta => void adjustInventory(product, delta)} />;
-                          })()}
-                        </div>
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <div className="rounded-xl bg-muted/35 p-2.5">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Tag className="h-3.5 w-3.5" />{copy.price}</div>
+                      <p className="mt-1 truncate text-base font-extrabold" dir="ltr">{formatPrice(product)}</p>
+                    </div>
+                    <div className="rounded-xl bg-muted/35 p-2.5">
+                      {type === 'service' ? (
+                        <>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><CalendarClock className="h-3.5 w-3.5" />{copy.duration}</div>
+                          <p className="mt-1 truncate text-base font-extrabold">{service?.duration_minutes ? `${service.duration_minutes} ${copy.minute}` : '—'}</p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Boxes className="h-3.5 w-3.5" />{copy.quantity}</div>
+                          <p className="mt-1 truncate text-base font-extrabold">{tracksInventory(product) ? product.stock_quantity.toLocaleString('en-US') : copy.inventoryNotTracked}</p>
+                        </>
                       )}
                     </div>
                   </div>
-                )}
 
-                {product.description && <div className="px-4 pb-4"><p className="rounded-2xl bg-muted/30 p-3 text-sm leading-7 text-muted-foreground">{product.description}</p></div>}
-              </article>
+                  <p className="mt-2 min-h-5 truncate text-xs text-muted-foreground">
+                    {type === 'service'
+                      ? `${copy.booking}: ${service?.booking_required === false ? copy.bookingOptional : copy.bookingRequired}`
+                      : hasVariants
+                        ? `${copy.variants}: ${product.variants.length}`
+                        : '\u00a0'}
+                  </p>
+
+                  <div className="mt-auto flex items-center gap-2 border-t pt-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-9 flex-1 rounded-xl px-3 text-xs font-bold"
+                      onClick={() => setDetailsProductId(product.id)}
+                    >
+                      <Eye className="me-1.5 h-4 w-4" />
+                      {copy.details}
+                    </Button>
+                    <Button type="button" variant="outline" size="icon" title={copy.edit} className="h-9 w-9 rounded-xl" disabled={!authorityReady || mutationBusy} onClick={() => openEdit(product)}><Pencil className="h-4 w-4" /></Button>
+                    <Button type="button" variant="ghost" size="icon" title={copy.deleteConfirm} className="h-9 w-9 rounded-xl text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={!authorityReady || mutationBusy} onClick={() => void remove(product)}><Trash2 className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>
       )}
+
+      <Dialog open={Boolean(detailsProduct)} onOpenChange={open => { if (!open) setDetailsProductId(null); }}>
+        {detailsProduct && (
+          <DialogContent dir={dir} className="max-h-[90vh] w-[calc(100%-1.5rem)] max-w-4xl overflow-y-auto rounded-3xl p-5 sm:p-6" closeButtonClassName={isRTL ? 'left-4 right-auto' : undefined}>
+            <DialogHeader className={isRTL ? 'pe-12 text-right sm:text-right' : 'pe-12 text-left sm:text-left'}>
+              <DialogTitle className="text-xl font-extrabold">{copy.detailsTitle}</DialogTitle>
+              <DialogDescription>{detailsProduct.name}</DialogDescription>
+            </DialogHeader>
+
+            <div dir="ltr" className="flex flex-col gap-5 sm:flex-row">
+              <div className="relative aspect-square w-full shrink-0 overflow-hidden rounded-2xl border bg-muted/20 sm:w-48">
+                {detailsProduct.image_refs[0] ? (
+                  <CatalogProtectedImage
+                    image={detailsProduct.image_refs[0]}
+                    alt={detailsProduct.image_refs[0]?.alt || detailsProduct.name}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center"><ImageIcon className="h-12 w-12 text-muted-foreground/25" /></div>
+                )}
+              </div>
+
+              <div dir={dir} className={`min-w-0 flex-1 ${isRTL ? 'text-right' : 'text-left'}`}>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className="rounded-full">{itemType(detailsProduct) === 'service' ? copy.service : copy.product}</Badge>
+                  <Badge variant="outline" className={`rounded-full ${statusClass(detailsProduct.status)}`}>{itemStatusLabel(detailsProduct, copy)}</Badge>
+                  {detailsProduct.allow_fawri_reply && <Badge variant="outline" className="rounded-full border-orange-200 bg-orange-50 text-orange-700"><Bot className="me-1 h-3 w-3" />{fawriBrand}</Badge>}
+                  {detailsProduct.image_refs.length > 0 && <Badge variant="outline" className="rounded-full"><ImageIcon className="me-1 h-3 w-3" />{detailsProduct.image_refs.length}</Badge>}
+                </div>
+                <h3 className="mt-3 text-2xl font-extrabold leading-8">{detailsProduct.name}</h3>
+                {detailsProduct.category && <p className="mt-1 text-sm text-muted-foreground">{detailsProduct.category}</p>}
+                {detailsProduct.sku && <p className="mt-2 text-xs font-medium text-muted-foreground" dir="ltr">SKU: {detailsProduct.sku}</p>}
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-2xl bg-muted/35 p-3">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground"><Tag className="h-4 w-4" />{copy.price}</div>
+                    <p className="mt-1 text-xl font-extrabold" dir="ltr">{formatPrice(detailsProduct)}</p>
+                  </div>
+                  <div className="rounded-2xl bg-muted/35 p-3">
+                    {itemType(detailsProduct) === 'service' ? (
+                      <>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{copy.duration}</div>
+                        <p className="mt-1 text-xl font-extrabold">{detailsProduct.service_details?.duration_minutes ? `${detailsProduct.service_details.duration_minutes} ${copy.minute}` : '—'}</p>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground"><Boxes className="h-4 w-4" />{copy.quantity}</div>
+                        <p className="mt-1 text-xl font-extrabold">{tracksInventory(detailsProduct) ? detailsProduct.stock_quantity.toLocaleString('en-US') : copy.inventoryNotTracked}</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {itemType(detailsProduct) === 'service' && (
+                  <div className="mt-3 rounded-2xl border bg-muted/15 p-3 text-sm">
+                    <span className="font-bold">{copy.booking}: </span>
+                    <span className="text-muted-foreground">{detailsProduct.service_details?.booking_required === false ? copy.bookingOptional : copy.bookingRequired}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <section className="rounded-2xl border bg-card p-4">
+              <h4 className="text-sm font-extrabold">{copy.description}</h4>
+              <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-muted-foreground" dir="auto">{detailsProduct.description || copy.descriptionMissing}</p>
+            </section>
+
+            {tracksInventory(detailsProduct) && (
+              <section className="rounded-2xl border bg-muted/10 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <h4 className="text-sm font-extrabold">{detailsProduct.variants.length > 0 ? copy.variantDetails : copy.inventoryDetails}</h4>
+                  {detailsProduct.variants.length > 0 && <Badge variant="outline" className="rounded-full bg-background">{detailsProduct.variants.length}</Badge>}
+                </div>
+                <div className="space-y-2">
+                  {detailsProduct.variants.length > 0 ? detailsProduct.variants.map(variant => {
+                    const key = inventoryKey(detailsProduct.id, variant.id);
+                    return (
+                      <InventoryControl
+                        key={variant.id}
+                        copy={copy}
+                        product={detailsProduct}
+                        variant={variant}
+                        value={inventoryValues[key] ?? String(variant.stock_quantity)}
+                        busy={mutationBusy || !authorityReady}
+                        onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
+                        onSet={() => void setInventory(detailsProduct, variant)}
+                        onAdjust={delta => void adjustInventory(detailsProduct, delta, variant)}
+                      />
+                    );
+                  }) : (() => {
+                    const key = inventoryKey(detailsProduct.id);
+                    return (
+                      <InventoryControl
+                        copy={copy}
+                        product={detailsProduct}
+                        value={inventoryValues[key] ?? String(detailsProduct.stock_quantity)}
+                        busy={mutationBusy || !authorityReady}
+                        onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
+                        onSet={() => void setInventory(detailsProduct)}
+                        onAdjust={delta => void adjustInventory(detailsProduct, delta)}
+                      />
+                    );
+                  })()}
+                </div>
+              </section>
+            )}
+
+            <div className="flex justify-end border-t pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-10 rounded-xl px-4 font-bold"
+                disabled={!authorityReady || mutationBusy}
+                onClick={() => {
+                  const product = detailsProduct;
+                  setDetailsProductId(null);
+                  openEdit(product);
+                }}
+              >
+                <Pencil className="me-2 h-4 w-4" />
+                {copy.edit}
+              </Button>
+            </div>
+          </DialogContent>
+        )}
+      </Dialog>
 
       {formOpen && (
         <CatalogEditorShell
