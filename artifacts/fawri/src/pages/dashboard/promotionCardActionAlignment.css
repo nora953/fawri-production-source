@@ -1,16 +1,26 @@
 /*
- * Promotion cards reuse the icon-only edit button from the original markup and
- * add its localized label through the summary-card CSS. Keep both pieces in one
- * centered flex row so the pencil never overlaps the label in RTL or LTR.
- * The scope badge also gets logical icon spacing, and the discount summary is
- * lifted slightly so it keeps breathing room above the start/end metric row.
+ * Promotion cards keep edit/delete as compact icon controls, matching Product
+ * summary cards. The scope badge gets logical icon spacing, and the discount
+ * summary is lifted slightly so it keeps breathing room above start/end.
  */
 @media (min-width: 1280px) {
-  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child {
-    display: inline-flex !important;
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 {
+    display: flex !important;
+    grid-template-columns: none !important;
     align-items: center !important;
-    justify-content: center !important;
-    gap: 0.45rem !important;
+    justify-content: flex-start !important;
+    gap: 0.5rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button,
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child,
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:last-child {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    min-width: 2.5rem !important;
+    min-height: 2.5rem !important;
+    padding: 0 !important;
+    border-radius: 0.75rem !important;
   }
 
   .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child > svg {
@@ -19,8 +29,8 @@
   }
 
   .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child::after {
-    margin: 0 !important;
-    line-height: 1rem;
+    content: none !important;
+    display: none !important;
   }
 
   .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .min-w-0.flex-1 > .mb-3 > .rounded-full.bg-background {
