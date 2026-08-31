@@ -65,6 +65,9 @@ jobs:
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
 
+      - name: Build API server
+        run: pnpm --filter @workspace/api-server run build
+
       - name: Check lifecycle contract syntax
         run: node --check artifacts/api-server/tests/merchant-deletion-cashier-lifecycle-contract.test.mjs
 
