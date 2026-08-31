@@ -6,6 +6,7 @@ import {
   type MetaCredentialEnvelope,
   type MetaCredentialKeyProvider,
 } from "./metaCredentialVault";
+import { evaluateMerchantOperationalAccess } from "./merchantOperationalAccess";
 import {
   operationalPostgresAuthorityRequired,
   withMerchantOperationalTransaction,
@@ -69,6 +70,13 @@ type ChannelRow = {
   metadata: Record<string, string | number | boolean | null> | null;
   created_at: Date | string;
   updated_at: Date | string;
+};
+
+type MerchantOperationalRow = {
+  id: string;
+  phone_verified: boolean;
+  merchant_status: string;
+  account_status: string;
 };
 
 function iso(value: Date | string | null | undefined): string | undefined {
@@ -149,6 +157,42 @@ async function findChannel(
   return result.rows[0] || null;
 }
 
+async function assertMerchantOperationalAccessForChannelWrite(
+  client: OperationalSqlClient,
+  merchantId: string,
+): Promise<void> {
+  const result = await client.query<MerchantOperationalRow>(
+    `SELECT a.id,
+            a.phone_verified,
+            m.status::text AS merchant_status,
+            m.account_status::text AS account_status
+       FROM accounts AS a
+       JOIN merchants AS m ON m.id = a.id AND m.account_id = a.id
+      WHERE a.id = $1 AND a.kind = 'merchant'
+      LIMIT 1
+      FOR UPDATE OF a, m`,
+    [merchantId],
+  );
+  const row = result.rows[0];
+  const decision = evaluateMerchantOperationalAccess(
+    row
+      ? {
+          id: row.id,
+          is_admin: false,
+          otp_verified: row.phone_verified,
+          status: row.merchant_status,
+          account_status: row.account_status,
+        }
+      : undefined,
+  );
+  if (!decision.allowed) {
+    throw Object.assign(new Error(decision.error), {
+      code: decision.code,
+      statusCode: decision.statusCode,
+    });
+  }
+}
+
 export async function listMetaChannelsAuthoritative(
   merchantId: string,
 ): Promise<MetaChannelSummary[]> {
@@ -205,13 +249,14 @@ export async function connectMetaChannelAuthoritative(input: {
       code: "META_CHANNEL_IDENTITY_INVALID",
     });
   }
-  const encrypted = encryptMetaCredential(
-    input.accessToken,
-    provider(input.keyProvider),
-    `fawri:meta:${merchantId}:${input.platform}:${pageId}`,
-  );
   const now = input.now || new Date();
   return withMerchantOperationalTransaction(merchantId, async (client) => {
+    await assertMerchantOperationalAccessForChannelWrite(client, merchantId);
+    const encrypted = encryptMetaCredential(
+      input.accessToken,
+      provider(input.keyProvider),
+      `fawri:meta:${merchantId}:${input.platform}:${pageId}`,
+    );
     const id = channelId(merchantId, input.platform, pageId);
     await client.query(
       `INSERT INTO merchant_channels
@@ -344,7 +389,7 @@ export async function requestMetaChannelDisconnectAuthoritative(input: {
       `UPDATE merchant_channels
           SET status = 'pending',
               version = version + 1,
-              metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{operation}', '"disconnecting"'::jsonb, true)
+              metadata = jsonb_set(COALESCE(metadata, '{}'::jsonb), '{operation}', '\"disconnecting\"'::jsonb, true)
                          || jsonb_build_object('disconnect_requested_at', $4::text),
               updated_at = $4::timestamptz
         WHERE merchant_id = $1 AND platform = $2::channel_platform AND page_id = $3`,
