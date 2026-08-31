@@ -105,17 +105,28 @@ test('promotion scope icon keeps breathing room and discount summary lifts away 
   );
 });
 
-test('promotion header separates the pricing notice from store currency and timezone facts', () => {
+test('promotion header separates the pricing notice from grouped store currency and timezone facts', () => {
+  assert.match(
+    promotionSource,
+    /originalSafe:\s*'السعر الأصلي لا يتغير، فوري يستخدم السعر الفعّال فقط أثناء فترة العرض\.'/,
+  );
   assert.match(
     promotionSource,
     /sm:flex-row sm:items-center sm:justify-between[\s\S]*?<span>\{copy\.originalSafe\}<\/span>/,
   );
-  assert.match(promotionSource, /\{copy\.currency\}: <span dir="ltr">\{context\.currency_code\}<\/span>/);
-  assert.match(promotionSource, /\{copy\.timezone\}: <span dir="ltr">\{context\.timezone\}<\/span>/);
+  assert.match(
+    promotionSource,
+    /<span className="inline-flex items-center gap-1\.5">[\s\S]*?\{copy\.currency\}:[\s\S]*?<strong dir="ltr" className="font-extrabold text-foreground">\{context\.currency_code\}<\/strong>/,
+  );
+  assert.match(promotionSource, /<span aria-hidden="true" className="text-orange-400">•<\/span>/);
+  assert.match(
+    promotionSource,
+    /<span className="inline-flex items-center gap-1\.5">[\s\S]*?\{copy\.timezone\}:[\s\S]*?<strong dir="ltr" className="font-extrabold text-foreground">\{context\.timezone\}<\/strong>/,
+  );
   assert.match(promotionActionCss, /Promotion header context:/);
   assert.match(promotionActionCss, /column-gap:\s*1\.5rem !important/);
   assert.match(promotionActionCss, /> span:first-child \{[\s\S]*?flex:\s*1 1 auto;[\s\S]*?font-weight:\s*650/);
   assert.match(promotionActionCss, /> span:last-child \{[\s\S]*?white-space:\s*nowrap/);
-  assert.match(promotionActionCss, /> span:last-child > \[dir="ltr"\] \{[\s\S]*?font-weight:\s*800/);
+  assert.match(promotionActionCss, /> span:last-child \[dir="ltr"\] \{[\s\S]*?font-weight:\s*800/);
   assert.match(promotionActionCss, /@media \(max-width: 639px\)[\s\S]*?border-top:\s*1px solid rgb\(249 115 22 \/ 0\.14\)/);
 });
