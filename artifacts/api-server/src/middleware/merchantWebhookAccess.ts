@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { getMetaWebhookEventId } from "./metaWebhookSecurity";
-import { readMetaPageMerchantMap } from "../services/metaPageDirectory";
-import { getMerchantOperationalDecision } from "../services/merchantOperationalAccess";
+import { readMetaPageMerchantMapAuthoritative } from "../services/metaPageDirectory";
+import { getMerchantOperationalDecisionAuthoritative } from "../services/merchantOperationalAccess";
 
 function entryEventIds(entry: unknown): string[] {
   const record = entry && typeof entry === "object"
@@ -17,11 +17,11 @@ function unavailable(res: Response, code: string, error: string): void {
   res.status(503).json({ ok: false, code, error });
 }
 
-export function enforceMerchantWebhookOperationalAccess(
+export async function enforceMerchantWebhookOperationalAccess(
   req: Request,
   res: Response,
   next: NextFunction,
-): void {
+): Promise<void> {
   if (req.method !== "POST" || req.path !== "/api/meta/webhook") {
     next();
     return;
@@ -34,7 +34,7 @@ export function enforceMerchantWebhookOperationalAccess(
   }
 
   try {
-    const pageMerchantMap = readMetaPageMerchantMap();
+    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative();
     const permittedEntries: unknown[] = [];
     const terminalEventIds: string[] = [];
 
@@ -50,7 +50,7 @@ export function enforceMerchantWebhookOperationalAccess(
         return;
       }
 
-      const decision = getMerchantOperationalDecision(merchantId);
+      const decision = await getMerchantOperationalDecisionAuthoritative(merchantId);
       if (decision.allowed) {
         permittedEntries.push(entry);
         continue;
