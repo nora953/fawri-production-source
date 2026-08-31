@@ -44,4 +44,21 @@ test("Meta OAuth callback rechecks merchant access before external Page subscrip
     /getMerchantOperationalDecisionAuthoritative\s*\(/,
     "merchant operational access must be re-read after Page discovery and before subscribed_apps",
   );
+
+  const compensationEndpoint = callback.indexOf(
+    "/subscribed_apps",
+    localPersistence,
+  );
+  const compensationDelete = callback.indexOf(
+    'method: "DELETE"',
+    localPersistence,
+  );
+  assert.ok(
+    compensationEndpoint > localPersistence,
+    "operational denial after provider subscription must retain a provider unsubscribe compensation path",
+  );
+  assert.ok(
+    compensationDelete > compensationEndpoint,
+    "provider cutoff compensation must unsubscribe the Page rather than issue another subscription",
+  );
 });
