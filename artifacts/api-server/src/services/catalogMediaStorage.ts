@@ -45,6 +45,7 @@ export interface CatalogMediaStorageProvider {
   put(storageKey: string, buffer: Buffer): Promise<void>;
   read(storageKey: string): Promise<Buffer | null>;
   remove(storageKey: string): Promise<void>;
+  removePrefix?(storagePrefix: string): Promise<void>;
 }
 
 function mediaRoot(): string {
@@ -83,6 +84,9 @@ const filesystemProvider: CatalogMediaStorageProvider = {
   },
   async remove(storageKey) {
     fs.rmSync(resolveStoragePath(storageKey), { force: true });
+  },
+  async removePrefix(storagePrefix) {
+    fs.rmSync(resolveStoragePath(storagePrefix), { recursive: true, force: true });
   },
 };
 
@@ -300,4 +304,19 @@ export async function removeCatalogMediaStorageObject(params: {
     );
   }
   await storageProviderByName(params.storageProvider).remove(storageKey);
+}
+
+export async function removeCatalogMerchantMedia(params: {
+  storageProvider: unknown;
+  merchantId: string;
+}): Promise<void> {
+  const provider = storageProviderByName(params.storageProvider);
+  if (!provider.removePrefix) {
+    throw new CatalogMediaError(
+      "CATALOG_MEDIA_PREFIX_DELETE_UNAVAILABLE",
+      "catalog media prefix deletion is unavailable",
+      503,
+    );
+  }
+  await provider.removePrefix(merchantStoragePrefix(params.merchantId));
 }
