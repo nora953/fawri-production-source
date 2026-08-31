@@ -32,11 +32,12 @@ test('summary cards hide product media while the details dialog keeps the produc
   assert.match(dialog, /<CatalogProtectedImage/);
 });
 
-test('summary cards keep SKU out of sight and align compact variant facts with status chips', () => {
+test('summary cards keep SKU out of sight and keep compact variant facts adjacent without empty pills', () => {
   assert.match(cardStyles, /> :first-child > p\[dir="ltr"\][\s\S]*display:\s*none/);
-  assert.match(cardStyles, /> :nth-child\(2\)[\s\S]*grid-row:\s*2/);
+  assert.match(cardStyles, /grid-template-columns:\s*auto auto minmax\(0, 1fr\)/);
+  assert.match(cardStyles, /> :nth-child\(2\)[\s\S]*grid-column:\s*1[\s\S]*grid-row:\s*2/);
   assert.match(cardStyles, /> \[dir\] > p\s*\{[\s\S]*grid-column:\s*2[\s\S]*grid-row:\s*2/);
-  assert.match(cardStyles, /border-radius:\s*9999px/);
+  assert.match(cardStyles, /> \[dir\] > p\s*\{[\s\S]*background:\s*transparent !important[\s\S]*padding:\s*0 !important/);
 
   const cardStart = pageSource.indexOf('data-catalog-summary-card="true"');
   const dialogStart = pageSource.indexOf('<Dialog open={Boolean(detailsProduct)}');
