@@ -279,6 +279,16 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
         platform: platform === "instagram" ? "instagram" : "messenger",
       };
 
+      if (operationalPostgresAuthorityRequired()) {
+        const activationDecision =
+          await getMerchantOperationalDecisionAuthoritative(merchantId);
+        if (!activationDecision.allowed) {
+          return res
+            .status(activationDecision.statusCode)
+            .send("Merchant account is unavailable");
+        }
+      }
+
       // Install the app on this Page so Meta can deliver Page events
       // to the Webhook configured for the Fawri app.
       try {
@@ -382,16 +392,62 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
         });
       }
 
-      await connectMetaChannelAuthoritative({
-        merchantId,
-        platform: connection.platform,
-        pageId: connection.page_id,
-        pageName: connection.page_name,
-        accessToken: pageAccessToken,
-        webhookSubscribed: connection.webhook_subscribed,
-        instagramAccountId: connection.instagram_account_id,
-        instagramUsername: connection.instagram_username,
-      });
+      try {
+        await connectMetaChannelAuthoritative({
+          merchantId,
+          platform: connection.platform,
+          pageId: connection.page_id,
+          pageName: connection.page_name,
+          accessToken: pageAccessToken,
+          webhookSubscribed: connection.webhook_subscribed,
+          instagramAccountId: connection.instagram_account_id,
+          instagramUsername: connection.instagram_username,
+        });
+      } catch (connectionError) {
+        const connectionCode = safeErrorCode(
+          connectionError,
+          "META_CHANNEL_CONNECT_FAILED",
+        );
+        const operationalCutoff =
+          connectionCode === "MERCHANT_APPROVAL_REQUIRED" ||
+          connectionCode === "MERCHANT_REJECTED" ||
+          connectionCode === "MERCHANT_SUSPENDED" ||
+          connectionCode === "MERCHANT_ACCESS_STATE_UNAVAILABLE";
+
+        if (operationalCutoff && connection.webhook_subscribed === true) {
+          try {
+            const unsubscribeUrl =
+              `https://graph.facebook.com/${GRAPH_VERSION}/${encodeURIComponent(pageId)}/subscribed_apps`;
+            const unsubscribeBody = new URLSearchParams({
+              access_token: pageAccessToken,
+            });
+            const unsubscribeResponse = await fetch(unsubscribeUrl, {
+              method: "DELETE",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: unsubscribeBody,
+            });
+            if (!unsubscribeResponse.ok) {
+              console.error("Meta Page webhook cutoff compensation failed:", {
+                pageId,
+                status: unsubscribeResponse.status,
+                code: "META_SUBSCRIPTION_CUTOFF_CLEANUP_FAILED",
+              });
+            }
+          } catch (unsubscribeError) {
+            console.error("Meta Page webhook cutoff compensation failed:", {
+              pageId,
+              code: safeErrorCode(
+                unsubscribeError,
+                "META_SUBSCRIPTION_CUTOFF_CLEANUP_FAILED",
+              ),
+            });
+          }
+        }
+
+        throw connectionError;
+      }
 
       connectedPages.push(connection);
       if (!operationalPostgresAuthorityRequired()) {
@@ -415,9 +471,22 @@ router.get("/meta/callback", async (req: Request, res: Response) => {
       </html>
     `);
   } catch (callbackError) {
+    const callbackCode = safeErrorCode(callbackError, "META_CALLBACK_FAILED");
     console.error("Meta callback failed:", {
-      code: safeErrorCode(callbackError, "META_CALLBACK_FAILED"),
+      code: callbackCode,
     });
+    if (
+      callbackCode === "MERCHANT_APPROVAL_REQUIRED" ||
+      callbackCode === "MERCHANT_REJECTED" ||
+      callbackCode === "MERCHANT_SUSPENDED" ||
+      callbackCode === "MERCHANT_ACCESS_STATE_UNAVAILABLE"
+    ) {
+      const statusCode =
+        Number((callbackError as { statusCode?: unknown })?.statusCode) === 503
+          ? 503
+          : 403;
+      return res.status(statusCode).send("Merchant account is unavailable");
+    }
     return res.status(500).send("Meta callback failed");
   }
 });
