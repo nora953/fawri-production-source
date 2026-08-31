@@ -444,9 +444,14 @@ export function catalogVariantSignature(
         `${normalizeCatalogIdentifier(name)}=${normalizeCatalogIdentifier(value)}`,
     )
     .sort();
-  return entries.length > 0
-    ? entries.join("|")
-    : `name=${normalizeCatalogIdentifier(variant.name)}`;
+  const canonical =
+    entries.length > 0
+      ? entries.join("|")
+      : `name=${normalizeCatalogIdentifier(variant.name)}`;
+  if (canonical.length >= 16 && canonical.length <= 256) {
+    return canonical;
+  }
+  return `sig_${crypto.createHash("sha256").update(canonical, "utf8").digest("hex")}`;
 }
 
 function normalizeVariant(
