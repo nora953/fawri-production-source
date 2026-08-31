@@ -13,6 +13,7 @@ const IMAGE_MIME_TO_EXTENSION = {
 } as const;
 
 export type CatalogImageMime = keyof typeof IMAGE_MIME_TO_EXTENSION;
+export type CatalogMediaStorageProviderName = "filesystem";
 
 export type CatalogMediaUpload = {
   storage_key: string;
@@ -85,13 +86,16 @@ const filesystemProvider: CatalogMediaStorageProvider = {
   },
 };
 
-function storageProvider(): CatalogMediaStorageProvider {
-  const provider = String(
+export function catalogMediaStorageProviderName(): string {
+  return String(
     process.env.FAWRI_CATALOG_MEDIA_STORAGE_PROVIDER || "filesystem",
   )
     .trim()
     .toLowerCase();
+}
 
+function storageProviderByName(providerValue: unknown): CatalogMediaStorageProvider {
+  const provider = String(providerValue || "").trim().toLowerCase();
   if (provider === "filesystem") return filesystemProvider;
 
   throw new CatalogMediaError(
@@ -99,6 +103,10 @@ function storageProvider(): CatalogMediaStorageProvider {
     "configured catalog media storage provider is unavailable",
     503,
   );
+}
+
+function storageProvider(): CatalogMediaStorageProvider {
+  return storageProviderByName(catalogMediaStorageProviderName());
 }
 
 function merchantStoragePrefix(merchantId: string): string {
@@ -277,4 +285,19 @@ export async function removeCatalogImage(params: {
     params.storageKey,
   );
   await storageProvider().remove(storageKey);
+}
+
+export async function removeCatalogMediaStorageObject(params: {
+  storageProvider: unknown;
+  storageKey: unknown;
+}): Promise<void> {
+  const storageKey = String(params.storageKey || "").trim();
+  if (!storageKey || storageKey.length > 1024) {
+    throw new CatalogMediaError(
+      "CATALOG_MEDIA_STORAGE_KEY_INVALID",
+      "catalog media storage key is invalid",
+      400,
+    );
+  }
+  await storageProviderByName(params.storageProvider).remove(storageKey);
 }
