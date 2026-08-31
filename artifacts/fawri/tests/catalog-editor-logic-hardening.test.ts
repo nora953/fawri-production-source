@@ -231,13 +231,14 @@ test('type switching source preserves product draft fields instead of destroying
   assert.match(itemTypeEditorSource, /item_type:\s*'product'/);
 });
 
-test('variant editor exposes labels, inherited price, safe sparse completion, and bidi isolation', () => {
-  assert.match(variantEditorSource, /incompleteMatrix/);
-  assert.match(variantEditorSource, /completeMissing/);
-  assert.match(variantEditorSource, /inheritedPrice/);
-  assert.match(variantEditorSource, /variantSku/);
-  assert.match(variantEditorSource, /variantQuantity/);
-  assert.match(variantEditorSource, /<bdi>/);
+test('variant editor exposes grouped options, inherited values, safe regeneration, and bidi isolation', () => {
+  assert.match(variantEditorSource, /catalogVariantCombinationCount/);
+  assert.match(variantEditorSource, /catalogVariantOptionSetDefinitionsAreValid/);
+  assert.match(variantEditorSource, /regenerateCatalogVariantDrafts/);
+  assert.match(variantEditorSource, /excluded_variant_combinations/);
+  assert.match(variantEditorSource, /labels\.inheritedSale/);
+  assert.match(variantEditorSource, /labels\.inheritedCost/);
+  assert.match(variantEditorSource, /dir="auto"/);
   assert.match(variantEditorSource, /MAX_VARIANTS = 100/);
 });
 
