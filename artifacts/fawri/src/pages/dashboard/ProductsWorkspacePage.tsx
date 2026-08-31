@@ -6,6 +6,7 @@ import CatalogPromotionsPage from './CatalogPromotionsPage';
 import './dashboardMerchantPolish.css';
 import './catalogEditorFullscreen.css';
 import './catalogEditorCardHarmony.css';
+import './promotionCardActionAlignment.css';
 import './productCardCompact.css';
 import './catalogMeasurementAlignment.css';
 import { useI18n } from '@/lib/i18n';
