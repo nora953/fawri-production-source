@@ -388,9 +388,19 @@ test('inventory adjust uses canonical idempotency and expected_version contract'
 });
 
 test('variant-managed inventory UI never exposes a product-level mutation path', () => {
-  assert.match(catalogPage, /hasVariants \? product\.variants\.map/);
-  assert.match(catalogPage, /setInventory\(product, variant\)/);
-  assert.match(catalogPage, /adjustInventory\(product, delta, variant\)/);
+  const variantBranch = catalogPage.indexOf('detailsProduct.variants.length > 0 ? detailsProduct.variants.map');
+  const simpleBranch = catalogPage.indexOf('}) : (() => {', variantBranch);
+  const variantSet = catalogPage.indexOf('setInventory(detailsProduct, variant)', variantBranch);
+  const variantAdjust = catalogPage.indexOf('adjustInventory(detailsProduct, delta, variant)', variantBranch);
+  const productSet = catalogPage.indexOf('setInventory(detailsProduct)', variantBranch);
+  const productAdjust = catalogPage.indexOf('adjustInventory(detailsProduct, delta)', variantBranch);
+
+  assert.ok(variantBranch >= 0, 'details modal must branch on variant-managed inventory');
+  assert.ok(simpleBranch > variantBranch, 'simple-product controls must stay in the fallback branch');
+  assert.ok(variantSet > variantBranch && variantSet < simpleBranch, 'variant set must stay variant-scoped');
+  assert.ok(variantAdjust > variantBranch && variantAdjust < simpleBranch, 'variant adjust must stay variant-scoped');
+  assert.ok(productSet > simpleBranch, 'product-level set must exist only in the simple-product fallback');
+  assert.ok(productAdjust > simpleBranch, 'product-level adjust must exist only in the simple-product fallback');
   assert.match(catalogPage, /CatalogProductDetailsEditor/);
   assert.match(productDetails, /catalogProductStockIsVariantManaged/);
 });
