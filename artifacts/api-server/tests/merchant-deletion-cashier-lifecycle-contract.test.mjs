@@ -20,7 +20,7 @@ function between(text, startMarker, endMarker) {
   return text.slice(start, end);
 }
 
-test("irreversible merchant deletion must explicitly retire cashier identities, credentials, sessions, and retained attribution", () => {
+test("irreversible merchant deletion retires cashier auth state while retaining anonymized accounting anchors", () => {
   const management = source(
     "artifacts/api-server/src/services/postgresMerchantManagementAuthority.ts",
   );
@@ -61,22 +61,50 @@ test("irreversible merchant deletion must explicitly retire cashier identities, 
     );
   }
 
-  const lifecycleTables = [
-    "merchant_cashier_staff",
-    "merchant_cashier_staff_permissions",
-    "merchant_cashier_stations",
-    "cashier_station_pairing_challenges",
-    "cashier_station_credentials",
-    "cashier_shifts",
+  for (const table of [
     "cashier_operator_sessions",
-    "cashier_operation_attribution",
-  ];
-
-  for (const table of lifecycleTables) {
+    "cashier_station_credentials",
+    "cashier_station_pairing_challenges",
+    "merchant_cashier_staff_permissions",
+  ]) {
     assert.match(
       purge,
-      new RegExp(`\\b${table}\\b`),
-      `merchant deletion does not explicitly handle ${table}; because the merchant row is tombstoned rather than deleted, merchant-level ON DELETE CASCADE cannot retire this cashier state`,
+      new RegExp(`DELETE FROM ${table} WHERE merchant_id = \\$1`),
+      `merchant deletion must remove transient cashier auth state from ${table}`,
+    );
+  }
+
+  assert.match(
+    purge,
+    /UPDATE cashier_shifts[\s\S]*status = 'closed'[\s\S]*ended_at = COALESCE\(ended_at, GREATEST\(now\(\), started_at\)\)[\s\S]*close_reason = 'merchant_deleted'[\s\S]*WHERE merchant_id = \$1/,
+    "merchant deletion must close every retained shift and replace free-text close reasons",
+  );
+  assert.match(
+    purge,
+    /UPDATE cashier_operation_attribution[\s\S]*device_id = '\[deleted device\]'[\s\S]*station_credential_id = '\[deleted credential\]'[\s\S]*operator_session_id = '\[deleted operator session\]'[\s\S]*WHERE merchant_id = \$1/,
+    "retained cashier accounting attribution must not keep device/session credential identifiers",
+  );
+  assert.match(
+    purge,
+    /UPDATE merchant_cashier_staff[\s\S]*display_name = '\[deleted cashier\]'[\s\S]*status = 'revoked'[\s\S]*pin_hash = repeat\('0', 64\)[\s\S]*pin_locked_until = NULL[\s\S]*revoked_at = COALESCE\(revoked_at, now\(\)\)[\s\S]*WHERE merchant_id = \$1/,
+    "retained cashier staff anchors must be revoked and stripped of identity/PIN material",
+  );
+  assert.match(
+    purge,
+    /UPDATE merchant_cashier_stations[\s\S]*name = '\[deleted station\]'[\s\S]*branch_key = 'deleted'[\s\S]*branch_label = NULL[\s\S]*status = 'revoked'[\s\S]*paired_device_id = NULL[\s\S]*offline_inventory_authority = false[\s\S]*paired_at = NULL[\s\S]*last_seen_at = NULL[\s\S]*WHERE merchant_id = \$1/,
+    "retained station anchors must be revoked and stripped of branch/device identity",
+  );
+
+  for (const retainedTable of [
+    "merchant_cashier_staff",
+    "merchant_cashier_stations",
+    "cashier_shifts",
+    "cashier_operation_attribution",
+  ]) {
+    assert.doesNotMatch(
+      purge,
+      new RegExp(`DELETE FROM ${retainedTable} WHERE merchant_id = \\$1`),
+      `${retainedTable} is an accounting/shift FK anchor and must be anonymized rather than blindly deleted`,
     );
   }
 
