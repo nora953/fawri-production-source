@@ -25,6 +25,7 @@ const copy = {
     makePrimary: 'تعيين كرئيسية',
     alt: 'وصف الصورة',
     remove: 'إزالة',
+    viewImages: 'عرض الصور',
     limit: 'تم الوصول إلى الحد الأقصى لعدد الصور.',
     failed: 'تعذر رفع الصورة.',
     previewFailed: 'تعذر عرض الصورة',
@@ -41,6 +42,7 @@ const copy = {
     makePrimary: 'بیکە بە سەرەکی',
     alt: 'وەسفی وێنە',
     remove: 'لابردن',
+    viewImages: 'بینینی وێنەکان',
     limit: 'گەیشتیتە سنووری ژمارەی وێنەکان.',
     failed: 'بارکردنی وێنە سەرکەوتوو نەبوو.',
     previewFailed: 'وێنە پیشان نەدرا',
@@ -57,6 +59,7 @@ const copy = {
     makePrimary: 'Make primary',
     alt: 'Image description',
     remove: 'Remove',
+    viewImages: 'View images',
     limit: 'Maximum image count reached.',
     failed: 'Could not upload image.',
     previewFailed: 'Could not display image',
@@ -192,6 +195,7 @@ export function CatalogImageUploadEditor({
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   const updateAlt = (index: number, alt: string) => {
     onChange(images.map((image, itemIndex) => (itemIndex === index ? { ...image, alt } : image)));
@@ -205,7 +209,11 @@ export function CatalogImageUploadEditor({
 
   const removeImage = (index: number) => {
     onChange(images.filter((_, itemIndex) => itemIndex !== index));
-    if (lightboxIndex === index) setLightboxIndex(null);
+    setLightboxIndex(current => {
+      if (current === null) return null;
+      if (current === index) return null;
+      return current > index ? current - 1 : current;
+    });
   };
 
   const handleFiles = async (files: FileList | File[]) => {
@@ -260,14 +268,22 @@ export function CatalogImageUploadEditor({
       if (event.dataTransfer.files) void handleFiles(event.dataTransfer.files);
     },
   };
+
   const selectedLightbox = lightboxIndex === null ? null : images[lightboxIndex];
-  const compactUploadSize = dense ? 'h-14 w-16 shrink-0 px-1' : 'h-20 w-24 shrink-0 px-2';
-  const compactThumbSize = dense ? 'h-14 w-14' : 'h-20 w-20';
+  const denseSummary = compact && dense;
+  const latestImageIndex = images.length > 0 ? images.length - 1 : -1;
+  const visibleImages = denseSummary
+    ? latestImageIndex >= 0
+      ? [{ image: images[latestImageIndex], index: latestImageIndex }]
+      : []
+    : images.map((image, index) => ({ image, index }));
+  const compactUploadSize = dense ? 'h-12 w-11 shrink-0 px-1' : 'h-20 w-24 shrink-0 px-2';
+  const compactThumbSize = dense ? 'h-12 w-12' : 'h-20 w-20';
   const compactShellClass = hideHeading
     ? (dense ? 'space-y-1' : 'space-y-2')
     : `${dense ? 'space-y-1 rounded-lg p-1.5' : 'space-y-2 rounded-xl p-2.5'} border bg-muted/10`;
-  const imageStripClass = compact && dense
-    ? 'flex flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden pb-0.5'
+  const imageStripClass = denseSummary
+    ? 'flex flex-nowrap items-center justify-center gap-1.5 overflow-hidden'
     : 'flex flex-wrap items-center gap-2';
 
   return (
@@ -312,11 +328,11 @@ export function CatalogImageUploadEditor({
           className={`${compact ? compactUploadSize : 'min-h-20 min-w-[12rem] flex-1 px-4'} flex flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${isDragging ? 'border-orange-500 bg-orange-50/60' : 'border-muted-foreground/25 bg-background hover:border-orange-400/70'} disabled:cursor-not-allowed disabled:opacity-60`}
         >
           {isUploading ? <Loader2 className={`${dense ? 'mb-0.5 h-4 w-4' : 'mb-1 h-5 w-5'} animate-spin text-orange-500`} /> : <Upload className={`${dense ? 'mb-0.5 h-4 w-4' : 'mb-1 h-5 w-5'} text-muted-foreground`} />}
-          <span className={`${dense ? 'text-[10px]' : 'text-xs'} font-semibold`}>{isUploading ? labels.uploading : labels.upload}</span>
+          <span className={`${dense ? 'text-[9px]' : 'text-xs'} font-semibold`}>{isUploading ? labels.uploading : labels.upload}</span>
           {!compact && <span className="mt-1 text-[11px] text-muted-foreground">{labels.formats}</span>}
         </button>
 
-        {images.map((image, index) => (
+        {visibleImages.map(({ image, index }) => (
           <div key={image.key} className={`group relative ${compactThumbSize} shrink-0 overflow-hidden rounded-xl border bg-background`}>
             <ResilientImage
               image={image}
@@ -326,7 +342,7 @@ export function CatalogImageUploadEditor({
               onClick={() => setLightboxIndex(index)}
             />
             {index === 0 && (
-              <span className="absolute start-1 top-1 inline-flex items-center rounded-full bg-background/95 px-1.5 py-0.5 text-[9px] font-bold shadow-sm">
+              <span className="absolute start-1 top-1 inline-flex items-center rounded-full bg-background/95 px-1 py-0.5 text-[8px] font-bold shadow-sm">
                 <Star className="me-0.5 h-2.5 w-2.5 fill-current text-orange-500" />
                 {labels.primary}
               </span>
@@ -341,6 +357,20 @@ export function CatalogImageUploadEditor({
             </button>
           </div>
         ))}
+
+        {denseSummary && images.length > 0 && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-12 w-14 shrink-0 flex-col gap-0 rounded-xl px-1 text-[9px] leading-3"
+            onClick={() => setGalleryOpen(true)}
+          >
+            <ImageIcon className="mb-0.5 h-4 w-4" />
+            <span>{labels.viewImages}</span>
+            <span className="font-bold">({images.length})</span>
+          </Button>
+        )}
       </div>
 
       {!compact && images.length > 0 && (
@@ -361,6 +391,52 @@ export function CatalogImageUploadEditor({
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {galleryOpen && (
+        <div className="fixed inset-0 z-[95] flex items-center justify-center bg-black/60 p-4" onClick={() => setGalleryOpen(false)}>
+          <div className="w-full max-w-4xl overflow-hidden rounded-2xl bg-background shadow-2xl" onClick={event => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
+              <div className="flex items-center gap-2 font-bold">
+                <ImageIcon className="h-4 w-4" />
+                <span>{labels.viewImages}</span>
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{images.length}</span>
+              </div>
+              <button type="button" aria-label={labels.close} onClick={() => setGalleryOpen(false)} className="rounded-full p-2 hover:bg-muted">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[72vh] overflow-y-auto p-4">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {images.map((image, index) => (
+                  <div key={`${image.key}-gallery`} className="group relative aspect-square overflow-hidden rounded-xl border bg-muted/20">
+                    <ResilientImage
+                      image={image}
+                      alt={image.alt || labels.title}
+                      failureLabel={labels.previewFailed}
+                      className="h-full w-full cursor-zoom-in object-cover"
+                      onClick={() => setLightboxIndex(index)}
+                    />
+                    {index === 0 && (
+                      <span className="absolute start-2 top-2 inline-flex items-center rounded-full bg-background/95 px-2 py-1 text-[10px] font-bold shadow-sm">
+                        <Star className="me-1 h-3 w-3 fill-current text-orange-500" />
+                        {labels.primary}
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      aria-label={labels.remove}
+                      onClick={() => removeImage(index)}
+                      className="absolute end-2 bottom-2 rounded-full bg-background/95 p-1.5 text-destructive shadow"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
