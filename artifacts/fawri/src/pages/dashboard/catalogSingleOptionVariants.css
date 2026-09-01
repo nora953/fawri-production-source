@@ -1,0 +1,151 @@
+/*
+ * Single-option catalog products (for example: Color = Red, White, Black)
+ * do not need both a group card and a one-row variant table for every value.
+ * Detect exactly one option-definition row in the option builder and collapse
+ * the generated groups into one merchant-facing variant table. Products with
+ * two or more option definitions keep the richer grouped editor unchanged.
+ */
+
+/* Exactly one option row: the section has an option-row grid but does not have
+ * a second option-row grid following it. */
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 {
+  gap: 0.875rem !important;
+}
+
+/* The inherited-values explainer is useful for grouped multi-option editing,
+ * but becomes redundant noise when every group contains only one variant. */
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .rounded-xl.border.border-orange-200 {
+  display: none !important;
+}
+
+/* Keep the compact "Variants — N" toolbar, but remove the implementation note
+ * about inventory history. The merchant only needs the available controls. */
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .flex.flex-col.gap-2.rounded-xl.border.bg-background.p-3 > div:first-child > p.mt-1.text-xs {
+  display: none !important;
+}
+
+/* The groups container becomes the one visual card for all single-option
+ * variants. Every generated group contributes only its actual variant row. */
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 {
+  overflow: hidden !important;
+  gap: 0 !important;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  background: hsl(var(--background));
+  box-shadow: 0 6px 18px -18px rgb(15 23 42 / 0.45);
+}
+
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 > section {
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Hide the duplicate group-level card (Color: Red + group price/cost/stock/image
+ * + copy controls). With one option there is only one variant in that group, so
+ * the row immediately below already exposes the same editable authorities. */
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 > section > .space-y-3.border-b.bg-muted\/20.p-3 {
+  display: none !important;
+}
+
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 > section > .p-2\.5 {
+  padding: 0 !important;
+}
+
+/* Merge the per-group one-row tables into one continuous table. */
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 > section .overflow-x-auto.rounded-2xl.border.bg-background {
+  overflow-x: auto !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+/* Show the column header only once; the remaining groups contribute rows only. */
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 > section:not(:first-child) thead {
+  display: none !important;
+}
+
+/* Keep rows visually continuous and prevent a heavy card-within-card look. */
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 > section:not(:first-child) tbody > tr:first-child {
+  border-top: 1px solid hsl(var(--border)) !important;
+}
+
+/* "Remaining options" is a grouped-editor term. For a single option this first
+ * column is simply the variant itself. Replace only the visible heading while
+ * preserving the table structure and row values. */
+.products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 > section:first-child thead th:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
+  content: 'التركيبة';
+  font-size: 0.75rem;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
+  content: 'تێکەڵە';
+  font-size: 0.75rem;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell
+section[class~="space-y-4"]:has(> div:first-child button[role="switch"])
+:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2)
+:not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2))
+> .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
+  content: 'Variant';
+  font-size: 0.75rem;
+}
