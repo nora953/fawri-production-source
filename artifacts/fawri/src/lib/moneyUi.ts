@@ -24,13 +24,14 @@ export function formatMerchantNumber(value: number, fractionDigits = 0): string 
 }
 
 function localizedMoneyToken(number: string, currency: string, lang: Lang): string {
-  if (lang === 'en') return `${number}\u00a0${currency}`;
+  const value = `${number}\u00a0${currency}`;
+  if (lang === 'en') return value;
 
-  // Arabic and Kurdish UIs are RTL. The price should read visually as
-  // number first from the RTL reading edge, followed by the currency label:
-  // 49,000 د.ع. Build a stable LTR-isolated token in visual order so existing
-  // price containers cannot flip the two parts through bidi inheritance.
-  return `\u2066${currency}\u00a0${number}\u2069`;
+  // Arabic and Kurdish pages are RTL, but merchant prices must always render
+  // exactly in this visual order: 49,000 د.ع. LTR override is intentional here:
+  // unlike an isolate/embedding, it prevents the Arabic abbreviation itself
+  // from being visually reordered to ع.د by the Unicode bidi algorithm.
+  return `\u202D${value}\u202C`;
 }
 
 export function formatMerchantMoneyMinor(
