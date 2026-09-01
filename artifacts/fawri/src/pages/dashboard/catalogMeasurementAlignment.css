@@ -26,37 +26,47 @@
 }
 
 /*
- * Product details must keep the same compact rectangular inventory-card shape
- * whether the product has variants or only one base inventory record. The
- * single-record state previously stretched into a tall narrow card.
+ * Product details: a product without variants must use the same compact,
+ * horizontal card geometry as the variant summary cards. Keep this selector
+ * independent of Radix dialog attributes so it is stable in preview builds.
  */
-.products-workspace-polish [role="dialog"] section.rounded-2xl.border.bg-muted\/10 > .space-y-2 {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.5rem;
+.products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start !important;
+  gap: 0.5rem !important;
 }
 
-.products-workspace-polish [role="dialog"] section.rounded-2xl.border.bg-muted\/10 > .space-y-2 > .rounded-xl.border.bg-background.p-3 {
+.products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 > .rounded-xl.border.bg-background.p-3 {
   box-sizing: border-box;
   width: 100% !important;
-  min-width: 0;
+  min-width: 0 !important;
   min-height: 3.75rem !important;
-  height: auto !important;
+  height: 3.75rem !important;
   padding: 0.625rem 0.75rem !important;
   border-radius: 0.75rem !important;
+  overflow: hidden !important;
 }
 
-.products-workspace-polish [role="dialog"] section.rounded-2xl.border.bg-muted\/10 > .space-y-2 > .rounded-xl.border.bg-background.p-3 > .mb-2 {
+.products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 > .rounded-xl.border.bg-background.p-3 > .mb-2 {
   margin-bottom: 0 !important;
+  height: 100%;
+  align-items: center !important;
 }
 
-/* Details view is a read-only summary; inventory changes stay in the editor. */
-.products-workspace-polish [role="dialog"] section.rounded-2xl.border.bg-muted\/10 > .space-y-2 > .rounded-xl.border.bg-background.p-3 > .grid {
+.products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 > .rounded-xl.border.bg-background.p-3 > .mb-2 > .min-w-0 {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+
+/* Details modal is a summary; stock editing stays in the edit screen. */
+.products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 > .rounded-xl.border.bg-background.p-3 > .grid {
   display: none !important;
 }
 
 @media (max-width: 640px) {
-  .products-workspace-polish [role="dialog"] section.rounded-2xl.border.bg-muted\/10 > .space-y-2 {
-    grid-template-columns: minmax(0, 1fr);
+  .products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
