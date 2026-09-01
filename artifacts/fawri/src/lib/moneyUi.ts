@@ -11,22 +11,20 @@ export function merchantCurrencyLabel(currencyCode: string, lang: Lang = 'ar'): 
   return currency;
 }
 
-export function formatMerchantNumber(value: number, fractionDigits = 0): string {
+export function formatMerchantNumber(
+  value: number,
+  fractionDigits = 0,
+  useGrouping = true,
+): string {
   if (!Number.isFinite(value)) return '—';
   const digits = Number.isSafeInteger(fractionDigits)
     ? Math.min(6, Math.max(0, fractionDigits))
     : 0;
   return new Intl.NumberFormat('en-US', {
-    useGrouping: true,
+    useGrouping,
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
   }).format(value);
-}
-
-function catalogCurrencyVisualToken(currency: string, lang: Lang): string {
-  if (lang === 'en') return currency;
-  if (currency === 'د.ع') return 'ع.د';
-  return currency;
 }
 
 export function formatMerchantMoneyMinor(
@@ -40,12 +38,11 @@ export function formatMerchantMoneyMinor(
     : 0;
   const divisor = 10 ** digits;
   const amount = amountMinor / divisor;
-  const number = formatMerchantNumber(amount, digits);
-  const currency = catalogCurrencyVisualToken(merchantCurrencyLabel(currencyCode, lang), lang);
+  const currencyCodeNormalized = normalizedCurrency(currencyCode);
+  const compactArabicIqd = currencyCodeNormalized === 'IQD' && lang !== 'en';
+  const number = formatMerchantNumber(amount, digits, !compactArabicIqd);
+  const currency = merchantCurrencyLabel(currencyCodeNormalized, lang);
 
-  // Catalog price nodes render with dir="ltr" so western digits remain stable.
-  // Arabic-script tokens are visually reversed by the browser in that context;
-  // supplying the mirrored logical token makes the rendered label exactly د.ع.
   return `${number}\u00a0${currency}`;
 }
 
