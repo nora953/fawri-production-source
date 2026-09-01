@@ -23,17 +23,6 @@ export function formatMerchantNumber(value: number, fractionDigits = 0): string 
   }).format(value);
 }
 
-function localizedMoneyToken(number: string, currency: string, lang: Lang): string {
-  const value = `${number}\u00a0${currency}`;
-  if (lang === 'en') return value;
-
-  // Arabic and Kurdish pages are RTL, but merchant prices must always render
-  // exactly in this visual order: 49,000 د.ع. LTR override is intentional here:
-  // unlike an isolate/embedding, it prevents the Arabic abbreviation itself
-  // from being visually reordered to ع.د by the Unicode bidi algorithm.
-  return `\u202D${value}\u202C`;
-}
-
 export function formatMerchantMoneyMinor(
   amountMinor: number,
   currencyCode: string,
@@ -47,7 +36,10 @@ export function formatMerchantMoneyMinor(
   const amount = amountMinor / divisor;
   const number = formatMerchantNumber(amount, digits);
   const currency = merchantCurrencyLabel(currencyCode, lang);
-  return localizedMoneyToken(number, currency, lang);
+
+  // Keep the formatter direction-neutral. Rendering direction belongs to the
+  // price UI element, where CSS can enforce the exact visual order reliably.
+  return `${number}\u00a0${currency}`;
 }
 
 export function formatMerchantIqd(amountIqd: number, lang: Lang = 'ar'): string {
