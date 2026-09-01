@@ -14,12 +14,14 @@ import {
 
 let started = false;
 let running = false;
+let activeSweep: Promise<void> | null = null;
 let postgresTimer: NodeJS.Timeout | null = null;
 
-async function sweepPostgresSupportRuntime(): Promise<void> {
-  if (running) return;
+function sweepPostgresSupportRuntime(): Promise<void> {
+  if (activeSweep) return activeSweep;
+
   running = true;
-  try {
+  const sweep = (async () => {
     await refreshSupportLifecyclePostgresCanonical();
     const pool = await operationalDatabasePool();
     const subscriptions = await pool.query<{ merchant_id: string }>(
@@ -28,9 +30,14 @@ async function sweepPostgresSupportRuntime(): Promise<void> {
     for (const row of subscriptions.rows) {
       await refreshSubscriptionNotificationsPostgres(row.merchant_id);
     }
-  } finally {
+  })();
+
+  activeSweep = sweep.finally(() => {
     running = false;
-  }
+    activeSweep = null;
+  });
+
+  return activeSweep;
 }
 
 export function startPostgresSupportRuntimeCutover(): void {
@@ -54,9 +61,15 @@ export function startPostgresSupportRuntimeCutover(): void {
   postgresTimer.unref();
 }
 
-export function stopPostgresSupportRuntimeCutoverForTests(): void {
+export async function stopPostgresSupportRuntimeCutoverForTests(): Promise<void> {
   if (postgresTimer) clearInterval(postgresTimer);
   postgresTimer = null;
   started = false;
+
+  const sweep = activeSweep;
+  if (sweep) {
+    await sweep.catch(() => undefined);
+  }
+
   running = false;
 }
