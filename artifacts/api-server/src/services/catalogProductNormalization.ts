@@ -14,7 +14,7 @@ export const MAX_PRODUCTS_PER_MERCHANT = 5_000;
 export const MAX_IMPORT_ITEMS = 1_000;
 const MAX_VARIANTS_PER_PRODUCT = 100;
 const MAX_IMAGES_PER_PRODUCT = 20;
-const MAX_IMAGES_PER_VARIANT = 5;
+const MAX_IMAGES_PER_VARIANT = 10;
 const MAX_PRICE_IQD = 1_000_000_000_000;
 const PRODUCT_STATUSES = new Set<CatalogProductStatus>([
   "available",
