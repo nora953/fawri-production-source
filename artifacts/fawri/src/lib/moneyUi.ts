@@ -44,10 +44,8 @@ export function formatMerchantMoneyMinor(
   const currency = merchantCurrencyLabel(currencyCodeNormalized, lang);
 
   if (compactArabicIqd) {
-    // Keep the western-digit amount first and the Arabic IQD label second even
-    // inside LTR price nodes embedded in an RTL page. Isolating each run stops
-    // the bidi algorithm from moving the currency token in front of the amount.
-    return `\u2066${number}\u2069\u00a0\u2067${currency}\u2069`;
+    const arabicNumber = number.replace(/\d/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
+    return `${arabicNumber}\u00a0${currency}`;
   }
 
   return `${number}\u00a0${currency}`;

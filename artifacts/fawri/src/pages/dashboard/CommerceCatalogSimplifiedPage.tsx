@@ -919,10 +919,16 @@ export default function CommerceCatalogSimplifiedPage() {
     const compactArabicIqd = currencyCode === 'IQD' && lang !== 'en';
     const number = formatMerchantNumber(amount, digits, !compactArabicIqd);
     const currency = merchantCurrencyLabel(currencyCode, lang);
+    const displayNumber = compactArabicIqd
+      ? number.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
+      : number;
 
     return (
-      <span className="inline-flex items-baseline gap-1 whitespace-nowrap" dir="ltr">
-        <span dir="ltr">{number}</span>
+      <span
+        className="inline-flex items-baseline gap-1 whitespace-nowrap"
+        dir={compactArabicIqd ? 'rtl' : 'ltr'}
+      >
+        <span>{displayNumber}</span>
         <span dir={lang === 'en' ? 'ltr' : 'rtl'}>{currency}</span>
       </span>
     );
