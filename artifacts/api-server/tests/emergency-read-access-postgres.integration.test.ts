@@ -479,6 +479,129 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
   assert.equal(ownerEnded.status, 200);
   assert.equal((await body(ownerEnded)).request.end_reason, "owner_ended");
 
+  // A delayed cleanup must report the policy expiry time, not the later
+  // moment when refreshEmergencyAccessPostgres happens to run.
+  const delayedExpiry = await fetch(
+    `${baseUrl}/api/auth/admin/emergency-read-access/requests`,
+    {
+      method: "POST",
+      headers: { Cookie: trustedCookie, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        merchant_id: merchantId,
+        incident_reference: "INC-DELAYED-EXPIRY-2002",
+        severity: "critical",
+        reason: "Verify delayed expiry reconciliation keeps merchant incident times truthful.",
+        duration_minutes: 15,
+        critical_self_activate: true,
+      }),
+    },
+  );
+  assert.equal(delayedExpiry.status, 201);
+  const delayedRequest = (await body(delayedExpiry)).request;
+  assert.equal(delayedRequest.status, "active");
+
+  const delayedStartedAt = new Date(Date.now() - 2 * 60 * 60_000).toISOString();
+  const delayedExpiresAt = new Date(
+    new Date(delayedStartedAt).getTime() + 15 * 60_000,
+  ).toISOString();
+
+  await pool.query(
+    `UPDATE emergency_access_requests
+        SET status = 'active',
+            started_at = $2::timestamptz,
+            expires_at = $3::timestamptz,
+            ended_at = NULL,
+            end_reason = NULL,
+            updated_at = now()
+      WHERE id = $1`,
+    [delayedRequest.id, delayedStartedAt, delayedExpiresAt],
+  );
+
+  const delayedNoticesResponse = await fetch(
+    `${baseUrl}/api/auth/emergency-read-access/notices`,
+    { headers: { Cookie: merchantCookie } },
+  );
+  assert.equal(delayedNoticesResponse.status, 200);
+  const delayedNotices = await body(delayedNoticesResponse);
+  let delayedNotice = delayedNotices.notices.find(
+    (item: any) => item.request_id === delayedRequest.id,
+  );
+  assert.ok(delayedNotice);
+  assert.equal(
+    new Date(delayedNotice.ended_at).toISOString(),
+    delayedExpiresAt,
+  );
+
+  let delayedRow = (
+    await pool.query<{
+      status: string;
+      end_reason: string | null;
+      ended_at: Date | string | null;
+    }>(
+      `SELECT status, end_reason, ended_at
+         FROM emergency_access_requests
+        WHERE id = $1`,
+      [delayedRequest.id],
+    )
+  ).rows[0];
+
+  assert.equal(delayedRow.status, "expired");
+  assert.equal(delayedRow.end_reason, "duration_expired");
+  assert.equal(
+    new Date(String(delayedRow.ended_at)).toISOString(),
+    delayedExpiresAt,
+  );
+
+  // Simulate a row/notice written by the pre-fix runtime and prove that a
+  // later refresh repairs the historical merchant-facing evidence as well.
+  const misleadingCleanupAt = new Date().toISOString();
+
+  await pool.query(
+    `UPDATE emergency_access_requests
+        SET ended_at = $2::timestamptz
+      WHERE id = $1`,
+    [delayedRequest.id, misleadingCleanupAt],
+  );
+  await pool.query(
+    `UPDATE emergency_merchant_notices
+        SET ended_at = $2::timestamptz
+      WHERE request_id = $1`,
+    [delayedRequest.id, misleadingCleanupAt],
+  );
+
+  const repairedNoticesResponse = await fetch(
+    `${baseUrl}/api/auth/emergency-read-access/notices`,
+    { headers: { Cookie: merchantCookie } },
+  );
+  assert.equal(repairedNoticesResponse.status, 200);
+  const repairedNotices = await body(repairedNoticesResponse);
+  delayedNotice = repairedNotices.notices.find(
+    (item: any) => item.request_id === delayedRequest.id,
+  );
+  assert.ok(delayedNotice);
+  assert.equal(
+    new Date(delayedNotice.ended_at).toISOString(),
+    delayedExpiresAt,
+  );
+
+  delayedRow = (
+    await pool.query<{
+      status: string;
+      end_reason: string | null;
+      ended_at: Date | string | null;
+    }>(
+      `SELECT status, end_reason, ended_at
+         FROM emergency_access_requests
+        WHERE id = $1`,
+      [delayedRequest.id],
+    )
+  ).rows[0];
+
+  assert.equal(
+    new Date(String(delayedRow.ended_at)).toISOString(),
+    delayedExpiresAt,
+  );
+
   const audit = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/audit`,
     { headers: { Cookie: ownerCookie } },
