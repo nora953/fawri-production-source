@@ -96,14 +96,14 @@ html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~=
 /* Bulk stock: keep both the placeholder and the entered quantity visually centred.
  * The component intentionally uses an LTR numeric input, so localised placeholders
  * need their locale direction restored to avoid looking offset inside the field. */
-.products-workspace-polish .catalog-editor-shell input[placeholder="كمية لكل تركيبة"],
+.products-workspace-polish .catalog-editor-shell input[placeholder="كمية لكل نوع"],
 .products-workspace-polish .catalog-editor-shell input[placeholder="بڕ بۆ هەر تێکەڵە"],
 .products-workspace-polish .catalog-editor-shell input[placeholder="Stock per combination"] {
   text-align: center !important;
   text-align-last: center !important;
 }
 
-html[lang="ar"] .products-workspace-polish .catalog-editor-shell input[placeholder="كمية لكل تركيبة"],
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell input[placeholder="كمية لكل نوع"],
 html[lang="ku"] .products-workspace-polish .catalog-editor-shell input[placeholder="بڕ بۆ هەر تێکەڵە"] {
   direction: rtl !important;
 }
