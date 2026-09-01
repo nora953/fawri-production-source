@@ -26,47 +26,56 @@
 }
 
 /*
- * Product details: a product without variants must use the same compact,
- * horizontal card geometry as the variant summary cards. Keep this selector
- * independent of Radix dialog attributes so it is stable in preview builds.
+ * Details-modal inventory geometry.
+ * The no-variant state uses a `space-y-2` wrapper while variant rows use the
+ * two-column grid. Keep the no-variant card at the same short rectangular
+ * height as a variant card instead of allowing the generic inventory control
+ * to stretch vertically.
  */
-.products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 {
+.products-workspace-polish section:has(> .mb-3 > h4) > .space-y-2 {
   display: grid !important;
   grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   align-items: start !important;
   gap: 0.5rem !important;
+  width: 100% !important;
 }
 
-.products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 > .rounded-xl.border.bg-background.p-3 {
-  box-sizing: border-box;
+.products-workspace-polish section:has(> .mb-3 > h4) > .space-y-2 > div {
+  box-sizing: border-box !important;
+  display: block !important;
   width: 100% !important;
   min-width: 0 !important;
+  max-width: none !important;
   min-height: 3.75rem !important;
   height: 3.75rem !important;
+  max-height: 3.75rem !important;
   padding: 0.625rem 0.75rem !important;
-  border-radius: 0.75rem !important;
   overflow: hidden !important;
+  border-radius: 0.75rem !important;
 }
 
-.products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 > .rounded-xl.border.bg-background.p-3 > .mb-2 {
-  margin-bottom: 0 !important;
-  height: 100%;
+.products-workspace-polish section:has(> .mb-3 > h4) > .space-y-2 > div > .mb-2 {
+  display: flex !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.75rem !important;
+  margin: 0 !important;
+}
+
+.products-workspace-polish section:has(> .mb-3 > h4) > .space-y-2 > div > .mb-2 > .min-w-0 {
+  display: flex !important;
+  min-width: 0 !important;
   align-items: center !important;
 }
 
-.products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 > .rounded-xl.border.bg-background.p-3 > .mb-2 > .min-w-0 {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-}
-
-/* Details modal is a summary; stock editing stays in the edit screen. */
-.products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 > .rounded-xl.border.bg-background.p-3 > .grid {
+.products-workspace-polish section:has(> .mb-3 > h4) > .space-y-2 > div > .grid {
   display: none !important;
 }
 
 @media (max-width: 640px) {
-  .products-workspace-polish section.rounded-2xl.border[class*="bg-muted/10"] > .space-y-2 {
+  .products-workspace-polish section:has(> .mb-3 > h4) > .space-y-2 {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
