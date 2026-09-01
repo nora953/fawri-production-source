@@ -49,6 +49,20 @@
   margin-top: 0.35rem !important;
 }
 
+/*
+ * Product details are presentation-only. Keep the variant/product inventory
+ * name, option summary, and current quantity badge visible, while the mutation
+ * row (+ / quantity input / Set / -) stays out of the details dialog. Inventory
+ * changes remain available through the dedicated Edit product/service action.
+ */
+.products-workspace-polish [role="dialog"] [class~="grid-cols-[auto_1fr_auto_auto]"] {
+  display: none !important;
+}
+
+.products-workspace-polish [role="dialog"] [class~="grid-cols-[auto_1fr_auto_auto]"] + * {
+  display: none !important;
+}
+
 @media (min-width: 1280px) {
   .grid:has(> [data-catalog-summary-card="true"]) {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
