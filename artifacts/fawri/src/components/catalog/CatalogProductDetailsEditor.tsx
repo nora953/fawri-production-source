@@ -546,10 +546,6 @@ export function CatalogProductDetailsEditor({
   const excludeVariant = (index: number) => {
     const variant = form.variants[index];
     if (!variant) return;
-    if (variant.id) {
-      setFeedback(labels.savedVariantProtected);
-      return;
-    }
     const signature = variantSignature(variant);
     if (!signature) return;
     const nextExcluded = excluded.some(item => item.signature === signature)
@@ -582,7 +578,7 @@ export function CatalogProductDetailsEditor({
   const applyBulkStock = () => {
     const value = bulkStock.trim();
     if (!/^\d+$/.test(value)) return;
-    onChange({ variants: form.variants.map(variant => variant.id ? variant : { ...variant, stock_quantity: value }) });
+    onChange({ variants: form.variants.map(variant => ({ ...variant, stock_quantity: value })) });
   };
 
   const generateMissingSkus = () => {
@@ -604,7 +600,6 @@ export function CatalogProductDetailsEditor({
     onChange({
       variants: form.variants.map((variant, index) => {
         if (!memberIndexes.has(index)) return variant;
-        if (field === 'stock_quantity' && variant.id) return variant;
         return { ...variant, [field]: value };
       }),
     });
@@ -638,7 +633,7 @@ export function CatalogProductDetailsEditor({
           price_iqd: matching.price_iqd,
           cost_iqd: matching.cost_iqd,
           image_refs: cloneImages(matching.image_refs),
-          ...(!variant.id && form.track_inventory ? { stock_quantity: matching.stock_quantity } : {}),
+          ...(form.track_inventory ? { stock_quantity: matching.stock_quantity } : {}),
         };
       }),
     });
@@ -651,14 +646,14 @@ export function CatalogProductDetailsEditor({
       <table className="w-full min-w-[1080px] border-collapse text-sm">
         <thead className="bg-muted/40 text-xs text-muted-foreground">
           <tr>
-            <th className="p-3 text-start">{legacy ? labels.name : grouped ? labels.variantWithinGroup : labels.combination}</th>
+            <th className="w-32 p-3 text-center">{legacy ? labels.name : grouped ? labels.variantWithinGroup : labels.combination}</th>
             <th className="p-3 text-center">{labels.salePrice}</th>
             <th className="p-3 text-center">{labels.cost}</th>
             {form.track_inventory && <th className="p-3 text-center">{labels.stock}</th>}
             <th className="p-3 text-center">{labels.sku}</th>
             <th className="p-3 text-center">{labels.barcode}</th>
-            <th className="p-3 text-center">{labels.images}</th>
-            <th className="w-16 p-3 text-center">{labels.actions}</th>
+            <th className="w-40 p-3 text-center">{labels.images}</th>
+            <th className="w-32 p-3 text-center">{labels.actions}</th>
           </tr>
         </thead>
         <tbody>
@@ -667,31 +662,30 @@ export function CatalogProductDetailsEditor({
             if (!variant) return null;
             return (
               <tr key={variant.key} className="border-t align-middle">
-                <td className="p-2.5">
+                <td className="w-32 p-2.5 text-center align-middle">
                   {legacy
-                    ? <Input value={variant.name} onChange={event => updateVariant(index, { name: event.target.value })} className="h-10 min-w-32 rounded-xl" />
-                    : <div className="min-w-28 rounded-xl bg-muted/30 px-3 py-2.5 font-bold" dir="auto">{grouped ? optionSummaryWithinGroup(variant) : optionSummary(variant)}</div>}
+                    ? <Input value={variant.name} onChange={event => updateVariant(index, { name: event.target.value })} className="h-10 min-w-32 rounded-xl text-center" />
+                    : <div className="mx-auto flex min-h-10 w-28 items-center justify-center rounded-xl bg-muted/30 px-3 py-2.5 text-center font-bold" dir="auto">{grouped ? optionSummaryWithinGroup(variant) : optionSummary(variant)}</div>}
                 </td>
                 <td className="p-2.5"><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => updateVariant(index, { price_iqd: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className={`${numericClass} min-w-32`} /></td>
                 <td className="p-2.5"><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => updateVariant(index, { cost_iqd: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className={`${numericClass} min-w-32`} /></td>
-                {form.track_inventory && <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.stock_quantity} onChange={event => updateVariant(index, { stock_quantity: event.target.value })} disabled={Boolean(editing && variant.id)} placeholder={editing && variant.id ? labels.currentInventoryLocked : '0'} className={`${numericClass} w-24`} /></td>}
+                {form.track_inventory && <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.stock_quantity} onChange={event => updateVariant(index, { stock_quantity: event.target.value })} placeholder="0" className={`${numericClass} w-24`} /></td>}
                 <td className="p-2.5"><Input type="text" dir="ltr" value={variant.sku} onChange={event => updateVariant(index, { sku: event.target.value })} className="h-10 min-w-36 rounded-xl text-center font-mono text-xs" /></td>
                 <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.barcode} onChange={event => updateVariant(index, { barcode: event.target.value })} className={`${numericClass} min-w-32`} /></td>
-                <td className="p-2.5 align-middle">
-                  <div className="mx-auto w-fit max-w-28">
+                <td className="w-40 p-2.5 align-middle">
+                  <div className="mx-auto flex w-28 flex-col items-center justify-center">
                     <CatalogImageUploadEditor images={variant.image_refs} onChange={image_refs => updateVariant(index, { image_refs })} maxImages={5} compact dense hideHeading />
-                    {variant.image_refs.length === 0 && <p className="mt-1 max-w-28 text-center text-[9px] leading-3 text-muted-foreground">{labels.inheritedImage}</p>}
+                    {variant.image_refs.length === 0 && <p className="mt-1 w-28 text-center text-[9px] leading-3 text-muted-foreground">{labels.inheritedImage}</p>}
                   </div>
                 </td>
-                <td className="p-2.5 text-center align-middle">
+                <td className="w-32 p-2.5 text-center align-middle">
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    disabled={Boolean(variant.id)}
-                    title={variant.id ? labels.savedVariantProtected : labels.excludeCombination}
-                    aria-label={variant.id ? labels.savedVariantProtected : labels.excludeCombination}
-                    className="h-9 w-9 rounded-xl text-destructive disabled:text-muted-foreground"
+                    title={labels.excludeCombination}
+                    aria-label={labels.excludeCombination}
+                    className="h-9 w-9 rounded-xl text-destructive"
                     onClick={() => excludeVariant(index)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -710,7 +704,7 @@ export function CatalogProductDetailsEditor({
       {form.track_inventory && !variantManagedInventory && (
         <label className="space-y-1 text-sm font-semibold">
           <span>{labels.quantity}</span>
-          <Input type="text" inputMode="numeric" dir="ltr" value={form.quantity} onChange={event => onChange({ quantity: event.target.value })} disabled={editing} className="h-11 rounded-xl text-center tabular-nums" />
+          <Input type="text" inputMode="numeric" dir="ltr" value={form.quantity} onChange={event => onChange({ quantity: event.target.value })} className="h-11 rounded-xl text-center tabular-nums" />
           {editing && <span className="block text-xs font-normal text-muted-foreground">{labels.inventoryAfterSave}</span>}
         </label>
       )}
@@ -811,7 +805,6 @@ export function CatalogProductDetailsEditor({
                     {groups.map(group => {
                       const draft = groupDrafts[group.key] || EMPTY_GROUP_DRAFT;
                       const shared = sharedGroupImages(group, form.variants);
-                      const canSetGroupStock = group.indexes.some(index => !form.variants[index]?.id);
                       return (
                         <section key={group.key} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
                           <div className="space-y-3 border-b bg-muted/20 p-3">
@@ -845,8 +838,8 @@ export function CatalogProductDetailsEditor({
                                 <label className="space-y-1 text-xs font-semibold">
                                   <span>{labels.groupStock}</span>
                                   <div className="flex gap-1.5">
-                                    <Input type="text" inputMode="numeric" dir="ltr" value={draft.stock} onChange={event => updateGroupDraft(group.key, { stock: event.target.value })} placeholder={canSetGroupStock ? '0' : labels.currentInventoryLocked} disabled={!canSetGroupStock} className="h-10 rounded-xl text-center tabular-nums" />
-                                    <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" disabled={!canSetGroupStock} onClick={() => applyGroupField(group, 'stock_quantity', draft.stock)}>{labels.applyGroup}</Button>
+                                    <Input type="text" inputMode="numeric" dir="ltr" value={draft.stock} onChange={event => updateGroupDraft(group.key, { stock: event.target.value })} placeholder="0" className="h-10 rounded-xl text-center tabular-nums" />
+                                    <Button type="button" variant="outline" size="sm" className="h-10 rounded-xl" onClick={() => applyGroupField(group, 'stock_quantity', draft.stock)}>{labels.applyGroup}</Button>
                                   </div>
                                 </label>
                               ) : <div />}
