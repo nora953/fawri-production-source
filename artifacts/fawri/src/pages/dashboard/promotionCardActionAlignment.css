@@ -109,6 +109,36 @@
   stroke-width: 2.25 !important;
 }
 
+/*
+ * Keep the catalog Add product/service CTA visually identical to Add promotion.
+ * The selector targets only the primary first action; Import remains unchanged.
+ */
+.products-workspace-polish > .min-h-screen > header > .flex:first-child > .flex.shrink-0 > button:first-child {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.7rem !important;
+  height: 3rem !important;
+  min-height: 3rem !important;
+  padding-inline: 0.8rem 1.05rem !important;
+  border-radius: 1rem !important;
+  line-height: 1 !important;
+  box-shadow: 0 8px 18px rgb(249 115 22 / 0.16) !important;
+}
+
+.products-workspace-polish > .min-h-screen > header > .flex:first-child > .flex.shrink-0 > button:first-child > svg {
+  box-sizing: border-box !important;
+  flex: 0 0 auto;
+  width: 1.8rem !important;
+  height: 1.8rem !important;
+  padding: 0.34rem !important;
+  margin: 0 !important;
+  border-radius: 0.6rem !important;
+  background: rgb(255 255 255 / 0.16) !important;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22) !important;
+  stroke-width: 2.25 !important;
+}
+
 @media (max-width: 639px) {
   .products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:last-child {
     width: 100%;
