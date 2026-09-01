@@ -99,3 +99,18 @@ test('details dialog presents inventory read-only and routes changes through edi
   assert.match(dialog, /<InventoryControl/);
   assert.match(dialog, /setDetailsProductId\(null\);[\s\S]*openEdit\(product\);/);
 });
+
+test('read-only inventory quantities align centrally opposite their labels', () => {
+  const alignmentRule = cardStyles.match(
+    /\[role="dialog"\] \.rounded-xl\.border\.bg-background\.p-3 > \.mb-2\.flex\.items-start\.justify-between\.gap-3 \{[\s\S]*?\n\}/,
+  )?.[0] || '';
+  assert.match(alignmentRule, /align-items:\s*center !important/);
+
+  const quantityRule = cardStyles.match(
+    /\[role="dialog"\] \.rounded-xl\.border\.bg-background\.p-3 > \.mb-2\.flex\.items-start\.justify-between\.gap-3 > :last-child \{[\s\S]*?\n\}/,
+  )?.[0] || '';
+  assert.match(quantityRule, /min-width:\s*2rem/);
+  assert.match(quantityRule, /justify-content:\s*center/);
+  assert.match(quantityRule, /text-align:\s*center/);
+  assert.match(quantityRule, /align-self:\s*center/);
+});
