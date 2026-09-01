@@ -126,18 +126,6 @@
   font-weight: 700;
 }
 
-/*
- * Arabic and Kurdish catalog UIs are RTL. The price text keeps western digits,
- * while the IQD abbreviation must resolve naturally as د.ع. Scope this only to
- * RTL product surfaces so the English LTR presentation remains untouched.
- */
-[dir="rtl"] [data-catalog-summary-card="true"] p[dir="ltr"].font-extrabold,
-[role="dialog"][dir="rtl"] p[dir="ltr"].font-extrabold,
-[dir="rtl"] [role="dialog"] p[dir="ltr"].font-extrabold {
-  direction: rtl !important;
-  unicode-bidi: plaintext !important;
-}
-
 @media (min-width: 960px) {
   [role="dialog"] section[class~="bg-muted/10"] > .space-y-2 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
