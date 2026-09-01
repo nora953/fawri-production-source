@@ -62,6 +62,18 @@
   display: none !important;
 }
 
+/* Center the read-only stock quantity opposite the variant/product label. */
+[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 {
+  align-items: center !important;
+}
+
+[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :last-child {
+  min-width: 2rem;
+  justify-content: center;
+  text-align: center;
+  align-self: center;
+}
+
 @media (min-width: 1280px) {
   .grid:has(> [data-catalog-summary-card="true"]) {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
