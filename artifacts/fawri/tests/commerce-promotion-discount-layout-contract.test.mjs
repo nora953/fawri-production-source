@@ -7,6 +7,11 @@ const promotionSource = await readFile(
   'utf8',
 );
 
+const catalogSource = await readFile(
+  new URL('../src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx', import.meta.url),
+  'utf8',
+);
+
 const harmonyCss = await readFile(
   new URL('../src/pages/dashboard/catalogEditorCardHarmony.css', import.meta.url),
   'utf8',
@@ -155,4 +160,48 @@ test('promotion add button gives the plus a visible chip and balanced CTA rhythm
   assert.match(iconRule, /border-radius:\s*0\.6rem !important/);
   assert.match(iconRule, /background:\s*rgb\(255 255 255 \/ 0\.16\) !important/);
   assert.match(iconRule, /box-shadow:\s*inset 0 0 0 1px rgb\(255 255 255 \/ 0\.22\) !important/);
+});
+
+test('catalog add product/service button mirrors the visible Add promotion CTA without changing Import', () => {
+  const catalogButtonRule = promotionActionCss.match(
+    /header > \.flex:first-child > \.flex\.shrink-0 > button:first-child \{[\s\S]*?\n\}/,
+  )?.[0] || '';
+  const catalogIconRule = promotionActionCss.match(
+    /header > \.flex:first-child > \.flex\.shrink-0 > button:first-child > svg \{[\s\S]*?\n\}/,
+  )?.[0] || '';
+
+  assert.match(catalogSource, /<div className="flex shrink-0 flex-col gap-2 sm:flex-row">/);
+  assert.match(catalogSource, /<Plus className=\{isRTL \? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'\} \/>\{copy\.add\}<\/Button>/);
+  assert.match(promotionActionCss, /catalog Add product\/service CTA visually identical to Add promotion/);
+
+  for (const pattern of [
+    /display:\s*inline-flex !important/,
+    /align-items:\s*center !important/,
+    /justify-content:\s*center !important/,
+    /gap:\s*0\.7rem !important/,
+    /height:\s*3rem !important/,
+    /min-height:\s*3rem !important/,
+    /padding-inline:\s*0\.8rem 1\.05rem !important/,
+    /border-radius:\s*1rem !important/,
+    /box-shadow:\s*0 8px 18px rgb\(249 115 22 \/ 0\.16\) !important/,
+  ]) {
+    assert.match(catalogButtonRule, pattern);
+  }
+
+  for (const pattern of [
+    /width:\s*1\.8rem !important/,
+    /height:\s*1\.8rem !important/,
+    /padding:\s*0\.34rem !important/,
+    /margin:\s*0 !important/,
+    /border-radius:\s*0\.6rem !important/,
+    /background:\s*rgb\(255 255 255 \/ 0\.16\) !important/,
+    /box-shadow:\s*inset 0 0 0 1px rgb\(255 255 255 \/ 0\.22\) !important/,
+  ]) {
+    assert.match(catalogIconRule, pattern);
+  }
+
+  assert.doesNotMatch(
+    promotionActionCss,
+    /header > \.flex:first-child > \.flex\.shrink-0 > button:last-child \{/,
+  );
 });
