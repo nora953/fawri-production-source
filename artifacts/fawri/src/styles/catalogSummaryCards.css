@@ -50,6 +50,30 @@
 }
 
 /*
+ * Catalog money is rendered as two DOM fields: amount + currency. Force their
+ * visual order independently from the surrounding RTL page. The currency field
+ * itself is LTR so the canonical Iraqi token stays exactly "د.ع" rather than
+ * being reordered to "ع.د" by the Unicode bidi algorithm.
+ */
+p[dir="ltr"] > span.inline-flex[dir="ltr"] {
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  flex-direction: row !important;
+}
+
+p[dir="ltr"] > span.inline-flex[dir="ltr"] > span:first-child {
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  order: 1;
+}
+
+p[dir="ltr"] > span.inline-flex[dir="ltr"] > span:last-child {
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  order: 2;
+}
+
+/*
  * Product details are presentation-only. Keep the variant/product inventory
  * name, option summary, and current quantity badge visible, while the mutation
  * row (+ / quantity input / Set / -) stays out of the details dialog. Inventory
