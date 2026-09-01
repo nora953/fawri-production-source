@@ -62,6 +62,18 @@
   display: none !important;
 }
 
+/* Baseline read-only alignment contract; the shared grid below refines it. */
+[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 {
+  align-items: center !important;
+}
+
+[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :last-child {
+  min-width: 2rem;
+  justify-content: center;
+  text-align: center;
+  align-self: center;
+}
+
 /*
  * Read-only inventory rows use one shared two-zone grid: the variant label owns
  * the larger zone while the quantity badge is centered inside a dedicated lane.
