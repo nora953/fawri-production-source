@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import crypto from "node:crypto";
 import fs from "node:fs";
+import type { Server } from "node:http";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -20,6 +22,8 @@ assert.equal(
 
 const AUTH_SECRET = "emergency-proof-security-secret-at-least-32-characters";
 const PASSWORD_SALT = "emergency-proof-password-salt";
+const OWNER_DEVICE_ID = "emergency-pg-owner-device";
+const OWNER_DEVICE_RECORD_ID = "emergency-pg-owner-device-record";
 const ownerId = "emergency-pg-owner";
 const trustedId = "emergency-pg-trusted";
 const untrustedId = "emergency-pg-untrusted";
@@ -30,6 +34,13 @@ const channelId = "emergency-pg-channel";
 
 function cookie(name: string, token: string): string {
   return `${name}=${token}`;
+}
+
+function deviceFingerprint(deviceId: string): string {
+  return crypto
+    .createHmac("sha256", AUTH_SECRET)
+    .update(`device:${deviceId}`)
+    .digest("base64url");
 }
 
 async function body(response: Response): Promise<any> {
@@ -90,6 +101,8 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
     import("../src/routes/auth-security.js"),
   ]);
 
+  let server: Server | null = null;
+
   async function cleanup(): Promise<void> {
     await pool.query(
       "DELETE FROM emergency_merchant_notices WHERE merchant_id = $1",
@@ -123,6 +136,19 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
       [[ownerId, trustedId, untrustedId, merchantId]],
     ).catch(() => undefined);
   }
+
+  t.after(async () => {
+    await stopPostgresSupportRuntimeCutoverForTests();
+    if (server) {
+      await new Promise<void>((resolve, reject) => {
+        server?.close((error) => (error ? reject(error) : resolve()));
+        server?.closeAllConnections?.();
+      });
+    }
+    await cleanup();
+    await pool.end();
+    await rm(runtimeDirectory, { recursive: true, force: true });
+  });
 
   await cleanup();
 
@@ -161,6 +187,17 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
        ($2, $2, 'admin', 'Trusted Responder', 'assistant_admin', true, false, now(), now()),
        ($3, $3, 'admin', 'Untrusted Responder', 'assistant_admin', true, false, now(), now())`,
     [ownerId, trustedId, untrustedId],
+  );
+
+  await pool.query(
+    `INSERT INTO trusted_devices
+       (id, account_id, kind, device_fingerprint_hash, label, status,
+        trust_slot, first_seen_at, last_seen_at, trusted_at,
+        trusted_by_account_id)
+     VALUES
+       ($1, $2, 'admin', $3, 'Emergency owner trusted device', 'trusted',
+        1, now(), now(), now(), $2)`,
+    [OWNER_DEVICE_RECORD_ID, ownerId, deviceFingerprint(OWNER_DEVICE_ID)],
   );
 
   await pool.query(
@@ -222,6 +259,8 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
     tenantId: "fawri-admin",
     adminRole: "owner_admin",
     permissions: [],
+    deviceId: OWNER_DEVICE_ID,
+    deviceLabel: "Emergency owner trusted device",
   });
   const trustedSession = await authPostgresSessionAuthority.issueSession({
     accountId: trustedId,
@@ -254,7 +293,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
   app.use(cookieParser());
   app.use(express.json());
   app.use("/api/auth", authSecurityRouter);
-  const server = await new Promise<ReturnType<typeof app.listen>>((resolve, reject) => {
+  server = await new Promise<Server>((resolve, reject) => {
     const listening = app.listen(0, "127.0.0.1", () => resolve(listening));
     listening.once("error", reject);
   });
@@ -266,23 +305,16 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
   const trustedSecondCookie = cookie(ADMIN_SESSION_COOKIE, trustedSecondSession.token);
   const untrustedCookie = cookie(ADMIN_SESSION_COOKIE, untrustedSession.token);
   const merchantCookie = cookie(MERCHANT_SESSION_COOKIE, merchantSession.token);
-
-  t.after(async () => {
-    await stopPostgresSupportRuntimeCutoverForTests();
-    await new Promise<void>((resolve, reject) => {
-      server.close((error) => (error ? reject(error) : resolve()));
-      server.closeAllConnections?.();
-    });
-    await cleanup();
-    await pool.end();
-    await rm(runtimeDirectory, { recursive: true, force: true });
-  });
+  const ownerHeaders = {
+    Cookie: ownerCookie,
+    "x-fawri-device-id": OWNER_DEVICE_ID,
+  };
 
   assertNoLegacyFiles(dataDirectory);
 
   const directory = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/directory`,
-    { headers: { Cookie: ownerCookie } },
+    { headers: ownerHeaders },
   );
   assert.equal(directory.status, 200);
   const directoryBody = await body(directory);
@@ -312,7 +344,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
     `${baseUrl}/api/auth/admin/emergency-read-access/authorizations/${trustedId}`,
     {
       method: "PUT",
-      headers: { Cookie: ownerCookie, "Content-Type": "application/json" },
+      headers: { ...ownerHeaders, "Content-Type": "application/json" },
       body: JSON.stringify({
         can_request: true,
         can_critical_self_activate: true,
@@ -351,7 +383,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
 
   const ownerOverview = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/overview`,
-    { headers: { Cookie: ownerCookie } },
+    { headers: ownerHeaders },
   );
   assert.equal(ownerOverview.status, 200);
   assert.equal(
@@ -365,7 +397,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
     `${baseUrl}/api/auth/admin/emergency-read-access/requests/${highRequest.id}/decision`,
     {
       method: "POST",
-      headers: { Cookie: ownerCookie, "Content-Type": "application/json" },
+      headers: { ...ownerHeaders, "Content-Type": "application/json" },
       body: JSON.stringify({ decision: "approve" }),
     },
   );
@@ -393,7 +425,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
 
   const ownerSnapshot = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/requests/${highRequest.id}/snapshot`,
-    { headers: { Cookie: ownerCookie } },
+    { headers: ownerHeaders },
   );
   assert.equal(ownerSnapshot.status, 200);
 
@@ -454,7 +486,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
 
   const criticalOverview = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/overview`,
-    { headers: { Cookie: ownerCookie } },
+    { headers: ownerHeaders },
   );
   assert.equal(criticalOverview.status, 200);
   assert.equal(
@@ -474,7 +506,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
 
   const ownerEnded = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/requests/${criticalRequest.id}/end`,
-    { method: "POST", headers: { Cookie: ownerCookie } },
+    { method: "POST", headers: ownerHeaders },
   );
   assert.equal(ownerEnded.status, 200);
   assert.equal((await body(ownerEnded)).request.end_reason, "owner_ended");
@@ -604,7 +636,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
 
   const audit = await fetch(
     `${baseUrl}/api/auth/admin/emergency-read-access/audit`,
-    { headers: { Cookie: ownerCookie } },
+    { headers: ownerHeaders },
   );
   assert.equal(audit.status, 200);
   const auditBody = await body(audit);
@@ -624,7 +656,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
     `${baseUrl}/api/auth/admin/emergency-read-access/authorizations/${trustedId}`,
     {
       method: "PUT",
-      headers: { Cookie: ownerCookie, "Content-Type": "application/json" },
+      headers: { ...ownerHeaders, "Content-Type": "application/json" },
       body: JSON.stringify({
         can_request: false,
         can_critical_self_activate: false,
