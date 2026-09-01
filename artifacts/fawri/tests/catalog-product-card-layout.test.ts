@@ -100,17 +100,29 @@ test('details dialog presents inventory read-only and routes changes through edi
   assert.match(dialog, /setDetailsProductId\(null\);[\s\S]*openEdit\(product\);/);
 });
 
-test('read-only inventory quantities align centrally opposite their labels', () => {
-  const alignmentRule = cardStyles.match(
+test('read-only variant cards center name option summary and quantity as one unit', () => {
+  const summaryRule = cardStyles.match(
     /\[role="dialog"\] \.rounded-xl\.border\.bg-background\.p-3 > \.mb-2\.flex\.items-start\.justify-between\.gap-3 \{[\s\S]*?\n\}/,
   )?.[0] || '';
-  assert.match(alignmentRule, /align-items:\s*center !important/);
+  assert.match(summaryRule, /flex-direction:\s*column/);
+  assert.match(summaryRule, /align-items:\s*center !important/);
+  assert.match(summaryRule, /justify-content:\s*center !important/);
+  assert.match(summaryRule, /text-align:\s*center/);
+
+  const labelRule = cardStyles.match(
+    /\[role="dialog"\] \.rounded-xl\.border\.bg-background\.p-3 > \.mb-2\.flex\.items-start\.justify-between\.gap-3 > :first-child \{[\s\S]*?\n\}/,
+  )?.[0] || '';
+  assert.match(labelRule, /width:\s*100%/);
+  assert.match(labelRule, /text-align:\s*center/);
 
   const quantityRule = cardStyles.match(
     /\[role="dialog"\] \.rounded-xl\.border\.bg-background\.p-3 > \.mb-2\.flex\.items-start\.justify-between\.gap-3 > :last-child \{[\s\S]*?\n\}/,
   )?.[0] || '';
-  assert.match(quantityRule, /min-width:\s*2rem/);
+  assert.match(quantityRule, /min-width:\s*2\.5rem/);
+  assert.match(quantityRule, /align-items:\s*center/);
   assert.match(quantityRule, /justify-content:\s*center/);
   assert.match(quantityRule, /text-align:\s*center/);
   assert.match(quantityRule, /align-self:\s*center/);
+
+  assert.doesNotMatch(cardStyles, /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(6rem, 0\.28fr\)/);
 });
