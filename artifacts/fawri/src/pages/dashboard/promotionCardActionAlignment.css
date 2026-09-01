@@ -47,6 +47,13 @@
   .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .inline-flex {
     transform: translateY(-0.35rem);
   }
+
+  /* Keep the catalog header description on one desktop line without forcing
+   * narrow/mobile layouts to overflow. */
+  .products-workspace-polish > .min-h-screen > header > .flex:first-child > div:first-child > p {
+    max-width: none !important;
+    white-space: nowrap !important;
+  }
 }
 
 /*
