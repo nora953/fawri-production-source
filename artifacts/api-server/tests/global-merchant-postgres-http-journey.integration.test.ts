@@ -306,9 +306,23 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
     JSON.stringify(await staffCreate.clone().json().catch(() => null)),
   );
   const staff = (await json(staffCreate)).staff;
-  assert.equal(staff.merchant_id, merchantAId);
+  assert.ok(staff.id);
   assert.ok(staff.permissions.includes("sale.create"));
   assert.ok(staff.permissions.includes("reports.sales"));
+
+  const staffListAResponse = await fetch(`${baseUrl}/api/cashier/management/staff`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(staffListAResponse.status, 200);
+  const staffListA = (await json(staffListAResponse)).staff;
+  assert.equal(staffListA.some((candidate: any) => candidate.id === staff.id), true);
+
+  const staffListBResponse = await fetch(`${baseUrl}/api/cashier/management/staff`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(staffListBResponse.status, 200);
+  const staffListB = (await json(staffListBResponse)).staff;
+  assert.equal(staffListB.some((candidate: any) => candidate.id === staff.id), false);
 
   const stationCreate = await fetch(`${baseUrl}/api/cashier/management/stations`, {
     method: "POST",
@@ -325,7 +339,21 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
     JSON.stringify(await stationCreate.clone().json().catch(() => null)),
   );
   const station = (await json(stationCreate)).station;
-  assert.equal(station.merchant_id, merchantAId);
+  assert.ok(station.id);
+
+  const stationListAResponse = await fetch(`${baseUrl}/api/cashier/management/stations`, {
+    headers: { Cookie: merchantACookie },
+  });
+  assert.equal(stationListAResponse.status, 200);
+  const stationListA = (await json(stationListAResponse)).stations;
+  assert.equal(stationListA.some((candidate: any) => candidate.id === station.id), true);
+
+  const stationListBResponse = await fetch(`${baseUrl}/api/cashier/management/stations`, {
+    headers: { Cookie: merchantBCookie },
+  });
+  assert.equal(stationListBResponse.status, 200);
+  const stationListB = (await json(stationListBResponse)).stations;
+  assert.equal(stationListB.some((candidate: any) => candidate.id === station.id), false);
 
   const pairingBegin = await fetch(
     `${baseUrl}/api/cashier/management/stations/${encodeURIComponent(station.id)}/pairing`,
