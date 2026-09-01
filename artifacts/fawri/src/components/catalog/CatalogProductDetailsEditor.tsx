@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Boxes, ChevronDown, Copy, Layers3, Plus, Ruler, Trash2, Undo2 } from 'lucide-react';
 
 import { CatalogImageUploadEditor } from '@/components/catalog/CatalogImageUploadEditor';
@@ -385,6 +385,50 @@ function cleanSkuPrefix(value: string): string {
   return value.trim().normalize('NFKC').replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80) || 'FWR';
 }
 
+function EditableVariantValue({
+  value,
+  onCommit,
+}: {
+  value: string;
+  onCommit: (nextValue: string) => boolean;
+}) {
+  const [draft, setDraft] = useState(value);
+
+  useEffect(() => {
+    setDraft(value);
+  }, [value]);
+
+  const commit = () => {
+    const nextValue = draft.trim();
+    if (!nextValue) {
+      setDraft(value);
+      return;
+    }
+    if (nextValue === value) {
+      setDraft(nextValue);
+      return;
+    }
+    if (!onCommit(nextValue)) setDraft(value);
+  };
+
+  return (
+    <Input
+      value={draft}
+      onChange={event => setDraft(event.target.value)}
+      onBlur={commit}
+      onKeyDown={event => {
+        if (event.key === 'Enter') event.currentTarget.blur();
+        if (event.key === 'Escape') {
+          setDraft(value);
+          event.currentTarget.blur();
+        }
+      }}
+      dir="auto"
+      className="mx-auto h-10 w-28 rounded-xl text-center font-bold"
+    />
+  );
+}
+
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <button
@@ -467,6 +511,63 @@ export function CatalogProductDetailsEditor({
 
   const updateVariant = (index: number, patch: Partial<CatalogVariantDraft>) => {
     onChange({ variants: form.variants.map((variant, itemIndex) => itemIndex === index ? { ...variant, ...patch } : variant) });
+  };
+
+  const renameSingleOptionVariant = (index: number, nextValueRaw: string): boolean => {
+    const nextValue = nextValueRaw.trim();
+    const variant = form.variants[index];
+    if (!variant || !nextValue) return false;
+
+    const usableOptions = structuredOptions(variant);
+    if (usableOptions.length !== 1) return false;
+    const currentOption = usableOptions[0];
+    const optionIndex = variant.options.findIndex(option => option.key === currentOption.key);
+    if (optionIndex < 0) return false;
+
+    const duplicate = form.variants.some((candidate, candidateIndex) => {
+      if (candidateIndex === index) return false;
+      const candidateOptions = structuredOptions(candidate);
+      return candidateOptions.length === 1
+        && normalized(candidateOptions[0].name) === normalized(currentOption.name)
+        && normalized(candidateOptions[0].value) === normalized(nextValue);
+    });
+    if (duplicate) {
+      setFeedback(labels.invalidOptions);
+      return false;
+    }
+
+    const nextVariants = form.variants.map((candidate, candidateIndex) => {
+      if (candidateIndex !== index) return candidate;
+      return {
+        ...candidate,
+        name: nextValue,
+        options: candidate.options.map((option, candidateOptionIndex) => candidateOptionIndex === optionIndex
+          ? { ...option, value: nextValue }
+          : option),
+      };
+    });
+
+    let nextOptionRows = optionRows;
+    if (optionRows.length === 1) {
+      const previousValue = currentOption.value;
+      let replaced = false;
+      const syncedValues = splitValues(optionRows[0].values).map(value => {
+        if (!replaced && normalized(value) === normalized(previousValue)) {
+          replaced = true;
+          return nextValue;
+        }
+        return value;
+      });
+      if (!replaced) syncedValues.push(nextValue);
+      nextOptionRows = [{ ...optionRows[0], values: syncedValues.join('، ') }];
+    }
+
+    patchBuilder({
+      variants: nextVariants,
+      ...(optionRows.length === 1 ? { variant_option_rows: nextOptionRows } : {}),
+    });
+    setFeedback('');
+    return true;
   };
 
   const updateGroupDraft = (groupKey: string, patch: Partial<GroupDraft>) => {
@@ -660,12 +761,16 @@ export function CatalogProductDetailsEditor({
           {indexes.map(index => {
             const variant = form.variants[index];
             if (!variant) return null;
+            const usableOptions = structuredOptions(variant);
+            const singleOptionValue = usableOptions.length === 1 ? usableOptions[0].value.trim() : '';
             return (
               <tr key={variant.key} className="border-t align-middle">
                 <td className="w-32 p-2.5 text-center align-middle">
                   {legacy
                     ? <Input value={variant.name} onChange={event => updateVariant(index, { name: event.target.value })} className="h-10 min-w-32 rounded-xl text-center" />
-                    : <div className="mx-auto flex min-h-10 w-28 items-center justify-center rounded-xl bg-muted/30 px-3 py-2.5 text-center font-bold" dir="auto">{grouped ? optionSummaryWithinGroup(variant) : optionSummary(variant)}</div>}
+                    : usableOptions.length === 1
+                      ? <EditableVariantValue value={singleOptionValue} onCommit={value => renameSingleOptionVariant(index, value)} />
+                      : <div className="mx-auto flex min-h-10 w-28 items-center justify-center rounded-xl bg-muted/30 px-3 py-2.5 text-center font-bold" dir="auto">{grouped ? optionSummaryWithinGroup(variant) : optionSummary(variant)}</div>}
                 </td>
                 <td className="p-2.5"><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => updateVariant(index, { price_iqd: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className={`${numericClass} min-w-32`} /></td>
                 <td className="p-2.5"><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => updateVariant(index, { cost_iqd: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className={`${numericClass} min-w-32`} /></td>
@@ -673,9 +778,9 @@ export function CatalogProductDetailsEditor({
                 <td className="p-2.5"><Input type="text" dir="ltr" value={variant.sku} onChange={event => updateVariant(index, { sku: event.target.value })} className="h-10 min-w-36 rounded-xl text-center font-mono text-xs" /></td>
                 <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.barcode} onChange={event => updateVariant(index, { barcode: event.target.value })} className={`${numericClass} min-w-32`} /></td>
                 <td className="w-40 p-2.5 align-middle">
-                  <div className="mx-auto flex w-28 flex-col items-center justify-center">
+                  <div className="mx-auto w-full min-w-0">
                     <CatalogImageUploadEditor images={variant.image_refs} onChange={image_refs => updateVariant(index, { image_refs })} maxImages={5} compact dense hideHeading />
-                    {variant.image_refs.length === 0 && <p className="mt-1 w-28 text-center text-[9px] leading-3 text-muted-foreground">{labels.inheritedImage}</p>}
+                    {variant.image_refs.length === 0 && <p className="mt-1 w-full text-center text-[9px] leading-3 text-muted-foreground">{labels.inheritedImage}</p>}
                   </div>
                 </td>
                 <td className="w-32 p-2.5 text-center align-middle">
