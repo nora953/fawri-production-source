@@ -62,47 +62,36 @@
   display: none !important;
 }
 
-/* Baseline read-only alignment contract; the shared grid below refines it. */
-[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 {
-  align-items: center !important;
-}
-
-[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :last-child {
-  min-width: 2rem;
-  justify-content: center;
-  text-align: center;
-  align-self: center;
-}
-
 /*
- * Read-only inventory rows use one shared two-zone grid: the variant label owns
- * the larger zone while the quantity badge is centered inside a dedicated lane.
- * The section-level variant count uses the same lane, so every number sits on
- * one visual axis instead of floating at the far edge of the dialog.
+ * Each read-only variant card is one centered visual unit. The option summary
+ * stays directly under the variant name (it is not moved into a separate lane),
+ * and the current stock badge sits centered beneath them.
  */
-[role="dialog"] section[class~="bg-muted/10"] > .mb-3.flex.items-center.justify-between.gap-3,
 [role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) minmax(6rem, 0.28fr);
+  display: flex !important;
+  flex-direction: column;
   align-items: center !important;
-  column-gap: 1rem !important;
-}
-
-[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 {
+  justify-content: center !important;
+  gap: 0.3rem !important;
+  min-height: 4.75rem;
   margin-bottom: 0 !important;
+  text-align: center;
 }
 
-[role="dialog"] section[class~="bg-muted/10"] > .mb-3.flex.items-center.justify-between.gap-3 > :first-child,
 [role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :first-child {
+  width: 100%;
   min-width: 0;
-  align-self: center;
+  text-align: center;
 }
 
-[role="dialog"] section[class~="bg-muted/10"] > .mb-3.flex.items-center.justify-between.gap-3 > :last-child,
+[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :first-child > p {
+  margin-inline: auto;
+  text-align: center;
+}
+
 [role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :last-child {
   min-width: 2.5rem;
   min-height: 1.75rem;
-  justify-self: center;
   align-self: center;
   display: inline-flex;
   align-items: center;
