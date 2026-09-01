@@ -205,3 +205,14 @@ test('catalog add product/service button mirrors the visible Add promotion CTA w
     /header > \.flex:first-child > \.flex\.shrink-0 > button:last-child \{/,
   );
 });
+
+test('catalog header subtitle stays on one desktop line without forcing narrow layouts', () => {
+  assert.match(
+    promotionActionCss,
+    /@media \(min-width: 1280px\)[\s\S]*?Keep the catalog header description on one desktop line[\s\S]*?> header > \.flex:first-child > div:first-child > p \{[\s\S]*?max-width:\s*none !important;[\s\S]*?white-space:\s*nowrap !important/,
+  );
+  assert.match(
+    catalogSource,
+    /<p className="mt-1 max-w-3xl text-sm leading-6 text-muted-foreground">\{copy\.subtitle\}<\/p>/,
+  );
+});
