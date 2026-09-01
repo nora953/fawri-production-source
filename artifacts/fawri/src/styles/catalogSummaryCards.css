@@ -54,8 +54,11 @@
  * name, option summary, and current quantity badge visible, while the mutation
  * row (+ / quantity input / Set / -) stays out of the details dialog. Inventory
  * changes remain available through the dedicated Edit product/service action.
+ *
+ * This stylesheet is loaded only by the catalog workspace, so the dialog scope
+ * itself is sufficient and does not depend on a non-existent page wrapper.
  */
-.products-workspace-polish [role="dialog"] [class~="grid-cols-[auto_1fr_auto_auto]"] {
+[role="dialog"] [class~="grid-cols-[auto_1fr_auto_auto]"] {
   display: none !important;
 }
 
