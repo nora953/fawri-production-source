@@ -580,7 +580,10 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
   assert.equal(delayedRow.status, "expired");
   assert.equal(delayedRow.end_reason, "duration_expired");
   assert.equal(
-    new Date(String(delayedRow.ended_at)).toISOString(),
+    (delayedRow.ended_at instanceof Date
+      ? delayedRow.ended_at
+      : new Date(String(delayedRow.ended_at))
+    ).toISOString(),
     delayedExpiresAt,
   );
 
@@ -630,7 +633,10 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
   ).rows[0];
 
   assert.equal(
-    new Date(String(delayedRow.ended_at)).toISOString(),
+    (delayedRow.ended_at instanceof Date
+      ? delayedRow.ended_at
+      : new Date(String(delayedRow.ended_at))
+    ).toISOString(),
     delayedExpiresAt,
   );
 
