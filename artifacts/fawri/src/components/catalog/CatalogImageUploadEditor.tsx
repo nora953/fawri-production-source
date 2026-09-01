@@ -266,6 +266,9 @@ export function CatalogImageUploadEditor({
   const compactShellClass = hideHeading
     ? (dense ? 'space-y-1' : 'space-y-2')
     : `${dense ? 'space-y-1 rounded-lg p-1.5' : 'space-y-2 rounded-xl p-2.5'} border bg-muted/10`;
+  const imageStripClass = compact && dense
+    ? 'flex flex-nowrap items-center gap-2 overflow-x-auto overflow-y-hidden pb-0.5'
+    : 'flex flex-wrap items-center gap-2';
 
   return (
     <section className={compact ? compactShellClass : 'space-y-3 rounded-2xl border bg-muted/10 p-4'}>
@@ -300,7 +303,7 @@ export function CatalogImageUploadEditor({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={imageStripClass}>
         <button
           type="button"
           disabled={isUploading || images.length >= maxImages}
