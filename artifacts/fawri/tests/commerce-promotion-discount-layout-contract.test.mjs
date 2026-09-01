@@ -125,8 +125,20 @@ test('promotion header separates the pricing notice from grouped store currency 
   );
   assert.match(promotionActionCss, /Promotion header context:/);
   assert.match(promotionActionCss, /column-gap:\s*1\.5rem !important/);
-  assert.match(promotionActionCss, /> span:first-child \{[\s\S]*?flex:\s*1 1 auto;[\s\S]*?font-weight:\s*650/);
+  assert.match(promotionActionCss, /> span:first-child \{[\s\S]*?flex:\s*1 1 auto;[\s\S]*?font-weight:\s*500/);
   assert.match(promotionActionCss, /> span:last-child \{[\s\S]*?white-space:\s*nowrap/);
   assert.match(promotionActionCss, /> span:last-child \[dir="ltr"\] \{[\s\S]*?font-weight:\s*800/);
   assert.match(promotionActionCss, /@media \(max-width: 639px\)[\s\S]*?border-top:\s*1px solid rgb\(249 115 22 \/ 0\.14\)/);
+});
+
+test('promotion add button keeps the plus icon aligned with its label in RTL and LTR', () => {
+  assert.match(promotionActionCss, /Keep the Add promotion label and plus icon on one compact visual axis/);
+  assert.match(
+    promotionActionCss,
+    /header > \.flex:first-child > button \{[\s\S]*?display:\s*inline-flex !important;[\s\S]*?align-items:\s*center !important;[\s\S]*?justify-content:\s*center !important;[\s\S]*?gap:\s*0\.55rem !important/,
+  );
+  assert.match(
+    promotionActionCss,
+    /header > \.flex:first-child > button > svg \{[\s\S]*?width:\s*1rem !important;[\s\S]*?height:\s*1rem !important;[\s\S]*?margin:\s*0 !important/,
+  );
 });
