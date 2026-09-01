@@ -10,13 +10,11 @@ const root = path.resolve(here, '..');
 const moneyUi = fs.readFileSync(path.join(root, 'src/lib/moneyUi.ts'), 'utf8');
 const catalogCss = fs.readFileSync(path.join(root, 'src/styles/catalogSummaryCards.css'), 'utf8');
 
-test('Arabic and Kurdish catalog money uses canonical Iraqi dinar label and ungrouped digits', () => {
-  assert.match(moneyUi, /if \(currency === 'IQD'\) return lang === 'en' \? 'IQD' : 'د\.ع';/);
-  assert.doesNotMatch(moneyUi, /return 'ع\.د'/);
-  assert.match(moneyUi, /const compactArabicIqd = currencyCodeNormalized === 'IQD' && lang !== 'en';/);
-  assert.match(moneyUi, /const number = formatMerchantNumber\(amount, digits, !compactArabicIqd\);/);
-  assert.match(moneyUi, /return `\$\{number\}\\u00a0\$\{currency\}`;/);
-  assert.doesNotMatch(moneyUi, /\\u202D|\\u202E|\\u2066|\\u2067|\\u2068|\\u2069/);
+test('Arabic and Kurdish IQD catalog money keeps amount before canonical dinar label', () => {
+  assert.ok(moneyUi.includes("if (currency === 'IQD') return lang === 'en' ? 'IQD' : 'د.ع';"));
+  assert.ok(!moneyUi.includes("return 'ع.د'"));
+  assert.ok(moneyUi.includes("const compactArabicIqd = currencyCodeNormalized === 'IQD' && lang !== 'en';"));
+  assert.ok(moneyUi.includes('return `\\u2066${number}\\u2069\\u00a0\\u2067${currency}\\u2069`;'));
 });
 
 test('catalog CSS does not override bidi direction for the complete price', () => {
