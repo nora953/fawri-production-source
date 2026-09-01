@@ -24,7 +24,8 @@ test('catalog renders amount and merchant currency as separate fixed-order visua
   assert.ok(catalogPage.includes("<span dir={lang === 'en' ? 'ltr' : 'rtl'}>{currency}</span>"));
 });
 
-test('catalog CSS does not override bidi direction for the complete price', () => {
-  assert.doesNotMatch(catalogCss, /unicode-bidi:\s*(?:bidi-override|plaintext)\s*!important/);
-  assert.doesNotMatch(catalogCss, /p\[dir="ltr"\]\.font-extrabold[\s\S]*direction:\s*(?:ltr|rtl)\s*!important/);
+test('catalog CSS pins split money to amount first and canonical IQD token second', () => {
+  assert.match(catalogCss, /p\[dir="ltr"\] > span\.inline-flex\[dir="ltr"\][\s\S]*flex-direction:\s*row\s*!important/);
+  assert.match(catalogCss, /span:first-child[\s\S]*order:\s*1/);
+  assert.match(catalogCss, /span:last-child[\s\S]*direction:\s*ltr\s*!important[\s\S]*order:\s*2/);
 });
