@@ -10,10 +10,10 @@ const root = path.resolve(here, '..');
 const moneyUi = fs.readFileSync(path.join(root, 'src/lib/moneyUi.ts'), 'utf8');
 const catalogCss = fs.readFileSync(path.join(root, 'src/styles/catalogSummaryCards.css'), 'utf8');
 
-test('Arabic and Kurdish force only the currency token into stable LTR visual order', () => {
-  assert.match(moneyUi, /if \(lang === 'en'\) return currency;/);
-  assert.match(moneyUi, /return `\\u202D\$\{currency\}\\u202C`;/);
+test('Arabic and Kurdish catalog money uses mirrored logical IQD token for LTR price nodes', () => {
+  assert.match(moneyUi, /if \(currency === 'د\.ع'\) return 'ع\.د';/);
   assert.match(moneyUi, /return `\$\{number\}\\u00a0\$\{currency\}`;/);
+  assert.doesNotMatch(moneyUi, /\\u202D|\\u202E|\\u2066|\\u2067|\\u2068|\\u2069/);
 });
 
 test('catalog CSS does not override bidi direction for the complete price', () => {
