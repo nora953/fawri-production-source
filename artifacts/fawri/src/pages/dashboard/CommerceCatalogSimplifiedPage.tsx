@@ -70,7 +70,7 @@ import {
   type CatalogProductFormState,
 } from '@/lib/catalogProductEditor';
 import { useI18n } from '@/lib/i18n';
-import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import { formatMerchantNumber, merchantCurrencyLabel } from '@/lib/moneyUi';
 import type { Lang, ProductStatus } from '@/lib/types';
 
 type PageCopy = {
@@ -911,14 +911,21 @@ export default function CommerceCatalogSimplifiedPage() {
     const service = product.service_details;
     if (service?.price_type === 'custom') return copy.customPrice;
     if (service?.price_type === 'free') return copy.freePrice;
-    return commerceContext
-      ? formatMerchantMoneyMinor(
-          product.price_iqd,
-          commerceContext.currency_code,
-          commerceContext.currency_fraction_digits,
-          lang,
-        )
-      : '—';
+    if (!commerceContext) return '—';
+
+    const digits = commerceContext.currency_fraction_digits;
+    const amount = product.price_iqd / (10 ** digits);
+    const currencyCode = String(commerceContext.currency_code || '').trim().toUpperCase();
+    const compactArabicIqd = currencyCode === 'IQD' && lang !== 'en';
+    const number = formatMerchantNumber(amount, digits, !compactArabicIqd);
+    const currency = merchantCurrencyLabel(currencyCode, lang);
+
+    return (
+      <span className="inline-flex items-baseline gap-1 whitespace-nowrap" dir="ltr">
+        <span dir="ltr">{number}</span>
+        <span dir={lang === 'en' ? 'ltr' : 'rtl'}>{currency}</span>
+      </span>
+    );
   };
 
   return (
