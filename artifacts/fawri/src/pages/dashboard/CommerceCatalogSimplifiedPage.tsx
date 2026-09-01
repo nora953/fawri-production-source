@@ -452,7 +452,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boo
   );
 }
 
-function InventoryControl({ copy, product, variant, value, busy, onValue, onSet, onAdjust }: {
+function InventoryControl({ copy, product, variant, value, busy, onValue, onSet, onAdjust, compact = false }: {
   copy: PageCopy;
   product: CatalogProduct;
   variant?: CatalogVariant;
@@ -461,21 +461,22 @@ function InventoryControl({ copy, product, variant, value, busy, onValue, onSet,
   onValue: (value: string) => void;
   onSet: () => void;
   onAdjust: (delta: number) => void;
+  compact?: boolean;
 }) {
   return (
-    <div className="rounded-xl border bg-background p-3">
-      <div className="mb-2 flex items-start justify-between gap-3">
+    <div className={compact ? 'rounded-lg border bg-background px-2.5 py-2' : 'rounded-xl border bg-background p-3'}>
+      <div className={compact ? 'mb-1.5 flex items-start justify-between gap-2' : 'mb-2 flex items-start justify-between gap-3'}>
         <div className="min-w-0">
-          <p className="text-sm font-bold">{variant?.name || product.name}</p>
-          {variant && variantOptionSummary(variant) && <p className="text-xs text-muted-foreground" dir="auto">{variantOptionSummary(variant)}</p>}
+          <p className={compact ? 'text-sm font-bold leading-5' : 'text-sm font-bold'}>{variant?.name || product.name}</p>
+          {variant && variantOptionSummary(variant) && <p className={compact ? 'text-[11px] leading-4 text-muted-foreground' : 'text-xs text-muted-foreground'} dir="auto">{variantOptionSummary(variant)}</p>}
         </div>
-        <Badge variant="outline" className="rounded-full">{variant?.stock_quantity ?? product.stock_quantity}</Badge>
+        <Badge variant="outline" className={compact ? 'rounded-full px-2 py-0.5 text-xs' : 'rounded-full'}>{variant?.stock_quantity ?? product.stock_quantity}</Badge>
       </div>
-      <div className="grid grid-cols-[auto_1fr_auto_auto] gap-2">
-        <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={busy} onClick={() => onAdjust(-1)}><Minus className="h-4 w-4" /></Button>
-        <Input type="number" min={0} dir="ltr" value={value} disabled={busy} onChange={event => onValue(event.target.value)} className="h-10 rounded-xl" />
-        <Button type="button" variant="outline" className="h-10 rounded-xl" disabled={busy} onClick={onSet}>{copy.inventorySet}</Button>
-        <Button type="button" variant="outline" size="icon" className="h-10 w-10 rounded-xl" disabled={busy} onClick={() => onAdjust(1)}><Plus className="h-4 w-4" /></Button>
+      <div className={compact ? 'grid grid-cols-[auto_1fr_auto_auto] gap-1.5' : 'grid grid-cols-[auto_1fr_auto_auto] gap-2'}>
+        <Button type="button" variant="outline" size="icon" className={compact ? 'h-9 w-9 rounded-lg' : 'h-10 w-10 rounded-xl'} disabled={busy} onClick={() => onAdjust(-1)}><Minus className="h-4 w-4" /></Button>
+        <Input type="number" min={0} dir="ltr" value={value} disabled={busy} onChange={event => onValue(event.target.value)} className={compact ? 'h-9 rounded-lg' : 'h-10 rounded-xl'} />
+        <Button type="button" variant="outline" className={compact ? 'h-9 rounded-lg px-2.5 text-xs' : 'h-10 rounded-xl'} disabled={busy} onClick={onSet}>{copy.inventorySet}</Button>
+        <Button type="button" variant="outline" size="icon" className={compact ? 'h-9 w-9 rounded-lg' : 'h-10 w-10 rounded-xl'} disabled={busy} onClick={() => onAdjust(1)}><Plus className="h-4 w-4" /></Button>
       </div>
     </div>
   );
@@ -1128,7 +1129,7 @@ export default function CommerceCatalogSimplifiedPage() {
                   <h4 className="text-sm font-extrabold">{detailsProduct.variants.length > 0 ? copy.variantDetails : copy.inventoryDetails}</h4>
                   {detailsProduct.variants.length > 0 && <Badge variant="outline" className="rounded-full bg-background">{detailsProduct.variants.length}</Badge>}
                 </div>
-                <div className="space-y-2">
+                <div className={detailsProduct.variants.length > 0 ? 'grid gap-2 sm:grid-cols-2' : 'space-y-2'}>
                   {detailsProduct.variants.length > 0 ? detailsProduct.variants.map(variant => {
                     const key = inventoryKey(detailsProduct.id, variant.id);
                     return (
@@ -1137,6 +1138,7 @@ export default function CommerceCatalogSimplifiedPage() {
                         copy={copy}
                         product={detailsProduct}
                         variant={variant}
+                        compact
                         value={inventoryValues[key] ?? String(variant.stock_quantity)}
                         busy={mutationBusy || !authorityReady}
                         onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
