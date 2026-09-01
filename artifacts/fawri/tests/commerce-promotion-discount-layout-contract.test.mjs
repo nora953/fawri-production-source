@@ -131,14 +131,14 @@ test('promotion header separates the pricing notice from grouped store currency 
   assert.match(promotionActionCss, /@media \(max-width: 639px\)[\s\S]*?border-top:\s*1px solid rgb\(249 115 22 \/ 0\.14\)/);
 });
 
-test('promotion add button keeps the plus icon aligned with its label in RTL and LTR', () => {
-  assert.match(promotionActionCss, /Keep the Add promotion label and plus icon on one compact visual axis/);
+test('promotion add button gives the plus a visible chip and balanced CTA rhythm in RTL and LTR', () => {
+  assert.match(promotionActionCss, /plus gets its own soft chip/);
   assert.match(
     promotionActionCss,
-    /header > \.flex:first-child > button \{[\s\S]*?display:\s*inline-flex !important;[\s\S]*?align-items:\s*center !important;[\s\S]*?justify-content:\s*center !important;[\s\S]*?gap:\s*0\.55rem !important/,
+    /header > \.flex:first-child > button \{[\s\S]*?gap:\s*0\.7rem !important;[\s\S]*?height:\s*3rem !important;[\s\S]*?border-radius:\s*1rem !important;[\s\S]*?box-shadow:\s*0 8px 18px rgb\(249 115 22 \/ 0\.16\) !important/,
   );
   assert.match(
     promotionActionCss,
-    /header > \.flex:first-child > button > svg \{[\s\S]*?width:\s*1rem !important;[\s\S]*?height:\s*1rem !important;[\s\S]*?margin:\s*0 !important/,
+    /header > \.flex:first-child > button > svg \{[\s\S]*?width:\s*1\.8rem !important;[\s\S]*?height:\s*1\.8rem !important;[\s\S]*?padding:\s*0\.34rem !important;[\s\S]*?border-radius:\s*0\.6rem !important;[\s\S]*?background:\s*rgb\(255 255 255 \/ 0\.16\) !important;[\s\S]*?margin:\s*0 !important/,
   );
 });
