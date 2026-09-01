@@ -127,16 +127,15 @@
 }
 
 /*
- * Merchant money is authored in logical order (49,000 د.ع). Price nodes are
- * deliberately LTR in the product UI, so force a bidi override on the rendered
- * node itself. This preserves both the number/currency order and the literal
- * Arabic abbreviation order (د.ع) instead of allowing the browser to show ع.د.
- * English remains visually unchanged because its price token is already LTR.
+ * Arabic and Kurdish catalog UIs are RTL. The price text keeps western digits,
+ * while the IQD abbreviation must resolve naturally as د.ع. Scope this only to
+ * RTL product surfaces so the English LTR presentation remains untouched.
  */
-[data-catalog-summary-card="true"] p[dir="ltr"].font-extrabold,
-[role="dialog"] p[dir="ltr"].font-extrabold {
-  direction: ltr !important;
-  unicode-bidi: bidi-override !important;
+[dir="rtl"] [data-catalog-summary-card="true"] p[dir="ltr"].font-extrabold,
+[role="dialog"][dir="rtl"] p[dir="ltr"].font-extrabold,
+[dir="rtl"] [role="dialog"] p[dir="ltr"].font-extrabold {
+  direction: rtl !important;
+  unicode-bidi: plaintext !important;
 }
 
 @media (min-width: 960px) {
