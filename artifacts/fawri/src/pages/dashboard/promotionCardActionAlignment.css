@@ -79,23 +79,34 @@
 }
 
 /*
- * Keep the Add promotion label and plus icon on one compact visual axis.
- * Logical gap handles both RTL and LTR without direction-specific margins.
+ * Make the Add promotion CTA visibly intentional instead of merely moving the
+ * plus glyph. The plus gets its own soft chip, so RTL/LTR both keep a balanced
+ * icon-to-label rhythm and the control reads as one composed action.
  */
 .products-workspace-polish > .min-h-screen > .mx-auto > header > .flex:first-child > button {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 0.55rem !important;
-  padding-inline: 1.15rem !important;
+  gap: 0.7rem !important;
+  height: 3rem !important;
+  min-height: 3rem !important;
+  padding-inline: 0.8rem 1.05rem !important;
+  border-radius: 1rem !important;
   line-height: 1 !important;
+  box-shadow: 0 8px 18px rgb(249 115 22 / 0.16) !important;
 }
 
 .products-workspace-polish > .min-h-screen > .mx-auto > header > .flex:first-child > button > svg {
+  box-sizing: border-box !important;
   flex: 0 0 auto;
-  width: 1rem !important;
-  height: 1rem !important;
+  width: 1.8rem !important;
+  height: 1.8rem !important;
+  padding: 0.34rem !important;
   margin: 0 !important;
+  border-radius: 0.6rem !important;
+  background: rgb(255 255 255 / 0.16) !important;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22) !important;
+  stroke-width: 2.25 !important;
 }
 
 @media (max-width: 639px) {
