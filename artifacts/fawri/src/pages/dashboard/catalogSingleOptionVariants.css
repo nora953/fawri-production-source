@@ -64,6 +64,13 @@
   border-top: 1px solid hsl(var(--border)) !important;
 }
 
+/* The column title already says that the variant image is optional. Repeating
+ * "no custom image = product image" under every row adds noise and unnecessary
+ * height, so keep that fallback behavior implicit in the single-option table. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 tbody td[class~="w-40"] p {
+  display: none !important;
+}
+
 /* For one option, the first column is the variant itself, not "remaining options". */
 .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:first-child {
   font-size: 0 !important;
