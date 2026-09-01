@@ -1142,7 +1142,7 @@ export default function CommerceCatalogSimplifiedPage() {
                   <h4 className="text-sm font-extrabold">{detailsProduct.variants.length > 0 ? copy.variantDetails : copy.inventoryDetails}</h4>
                   {detailsProduct.variants.length > 0 && <Badge variant="outline" className="rounded-full bg-background">{detailsProduct.variants.length}</Badge>}
                 </div>
-                <div className={detailsProduct.variants.length > 0 ? 'grid gap-2 sm:grid-cols-2' : 'space-y-2'}>
+                <div className="grid gap-2 sm:grid-cols-2">
                   {detailsProduct.variants.length > 0 ? detailsProduct.variants.map(variant => {
                     const key = inventoryKey(detailsProduct.id, variant.id);
                     return (
@@ -1165,6 +1165,7 @@ export default function CommerceCatalogSimplifiedPage() {
                       <InventoryControl
                         copy={copy}
                         product={detailsProduct}
+                        compact
                         value={inventoryValues[key] ?? String(detailsProduct.stock_quantity)}
                         busy={mutationBusy || !authorityReady}
                         onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
