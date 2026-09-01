@@ -268,7 +268,7 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
   const merchantCookie = cookie(MERCHANT_SESSION_COOKIE, merchantSession.token);
 
   t.after(async () => {
-    stopPostgresSupportRuntimeCutoverForTests();
+    await stopPostgresSupportRuntimeCutoverForTests();
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
       server.closeAllConnections?.();
