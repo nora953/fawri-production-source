@@ -132,13 +132,27 @@ test('promotion header separates the pricing notice from grouped store currency 
 });
 
 test('promotion add button gives the plus a visible chip and balanced CTA rhythm in RTL and LTR', () => {
+  const buttonRule = promotionActionCss.match(
+    /header > \.flex:first-child > button \{[\s\S]*?\n\}/,
+  )?.[0] || '';
+  const iconRule = promotionActionCss.match(
+    /header > \.flex:first-child > button > svg \{[\s\S]*?\n\}/,
+  )?.[0] || '';
+
   assert.match(promotionActionCss, /plus gets its own soft chip/);
-  assert.match(
-    promotionActionCss,
-    /header > \.flex:first-child > button \{[\s\S]*?gap:\s*0\.7rem !important;[\s\S]*?height:\s*3rem !important;[\s\S]*?border-radius:\s*1rem !important;[\s\S]*?box-shadow:\s*0 8px 18px rgb\(249 115 22 \/ 0\.16\) !important/,
-  );
-  assert.match(
-    promotionActionCss,
-    /header > \.flex:first-child > button > svg \{[\s\S]*?width:\s*1\.8rem !important;[\s\S]*?height:\s*1\.8rem !important;[\s\S]*?padding:\s*0\.34rem !important;[\s\S]*?border-radius:\s*0\.6rem !important;[\s\S]*?background:\s*rgb\(255 255 255 \/ 0\.16\) !important;[\s\S]*?margin:\s*0 !important/,
-  );
+  assert.match(buttonRule, /display:\s*inline-flex !important/);
+  assert.match(buttonRule, /align-items:\s*center !important/);
+  assert.match(buttonRule, /justify-content:\s*center !important/);
+  assert.match(buttonRule, /gap:\s*0\.7rem !important/);
+  assert.match(buttonRule, /height:\s*3rem !important/);
+  assert.match(buttonRule, /border-radius:\s*1rem !important/);
+  assert.match(buttonRule, /box-shadow:\s*0 8px 18px rgb\(249 115 22 \/ 0\.16\) !important/);
+
+  assert.match(iconRule, /width:\s*1\.8rem !important/);
+  assert.match(iconRule, /height:\s*1\.8rem !important/);
+  assert.match(iconRule, /padding:\s*0\.34rem !important/);
+  assert.match(iconRule, /margin:\s*0 !important/);
+  assert.match(iconRule, /border-radius:\s*0\.6rem !important/);
+  assert.match(iconRule, /background:\s*rgb\(255 255 255 \/ 0\.16\) !important/);
+  assert.match(iconRule, /box-shadow:\s*inset 0 0 0 1px rgb\(255 255 255 \/ 0\.22\) !important/);
 });
