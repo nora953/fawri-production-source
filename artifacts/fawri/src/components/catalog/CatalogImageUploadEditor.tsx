@@ -196,6 +196,7 @@ export function CatalogImageUploadEditor({
   const [isDragging, setIsDragging] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const effectiveMaxImages = dense ? Math.max(maxImages, 10) : maxImages;
 
   const updateAlt = (index: number, alt: string) => {
     onChange(images.map((image, itemIndex) => (itemIndex === index ? { ...image, alt } : image)));
@@ -219,7 +220,7 @@ export function CatalogImageUploadEditor({
   const handleFiles = async (files: FileList | File[]) => {
     const incoming = Array.from(files);
     if (incoming.length === 0 || isUploading) return;
-    const remaining = Math.max(0, maxImages - images.length);
+    const remaining = Math.max(0, effectiveMaxImages - images.length);
     if (remaining === 0) {
       toast.error(labels.limit);
       return;
@@ -310,7 +311,7 @@ export function CatalogImageUploadEditor({
             variant="outline"
             size="sm"
             className="h-9 rounded-xl"
-            disabled={isUploading || images.length >= maxImages}
+            disabled={isUploading || images.length >= effectiveMaxImages}
             onClick={() => inputRef.current?.click()}
           >
             {isUploading ? <Loader2 className="me-1 h-4 w-4 animate-spin" /> : <Upload className="me-1 h-4 w-4" />}
@@ -322,7 +323,7 @@ export function CatalogImageUploadEditor({
       <div className={imageStripClass}>
         <button
           type="button"
-          disabled={isUploading || images.length >= maxImages}
+          disabled={isUploading || images.length >= effectiveMaxImages}
           onClick={() => inputRef.current?.click()}
           {...dropHandlers}
           className={`${compact ? compactUploadSize : 'min-h-20 min-w-[12rem] flex-1 px-4'} flex flex-col items-center justify-center rounded-xl border-2 border-dashed text-center transition ${isDragging ? 'border-orange-500 bg-orange-50/60' : 'border-muted-foreground/25 bg-background hover:border-orange-400/70'} disabled:cursor-not-allowed disabled:opacity-60`}
