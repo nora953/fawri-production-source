@@ -23,14 +23,10 @@ export function formatMerchantNumber(value: number, fractionDigits = 0): string 
   }).format(value);
 }
 
-function stableCurrencyToken(currency: string, lang: Lang): string {
+function catalogCurrencyVisualToken(currency: string, lang: Lang): string {
   if (lang === 'en') return currency;
-
-  // Catalog price containers intentionally use LTR so western digits stay in
-  // familiar order. Arabic-script currency abbreviations are therefore forced
-  // LTR independently; this preserves the literal visual label "د.ع" instead
-  // of allowing the bidi algorithm to display it as "ع.د".
-  return `\u202D${currency}\u202C`;
+  if (currency === 'د.ع') return 'ع.د';
+  return currency;
 }
 
 export function formatMerchantMoneyMinor(
@@ -45,7 +41,11 @@ export function formatMerchantMoneyMinor(
   const divisor = 10 ** digits;
   const amount = amountMinor / divisor;
   const number = formatMerchantNumber(amount, digits);
-  const currency = stableCurrencyToken(merchantCurrencyLabel(currencyCode, lang), lang);
+  const currency = catalogCurrencyVisualToken(merchantCurrencyLabel(currencyCode, lang), lang);
+
+  // Catalog price nodes render with dir="ltr" so western digits remain stable.
+  // Arabic-script tokens are visually reversed by the browser in that context;
+  // supplying the mirrored logical token makes the rendered label exactly د.ع.
   return `${number}\u00a0${currency}`;
 }
 
