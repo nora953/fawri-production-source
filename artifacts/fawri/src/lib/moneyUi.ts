@@ -23,6 +23,14 @@ export function formatMerchantNumber(value: number, fractionDigits = 0): string 
   }).format(value);
 }
 
+function stabilizeLocalizedMoneyOrder(value: string, lang: Lang): string {
+  // Arabic and Kurdish pages are RTL, while merchant money is intentionally
+  // displayed number-first (for example: 49,000 د.ع). Isolate the complete
+  // money token as LTR so the browser bidi algorithm cannot move the currency
+  // label in front of the number. English keeps its existing output unchanged.
+  return lang === 'en' ? value : `\u2066${value}\u2069`;
+}
+
 export function formatMerchantMoneyMinor(
   amountMinor: number,
   currencyCode: string,
@@ -36,7 +44,7 @@ export function formatMerchantMoneyMinor(
   const amount = amountMinor / divisor;
   const number = formatMerchantNumber(amount, digits);
   const currency = merchantCurrencyLabel(currencyCode, lang);
-  return `${number}\u00a0${currency}`;
+  return stabilizeLocalizedMoneyOrder(`${number}\u00a0${currency}`, lang);
 }
 
 export function formatMerchantIqd(amountIqd: number, lang: Lang = 'ar'): string {
