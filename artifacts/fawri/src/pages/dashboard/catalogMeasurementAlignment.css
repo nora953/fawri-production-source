@@ -24,3 +24,39 @@
   align-self: start;
   min-height: 3rem;
 }
+
+/*
+ * Product details must keep the same compact rectangular inventory-card shape
+ * whether the product has variants or only one base inventory record. The
+ * single-record state previously stretched into a tall narrow card.
+ */
+.products-workspace-polish [role="dialog"] section.rounded-2xl.border.bg-muted\/10 > .space-y-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.products-workspace-polish [role="dialog"] section.rounded-2xl.border.bg-muted\/10 > .space-y-2 > .rounded-xl.border.bg-background.p-3 {
+  box-sizing: border-box;
+  width: 100% !important;
+  min-width: 0;
+  min-height: 3.75rem !important;
+  height: auto !important;
+  padding: 0.625rem 0.75rem !important;
+  border-radius: 0.75rem !important;
+}
+
+.products-workspace-polish [role="dialog"] section.rounded-2xl.border.bg-muted\/10 > .space-y-2 > .rounded-xl.border.bg-background.p-3 > .mb-2 {
+  margin-bottom: 0 !important;
+}
+
+/* Details view is a read-only summary; inventory changes stay in the editor. */
+.products-workspace-polish [role="dialog"] section.rounded-2xl.border.bg-muted\/10 > .space-y-2 > .rounded-xl.border.bg-background.p-3 > .grid {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .products-workspace-polish [role="dialog"] section.rounded-2xl.border.bg-muted\/10 > .space-y-2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
