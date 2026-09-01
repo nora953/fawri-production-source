@@ -74,13 +74,8 @@ p[dir="ltr"] > span.inline-flex[dir="ltr"] > span:last-child {
 }
 
 /*
- * Product details are presentation-only. Keep the variant/product inventory
- * name, option summary, and current quantity badge visible, while the mutation
- * row (+ / quantity input / Set / -) stays out of the details dialog. Inventory
- * changes remain available through the dedicated Edit product/service action.
- *
- * This stylesheet is loaded only by the catalog workspace, so the dialog scope
- * itself is sufficient and does not depend on a non-existent page wrapper.
+ * Product details are presentation-only. Keep the product/variant identity and
+ * current quantity visible, while mutation controls stay in the edit screen.
  */
 [role="dialog"] [class~="grid-cols-[auto_1fr_auto_auto]"] {
   display: none !important;
@@ -92,67 +87,78 @@ p[dir="ltr"] > span.inline-flex[dir="ltr"] > span:last-child {
 }
 
 /*
- * Read-only variant inventory uses compact square cards instead of full-width
- * rows. This keeps the details dialog dense while preserving a clear hierarchy.
+ * Inventory details use one geometry for both states:
+ *   - products with variants
+ *   - a product with one base inventory record and no variants
+ *
+ * The previous stylesheet explicitly forced the no-variant wrapper into four
+ * columns and gave its only child aspect-ratio: 1/1, which is why the blender
+ * became a tall square tile. The source component already renders both states
+ * with the same two-column compact grid; preserve that geometry here and never
+ * apply a square aspect ratio to an inventory summary card.
  */
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2,
 [role="dialog"] section[class~="bg-muted/10"] > .space-y-2 {
   display: grid !important;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
 }
 
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2 > *,
 [role="dialog"] section[class~="bg-muted/10"] > .space-y-2 > * {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
   margin-top: 0 !important;
-  min-width: 0;
-  aspect-ratio: 1 / 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  align-self: start !important;
 }
 
-/*
- * Each read-only variant card is one centered visual unit. The option summary
- * stays directly under the variant name, and the current stock badge sits
- * centered beneath them.
- */
-[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 {
+/* Legacy non-compact single-SKU markup, if present in an old hydrated preview,
+ * must follow the same horizontal card structure rather than centered-square UI. */
+[role="dialog"] section[class~="bg-muted/10"] > :is(.grid.gap-2.sm\:grid-cols-2, .space-y-2) > .rounded-xl.border.bg-background.p-3 {
+  display: block !important;
+  padding: 0.5rem 0.625rem !important;
+  text-align: start !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > :is(.grid.gap-2.sm\:grid-cols-2, .space-y-2) > .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 {
   display: flex !important;
-  flex-direction: column;
+  min-height: 2.75rem !important;
+  flex-direction: row !important;
   align-items: center !important;
-  justify-content: center !important;
-  gap: 0.4rem !important;
-  min-height: 0;
-  width: 100%;
-  margin-bottom: 0 !important;
-  text-align: center;
+  justify-content: space-between !important;
+  gap: 0.75rem !important;
+  width: 100% !important;
+  margin: 0 !important;
+  text-align: start !important;
 }
 
-[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :first-child {
-  width: 100%;
-  min-width: 0;
-  text-align: center;
+[role="dialog"] section[class~="bg-muted/10"] > :is(.grid.gap-2.sm\:grid-cols-2, .space-y-2) > .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :first-child {
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  text-align: start !important;
 }
 
-[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :first-child > p {
-  margin-inline: auto;
-  text-align: center;
+[role="dialog"] section[class~="bg-muted/10"] > :is(.grid.gap-2.sm\:grid-cols-2, .space-y-2) > .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :first-child > p {
+  margin-inline: 0 !important;
+  text-align: start !important;
 }
 
-[role="dialog"] .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :last-child {
-  min-width: 2.5rem;
-  min-height: 1.75rem;
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding-inline: 0.625rem;
-  text-align: center;
-  font-weight: 700;
+[role="dialog"] section[class~="bg-muted/10"] > :is(.grid.gap-2.sm\:grid-cols-2, .space-y-2) > .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :last-child {
+  align-self: center !important;
 }
 
-@media (min-width: 960px) {
+@media (max-width: 640px) {
+  [role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2,
   [role="dialog"] section[class~="bg-muted/10"] > .space-y-2 {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
