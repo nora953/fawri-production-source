@@ -15,8 +15,10 @@ test('merchant money formatter stays direction-neutral', () => {
   assert.doesNotMatch(moneyUi, /\\u202D|\\u202E|\\u2066|\\u2067|\\u2068|\\u2069/);
 });
 
-test('catalog price nodes force stable visual order at render time', () => {
+test('Arabic and Kurdish catalog prices resolve in RTL without changing English', () => {
+  assert.match(catalogCss, /\[dir="rtl"\]/);
   assert.match(catalogCss, /p\[dir="ltr"\]\.font-extrabold/);
-  assert.match(catalogCss, /unicode-bidi:\s*bidi-override\s*!important/);
-  assert.match(catalogCss, /direction:\s*ltr\s*!important/);
+  assert.match(catalogCss, /unicode-bidi:\s*plaintext\s*!important/);
+  assert.match(catalogCss, /direction:\s*rtl\s*!important/);
+  assert.doesNotMatch(catalogCss, /unicode-bidi:\s*bidi-override\s*!important/);
 });
