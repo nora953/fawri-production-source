@@ -1083,7 +1083,6 @@ export default function CommerceCatalogSimplifiedPage() {
                   <Badge variant="outline" className="rounded-full">{itemType(detailsProduct) === 'service' ? copy.service : copy.product}</Badge>
                   <Badge variant="outline" className={`rounded-full ${statusClass(detailsProduct.status)}`}>{itemStatusLabel(detailsProduct, copy)}</Badge>
                   {detailsProduct.allow_fawri_reply && <Badge variant="outline" className="rounded-full border-orange-200 bg-orange-50 text-orange-700"><Bot className="me-1 h-3 w-3" />{fawriBrand}</Badge>}
-                  {detailsProduct.image_refs.length > 0 && <Badge variant="outline" className="rounded-full"><ImageIcon className="me-1 h-3 w-3" />{detailsProduct.image_refs.length}</Badge>}
                 </div>
                 <h3 className="mt-3 text-2xl font-extrabold leading-8">{detailsProduct.name}</h3>
                 {detailsProduct.category && <p className="mt-1 text-sm text-muted-foreground">{detailsProduct.category}</p>}
