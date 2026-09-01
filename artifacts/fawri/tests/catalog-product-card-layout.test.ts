@@ -87,8 +87,9 @@ test('inventory operations remain canonical inside the details modal', () => {
 
 test('details dialog presents inventory read-only and routes changes through edit', () => {
   assert.match(cardStyles, /Product details are presentation-only/);
+  assert.doesNotMatch(cardStyles, /\.products-workspace-polish \[role="dialog"\]/);
   const readOnlyRule = cardStyles.match(
-    /\.products-workspace-polish \[role="dialog"\] \[class~="grid-cols-\[auto_1fr_auto_auto\]"\] \{[\s\S]*?\n\}/,
+    /\[role="dialog"\] \[class~="grid-cols-\[auto_1fr_auto_auto\]"\] \{[\s\S]*?\n\}/,
   )?.[0] || '';
   assert.match(readOnlyRule, /display:\s*none !important/);
 
