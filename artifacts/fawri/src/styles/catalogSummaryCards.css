@@ -59,10 +59,6 @@
   display: none !important;
 }
 
-.products-workspace-polish [role="dialog"] [class~="grid-cols-[auto_1fr_auto_auto]"] + * {
-  display: none !important;
-}
-
 @media (min-width: 1280px) {
   .grid:has(> [data-catalog-summary-card="true"]) {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
