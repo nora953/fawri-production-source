@@ -62,7 +62,7 @@
 .products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:first-child {
   flex: 1 1 auto;
   min-width: 0;
-  font-weight: 650;
+  font-weight: 500;
   color: rgb(154 52 18);
 }
 
@@ -76,6 +76,26 @@
   color: hsl(var(--foreground));
   font-weight: 800;
   letter-spacing: 0.01em;
+}
+
+/*
+ * Keep the Add promotion label and plus icon on one compact visual axis.
+ * Logical gap handles both RTL and LTR without direction-specific margins.
+ */
+.products-workspace-polish > .min-h-screen > .mx-auto > header > .flex:first-child > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.55rem !important;
+  padding-inline: 1.15rem !important;
+  line-height: 1 !important;
+}
+
+.products-workspace-polish > .min-h-screen > .mx-auto > header > .flex:first-child > button > svg {
+  flex: 0 0 auto;
+  width: 1rem !important;
+  height: 1rem !important;
+  margin: 0 !important;
 }
 
 @media (max-width: 639px) {
