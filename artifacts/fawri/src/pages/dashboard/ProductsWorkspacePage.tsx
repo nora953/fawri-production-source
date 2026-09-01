@@ -10,6 +10,7 @@ import './promotionCardActionAlignment.css';
 import './productCardCompact.css';
 import './catalogMeasurementAlignment.css';
 import './catalogOptionBuilderLabels.css';
+import './catalogSingleOptionVariants.css';
 import { useI18n } from '@/lib/i18n';
 
 const copy = {
