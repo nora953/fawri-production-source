@@ -24,3 +24,45 @@
   align-self: start;
   min-height: 3rem;
 }
+
+/*
+ * Details dialog: a product without variants has exactly one inventory summary.
+ * Do not render that one record as a half-width/tall tile. The dialog is read-only,
+ * so the canonical presentation is one compact full-width horizontal summary row.
+ * This file is imported last by ProductsWorkspacePage, intentionally making this
+ * the final layout authority for the catalog details geometry.
+ */
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2:has(> :only-child) {
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: start !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2:has(> :only-child) > :only-child {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  height: 3.75rem !important;
+  min-height: 3.75rem !important;
+  max-height: 3.75rem !important;
+  aspect-ratio: auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  padding: 0.625rem 0.875rem !important;
+  margin: 0 !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2:has(> :only-child) > :only-child > :first-child {
+  width: 100% !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  align-items: center !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2:has(> :only-child) > :only-child > :first-child > :first-child {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2:has(> :only-child) > :only-child > :first-child > :last-child {
+  flex: 0 0 auto !important;
+}
