@@ -71,320 +71,10 @@ import {
   type CatalogProductFormState,
 } from '@/lib/catalogProductEditor';
 import { useI18n } from '@/lib/i18n';
+import { COMMERCE_CATALOG_COPY, type CommerceCatalogPageCopy } from '@/lib/translations/features/catalog/catalogEditorCopy';
 import { formatMerchantNumber, merchantCurrencyLabel } from '@/lib/moneyUi';
-import type { Lang, ProductStatus } from '@/lib/types';
+import type { ProductStatus } from '@/lib/types';
 
-type PageCopy = {
-  title: string;
-  subtitle: string;
-  add: string;
-  import: string;
-  search: string;
-  all: string;
-  products: string;
-  services: string;
-  product: string;
-  service: string;
-  noItems: string;
-  noItemsHint: string;
-  loading: string;
-  retry: string;
-  loadFailed: string;
-  saveFailed: string;
-  saved: string;
-  updated: string;
-  deleted: string;
-  deleteConfirm: string;
-  versionConflict: string;
-  secureCrypto: string;
-  invalidName: string;
-  invalidPrice: string;
-  invalidQuantity: string;
-  invalidForm: string;
-  name: string;
-  namePlaceholder: string;
-  category: string;
-  categoryPlaceholder: string;
-  basePrice: string;
-  basePriceHint: string;
-  price: string;
-  freePrice: string;
-  customPrice: string;
-  quantity: string;
-  inventoryNotTracked: string;
-  duration: string;
-  booking: string;
-  bookingRequired: string;
-  bookingOptional: string;
-  description: string;
-  descriptionPlaceholder: string;
-  descriptionMissing: string;
-  details: string;
-  detailsTitle: string;
-  variants: string;
-  fawri: string;
-  fawriHint: string;
-  inventory: string;
-  inventorySet: string;
-  inventorySaved: string;
-  inventoryFailed: string;
-  inventoryDetails: string;
-  hideInventoryDetails: string;
-  variantDetails: string;
-  hideVariantDetails: string;
-  save: string;
-  saving: string;
-  edit: string;
-  create: string;
-  available: string;
-  lowStock: string;
-  inventoryOut: string;
-  unavailable: string;
-  draft: string;
-  hidden: string;
-  remaining: string;
-  units: string;
-  someVariantsOut: string;
-  minute: string;
-  sku: string;
-  skuHint: string;
-  availableForSale: string;
-  availableForSaleHint: string;
-};
-
-const COPY: Record<Lang, PageCopy> = {
-  ar: {
-    title: 'المنتجات والخدمات',
-    subtitle: 'أضف معلومات العنصر مرة واحدة، ويتولى فوري حساب حالة المخزون واستخدامها في الكاشير والردود.',
-    add: 'إضافة منتج أو خدمة',
-    import: 'استيراد المنتجات',
-    search: 'ابحث بالاسم أو القسم أو SKU أو الباركود...',
-    all: 'الكل',
-    products: 'المنتجات',
-    services: 'الخدمات',
-    product: 'منتج',
-    service: 'خدمة',
-    noItems: 'لا توجد عناصر بعد',
-    noItemsHint: 'أضف أول منتج أو خدمة ليبدأ فوري باستخدام بيانات الكتالوج الموثوقة.',
-    loading: 'جارٍ تحميل الكتالوج...',
-    retry: 'إعادة المحاولة',
-    loadFailed: 'تعذر تحميل الكتالوج من الخادم.',
-    saveFailed: 'تعذر حفظ العنصر.',
-    saved: 'تمت إضافة العنصر.',
-    updated: 'تم تحديث العنصر.',
-    deleted: 'تم حذف العنصر.',
-    deleteConfirm: 'هل تريد حذف هذا العنصر؟',
-    versionConflict: 'تم تعديل هذا العنصر من مكان آخر. حمّلنا أحدث نسخة؛ راجعها ثم احفظ مجددًا.',
-    secureCrypto: 'تعذر إنشاء رمز آمن للعملية.',
-    invalidName: 'أدخل اسمًا صحيحًا.',
-    invalidPrice: 'راجع السعر الأساسي.',
-    invalidQuantity: 'راجع كمية المخزون.',
-    invalidForm: 'راجع حقول العنصر قبل الحفظ.',
-    name: 'الاسم',
-    namePlaceholder: 'اسم المنتج أو الخدمة',
-    category: 'القسم',
-    categoryPlaceholder: 'مثال: إلكترونيات، عناية، خدمات منزلية',
-    basePrice: 'السعر الأساسي',
-    basePriceHint: 'هذا هو السعر الطبيعي للعنصر. أنشئ الخصومات المؤقتة من تبويب العروض.',
-    price: 'السعر',
-    freePrice: 'مجاني',
-    customPrice: 'حسب الطلب',
-    quantity: 'المخزون',
-    inventoryNotTracked: 'غير متابع',
-    duration: 'المدة',
-    booking: 'الحجز',
-    bookingRequired: 'مطلوب',
-    bookingOptional: 'غير مطلوب',
-    description: 'الوصف',
-    descriptionPlaceholder: 'معلومات واضحة يمكن لفوري الاعتماد عليها عند الرد على العميل.',
-    descriptionMissing: 'لا يوجد وصف مضاف لهذا العنصر.',
-    details: 'التفاصيل',
-    detailsTitle: 'تفاصيل المنتج',
-    variants: 'الأنواع',
-    fawri: 'استخدام هذا العنصر في ردود فوري',
-    fawriHint: 'عند الإيقاف يبقى العنصر في الكتالوج والكاشير، لكن فوري لا يستخدم معلوماته في الردود الآلية.',
-    inventory: 'إدارة المخزون',
-    inventorySet: 'تعيين',
-    inventorySaved: 'تم تحديث المخزون.',
-    inventoryFailed: 'تعذر تحديث المخزون.',
-    inventoryDetails: 'تفاصيل المخزون',
-    hideInventoryDetails: 'إخفاء المخزون',
-    variantDetails: 'تفاصيل الأنواع',
-    hideVariantDetails: 'إخفاء الأنواع',
-    save: 'حفظ',
-    saving: 'جارٍ الحفظ...',
-    edit: 'تعديل المنتج أو الخدمة',
-    create: 'إضافة منتج أو خدمة',
-    available: 'متوفر',
-    lowStock: 'مخزون منخفض',
-    inventoryOut: 'نفد المخزون',
-    unavailable: 'غير متوفر',
-    draft: 'مسودة',
-    hidden: 'مخفي عن فوري',
-    remaining: 'بقي',
-    units: 'قطعة',
-    someVariantsOut: 'بعض الأنواع نفدت',
-    minute: 'دقيقة',
-    sku: 'رمز العنصر (SKU)',
-    skuHint: 'يولّد فوري رمزًا فريدًا تلقائيًا. يمكنك تغييره قبل الحفظ.',
-    availableForSale: 'متاح للبيع',
-    availableForSaleHint: 'يظهر هذا الخيار فقط عندما لا يعتمد توفر العنصر على كمية مخزون مسجلة.',
-  },
-  ku: {
-    title: 'بەرهەم و خزمەتگوزارییەکان',
-    subtitle: 'زانیاریی بابەتەکە جارێک زیاد بکە؛ فەوری دۆخی کۆگا خۆکار هەژمار دەکات و لە کاشێر و وەڵامەکان بەکاری دەهێنێت.',
-    add: 'زیادکردنی بەرهەم یان خزمەتگوزاری',
-    import: 'هاوردەکردنی بەرهەم',
-    search: 'گەڕان بە ناو، بەش، SKU یان بارکۆد...',
-    all: 'هەموو',
-    products: 'بەرهەمەکان',
-    services: 'خزمەتگوزارییەکان',
-    product: 'بەرهەم',
-    service: 'خزمەتگوزاری',
-    noItems: 'هیچ بابەتێک نییە',
-    noItemsHint: 'یەکەم بەرهەم یان خزمەتگوزاری زیاد بکە.',
-    loading: 'کەتەلۆگ بار دەکرێت...',
-    retry: 'دووبارە هەوڵدانەوە',
-    loadFailed: 'بارکردنی کەتەلۆگ سەرکەوتوو نەبوو.',
-    saveFailed: 'پاشەکەوتکردنی بابەت سەرکەوتوو نەبوو.',
-    saved: 'بابەت زیادکرا.',
-    updated: 'بابەت نوێکرایەوە.',
-    deleted: 'بابەت سڕایەوە.',
-    deleteConfirm: 'دەتەوێت ئەم بابەتە بسڕیتەوە؟',
-    versionConflict: 'ئەم بابەتە لە شوێنێکی تر گۆڕدراوە. نوێترین وەشان بارکرا.',
-    secureCrypto: 'دروستکردنی ناسنامەی پارێزراو سەرکەوتوو نەبوو.',
-    invalidName: 'ناوێکی دروست بنووسە.',
-    invalidPrice: 'نرخی بنەڕەتی بپشکنە.',
-    invalidQuantity: 'بڕی کۆگا بپشکنە.',
-    invalidForm: 'خانەکان پێش پاشەکەوتکردن بپشکنە.',
-    name: 'ناو',
-    namePlaceholder: 'ناوی بەرهەم یان خزمەتگوزاری',
-    category: 'بەش',
-    categoryPlaceholder: 'نموونە: ئەلیکترۆنیات، خزمەتگوزاری',
-    basePrice: 'نرخی بنەڕەتی',
-    basePriceHint: 'ئەمە نرخی ئاسایی بابەتەکەیە. داشکاندنی کاتی لە بەشی ئۆفەرەکان دروست بکە.',
-    price: 'نرخ',
-    freePrice: 'بەخۆڕایی',
-    customPrice: 'بەپێی داواکاری',
-    quantity: 'کۆگا',
-    inventoryNotTracked: 'بەدواداچوون ناکرێت',
-    duration: 'ماوە',
-    booking: 'حجز',
-    bookingRequired: 'پێویستە',
-    bookingOptional: 'پێویست نییە',
-    description: 'وەسف',
-    descriptionPlaceholder: 'زانیارییەکی ڕوون کە فەوری بتوانێت پشتی پێ ببەستێت.',
-    descriptionMissing: 'هیچ وەسفێک بۆ ئەم بابەتە زیاد نەکراوە.',
-    details: 'وردەکاری',
-    detailsTitle: 'وردەکاری بەرهەم',
-    variants: 'جۆرەکان',
-    fawri: 'بەکارهێنانی ئەم بابەتە لە وەڵامەکانی فەوری',
-    fawriHint: 'کاتێک ناچالاکە، بابەتەکە لە کەتەلۆگ و کاشێر دەمێنێتەوە بەڵام فەوری لە وەڵامە ئۆتۆماتیکییەکان بەکاری ناهێنێت.',
-    inventory: 'بەڕێوەبردنی کۆگا',
-    inventorySet: 'دانان',
-    inventorySaved: 'کۆگا نوێکرایەوە.',
-    inventoryFailed: 'نوێکردنەوەی کۆگا سەرکەوتوو نەبوو.',
-    inventoryDetails: 'وردەکاری کۆگا',
-    hideInventoryDetails: 'شاردنەوەی کۆگا',
-    variantDetails: 'وردەکاری جۆرەکان',
-    hideVariantDetails: 'شاردنەوەی جۆرەکان',
-    save: 'پاشەکەوتکردن',
-    saving: 'پاشەکەوت دەکرێت...',
-    edit: 'دەستکاری بەرهەم یان خزمەتگوزاری',
-    create: 'زیادکردنی بەرهەم یان خزمەتگوزاری',
-    available: 'بەردەست',
-    lowStock: 'کۆگای کەم',
-    inventoryOut: 'کۆگا تەواو بوو',
-    unavailable: 'بەردەست نییە',
-    draft: 'ڕەشنووس',
-    hidden: 'لە فەوری شاردراوەتەوە',
-    remaining: 'ماوە',
-    units: 'دانە',
-    someVariantsOut: 'هەندێک جۆر تەواو بوون',
-    minute: 'خولەک',
-    sku: 'کۆدی بابەت (SKU)',
-    skuHint: 'فەوری کۆدێکی تاک خۆکار دروست دەکات. پێش پاشەکەوتکردن دەتوانیت بیگۆڕیت.',
-    availableForSale: 'بۆ فرۆشتن بەردەستە',
-    availableForSaleHint: 'تەنها کاتێک دەردەکەوێت کە بەردەستبوون بە بڕی کۆگای تۆمارکراو نەبەستراوە.',
-  },
-  en: {
-    title: 'Products & Services',
-    subtitle: 'Enter item details once; Fawri calculates inventory status automatically and uses it across cashier and replies.',
-    add: 'Add product or service',
-    import: 'Import products',
-    search: 'Search by name, category, SKU, or barcode...',
-    all: 'All',
-    products: 'Products',
-    services: 'Services',
-    product: 'Product',
-    service: 'Service',
-    noItems: 'No catalog items yet',
-    noItemsHint: 'Add your first product or service so Fawri can use trusted catalog facts.',
-    loading: 'Loading catalog...',
-    retry: 'Retry',
-    loadFailed: 'Could not load the catalog from the server.',
-    saveFailed: 'Could not save the item.',
-    saved: 'Item added.',
-    updated: 'Item updated.',
-    deleted: 'Item deleted.',
-    deleteConfirm: 'Delete this catalog item?',
-    versionConflict: 'This item changed elsewhere. The latest server version was loaded; review it and save again.',
-    secureCrypto: 'Could not create a secure operation identifier.',
-    invalidName: 'Enter a valid name.',
-    invalidPrice: 'Review the base price.',
-    invalidQuantity: 'Review inventory quantity.',
-    invalidForm: 'Review the item fields before saving.',
-    name: 'Name',
-    namePlaceholder: 'Product or service name',
-    category: 'Category',
-    categoryPlaceholder: 'e.g. Electronics, Beauty, Home services',
-    basePrice: 'Base price',
-    basePriceHint: 'This is the normal item price. Create temporary discounts from the Promotions tab.',
-    price: 'Price',
-    freePrice: 'Free',
-    customPrice: 'On request',
-    quantity: 'Inventory',
-    inventoryNotTracked: 'Not tracked',
-    duration: 'Duration',
-    booking: 'Booking',
-    bookingRequired: 'Required',
-    bookingOptional: 'Not required',
-    description: 'Description',
-    descriptionPlaceholder: 'Clear information Fawri can rely on when answering customers.',
-    descriptionMissing: 'No description has been added for this item.',
-    details: 'Details',
-    detailsTitle: 'Product details',
-    variants: 'Variants',
-    fawri: 'Use this item in Fawri replies',
-    fawriHint: 'When disabled, the item stays in catalog and cashier, but Fawri will not use it in automated replies.',
-    inventory: 'Inventory management',
-    inventorySet: 'Set',
-    inventorySaved: 'Inventory updated.',
-    inventoryFailed: 'Could not update inventory.',
-    inventoryDetails: 'Inventory details',
-    hideInventoryDetails: 'Hide inventory',
-    variantDetails: 'Variant details',
-    hideVariantDetails: 'Hide variants',
-    save: 'Save',
-    saving: 'Saving...',
-    edit: 'Edit product or service',
-    create: 'Add product or service',
-    available: 'Available',
-    lowStock: 'Low stock',
-    inventoryOut: 'Out of stock',
-    unavailable: 'Unavailable',
-    draft: 'Draft',
-    hidden: 'Hidden from Fawri',
-    remaining: 'left',
-    units: 'units',
-    someVariantsOut: 'Some variants are out',
-    minute: 'min',
-    sku: 'Item code (SKU)',
-    skuHint: 'Fawri creates a unique code automatically. You can change it before saving.',
-    availableForSale: 'Available for sale',
-    availableForSaleHint: 'Shown only when availability is not driven by a tracked inventory quantity.',
-  },
-};
 
 function statusClass(status: ProductStatus): string {
   if (status === 'available') return 'border-emerald-200 bg-emerald-50 text-emerald-700';
@@ -417,7 +107,7 @@ function automaticSku(): string {
   return `FWR-${token}`;
 }
 
-function itemStatusLabel(product: CatalogProduct, copy: PageCopy): string {
+function itemStatusLabel(product: CatalogProduct, copy: CommerceCatalogPageCopy): string {
   if (product.status === 'draft') return copy.draft;
   if (product.status === 'hidden_from_fawri') return copy.hidden;
   if (!tracksInventory(product)) {
@@ -430,7 +120,7 @@ function itemStatusLabel(product: CatalogProduct, copy: PageCopy): string {
   return `${copy.available} · ${product.stock_quantity.toLocaleString('en-US')} ${copy.units}`;
 }
 
-function itemStatusShortLabel(product: CatalogProduct, copy: PageCopy): string {
+function itemStatusShortLabel(product: CatalogProduct, copy: CommerceCatalogPageCopy): string {
   if (product.status === 'draft') return copy.draft;
   if (product.status === 'hidden_from_fawri') return copy.hidden;
   if (!tracksInventory(product)) return product.status === 'out_of_stock' ? copy.unavailable : copy.available;
@@ -454,7 +144,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boo
 }
 
 function InventoryControl({ copy, product, variant, value, busy, onValue, onSet, onAdjust, compact = false }: {
-  copy: PageCopy;
+  copy: CommerceCatalogPageCopy;
   product: CatalogProduct;
   variant?: CatalogVariant;
   value: string;
@@ -485,7 +175,7 @@ function InventoryControl({ copy, product, variant, value, busy, onValue, onSet,
 
 export default function CommerceCatalogSimplifiedPage() {
   const { lang, dir, isRTL } = useI18n();
-  const copy = COPY[lang] || COPY.en;
+  const copy = COMMERCE_CATALOG_COPY[lang] || COMMERCE_CATALOG_COPY.en;
   const fawriBrand = lang === 'ar' ? 'فوري' : lang === 'ku' ? 'فەوری' : 'Fawri';
 
   const createAttempt = useRef<CatalogIdempotencyAttempt | null>(null);
@@ -1217,23 +907,22 @@ export default function CommerceCatalogSimplifiedPage() {
         >
           <CatalogItemTypeEditor lang={lang} form={form} onChange={patchForm} />
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <label className="space-y-1 text-sm font-semibold">
               <span>{copy.name}</span>
-              <Input data-catalog-primary-input="true" value={form.name} onChange={event => patchForm({ name: event.target.value })} placeholder={copy.namePlaceholder} className="h-11 rounded-xl" />
+              <Input data-catalog-primary-input="true" value={form.name} onChange={event => patchForm({ name: event.target.value })} placeholder={copy.namePlaceholder} className="h-10 rounded-xl" />
             </label>
 
             <label className="space-y-1 text-sm font-semibold">
               <span>{copy.category}</span>
-              <Input value={form.category} onChange={event => patchForm({ category: event.target.value })} placeholder={copy.categoryPlaceholder} className="h-11 rounded-xl" />
+              <Input value={form.category} onChange={event => patchForm({ category: event.target.value })} placeholder={copy.categoryPlaceholder} className="h-10 rounded-xl" />
+            </label>
+
+            <label className="space-y-1 text-sm font-semibold">
+              <span>{copy.basePrice}</span>
+              <Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={form.current_price} onChange={event => patchForm({ current_price: event.target.value })} disabled={form.item_type === 'service' && (form.service_price_type === 'free' || form.service_price_type === 'custom')} placeholder={priceExample} className="h-10 rounded-xl" />
             </label>
           </div>
-
-          <label className="space-y-1 text-sm font-semibold">
-            <span>{copy.basePrice}</span>
-            <Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={form.current_price} onChange={event => patchForm({ current_price: event.target.value })} disabled={form.item_type === 'service' && (form.service_price_type === 'free' || form.service_price_type === 'custom')} placeholder={priceExample} className="h-11 rounded-xl" />
-            <span className="block text-xs font-normal leading-5 text-muted-foreground">{copy.basePriceHint}</span>
-          </label>
 
           {form.item_type === 'service' && (
             <label className="space-y-1 text-sm font-semibold">

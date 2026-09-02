@@ -3,143 +3,13 @@ import { Bot, BriefcaseBusiness, Boxes, CalendarClock, MapPin, Package, SlidersH
 import { Input } from '@/components/ui/input';
 import type { Lang } from '@/lib/types';
 import type { CatalogProductFormState } from '@/lib/catalogProductEditor';
+import { CATALOG_ITEM_TYPE_COPY } from '@/lib/translations/features/catalog/catalogEditorCopy';
 import type {
   CatalogItemType,
   CatalogServiceLocationMode,
   CatalogServicePriceType,
 } from '@/lib/catalogUiApi';
 
-type Copy = {
-  chooseType: string;
-  chooseTypeHint: string;
-  product: string;
-  productHint: string;
-  service: string;
-  serviceHint: string;
-  itemSettings: string;
-  itemSettingsHint: string;
-  trackInventory: string;
-  trackInventoryHint: string;
-  fawriReplies: string;
-  fawriRepliesHint: string;
-  serviceDetails: string;
-  serviceDetailsHint: string;
-  duration: string;
-  durationHint: string;
-  buffer: string;
-  bufferHint: string;
-  bookingRequired: string;
-  bookingRequiredHint: string;
-  priceType: string;
-  priceFixed: string;
-  priceFrom: string;
-  priceFree: string;
-  priceCustom: string;
-  location: string;
-  locationMerchant: string;
-  locationCustomer: string;
-  locationOnline: string;
-  locationFlexible: string;
-};
-
-const COPY: Record<Lang, Copy> = {
-  ar: {
-    chooseType: 'نوع العنصر',
-    chooseTypeHint: 'اختر منتجًا يباع أو خدمة يقدمها نشاطك. يمكنك التبديل قبل الحفظ من دون فقدان البيانات التي أدخلتها.',
-    product: 'منتج',
-    productHint: 'سلعة يمكن بيعها وتتبع مخزونها وباركودها وخياراتها.',
-    service: 'خدمة',
-    serviceHint: 'خدمة يمكن لفوري شرحها والمساعدة في طلبها أو حجزها.',
-    itemSettings: 'إعدادات العنصر',
-    itemSettingsHint: 'إعدادات تشغيل مختصرة لهذا العنصر.',
-    trackInventory: 'تتبع المخزون',
-    trackInventoryHint: 'حدّث الكمية تلقائيًا مع المبيعات ونبّه عند انخفاض المخزون أو نفاده.',
-    fawriReplies: 'استخدامه في ردود فوري',
-    fawriRepliesHint: 'اسمح لفوري باستخدام معلومات هذا العنصر عند الرد على العملاء.',
-    serviceDetails: 'تفاصيل الخدمة',
-    serviceDetailsHint: 'هذه المعلومات تساعد فوري على إعطاء العميل تفاصيل دقيقة عن الخدمة.',
-    duration: 'مدة الخدمة بالدقائق',
-    durationHint: 'اختياري، من دقيقة واحدة إلى 24 ساعة.',
-    buffer: 'وقت فاصل بعد الخدمة (دقيقة)',
-    bufferHint: 'اختياري، ويستخدم لاحقًا عند إدارة الحجوزات.',
-    bookingRequired: 'تحتاج إلى حجز',
-    bookingRequiredHint: 'فعّله إذا كان العميل يحتاج إلى طلب موعد أو حجز الخدمة مسبقًا.',
-    priceType: 'طريقة عرض السعر',
-    priceFixed: 'سعر ثابت',
-    priceFrom: 'يبدأ من',
-    priceFree: 'مجاني',
-    priceCustom: 'حسب الطلب',
-    location: 'مكان تقديم الخدمة',
-    locationMerchant: 'في موقع التاجر',
-    locationCustomer: 'عند العميل',
-    locationOnline: 'أونلاين',
-    locationFlexible: 'مرن / أكثر من خيار',
-  },
-  ku: {
-    chooseType: 'جۆری بابەت',
-    chooseTypeHint: 'بەرهەم یان خزمەتگوزاری هەڵبژێرە. پێش پاشەکەوتکردن دەتوانیت بگۆڕیت بەبێ لەدەستدانی داتای نووسراو.',
-    product: 'بەرهەم',
-    productHint: 'کاڵایەک بۆ فرۆشتن و بەدواداچوونی کۆگا و بارکۆد و هەڵبژاردەکان.',
-    service: 'خزمەتگوزاری',
-    serviceHint: 'خزمەتگوزارییەک کە فەوری دەتوانێت ڕوونی بکاتەوە و بۆ داواکاری یان حجز یارمەتی بدات.',
-    itemSettings: 'ڕێکخستنەکانی بابەت',
-    itemSettingsHint: 'ڕێکخستنە سەرەکییەکانی ئەم بابەتە.',
-    trackInventory: 'بەدواداچوونی کۆگا',
-    trackInventoryHint: 'بڕ لەگەڵ فرۆشتن خۆکار نوێ بکەرەوە و لە کەمبوون یان تەواوبوونی کۆگا ئاگادار بە.',
-    fawriReplies: 'بەکارهێنان لە وەڵامەکانی فەوری',
-    fawriRepliesHint: 'ڕێگە بدە فەوری زانیارییەکانی ئەم بابەتە لە وەڵامەکاندا بەکاربهێنێت.',
-    serviceDetails: 'وردەکاریی خزمەتگوزاری',
-    serviceDetailsHint: 'ئەم زانیارییانە یارمەتی فەوری دەدەن وەڵامی ورد بدات.',
-    duration: 'ماوەی خزمەتگوزاری بە خولەک',
-    durationHint: 'ئارەزوومەندانە، لە 1 خولەک تا 24 کاتژمێر.',
-    buffer: 'ماوەی نێوان دوای خزمەتگوزاری (خولەک)',
-    bufferHint: 'ئارەزوومەندانە، دواتر لە حجزەکان بەکاردێت.',
-    bookingRequired: 'پێویستی بە حجز هەیە',
-    bookingRequiredHint: 'ئەگەر کڕیار پێویستی بە کات یان حجز پێشتر هەیە چالاکی بکە.',
-    priceType: 'شێوازی نیشاندانی نرخ',
-    priceFixed: 'نرخی جێگیر',
-    priceFrom: 'دەستپێدەکات لە',
-    priceFree: 'بەخۆڕایی',
-    priceCustom: 'بەپێی داواکاری',
-    location: 'شوێنی خزمەتگوزاری',
-    locationMerchant: 'لە شوێنی بازرگان',
-    locationCustomer: 'لە شوێنی کڕیار',
-    locationOnline: 'ئۆنلاین',
-    locationFlexible: 'نەرم / چەند هەڵبژاردە',
-  },
-  en: {
-    chooseType: 'Item type',
-    chooseTypeHint: 'Choose a product or service. You can switch before saving without losing the data you already entered.',
-    product: 'Product',
-    productHint: 'A sellable item with optional inventory, barcode, and product options.',
-    service: 'Service',
-    serviceHint: 'A service Fawri can explain and help customers request or book.',
-    itemSettings: 'Item settings',
-    itemSettingsHint: 'Compact operating settings for this item.',
-    trackInventory: 'Track inventory',
-    trackInventoryHint: 'Update quantity automatically with sales and warn when stock is low or runs out.',
-    fawriReplies: 'Use in Fawri replies',
-    fawriRepliesHint: 'Allow Fawri to use this item information when answering customers.',
-    serviceDetails: 'Service details',
-    serviceDetailsHint: 'These facts help Fawri answer service questions accurately.',
-    duration: 'Service duration (minutes)',
-    durationHint: 'Optional, from 1 minute up to 24 hours.',
-    buffer: 'Buffer after service (minutes)',
-    bufferHint: 'Optional and ready for future booking availability.',
-    bookingRequired: 'Booking required',
-    bookingRequiredHint: 'Enable when customers should request an appointment or booking first.',
-    priceType: 'Price display',
-    priceFixed: 'Fixed price',
-    priceFrom: 'Starts from',
-    priceFree: 'Free',
-    priceCustom: 'Custom / on request',
-    location: 'Service location',
-    locationMerchant: 'Merchant location',
-    locationCustomer: 'Customer location',
-    locationOnline: 'Online',
-    locationFlexible: 'Flexible / multiple options',
-  },
-};
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
   return (
@@ -188,7 +58,7 @@ export function CatalogItemTypeEditor({
   form: CatalogProductFormState;
   onChange: (patch: Partial<CatalogProductFormState>) => void;
 }) {
-  const copy = COPY[lang] || COPY.en;
+  const copy = CATALOG_ITEM_TYPE_COPY[lang] || CATALOG_ITEM_TYPE_COPY.en;
 
   const chooseType = (itemType: CatalogItemType) => {
     if (itemType === form.item_type) return;

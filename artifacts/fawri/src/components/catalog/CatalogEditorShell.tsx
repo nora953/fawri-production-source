@@ -17,35 +17,10 @@ import {
   saveCatalogCreateRecoveryDraft,
 } from '@/lib/catalogEditorRecovery';
 import { catalogEditorFormFingerprint, catalogEditorHasUnsavedChanges } from '@/lib/catalogEditorSession';
+import { CATALOG_EDITOR_SHELL_COPY } from '@/lib/translations/features/catalog/catalogEditorCopy';
 import type { CatalogProductFormState } from '@/lib/catalogProductEditor';
 import type { Lang } from '@/lib/types';
 
-const copy = {
-  ar: {
-    cancel: 'إلغاء',
-    unsaved: 'تغييرات غير محفوظة',
-    discardTitle: 'لديك تغييرات غير محفوظة',
-    discard: 'إذا خرجت الآن ستفقد التغييرات التي لم تُحفظ. هل تريد المتابعة؟',
-    keepEditing: 'متابعة التعديل',
-    discardAction: 'الخروج بدون حفظ',
-  },
-  ku: {
-    cancel: 'هەڵوەشاندنەوە',
-    unsaved: 'گۆڕانکاری پاشەکەوت نەکراوە',
-    discardTitle: 'گۆڕانکاری پاشەکەوت نەکراوت هەیە',
-    discard: 'ئەگەر ئێستا بچیتە دەرەوە، گۆڕانکارییە پاشەکەوت نەکراوەکان لەدەست دەدەیت. دەتەوێت بەردەوام بیت؟',
-    keepEditing: 'بەردەوامبوون لە دەستکاری',
-    discardAction: 'چوونەدەرەوە بەبێ پاشەکەوتکردن',
-  },
-  en: {
-    cancel: 'Cancel',
-    unsaved: 'Unsaved changes',
-    discardTitle: 'You have unsaved changes',
-    discard: 'If you leave now, changes that were not saved will be lost. Do you want to continue?',
-    keepEditing: 'Keep editing',
-    discardAction: 'Leave without saving',
-  },
-} as const;
 
 export type CatalogEditorShellProps = {
   lang: Lang;
@@ -87,7 +62,7 @@ export function CatalogEditorShell({
   onSave,
   children,
 }: CatalogEditorShellProps) {
-  const labels = copy[lang] || copy.en;
+  const labels = CATALOG_EDITOR_SHELL_COPY[lang] || CATALOG_EDITOR_SHELL_COPY.en;
   const shellRef = useRef<HTMLDivElement | null>(null);
   const initialFingerprint = useRef(catalogEditorFormFingerprint(form)).current;
   const previousSaving = useRef(saving);

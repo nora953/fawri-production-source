@@ -1,7 +1,0 @@
-
-> @workspace/fawri@0.0.0 typecheck /home/runner/work/fawri-production-source/fawri-production-source/artifacts/fawri
-> tsc -p tsconfig.json --noEmit
-
-src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx(110,57): error TS2304: Cannot find name 'PageCopy'.
-src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx(123,62): error TS2304: Cannot find name 'PageCopy'.
- ELIFECYCLE  Command failed with exit code 2.

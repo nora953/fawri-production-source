@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useI18n } from '@/lib/i18n';
+import { CATALOG_IMAGE_UPLOAD_COPY } from '@/lib/translations/features/catalog/catalogEditorCopy';
 import type { CatalogImageDraft } from '@/lib/catalogProductEditor';
 import {
   CATALOG_IMAGE_ACCEPT,
@@ -13,59 +14,6 @@ import {
   uploadCatalogImage,
 } from '@/lib/catalogMediaUiApi';
 
-const copy = {
-  ar: {
-    title: 'الصور',
-    help: 'أضف الصور دفعة واحدة. اضغط على أي صورة لتكبيرها.',
-    upload: 'إضافة صور',
-    uploading: 'جارٍ الرفع...',
-    drop: 'اسحب الصور هنا أو اضغط للاختيار',
-    formats: 'JPG / PNG / WebP — حتى 8 MB',
-    primary: 'رئيسية',
-    makePrimary: 'تعيين كرئيسية',
-    alt: 'وصف الصورة',
-    remove: 'إزالة',
-    viewImages: 'عرض الصور',
-    limit: 'تم الوصول إلى الحد الأقصى لعدد الصور.',
-    failed: 'تعذر رفع الصورة.',
-    previewFailed: 'تعذر عرض الصورة',
-    close: 'إغلاق',
-  },
-  ku: {
-    title: 'وێنەکان',
-    help: 'وێنەکان بە یەکجار زیاد بکە. بۆ گەورەکردن کلیک لە وێنە بکە.',
-    upload: 'زیادکردنی وێنە',
-    uploading: 'باردەکرێت...',
-    drop: 'وێنەکان لێرە دابنێ یان کلیک بکە',
-    formats: 'JPG / PNG / WebP — تا 8 MB',
-    primary: 'سەرەکی',
-    makePrimary: 'بیکە بە سەرەکی',
-    alt: 'وەسفی وێنە',
-    remove: 'لابردن',
-    viewImages: 'بینینی وێنەکان',
-    limit: 'گەیشتیتە سنووری ژمارەی وێنەکان.',
-    failed: 'بارکردنی وێنە سەرکەوتوو نەبوو.',
-    previewFailed: 'وێنە پیشان نەدرا',
-    close: 'داخستن',
-  },
-  en: {
-    title: 'Images',
-    help: 'Add images in one batch. Click any thumbnail to enlarge it.',
-    upload: 'Add images',
-    uploading: 'Uploading...',
-    drop: 'Drop images here or click to choose',
-    formats: 'JPG / PNG / WebP — up to 8 MB',
-    primary: 'Primary',
-    makePrimary: 'Make primary',
-    alt: 'Image description',
-    remove: 'Remove',
-    viewImages: 'View images',
-    limit: 'Maximum image count reached.',
-    failed: 'Could not upload image.',
-    previewFailed: 'Could not display image',
-    close: 'Close',
-  },
-} as const;
 
 export type CatalogImageUploadEditorProps = {
   images: CatalogImageDraft[];
@@ -190,7 +138,7 @@ export function CatalogImageUploadEditor({
   dense = false,
 }: CatalogImageUploadEditorProps) {
   const { lang } = useI18n();
-  const labels = copy[lang] || copy.en;
+  const labels = CATALOG_IMAGE_UPLOAD_COPY[lang] || CATALOG_IMAGE_UPLOAD_COPY.en;
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
