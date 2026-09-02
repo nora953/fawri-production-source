@@ -1,0 +1,72 @@
+name: Fawri one-shot currency placement
+
+on:
+  push:
+    branches:
+      - foundation/integration-candidate
+    paths:
+      - .github/workflows/fawri-one-shot-currency-placement.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: foundation/integration-candidate
+          fetch-depth: 0
+
+      - name: Apply exact currency placement fix
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          path = Path('artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx')
+          source = path.read_text(encoding='utf-8')
+          old = '''    const displayPrice = `${range} ${currency}`;
+
+    return (
+      <span
+        className={`inline-block max-w-full whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
+        dir="ltr"
+        style={{ unicodeBidi: 'isolate-override' }}
+      >
+        {displayPrice}
+      </span>
+    );'''
+          new = '''    return (
+      <span
+        className={`inline-flex max-w-full items-baseline gap-1 whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
+        dir={isRTL ? 'rtl' : 'ltr'}
+      >
+        <bdi dir="ltr" style={{ unicodeBidi: 'isolate-override' }}>{range}</bdi>
+        <bdi dir="ltr" style={{ unicodeBidi: 'isolate-override' }}>{currency}</bdi>
+      </span>
+    );'''
+          if source.count(old) != 1:
+              raise SystemExit(f'Expected exactly one formatter block, found {source.count(old)}; refusing to patch.')
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
+          git diff --check
+
+      - name: Verify scope
+        shell: bash
+        run: |
+          changed="$(git diff --name-only)"
+          test "$changed" = "artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx"
+
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/fawri-one-shot-currency-placement.yml
+
+      - name: Commit exact fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx .github/workflows/fawri-one-shot-currency-placement.yml
+          git commit -m "Place Arabic IQD label left of catalog price"
+          git push origin HEAD:foundation/integration-candidate
