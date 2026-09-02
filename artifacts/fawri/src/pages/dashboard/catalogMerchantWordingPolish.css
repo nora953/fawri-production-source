@@ -53,3 +53,90 @@ html[lang="ar"] .products-workspace-polish .catalog-editor-shell section[class~=
     min-height: 2.625rem !important;
   }
 }
+
+/* --------------------------------------------------------------------------
+ * Approved Arabic service-editor polish.
+ * Product mode is intentionally untouched.
+ * -------------------------------------------------------------------------- */
+
+/* In service mode the basic commercial fields come before service scheduling
+ * details: item type -> name/category/price -> service details -> remaining data. */
+html[lang="ar"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > * {
+  order: 3;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > [data-catalog-item-type-editor="true"] {
+  order: 0;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) {
+  order: 1;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > [data-catalog-service-details="true"] {
+  order: 2;
+}
+
+/* Service-specific subtitle: do not mention inventory for an item that has no
+ * tracked stock. */
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p {
+  font-size: 0 !important;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p::after {
+  content: "أضف معلومات الخدمة مرة واحدة، ويستخدمها فوري في الكاشير والردود ومساعدة العملاء.";
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  html[lang="ar"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p::after {
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+  }
+}
+
+/* The product reference says "سعر البيع"; a service uses the simpler "السعر",
+ * with an explicit "starts from" label when that pricing mode is selected. */
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child::after {
+  content: "السعر";
+  font-size: 0.875rem;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"][data-service-price-type="from"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child::after {
+  content: "السعر يبدأ من";
+}
+
+/* Use a consistent plural-unit phrase for the service buffer field. */
+html[lang="ar"] .products-workspace-polish [data-catalog-service-details="true"] > .grid > label:nth-child(2) > span:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ar"] .products-workspace-polish [data-catalog-service-details="true"] > .grid > label:nth-child(2) > span:first-child::after {
+  content: "وقت فاصل بعد الخدمة (بالدقائق)";
+  font-size: 0.875rem;
+}
+
+/* A service is available for requesting/booking, not inventory-backed selling. */
+html[lang="ar"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > .flex.items-center.justify-between.gap-4.rounded-2xl.border.bg-muted\/10.p-4 > div > p:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > .flex.items-center.justify-between.gap-4.rounded-2xl.border.bg-muted\/10.p-4 > div > p:first-child::after {
+  content: "متاح للطلب";
+  font-size: 0.875rem;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > .flex.items-center.justify-between.gap-4.rounded-2xl.border.bg-muted\/10.p-4 > div > p.mt-1 {
+  font-size: 0 !important;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > .flex.items-center.justify-between.gap-4.rounded-2xl.border.bg-muted\/10.p-4 > div > p.mt-1::after {
+  content: "حدد ما إذا كانت هذه الخدمة متاحة حاليًا للعملاء.";
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
