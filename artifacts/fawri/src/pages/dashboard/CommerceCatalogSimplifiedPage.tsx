@@ -928,15 +928,13 @@ export default function CommerceCatalogSimplifiedPage() {
     const maximum = formatMinorAmount(maximumMinor);
     const hasRange = minimumMinor !== maximumMinor;
     const range = hasRange ? `${minimum} - ${maximum}` : minimum;
-    const displayPrice = `${range} ${currency}`;
-
     return (
       <span
-        className={`inline-block max-w-full whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
-        dir="ltr"
-        style={{ unicodeBidi: 'isolate-override' }}
+        className={`inline-flex max-w-full items-baseline gap-1 whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
+        dir={isRTL ? 'rtl' : 'ltr'}
       >
-        {displayPrice}
+        <bdi dir="ltr" style={{ unicodeBidi: 'isolate-override' }}>{range}</bdi>
+        <bdi dir="ltr" style={{ unicodeBidi: 'isolate-override' }}>{currency}</bdi>
       </span>
     );
   };
