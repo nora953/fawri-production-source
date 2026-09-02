@@ -22,6 +22,7 @@ export type WhatsAppInboundMessageJob = {
   customer_name?: string;
   message_kind: NormalizedWhatsAppMessageEvent["message_kind"];
   text?: string;
+  provider_reference?: NormalizedWhatsAppMessageEvent["provider_reference"];
   reply_to_message_id?: string;
   provider_timestamp?: string;
 };
@@ -163,6 +164,8 @@ export function whatsAppChannelKey(identity: WhatsAppChannelIdentity): string {
  * Converts a verified + normalized WhatsApp message into the shape that a
  * future durable-queue adapter can enqueue. This function does not enqueue,
  * persist, call Meta, or resolve a merchant from an external identifier.
+ * Provider media/location references are retained only as bounded metadata;
+ * no media download is performed here.
  */
 export function buildWhatsAppInboundMessageJob(input: {
   identity: WhatsAppChannelIdentity;
@@ -191,6 +194,9 @@ export function buildWhatsAppInboundMessageJob(input: {
       : {}),
     message_kind: input.event.message_kind,
     ...(input.event.text ? { text: input.event.text } : {}),
+    ...(input.event.provider_reference
+      ? { provider_reference: structuredClone(input.event.provider_reference) }
+      : {}),
     ...(input.event.reply_to_message_id
       ? { reply_to_message_id: input.event.reply_to_message_id }
       : {}),
@@ -254,7 +260,13 @@ function providerFailureCode(body: Record<string, unknown>, status: number): str
 }
 
 function confirmedFailure(status: number): boolean {
-  return status >= 400 && status < 500 && status !== 408 && status !== 425 && status !== 429;
+  return (
+    status >= 400 &&
+    status < 500 &&
+    status !== 408 &&
+    status !== 425 &&
+    status !== 429
+  );
 }
 
 /**
