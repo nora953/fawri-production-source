@@ -32,6 +32,7 @@ function statusEvent(
 
 function sentState() {
   return createWhatsAppDeliveryState({
+    attemptId: "attempt-1",
     wabaId: "1234567890",
     phoneNumberId: "9876543210",
     recipientId: "9647711111111",
@@ -44,6 +45,7 @@ function sentState() {
 
 test("delivery status advances monotonically from sent to delivered to read", () => {
   const sent = sentState();
+  assert.equal(sent.local_attempt_id, "attempt-1");
   const delivered = reduceWhatsAppDeliveryStatus(sent, statusEvent("delivered"));
   assert.equal(delivered.changed, true);
   assert.equal(delivered.state.phase, "delivered");
@@ -74,7 +76,7 @@ test("late success status cannot regress a more advanced successful state", () =
   assert.equal(lateDelivered.state.last_status_event_id, read.last_status_event_id);
 });
 
-test("failed status becomes terminal and preserves provider error codes", () => {
+test("failed status after send becomes terminal and preserves provider error codes", () => {
   const failed = reduceWhatsAppDeliveryStatus(
     sentState(),
     statusEvent("failed", {
@@ -101,11 +103,68 @@ test("success after terminal failure fails closed to uncertain", () => {
     contradictory.state.conflict_code,
     "WHATSAPP_DELIVERY_CONTRADICTORY_TERMINAL_STATUS",
   );
-  assert.ok(
-    contradictory.state.error_codes.includes(
+});
+
+test("failure after delivered or read fails closed to uncertain", () => {
+  for (const success of ["delivered", "read"]) {
+    const advanced = reduceWhatsAppDeliveryStatus(
+      sentState(),
+      statusEvent(success),
+    ).state;
+    const result = reduceWhatsAppDeliveryStatus(
+      advanced,
+      statusEvent("failed", {
+        event_id: `failed-after-${success}`,
+        error_codes: ["131000"],
+      }),
+    );
+    assert.equal(result.state.phase, "uncertain");
+    assert.equal(
+      result.state.conflict_code,
       "WHATSAPP_DELIVERY_CONTRADICTORY_TERMINAL_STATUS",
-    ),
+    );
+  }
+});
+
+test("once uncertain, later webhooks cannot silently restore certainty", () => {
+  const failed = reduceWhatsAppDeliveryStatus(
+    sentState(),
+    statusEvent("failed", { error_codes: ["131047"] }),
+  ).state;
+  const uncertain = reduceWhatsAppDeliveryStatus(
+    failed,
+    statusEvent("delivered", { event_id: "contradictory-delivered" }),
+  ).state;
+  const laterRead = reduceWhatsAppDeliveryStatus(
+    uncertain,
+    statusEvent("read", { event_id: "later-read" }),
   );
+  assert.equal(laterRead.state.phase, "uncertain");
+  assert.equal(
+    laterRead.state.conflict_code,
+    "WHATSAPP_DELIVERY_CONTRADICTORY_TERMINAL_STATUS",
+  );
+});
+
+test("failed or uncertain send without provider id never invents one", () => {
+  for (const outcome of [
+    { status: "confirmed_failed" as const, code: "WHATSAPP_GRAPH_HTTP_400", http_status: 400 },
+    { status: "uncertain" as const, code: "WHATSAPP_GRAPH_HTTP_503", http_status: 503 },
+  ]) {
+    const state = createWhatsAppDeliveryState({
+      attemptId: `attempt-${outcome.status}`,
+      wabaId: "1234567890",
+      phoneNumberId: "9876543210",
+      outcome,
+    });
+    assert.equal(state.external_message_id, undefined);
+    assert.throws(
+      () => reduceWhatsAppDeliveryStatus(state, statusEvent("delivered")),
+      (error: unknown) =>
+        (error as { code?: string }).code ===
+        "WHATSAPP_DELIVERY_PROVIDER_ID_UNAVAILABLE",
+    );
+  }
 });
 
 test("unknown status is observed without inventing a transition", () => {
