@@ -152,3 +152,17 @@ test("dormant authority has no provider transport or credential input path", () 
   assert.doesNotMatch(source, /access[_-]?token/i);
   assert.doesNotMatch(source, /app[_-]?secret/i);
 });
+
+test("legacy Meta channel listing excludes dormant WhatsApp rows", () => {
+  const source = fs.readFileSync(
+    path.join(
+      repoRoot,
+      "artifacts/api-server/src/services/postgresMetaChannelAuthority.ts",
+    ),
+    "utf8",
+  );
+  assert.match(
+    source,
+    /WHERE merchant_id = \$1\s+AND platform IN \('messenger', 'instagram'\)\s+ORDER BY updated_at DESC, id/,
+  );
+});
