@@ -32,6 +32,38 @@ html[lang="ar"] .products-workspace-polish .catalog-editor-shell section[class~=
 }
 
 /*
+ * Keep a multi-variant price range readable inside the compact summary card.
+ * The card itself can be RTL, but the numeric range must remain a stable LTR
+ * sequence and must not inherit the old truncate behavior that clipped its start.
+ */
+.products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  text-align: left !important;
+}
+
+.products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) > span {
+  display: flex !important;
+  width: 100%;
+  max-width: 100%;
+  flex-direction: row !important;
+  align-items: baseline;
+  justify-content: flex-start;
+  gap: 0.2rem !important;
+  direction: ltr !important;
+  unicode-bidi: isolate;
+  font-size: 0.8125rem !important;
+  line-height: 1.25rem !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) > span > span {
+  flex: 0 0 auto;
+  unicode-bidi: isolate;
+}
+
+/*
  * Desktop-only compact primary row: name + category + selling price.
  * This reduces only these three writing fields and leaves the rest of the
  * editor, variant table, cards, padding, and established design geometry alone.
