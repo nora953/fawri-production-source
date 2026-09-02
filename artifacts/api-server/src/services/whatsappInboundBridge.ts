@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import type { WhatsAppInboundMessageJob } from "./whatsappOfflineContracts";
+import type { WhatsAppMessageProviderReference } from "./whatsappWebhookContract";
 
 export type WhatsAppInboundBridgeInput = WhatsAppInboundMessageJob & {
   channel_id: string;
@@ -16,6 +17,7 @@ export type ChannelInboundMessage = {
   customer_name?: string;
   message_kind: WhatsAppInboundMessageJob["message_kind"];
   text?: string;
+  provider_reference?: WhatsAppMessageProviderReference;
   reply_to_message_id?: string;
   provider_timestamp?: string;
   routing: {
@@ -68,6 +70,18 @@ function required(value: unknown, label: string, max = 512): string {
   return normalized;
 }
 
+function optionalBounded(value: unknown, max: number): string | undefined {
+  const normalized = text(value);
+  if (!normalized) return undefined;
+  if (normalized.length > max || /[\r\n]/.test(normalized)) {
+    throw bridgeError(
+      "WHATSAPP_INBOUND_BRIDGE_PROVIDER_REFERENCE_INVALID",
+      "WhatsApp provider reference metadata is invalid",
+    );
+  }
+  return normalized;
+}
+
 function numeric(value: unknown, label: string): string {
   const normalized = text(value);
   if (!/^\d{1,40}$/.test(normalized)) {
@@ -112,6 +126,114 @@ function disposition(
   return { action: "eligible_for_reply_engine", reason: "text_ready" };
 }
 
+function providerReference(
+  kind: WhatsAppInboundMessageJob["message_kind"],
+  value: WhatsAppInboundMessageJob["provider_reference"],
+): WhatsAppMessageProviderReference | undefined {
+  if (!value) return undefined;
+
+  if (value.kind === "media") {
+    if (
+      kind !== value.media_kind ||
+      !["image", "audio", "video", "document", "sticker"].includes(kind)
+    ) {
+      throw bridgeError(
+        "WHATSAPP_INBOUND_BRIDGE_PROVIDER_REFERENCE_INVALID",
+        "WhatsApp media reference does not match the message kind",
+      );
+    }
+    const id = required(value.id, "WhatsApp media id", 160);
+    const mimeType = optionalBounded(value.mime_type, 160);
+    const sha256 = optionalBounded(value.sha256, 256);
+    const caption = optionalBounded(value.caption, 1_024);
+    const filename = optionalBounded(value.filename, 512);
+    return {
+      kind: "media",
+      media_kind: value.media_kind,
+      id,
+      ...(mimeType ? { mime_type: mimeType } : {}),
+      ...(sha256 ? { sha256 } : {}),
+      ...(caption ? { caption } : {}),
+      ...(filename ? { filename } : {}),
+      ...(value.media_kind === "audio" && typeof value.voice === "boolean"
+        ? { voice: value.voice }
+        : {}),
+      ...(value.media_kind === "sticker" && typeof value.animated === "boolean"
+        ? { animated: value.animated }
+        : {}),
+    };
+  }
+
+  if (value.kind === "location") {
+    if (kind !== "location") {
+      throw bridgeError(
+        "WHATSAPP_INBOUND_BRIDGE_PROVIDER_REFERENCE_INVALID",
+        "WhatsApp location reference does not match the message kind",
+      );
+    }
+    const latitude = Number(value.latitude);
+    const longitude = Number(value.longitude);
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      throw bridgeError(
+        "WHATSAPP_INBOUND_BRIDGE_PROVIDER_REFERENCE_INVALID",
+        "WhatsApp location reference is invalid",
+      );
+    }
+    const name = optionalBounded(value.name, 300);
+    const address = optionalBounded(value.address, 1_000);
+    return {
+      kind: "location",
+      latitude,
+      longitude,
+      ...(name ? { name } : {}),
+      ...(address ? { address } : {}),
+    };
+  }
+
+  if (value.kind === "reaction") {
+    if (kind !== "reaction") {
+      throw bridgeError(
+        "WHATSAPP_INBOUND_BRIDGE_PROVIDER_REFERENCE_INVALID",
+        "WhatsApp reaction reference does not match the message kind",
+      );
+    }
+    const messageId = required(value.message_id, "WhatsApp reaction message id", 512);
+    const emoji = optionalBounded(value.emoji, 32);
+    return {
+      kind: "reaction",
+      message_id: messageId,
+      ...(emoji ? { emoji } : {}),
+    };
+  }
+
+  if (value.kind === "contacts") {
+    if (
+      kind !== "contacts" ||
+      !Number.isSafeInteger(value.count) ||
+      value.count < 1 ||
+      value.count > 1_000
+    ) {
+      throw bridgeError(
+        "WHATSAPP_INBOUND_BRIDGE_PROVIDER_REFERENCE_INVALID",
+        "WhatsApp contacts reference is invalid",
+      );
+    }
+    return { kind: "contacts", count: value.count };
+  }
+
+  throw bridgeError(
+    "WHATSAPP_INBOUND_BRIDGE_PROVIDER_REFERENCE_INVALID",
+    "WhatsApp provider reference is invalid",
+  );
+}
+
 /**
  * Converts a WhatsApp-specific queue contract into a channel-neutral inbound
  * message that future conversation/reply code can consume. This bridge is pure:
@@ -146,6 +268,7 @@ export function bridgeWhatsAppInboundMessage(
       "WhatsApp normalized message text is invalid",
     );
   }
+  const reference = providerReference(job.message_kind, job.provider_reference);
 
   const message: ChannelInboundMessage = {
     event_id: eventId,
@@ -160,6 +283,7 @@ export function bridgeWhatsAppInboundMessage(
       : {}),
     message_kind: job.message_kind,
     ...(normalizedText ? { text: normalizedText } : {}),
+    ...(reference ? { provider_reference: reference } : {}),
     ...(text(job.reply_to_message_id)
       ? { reply_to_message_id: required(job.reply_to_message_id, "reply message id") }
       : {}),
