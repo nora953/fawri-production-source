@@ -5,17 +5,20 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   bridgeWhatsAppInboundMessage,
+  type WhatsAppInboundBridgeInput,
 } from "../src/services/whatsappInboundBridge";
-import type { WhatsAppInboundMessageJob } from "../src/services/whatsappOfflineContracts";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "../../..");
 
-function job(overrides: Partial<WhatsAppInboundMessageJob> = {}): WhatsAppInboundMessageJob {
+function job(
+  overrides: Partial<WhatsAppInboundBridgeInput> = {},
+): WhatsAppInboundBridgeInput {
   return {
     job_type: "whatsapp_inbound_message",
     event_id: "whatsapp:123:456:message:wamid.1",
     merchant_id: "merchant-1",
+    channel_id: "channel-1",
     channel: "whatsapp",
     waba_id: "1234567890",
     phone_number_id: "9876543210",
@@ -37,6 +40,7 @@ test("text message becomes a deterministic channel-neutral reply candidate", () 
     reason: "text_ready",
   });
   assert.equal(first.message.channel, "whatsapp");
+  assert.equal(first.message.channel_id, "channel-1");
   assert.equal(first.message.external_channel_id, "9876543210");
   assert.equal(first.message.customer_external_id, "9647711111111");
   assert.equal(first.message.conversation_key, second.message.conversation_key);
@@ -46,7 +50,9 @@ test("text message becomes a deterministic channel-neutral reply candidate", () 
 
 test("button and interactive normalized text are eligible without provider calls", () => {
   for (const kind of ["button", "interactive"] as const) {
-    const result = bridgeWhatsAppInboundMessage(job({ message_kind: kind, text: "choice" }));
+    const result = bridgeWhatsAppInboundMessage(
+      job({ message_kind: kind, text: "choice" }),
+    );
     assert.equal(result.disposition.action, "eligible_for_reply_engine");
   }
 });
@@ -84,12 +90,17 @@ test("reply-engine text limit blocks automatic processing without dropping the t
 });
 
 test("invalid channel identity fails before any downstream processing", () => {
-  assert.throws(
-    () => bridgeWhatsAppInboundMessage(job({ phone_number_id: "bad" })),
-    (error: unknown) =>
-      (error as { code?: string }).code ===
-      "WHATSAPP_INBOUND_BRIDGE_IDENTITY_INVALID",
-  );
+  for (const overrides of [
+    { phone_number_id: "bad" },
+    { channel_id: "" },
+  ]) {
+    assert.throws(
+      () => bridgeWhatsAppInboundMessage(job(overrides)),
+      (error: unknown) =>
+        (error as { code?: string }).code ===
+        "WHATSAPP_INBOUND_BRIDGE_IDENTITY_INVALID",
+    );
+  }
 });
 
 test("inbound bridge contains no AI, media fetch, queue, database, or provider I/O", () => {
