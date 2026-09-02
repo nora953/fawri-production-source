@@ -157,6 +157,7 @@ export async function listMetaChannelsAuthoritative(
     const result = await client.query<ChannelRow>(
       `${SELECT_CHANNEL}
         WHERE merchant_id = $1
+          AND platform IN ('messenger', 'instagram')
         ORDER BY updated_at DESC, id`,
       [merchantId],
     );
