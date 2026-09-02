@@ -1,0 +1,76 @@
+name: Fawri catalog localization authority final
+
+on:
+  push:
+    branches:
+      - foundation/integration-candidate
+    paths:
+      - .github/workflows/fawri-one-shot-catalog-localization-authority-v3.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: foundation/integration-candidate
+          fetch-depth: 0
+
+      - name: Enable repository pnpm
+        shell: bash
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.26.1 --activate
+          pnpm --version
+          pnpm install --frozen-lockfile
+
+      - name: Apply canonical catalog localization
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64, re
+          source = Path('.github/workflows/fawri-one-shot-catalog-localization-authority-v2.yml').read_text(encoding='utf-8')
+          match = re.search(r"base64\.b64decode\('([^']+)'\)", source)
+          if not match:
+              raise SystemExit('catalog localization patch payload not found')
+          exec(base64.b64decode(match.group(1)), {})
+          PY
+
+      - name: Verify localization regression contract
+        run: node --test artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs
+
+      - name: Typecheck
+        run: pnpm --dir artifacts/fawri run typecheck
+
+      - name: Build
+        run: pnpm --dir artifacts/fawri run build
+
+      - name: Validate diff
+        shell: bash
+        run: |
+          git diff --check
+          git status --short
+
+      - name: Remove temporary automation and diagnostics
+        shell: bash
+        run: |
+          rm -f .github/workflows/fawri-one-shot-catalog-localization-authority.yml
+          rm -f .github/workflows/fawri-one-shot-catalog-localization-authority-v2.yml
+          rm -f .github/workflows/fawri-one-shot-catalog-localization-authority-v3.yml
+          rm -f .github/workflows/fawri-one-shot-catalog-localization-diagnostic.yml
+          rm -f diagnostics/catalog-localization-typecheck.txt
+          rmdir diagnostics 2>/dev/null || true
+
+      - name: Commit verified localization authority
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Centralize and align catalog editor localization"
+          git push origin HEAD:foundation/integration-candidate
