@@ -14,6 +14,35 @@ export type WhatsAppMessageKind =
   | "interactive"
   | "unknown";
 
+export type WhatsAppMessageProviderReference =
+  | {
+      kind: "media";
+      media_kind: "image" | "audio" | "video" | "document" | "sticker";
+      id: string;
+      mime_type?: string;
+      sha256?: string;
+      caption?: string;
+      filename?: string;
+      voice?: boolean;
+      animated?: boolean;
+    }
+  | {
+      kind: "location";
+      latitude: number;
+      longitude: number;
+      name?: string;
+      address?: string;
+    }
+  | {
+      kind: "reaction";
+      message_id: string;
+      emoji?: string;
+    }
+  | {
+      kind: "contacts";
+      count: number;
+    };
+
 export type NormalizedWhatsAppMessageEvent = {
   event_id: string;
   event_kind: "message";
@@ -25,6 +54,7 @@ export type NormalizedWhatsAppMessageEvent = {
   customer_name?: string;
   message_kind: WhatsAppMessageKind;
   text?: string;
+  provider_reference?: WhatsAppMessageProviderReference;
   reply_to_message_id?: string;
   timestamp?: string;
 };
@@ -78,6 +108,11 @@ function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
+function boundedText(value: unknown, max: number): string | undefined {
+  const normalized = text(value);
+  return normalized && normalized.length <= max ? normalized : undefined;
+}
+
 function cleanTimestamp(value: unknown): string | undefined {
   const raw = text(value);
   return /^\d{1,20}$/.test(raw) ? raw : undefined;
@@ -126,12 +161,99 @@ function normalizedMessageText(message: Record<string, unknown>): string {
   return "";
 }
 
+function mediaReference(
+  message: Record<string, unknown>,
+  kind: "image" | "audio" | "video" | "document" | "sticker",
+): WhatsAppMessageProviderReference | undefined {
+  const media = record(message[kind]);
+  const id = boundedText(media.id, 160);
+  if (!id) return undefined;
+  const mimeType = boundedText(media.mime_type, 160);
+  const sha = boundedText(media.sha256, 256);
+  const caption = boundedText(media.caption, 1_024);
+  const filename = boundedText(media.filename, 512);
+  return {
+    kind: "media",
+    media_kind: kind,
+    id,
+    ...(mimeType ? { mime_type: mimeType } : {}),
+    ...(sha ? { sha256: sha } : {}),
+    ...(caption ? { caption } : {}),
+    ...(filename ? { filename } : {}),
+    ...(kind === "audio" && typeof media.voice === "boolean"
+      ? { voice: media.voice }
+      : {}),
+    ...(kind === "sticker" && typeof media.animated === "boolean"
+      ? { animated: media.animated }
+      : {}),
+  };
+}
+
+function providerReference(
+  message: Record<string, unknown>,
+  kind: WhatsAppMessageKind,
+): WhatsAppMessageProviderReference | undefined {
+  if (
+    kind === "image" ||
+    kind === "audio" ||
+    kind === "video" ||
+    kind === "document" ||
+    kind === "sticker"
+  ) {
+    return mediaReference(message, kind);
+  }
+
+  if (kind === "location") {
+    const location = record(message.location);
+    const latitude = Number(location.latitude);
+    const longitude = Number(location.longitude);
+    if (
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude) ||
+      latitude < -90 ||
+      latitude > 90 ||
+      longitude < -180 ||
+      longitude > 180
+    ) {
+      return undefined;
+    }
+    const name = boundedText(location.name, 300);
+    const address = boundedText(location.address, 1_000);
+    return {
+      kind: "location",
+      latitude,
+      longitude,
+      ...(name ? { name } : {}),
+      ...(address ? { address } : {}),
+    };
+  }
+
+  if (kind === "reaction") {
+    const reaction = record(message.reaction);
+    const messageId = boundedText(reaction.message_id, 512);
+    if (!messageId) return undefined;
+    const emoji = boundedText(reaction.emoji, 32);
+    return {
+      kind: "reaction",
+      message_id: messageId,
+      ...(emoji ? { emoji } : {}),
+    };
+  }
+
+  if (kind === "contacts") {
+    const count = list(message.contacts).length;
+    return count > 0 ? { kind: "contacts", count } : undefined;
+  }
+
+  return undefined;
+}
+
 function contactNameByWaId(value: Record<string, unknown>): Map<string, string> {
   const names = new Map<string, string>();
   for (const candidate of list(value.contacts)) {
     const contact = record(candidate);
     const waId = text(contact.wa_id);
-    const name = text(record(contact.profile).name);
+    const name = boundedText(record(contact.profile).name, 300);
     if (waId && name && !names.has(waId)) names.set(waId, name);
   }
   return names;
@@ -142,7 +264,7 @@ function errorCodes(value: unknown): string[] {
     ...new Set(
       list(value)
         .map((candidate) => text(record(candidate).code))
-        .filter(Boolean),
+        .filter((code) => /^[A-Za-z0-9_.:-]{1,160}$/.test(code)),
     ),
   ];
 }
@@ -161,14 +283,16 @@ function buildMessageEvent(input: {
   message: Record<string, unknown>;
   contactNames: Map<string, string>;
 }): NormalizedWhatsAppMessageEvent | null {
-  const externalMessageId = text(input.message.id);
-  const customerId = text(input.message.from);
+  const externalMessageId = boundedText(input.message.id, 512);
+  const customerId = boundedText(input.message.from, 200);
   if (!input.wabaId || !input.phoneNumberId || !externalMessageId || !customerId) {
     return null;
   }
 
+  const messageKind = safeMessageKind(input.message.type);
   const normalizedText = normalizedMessageText(input.message);
-  const replyToMessageId = text(record(input.message.context).id);
+  const reference = providerReference(input.message, messageKind);
+  const replyToMessageId = boundedText(record(input.message.context).id, 512);
   const timestamp = cleanTimestamp(input.message.timestamp);
   const customerName = input.contactNames.get(customerId);
 
@@ -183,8 +307,9 @@ function buildMessageEvent(input: {
     external_message_id: externalMessageId,
     customer_id: customerId,
     ...(customerName ? { customer_name: customerName } : {}),
-    message_kind: safeMessageKind(input.message.type),
+    message_kind: messageKind,
     ...(normalizedText ? { text: normalizedText } : {}),
+    ...(reference ? { provider_reference: reference } : {}),
     ...(replyToMessageId ? { reply_to_message_id: replyToMessageId } : {}),
     ...(timestamp ? { timestamp } : {}),
   };
@@ -195,12 +320,12 @@ function buildStatusEvent(input: {
   phoneNumberId: string;
   status: Record<string, unknown>;
 }): NormalizedWhatsAppStatusEvent | null {
-  const externalMessageId = text(input.status.id);
-  const status = text(input.status.status).toLowerCase();
+  const externalMessageId = boundedText(input.status.id, 512);
+  const status = boundedText(text(input.status.status).toLowerCase(), 80);
   if (!input.wabaId || !input.phoneNumberId || !externalMessageId || !status) {
     return null;
   }
-  const recipientId = text(input.status.recipient_id);
+  const recipientId = boundedText(input.status.recipient_id, 200);
   const timestamp = cleanTimestamp(input.status.timestamp);
   return {
     event_id: `whatsapp:${input.wabaId}:${input.phoneNumberId}:status:${externalMessageId}:${status}`,
@@ -220,10 +345,12 @@ function buildErrorEvent(input: {
   phoneNumberId: string;
   error: Record<string, unknown>;
 }): NormalizedWhatsAppErrorEvent | null {
-  const code = text(input.error.code);
+  const code = boundedText(input.error.code, 160);
   if (!input.wabaId || !input.phoneNumberId || !code) return null;
-  const title = text(input.error.title);
-  const message = text(input.error.message) || text(record(input.error.error_data).details);
+  const title = boundedText(input.error.title, 300);
+  const message =
+    boundedText(input.error.message, 1_000) ||
+    boundedText(record(input.error.error_data).details, 1_000);
   const digest = hashEvent([
     input.wabaId,
     input.phoneNumberId,
@@ -280,11 +407,11 @@ export function parseWhatsAppWebhookPayload(
       const value = record(change.value);
       const metadata = record(value.metadata);
       const phoneNumberId = text(metadata.phone_number_id);
-      if (!wabaId || !phoneNumberId) {
+      if (!/^\d{1,40}$/.test(wabaId) || !/^\d{1,40}$/.test(phoneNumberId)) {
         malformedChanges += 1;
         continue;
       }
-      const displayPhoneNumber = text(metadata.display_phone_number);
+      const displayPhoneNumber = boundedText(metadata.display_phone_number, 40) || "";
       const contactNames = contactNameByWaId(value);
 
       for (const messageValue of list(value.messages)) {
@@ -296,6 +423,7 @@ export function parseWhatsAppWebhookPayload(
           contactNames,
         });
         if (event) events.push(event);
+        else malformedChanges += 1;
       }
 
       for (const statusValue of list(value.statuses)) {
@@ -305,6 +433,7 @@ export function parseWhatsAppWebhookPayload(
           status: record(statusValue),
         });
         if (event) events.push(event);
+        else malformedChanges += 1;
       }
 
       for (const errorValue of list(value.errors)) {
@@ -314,11 +443,14 @@ export function parseWhatsAppWebhookPayload(
           error: record(errorValue),
         });
         if (event) events.push(event);
+        else malformedChanges += 1;
       }
     }
   }
 
-  const uniqueEvents = [...new Map(events.map((event) => [event.event_id, event])).values()];
+  const uniqueEvents = [
+    ...new Map(events.map((event) => [event.event_id, event])).values(),
+  ];
   return {
     supported: true,
     object,
