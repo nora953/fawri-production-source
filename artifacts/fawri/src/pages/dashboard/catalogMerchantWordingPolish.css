@@ -32,9 +32,9 @@ html[lang="ar"] .products-workspace-polish .catalog-editor-shell section[class~=
 }
 
 /*
- * Keep a multi-variant price range readable inside the compact summary card.
- * The card itself can be RTL, but the numeric range must remain a stable LTR
- * sequence and must not inherit the old truncate behavior that clipped its start.
+ * Keep a multi-variant price range in a deterministic visual order:
+ * minimum - maximum currency. The surrounding card may be RTL, so each
+ * range part is isolated and pinned to an explicit grid column.
  */
 .products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) {
   overflow: visible !important;
@@ -44,23 +44,49 @@ html[lang="ar"] .products-workspace-polish .catalog-editor-shell section[class~=
 }
 
 .products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) > span {
-  display: flex !important;
-  width: 100%;
-  max-width: 100%;
-  flex-direction: row !important;
+  display: inline-grid !important;
+  grid-template-columns: max-content max-content max-content max-content;
   align-items: baseline;
-  justify-content: flex-start;
-  gap: 0.2rem !important;
+  justify-content: start;
+  column-gap: 0;
   direction: ltr !important;
   unicode-bidi: isolate;
+  white-space: nowrap !important;
   font-size: 0.8125rem !important;
   line-height: 1.25rem !important;
   font-variant-numeric: tabular-nums;
 }
 
 .products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) > span > span {
-  flex: 0 0 auto;
   unicode-bidi: isolate;
+}
+
+.products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) > span > span:nth-child(1) {
+  grid-column: 1;
+  direction: ltr !important;
+}
+
+.products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) > span > span:nth-child(2) {
+  grid-column: 2;
+  direction: ltr !important;
+  font-size: 0 !important;
+}
+
+.products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) > span > span:nth-child(2)::after {
+  content: "-";
+  font-size: 0.8125rem;
+  margin-inline: 0.08rem;
+}
+
+.products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) > span > span:nth-child(3) {
+  grid-column: 3;
+  direction: ltr !important;
+}
+
+.products-workspace-polish [data-catalog-summary-card="true"] .mt-4.grid.grid-cols-2.gap-2 > div:first-child > p[dir="ltr"]:has(> span > span:nth-child(4)) > span > span:nth-child(4) {
+  grid-column: 4;
+  direction: rtl !important;
+  margin-inline-start: 0.3rem;
 }
 
 /*
