@@ -1,0 +1,50 @@
+name: WhatsApp offline foundation
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/services/whatsappWebhookContract.ts"
+      - "artifacts/api-server/tests/whatsapp-webhook-contract.test.ts"
+      - "artifacts/api-server/package.json"
+      - ".github/workflows/whatsapp-offline-foundation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: whatsapp-offline-foundation-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-whatsapp-offline-foundation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label whatsapp-offline-frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Test dormant WhatsApp webhook contract
+        run: node scripts/ci-run-redacted.mjs --label whatsapp-offline-test -- pnpm --filter @workspace/api-server run test:whatsapp-offline
+
+      - name: Type-check API server
+        run: node scripts/ci-run-redacted.mjs --label whatsapp-offline-typecheck -- pnpm --filter @workspace/api-server run typecheck
+
+      - name: Build API server
+        run: node scripts/ci-run-redacted.mjs --label whatsapp-offline-build -- pnpm --filter @workspace/api-server run build
