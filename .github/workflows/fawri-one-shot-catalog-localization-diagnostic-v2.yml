@@ -1,0 +1,57 @@
+name: Fawri catalog localization typecheck diagnostic v2
+
+on:
+  push:
+    branches:
+      - foundation/integration-candidate
+    paths:
+      - .github/workflows/fawri-one-shot-catalog-localization-diagnostic-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: foundation/integration-candidate
+          fetch-depth: 0
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.26.1 --activate
+          pnpm install --frozen-lockfile
+
+      - name: Reproduce localization patch
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64, re
+          source = Path('.github/workflows/fawri-one-shot-catalog-localization-authority-v2.yml').read_text(encoding='utf-8')
+          match = re.search(r"base64\.b64decode\('([^']+)'\)", source)
+          if not match:
+              raise SystemExit('v2 patch payload not found')
+          exec(base64.b64decode(match.group(1)), {})
+          PY
+
+      - name: Capture TypeScript errors
+        shell: bash
+        run: |
+          set +e
+          pnpm --dir artifacts/fawri run typecheck > catalog-localization-typecheck.txt 2>&1
+          code=$?
+          set -e
+          cat catalog-localization-typecheck.txt
+          mkdir -p diagnostics
+          mv catalog-localization-typecheck.txt diagnostics/catalog-localization-typecheck.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add diagnostics/catalog-localization-typecheck.txt
+          git commit -m "Record catalog localization TypeScript errors" || true
+          git push origin HEAD:foundation/integration-candidate
+          exit "$code"
