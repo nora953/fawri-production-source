@@ -72,6 +72,60 @@ export function CatalogItemTypeEditor({
     onChange({ item_type: 'product' });
   };
 
+  const serviceDetails = form.item_type === 'service' ? (
+    <div
+      data-catalog-service-details="true"
+      data-service-price-type={form.service_price_type}
+      className={lang === 'ar'
+        ? 'w-full min-w-0 space-y-4 rounded-2xl border bg-muted/10 p-4'
+        : 'space-y-4 rounded-xl border bg-background p-4'}
+    >
+      <div>
+        <div className="flex items-center gap-2 text-sm font-bold"><CalendarClock className="h-4 w-4" />{copy.serviceDetails}</div>
+        <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.serviceDetailsHint}</p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <label className="space-y-1 text-sm font-semibold">
+          <span>{copy.duration}</span>
+          <Input type="number" min={1} max={1440} dir="ltr" value={form.service_duration_minutes} onChange={event => onChange({ service_duration_minutes: event.target.value })} placeholder="60" className="h-10 rounded-xl" />
+          <span className="block text-xs font-normal text-muted-foreground">{copy.durationHint}</span>
+        </label>
+        <label className="space-y-1 text-sm font-semibold">
+          <span>{copy.buffer}</span>
+          <Input type="number" min={0} max={480} dir="ltr" value={form.service_buffer_minutes} onChange={event => onChange({ service_buffer_minutes: event.target.value })} placeholder="0" className="h-10 rounded-xl" />
+          <span className="block text-xs font-normal text-muted-foreground">{copy.bufferHint}</span>
+        </label>
+        <label className="space-y-1 text-sm font-semibold">
+          <span>{copy.priceType}</span>
+          <select value={form.service_price_type} onChange={event => onChange({ service_price_type: event.target.value as CatalogServicePriceType })} className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
+            <option value="fixed">{copy.priceFixed}</option>
+            <option value="from">{copy.priceFrom}</option>
+            <option value="free">{copy.priceFree}</option>
+            <option value="custom">{copy.priceCustom}</option>
+          </select>
+        </label>
+        <label className="space-y-1 text-sm font-semibold">
+          <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{copy.location}</span>
+          <select value={form.service_location_mode} onChange={event => onChange({ service_location_mode: event.target.value as CatalogServiceLocationMode })} className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
+            <option value="merchant">{copy.locationMerchant}</option>
+            <option value="customer">{copy.locationCustomer}</option>
+            <option value="online">{copy.locationOnline}</option>
+            <option value="flexible">{copy.locationFlexible}</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="flex items-start justify-between gap-4 rounded-xl border bg-background p-3">
+        <div>
+          <p className="text-sm font-bold">{copy.bookingRequired}</p>
+          <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">{copy.bookingRequiredHint}</p>
+        </div>
+        <Toggle checked={form.service_booking_required} onChange={service_booking_required => onChange({ service_booking_required })} />
+      </div>
+    </div>
+  ) : null;
+
   return (
     <>
       <div data-catalog-item-type-editor="true" className="w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4">
@@ -124,59 +178,11 @@ export function CatalogItemTypeEditor({
             </div>
           </div>
         </div>
+
+        {lang !== 'ar' && serviceDetails}
       </div>
 
-      {form.item_type === 'service' && (
-        <div
-          data-catalog-service-details="true"
-          data-service-price-type={form.service_price_type}
-          className="w-full min-w-0 space-y-4 rounded-2xl border bg-muted/10 p-4"
-        >
-          <div>
-            <div className="flex items-center gap-2 text-sm font-bold"><CalendarClock className="h-4 w-4" />{copy.serviceDetails}</div>
-            <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.serviceDetailsHint}</p>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <label className="space-y-1 text-sm font-semibold">
-              <span>{copy.duration}</span>
-              <Input type="number" min={1} max={1440} dir="ltr" value={form.service_duration_minutes} onChange={event => onChange({ service_duration_minutes: event.target.value })} placeholder="60" className="h-10 rounded-xl" />
-              <span className="block text-xs font-normal text-muted-foreground">{copy.durationHint}</span>
-            </label>
-            <label className="space-y-1 text-sm font-semibold">
-              <span>{copy.buffer}</span>
-              <Input type="number" min={0} max={480} dir="ltr" value={form.service_buffer_minutes} onChange={event => onChange({ service_buffer_minutes: event.target.value })} placeholder="0" className="h-10 rounded-xl" />
-              <span className="block text-xs font-normal text-muted-foreground">{copy.bufferHint}</span>
-            </label>
-            <label className="space-y-1 text-sm font-semibold">
-              <span>{copy.priceType}</span>
-              <select value={form.service_price_type} onChange={event => onChange({ service_price_type: event.target.value as CatalogServicePriceType })} className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
-                <option value="fixed">{copy.priceFixed}</option>
-                <option value="from">{copy.priceFrom}</option>
-                <option value="free">{copy.priceFree}</option>
-                <option value="custom">{copy.priceCustom}</option>
-              </select>
-            </label>
-            <label className="space-y-1 text-sm font-semibold">
-              <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{copy.location}</span>
-              <select value={form.service_location_mode} onChange={event => onChange({ service_location_mode: event.target.value as CatalogServiceLocationMode })} className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
-                <option value="merchant">{copy.locationMerchant}</option>
-                <option value="customer">{copy.locationCustomer}</option>
-                <option value="online">{copy.locationOnline}</option>
-                <option value="flexible">{copy.locationFlexible}</option>
-              </select>
-            </label>
-          </div>
-
-          <div className="flex items-start justify-between gap-4 rounded-xl border bg-background p-3">
-            <div>
-              <p className="text-sm font-bold">{copy.bookingRequired}</p>
-              <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">{copy.bookingRequiredHint}</p>
-            </div>
-            <Toggle checked={form.service_booking_required} onChange={service_booking_required => onChange({ service_booking_required })} />
-          </div>
-        </div>
-      )}
+      {lang === 'ar' && serviceDetails}
     </>
   );
 }
