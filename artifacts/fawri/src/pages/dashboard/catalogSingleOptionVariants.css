@@ -80,6 +80,15 @@
   letter-spacing: -0.02em;
 }
 
+/* SKU is a Latin technical identifier even when the interface language is RTL.
+ * English already renders it with Inter and therefore gets visibly better edge
+ * clearance. Use the exact same Latin metric in Arabic/Sorani for SKU fields so
+ * the identifier fits the same fixed card width without hiding its final glyph. */
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell input.font-mono,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell input.font-mono {
+  font-family: "Inter", Arial, sans-serif !important;
+}
+
 /* Inventory is a short numeric value, so it should not consume the same width
  * as prices or identifiers. Give that reclaimed space to the image controls. */
 .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table:has(thead tr > th:nth-child(8)) :where(th:nth-child(4), td:nth-child(4)) {
