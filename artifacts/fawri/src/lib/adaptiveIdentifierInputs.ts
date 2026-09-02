@@ -4,6 +4,10 @@ const ADAPTIVE_IDENTIFIER_SELECTOR = [
 ].join(', ');
 
 const MIN_IDENTIFIER_FONT_PX = 8.5;
+/* Keep a small visual breathing margin beyond the field's CSS padding. This is
+ * especially important for Latin identifiers rendered with the Arabic/Kurdish
+ * UI font stack, whose final glyph can otherwise sit too close to the edge. */
+const IDENTIFIER_SAFETY_INSET_PX = 10;
 const baseFontSizes = new WeakMap<HTMLInputElement, number>();
 let measurementCanvas: HTMLCanvasElement | null = null;
 
@@ -46,7 +50,7 @@ function fitIdentifierInput(input: HTMLInputElement) {
     input.clientWidth
       - numericCssValue(style.paddingLeft)
       - numericCssValue(style.paddingRight)
-      - 4,
+      - IDENTIFIER_SAFETY_INSET_PX,
   );
   const measuredWidth = textWidthAtBaseSize(input, text, baseSize);
 
@@ -108,5 +112,15 @@ export function installAdaptiveIdentifierInputs() {
   });
 
   window.addEventListener('resize', scheduleAll, { passive: true });
+
+  /* Font metrics can change after the initial render. Re-measure once the actual
+   * language font has loaded so Arabic/Kurdish and English identifiers receive
+   * the same visible edge clearance instead of fitting against fallback-font
+   * measurements. */
+  if ('fonts' in document) {
+    void document.fonts.ready.then(scheduleAll);
+    document.fonts.addEventListener('loadingdone', scheduleAll);
+  }
+
   scheduleAll();
 }
