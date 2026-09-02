@@ -29,11 +29,13 @@ test("migration adds explicit WhatsApp identity without enabling a live channel"
   );
   assert.match(
     migration,
-    /CONSTRAINT "merchant_channels_whatsapp_dormant_only_check" CHECK \("platform" <> 'whatsapp' OR \("status" = 'pending'/,
+    /CONSTRAINT "merchant_channels_whatsapp_dormant_only_check"/,
   );
-  assert.match(migration, /"webhook_subscribed_at" IS NULL/);
-  assert.match(migration, /"connected_at" IS NULL/);
-  assert.match(migration, /"credential_ciphertext" IS NULL/);
+  assert.match(migration, /"merchant_channels"\."status" = 'pending'/);
+  assert.match(migration, /"merchant_channels"\."platform" <> 'whatsapp'/);
+  assert.match(migration, /"merchant_channels"\."webhook_subscribed_at" IS NULL/);
+  assert.match(migration, /"merchant_channels"\."connected_at" IS NULL/);
+  assert.match(migration, /"merchant_channels"\."credential_ciphertext" IS NULL/);
 });
 
 test("Drizzle channel schema mirrors the dormant WhatsApp database boundary", () => {
