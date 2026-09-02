@@ -51,3 +51,20 @@ button[role="combobox"] > span {
   text-overflow: clip !important;
   -webkit-line-clamp: unset !important;
 }
+
+/* Arabic merchant prose starts at the natural reading edge rather than in the
+ * visual centre. Keep compact numeric/identifier fields centred; only the long
+ * description and the option-values entry use right-aligned RTL input. */
+html[lang="ar"] .catalog-editor-shell .catalog-editor-description-field textarea,
+html[lang="ar"] .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2) {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: plaintext;
+}
+
+html[lang="ar"] .catalog-editor-shell .catalog-editor-description-field textarea::placeholder,
+html[lang="ar"] .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: plaintext;
+}
