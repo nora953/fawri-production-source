@@ -18,23 +18,23 @@ html[lang="ku"] .products-workspace-polish .catalog-editor-shell details > summa
   text-align: right;
 }
 
+/* Free prose/product-option values may contain another language than the active
+ * UI. Their dir="auto" is installed at runtime, so align to that detected reading
+ * edge instead of forcing every saved value to RTL. */
 html[lang="ku"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea,
 html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2) {
-  direction: rtl !important;
-  text-align: right !important;
+  text-align: start !important;
   unicode-bidi: plaintext;
 }
 
 html[lang="ku"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea::placeholder,
 html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
-  direction: rtl !important;
-  text-align: right !important;
+  text-align: start !important;
   unicode-bidi: plaintext;
 }
 
-/* English mirrors the same approved geometry, but all prose-entry surfaces read
- * from the left. Numeric, price, SKU and barcode fields keep their existing
- * centred technical-value treatment. */
+/* English mirrors the same approved geometry. Interface chrome is LTR, while
+ * merchant-entered prose follows its own detected script direction. */
 html[lang="en"] .products-workspace-polish .catalog-editor-shell {
   direction: ltr;
 }
@@ -47,15 +47,13 @@ html[lang="en"] .products-workspace-polish .catalog-editor-shell details > summa
 
 html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea,
 html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2) {
-  direction: ltr !important;
-  text-align: left !important;
+  text-align: start !important;
   unicode-bidi: plaintext;
 }
 
 html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea::placeholder,
 html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
-  direction: ltr !important;
-  text-align: left !important;
+  text-align: start !important;
   unicode-bidi: plaintext;
 }
 
