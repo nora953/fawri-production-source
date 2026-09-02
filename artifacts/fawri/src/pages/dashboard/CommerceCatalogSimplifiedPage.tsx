@@ -934,13 +934,7 @@ export default function CommerceCatalogSimplifiedPage() {
         dir={isRTL ? 'rtl' : 'ltr'}
       >
         <bdi dir="ltr" style={{ unicodeBidi: 'isolate-override' }}>{range}</bdi>
-        {currency === 'د.ع' ? (
-          <span dir="ltr" className="inline-flex" aria-label={currency}>
-            <span aria-hidden="true">د</span><span aria-hidden="true">.</span><span aria-hidden="true">ع</span>
-          </span>
-        ) : (
-          <bdi dir="ltr" style={{ unicodeBidi: 'isolate-override' }}>{currency}</bdi>
-        )}
+        <bdi dir={isRTL ? 'rtl' : 'ltr'} style={{ unicodeBidi: 'isolate' }}>{currency}</bdi>
       </span>
     );
   };
