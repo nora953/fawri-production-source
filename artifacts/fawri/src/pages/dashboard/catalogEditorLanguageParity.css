@@ -1,0 +1,75 @@
+/*
+ * Catalog editor language parity overrides.
+ *
+ * Arabic is the reviewed golden reference and is intentionally NOT targeted in
+ * this file. Sorani Kurdish and English inherit the same editor geometry and
+ * only receive direction/reading-edge corrections required by their scripts.
+ */
+
+/* Sorani Kurdish follows the same RTL interaction model as the approved Arabic
+ * editor while keeping the dedicated Kurdish font authority. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell {
+  direction: rtl;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell .catalog-editor-header,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell details > summary {
+  text-align: right;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2) {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: plaintext;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea::placeholder,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: plaintext;
+}
+
+/* English mirrors the same approved geometry, but all prose-entry surfaces read
+ * from the left. Numeric, price, SKU and barcode fields keep their existing
+ * centred technical-value treatment. */
+html[lang="en"] .products-workspace-polish .catalog-editor-shell {
+  direction: ltr;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-header,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell details > summary {
+  text-align: left;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2) {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: plaintext;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea::placeholder,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: plaintext;
+}
+
+/* Keep dense English/Kurdish variant headings inside the exact Arabic card
+ * geometry instead of letting longer translated labels increase row height. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell .space-y-4 table thead th,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell .space-y-4 table thead th {
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+/* Long toolbar labels may be wider in Kurdish/English. Allow the text to use the
+ * existing button width without forcing the button or card wider. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell button,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell button {
+  min-width: 0;
+}
