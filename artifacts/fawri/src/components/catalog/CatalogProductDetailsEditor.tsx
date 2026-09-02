@@ -291,7 +291,6 @@ export function CatalogProductDetailsEditor({
   const structuredDefinitions = useMemo(() => optionRows
     .filter(row => row.name.trim() || row.values.trim())
     .map(row => createCatalogVariantOptionSetDraft(row.name, splitValues(row.values))), [optionRows]);
-  const combinationCount = useMemo(() => catalogVariantCombinationCount(structuredDefinitions), [structuredDefinitions]);
   const groups = useMemo(() => legacy ? [] : variantGroups(form.variants), [form.variants, legacy]);
   const variantManagedInventory = catalogProductStockIsVariantManaged(form);
 
@@ -658,7 +657,7 @@ export function CatalogProductDetailsEditor({
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex flex-wrap items-center gap-2">
                     <Button type="button" variant="outline" size="sm" className="rounded-xl" onClick={addOptionRow}><Plus className="me-1 h-4 w-4" />{labels.addOption}</Button>
-                    <p className="text-xs text-muted-foreground">{labels.valuesHint} {combinationCount > 0 ? `${labels.combinations}: ${combinationCount}` : ''}</p>
+                    <p className="text-xs text-muted-foreground">{labels.valuesHint}</p>
                   </div>
                   <Button type="button" className="rounded-xl bg-orange-500 text-white hover:bg-orange-600" onClick={generate}>{labels.generate}</Button>
                 </div>
