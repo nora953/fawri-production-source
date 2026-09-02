@@ -49,45 +49,6 @@
   margin-top: 0.35rem !important;
 }
 
-/*
- * Variant rows use one visual field language in Arabic, Sorani Kurdish, and
- * English. The read-only combination label should look and align like the
- * editable price/cost/stock/SKU/barcode fields beside it, so rows with values
- * such as Red and Black do not appear vertically offset from one another.
- */
-table[class~="min-w-[1080px]"] > tbody > tr > td {
-  vertical-align: middle !important;
-}
-
-table[class~="min-w-[1080px]"] > tbody > tr > td:first-child > div[dir="auto"] {
-  display: flex !important;
-  width: 100%;
-  min-width: 8rem;
-  height: 2.5rem;
-  min-height: 2.5rem;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  overflow: hidden;
-  padding: 0 0.75rem !important;
-  border: 1px solid hsl(var(--input));
-  border-radius: 0.75rem !important;
-  background: hsl(var(--background)) !important;
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
-  text-align: center;
-  line-height: 1.25rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-html[dir="rtl"] table[class~="min-w-[1080px]"] > tbody > tr > td:first-child > div[dir="auto"] {
-  direction: rtl;
-}
-
-html[dir="ltr"] table[class~="min-w-[1080px]"] > tbody > tr > td:first-child > div[dir="auto"] {
-  direction: ltr;
-}
-
 @media (min-width: 1280px) {
   .grid:has(> [data-catalog-summary-card="true"]) {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
