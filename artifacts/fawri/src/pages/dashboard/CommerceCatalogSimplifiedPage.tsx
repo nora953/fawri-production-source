@@ -930,7 +930,7 @@ export default function CommerceCatalogSimplifiedPage() {
     const range = hasRange ? `${minimum} - ${maximum}` : minimum;
     return (
       <span
-        className={`inline-flex max-w-full items-baseline gap-1 whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
+        className={`inline-flex max-w-full items-baseline gap-1 whitespace-nowrap ${compact && hasRange ? 'text-[clamp(8px,8cqi,12px)] tracking-tight' : ''}`}
         dir={isRTL ? 'rtl' : 'ltr'}
       >
         <bdi dir="ltr" style={{ unicodeBidi: 'isolate-override' }}>{range}</bdi>
@@ -1039,7 +1039,7 @@ export default function CommerceCatalogSimplifiedPage() {
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <div className="rounded-xl bg-muted/35 p-2.5">
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Tag className="h-3.5 w-3.5" />{copy.price}</div>
-                      <p className="mt-1 truncate text-base font-extrabold" dir="ltr">{formatPrice(product, true)}</p>
+                      <p className="mt-1 min-w-0 whitespace-nowrap text-base font-extrabold [container-type:inline-size]" dir="ltr">{formatPrice(product, true)}</p>
                     </div>
                     <div className="rounded-xl bg-muted/35 p-2.5">
                       {type === 'service' ? (
