@@ -1,9 +1,14 @@
 import crypto from "node:crypto";
 import type { WhatsAppInboundMessageJob } from "./whatsappOfflineContracts";
 
+export type WhatsAppInboundBridgeInput = WhatsAppInboundMessageJob & {
+  channel_id: string;
+};
+
 export type ChannelInboundMessage = {
   event_id: string;
   merchant_id: string;
+  channel_id: string;
   channel: "whatsapp";
   external_channel_id: string;
   external_message_id: string;
@@ -115,7 +120,7 @@ function disposition(
  * reply processing until a separate verified media pipeline exists.
  */
 export function bridgeWhatsAppInboundMessage(
-  job: WhatsAppInboundMessageJob,
+  job: WhatsAppInboundBridgeInput,
 ): WhatsAppInboundBridgeResult {
   if (job.job_type !== "whatsapp_inbound_message" || job.channel !== "whatsapp") {
     throw bridgeError(
@@ -126,6 +131,7 @@ export function bridgeWhatsAppInboundMessage(
 
   const eventId = required(job.event_id, "WhatsApp event id");
   const merchantId = required(job.merchant_id, "merchant id", 200);
+  const channelId = required(job.channel_id, "channel id", 200);
   const wabaId = numeric(job.waba_id, "WhatsApp business account id");
   const phoneNumberId = numeric(job.phone_number_id, "WhatsApp phone number id");
   const externalMessageId = required(
@@ -144,6 +150,7 @@ export function bridgeWhatsAppInboundMessage(
   const message: ChannelInboundMessage = {
     event_id: eventId,
     merchant_id: merchantId,
+    channel_id: channelId,
     channel: "whatsapp",
     external_channel_id: phoneNumberId,
     external_message_id: externalMessageId,
@@ -165,12 +172,12 @@ export function bridgeWhatsAppInboundMessage(
     },
     conversation_key: `whatsapp-conversation-${hash([
       merchantId,
-      phoneNumberId,
+      channelId,
       customerId,
     ])}`,
     inbound_event_key: `whatsapp-inbound-${hash([
       merchantId,
-      phoneNumberId,
+      channelId,
       eventId,
       externalMessageId,
     ])}`,
