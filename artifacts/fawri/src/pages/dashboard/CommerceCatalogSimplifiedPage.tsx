@@ -60,6 +60,7 @@ import {
   getCatalogCommerceContext,
   type CatalogCommerceContext,
 } from '@/lib/catalogPromotionUiApi';
+import { catalogEffectivePriceRange } from '@/lib/catalogPriceRange';
 import { subscribeCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import {
   catalogProductFormFromProduct,
@@ -914,21 +915,35 @@ export default function CommerceCatalogSimplifiedPage() {
     if (!commerceContext) return '—';
 
     const digits = commerceContext.currency_fraction_digits;
-    const amount = product.price_iqd / (10 ** digits);
     const currencyCode = String(commerceContext.currency_code || '').trim().toUpperCase();
     const compactArabicIqd = currencyCode === 'IQD' && lang !== 'en';
-    const number = formatMerchantNumber(amount, digits, !compactArabicIqd);
     const currency = merchantCurrencyLabel(currencyCode, lang);
-    const displayNumber = compactArabicIqd
-      ? number.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
-      : number;
+    const { minimum_iqd: minimumMinor, maximum_iqd: maximumMinor } = catalogEffectivePriceRange(product);
+
+    const formatMinorAmount = (amountMinor: number) => {
+      const amount = amountMinor / (10 ** digits);
+      const number = formatMerchantNumber(amount, digits, !compactArabicIqd);
+      return compactArabicIqd
+        ? number.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
+        : number;
+    };
+
+    const minimum = formatMinorAmount(minimumMinor);
+    const maximum = formatMinorAmount(maximumMinor);
+    const hasRange = minimumMinor !== maximumMinor;
 
     return (
       <span
         className="inline-flex items-baseline gap-1 whitespace-nowrap"
-        dir={compactArabicIqd ? 'rtl' : 'ltr'}
+        dir="ltr"
       >
-        <span>{displayNumber}</span>
+        <span>{minimum}</span>
+        {hasRange && (
+          <>
+            <span aria-hidden="true">–</span>
+            <span>{maximum}</span>
+          </>
+        )}
         <span dir={lang === 'en' ? 'ltr' : 'rtl'}>{currency}</span>
       </span>
     );
