@@ -73,59 +73,65 @@ export function CatalogItemTypeEditor({
   };
 
   return (
-    <div className="w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4">
-      <div>
-        <p className="text-sm font-bold">{copy.chooseType}</p>
-        <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.chooseTypeHint}</p>
-      </div>
+    <>
+      <div data-catalog-item-type-editor="true" className="w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4">
+        <div>
+          <p className="text-sm font-bold">{copy.chooseType}</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.chooseTypeHint}</p>
+        </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <button
-          type="button"
-          aria-pressed={form.item_type === 'product'}
-          onClick={() => chooseType('product')}
-          className={`h-full rounded-2xl border p-3 text-start transition ${form.item_type === 'product' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
-        >
-          <div className="flex items-center gap-2 font-bold"><Package className="h-5 w-5" />{copy.product}</div>
-          <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.productHint}</p>
-        </button>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <button
+            type="button"
+            aria-pressed={form.item_type === 'product'}
+            onClick={() => chooseType('product')}
+            className={`h-full rounded-2xl border p-3 text-start transition ${form.item_type === 'product' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
+          >
+            <div className="flex items-center gap-2 font-bold"><Package className="h-5 w-5" />{copy.product}</div>
+            <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.productHint}</p>
+          </button>
 
-        <button
-          type="button"
-          aria-pressed={form.item_type === 'service'}
-          onClick={() => chooseType('service')}
-          className={`h-full rounded-2xl border p-3 text-start transition ${form.item_type === 'service' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
-        >
-          <div className="flex items-center gap-2 font-bold"><BriefcaseBusiness className="h-5 w-5" />{copy.service}</div>
-          <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.serviceHint}</p>
-        </button>
+          <button
+            type="button"
+            aria-pressed={form.item_type === 'service'}
+            onClick={() => chooseType('service')}
+            className={`h-full rounded-2xl border p-3 text-start transition ${form.item_type === 'service' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
+          >
+            <div className="flex items-center gap-2 font-bold"><BriefcaseBusiness className="h-5 w-5" />{copy.service}</div>
+            <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.serviceHint}</p>
+          </button>
 
-        <div className="h-full rounded-2xl border bg-background p-3 sm:col-span-2 lg:col-span-1">
-          <div className="flex items-center gap-2 text-sm font-bold"><SlidersHorizontal className="h-4 w-4" />{copy.itemSettings}</div>
-          <p className="mt-1 text-xs text-muted-foreground">{copy.itemSettingsHint}</p>
-          <div className="mt-2 divide-y">
-            {form.item_type === 'product' && (
+          <div className="h-full rounded-2xl border bg-background p-3 sm:col-span-2 lg:col-span-1">
+            <div className="flex items-center gap-2 text-sm font-bold"><SlidersHorizontal className="h-4 w-4" />{copy.itemSettings}</div>
+            <p className="mt-1 text-xs text-muted-foreground">{copy.itemSettingsHint}</p>
+            <div className="mt-2 divide-y">
+              {form.item_type === 'product' && (
+                <SettingRow
+                  icon={<Boxes className="h-4 w-4" />}
+                  title={copy.trackInventory}
+                  hint={copy.trackInventoryHint}
+                  checked={form.track_inventory}
+                  onChange={track_inventory => onChange({ track_inventory })}
+                />
+              )}
               <SettingRow
-                icon={<Boxes className="h-4 w-4" />}
-                title={copy.trackInventory}
-                hint={copy.trackInventoryHint}
-                checked={form.track_inventory}
-                onChange={track_inventory => onChange({ track_inventory })}
+                icon={<Bot className="h-4 w-4" />}
+                title={copy.fawriReplies}
+                hint={copy.fawriRepliesHint}
+                checked={form.allow_fawri_reply}
+                onChange={allow_fawri_reply => onChange({ allow_fawri_reply })}
               />
-            )}
-            <SettingRow
-              icon={<Bot className="h-4 w-4" />}
-              title={copy.fawriReplies}
-              hint={copy.fawriRepliesHint}
-              checked={form.allow_fawri_reply}
-              onChange={allow_fawri_reply => onChange({ allow_fawri_reply })}
-            />
+            </div>
           </div>
         </div>
       </div>
 
       {form.item_type === 'service' && (
-        <div className="space-y-4 rounded-xl border bg-background p-4">
+        <div
+          data-catalog-service-details="true"
+          data-service-price-type={form.service_price_type}
+          className="w-full min-w-0 space-y-4 rounded-2xl border bg-muted/10 p-4"
+        >
           <div>
             <div className="flex items-center gap-2 text-sm font-bold"><CalendarClock className="h-4 w-4" />{copy.serviceDetails}</div>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.serviceDetailsHint}</p>
@@ -162,7 +168,7 @@ export function CatalogItemTypeEditor({
             </label>
           </div>
 
-          <div className="flex items-start justify-between gap-4 rounded-xl border bg-muted/20 p-3">
+          <div className="flex items-start justify-between gap-4 rounded-xl border bg-background p-3">
             <div>
               <p className="text-sm font-bold">{copy.bookingRequired}</p>
               <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">{copy.bookingRequiredHint}</p>
@@ -171,7 +177,7 @@ export function CatalogItemTypeEditor({
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
 
