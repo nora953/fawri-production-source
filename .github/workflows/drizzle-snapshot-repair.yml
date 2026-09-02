@@ -48,6 +48,8 @@ jobs:
           rm -f lib/db/drizzle/meta/0011_snapshot.json lib/db/drizzle/meta/0012_snapshot.json
 
       - name: Generate 0011 snapshot
+        env:
+          DATABASE_URL: postgresql://snapshot:snapshot@127.0.0.1:5432/snapshot
         run: pnpm --dir lib/db exec drizzle-kit generate --config ./drizzle.config.ts --name snapshot_repair_0011
 
       - name: Verify snapshot exists
