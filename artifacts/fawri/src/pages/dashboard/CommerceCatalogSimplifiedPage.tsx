@@ -908,7 +908,7 @@ export default function CommerceCatalogSimplifiedPage() {
     }
   };
 
-  const formatPrice = (product: CatalogProduct) => {
+  const formatPrice = (product: CatalogProduct, compact = false) => {
     const service = product.service_details;
     if (service?.price_type === 'custom') return copy.customPrice;
     if (service?.price_type === 'free') return copy.freePrice;
@@ -916,35 +916,27 @@ export default function CommerceCatalogSimplifiedPage() {
 
     const digits = commerceContext.currency_fraction_digits;
     const currencyCode = String(commerceContext.currency_code || '').trim().toUpperCase();
-    const compactArabicIqd = currencyCode === 'IQD' && lang !== 'en';
     const currency = merchantCurrencyLabel(currencyCode, lang);
     const { minimum_iqd: minimumMinor, maximum_iqd: maximumMinor } = catalogEffectivePriceRange(product);
 
     const formatMinorAmount = (amountMinor: number) => {
       const amount = amountMinor / (10 ** digits);
-      const number = formatMerchantNumber(amount, digits, !compactArabicIqd);
-      return compactArabicIqd
-        ? number.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])
-        : number;
+      return formatMerchantNumber(amount, digits, true);
     };
 
     const minimum = formatMinorAmount(minimumMinor);
     const maximum = formatMinorAmount(maximumMinor);
     const hasRange = minimumMinor !== maximumMinor;
+    const range = hasRange ? `${minimum}-${maximum}` : minimum;
 
     return (
       <span
-        className="inline-flex items-baseline gap-1 whitespace-nowrap"
+        className={`inline-flex max-w-full items-baseline whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
         dir="ltr"
+        style={{ unicodeBidi: 'isolate' }}
       >
-        <span>{minimum}</span>
-        {hasRange && (
-          <>
-            <span aria-hidden="true">–</span>
-            <span>{maximum}</span>
-          </>
-        )}
-        <span dir={lang === 'en' ? 'ltr' : 'rtl'}>{currency}</span>
+        <bdi dir="ltr">{range}</bdi>
+        <span className="ms-1" dir={lang === 'en' ? 'ltr' : 'rtl'}>{currency}</span>
       </span>
     );
   };
@@ -1049,7 +1041,7 @@ export default function CommerceCatalogSimplifiedPage() {
                   <div className="mt-4 grid grid-cols-2 gap-2">
                     <div className="rounded-xl bg-muted/35 p-2.5">
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><Tag className="h-3.5 w-3.5" />{copy.price}</div>
-                      <p className="mt-1 truncate text-base font-extrabold" dir="ltr">{formatPrice(product)}</p>
+                      <p className="mt-1 truncate text-base font-extrabold" dir="ltr">{formatPrice(product, true)}</p>
                     </div>
                     <div className="rounded-xl bg-muted/35 p-2.5">
                       {type === 'service' ? (
