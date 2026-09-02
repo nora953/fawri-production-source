@@ -1,0 +1,204 @@
+name: Fawri catalog editor quality hardening v2
+
+on:
+  push:
+    branches:
+      - foundation/integration-candidate
+    paths:
+      - .github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v2.yml
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: foundation/integration-candidate
+          fetch-depth: 0
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.26.1 --activate
+          pnpm install --frozen-lockfile
+
+      - name: Apply catalog editor quality hardening
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+
+          root = Path('.')
+          central = root / 'artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts'
+          page = root / 'artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx'
+          details = root / 'artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx'
+          item_type = root / 'artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx'
+          images = root / 'artifacts/fawri/src/components/catalog/CatalogImageUploadEditor.tsx'
+          shell = root / 'artifacts/fawri/src/components/catalog/CatalogEditorShell.tsx'
+          contract = root / 'artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs'
+          render_test = root / 'artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx'
+          permanent_workflow = root / '.github/workflows/catalog-editor-quality.yml'
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one occurrence, found {count}: {old!r}')
+              return text.replace(old, new, 1)
+
+          c = central.read_text(encoding='utf-8')
+          c = replace_once(c, "  basePriceHint: string;\n", "  basePriceHint: string;\n  priceExample: (value: string) => string;\n", 'priceExample type')
+          c = replace_once(c, "    basePriceHint: '',\n    price: 'السعر',", "    basePriceHint: '',\n    priceExample: (value: string) => `مثال: ${value}`,\n    price: 'السعر',", 'ar priceExample')
+          c = replace_once(c, "    basePriceHint: '',\n    price: 'نرخ',", "    basePriceHint: '',\n    priceExample: (value: string) => `نموونە: ${value}`,\n    price: 'نرخ',", 'ku priceExample')
+          c = replace_once(c, "    basePriceHint: '',\n    price: 'Price',", "    basePriceHint: '',\n    priceExample: (value: string) => `e.g. ${value}`,\n    price: 'Price',", 'en priceExample')
+
+          replacements = {
+              "    noItemsHint: 'یەکەم بەرهەم یان خزمەتگوزاری زیاد بکە.',": "    noItemsHint: 'یەکەم بەرهەم یان خزمەتگوزاری زیاد بکە تا فەوری بتوانێت زانیارییە متمانەپێکراوەکانی کەتەلۆگ بەکاربهێنێت.',",
+              "    versionConflict: 'ئەم بابەتە لە شوێنێکی تر گۆڕدراوە. نوێترین وەشان بارکرا.',": "    versionConflict: 'ئەم بابەتە لە شوێنێکی تر گۆڕدراوە. نوێترین وەشان بارکرا؛ پێداچوونەوەی بۆ بکە و دووبارە پاشەکەوتی بکە.',",
+              "    categoryPlaceholder: 'نموونە: ئەلیکترۆنیات، خزمەتگوزاری',": "    categoryPlaceholder: 'نموونە: ئەلیکترۆنیات، چاودێری، خزمەتگوزاریی ماڵەوە',",
+              "    booking: 'حجز',": "    booking: 'کاتگرتن',",
+              "    descriptionPlaceholder: 'زانیارییەکی ڕوون کە فەوری بتوانێت پشتی پێ ببەستێت.',": "    descriptionPlaceholder: 'زانیارییەکی ڕوون کە فەوری بتوانێت لە کاتی وەڵامدانەوە بە کڕیار پشتی پێ ببەستێت.',",
+              "    cost: 'كلفة خاصة — اختياري',": "    cost: 'تكلفة خاصة — اختياري',",
+              "    inheritedSale: (value: string) => `العام: ${value || 'سعر المنتج'}`,": "    inheritedSale: (value: string) => `الافتراضي: ${value || 'سعر المنتج'}`,",
+              "    inheritedCost: (value: string) => `العام: ${value || 'كلفة المنتج'}`,": "    inheritedCost: (value: string) => `الافتراضي: ${value || 'تكلفة المنتج'}`,",
+              "    inheritanceTitle: 'البيانات العامة تطبق تلقائيًا',": "    inheritanceTitle: 'القيم الافتراضية تُطبّق تلقائيًا',",
+              "    inheritanceHint: (price: string, cost: string) => `سعر البيع ${price || '—'} والكلفة ${cost || '—'} وصور المنتج هي الافتراضية لكل الأنواع. اكتب فقط القيمة المختلفة عند الحاجة.`,": "    inheritanceHint: (price: string, cost: string) => `سعر البيع ${price || '—'} والتكلفة ${cost || '—'} وصور المنتج هي القيم الافتراضية لكل الأنواع. أدخل فقط القيم المختلفة عند الحاجة.`,",
+              "    clearOverrideHint: 'اتركه فارغًا واضغط تطبيق للرجوع إلى القيمة العامة.',": "    clearOverrideHint: 'اتركه فارغًا واضغط تطبيق للرجوع إلى القيمة الافتراضية.',",
+              "    excludedTitle: 'أنواع غير متوفرة',": "    excludedTitle: 'أنواع مستبعدة',",
+              "    inventoryAfterSave: 'کۆگای جۆر پاشەکەوتکراوەکان دوای پاشەکەوتکردن لە ئامرازەکانی کۆگا بگۆڕە.',": "    inventoryAfterSave: 'کۆگای جۆرە پاشەکەوتکراوەکان دوای پاشەکەوتکردن لە ئامرازەکانی کۆگا بگۆڕە تا هەموو جووڵەکانی کۆگا تۆمارکراو بمێننەوە.',",
+              "    multiProductHint: 'ئەگەر بەرهەمەکە وەشانە جیاوازەکانی هەیە وەک ڕەنگ، قەبارە، کێش، تام یان ماددە چالاکی بکە.',": "    multiProductHint: 'ئەگەر بەرهەمەکە جۆری جیاوازی هەیە وەک ڕەنگ، گنجایش، کێش، تام، ماددە یان قەبارە، چالاکی بکە.',",
+              "    valuesHint: 'بەهاکان بە کۆما جیا بکەوە.',": "    valuesHint: 'بەهاکان بە کۆمای عەرەبی یان ئینگلیزی جیا بکەوە.',",
+              "    inheritedSale: (value: string) => `گشتی: ${value || 'نرخی بەرهەم'}`,": "    inheritedSale: (value: string) => `بنەڕەتی: ${value || 'نرخی بەرهەم'}`,",
+              "    inheritedCost: (value: string) => `گشتی: ${value || 'تێچووی بەرهەم'}`,": "    inheritedCost: (value: string) => `بنەڕەتی: ${value || 'تێچووی بەرهەم'}`,",
+              "    inheritanceTitle: 'داتای گشتی خۆکار جێبەجێ دەبێت',": "    inheritanceTitle: 'بەها بنەڕەتییەکان خۆکار جێبەجێ دەبن',",
+              "    inheritanceHint: (price: string, cost: string) => `نرخی ${price || '—'} و تێچووی ${cost || '—'} و وێنەکانی بەرهەم بۆ هەموو جۆرەکان بنەڕەتین. تەنها جیاوازییەکان بنووسە.`,": "    inheritanceHint: (price: string, cost: string) => `نرخی فرۆشتن ${price || '—'} و تێچوو ${cost || '—'} و وێنەکانی بەرهەم بەها بنەڕەتییەکانی هەموو جۆرەکانن. تەنها بەها جیاوازەکان بنووسە.`,",
+              "    tooMany: 'ژمارەی جۆرەکان لە 100 زیاترە.',": "    tooMany: 'ژمارەی جۆرەکان لە 100 زیاترە. ژمارەی بەهاکان کەم بکەرەوە.',",
+              "    existingVariants: 'ئەم بەرهەمە جۆری پاشەکەوتکراوی هەیە و ناتوانرێت چەند هەڵبژاردەیی ناچالاک بکرێت.',": "    existingVariants: 'ئەم بەرهەمە جۆری پاشەکەوتکراوی هەیە. تا جۆرەکان لابنرێن یان دەستکاری بکرێن ناتوانیت دۆخی چەند هەڵبژاردەیی ناچالاک بکەیت.',",
+              "    legacy: 'ئەم بەرهەمە جۆراوجۆری کۆنی هەیە. بۆ پاراستنی داتا لە خشتەکە ماوەتەوە.',": "    legacy: 'ئەم بەرهەمە جۆرە کۆنی هەیە کە هەڵبژاردەکانیان بە شێوەی ڕێکخراو تۆمار نەکراون. بۆ ئەوەی هیچ داتایەک لەدەست نەچێت لە خشتەکەدا ماونەتەوە.',",
+              "    clearOverrideHint: 'بە بەتاڵی بهێڵەوە و جێبەجێ بکە بۆ گەڕانەوە بۆ نرخی گشتی.',": "    clearOverrideHint: 'بە بەتاڵی بهێڵەوە و جێبەجێکردن هەڵبژێرە بۆ گەڕانەوە بۆ بەهای بنەڕەتی.',",
+              "    excludeCombination: 'لابردنی جۆر',": "    excludeCombination: 'دەرخستنی جۆر',",
+              "    excludedTitle: 'جۆر بەردەست نییەکان',": "    excludedTitle: 'جۆرە دەرخراوەکان',",
+              "    excludedHint: 'ئەم جۆرانە لە نوێکردنەوەدا دووبارە دروست نابن. پێش پاشەکەوتکردن دەتوانیت بیانگەڕێنیتەوە.',": "    excludedHint: 'ئەم جۆرە دەرخراوانە کاتێک جۆرەکان دووبارە دروست دەکەیت ناگەڕێنەوە. پێش پاشەکەوتکردن دەتوانیت بیانگەڕێنیتەوە.',",
+              "    inheritanceTitle: 'General data applies automatically',": "    inheritanceTitle: 'Default values apply automatically',",
+              "    inheritanceHint: (price: string, cost: string) => `Sale price ${price || '—'}, cost ${cost || '—'}, and product images are the defaults for every variant. Enter only what is different.`,": "    inheritanceHint: (price: string, cost: string) => `Sale price ${price || '—'}, cost ${cost || '—'}, and product images are the default values for every variant. Enter only values that are different.`,",
+              "    clearOverrideHint: 'Leave blank and apply to return to the general value.',": "    clearOverrideHint: 'Leave blank and apply to return to the default value.',",
+              "    excludedTitle: 'Unavailable variants',": "    excludedTitle: 'Excluded variants',",
+              "    productHint: 'سلعة يمكن بيعها وتتبع مخزونها وباركودها وخياراتها.',": "    productHint: 'سلعة قابلة للبيع يمكن تتبع مخزونها وباركودها وخياراتها.',",
+              "    chooseTypeHint: 'Choose a product or service. You can switch before saving without losing the data you already entered.',": "    chooseTypeHint: 'Choose a product you sell or a service your business provides. You can switch before saving without losing the data you already entered.',",
+              "    productHint: 'A sellable item with optional inventory, barcode, and product options.',": "    productHint: 'A sellable item whose inventory, barcode, and product options can be tracked.',",
+              "    chooseTypeHint: 'بەرهەم یان خزمەتگوزاری هەڵبژێرە. پێش پاشەکەوتکردن دەتوانیت بگۆڕیت بەبێ لەدەستدانی داتای نووسراو.',": "    chooseTypeHint: 'بەرهەمێک کە دەیفرۆشیت یان خزمەتگوزارییەک کە کاروبارەکەت پێشکەشی دەکات هەڵبژێرە. پێش پاشەکەوتکردن دەتوانیت بگۆڕیت بەبێ لەدەستدانی داتای نووسراو.',",
+              "    productHint: 'کاڵایەک بۆ فرۆشتن و بەدواداچوونی کۆگا و بارکۆد و هەڵبژاردەکان.',": "    productHint: 'کاڵایەکی فرۆشراو کە دەتوانرێت کۆگا، بارکۆد و هەڵبژاردەکانی بەدواداچوون بکرێن.',",
+              "    serviceHint: 'خزمەتگوزارییەک کە فەوری دەتوانێت ڕوونی بکاتەوە و بۆ داواکاری یان حجز یارمەتی بدات.',": "    serviceHint: 'خزمەتگوزارییەک کە فەوری دەتوانێت ڕوونی بکاتەوە و بۆ داواکاری یان کاتگرتن یارمەتی بدات.',",
+              "    itemSettingsHint: 'ڕێکخستنە سەرەکییەکانی ئەم بابەتە.',": "    itemSettingsHint: 'ڕێکخستنە کورتییەکانی کارپێکردنی ئەم بابەتە.',",
+              "    serviceDetailsHint: 'ئەم زانیارییانە یارمەتی فەوری دەدەن وەڵامی ورد بدات.',": "    serviceDetailsHint: 'ئەم زانیارییانە یارمەتی فەوری دەدەن پرسیارەکانی خزمەتگوزاری بە وردی وەڵام بداتەوە.',",
+              "    bufferHint: 'ئارەزوومەندانە، دواتر لە حجزەکان بەکاردێت.',": "    bufferHint: 'ئارەزوومەندانە، دواتر لە بەڕێوەبردنی کاتگرتنەکان بەکاردێت.',",
+              "    bookingRequired: 'پێویستی بە حجز هەیە',": "    bookingRequired: 'پێویستی بە کاتگرتن هەیە',",
+              "    bookingRequiredHint: 'ئەگەر کڕیار پێویستی بە کات یان حجز پێشتر هەیە چالاکی بکە.',": "    bookingRequiredHint: 'ئەگەر کڕیار پێویستی بە داواکردنی کات یان کاتگرتنی خزمەتگوزاری پێشتر هەیە، چالاکی بکە.',",
+              "    upload: 'زیادکردنی وێنە',": "    upload: 'زیادکردنی وێنەکان',",
+          }
+          for old, new in replacements.items():
+              c = replace_once(c, old, new, 'translation replacement')
+          central.write_text(c, encoding='utf-8')
+
+          s = shell.read_text(encoding='utf-8')
+          s = replace_once(s, '<div ref={shellRef} className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background" role="dialog" aria-modal="true" aria-label={title}>', '<div ref={shellRef} className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background" dir={lang === \'en\' ? \'ltr\' : \'rtl\'} role="dialog" aria-modal="true" aria-label={title}>', 'shell direction')
+          s = replace_once(s, 'className="catalog-editor-body-grid mx-auto grid w-full max-w-[1500px] grid-cols-12 gap-5"', 'className="catalog-editor-body-grid mx-auto grid w-full max-w-[1500px] grid-cols-1 gap-5"', 'single-column editor grid')
+          shell.write_text(s, encoding='utf-8')
+
+          it = item_type.read_text(encoding='utf-8')
+          it = replace_once(it, '<div className="space-y-3 rounded-2xl border bg-muted/10 p-4">', '<div className="w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4">', 'item type root width')
+          item_type.write_text(it, encoding='utf-8')
+
+          d = details.read_text(encoding='utf-8')
+          d = replace_once(d, '<div className="space-y-4">', '<div className="w-full min-w-0 space-y-4">', 'product details root width')
+          d = d.replace('className="overflow-x-auto rounded-2xl border bg-background"', 'className="w-full min-w-0 overflow-x-auto rounded-2xl border bg-background"')
+          if d.count('maxImages={10}') != 2:
+              raise SystemExit(f'variant image limit regression: expected 2 maxImages=10, got {d.count("maxImages={10}")}')
+          details.write_text(d, encoding='utf-8')
+
+          im = images.read_text(encoding='utf-8')
+          im = replace_once(im, "  const compactShellClass = hideHeading\n    ? (dense ? 'space-y-1' : 'space-y-2')\n    : `${dense ? 'space-y-1 rounded-lg p-1.5' : 'space-y-2 rounded-xl p-2.5'} border bg-muted/10`;", "  const compactShellClass = hideHeading\n    ? `w-full min-w-0 ${dense ? 'space-y-1' : 'space-y-2'}`\n    : `w-full min-w-0 ${dense ? 'space-y-1 rounded-lg p-1.5' : 'space-y-2 rounded-xl p-2.5'} border bg-muted/10`;", 'image editor width')
+          im = replace_once(im, "<section className={compact ? compactShellClass : 'space-y-3 rounded-2xl border bg-muted/10 p-4'}>", "<section className={compact ? compactShellClass : 'w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4'}>", 'image editor noncompact width')
+          images.write_text(im, encoding='utf-8')
+
+          p = page.read_text(encoding='utf-8')
+          old_price = "  const priceExample = fractionDigits > 0\n    ? (lang === 'ar' ? 'مثال: 19.99' : lang === 'ku' ? 'نموونە: 19.99' : 'e.g. 19.99')\n    : (lang === 'ar' ? 'مثال: 15000' : lang === 'ku' ? 'نموونە: 15000' : 'e.g. 15000');"
+          p = replace_once(p, old_price, "  const priceExample = copy.priceExample(fractionDigits > 0 ? '19.99' : '15000');", 'central price example')
+          duplicate = "\n          <div className=\"catalog-editor-fawri-field space-y-2 text-sm font-semibold\">\n            <span className=\"catalog-editor-fawri-label\">{copy.fawri}</span>\n            <div className=\"catalog-editor-fawri-control flex min-h-[7rem] flex-1 items-center justify-between gap-4 rounded-xl border border-input bg-background px-4 py-4\">\n              <p className=\"max-w-md text-xs font-normal leading-5 text-muted-foreground\">{copy.fawriHint}</p>\n              <Toggle checked={form.allow_fawri_reply} onChange={allow_fawri_reply => patchForm({ allow_fawri_reply })} />\n            </div>\n          </div>"
+          p = replace_once(p, duplicate, '', 'duplicate Fawri reply control')
+          page.write_text(p, encoding='utf-8')
+
+          t = contract.read_text(encoding='utf-8')
+          if "const shell = read('../src/components/catalog/CatalogEditorShell.tsx');" not in t:
+              t = replace_once(t, "const images = read('../src/components/catalog/CatalogImageUploadEditor.tsx');\n", "const images = read('../src/components/catalog/CatalogImageUploadEditor.tsx');\nconst shell = read('../src/components/catalog/CatalogEditorShell.tsx');\n", 'contract shell source')
+          t = replace_once(t, "  assert.doesNotMatch(details, /maxImages=\\{5\\}/);\n", "  assert.doesNotMatch(details, /maxImages=\\{5\\}/);\n  assert.doesNotMatch(central, /التركيبة|تێکەڵ|حجز/);\n  assert.doesNotMatch(central, /actions: 'Delete'|actions: 'حذف'|actions: 'سڕینەوە'/);\n", 'contract forbidden terms')
+          t += "\ntest('catalog editor visual parity is structurally language-neutral', () => {\n  assert.match(shell, /dir=\\{lang === 'en' \\? 'ltr' : 'rtl'\\}/);\n  assert.match(shell, /catalog-editor-body-grid[^\\n]*grid-cols-1/);\n  assert.doesNotMatch(shell, /catalog-editor-body-grid[^\\n]*grid-cols-12/);\n  assert.match(details, /w-full min-w-0 space-y-4/);\n  assert.match(itemType, /w-full min-w-0 space-y-3/);\n  assert.match(images, /w-full min-w-0/);\n  assert.doesNotMatch(page, /catalog-editor-fawri-field/);\n  assert.doesNotMatch(page, /lang === 'ar' \\? 'مثال:/);\n});\n"
+          contract.write_text(t, encoding='utf-8')
+
+          render_b64 = 'aW1wb3J0IHRlc3QgZnJvbSAnbm9kZTp0ZXN0JzsKaW1wb3J0IGFzc2VydCBmcm9tICdub2RlOmFzc2VydC9zdHJpY3QnOwppbXBvcnQgUmVhY3QgZnJvbSAncmVhY3QnOwppbXBvcnQgeyByZW5kZXJUb1N0YXRpY01hcmt1cCB9IGZyb20gJ3JlYWN0LWRvbS9zZXJ2ZXInOwoKaW1wb3J0IHsgQ2F0YWxvZ0l0ZW1UeXBlRWRpdG9yIH0gZnJvbSAnLi4vc3JjL2NvbXBvbmVudHMvY2F0YWxvZy9DYXRhbG9nSXRlbVR5cGVFZGl0b3InOwppbXBvcnQgeyBDYXRhbG9nUHJvZHVjdERldGFpbHNFZGl0b3IgfSBmcm9tICcuLi9zcmMvY29tcG9uZW50cy9jYXRhbG9nL0NhdGFsb2dQcm9kdWN0RGV0YWlsc0VkaXRvcic7CmltcG9ydCB7IEkxOG5Qcm92aWRlciB9IGZyb20gJy4uL3NyYy9saWIvaTE4bic7CmltcG9ydCB7IENBVEFMT0dfSVRFTV9UWVBFX0NPUFksIENBVEFMT0dfUFJPRFVDVF9ERVRBSUxTX0NPUFksIENPTU1FUkNFX0NBVEFMT0dfQ09QWSB9IGZyb20gJy4uL3NyYy9saWIvdHJhbnNsYXRpb25zL2ZlYXR1cmVzL2NhdGFsb2cvY2F0YWxvZ0VkaXRvckNvcHknOwppbXBvcnQgdHlwZSB7IENhdGFsb2dQcm9kdWN0Rm9ybVN0YXRlIH0gZnJvbSAnLi4vc3JjL2xpYi9jYXRhbG9nUHJvZHVjdEVkaXRvcic7CmltcG9ydCB0eXBlIHsgTGFuZyB9IGZyb20gJy4uL3NyYy9saWIvdHlwZXMnOwoKY29uc3Qgc3RvcmFnZVN0YXRlID0geyBsYW5nOiAnYXInIGFzIExhbmcgfTsKT2JqZWN0LmRlZmluZVByb3BlcnR5KGdsb2JhbFRoaXMsICdsb2NhbFN0b3JhZ2UnLCB7IGNvbmZpZ3VyYWJsZTogdHJ1ZSwgdmFsdWU6IHsgZ2V0SXRlbTogKCkgPT4gc3RvcmFnZVN0YXRlLmxhbmcsIHNldEl0ZW06ICgpID0+IHVuZGVmaW5lZCwgcmVtb3ZlSXRlbTogKCkgPT4gdW5kZWZpbmVkLCBjbGVhcjogKCkgPT4gdW5kZWZpbmVkLCBrZXk6ICgpID0+IG51bGwsIGxlbmd0aDogMCB9IH0pOwoKZnVuY3Rpb24gZm9ybUZpeHR1cmUoKTogQ2F0YWxvZ1Byb2R1Y3RGb3JtU3RhdGUgewogIHJldHVybiB7CiAgICBpdGVtX3R5cGU6ICdwcm9kdWN0JywgdHJhY2tfaW52ZW50b3J5OiB0cnVlLCBzZXJ2aWNlX2R1cmF0aW9uX21pbnV0ZXM6ICcnLCBzZXJ2aWNlX2J1ZmZlcl9taW51dGVzOiAnMCcsCiAgICBzZXJ2aWNlX2Jvb2tpbmdfcmVxdWlyZWQ6IHRydWUsIHNlcnZpY2VfcHJpY2VfdHlwZTogJ2ZpeGVkJywgc2VydmljZV9sb2NhdGlvbl9tb2RlOiAnbWVyY2hhbnQnLAogICAgbmFtZTogJ01peGVyJywgc2t1OiAnRldSLU1JWEVSJywgYmFyY29kZTogJycsIGNhdGVnb3J5OiAnRWxlY3Ryb25pY3MnLCBkZXNjcmlwdGlvbjogJ01peGVyJywKICAgIG9yaWdpbmFsX3ByaWNlOiAnJywgY3VycmVudF9wcmljZTogJzQ5MDAwJywgY29zdF9pcWQ6ICcyNTAwMCcsIHF1YW50aXR5OiAnMjMnLAogICAgd2VpZ2h0X2tnOiAnJywgbGVuZ3RoX2NtOiAnJywgd2lkdGhfY206ICcnLCBoZWlnaHRfY206ICcnLCBzdGF0dXM6ICdhdmFpbGFibGUnLAogICAgYWxsb3dfZmF3cmlfcmVwbHk6IHRydWUsIGltYWdlX3JlZnM6IFtdLAogICAgdmFyaWFudHM6IFt7IGtleTogJ3ZhcmlhbnQtcmVkJywgbmFtZTogJ1JlZCcsIHNrdTogJ0ZXUi1SRUQnLCBiYXJjb2RlOiAnJywgcHJpY2VfaXFkOiAnJywgY29zdF9pcWQ6ICcnLAogICAgICBzdG9ja19xdWFudGl0eTogJzExJywgd2VpZ2h0X2tnOiAnJywgbGVuZ3RoX2NtOiAnJywgd2lkdGhfY206ICcnLCBoZWlnaHRfY206ICcnLCBpbWFnZV9yZWZzOiBbXSwKICAgICAgb3B0aW9uczogW3sga2V5OiAnY29sb3ItcmVkJywgbmFtZTogJ0NvbG9yJywgdmFsdWU6ICdSZWQnIH1dIH1dLAogIH07Cn0KZnVuY3Rpb24gc29ydGVkS2V5cyh2YWx1ZTogb2JqZWN0KSB7IHJldHVybiBPYmplY3Qua2V5cyh2YWx1ZSkuc29ydCgpOyB9CmZ1bmN0aW9uIHJlbmRlckRldGFpbHMobGFuZzogTGFuZykgewogIHN0b3JhZ2VTdGF0ZS5sYW5nID0gbGFuZzsKICByZXR1cm4gcmVuZGVyVG9TdGF0aWNNYXJrdXAoPEkxOG5Qcm92aWRlcj48Q2F0YWxvZ1Byb2R1Y3REZXRhaWxzRWRpdG9yIGxhbmc9e2xhbmd9IGZvcm09e2Zvcm1GaXh0dXJlKCl9IGVkaXRpbmcgbW9uZXlTdGVwPSIxIiBvbkNoYW5nZT17KCkgPT4gdW5kZWZpbmVkfSAvPjwvSTE4blByb3ZpZGVyPik7Cn0KZnVuY3Rpb24gcmVuZGVySXRlbVR5cGUobGFuZzogTGFuZykgewogIHN0b3JhZ2VTdGF0ZS5sYW5nID0gbGFuZzsKICByZXR1cm4gcmVuZGVyVG9TdGF0aWNNYXJrdXAoPENhdGFsb2dJdGVtVHlwZUVkaXRvciBsYW5nPXtsYW5nfSBmb3JtPXtmb3JtRml4dHVyZSgpfSBvbkNoYW5nZT17KCkgPT4gdW5kZWZpbmVkfSAvPik7Cn0KdGVzdCgnY2F0YWxvZyBkaWN0aW9uYXJpZXMgaGF2ZSBpZGVudGljYWwga2V5IHNldHMgYWNyb3NzIGFyL2VuL2t1JywgKCkgPT4gewogIGZvciAoY29uc3QgZGljdGlvbmFyeSBvZiBbQ09NTUVSQ0VfQ0FUQUxPR19DT1BZLCBDQVRBTE9HX0lURU1fVFlQRV9DT1BZLCBDQVRBTE9HX1BST0RVQ1RfREVUQUlMU19DT1BZXSkgewogICAgYXNzZXJ0LmRlZXBFcXVhbChzb3J0ZWRLZXlzKGRpY3Rpb25hcnkuYXIpLCBzb3J0ZWRLZXlzKGRpY3Rpb25hcnkuZW4pKTsKICAgIGFzc2VydC5kZWVwRXF1YWwoc29ydGVkS2V5cyhkaWN0aW9uYXJ5LmFyKSwgc29ydGVkS2V5cyhkaWN0aW9uYXJ5Lmt1KSk7CiAgfQp9KTsKdGVzdCgncmVuZGVyZWQgdmFyaWFudCBoZWFkZXJzIGFyZSBjYW5vbmljYWwgaW4gYWxsIHRocmVlIGxhbmd1YWdlcycsICgpID0+IHsKICBjb25zdCBhciA9IHJlbmRlckRldGFpbHMoJ2FyJyk7IGNvbnN0IGVuID0gcmVuZGVyRGV0YWlscygnZW4nKTsgY29uc3Qga3UgPSByZW5kZXJEZXRhaWxzKCdrdScpOwogIGFzc2VydC5tYXRjaChhciwgL9in2YTZhtmI2LkvKTsgYXNzZXJ0Lm1hdGNoKGFyLCAv2KfZhNil2KzYsdin2KEvKTsgYXNzZXJ0LmRvZXNOb3RNYXRjaChhciwgL9in2YTYqtix2YPZitio2KkvKTsKICBhc3NlcnQubWF0Y2goZW4sIC9WYXJpYW50Lyk7IGFzc2VydC5tYXRjaChlbiwgL0FjdGlvbi8pOyBhc3NlcnQuZG9lc05vdE1hdGNoKGVuLCAvUHJvZHVjdCBjb21iaW5hdGlvbnN8Q29tYmluYXRpb24gaW1hZ2UvKTsKICBhc3NlcnQubWF0Y2goa3UsIC/YrNuG2LEvKTsgYXNzZXJ0Lm1hdGNoKGt1LCAv2qnYsdiv2KfYsS8pOyBhc3NlcnQuZG9lc05vdE1hdGNoKGt1LCAv2Krbjtqp25XatS8pOwp9KTsKdGVzdCgnU29yYW5pIHJlbmRlcmVkIGl0ZW0tdHlwZSBjb3B5IGNvbnRhaW5zIG5vIEFyYWJpYyBib29raW5nIGZhbGxiYWNrJywgKCkgPT4gewogIGNvbnN0IGt1ID0gcmVuZGVySXRlbVR5cGUoJ2t1Jyk7IGFzc2VydC5tYXRjaChrdSwgL9qp2KfYqtqv2LHYqtmGLyk7IGFzc2VydC5kb2VzTm90TWF0Y2goa3UsIC/Yrdis2LIvKTsKfSk7CnRlc3QoJ2FsbCByZW5kZXJlZCBwcm9kdWN0LWRldGFpbHMgcm9vdHMgdXNlIHRoZSBzYW1lIGZ1bGwtd2lkdGggbGF5b3V0IGNvbnRyYWN0JywgKCkgPT4gewogIGZvciAoY29uc3QgbGFuZyBvZiBbJ2FyJywgJ2VuJywgJ2t1J10gYXMgY29uc3QpIGFzc2VydC5tYXRjaChyZW5kZXJEZXRhaWxzKGxhbmcpLCAvdy1mdWxsIG1pbi13LTAgc3BhY2UteS00Lyk7Cn0pOwo='
+          workflow_b64 = 'bmFtZTogQ2F0YWxvZyBlZGl0b3IgcXVhbGl0eQoKb246CiAgcHVzaDoKICAgIGJyYW5jaGVzOiBbZm91bmRhdGlvbi9pbnRlZ3JhdGlvbi1jYW5kaWRhdGVdCiAgICBwYXRoczoKICAgICAgLSAnYXJ0aWZhY3RzL2Zhd3JpL3NyYy9wYWdlcy9kYXNoYm9hcmQvQ29tbWVyY2VDYXRhbG9nU2ltcGxpZmllZFBhZ2UudHN4JwogICAgICAtICdhcnRpZmFjdHMvZmF3cmkvc3JjL2NvbXBvbmVudHMvY2F0YWxvZy8qKicKICAgICAgLSAnYXJ0aWZhY3RzL2Zhd3JpL3NyYy9saWIvdHJhbnNsYXRpb25zL2ZlYXR1cmVzL2NhdGFsb2cvY2F0YWxvZ0VkaXRvckNvcHkudHMnCiAgICAgIC0gJ2FydGlmYWN0cy9mYXdyaS90ZXN0cy9jYXRhbG9nLWVkaXRvci0qLnRlc3QuKicKICAgICAgLSAnLmdpdGh1Yi93b3JrZmxvd3MvY2F0YWxvZy1lZGl0b3ItcXVhbGl0eS55bWwnCiAgcHVsbF9yZXF1ZXN0OgogICAgcGF0aHM6CiAgICAgIC0gJ2FydGlmYWN0cy9mYXdyaS9zcmMvcGFnZXMvZGFzaGJvYXJkL0NvbW1lcmNlQ2F0YWxvZ1NpbXBsaWZpZWRQYWdlLnRzeCcKICAgICAgLSAnYXJ0aWZhY3RzL2Zhd3JpL3NyYy9jb21wb25lbnRzL2NhdGFsb2cvKionCiAgICAgIC0gJ2FydGlmYWN0cy9mYXdyaS9zcmMvbGliL3RyYW5zbGF0aW9ucy9mZWF0dXJlcy9jYXRhbG9nL2NhdGFsb2dFZGl0b3JDb3B5LnRzJwogICAgICAtICdhcnRpZmFjdHMvZmF3cmkvdGVzdHMvY2F0YWxvZy1lZGl0b3ItKi50ZXN0LionCiAgICAgIC0gJy5naXRodWIvd29ya2Zsb3dzL2NhdGFsb2ctZWRpdG9yLXF1YWxpdHkueW1sJwoKcGVybWlzc2lvbnM6CiAgY29udGVudHM6IHJlYWQKCmpvYnM6CiAgcXVhbGl0eToKICAgIHJ1bnMtb246IHVidW50dS1sYXRlc3QKICAgIHN0ZXBzOgogICAgICAtIHVzZXM6IGFjdGlvbnMvY2hlY2tvdXQ%djQKICAgICAgLSBuYW1lOiBFbmFibGUgcG5wbQogICAgICAgIHJ1bjogfAogICAgICAgICAgY29yZXBhY2sgZW5hYmxlCiAgICAgICAgICBjb3JlcGFjayBwcmVwYXJlIHBucG1AMTAuMjYuMSAtLWFjdGl2YXRlCiAgICAgICAgICBwbnBtIGluc3RhbGwgLS1mcm96ZW4tbG9ja2ZpbGUKICAgICAgLSBuYW1lOiBMb2NhbGl6YXRpb24gYW5kIGxheW91dCBzb3VyY2UgY29udHJhY3QKICAgICAgICBydW46IG5vZGUgLS10ZXN0IGFydGlmYWN0cy9mYXdyaS90ZXN0cy9jYXRhbG9nLWVkaXRvci1sb2NhbGl6YXRpb24tY29udHJhY3QudGVzdC5tanMKICAgICAgLSBuYW1lOiBSZW5kZXJlZCBsb2NhbGl6YXRpb24gcGFyaXR5CiAgICAgICAgcnVuOiBwbnBtIGV4ZWMgdHN4IC0tdGVzdCBhcnRpZmFjdHMvZmF3cmkvdGVzdHMvY2F0YWxvZy1lZGl0b3ItbGFuZ3VhZ2UtcGFyaXR5LXJlbmRlci50ZXN0LnRzeAogICAgICAtIG5hbWU6IFR5cGVjaGVjawogICAgICAgIHdvcmtpbmctZGlyZWN0b3J5OiBhcnRpZmFjdHMvZmF3cmkKICAgICAgICBydW46IHBucG0gcnVuIHR5cGVjaGVjawogICAgICAtIG5hbWU6IEJ1aWxkCiAgICAgICAgd29ya2luZy1kaXJlY3Rvcnk6IGFydGlmYWN0cy9mYXdyaQogICAgICAgIHJ1bjogcG5wbSBydW4gYnVpbGQK'
+          render_test.write_bytes(base64.b64decode(render_b64))
+          permanent_workflow.write_bytes(base64.b64decode(workflow_b64))
+
+          combined = '\n'.join([central.read_text(encoding='utf-8'), details.read_text(encoding='utf-8'), item_type.read_text(encoding='utf-8'), page.read_text(encoding='utf-8')])
+          for token in ['التركيبة', 'تێکەڵ', 'Product combinations', 'Generate / update combinations', "actions: 'Delete'", "actions: 'حذف'", "actions: 'سڕینەوە'"]:
+              if token in combined:
+                  raise SystemExit(f'forbidden legacy catalog token remains: {token}')
+          if 'حجز' in central.read_text(encoding='utf-8'):
+              raise SystemExit('Arabic booking fallback remains in Sorani catalog copy')
+          PY
+
+      - name: Source localization and layout contract
+        run: node --test artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs
+
+      - name: Rendered localization parity
+        run: pnpm exec tsx --test artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx
+
+      - name: Typecheck
+        working-directory: artifacts/fawri
+        run: pnpm run typecheck
+
+      - name: Build
+        working-directory: artifacts/fawri
+        run: pnpm run build
+
+      - name: Validate exact scope
+        run: |
+          git diff --check
+          git diff --exit-code -- . \
+            ':(exclude)artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts' \
+            ':(exclude)artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogImageUploadEditor.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogEditorShell.tsx' \
+            ':(exclude)artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs' \
+            ':(exclude)artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx' \
+            ':(exclude).github/workflows/catalog-editor-quality.yml' \
+            ':(exclude).github/workflows/fawri-one-shot-catalog-editor-quality-hardening.yml' \
+            ':(exclude).github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v2.yml'
+
+      - name: Remove temporary workflows and commit
+        run: |
+          rm -f .github/workflows/fawri-one-shot-catalog-editor-quality-hardening.yml
+          rm -f .github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v2.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts \
+            artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx \
+            artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx \
+            artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx \
+            artifacts/fawri/src/components/catalog/CatalogImageUploadEditor.tsx \
+            artifacts/fawri/src/components/catalog/CatalogEditorShell.tsx \
+            artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs \
+            artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx \
+            .github/workflows/catalog-editor-quality.yml \
+            .github/workflows/fawri-one-shot-catalog-editor-quality-hardening.yml \
+            .github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v2.yml
+          git commit -m 'Harden catalog editor language and layout parity'
+          git push origin HEAD:foundation/integration-candidate
