@@ -16,7 +16,7 @@ import {
  */
 export function applyCatalogEditorEnglishSemanticParity() {
   Object.assign(COMMERCE_CATALOG_COPY.en, {
-    subtitle: 'Add the item information once; Fawri handles inventory status automatically and uses it in the cashier and replies.',
+    subtitle: 'Add the item information once; Fawri automatically calculates inventory status and uses it in the cashier and replies.',
     noItems: 'No items yet',
     noItemsHint: 'Add the first product or service so Fawri can start using trusted catalog data.',
     secureCrypto: 'Could not create a secure token for the operation.',
@@ -39,7 +39,6 @@ export function applyCatalogEditorEnglishSemanticParity() {
     combinations: 'Product types',
     combination: 'Type',
     images: 'Type image — optional',
-    actions: 'Delete',
     inheritanceHint: (price: string, cost: string) => `Sale price ${price || '—'}, cost ${cost || '—'}, and product images are the default values for all types. Enter only the values that are different when needed.`,
     bulkStock: 'Quantity per type',
     generateSku: 'Generate SKUs for types',
