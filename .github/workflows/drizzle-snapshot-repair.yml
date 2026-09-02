@@ -1,0 +1,61 @@
+name: Drizzle snapshot repair helper
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/drizzle-snapshot-repair.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-0011-snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Recreate committed 0011 schema state
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'lib/db/drizzle/meta/_journal.json';
+          const journal = JSON.parse(fs.readFileSync(p, 'utf8'));
+          journal.entries = journal.entries.filter((entry) => entry.idx <= 10);
+          fs.writeFileSync(p, JSON.stringify(journal, null, 2) + '\n');
+          NODE
+          cp lib/db/migration-stages/0012/preimage/channels.ts lib/db/src/schema/channels.ts
+          mv lib/db/drizzle/0011_commerce_promotions_timezone_authority.sql /tmp/0011_commerce_promotions_timezone_authority.sql
+          rm -f lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql
+          rm -f lib/db/drizzle/meta/0011_snapshot.json lib/db/drizzle/meta/0012_snapshot.json
+
+      - name: Generate 0011 snapshot
+        run: pnpm --dir lib/db exec drizzle-kit generate --config ./drizzle.config.ts --name snapshot_repair_0011
+
+      - name: Verify snapshot exists
+        run: test -s lib/db/drizzle/meta/0011_snapshot.json
+
+      - name: Upload snapshot
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: drizzle-0011-snapshot
+          path: lib/db/drizzle/meta/0011_snapshot.json
+          if-no-files-found: error
