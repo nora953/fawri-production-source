@@ -43,6 +43,8 @@ test('variant terminology is aligned in Arabic English and Sorani', () => {
   assert.match(details, /labels\.actions/);
   assert.equal((details.match(/maxImages=\{10\}/g) || []).length, 2);
   assert.doesNotMatch(details, /maxImages=\{5\}/);
+  assert.doesNotMatch(central, /التركيبة|تێکەڵ/);
+  assert.doesNotMatch(central, /actions: 'Delete'|actions: 'حذف'|actions: 'سڕینەوە'/);
 });
 
 test('all three languages use the same product-editor structure', () => {
@@ -51,4 +53,15 @@ test('all three languages use the same product-editor structure', () => {
   assert.ok((central.match(/\bar:\s*\{/g) || []).length >= 5);
   assert.ok((central.match(/\bku:\s*\{/g) || []).length >= 5);
   assert.ok((central.match(/\ben:\s*\{/g) || []).length >= 5);
+});
+
+test('catalog editor visual parity is structurally language-neutral', () => {
+  assert.match(shell, /dir=\{lang === 'en' \? 'ltr' : 'rtl'\}/);
+  assert.match(shell, /catalog-editor-body-grid[^\n]*grid-cols-1/);
+  assert.doesNotMatch(shell, /catalog-editor-body-grid[^\n]*grid-cols-12/);
+  assert.match(details, /w-full min-w-0 space-y-4/);
+  assert.match(itemType, /w-full min-w-0 space-y-3/);
+  assert.match(images, /w-full min-w-0/);
+  assert.doesNotMatch(page, /catalog-editor-fawri-field/);
+  assert.doesNotMatch(page, /lang === 'ar' \? 'مثال:/);
 });

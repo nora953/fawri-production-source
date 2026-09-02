@@ -539,7 +539,7 @@ export function CatalogProductDetailsEditor({
   const numericClass = 'h-10 rounded-xl text-center tabular-nums';
 
   const variantTable = (indexes: number[], grouped: boolean) => (
-    <div className="overflow-x-auto rounded-2xl border bg-background">
+    <div className="w-full min-w-0 overflow-x-auto rounded-2xl border bg-background">
       <table className="w-full min-w-[1080px] border-collapse text-sm">
         <thead className="bg-muted/40 text-xs text-muted-foreground">
           <tr>
@@ -601,7 +601,7 @@ export function CatalogProductDetailsEditor({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="w-full min-w-0 space-y-4">
       {form.track_inventory && !variantManagedInventory && (
         <label className="space-y-1 text-sm font-semibold">
           <span>{labels.quantity}</span>

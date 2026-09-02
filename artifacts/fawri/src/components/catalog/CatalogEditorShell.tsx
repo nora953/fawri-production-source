@@ -162,7 +162,7 @@ export function CatalogEditorShell({
 
   return (
     <>
-      <div ref={shellRef} className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background" role="dialog" aria-modal="true" aria-label={title}>
+      <div ref={shellRef} className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background" dir={lang === 'en' ? 'ltr' : 'rtl'} role="dialog" aria-modal="true" aria-label={title}>
         <div className="catalog-editor-frame flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
           <header className="catalog-editor-header shrink-0 border-b bg-background/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-10">
             <div className="mx-auto flex w-full max-w-[1500px] items-start justify-between gap-4">
@@ -182,7 +182,7 @@ export function CatalogEditorShell({
           </header>
 
           <main className="catalog-editor-body min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 lg:px-10">
-            <div className="catalog-editor-body-grid mx-auto grid w-full max-w-[1500px] grid-cols-12 gap-5">{children}</div>
+            <div className="catalog-editor-body-grid mx-auto grid w-full max-w-[1500px] grid-cols-1 gap-5">{children}</div>
           </main>
 
           <footer className="catalog-editor-footer shrink-0 border-t bg-background/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-10">

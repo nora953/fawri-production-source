@@ -205,9 +205,7 @@ export default function CommerceCatalogSimplifiedPage() {
 
   const fractionDigits = commerceContext?.currency_fraction_digits ?? 0;
   const moneyStep = catalogCurrencyStep(fractionDigits);
-  const priceExample = fractionDigits > 0
-    ? (lang === 'ar' ? 'مثال: 19.99' : lang === 'ku' ? 'نموونە: 19.99' : 'e.g. 19.99')
-    : (lang === 'ar' ? 'مثال: 15000' : lang === 'ku' ? 'نموونە: 15000' : 'e.g. 15000');
+  const priceExample = copy.priceExample(fractionDigits > 0 ? '19.99' : '15000');
 
   const syncInventory = (product: CatalogProduct) => {
     if (!tracksInventory(product)) return;
@@ -951,13 +949,6 @@ export default function CommerceCatalogSimplifiedPage() {
 
           <CatalogProductDetailsEditor lang={lang} form={form} editing={Boolean(editingId)} moneyStep={moneyStep} onChange={patchForm} />
 
-          <div className="catalog-editor-fawri-field space-y-2 text-sm font-semibold">
-            <span className="catalog-editor-fawri-label">{copy.fawri}</span>
-            <div className="catalog-editor-fawri-control flex min-h-[7rem] flex-1 items-center justify-between gap-4 rounded-xl border border-input bg-background px-4 py-4">
-              <p className="max-w-md text-xs font-normal leading-5 text-muted-foreground">{copy.fawriHint}</p>
-              <Toggle checked={form.allow_fawri_reply} onChange={allow_fawri_reply => patchForm({ allow_fawri_reply })} />
-            </div>
-          </div>
         </CatalogEditorShell>
       )}
     </div>

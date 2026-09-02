@@ -73,7 +73,7 @@ export function CatalogItemTypeEditor({
   };
 
   return (
-    <div className="space-y-3 rounded-2xl border bg-muted/10 p-4">
+    <div className="w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4">
       <div>
         <p className="text-sm font-bold">{copy.chooseType}</p>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.chooseTypeHint}</p>
