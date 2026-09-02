@@ -7,17 +7,18 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  generate-snapshot-repair-artifacts:
+  repair-canonical-snapshots:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
-      - name: Checkout repository
+      - name: Checkout WhatsApp foundation branch
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          persist-credentials: false
+          ref: feature/whatsapp-offline-foundation
+          persist-credentials: true
           fetch-depth: 1
 
       - name: Enable Corepack
@@ -35,7 +36,6 @@ jobs:
       - name: Recreate 0011 schema boundary
         shell: bash
         run: |
-          cp lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql /tmp/0012_committed.sql
           node <<'NODE'
           const fs = require('fs');
           const p = 'lib/db/drizzle/meta/_journal.json';
@@ -48,54 +48,63 @@ jobs:
           rm -f lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql
           rm -f lib/db/drizzle/meta/0011_snapshot.json lib/db/drizzle/meta/0012_snapshot.json
 
-      - name: Generate 0011 snapshot
+      - name: Generate and canonicalize missing 0011 snapshot
         env:
           DATABASE_URL: postgresql://snapshot:snapshot@127.0.0.1:5432/snapshot
-        run: pnpm --dir lib/db exec drizzle-kit generate --config ./drizzle.config.ts --name snapshot_repair_0011
-
-      - name: Preserve generated 0011 snapshot
+        shell: bash
         run: |
+          pnpm --dir lib/db exec drizzle-kit generate --config ./drizzle.config.ts --name snapshot_repair_0011
           test -s lib/db/drizzle/meta/0011_snapshot.json
+          node <<'NODE'
+          const fs = require('fs');
+          const crypto = require('crypto');
+          const p = 'lib/db/drizzle/meta/0011_snapshot.json';
+          const snapshot = JSON.parse(fs.readFileSync(p, 'utf8'));
+          const hashInput = JSON.stringify({ ...snapshot, id: '<generated-id>' });
+          const hex = crypto.createHash('sha256').update(hashInput).digest('hex');
+          const normalized = `${hex.slice(0, 12)}4${hex.slice(13, 16)}8${hex.slice(17, 32)}`;
+          snapshot.id = `${normalized.slice(0, 8)}-${normalized.slice(8, 12)}-${normalized.slice(12, 16)}-${normalized.slice(16, 20)}-${normalized.slice(20, 32)}`;
+          fs.writeFileSync(p, JSON.stringify(snapshot, null, 2) + '\n');
+          NODE
           cp lib/db/drizzle/meta/0011_snapshot.json /tmp/0011_snapshot.json
 
-      - name: Recreate 0012 schema boundary
+      - name: Restore current branch and inject repaired 0011 snapshot
         shell: bash
         run: |
           git reset --hard HEAD
           git clean -fd lib/db/drizzle
           cp /tmp/0011_snapshot.json lib/db/drizzle/meta/0011_snapshot.json
-          node <<'NODE'
-          const fs = require('fs');
-          const p = 'lib/db/drizzle/meta/_journal.json';
-          const journal = JSON.parse(fs.readFileSync(p, 'utf8'));
-          journal.entries = journal.entries.filter((entry) => entry.idx <= 11);
-          fs.writeFileSync(p, JSON.stringify(journal, null, 2) + '\n');
-          NODE
-          mv lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql /tmp/0012_committed.sql
-          rm -f lib/db/drizzle/meta/0012_snapshot.json
 
-      - name: Generate 0012 snapshot and SQL
+      - name: Generate canonical complete migration chain
         env:
-          DATABASE_URL: postgresql://snapshot:snapshot@127.0.0.1:5432/snapshot
-        run: pnpm --dir lib/db exec drizzle-kit generate --config ./drizzle.config.ts --name snapshot_repair_0012
+          FAWRI_MIGRATION_OUTPUT_DIR: /tmp/fawri-canonical-drizzle
+        run: node lib/db/scripts/generate-migration.mjs
 
-      - name: Collect repair artifacts
+      - name: Apply only canonical 0011 and 0012 metadata
         shell: bash
         run: |
-          test -s lib/db/drizzle/meta/0012_snapshot.json
-          generated_sql="$(find lib/db/drizzle -maxdepth 1 -type f -name '0012_*.sql' | head -n 1)"
-          test -n "$generated_sql"
-          mkdir -p snapshot-repair
-          cp /tmp/0011_snapshot.json snapshot-repair/0011_snapshot.json
-          cp lib/db/drizzle/meta/0012_snapshot.json snapshot-repair/0012_snapshot.json
-          cp "$generated_sql" snapshot-repair/0012_generated.sql
-          cp /tmp/0012_committed.sql snapshot-repair/0012_committed.sql
-          cp lib/db/drizzle/meta/_journal.json snapshot-repair/generated_journal.json
-          wc -c snapshot-repair/*
+          cp /tmp/fawri-canonical-drizzle/meta/0011_snapshot.json lib/db/drizzle/meta/0011_snapshot.json
+          cp /tmp/fawri-canonical-drizzle/meta/0012_snapshot.json lib/db/drizzle/meta/0012_snapshot.json
+          cp /tmp/fawri-canonical-drizzle/0012_whatsapp_dormant_channel_identity.sql lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql
+          cp /tmp/fawri-canonical-drizzle/meta/_journal.json lib/db/drizzle/meta/_journal.json
+          unexpected="$(git diff --name-only | grep -Ev '^(lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql|lib/db/drizzle/meta/0011_snapshot.json|lib/db/drizzle/meta/0012_snapshot.json|lib/db/drizzle/meta/_journal.json)$' || true)"
+          test -z "$unexpected" || { echo "Unexpected repair changes: $unexpected" >&2; exit 1; }
 
-      - name: Upload repair artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: drizzle-snapshot-repair
-          path: snapshot-repair/
-          if-no-files-found: error
+      - name: Verify repaired committed chain is fully reproducible
+        run: node lib/db/scripts/generate-migration.mjs
+
+      - name: Commit repaired snapshots
+        shell: bash
+        run: |
+          git add lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql \
+                  lib/db/drizzle/meta/0011_snapshot.json \
+                  lib/db/drizzle/meta/0012_snapshot.json \
+                  lib/db/drizzle/meta/_journal.json
+          if git diff --cached --quiet; then
+            echo 'No snapshot repair changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Repair Drizzle snapshots for dormant WhatsApp migration'
+          git push origin HEAD:feature/whatsapp-offline-foundation
