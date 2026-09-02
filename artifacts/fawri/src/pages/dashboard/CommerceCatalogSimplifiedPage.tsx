@@ -930,7 +930,7 @@ export default function CommerceCatalogSimplifiedPage() {
     const range = hasRange ? `${minimum} - ${maximum}` : minimum;
     return (
       <span
-        className={`inline-flex max-w-full items-baseline gap-1 whitespace-nowrap ${compact && hasRange ? 'text-[clamp(8px,8cqi,12px)] tracking-tight' : ''}`}
+        className={`inline-flex max-w-full items-baseline gap-1 whitespace-nowrap ${compact && hasRange ? (lang === 'en' ? 'text-[clamp(8px,8cqi,12px)] tracking-tight' : 'text-xs') : ''}`}
         dir={isRTL ? 'rtl' : 'ltr'}
       >
         <bdi dir="ltr" style={{ unicodeBidi: 'isolate-override' }}>{range}</bdi>
