@@ -404,9 +404,9 @@ export function CatalogImageUploadEditor({
                 <span>{labels.viewImages}</span>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs">{images.length}</span>
               </div>
-              <button type="button" aria-label={labels.close} onClick={() => setGalleryOpen(false)} className="rounded-full p-2 hover:bg-muted">
-                <X className="h-5 w-5" />
-              </button>
+              <Button type="button" variant="outline" size="icon" aria-label={labels.close} onClick={() => setGalleryOpen(false)} className="h-10 w-10 shrink-0 rounded-xl">
+                <X className="h-4 w-4" />
+              </Button>
             </div>
             <div className="max-h-[72vh] overflow-y-auto p-4">
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -444,14 +444,16 @@ export function CatalogImageUploadEditor({
       {selectedLightbox && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 p-4" onClick={() => setLightboxIndex(null)}>
           <div className="relative flex min-h-64 min-w-64 max-h-[92vh] max-w-[94vw] items-center justify-center" onClick={event => event.stopPropagation()}>
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="icon"
               aria-label={labels.close}
               onClick={() => setLightboxIndex(null)}
-              className="absolute -end-2 -top-2 z-10 rounded-full bg-background p-2 shadow-lg"
+              className="absolute -end-2 -top-2 z-10 h-10 w-10 rounded-xl bg-background shadow-lg"
             >
-              <X className="h-5 w-5" />
-            </button>
+              <X className="h-4 w-4" />
+            </Button>
             <ResilientImage
               image={selectedLightbox}
               alt={selectedLightbox.alt || labels.title}
