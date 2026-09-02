@@ -15,6 +15,10 @@ export type WhatsAppWebhookChannelResolver = (input: {
   phoneNumberId: string;
 }) => Promise<ResolvedDormantWhatsAppChannel>;
 
+export type WhatsAppPlannedInboundMessage = WhatsAppInboundMessageJob & {
+  channel_id: string;
+};
+
 export type WhatsAppDeliveryStatusPlan = {
   event_id: string;
   merchant_id: string;
@@ -41,7 +45,7 @@ export type WhatsAppWebhookProcessingPlan = {
   mode: "offline_replay";
   supported: boolean;
   provider_object: string;
-  inbound_messages: WhatsAppInboundMessageJob[];
+  inbound_messages: WhatsAppPlannedInboundMessage[];
   delivery_statuses: WhatsAppDeliveryStatusPlan[];
   provider_errors: WhatsAppProviderErrorPlan[];
   ignored_changes: number;
@@ -186,8 +190,8 @@ export async function planWhatsAppWebhookProcessing(input: {
     }
 
     if (event.event_kind === "message") {
-      base.inbound_messages.push(
-        buildWhatsAppInboundMessageJob({
+      base.inbound_messages.push({
+        ...buildWhatsAppInboundMessageJob({
           identity: {
             merchant_id: channel.merchant_id,
             waba_id: channel.waba_id,
@@ -198,7 +202,8 @@ export async function planWhatsAppWebhookProcessing(input: {
           },
           event,
         }),
-      );
+        channel_id: channel.id,
+      });
       continue;
     }
 
