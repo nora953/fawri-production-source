@@ -1,0 +1,80 @@
+name: Fawri one-shot catalog price format
+
+on:
+  push:
+    branches:
+      - foundation/integration-candidate
+    paths:
+      - .github/workflows/fawri-one-shot-price-format.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: foundation/integration-candidate
+          fetch-depth: 0
+
+      - name: Apply exact catalog price display fix
+        shell: bash
+        run: |
+          python <<'PY'
+          from pathlib import Path
+
+          path = Path('artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx')
+          source = path.read_text(encoding='utf-8')
+
+          old = '''    const minimum = formatMinorAmount(minimumMinor);
+    const maximum = formatMinorAmount(maximumMinor);
+    const hasRange = minimumMinor !== maximumMinor;
+    const range = hasRange ? `${minimum}-${maximum}` : minimum;
+
+    return (
+      <span
+        className={`inline-flex max-w-full items-baseline whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
+        dir="ltr"
+        style={{ unicodeBidi: 'isolate' }}
+      >
+        <bdi dir="ltr">{range}</bdi>
+        <span className="ms-1" dir={lang === 'en' ? 'ltr' : 'rtl'}>{currency}</span>
+      </span>
+    );'''
+
+          new = '''    const minimum = formatMinorAmount(minimumMinor);
+    const maximum = formatMinorAmount(maximumMinor);
+    const hasRange = minimumMinor !== maximumMinor;
+    const range = hasRange ? `${minimum} - ${maximum}` : minimum;
+    const displayPrice = `${range} ${currency}`;
+
+    return (
+      <span
+        className={`inline-block max-w-full whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
+        dir="ltr"
+        style={{ unicodeBidi: 'isolate-override' }}
+      >
+        {displayPrice}
+      </span>
+    );'''
+
+          if old not in source:
+              raise SystemExit('Expected catalog price formatter block was not found; refusing to patch.')
+
+          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/fawri-one-shot-price-format.yml
+
+      - name: Commit exact fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx .github/workflows/fawri-one-shot-price-format.yml
+          git commit -m "Fix catalog price range spacing and direction"
+          git push origin HEAD:foundation/integration-candidate
