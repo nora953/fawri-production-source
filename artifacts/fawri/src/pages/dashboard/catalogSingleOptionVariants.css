@@ -47,12 +47,49 @@
   padding: 0 !important;
 }
 
-/* Flatten the per-value one-row tables into one continuous merchant-facing list. */
+/* Flatten the per-value one-row tables into one continuous merchant-facing list.
+ * A single-option row must fit its card: compact the cells instead of creating
+ * an inner horizontal scrollbar. */
 .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section .overflow-x-auto.rounded-2xl.border.bg-background {
-  overflow-x: auto !important;
+  overflow-x: hidden !important;
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table :where(th, td) {
+  padding-inline: 0.45rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 tbody input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]) {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-inline-size: 0 !important;
+  padding-inline: 0.4rem !important;
+  font-size: 0.75rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 tbody input.font-mono {
+  font-size: 0.7rem !important;
+  letter-spacing: -0.02em;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table :where(th:first-child, td:first-child) {
+  width: 7.5rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table :where(th[class~="w-40"], td[class~="w-40"]) {
+  width: 9.5rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table :where(th:last-child, td:last-child) {
+  width: 3.75rem !important;
 }
 
 /* The column heading belongs to the first table only. */
@@ -77,12 +114,12 @@
 }
 
 html[lang="ar"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
-  content: 'التركيبة';
+  content: 'النوع';
   font-size: 0.75rem;
 }
 
 html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
-  content: 'تێکەڵە';
+  content: 'جۆر';
   font-size: 0.75rem;
 }
 
