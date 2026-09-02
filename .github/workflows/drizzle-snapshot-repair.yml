@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  generate-0011-snapshot:
+  generate-snapshot-repair-artifacts:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -32,9 +32,10 @@ jobs:
       - name: Install frozen dependencies
         run: pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Recreate committed 0011 schema state
+      - name: Recreate 0011 schema boundary
         shell: bash
         run: |
+          cp lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql /tmp/0012_committed.sql
           node <<'NODE'
           const fs = require('fs');
           const p = 'lib/db/drizzle/meta/_journal.json';
@@ -43,7 +44,7 @@ jobs:
           fs.writeFileSync(p, JSON.stringify(journal, null, 2) + '\n');
           NODE
           cp lib/db/migration-stages/0012/preimage/channels.ts lib/db/src/schema/channels.ts
-          mv lib/db/drizzle/0011_commerce_promotions_timezone_authority.sql /tmp/0011_commerce_promotions_timezone_authority.sql
+          mv lib/db/drizzle/0011_commerce_promotions_timezone_authority.sql /tmp/0011_committed.sql
           rm -f lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql
           rm -f lib/db/drizzle/meta/0011_snapshot.json lib/db/drizzle/meta/0012_snapshot.json
 
@@ -52,12 +53,49 @@ jobs:
           DATABASE_URL: postgresql://snapshot:snapshot@127.0.0.1:5432/snapshot
         run: pnpm --dir lib/db exec drizzle-kit generate --config ./drizzle.config.ts --name snapshot_repair_0011
 
-      - name: Verify snapshot exists
-        run: test -s lib/db/drizzle/meta/0011_snapshot.json
+      - name: Preserve generated 0011 snapshot
+        run: |
+          test -s lib/db/drizzle/meta/0011_snapshot.json
+          cp lib/db/drizzle/meta/0011_snapshot.json /tmp/0011_snapshot.json
 
-      - name: Upload snapshot
+      - name: Recreate 0012 schema boundary
+        shell: bash
+        run: |
+          git reset --hard HEAD
+          git clean -fd lib/db/drizzle
+          cp /tmp/0011_snapshot.json lib/db/drizzle/meta/0011_snapshot.json
+          node <<'NODE'
+          const fs = require('fs');
+          const p = 'lib/db/drizzle/meta/_journal.json';
+          const journal = JSON.parse(fs.readFileSync(p, 'utf8'));
+          journal.entries = journal.entries.filter((entry) => entry.idx <= 11);
+          fs.writeFileSync(p, JSON.stringify(journal, null, 2) + '\n');
+          NODE
+          mv lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql /tmp/0012_committed.sql
+          rm -f lib/db/drizzle/meta/0012_snapshot.json
+
+      - name: Generate 0012 snapshot and SQL
+        env:
+          DATABASE_URL: postgresql://snapshot:snapshot@127.0.0.1:5432/snapshot
+        run: pnpm --dir lib/db exec drizzle-kit generate --config ./drizzle.config.ts --name snapshot_repair_0012
+
+      - name: Collect repair artifacts
+        shell: bash
+        run: |
+          test -s lib/db/drizzle/meta/0012_snapshot.json
+          generated_sql="$(find lib/db/drizzle -maxdepth 1 -type f -name '0012_*.sql' | head -n 1)"
+          test -n "$generated_sql"
+          mkdir -p snapshot-repair
+          cp /tmp/0011_snapshot.json snapshot-repair/0011_snapshot.json
+          cp lib/db/drizzle/meta/0012_snapshot.json snapshot-repair/0012_snapshot.json
+          cp "$generated_sql" snapshot-repair/0012_generated.sql
+          cp /tmp/0012_committed.sql snapshot-repair/0012_committed.sql
+          cp lib/db/drizzle/meta/_journal.json snapshot-repair/generated_journal.json
+          wc -c snapshot-repair/*
+
+      - name: Upload repair artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: drizzle-0011-snapshot
-          path: lib/db/drizzle/meta/0011_snapshot.json
+          name: drizzle-snapshot-repair
+          path: snapshot-repair/
           if-no-files-found: error
