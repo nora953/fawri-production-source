@@ -6,9 +6,11 @@ import "./styles/catalogSummaryCards.css";
 import "./styles/fawriLanguageAuthority.css";
 import "./styles/fawriFieldContent.css";
 import { installAdaptiveIdentifierInputs } from "@/lib/adaptiveIdentifierInputs";
+import { installCatalogEditorAutoDirection } from "@/lib/catalogEditorAutoDirection";
 import { I18nProvider } from "@/lib/i18n";
 
 installAdaptiveIdentifierInputs();
+installCatalogEditorAutoDirection();
 
 createRoot(document.getElementById("root")!).render(
   <I18nProvider>
