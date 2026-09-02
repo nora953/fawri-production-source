@@ -1,8 +1,8 @@
-/* Merchant-facing Arabic wording and table header polish.
- * Loaded after the broader catalog styles so the final UI wording is unambiguous.
+/* Merchant-facing Arabic wording only.
+ * Do not change catalog table widths, row heights, padding, or card sizing here.
  */
 
-/* Base selling price: remove the operational promotions hint and use merchant language. */
+/* Base selling price: remove the promotions hint and use merchant language. */
 html[lang="ar"] .products-workspace-polish .catalog-editor-shell .grid.gap-4.sm\:grid-cols-2 + label.space-y-1.text-sm.font-semibold > span:first-child {
   font-size: 0 !important;
 }
@@ -16,11 +16,6 @@ html[lang="ar"] .products-workspace-polish .catalog-editor-shell .grid.gap-4.sm\
   display: none !important;
 }
 
-/* Single-option products: use the simpler merchant term "نوع". */
-html[lang="ar"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
-  content: "النوع" !important;
-}
-
 /* The action column contains only deletion in this compact table. */
 html[lang="ar"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child {
   font-size: 0 !important;
@@ -31,8 +26,7 @@ html[lang="ar"] .products-workspace-polish .catalog-editor-shell section[class~=
   font-size: 0.75rem;
 }
 
-/* Keep the sale-price heading on one line. */
+/* Keep the requested sale-price heading on one line without imposing a new width. */
 .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:nth-child(2) {
-  min-width: 11rem !important;
   white-space: nowrap !important;
 }
