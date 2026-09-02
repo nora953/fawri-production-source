@@ -575,7 +575,7 @@ export function CatalogProductDetailsEditor({
                 <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.barcode} onChange={event => updateVariant(index, { barcode: event.target.value })} className={`${numericClass} min-w-32`} /></td>
                 <td className="w-40 p-2.5 align-middle">
                   <div className="mx-auto w-full min-w-0">
-                    <CatalogImageUploadEditor images={variant.image_refs} onChange={image_refs => updateVariant(index, { image_refs })} maxImages={5} compact dense hideHeading />
+                    <CatalogImageUploadEditor images={variant.image_refs} onChange={image_refs => updateVariant(index, { image_refs })} maxImages={10} compact dense hideHeading />
                     {variant.image_refs.length === 0 && <p className="mt-1 w-full text-center text-[9px] leading-3 text-muted-foreground">{labels.inheritedImage}</p>}
                   </div>
                 </td>
@@ -747,7 +747,7 @@ export function CatalogProductDetailsEditor({
 
                               <div className="space-y-1 text-xs font-semibold">
                                 <span>{labels.groupImages}</span>
-                                <CatalogImageUploadEditor images={shared.images} onChange={images => applyGroupImages(group, images)} maxImages={5} compact hideHeading />
+                                <CatalogImageUploadEditor images={shared.images} onChange={images => applyGroupImages(group, images)} maxImages={10} compact hideHeading />
                                 <span className="block text-[10px] font-normal leading-4 text-muted-foreground">{shared.mixed ? labels.mixedGroupImages : labels.groupImagesHint}</span>
                               </div>
                             </div>

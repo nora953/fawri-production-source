@@ -30,15 +30,19 @@ test('approved sale-price editor layout is language-neutral', () => {
 test('variant terminology is aligned in Arabic English and Sorani', () => {
   assert.match(central, /combinations: 'أنواع المنتج'/);
   assert.match(central, /combination: 'النوع'/);
-  assert.match(central, /actions: 'حذف'/);
+  assert.match(central, /actions: 'الإجراء'/);
   assert.match(central, /combinations: 'Product variants'/);
   assert.match(central, /combination: 'Variant'/);
-  assert.match(central, /actions: 'Delete'/);
+  assert.match(central, /actions: 'Action'/);
   assert.match(central, /combinations: 'جۆرەکانی بەرهەم'/);
   assert.match(central, /combination: 'جۆر'/);
-  assert.match(central, /actions: 'سڕینەوە'/);
+  assert.match(central, /actions: 'کردار'/);
   assert.doesNotMatch(central, /'Product combinations'|'Generate \/ update combinations'|'Combination image — optional'|'Stock per combination'|'Generate combination SKUs'/);
-  assert.doesNotMatch(central, /تێکەڵە/);
+  assert.doesNotMatch(central, /تێکەڵ/);
+  assert.match(details, /labels\.combination/);
+  assert.match(details, /labels\.actions/);
+  assert.equal((details.match(/maxImages=\{10\}/g) || []).length, 2);
+  assert.doesNotMatch(details, /maxImages=\{5\}/);
 });
 
 test('all three languages use the same product-editor structure', () => {
