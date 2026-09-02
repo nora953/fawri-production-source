@@ -5,9 +5,16 @@ on:
     paths:
       - "artifacts/api-server/src/services/whatsappWebhookContract.ts"
       - "artifacts/api-server/src/services/whatsappOfflineContracts.ts"
+      - "artifacts/api-server/src/services/whatsappDormantChannelAuthority.ts"
       - "artifacts/api-server/tests/whatsapp-webhook-contract.test.ts"
       - "artifacts/api-server/tests/whatsapp-offline-contracts.test.ts"
+      - "artifacts/api-server/tests/whatsapp-dormant-channel-authority.test.ts"
+      - "artifacts/api-server/tests/whatsapp-dormant-schema.test.ts"
       - "artifacts/api-server/package.json"
+      - "lib/db/src/schema/channels.ts"
+      - "lib/db/drizzle/0012_whatsapp_dormant_channel_identity.sql"
+      - "lib/db/drizzle/meta/_journal.json"
+      - "lib/db/migration-stages/0012/**"
       - "docs/whatsapp-offline-foundation.md"
       - ".github/workflows/whatsapp-offline-foundation.yml"
   workflow_dispatch:
@@ -43,8 +50,11 @@ jobs:
       - name: Install frozen dependencies without lifecycle scripts
         run: node scripts/ci-run-redacted.mjs --label whatsapp-offline-frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
 
-      - name: Test dormant WhatsApp contracts
+      - name: Test dormant WhatsApp contracts and persistence boundary
         run: node scripts/ci-run-redacted.mjs --label whatsapp-offline-test -- pnpm --filter @workspace/api-server run test:whatsapp-offline
+
+      - name: Type-check database schema
+        run: node scripts/ci-run-redacted.mjs --label whatsapp-offline-db-typecheck -- pnpm --filter @workspace/db run typecheck
 
       - name: Type-check API server
         run: node scripts/ci-run-redacted.mjs --label whatsapp-offline-typecheck -- pnpm --filter @workspace/api-server run typecheck
