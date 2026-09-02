@@ -57,7 +57,7 @@ html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~=
   unicode-bidi: plaintext;
 }
 
-/* Keep dense English/Kurdish variant headings inside the exact Arabic card
+/* Keep dense English/Kurdish type headings inside the exact Arabic card
  * geometry instead of letting longer translated labels increase row height. */
 html[lang="ku"] .products-workspace-polish .catalog-editor-shell .space-y-4 table thead th,
 html[lang="en"] .products-workspace-polish .catalog-editor-shell .space-y-4 table thead th {
@@ -70,4 +70,11 @@ html[lang="en"] .products-workspace-polish .catalog-editor-shell .space-y-4 tabl
 html[lang="ku"] .products-workspace-polish .catalog-editor-shell button,
 html[lang="en"] .products-workspace-polish .catalog-editor-shell button {
   min-width: 0;
+}
+
+/* The Arabic golden reference calls each generated sellable entry "النوع".
+ * The older compact-table CSS writes "Variant" directly, bypassing the copy
+ * dictionary, so correct that legacy visual label for English only. */
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
+  content: 'Type' !important;
 }
