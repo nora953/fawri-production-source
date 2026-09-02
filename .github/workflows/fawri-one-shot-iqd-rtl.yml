@@ -1,0 +1,41 @@
+name: Fawri one-shot IQD RTL rendering
+
+on:
+  push:
+    branches:
+      - foundation/integration-candidate
+    paths:
+      - .github/workflows/fawri-one-shot-iqd-rtl.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: foundation/integration-candidate
+          fetch-depth: 0
+      - name: Apply exact IQD text-direction fix
+        shell: bash
+        run: |
+          python -c "from pathlib import Path; p=Path('artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx'); s=p.read_text(encoding='utf-8'); old='        {currency === \\'د.ع\\' ? (\\n          <span dir=\\\"ltr\\\" className=\\\"inline-flex\\\" aria-label={currency}>\\n            <span aria-hidden=\\\"true\\\">د</span><span aria-hidden=\\\"true\\\">.</span><span aria-hidden=\\\"true\\\">ع</span>\\n          </span>\\n        ) : (\\n          <bdi dir=\\\"ltr\\\" style={{ unicodeBidi: \\'isolate-override\\' }}>{currency}</bdi>\\n        )}'; new='        <bdi dir={isRTL ? \\'rtl\\' : \\'ltr\\'} style={{ unicodeBidi: \\'isolate\\' }}>{currency}</bdi>'; assert s.count(old)==1, f'Expected one IQD currency block, found {s.count(old)}'; p.write_text(s.replace(old,new,1),encoding='utf-8')"
+          git diff --check
+      - name: Verify scope
+        shell: bash
+        run: |
+          changed="$(git diff --name-only)"
+          test "$changed" = "artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx"
+      - name: Remove one-shot workflow
+        run: rm .github/workflows/fawri-one-shot-iqd-rtl.yml
+      - name: Commit exact fix
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx .github/workflows/fawri-one-shot-iqd-rtl.yml
+          git commit -m "Render Arabic IQD abbreviation in RTL order"
+          git push origin HEAD:foundation/integration-candidate
