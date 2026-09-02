@@ -25,46 +25,19 @@ jobs:
         run: |
           python <<'PY'
           from pathlib import Path
-
           path = Path('artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx')
           source = path.read_text(encoding='utf-8')
-
-          old = '''    const minimum = formatMinorAmount(minimumMinor);
-    const maximum = formatMinorAmount(maximumMinor);
-    const hasRange = minimumMinor !== maximumMinor;
-    const range = hasRange ? `${minimum}-${maximum}` : minimum;
-
-    return (
-      <span
-        className={`inline-flex max-w-full items-baseline whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
-        dir="ltr"
-        style={{ unicodeBidi: 'isolate' }}
-      >
-        <bdi dir="ltr">{range}</bdi>
-        <span className="ms-1" dir={lang === 'en' ? 'ltr' : 'rtl'}>{currency}</span>
-      </span>
-    );'''
-
-          new = '''    const minimum = formatMinorAmount(minimumMinor);
-    const maximum = formatMinorAmount(maximumMinor);
-    const hasRange = minimumMinor !== maximumMinor;
-    const range = hasRange ? `${minimum} - ${maximum}` : minimum;
-    const displayPrice = `${range} ${currency}`;
-
-    return (
-      <span
-        className={`inline-block max-w-full whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
-        dir="ltr"
-        style={{ unicodeBidi: 'isolate-override' }}
-      >
-        {displayPrice}
-      </span>
-    );'''
-
-          if old not in source:
-              raise SystemExit('Expected catalog price formatter block was not found; refusing to patch.')
-
-          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          replacements = [
+              ("    const range = hasRange ? `${minimum}-${maximum}` : minimum;", "    const range = hasRange ? `${minimum} - ${maximum}` : minimum;\n    const displayPrice = `${range} ${currency}`;"),
+              ("        className={`inline-flex max-w-full items-baseline whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}", "        className={`inline-block max-w-full whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}"),
+              ("        style={{ unicodeBidi: 'isolate' }}", "        style={{ unicodeBidi: 'isolate-override' }}"),
+              ("        <bdi dir=\"ltr\">{range}</bdi>\n        <span className=\"ms-1\" dir={lang === 'en' ? 'ltr' : 'rtl'}>{currency}</span>", "        {displayPrice}"),
+          ]
+          for old, new in replacements:
+              if old not in source:
+                  raise SystemExit(f'Expected catalog price formatter fragment was not found: {old}')
+              source = source.replace(old, new, 1)
+          path.write_text(source, encoding='utf-8')
           PY
 
       - name: Remove one-shot workflow
