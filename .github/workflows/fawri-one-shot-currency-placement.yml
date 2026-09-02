@@ -27,29 +27,17 @@ jobs:
           from pathlib import Path
           path = Path('artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx')
           source = path.read_text(encoding='utf-8')
-          old = '''    const displayPrice = `${range} ${currency}`;
-
-    return (
-      <span
-        className={`inline-block max-w-full whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
-        dir="ltr"
-        style={{ unicodeBidi: 'isolate-override' }}
-      >
-        {displayPrice}
-      </span>
-    );'''
-          new = '''    return (
-      <span
-        className={`inline-flex max-w-full items-baseline gap-1 whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}
-        dir={isRTL ? 'rtl' : 'ltr'}
-      >
-        <bdi dir="ltr" style={{ unicodeBidi: 'isolate-override' }}>{range}</bdi>
-        <bdi dir="ltr" style={{ unicodeBidi: 'isolate-override' }}>{currency}</bdi>
-      </span>
-    );'''
-          if source.count(old) != 1:
-              raise SystemExit(f'Expected exactly one formatter block, found {source.count(old)}; refusing to patch.')
-          path.write_text(source.replace(old, new, 1), encoding='utf-8')
+          replacements = [
+              ("    const displayPrice = `${range} ${currency}`;\n\n", ""),
+              ("        className={`inline-block max-w-full whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}", "        className={`inline-flex max-w-full items-baseline gap-1 whitespace-nowrap ${compact && hasRange ? 'text-xs' : ''}`}"),
+              ("        dir=\"ltr\"\n        style={{ unicodeBidi: 'isolate-override' }}", "        dir={isRTL ? 'rtl' : 'ltr'}"),
+              ("        {displayPrice}", "        <bdi dir=\"ltr\" style={{ unicodeBidi: 'isolate-override' }}>{range}</bdi>\n        <bdi dir=\"ltr\" style={{ unicodeBidi: 'isolate-override' }}>{currency}</bdi>"),
+          ]
+          for old, new in replacements:
+              if source.count(old) != 1:
+                  raise SystemExit(f'Expected exactly one formatter fragment, found {source.count(old)}: {old}')
+              source = source.replace(old, new, 1)
+          path.write_text(source, encoding='utf-8')
           PY
           git diff --check
 
