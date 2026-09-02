@@ -74,6 +74,18 @@ export function installAdaptiveIdentifierInputs() {
     }
   }, true);
 
+  document.addEventListener('focusin', event => {
+    if (event.target instanceof HTMLInputElement && event.target.matches(ADAPTIVE_IDENTIFIER_SELECTOR)) {
+      fitIdentifierInput(event.target);
+    }
+  }, true);
+
+  /* Editor buttons can generate or copy identifiers programmatically without
+   * dispatching a native input event. Re-fit after those React updates land. */
+  document.addEventListener('click', () => {
+    requestAnimationFrame(() => requestAnimationFrame(() => fitAllIdentifierInputs()));
+  }, true);
+
   const observer = new MutationObserver(records => {
     let needsScan = false;
     for (const record of records) {
