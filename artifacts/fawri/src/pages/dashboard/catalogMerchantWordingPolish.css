@@ -30,3 +30,26 @@ html[lang="ar"] .products-workspace-polish .catalog-editor-shell section[class~=
 .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:nth-child(2) {
   white-space: nowrap !important;
 }
+
+/*
+ * Desktop-only compact primary row: name + category + selling price.
+ * This reduces only these three writing fields and leaves the rest of the
+ * editor, variant table, cards, padding, and established design geometry alone.
+ */
+@media (min-width: 1001px) {
+  .products-workspace-polish .catalog-editor-body-grid > .grid.gap-4.sm\:grid-cols-2:has([data-catalog-primary-input="true"]) {
+    grid-column: 1 / span 8 !important;
+    align-self: start;
+  }
+
+  .products-workspace-polish .catalog-editor-body-grid > .grid.gap-4.sm\:grid-cols-2:has([data-catalog-primary-input="true"]) + label.space-y-1.text-sm.font-semibold {
+    grid-column: 9 / -1 !important;
+    align-self: start;
+  }
+
+  .products-workspace-polish .catalog-editor-body-grid > .grid.gap-4.sm\:grid-cols-2:has([data-catalog-primary-input="true"]) input,
+  .products-workspace-polish .catalog-editor-body-grid > .grid.gap-4.sm\:grid-cols-2:has([data-catalog-primary-input="true"]) + label.space-y-1.text-sm.font-semibold input {
+    height: 2.625rem !important;
+    min-height: 2.625rem !important;
+  }
+}
