@@ -2,8 +2,8 @@
  * Project-wide field-content alignment.
  *
  * Keep labels and surrounding layout untouched; only the content rendered inside
- * merchant/public/admin form controls is centered. Dense editable tables are
- * allowed to grow horizontally instead of squeezing values or placeholders.
+ * merchant/public/admin form controls is centered. Individual dense editors own
+ * their compact sizing so the global rule never forces a horizontal scrollbar.
  */
 
 :where(
@@ -37,8 +37,7 @@ select {
 }
 
 /* Radix/select-style fields previously clamped selected text to one line.
- * Let the control grow when a translated value needs more room instead of
- * cutting the visible wording. */
+ * Let translated values remain readable without changing surrounding labels. */
 button[role="combobox"] {
   height: auto !important;
 }
@@ -51,19 +50,4 @@ button[role="combobox"] > span {
   overflow: visible !important;
   text-overflow: clip !important;
   -webkit-line-clamp: unset !important;
-}
-
-/* Single-line inputs cannot wrap. In editable tables, give the fields enough
- * intrinsic width and let the existing table scroller carry any extra width.
- * This keeps complete inherited price/cost text visible instead of squeezing it. */
-.fawri-ui-baseline table:has(input) input[type="number"] {
-  min-inline-size: 10.5rem !important;
-}
-
-.fawri-ui-baseline table:has(input) input[type="text"][inputmode="numeric"] {
-  min-inline-size: 8rem !important;
-}
-
-.fawri-ui-baseline table:has(input) input.font-mono {
-  min-inline-size: 10rem !important;
 }
