@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   buildWhatsAppInboundMessageJob,
@@ -8,6 +9,25 @@ import {
   whatsAppChannelKey,
 } from "../src/services/whatsappOfflineContracts";
 import type { NormalizedWhatsAppMessageEvent } from "../src/services/whatsappWebhookContract";
+
+test("offline WhatsApp implementation has no network or credential capability", () => {
+  const sources = [
+    new URL("../src/services/whatsappWebhookContract.ts", import.meta.url),
+    new URL("../src/services/whatsappOfflineContracts.ts", import.meta.url),
+  ].map((url) => readFileSync(url, "utf8"));
+  const joined = sources.join("\n");
+
+  for (const forbidden of [
+    /\bfetch\s*\(/,
+    /graph\.facebook\.com/i,
+    /\bAuthorization\b/,
+    /\bBearer\b/,
+    /ACCESS_TOKEN/,
+    /APP_SECRET/,
+  ]) {
+    assert.doesNotMatch(joined, forbidden);
+  }
+});
 
 test("normalizes merchant/WABA/phone identity and derives a stable key", () => {
   const identity = normalizeWhatsAppChannelIdentity({
