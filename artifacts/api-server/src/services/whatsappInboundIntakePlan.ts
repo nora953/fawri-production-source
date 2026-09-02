@@ -67,6 +67,12 @@ function unit(input: {
   maxAttempts: number;
   priority?: number;
 }): WhatsAppInboundIntakeUnit {
+  if (!input.channelId || input.channelId.length > 200) {
+    throw intakeError(
+      "WHATSAPP_INTAKE_CHANNEL_ID_INVALID",
+      "WhatsApp intake channel identity is invalid",
+    );
+  }
   const payloadSha256 = sha256(canonical(input.payload));
   const jobId = deterministicId(
     "job",
@@ -123,11 +129,12 @@ export function buildWhatsAppInboundIntakeTransactionPlan(
       "WhatsApp intake plan mode is invalid",
     );
   }
-  if (!plan.supported && (
-    plan.inbound_messages.length > 0 ||
-    plan.delivery_statuses.length > 0 ||
-    plan.provider_errors.length > 0
-  )) {
+  if (
+    !plan.supported &&
+    (plan.inbound_messages.length > 0 ||
+      plan.delivery_statuses.length > 0 ||
+      plan.provider_errors.length > 0)
+  ) {
     throw intakeError(
       "WHATSAPP_INTAKE_UNSUPPORTED_EVENTS",
       "Unsupported WhatsApp delivery cannot contain planned events",
@@ -142,12 +149,7 @@ export function buildWhatsAppInboundIntakeTransactionPlan(
         type: "whatsapp_inbound_message",
         eventId: message.event_id,
         merchantId: message.merchant_id,
-        channelId: deterministicId(
-          "channel-key",
-          message.merchant_id,
-          message.waba_id,
-          message.phone_number_id,
-        ),
+        channelId: message.channel_id,
         payload: { ...message },
         maxAttempts: 5,
       }),
