@@ -10,7 +10,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test:role-session-isolation": "node --test ./tests/role-session-isolation.test.mjs",
     "test:catalog-arabic-service-golden": "node --test ./tests/catalog-arabic-service-golden-guard.test.mjs",
-    "test:catalog-arabic-golden": "node --test ./tests/catalog-arabic-service-golden-guard.test.mjs ./tests/catalog-arabic-golden-reference.test.mjs"
+    "test:catalog-arabic-golden": "node --test ./tests/catalog-arabic-service-golden-guard.test.mjs ./tests/catalog-arabic-golden-reference.test.mjs",
+    "test:catalog-english-service-golden": "node --test ./tests/catalog-english-service-golden-reference.test.mjs",
+    "test:catalog-golden": "pnpm run test:catalog-arabic-golden && pnpm run test:catalog-english-service-golden"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
