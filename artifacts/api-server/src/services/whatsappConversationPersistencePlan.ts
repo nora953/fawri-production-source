@@ -2,6 +2,7 @@ import type {
   ChannelInboundMessage,
   WhatsAppInboundBridgeResult,
 } from "./whatsappInboundBridge";
+import { assertWhatsAppInboundBridgeResultRuntime } from "./whatsappInboundBridgeResultGuard";
 import type { WhatsAppMessageProviderReference } from "./whatsappWebhookContract";
 
 export type PlannedWhatsAppConversationRecord = {
@@ -112,15 +113,20 @@ function customerDisplayText(message: ChannelInboundMessage): string {
 
 /**
  * Produces the shared `conversations` + `messages` write shape for a verified
- * WhatsApp inbound job. It intentionally performs no SQL and requires a future
- * adapter to commit both records transactionally after verifying the matching
+ * WhatsApp inbound job. A coercion-free structural guard runs first so a forged
+ * bridge result cannot execute getters/value coercion or place an accessor-
+ * bearing provider reference into the future persistence metadata.
+ *
+ * This planner intentionally performs no SQL and requires a future adapter to
+ * commit both records transactionally after verifying the matching
  * `channel_inbound_events` marker. Existing unique constraints remain the final
  * authority for idempotency/collision handling. Human text is independently
- * checked here as a persistence boundary even if a caller bypasses the bridge.
+ * checked here even if a caller forges a structurally safe bridge result.
  */
 export function buildWhatsAppConversationPersistencePlan(
   input: WhatsAppInboundBridgeResult,
 ): WhatsAppConversationPersistencePlan {
+  assertWhatsAppInboundBridgeResultRuntime(input);
   const message = input.message;
   if (message.channel !== "whatsapp") {
     throw persistenceError(
