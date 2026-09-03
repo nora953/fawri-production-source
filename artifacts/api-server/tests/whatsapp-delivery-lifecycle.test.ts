@@ -196,6 +196,50 @@ test("status event must match WABA, phone number, and provider message id", () =
   );
 });
 
+test("known recipient is immutable across provider status events", () => {
+  assert.throws(
+    () =>
+      reduceWhatsAppDeliveryStatus(
+        sentState(),
+        statusEvent("delivered", { recipient_id: "9647722222222" }),
+      ),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_DELIVERY_RECIPIENT_MISMATCH",
+  );
+
+  const withoutRecipient = reduceWhatsAppDeliveryStatus(
+    sentState(),
+    statusEvent("delivered", { recipient_id: undefined }),
+  );
+  assert.equal(withoutRecipient.state.recipient_id, "9647711111111");
+});
+
+test("invalid recipient identity fails closed before state creation or reduction", () => {
+  assert.throws(
+    () =>
+      createWhatsAppDeliveryState({
+        attemptId: "attempt-invalid-recipient",
+        wabaId: "1234567890",
+        phoneNumberId: "9876543210",
+        recipientId: "not-a-number",
+        outcome: { status: "sent", provider_message_id: "wamid.out-1" },
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code === "WHATSAPP_DELIVERY_RECIPIENT_INVALID",
+  );
+
+  assert.throws(
+    () =>
+      reduceWhatsAppDeliveryStatus(
+        sentState(),
+        statusEvent("delivered", { recipient_id: "bad-recipient" }),
+      ),
+    (error: unknown) =>
+      (error as { code?: string }).code === "WHATSAPP_DELIVERY_RECIPIENT_INVALID",
+  );
+});
+
 test("delivery lifecycle stays pure and credential-free", () => {
   const source = fs.readFileSync(
     path.join(
