@@ -59,9 +59,10 @@ function processingPlan(): WhatsAppWebhookProcessingPlan {
   };
 }
 
-test("plans event markers and encrypted jobs as one required atomic boundary", () => {
+test("plans event markers and encrypted PostgreSQL jobs as one required atomic boundary", () => {
   const result = buildWhatsAppInboundIntakeTransactionPlan(processingPlan());
   assert.equal(result.boundary, "not_persisted_not_enqueued");
+  assert.equal(result.storage_authority, "postgres_background_jobs_encrypted_payload");
   assert.equal(result.atomic_write_required, true);
   assert.equal(result.encrypted_payload_required, true);
   assert.equal(result.units.length, 3);
@@ -69,11 +70,14 @@ test("plans event markers and encrypted jobs as one required atomic boundary", (
     assert.equal(unit.event.provider, "whatsapp");
     assert.equal(unit.event.merchant_id, "merchant-1");
     assert.equal(unit.event.channel_id, "channel-1");
-    assert.equal(unit.event.enqueue_job_id, unit.job.id);
-    assert.equal(unit.job.encrypted_payload_required, true);
-    assert.equal(unit.job.enqueue.merchantId, "merchant-1");
+    assert.equal(unit.event.enqueue_job_id, unit.job.job_row.id);
+    assert.equal(unit.job.storage_authority, "postgres_background_jobs_encrypted_payload");
+    assert.equal(unit.job.job_row.merchant_id, "merchant-1");
+    assert.equal(unit.job.encrypted_payload.ciphertext_required, true);
+    assert.equal(unit.job.encrypted_payload.plaintext_persistence_forbidden, true);
     assert.match(unit.event.payload_hash, /^[a-f0-9]{64}$/);
-    assert.equal(unit.job.payload_sha256, unit.event.payload_hash);
+    assert.equal(unit.job.encrypted_payload.payload_sha256, unit.event.payload_hash);
+    assert.equal(unit.job.job_row.payload_hash, unit.event.payload_hash);
   }
 });
 
@@ -81,8 +85,16 @@ test("same processing plan generates deterministic event and job identities", ()
   const first = buildWhatsAppInboundIntakeTransactionPlan(processingPlan());
   const second = buildWhatsAppInboundIntakeTransactionPlan(processingPlan());
   assert.deepEqual(
-    first.units.map((unit) => [unit.event.id, unit.job.id, unit.job.enqueue.dedupeKey]),
-    second.units.map((unit) => [unit.event.id, unit.job.id, unit.job.enqueue.dedupeKey]),
+    first.units.map((unit) => [
+      unit.event.id,
+      unit.job.job_row.id,
+      unit.job.job_row.dedupe_key,
+    ]),
+    second.units.map((unit) => [
+      unit.event.id,
+      unit.job.job_row.id,
+      unit.job.job_row.dedupe_key,
+    ]),
   );
 });
 
@@ -97,16 +109,26 @@ test("duplicate external provider identities are rejected before any persistence
   );
 });
 
-test("intake planner carries the resolved merchant channel row identity", () => {
+test("intake planner carries merchant/channel/event identity inside the encryption envelope", () => {
   const result = buildWhatsAppInboundIntakeTransactionPlan(processingPlan());
-  assert.equal(result.units[0].event.channel_id, "channel-1");
+  const first = result.units[0];
+  assert.equal(first.event.channel_id, "channel-1");
+  assert.equal(first.job.channel_id, "channel-1");
   assert.equal(
-    (result.units[0].job.enqueue.payload as Record<string, unknown>).channel_id,
+    first.job.encrypted_payload.payload_for_encryption.channel_id,
     "channel-1",
+  );
+  assert.equal(
+    first.job.encrypted_payload.payload_for_encryption.merchant_id,
+    "merchant-1",
+  );
+  assert.equal(
+    first.job.encrypted_payload.payload_for_encryption.event_id,
+    "message-event",
   );
 });
 
-test("intake planner has no database, queue write, network, or secret capability", () => {
+test("intake planner has no legacy JSON queue, database write, network, or secret capability", () => {
   const source = fs.readFileSync(
     path.join(
       repoRoot,
@@ -114,6 +136,8 @@ test("intake planner has no database, queue write, network, or secret capability
     ),
     "utf8",
   );
+  assert.doesNotMatch(source, /durableJobQueue/);
+  assert.doesNotMatch(source, /JsonFileStore/);
   assert.doesNotMatch(source, /withOperationalTransaction/);
   assert.doesNotMatch(source, /enqueueDurableJob\s*\(/);
   assert.doesNotMatch(source, /\bfetch\s*\(/);
