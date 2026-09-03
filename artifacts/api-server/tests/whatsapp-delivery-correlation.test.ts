@@ -40,6 +40,8 @@ function row(overrides: Record<string, unknown> = {}) {
     provider_message_id: "wamid.out-1",
     failure_code: null,
     channel_id: "channel-1",
+    waba_id: "1234567890",
+    phone_number_id: "9876543210",
     ...overrides,
   };
 }
@@ -51,17 +53,27 @@ function clientWith(rows: Record<string, unknown>[]): OperationalSqlClient {
       values: unknown[] = [],
     ) {
       assert.match(sql, /JOIN channel_inbound_events/);
+      assert.match(sql, /JOIN merchant_channels/);
       assert.match(sql, /i\.provider = 'whatsapp'/);
+      assert.match(sql, /c\.platform = 'whatsapp'/);
       assert.match(sql, /d\.merchant_id = \$1/);
       assert.match(sql, /i\.channel_id = \$2/);
       assert.match(sql, /d\.provider_message_id = \$3/);
-      assert.deepEqual(values, ["merchant-1", "channel-1", "wamid.out-1"]);
+      assert.match(sql, /c\.whatsapp_business_account_id = \$4/);
+      assert.match(sql, /c\.whatsapp_phone_number_id = \$5/);
+      assert.deepEqual(values, [
+        "merchant-1",
+        "channel-1",
+        "wamid.out-1",
+        "1234567890",
+        "9876543210",
+      ]);
       return { rows: rows as T[] };
     },
   };
 }
 
-test("correlates only a confirmed send in the same merchant and channel", async () => {
+test("correlates only a confirmed send in the exact merchant WhatsApp channel identity", async () => {
   const result = await correlateWhatsAppDeliveryWithClient(
     clientWith([row()]),
     observation(),
@@ -102,12 +114,16 @@ test("missing or ambiguous correlation fails closed", async () => {
   );
 });
 
-test("non-sent or cross-owner rows are rejected even if a query adapter misbehaves", async () => {
+test("non-sent, cross-owner, or cross-provider-identity rows are rejected even if a query adapter misbehaves", async () => {
   for (const badRow of [
     row({ outcome: "uncertain" }),
     row({ merchant_id: "merchant-2" }),
     row({ channel_id: "channel-2" }),
     row({ provider_message_id: "wamid.other" }),
+    row({ waba_id: "1234567899" }),
+    row({ phone_number_id: "9876543299" }),
+    row({ waba_id: null }),
+    row({ phone_number_id: null }),
   ]) {
     await assert.rejects(
       () => correlateWhatsAppDeliveryWithClient(clientWith([badRow]), observation()),
@@ -116,6 +132,29 @@ test("non-sent or cross-owner rows are rejected even if a query adapter misbehav
         "WHATSAPP_DELIVERY_CORRELATION_STATE_INVALID",
     );
   }
+});
+
+test("invalid WABA or phone identity fails before database lookup", async () => {
+  let queried = false;
+  const client: OperationalSqlClient = {
+    async query<T extends Record<string, unknown>>() {
+      queried = true;
+      return { rows: [] as T[] };
+    },
+  };
+
+  for (const badObservation of [
+    observation({ waba_id: "not-numeric" }),
+    observation({ phone_number_id: "" }),
+  ]) {
+    await assert.rejects(
+      () => correlateWhatsAppDeliveryWithClient(client, badObservation),
+      (error: unknown) =>
+        (error as { code?: string }).code ===
+        "WHATSAPP_DELIVERY_CORRELATION_IDENTITY_INVALID",
+    );
+  }
+  assert.equal(queried, false);
 });
 
 test("correlation is read-only and has no provider or credential capability", () => {
