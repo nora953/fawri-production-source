@@ -36,13 +36,14 @@ function request(messageText = "hello") {
   });
 }
 
-test("same logical attempt is deterministic and transport remains unauthorized", () => {
+test("same logical attempt is deterministic, cloned, and transport remains unauthorized", () => {
+  const originalRequest = request();
   const input = {
     merchantId: "merchant-1",
     replyIntentId: "reply-intent-1",
     attemptNumber: 1,
     channel,
-    request: request(),
+    request: originalRequest,
   };
   const first = createWhatsAppOutboundAttemptPlan(input);
   const second = createWhatsAppOutboundAttemptPlan(input);
@@ -53,6 +54,8 @@ test("same logical attempt is deterministic and transport remains unauthorized",
   assert.match(first.attempt_id, /^whatsapp-attempt-[a-f0-9]{40}$/);
   assert.match(first.dedupe_key, /^whatsapp-send:[a-f0-9]{64}$/);
   assert.match(first.recipient_hash, /^[a-f0-9]{24}$/);
+  assert.notEqual(first.request, originalRequest);
+  assert.notEqual(first.request.body, originalRequest.body);
 });
 
 test("later attempt number keeps logical send identity but changes attempt identity", () => {
@@ -108,6 +111,41 @@ test("channel/request and merchant mismatches fail closed", () => {
     (error: unknown) =>
       (error as { code?: string }).code ===
       "WHATSAPP_OUTBOUND_REQUEST_CHANNEL_MISMATCH",
+  );
+
+  const forgedPath = { ...request(), path: "/v30.0/other/9876543210/messages" };
+  assert.throws(
+    () =>
+      createWhatsAppOutboundAttemptPlan({
+        merchantId: "merchant-1",
+        replyIntentId: "reply-intent-1",
+        attemptNumber: 1,
+        channel,
+        request: forgedPath,
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_OUTBOUND_REQUEST_CHANNEL_MISMATCH",
+  );
+});
+
+test("forged non-dormant channel state fails before an outbound attempt is planned", () => {
+  const forgedChannel = {
+    ...channel,
+    status: "connected",
+  } as unknown as ResolvedDormantWhatsAppChannel;
+  assert.throws(
+    () =>
+      createWhatsAppOutboundAttemptPlan({
+        merchantId: "merchant-1",
+        replyIntentId: "reply-intent-1",
+        attemptNumber: 1,
+        channel: forgedChannel,
+        request: request(),
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_OUTBOUND_CHANNEL_STATE_INVALID",
   );
 });
 
