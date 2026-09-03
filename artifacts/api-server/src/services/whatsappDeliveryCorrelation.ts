@@ -21,6 +21,8 @@ type DeliveryRow = {
   provider_message_id: string | null;
   failure_code: string | null;
   channel_id: string;
+  waba_id: string | null;
+  phone_number_id: string | null;
 };
 
 function correlationError(code: string, message: string): Error & { code: string } {
@@ -38,12 +40,25 @@ function identity(value: unknown, label: string): string {
   return normalized;
 }
 
+function numericProviderIdentity(value: unknown, label: string): string {
+  const normalized = identity(value, label);
+  if (!/^\d{1,40}$/.test(normalized)) {
+    throw correlationError(
+      "WHATSAPP_DELIVERY_CORRELATION_IDENTITY_INVALID",
+      `${label} is invalid`,
+    );
+  }
+  return normalized;
+}
+
 /**
  * Correlates a provider status only to a previously confirmed-send row owned by
- * the same merchant and inbound channel. It never searches globally by provider
- * message id alone, preventing a cross-tenant status from attaching to another
- * merchant. Failed/uncertain/pending rows intentionally cannot correlate because
- * the dormant send model stores no invented provider message id for them.
+ * the same merchant and the exact WhatsApp channel identity. It never searches
+ * globally by provider message id alone. WABA + phone-number identity are
+ * checked against `merchant_channels` as well as the already-resolved channel
+ * id so a forged/cross-channel observation cannot attach to another delivery.
+ * Failed/uncertain/pending rows intentionally cannot correlate because the
+ * send model stores no invented provider message id for them.
  */
 export async function correlateWhatsAppDeliveryWithClient(
   client: OperationalSqlClient,
@@ -55,23 +70,36 @@ export async function correlateWhatsAppDeliveryWithClient(
     observation.external_message_id,
     "provider message id",
   );
+  const wabaId = numericProviderIdentity(observation.waba_id, "WABA id");
+  const phoneNumberId = numericProviderIdentity(
+    observation.phone_number_id,
+    "phone number id",
+  );
 
   const result = await client.query<DeliveryRow>(
     `SELECT d.id, d.merchant_id, d.inbound_event_id, d.reservation_id,
             d.reply_intent_id, d.outcome::text AS outcome,
             d.provider_message_id, d.failure_code,
-            i.channel_id
+            i.channel_id,
+            c.whatsapp_business_account_id AS waba_id,
+            c.whatsapp_phone_number_id AS phone_number_id
        FROM outbound_deliveries d
        JOIN channel_inbound_events i
          ON i.id = d.inbound_event_id
         AND i.merchant_id = d.merchant_id
+       JOIN merchant_channels c
+         ON c.id = i.channel_id
+        AND c.merchant_id = i.merchant_id
       WHERE d.merchant_id = $1
         AND i.channel_id = $2
         AND i.provider = 'whatsapp'::channel_platform
+        AND c.platform = 'whatsapp'::channel_platform
         AND d.provider_message_id = $3
+        AND c.whatsapp_business_account_id = $4
+        AND c.whatsapp_phone_number_id = $5
       ORDER BY d.id
       LIMIT 2`,
-    [merchantId, channelId, providerMessageId],
+    [merchantId, channelId, providerMessageId, wabaId, phoneNumberId],
   );
 
   if (result.rows.length === 0) {
@@ -92,11 +120,13 @@ export async function correlateWhatsAppDeliveryWithClient(
     row.merchant_id !== merchantId ||
     row.channel_id !== channelId ||
     row.outcome !== "sent" ||
-    row.provider_message_id !== providerMessageId
+    row.provider_message_id !== providerMessageId ||
+    row.waba_id !== wabaId ||
+    row.phone_number_id !== phoneNumberId
   ) {
     throw correlationError(
       "WHATSAPP_DELIVERY_CORRELATION_STATE_INVALID",
-      "WhatsApp correlated delivery is not a confirmed send",
+      "WhatsApp correlated delivery is not a confirmed send for the expected channel identity",
     );
   }
 
@@ -108,8 +138,8 @@ export async function correlateWhatsAppDeliveryWithClient(
     ...(row.reservation_id ? { reservation_id: row.reservation_id } : {}),
     state: {
       local_attempt_id: row.id,
-      waba_id: observation.waba_id,
-      phone_number_id: observation.phone_number_id,
+      waba_id: wabaId,
+      phone_number_id: phoneNumberId,
       external_message_id: providerMessageId,
       phase: "sent",
       ...(observation.recipient_id
