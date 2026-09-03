@@ -13,8 +13,8 @@
     "test:catalog-arabic-golden": "node --test ./tests/catalog-arabic-service-golden-guard.test.mjs ./tests/catalog-arabic-golden-reference.test.mjs",
     "test:catalog-english-service-golden": "node --test ./tests/catalog-english-service-golden-reference.test.mjs",
     "test:catalog-sorani-product-golden": "node --test ./tests/catalog-sorani-product-golden-reference.test.mjs",
-    "test:catalog-sorani-service-parity": "node --test ./tests/catalog-sorani-service-parity.test.mjs",
-    "test:catalog-golden": "pnpm run test:catalog-arabic-golden && pnpm run test:catalog-english-service-golden && pnpm run test:catalog-sorani-product-golden && pnpm run test:catalog-sorani-service-parity"
+    "test:catalog-sorani-service-golden": "node --test ./tests/catalog-sorani-service-parity.test.mjs",
+    "test:catalog-golden": "pnpm run test:catalog-arabic-golden && pnpm run test:catalog-english-service-golden && pnpm run test:catalog-sorani-product-golden && pnpm run test:catalog-sorani-service-golden"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
