@@ -31,6 +31,9 @@ const DETAILS_LABELS: Record<Lang, CatalogDetailsLabels> = {
   },
 };
 
+const ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
+const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
+
 function activeLang(): Lang {
   const value = String(document.documentElement.lang || 'en').trim().toLowerCase();
   if (value.startsWith('ar')) return 'ar';
@@ -40,6 +43,12 @@ function activeLang(): Lang {
 
 function exactText(element: Element | null): string {
   return String(element?.textContent || '').replace(/\s+/g, ' ').trim();
+}
+
+function asciiDigits(value: string): string {
+  return value
+    .replace(/[٠-٩]/g, digit => String(ARABIC_DIGITS.indexOf(digit)))
+    .replace(/[۰-۹]/g, digit => String(PERSIAN_DIGITS.indexOf(digit)));
 }
 
 function detectItemType(dialog: HTMLElement, lang: Lang): CatalogDetailsItemType | null {
@@ -69,10 +78,16 @@ function stabilizeSkuDirection(dialog: HTMLElement): void {
     /^SKU\s*:/i.test(exactText(element)),
   );
   if (!sku) return;
+
+  sku.dataset.fawriPreserveDigits = 'true';
   sku.setAttribute('dir', 'ltr');
   sku.style.direction = 'ltr';
   sku.style.unicodeBidi = 'isolate';
   sku.style.fontVariantNumeric = 'tabular-nums';
+
+  const current = exactText(sku);
+  const normalized = asciiDigits(current);
+  if (current !== normalized) sku.textContent = normalized;
 }
 
 function stabilizePriceRangeDirection(dialog: HTMLElement, lang: Lang): void {
@@ -157,5 +172,6 @@ export function installCatalogDetailsTypeParity(): void {
   observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
+    characterData: true,
   });
 }
