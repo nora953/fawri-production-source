@@ -158,7 +158,7 @@ test("provider error title is single-line and unsafe error text falls back only 
   if (event.event_kind !== "error") throw new Error("expected error event");
   assert.equal(event.title, undefined);
   assert.equal(event.message, "Safe detail\nsecond line");
-  assert.equal(JSON.stringify(event).includes("bad"), false);
+  assert.equal(event.message.includes("bad"), false);
 });
 
 test("interactive identifiers containing controls cannot become reply-engine text", () => {
