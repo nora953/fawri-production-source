@@ -4,7 +4,8 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-const here = path.dirname(fileURLToPath(import.meta.url));
+const filename = fileURLToPath(import.meta.url);
+const here = path.dirname(filename);
 const srcRoot = path.resolve(here, "../src");
 
 function source(relativePath: string): string {
@@ -39,7 +40,7 @@ test("existing Meta worker cannot accidentally consume WhatsApp job types", () =
 });
 
 test("dormant runtime audit itself creates no provider capability", () => {
-  const audit = fs.readFileSync(import.meta.filename, "utf8");
+  const audit = fs.readFileSync(filename, "utf8");
   assert.doesNotMatch(audit, /\bfetch\s*\(/);
   assert.doesNotMatch(audit, /graph\.facebook\.com/i);
   assert.doesNotMatch(audit, /\bBearer\s+[A-Za-z0-9]/);
