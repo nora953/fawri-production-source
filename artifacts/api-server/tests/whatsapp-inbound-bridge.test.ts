@@ -43,6 +43,7 @@ test("text message becomes a deterministic channel-neutral reply candidate", () 
   assert.equal(first.message.channel_id, "channel-1");
   assert.equal(first.message.external_channel_id, "9876543210");
   assert.equal(first.message.customer_external_id, "9647711111111");
+  assert.equal(first.message.provider_timestamp, "1788390000");
   assert.equal(first.message.conversation_key, second.message.conversation_key);
   assert.equal(first.message.inbound_event_key, second.message.inbound_event_key);
   assert.match(first.message.conversation_key, /^whatsapp-conversation-[a-f0-9]{40}$/);
@@ -205,19 +206,26 @@ test("location references are bounded and validated before downstream handling",
 });
 
 test("reply-engine text limit blocks automatic processing without dropping the text", () => {
-  const text = "x".repeat(2_001);
-  const result = bridgeWhatsAppInboundMessage(job({ text }));
+  const value = "x".repeat(2_001);
+  const result = bridgeWhatsAppInboundMessage(job({ text: value }));
   assert.deepEqual(result.disposition, {
     action: "manual_or_future_media",
     reason: "reply_engine_text_limit_exceeded",
   });
-  assert.equal(result.message.text, text);
+  assert.equal(result.message.text, value);
 });
 
-test("invalid channel identity fails before any downstream processing", () => {
+test("invalid local, provider, or customer identity fails before downstream processing", () => {
   for (const overrides of [
     { phone_number_id: "bad" },
     { channel_id: "" },
+    { channel_id: "bad channel" },
+    { merchant_id: "merchant\nspoof" },
+    { customer_id: "not-a-wa-id" },
+    { customer_id: "12345" },
+    { event_id: "bad\u0000event" },
+    { external_message_id: "bad\nmessage" },
+    { reply_to_message_id: "bad\rreply" },
   ]) {
     assert.throws(
       () => bridgeWhatsAppInboundMessage(job(overrides)),
@@ -226,6 +234,41 @@ test("invalid channel identity fails before any downstream processing", () => {
         "WHATSAPP_INBOUND_BRIDGE_IDENTITY_INVALID",
     );
   }
+});
+
+test("invalid provider timestamp and oversized customer display name fail closed", () => {
+  assert.throws(
+    () => bridgeWhatsAppInboundMessage(job({ provider_timestamp: "yesterday" })),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_INBOUND_BRIDGE_TIMESTAMP_INVALID",
+  );
+  assert.throws(
+    () => bridgeWhatsAppInboundMessage(job({ customer_name: "x".repeat(301) })),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_INBOUND_BRIDGE_CUSTOMER_NAME_INVALID",
+  );
+});
+
+test("unsafe provider-reference control characters fail closed", () => {
+  assert.throws(
+    () =>
+      bridgeWhatsAppInboundMessage(
+        job({
+          message_kind: "image",
+          text: undefined,
+          provider_reference: {
+            kind: "media",
+            media_kind: "image",
+            id: "media\u0000id",
+          },
+        }),
+      ),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_INBOUND_BRIDGE_IDENTITY_INVALID",
+  );
 });
 
 test("inbound bridge contains no AI, media fetch, queue, database, or provider I/O", () => {
