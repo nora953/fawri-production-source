@@ -1,5 +1,6 @@
 import {
   CATALOG_IMAGE_UPLOAD_COPY,
+  CATALOG_ITEM_TYPE_COPY,
   CATALOG_PRODUCT_DETAILS_COPY,
   COMMERCE_CATALOG_COPY,
 } from '@/lib/translations/features/catalog/catalogEditorCopy';
@@ -14,6 +15,7 @@ import {
 export function applyCatalogEditorSoraniSemanticParity() {
   const commerce = COMMERCE_CATALOG_COPY.ku as unknown as Record<string, unknown>;
   const details = CATALOG_PRODUCT_DETAILS_COPY.ku as unknown as Record<string, unknown>;
+  const itemType = CATALOG_ITEM_TYPE_COPY.ku as unknown as Record<string, unknown>;
   const images = CATALOG_IMAGE_UPLOAD_COPY.ku as unknown as Record<string, unknown>;
 
   // Hidden/catalog states reviewed against the Arabic golden reference.
@@ -32,6 +34,14 @@ export function applyCatalogEditorSoraniSemanticParity() {
     inheritanceHint: (price: string, cost: string) =>
       `نرخی فرۆشتن ${price || '—'} و تێچوو ${cost || '—'} و وێنەکانی بەرهەم بەها بنەڕەتییەکانی هەموو جۆرەکانن. تەنها لە کاتی پێویستدا بەها جیاوازەکان بنووسە.`,
     noVariants: 'هەڵبژاردەیەک وەک ڕەنگ، گنجایش، تام یان قەبارە زیاد بکە، پاشان هەموو بەهاکان لە یەک ڕیز بنووسە.',
+  });
+
+  // Service-only wording mirrors the approved Arabic service meaning. These
+  // keys are not used by the locked Sorani product editor.
+  Object.assign(itemType, {
+    serviceDetailsHint: 'ئەم زانیارییانە یارمەتی فەوری دەدەن زانیاریی ورد لەبارەی خزمەتگوزارییەکە بە کڕیار بدات.',
+    locationFlexible: 'زیاتر لە شوێنێک بۆ پێشکەشکردنی خزمەتگوزاری',
+    locationFlexibleHint: 'لانیکەم دوو شوێن هەڵبژێرە کە خزمەتگوزارییەکە لێیان پێشکەش دەکرێت.',
   });
 
   // Image-editor hidden states are part of the same product workflow.
