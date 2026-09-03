@@ -7,7 +7,7 @@ import {
 
 function evidence(overrides: Partial<WhatsAppActivationEvidence> = {}): WhatsAppActivationEvidence {
   return {
-    environment: "staging",
+    environment: "production",
     explicit_cutover_approved: true,
     deployment_revision_pinned: true,
     dormant_database_barrier_replaced: true,
@@ -17,8 +17,10 @@ function evidence(overrides: Partial<WhatsAppActivationEvidence> = {}): WhatsApp
     credential_provider_ready: true,
     provider_credential_configured: true,
     webhook_verification_ready: true,
+    webhook_signature_verification_ready: true,
     app_secret_configured: true,
     durable_queue_ready: true,
+    encrypted_job_payload_authority_ready: true,
     inbound_persistence_ready: true,
     reply_engine_handoff_ready: true,
     data_policy_ready: true,
@@ -40,6 +42,16 @@ test("readiness remains dormant while live cutover is not explicitly requested",
   assert.deepEqual(result.blockers, ["WHATSAPP_LIVE_CUTOVER_NOT_REQUESTED"]);
 });
 
+test("staging can never become an external activation candidate", () => {
+  const result = assessWhatsAppActivationReadiness(evidence({ environment: "staging" }), {
+    FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
+    FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
+  } as NodeJS.ProcessEnv);
+  assert.equal(result.mode, "blocked");
+  assert.equal(result.ready_for_external_activation, false);
+  assert.deepEqual(result.blockers, ["WHATSAPP_PRODUCTION_ENVIRONMENT_REQUIRED"]);
+});
+
 test("dormant database barrier independently blocks activation", () => {
   const result = assessWhatsAppActivationReadiness(
     evidence({ dormant_database_barrier_replaced: false }),
@@ -59,6 +71,7 @@ test("every external dependency must be explicitly evidenced", () => {
       credential_provider_ready: false,
       provider_credential_configured: false,
       webhook_verification_ready: false,
+      webhook_signature_verification_ready: false,
       durable_queue_ready: false,
       outbound_transport_ready: false,
     }),
@@ -71,8 +84,27 @@ test("every external dependency must be explicitly evidenced", () => {
   assert.ok(result.blockers.includes("WHATSAPP_CREDENTIAL_PROVIDER_NOT_READY"));
   assert.ok(result.blockers.includes("WHATSAPP_PROVIDER_CREDENTIAL_NOT_CONFIGURED"));
   assert.ok(result.blockers.includes("WHATSAPP_WEBHOOK_VERIFICATION_NOT_READY"));
+  assert.ok(
+    result.blockers.includes("WHATSAPP_WEBHOOK_SIGNATURE_VERIFICATION_NOT_READY"),
+  );
   assert.ok(result.blockers.includes("WHATSAPP_DURABLE_QUEUE_NOT_READY"));
   assert.ok(result.blockers.includes("WHATSAPP_OUTBOUND_TRANSPORT_NOT_READY"));
+});
+
+test("encrypted privileged payload authority is independent from durable queue readiness", () => {
+  const result = assessWhatsAppActivationReadiness(
+    evidence({ encrypted_job_payload_authority_ready: false }),
+    {
+      FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
+      FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
+    } as NodeJS.ProcessEnv,
+  );
+  assert.equal(result.mode, "blocked");
+  assert.equal(result.ready_for_external_activation, false);
+  assert.ok(
+    result.blockers.includes("WHATSAPP_ENCRYPTED_JOB_PAYLOAD_AUTHORITY_NOT_READY"),
+  );
+  assert.equal(result.blockers.includes("WHATSAPP_DURABLE_QUEUE_NOT_READY"), false);
 });
 
 test("internal persistence, reply, data, and media gates independently block cutover", () => {
@@ -95,14 +127,14 @@ test("internal persistence, reply, data, and media gates independently block cut
   assert.ok(result.blockers.includes("WHATSAPP_MEDIA_POLICY_NOT_READY"));
 });
 
-test("complete evidence produces only an activation candidate, not activation", () => {
+test("complete production evidence produces only an activation candidate, not activation", () => {
   const result = assessWhatsAppActivationReadiness(evidence(), {
     FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
     FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
   } as NodeJS.ProcessEnv);
   assert.deepEqual(result, {
     mode: "activation_candidate",
-    environment: "staging",
+    environment: "production",
     offline_foundation_enabled: true,
     live_cutover_requested: true,
     ready_for_external_activation: true,
