@@ -51,18 +51,35 @@ function numericProviderIdentity(value: unknown, label: string): string {
   return normalized;
 }
 
+function recipientIdentity(value: unknown, label: string): string {
+  const normalized = identity(value, label);
+  if (!/^\d{6,20}$/.test(normalized)) {
+    throw correlationError(
+      "WHATSAPP_DELIVERY_CORRELATION_IDENTITY_INVALID",
+      `${label} is invalid`,
+    );
+  }
+  return normalized;
+}
+
 /**
  * Correlates a provider status only to a previously confirmed-send row owned by
  * the same merchant and the exact WhatsApp channel identity. It never searches
  * globally by provider message id alone. WABA + phone-number identity are
  * checked against `merchant_channels` as well as the already-resolved channel
  * id so a forged/cross-channel observation cannot attach to another delivery.
- * Failed/uncertain/pending rows intentionally cannot correlate because the
- * send model stores no invented provider message id for them.
+ *
+ * A trusted expected recipient is mandatory and must come from the original
+ * outbound request/encrypted attempt authority, never from the status webhook.
+ * If Meta supplies `recipient_id`, it must match that trusted identity before a
+ * database lookup is allowed. Failed/uncertain/pending rows intentionally cannot
+ * correlate because the send model stores no invented provider message id for
+ * them.
  */
 export async function correlateWhatsAppDeliveryWithClient(
   client: OperationalSqlClient,
   observation: WhatsAppDeliveryStatusPlan,
+  expectedRecipientId: unknown,
 ): Promise<CorrelatedWhatsAppDelivery> {
   const merchantId = identity(observation.merchant_id, "merchant id");
   const channelId = identity(observation.channel_id, "channel id");
@@ -75,6 +92,20 @@ export async function correlateWhatsAppDeliveryWithClient(
     observation.phone_number_id,
     "phone number id",
   );
+  const expectedRecipient = recipientIdentity(
+    expectedRecipientId,
+    "expected recipient id",
+  );
+  const observedRecipient = String(observation.recipient_id ?? "").trim();
+  if (
+    observedRecipient &&
+    recipientIdentity(observedRecipient, "observed recipient id") !== expectedRecipient
+  ) {
+    throw correlationError(
+      "WHATSAPP_DELIVERY_RECIPIENT_MISMATCH",
+      "WhatsApp provider status belongs to a different recipient",
+    );
+  }
 
   const result = await client.query<DeliveryRow>(
     `SELECT d.id, d.merchant_id, d.inbound_event_id, d.reservation_id,
@@ -142,9 +173,7 @@ export async function correlateWhatsAppDeliveryWithClient(
       phone_number_id: phoneNumberId,
       external_message_id: providerMessageId,
       phase: "sent",
-      ...(observation.recipient_id
-        ? { recipient_id: observation.recipient_id }
-        : {}),
+      recipient_id: expectedRecipient,
       error_codes: [],
     },
   };
