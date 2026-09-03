@@ -114,7 +114,11 @@ function recipient(value: unknown): string {
 
 function messageText(value: unknown): string {
   const result = text(value);
-  if (!result || result.length > 4_000) {
+  if (
+    !result ||
+    result.length > 4_000 ||
+    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(result)
+  ) {
     throw contractError(
       "WHATSAPP_MESSAGE_TEXT_INVALID",
       "WhatsApp message text is invalid",
@@ -216,7 +220,9 @@ export function buildWhatsAppInboundMessageJob(input: {
  * Produces an outbound Cloud API request plan without performing a network
  * request and without accepting an access token. The Graph API version is
  * deliberately mandatory so a stale implicit default cannot survive until
- * future activation.
+ * future activation. Newlines and tabs remain valid user-facing text, while
+ * non-printing control bytes are rejected before the request can cross a future
+ * provider boundary.
  */
 export function buildWhatsAppTextSendPlan(input: {
   phoneNumberId: unknown;
