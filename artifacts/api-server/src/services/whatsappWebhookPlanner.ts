@@ -2,6 +2,7 @@ import {
   buildWhatsAppInboundMessageJob,
   type WhatsAppInboundMessageJob,
 } from "./whatsappOfflineContracts";
+import { assertWhatsAppWebhookParseResultRuntime } from "./whatsappWebhookParseGuard";
 import type {
   NormalizedWhatsAppErrorEvent,
   NormalizedWhatsAppStatusEvent,
@@ -119,14 +120,16 @@ function eventFingerprint(event: NormalizedWhatsAppWebhookEvent): string {
 
 /**
  * Converts normalized WhatsApp webhook events into queue- and reconciliation-
- * ready plans. It deliberately performs no enqueue, persistence, transport, or
- * provider call. Channel resolution is injected so offline fixtures and a
- * future authenticated ingress can share the same fail-closed planner.
+ * ready plans. Direct/manual parsed-result callers are runtime-guarded before
+ * fingerprinting, resolution, or event iteration, so they cannot bypass the
+ * parser's bounded/coercion-free event shape. The planner deliberately performs
+ * no enqueue, persistence, transport, or provider call.
  */
 export async function planWhatsAppWebhookProcessing(input: {
   parsed: WhatsAppWebhookParseResult;
   resolveChannel: WhatsAppWebhookChannelResolver;
 }): Promise<WhatsAppWebhookProcessingPlan> {
+  assertWhatsAppWebhookParseResultRuntime(input.parsed);
   const base: WhatsAppWebhookProcessingPlan = {
     mode: "offline_replay",
     supported: input.parsed.supported,
