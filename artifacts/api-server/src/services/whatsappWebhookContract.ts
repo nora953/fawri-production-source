@@ -296,6 +296,10 @@ function hashEvent(parts: unknown[]): string {
     .digest("hex");
 }
 
+function eventId(kind: "message" | "status" | "error", parts: unknown[]): string {
+  return `whatsapp:${kind}:${hashEvent(parts)}`;
+}
+
 function buildMessageEvent(input: {
   wabaId: string;
   phoneNumberId: string;
@@ -322,7 +326,11 @@ function buildMessageEvent(input: {
   const customerName = input.contactNames.get(customerId);
 
   return {
-    event_id: `whatsapp:${input.wabaId}:${input.phoneNumberId}:message:${externalMessageId}`,
+    event_id: eventId("message", [
+      input.wabaId,
+      input.phoneNumberId,
+      externalMessageId,
+    ]),
     event_kind: "message",
     waba_id: input.wabaId,
     phone_number_id: input.phoneNumberId,
@@ -359,8 +367,17 @@ function buildStatusEvent(input: {
   }
   const recipientId = rawRecipientId || undefined;
   const timestamp = cleanTimestamp(input.status.timestamp);
+  const errors = errorCodes(input.status.errors);
   return {
-    event_id: `whatsapp:${input.wabaId}:${input.phoneNumberId}:status:${externalMessageId}:${status}`,
+    event_id: eventId("status", [
+      input.wabaId,
+      input.phoneNumberId,
+      externalMessageId,
+      status,
+      recipientId ?? "",
+      timestamp ?? "",
+      [...errors].sort(),
+    ]),
     event_kind: "status",
     waba_id: input.wabaId,
     phone_number_id: input.phoneNumberId,
@@ -368,7 +385,7 @@ function buildStatusEvent(input: {
     ...(recipientId ? { recipient_id: recipientId } : {}),
     status,
     ...(timestamp ? { timestamp } : {}),
-    error_codes: errorCodes(input.status.errors),
+    error_codes: errors,
   };
 }
 
@@ -383,15 +400,14 @@ function buildErrorEvent(input: {
   const message =
     boundedText(input.error.message, 1_000) ||
     boundedText(record(input.error.error_data).details, 1_000);
-  const digest = hashEvent([
-    input.wabaId,
-    input.phoneNumberId,
-    code,
-    title,
-    message,
-  ]);
   return {
-    event_id: `whatsapp:${input.wabaId}:${input.phoneNumberId}:error:${digest}`,
+    event_id: eventId("error", [
+      input.wabaId,
+      input.phoneNumberId,
+      code,
+      title,
+      message,
+    ]),
     event_kind: "error",
     waba_id: input.wabaId,
     phone_number_id: input.phoneNumberId,
@@ -403,6 +419,10 @@ function buildErrorEvent(input: {
 
 /**
  * Pure, side-effect-free WhatsApp Business Platform webhook parser.
+ *
+ * Provider event identities are compact deterministic hashes. Raw provider
+ * message ids remain separately bounded for correlation, so maximum-length
+ * valid provider ids cannot overflow downstream job/persistence identities.
  *
  * This contract deliberately performs no Meta network calls, does not persist
  * credentials, and is not mounted on an HTTP route. It can therefore be built
