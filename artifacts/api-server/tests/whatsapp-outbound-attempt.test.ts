@@ -25,11 +25,14 @@ const channel: ResolvedDormantWhatsAppChannel = {
   integration_mode: "dormant_offline",
 };
 
+const graphVersion = "v30.0";
+
 function request(messageText = "hello") {
   return buildWhatsAppTextSendPlan({
     phoneNumberId: channel.phone_number_id,
     to: "+9647711111111",
     messageText,
+    graphVersion,
   });
 }
 
@@ -91,6 +94,7 @@ test("channel/request and merchant mismatches fail closed", () => {
     phoneNumberId: "1111111111",
     to: "+9647711111111",
     messageText: "hello",
+    graphVersion,
   });
   assert.throws(
     () =>
