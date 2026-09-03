@@ -72,7 +72,7 @@ test("plans pending delivery and one-shot encrypted outbound job before transpor
   const encryptedRequest = payload.request as ReturnType<typeof buildWhatsAppTextSendPlan>;
   assert.equal(payload.request_sha256, outboundAttempt.request_sha256);
   assert.equal(payload.recipient_hash, outboundAttempt.recipient_hash);
-  assert.equal(encryptedRequest.body.to, "+9647711111111");
+  assert.equal(encryptedRequest.body.to, "9647711111111");
   assert.equal(result.recipient_lock.recipient_hash, outboundAttempt.recipient_hash);
   assert.equal(result.recipient_lock.encrypted_payload_job_id, result.job.job_row.id);
   assert.equal(result.recipient_lock.encrypted_payload_field, "request.body.to");
