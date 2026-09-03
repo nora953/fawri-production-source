@@ -34,6 +34,8 @@ The migration also installs a deliberate cutover barrier: WhatsApp rows must rem
 
 `whatsappDormantChannelAuthority.ts` registers only validated dormant identity under the merchant tenant authority. `whatsappDormantChannelResolver.ts` resolves WABA + phone identity only when exactly one tenant-owned row remains `platform=whatsapp`, `status=pending`, and `integration_mode=dormant_offline`. Missing, duplicate, cross-tenant, or live-state mappings fail closed.
 
+The existing Messenger/Instagram PostgreSQL authority explicitly lists only `messenger` and `instagram`, so dormant WhatsApp rows cannot leak into the legacy Meta runtime path.
+
 ## Offline inbound architecture
 
 ### Webhook normalization
@@ -68,16 +70,18 @@ No provider media binary is downloaded or stored by this foundation.
 
 The planner rejects channel mapping mismatches and event identity collisions.
 
-### Durable intake boundary
+### Durable intake and encrypted privileged payload boundary
 
 `whatsappInboundIntakePlan.ts` describes the single-transaction relationship between:
 
 - `channel_inbound_events`, which provides provider-event dedupe and enqueue linkage; and
-- the corresponding durable background job.
+- the corresponding administrative `background_jobs` row.
 
-The job payload is marked as requiring encrypted privileged-payload storage. The planner itself performs neither SQL nor enqueue.
+`whatsappPrivilegedJobPlan.ts` separates the administrative job row from its privileged payload. The administrative row contains only bounded routing/dedupe metadata and a payload hash. The normalized job payload is explicitly marked as plaintext input for a future encryption boundary, with plaintext persistence forbidden.
 
-`whatsappDurableQueuePlan.ts` defines deterministic queue envelopes/dedupe keys without invoking or starting a worker.
+A future PostgreSQL adapter must atomically persist the inbound-event marker, administrative background job, and encrypted privileged payload record. This branch performs none of those writes.
+
+`whatsappDurableQueuePlan.ts` defines deterministic queue envelopes/dedupe keys without invoking or starting a worker. WhatsApp planners have no dependency on the legacy JSON `durableJobQueue`/`JsonFileStore`; the dormant repository audit rejects those references from WhatsApp services.
 
 ## Shared conversation and reply-engine path
 
@@ -117,7 +121,13 @@ A send is considered `sent` only when a successful HTTP response contains a prov
 - configuration/auth failures do not enter unsafe retry loops;
 - transient/ambiguous transport failures require reconciliation rather than duplicate sends.
 
-`whatsappOutboundDeliveryPersistence.ts`, `whatsappDeliveryCorrelation.ts`, `whatsappDeliveryLifecycle.ts`, and `whatsappDeliveryReconciliation.ts` define provider-message correlation and monotonic delivery-state handling. Conflicting, regressive, or cross-tenant/channel statuses fail closed. An uncertain delivery remains a manual-reconciliation condition and does not authorize resend.
+`whatsappOutboundDeliveryPersistence.ts`, `whatsappDeliveryCorrelation.ts`, `whatsappDeliveryLifecycle.ts`, and `whatsappDeliveryReconciliation.ts` define provider-message correlation and monotonic delivery-state handling.
+
+Delivery correlation is fail closed across merchant, channel, WABA, phone-number ID, provider message ID, and recipient identity. A trusted expected recipient must come from the original outbound request/encrypted attempt authority; a status webhook is not allowed to establish or replace that ownership. Once a recipient is known, later provider statuses for a different recipient are rejected. Missing provider `recipient_id` does not erase the trusted recipient.
+
+Conflicting or regressive terminal statuses move to/retain uncertainty rather than silently restoring certainty. An uncertain delivery remains a reconciliation condition and does not authorize resend.
+
+`whatsappOfflineOutboundRehearsal.ts` exercises the complete request/attempt/outcome/persistence/delivery contract only through scripted fake transport observations. It accepts no activation override and has no network/provider capability.
 
 ## Data handling and diagnostics
 
@@ -131,7 +141,8 @@ Forbidden in the dormant phase:
 - provider media fetching;
 - raw customer payloads in diagnostics;
 - raw channel/customer/provider identifiers in diagnostics;
-- dormant credential storage.
+- dormant credential storage;
+- plaintext persistence of privileged background-job payloads.
 
 Durable privileged job payloads require the existing encrypted payload boundary. Diagnostic helpers emit bounded operational codes and hashes instead of customer/business payloads.
 
@@ -139,13 +150,13 @@ Durable privileged job payloads require the existing encrypted payload boundary.
 
 The running API (`app.ts` / `index.ts`) does not mount or start WhatsApp code. The existing `metaWebhookWorker.ts` does not accept WhatsApp job types.
 
-`whatsapp-dormant-runtime-audit.test.ts` guards this property during final validation. `scripts/audit-whatsapp-dormant-boundary.mjs` provides the repository-level dormant-boundary audit.
+`whatsapp-dormant-runtime-audit.test.ts` guards this property during final validation. `scripts/audit-whatsapp-dormant-boundary.mjs` provides the repository-level dormant-boundary audit and rejects active WhatsApp routing, provider transport, credential operations, worker startup, queue writes, legacy JSON queue/store references, and direct WhatsApp secret-environment consumption.
 
 ## Activation readiness
 
 `whatsappActivationReadiness.ts` can report an `activation_candidate`, but it cannot activate anything.
 
-Activation remains blocked unless all required evidence is explicitly true, including:
+An activation candidate is restricted to **production** and remains blocked unless all required evidence is explicitly true, including:
 
 - explicit cutover approval;
 - pinned deployment revision;
@@ -154,8 +165,11 @@ Activation remains blocked unless all required evidence is explicitly true, incl
 - business verification readiness;
 - Meta app configuration readiness;
 - production credential-provider readiness and configured credential;
-- webhook verification/App Secret readiness;
-- durable queue readiness;
+- webhook verification readiness;
+- webhook raw-body signature-verification readiness;
+- App Secret configuration readiness;
+- PostgreSQL durable queue readiness;
+- encrypted privileged-job payload authority readiness;
 - inbound persistence readiness;
 - reply-engine handoff readiness;
 - data/media-policy readiness;
@@ -164,7 +178,7 @@ Activation remains blocked unless all required evidence is explicitly true, incl
 - delivery reconciliation readiness;
 - observability readiness.
 
-These are evidence booleans only. The readiness function never accepts secret values.
+These are evidence booleans only. The readiness function never accepts secret values. Development or staging cannot become an external activation candidate even when every boolean is true.
 
 ## Shared database structures
 
@@ -175,6 +189,8 @@ The foundation uses existing Fawri messaging authorities rather than creating a 
 - `background_jobs` plus encrypted privileged job payload storage;
 - `conversations` and `messages` for the merchant-facing conversation model;
 - `outbound_deliveries` for send/delivery reconciliation.
+
+The dormant branch defines plans/contracts around these authorities; it does not start a WhatsApp persistence executor or worker.
 
 ## Still deliberately disabled
 
@@ -192,18 +208,20 @@ The dormant database barrier must also be explicitly replaced before any channel
 
 ## Final verification — intentionally deferred
 
-GitHub Actions is not being used for this development pass. Per the project execution plan, WhatsApp tests and builds are **not being executed incrementally**. They will be run together from Replit Shell after development is complete.
+GitHub Actions is not being used for this development pass. Per the project execution plan, WhatsApp tests, typechecks, builds, and the dormant-boundary audit are **not being executed incrementally**. They will be run together from Replit Shell after development is complete.
 
-The API package provides one aggregate verification command:
+The final Replit validation session must run at least:
 
 ```sh
 pnpm --filter @workspace/api-server run verify:whatsapp-offline
+pnpm --filter @workspace/db run typecheck
+node scripts/audit-whatsapp-dormant-boundary.mjs
 ```
 
-It runs, in order:
+The API aggregate command runs, in order:
 
 1. API TypeScript typecheck;
 2. every `whatsapp-*.test.ts` test;
 3. API build.
 
-The final Replit validation session should also run the wider repository/integration checks required by the integration checkpoint. Until that session is performed, this document and PR must not claim that tests have passed.
+The final Replit session must then run the wider repository/integration checks required by the integration checkpoint before this PR is considered merge-ready. Until that session is performed, this document and PR must not claim that tests have passed.
