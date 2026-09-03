@@ -38,16 +38,31 @@ function planError(code: string, message: string): Error & { code: string } {
   return Object.assign(new Error(message), { code });
 }
 
-function identity(value: unknown, label: string, max = 200): string {
+function localIdentity(value: unknown, label: string): string {
   const normalized = String(value ?? "").trim();
   if (
     !normalized ||
-    normalized.length > max ||
-    /[\u0000-\u001F\u007F]/.test(normalized)
+    normalized.length > 200 ||
+    !/^[A-Za-z0-9._:-]+$/.test(normalized)
   ) {
     throw planError(
       "WHATSAPP_PRIVILEGED_JOB_IDENTITY_INVALID",
       `${label} is invalid`,
+    );
+  }
+  return normalized;
+}
+
+function providerEventIdentity(value: unknown): string {
+  const normalized = String(value ?? "").trim();
+  if (
+    !normalized ||
+    normalized.length > 512 ||
+    /[\u0000-\u001F\u007F]/.test(normalized)
+  ) {
+    throw planError(
+      "WHATSAPP_PRIVILEGED_JOB_IDENTITY_INVALID",
+      "external event id is invalid",
     );
   }
   return normalized;
@@ -146,9 +161,9 @@ export function buildWhatsAppPrivilegedJobPlan(input: {
   priority?: unknown;
 }): WhatsAppPrivilegedJobPlan {
   const type = jobType(input.type);
-  const eventId = identity(input.eventId, "external event id", 512);
-  const merchantId = identity(input.merchantId, "merchant id");
-  const channelId = identity(input.channelId, "channel id");
+  const eventId = providerEventIdentity(input.eventId);
+  const merchantId = localIdentity(input.merchantId, "merchant id");
+  const channelId = localIdentity(input.channelId, "channel id");
   const maxAttempts = positiveInteger(input.maxAttempts, "max attempts", 25);
   const normalizedPriority = priority(input.priority);
   assertPayloadOwnership({
