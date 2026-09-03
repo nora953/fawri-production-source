@@ -106,15 +106,15 @@ function stabilizePriceRangeDirection(dialog: HTMLElement, lang: Lang): void {
 
   const range = value.querySelector<HTMLElement>('span');
   if (range) {
-    range.setAttribute('dir', 'ltr');
-    range.style.direction = 'ltr';
+    range.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
+    range.style.direction = lang === 'en' ? 'ltr' : 'rtl';
     range.style.unicodeBidi = 'isolate';
     range.style.display = 'inline-flex';
     range.style.alignItems = 'baseline';
-    // Arabic and Sorani details should match the catalog card: the numeric
-    // amount stays on the visual right while the currency sits on the left.
-    // English keeps its normal amount-then-currency visual order.
-    range.style.flexDirection = lang === 'en' ? 'row' : 'row-reverse';
+    // In RTL flex rows, the first child (the amount) is placed on the visual
+    // right and the following currency child is placed on the visual left,
+    // matching the approved catalog summary-card presentation.
+    range.style.flexDirection = 'row';
   }
 
   const firstBdi = value.querySelector<HTMLElement>('bdi');
