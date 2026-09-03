@@ -70,10 +70,17 @@ function required(value: unknown, label: string, max = 512): string {
   return normalized;
 }
 
-function optionalBounded(value: unknown, max: number): string | undefined {
+function optionalBounded(
+  value: unknown,
+  max: number,
+  options: { allowNewlines?: boolean } = {},
+): string | undefined {
   const normalized = text(value);
   if (!normalized) return undefined;
-  if (normalized.length > max || /[\r\n]/.test(normalized)) {
+  if (
+    normalized.length > max ||
+    (!options.allowNewlines && /[\r\n]/.test(normalized))
+  ) {
     throw bridgeError(
       "WHATSAPP_INBOUND_BRIDGE_PROVIDER_REFERENCE_INVALID",
       "WhatsApp provider reference metadata is invalid",
@@ -145,7 +152,7 @@ function providerReference(
     const id = required(value.id, "WhatsApp media id", 160);
     const mimeType = optionalBounded(value.mime_type, 160);
     const sha256 = optionalBounded(value.sha256, 256);
-    const caption = optionalBounded(value.caption, 1_024);
+    const caption = optionalBounded(value.caption, 1_024, { allowNewlines: true });
     const filename = optionalBounded(value.filename, 512);
     return {
       kind: "media",
@@ -187,7 +194,7 @@ function providerReference(
       );
     }
     const name = optionalBounded(value.name, 300);
-    const address = optionalBounded(value.address, 1_000);
+    const address = optionalBounded(value.address, 1_000, { allowNewlines: true });
     return {
       kind: "location",
       latitude,
