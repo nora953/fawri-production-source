@@ -10,6 +10,7 @@ const editModeCss = read('../src/pages/dashboard/catalogEditModeCompact.css');
 const productsWorkspace = read('../src/pages/dashboard/ProductsWorkspacePage.tsx');
 const authority = read('../../api-server/src/services/postgresCatalogAuthority.ts');
 const detailsParity = read('../src/lib/catalogDetailsTypeParity.ts');
+const i18n = read('../src/lib/i18n.tsx');
 const main = read('../src/main.tsx');
 
 test('existing catalog items use type-specific edit titles in all supported languages', () => {
@@ -69,4 +70,10 @@ test('catalog details modal uses type-specific titles and edit labels in all sup
   assert.match(detailsParity, /stabilizeSkuDirection\(dialog\)/);
   assert.match(detailsParity, /stabilizePriceRangeDirection\(dialog, lang\)/);
   assert.match(main, /installCatalogDetailsTypeParity\(\)/);
+});
+
+test('catalog details keeps SKU technical digits ASCII while localizing normal UI numbers', () => {
+  assert.match(detailsParity, /sku\.dataset\.fawriPreserveDigits = 'true'/);
+  assert.match(detailsParity, /const normalized = asciiDigits\(current\)/);
+  assert.match(i18n, /parent\.closest\('\[data-fawri-preserve-digits="true"\]'\)/);
 });
