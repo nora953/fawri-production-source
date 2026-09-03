@@ -110,6 +110,7 @@ for (const requiredService of [
   "whatsappPrivilegedJobPlan.ts",
   "whatsappInboundIntakePlan.ts",
   "whatsappDurableQueuePlan.ts",
+  "whatsappOutboundDispatchPlan.ts",
 ]) {
   if (!serviceFiles().includes(requiredService)) {
     violations.push({
