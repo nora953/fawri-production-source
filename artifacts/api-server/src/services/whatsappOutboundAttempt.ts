@@ -1,6 +1,10 @@
 import crypto from "node:crypto";
 import type { WhatsAppTextSendPlan } from "./whatsappOfflineContracts";
 import type { ResolvedDormantWhatsAppChannel } from "./whatsappDormantChannelResolver";
+import {
+  assertWhatsAppOutboundAttemptCreateInputStructure,
+  assertWhatsAppOutboundAttemptPlanStructure,
+} from "./whatsappOutboundRuntimeGuards";
 
 export type WhatsAppOutboundAttemptPlan = {
   boundary: "not_sent";
@@ -158,6 +162,7 @@ function expectedIdentities(input: {
 export function assertWhatsAppOutboundAttemptIntegrity(
   attempt: WhatsAppOutboundAttemptPlan,
 ): void {
+  assertWhatsAppOutboundAttemptPlanStructure(attempt);
   if (attempt.boundary !== "not_sent" || attempt.transport_authorized !== false) {
     throw attemptError(
       "WHATSAPP_OUTBOUND_ATTEMPT_INTEGRITY_INVALID",
@@ -205,6 +210,7 @@ export function createWhatsAppOutboundAttemptPlan(input: {
   channel: ResolvedDormantWhatsAppChannel;
   request: WhatsAppTextSendPlan;
 }): WhatsAppOutboundAttemptPlan {
+  assertWhatsAppOutboundAttemptCreateInputStructure(input);
   const merchantId = safeIdentity(input.merchantId, "merchant id");
   const replyIntentId = safeIdentity(input.replyIntentId, "reply intent id");
   const attemptNumber = assertFirstAttemptOnly(input.attemptNumber);
