@@ -1,4 +1,8 @@
 import crypto from "node:crypto";
+import {
+  assertWhatsAppSendResponseInputStructure,
+  assertWhatsAppTextSendBuildInputStructure,
+} from "./whatsappOfflineContractInputGuards";
 import type {
   NormalizedWhatsAppMessageEvent,
 } from "./whatsappWebhookContract";
@@ -230,6 +234,7 @@ export function buildWhatsAppTextSendPlan(input: {
   messageText: unknown;
   graphVersion: unknown;
 }): WhatsAppTextSendPlan {
+  assertWhatsAppTextSendBuildInputStructure(input);
   const phoneNumberId = metaNumericId(
     input.phoneNumberId,
     "WhatsApp phone number id",
@@ -292,6 +297,7 @@ export function classifyWhatsAppSendResponse(input: {
   httpStatus: unknown;
   body: unknown;
 }): WhatsAppSendOutcome {
+  assertWhatsAppSendResponseInputStructure(input);
   const status = Number(input.httpStatus);
   if (!Number.isInteger(status) || status < 100 || status > 599) {
     throw contractError(
