@@ -9,9 +9,11 @@ import { installAdaptiveIdentifierInputs } from "@/lib/adaptiveIdentifierInputs"
 import { installCatalogEditorAutoDirection } from "@/lib/catalogEditorAutoDirection";
 import { installCatalogArabicServiceGoldenGuard } from "@/lib/catalogArabicServiceGoldenGuard";
 import { applyCatalogEditorEnglishSemanticParity } from "@/lib/catalogEditorEnglishSemanticParity";
+import { applyCatalogEditorSoraniSemanticParity } from "@/lib/catalogEditorSoraniSemanticParity";
 import { I18nProvider } from "@/lib/i18n";
 
 applyCatalogEditorEnglishSemanticParity();
+applyCatalogEditorSoraniSemanticParity();
 installAdaptiveIdentifierInputs();
 installCatalogEditorAutoDirection();
 installCatalogArabicServiceGoldenGuard();
