@@ -84,8 +84,11 @@ test('catalog details keeps RTL price ranges in minimum-to-maximum order', () =>
 });
 
 test('catalog details puts RTL currency on the visual left and amount on the visual right', () => {
+  assert.match(detailsParity, /range\.setAttribute\('dir', lang === 'en' \? 'ltr' : 'rtl'\)/);
+  assert.match(detailsParity, /range\.style\.direction = lang === 'en' \? 'ltr' : 'rtl'/);
   assert.match(detailsParity, /range\.style\.display = 'inline-flex'/);
   assert.match(detailsParity, /range\.style\.alignItems = 'baseline'/);
-  assert.match(detailsParity, /range\.style\.flexDirection = lang === 'en' \? 'row' : 'row-reverse'/);
-  assert.match(detailsParity, /amount stays on the visual right while the currency sits on the left/);
+  assert.match(detailsParity, /range\.style\.flexDirection = 'row'/);
+  assert.doesNotMatch(detailsParity, /row-reverse/);
+  assert.match(detailsParity, /amount\) is placed on the visual/);
 });
