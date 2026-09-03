@@ -10,6 +10,8 @@ import {
 } from "../src/services/whatsappOfflineContracts";
 import type { NormalizedWhatsAppMessageEvent } from "../src/services/whatsappWebhookContract";
 
+const graphVersion = "v30.0";
+
 test("offline WhatsApp implementation has no network or credential capability", () => {
   const sources = [
     new URL("../src/services/whatsappWebhookContract.ts", import.meta.url),
@@ -138,12 +140,13 @@ test("builds an outbound text plan without credentials or network calls", () => 
     phoneNumberId: "9876543210",
     to: "+9647711111111",
     messageText: "تم استلام طلبك",
+    graphVersion,
   });
 
   assert.deepEqual(plan, {
     method: "POST",
-    graph_version: "v22.0",
-    path: "/v22.0/9876543210/messages",
+    graph_version: graphVersion,
+    path: "/v30.0/9876543210/messages",
     body: {
       messaging_product: "whatsapp",
       recipient_type: "individual",
@@ -159,13 +162,14 @@ test("builds an outbound text plan without credentials or network calls", () => 
   assert.equal(JSON.stringify(plan).includes("Bearer"), false);
 });
 
-test("rejects unsafe outbound recipient, text, and Graph version values", () => {
+test("rejects unsafe outbound recipient, text, and missing/unpinned Graph version values", () => {
   assert.throws(
     () =>
       buildWhatsAppTextSendPlan({
         phoneNumberId: "9876543210",
         to: "not-a-number",
         messageText: "hello",
+        graphVersion,
       }),
     (error: unknown) =>
       (error as { code?: string }).code === "WHATSAPP_RECIPIENT_INVALID",
@@ -176,6 +180,7 @@ test("rejects unsafe outbound recipient, text, and Graph version values", () => 
         phoneNumberId: "9876543210",
         to: "9647711111111",
         messageText: "",
+        graphVersion,
       }),
     (error: unknown) =>
       (error as { code?: string }).code === "WHATSAPP_MESSAGE_TEXT_INVALID",
@@ -191,9 +196,20 @@ test("rejects unsafe outbound recipient, text, and Graph version values", () => 
     (error: unknown) =>
       (error as { code?: string }).code === "WHATSAPP_GRAPH_VERSION_INVALID",
   );
+  assert.throws(
+    () =>
+      buildWhatsAppTextSendPlan({
+        phoneNumberId: "9876543210",
+        to: "9647711111111",
+        messageText: "hello",
+        graphVersion: "",
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code === "WHATSAPP_GRAPH_VERSION_INVALID",
+  );
 });
 
-test("classifies confirmed sends only when Meta returns a provider message id", () => {
+test("classifies confirmed sends only when provider returns a bounded message id", () => {
   assert.deepEqual(
     classifyWhatsAppSendResponse({
       httpStatus: 200,
@@ -204,6 +220,20 @@ test("classifies confirmed sends only when Meta returns a provider message id", 
       provider_message_id: "wamid.outbound-1",
     },
   );
+
+  for (const invalidId of ["", "bad\nid", "x".repeat(513)]) {
+    assert.deepEqual(
+      classifyWhatsAppSendResponse({
+        httpStatus: 200,
+        body: { messages: [{ id: invalidId }] },
+      }),
+      {
+        status: "uncertain",
+        code: "WHATSAPP_GRAPH_SUCCESS_WITHOUT_MESSAGE_ID",
+        http_status: 200,
+      },
+    );
+  }
 
   assert.deepEqual(
     classifyWhatsAppSendResponse({
