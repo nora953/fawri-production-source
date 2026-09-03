@@ -94,6 +94,14 @@ export type WhatsAppWebhookParseResult = {
   malformed_changes: number;
 };
 
+const MAX_WEBHOOK_ENTRIES = 100;
+const MAX_CHANGES_PER_ENTRY = 100;
+const MAX_TOTAL_CHANGES = 1_000;
+const MAX_EVENTS_PER_CHANGE = 500;
+const MAX_NORMALIZED_EVENT_CANDIDATES = 2_000;
+const MAX_CONTACT_PROFILES_PER_CHANGE = 1_000;
+const MAX_STATUS_ERROR_CODES = 100;
+
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -106,6 +114,44 @@ function text(value: unknown): string {
 
 function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
+}
+
+function webhookShapeWithinBudget(body: Record<string, unknown>): boolean {
+  const entries = list(body.entry);
+  if (entries.length > MAX_WEBHOOK_ENTRIES) return false;
+
+  let totalChanges = 0;
+  let totalEventCandidates = 0;
+
+  for (const entryValue of entries) {
+    const changes = list(record(entryValue).changes);
+    if (changes.length > MAX_CHANGES_PER_ENTRY) return false;
+    totalChanges += changes.length;
+    if (totalChanges > MAX_TOTAL_CHANGES) return false;
+
+    for (const changeValue of changes) {
+      const change = record(changeValue);
+      if (text(change.field) !== "messages") continue;
+
+      const value = record(change.value);
+      if (list(value.contacts).length > MAX_CONTACT_PROFILES_PER_CHANGE) {
+        return false;
+      }
+
+      const candidateCount =
+        list(value.messages).length +
+        list(value.statuses).length +
+        list(value.errors).length;
+      if (candidateCount > MAX_EVENTS_PER_CHANGE) return false;
+
+      totalEventCandidates += candidateCount;
+      if (totalEventCandidates > MAX_NORMALIZED_EVENT_CANDIDATES) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 function boundedSingleLineText(value: unknown, max: number): string | undefined {
@@ -383,18 +429,20 @@ function buildStatusEvent(input: {
   const externalMessageId = boundedProviderId(input.status.id, 512);
   const status = safeToken(input.status.status, 80);
   const rawRecipientId = text(input.status.recipient_id);
+  const statusErrors = list(input.status.errors);
   if (
     !input.wabaId ||
     !input.phoneNumberId ||
     !externalMessageId ||
     !status ||
-    (rawRecipientId && !/^\d{6,20}$/.test(rawRecipientId))
+    (rawRecipientId && !/^\d{6,20}$/.test(rawRecipientId)) ||
+    statusErrors.length > MAX_STATUS_ERROR_CODES
   ) {
     return null;
   }
   const recipientId = rawRecipientId || undefined;
   const timestamp = cleanTimestamp(input.status.timestamp);
-  const errors = errorCodes(input.status.errors);
+  const errors = errorCodes(statusErrors);
   return {
     event_id: eventId("status", [
       input.wabaId,
@@ -486,6 +534,9 @@ function deduplicateEvents(events: NormalizedWhatsAppWebhookEvent[]): {
  * removed and counted as malformed instead of allowing last-write-wins data.
  * Human message text may retain normal line breaks, while control bytes and
  * control-bearing single-line metadata are omitted before queue planning.
+ * Internal batch budgets reject oversized entry/change/event/contact shapes
+ * before normalization work begins; these are Fawri safety limits rather than
+ * claims about provider-side delivery limits.
  *
  * This contract deliberately performs no Meta network calls, does not persist
  * credentials, and is not mounted on an HTTP route. It can therefore be built
@@ -503,6 +554,15 @@ export function parseWhatsAppWebhookPayload(
       events: [],
       ignored_changes: 0,
       malformed_changes: 0,
+    };
+  }
+  if (!webhookShapeWithinBudget(body)) {
+    return {
+      supported: true,
+      object,
+      events: [],
+      ignored_changes: 0,
+      malformed_changes: 1,
     };
   }
 
