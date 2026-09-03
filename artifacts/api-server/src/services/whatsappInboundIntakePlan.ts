@@ -4,6 +4,7 @@ import {
   type WhatsAppPrivilegedJobPlan,
   type WhatsAppPrivilegedJobType,
 } from "./whatsappPrivilegedJobPlan";
+import { assertWhatsAppWebhookProcessingPlanRuntime } from "./whatsappRuntimeGuards";
 import type { WhatsAppWebhookProcessingPlan } from "./whatsappWebhookPlanner";
 
 export type PlannedWhatsAppChannelInboundEvent = {
@@ -93,6 +94,10 @@ function unit(input: {
  * - its administrative `background_jobs` row; and
  * - its encrypted `background_job_payloads` record.
  *
+ * Synthetic/manual processing plans are runtime-guarded before any item is
+ * spread, hashed, cloned, or accumulated, so callers cannot bypass parser
+ * budgets by constructing an oversized or accessor-bearing plan directly.
+ *
  * This function performs none of those writes. It is deliberately detached
  * from the legacy JSON queue and carries plaintext only as ephemeral input to a
  * future encryption adapter; plaintext persistence is forbidden by the job
@@ -101,6 +106,7 @@ function unit(input: {
 export function buildWhatsAppInboundIntakeTransactionPlan(
   plan: WhatsAppWebhookProcessingPlan,
 ): WhatsAppInboundIntakeTransactionPlan {
+  assertWhatsAppWebhookProcessingPlanRuntime(plan);
   if (plan.mode !== "offline_replay") {
     throw intakeError(
       "WHATSAPP_INTAKE_PLAN_MODE_INVALID",
