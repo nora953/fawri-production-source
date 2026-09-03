@@ -143,19 +143,20 @@ function normalizedInteractiveText(value: Record<string, unknown>): string {
   const buttonReply = record(interactive.button_reply);
   const listReply = record(interactive.list_reply);
   return (
-    text(buttonReply.title) ||
-    text(buttonReply.id) ||
-    text(listReply.title) ||
-    text(listReply.id)
+    boundedText(buttonReply.title, 4_000) ||
+    boundedText(buttonReply.id, 4_000) ||
+    boundedText(listReply.title, 4_000) ||
+    boundedText(listReply.id, 4_000) ||
+    ""
   );
 }
 
 function normalizedMessageText(message: Record<string, unknown>): string {
   const kind = safeMessageKind(message.type);
-  if (kind === "text") return text(record(message.text).body);
+  if (kind === "text") return boundedText(record(message.text).body, 4_000) || "";
   if (kind === "button") {
     const button = record(message.button);
-    return text(button.text) || text(button.payload);
+    return boundedText(button.text, 4_000) || boundedText(button.payload, 4_000) || "";
   }
   if (kind === "interactive") return normalizedInteractiveText(message);
   return "";
@@ -242,7 +243,7 @@ function providerReference(
 
   if (kind === "contacts") {
     const count = list(message.contacts).length;
-    return count > 0 ? { kind: "contacts", count } : undefined;
+    return count > 0 && count <= 1_000 ? { kind: "contacts", count } : undefined;
   }
 
   return undefined;
@@ -254,7 +255,7 @@ function contactNameByWaId(value: Record<string, unknown>): Map<string, string> 
     const contact = record(candidate);
     const waId = text(contact.wa_id);
     const name = boundedText(record(contact.profile).name, 300);
-    if (waId && name && !names.has(waId)) names.set(waId, name);
+    if (/^\d{6,20}$/.test(waId) && name && !names.has(waId)) names.set(waId, name);
   }
   return names;
 }
@@ -285,7 +286,13 @@ function buildMessageEvent(input: {
 }): NormalizedWhatsAppMessageEvent | null {
   const externalMessageId = boundedText(input.message.id, 512);
   const customerId = boundedText(input.message.from, 200);
-  if (!input.wabaId || !input.phoneNumberId || !externalMessageId || !customerId) {
+  if (
+    !input.wabaId ||
+    !input.phoneNumberId ||
+    !externalMessageId ||
+    !customerId ||
+    !/^\d{6,20}$/.test(customerId)
+  ) {
     return null;
   }
 
@@ -322,10 +329,17 @@ function buildStatusEvent(input: {
 }): NormalizedWhatsAppStatusEvent | null {
   const externalMessageId = boundedText(input.status.id, 512);
   const status = boundedText(text(input.status.status).toLowerCase(), 80);
-  if (!input.wabaId || !input.phoneNumberId || !externalMessageId || !status) {
+  const rawRecipientId = text(input.status.recipient_id);
+  if (
+    !input.wabaId ||
+    !input.phoneNumberId ||
+    !externalMessageId ||
+    !status ||
+    (rawRecipientId && !/^\d{6,20}$/.test(rawRecipientId))
+  ) {
     return null;
   }
-  const recipientId = boundedText(input.status.recipient_id, 200);
+  const recipientId = rawRecipientId || undefined;
   const timestamp = cleanTimestamp(input.status.timestamp);
   return {
     event_id: `whatsapp:${input.wabaId}:${input.phoneNumberId}:status:${externalMessageId}:${status}`,
