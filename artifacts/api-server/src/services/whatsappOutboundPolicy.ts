@@ -4,6 +4,9 @@ import {
 } from "./whatsappOfflineContracts";
 import type { ResolvedDormantWhatsAppChannel } from "./whatsappDormantChannelResolver";
 import type { WhatsAppActivationReadiness } from "./whatsappActivationReadiness";
+import {
+  assertDormantWhatsAppOutboundPreviewInputStructure,
+} from "./whatsappOutboundPolicyInputGuard";
 
 type DormantWhatsAppOutboundBase = {
   decision: "blocked";
@@ -41,6 +44,7 @@ export function previewDormantWhatsAppTextSend(input: {
   graphVersion: unknown;
   readiness?: WhatsAppActivationReadiness;
 }): DormantWhatsAppOutboundPreview {
+  assertDormantWhatsAppOutboundPreviewInputStructure(input);
   const merchantId = String(input.merchantId ?? "").trim();
   if (!merchantId || merchantId.length > 200 || !/^[A-Za-z0-9._:-]+$/.test(merchantId)) {
     throw policyError(
