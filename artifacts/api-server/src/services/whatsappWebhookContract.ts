@@ -417,12 +417,46 @@ function buildErrorEvent(input: {
   };
 }
 
+function deduplicateEvents(events: NormalizedWhatsAppWebhookEvent[]): {
+  events: NormalizedWhatsAppWebhookEvent[];
+  collisions: number;
+} {
+  const unique = new Map<
+    string,
+    { fingerprint: string; event: NormalizedWhatsAppWebhookEvent }
+  >();
+  const conflicted = new Set<string>();
+  let collisions = 0;
+
+  for (const event of events) {
+    if (conflicted.has(event.event_id)) continue;
+    const fingerprint = JSON.stringify(event);
+    const existing = unique.get(event.event_id);
+    if (!existing) {
+      unique.set(event.event_id, { fingerprint, event });
+      continue;
+    }
+    if (existing.fingerprint === fingerprint) continue;
+
+    unique.delete(event.event_id);
+    conflicted.add(event.event_id);
+    collisions += 1;
+  }
+
+  return {
+    events: [...unique.values()].map((entry) => entry.event),
+    collisions,
+  };
+}
+
 /**
  * Pure, side-effect-free WhatsApp Business Platform webhook parser.
  *
  * Provider event identities are compact deterministic hashes. Raw provider
  * message ids remain separately bounded for correlation, so maximum-length
  * valid provider ids cannot overflow downstream job/persistence identities.
+ * Conflicting normalized payloads claiming the same provider event identity are
+ * removed and counted as malformed instead of allowing last-write-wins data.
  *
  * This contract deliberately performs no Meta network calls, does not persist
  * credentials, and is not mounted on an HTTP route. It can therefore be built
@@ -503,13 +537,12 @@ export function parseWhatsAppWebhookPayload(
     }
   }
 
-  const uniqueEvents = [
-    ...new Map(events.map((event) => [event.event_id, event])).values(),
-  ];
+  const deduplicated = deduplicateEvents(events);
+  malformedChanges += deduplicated.collisions;
   return {
     supported: true,
     object,
-    events: uniqueEvents,
+    events: deduplicated.events,
     ignored_changes: ignoredChanges,
     malformed_changes: malformedChanges,
   };
