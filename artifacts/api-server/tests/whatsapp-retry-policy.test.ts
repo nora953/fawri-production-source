@@ -52,7 +52,7 @@ test("confirmed failure does not allow a blind same-request retry", () => {
   }
 });
 
-test("changed confirmed failure can create a new numbered attempt only after explicit approval", () => {
+test("approved changed request requires a new reply intent instead of a second persisted attempt", () => {
   const result = decideWhatsAppRetry({
     outcome: {
       status: "confirmed_failed",
@@ -64,10 +64,25 @@ test("changed confirmed failure can create a new numbered attempt only after exp
     requestFingerprintChanged: true,
   });
   assert.deepEqual(result, {
-    action: "new_attempt_permitted",
+    action: "new_reply_intent_required",
     automatic_retry_allowed: false,
-    new_attempt_allowed: true,
-    reason: "confirmed_failure_changed_request_explicitly_approved",
-    next_attempt_number: 3,
+    new_attempt_allowed: false,
+    reason: "confirmed_failure_changed_request_requires_new_reply_intent",
   });
+});
+
+test("retry attempt identity remains bounded even though same-intent resend is never authorized", () => {
+  assert.throws(
+    () =>
+      decideWhatsAppRetry({
+        outcome: {
+          status: "confirmed_failed",
+          code: "WHATSAPP_GRAPH_HTTP_400_100",
+          http_status: 400,
+        },
+        currentAttemptNumber: 101,
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code === "WHATSAPP_RETRY_ATTEMPT_INVALID",
+  );
 });
