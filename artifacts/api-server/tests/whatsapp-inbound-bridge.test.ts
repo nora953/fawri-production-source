@@ -79,6 +79,91 @@ test("media and non-text kinds fail closed to manual or future media handling", 
   }
 });
 
+test("safe provider references are carried without changing media disposition", () => {
+  const result = bridgeWhatsAppInboundMessage(
+    job({
+      message_kind: "image",
+      text: undefined,
+      provider_reference: {
+        kind: "media",
+        media_kind: "image",
+        id: "media-123",
+        mime_type: "image/jpeg",
+        sha256: "abc123",
+        caption: "Product image",
+      },
+    }),
+  );
+  assert.equal(result.disposition.action, "manual_or_future_media");
+  assert.deepEqual(result.message.provider_reference, {
+    kind: "media",
+    media_kind: "image",
+    id: "media-123",
+    mime_type: "image/jpeg",
+    sha256: "abc123",
+    caption: "Product image",
+  });
+});
+
+test("provider reference kind must match the normalized message kind", () => {
+  assert.throws(
+    () =>
+      bridgeWhatsAppInboundMessage(
+        job({
+          message_kind: "image",
+          text: undefined,
+          provider_reference: {
+            kind: "media",
+            media_kind: "document",
+            id: "media-123",
+          },
+        }),
+      ),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_INBOUND_BRIDGE_PROVIDER_REFERENCE_INVALID",
+  );
+});
+
+test("location references are bounded and validated before downstream handling", () => {
+  const valid = bridgeWhatsAppInboundMessage(
+    job({
+      message_kind: "location",
+      text: undefined,
+      provider_reference: {
+        kind: "location",
+        latitude: 33.3152,
+        longitude: 44.3661,
+        name: "Baghdad",
+      },
+    }),
+  );
+  assert.deepEqual(valid.message.provider_reference, {
+    kind: "location",
+    latitude: 33.3152,
+    longitude: 44.3661,
+    name: "Baghdad",
+  });
+
+  assert.throws(
+    () =>
+      bridgeWhatsAppInboundMessage(
+        job({
+          message_kind: "location",
+          text: undefined,
+          provider_reference: {
+            kind: "location",
+            latitude: 200,
+            longitude: 44.3661,
+          },
+        }),
+      ),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_INBOUND_BRIDGE_PROVIDER_REFERENCE_INVALID",
+  );
+});
+
 test("reply-engine text limit blocks automatic processing without dropping the text", () => {
   const text = "x".repeat(2_001);
   const result = bridgeWhatsAppInboundMessage(job({ text }));
