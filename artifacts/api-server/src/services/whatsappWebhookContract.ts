@@ -108,9 +108,28 @@ function list(value: unknown): unknown[] {
   return Array.isArray(value) ? value : [];
 }
 
-function boundedText(value: unknown, max: number): string | undefined {
+function boundedSingleLineText(value: unknown, max: number): string | undefined {
   const normalized = text(value);
-  return normalized && normalized.length <= max ? normalized : undefined;
+  if (
+    !normalized ||
+    normalized.length > max ||
+    /[\u0000-\u001F\u007F]/.test(normalized)
+  ) {
+    return undefined;
+  }
+  return normalized;
+}
+
+function boundedHumanText(value: unknown, max: number): string | undefined {
+  const normalized = text(value);
+  if (
+    !normalized ||
+    normalized.length > max ||
+    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(normalized)
+  ) {
+    return undefined;
+  }
+  return normalized;
 }
 
 function boundedProviderId(value: unknown, max = 512): string | undefined {
@@ -162,20 +181,26 @@ function normalizedInteractiveText(value: Record<string, unknown>): string {
   const buttonReply = record(interactive.button_reply);
   const listReply = record(interactive.list_reply);
   return (
-    boundedText(buttonReply.title, 4_000) ||
-    boundedText(buttonReply.id, 4_000) ||
-    boundedText(listReply.title, 4_000) ||
-    boundedText(listReply.id, 4_000) ||
+    boundedHumanText(buttonReply.title, 4_000) ||
+    boundedSingleLineText(buttonReply.id, 4_000) ||
+    boundedHumanText(listReply.title, 4_000) ||
+    boundedSingleLineText(listReply.id, 4_000) ||
     ""
   );
 }
 
 function normalizedMessageText(message: Record<string, unknown>): string {
   const kind = safeMessageKind(message.type);
-  if (kind === "text") return boundedText(record(message.text).body, 4_000) || "";
+  if (kind === "text") {
+    return boundedHumanText(record(message.text).body, 4_000) || "";
+  }
   if (kind === "button") {
     const button = record(message.button);
-    return boundedText(button.text, 4_000) || boundedText(button.payload, 4_000) || "";
+    return (
+      boundedHumanText(button.text, 4_000) ||
+      boundedSingleLineText(button.payload, 4_000) ||
+      ""
+    );
   }
   if (kind === "interactive") return normalizedInteractiveText(message);
   return "";
@@ -188,10 +213,10 @@ function mediaReference(
   const media = record(message[kind]);
   const id = boundedProviderId(media.id, 160);
   if (!id) return undefined;
-  const mimeType = boundedText(media.mime_type, 160);
-  const sha = boundedText(media.sha256, 256);
-  const caption = boundedText(media.caption, 1_024);
-  const filename = boundedText(media.filename, 512);
+  const mimeType = boundedSingleLineText(media.mime_type, 160);
+  const sha = boundedSingleLineText(media.sha256, 256);
+  const caption = boundedHumanText(media.caption, 1_024);
+  const filename = boundedSingleLineText(media.filename, 512);
   return {
     kind: "media",
     media_kind: kind,
@@ -237,8 +262,8 @@ function providerReference(
     ) {
       return undefined;
     }
-    const name = boundedText(location.name, 300);
-    const address = boundedText(location.address, 1_000);
+    const name = boundedSingleLineText(location.name, 300);
+    const address = boundedHumanText(location.address, 1_000);
     return {
       kind: "location",
       latitude,
@@ -252,7 +277,7 @@ function providerReference(
     const reaction = record(message.reaction);
     const messageId = boundedProviderId(reaction.message_id, 512);
     if (!messageId) return undefined;
-    const emoji = boundedText(reaction.emoji, 32);
+    const emoji = boundedSingleLineText(reaction.emoji, 32);
     return {
       kind: "reaction",
       message_id: messageId,
@@ -273,8 +298,10 @@ function contactNameByWaId(value: Record<string, unknown>): Map<string, string> 
   for (const candidate of list(value.contacts)) {
     const contact = record(candidate);
     const waId = text(contact.wa_id);
-    const name = boundedText(record(contact.profile).name, 300);
-    if (/^\d{6,20}$/.test(waId) && name && !names.has(waId)) names.set(waId, name);
+    const name = boundedSingleLineText(record(contact.profile).name, 300);
+    if (/^\d{6,20}$/.test(waId) && name && !names.has(waId)) {
+      names.set(waId, name);
+    }
   }
   return names;
 }
@@ -396,10 +423,10 @@ function buildErrorEvent(input: {
 }): NormalizedWhatsAppErrorEvent | null {
   const code = safeToken(input.error.code, 160);
   if (!input.wabaId || !input.phoneNumberId || !code) return null;
-  const title = boundedText(input.error.title, 300);
+  const title = boundedSingleLineText(input.error.title, 300);
   const message =
-    boundedText(input.error.message, 1_000) ||
-    boundedText(record(input.error.error_data).details, 1_000);
+    boundedHumanText(input.error.message, 1_000) ||
+    boundedHumanText(record(input.error.error_data).details, 1_000);
   return {
     event_id: eventId("error", [
       input.wabaId,
@@ -457,6 +484,8 @@ function deduplicateEvents(events: NormalizedWhatsAppWebhookEvent[]): {
  * valid provider ids cannot overflow downstream job/persistence identities.
  * Conflicting normalized payloads claiming the same provider event identity are
  * removed and counted as malformed instead of allowing last-write-wins data.
+ * Human message text may retain normal line breaks, while control bytes and
+ * control-bearing single-line metadata are omitted before queue planning.
  *
  * This contract deliberately performs no Meta network calls, does not persist
  * credentials, and is not mounted on an HTTP route. It can therefore be built
