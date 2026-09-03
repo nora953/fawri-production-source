@@ -121,6 +121,14 @@ function assertPayloadString(value: string, label: string): void {
   }
 }
 
+function jsonScalar(value: string | number): string {
+  const encoded = JSON.stringify(value);
+  if (typeof encoded !== "string") {
+    payloadInvalid("WhatsApp privileged payload contains an unencodable JSON value");
+  }
+  return encoded;
+}
+
 function assertPayloadKey(key: string): void {
   if (
     !key ||
@@ -220,7 +228,7 @@ function canonicalObject(
       );
     }
     if (index > 0) parts.push(emitCanonical(state, ","));
-    parts.push(emitCanonical(state, JSON.stringify(key)));
+    parts.push(emitCanonical(state, jsonScalar(key)));
     parts.push(emitCanonical(state, ":"));
     parts.push(canonicalJsonValue(descriptor.value, state, depth + 1));
   }
@@ -239,7 +247,7 @@ function canonicalJsonValue(
 
   if (typeof value === "string") {
     assertPayloadString(value, "WhatsApp privileged payload string");
-    return emitCanonical(state, JSON.stringify(value));
+    return emitCanonical(state, jsonScalar(value));
   }
 
   if (typeof value === "boolean") {
@@ -252,7 +260,7 @@ function canonicalJsonValue(
         "WhatsApp privileged payload numbers must be finite JSON numbers",
       );
     }
-    return emitCanonical(state, JSON.stringify(value));
+    return emitCanonical(state, jsonScalar(value));
   }
 
   if (Array.isArray(value)) return canonicalArray(value, state, depth);
