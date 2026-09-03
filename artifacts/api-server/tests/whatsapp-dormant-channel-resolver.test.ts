@@ -50,7 +50,7 @@ function clientWith(rows: Record<string, unknown>[]): OperationalSqlClient {
   };
 }
 
-test("resolves exactly one dormant WABA and phone-number mapping", async () => {
+test("resolves exactly one explicitly dormant WABA and phone-number mapping", async () => {
   const result = await resolveDormantWhatsAppChannelWithClient(clientWith([row()]), {
     wabaId: "1234567890",
     phoneNumberId: "9876543210",
@@ -96,7 +96,6 @@ test("rejects a mapped row that contains any live integration state", async () =
     { webhook_subscribed_at: new Date().toISOString() },
     { last_webhook_at: new Date().toISOString() },
     { connected_at: new Date().toISOString() },
-    { metadata: { integration_mode: "live" } },
   ]) {
     await assert.rejects(
       () =>
@@ -104,11 +103,46 @@ test("rejects a mapped row that contains any live integration state", async () =
           wabaId: "1234567890",
           phoneNumberId: "9876543210",
         }),
+      (error: unknown) =>
+        (error as { code?: string }).code === "WHATSAPP_DORMANT_STATE_VIOLATION",
+    );
+  }
+});
+
+test("missing or non-dormant integration marker is never inferred as dormant", async () => {
+  for (const metadata of [null, {}, { integration_mode: "live" }]) {
+    await assert.rejects(
+      () =>
+        resolveDormantWhatsAppChannelWithClient(clientWith([row({ metadata })]), {
+          wabaId: "1234567890",
+          phoneNumberId: "9876543210",
+        }),
+      (error: unknown) =>
+        (error as { code?: string }).code === "WHATSAPP_CHANNEL_MODE_INVALID",
+    );
+  }
+});
+
+test("malformed stored channel identity fails closed even if database adapter returns it", async () => {
+  for (const badRow of [
+    row({ id: "bad\nchannel" }),
+    row({ merchant_id: "" }),
+    row({ whatsapp_business_account_id: "not-numeric" }),
+    row({ whatsapp_phone_number_id: "not-numeric" }),
+    row({ whatsapp_display_phone_number: "bad\nphone" }),
+  ]) {
+    await assert.rejects(
+      () =>
+        resolveDormantWhatsAppChannelWithClient(clientWith([badRow]), {
+          wabaId: "1234567890",
+          phoneNumberId: "9876543210",
+        }),
       (error: unknown) => {
         const code = (error as { code?: string }).code;
         return (
-          code === "WHATSAPP_DORMANT_STATE_VIOLATION" ||
-          code === "WHATSAPP_CHANNEL_MODE_INVALID"
+          code === "WHATSAPP_CHANNEL_MAPPING_MISMATCH" ||
+          code === "WHATSAPP_CHANNEL_STATE_INVALID" ||
+          code === "WHATSAPP_CHANNEL_IDENTITY_INVALID"
         );
       },
     );
