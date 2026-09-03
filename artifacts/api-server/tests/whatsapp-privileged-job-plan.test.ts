@@ -65,6 +65,23 @@ test("same event produces deterministic job identity and payload hash", () => {
   assert.equal(first.job_row.payload_hash, second.job_row.payload_hash);
 });
 
+test("provider event identifiers may contain provider punctuation while local ids stay strict", () => {
+  const providerEvent = "whatsapp:1234567890:9876543210:message:wamid.ABC~_-";
+  const result = buildWhatsAppPrivilegedJobPlan({
+    type: "whatsapp_inbound_message",
+    eventId: providerEvent,
+    merchantId: "merchant-1",
+    channelId: "channel_1:primary",
+    payload: payload({
+      event_id: providerEvent,
+      channel_id: "channel_1:primary",
+    }),
+    maxAttempts: 5,
+  });
+  assert.equal(result.external_event_id, providerEvent);
+  assert.equal(result.channel_id, "channel_1:primary");
+});
+
 test("payload ownership mismatch fails before any future persistence boundary", () => {
   for (const badPayload of [
     payload({ merchant_id: "merchant-2" }),
@@ -116,19 +133,30 @@ test("invalid retry, priority, and identities fail closed", () => {
     (error: unknown) =>
       (error as { code?: string }).code === "WHATSAPP_PRIVILEGED_JOB_PRIORITY_INVALID",
   );
-  assert.throws(
-    () =>
-      buildWhatsAppPrivilegedJobPlan({
-        type: "whatsapp_inbound_message",
-        eventId: "bad\nevent",
-        merchantId: "merchant-1",
-        channelId: "channel-1",
-        payload: payload(),
-        maxAttempts: 5,
-      }),
-    (error: unknown) =>
-      (error as { code?: string }).code === "WHATSAPP_PRIVILEGED_JOB_IDENTITY_INVALID",
-  );
+  for (const input of [
+    { eventId: "bad\nevent", merchantId: "merchant-1", channelId: "channel-1" },
+    { eventId: "message-event", merchantId: "bad merchant", channelId: "channel-1" },
+    { eventId: "message-event", merchantId: "merchant\nspoof", channelId: "channel-1" },
+    { eventId: "message-event", merchantId: "merchant-1", channelId: "bad channel" },
+  ]) {
+    assert.throws(
+      () =>
+        buildWhatsAppPrivilegedJobPlan({
+          type: "whatsapp_inbound_message",
+          eventId: input.eventId,
+          merchantId: input.merchantId,
+          channelId: input.channelId,
+          payload: payload({
+            event_id: input.eventId,
+            merchant_id: input.merchantId,
+            channel_id: input.channelId,
+          }),
+          maxAttempts: 5,
+        }),
+      (error: unknown) =>
+        (error as { code?: string }).code === "WHATSAPP_PRIVILEGED_JOB_IDENTITY_INVALID",
+    );
+  }
 });
 
 test("privileged job planner is detached from JSON queue, SQL, encryption runtime, and transport", () => {
