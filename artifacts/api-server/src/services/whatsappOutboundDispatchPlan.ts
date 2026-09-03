@@ -1,4 +1,7 @@
-import type { WhatsAppOutboundAttemptPlan } from "./whatsappOutboundAttempt";
+import {
+  assertWhatsAppOutboundAttemptIntegrity,
+  type WhatsAppOutboundAttemptPlan,
+} from "./whatsappOutboundAttempt";
 import {
   planWhatsAppOutboundDeliveryPersistence,
   type WhatsAppOutboundDeliveryPersistencePlan,
@@ -31,10 +34,11 @@ function dispatchError(code: string, message: string): Error & { code: string } 
  * Plans the durable pre-send boundary required by a future live worker.
  *
  * The administrative delivery row remains `pending`, while the complete send
- * request (including the trusted recipient) is carried only inside the
- * encrypted privileged job payload. The outbound job is deliberately configured
- * for one claim attempt so generic queue retry policy cannot silently duplicate
- * a provider send after an ambiguous transport boundary.
+ * request (including the trusted recipient and immutable phone-number routing
+ * identity) is carried only inside the encrypted privileged job payload. The
+ * outbound job is deliberately configured for one claim attempt so generic
+ * queue retry policy cannot silently duplicate a provider send after an
+ * ambiguous transport boundary.
  *
  * This function performs no SQL, encryption, enqueue, credential access, or
  * provider/network request and never authorizes transport.
@@ -51,6 +55,7 @@ export function planWhatsAppOutboundDispatch(input: {
       "WhatsApp outbound dispatch requires an unauthorized pre-send attempt",
     );
   }
+  assertWhatsAppOutboundAttemptIntegrity(input.attempt);
 
   const delivery = planWhatsAppOutboundDeliveryPersistence({
     attempt: input.attempt,
@@ -75,7 +80,10 @@ export function planWhatsAppOutboundDispatch(input: {
     event_id: input.attempt.attempt_id,
     merchant_id: input.attempt.merchant_id,
     channel_id: input.attempt.channel_id,
+    logical_send_id: input.attempt.logical_send_id,
     attempt_id: input.attempt.attempt_id,
+    attempt_number: input.attempt.attempt_number,
+    phone_number_id: input.attempt.phone_number_id,
     inbound_event_id: delivery.row.inbound_event_id,
     reservation_id: delivery.row.reservation_id,
     reply_intent_id: input.attempt.reply_intent_id,
@@ -93,11 +101,13 @@ export function planWhatsAppOutboundDispatch(input: {
     maxAttempts: 1,
   });
 
+  const encrypted = job.encrypted_payload.payload_for_encryption;
   if (
-    job.encrypted_payload.payload_for_encryption.request_sha256 !==
-      input.attempt.request_sha256 ||
-    job.encrypted_payload.payload_for_encryption.recipient_hash !==
-      input.attempt.recipient_hash
+    encrypted.request_sha256 !== input.attempt.request_sha256 ||
+    encrypted.recipient_hash !== input.attempt.recipient_hash ||
+    encrypted.phone_number_id !== input.attempt.phone_number_id ||
+    encrypted.logical_send_id !== input.attempt.logical_send_id ||
+    encrypted.attempt_number !== 1
   ) {
     throw dispatchError(
       "WHATSAPP_OUTBOUND_DISPATCH_PAYLOAD_MISMATCH",
