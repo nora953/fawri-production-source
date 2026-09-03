@@ -5,6 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   bridgeWhatsAppInboundMessage,
+  type WhatsAppInboundBridgeResult,
 } from "../src/services/whatsappInboundBridge";
 import {
   buildWhatsAppReplyDecisionHandoff,
@@ -40,6 +41,22 @@ test("eligible WhatsApp text maps to the existing knowledge decision input shape
   });
   assert.match(result.conversation_key, /^whatsapp-conversation-/);
   assert.match(result.inbound_event_key, /^whatsapp-inbound-/);
+});
+
+test("normal multiline text remains valid at the final decision handoff", () => {
+  const value = "first line\nsecond line\twith tab";
+  const result = buildWhatsAppReplyDecisionHandoff(bridged(value));
+  assert.equal(result.request.customerText, value);
+});
+
+test("forged eligible bridge result with unsafe controls is rejected independently", () => {
+  const forged = structuredClone(bridged()) as WhatsAppInboundBridgeResult;
+  forged.message.text = "hello\u0000world";
+  assert.throws(
+    () => buildWhatsAppReplyDecisionHandoff(forged),
+    (error: unknown) =>
+      (error as { code?: string }).code === "WHATSAPP_REPLY_DECISION_TEXT_INVALID",
+  );
 });
 
 test("non-text media disposition cannot be handed to automatic reply decision", () => {
