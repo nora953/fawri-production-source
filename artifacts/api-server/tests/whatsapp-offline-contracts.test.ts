@@ -104,6 +104,35 @@ test("builds a queue-ready message contract only for the mapped channel", () => 
   );
 });
 
+test("queue-ready contract retains provider references without media I/O", () => {
+  const identity = normalizeWhatsAppChannelIdentity({
+    merchantId: "merchant-123",
+    wabaId: "1234567890",
+    phoneNumberId: "9876543210",
+  });
+  const event: NormalizedWhatsAppMessageEvent = {
+    event_id: "whatsapp:1234567890:9876543210:message:wamid.image",
+    event_kind: "message",
+    waba_id: "1234567890",
+    phone_number_id: "9876543210",
+    external_message_id: "wamid.image",
+    customer_id: "9647711111111",
+    message_kind: "image",
+    provider_reference: {
+      kind: "media",
+      media_kind: "image",
+      id: "media-123",
+      mime_type: "image/jpeg",
+      sha256: "abc123",
+      caption: "Line one\nLine two",
+    },
+  };
+
+  const built = buildWhatsAppInboundMessageJob({ identity, event });
+  assert.deepEqual(built.provider_reference, event.provider_reference);
+  assert.notEqual(built.provider_reference, event.provider_reference);
+});
+
 test("builds an outbound text plan without credentials or network calls", () => {
   const plan = buildWhatsAppTextSendPlan({
     phoneNumberId: "9876543210",
