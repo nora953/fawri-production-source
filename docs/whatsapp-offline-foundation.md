@@ -77,7 +77,7 @@ The planner rejects channel mapping mismatches and event identity collisions.
 - `channel_inbound_events`, which provides provider-event dedupe and enqueue linkage; and
 - the corresponding administrative `background_jobs` row.
 
-`whatsappPrivilegedJobPlan.ts` separates the administrative job row from its privileged payload. The administrative row contains only bounded routing/dedupe metadata and a payload hash. The normalized job payload is explicitly marked as plaintext input for a future encryption boundary, with plaintext persistence forbidden.
+`whatsappPrivilegedJobPlan.ts` separates the administrative job row from its privileged payload. The administrative row contains only bounded routing/dedupe metadata and a payload hash. The normalized job payload is explicitly marked as plaintext input for a future encryption boundary, with plaintext persistence forbidden. The same encrypted privileged-payload contract now also supports the future one-shot `whatsapp_outbound_send` work type without enabling a worker.
 
 A future PostgreSQL adapter must atomically persist the inbound-event marker, administrative background job, and encrypted privileged payload record. This branch performs none of those writes.
 
@@ -121,6 +121,12 @@ A send is considered `sent` only when a successful HTTP response contains a prov
 - configuration/auth failures do not enter unsafe retry loops;
 - transient/ambiguous transport failures require reconciliation rather than duplicate sends.
 
+A confirmed-failure retry cannot reuse the same reply-intent delivery identity. The existing `outbound_deliveries` uniqueness authority treats the merchant + inbound event + reply intent as one logical send, so any explicitly approved corrected resend must be represented by a new reply intent rather than overwriting or duplicating the prior delivery.
+
+`whatsappOutboundDispatchPlan.ts` defines the durable **pre-send** boundary for a future worker. It plans a pending `outbound_deliveries` row together with a one-attempt `whatsapp_outbound_send` background job. The complete provider request, including the trusted recipient, exists only in the encrypted privileged payload; the administrative delivery/job rows contain no plaintext phone number. The generic job is limited to one claim attempt so an ambiguous provider boundary cannot turn into a silent queue resend. This planner performs no SQL, enqueue, credential access, or transport.
+
+Before a future live transport is allowed to execute, its persistence adapter must durably commit the pending delivery, administrative background job, and encrypted payload. The encrypted request recipient is then the trusted recipient authority used by delivery correlation; a later webhook status cannot establish or replace that ownership.
+
 `whatsappOutboundDeliveryPersistence.ts`, `whatsappDeliveryCorrelation.ts`, `whatsappDeliveryLifecycle.ts`, and `whatsappDeliveryReconciliation.ts` define provider-message correlation and monotonic delivery-state handling.
 
 Delivery correlation is fail closed across merchant, channel, WABA, phone-number ID, provider message ID, and recipient identity. A trusted expected recipient must come from the original outbound request/encrypted attempt authority; a status webhook is not allowed to establish or replace that ownership. Once a recipient is known, later provider statuses for a different recipient are rejected. Missing provider `recipient_id` does not erase the trusted recipient.
@@ -150,7 +156,7 @@ Durable privileged job payloads require the existing encrypted payload boundary.
 
 The running API (`app.ts` / `index.ts`) does not mount or start WhatsApp code. The existing `metaWebhookWorker.ts` does not accept WhatsApp job types.
 
-`whatsapp-dormant-runtime-audit.test.ts` guards this property during final validation. `scripts/audit-whatsapp-dormant-boundary.mjs` provides the repository-level dormant-boundary audit and rejects active WhatsApp routing, provider transport, credential operations, worker startup, queue writes, legacy JSON queue/store references, and direct WhatsApp secret-environment consumption.
+`whatsapp-dormant-runtime-audit.test.ts` guards this property during final validation. `scripts/audit-whatsapp-dormant-boundary.mjs` provides the repository-level dormant-boundary audit and rejects active WhatsApp routing, provider transport, credential operations, worker startup, queue writes, legacy JSON queue/store references, and direct WhatsApp secret-environment consumption. The audit also requires the encrypted inbound and outbound dispatch planners to remain present.
 
 ## Activation readiness
 
@@ -174,11 +180,12 @@ An activation candidate is restricted to **production** and remains blocked unle
 - reply-engine handoff readiness;
 - data/media-policy readiness;
 - inbound worker readiness;
+- durable outbound dispatch persistence readiness;
 - outbound transport readiness;
 - delivery reconciliation readiness;
 - observability readiness.
 
-These are evidence booleans only. The readiness function never accepts secret values. Development or staging cannot become an external activation candidate even when every boolean is true.
+These are evidence booleans only. The readiness function never accepts secret values. Development or staging cannot become an external activation candidate even when every boolean is true. Transport readiness cannot substitute for the durable pre-send dispatch persistence gate.
 
 ## Shared database structures
 
@@ -188,7 +195,7 @@ The foundation uses existing Fawri messaging authorities rather than creating a 
 - `channel_inbound_events` for provider-event dedupe and durable-enqueue linkage;
 - `background_jobs` plus encrypted privileged job payload storage;
 - `conversations` and `messages` for the merchant-facing conversation model;
-- `outbound_deliveries` for send/delivery reconciliation.
+- `outbound_deliveries` for pre-send identity and send/delivery reconciliation.
 
 The dormant branch defines plans/contracts around these authorities; it does not start a WhatsApp persistence executor or worker.
 
