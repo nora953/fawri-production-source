@@ -64,6 +64,7 @@ export function applyCatalogEditorEnglishSemanticParity() {
     priceCustom: 'On request',
     locationMerchant: 'At the merchant location',
     locationCustomer: 'At the customer location',
-    locationFlexible: 'Flexible / more than one option',
+    locationFlexible: 'Multiple service locations',
+    locationFlexibleHint: 'Choose at least two locations where this service can be provided.',
   });
 }
