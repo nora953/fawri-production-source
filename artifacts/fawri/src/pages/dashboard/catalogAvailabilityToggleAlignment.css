@@ -20,10 +20,10 @@
 }
 
 /*
- * Arabic service editor: the location control uses a div wrapper because it can
- * reveal multiple-location choices. Its select otherwise sits slightly higher than
- * the three neighboring controls. Match their label-to-control rhythm exactly.
+ * Arabic service editor: the location control has a div wrapper because it can
+ * reveal multiple-location choices. Fine-tune its label-to-control spacing so the
+ * closed select shares the exact horizontal baseline of the three adjacent fields.
  */
 html[lang="ar"] .products-workspace-polish [data-catalog-service-details="true"] > .grid > div:nth-child(4) > select {
-  margin-top: 0.8125rem !important;
+  margin-top: 0.5rem !important;
 }
