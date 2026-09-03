@@ -1,0 +1,37 @@
+/*
+ * Edit-mode-only catalog polish.
+ *
+ * Creation keeps the full Product / Service chooser. Existing items already
+ * have a stored type, so edit mode uses a compact locked-type summary and
+ * gives more vertical space back to the merchant's editable data.
+ */
+
+[data-catalog-item-type-mode="edit-locked"] {
+  padding-block: 0.75rem;
+  row-gap: 0.75rem;
+}
+
+[data-catalog-item-type-mode="edit-locked"] > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 1rem;
+  row-gap: 0.25rem;
+}
+
+[data-catalog-item-type-mode="edit-locked"] > div:first-child > p:last-child {
+  margin-top: 0;
+}
+
+[data-catalog-item-type-mode="edit-locked"] [data-catalog-item-type-locked="true"] {
+  align-self: start;
+  border-radius: 0.875rem;
+  padding: 0.75rem 1rem;
+}
+
+@media (min-width: 1024px) {
+  [data-catalog-item-type-mode="edit-locked"] > div:nth-child(2) {
+    grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.28fr);
+    align-items: start;
+  }
+}
