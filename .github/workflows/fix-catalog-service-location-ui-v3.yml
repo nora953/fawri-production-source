@@ -1,0 +1,82 @@
+name: Targeted catalog service-location UI repair v3
+
+on:
+  push:
+    branches:
+      - parallel/catalog-card-details-modal
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: parallel/catalog-card-details-modal
+          fetch-depth: 0
+
+      - name: Apply focused repair
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import textwrap
+
+          workflow = Path('.github/workflows/fix-catalog-service-location-ui.yml').read_text()
+          block = workflow.split("python3 <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
+          script = textwrap.dedent(block).replace('if actual != count:', 'if actual < count:')
+          Path('/tmp/catalog-service-location-repair.py').write_text(script)
+          PY
+          python3 /tmp/catalog-service-location-repair.py
+          python3 <<'PY'
+          from pathlib import Path
+          path = Path('artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx')
+          text = path.read_text()
+          old = "if (preferred !== 'flexible' && !next.includes(preferred)) next.push(preferred);"
+          new = "if (!next.includes(preferred)) next.push(preferred);"
+          if text.count(old) != 1:
+              raise SystemExit(f'expected one preferred-location guard, found {text.count(old)}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate targeted repair
+        run: |
+          node --test artifacts/fawri/tests/catalog-service-location-ui.test.mjs
+          pnpm --dir artifacts/api-server exec tsx --test ./tests/catalog-service-location-metadata.test.ts
+          pnpm --dir artifacts/fawri typecheck
+          pnpm --dir artifacts/api-server typecheck
+          git diff --check
+
+      - name: Commit repair
+        shell: bash
+        run: |
+          if git diff --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/fawri/src/lib/catalogUiApi.ts \
+                  artifacts/fawri/src/lib/catalogProductEditor.ts \
+                  artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx \
+                  artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx \
+                  artifacts/fawri/tests/catalog-service-location-ui.test.mjs \
+                  artifacts/api-server/src/services/catalogCommerceMetadata.ts \
+                  artifacts/api-server/tests/catalog-service-location-metadata.test.ts
+          git commit -m "Fix service location choices and availability spacing"
+          git push origin HEAD:parallel/catalog-card-details-modal
