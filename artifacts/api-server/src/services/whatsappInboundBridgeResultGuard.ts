@@ -74,6 +74,17 @@ function plainRecord(
   }
 }
 
+function onlyKeys(
+  record: Record<string, unknown>,
+  allowed: readonly string[],
+  label: string,
+): void {
+  const allowedSet = new Set(allowed);
+  for (const key of Object.keys(record)) {
+    if (!allowedSet.has(key)) fail(`${label} contains unsupported property ${key}`);
+  }
+}
+
 function data(
   record: Record<string, unknown>,
   key: string,
@@ -102,6 +113,36 @@ function stringValue(
   }
   if (required && value.length === 0) fail(`${label} cannot be empty`);
   return value;
+}
+
+function singleLineString(
+  value: unknown,
+  label: string,
+  max: number,
+  pattern?: RegExp,
+  required = true,
+): string | undefined {
+  const result = stringValue(value, label, max, required);
+  if (result === undefined) return undefined;
+  if (/[\u0000-\u001F\u007F]/.test(result)) {
+    fail(`${label} contains unsafe control bytes`);
+  }
+  if (pattern && !pattern.test(result)) fail(`${label} has an invalid format`);
+  return result;
+}
+
+function humanString(
+  value: unknown,
+  label: string,
+  max: number,
+  required = false,
+): string | undefined {
+  const result = stringValue(value, label, max, required);
+  if (result === undefined) return undefined;
+  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(result)) {
+    fail(`${label} contains unsafe control bytes`);
+  }
+  return result;
 }
 
 function booleanValue(value: unknown, label: string, required = false): void {
@@ -144,92 +185,99 @@ function inspectProviderReference(value: unknown, messageKind: string): void {
     "emoji",
     "count",
   ]);
-  const kind = stringValue(data(base, "kind"), "provider reference kind", 32)!;
+  const kind = singleLineString(
+    data(base, "kind"),
+    "provider reference kind",
+    32,
+  )!;
 
   if (kind === "media") {
-    const mediaKind = stringValue(data(base, "media_kind"), "media kind", 32)!;
+    onlyKeys(
+      base,
+      [
+        "kind",
+        "media_kind",
+        "id",
+        "mime_type",
+        "sha256",
+        "caption",
+        "filename",
+        "voice",
+        "animated",
+      ],
+      "media reference",
+    );
+    const mediaKind = singleLineString(
+      data(base, "media_kind"),
+      "media kind",
+      32,
+    )!;
     if (!MEDIA_KINDS.has(mediaKind) || mediaKind !== messageKind) {
       fail("media reference does not match the bridge message kind");
     }
-    stringValue(data(base, "id"), "media id", 160);
-    stringValue(data(base, "mime_type", false), "media mime type", 160, false);
-    stringValue(data(base, "sha256", false), "media sha256", 256, false);
-    stringValue(data(base, "caption", false), "media caption", 1_024, false);
-    stringValue(data(base, "filename", false), "media filename", 512, false);
+    singleLineString(data(base, "id"), "media id", 160);
+    singleLineString(
+      data(base, "mime_type", false),
+      "media mime type",
+      160,
+      undefined,
+      false,
+    );
+    singleLineString(
+      data(base, "sha256", false),
+      "media sha256",
+      256,
+      undefined,
+      false,
+    );
+    humanString(data(base, "caption", false), "media caption", 1_024);
+    singleLineString(
+      data(base, "filename", false),
+      "media filename",
+      512,
+      undefined,
+      false,
+    );
     booleanValue(data(base, "voice", false), "media voice flag");
     booleanValue(data(base, "animated", false), "media animated flag");
-    for (const unsupported of [
-      "latitude",
-      "longitude",
-      "name",
-      "address",
-      "message_id",
-      "emoji",
-      "count",
-    ]) {
-      if (data(base, unsupported, false) !== undefined) {
-        fail(`media reference contains unsupported property ${unsupported}`);
-      }
-    }
     return;
   }
 
   if (kind === "location") {
+    onlyKeys(base, ["kind", "latitude", "longitude", "name", "address"], "location reference");
     if (messageKind !== "location") fail("location reference does not match message kind");
     const latitude = numberValue(data(base, "latitude"), "location latitude");
     const longitude = numberValue(data(base, "longitude"), "location longitude");
     if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
       fail("location coordinates are outside their valid range");
     }
-    stringValue(data(base, "name", false), "location name", 300, false);
-    stringValue(data(base, "address", false), "location address", 1_000, false);
-    for (const unsupported of [
-      "media_kind",
-      "id",
-      "mime_type",
-      "sha256",
-      "caption",
-      "filename",
-      "voice",
-      "animated",
-      "message_id",
-      "emoji",
-      "count",
-    ]) {
-      if (data(base, unsupported, false) !== undefined) {
-        fail(`location reference contains unsupported property ${unsupported}`);
-      }
-    }
+    singleLineString(
+      data(base, "name", false),
+      "location name",
+      300,
+      undefined,
+      false,
+    );
+    humanString(data(base, "address", false), "location address", 1_000);
     return;
   }
 
   if (kind === "reaction") {
+    onlyKeys(base, ["kind", "message_id", "emoji"], "reaction reference");
     if (messageKind !== "reaction") fail("reaction reference does not match message kind");
-    stringValue(data(base, "message_id"), "reaction message id", 512);
-    stringValue(data(base, "emoji", false), "reaction emoji", 32, false);
-    for (const unsupported of [
-      "media_kind",
-      "id",
-      "mime_type",
-      "sha256",
-      "caption",
-      "filename",
-      "voice",
-      "animated",
-      "latitude",
-      "longitude",
-      "name",
-      "address",
-      "count",
-    ]) {
-      if (data(base, unsupported, false) !== undefined) {
-        fail(`reaction reference contains unsupported property ${unsupported}`);
-      }
-    }
+    singleLineString(data(base, "message_id"), "reaction message id", 512);
+    singleLineString(
+      data(base, "emoji", false),
+      "reaction emoji",
+      32,
+      undefined,
+      false,
+    );
     return;
   }
 
   if (kind === "contacts") {
+    onlyKeys(base, ["kind", "count"], "contacts reference");
     if (messageKind !== "contacts") fail("contacts reference does not match message kind");
     const count = data(base, "count");
     if (
@@ -239,26 +287,6 @@ function inspectProviderReference(value: unknown, messageKind: string): void {
       count > 1_000
     ) {
       fail("contacts reference count is invalid");
-    }
-    for (const unsupported of [
-      "media_kind",
-      "id",
-      "mime_type",
-      "sha256",
-      "caption",
-      "filename",
-      "voice",
-      "animated",
-      "latitude",
-      "longitude",
-      "name",
-      "address",
-      "message_id",
-      "emoji",
-    ]) {
-      if (data(base, unsupported, false) !== undefined) {
-        fail(`contacts reference contains unsupported property ${unsupported}`);
-      }
     }
     return;
   }
@@ -298,12 +326,13 @@ function expectedDisposition(
 
 /**
  * Validates a bridge result before direct persistence/decision consumers touch
- * it. The guard deliberately focuses on coercion-free structural integrity:
- * proxies, getters, hidden/symbol properties, unexpected fields, non-scalar
- * identities, and malformed nested provider references fail before downstream
- * String/clone operations. Human-text control semantics remain owned by the
- * persistence/decision boundaries so their established fail-closed error codes
- * remain authoritative.
+ * it. Proxies, getters, hidden/symbol properties, unexpected fields, malformed
+ * nested provider references, and forged deterministic identities fail before
+ * downstream String/clone operations. Provider/local/customer identities are
+ * revalidated here because the reply-decision consumer otherwise has no later
+ * identity boundary. Human message-text control semantics remain owned by the
+ * persistence/decision functions so their established text error codes remain
+ * authoritative.
  */
 export function assertWhatsAppInboundBridgeResultRuntime(
   value: unknown,
@@ -340,53 +369,103 @@ export function assertWhatsAppInboundBridgeResultRuntime(
     "phone_number_id",
   ]);
 
-  const eventId = stringValue(data(message, "event_id"), "event id", 512)!;
-  const merchantId = stringValue(data(message, "merchant_id"), "merchant id", 200)!;
-  const channelId = stringValue(data(message, "channel_id"), "channel id", 200)!;
-  const channel = stringValue(data(message, "channel"), "channel", 32)!;
+  const eventId = singleLineString(data(message, "event_id"), "event id", 512)!;
+  const merchantId = singleLineString(
+    data(message, "merchant_id"),
+    "merchant id",
+    200,
+    /^[A-Za-z0-9._:-]+$/,
+  )!;
+  const channelId = singleLineString(
+    data(message, "channel_id"),
+    "channel id",
+    200,
+    /^[A-Za-z0-9._:-]+$/,
+  )!;
+  const channel = singleLineString(data(message, "channel"), "channel", 32)!;
   if (channel !== "whatsapp") fail("bridge channel must be whatsapp");
-  const externalChannelId = stringValue(
+  const externalChannelId = singleLineString(
     data(message, "external_channel_id"),
     "external channel id",
     40,
+    /^\d{1,40}$/,
   )!;
-  const externalMessageId = stringValue(
+  const externalMessageId = singleLineString(
     data(message, "external_message_id"),
     "external message id",
     512,
   )!;
-  const customerExternalId = stringValue(
+  const customerExternalId = singleLineString(
     data(message, "customer_external_id"),
     "customer external id",
-    200,
+    20,
+    /^\d{6,20}$/,
   )!;
-  stringValue(data(message, "customer_name", false), "customer name", 300, false);
-  const messageKind = stringValue(data(message, "message_kind"), "message kind", 32)!;
+  singleLineString(
+    data(message, "customer_name", false),
+    "customer name",
+    300,
+    undefined,
+    false,
+  );
+  const messageKind = singleLineString(
+    data(message, "message_kind"),
+    "message kind",
+    32,
+  )!;
   if (!MESSAGE_KINDS.has(messageKind)) fail("bridge message kind is invalid");
-  const messageText = stringValue(data(message, "text", false), "message text", 4_000, false);
-  stringValue(data(message, "reply_to_message_id", false), "reply message id", 512, false);
-  stringValue(data(message, "provider_timestamp", false), "provider timestamp", 20, false);
+
+  // Message text is type/length checked here but control semantics remain the
+  // responsibility of the persistence/decision boundary to preserve its error.
+  const messageText = stringValue(
+    data(message, "text", false),
+    "message text",
+    4_000,
+    false,
+  );
+  singleLineString(
+    data(message, "reply_to_message_id", false),
+    "reply message id",
+    512,
+    undefined,
+    false,
+  );
+  singleLineString(
+    data(message, "provider_timestamp", false),
+    "provider timestamp",
+    20,
+    /^\d{1,20}$/,
+    false,
+  );
   inspectProviderReference(data(message, "provider_reference", false), messageKind);
 
-  const wabaId = stringValue(data(routing, "waba_id"), "WABA id", 40)!;
-  const phoneNumberId = stringValue(
+  const wabaId = singleLineString(
+    data(routing, "waba_id"),
+    "WABA id",
+    40,
+    /^\d{1,40}$/,
+  )!;
+  const phoneNumberId = singleLineString(
     data(routing, "phone_number_id"),
     "phone-number id",
     40,
+    /^\d{1,40}$/,
   )!;
   if (externalChannelId !== phoneNumberId) {
     fail("bridge external channel does not match routing phone-number id");
   }
 
-  const conversationKey = stringValue(
+  const conversationKey = singleLineString(
     data(message, "conversation_key"),
     "conversation key",
     200,
+    /^whatsapp-conversation-[a-f0-9]{40}$/,
   )!;
-  const inboundEventKey = stringValue(
+  const inboundEventKey = singleLineString(
     data(message, "inbound_event_key"),
     "inbound event key",
     200,
+    /^whatsapp-inbound-[a-f0-9]{40}$/,
   )!;
   const expectedConversationKey = `whatsapp-conversation-${hash([
     merchantId,
@@ -406,14 +485,22 @@ export function assertWhatsAppInboundBridgeResultRuntime(
     fail("bridge deterministic identity keys do not match their source identities");
   }
 
-  if (!/^\d{1,40}$/.test(wabaId) || !/^\d{1,40}$/.test(phoneNumberId)) {
-    fail("bridge routing identities are invalid");
-  }
-
-  const action = stringValue(data(disposition, "action"), "disposition action", 64)!;
-  const reason = stringValue(data(disposition, "reason"), "disposition reason", 80)!;
+  const action = singleLineString(
+    data(disposition, "action"),
+    "disposition action",
+    64,
+  )!;
+  const reason = singleLineString(
+    data(disposition, "reason"),
+    "disposition reason",
+    80,
+  )!;
   const expected = expectedDisposition(messageKind, messageText);
   if (action !== expected.action || reason !== expected.reason) {
     fail("bridge disposition is inconsistent with the normalized message");
   }
+
+  // Keep WABA identity included in integrity inspection even though the
+  // deterministic local conversation key intentionally uses channel/customer.
+  if (!wabaId) fail("bridge WABA identity is missing");
 }
