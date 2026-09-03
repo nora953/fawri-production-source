@@ -7,6 +7,7 @@ export type CatalogServiceLocationMode =
   | "customer"
   | "online"
   | "flexible";
+export type CatalogServiceLocationChoice = Exclude<CatalogServiceLocationMode, "flexible">;
 
 export type CatalogServiceDetails = {
   duration_minutes?: number;
@@ -14,6 +15,7 @@ export type CatalogServiceDetails = {
   booking_required: boolean;
   price_type: CatalogServicePriceType;
   location_mode: CatalogServiceLocationMode;
+  location_modes: CatalogServiceLocationChoice[];
 };
 
 export type CatalogCommerceFields = {
@@ -50,6 +52,16 @@ const SERVICE_LOCATION_MODES = new Set<CatalogServiceLocationMode>([
   "online",
   "flexible",
 ]);
+const SERVICE_LOCATION_CHOICES = new Set<CatalogServiceLocationChoice>([
+  "merchant",
+  "customer",
+  "online",
+]);
+const ALL_SERVICE_LOCATION_CHOICES: CatalogServiceLocationChoice[] = [
+  "merchant",
+  "customer",
+  "online",
+];
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -169,6 +181,33 @@ function serviceLocationMode(
   return normalized;
 }
 
+function serviceLocationChoices(
+  value: unknown,
+  fallbackMode: CatalogServiceLocationMode,
+  fallbackChoices?: readonly CatalogServiceLocationChoice[],
+): CatalogServiceLocationChoice[] {
+  if (value === undefined || value === null || value === "") {
+    if (fallbackChoices && fallbackChoices.length > 0) return [...fallbackChoices];
+    return fallbackMode === "flexible" ? [...ALL_SERVICE_LOCATION_CHOICES] : [fallbackMode];
+  }
+  if (!Array.isArray(value) || value.length === 0 || value.length > ALL_SERVICE_LOCATION_CHOICES.length) {
+    throw new CatalogRuntimeError("CATALOG_SERVICE_LOCATION_INVALID", "service location_modes must contain one to three valid locations", 400, { field: "service_details.location_modes" });
+  }
+  const choices: CatalogServiceLocationChoice[] = [];
+  for (const rawChoice of value) {
+    const choice = normalizedText(rawChoice) as CatalogServiceLocationChoice;
+    if (!SERVICE_LOCATION_CHOICES.has(choice)) {
+      throw new CatalogRuntimeError("CATALOG_SERVICE_LOCATION_INVALID", "service location_modes contains an invalid location", 400, { location: choice });
+    }
+    if (!choices.includes(choice)) choices.push(choice);
+  }
+  return choices;
+}
+
+function serviceLocationModeFromChoices(choices: readonly CatalogServiceLocationChoice[]): CatalogServiceLocationMode {
+  return choices.length > 1 ? "flexible" : choices[0];
+}
+
 function variantSignature(value: unknown): string {
   const variant = record(value);
   const options = record(variant.options);
@@ -269,6 +308,9 @@ export function catalogCommerceFromMetadata(metadataValue: unknown): CatalogComm
     1_440,
   );
 
+  const storedLocationMode = serviceLocationMode(rawService.location_mode, "merchant");
+  const storedLocationModes = serviceLocationChoices(rawService.location_modes, storedLocationMode);
+
   return {
     item_type: "service",
     track_inventory: false,
@@ -284,7 +326,8 @@ export function catalogCommerceFromMetadata(metadataValue: unknown): CatalogComm
         ) ?? 0,
       booking_required: booleanValue(rawService.booking_required, true),
       price_type: servicePriceType(rawService.price_type, "fixed"),
-      location_mode: serviceLocationMode(rawService.location_mode, "merchant"),
+      location_mode: serviceLocationModeFromChoices(storedLocationModes),
+      location_modes: storedLocationModes,
     },
     ...reportingFields,
   };
@@ -347,6 +390,14 @@ export function normalizeCatalogCommerceInput(
         1_440,
       )
     : existingService?.duration_minutes;
+  const requestedLocationMode = hasOwn(serviceInput, "location_mode")
+    ? serviceLocationMode(serviceInput.location_mode, existingService?.location_mode ?? "merchant")
+    : existingService?.location_mode ?? "merchant";
+  const locationModes = hasOwn(serviceInput, "location_modes")
+    ? serviceLocationChoices(serviceInput.location_modes, requestedLocationMode, existingService?.location_modes)
+    : hasOwn(serviceInput, "location_mode")
+      ? serviceLocationChoices(undefined, requestedLocationMode)
+      : serviceLocationChoices(undefined, requestedLocationMode, existingService?.location_modes);
 
   return {
     item_type: "service",
@@ -374,12 +425,8 @@ export function normalizeCatalogCommerceInput(
             existingService?.price_type ?? "fixed",
           )
         : existingService?.price_type ?? "fixed",
-      location_mode: hasOwn(serviceInput, "location_mode")
-        ? serviceLocationMode(
-            serviceInput.location_mode,
-            existingService?.location_mode ?? "merchant",
-          )
-        : existingService?.location_mode ?? "merchant",
+      location_mode: serviceLocationModeFromChoices(locationModes),
+      location_modes: locationModes,
     },
     ...reportingFields,
   };

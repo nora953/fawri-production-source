@@ -556,6 +556,7 @@ export type CatalogItemTypeCopy = {
   locationCustomer: string;
   locationOnline: string;
   locationFlexible: string;
+  locationFlexibleHint: string;
 };
 
 export const CATALOG_ITEM_TYPE_COPY: Record<Lang, CatalogItemTypeCopy> = {
@@ -589,7 +590,8 @@ export const CATALOG_ITEM_TYPE_COPY: Record<Lang, CatalogItemTypeCopy> = {
     locationMerchant: 'في موقع التاجر',
     locationCustomer: 'عند العميل',
     locationOnline: 'أونلاين',
-    locationFlexible: 'مرن / أكثر من خيار',
+    locationFlexible: 'أكثر من مكان لتقديم الخدمة',
+    locationFlexibleHint: 'اختر مكانين على الأقل من الأماكن التي يمكن تقديم هذه الخدمة فيها.',
   },
   ku: {
     chooseType: 'جۆری بابەت',
@@ -622,6 +624,7 @@ export const CATALOG_ITEM_TYPE_COPY: Record<Lang, CatalogItemTypeCopy> = {
     locationCustomer: 'لە شوێنی کڕیار',
     locationOnline: 'ئۆنلاین',
     locationFlexible: 'نەرم / چەند هەڵبژاردە',
+    locationFlexibleHint: 'لانیکەم دوو شوێن هەڵبژێرە کە خزمەتگوزارییەکە لێیان پێشکەش دەکرێت.',
   },
   en: {
     chooseType: 'Item type',
@@ -654,6 +657,7 @@ export const CATALOG_ITEM_TYPE_COPY: Record<Lang, CatalogItemTypeCopy> = {
     locationCustomer: 'Customer location',
     locationOnline: 'Online',
     locationFlexible: 'Flexible / multiple options',
+    locationFlexibleHint: 'Choose at least two locations where this service can be provided.',
   },
 };
 
