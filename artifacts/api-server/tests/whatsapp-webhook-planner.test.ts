@@ -77,6 +77,7 @@ test("plans messages, statuses, and provider errors without side effects", async
   assert.equal(plan.delivery_statuses.length, 1);
   assert.equal(plan.provider_errors.length, 1);
   assert.equal(plan.inbound_messages[0].merchant_id, "merchant-1");
+  assert.equal(plan.inbound_messages[0].channel_id, "channel-1");
   assert.equal(plan.delivery_statuses[0].channel_id, "channel-1");
   assert.deepEqual(plan.provider_errors[0], {
     event_id: "error-event",
@@ -87,6 +88,42 @@ test("plans messages, statuses, and provider errors without side effects", async
     code: "131000",
   });
   assert.equal(JSON.stringify(plan.provider_errors).includes("provider detail"), false);
+});
+
+test("planner keeps safe provider references and the resolved channel id", async () => {
+  const fixture = parsed();
+  fixture.events = [
+    {
+      event_id: "message-media-event",
+      event_kind: "message",
+      waba_id: "1234567890",
+      phone_number_id: "9876543210",
+      external_message_id: "wamid.image",
+      customer_id: "9647711111111",
+      message_kind: "image",
+      provider_reference: {
+        kind: "media",
+        media_kind: "image",
+        id: "media-123",
+        mime_type: "image/jpeg",
+        caption: "Front\nBack",
+      },
+    },
+  ];
+
+  const plan = await planWhatsAppWebhookProcessing({
+    parsed: fixture,
+    resolveChannel: async () => channel,
+  });
+  assert.equal(plan.inbound_messages.length, 1);
+  assert.equal(plan.inbound_messages[0].channel_id, "channel-1");
+  assert.deepEqual(plan.inbound_messages[0].provider_reference, {
+    kind: "media",
+    media_kind: "image",
+    id: "media-123",
+    mime_type: "image/jpeg",
+    caption: "Front\nBack",
+  });
 });
 
 test("unsupported objects produce an empty offline plan", async () => {
