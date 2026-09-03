@@ -6,6 +6,7 @@ import type { CatalogProductFormState } from '@/lib/catalogProductEditor';
 import { CATALOG_ITEM_TYPE_COPY } from '@/lib/translations/features/catalog/catalogEditorCopy';
 import type {
   CatalogItemType,
+  CatalogServiceLocationChoice,
   CatalogServiceLocationMode,
   CatalogServicePriceType,
 } from '@/lib/catalogUiApi';
@@ -59,6 +60,43 @@ export function CatalogItemTypeEditor({
   onChange: (patch: Partial<CatalogProductFormState>) => void;
 }) {
   const copy = CATALOG_ITEM_TYPE_COPY[lang] || CATALOG_ITEM_TYPE_COPY.en;
+  const concreteServiceLocations: Array<{ value: CatalogServiceLocationChoice; label: string }> = [
+    { value: 'merchant', label: copy.locationMerchant },
+    { value: 'customer', label: copy.locationCustomer },
+    { value: 'online', label: copy.locationOnline },
+  ];
+
+  const chooseServiceLocationMode = (mode: CatalogServiceLocationMode) => {
+    if (mode !== 'flexible') {
+      onChange({ service_location_mode: mode, service_location_modes: [mode] });
+      return;
+    }
+    const current = (form.service_location_modes || []).filter(choice =>
+      concreteServiceLocations.some(location => location.value === choice),
+    );
+    const next = [...new Set(current)];
+    if (next.length < 2) {
+      const preferred: CatalogServiceLocationChoice = form.service_location_mode !== 'flexible'
+        ? form.service_location_mode
+        : 'merchant';
+      if (!next.includes(preferred)) next.push(preferred);
+      const fallback = concreteServiceLocations.find(location => !next.includes(location.value));
+      if (fallback) next.push(fallback.value);
+    }
+    onChange({ service_location_mode: 'flexible', service_location_modes: next });
+  };
+
+  const toggleServiceLocation = (choice: CatalogServiceLocationChoice) => {
+    const current = (form.service_location_modes || []).filter(item =>
+      concreteServiceLocations.some(location => location.value === item),
+    );
+    if (current.includes(choice)) {
+      if (current.length <= 2) return;
+      onChange({ service_location_mode: 'flexible', service_location_modes: current.filter(item => item !== choice) });
+      return;
+    }
+    onChange({ service_location_mode: 'flexible', service_location_modes: [...current, choice] });
+  };
 
   const chooseType = (itemType: CatalogItemType) => {
     if (itemType === form.item_type) return;
@@ -105,15 +143,36 @@ export function CatalogItemTypeEditor({
             <option value="custom">{copy.priceCustom}</option>
           </select>
         </label>
-        <label className="space-y-1 text-sm font-semibold">
+        <div className="space-y-1 text-sm font-semibold">
           <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{copy.location}</span>
-          <select value={form.service_location_mode} onChange={event => onChange({ service_location_mode: event.target.value as CatalogServiceLocationMode })} className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
+          <select value={form.service_location_mode} onChange={event => chooseServiceLocationMode(event.target.value as CatalogServiceLocationMode)} className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
             <option value="merchant">{copy.locationMerchant}</option>
             <option value="customer">{copy.locationCustomer}</option>
             <option value="online">{copy.locationOnline}</option>
             <option value="flexible">{copy.locationFlexible}</option>
           </select>
-        </label>
+          {form.service_location_mode === 'flexible' && (
+            <div className="space-y-2 rounded-xl border bg-background p-2.5">
+              <p className="text-xs font-normal leading-5 text-muted-foreground">{copy.locationFlexibleHint}</p>
+              <div className="flex flex-wrap gap-2">
+                {concreteServiceLocations.map(location => {
+                  const selected = (form.service_location_modes || []).includes(location.value);
+                  return (
+                    <button
+                      key={location.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => toggleServiceLocation(location.value)}
+                      className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${selected ? 'border-orange-400 bg-orange-50 text-orange-800' : 'bg-background text-muted-foreground hover:bg-muted/40'}`}
+                    >
+                      {location.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex items-start justify-between gap-4 rounded-xl border bg-background p-3">

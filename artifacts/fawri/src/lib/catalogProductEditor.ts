@@ -6,6 +6,7 @@ import type {
   CatalogItemType,
   CatalogProduct,
   CatalogProductInput,
+  CatalogServiceLocationChoice,
   CatalogServiceLocationMode,
   CatalogServicePriceType,
   CatalogVariant,
@@ -54,6 +55,7 @@ export type CatalogProductFormState = CatalogMeasurementDraft & {
   service_booking_required: boolean;
   service_price_type: CatalogServicePriceType;
   service_location_mode: CatalogServiceLocationMode;
+  service_location_modes: CatalogServiceLocationChoice[];
   name: string;
   sku: string;
   barcode: string;
@@ -101,6 +103,19 @@ function nextDraftKey(prefix: string): string {
 
 function trimmed(value: unknown): string {
   return String(value ?? '').trim();
+}
+
+const SERVICE_LOCATION_CHOICES: CatalogServiceLocationChoice[] = ['merchant', 'customer', 'online'];
+
+function serviceLocationChoices(
+  mode: CatalogServiceLocationMode,
+  choices?: readonly CatalogServiceLocationChoice[],
+): CatalogServiceLocationChoice[] {
+  const normalized = [...new Set((choices || []).filter(choice => SERVICE_LOCATION_CHOICES.includes(choice)))];
+  if (mode === 'flexible') {
+    return normalized.length >= 2 ? normalized : [...SERVICE_LOCATION_CHOICES];
+  }
+  return normalized.length === 1 && normalized[0] === mode ? normalized : [mode];
 }
 
 function wholeNumber(value: string): number | null {
@@ -249,7 +264,14 @@ function variantDraftFromVariant(variant?: CatalogVariant): CatalogVariantDraft 
 
 export function createEmptyCatalogProductForm(): CatalogProductFormState {
   const recovered = peekCatalogCreateRecoveryDraft();
-  if (recovered) return recovered;
+  if (recovered) {
+    const recoveredMode = recovered.service_location_mode || 'merchant';
+    return {
+      ...recovered,
+      service_location_mode: recoveredMode,
+      service_location_modes: serviceLocationChoices(recoveredMode, recovered.service_location_modes),
+    };
+  }
   return {
     item_type: 'product',
     track_inventory: true,
@@ -258,6 +280,7 @@ export function createEmptyCatalogProductForm(): CatalogProductFormState {
     service_booking_required: true,
     service_price_type: 'fixed',
     service_location_mode: 'merchant',
+    service_location_modes: ['merchant'],
     name: '',
     sku: '',
     barcode: '',
@@ -301,6 +324,7 @@ export function catalogProductFormFromProduct(
     service_booking_required: service?.booking_required ?? true,
     service_price_type: service?.price_type ?? 'fixed',
     service_location_mode: service?.location_mode ?? 'merchant',
+    service_location_modes: serviceLocationChoices(service?.location_mode ?? 'merchant', service?.location_modes),
     name: product.name || '',
     sku: product.sku || '',
     barcode: product.barcode || '',
@@ -453,6 +477,7 @@ export function catalogProductInputFromForm(
   const compareAtPrice = serviceUsesAmount && form.original_price.trim()
     ? wholeNumber(form.original_price)
     : null;
+  const serviceLocationModes = serviceLocationChoices(form.service_location_mode, form.service_location_modes);
 
   return {
     item_type: form.item_type,
@@ -474,7 +499,8 @@ export function catalogProductInputFromForm(
               optionalBoundedWholeNumber(form.service_buffer_minutes, 0, 480) ?? 0,
             booking_required: form.service_booking_required,
             price_type: form.service_price_type,
-            location_mode: form.service_location_mode,
+            location_mode: serviceLocationModes.length > 1 ? 'flexible' : serviceLocationModes[0],
+            location_modes: serviceLocationModes,
           },
         }
       : {}),
