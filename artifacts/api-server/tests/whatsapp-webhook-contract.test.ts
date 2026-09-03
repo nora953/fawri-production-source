@@ -4,6 +4,7 @@ import {
   parseWhatsAppWebhookPayload,
   whatsAppLiveCutoverRequested,
   whatsAppOfflineFoundationEnabled,
+  type NormalizedWhatsAppMessageEvent,
 } from "../src/services/whatsappWebhookContract";
 
 function messagePayload() {
@@ -149,7 +150,9 @@ test("normalizes location, reaction, and contact references as structured metada
 
   const result = parseWhatsAppWebhookPayload(payload);
   assert.equal(result.events.length, 3);
-  const messageEvents = result.events.filter((event) => event.event_kind === "message");
+  const messageEvents = result.events.filter(
+    (event): event is NormalizedWhatsAppMessageEvent => event.event_kind === "message",
+  );
   assert.deepEqual(messageEvents.map((event) => event.provider_reference), [
     { kind: "location", latitude: 33.3152, longitude: 44.3661, name: "Baghdad" },
     { kind: "reaction", message_id: "wamid.previous", emoji: "👍" },
