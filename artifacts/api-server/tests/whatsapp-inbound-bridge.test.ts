@@ -105,6 +105,46 @@ test("safe provider references are carried without changing media disposition", 
   });
 });
 
+test("human captions and location addresses may contain bounded newlines", () => {
+  const image = bridgeWhatsAppInboundMessage(
+    job({
+      message_kind: "image",
+      text: undefined,
+      provider_reference: {
+        kind: "media",
+        media_kind: "image",
+        id: "media-123",
+        caption: "First line\nSecond line",
+      },
+    }),
+  );
+  assert.equal(
+    image.message.provider_reference?.kind === "media"
+      ? image.message.provider_reference.caption
+      : undefined,
+    "First line\nSecond line",
+  );
+
+  const location = bridgeWhatsAppInboundMessage(
+    job({
+      message_kind: "location",
+      text: undefined,
+      provider_reference: {
+        kind: "location",
+        latitude: 33.3152,
+        longitude: 44.3661,
+        address: "Street 1\nBaghdad",
+      },
+    }),
+  );
+  assert.equal(
+    location.message.provider_reference?.kind === "location"
+      ? location.message.provider_reference.address
+      : undefined,
+    "Street 1\nBaghdad",
+  );
+});
+
 test("provider reference kind must match the normalized message kind", () => {
   assert.throws(
     () =>
