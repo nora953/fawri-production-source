@@ -34,12 +34,12 @@ test('Arabic service editor keeps approved wording and service-specific semantic
   assert.match(serviceGuard, /ARABIC_SERVICE_AVAILABILITY_HINT = 'حدد ما إذا كانت هذه الخدمة متاحة حاليًا للعملاء\.'/);
   assert.match(serviceGuard, /ARABIC_SERVICE_BOOKING_TITLE = 'تحتاج إلى حجز'/);
   assert.match(copy, /bookingRequired: 'تحتاج إلى حجز'/);
+  assert.match(copy, /locationFlexible: 'أكثر من مكان لتقديم الخدمة'/);
+  assert.match(copy, /locationFlexibleHint: 'اختر مكانين على الأقل من الأماكن التي يمكن تقديم هذه الخدمة فيها\.'/);
   assert.match(merchantCss, /أضف معلومات الخدمة مرة واحدة، ويستخدمها فوري في الكاشير والردود ومساعدة العملاء\./);
   assert.match(merchantCss, /content: "السعر"/);
   assert.match(merchantCss, /content: "السعر يبدأ من"/);
   assert.match(merchantCss, /content: "وقت فاصل بعد الخدمة \(بالدقائق\)"/);
-  assert.match(itemTypeEditor, /locationFlexible: 'أكثر من مكان لتقديم الخدمة'/);
-  assert.match(itemTypeEditor, /locationFlexibleHint: 'اختر مكانين على الأقل من الأماكن التي يمكن تقديم هذه الخدمة فيها\.'/);
   assert.match(itemTypeEditor, /service_location_modes/);
 });
 
