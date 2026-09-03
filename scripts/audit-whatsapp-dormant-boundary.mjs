@@ -32,13 +32,25 @@ function reject(sourceName, source, expression, code) {
   if (expression.test(source)) violations.push({ source: sourceName, code });
 }
 
-const app = read("artifacts/api-server/src/app.ts");
-reject(
-  "artifacts/api-server/src/app.ts",
-  app,
-  /(?:import|require|use|post|get|put|patch|delete)[^\n]*whatsapp/i,
-  "WHATSAPP_ACTIVE_APP_WIRING_PRESENT",
-);
+const runtimeEntries = [
+  ["artifacts/api-server/src/app.ts", read("artifacts/api-server/src/app.ts")],
+  ["artifacts/api-server/src/index.ts", read("artifacts/api-server/src/index.ts")],
+];
+
+for (const [relative, source] of runtimeEntries) {
+  reject(
+    relative,
+    source,
+    /(?:import|require|use|post|get|put|patch|delete|start)[^\n]*whatsapp/i,
+    "WHATSAPP_ACTIVE_RUNTIME_WIRING_PRESENT",
+  );
+  reject(
+    relative,
+    source,
+    /FAWRI_WHATSAPP_(?:OFFLINE_FOUNDATION|LIVE_CUTOVER)/,
+    "WHATSAPP_RUNTIME_SWITCH_CONSUMPTION_PRESENT",
+  );
+}
 
 for (const name of routeFiles()) {
   const relative = `artifacts/api-server/src/routes/${name}`;
@@ -131,7 +143,7 @@ const result = {
   boundary: "whatsapp_dormant_offline",
   whatsapp_service_files: serviceFiles().length,
   active_whatsapp_routes: violations.filter((item) =>
-    item.code.includes("ROUTE") || item.code.includes("APP_WIRING"),
+    item.code.includes("ROUTE") || item.code.includes("RUNTIME_WIRING"),
   ).length,
   forbidden_capability_violations: violations.filter((item) =>
     item.code.includes("PRESENT"),
