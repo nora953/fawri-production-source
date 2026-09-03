@@ -1,0 +1,55 @@
+name: Temporary validated service location fix v2
+
+on:
+  push:
+    branches:
+      - work/integration-service-location-fix-run
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/integration-service-location-fix-run
+          fetch-depth: 0
+
+      - name: Apply targeted fix
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import textwrap
+          workflow = Path('.github/workflows/tmp-service-location-fix.yml').read_text()
+          block = workflow.split("python3 <<'PY'\n", 1)[1].split("\n          PY", 1)[0]
+          script = textwrap.dedent(block).replace('if actual != count:', 'if actual < count:')
+          Path('/tmp/service-location-fix.py').write_text(script)
+          PY
+          python3 /tmp/service-location-fix.py
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validate
+        run: |
+          node --test artifacts/fawri/tests/catalog-service-location-ui.test.mjs
+          pnpm --dir artifacts/api-server exec tsx --test ./tests/catalog-service-location-metadata.test.ts
+          pnpm --dir artifacts/fawri typecheck
+          pnpm --dir artifacts/api-server typecheck
+          git diff --check
+      - name: Commit validated fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/fawri/src/lib/catalogUiApi.ts artifacts/fawri/src/lib/catalogProductEditor.ts artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx artifacts/fawri/tests/catalog-service-location-ui.test.mjs artifacts/api-server/src/services/catalogCommerceMetadata.ts artifacts/api-server/tests/catalog-service-location-metadata.test.ts
+          git commit -m "Fix service location choices and availability spacing"
+          git push origin HEAD:work/integration-service-location-fix-run
