@@ -16,6 +16,9 @@ import {
   type DormantWhatsAppOutboundPreview,
 } from "./whatsappOutboundPolicy";
 import {
+  assertWhatsAppOfflineOutboundRehearsalInputStructure,
+} from "./whatsappOutboundPolicyInputGuard";
+import {
   createWhatsAppDeliveryState,
   type WhatsAppDeliveryState,
 } from "./whatsappDeliveryLifecycle";
@@ -101,6 +104,7 @@ export function rehearseWhatsAppOfflineOutbound(input: {
   finalizedAt: unknown;
   observation: WhatsAppFakeTransportObservation;
 }): WhatsAppOfflineOutboundRehearsal {
+  assertWhatsAppOfflineOutboundRehearsalInputStructure(input);
   const preview = previewDormantWhatsAppTextSend({
     merchantId: input.merchantId,
     channel: input.channel,
