@@ -10,6 +10,9 @@ import {
   buildWhatsAppPrivilegedJobPlan,
   type WhatsAppPrivilegedJobPlan,
 } from "./whatsappPrivilegedJobPlan";
+import {
+  assertWhatsAppOutboundDispatchInputStructure,
+} from "./whatsappOutboundRuntimeGuards";
 
 export type WhatsAppOutboundDispatchPlan = {
   boundary: "not_persisted_not_enqueued_not_sent";
@@ -49,6 +52,7 @@ export function planWhatsAppOutboundDispatch(input: {
   reservationId?: unknown;
   attemptedAt: unknown;
 }): WhatsAppOutboundDispatchPlan {
+  assertWhatsAppOutboundDispatchInputStructure(input);
   if (input.attempt.boundary !== "not_sent" || input.attempt.transport_authorized) {
     throw dispatchError(
       "WHATSAPP_OUTBOUND_DISPATCH_ATTEMPT_INVALID",
