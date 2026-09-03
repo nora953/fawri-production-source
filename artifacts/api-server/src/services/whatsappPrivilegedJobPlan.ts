@@ -3,7 +3,8 @@ import crypto from "node:crypto";
 export type WhatsAppPrivilegedJobType =
   | "whatsapp_inbound_message"
   | "whatsapp_delivery_status"
-  | "whatsapp_provider_error";
+  | "whatsapp_provider_error"
+  | "whatsapp_outbound_send";
 
 export type PlannedWhatsAppBackgroundJobRow = {
   id: string;
@@ -62,7 +63,7 @@ function providerEventIdentity(value: unknown): string {
   ) {
     throw planError(
       "WHATSAPP_PRIVILEGED_JOB_IDENTITY_INVALID",
-      "external event id is invalid",
+      "external event/work identity is invalid",
     );
   }
   return normalized;
@@ -88,7 +89,8 @@ function jobType(value: unknown): WhatsAppPrivilegedJobType {
   if (
     value === "whatsapp_inbound_message" ||
     value === "whatsapp_delivery_status" ||
-    value === "whatsapp_provider_error"
+    value === "whatsapp_provider_error" ||
+    value === "whatsapp_outbound_send"
   ) {
     return value;
   }
@@ -146,7 +148,9 @@ function assertPayloadOwnership(input: {
  * an administrative `background_jobs` row plus an encrypted
  * `background_job_payloads` record. The normalized payload is carried only as
  * plaintext input for a future encryption boundary and is explicitly forbidden
- * from plaintext persistence.
+ * from plaintext persistence. Inbound jobs use normalized provider event IDs;
+ * outbound-send jobs may use a deterministic local attempt ID as the same
+ * bounded work identity.
  *
  * This module deliberately imports no queue implementation, performs no SQL,
  * performs no encryption/decryption, and cannot enqueue or start a worker.
