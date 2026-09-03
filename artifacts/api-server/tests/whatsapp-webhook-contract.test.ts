@@ -285,11 +285,72 @@ test("malformed changes fail closed instead of inventing identities", () => {
 });
 
 test("malformed provider message identities are rejected at normalization boundary", () => {
+  const badWaba = messagePayload();
+  badWaba.entry[0].id = "not-a-waba";
+  const badWabaResult = parseWhatsAppWebhookPayload(badWaba);
+  assert.equal(badWabaResult.events.length, 0);
+  assert.equal(badWabaResult.malformed_changes, 1);
+
+  for (const badId of ["wamid.bad\nid", "wamid.bad\u0000id", "x".repeat(513)]) {
+    const payload = messagePayload();
+    payload.entry[0].changes[0].value.messages[0].id = badId;
+    const result = parseWhatsAppWebhookPayload(payload);
+    assert.equal(result.events.length, 0);
+    assert.equal(result.malformed_changes, 1);
+  }
+
+  const badCustomer = messagePayload();
+  badCustomer.entry[0].changes[0].value.messages[0].from = "not-a-wa-id";
+  const badCustomerResult = parseWhatsAppWebhookPayload(badCustomer);
+  assert.equal(badCustomerResult.events.length, 0);
+  assert.equal(badCustomerResult.malformed_changes, 1);
+});
+
+test("invalid status identity/token is rejected rather than entering reconciliation", () => {
+  for (const badStatus of [
+    { id: "wamid.bad\nid", status: "delivered", recipient_id: "9647711111111" },
+    { id: "wamid.good", status: "delivered\nspoof", recipient_id: "9647711111111" },
+    { id: "wamid.good", status: "delivered", recipient_id: "invalid" },
+  ]) {
+    const payload = messagePayload();
+    const value = payload.entry[0].changes[0].value;
+    value.messages = [];
+    Object.assign(value, { statuses: [badStatus] });
+    const result = parseWhatsAppWebhookPayload(payload);
+    assert.equal(result.events.length, 0);
+    assert.equal(result.malformed_changes, 1);
+  }
+});
+
+test("unsafe display phone metadata is omitted without corrupting channel identity", () => {
   const payload = messagePayload();
-  payload.entry[0].id = "not-a-waba";
+  payload.entry[0].changes[0].value.metadata.display_phone_number = "bad\nheader";
   const result = parseWhatsAppWebhookPayload(payload);
-  assert.equal(result.events.length, 0);
-  assert.equal(result.malformed_changes, 1);
+  assert.equal(result.events.length, 1);
+  const event = result.events[0];
+  assert.equal(event.event_kind, "message");
+  if (event.event_kind !== "message") throw new Error("expected message event");
+  assert.equal(event.display_phone_number, undefined);
+});
+
+test("invalid reaction target is dropped as metadata while the message remains manual-safe", () => {
+  const payload = messagePayload();
+  const value = payload.entry[0].changes[0].value;
+  value.messages = [
+    {
+      from: "9647711111111",
+      id: "wamid.reaction",
+      type: "reaction",
+      reaction: { message_id: "wamid.bad\nid", emoji: "👍" },
+    },
+  ] as never;
+  const result = parseWhatsAppWebhookPayload(payload);
+  assert.equal(result.events.length, 1);
+  const event = result.events[0];
+  assert.equal(event.event_kind, "message");
+  if (event.event_kind !== "message") throw new Error("expected message event");
+  assert.equal(event.provider_reference, undefined);
+  assert.equal(event.message_kind, "reaction");
 });
 
 test("normalizes top-level WhatsApp errors without exposing raw payloads", () => {
@@ -326,4 +387,26 @@ test("normalizes top-level WhatsApp errors without exposing raw payloads", () =>
   assert.equal(event.title, "Generic error");
   assert.equal(event.message, "Provider rejected event");
   assert.match(event.event_id, /^whatsapp:1234567890:9876543210:error:[a-f0-9]{64}$/);
+});
+
+test("unsafe top-level provider error codes are rejected", () => {
+  const result = parseWhatsAppWebhookPayload({
+    object: "whatsapp_business_account",
+    entry: [
+      {
+        id: "1234567890",
+        changes: [
+          {
+            field: "messages",
+            value: {
+              metadata: { phone_number_id: "9876543210" },
+              errors: [{ code: "bad\ncode" }],
+            },
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(result.events.length, 0);
+  assert.equal(result.malformed_changes, 1);
 });
