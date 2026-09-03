@@ -1,0 +1,204 @@
+name: Temporary validated service location fix
+
+on:
+  push:
+    branches:
+      - work/integration-service-location-fix-run
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: work/integration-service-location-fix-run
+          fetch-depth: 0
+
+      - name: Apply targeted fix
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              p = Path(path)
+              text = p.read_text()
+              actual = text.count(old)
+              if actual != count:
+                  raise SystemExit(f"{path}: expected {count}, found {actual}: {old[:100]!r}")
+              p.write_text(text.replace(old, new, count))
+
+          # Frontend contract.
+          replace(
+              'artifacts/fawri/src/lib/catalogUiApi.ts',
+              "export type CatalogServiceLocationMode = 'merchant' | 'customer' | 'online' | 'flexible';\n\nexport type CatalogServiceDetails = {",
+              "export type CatalogServiceLocationMode = 'merchant' | 'customer' | 'online' | 'flexible';\nexport type CatalogServiceLocationChoice = Exclude<CatalogServiceLocationMode, 'flexible'>;\n\nexport type CatalogServiceDetails = {",
+          )
+          replace(
+              'artifacts/fawri/src/lib/catalogUiApi.ts',
+              "  price_type: CatalogServicePriceType;\n  location_mode: CatalogServiceLocationMode;\n};",
+              "  price_type: CatalogServicePriceType;\n  location_mode: CatalogServiceLocationMode;\n  location_modes: CatalogServiceLocationChoice[];\n};",
+          )
+
+          # Canonical copy: Arabic reference wording plus shared hint key.
+          replace(
+              'artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts',
+              "  locationOnline: string;\n  locationFlexible: string;\n};",
+              "  locationOnline: string;\n  locationFlexible: string;\n  locationFlexibleHint: string;\n};",
+          )
+          replace(
+              'artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts',
+              "    locationOnline: 'أونلاين',\n    locationFlexible: 'مرن / أكثر من خيار',",
+              "    locationOnline: 'أونلاين',\n    locationFlexible: 'أكثر من مكان لتقديم الخدمة',\n    locationFlexibleHint: 'اختر مكانين على الأقل من الأماكن التي يمكن تقديم هذه الخدمة فيها.',",
+          )
+          replace(
+              'artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts',
+              "    locationOnline: 'ئۆنلاین',\n    locationFlexible: 'نەرم / چەند هەڵبژاردە',",
+              "    locationOnline: 'ئۆنلاین',\n    locationFlexible: 'نەرم / چەند هەڵبژاردە',\n    locationFlexibleHint: 'لانیکەم دوو شوێن هەڵبژێرە کە خزمەتگوزارییەکە لێیان پێشکەش دەکرێت.',",
+          )
+          replace(
+              'artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts',
+              "    locationOnline: 'Online',\n    locationFlexible: 'Flexible / multiple options',",
+              "    locationOnline: 'Online',\n    locationFlexible: 'Flexible / multiple options',\n    locationFlexibleHint: 'Choose at least two locations where this service can be provided.',",
+          )
+
+          # Editor state and backward-compatible serialization.
+          replace(
+              'artifacts/fawri/src/lib/catalogProductEditor.ts',
+              "  CatalogProductInput,\n  CatalogServiceLocationMode,\n  CatalogServicePriceType,",
+              "  CatalogProductInput,\n  CatalogServiceLocationChoice,\n  CatalogServiceLocationMode,\n  CatalogServicePriceType,",
+          )
+          replace(
+              'artifacts/fawri/src/lib/catalogProductEditor.ts',
+              "  service_price_type: CatalogServicePriceType;\n  service_location_mode: CatalogServiceLocationMode;\n  name: string;",
+              "  service_price_type: CatalogServicePriceType;\n  service_location_mode: CatalogServiceLocationMode;\n  service_location_modes: CatalogServiceLocationChoice[];\n  name: string;",
+          )
+          replace(
+              'artifacts/fawri/src/lib/catalogProductEditor.ts',
+              "function trimmed(value: unknown): string {\n  return String(value ?? '').trim();\n}\n\nfunction wholeNumber",
+              "function trimmed(value: unknown): string {\n  return String(value ?? '').trim();\n}\n\nconst SERVICE_LOCATION_CHOICES: CatalogServiceLocationChoice[] = ['merchant', 'customer', 'online'];\n\nfunction serviceLocationChoices(\n  mode: CatalogServiceLocationMode,\n  choices?: readonly CatalogServiceLocationChoice[],\n): CatalogServiceLocationChoice[] {\n  const normalized = [...new Set((choices || []).filter(choice => SERVICE_LOCATION_CHOICES.includes(choice)))];\n  if (mode === 'flexible') {\n    return normalized.length >= 2 ? normalized : [...SERVICE_LOCATION_CHOICES];\n  }\n  return normalized.length === 1 && normalized[0] === mode ? normalized : [mode];\n}\n\nfunction wholeNumber",
+          )
+          replace(
+              'artifacts/fawri/src/lib/catalogProductEditor.ts',
+              "  const recovered = peekCatalogCreateRecoveryDraft();\n  if (recovered) return recovered;\n  return {",
+              "  const recovered = peekCatalogCreateRecoveryDraft();\n  if (recovered) {\n    const recoveredMode = recovered.service_location_mode || 'merchant';\n    return {\n      ...recovered,\n      service_location_mode: recoveredMode,\n      service_location_modes: serviceLocationChoices(recoveredMode, recovered.service_location_modes),\n    };\n  }\n  return {",
+          )
+          replace(
+              'artifacts/fawri/src/lib/catalogProductEditor.ts',
+              "    service_price_type: 'fixed',\n    service_location_mode: 'merchant',\n    name: '',",
+              "    service_price_type: 'fixed',\n    service_location_mode: 'merchant',\n    service_location_modes: ['merchant'],\n    name: '',",
+          )
+          replace(
+              'artifacts/fawri/src/lib/catalogProductEditor.ts',
+              "    service_price_type: service?.price_type ?? 'fixed',\n    service_location_mode: service?.location_mode ?? 'merchant',\n    name: product.name || '',",
+              "    service_price_type: service?.price_type ?? 'fixed',\n    service_location_mode: service?.location_mode ?? 'merchant',\n    service_location_modes: serviceLocationChoices(service?.location_mode ?? 'merchant', service?.location_modes),\n    name: product.name || '',",
+          )
+          replace(
+              'artifacts/fawri/src/lib/catalogProductEditor.ts',
+              "  const compareAtPrice = serviceUsesAmount && form.original_price.trim()\n    ? wholeNumber(form.original_price)\n    : null;\n\n  return {",
+              "  const compareAtPrice = serviceUsesAmount && form.original_price.trim()\n    ? wholeNumber(form.original_price)\n    : null;\n  const serviceLocationModes = serviceLocationChoices(form.service_location_mode, form.service_location_modes);\n\n  return {",
+          )
+          replace(
+              'artifacts/fawri/src/lib/catalogProductEditor.ts',
+              "            price_type: form.service_price_type,\n            location_mode: form.service_location_mode,\n          },",
+              "            price_type: form.service_price_type,\n            location_mode: serviceLocationModes.length > 1 ? 'flexible' : serviceLocationModes[0],\n            location_modes: serviceLocationModes,\n          },",
+          )
+
+          # Service location UI, preserving the current Arabic service-layout authority.
+          replace(
+              'artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx',
+              "  CatalogItemType,\n  CatalogServiceLocationMode,",
+              "  CatalogItemType,\n  CatalogServiceLocationChoice,\n  CatalogServiceLocationMode,",
+          )
+          replace(
+              'artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx',
+              "  const copy = CATALOG_ITEM_TYPE_COPY[lang] || CATALOG_ITEM_TYPE_COPY.en;\n\n  const chooseType",
+              "  const copy = CATALOG_ITEM_TYPE_COPY[lang] || CATALOG_ITEM_TYPE_COPY.en;\n  const concreteServiceLocations: Array<{ value: CatalogServiceLocationChoice; label: string }> = [\n    { value: 'merchant', label: copy.locationMerchant },\n    { value: 'customer', label: copy.locationCustomer },\n    { value: 'online', label: copy.locationOnline },\n  ];\n\n  const chooseServiceLocationMode = (mode: CatalogServiceLocationMode) => {\n    if (mode !== 'flexible') {\n      onChange({ service_location_mode: mode, service_location_modes: [mode] });\n      return;\n    }\n    const current = (form.service_location_modes || []).filter(choice =>\n      concreteServiceLocations.some(location => location.value === choice),\n    );\n    const next = [...new Set(current)];\n    if (next.length < 2) {\n      const preferred: CatalogServiceLocationChoice = form.service_location_mode !== 'flexible'\n        ? form.service_location_mode\n        : 'merchant';\n      if (!next.includes(preferred)) next.push(preferred);\n      const fallback = concreteServiceLocations.find(location => !next.includes(location.value));\n      if (fallback) next.push(fallback.value);\n    }\n    onChange({ service_location_mode: 'flexible', service_location_modes: next });\n  };\n\n  const toggleServiceLocation = (choice: CatalogServiceLocationChoice) => {\n    const current = (form.service_location_modes || []).filter(item =>\n      concreteServiceLocations.some(location => location.value === item),\n    );\n    if (current.includes(choice)) {\n      if (current.length <= 2) return;\n      onChange({ service_location_mode: 'flexible', service_location_modes: current.filter(item => item !== choice) });\n      return;\n    }\n    onChange({ service_location_mode: 'flexible', service_location_modes: [...current, choice] });\n  };\n\n  const chooseType",
+          )
+          replace(
+              'artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx',
+              "        <label className=\"space-y-1 text-sm font-semibold\">\n          <span className=\"flex items-center gap-2\"><MapPin className=\"h-4 w-4\" />{copy.location}</span>\n          <select value={form.service_location_mode} onChange={event => onChange({ service_location_mode: event.target.value as CatalogServiceLocationMode })} className=\"h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20\">\n            <option value=\"merchant\">{copy.locationMerchant}</option>\n            <option value=\"customer\">{copy.locationCustomer}</option>\n            <option value=\"online\">{copy.locationOnline}</option>\n            <option value=\"flexible\">{copy.locationFlexible}</option>\n          </select>\n        </label>",
+              "        <div className=\"space-y-1 text-sm font-semibold\">\n          <span className=\"flex items-center gap-2\"><MapPin className=\"h-4 w-4\" />{copy.location}</span>\n          <select value={form.service_location_mode} onChange={event => chooseServiceLocationMode(event.target.value as CatalogServiceLocationMode)} className=\"h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20\">\n            <option value=\"merchant\">{copy.locationMerchant}</option>\n            <option value=\"customer\">{copy.locationCustomer}</option>\n            <option value=\"online\">{copy.locationOnline}</option>\n            <option value=\"flexible\">{copy.locationFlexible}</option>\n          </select>\n          {form.service_location_mode === 'flexible' && (\n            <div className=\"space-y-2 rounded-xl border bg-background p-2.5\">\n              <p className=\"text-xs font-normal leading-5 text-muted-foreground\">{copy.locationFlexibleHint}</p>\n              <div className=\"flex flex-wrap gap-2\">\n                {concreteServiceLocations.map(location => {\n                  const selected = (form.service_location_modes || []).includes(location.value);\n                  return (\n                    <button\n                      key={location.value}\n                      type=\"button\"\n                      aria-pressed={selected}\n                      onClick={() => toggleServiceLocation(location.value)}\n                      className={`rounded-lg border px-3 py-2 text-xs font-semibold transition ${selected ? 'border-orange-400 bg-orange-50 text-orange-800' : 'bg-background text-muted-foreground hover:bg-muted/40'}`}\n                    >\n                      {location.label}\n                    </button>\n                  );\n                })}\n              </div>\n            </div>\n          )}\n        </div>",
+          )
+
+          # Availability switch stays visually attached to its service copy.
+          replace(
+              'artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx',
+              "<div className=\"flex items-center justify-between gap-4 rounded-2xl border bg-muted/10 p-4\">\n              <div>\n                <p className=\"text-sm font-bold\">{copy.availableForSale}</p>",
+              "<div className=\"flex items-start gap-3 rounded-2xl border bg-muted/10 p-4\">\n              <div>\n                <p className=\"text-sm font-bold\">{copy.availableForSale}</p>",
+          )
+
+          # Server metadata authority for concrete service locations.
+          replace(
+              'artifacts/api-server/src/services/catalogCommerceMetadata.ts',
+              "export type CatalogServiceLocationMode =\n  | \"merchant\"\n  | \"customer\"\n  | \"online\"\n  | \"flexible\";\n\nexport type CatalogServiceDetails = {",
+              "export type CatalogServiceLocationMode =\n  | \"merchant\"\n  | \"customer\"\n  | \"online\"\n  | \"flexible\";\nexport type CatalogServiceLocationChoice = Exclude<CatalogServiceLocationMode, \"flexible\">;\n\nexport type CatalogServiceDetails = {",
+          )
+          replace(
+              'artifacts/api-server/src/services/catalogCommerceMetadata.ts',
+              "  price_type: CatalogServicePriceType;\n  location_mode: CatalogServiceLocationMode;\n};",
+              "  price_type: CatalogServicePriceType;\n  location_mode: CatalogServiceLocationMode;\n  location_modes: CatalogServiceLocationChoice[];\n};",
+          )
+          replace(
+              'artifacts/api-server/src/services/catalogCommerceMetadata.ts',
+              "const SERVICE_LOCATION_MODES = new Set<CatalogServiceLocationMode>([\n  \"merchant\",\n  \"customer\",\n  \"online\",\n  \"flexible\",\n]);",
+              "const SERVICE_LOCATION_MODES = new Set<CatalogServiceLocationMode>([\n  \"merchant\",\n  \"customer\",\n  \"online\",\n  \"flexible\",\n]);\nconst SERVICE_LOCATION_CHOICES = new Set<CatalogServiceLocationChoice>([\n  \"merchant\",\n  \"customer\",\n  \"online\",\n]);\nconst ALL_SERVICE_LOCATION_CHOICES: CatalogServiceLocationChoice[] = [\n  \"merchant\",\n  \"customer\",\n  \"online\",\n];",
+          )
+          replace(
+              'artifacts/api-server/src/services/catalogCommerceMetadata.ts',
+              "function variantSignature(value: unknown): string {",
+              "function serviceLocationChoices(\n  value: unknown,\n  fallbackMode: CatalogServiceLocationMode,\n  fallbackChoices?: readonly CatalogServiceLocationChoice[],\n): CatalogServiceLocationChoice[] {\n  if (value === undefined || value === null || value === \"\") {\n    if (fallbackChoices && fallbackChoices.length > 0) return [...fallbackChoices];\n    return fallbackMode === \"flexible\" ? [...ALL_SERVICE_LOCATION_CHOICES] : [fallbackMode];\n  }\n  if (!Array.isArray(value) || value.length === 0 || value.length > ALL_SERVICE_LOCATION_CHOICES.length) {\n    throw new CatalogRuntimeError(\"CATALOG_SERVICE_LOCATION_INVALID\", \"service location_modes must contain one to three valid locations\", 400, { field: \"service_details.location_modes\" });\n  }\n  const choices: CatalogServiceLocationChoice[] = [];\n  for (const rawChoice of value) {\n    const choice = normalizedText(rawChoice) as CatalogServiceLocationChoice;\n    if (!SERVICE_LOCATION_CHOICES.has(choice)) {\n      throw new CatalogRuntimeError(\"CATALOG_SERVICE_LOCATION_INVALID\", \"service location_modes contains an invalid location\", 400, { location: choice });\n    }\n    if (!choices.includes(choice)) choices.push(choice);\n  }\n  return choices;\n}\n\nfunction serviceLocationModeFromChoices(choices: readonly CatalogServiceLocationChoice[]): CatalogServiceLocationMode {\n  return choices.length > 1 ? \"flexible\" : choices[0];\n}\n\nfunction variantSignature(value: unknown): string {",
+          )
+          replace(
+              'artifacts/api-server/src/services/catalogCommerceMetadata.ts',
+              "  return {\n    item_type: \"service\",\n    track_inventory: false,\n    service_details: {",
+              "  const storedLocationMode = serviceLocationMode(rawService.location_mode, \"merchant\");\n  const storedLocationModes = serviceLocationChoices(rawService.location_modes, storedLocationMode);\n\n  return {\n    item_type: \"service\",\n    track_inventory: false,\n    service_details: {",
+          )
+          replace(
+              'artifacts/api-server/src/services/catalogCommerceMetadata.ts',
+              "      price_type: servicePriceType(rawService.price_type, \"fixed\"),\n      location_mode: serviceLocationMode(rawService.location_mode, \"merchant\"),\n    },",
+              "      price_type: servicePriceType(rawService.price_type, \"fixed\"),\n      location_mode: serviceLocationModeFromChoices(storedLocationModes),\n      location_modes: storedLocationModes,\n    },",
+          )
+          replace(
+              'artifacts/api-server/src/services/catalogCommerceMetadata.ts',
+              "  const duration = hasOwn(serviceInput, \"duration_minutes\")\n    ? boundedInteger(\n        serviceInput.duration_minutes,\n        \"service_details.duration_minutes\",\n        1,\n        1_440,\n      )\n    : existingService?.duration_minutes;\n\n  return {",
+              "  const duration = hasOwn(serviceInput, \"duration_minutes\")\n    ? boundedInteger(\n        serviceInput.duration_minutes,\n        \"service_details.duration_minutes\",\n        1,\n        1_440,\n      )\n    : existingService?.duration_minutes;\n  const requestedLocationMode = hasOwn(serviceInput, \"location_mode\")\n    ? serviceLocationMode(serviceInput.location_mode, existingService?.location_mode ?? \"merchant\")\n    : existingService?.location_mode ?? \"merchant\";\n  const locationModes = hasOwn(serviceInput, \"location_modes\")\n    ? serviceLocationChoices(serviceInput.location_modes, requestedLocationMode, existingService?.location_modes)\n    : hasOwn(serviceInput, \"location_mode\")\n      ? serviceLocationChoices(undefined, requestedLocationMode)\n      : serviceLocationChoices(undefined, requestedLocationMode, existingService?.location_modes);\n\n  return {",
+          )
+          replace(
+              'artifacts/api-server/src/services/catalogCommerceMetadata.ts',
+              "      location_mode: hasOwn(serviceInput, \"location_mode\")\n        ? serviceLocationMode(\n            serviceInput.location_mode,\n            existingService?.location_mode ?? \"merchant\",\n          )\n        : existingService?.location_mode ?? \"merchant\",\n    },",
+              "      location_mode: serviceLocationModeFromChoices(locationModes),\n      location_modes: locationModes,\n    },",
+          )
+
+          # Regression tests.
+          Path('artifacts/fawri/tests/catalog-service-location-ui.test.mjs').write_text('''import assert from "node:assert/strict";\nimport fs from "node:fs";\nimport test from "node:test";\n\nconst editor = fs.readFileSync(new URL("../src/components/catalog/CatalogItemTypeEditor.tsx", import.meta.url), "utf8");\nconst page = fs.readFileSync(new URL("../src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx", import.meta.url), "utf8");\n\ntest("multi-location service exposes concrete choices", () => {\n  assert.match(editor, /service_location_modes/);\n  assert.match(editor, /locationFlexibleHint/);\n  assert.match(editor, /aria-pressed=\{selected\}/);\n});\n\ntest("availability switch no longer uses justify-between", () => {\n  const start = page.indexOf("{copy.availableForSale}");\n  assert.ok(start > 0);\n  const block = page.slice(Math.max(0, start - 220), start + 420);\n  assert.match(block, /flex items-start gap-3 rounded-2xl border/);\n  assert.doesNotMatch(block, /justify-between/);\n});\n''')
+
+          Path('artifacts/api-server/tests/catalog-service-location-metadata.test.ts').write_text('''import assert from "node:assert/strict";\nimport test from "node:test";\nimport { catalogCommerceFromMetadata, catalogCommerceMetadataPatch, normalizeCatalogCommerceInput } from "../src/services/catalogCommerceMetadata";\n\ntest("persists concrete multi-location service choices", () => {\n  const fields = normalizeCatalogCommerceInput({ item_type: "service", track_inventory: false, service_details: { booking_required: true, buffer_minutes: 0, price_type: "fixed", location_mode: "flexible", location_modes: ["merchant", "online"] } });\n  assert.equal(fields.service_details?.location_mode, "flexible");\n  assert.deepEqual(fields.service_details?.location_modes, ["merchant", "online"]);\n  const roundTrip = catalogCommerceFromMetadata(catalogCommerceMetadataPatch(fields));\n  assert.deepEqual(roundTrip.service_details?.location_modes, ["merchant", "online"]);\n});\n\ntest("legacy flexible service expands safely", () => {\n  const legacy = catalogCommerceFromMetadata({ fawri_catalog_v2: { version: 2, item_type: "service", track_inventory: false, service_details: { booking_required: true, buffer_minutes: 0, price_type: "fixed", location_mode: "flexible" } } });\n  assert.deepEqual(legacy.service_details?.location_modes, ["merchant", "customer", "online"]);\n});\n''')
+          PY
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.26.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Validate
+        run: |
+          node --test artifacts/fawri/tests/catalog-service-location-ui.test.mjs
+          pnpm --dir artifacts/api-server exec tsx --test ./tests/catalog-service-location-metadata.test.ts
+          pnpm --dir artifacts/fawri typecheck
+          pnpm --dir artifacts/api-server typecheck
+          git diff --check
+      - name: Commit validated fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifacts/fawri/src/lib/catalogUiApi.ts artifacts/fawri/src/lib/catalogProductEditor.ts artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx artifacts/fawri/tests/catalog-service-location-ui.test.mjs artifacts/api-server/src/services/catalogCommerceMetadata.ts artifacts/api-server/tests/catalog-service-location-metadata.test.ts
+          git commit -m "Fix service location choices and availability spacing"
+          git push origin HEAD:work/integration-service-location-fix-run
