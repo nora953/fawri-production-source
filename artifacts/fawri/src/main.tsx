@@ -7,12 +7,14 @@ import "./styles/fawriLanguageAuthority.css";
 import "./styles/fawriFieldContent.css";
 import { installAdaptiveIdentifierInputs } from "@/lib/adaptiveIdentifierInputs";
 import { installCatalogEditorAutoDirection } from "@/lib/catalogEditorAutoDirection";
+import { installCatalogArabicServiceGoldenGuard } from "@/lib/catalogArabicServiceGoldenGuard";
 import { applyCatalogEditorEnglishSemanticParity } from "@/lib/catalogEditorEnglishSemanticParity";
 import { I18nProvider } from "@/lib/i18n";
 
 applyCatalogEditorEnglishSemanticParity();
 installAdaptiveIdentifierInputs();
 installCatalogEditorAutoDirection();
+installCatalogArabicServiceGoldenGuard();
 
 createRoot(document.getElementById("root")!).render(
   <I18nProvider>
