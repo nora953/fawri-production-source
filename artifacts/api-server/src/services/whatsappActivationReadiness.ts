@@ -21,6 +21,10 @@ export type WhatsAppActivationEvidence = {
   webhook_verification_ready: boolean;
   app_secret_configured: boolean;
   durable_queue_ready: boolean;
+  inbound_persistence_ready: boolean;
+  reply_engine_handoff_ready: boolean;
+  data_policy_ready: boolean;
+  media_policy_ready: boolean;
   inbound_worker_ready: boolean;
   outbound_transport_ready: boolean;
   delivery_reconciliation_ready: boolean;
@@ -41,6 +45,10 @@ export type WhatsAppActivationBlocker =
   | "WHATSAPP_WEBHOOK_VERIFICATION_NOT_READY"
   | "WHATSAPP_APP_SECRET_NOT_CONFIGURED"
   | "WHATSAPP_DURABLE_QUEUE_NOT_READY"
+  | "WHATSAPP_INBOUND_PERSISTENCE_NOT_READY"
+  | "WHATSAPP_REPLY_ENGINE_HANDOFF_NOT_READY"
+  | "WHATSAPP_DATA_POLICY_NOT_READY"
+  | "WHATSAPP_MEDIA_POLICY_NOT_READY"
   | "WHATSAPP_INBOUND_WORKER_NOT_READY"
   | "WHATSAPP_OUTBOUND_TRANSPORT_NOT_READY"
   | "WHATSAPP_DELIVERY_RECONCILIATION_NOT_READY"
@@ -104,6 +112,22 @@ const BOOLEAN_EVIDENCE: Array<{
     blocker: "WHATSAPP_DURABLE_QUEUE_NOT_READY",
   },
   {
+    key: "inbound_persistence_ready",
+    blocker: "WHATSAPP_INBOUND_PERSISTENCE_NOT_READY",
+  },
+  {
+    key: "reply_engine_handoff_ready",
+    blocker: "WHATSAPP_REPLY_ENGINE_HANDOFF_NOT_READY",
+  },
+  {
+    key: "data_policy_ready",
+    blocker: "WHATSAPP_DATA_POLICY_NOT_READY",
+  },
+  {
+    key: "media_policy_ready",
+    blocker: "WHATSAPP_MEDIA_POLICY_NOT_READY",
+  },
+  {
     key: "inbound_worker_ready",
     blocker: "WHATSAPP_INBOUND_WORKER_NOT_READY",
   },
@@ -140,7 +164,8 @@ function assertEvidence(input: WhatsAppActivationEvidence): void {
  * Evaluates only readiness evidence and feature switches. Secret material is
  * intentionally represented as booleans, never as values, and this function
  * cannot activate a route, store a credential, subscribe a webhook, or send a
- * provider request.
+ * provider request. Internal persistence/data/media gates are explicit so a
+ * provider cutover cannot outrun the verified offline contracts.
  */
 export function assessWhatsAppActivationReadiness(
   evidence: WhatsAppActivationEvidence,
