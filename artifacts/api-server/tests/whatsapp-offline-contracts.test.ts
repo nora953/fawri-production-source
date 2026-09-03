@@ -162,6 +162,30 @@ test("builds an outbound text plan without credentials or network calls", () => 
   assert.equal(JSON.stringify(plan).includes("Bearer"), false);
 });
 
+test("outbound text preserves normal multiline formatting but rejects unsafe controls", () => {
+  const multiline = buildWhatsAppTextSendPlan({
+    phoneNumberId: "9876543210",
+    to: "9647711111111",
+    messageText: "Line one\nLine two\tvalue",
+    graphVersion,
+  });
+  assert.equal(multiline.body.text.body, "Line one\nLine two\tvalue");
+
+  for (const unsafe of ["hello\u0000world", "hello\u0007world", "hello\u001Fworld", "hello\u007Fworld"]) {
+    assert.throws(
+      () =>
+        buildWhatsAppTextSendPlan({
+          phoneNumberId: "9876543210",
+          to: "9647711111111",
+          messageText: unsafe,
+          graphVersion,
+        }),
+      (error: unknown) =>
+        (error as { code?: string }).code === "WHATSAPP_MESSAGE_TEXT_INVALID",
+    );
+  }
+});
+
 test("rejects unsafe outbound recipient, text, and missing/unpinned Graph version values", () => {
   assert.throws(
     () =>
