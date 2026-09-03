@@ -3,6 +3,9 @@ import {
   assertWhatsAppOutboundAttemptIntegrity,
   type WhatsAppOutboundAttemptPlan,
 } from "./whatsappOutboundAttempt";
+import {
+  assertWhatsAppOutboundDeliveryPersistenceInputStructure,
+} from "./whatsappOutboundRuntimeGuards";
 
 export type PlannedWhatsAppOutboundDeliveryRow = {
   id: string;
@@ -81,6 +84,7 @@ export function planWhatsAppOutboundDeliveryPersistence(input: {
   finalizedAt?: unknown;
   outcome?: WhatsAppSendOutcome;
 }): WhatsAppOutboundDeliveryPersistencePlan {
+  assertWhatsAppOutboundDeliveryPersistenceInputStructure(input);
   if (input.attempt.boundary !== "not_sent" || input.attempt.transport_authorized) {
     throw persistenceError(
       "WHATSAPP_OUTBOUND_ATTEMPT_BOUNDARY_INVALID",
