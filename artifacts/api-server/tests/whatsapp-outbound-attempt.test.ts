@@ -7,6 +7,7 @@ import {
   buildWhatsAppTextSendPlan,
 } from "../src/services/whatsappOfflineContracts";
 import {
+  assertWhatsAppOutboundAttemptIntegrity,
   createWhatsAppOutboundAttemptPlan,
 } from "../src/services/whatsappOutboundAttempt";
 import type { ResolvedDormantWhatsAppChannel } from "../src/services/whatsappDormantChannelResolver";
@@ -50,15 +51,34 @@ test("same logical attempt is deterministic, cloned, and transport remains unaut
   assert.deepEqual(first, second);
   assert.equal(first.boundary, "not_sent");
   assert.equal(first.transport_authorized, false);
+  assert.equal(first.attempt_number, 1);
+  assert.equal(first.phone_number_id, channel.phone_number_id);
   assert.match(first.logical_send_id, /^whatsapp-send-[a-f0-9]{40}$/);
   assert.match(first.attempt_id, /^whatsapp-attempt-[a-f0-9]{40}$/);
   assert.match(first.dedupe_key, /^whatsapp-send:[a-f0-9]{64}$/);
   assert.match(first.recipient_hash, /^[a-f0-9]{24}$/);
   assert.notEqual(first.request, originalRequest);
   assert.notEqual(first.request.body, originalRequest.body);
+  assert.doesNotThrow(() => assertWhatsAppOutboundAttemptIntegrity(first));
 });
 
-test("later attempt number keeps logical send identity but changes attempt identity", () => {
+test("second provider attempt under the same reply intent is rejected", () => {
+  assert.throws(
+    () =>
+      createWhatsAppOutboundAttemptPlan({
+        merchantId: "merchant-1",
+        replyIntentId: "reply-intent-1",
+        attemptNumber: 2,
+        channel,
+        request: request("corrected text"),
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_OUTBOUND_NEW_REPLY_INTENT_REQUIRED",
+  );
+});
+
+test("an explicitly new reply intent creates a distinct one-attempt logical send", () => {
   const first = createWhatsAppOutboundAttemptPlan({
     merchantId: "merchant-1",
     replyIntentId: "reply-intent-1",
@@ -66,16 +86,16 @@ test("later attempt number keeps logical send identity but changes attempt ident
     channel,
     request: request(),
   });
-  const second = createWhatsAppOutboundAttemptPlan({
+  const corrected = createWhatsAppOutboundAttemptPlan({
     merchantId: "merchant-1",
-    replyIntentId: "reply-intent-1",
-    attemptNumber: 2,
+    replyIntentId: "reply-intent-2",
+    attemptNumber: 1,
     channel,
     request: request("corrected text"),
   });
-  assert.equal(first.logical_send_id, second.logical_send_id);
-  assert.notEqual(first.attempt_id, second.attempt_id);
-  assert.notEqual(first.dedupe_key, second.dedupe_key);
+  assert.notEqual(first.logical_send_id, corrected.logical_send_id);
+  assert.notEqual(first.attempt_id, corrected.attempt_id);
+  assert.notEqual(first.dedupe_key, corrected.dedupe_key);
 });
 
 test("channel/request and merchant mismatches fail closed", () => {
@@ -126,6 +146,24 @@ test("channel/request and merchant mismatches fail closed", () => {
     (error: unknown) =>
       (error as { code?: string }).code ===
       "WHATSAPP_OUTBOUND_REQUEST_CHANNEL_MISMATCH",
+  );
+});
+
+test("integrity check catches request mutation before durable dispatch", () => {
+  const planned = createWhatsAppOutboundAttemptPlan({
+    merchantId: "merchant-1",
+    replyIntentId: "reply-intent-1",
+    attemptNumber: 1,
+    channel,
+    request: request(),
+  });
+  planned.request.body.to = "9647722222222";
+
+  assert.throws(
+    () => assertWhatsAppOutboundAttemptIntegrity(planned),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_OUTBOUND_ATTEMPT_INTEGRITY_INVALID",
   );
 });
 
