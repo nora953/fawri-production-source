@@ -115,7 +115,10 @@ function stabilizePriceRangeDirection(dialog: HTMLElement, lang: Lang): void {
   if (firstBdi) {
     firstBdi.setAttribute('dir', 'ltr');
     firstBdi.style.direction = 'ltr';
-    firstBdi.style.unicodeBidi = 'isolate';
+    // Keep the numeric range in logical minimum -> maximum order even after
+    // Arabic/Sorani digit localization. Plain `isolate` lets the bidi algorithm
+    // visually swap the two Arabic-Indic numeric runs around the neutral hyphen.
+    firstBdi.style.unicodeBidi = 'isolate-override';
   }
 }
 
