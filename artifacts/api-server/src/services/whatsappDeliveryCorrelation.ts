@@ -4,6 +4,9 @@ import {
   assertExpectedWhatsAppRecipientStructure,
   assertWhatsAppDeliveryStatusPlanStructure,
 } from "./whatsappDeliveryRuntimeGuards";
+import {
+  assertWhatsAppDeliveryCorrelationResultStructure,
+} from "./whatsappDeliveryCorrelationResultGuard";
 import type { WhatsAppDeliveryStatusPlan } from "./whatsappWebhookPlanner";
 
 export type CorrelatedWhatsAppDelivery = {
@@ -139,6 +142,7 @@ export async function correlateWhatsAppDeliveryWithClient(
       LIMIT 2`,
     [merchantId, channelId, providerMessageId, wabaId, phoneNumberId],
   );
+  assertWhatsAppDeliveryCorrelationResultStructure(result);
 
   if (result.rows.length === 0) {
     throw correlationError(
