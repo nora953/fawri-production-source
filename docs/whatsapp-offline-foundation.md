@@ -32,6 +32,8 @@ The phone-number identifier is globally unique and the WABA/phone pair is treate
 
 The migration also installs a deliberate cutover barrier: WhatsApp rows must remain pending, credential-free, unsubscribed, without webhook activity, and without `connected_at`. A future live integration therefore requires an explicit migration that removes or replaces this constraint; setting an environment variable alone cannot turn a dormant record into a live channel.
 
+The migration metadata keeps the Drizzle snapshot history ordered. The repository journal already contained migration 0011, so this branch backfills the missing `0011_snapshot.json` at the post-0011 commerce state and chains the new `0012_snapshot.json` from it. Static tests verify `0010 -> 0011 -> 0012`, verify that 0011 contains the commerce-promotion state but no WhatsApp identity fields, and verify that WhatsApp fields/constraints appear only in 0012.
+
 `whatsappDormantChannelAuthority.ts` registers only validated dormant identity under the merchant tenant authority. `whatsappDormantChannelResolver.ts` resolves WABA + phone identity only when exactly one tenant-owned row remains `platform=whatsapp`, `status=pending`, and `integration_mode=dormant_offline`. Missing, duplicate, cross-tenant, or live-state mappings fail closed.
 
 The existing Messenger/Instagram PostgreSQL authority explicitly lists only `messenger` and `instagram`, so dormant WhatsApp rows cannot leak into the legacy Meta runtime path.
@@ -46,8 +48,8 @@ The existing Messenger/Instagram PostgreSQL authority explicitly lists only `mes
 - requires numeric WABA and phone-number identities;
 - validates WhatsApp customer and delivery-recipient identifiers;
 - normalizes messages, statuses, and provider errors;
-- creates deterministic provider event identities;
-- deduplicates identical events within one delivery;
+- creates compact deterministic provider event identities;
+- deduplicates identical events and rejects conflicting identity collisions;
 - bounds normalized customer text before it can enter a queue plan;
 - normalizes safe provider references without downloading media.
 
@@ -77,7 +79,7 @@ The planner rejects channel mapping mismatches and event identity collisions.
 - `channel_inbound_events`, which provides provider-event dedupe and enqueue linkage; and
 - the corresponding administrative `background_jobs` row.
 
-`whatsappPrivilegedJobPlan.ts` separates the administrative job row from its privileged payload. The administrative row contains only bounded routing/dedupe metadata and a payload hash. The normalized job payload is explicitly marked as plaintext input for a future encryption boundary, with plaintext persistence forbidden. The same encrypted privileged-payload contract now also supports the future one-shot `whatsapp_outbound_send` work type without enabling a worker.
+`whatsappPrivilegedJobPlan.ts` separates the administrative job row from its privileged payload. The administrative row contains only bounded routing/dedupe metadata and a payload hash. The normalized job payload is explicitly marked as plaintext input for a future encryption boundary, with plaintext persistence forbidden. The same encrypted privileged-payload contract also supports the future one-shot `whatsapp_outbound_send` work type without enabling a worker.
 
 A future PostgreSQL adapter must atomically persist the inbound-event marker, administrative background job, and encrypted privileged payload record. This branch performs none of those writes.
 
@@ -109,7 +111,7 @@ Media, missing text, and reply-engine-over-limit content remain merchant/manual 
 
 ## Outbound and delivery safety
 
-`whatsappOfflineContracts.ts` builds credential-free WhatsApp text-send request plans and classifies an already-observed provider response. It never performs a network request.
+`whatsappOfflineContracts.ts` builds credential-free WhatsApp text-send request plans and classifies an already-observed provider response. It never performs a network request. Outbound text permits normal newlines/tabs but rejects unsafe non-printing control bytes before a future provider boundary.
 
 A send is considered `sent` only when a successful HTTP response contains a provider message ID. Timeout-like, throttled, server, or otherwise ambiguous outcomes remain `uncertain`.
 
@@ -121,7 +123,9 @@ A send is considered `sent` only when a successful HTTP response contains a prov
 - configuration/auth failures do not enter unsafe retry loops;
 - transient/ambiguous transport failures require reconciliation rather than duplicate sends.
 
-A confirmed-failure retry cannot reuse the same reply-intent delivery identity. The existing `outbound_deliveries` uniqueness authority treats the merchant + inbound event + reply intent as one logical send, so any explicitly approved corrected resend must be represented by a new reply intent rather than overwriting or duplicating the prior delivery.
+An outbound attempt carries deterministic request, logical-send, recipient, and routing hashes/identities. The attempt is revalidated before durable dispatch and again before delivery-state persistence, so a mutated request/recipient/routing value cannot be finalized under stale identifiers.
+
+A confirmed-failure retry cannot reuse the same reply-intent delivery identity. The existing `outbound_deliveries` uniqueness authority treats the merchant + inbound event + reply intent as one logical send, so any explicitly approved corrected resend must be represented by a new reply intent rather than overwriting or duplicating the prior delivery. Attempt number 2+ under the same reply intent is rejected.
 
 `whatsappOutboundDispatchPlan.ts` defines the durable **pre-send** boundary for a future worker. It plans a pending `outbound_deliveries` row together with a one-attempt `whatsapp_outbound_send` background job. The complete provider request, including the trusted recipient, exists only in the encrypted privileged payload; the administrative delivery/job rows contain no plaintext phone number. The generic job is limited to one claim attempt so an ambiguous provider boundary cannot turn into a silent queue resend. This planner performs no SQL, enqueue, credential access, or transport.
 
@@ -215,7 +219,9 @@ The dormant database barrier must also be explicitly replaced before any channel
 
 ## Final verification — intentionally deferred
 
-GitHub Actions is not being used for this development pass. Per the project execution plan, WhatsApp tests, typechecks, builds, and the dormant-boundary audit are **not being executed incrementally**. They will be run together from Replit Shell after development is complete.
+No WhatsApp validation run is being deliberately started during this development pass. The WhatsApp-specific GitHub workflow is `workflow_dispatch` only. The repository already has broad pull-request workflows that GitHub automatically triggers when this branch changes; those automatic repository-wide runs are not being treated as validation evidence for the WhatsApp foundation.
+
+The authoritative final validation will be run together from Replit Shell after development is complete.
 
 The final Replit validation session must run at least:
 
