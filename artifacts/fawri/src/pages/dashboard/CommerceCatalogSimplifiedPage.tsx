@@ -1224,7 +1224,7 @@ export default function CommerceCatalogSimplifiedPage() {
           )}
 
           {(form.item_type === 'service' || !form.track_inventory) && (
-            <div className="flex items-center justify-between gap-4 rounded-2xl border bg-muted/10 p-4">
+            <div className="flex items-start gap-3 rounded-2xl border bg-muted/10 p-4">
               <div>
                 <p className="text-sm font-bold">{copy.availableForSale}</p>
                 <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">{copy.availableForSaleHint}</p>

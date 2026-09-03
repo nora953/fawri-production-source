@@ -3,6 +3,7 @@ import type { ProductStatus } from '@/lib/types';
 export type CatalogItemType = 'product' | 'service';
 export type CatalogServicePriceType = 'fixed' | 'from' | 'free' | 'custom';
 export type CatalogServiceLocationMode = 'merchant' | 'customer' | 'online' | 'flexible';
+export type CatalogServiceLocationChoice = Exclude<CatalogServiceLocationMode, 'flexible'>;
 
 export type CatalogServiceDetails = {
   duration_minutes?: number;
@@ -10,6 +11,7 @@ export type CatalogServiceDetails = {
   booking_required: boolean;
   price_type: CatalogServicePriceType;
   location_mode: CatalogServiceLocationMode;
+  location_modes: CatalogServiceLocationChoice[];
 };
 
 export type CatalogImageReference = {
