@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { createContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 
 import {
@@ -36,6 +36,12 @@ export type CatalogEditorShellProps = {
   children: ReactNode;
 };
 
+export type CatalogEditorModeContextValue = {
+  createMode: boolean;
+};
+
+export const CatalogEditorModeContext = createContext<CatalogEditorModeContextValue>({ createMode: true });
+
 function focusableElements(root: HTMLElement | null): HTMLElement[] {
   if (!root) return [];
   return Array.from(root.querySelectorAll<HTMLElement>(
@@ -47,6 +53,12 @@ function isCreateTitle(lang: Lang, title: string): boolean {
   if (lang === 'ar') return title.trim().startsWith('إضافة');
   if (lang === 'ku') return title.trim().startsWith('زیادکردنی');
   return title.trim().toLocaleLowerCase('en-US').startsWith('add ');
+}
+
+function editTitleForItemType(lang: Lang, itemType: CatalogProductFormState['item_type']): string {
+  if (lang === 'ar') return itemType === 'service' ? 'تعديل الخدمة' : 'تعديل المنتج';
+  if (lang === 'ku') return itemType === 'service' ? 'دەستکاری خزمەتگوزاری' : 'دەستکاری بەرهەم';
+  return itemType === 'service' ? 'Edit service' : 'Edit product';
 }
 
 export function CatalogEditorShell({
@@ -69,6 +81,7 @@ export function CatalogEditorShell({
   const [discardOpen, setDiscardOpen] = useState(false);
   const dirty = catalogEditorHasUnsavedChanges(initialFingerprint, form);
   const createMode = isCreateTitle(lang, title);
+  const displayTitle = createMode ? title : editTitleForItemType(lang, form.item_type);
 
   const requestClose = () => {
     if (saving) return;
@@ -162,13 +175,13 @@ export function CatalogEditorShell({
 
   return (
     <>
-      <div ref={shellRef} className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background" dir={lang === 'en' ? 'ltr' : 'rtl'} role="dialog" aria-modal="true" aria-label={title}>
+      <div ref={shellRef} className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background" dir={lang === 'en' ? 'ltr' : 'rtl'} role="dialog" aria-modal="true" aria-label={displayTitle}>
         <div className="catalog-editor-frame flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
           <header className="catalog-editor-header shrink-0 border-b bg-background/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-10">
             <div className="mx-auto flex w-full max-w-[1500px] items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="text-xl font-extrabold sm:text-2xl">{title}</h2>
+                  <h2 className="text-xl font-extrabold sm:text-2xl">{displayTitle}</h2>
                   {dirty && (
                     <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-800">{labels.unsaved}</span>
                   )}
@@ -182,7 +195,9 @@ export function CatalogEditorShell({
           </header>
 
           <main className="catalog-editor-body min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6 lg:px-10">
-            <div className="catalog-editor-body-grid mx-auto grid w-full max-w-[1500px] grid-cols-1 gap-5">{children}</div>
+            <CatalogEditorModeContext.Provider value={{ createMode }}>
+              <div className="catalog-editor-body-grid mx-auto grid w-full max-w-[1500px] grid-cols-1 gap-5">{children}</div>
+            </CatalogEditorModeContext.Provider>
           </main>
 
           <footer className="catalog-editor-footer shrink-0 border-t bg-background/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-10">
