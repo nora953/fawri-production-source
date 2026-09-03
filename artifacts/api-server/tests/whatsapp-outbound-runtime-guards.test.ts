@@ -9,6 +9,12 @@ import {
   createWhatsAppOutboundAttemptPlan,
   type WhatsAppOutboundAttemptPlan,
 } from "../src/services/whatsappOutboundAttempt";
+import {
+  planWhatsAppOutboundDeliveryPersistence,
+} from "../src/services/whatsappOutboundDeliveryPersistence";
+import {
+  planWhatsAppOutboundDispatch,
+} from "../src/services/whatsappOutboundDispatchPlan";
 import type { ResolvedDormantWhatsAppChannel } from "../src/services/whatsappDormantChannelResolver";
 
 const channel: ResolvedDormantWhatsAppChannel = {
@@ -39,6 +45,10 @@ function createInput() {
     channel,
     request: request(),
   };
+}
+
+function attempt() {
+  return createWhatsAppOutboundAttemptPlan(createInput());
 }
 
 function expectShapeError(run: () => unknown) {
@@ -89,9 +99,9 @@ test("proxied outbound requests are rejected before deterministic hashing", () =
 });
 
 test("attempt integrity rejects forged accessors without invoking them", () => {
-  const attempt = createWhatsAppOutboundAttemptPlan(createInput());
+  const forged = attempt();
   let getterInvoked = false;
-  Object.defineProperty(attempt, "request_sha256", {
+  Object.defineProperty(forged, "request_sha256", {
     enumerable: true,
     configurable: true,
     get() {
@@ -100,14 +110,14 @@ test("attempt integrity rejects forged accessors without invoking them", () => {
     },
   });
 
-  expectShapeError(() => assertWhatsAppOutboundAttemptIntegrity(attempt));
+  expectShapeError(() => assertWhatsAppOutboundAttemptIntegrity(forged));
   assert.equal(getterInvoked, false);
 });
 
 test("nested attempt request accessors are rejected before integrity rehashing", () => {
-  const attempt = createWhatsAppOutboundAttemptPlan(createInput());
+  const forged = attempt();
   let getterInvoked = false;
-  Object.defineProperty(attempt.request.body.text, "body", {
+  Object.defineProperty(forged.request.body.text, "body", {
     enumerable: true,
     configurable: true,
     get() {
@@ -116,18 +126,97 @@ test("nested attempt request accessors are rejected before integrity rehashing",
     },
   });
 
-  expectShapeError(() => assertWhatsAppOutboundAttemptIntegrity(attempt));
+  expectShapeError(() => assertWhatsAppOutboundAttemptIntegrity(forged));
   assert.equal(getterInvoked, false);
 });
 
 test("valid outbound attempt remains accepted after structural hardening", () => {
-  const attempt = createWhatsAppOutboundAttemptPlan(createInput());
-  assert.doesNotThrow(() => assertWhatsAppOutboundAttemptIntegrity(attempt));
+  const valid = attempt();
+  assert.doesNotThrow(() => assertWhatsAppOutboundAttemptIntegrity(valid));
 });
 
 test("unexpected outbound attempt fields fail closed before integrity processing", () => {
-  const attempt = createWhatsAppOutboundAttemptPlan(createInput()) as
-    WhatsAppOutboundAttemptPlan & Record<string, unknown>;
-  attempt.untrusted_extra = "must-not-pass";
-  expectShapeError(() => assertWhatsAppOutboundAttemptIntegrity(attempt));
+  const forged = attempt() as WhatsAppOutboundAttemptPlan & Record<string, unknown>;
+  forged.untrusted_extra = "must-not-pass";
+  expectShapeError(() => assertWhatsAppOutboundAttemptIntegrity(forged));
+});
+
+test("dispatch input accessors are rejected before attempt or scalar reads", () => {
+  const forged = {
+    attempt: attempt(),
+    inboundEventId: "inbound-event-1",
+    attemptedAt: "2026-09-03T00:00:00.000Z",
+  } as Record<string, unknown>;
+  let getterInvoked = false;
+  Object.defineProperty(forged, "inboundEventId", {
+    enumerable: true,
+    configurable: true,
+    get() {
+      getterInvoked = true;
+      return "inbound-event-1";
+    },
+  });
+
+  expectShapeError(() => planWhatsAppOutboundDispatch(forged as never));
+  assert.equal(getterInvoked, false);
+});
+
+test("persistence outcome accessors are rejected before outcome branching", () => {
+  const outcome: Record<string, unknown> = {
+    provider_message_id: "wamid.out-1",
+  };
+  let getterInvoked = false;
+  Object.defineProperty(outcome, "status", {
+    enumerable: true,
+    configurable: true,
+    get() {
+      getterInvoked = true;
+      return "sent";
+    },
+  });
+
+  expectShapeError(() =>
+    planWhatsAppOutboundDeliveryPersistence({
+      attempt: attempt(),
+      inboundEventId: "inbound-event-1",
+      attemptedAt: "2026-09-03T00:00:00.000Z",
+      finalizedAt: "2026-09-03T00:00:01.000Z",
+      outcome: outcome as never,
+    }),
+  );
+  assert.equal(getterInvoked, false);
+});
+
+test("non-scalar timestamps cannot trigger custom coercion", () => {
+  let coercionInvoked = false;
+  const attemptedAt = {
+    toString() {
+      coercionInvoked = true;
+      return "2026-09-03T00:00:00.000Z";
+    },
+  };
+
+  expectShapeError(() =>
+    planWhatsAppOutboundDeliveryPersistence({
+      attempt: attempt(),
+      inboundEventId: "inbound-event-1",
+      attemptedAt,
+    }),
+  );
+  assert.equal(coercionInvoked, false);
+});
+
+test("unknown observed send statuses fail closed instead of becoming uncertainty implicitly", () => {
+  expectShapeError(() =>
+    planWhatsAppOutboundDeliveryPersistence({
+      attempt: attempt(),
+      inboundEventId: "inbound-event-1",
+      attemptedAt: "2026-09-03T00:00:00.000Z",
+      finalizedAt: "2026-09-03T00:00:01.000Z",
+      outcome: {
+        status: "mystery",
+        code: "UNKNOWN",
+      } as never,
+    }),
+  );
 });
