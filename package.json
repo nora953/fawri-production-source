@@ -5,8 +5,8 @@
   "license": "MIT",
   "scripts": {
     "preinstall": "sh -c 'rm -f package-lock.json yarn.lock; case \"$npm_config_user_agent\" in pnpm/*) ;; *) echo \"Use pnpm instead\" >&2; exit 1 ;; esac'",
-    "build": "pnpm --dir artifacts/fawri test:catalog-arabic-golden && pnpm run typecheck && pnpm -r --if-present run build",
-    "preview:replit": "pnpm --dir artifacts/fawri test:catalog-arabic-golden && node ./scripts/run-fawri-preview.mjs",
+    "build": "pnpm --dir artifacts/fawri test:catalog-golden && pnpm run typecheck && pnpm -r --if-present run build",
+    "preview:replit": "pnpm --dir artifacts/fawri test:catalog-golden && node ./scripts/run-fawri-preview.mjs",
     "cashier:validate": "pnpm --dir artifacts/fawri typecheck && pnpm --dir artifacts/fawri build",
     "audit:data": "node ./scripts/audit-fawri-data.mjs",
     "audit:legacy-json": "node ./scripts/audit-fawri-json-data.mjs",
