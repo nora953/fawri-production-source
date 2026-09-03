@@ -82,3 +82,10 @@ test('catalog details keeps RTL price ranges in minimum-to-maximum order', () =>
   assert.match(detailsParity, /firstBdi\.style\.unicodeBidi = 'isolate-override'/);
   assert.match(detailsParity, /Arabic\/Sorani digit localization/);
 });
+
+test('catalog details puts RTL currency on the visual left and amount on the visual right', () => {
+  assert.match(detailsParity, /range\.style\.display = 'inline-flex'/);
+  assert.match(detailsParity, /range\.style\.alignItems = 'baseline'/);
+  assert.match(detailsParity, /range\.style\.flexDirection = lang === 'en' \? 'row' : 'row-reverse'/);
+  assert.match(detailsParity, /amount stays on the visual right while the currency sits on the left/);
+});
