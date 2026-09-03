@@ -1,0 +1,20 @@
+/*
+ * Keep the standalone availability switch aligned with the service booking switch.
+ * The availability card is a direct child of the editor body; booking/item-setting
+ * switches are nested deeper, so this stays scoped to that one merchant control.
+ */
+.products-workspace-polish .catalog-editor-body-grid > div:has(> button[role="switch"]) {
+  justify-content: space-between !important;
+  gap: 1rem !important;
+}
+
+.products-workspace-polish .catalog-editor-body-grid > div:has(> button[role="switch"]) > button[role="switch"] {
+  width: 3rem !important;
+  height: 1.75rem !important;
+}
+
+.products-workspace-polish .catalog-editor-body-grid > div:has(> button[role="switch"]) > button[role="switch"] > span {
+  top: 0.25rem !important;
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+}
