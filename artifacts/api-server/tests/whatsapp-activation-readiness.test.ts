@@ -26,6 +26,7 @@ function evidence(overrides: Partial<WhatsAppActivationEvidence> = {}): WhatsApp
     data_policy_ready: true,
     media_policy_ready: true,
     inbound_worker_ready: true,
+    outbound_dispatch_persistence_ready: true,
     outbound_transport_ready: true,
     delivery_reconciliation_ready: true,
     observability_ready: true,
@@ -73,6 +74,7 @@ test("every external dependency must be explicitly evidenced", () => {
       webhook_verification_ready: false,
       webhook_signature_verification_ready: false,
       durable_queue_ready: false,
+      outbound_dispatch_persistence_ready: false,
       outbound_transport_ready: false,
     }),
     {
@@ -88,6 +90,9 @@ test("every external dependency must be explicitly evidenced", () => {
     result.blockers.includes("WHATSAPP_WEBHOOK_SIGNATURE_VERIFICATION_NOT_READY"),
   );
   assert.ok(result.blockers.includes("WHATSAPP_DURABLE_QUEUE_NOT_READY"));
+  assert.ok(
+    result.blockers.includes("WHATSAPP_OUTBOUND_DISPATCH_PERSISTENCE_NOT_READY"),
+  );
   assert.ok(result.blockers.includes("WHATSAPP_OUTBOUND_TRANSPORT_NOT_READY"));
 });
 
@@ -105,6 +110,21 @@ test("encrypted privileged payload authority is independent from durable queue r
     result.blockers.includes("WHATSAPP_ENCRYPTED_JOB_PAYLOAD_AUTHORITY_NOT_READY"),
   );
   assert.equal(result.blockers.includes("WHATSAPP_DURABLE_QUEUE_NOT_READY"), false);
+});
+
+test("outbound transport cannot substitute for durable pre-send dispatch persistence", () => {
+  const result = assessWhatsAppActivationReadiness(
+    evidence({ outbound_dispatch_persistence_ready: false }),
+    {
+      FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
+      FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
+    } as NodeJS.ProcessEnv,
+  );
+  assert.equal(result.mode, "blocked");
+  assert.ok(
+    result.blockers.includes("WHATSAPP_OUTBOUND_DISPATCH_PERSISTENCE_NOT_READY"),
+  );
+  assert.equal(result.blockers.includes("WHATSAPP_OUTBOUND_TRANSPORT_NOT_READY"), false);
 });
 
 test("internal persistence, reply, data, and media gates independently block cutover", () => {
