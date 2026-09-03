@@ -6,6 +6,8 @@ const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'ut
 
 const shell = read('../src/components/catalog/CatalogEditorShell.tsx');
 const itemTypeEditor = read('../src/components/catalog/CatalogItemTypeEditor.tsx');
+const editModeCss = read('../src/pages/dashboard/catalogEditModeCompact.css');
+const productsWorkspace = read('../src/pages/dashboard/ProductsWorkspacePage.tsx');
 const authority = read('../../api-server/src/services/postgresCatalogAuthority.ts');
 
 test('existing catalog items use type-specific edit titles in all supported languages', () => {
@@ -30,6 +32,15 @@ test('edit mode explains that the stored item type is fixed', () => {
   assert.match(itemTypeEditor, /نوع هذا العنصر ثابت أثناء التعديل لحماية بياناته\./);
   assert.match(itemTypeEditor, /جۆری ئەم بابەتە لە کاتی دەستکاریکردندا جێگیرە بۆ پاراستنی زانیارییەکانی\./);
   assert.match(itemTypeEditor, /This item's type is fixed while editing to protect its data\./);
+});
+
+test('locked item type summary stays compact without changing create mode', () => {
+  assert.match(productsWorkspace, /import '\.\/catalogEditModeCompact\.css';/);
+  assert.match(editModeCss, /\[data-catalog-item-type-mode="edit-locked"\]/);
+  assert.match(editModeCss, /\[data-catalog-item-type-locked="true"\]/);
+  assert.match(editModeCss, /align-items: start;/);
+  assert.match(editModeCss, /grid-template-columns: minmax\(240px, 0\.72fr\) minmax\(0, 1\.28fr\);/);
+  assert.doesNotMatch(editModeCss, /data-catalog-item-type-mode="create"/);
 });
 
 test('server authority rejects product-service type changes after creation', () => {
