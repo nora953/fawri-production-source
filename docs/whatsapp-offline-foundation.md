@@ -67,6 +67,16 @@ Supported provider-reference shapes include:
 
 No provider media binary is downloaded or stored by this foundation.
 
+### Parsed-result and processing-plan runtime guards
+
+TypeScript types are not treated as a runtime trust boundary. A test, replay tool, manual utility, or future internal caller can construct typed objects directly, so persistence-adjacent WhatsApp planners validate those objects again before expensive or security-sensitive work.
+
+`whatsappWebhookParseGuard.ts` validates direct `WhatsAppWebhookParseResult` input before `whatsappWebhookPlanner.ts` fingerprints or resolves an event. It rejects proxies, accessors, hidden/symbol properties, sparse or extended event arrays, excessive event/change counts, event-bearing unsupported provider objects, and malformed normalized events. A synthetic caller therefore cannot bypass parser workload limits by constructing a large or accessor-bearing parsed result manually.
+
+`whatsappRuntimeGuards.ts` applies the same principle to downstream `WhatsAppWebhookProcessingPlan` callers and normalized event diagnostics. It validates plain enumerable data properties, bounded event collections, the total planned-event budget, merchant/channel/provider identities, message kinds, provider-reference shapes, nested status error-code arrays, and supported/unsupported plan consistency.
+
+Queue/intake planners invoke the processing-plan guard before object spread, cloning, hashing, or event iteration. Safe diagnostic helpers invoke the guards before hashing identifiers. Unsupported extra properties such as raw webhook data are rejected rather than flowing into privileged payloads.
+
 ### Tenant/channel resolution and webhook planning
 
 `whatsappWebhookPlanner.ts` combines normalized events with the dormant channel resolver and produces merchant/channel-resolved plans for:
@@ -75,7 +85,7 @@ No provider media binary is downloaded or stored by this foundation.
 - delivery statuses;
 - provider errors.
 
-The planner rejects channel mapping mismatches and event identity collisions.
+The planner rejects channel mapping mismatches and event identity collisions. Direct/manual parsed-result callers are runtime-guarded before JSON fingerprinting, channel resolution, or iteration.
 
 ### Durable intake and encrypted privileged payload boundary
 
@@ -91,6 +101,8 @@ Before cloning or hashing, privileged payloads are restricted to deterministic p
 A future PostgreSQL adapter must atomically persist the inbound-event marker, administrative background job, and encrypted privileged payload record. This branch performs none of those writes.
 
 `whatsappDurableQueuePlan.ts` defines deterministic queue envelopes/dedupe keys without invoking or starting a worker. WhatsApp planners have no dependency on the legacy JSON `durableJobQueue`/`JsonFileStore`; the dormant repository audit rejects those references from WhatsApp services.
+
+Both `whatsappDurableQueuePlan.ts` and `whatsappInboundIntakePlan.ts` run the processing-plan runtime guard before traversing collections or spreading event objects, so manually constructed plans cannot evade the parser's event budgets or introduce accessor-bearing payloads at this downstream boundary.
 
 ## Shared conversation and reply-engine path
 
@@ -162,6 +174,8 @@ Forbidden in the dormant phase:
 - plaintext persistence of privileged background-job payloads.
 
 Durable privileged job payloads require the existing encrypted payload boundary. Diagnostic helpers emit bounded operational codes and hashes instead of customer/business payloads.
+
+Failure-metadata extraction is coercion-free and reads only bounded plain-object data properties. Safe event/plan diagnostics also run runtime shape guards before hashing, so forged proxy/accessor/oversized input fails before user-controlled code or unbounded identifiers can reach the diagnostic hashing boundary.
 
 ## Runtime isolation
 
