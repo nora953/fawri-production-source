@@ -55,6 +55,10 @@ function text(value: unknown): string {
   return String(value ?? "").trim();
 }
 
+function unsafeHumanText(value: string): boolean {
+  return /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(value);
+}
+
 function bounded(value: unknown, max: number, label: string): string {
   const normalized = text(value);
   if (!normalized || normalized.length > max || /[\r\n]/.test(normalized)) {
@@ -111,7 +115,8 @@ function customerDisplayText(message: ChannelInboundMessage): string {
  * WhatsApp inbound job. It intentionally performs no SQL and requires a future
  * adapter to commit both records transactionally after verifying the matching
  * `channel_inbound_events` marker. Existing unique constraints remain the final
- * authority for idempotency/collision handling.
+ * authority for idempotency/collision handling. Human text is independently
+ * checked here as a persistence boundary even if a caller bypasses the bridge.
  */
 export function buildWhatsAppConversationPersistencePlan(
   input: WhatsAppInboundBridgeResult,
@@ -149,7 +154,16 @@ export function buildWhatsAppConversationPersistencePlan(
   );
 
   const eligible = input.disposition.action === "eligible_for_reply_engine";
-  const customerName = text(message.customer_name).slice(0, 300);
+  const customerName = text(message.customer_name);
+  if (
+    customerName.length > 300 ||
+    /[\u0000-\u001F\u007F]/.test(customerName)
+  ) {
+    throw persistenceError(
+      "WHATSAPP_CONVERSATION_PERSISTENCE_CUSTOMER_NAME_INVALID",
+      "WhatsApp customer display name is invalid for persistence",
+    );
+  }
   const providerTimestamp = text(message.provider_timestamp);
   if (providerTimestamp && !/^\d{1,20}$/.test(providerTimestamp)) {
     throw persistenceError(
@@ -170,7 +184,11 @@ export function buildWhatsAppConversationPersistencePlan(
   }
 
   const persistedText = customerDisplayText(message);
-  if (!persistedText || persistedText.length > 4_000) {
+  if (
+    !persistedText ||
+    persistedText.length > 4_000 ||
+    unsafeHumanText(persistedText)
+  ) {
     throw persistenceError(
       "WHATSAPP_CONVERSATION_PERSISTENCE_TEXT_INVALID",
       "WhatsApp customer message text is invalid for persistence",
