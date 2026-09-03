@@ -91,6 +91,21 @@ function booleanType(value: unknown, label: string): void {
   if (typeof value !== "boolean") fail(`${label} must be boolean`);
 }
 
+function scalarInput(
+  value: unknown,
+  label: string,
+  options: { optional?: boolean; nullable?: boolean } = {},
+): void {
+  if (value === undefined && options.optional) return;
+  if (value === null && options.nullable) return;
+  if (typeof value !== "string" && typeof value !== "number") {
+    fail(`${label} must be a scalar string or number`);
+  }
+  if (typeof value === "number" && !Number.isFinite(value)) {
+    fail(`${label} must be finite`);
+  }
+}
+
 /**
  * Structural-only request guard. Semantic request/channel validation remains in
  * whatsappOutboundAttempt.ts so existing mismatch/error codes remain stable.
@@ -208,4 +223,86 @@ export function assertWhatsAppOutboundAttemptPlanStructure(
   stringType(data(attempt, "recipient_hash"), "recipient hash", 128);
   assertWhatsAppTextSendPlanStructure(data(attempt, "request"));
   booleanType(data(attempt, "transport_authorized"), "transport authorization flag");
+}
+
+function assertObservedSendOutcomeStructure(value: unknown): void {
+  const base = plainRecord(value, "WhatsApp observed send outcome", [
+    "status",
+    "provider_message_id",
+    "code",
+    "http_status",
+  ]);
+  const status = data(base, "status");
+  stringType(status, "send outcome status", 32);
+
+  if (status === "sent") {
+    if (data(base, "code", false) !== undefined || data(base, "http_status", false) !== undefined) {
+      fail("sent outcome cannot carry failure fields");
+    }
+    stringType(data(base, "provider_message_id"), "provider message id", 512);
+    return;
+  }
+
+  if (status === "confirmed_failed") {
+    if (data(base, "provider_message_id", false) !== undefined) {
+      fail("confirmed failure cannot carry a provider message id");
+    }
+    stringType(data(base, "code"), "send failure code", 160);
+    numberType(data(base, "http_status"), "send failure HTTP status");
+    return;
+  }
+
+  if (status === "uncertain") {
+    if (data(base, "provider_message_id", false) !== undefined) {
+      fail("uncertain outcome cannot carry a provider message id");
+    }
+    stringType(data(base, "code"), "uncertain send code", 160);
+    const httpStatus = data(base, "http_status", false);
+    if (httpStatus !== undefined) numberType(httpStatus, "uncertain send HTTP status");
+    return;
+  }
+
+  fail("send outcome status is invalid");
+}
+
+export function assertWhatsAppOutboundDeliveryPersistenceInputStructure(
+  value: unknown,
+): void {
+  const input = plainRecord(value, "WhatsApp outbound persistence input", [
+    "attempt",
+    "inboundEventId",
+    "reservationId",
+    "attemptedAt",
+    "finalizedAt",
+    "outcome",
+  ]);
+  assertWhatsAppOutboundAttemptPlanStructure(data(input, "attempt"));
+  scalarInput(data(input, "inboundEventId"), "inbound event id");
+  scalarInput(data(input, "reservationId", false), "reservation id", {
+    optional: true,
+    nullable: true,
+  });
+  scalarInput(data(input, "attemptedAt"), "attempted timestamp");
+  scalarInput(data(input, "finalizedAt", false), "finalized timestamp", {
+    optional: true,
+    nullable: true,
+  });
+  const outcome = data(input, "outcome", false);
+  if (outcome !== undefined) assertObservedSendOutcomeStructure(outcome);
+}
+
+export function assertWhatsAppOutboundDispatchInputStructure(value: unknown): void {
+  const input = plainRecord(value, "WhatsApp outbound dispatch input", [
+    "attempt",
+    "inboundEventId",
+    "reservationId",
+    "attemptedAt",
+  ]);
+  assertWhatsAppOutboundAttemptPlanStructure(data(input, "attempt"));
+  scalarInput(data(input, "inboundEventId"), "inbound event id");
+  scalarInput(data(input, "reservationId", false), "reservation id", {
+    optional: true,
+    nullable: true,
+  });
+  scalarInput(data(input, "attemptedAt"), "attempted timestamp");
 }
