@@ -46,6 +46,18 @@ function numericId(value: unknown, label: string): string {
   return result;
 }
 
+function recipientId(value: unknown): string | undefined {
+  const result = text(value);
+  if (!result) return undefined;
+  if (!/^\d{6,20}$/.test(result)) {
+    throw lifecycleError(
+      "WHATSAPP_DELIVERY_RECIPIENT_INVALID",
+      "WhatsApp delivery recipient identity is invalid",
+    );
+  }
+  return result;
+}
+
 function localAttemptId(value: unknown): string {
   const result = text(value);
   if (!result || result.length > 200 || !/^[A-Za-z0-9._:-]+$/.test(result)) {
@@ -103,12 +115,13 @@ function contradictoryState(
   event: NormalizedWhatsAppStatusEvent,
   incomingErrors: string[],
 ): WhatsAppDeliveryReduction {
-  const recipientId = text(event.recipient_id) || state.recipient_id;
+  const observedRecipientId = recipientId(event.recipient_id);
+  const resolvedRecipientId = observedRecipientId || state.recipient_id;
   const providerTimestamp = text(event.timestamp) || state.provider_timestamp;
   const next: WhatsAppDeliveryState = {
     ...state,
     phase: "uncertain",
-    ...(recipientId ? { recipient_id: recipientId } : {}),
+    ...(resolvedRecipientId ? { recipient_id: resolvedRecipientId } : {}),
     ...(providerTimestamp ? { provider_timestamp: providerTimestamp } : {}),
     error_codes: [
       ...new Set([
@@ -136,7 +149,8 @@ function contradictoryState(
  * Converts an already-observed send outcome into local delivery state. A local
  * attempt id is always required. Provider message identity is stored only when
  * Meta actually returned one; failed/uncertain attempts never invent a fake
- * provider id that could later collide with a real status webhook.
+ * provider id that could later collide with a real status webhook. A recipient,
+ * when supplied from the outbound request, becomes a locked delivery identity.
  */
 export function createWhatsAppDeliveryState(input: {
   attemptId: unknown;
@@ -148,7 +162,7 @@ export function createWhatsAppDeliveryState(input: {
   const attemptId = localAttemptId(input.attemptId);
   const wabaId = numericId(input.wabaId, "WhatsApp business account id");
   const phoneNumberId = numericId(input.phoneNumberId, "WhatsApp phone number id");
-  const recipientId = text(input.recipientId);
+  const normalizedRecipientId = recipientId(input.recipientId);
 
   if (input.outcome.status === "sent") {
     return {
@@ -157,7 +171,7 @@ export function createWhatsAppDeliveryState(input: {
       phone_number_id: phoneNumberId,
       external_message_id: messageId(input.outcome.provider_message_id),
       phase: "sent",
-      ...(recipientId ? { recipient_id: recipientId } : {}),
+      ...(normalizedRecipientId ? { recipient_id: normalizedRecipientId } : {}),
       error_codes: [],
     };
   }
@@ -167,7 +181,7 @@ export function createWhatsAppDeliveryState(input: {
     waba_id: wabaId,
     phone_number_id: phoneNumberId,
     phase: input.outcome.status === "confirmed_failed" ? "failed" : "uncertain",
-    ...(recipientId ? { recipient_id: recipientId } : {}),
+    ...(normalizedRecipientId ? { recipient_id: normalizedRecipientId } : {}),
     error_codes: [input.outcome.code],
   };
 }
@@ -197,6 +211,19 @@ function assertEventMatchesState(
       "WhatsApp status event does not belong to the supplied delivery",
     );
   }
+
+  const expectedRecipientId = recipientId(state.recipient_id);
+  const observedRecipientId = recipientId(event.recipient_id);
+  if (
+    expectedRecipientId &&
+    observedRecipientId &&
+    expectedRecipientId !== observedRecipientId
+  ) {
+    throw lifecycleError(
+      "WHATSAPP_DELIVERY_RECIPIENT_MISMATCH",
+      "WhatsApp status event belongs to a different recipient",
+    );
+  }
 }
 
 /**
@@ -204,7 +231,8 @@ function assertEventMatchesState(
  * Successful states advance monotonically. Confirmed failure may follow `sent`
  * but conflicts with `delivered`/`read`; success after failure is also a
  * conflict. Once uncertainty is reached, webhook observations cannot silently
- * clear it and manual/provider reconciliation is required.
+ * clear it and manual/provider reconciliation is required. A known recipient
+ * is immutable: a provider status for another recipient fails closed.
  */
 export function reduceWhatsAppDeliveryStatus(
   state: WhatsAppDeliveryState,
@@ -223,13 +251,13 @@ export function reduceWhatsAppDeliveryStatus(
   }
 
   const incomingErrors = cleanErrors(event.error_codes);
-  const recipientId = text(event.recipient_id) || state.recipient_id;
+  const resolvedRecipientId = recipientId(event.recipient_id) || state.recipient_id;
   const providerTimestamp = text(event.timestamp) || state.provider_timestamp;
 
   if (state.phase === "uncertain") {
     const next: WhatsAppDeliveryState = {
       ...state,
-      ...(recipientId ? { recipient_id: recipientId } : {}),
+      ...(resolvedRecipientId ? { recipient_id: resolvedRecipientId } : {}),
       ...(providerTimestamp ? { provider_timestamp: providerTimestamp } : {}),
       error_codes: [...new Set([...state.error_codes, ...incomingErrors])],
       last_status_event_id: event.event_id,
@@ -264,7 +292,7 @@ export function reduceWhatsAppDeliveryStatus(
     const next: WhatsAppDeliveryState = {
       ...state,
       phase: "failed",
-      ...(recipientId ? { recipient_id: recipientId } : {}),
+      ...(resolvedRecipientId ? { recipient_id: resolvedRecipientId } : {}),
       ...(providerTimestamp ? { provider_timestamp: providerTimestamp } : {}),
       error_codes: nextErrors,
       last_status_event_id: event.event_id,
@@ -289,7 +317,7 @@ export function reduceWhatsAppDeliveryStatus(
   const next: WhatsAppDeliveryState = {
     ...state,
     phase: incomingPhase,
-    ...(recipientId ? { recipient_id: recipientId } : {}),
+    ...(resolvedRecipientId ? { recipient_id: resolvedRecipientId } : {}),
     ...(providerTimestamp ? { provider_timestamp: providerTimestamp } : {}),
     error_codes: [],
     last_status_event_id: event.event_id,
