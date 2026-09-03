@@ -185,6 +185,53 @@ test("bridge deterministic identity keys cannot be forged before persistence or 
   );
 });
 
+test("forged tenant/customer identities fail before the reply-decision request can be built", () => {
+  for (const mutate of [
+    (value: WhatsAppInboundBridgeResult) => {
+      value.message.merchant_id = "merchant\nspoof";
+    },
+    (value: WhatsAppInboundBridgeResult) => {
+      value.message.customer_external_id = "not-a-wa-id";
+    },
+    (value: WhatsAppInboundBridgeResult) => {
+      value.message.routing.phone_number_id = "bad-phone-id";
+      value.message.external_channel_id = "bad-phone-id";
+    },
+  ]) {
+    const forged = structuredClone(
+      bridgeWhatsAppInboundMessage(job()),
+    ) as WhatsAppInboundBridgeResult;
+    mutate(forged);
+    expectCode(
+      () => buildWhatsAppReplyDecisionHandoff(forged),
+      "WHATSAPP_INBOUND_BRIDGE_RESULT_SHAPE_INVALID",
+    );
+  }
+});
+
+test("provider-reference variant fields cannot be smuggled into persistence metadata", () => {
+  const forged = structuredClone(
+    bridgeWhatsAppInboundMessage(
+      job({
+        message_kind: "image",
+        text: undefined,
+        provider_reference: {
+          kind: "media",
+          media_kind: "image",
+          id: "media-1",
+        },
+      }),
+    ),
+  ) as WhatsAppInboundBridgeResult;
+  const reference = forged.message.provider_reference as Record<string, unknown>;
+  reference.latitude = undefined;
+
+  expectCode(
+    () => buildWhatsAppConversationPersistencePlan(forged),
+    "WHATSAPP_INBOUND_BRIDGE_RESULT_SHAPE_INVALID",
+  );
+});
+
 test("unsafe forged customer text still belongs to the final decision text boundary", () => {
   const forged = structuredClone(
     bridgeWhatsAppInboundMessage(job()),
