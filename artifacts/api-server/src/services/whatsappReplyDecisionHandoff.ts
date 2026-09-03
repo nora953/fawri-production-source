@@ -1,4 +1,5 @@
 import type { WhatsAppInboundBridgeResult } from "./whatsappInboundBridge";
+import { assertWhatsAppInboundBridgeResultRuntime } from "./whatsappInboundBridgeResultGuard";
 
 export type WhatsAppKnowledgeDecisionRequest = {
   merchantId: string;
@@ -24,13 +25,15 @@ function unsafeHumanText(value: string): boolean {
 
 /**
  * Shapes the exact channel-neutral input already expected by Fawri's knowledge
- * decision engine, but never invokes the engine. This boundary independently
- * rejects unsafe control characters even if a caller forges a bridge result,
- * while preserving normal tabs and human line breaks.
+ * decision engine, but never invokes the engine. A coercion-free structural
+ * bridge-result guard runs before direct field access, then this final boundary
+ * independently rejects unsafe customer text while preserving normal tabs and
+ * human line breaks.
  */
 export function buildWhatsAppReplyDecisionHandoff(
   bridged: WhatsAppInboundBridgeResult,
 ): WhatsAppReplyDecisionHandoff {
+  assertWhatsAppInboundBridgeResultRuntime(bridged);
   if (
     bridged.disposition.action !== "eligible_for_reply_engine" ||
     bridged.disposition.reason !== "text_ready"
