@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { types as utilTypes } from "node:util";
 
 export type WhatsAppDataHandlingPolicy = {
   raw_webhook_persistence_allowed: false;
@@ -47,18 +48,65 @@ function digest(namespace: string, value: string): string {
 }
 
 function safeCode(value: unknown, fallback: string): string {
-  const normalized = String(value ?? "").trim();
+  if (typeof value !== "string") return fallback;
+  const normalized = value.trim();
   return /^[A-Za-z0-9_.:-]{1,160}$/.test(normalized) ? normalized : fallback;
 }
 
-function safeText(value: unknown): string {
-  return String(value ?? "").trim();
+function safeIdentifier(value: unknown, max = 512): string {
+  if (typeof value !== "string") return "";
+  const normalized = value.trim();
+  if (
+    !normalized ||
+    normalized.length > max ||
+    /[\u0000-\u001F\u007F]/.test(normalized)
+  ) {
+    return "";
+  }
+  return normalized;
+}
+
+function safePayloadRecord(value: unknown): Record<string, unknown> | null {
+  try {
+    if (
+      !value ||
+      typeof value !== "object" ||
+      Array.isArray(value) ||
+      utilTypes.isProxy(value) ||
+      Object.getPrototypeOf(value) !== Object.prototype
+    ) {
+      return null;
+    }
+    return value as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function safeDataProperty(
+  record: Record<string, unknown> | null,
+  key: string,
+  max = 512,
+): string {
+  if (!record) return "";
+  try {
+    const descriptor = Object.getOwnPropertyDescriptor(record, key);
+    if (!descriptor || !("value" in descriptor) || !descriptor.enumerable) {
+      return "";
+    }
+    return safeIdentifier(descriptor.value, max);
+  } catch {
+    return "";
+  }
 }
 
 /**
  * Produces dead-letter/worker failure metadata that is safe for operational
  * inspection. Customer text, names, phone numbers, provider payloads, and raw
- * channel identifiers are intentionally not copied.
+ * channel identifiers are intentionally not copied. Diagnostic extraction is
+ * coercion-free and reads only bounded plain-object data properties, so failure
+ * handling cannot execute user-controlled getters/value coercion or hash an
+ * unbounded identifier.
  */
 export function buildSafeWhatsAppFailureMetadata(input: {
   jobType: unknown;
@@ -66,20 +114,24 @@ export function buildSafeWhatsAppFailureMetadata(input: {
   attemptNumber: unknown;
   payload?: Record<string, unknown> | null;
 }): SafeWhatsAppFailureMetadata {
-  const attemptNumber = Number(input.attemptNumber);
-  if (!Number.isSafeInteger(attemptNumber) || attemptNumber < 1) {
+  const attemptNumber = input.attemptNumber;
+  if (
+    typeof attemptNumber !== "number" ||
+    !Number.isSafeInteger(attemptNumber) ||
+    attemptNumber < 1
+  ) {
     throw Object.assign(new Error("WhatsApp failure attempt is invalid"), {
       code: "WHATSAPP_FAILURE_METADATA_INVALID",
     });
   }
 
-  const payload = input.payload || {};
-  const eventId = safeText(payload.event_id);
-  const merchantId = safeText(payload.merchant_id);
-  const channelId = safeText(payload.channel_id);
-  const externalMessageId = safeText(payload.external_message_id);
-  const wabaId = safeText(payload.waba_id);
-  const phoneNumberId = safeText(payload.phone_number_id);
+  const payload = safePayloadRecord(input.payload);
+  const eventId = safeDataProperty(payload, "event_id");
+  const merchantId = safeDataProperty(payload, "merchant_id", 200);
+  const channelId = safeDataProperty(payload, "channel_id", 200);
+  const externalMessageId = safeDataProperty(payload, "external_message_id");
+  const wabaId = safeDataProperty(payload, "waba_id", 40);
+  const phoneNumberId = safeDataProperty(payload, "phone_number_id", 40);
 
   return {
     job_type: safeCode(input.jobType, "whatsapp_unknown_job"),
