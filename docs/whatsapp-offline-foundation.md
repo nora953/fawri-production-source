@@ -51,7 +51,12 @@ The existing Messenger/Instagram PostgreSQL authority explicitly lists only `mes
 - creates compact deterministic provider event identities;
 - deduplicates identical events and rejects conflicting identity collisions;
 - bounds normalized customer text before it can enter a queue plan;
+- preserves ordinary newlines/tabs in human text while rejecting unsafe control bytes;
+- treats names, identifiers, filenames, MIME/hash metadata, and similar fields as single-line values;
+- applies Fawri-internal entry/change/event/contact/status-error budgets before normalization work can grow without bound;
 - normalizes safe provider references without downloading media.
+
+The workload budgets are defensive Fawri limits, not claims about Meta provider delivery limits. An oversized supported WhatsApp shape fails closed as malformed and produces no normalized events.
 
 Supported provider-reference shapes include:
 
@@ -80,6 +85,8 @@ The planner rejects channel mapping mismatches and event identity collisions.
 - the corresponding administrative `background_jobs` row.
 
 `whatsappPrivilegedJobPlan.ts` separates the administrative job row from its privileged payload. The administrative row contains only bounded routing/dedupe metadata and a payload hash. The normalized job payload is explicitly marked as plaintext input for a future encryption boundary, with plaintext persistence forbidden. The same encrypted privileged-payload contract also supports the future one-shot `whatsapp_outbound_send` work type without enabling a worker.
+
+Before cloning or hashing, privileged payloads are restricted to deterministic plain JSON data. Proxies, custom object types, accessors, hidden/symbol properties, cycles/shared aliases, sparse or extended arrays, dangerous object keys, non-JSON scalars, non-finite/ambiguous numbers, and unsafe control bytes fail closed. Canonical hashing sorts object keys and is bounded by Fawri-internal limits of 512 KiB canonical bytes, depth 32, 10,000 nodes, and 2,000 items per container. These are internal safety budgets, not provider limits.
 
 A future PostgreSQL adapter must atomically persist the inbound-event marker, administrative background job, and encrypted privileged payload record. This branch performs none of those writes.
 
