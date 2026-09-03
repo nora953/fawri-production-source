@@ -52,16 +52,38 @@ function safeIdentity(value: unknown, label: string): string {
   return normalized;
 }
 
+function assertDormantChannel(channel: ResolvedDormantWhatsAppChannel): void {
+  if (
+    channel.platform !== "whatsapp" ||
+    channel.status !== "pending" ||
+    channel.integration_mode !== "dormant_offline" ||
+    !/^\d{1,40}$/.test(channel.waba_id) ||
+    !/^\d{1,40}$/.test(channel.phone_number_id)
+  ) {
+    throw attemptError(
+      "WHATSAPP_OUTBOUND_CHANNEL_STATE_INVALID",
+      "WhatsApp outbound channel is not a valid dormant channel",
+    );
+  }
+}
+
 function assertRequestMatchesChannel(
   channel: ResolvedDormantWhatsAppChannel,
   request: WhatsAppTextSendPlan,
 ): void {
-  const expectedSuffix = `/${channel.phone_number_id}/messages`;
+  const graphVersion = text(request.graph_version);
+  const expectedPath = `/${graphVersion}/${channel.phone_number_id}/messages`;
   if (
     request.method !== "POST" ||
+    !/^v\d{1,3}\.\d{1,3}$/.test(graphVersion) ||
+    request.path !== expectedPath ||
     request.body.messaging_product !== "whatsapp" ||
+    request.body.recipient_type !== "individual" ||
     request.body.type !== "text" ||
-    !request.path.endsWith(expectedSuffix)
+    request.body.text.preview_url !== false ||
+    !request.body.text.body ||
+    request.body.text.body.length > 4_000 ||
+    !/^\d{6,20}$/.test(request.body.to)
   ) {
     throw attemptError(
       "WHATSAPP_OUTBOUND_REQUEST_CHANNEL_MISMATCH",
@@ -92,6 +114,7 @@ export function createWhatsAppOutboundAttemptPlan(input: {
       "WhatsApp outbound attempt number is invalid",
     );
   }
+  assertDormantChannel(input.channel);
   if (input.channel.merchant_id !== merchantId) {
     throw attemptError(
       "WHATSAPP_OUTBOUND_ATTEMPT_MERCHANT_MISMATCH",
@@ -121,7 +144,7 @@ export function createWhatsAppOutboundAttemptPlan(input: {
     reply_intent_id: replyIntentId,
     request_sha256: requestSha256,
     recipient_hash: digest(`fawri:whatsapp:recipient:${input.request.body.to}`).slice(0, 24),
-    request: input.request,
+    request: structuredClone(input.request),
     transport_authorized: false,
   };
 }
