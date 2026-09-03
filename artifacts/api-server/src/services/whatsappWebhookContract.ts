@@ -113,6 +113,25 @@ function boundedText(value: unknown, max: number): string | undefined {
   return normalized && normalized.length <= max ? normalized : undefined;
 }
 
+function boundedProviderId(value: unknown, max = 512): string | undefined {
+  const normalized = text(value);
+  if (
+    !normalized ||
+    normalized.length > max ||
+    /[\u0000-\u001F\u007F]/.test(normalized)
+  ) {
+    return undefined;
+  }
+  return normalized;
+}
+
+function safeToken(value: unknown, max: number): string | undefined {
+  const normalized = text(value).toLowerCase();
+  return /^[a-z0-9_.:-]+$/.test(normalized) && normalized.length <= max
+    ? normalized
+    : undefined;
+}
+
 function cleanTimestamp(value: unknown): string | undefined {
   const raw = text(value);
   return /^\d{1,20}$/.test(raw) ? raw : undefined;
@@ -167,7 +186,7 @@ function mediaReference(
   kind: "image" | "audio" | "video" | "document" | "sticker",
 ): WhatsAppMessageProviderReference | undefined {
   const media = record(message[kind]);
-  const id = boundedText(media.id, 160);
+  const id = boundedProviderId(media.id, 160);
   if (!id) return undefined;
   const mimeType = boundedText(media.mime_type, 160);
   const sha = boundedText(media.sha256, 256);
@@ -231,7 +250,7 @@ function providerReference(
 
   if (kind === "reaction") {
     const reaction = record(message.reaction);
-    const messageId = boundedText(reaction.message_id, 512);
+    const messageId = boundedProviderId(reaction.message_id, 512);
     if (!messageId) return undefined;
     const emoji = boundedText(reaction.emoji, 32);
     return {
@@ -284,13 +303,12 @@ function buildMessageEvent(input: {
   message: Record<string, unknown>;
   contactNames: Map<string, string>;
 }): NormalizedWhatsAppMessageEvent | null {
-  const externalMessageId = boundedText(input.message.id, 512);
-  const customerId = boundedText(input.message.from, 200);
+  const externalMessageId = boundedProviderId(input.message.id, 512);
+  const customerId = text(input.message.from);
   if (
     !input.wabaId ||
     !input.phoneNumberId ||
     !externalMessageId ||
-    !customerId ||
     !/^\d{6,20}$/.test(customerId)
   ) {
     return null;
@@ -299,7 +317,7 @@ function buildMessageEvent(input: {
   const messageKind = safeMessageKind(input.message.type);
   const normalizedText = normalizedMessageText(input.message);
   const reference = providerReference(input.message, messageKind);
-  const replyToMessageId = boundedText(record(input.message.context).id, 512);
+  const replyToMessageId = boundedProviderId(record(input.message.context).id, 512);
   const timestamp = cleanTimestamp(input.message.timestamp);
   const customerName = input.contactNames.get(customerId);
 
@@ -327,8 +345,8 @@ function buildStatusEvent(input: {
   phoneNumberId: string;
   status: Record<string, unknown>;
 }): NormalizedWhatsAppStatusEvent | null {
-  const externalMessageId = boundedText(input.status.id, 512);
-  const status = boundedText(text(input.status.status).toLowerCase(), 80);
+  const externalMessageId = boundedProviderId(input.status.id, 512);
+  const status = safeToken(input.status.status, 80);
   const rawRecipientId = text(input.status.recipient_id);
   if (
     !input.wabaId ||
@@ -359,7 +377,7 @@ function buildErrorEvent(input: {
   phoneNumberId: string;
   error: Record<string, unknown>;
 }): NormalizedWhatsAppErrorEvent | null {
-  const code = boundedText(input.error.code, 160);
+  const code = safeToken(input.error.code, 160);
   if (!input.wabaId || !input.phoneNumberId || !code) return null;
   const title = boundedText(input.error.title, 300);
   const message =
@@ -425,7 +443,10 @@ export function parseWhatsAppWebhookPayload(
         malformedChanges += 1;
         continue;
       }
-      const displayPhoneNumber = boundedText(metadata.display_phone_number, 40) || "";
+      const rawDisplayPhoneNumber = text(metadata.display_phone_number);
+      const displayPhoneNumber = /^[+0-9 ()-]{1,40}$/.test(rawDisplayPhoneNumber)
+        ? rawDisplayPhoneNumber
+        : "";
       const contactNames = contactNameByWaId(value);
 
       for (const messageValue of list(value.messages)) {
