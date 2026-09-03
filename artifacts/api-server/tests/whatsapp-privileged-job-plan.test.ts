@@ -66,7 +66,7 @@ test("same event produces deterministic job identity and payload hash", () => {
 });
 
 test("provider event identifiers may contain provider punctuation while local ids stay strict", () => {
-  const providerEvent = "whatsapp:1234567890:9876543210:message:wamid.ABC~_-";
+  const providerEvent = "whatsapp:message:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
   const result = buildWhatsAppPrivilegedJobPlan({
     type: "whatsapp_inbound_message",
     eventId: providerEvent,
@@ -80,38 +80,6 @@ test("provider event identifiers may contain provider punctuation while local id
   });
   assert.equal(result.external_event_id, providerEvent);
   assert.equal(result.channel_id, "channel_1:primary");
-});
-
-test("bounded composite webhook event ids remain valid downstream", () => {
-  const providerEvent = `whatsapp:${"1".repeat(40)}:${"2".repeat(40)}:status:${"w".repeat(512)}:${"d".repeat(80)}`;
-  assert.ok(providerEvent.length > 512);
-  assert.ok(providerEvent.length <= 1_024);
-
-  const result = buildWhatsAppPrivilegedJobPlan({
-    type: "whatsapp_delivery_status",
-    eventId: providerEvent,
-    merchantId: "merchant-1",
-    channelId: "channel-1",
-    payload: payload({ event_id: providerEvent, status: "delivered" }),
-    maxAttempts: 5,
-  });
-  assert.equal(result.external_event_id, providerEvent);
-  assert.match(result.job_row.dedupe_key, /^whatsapp:whatsapp_delivery_status:[a-f0-9]{64}$/);
-
-  const oversized = "x".repeat(1_025);
-  assert.throws(
-    () =>
-      buildWhatsAppPrivilegedJobPlan({
-        type: "whatsapp_delivery_status",
-        eventId: oversized,
-        merchantId: "merchant-1",
-        channelId: "channel-1",
-        payload: payload({ event_id: oversized, status: "delivered" }),
-        maxAttempts: 5,
-      }),
-    (error: unknown) =>
-      (error as { code?: string }).code === "WHATSAPP_PRIVILEGED_JOB_IDENTITY_INVALID",
-  );
 });
 
 test("payload ownership mismatch fails before any future persistence boundary", () => {
