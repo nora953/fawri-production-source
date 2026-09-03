@@ -20,11 +20,10 @@ export type WhatsAppRetryDecision =
       reason: "confirmed_failure_requires_changed_request_and_explicit_approval";
     }
   | {
-      action: "new_attempt_permitted";
+      action: "new_reply_intent_required";
       automatic_retry_allowed: false;
-      new_attempt_allowed: true;
-      reason: "confirmed_failure_changed_request_explicitly_approved";
-      next_attempt_number: number;
+      new_attempt_allowed: false;
+      reason: "confirmed_failure_changed_request_requires_new_reply_intent";
     };
 
 function retryError(code: string, message: string): Error & { code: string } {
@@ -32,11 +31,12 @@ function retryError(code: string, message: string): Error & { code: string } {
 }
 
 /**
- * Prevents blind resend after any ambiguous provider interaction. Even a
- * confirmed failure never enables automatic retry: a new attempt is permitted
- * only when an operator/workflow explicitly approves it AND the request
- * fingerprint changed, which protects a worker restart from duplicating the
- * same logical send.
+ * Prevents blind resend after any ambiguous provider interaction. The canonical
+ * `outbound_deliveries` authority allows one persisted delivery per
+ * merchant/inbound-event/reply-intent, so even a confirmed failure never
+ * authorizes a second attempt under the same reply intent. If an operator
+ * explicitly approves a materially changed request, the caller must create a
+ * new reply intent/workflow identity before any future send can be considered.
  */
 export function decideWhatsAppRetry(input: {
   outcome: WhatsAppSendOutcome;
@@ -45,7 +45,7 @@ export function decideWhatsAppRetry(input: {
   requestFingerprintChanged?: boolean;
 }): WhatsAppRetryDecision {
   const attempt = Number(input.currentAttemptNumber);
-  if (!Number.isSafeInteger(attempt) || attempt < 1 || attempt >= 100) {
+  if (!Number.isSafeInteger(attempt) || attempt < 1 || attempt > 100) {
     throw retryError(
       "WHATSAPP_RETRY_ATTEMPT_INVALID",
       "WhatsApp retry attempt number is invalid",
@@ -75,11 +75,10 @@ export function decideWhatsAppRetry(input: {
     input.requestFingerprintChanged === true
   ) {
     return {
-      action: "new_attempt_permitted",
+      action: "new_reply_intent_required",
       automatic_retry_allowed: false,
-      new_attempt_allowed: true,
-      reason: "confirmed_failure_changed_request_explicitly_approved",
-      next_attempt_number: attempt + 1,
+      new_attempt_allowed: false,
+      reason: "confirmed_failure_changed_request_requires_new_reply_intent",
     };
   }
 
