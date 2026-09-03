@@ -77,3 +77,8 @@ test('catalog details keeps SKU technical digits ASCII while localizing normal U
   assert.match(detailsParity, /const normalized = asciiDigits\(current\)/);
   assert.match(i18n, /parent\.closest\('\[data-fawri-preserve-digits="true"\]'\)/);
 });
+
+test('catalog details keeps RTL price ranges in minimum-to-maximum order', () => {
+  assert.match(detailsParity, /firstBdi\.style\.unicodeBidi = 'isolate-override'/);
+  assert.match(detailsParity, /Arabic\/Sorani digit localization/);
+});
