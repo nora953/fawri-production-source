@@ -113,6 +113,25 @@ test("confirmed failure refunds while uncertainty holds reservation", () => {
   assert.equal(uncertain.automatic_retry_allowed, false);
 });
 
+test("mutated attempt cannot be finalized under stale deterministic identity", () => {
+  const mutated = attempt();
+  mutated.request.body.text.body = "tampered after planning";
+
+  assert.throws(
+    () =>
+      planWhatsAppOutboundDeliveryPersistence({
+        attempt: mutated,
+        inboundEventId: "inbound-event-1",
+        attemptedAt,
+        finalizedAt,
+        outcome: { status: "sent", provider_message_id: "wamid.out-1" },
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_OUTBOUND_ATTEMPT_INTEGRITY_INVALID",
+  );
+});
+
 test("invalid finalization ordering and pending finalization fail closed", () => {
   assert.throws(
     () =>
