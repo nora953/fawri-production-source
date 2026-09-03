@@ -1,5 +1,9 @@
 import crypto from "node:crypto";
-import type { EnqueueDurableJobInput } from "./durableJobQueue";
+import {
+  buildWhatsAppPrivilegedJobPlan,
+  type WhatsAppPrivilegedJobPlan,
+  type WhatsAppPrivilegedJobType,
+} from "./whatsappPrivilegedJobPlan";
 import type { WhatsAppWebhookProcessingPlan } from "./whatsappWebhookPlanner";
 
 export type PlannedWhatsAppChannelInboundEvent = {
@@ -12,21 +16,15 @@ export type PlannedWhatsAppChannelInboundEvent = {
   enqueue_job_id: string;
 };
 
-export type PlannedWhatsAppBackgroundJob = {
-  id: string;
-  enqueue: EnqueueDurableJobInput;
-  payload_sha256: string;
-  encrypted_payload_required: true;
-};
-
 export type WhatsAppInboundIntakeUnit = {
   event: PlannedWhatsAppChannelInboundEvent;
-  job: PlannedWhatsAppBackgroundJob;
+  job: WhatsAppPrivilegedJobPlan;
 };
 
 export type WhatsAppInboundIntakeTransactionPlan = {
   boundary: "not_persisted_not_enqueued";
   provider: "whatsapp";
+  storage_authority: "postgres_background_jobs_encrypted_payload";
   atomic_write_required: true;
   encrypted_payload_required: true;
   units: WhatsAppInboundIntakeUnit[];
@@ -36,30 +34,22 @@ function intakeError(code: string, message: string): Error & { code: string } {
   return Object.assign(new Error(message), { code });
 }
 
-function canonical(value: unknown): string {
-  if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
-  if (value && typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    return `{${Object.keys(record)
-      .sort()
-      .map((key) => `${JSON.stringify(key)}:${canonical(record[key])}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(value) ?? "null";
-}
-
 function sha256(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-function deterministicId(namespace: string, ...parts: string[]): string {
-  return `whatsapp-${namespace}-${sha256(
-    `fawri:whatsapp:${namespace}:${parts.join("\0")}`,
+function deterministicEventId(input: {
+  merchantId: string;
+  channelId: string;
+  eventId: string;
+}): string {
+  return `whatsapp-event-${sha256(
+    `fawri:whatsapp:event:${input.merchantId}:${input.channelId}:${input.eventId}`,
   ).slice(0, 40)}`;
 }
 
 function unit(input: {
-  type: string;
+  type: WhatsAppPrivilegedJobType;
   eventId: string;
   merchantId: string;
   channelId: string;
@@ -67,58 +57,46 @@ function unit(input: {
   maxAttempts: number;
   priority?: number;
 }): WhatsAppInboundIntakeUnit {
-  if (!input.channelId || input.channelId.length > 200) {
-    throw intakeError(
-      "WHATSAPP_INTAKE_CHANNEL_ID_INVALID",
-      "WhatsApp intake channel identity is invalid",
-    );
-  }
-  const payloadSha256 = sha256(canonical(input.payload));
-  const jobId = deterministicId(
-    "job",
-    input.type,
-    input.merchantId,
-    input.channelId,
-    input.eventId,
-  );
-  const eventRowId = deterministicId(
-    "event",
-    input.merchantId,
-    input.channelId,
-    input.eventId,
-  );
+  const job = buildWhatsAppPrivilegedJobPlan({
+    type: input.type,
+    eventId: input.eventId,
+    merchantId: input.merchantId,
+    channelId: input.channelId,
+    payload: input.payload,
+    maxAttempts: input.maxAttempts,
+    priority: input.priority,
+  });
+  const eventRowId = deterministicEventId({
+    merchantId: job.job_row.merchant_id,
+    channelId: job.channel_id,
+    eventId: job.external_event_id,
+  });
   return {
     event: {
       id: eventRowId,
-      merchant_id: input.merchantId,
-      channel_id: input.channelId,
+      merchant_id: job.job_row.merchant_id,
+      channel_id: job.channel_id,
       provider: "whatsapp",
-      external_event_id: input.eventId,
-      payload_hash: payloadSha256,
-      enqueue_job_id: jobId,
+      external_event_id: job.external_event_id,
+      payload_hash: job.encrypted_payload.payload_sha256,
+      enqueue_job_id: job.job_row.id,
     },
-    job: {
-      id: jobId,
-      enqueue: {
-        type: input.type,
-        dedupeKey: `whatsapp:${input.type}:${sha256(input.eventId)}`,
-        merchantId: input.merchantId,
-        payload: input.payload,
-        priority: input.priority ?? 0,
-        maxAttempts: input.maxAttempts,
-      },
-      payload_sha256: payloadSha256,
-      encrypted_payload_required: true,
-    },
+    job,
   };
 }
 
 /**
- * Describes the single-transaction database boundary needed by a future live
- * WhatsApp ingress. Each provider event must atomically create its encrypted
- * background job and `channel_inbound_events` marker using the planned job id.
- * This function intentionally performs neither write and cannot bypass the
- * encrypted payload authority.
+ * Describes the single-transaction PostgreSQL boundary required by a future
+ * live WhatsApp ingress. Each provider event must atomically create:
+ *
+ * - a `channel_inbound_events` dedupe marker;
+ * - its administrative `background_jobs` row; and
+ * - its encrypted `background_job_payloads` record.
+ *
+ * This function performs none of those writes. It is deliberately detached
+ * from the legacy JSON queue and carries plaintext only as ephemeral input to a
+ * future encryption adapter; plaintext persistence is forbidden by the job
+ * contract.
  */
 export function buildWhatsAppInboundIntakeTransactionPlan(
   plan: WhatsAppWebhookProcessingPlan,
@@ -192,7 +170,12 @@ export function buildWhatsAppInboundIntakeTransactionPlan(
       );
     }
     seenExternal.add(item.event.external_event_id);
-    if (item.event.enqueue_job_id !== item.job.id) {
+    if (
+      item.event.enqueue_job_id !== item.job.job_row.id ||
+      item.event.payload_hash !== item.job.encrypted_payload.payload_sha256 ||
+      item.event.merchant_id !== item.job.job_row.merchant_id ||
+      item.event.channel_id !== item.job.channel_id
+    ) {
       throw intakeError(
         "WHATSAPP_INTAKE_JOB_LINK_INVALID",
         "WhatsApp intake event/job identity link is invalid",
@@ -203,6 +186,7 @@ export function buildWhatsAppInboundIntakeTransactionPlan(
   return {
     boundary: "not_persisted_not_enqueued",
     provider: "whatsapp",
+    storage_authority: "postgres_background_jobs_encrypted_payload",
     atomic_write_required: true,
     encrypted_payload_required: true,
     units,
