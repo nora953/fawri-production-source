@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
+import { assertWhatsAppInboundBridgeInputStructure } from "./whatsappInboundJobGuard";
 import type { WhatsAppInboundMessageJob } from "./whatsappOfflineContracts";
-import { assertWhatsAppWebhookProcessingPlanRuntime } from "./whatsappRuntimeGuards";
 import type { WhatsAppMessageProviderReference } from "./whatsappWebhookContract";
 
 export type WhatsAppInboundBridgeInput = WhatsAppInboundMessageJob & {
@@ -281,9 +281,11 @@ function providerReference(
 
 /**
  * Converts a WhatsApp-specific queue contract into a channel-neutral inbound
- * message that future conversation/reply code can consume. The inbound job is
- * runtime-guarded before any direct field access, so a synthetic caller cannot
- * execute accessors or bypass the parser/planner's normalized-shape limits.
+ * message that future conversation/reply code can consume. A coercion-free
+ * structural guard runs before direct field access, preventing proxies/getters
+ * from executing while leaving semantic identity/reference validation to this
+ * bridge so its established fail-closed error codes remain authoritative.
+ *
  * This bridge is pure: it does not create conversations, call AI, fetch media,
  * enqueue work, or talk to Meta. Non-text/media messages remain explicitly
  * ineligible for automatic reply processing until a separate verified media
@@ -292,17 +294,7 @@ function providerReference(
 export function bridgeWhatsAppInboundMessage(
   job: WhatsAppInboundBridgeInput,
 ): WhatsAppInboundBridgeResult {
-  assertWhatsAppWebhookProcessingPlanRuntime({
-    mode: "offline_replay",
-    supported: true,
-    provider_object: "whatsapp_business_account",
-    inbound_messages: [job],
-    delivery_statuses: [],
-    provider_errors: [],
-    ignored_changes: 0,
-    malformed_changes: 0,
-    duplicate_events: 0,
-  });
+  assertWhatsAppInboundBridgeInputStructure(job);
 
   if (job.job_type !== "whatsapp_inbound_message" || job.channel !== "whatsapp") {
     throw bridgeError(
