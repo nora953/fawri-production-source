@@ -94,9 +94,11 @@ function assertRequestMatchesChannel(
 
 /**
  * Creates a deterministic logical-send/attempt identity before any transport
- * exists. Reprocessing the same attempt produces the same dedupe key. A later
- * confirmed-failure retry must use a larger attempt number and pass the
- * separate retry policy; nothing here can send or authorize a provider call.
+ * exists. Reprocessing the same numbered attempt produces the same dedupe key.
+ * Attempt numbering remains explicit for offline modeling and future schema
+ * evolution, but the current retry policy never authorizes a second persisted
+ * attempt under the same reply intent because the canonical delivery authority
+ * permits one delivery per merchant/inbound-event/reply-intent.
  */
 export function createWhatsAppOutboundAttemptPlan(input: {
   merchantId: unknown;
