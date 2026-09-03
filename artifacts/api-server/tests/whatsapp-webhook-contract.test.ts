@@ -75,8 +75,9 @@ test("normalizes a WhatsApp text message without side effects", () => {
   const result = parseWhatsAppWebhookPayload(messagePayload());
   assert.equal(result.supported, true);
   assert.equal(result.events.length, 1);
-  assert.deepEqual(result.events[0], {
-    event_id: "whatsapp:1234567890:9876543210:message:wamid.message-1",
+  const { event_id: eventId, ...event } = result.events[0];
+  assert.match(eventId, /^whatsapp:message:[a-f0-9]{64}$/);
+  assert.deepEqual(event, {
     event_kind: "message",
     waba_id: "1234567890",
     phone_number_id: "9876543210",
@@ -212,8 +213,9 @@ test("normalizes delivery statuses and preserves provider error codes", () => {
 
   const result = parseWhatsAppWebhookPayload(payload);
   assert.equal(result.events.length, 1);
-  assert.deepEqual(result.events[0], {
-    event_id: "whatsapp:1234567890:9876543210:status:wamid.outbound-1:failed",
+  const { event_id: eventId, ...event } = result.events[0];
+  assert.match(eventId, /^whatsapp:status:[a-f0-9]{64}$/);
+  assert.deepEqual(event, {
     event_kind: "status",
     waba_id: "1234567890",
     phone_number_id: "9876543210",
@@ -223,6 +225,62 @@ test("normalizes delivery statuses and preserves provider error codes", () => {
     timestamp: "1788380100",
     error_codes: ["131026", "130429"],
   });
+});
+
+test("maximum-length provider ids produce bounded downstream-safe event identities", () => {
+  const payload = messagePayload();
+  payload.entry[0].changes[0].value.messages[0].id = "w".repeat(512);
+  const result = parseWhatsAppWebhookPayload(payload);
+  assert.equal(result.events.length, 1);
+  assert.match(result.events[0].event_id, /^whatsapp:message:[a-f0-9]{64}$/);
+  assert.ok(result.events[0].event_id.length < 512);
+  assert.equal(
+    result.events[0].event_kind === "message"
+      ? result.events[0].external_message_id.length
+      : 0,
+    512,
+  );
+
+  const statusPayload = messagePayload();
+  const value = statusPayload.entry[0].changes[0].value;
+  value.messages = [];
+  Object.assign(value, {
+    statuses: [
+      {
+        id: "s".repeat(512),
+        status: "delivered",
+        recipient_id: "9647711111111",
+        timestamp: "1788380100",
+      },
+    ],
+  });
+  const statusResult = parseWhatsAppWebhookPayload(statusPayload);
+  assert.equal(statusResult.events.length, 1);
+  assert.match(statusResult.events[0].event_id, /^whatsapp:status:[a-f0-9]{64}$/);
+  assert.ok(statusResult.events[0].event_id.length < 512);
+});
+
+test("status identity dedupes exact retries but preserves distinct observations", () => {
+  const payload = messagePayload();
+  const value = payload.entry[0].changes[0].value;
+  value.messages = [];
+  const original = {
+    id: "wamid.outbound-1",
+    status: "delivered",
+    recipient_id: "9647711111111",
+    timestamp: "1788380100",
+  };
+  Object.assign(value, {
+    statuses: [
+      original,
+      { ...original },
+      { ...original, timestamp: "1788380101" },
+    ],
+  });
+
+  const result = parseWhatsAppWebhookPayload(payload);
+  assert.equal(result.events.length, 2);
+  assert.notEqual(result.events[0].event_id, result.events[1].event_id);
 });
 
 test("deduplicates identical webhook events inside one delivery", () => {
@@ -386,7 +444,7 @@ test("normalizes top-level WhatsApp errors without exposing raw payloads", () =>
   assert.equal(event.code, "131000");
   assert.equal(event.title, "Generic error");
   assert.equal(event.message, "Provider rejected event");
-  assert.match(event.event_id, /^whatsapp:1234567890:9876543210:error:[a-f0-9]{64}$/);
+  assert.match(event.event_id, /^whatsapp:error:[a-f0-9]{64}$/);
 });
 
 test("unsafe top-level provider error codes are rejected", () => {
