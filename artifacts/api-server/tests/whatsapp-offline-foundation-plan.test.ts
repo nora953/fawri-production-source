@@ -71,7 +71,7 @@ function payload() {
   };
 }
 
-test("complete offline foundation composes compatible plans without executing them", async () => {
+test("complete offline foundation composes compatible encrypted PostgreSQL plans without executing them", async () => {
   const result = await buildWhatsAppOfflineFoundationPlan({
     payload: payload(),
     resolveChannel: async () => channel,
@@ -82,8 +82,16 @@ test("complete offline foundation composes compatible plans without executing th
   assert.equal(result.replay.plan.inbound_messages.length, 2);
   assert.equal(result.replay.plan.delivery_statuses.length, 1);
   assert.equal(result.intake.boundary, "not_persisted_not_enqueued");
+  assert.equal(
+    result.intake.storage_authority,
+    "postgres_background_jobs_encrypted_payload",
+  );
   assert.equal(result.intake.units.length, 3);
-  assert.equal(result.queue.boundary, "not_enqueued");
+  assert.equal(result.queue.boundary, "not_persisted_not_enqueued");
+  assert.equal(
+    result.queue.storage_authority,
+    "postgres_background_jobs_encrypted_payload",
+  );
   assert.equal(result.queue.jobs.length, 3);
   assert.equal(result.inbound_processing.length, 2);
 
@@ -99,10 +107,23 @@ test("complete offline foundation composes compatible plans without executing th
   assert.equal(imagePlan?.reply_decision, null);
   assert.equal(imagePlan?.persistence.message.text, "Product photo");
 
+  const queueByEvent = new Map(
+    result.queue.jobs.map((job) => [job.external_event_id, job]),
+  );
   for (const unit of result.intake.units) {
     assert.equal(unit.event.channel_id, "channel-1");
     assert.equal(unit.event.merchant_id, "merchant-1");
-    assert.equal(unit.event.enqueue_job_id, unit.job.id);
+    assert.equal(unit.event.enqueue_job_id, unit.job.job_row.id);
+    assert.equal(
+      unit.event.payload_hash,
+      unit.job.encrypted_payload.payload_sha256,
+    );
+    const queueJob = queueByEvent.get(unit.event.external_event_id);
+    assert.equal(queueJob?.job_row.id, unit.job.job_row.id);
+    assert.equal(
+      queueJob?.encrypted_payload.payload_sha256,
+      unit.job.encrypted_payload.payload_sha256,
+    );
   }
 });
 
@@ -123,7 +144,7 @@ test("complete offline composer inherits the live-cutover refusal", async () => 
   );
 });
 
-test("complete offline composer has no database, queue, AI, credential, or provider I/O", () => {
+test("complete offline composer has no database, legacy JSON queue, AI, credential, or provider I/O", () => {
   const source = fs.readFileSync(
     path.join(
       repoRoot,
@@ -133,6 +154,8 @@ test("complete offline composer has no database, queue, AI, credential, or provi
   );
   assert.doesNotMatch(source, /client\.query/);
   assert.doesNotMatch(source, /with(?:Merchant)?OperationalTransaction/);
+  assert.doesNotMatch(source, /durableJobQueue/);
+  assert.doesNotMatch(source, /JsonFileStore/);
   assert.doesNotMatch(source, /enqueueDurableJob\s*\(/);
   assert.doesNotMatch(source, /getKnowledgeDecisionEngine\s*\(/);
   assert.doesNotMatch(source, /\bfetch\s*\(/);
