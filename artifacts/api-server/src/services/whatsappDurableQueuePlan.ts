@@ -2,6 +2,7 @@ import {
   buildWhatsAppPrivilegedJobPlan,
   type WhatsAppPrivilegedJobPlan,
 } from "./whatsappPrivilegedJobPlan";
+import { assertWhatsAppWebhookProcessingPlanRuntime } from "./whatsappRuntimeGuards";
 import type { WhatsAppWebhookProcessingPlan } from "./whatsappWebhookPlanner";
 
 export type WhatsAppDurableQueuePlan = {
@@ -18,12 +19,18 @@ function queueError(code: string, message: string): Error & { code: string } {
  * Converts resolved webhook events into pure plans for the PostgreSQL
  * `background_jobs` + encrypted `background_job_payloads` authorities.
  *
+ * Processing plans are runtime-guarded before any collection is traversed or
+ * item is spread into a privileged payload. This prevents synthetic callers
+ * from bypassing parser budgets with oversized, accessor-bearing, proxy, or
+ * malformed plan data.
+ *
  * This module intentionally has no dependency on the legacy JSON durable queue,
  * does not persist plaintext payloads, and cannot enqueue/start a worker.
  */
 export function buildWhatsAppDurableQueuePlan(
   plan: WhatsAppWebhookProcessingPlan,
 ): WhatsAppDurableQueuePlan {
+  assertWhatsAppWebhookProcessingPlanRuntime(plan);
   if (plan.mode !== "offline_replay") {
     throw queueError(
       "WHATSAPP_QUEUE_PLAN_MODE_INVALID",
