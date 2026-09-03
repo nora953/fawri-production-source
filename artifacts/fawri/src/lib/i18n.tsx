@@ -61,6 +61,7 @@ function localizeDigitString(value: string, lang: Lang): string {
 function localizeTextNode(node: Text, lang: Lang) {
   const parent = node.parentElement;
   if (!parent || parent.closest('script, style, noscript')) return;
+  if (parent.closest('[data-fawri-preserve-digits="true"]')) return;
 
   const current = node.nodeValue || '';
   const next = localizeDigitString(current, lang);
