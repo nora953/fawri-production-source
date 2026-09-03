@@ -19,6 +19,10 @@ function evidence(overrides: Partial<WhatsAppActivationEvidence> = {}): WhatsApp
     webhook_verification_ready: true,
     app_secret_configured: true,
     durable_queue_ready: true,
+    inbound_persistence_ready: true,
+    reply_engine_handoff_ready: true,
+    data_policy_ready: true,
+    media_policy_ready: true,
     inbound_worker_ready: true,
     outbound_transport_ready: true,
     delivery_reconciliation_ready: true,
@@ -69,6 +73,26 @@ test("every external dependency must be explicitly evidenced", () => {
   assert.ok(result.blockers.includes("WHATSAPP_WEBHOOK_VERIFICATION_NOT_READY"));
   assert.ok(result.blockers.includes("WHATSAPP_DURABLE_QUEUE_NOT_READY"));
   assert.ok(result.blockers.includes("WHATSAPP_OUTBOUND_TRANSPORT_NOT_READY"));
+});
+
+test("internal persistence, reply, data, and media gates independently block cutover", () => {
+  const result = assessWhatsAppActivationReadiness(
+    evidence({
+      inbound_persistence_ready: false,
+      reply_engine_handoff_ready: false,
+      data_policy_ready: false,
+      media_policy_ready: false,
+    }),
+    {
+      FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
+      FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
+    } as NodeJS.ProcessEnv,
+  );
+  assert.equal(result.mode, "blocked");
+  assert.ok(result.blockers.includes("WHATSAPP_INBOUND_PERSISTENCE_NOT_READY"));
+  assert.ok(result.blockers.includes("WHATSAPP_REPLY_ENGINE_HANDOFF_NOT_READY"));
+  assert.ok(result.blockers.includes("WHATSAPP_DATA_POLICY_NOT_READY"));
+  assert.ok(result.blockers.includes("WHATSAPP_MEDIA_POLICY_NOT_READY"));
 });
 
 test("complete evidence produces only an activation candidate, not activation", () => {
