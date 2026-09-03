@@ -1,5 +1,12 @@
 import type { NormalizedWhatsAppStatusEvent } from "./whatsappWebhookContract";
 import type { WhatsAppSendOutcome } from "./whatsappOfflineContracts";
+import {
+  assertWhatsAppDeliveryCreateInputStructure,
+  assertWhatsAppDeliveryStateStructure,
+  assertWhatsAppNormalizedStatusEventStructure,
+} from "./whatsappDeliveryRuntimeGuards";
+
+const MAX_DELIVERY_ERROR_CODES = 100;
 
 export type WhatsAppDeliveryPhase =
   | "sent"
@@ -80,15 +87,17 @@ function messageId(value: unknown): string {
   return result;
 }
 
+function mergeErrors(...groups: string[][]): string[] {
+  return [...new Set(groups.flat())].slice(0, MAX_DELIVERY_ERROR_CODES);
+}
+
 function cleanErrors(values: unknown): string[] {
   const input = Array.isArray(values) ? values : [];
-  return [
-    ...new Set(
-      input
-        .map((value) => text(value))
-        .filter((value) => value && value.length <= 160),
-    ),
-  ];
+  return mergeErrors(
+    input
+      .map((value) => text(value))
+      .filter((value) => value && value.length <= 160),
+  );
 }
 
 function successRank(phase: WhatsAppDeliveryPhase): number {
@@ -123,13 +132,11 @@ function contradictoryState(
     phase: "uncertain",
     ...(resolvedRecipientId ? { recipient_id: resolvedRecipientId } : {}),
     ...(providerTimestamp ? { provider_timestamp: providerTimestamp } : {}),
-    error_codes: [
-      ...new Set([
-        ...state.error_codes,
-        ...incomingErrors,
-        "WHATSAPP_DELIVERY_CONTRADICTORY_TERMINAL_STATUS",
-      ]),
-    ],
+    error_codes: mergeErrors(
+      ["WHATSAPP_DELIVERY_CONTRADICTORY_TERMINAL_STATUS"],
+      state.error_codes,
+      incomingErrors,
+    ),
     last_status_event_id: event.event_id,
     conflict_code: "WHATSAPP_DELIVERY_CONTRADICTORY_TERMINAL_STATUS",
   };
@@ -159,6 +166,7 @@ export function createWhatsAppDeliveryState(input: {
   outcome: WhatsAppSendOutcome;
   recipientId?: unknown;
 }): WhatsAppDeliveryState {
+  assertWhatsAppDeliveryCreateInputStructure(input);
   const attemptId = localAttemptId(input.attemptId);
   const wabaId = numericId(input.wabaId, "WhatsApp business account id");
   const phoneNumberId = numericId(input.phoneNumberId, "WhatsApp phone number id");
@@ -238,6 +246,8 @@ export function reduceWhatsAppDeliveryStatus(
   state: WhatsAppDeliveryState,
   event: NormalizedWhatsAppStatusEvent,
 ): WhatsAppDeliveryReduction {
+  assertWhatsAppDeliveryStateStructure(state);
+  assertWhatsAppNormalizedStatusEventStructure(event);
   assertEventMatchesState(state, event);
 
   const normalizedStatus = text(event.status).toLowerCase();
@@ -259,7 +269,7 @@ export function reduceWhatsAppDeliveryStatus(
       ...state,
       ...(resolvedRecipientId ? { recipient_id: resolvedRecipientId } : {}),
       ...(providerTimestamp ? { provider_timestamp: providerTimestamp } : {}),
-      error_codes: [...new Set([...state.error_codes, ...incomingErrors])],
+      error_codes: mergeErrors(state.error_codes, incomingErrors),
       last_status_event_id: event.event_id,
     };
     return {
@@ -294,7 +304,7 @@ export function reduceWhatsAppDeliveryStatus(
       phase: "failed",
       ...(resolvedRecipientId ? { recipient_id: resolvedRecipientId } : {}),
       ...(providerTimestamp ? { provider_timestamp: providerTimestamp } : {}),
-      error_codes: nextErrors,
+      error_codes: nextErrors.slice(0, MAX_DELIVERY_ERROR_CODES),
       last_status_event_id: event.event_id,
     };
     return {
