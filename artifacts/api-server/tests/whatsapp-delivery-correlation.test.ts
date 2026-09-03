@@ -11,6 +11,7 @@ import type { WhatsAppDeliveryStatusPlan } from "../src/services/whatsappWebhook
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(here, "../../..");
+const expectedRecipientId = "9647711111111";
 
 function observation(
   overrides: Partial<WhatsAppDeliveryStatusPlan> = {},
@@ -22,7 +23,7 @@ function observation(
     waba_id: "1234567890",
     phone_number_id: "9876543210",
     external_message_id: "wamid.out-1",
-    recipient_id: "9647711111111",
+    recipient_id: expectedRecipientId,
     status: "delivered",
     error_codes: [],
     ...overrides,
@@ -73,11 +74,20 @@ function clientWith(rows: Record<string, unknown>[]): OperationalSqlClient {
   };
 }
 
-test("correlates only a confirmed send in the exact merchant WhatsApp channel identity", async () => {
-  const result = await correlateWhatsAppDeliveryWithClient(
-    clientWith([row()]),
-    observation(),
+function correlate(
+  client: OperationalSqlClient,
+  observed: WhatsAppDeliveryStatusPlan = observation(),
+  expectedRecipient: unknown = expectedRecipientId,
+) {
+  return correlateWhatsAppDeliveryWithClient(
+    client,
+    observed,
+    expectedRecipient,
   );
+}
+
+test("correlates only a confirmed send in the exact merchant WhatsApp channel identity", async () => {
+  const result = await correlate(clientWith([row()]));
   assert.deepEqual(result, {
     merchant_id: "merchant-1",
     channel_id: "channel-1",
@@ -90,7 +100,7 @@ test("correlates only a confirmed send in the exact merchant WhatsApp channel id
       phone_number_id: "9876543210",
       external_message_id: "wamid.out-1",
       phase: "sent",
-      recipient_id: "9647711111111",
+      recipient_id: expectedRecipientId,
       error_codes: [],
     },
   });
@@ -98,16 +108,12 @@ test("correlates only a confirmed send in the exact merchant WhatsApp channel id
 
 test("missing or ambiguous correlation fails closed", async () => {
   await assert.rejects(
-    () => correlateWhatsAppDeliveryWithClient(clientWith([]), observation()),
+    () => correlate(clientWith([])),
     (error: unknown) =>
       (error as { code?: string }).code === "WHATSAPP_DELIVERY_NOT_CORRELATED",
   );
   await assert.rejects(
-    () =>
-      correlateWhatsAppDeliveryWithClient(
-        clientWith([row(), row({ id: "attempt-2" })]),
-        observation(),
-      ),
+    () => correlate(clientWith([row(), row({ id: "attempt-2" })])),
     (error: unknown) =>
       (error as { code?: string }).code ===
       "WHATSAPP_DELIVERY_CORRELATION_AMBIGUOUS",
@@ -126,7 +132,7 @@ test("non-sent, cross-owner, or cross-provider-identity rows are rejected even i
     row({ phone_number_id: null }),
   ]) {
     await assert.rejects(
-      () => correlateWhatsAppDeliveryWithClient(clientWith([badRow]), observation()),
+      () => correlate(clientWith([badRow])),
       (error: unknown) =>
         (error as { code?: string }).code ===
         "WHATSAPP_DELIVERY_CORRELATION_STATE_INVALID",
@@ -134,7 +140,36 @@ test("non-sent, cross-owner, or cross-provider-identity rows are rejected even i
   }
 });
 
-test("invalid WABA or phone identity fails before database lookup", async () => {
+test("trusted outbound recipient cannot be replaced by status webhook data", async () => {
+  let queried = false;
+  const client: OperationalSqlClient = {
+    async query<T extends Record<string, unknown>>() {
+      queried = true;
+      return { rows: [row()] as T[] };
+    },
+  };
+
+  await assert.rejects(
+    () =>
+      correlate(
+        client,
+        observation({ recipient_id: "9647722222222" }),
+        expectedRecipientId,
+      ),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_DELIVERY_RECIPIENT_MISMATCH",
+  );
+  assert.equal(queried, false);
+
+  const withoutProviderRecipient = await correlate(
+    clientWith([row()]),
+    observation({ recipient_id: undefined }),
+  );
+  assert.equal(withoutProviderRecipient.state.recipient_id, expectedRecipientId);
+});
+
+test("invalid WABA, phone, or expected recipient identity fails before database lookup", async () => {
   let queried = false;
   const client: OperationalSqlClient = {
     async query<T extends Record<string, unknown>>() {
@@ -143,12 +178,14 @@ test("invalid WABA or phone identity fails before database lookup", async () => 
     },
   };
 
-  for (const badObservation of [
-    observation({ waba_id: "not-numeric" }),
-    observation({ phone_number_id: "" }),
+  for (const input of [
+    { observed: observation({ waba_id: "not-numeric" }), expected: expectedRecipientId },
+    { observed: observation({ phone_number_id: "" }), expected: expectedRecipientId },
+    { observed: observation(), expected: "bad-recipient" },
+    { observed: observation({ recipient_id: "bad-recipient" }), expected: expectedRecipientId },
   ]) {
     await assert.rejects(
-      () => correlateWhatsAppDeliveryWithClient(client, badObservation),
+      () => correlate(client, input.observed, input.expected),
       (error: unknown) =>
         (error as { code?: string }).code ===
         "WHATSAPP_DELIVERY_CORRELATION_IDENTITY_INVALID",
