@@ -55,9 +55,12 @@ function localIdentity(value: unknown, label: string): string {
 
 function providerEventIdentity(value: unknown): string {
   const normalized = String(value ?? "").trim();
+  // Normalized webhook event ids can include a bounded 512-character provider
+  // message id plus WABA/phone/status context. Keep the downstream boundary
+  // bounded without rejecting a webhook that already passed normalization.
   if (
     !normalized ||
-    normalized.length > 512 ||
+    normalized.length > 1_024 ||
     /[\u0000-\u001F\u007F]/.test(normalized)
   ) {
     throw planError(
