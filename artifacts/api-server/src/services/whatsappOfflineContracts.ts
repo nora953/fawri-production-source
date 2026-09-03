@@ -124,13 +124,19 @@ function messageText(value: unknown): string {
 }
 
 function graphVersion(value: unknown): string {
-  const result = text(value) || "v22.0";
+  const result = text(value);
   if (!/^v\d{1,3}\.\d{1,3}$/.test(result)) {
     throw contractError(
       "WHATSAPP_GRAPH_VERSION_INVALID",
-      "WhatsApp Graph API version is invalid",
+      "WhatsApp Graph API version must be explicitly pinned",
     );
   }
+  return result;
+}
+
+function providerMessageId(value: unknown): string | undefined {
+  const result = text(value);
+  if (!result || result.length > 512 || /[\r\n]/.test(result)) return undefined;
   return result;
 }
 
@@ -208,14 +214,15 @@ export function buildWhatsAppInboundMessageJob(input: {
 
 /**
  * Produces an outbound Cloud API request plan without performing a network
- * request and without accepting an access token. Credential access therefore
- * cannot accidentally leak into the offline foundation.
+ * request and without accepting an access token. The Graph API version is
+ * deliberately mandatory so a stale implicit default cannot survive until
+ * future activation.
  */
 export function buildWhatsAppTextSendPlan(input: {
   phoneNumberId: unknown;
   to: unknown;
   messageText: unknown;
-  graphVersion?: unknown;
+  graphVersion: unknown;
 }): WhatsAppTextSendPlan {
   const phoneNumberId = metaNumericId(
     input.phoneNumberId,
@@ -271,8 +278,9 @@ function confirmedFailure(status: number): boolean {
 
 /**
  * Classifies an already-observed provider response. It never performs I/O.
- * Ambiguous, throttled, timeout-like, and server responses remain uncertain so
- * future live code cannot blindly retry a send that may have reached Meta.
+ * Ambiguous, throttled, timeout-like, malformed-success, and server responses
+ * remain uncertain so future live code cannot blindly retry a send that may
+ * have reached Meta.
  */
 export function classifyWhatsAppSendResponse(input: {
   httpStatus: unknown;
@@ -287,9 +295,9 @@ export function classifyWhatsAppSendResponse(input: {
   }
   const body = responseBody(input.body);
   const firstMessage = responseBody(list(body.messages)[0]);
-  const providerMessageId = text(firstMessage.id);
-  if (status >= 200 && status < 300 && providerMessageId) {
-    return { status: "sent", provider_message_id: providerMessageId };
+  const messageId = providerMessageId(firstMessage.id);
+  if (status >= 200 && status < 300 && messageId) {
+    return { status: "sent", provider_message_id: messageId };
   }
   if (confirmedFailure(status)) {
     return {
