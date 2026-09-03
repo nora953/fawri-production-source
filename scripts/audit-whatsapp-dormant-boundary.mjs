@@ -90,6 +90,8 @@ const forbiddenCapabilities = [
   [/\bencryptMetaCredential\b/, "WHATSAPP_CREDENTIAL_ENCRYPT_PRESENT"],
   [/\benqueueDurableJob\s*\(/, "WHATSAPP_QUEUE_WRITE_PRESENT"],
   [/\bstartDurableJobWorker\s*\(/, "WHATSAPP_LIVE_WORKER_PRESENT"],
+  [/\bdurableJobQueue\b/, "WHATSAPP_LEGACY_JSON_QUEUE_REFERENCE_PRESENT"],
+  [/\bJsonFileStore\b/, "WHATSAPP_LEGACY_JSON_STORE_REFERENCE_PRESENT"],
   [/\bexpress\s*\.\s*Router\s*\(/, "WHATSAPP_HTTP_ROUTER_PRESENT"],
   [/\bAuthorization\s*:/i, "WHATSAPP_AUTHORIZATION_HEADER_PRESENT"],
   [/\bBearer\s+[A-Za-z0-9._-]+/i, "WHATSAPP_BEARER_VALUE_PRESENT"],
@@ -104,6 +106,19 @@ for (const name of serviceFiles()) {
   }
 }
 
+for (const requiredService of [
+  "whatsappPrivilegedJobPlan.ts",
+  "whatsappInboundIntakePlan.ts",
+  "whatsappDurableQueuePlan.ts",
+]) {
+  if (!serviceFiles().includes(requiredService)) {
+    violations.push({
+      source: "artifacts/api-server/src/services",
+      code: `WHATSAPP_ENCRYPTED_JOB_PLANNER_MISSING:${requiredService}`,
+    });
+  }
+}
+
 const schema = read("lib/db/src/schema/channels.ts");
 for (const required of [
   "merchant_channels_whatsapp_identity_pair_check",
@@ -115,6 +130,22 @@ for (const required of [
     violations.push({
       source: "lib/db/src/schema/channels.ts",
       code: `WHATSAPP_SCHEMA_BARRIER_MISSING:${required}`,
+    });
+  }
+}
+
+const jobsSchema = read("lib/db/src/schema/jobs.ts");
+for (const required of [
+  "background_jobs",
+  "background_job_payloads",
+  "payload_hash",
+  "payload_sha256",
+  "ciphertext",
+]) {
+  if (!jobsSchema.includes(required)) {
+    violations.push({
+      source: "lib/db/src/schema/jobs.ts",
+      code: `WHATSAPP_ENCRYPTED_JOB_AUTHORITY_MISSING:${required}`,
     });
   }
 }
