@@ -28,6 +28,7 @@ export type WhatsAppActivationEvidence = {
   data_policy_ready: boolean;
   media_policy_ready: boolean;
   inbound_worker_ready: boolean;
+  outbound_dispatch_persistence_ready: boolean;
   outbound_transport_ready: boolean;
   delivery_reconciliation_ready: boolean;
   observability_ready: boolean;
@@ -55,6 +56,7 @@ export type WhatsAppActivationBlocker =
   | "WHATSAPP_DATA_POLICY_NOT_READY"
   | "WHATSAPP_MEDIA_POLICY_NOT_READY"
   | "WHATSAPP_INBOUND_WORKER_NOT_READY"
+  | "WHATSAPP_OUTBOUND_DISPATCH_PERSISTENCE_NOT_READY"
   | "WHATSAPP_OUTBOUND_TRANSPORT_NOT_READY"
   | "WHATSAPP_DELIVERY_RECONCILIATION_NOT_READY"
   | "WHATSAPP_OBSERVABILITY_NOT_READY";
@@ -145,6 +147,10 @@ const BOOLEAN_EVIDENCE: Array<{
     blocker: "WHATSAPP_INBOUND_WORKER_NOT_READY",
   },
   {
+    key: "outbound_dispatch_persistence_ready",
+    blocker: "WHATSAPP_OUTBOUND_DISPATCH_PERSISTENCE_NOT_READY",
+  },
+  {
     key: "outbound_transport_ready",
     blocker: "WHATSAPP_OUTBOUND_TRANSPORT_NOT_READY",
   },
@@ -178,8 +184,9 @@ function assertEvidence(input: WhatsAppActivationEvidence): void {
  * intentionally represented as booleans, never as values, and this function
  * cannot activate a route, store a credential, subscribe a webhook, or send a
  * provider request. A live candidate is restricted to production and requires
- * explicit evidence for both the administrative durable queue and its separate
- * encrypted privileged-payload authority.
+ * explicit evidence for the administrative durable queue, separate encrypted
+ * privileged-payload authority, and the durable pre-send outbound dispatch
+ * persistence boundary before provider transport may be considered ready.
  */
 export function assessWhatsAppActivationReadiness(
   evidence: WhatsAppActivationEvidence,
