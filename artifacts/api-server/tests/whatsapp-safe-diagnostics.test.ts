@@ -29,6 +29,29 @@ test("event diagnostics never expose message text or raw customer/channel identi
   assert.match(diagnostic.event_hash, /^[a-f0-9]{24}$/);
 });
 
+test("provider-reference diagnostics never expose media ids, captions, or addresses", () => {
+  const diagnostic = safeWhatsAppEventDiagnostic({
+    event_id: "event-image",
+    event_kind: "message",
+    waba_id: "1234567890",
+    phone_number_id: "9876543210",
+    external_message_id: "wamid.image",
+    customer_id: "9647711111111",
+    message_kind: "image",
+    provider_reference: {
+      kind: "media",
+      media_kind: "image",
+      id: "media-secret",
+      caption: "private caption",
+      sha256: "private-provider-hash",
+    },
+  });
+  const serialized = JSON.stringify(diagnostic);
+  assert.equal(serialized.includes("media-secret"), false);
+  assert.equal(serialized.includes("private caption"), false);
+  assert.equal(serialized.includes("private-provider-hash"), false);
+});
+
 test("provider error diagnostics preserve only safe codes", () => {
   const diagnostic = safeWhatsAppEventDiagnostic({
     event_id: "error-1",
@@ -58,13 +81,19 @@ test("plan diagnostics contain counts and hashes instead of business payloads", 
         job_type: "whatsapp_inbound_message",
         event_id: "event-1",
         merchant_id: "merchant-1",
+        channel_id: "channel-1",
         channel: "whatsapp",
         waba_id: "1234567890",
         phone_number_id: "9876543210",
         external_message_id: "wamid.1",
         customer_id: "9647711111111",
-        message_kind: "text",
-        text: "private text",
+        message_kind: "image",
+        provider_reference: {
+          kind: "media",
+          media_kind: "image",
+          id: "media-secret",
+          caption: "private text",
+        },
       },
     ],
     delivery_statuses: [],
@@ -76,6 +105,8 @@ test("plan diagnostics contain counts and hashes instead of business payloads", 
   assert.equal(diagnostic.channel_hashes.length, 1);
   const serialized = JSON.stringify(diagnostic);
   assert.equal(serialized.includes("merchant-1"), false);
+  assert.equal(serialized.includes("channel-1"), false);
   assert.equal(serialized.includes("private text"), false);
+  assert.equal(serialized.includes("media-secret"), false);
   assert.equal(serialized.includes("9647711111111"), false);
 });
