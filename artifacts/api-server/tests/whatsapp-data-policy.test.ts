@@ -5,10 +5,14 @@ import {
   WHATSAPP_DATA_HANDLING_POLICY,
 } from "../src/services/whatsappDataPolicy";
 
-test("dormant WhatsApp policy forbids raw webhook and credential persistence", () => {
+test("dormant WhatsApp policy forbids raw payloads, media downloads, and credentials", () => {
   assert.deepEqual(WHATSAPP_DATA_HANDLING_POLICY, {
     raw_webhook_persistence_allowed: false,
     raw_webhook_logging_allowed: false,
+    normalized_conversation_payload_allowed: true,
+    provider_reference_persistence_allowed: true,
+    provider_media_binary_persistence_allowed: false,
+    provider_media_fetch_allowed_dormant: false,
     encrypted_queue_payload_required: true,
     diagnostic_customer_payload_allowed: false,
     diagnostic_raw_identifier_allowed: false,
@@ -30,6 +34,11 @@ test("failure metadata contains hashes and operational codes only", () => {
       customer_id: "9647711111111",
       customer_name: "Private Name",
       text: "private message text",
+      provider_reference: {
+        kind: "media",
+        id: "media-secret",
+        caption: "private caption",
+      },
       waba_id: "1234567890",
       phone_number_id: "9876543210",
     },
@@ -45,6 +54,8 @@ test("failure metadata contains hashes and operational codes only", () => {
     "9647711111111",
     "Private Name",
     "private message text",
+    "media-secret",
+    "private caption",
     "1234567890",
     "9876543210",
   ]) {
