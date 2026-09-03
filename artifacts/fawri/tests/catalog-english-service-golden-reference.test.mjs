@@ -19,8 +19,9 @@ test('English service editor keeps approved service wording', () => {
 });
 
 test('English service editor keeps the approved Arabic-reference structure', () => {
-  assert.match(itemTypeEditor, /className=\{lang === 'ku'[\s\S]*?'w-full min-w-0 space-y-4 rounded-2xl border bg-muted\/10 p-4'\}/);
-  assert.match(itemTypeEditor, /\{lang === 'ku' && serviceDetails\}[\s\S]*?\{lang !== 'ku' && serviceDetails\}/);
+  assert.match(itemTypeEditor, /className="w-full min-w-0 space-y-4 rounded-2xl border bg-muted\/10 p-4"/);
+  assert.doesNotMatch(itemTypeEditor, /\{lang === 'ku' && serviceDetails\}/);
+  assert.match(itemTypeEditor, /\n\s*<\/div>\n\n\s*\{serviceDetails\}\n\s*<\/>/);
   assert.match(languageParityCss, /html\[lang="en"\][^{]*catalog-editor-body-grid:has\(> \[data-catalog-service-details="true"\]\) > \[data-catalog-item-type-editor="true"\][^{]*\{\s*order: 0;/s);
   assert.match(languageParityCss, /html\[lang="en"\][^{]*md\\:grid-cols-3:has\(\[data-catalog-primary-input="true"\]\)[^{]*\{\s*order: 1;/s);
   assert.match(languageParityCss, /html\[lang="en"\][^{]*\[data-catalog-service-details="true"\][^{]*\{\s*order: 2;/s);
