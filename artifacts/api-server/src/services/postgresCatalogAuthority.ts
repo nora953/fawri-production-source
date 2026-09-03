@@ -52,6 +52,25 @@ function archivedShadow(value: unknown): Record<string, unknown> {
   return shadow;
 }
 
+function assertItemTypeImmutable(
+  current: { item_type?: unknown },
+  input: Record<string, unknown>,
+): void {
+  if (!Object.prototype.hasOwnProperty.call(input, "item_type")) return;
+  const currentType = current.item_type === "service" ? "service" : "product";
+  const requestedType = String(input.item_type || "").trim();
+  if (!requestedType || requestedType === currentType) return;
+  throw new CatalogRuntimeError(
+    "CATALOG_ITEM_TYPE_IMMUTABLE",
+    "catalog item type cannot be changed after creation",
+    409,
+    {
+      current_item_type: currentType,
+      requested_item_type: requestedType,
+    },
+  );
+}
+
 async function readArchivedVariantIds(
   merchantId: string,
   productId?: string,
@@ -162,15 +181,22 @@ export async function getCatalogProductAuthoritative(
 export async function updateCatalogProductAuthoritative(
   params: Parameters<typeof core.updateCatalogProductAuthoritative>[0],
 ): Promise<Awaited<ReturnType<typeof core.updateCatalogProductAuthoritative>>> {
-  if (!operationalPostgresAuthorityRequired()) {
-    return core.updateCatalogProductAuthoritative(params);
-  }
-
   const merchantId = normalizeCatalogMerchantId(params.merchantId);
   const productId = normalizeCatalogProductId(params.productId);
   const current = await core.getCatalogProductAuthoritative(merchantId, productId);
-  const previouslyArchived = await readArchivedVariantIds(merchantId, productId);
   const input = { ...asRecord(params.input) };
+  assertItemTypeImmutable(current, input);
+
+  if (!operationalPostgresAuthorityRequired()) {
+    return core.updateCatalogProductAuthoritative({
+      ...params,
+      merchantId,
+      productId,
+      input,
+    } as Parameters<typeof core.updateCatalogProductAuthoritative>[0]);
+  }
+
+  const previouslyArchived = await readArchivedVariantIds(merchantId, productId);
   const variantsWereSupplied = Object.prototype.hasOwnProperty.call(input, "variants");
   const activeCurrent = current.variants.filter(
     (variant) => !previouslyArchived.has(variant.id),
