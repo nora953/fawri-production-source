@@ -20,6 +20,11 @@ import {
   type WhatsAppDeliveryState,
 } from "./whatsappDeliveryLifecycle";
 
+type DormantWhatsAppRequestPreview = Extract<
+  DormantWhatsAppOutboundPreview,
+  { code: "WHATSAPP_CHANNEL_DORMANT" }
+>;
+
 export type WhatsAppFakeTransportObservation =
   | {
       kind: "http";
@@ -35,7 +40,7 @@ export type WhatsAppFakeTransportObservation =
 
 export type WhatsAppOfflineOutboundRehearsal = {
   boundary: "offline_fake_transport_only";
-  preview: DormantWhatsAppOutboundPreview & { request_preview: NonNullable<DormantWhatsAppOutboundPreview["request_preview"]> };
+  preview: DormantWhatsAppRequestPreview;
   attempt: WhatsAppOutboundAttemptPlan;
   observed_outcome: WhatsAppSendOutcome;
   persistence: WhatsAppOutboundDeliveryPersistencePlan;
@@ -104,19 +109,20 @@ export function rehearseWhatsAppOfflineOutbound(input: {
     graphVersion: input.graphVersion,
   });
 
-  if (preview.code !== "WHATSAPP_CHANNEL_DORMANT" || !("request_preview" in preview)) {
+  if (preview.code !== "WHATSAPP_CHANNEL_DORMANT") {
     throw rehearsalError(
       "WHATSAPP_OFFLINE_REHEARSAL_PREVIEW_BLOCKED",
       "WhatsApp offline rehearsal requires the correctly mapped dormant channel",
     );
   }
+  const dormantPreview: DormantWhatsAppRequestPreview = preview;
 
   const attempt = createWhatsAppOutboundAttemptPlan({
     merchantId: input.merchantId,
     replyIntentId: input.replyIntentId,
     attemptNumber: input.attemptNumber,
     channel: input.channel,
-    request: preview.request_preview,
+    request: dormantPreview.request_preview,
   });
   const observedOutcome = classifyFakeObservation(input.observation);
   const persistence = planWhatsAppOutboundDeliveryPersistence({
@@ -132,12 +138,12 @@ export function rehearseWhatsAppOfflineOutbound(input: {
     wabaId: input.channel.waba_id,
     phoneNumberId: input.channel.phone_number_id,
     outcome: observedOutcome,
-    recipientId: preview.request_preview.body.to,
+    recipientId: dormantPreview.request_preview.body.to,
   });
 
   return {
     boundary: "offline_fake_transport_only",
-    preview: preview as WhatsAppOfflineOutboundRehearsal["preview"],
+    preview: dormantPreview,
     attempt,
     observed_outcome: observedOutcome,
     persistence,
