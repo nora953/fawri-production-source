@@ -109,6 +109,12 @@ function stabilizePriceRangeDirection(dialog: HTMLElement, lang: Lang): void {
     range.setAttribute('dir', 'ltr');
     range.style.direction = 'ltr';
     range.style.unicodeBidi = 'isolate';
+    range.style.display = 'inline-flex';
+    range.style.alignItems = 'baseline';
+    // Arabic and Sorani details should match the catalog card: the numeric
+    // amount stays on the visual right while the currency sits on the left.
+    // English keeps its normal amount-then-currency visual order.
+    range.style.flexDirection = lang === 'en' ? 'row' : 'row-reverse';
   }
 
   const firstBdi = value.querySelector<HTMLElement>('bdi');
