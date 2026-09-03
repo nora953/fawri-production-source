@@ -1,5 +1,7 @@
+import { useContext } from 'react';
 import { Bot, BriefcaseBusiness, Boxes, CalendarClock, MapPin, Package, SlidersHorizontal } from 'lucide-react';
 
+import { CatalogEditorModeContext } from '@/components/catalog/CatalogEditorShell';
 import { Input } from '@/components/ui/input';
 import type { Lang } from '@/lib/types';
 import type { CatalogProductFormState } from '@/lib/catalogProductEditor';
@@ -50,6 +52,12 @@ function SettingRow({
   );
 }
 
+function lockedTypeHint(lang: Lang): string {
+  if (lang === 'ar') return 'نوع هذا العنصر ثابت أثناء التعديل لحماية بياناته.';
+  if (lang === 'ku') return 'جۆری ئەم بابەتە لە کاتی دەستکاریکردندا جێگیرە بۆ پاراستنی زانیارییەکانی.';
+  return "This item's type is fixed while editing to protect its data.";
+}
+
 export function CatalogItemTypeEditor({
   lang,
   form,
@@ -60,6 +68,7 @@ export function CatalogItemTypeEditor({
   onChange: (patch: Partial<CatalogProductFormState>) => void;
 }) {
   const copy = CATALOG_ITEM_TYPE_COPY[lang] || CATALOG_ITEM_TYPE_COPY.en;
+  const { createMode } = useContext(CatalogEditorModeContext);
   const concreteServiceLocations: Array<{ value: CatalogServiceLocationChoice; label: string }> = [
     { value: 'merchant', label: copy.locationMerchant },
     { value: 'customer', label: copy.locationCustomer },
@@ -99,7 +108,7 @@ export function CatalogItemTypeEditor({
   };
 
   const chooseType = (itemType: CatalogItemType) => {
-    if (itemType === form.item_type) return;
+    if (!createMode || itemType === form.item_type) return;
     if (itemType === 'service') {
       onChange({
         item_type: 'service',
@@ -183,58 +192,75 @@ export function CatalogItemTypeEditor({
     </div>
   ) : null;
 
+  const settingsCard = (
+    <div className="h-full rounded-2xl border bg-background p-3">
+      <div className="flex items-center gap-2 text-sm font-bold"><SlidersHorizontal className="h-4 w-4" />{copy.itemSettings}</div>
+      <p className="mt-1 text-xs text-muted-foreground">{copy.itemSettingsHint}</p>
+      <div className="mt-2 divide-y">
+        {form.item_type === 'product' && (
+          <SettingRow
+            icon={<Boxes className="h-4 w-4" />}
+            title={copy.trackInventory}
+            hint={copy.trackInventoryHint}
+            checked={form.track_inventory}
+            onChange={track_inventory => onChange({ track_inventory })}
+          />
+        )}
+        <SettingRow
+          icon={<Bot className="h-4 w-4" />}
+          title={copy.fawriReplies}
+          hint={copy.fawriRepliesHint}
+          checked={form.allow_fawri_reply}
+          onChange={allow_fawri_reply => onChange({ allow_fawri_reply })}
+        />
+      </div>
+    </div>
+  );
+
   return (
     <>
-      <div data-catalog-item-type-editor="true" className="w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4">
+      <div data-catalog-item-type-editor="true" data-catalog-item-type-mode={createMode ? 'create' : 'edit-locked'} className="w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4">
         <div>
           <p className="text-sm font-bold">{copy.chooseType}</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.chooseTypeHint}</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">{createMode ? copy.chooseTypeHint : lockedTypeHint(lang)}</p>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <button
-            type="button"
-            aria-pressed={form.item_type === 'product'}
-            onClick={() => chooseType('product')}
-            className={`h-full rounded-2xl border p-3 text-start transition ${form.item_type === 'product' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
-          >
-            <div className="flex items-center gap-2 font-bold"><Package className="h-5 w-5" />{copy.product}</div>
-            <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.productHint}</p>
-          </button>
+        {createMode ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <button
+              type="button"
+              aria-pressed={form.item_type === 'product'}
+              onClick={() => chooseType('product')}
+              className={`h-full rounded-2xl border p-3 text-start transition ${form.item_type === 'product' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
+            >
+              <div className="flex items-center gap-2 font-bold"><Package className="h-5 w-5" />{copy.product}</div>
+              <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.productHint}</p>
+            </button>
 
-          <button
-            type="button"
-            aria-pressed={form.item_type === 'service'}
-            onClick={() => chooseType('service')}
-            className={`h-full rounded-2xl border p-3 text-start transition ${form.item_type === 'service' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
-          >
-            <div className="flex items-center gap-2 font-bold"><BriefcaseBusiness className="h-5 w-5" />{copy.service}</div>
-            <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.serviceHint}</p>
-          </button>
+            <button
+              type="button"
+              aria-pressed={form.item_type === 'service'}
+              onClick={() => chooseType('service')}
+              className={`h-full rounded-2xl border p-3 text-start transition ${form.item_type === 'service' ? 'border-orange-400 bg-orange-50 ring-2 ring-orange-500/10' : 'bg-background hover:bg-muted/30'}`}
+            >
+              <div className="flex items-center gap-2 font-bold"><BriefcaseBusiness className="h-5 w-5" />{copy.service}</div>
+              <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{copy.serviceHint}</p>
+            </button>
 
-          <div className="h-full rounded-2xl border bg-background p-3 sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-2 text-sm font-bold"><SlidersHorizontal className="h-4 w-4" />{copy.itemSettings}</div>
-            <p className="mt-1 text-xs text-muted-foreground">{copy.itemSettingsHint}</p>
-            <div className="mt-2 divide-y">
-              {form.item_type === 'product' && (
-                <SettingRow
-                  icon={<Boxes className="h-4 w-4" />}
-                  title={copy.trackInventory}
-                  hint={copy.trackInventoryHint}
-                  checked={form.track_inventory}
-                  onChange={track_inventory => onChange({ track_inventory })}
-                />
-              )}
-              <SettingRow
-                icon={<Bot className="h-4 w-4" />}
-                title={copy.fawriReplies}
-                hint={copy.fawriRepliesHint}
-                checked={form.allow_fawri_reply}
-                onChange={allow_fawri_reply => onChange({ allow_fawri_reply })}
-              />
-            </div>
+            <div className="sm:col-span-2 lg:col-span-1">{settingsCard}</div>
           </div>
-        </div>
+        ) : (
+          <div className="grid gap-3 lg:grid-cols-2">
+            <div data-catalog-item-type-locked="true" className="rounded-2xl border border-orange-200 bg-orange-50/60 p-3">
+              <div className="flex items-center gap-2 font-bold">
+                {form.item_type === 'service' ? <BriefcaseBusiness className="h-5 w-5" /> : <Package className="h-5 w-5" />}
+                {form.item_type === 'service' ? copy.service : copy.product}
+              </div>
+              <p className="mt-1.5 text-xs leading-5 text-muted-foreground">{form.item_type === 'service' ? copy.serviceHint : copy.productHint}</p>
+            </div>
+            {settingsCard}
+          </div>
+        )}
       </div>
 
       {serviceDetails}
