@@ -24,6 +24,7 @@ function plan(): WhatsAppWebhookProcessingPlan {
         job_type: "whatsapp_inbound_message",
         event_id: "message-event",
         merchant_id: "merchant-1",
+        channel_id: "channel-1",
         channel: "whatsapp",
         waba_id: "1234567890",
         phone_number_id: "9876543210",
@@ -72,6 +73,7 @@ test("builds deterministic queue envelopes without enqueueing", () => {
     second.jobs.map((job) => job.dedupeKey),
   );
   assert.ok(first.jobs.every((job) => job.merchantId === "merchant-1"));
+  assert.equal(first.jobs[0].payload.channel_id, "channel-1");
   assert.match(first.jobs[0].dedupeKey, /^whatsapp:inbound:[a-f0-9]{64}$/);
 });
 
