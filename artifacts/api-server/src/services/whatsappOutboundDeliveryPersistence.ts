@@ -1,5 +1,8 @@
 import type { WhatsAppSendOutcome } from "./whatsappOfflineContracts";
-import type { WhatsAppOutboundAttemptPlan } from "./whatsappOutboundAttempt";
+import {
+  assertWhatsAppOutboundAttemptIntegrity,
+  type WhatsAppOutboundAttemptPlan,
+} from "./whatsappOutboundAttempt";
 
 export type PlannedWhatsAppOutboundDeliveryRow = {
   id: string;
@@ -63,10 +66,12 @@ function safeFailureCode(value: unknown): string {
 
 /**
  * Maps a credential-free outbound attempt and its observed provider outcome to
- * the existing `outbound_deliveries` schema. It performs no write. Reservation
- * effects are explicit so a future executor cannot consume/refund credits on
- * an ambiguous send: pending/uncertain hold, confirmed send consumes, and only
- * confirmed failure refunds.
+ * the existing `outbound_deliveries` schema. It performs no write. The attempt
+ * is revalidated at this boundary so a mutated request/routing/recipient cannot
+ * be finalized under stale deterministic identifiers. Reservation effects are
+ * explicit so a future executor cannot consume/refund credits on an ambiguous
+ * send: pending/uncertain hold, confirmed send consumes, and only confirmed
+ * failure refunds.
  */
 export function planWhatsAppOutboundDeliveryPersistence(input: {
   attempt: WhatsAppOutboundAttemptPlan;
@@ -82,6 +87,8 @@ export function planWhatsAppOutboundDeliveryPersistence(input: {
       "WhatsApp outbound attempt boundary is invalid",
     );
   }
+  assertWhatsAppOutboundAttemptIntegrity(input.attempt);
+
   const inboundEventId = identity(input.inboundEventId, "inbound event id")!;
   const reservationId = identity(input.reservationId, "reservation id", true);
   const attemptedAt = timestamp(input.attemptedAt, "attempted at");
