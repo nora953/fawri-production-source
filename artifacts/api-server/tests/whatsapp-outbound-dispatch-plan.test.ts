@@ -72,6 +72,9 @@ test("plans pending delivery and one-shot encrypted outbound job before transpor
   const encryptedRequest = payload.request as ReturnType<typeof buildWhatsAppTextSendPlan>;
   assert.equal(payload.request_sha256, outboundAttempt.request_sha256);
   assert.equal(payload.recipient_hash, outboundAttempt.recipient_hash);
+  assert.equal(payload.logical_send_id, outboundAttempt.logical_send_id);
+  assert.equal(payload.attempt_number, 1);
+  assert.equal(payload.phone_number_id, channel.phone_number_id);
   assert.equal(encryptedRequest.body.to, "9647711111111");
   assert.equal(result.recipient_lock.recipient_hash, outboundAttempt.recipient_hash);
   assert.equal(result.recipient_lock.encrypted_payload_job_id, result.job.job_row.id);
@@ -118,6 +121,23 @@ test("dispatch rejects an attempt that has crossed the dormant transport boundar
     (error: unknown) =>
       (error as { code?: string }).code ===
       "WHATSAPP_OUTBOUND_DISPATCH_ATTEMPT_INVALID",
+  );
+});
+
+test("dispatch rejects a mutated request before planning durable state", () => {
+  const mutated = attempt();
+  mutated.request.body.to = "9647722222222";
+
+  assert.throws(
+    () =>
+      planWhatsAppOutboundDispatch({
+        attempt: mutated,
+        inboundEventId: "inbound-event-1",
+        attemptedAt: "2026-09-03T00:00:00.000Z",
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_OUTBOUND_ATTEMPT_INTEGRITY_INVALID",
   );
 });
 
