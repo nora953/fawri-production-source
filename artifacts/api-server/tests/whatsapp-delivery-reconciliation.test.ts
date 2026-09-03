@@ -88,6 +88,21 @@ test("provider message mismatch remains fail closed", () => {
   );
 });
 
+test("recipient mismatch remains fail closed during reconciliation", () => {
+  assert.throws(
+    () =>
+      planWhatsAppDeliveryReconciliation({
+        merchantId: "merchant-1",
+        channelId: "channel-1",
+        state: state(),
+        observation: observation({ recipient_id: "9647722222222" }),
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code ===
+      "WHATSAPP_DELIVERY_RECIPIENT_MISMATCH",
+  );
+});
+
 test("reconciliation planner has no database, queue, network, or credential side effects", () => {
   const source = fs.readFileSync(
     path.join(
