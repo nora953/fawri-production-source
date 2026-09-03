@@ -14,6 +14,7 @@ import './catalogSingleOptionVariants.css';
 import './catalogMerchantWordingPolish.css';
 import './catalogEditorLanguageParity.css';
 import './catalogEditorSoraniProductParity.css';
+import './catalogEditorSoraniServiceAlignment.css';
 import './catalogAvailabilityToggleAlignment.css';
 import { useI18n } from '@/lib/i18n';
 
