@@ -1,5 +1,9 @@
 import type { OperationalSqlClient } from "./operationalPostgresAuthority";
 import type { WhatsAppDeliveryState } from "./whatsappDeliveryLifecycle";
+import {
+  assertExpectedWhatsAppRecipientStructure,
+  assertWhatsAppDeliveryStatusPlanStructure,
+} from "./whatsappDeliveryRuntimeGuards";
 import type { WhatsAppDeliveryStatusPlan } from "./whatsappWebhookPlanner";
 
 export type CorrelatedWhatsAppDelivery = {
@@ -81,6 +85,9 @@ export async function correlateWhatsAppDeliveryWithClient(
   observation: WhatsAppDeliveryStatusPlan,
   expectedRecipientId: unknown,
 ): Promise<CorrelatedWhatsAppDelivery> {
+  assertWhatsAppDeliveryStatusPlanStructure(observation);
+  assertExpectedWhatsAppRecipientStructure(expectedRecipientId);
+
   const merchantId = identity(observation.merchant_id, "merchant id");
   const channelId = identity(observation.channel_id, "channel id");
   const providerMessageId = identity(
