@@ -38,6 +38,7 @@ type DormantWhatsAppChannelRow = {
   webhook_subscribed_at: Date | string | null;
   last_webhook_at: Date | string | null;
   connected_at: Date | string | null;
+  metadata: Record<string, unknown> | null;
 };
 
 function authorityError(code: string, message: string): Error & { code: string } {
@@ -61,6 +62,18 @@ function dormantRecord(input: {
   };
 }
 
+function safeStoredDisplayPhoneNumber(value: unknown): string | undefined {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return undefined;
+  if (normalized.length > 40 || !/^[+0-9 ()-]+$/.test(normalized)) {
+    throw authorityError(
+      "WHATSAPP_CHANNEL_STATE_INVALID",
+      "Stored WhatsApp display phone number is invalid",
+    );
+  }
+  return normalized;
+}
+
 function assertDormantRow(
   row: DormantWhatsAppChannelRow,
   expected: { id: string; identity: WhatsAppChannelIdentity },
@@ -76,6 +89,14 @@ function assertDormantRow(
     throw authorityError(
       "WHATSAPP_CHANNEL_MAPPING_CONFLICT",
       "WhatsApp channel identity is already mapped differently",
+    );
+  }
+
+  const integrationMode = String(row.metadata?.integration_mode ?? "").trim();
+  if (integrationMode !== "dormant_offline") {
+    throw authorityError(
+      "WHATSAPP_CHANNEL_MODE_INVALID",
+      "WhatsApp channel does not carry the exact dormant integration marker",
     );
   }
 
@@ -105,6 +126,20 @@ function assertDormantRow(
     );
   }
 
+  const displayPhoneNumber = safeStoredDisplayPhoneNumber(
+    row.whatsapp_display_phone_number,
+  );
+  if (
+    identity.display_phone_number &&
+    displayPhoneNumber &&
+    identity.display_phone_number !== displayPhoneNumber
+  ) {
+    throw authorityError(
+      "WHATSAPP_CHANNEL_MAPPING_CONFLICT",
+      "WhatsApp display phone number does not match the dormant channel identity",
+    );
+  }
+
   return {
     id: row.id,
     merchant_id: row.merchant_id,
@@ -113,9 +148,7 @@ function assertDormantRow(
     version: row.version,
     waba_id: row.whatsapp_business_account_id,
     phone_number_id: row.whatsapp_phone_number_id,
-    ...(row.whatsapp_display_phone_number
-      ? { display_phone_number: row.whatsapp_display_phone_number }
-      : {}),
+    ...(displayPhoneNumber ? { display_phone_number: displayPhoneNumber } : {}),
     integration_mode: "dormant_offline",
   };
 }
@@ -155,7 +188,7 @@ export async function persistDormantWhatsAppChannelWithClient(
                  whatsapp_display_phone_number,
                  credential_ciphertext, credential_nonce, credential_auth_tag,
                  credential_key_id, credential_algorithm, credential_expires_at,
-                 webhook_subscribed_at, last_webhook_at, connected_at`,
+                 webhook_subscribed_at, last_webhook_at, connected_at, metadata`,
       [
         expected.id,
         identity.merchant_id,
@@ -185,7 +218,7 @@ export async function persistDormantWhatsAppChannelWithClient(
             whatsapp_display_phone_number,
             credential_ciphertext, credential_nonce, credential_auth_tag,
             credential_key_id, credential_algorithm, credential_expires_at,
-            webhook_subscribed_at, last_webhook_at, connected_at
+            webhook_subscribed_at, last_webhook_at, connected_at, metadata
        FROM merchant_channels
       WHERE merchant_id = $1 AND id = $2
       LIMIT 1
