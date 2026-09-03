@@ -1,4 +1,8 @@
 import crypto from "node:crypto";
+import {
+  assertNormalizedWhatsAppWebhookEventRuntime,
+  assertWhatsAppWebhookProcessingPlanRuntime,
+} from "./whatsappRuntimeGuards";
 import type { NormalizedWhatsAppWebhookEvent } from "./whatsappWebhookContract";
 import type { WhatsAppWebhookProcessingPlan } from "./whatsappWebhookPlanner";
 
@@ -41,9 +45,15 @@ function safeCode(value: unknown): string {
     : "WHATSAPP_PROVIDER_ERROR_REDACTED";
 }
 
+/**
+ * Builds redacted event diagnostics only after a coercion-free runtime shape
+ * guard has validated bounded provider identities and event metadata. Synthetic
+ * accessor/proxy/oversized events fail before any diagnostic field is hashed.
+ */
 export function safeWhatsAppEventDiagnostic(
   event: NormalizedWhatsAppWebhookEvent,
 ): SafeWhatsAppEventDiagnostic {
+  assertNormalizedWhatsAppWebhookEventRuntime(event);
   const diagnostic: SafeWhatsAppEventDiagnostic = {
     event_hash: hash(event.event_id, "event"),
     event_kind: event.event_kind,
@@ -76,9 +86,16 @@ export function safeWhatsAppEventDiagnostic(
   return diagnostic;
 }
 
+/**
+ * Builds plan-level diagnostics only after the processing-plan runtime guard has
+ * bounded all collections and validated plain data properties. This prevents a
+ * manually constructed plan from forcing unbounded spreads/iteration or from
+ * executing accessors while diagnostics are being produced.
+ */
 export function safeWhatsAppPlanDiagnostic(
   plan: WhatsAppWebhookProcessingPlan,
 ): SafeWhatsAppPlanDiagnostic {
+  assertWhatsAppWebhookProcessingPlanRuntime(plan);
   const merchantHashes = new Set<string>();
   const channelHashes = new Set<string>();
 
@@ -88,13 +105,7 @@ export function safeWhatsAppPlanDiagnostic(
     ...plan.provider_errors,
   ]) {
     merchantHashes.add(hash(item.merchant_id, "merchant"));
-    if ("channel_id" in item) {
-      channelHashes.add(hash(String(item.channel_id), "channel-row"));
-    } else {
-      channelHashes.add(
-        hash(`${item.waba_id}:${item.phone_number_id}`, "channel"),
-      );
-    }
+    channelHashes.add(hash(String(item.channel_id), "channel-row"));
   }
 
   return {
