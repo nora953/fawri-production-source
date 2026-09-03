@@ -12,6 +12,7 @@
     "test:merchant-status-access": "node ./build.mjs && node --test ./tests/merchant-status-access.integration.test.mjs",
     "test:meta-webhook-security": "node ./build.mjs && node --test ./tests/meta-webhook-security.integration.test.mjs",
     "test:whatsapp-offline": "pnpm exec tsx --test ./tests/whatsapp-*.test.ts",
+    "verify:whatsapp-offline": "pnpm run typecheck && pnpm run test:whatsapp-offline && pnpm run build",
     "test:manual-conversations": "node ./build.mjs && node --test ./tests/manual-conversation-operations.integration.test.mjs",
     "test:reply-entitlement": "pnpm exec tsx --test ./tests/merchant-reply-entitlement.test.ts",
     "test:durable-queue": "pnpm exec tsx --test ./tests/durable-job-queue.test.ts",
