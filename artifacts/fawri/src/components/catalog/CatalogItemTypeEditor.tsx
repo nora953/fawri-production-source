@@ -114,9 +114,9 @@ export function CatalogItemTypeEditor({
     <div
       data-catalog-service-details="true"
       data-service-price-type={form.service_price_type}
-      className={lang === 'ar'
-        ? 'w-full min-w-0 space-y-4 rounded-2xl border bg-muted/10 p-4'
-        : 'space-y-4 rounded-xl border bg-background p-4'}
+      className={lang === 'ku'
+        ? 'space-y-4 rounded-xl border bg-background p-4'
+        : 'w-full min-w-0 space-y-4 rounded-2xl border bg-muted/10 p-4'}
     >
       <div>
         <div className="flex items-center gap-2 text-sm font-bold"><CalendarClock className="h-4 w-4" />{copy.serviceDetails}</div>
@@ -238,10 +238,10 @@ export function CatalogItemTypeEditor({
           </div>
         </div>
 
-        {lang !== 'ar' && serviceDetails}
+        {lang === 'ku' && serviceDetails}
       </div>
 
-      {lang === 'ar' && serviceDetails}
+      {lang !== 'ku' && serviceDetails}
     </>
   );
 }
