@@ -51,6 +51,33 @@ function metaNumericId(value: unknown, label: string): string {
   return normalized;
 }
 
+function localIdentity(value: unknown, label: string): string {
+  const normalized = String(value ?? "").trim();
+  if (
+    !normalized ||
+    normalized.length > 200 ||
+    /[\r\n\u0000]/.test(normalized)
+  ) {
+    throw resolverError(
+      "WHATSAPP_CHANNEL_STATE_INVALID",
+      `${label} is invalid`,
+    );
+  }
+  return normalized;
+}
+
+function displayPhoneNumber(value: unknown): string | undefined {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return undefined;
+  if (normalized.length > 40 || !/^[+0-9 ()-]+$/.test(normalized)) {
+    throw resolverError(
+      "WHATSAPP_CHANNEL_STATE_INVALID",
+      "WhatsApp display phone number is invalid",
+    );
+  }
+  return normalized;
+}
+
 function hasLiveState(row: DormantResolutionRow): boolean {
   return (
     row.status !== "pending" ||
@@ -67,17 +94,22 @@ function hasLiveState(row: DormantResolutionRow): boolean {
 }
 
 function resolved(row: DormantResolutionRow): ResolvedDormantWhatsAppChannel {
-  if (
-    row.platform !== "whatsapp" ||
-    !row.whatsapp_business_account_id ||
-    !row.whatsapp_phone_number_id ||
-    hasLiveState(row)
-  ) {
+  if (row.platform !== "whatsapp" || hasLiveState(row)) {
     throw resolverError(
       "WHATSAPP_DORMANT_STATE_VIOLATION",
       "WhatsApp channel mapping is not safely dormant",
     );
   }
+  const channelId = localIdentity(row.id, "WhatsApp channel id");
+  const merchantId = localIdentity(row.merchant_id, "merchant id");
+  const wabaId = metaNumericId(
+    row.whatsapp_business_account_id,
+    "stored WhatsApp business account id",
+  );
+  const phoneNumberId = metaNumericId(
+    row.whatsapp_phone_number_id,
+    "stored WhatsApp phone number id",
+  );
   if (!Number.isInteger(row.version) || row.version < 1) {
     throw resolverError(
       "WHATSAPP_CHANNEL_STATE_INVALID",
@@ -85,23 +117,22 @@ function resolved(row: DormantResolutionRow): ResolvedDormantWhatsAppChannel {
     );
   }
   const mode = String(row.metadata?.integration_mode ?? "").trim();
-  if (mode && mode !== "dormant_offline") {
+  if (mode !== "dormant_offline") {
     throw resolverError(
       "WHATSAPP_CHANNEL_MODE_INVALID",
-      "WhatsApp channel integration mode is not dormant",
+      "WhatsApp channel integration mode is not explicitly dormant",
     );
   }
+  const display = displayPhoneNumber(row.whatsapp_display_phone_number);
   return {
-    id: row.id,
-    merchant_id: row.merchant_id,
+    id: channelId,
+    merchant_id: merchantId,
     platform: "whatsapp",
     status: "pending",
     version: row.version,
-    waba_id: row.whatsapp_business_account_id,
-    phone_number_id: row.whatsapp_phone_number_id,
-    ...(row.whatsapp_display_phone_number
-      ? { display_phone_number: row.whatsapp_display_phone_number }
-      : {}),
+    waba_id: wabaId,
+    phone_number_id: phoneNumberId,
+    ...(display ? { display_phone_number: display } : {}),
     integration_mode: "dormant_offline",
   };
 }
