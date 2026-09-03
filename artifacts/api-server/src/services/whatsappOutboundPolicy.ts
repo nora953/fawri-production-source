@@ -5,18 +5,23 @@ import {
 import type { ResolvedDormantWhatsAppChannel } from "./whatsappDormantChannelResolver";
 import type { WhatsAppActivationReadiness } from "./whatsappActivationReadiness";
 
-export type DormantWhatsAppOutboundPreview = {
+type DormantWhatsAppOutboundBase = {
   decision: "blocked";
-  code:
-    | "WHATSAPP_CHANNEL_DORMANT"
-    | "WHATSAPP_MERCHANT_MAPPING_MISMATCH"
-    | "WHATSAPP_EXTERNAL_ACTIVATION_NOT_READY";
   merchant_id: string;
   channel_id: string;
   transport_authorized: false;
   credential_required: false;
-  request_preview: WhatsAppTextSendPlan;
 };
+
+export type DormantWhatsAppOutboundPreview =
+  | (DormantWhatsAppOutboundBase & {
+      code: "WHATSAPP_MERCHANT_MAPPING_MISMATCH";
+      request_preview?: never;
+    })
+  | (DormantWhatsAppOutboundBase & {
+      code: "WHATSAPP_CHANNEL_DORMANT" | "WHATSAPP_EXTERNAL_ACTIVATION_NOT_READY";
+      request_preview: WhatsAppTextSendPlan;
+    });
 
 function policyError(code: string, message: string): Error & { code: string } {
   return Object.assign(new Error(message), { code });
@@ -24,19 +29,20 @@ function policyError(code: string, message: string): Error & { code: string } {
 
 /**
  * Builds a credential-free request preview while making it impossible for the
- * dormant authority to authorize transport. The preview exists so request
- * shaping can be completed and tested before Meta is connected.
+ * dormant authority to authorize transport. Cross-merchant channel input is
+ * rejected before recipient/text request shaping so no preview is created for
+ * a channel owned by another tenant.
  */
 export function previewDormantWhatsAppTextSend(input: {
   merchantId: unknown;
   channel: ResolvedDormantWhatsAppChannel;
   to: unknown;
   messageText: unknown;
-  graphVersion?: unknown;
+  graphVersion: unknown;
   readiness?: WhatsAppActivationReadiness;
 }): DormantWhatsAppOutboundPreview {
   const merchantId = String(input.merchantId ?? "").trim();
-  if (!merchantId || merchantId.length > 200) {
+  if (!merchantId || merchantId.length > 200 || !/^[A-Za-z0-9._:-]+$/.test(merchantId)) {
     throw policyError(
       "WHATSAPP_MERCHANT_ID_INVALID",
       "WhatsApp merchant identity is invalid",
@@ -50,12 +56,6 @@ export function previewDormantWhatsAppTextSend(input: {
       channel_id: input.channel.id,
       transport_authorized: false,
       credential_required: false,
-      request_preview: buildWhatsAppTextSendPlan({
-        phoneNumberId: input.channel.phone_number_id,
-        to: input.to,
-        messageText: input.messageText,
-        graphVersion: input.graphVersion,
-      }),
     };
   }
 
