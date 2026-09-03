@@ -22,30 +22,35 @@ const channel: ResolvedDormantWhatsAppChannel = {
   integration_mode: "dormant_offline",
 };
 
-test("dormant channel can shape a request but can never authorize transport", () => {
+const graphVersion = "v30.0";
+
+test("dormant channel can shape a pinned-version request but can never authorize transport", () => {
   const result = previewDormantWhatsAppTextSend({
     merchantId: "merchant-1",
     channel,
     to: "+9647711111111",
     messageText: "hello",
+    graphVersion,
   });
   assert.equal(result.decision, "blocked");
   assert.equal(result.code, "WHATSAPP_CHANNEL_DORMANT");
   assert.equal(result.transport_authorized, false);
   assert.equal(result.credential_required, false);
-  assert.equal(result.request_preview.path, "/v22.0/9876543210/messages");
+  assert.equal(result.request_preview.path, "/v30.0/9876543210/messages");
   assert.equal("access_token" in result.request_preview, false);
 });
 
-test("cross-merchant outbound planning stays blocked", () => {
+test("cross-merchant outbound planning stays blocked without producing a request preview", () => {
   const result = previewDormantWhatsAppTextSend({
     merchantId: "merchant-2",
     channel,
     to: "9647711111111",
     messageText: "hello",
+    graphVersion,
   });
   assert.equal(result.code, "WHATSAPP_MERCHANT_MAPPING_MISMATCH");
   assert.equal(result.transport_authorized, false);
+  assert.equal("request_preview" in result, false);
 });
 
 test("requested live cutover with blockers remains explicitly blocked", () => {
@@ -54,6 +59,7 @@ test("requested live cutover with blockers remains explicitly blocked", () => {
     channel,
     to: "9647711111111",
     messageText: "hello",
+    graphVersion,
     readiness: {
       mode: "blocked",
       environment: "staging",
@@ -65,6 +71,21 @@ test("requested live cutover with blockers remains explicitly blocked", () => {
   });
   assert.equal(result.code, "WHATSAPP_EXTERNAL_ACTIVATION_NOT_READY");
   assert.equal(result.transport_authorized, false);
+});
+
+test("missing or unpinned Graph version fails closed", () => {
+  assert.throws(
+    () =>
+      previewDormantWhatsAppTextSend({
+        merchantId: "merchant-1",
+        channel,
+        to: "9647711111111",
+        messageText: "hello",
+        graphVersion: "",
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code === "WHATSAPP_GRAPH_VERSION_INVALID",
+  );
 });
 
 test("outbound policy has no transport or credential path", () => {
