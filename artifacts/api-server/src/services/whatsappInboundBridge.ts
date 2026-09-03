@@ -306,7 +306,11 @@ export function bridgeWhatsAppInboundMessage(
   );
   const customerId = numeric(job.customer_id, "WhatsApp customer id", 6, 20);
   const normalizedText = text(job.text);
-  if (job.text !== undefined && normalizedText.length > 4_000) {
+  if (
+    job.text !== undefined &&
+    (normalizedText.length > 4_000 ||
+      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(normalizedText))
+  ) {
     throw bridgeError(
       "WHATSAPP_INBOUND_BRIDGE_TEXT_INVALID",
       "WhatsApp normalized message text is invalid",
@@ -315,10 +319,13 @@ export function bridgeWhatsAppInboundMessage(
   const reference = providerReference(job.message_kind, job.provider_reference);
   const timestamp = providerTimestamp(job.provider_timestamp);
   const customerName = text(job.customer_name);
-  if (customerName.length > 300) {
+  if (
+    customerName.length > 300 ||
+    /[\u0000-\u001F\u007F]/.test(customerName)
+  ) {
     throw bridgeError(
       "WHATSAPP_INBOUND_BRIDGE_CUSTOMER_NAME_INVALID",
-      "WhatsApp customer name is too long",
+      "WhatsApp customer name is invalid",
     );
   }
 
