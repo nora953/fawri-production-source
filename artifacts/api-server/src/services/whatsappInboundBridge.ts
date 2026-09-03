@@ -59,9 +59,28 @@ function text(value: unknown): string {
   return String(value ?? "").trim();
 }
 
-function required(value: unknown, label: string, max = 512): string {
+function providerId(value: unknown, label: string, max = 512): string {
   const normalized = text(value);
-  if (!normalized || normalized.length > max || /[\r\n]/.test(normalized)) {
+  if (
+    !normalized ||
+    normalized.length > max ||
+    /[\u0000-\u001F\u007F]/.test(normalized)
+  ) {
+    throw bridgeError(
+      "WHATSAPP_INBOUND_BRIDGE_IDENTITY_INVALID",
+      `${label} is invalid`,
+    );
+  }
+  return normalized;
+}
+
+function localIdentity(value: unknown, label: string, max = 200): string {
+  const normalized = text(value);
+  if (
+    !normalized ||
+    normalized.length > max ||
+    !/^[A-Za-z0-9._:-]+$/.test(normalized)
+  ) {
     throw bridgeError(
       "WHATSAPP_INBOUND_BRIDGE_IDENTITY_INVALID",
       `${label} is invalid`,
@@ -79,6 +98,7 @@ function optionalBounded(
   if (!normalized) return undefined;
   if (
     normalized.length > max ||
+    /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/.test(normalized) ||
     (!options.allowNewlines && /[\r\n]/.test(normalized))
   ) {
     throw bridgeError(
@@ -89,12 +109,25 @@ function optionalBounded(
   return normalized;
 }
 
-function numeric(value: unknown, label: string): string {
+function numeric(value: unknown, label: string, min = 1, max = 40): string {
   const normalized = text(value);
-  if (!/^\d{1,40}$/.test(normalized)) {
+  const expression = new RegExp(`^\\d{${min},${max}}$`);
+  if (!expression.test(normalized)) {
     throw bridgeError(
       "WHATSAPP_INBOUND_BRIDGE_IDENTITY_INVALID",
       `${label} is invalid`,
+    );
+  }
+  return normalized;
+}
+
+function providerTimestamp(value: unknown): string | undefined {
+  const normalized = text(value);
+  if (!normalized) return undefined;
+  if (!/^\d{1,20}$/.test(normalized)) {
+    throw bridgeError(
+      "WHATSAPP_INBOUND_BRIDGE_TIMESTAMP_INVALID",
+      "WhatsApp provider timestamp is invalid",
     );
   }
   return normalized;
@@ -149,7 +182,7 @@ function providerReference(
         "WhatsApp media reference does not match the message kind",
       );
     }
-    const id = required(value.id, "WhatsApp media id", 160);
+    const id = providerId(value.id, "WhatsApp media id", 160);
     const mimeType = optionalBounded(value.mime_type, 160);
     const sha256 = optionalBounded(value.sha256, 256);
     const caption = optionalBounded(value.caption, 1_024, { allowNewlines: true });
@@ -211,7 +244,11 @@ function providerReference(
         "WhatsApp reaction reference does not match the message kind",
       );
     }
-    const messageId = required(value.message_id, "WhatsApp reaction message id", 512);
+    const messageId = providerId(
+      value.message_id,
+      "WhatsApp reaction message id",
+      512,
+    );
     const emoji = optionalBounded(value.emoji, 32);
     return {
       kind: "reaction",
@@ -258,16 +295,16 @@ export function bridgeWhatsAppInboundMessage(
     );
   }
 
-  const eventId = required(job.event_id, "WhatsApp event id");
-  const merchantId = required(job.merchant_id, "merchant id", 200);
-  const channelId = required(job.channel_id, "channel id", 200);
+  const eventId = providerId(job.event_id, "WhatsApp event id");
+  const merchantId = localIdentity(job.merchant_id, "merchant id");
+  const channelId = localIdentity(job.channel_id, "channel id");
   const wabaId = numeric(job.waba_id, "WhatsApp business account id");
   const phoneNumberId = numeric(job.phone_number_id, "WhatsApp phone number id");
-  const externalMessageId = required(
+  const externalMessageId = providerId(
     job.external_message_id,
     "WhatsApp message id",
   );
-  const customerId = required(job.customer_id, "WhatsApp customer id", 200);
+  const customerId = numeric(job.customer_id, "WhatsApp customer id", 6, 20);
   const normalizedText = text(job.text);
   if (job.text !== undefined && normalizedText.length > 4_000) {
     throw bridgeError(
@@ -276,6 +313,14 @@ export function bridgeWhatsAppInboundMessage(
     );
   }
   const reference = providerReference(job.message_kind, job.provider_reference);
+  const timestamp = providerTimestamp(job.provider_timestamp);
+  const customerName = text(job.customer_name);
+  if (customerName.length > 300) {
+    throw bridgeError(
+      "WHATSAPP_INBOUND_BRIDGE_CUSTOMER_NAME_INVALID",
+      "WhatsApp customer name is too long",
+    );
+  }
 
   const message: ChannelInboundMessage = {
     event_id: eventId,
@@ -285,18 +330,19 @@ export function bridgeWhatsAppInboundMessage(
     external_channel_id: phoneNumberId,
     external_message_id: externalMessageId,
     customer_external_id: customerId,
-    ...(text(job.customer_name)
-      ? { customer_name: text(job.customer_name).slice(0, 300) }
-      : {}),
+    ...(customerName ? { customer_name: customerName } : {}),
     message_kind: job.message_kind,
     ...(normalizedText ? { text: normalizedText } : {}),
     ...(reference ? { provider_reference: reference } : {}),
     ...(text(job.reply_to_message_id)
-      ? { reply_to_message_id: required(job.reply_to_message_id, "reply message id") }
+      ? {
+          reply_to_message_id: providerId(
+            job.reply_to_message_id,
+            "reply message id",
+          ),
+        }
       : {}),
-    ...(text(job.provider_timestamp)
-      ? { provider_timestamp: text(job.provider_timestamp) }
-      : {}),
+    ...(timestamp ? { provider_timestamp: timestamp } : {}),
     routing: {
       waba_id: wabaId,
       phone_number_id: phoneNumberId,
