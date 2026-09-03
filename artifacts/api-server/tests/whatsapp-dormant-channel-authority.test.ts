@@ -30,6 +30,7 @@ function row(overrides: Record<string, unknown> = {}) {
     webhook_subscribed_at: null,
     last_webhook_at: null,
     connected_at: null,
+    metadata: { integration_mode: "dormant_offline" },
     ...overrides,
   };
 }
@@ -54,13 +55,14 @@ const input = {
   displayPhoneNumber: "+964 770 000 0000",
 };
 
-test("persists only a pending credential-free WhatsApp identity", async () => {
+test("persists only a pending credential-free WhatsApp identity with explicit dormant metadata", async () => {
   const queries: Array<{ sql: string; values: unknown[] }> = [];
   const client = clientFrom(async (sql, values) => {
     queries.push({ sql, values });
     assert.match(sql, /INSERT INTO merchant_channels/);
     assert.match(sql, /'whatsapp'::channel_platform/);
     assert.match(sql, /'pending'::channel_status/);
+    assert.match(sql, /metadata/);
     return [row({ id: String(values[0]) })];
   });
 
@@ -77,6 +79,10 @@ test("persists only a pending credential-free WhatsApp identity", async () => {
     display_phone_number: "+964 770 000 0000",
     integration_mode: "dormant_offline",
   });
+  assert.equal(
+    queries[0].values.includes(JSON.stringify({ integration_mode: "dormant_offline" })),
+    true,
+  );
   assert.equal(queries[0].values.includes("active"), false);
   assert.equal(queries[0].values.includes("connected"), false);
 });
@@ -92,6 +98,7 @@ test("reconciles an idempotent dormant registration without creating a second ro
       return [];
     }
     assert.match(sql, /FOR UPDATE/);
+    assert.match(sql, /metadata/);
     assert.deepEqual(values, ["merchant-123", expectedId]);
     return [row({ id: expectedId })];
   });
@@ -115,6 +122,39 @@ test("fails closed if a supposedly dormant row contains live state", async () =>
     () => persistDormantWhatsAppChannelWithClient(client, input),
     (error: unknown) =>
       (error as { code?: string }).code === "WHATSAPP_DORMANT_STATE_VIOLATION",
+  );
+});
+
+test("missing or non-dormant integration metadata fails closed", async () => {
+  for (const metadata of [null, {}, { integration_mode: "live" }]) {
+    const client = clientFrom(async (_sql, values) => [
+      row({ id: String(values[0]), metadata }),
+    ]);
+    await assert.rejects(
+      () => persistDormantWhatsAppChannelWithClient(client, input),
+      (error: unknown) =>
+        (error as { code?: string }).code === "WHATSAPP_CHANNEL_MODE_INVALID",
+    );
+  }
+});
+
+test("unsafe stored display number and conflicting display identity fail closed", async () => {
+  const unsafe = clientFrom(async (_sql, values) => [
+    row({ id: String(values[0]), whatsapp_display_phone_number: "bad\nvalue" }),
+  ]);
+  await assert.rejects(
+    () => persistDormantWhatsAppChannelWithClient(unsafe, input),
+    (error: unknown) =>
+      (error as { code?: string }).code === "WHATSAPP_CHANNEL_STATE_INVALID",
+  );
+
+  const conflicting = clientFrom(async (_sql, values) => [
+    row({ id: String(values[0]), whatsapp_display_phone_number: "+964 780 000 0000" }),
+  ]);
+  await assert.rejects(
+    () => persistDormantWhatsAppChannelWithClient(conflicting, input),
+    (error: unknown) =>
+      (error as { code?: string }).code === "WHATSAPP_CHANNEL_MAPPING_CONFLICT",
   );
 });
 
