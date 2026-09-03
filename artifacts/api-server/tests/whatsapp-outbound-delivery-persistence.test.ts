@@ -37,6 +37,7 @@ function attempt() {
       phoneNumberId: channel.phone_number_id,
       to: "+9647711111111",
       messageText: "hello",
+      graphVersion: "v30.0",
     }),
   });
 }
