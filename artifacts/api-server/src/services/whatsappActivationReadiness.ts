@@ -19,8 +19,10 @@ export type WhatsAppActivationEvidence = {
   credential_provider_ready: boolean;
   provider_credential_configured: boolean;
   webhook_verification_ready: boolean;
+  webhook_signature_verification_ready: boolean;
   app_secret_configured: boolean;
   durable_queue_ready: boolean;
+  encrypted_job_payload_authority_ready: boolean;
   inbound_persistence_ready: boolean;
   reply_engine_handoff_ready: boolean;
   data_policy_ready: boolean;
@@ -34,6 +36,7 @@ export type WhatsAppActivationEvidence = {
 export type WhatsAppActivationBlocker =
   | "WHATSAPP_OFFLINE_FOUNDATION_DISABLED"
   | "WHATSAPP_LIVE_CUTOVER_NOT_REQUESTED"
+  | "WHATSAPP_PRODUCTION_ENVIRONMENT_REQUIRED"
   | "WHATSAPP_EXPLICIT_CUTOVER_APPROVAL_REQUIRED"
   | "WHATSAPP_DEPLOYMENT_REVISION_NOT_PINNED"
   | "WHATSAPP_DORMANT_DATABASE_BARRIER_ACTIVE"
@@ -43,8 +46,10 @@ export type WhatsAppActivationBlocker =
   | "WHATSAPP_CREDENTIAL_PROVIDER_NOT_READY"
   | "WHATSAPP_PROVIDER_CREDENTIAL_NOT_CONFIGURED"
   | "WHATSAPP_WEBHOOK_VERIFICATION_NOT_READY"
+  | "WHATSAPP_WEBHOOK_SIGNATURE_VERIFICATION_NOT_READY"
   | "WHATSAPP_APP_SECRET_NOT_CONFIGURED"
   | "WHATSAPP_DURABLE_QUEUE_NOT_READY"
+  | "WHATSAPP_ENCRYPTED_JOB_PAYLOAD_AUTHORITY_NOT_READY"
   | "WHATSAPP_INBOUND_PERSISTENCE_NOT_READY"
   | "WHATSAPP_REPLY_ENGINE_HANDOFF_NOT_READY"
   | "WHATSAPP_DATA_POLICY_NOT_READY"
@@ -104,12 +109,20 @@ const BOOLEAN_EVIDENCE: Array<{
     blocker: "WHATSAPP_WEBHOOK_VERIFICATION_NOT_READY",
   },
   {
+    key: "webhook_signature_verification_ready",
+    blocker: "WHATSAPP_WEBHOOK_SIGNATURE_VERIFICATION_NOT_READY",
+  },
+  {
     key: "app_secret_configured",
     blocker: "WHATSAPP_APP_SECRET_NOT_CONFIGURED",
   },
   {
     key: "durable_queue_ready",
     blocker: "WHATSAPP_DURABLE_QUEUE_NOT_READY",
+  },
+  {
+    key: "encrypted_job_payload_authority_ready",
+    blocker: "WHATSAPP_ENCRYPTED_JOB_PAYLOAD_AUTHORITY_NOT_READY",
   },
   {
     key: "inbound_persistence_ready",
@@ -164,8 +177,9 @@ function assertEvidence(input: WhatsAppActivationEvidence): void {
  * Evaluates only readiness evidence and feature switches. Secret material is
  * intentionally represented as booleans, never as values, and this function
  * cannot activate a route, store a credential, subscribe a webhook, or send a
- * provider request. Internal persistence/data/media gates are explicit so a
- * provider cutover cannot outrun the verified offline contracts.
+ * provider request. A live candidate is restricted to production and requires
+ * explicit evidence for both the administrative durable queue and its separate
+ * encrypted privileged-payload authority.
  */
 export function assessWhatsAppActivationReadiness(
   evidence: WhatsAppActivationEvidence,
@@ -178,6 +192,9 @@ export function assessWhatsAppActivationReadiness(
 
   if (!offlineEnabled) blockers.push("WHATSAPP_OFFLINE_FOUNDATION_DISABLED");
   if (!liveRequested) blockers.push("WHATSAPP_LIVE_CUTOVER_NOT_REQUESTED");
+  if (evidence.environment !== "production") {
+    blockers.push("WHATSAPP_PRODUCTION_ENVIRONMENT_REQUIRED");
+  }
   for (const item of BOOLEAN_EVIDENCE) {
     if (!evidence[item.key]) blockers.push(item.blocker);
   }
