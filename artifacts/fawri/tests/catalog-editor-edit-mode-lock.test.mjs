@@ -9,6 +9,8 @@ const itemTypeEditor = read('../src/components/catalog/CatalogItemTypeEditor.tsx
 const editModeCss = read('../src/pages/dashboard/catalogEditModeCompact.css');
 const productsWorkspace = read('../src/pages/dashboard/ProductsWorkspacePage.tsx');
 const authority = read('../../api-server/src/services/postgresCatalogAuthority.ts');
+const detailsParity = read('../src/lib/catalogDetailsTypeParity.ts');
+const main = read('../src/main.tsx');
 
 test('existing catalog items use type-specific edit titles in all supported languages', () => {
   assert.match(shell, /'تعديل الخدمة' : 'تعديل المنتج'/);
@@ -48,4 +50,23 @@ test('server authority rejects product-service type changes after creation', () 
   assert.match(authority, /catalog item type cannot be changed after creation/);
   assert.match(authority, /assertItemTypeImmutable\(current, input\)/);
   assert.match(authority, /requested_item_type: requestedType/);
+});
+
+test('catalog details modal uses type-specific titles and edit labels in all supported languages', () => {
+  assert.match(detailsParity, /productDetails: 'تفاصيل المنتج'/);
+  assert.match(detailsParity, /serviceDetails: 'تفاصيل الخدمة'/);
+  assert.match(detailsParity, /editProduct: 'تعديل المنتج'/);
+  assert.match(detailsParity, /editService: 'تعديل الخدمة'/);
+  assert.match(detailsParity, /productDetails: 'وردەکاری بەرهەم'/);
+  assert.match(detailsParity, /serviceDetails: 'وردەکاری خزمەتگوزاری'/);
+  assert.match(detailsParity, /editProduct: 'دەستکاری بەرهەم'/);
+  assert.match(detailsParity, /editService: 'دەستکاری خزمەتگوزاری'/);
+  assert.match(detailsParity, /productDetails: 'Product details'/);
+  assert.match(detailsParity, /serviceDetails: 'Service details'/);
+  assert.match(detailsParity, /editProduct: 'Edit product'/);
+  assert.match(detailsParity, /editService: 'Edit service'/);
+  assert.match(detailsParity, /dialog\.dataset\.catalogDetailsType = type/);
+  assert.match(detailsParity, /stabilizeSkuDirection\(dialog\)/);
+  assert.match(detailsParity, /stabilizePriceRangeDirection\(dialog, lang\)/);
+  assert.match(main, /installCatalogDetailsTypeParity\(\)/);
 });
