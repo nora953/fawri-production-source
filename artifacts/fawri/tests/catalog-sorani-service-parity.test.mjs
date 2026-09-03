@@ -6,7 +6,9 @@ const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'ut
 
 const parity = read('../src/lib/catalogEditorSoraniSemanticParity.ts');
 const languageCss = read('../src/pages/dashboard/catalogEditorLanguageParity.css');
+const serviceAlignmentCss = read('../src/pages/dashboard/catalogEditorSoraniServiceAlignment.css');
 const itemTypeEditor = read('../src/components/catalog/CatalogItemTypeEditor.tsx');
+const workspace = read('../src/pages/dashboard/ProductsWorkspacePage.tsx');
 
 test('Sorani service wording matches the approved Arabic meaning', () => {
   assert.match(parity, /serviceDetailsHint: 'ئەم زانیارییانە یارمەتی فەوری دەدەن زانیاریی ورد لەبارەی خزمەتگوزارییەکە بە کڕیار بدات\.'/);
@@ -29,6 +31,13 @@ test('Sorani service has service-specific subtitle, price and availability wordi
   assert.match(languageCss, /content: "نرخ دەستپێدەکات لە"/);
   assert.match(languageCss, /content: "بۆ داواکردن بەردەستە"/);
   assert.match(languageCss, /دیاری بکە ئایا ئەم خزمەتگوزارییە لە ئێستادا بۆ کڕیاران بەردەستە\./);
+});
+
+test('Sorani service location control stays aligned with the other three fields', () => {
+  assert.match(serviceAlignmentCss, /html\[lang="ku"\][^{]*data-catalog-service-details="true"[^{]*div:nth-child\(4\) > select[^{]*\{\s*margin-top: 0\.5rem !important;/s);
+  assert.match(workspace, /catalogEditorSoraniServiceAlignment\.css/);
+  assert.doesNotMatch(serviceAlignmentCss, /html\[lang=["']ar["']\]/);
+  assert.doesNotMatch(serviceAlignmentCss, /html\[lang=["']en["']\]/);
 });
 
 test('Sorani service parity cannot mutate locked Arabic or English dictionaries', () => {
