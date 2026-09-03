@@ -3,6 +3,10 @@ import crypto from "node:crypto";
 export type WhatsAppDataHandlingPolicy = {
   raw_webhook_persistence_allowed: false;
   raw_webhook_logging_allowed: false;
+  normalized_conversation_payload_allowed: true;
+  provider_reference_persistence_allowed: true;
+  provider_media_binary_persistence_allowed: false;
+  provider_media_fetch_allowed_dormant: false;
   encrypted_queue_payload_required: true;
   diagnostic_customer_payload_allowed: false;
   diagnostic_raw_identifier_allowed: false;
@@ -13,6 +17,10 @@ export type WhatsAppDataHandlingPolicy = {
 export const WHATSAPP_DATA_HANDLING_POLICY: WhatsAppDataHandlingPolicy = {
   raw_webhook_persistence_allowed: false,
   raw_webhook_logging_allowed: false,
+  normalized_conversation_payload_allowed: true,
+  provider_reference_persistence_allowed: true,
+  provider_media_binary_persistence_allowed: false,
+  provider_media_fetch_allowed_dormant: false,
   encrypted_queue_payload_required: true,
   diagnostic_customer_payload_allowed: false,
   diagnostic_raw_identifier_allowed: false,
