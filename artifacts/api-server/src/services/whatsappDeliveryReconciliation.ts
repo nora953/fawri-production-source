@@ -3,6 +3,9 @@ import {
   type WhatsAppDeliveryReduction,
   type WhatsAppDeliveryState,
 } from "./whatsappDeliveryLifecycle";
+import {
+  assertWhatsAppDeliveryReconciliationInputStructure,
+} from "./whatsappDeliveryRuntimeGuards";
 import type { WhatsAppDeliveryStatusPlan } from "./whatsappWebhookPlanner";
 import type { NormalizedWhatsAppStatusEvent } from "./whatsappWebhookContract";
 
@@ -65,6 +68,7 @@ export function planWhatsAppDeliveryReconciliation(input: {
   state: WhatsAppDeliveryState;
   observation: WhatsAppDeliveryStatusPlan;
 }): WhatsAppDeliveryReconciliationPlan {
+  assertWhatsAppDeliveryReconciliationInputStructure(input);
   const merchantId = text(input.merchantId);
   const channelId = text(input.channelId);
   if (!merchantId || !channelId) {
