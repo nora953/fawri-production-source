@@ -174,3 +174,81 @@ html[lang="en"] .products-workspace-polish .catalog-editor-body-grid:has(> [data
   font-size: 0.75rem;
   line-height: 1.25rem;
 }
+
+/* --------------------------------------------------------------------------
+ * Sorani service-editor parity.
+ *
+ * Arabic and English are locked references. Rules below are Sorani-only and
+ * mirror the approved Arabic RTL flow without changing the locked product view.
+ * -------------------------------------------------------------------------- */
+
+/* Match the Arabic service flow:
+ * item type -> name/category/price -> service details -> remaining fields. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > * {
+  order: 3;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > [data-catalog-item-type-editor="true"] {
+  order: 0;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) {
+  order: 1;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > [data-catalog-service-details="true"] {
+  order: 2;
+}
+
+/* Use the approved service-specific subtitle instead of the generic inventory
+ * subtitle that remains correct for the locked Sorani product editor. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p::after {
+  content: "زانیاریی خزمەتگوزارییەکە تەنها جارێک زیاد بکە؛ فەوری لە کاشێر و وەڵامەکان و بۆ یارمەتیدانی کڕیاران بەکاری دەهێنێت.";
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p::after {
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+  }
+}
+
+/* Service pricing follows the Arabic semantics: Price / Price starts from. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child::after {
+  content: "نرخ";
+  font-size: 0.875rem;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"][data-service-price-type="from"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child::after {
+  content: "نرخ دەستپێدەکات لە";
+}
+
+/* A service is requested rather than sold from inventory. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p:first-child::after {
+  content: "بۆ داواکردن بەردەستە";
+  font-size: 0.875rem;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p.mt-1 {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p.mt-1::after {
+  content: "دیاری بکە ئایا ئەم خزمەتگوزارییە لە ئێستادا بۆ کڕیاران بەردەستە.";
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
