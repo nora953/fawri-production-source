@@ -190,3 +190,42 @@
     max-width: 100% !important;
   }
 }
+
+/*
+ * Group-level variant controls.
+ *
+ * The image picker is intentionally taller than a numeric field. On wide
+ * screens we reserve one shared control row so the image picker and the three
+ * value controls share the same vertical centre while their labels and helper
+ * text stay on common baselines. This keeps the four-column group card calm
+ * without shrinking the image target or changing any catalog behaviour.
+ */
+@media (min-width: 1280px) {
+  .products-workspace-polish
+    div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"] {
+    align-items: start;
+  }
+
+  .products-workspace-polish
+    div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"]
+    > * {
+    display: grid;
+    grid-template-rows: auto 5rem auto;
+    row-gap: 0.25rem;
+    align-items: start;
+  }
+
+  .products-workspace-polish
+    div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"]
+    > *
+    > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0 !important;
+  }
+
+  .products-workspace-polish
+    div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"]
+    > *
+    > :nth-child(2) {
+    align-self: center;
+  }
+}
