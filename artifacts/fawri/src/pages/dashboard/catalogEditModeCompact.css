@@ -37,18 +37,25 @@
 }
 
 /*
- * Variant grouping control.
+ * Variant grouping toolbar.
  *
- * Grouping is a view preference, not a data action. Keep it visually attached
- * to the "Product types" summary while bulk stock / apply / SKU actions remain
- * a separate action cluster on the opposite side of the toolbar.
+ * Desktop uses three visual zones inside one balanced card:
+ *   - type summary on the reading-start side
+ *   - grouping selector in the true horizontal center
+ *   - bulk actions on the opposite side
+ *
+ * Grouping is only a view preference, so it must not look like another bulk
+ * action or hang below the card.
  */
 .products-workspace-polish
   div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]:has(
     > div.flex.flex-wrap.items-center.gap-2 > label > span + select
   ) {
   position: relative;
-  align-items: flex-start;
+  min-height: 6.25rem;
+  align-items: center !important;
+  padding-block: 1rem;
+  padding-inline: 1.1rem;
 }
 
 .products-workspace-polish
@@ -56,16 +63,16 @@
   > div.flex.flex-wrap.items-center.gap-2
   > label:has(> span + select) {
   display: inline-flex;
-  align-items: center;
-  gap: 0.55rem;
-  width: auto;
-  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  width: 11.5rem;
+  min-width: 11.5rem;
   margin: 0;
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
-  white-space: nowrap;
 }
 
 .products-workspace-polish
@@ -73,11 +80,13 @@
   > div.flex.flex-wrap.items-center.gap-2
   > label:has(> span + select)
   > span {
-  flex: 0 0 auto;
+  display: block;
+  width: 100%;
   color: hsl(var(--muted-foreground));
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.25;
+  text-align: center;
 }
 
 .products-workspace-polish
@@ -86,23 +95,23 @@
   > label:has(> span + select)
   > select {
   display: block !important;
-  flex: 0 0 auto;
   width: 11.5rem !important;
   min-width: 11.5rem !important;
   max-width: 11.5rem !important;
-  height: 2.25rem !important;
-  min-height: 2.25rem !important;
+  height: 2.35rem !important;
+  min-height: 2.35rem !important;
   margin: 0 !important;
   padding-block: 0 !important;
-  padding-inline: 0.75rem 2rem !important;
+  padding-inline: 0.8rem 2rem !important;
   border: 1px solid hsl(var(--border)) !important;
   border-radius: 0.75rem !important;
   background-color: hsl(var(--background)) !important;
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04) !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05) !important;
   color: hsl(var(--foreground));
   font-size: 0.8125rem !important;
-  font-weight: 700 !important;
+  font-weight: 800 !important;
   line-height: 1 !important;
+  text-align: center;
   outline: none !important;
 }
 
@@ -119,8 +128,18 @@
   .products-workspace-polish
     div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]:has(
       > div.flex.flex-wrap.items-center.gap-2 > label > span + select
-    ) {
-    padding-bottom: 3.75rem;
+    )
+    > div:first-child {
+    max-width: 31%;
+  }
+
+  .products-workspace-polish
+    div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]:has(
+      > div.flex.flex-wrap.items-center.gap-2 > label > span + select
+    )
+    > div.flex.flex-wrap.items-center.gap-2 {
+    max-width: 34%;
+    align-self: center;
   }
 
   .products-workspace-polish
@@ -128,24 +147,27 @@
     > div.flex.flex-wrap.items-center.gap-2
     > label:has(> span + select) {
     position: absolute;
-    inset-inline-start: 0.75rem;
-    bottom: 0.75rem;
-  }
-
-  .products-workspace-polish
-    div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
-    > div.flex.flex-wrap.items-center.gap-2 {
-    align-self: flex-start;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1;
   }
 }
 
 @media (max-width: 1023px) {
   .products-workspace-polish
+    div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]:has(
+      > div.flex.flex-wrap.items-center.gap-2 > label > span + select
+    ) {
+    min-height: 0;
+  }
+
+  .products-workspace-polish
     div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
     > div.flex.flex-wrap.items-center.gap-2
     > label:has(> span + select) {
     flex-basis: 100%;
-    justify-content: flex-start;
+    margin-block: 0.15rem;
   }
 }
 
@@ -154,9 +176,8 @@
     div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
     > div.flex.flex-wrap.items-center.gap-2
     > label:has(> span + select) {
-    align-items: stretch;
-    flex-direction: column;
-    white-space: normal;
+    width: 100%;
+    min-width: 0;
   }
 
   .products-workspace-polish
@@ -164,7 +185,7 @@
     > div.flex.flex-wrap.items-center.gap-2
     > label:has(> span + select)
     > select {
-    width: min(100%, 11.5rem) !important;
+    width: 100% !important;
     min-width: 0 !important;
     max-width: 100% !important;
   }
