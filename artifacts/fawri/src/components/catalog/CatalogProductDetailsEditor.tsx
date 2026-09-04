@@ -67,6 +67,11 @@ const EMPTY_GROUP_DRAFT: GroupDraft = {
   copyTarget: '',
 };
 
+const GROUP_BY_LABEL: Record<Lang, string> = {
+  ar: 'تجميع الأنواع حسب',
+  ku: 'گرووپکردنی جۆرەکان بەپێی',
+  en: 'Group types by',
+};
 
 function splitValues(raw: string): string[] {
   const seen = new Set<string>();
@@ -97,13 +102,23 @@ function normalized(value: string): string {
   return value.trim().normalize('NFKC').toLocaleLowerCase('en-US');
 }
 
+function optionForGrouping(variant: CatalogVariantDraft, groupByOptionName: string) {
+  const options = structuredOptions(variant);
+  if (!groupByOptionName) return options[0];
+  return options.find(option => normalized(option.name) === normalized(groupByOptionName)) ?? options[0];
+}
+
 function optionSummary(variant: CatalogVariantDraft): string {
   const values = structuredOptions(variant).map(option => option.value.trim());
   return values.join(' / ') || variant.name || '—';
 }
 
-function optionSummaryWithinGroup(variant: CatalogVariantDraft): string {
-  const values = structuredOptions(variant).slice(1).map(option => option.value.trim());
+function optionSummaryWithinGroup(variant: CatalogVariantDraft, groupByOptionName: string): string {
+  const groupingOption = optionForGrouping(variant, groupByOptionName);
+  const groupingName = groupingOption ? normalized(groupingOption.name) : '';
+  const values = structuredOptions(variant)
+    .filter(option => normalized(option.name) !== groupingName)
+    .map(option => option.value.trim());
   return values.join(' / ') || variant.name || '—';
 }
 
@@ -125,19 +140,19 @@ function cloneVariant(variant: CatalogVariantDraft): CatalogVariantDraft {
   };
 }
 
-function variantGroups(variants: CatalogVariantDraft[]): VariantGroup[] {
+function variantGroups(variants: CatalogVariantDraft[], groupByOptionName: string): VariantGroup[] {
   const ordered: VariantGroup[] = [];
   const byKey = new Map<string, VariantGroup>();
   variants.forEach((variant, index) => {
-    const first = structuredOptions(variant)[0];
-    if (!first) return;
-    const key = `${normalized(first.name)}=${normalized(first.value)}`;
+    const selected = optionForGrouping(variant, groupByOptionName);
+    if (!selected) return;
+    const key = `${normalized(selected.name)}=${normalized(selected.value)}`;
     let group = byKey.get(key);
     if (!group) {
       group = {
         key,
-        optionName: first.name.trim(),
-        optionValue: first.value.trim(),
+        optionName: selected.name.trim(),
+        optionValue: selected.value.trim(),
         indexes: [],
       };
       byKey.set(key, group);
@@ -148,9 +163,11 @@ function variantGroups(variants: CatalogVariantDraft[]): VariantGroup[] {
   return ordered;
 }
 
-function secondarySignature(variant: CatalogVariantDraft): string {
+function secondarySignature(variant: CatalogVariantDraft, groupByOptionName: string): string {
+  const groupingOption = optionForGrouping(variant, groupByOptionName);
+  const groupingName = groupingOption ? normalized(groupingOption.name) : '';
   return structuredOptions(variant)
-    .slice(1)
+    .filter(option => normalized(option.name) !== groupingName)
     .map(option => `${normalized(option.name)}=${normalized(option.value)}`)
     .join('|');
 }
@@ -285,13 +302,34 @@ export function CatalogProductDetailsEditor({
   const [feedback, setFeedback] = useState('');
   const [bulkStock, setBulkStock] = useState('');
   const [groupDrafts, setGroupDrafts] = useState<Record<string, GroupDraft>>({});
+  const [groupByOptionName, setGroupByOptionName] = useState('');
 
   const legacy = form.variants.length > 0 && form.variants.some(variant => !catalogVariantDraftHasStructuredOptions(variant));
   const multiEnabled = form.variants.length > 0 || optionRows.length > 0 || excluded.length > 0;
   const structuredDefinitions = useMemo(() => optionRows
     .filter(row => row.name.trim() || row.values.trim())
     .map(row => createCatalogVariantOptionSetDraft(row.name, splitValues(row.values))), [optionRows]);
-  const groups = useMemo(() => legacy ? [] : variantGroups(form.variants), [form.variants, legacy]);
+  const groupingOptions = useMemo(() => {
+    const names: string[] = [];
+    const seen = new Set<string>();
+    for (const variant of form.variants) {
+      for (const option of structuredOptions(variant)) {
+        const name = option.name.trim();
+        const key = normalized(name);
+        if (!name || seen.has(key)) continue;
+        seen.add(key);
+        names.push(name);
+      }
+    }
+    return names;
+  }, [form.variants]);
+  const effectiveGroupByOptionName = groupingOptions.find(name => normalized(name) === normalized(groupByOptionName))
+    ?? groupingOptions[0]
+    ?? '';
+  const groups = useMemo(
+    () => legacy ? [] : variantGroups(form.variants, effectiveGroupByOptionName),
+    [form.variants, legacy, effectiveGroupByOptionName],
+  );
   const variantManagedInventory = catalogProductStockIsVariantManaged(form);
 
   if (form.item_type !== 'product') return null;
@@ -533,7 +571,7 @@ export function CatalogProductDetailsEditor({
       if (!variant) continue;
       const snapshot = cloneVariant(variant);
       sourceSnapshots.set(index, snapshot);
-      sourceBySecondary.set(secondarySignature(snapshot), snapshot);
+      sourceBySecondary.set(secondarySignature(snapshot, effectiveGroupByOptionName), snapshot);
     }
 
     const targetIndexes = new Set(target.indexes);
@@ -541,7 +579,7 @@ export function CatalogProductDetailsEditor({
       const sourceSnapshot = sourceSnapshots.get(index);
       if (sourceSnapshot) return cloneVariant(sourceSnapshot);
       if (!targetIndexes.has(index)) return variant;
-      const matching = sourceBySecondary.get(secondarySignature(variant));
+      const matching = sourceBySecondary.get(secondarySignature(variant, effectiveGroupByOptionName));
       if (!matching) return variant;
       return {
         ...variant,
@@ -587,7 +625,7 @@ export function CatalogProductDetailsEditor({
                     ? <Input value={variant.name} onChange={event => updateVariant(index, { name: event.target.value })} className="h-10 min-w-32 rounded-xl text-center" />
                     : usableOptions.length === 1
                       ? <EditableVariantValue value={singleOptionValue} onCommit={value => renameSingleOptionVariant(index, value)} />
-                      : <div className="mx-auto flex min-h-10 w-28 items-center justify-center rounded-xl bg-muted/30 px-3 py-2.5 text-center font-bold" dir="auto">{grouped ? optionSummaryWithinGroup(variant) : optionSummary(variant)}</div>}
+                      : <div className="mx-auto flex min-h-10 w-28 items-center justify-center rounded-xl bg-muted/30 px-3 py-2.5 text-center font-bold" dir="auto">{grouped ? optionSummaryWithinGroup(variant, effectiveGroupByOptionName) : optionSummary(variant)}</div>}
                 </td>
                 <td className="p-2.5"><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => updateVariant(index, { price_iqd: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className={`${numericClass} min-w-32`} /></td>
                 <td className="p-2.5"><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => updateVariant(index, { cost_iqd: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className={`${numericClass} min-w-32`} /></td>
@@ -715,6 +753,21 @@ export function CatalogProductDetailsEditor({
                     {editing && form.track_inventory && <p className="mt-1 text-xs text-muted-foreground">{labels.inventoryAfterSave}</p>}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    {!legacy && groupingOptions.length > 1 && (
+                      <label className="flex h-9 items-center gap-2 rounded-xl border bg-background px-2.5 text-xs font-semibold">
+                        <span className="whitespace-nowrap text-muted-foreground">{GROUP_BY_LABEL[lang]}</span>
+                        <select
+                          value={effectiveGroupByOptionName}
+                          onChange={event => {
+                            setGroupByOptionName(event.target.value);
+                            setGroupDrafts({});
+                          }}
+                          className="h-7 min-w-28 rounded-lg bg-transparent px-1 text-xs font-bold outline-none"
+                        >
+                          {groupingOptions.map(name => <option key={normalized(name)} value={name}>{name}</option>)}
+                        </select>
+                      </label>
+                    )}
                     {form.track_inventory && <><Input type="text" inputMode="numeric" dir="ltr" value={bulkStock} onChange={event => setBulkStock(event.target.value)} placeholder={labels.bulkStock} className="h-9 w-36 rounded-xl text-center text-xs tabular-nums" /><Button type="button" variant="outline" size="sm" className="h-9 rounded-xl" onClick={applyBulkStock}>{labels.applyStock}</Button></>}
                     <Button type="button" variant="outline" size="sm" className="h-9 rounded-xl px-3 text-xs" onClick={generateMissingSkus}>{labels.generateSku}</Button>
                   </div>
