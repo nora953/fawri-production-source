@@ -510,29 +510,51 @@ export function CatalogProductDetailsEditor({
     });
   };
 
+  const groupHasCopyableData = (group: VariantGroup): boolean => group.indexes.some(index => {
+    const variant = form.variants[index];
+    if (!variant) return false;
+    const hasTrackedStock = form.track_inventory && /^\d+$/.test(variant.stock_quantity.trim()) && Number(variant.stock_quantity) > 0;
+    return Boolean(
+      variant.price_iqd.trim()
+      || variant.cost_iqd.trim()
+      || variant.image_refs.length > 0
+      || hasTrackedStock,
+    );
+  });
+
   const copyGroupData = (source: VariantGroup, targetKey: string) => {
     const target = groups.find(group => group.key === targetKey);
-    if (!target) return;
+    if (!target || source.key === target.key || !groupHasCopyableData(source)) return;
+
+    const sourceSnapshots = new Map<number, CatalogVariantDraft>();
     const sourceBySecondary = new Map<string, CatalogVariantDraft>();
     for (const index of source.indexes) {
       const variant = form.variants[index];
-      if (variant) sourceBySecondary.set(secondarySignature(variant), variant);
+      if (!variant) continue;
+      const snapshot = cloneVariant(variant);
+      sourceSnapshots.set(index, snapshot);
+      sourceBySecondary.set(secondarySignature(snapshot), snapshot);
     }
+
     const targetIndexes = new Set(target.indexes);
-    onChange({
-      variants: form.variants.map((variant, index) => {
-        if (!targetIndexes.has(index)) return variant;
-        const matching = sourceBySecondary.get(secondarySignature(variant));
-        if (!matching) return variant;
-        return {
-          ...variant,
-          price_iqd: matching.price_iqd,
-          cost_iqd: matching.cost_iqd,
-          image_refs: cloneImages(matching.image_refs),
-          ...(form.track_inventory ? { stock_quantity: matching.stock_quantity } : {}),
-        };
-      }),
+    const nextVariants = form.variants.map((variant, index) => {
+      const sourceSnapshot = sourceSnapshots.get(index);
+      if (sourceSnapshot) return cloneVariant(sourceSnapshot);
+      if (!targetIndexes.has(index)) return variant;
+      const matching = sourceBySecondary.get(secondarySignature(variant));
+      if (!matching) return variant;
+      return {
+        ...variant,
+        price_iqd: matching.price_iqd,
+        cost_iqd: matching.cost_iqd,
+        image_refs: cloneImages(matching.image_refs),
+        ...(form.track_inventory ? { stock_quantity: matching.stock_quantity } : {}),
+      };
     });
+
+    onChange({ variants: nextVariants });
+    updateGroupDraft(source.key, { copyTarget: '' });
+    setFeedback('');
   };
 
   const numericClass = 'h-10 rounded-xl text-center tabular-nums';
@@ -705,6 +727,7 @@ export function CatalogProductDetailsEditor({
                     {groups.map(group => {
                       const draft = groupDrafts[group.key] || EMPTY_GROUP_DRAFT;
                       const shared = sharedGroupImages(group, form.variants);
+                      const copyable = groupHasCopyableData(group);
                       return (
                         <section key={group.key} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
                           <div className="space-y-3 border-b bg-muted/20 p-3">
@@ -762,7 +785,7 @@ export function CatalogProductDetailsEditor({
                                     <option value="">{labels.copyTo}</option>
                                     {groups.filter(candidate => candidate.key !== group.key).map(candidate => <option key={candidate.key} value={candidate.key}>{candidate.optionValue}</option>)}
                                   </select>
-                                  <Button type="button" variant="outline" className="h-10 rounded-xl" disabled={!draft.copyTarget} onClick={() => copyGroupData(group, draft.copyTarget)}>{labels.copyAction}</Button>
+                                  <Button type="button" variant="outline" className="h-10 rounded-xl" disabled={!draft.copyTarget || !copyable} onClick={() => copyGroupData(group, draft.copyTarget)}>{labels.copyAction}</Button>
                                 </div>
                               </div>
                             )}
