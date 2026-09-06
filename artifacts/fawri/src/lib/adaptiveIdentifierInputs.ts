@@ -4,10 +4,10 @@ const ADAPTIVE_IDENTIFIER_SELECTOR = [
 ].join(', ');
 
 const MIN_IDENTIFIER_FONT_PX = 8.5;
-/* Keep a small visual breathing margin beyond the field's CSS padding. This is
- * especially important for Latin identifiers rendered with the Arabic/Kurdish
- * UI font stack, whose final glyph can otherwise sit too close to the edge. */
+const MIN_MONO_IDENTIFIER_FONT_PX = 5.75;
 const IDENTIFIER_SAFETY_INSET_PX = 10;
+const MONO_IDENTIFIER_SAFETY_INSET_PX = 8;
+const MONO_IDENTIFIER_SIDE_PADDING_PX = 5;
 const baseFontSizes = new WeakMap<HTMLInputElement, number>();
 let measurementCanvas: HTMLCanvasElement | null = null;
 
@@ -28,24 +28,29 @@ function textWidthAtBaseSize(input: HTMLInputElement, text: string, baseSize: nu
   return measured + Math.max(0, text.length - 1) * letterSpacing;
 }
 
+function resetAdaptiveIdentifierStyles(input: HTMLInputElement) {
+  input.style.removeProperty('font-size');
+  input.style.removeProperty('padding-inline');
+  input.style.removeProperty('letter-spacing');
+}
+
 function fitIdentifierInput(input: HTMLInputElement) {
   if (!input.isConnected || !input.matches(ADAPTIVE_IDENTIFIER_SELECTOR)) return;
 
   let baseSize = baseFontSizes.get(input);
   if (!baseSize) {
-    input.style.removeProperty('font-size');
+    resetAdaptiveIdentifierStyles(input);
     baseSize = numericCssValue(getComputedStyle(input).fontSize) || 14;
     baseFontSizes.set(input, baseSize);
   }
 
   const text = input.value || input.placeholder || '';
-  if (!text) {
-    input.style.removeProperty('font-size');
-    return;
-  }
+  resetAdaptiveIdentifierStyles(input);
+  if (!text) return;
 
   const style = getComputedStyle(input);
-  const availableWidth = Math.max(
+  const isMonoIdentifier = input.matches('input.font-mono');
+  const normalAvailableWidth = Math.max(
     1,
     input.clientWidth
       - numericCssValue(style.paddingLeft)
@@ -54,12 +59,31 @@ function fitIdentifierInput(input: HTMLInputElement) {
   );
   const measuredWidth = textWidthAtBaseSize(input, text, baseSize);
 
-  if (!measuredWidth || measuredWidth <= availableWidth) {
-    input.style.removeProperty('font-size');
+  if (!measuredWidth || measuredWidth <= normalAvailableWidth) return;
+
+  /* Long SKUs are business identifiers, so showing the whole value is more
+   * important than preserving the default font size. Keep the field/table
+   * geometry unchanged, reclaim only a few pixels of inner padding, and scale
+   * the monospace text until both ends remain visibly inside the control. */
+  if (isMonoIdentifier) {
+    const compactAvailableWidth = Math.max(
+      1,
+      input.clientWidth
+        - (MONO_IDENTIFIER_SIDE_PADDING_PX * 2)
+        - MONO_IDENTIFIER_SAFETY_INSET_PX,
+    );
+    const fittedSize = Math.max(
+      MIN_MONO_IDENTIFIER_FONT_PX,
+      baseSize * (compactAvailableWidth / measuredWidth),
+    );
+
+    input.style.setProperty('padding-inline', `${MONO_IDENTIFIER_SIDE_PADDING_PX}px`, 'important');
+    if (text.length >= 24) input.style.setProperty('letter-spacing', '-0.025em', 'important');
+    input.style.setProperty('font-size', `${fittedSize.toFixed(2)}px`, 'important');
     return;
   }
 
-  const fittedSize = Math.max(MIN_IDENTIFIER_FONT_PX, baseSize * (availableWidth / measuredWidth));
+  const fittedSize = Math.max(MIN_IDENTIFIER_FONT_PX, baseSize * (normalAvailableWidth / measuredWidth));
   input.style.setProperty('font-size', `${fittedSize.toFixed(2)}px`, 'important');
 }
 
