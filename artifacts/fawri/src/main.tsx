@@ -9,10 +9,12 @@ import { installAdaptiveIdentifierInputs } from "@/lib/adaptiveIdentifierInputs"
 import { installCatalogEditorAutoDirection } from "@/lib/catalogEditorAutoDirection";
 import { installCatalogArabicServiceGoldenGuard } from "@/lib/catalogArabicServiceGoldenGuard";
 import { installCatalogDetailsTypeParity } from "@/lib/catalogDetailsTypeParity";
+import { applyCatalogEditorArabicFinalSemanticParity } from "@/lib/catalogEditorArabicFinalSemanticParity";
 import { applyCatalogEditorEnglishSemanticParity } from "@/lib/catalogEditorEnglishSemanticParity";
 import { applyCatalogEditorSoraniSemanticParity } from "@/lib/catalogEditorSoraniSemanticParity";
 import { I18nProvider } from "@/lib/i18n";
 
+applyCatalogEditorArabicFinalSemanticParity();
 applyCatalogEditorEnglishSemanticParity();
 applyCatalogEditorSoraniSemanticParity();
 installAdaptiveIdentifierInputs();
