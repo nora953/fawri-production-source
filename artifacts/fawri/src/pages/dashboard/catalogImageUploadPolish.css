@@ -1,0 +1,150 @@
+/*
+ * Shared catalog image-upload polish.
+ *
+ * CatalogImageUploadEditor is reused by create/edit product, create/edit
+ * service, grouped variant images, and per-variant images. Keep the upload
+ * behavior untouched and give every picker the same calm visual language.
+ */
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]
+  > button:first-child {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: hsl(var(--border)) !important;
+  border-radius: 1rem !important;
+  background:
+    radial-gradient(circle at 50% 18%, rgb(249 115 22 / 0.09), transparent 42%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.18) 100%) !important;
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.05),
+    inset 0 1px 0 rgb(255 255 255 / 0.7);
+  color: hsl(var(--foreground));
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]
+  > button:first-child:hover:not(:disabled),
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]
+  > button:first-child:focus-visible {
+  border-color: rgb(249 115 22 / 0.7) !important;
+  background:
+    radial-gradient(circle at 50% 18%, rgb(249 115 22 / 0.14), transparent 46%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, rgb(255 247 237 / 0.7) 100%) !important;
+  box-shadow:
+    0 6px 18px rgb(15 23 42 / 0.08),
+    0 0 0 3px rgb(249 115 22 / 0.08);
+  outline: none;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]
+  > button:first-child
+  > svg {
+  box-sizing: content-box;
+  width: 1rem !important;
+  height: 1rem !important;
+  margin-bottom: 0.3rem !important;
+  padding: 0.42rem;
+  border: 1px solid rgb(249 115 22 / 0.16);
+  border-radius: 9999px;
+  background: rgb(249 115 22 / 0.08);
+  color: rgb(234 88 12) !important;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]
+  > button:first-child
+  > span {
+  color: hsl(var(--foreground));
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+/* Dense per-type uploaders keep the same design language without growing. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]
+  > button:first-child[class*="h-12"][class*="w-11"] {
+  border-radius: 0.75rem !important;
+  background: hsl(var(--background)) !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]
+  > button:first-child[class*="h-12"][class*="w-11"]
+  > svg {
+  width: 0.8rem !important;
+  height: 0.8rem !important;
+  margin-bottom: 0.1rem !important;
+  padding: 0.18rem;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]
+  > button:first-child[class*="h-12"][class*="w-11"]
+  > span {
+  font-size: 0.55rem !important;
+  line-height: 0.7rem !important;
+}
+
+/* Existing thumbnails should feel like part of the same component. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]
+  > div.group.relative {
+  border-color: hsl(var(--border)) !important;
+  border-radius: 0.9rem !important;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 0.06);
+}
+
+/* The secondary upload action in the main image section follows the picker. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div.flex.flex-wrap.items-center.justify-between
+  > button {
+  border-color: hsl(var(--border));
+  border-radius: 0.8rem !important;
+  background: hsl(var(--background));
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+  font-weight: 700;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div.flex.flex-wrap.items-center.justify-between
+  > button:hover:not(:disabled) {
+  border-color: rgb(249 115 22 / 0.55);
+  background: rgb(255 247 237 / 0.65);
+}
+
+/*
+ * Group fields are bulk-action drafts, not a readout of the saved variant
+ * values. Suppress inherited/default placeholders (especially “0”) so a
+ * reopened product never looks as if its saved group values were reset.
+ * The helper text below each field still explains that an empty Apply clears
+ * an override back to the product default.
+ */
+.products-workspace-polish
+  div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"]
+  > label
+  input::placeholder {
+  color: transparent !important;
+  opacity: 0 !important;
+}
