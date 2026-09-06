@@ -18,6 +18,7 @@ import './catalogEditorSoraniServiceAlignment.css';
 import './catalogAvailabilityToggleAlignment.css';
 import './catalogEditModeCompact.css';
 import './catalogImageUploadPolish.css';
+import './catalogVariantPriceClarity.css';
 import { useI18n } from '@/lib/i18n';
 
 const copy = {
