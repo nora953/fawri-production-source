@@ -4,7 +4,9 @@ const ADAPTIVE_IDENTIFIER_SELECTOR = [
 ].join(', ');
 
 const MIN_IDENTIFIER_FONT_PX = 8.5;
-const MIN_MONO_IDENTIFIER_FONT_PX = 5.75;
+const PREFERRED_MIN_MONO_IDENTIFIER_FONT_PX = 7.25;
+const ABSOLUTE_MIN_MONO_IDENTIFIER_FONT_PX = 6.5;
+const MIN_MONO_IDENTIFIER_LETTER_SPACING_PX = -1.25;
 const IDENTIFIER_SAFETY_INSET_PX = 10;
 const MONO_IDENTIFIER_SAFETY_INSET_PX = 8;
 const MONO_IDENTIFIER_SIDE_PADDING_PX = 5;
@@ -61,10 +63,10 @@ function fitIdentifierInput(input: HTMLInputElement) {
 
   if (!measuredWidth || measuredWidth <= normalAvailableWidth) return;
 
-  /* Long SKUs are business identifiers, so showing the whole value is more
-   * important than preserving the default font size. Keep the field/table
-   * geometry unchanged, reclaim only a few pixels of inner padding, and scale
-   * the monospace text until both ends remain visibly inside the control. */
+  /* Long SKUs need to remain complete without becoming microscopic. Keep the
+   * field/table geometry unchanged, reclaim only a few pixels of inner padding,
+   * prefer a readable font floor, then use modest negative tracking to compress
+   * horizontally before allowing any further font reduction. */
   if (isMonoIdentifier) {
     const compactAvailableWidth = Math.max(
       1,
@@ -72,13 +74,35 @@ function fitIdentifierInput(input: HTMLInputElement) {
         - (MONO_IDENTIFIER_SIDE_PADDING_PX * 2)
         - MONO_IDENTIFIER_SAFETY_INSET_PX,
     );
-    const fittedSize = Math.max(
-      MIN_MONO_IDENTIFIER_FONT_PX,
-      baseSize * (compactAvailableWidth / measuredWidth),
+    const characterGaps = Math.max(1, text.length - 1);
+    const preferredSize = Math.max(
+      PREFERRED_MIN_MONO_IDENTIFIER_FONT_PX,
+      Math.min(baseSize, baseSize * (compactAvailableWidth / measuredWidth)),
     );
+    const preferredWidth = textWidthAtBaseSize(input, text, preferredSize);
+    let letterSpacingPx = Math.min(
+      0,
+      (compactAvailableWidth - preferredWidth) / characterGaps,
+    );
+    let fittedSize = preferredSize;
+
+    if (letterSpacingPx < MIN_MONO_IDENTIFIER_LETTER_SPACING_PX) {
+      letterSpacingPx = MIN_MONO_IDENTIFIER_LETTER_SPACING_PX;
+      const widthBudgetBeforeTracking = compactAvailableWidth
+        - (letterSpacingPx * characterGaps);
+      fittedSize = Math.max(
+        ABSOLUTE_MIN_MONO_IDENTIFIER_FONT_PX,
+        Math.min(
+          preferredSize,
+          baseSize * (widthBudgetBeforeTracking / measuredWidth),
+        ),
+      );
+    }
 
     input.style.setProperty('padding-inline', `${MONO_IDENTIFIER_SIDE_PADDING_PX}px`, 'important');
-    if (text.length >= 24) input.style.setProperty('letter-spacing', '-0.025em', 'important');
+    if (letterSpacingPx < 0) {
+      input.style.setProperty('letter-spacing', `${letterSpacingPx.toFixed(2)}px`, 'important');
+    }
     input.style.setProperty('font-size', `${fittedSize.toFixed(2)}px`, 'important');
     return;
   }
