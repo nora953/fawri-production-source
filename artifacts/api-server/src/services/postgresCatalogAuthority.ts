@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { CatalogRuntimeError } from "./catalogInventoryRuntime";
 import {
   normalizeCatalogMerchantId,
@@ -22,6 +24,78 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : {};
+}
+
+function attachmentImageId(
+  graphKey: string,
+  ownerKey: string,
+  value: unknown,
+  ordinal: number,
+): string {
+  const record = typeof value === "string" ? { url: value } : asRecord(value);
+  const storageKey = String(record.storage_key || "").trim();
+  const url = String(record.url || "").trim();
+  return `imgref_${crypto
+    .createHash("sha256")
+    .update(`${graphKey}\0${ownerKey}\0${storageKey}\0${url}\0${ordinal}`)
+    .digest("hex")
+    .slice(0, 32)}`;
+}
+
+function scopeImageReferences(
+  value: unknown,
+  graphKey: string,
+  ownerKey: string,
+): unknown {
+  if (!Array.isArray(value)) return value;
+  return value.map((image, ordinal) => {
+    const id = attachmentImageId(graphKey, ownerKey, image, ordinal);
+    if (typeof image === "string") {
+      return { id, url: image };
+    }
+    return {
+      ...asRecord(image),
+      id,
+    };
+  });
+}
+
+/**
+ * Catalog media assets may intentionally be reused by the product and by
+ * several variants. The database row ID therefore identifies the attachment
+ * (owner + media), not the underlying media asset itself.
+ */
+export function scopeCatalogImageAttachmentIds(
+  inputValue: unknown,
+  graphKey: string,
+): Record<string, unknown> {
+  const input = structuredClone(asRecord(inputValue));
+
+  if (Object.prototype.hasOwnProperty.call(input, "image_refs")) {
+    input.image_refs = scopeImageReferences(input.image_refs, graphKey, "product");
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "images")) {
+    input.images = scopeImageReferences(input.images, graphKey, "product");
+  }
+  if (Array.isArray(input.variants)) {
+    input.variants = input.variants.map((value, index) => {
+      const variant = asRecord(value);
+      if (!Object.prototype.hasOwnProperty.call(variant, "image_refs")) {
+        return variant;
+      }
+      const ownerId = String(variant.id || "").trim() || `index-${index}`;
+      return {
+        ...variant,
+        image_refs: scopeImageReferences(
+          variant.image_refs,
+          graphKey,
+          `variant:${ownerId}`,
+        ),
+      };
+    });
+  }
+
+  return input;
 }
 
 function variantId(value: unknown): string {
@@ -153,6 +227,19 @@ async function markArchivedVariants(
   });
 }
 
+export async function createCatalogProductAuthoritative(
+  params: Parameters<typeof core.createCatalogProductAuthoritative>[0],
+): Promise<Awaited<ReturnType<typeof core.createCatalogProductAuthoritative>>> {
+  const merchantId = normalizeCatalogMerchantId(params.merchantId);
+  const graphKey = `${merchantId}\0create\0${String(params.idempotencyKey || "")}`;
+  const input = scopeCatalogImageAttachmentIds(params.input, graphKey);
+  return core.createCatalogProductAuthoritative({
+    ...params,
+    merchantId,
+    input,
+  } as Parameters<typeof core.createCatalogProductAuthoritative>[0]);
+}
+
 export async function listCatalogProductsAuthoritative(
   merchantIdValue: unknown,
 ): Promise<Awaited<ReturnType<typeof core.listCatalogProductsAuthoritative>>> {
@@ -184,7 +271,10 @@ export async function updateCatalogProductAuthoritative(
   const merchantId = normalizeCatalogMerchantId(params.merchantId);
   const productId = normalizeCatalogProductId(params.productId);
   const current = await core.getCatalogProductAuthoritative(merchantId, productId);
-  const input = { ...asRecord(params.input) };
+  const input = scopeCatalogImageAttachmentIds(
+    params.input,
+    `${merchantId}\0${productId}`,
+  );
   assertItemTypeImmutable(current, input);
 
   if (!operationalPostgresAuthorityRequired()) {
