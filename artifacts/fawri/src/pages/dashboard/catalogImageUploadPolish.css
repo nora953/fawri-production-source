@@ -2,55 +2,91 @@
  * Shared catalog image-upload polish.
  *
  * CatalogImageUploadEditor is reused by create/edit product, create/edit
- * service, grouped variant images, and per-variant images. Keep the upload
- * behavior untouched and give every picker the same calm visual language.
+ * service, grouped variant images, and per-variant images. Keep upload
+ * behavior untouched while every picker shares one professional visual
+ * language. The main product/service picker gets one clear empty-state target;
+ * embedded group/type pickers remain compact so catalog geometry is stable.
  */
+
+/* Main product/service image area: calm container, one title, one upload CTA. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"]):has(
+    > div.flex.flex-wrap.items-center.justify-between h3
+  ) {
+  padding: 0.9rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 1rem !important;
+  background: hsl(var(--muted) / 0.08) !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.025);
+}
+
+/* The picker tile below already performs upload and drag/drop. Hiding this
+ * duplicate heading action removes the two competing “Add images” buttons. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div.flex.flex-wrap.items-center.justify-between
+  > button {
+  display: none !important;
+}
 
 .products-workspace-polish
   section:has(> input[type="file"][accept*="image"])
-  > div[class*="flex"]
+  > div.flex.flex-wrap.items-center.justify-between
+  h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+/* Every actual picker tile. Exclude the heading row so only the real
+ * drag/drop target receives the upload treatment. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
   > button:first-child {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   border-width: 1px !important;
-  border-style: solid !important;
+  border-style: dashed !important;
   border-color: hsl(var(--border)) !important;
-  border-radius: 1rem !important;
+  border-radius: 0.95rem !important;
   background:
-    radial-gradient(circle at 50% 18%, rgb(249 115 22 / 0.09), transparent 42%),
-    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.18) 100%) !important;
+    radial-gradient(circle at 50% 16%, rgb(249 115 22 / 0.075), transparent 44%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.14) 100%) !important;
   box-shadow:
-    0 1px 2px rgb(15 23 42 / 0.05),
-    inset 0 1px 0 rgb(255 255 255 / 0.7);
+    0 1px 2px rgb(15 23 42 / 0.035),
+    inset 0 1px 0 hsl(var(--background) / 0.75);
   color: hsl(var(--foreground));
   transition:
+    transform 160ms ease,
     border-color 160ms ease,
     box-shadow 160ms ease,
-    background-color 160ms ease;
+    background 160ms ease;
 }
 
 .products-workspace-polish
   section:has(> input[type="file"][accept*="image"])
-  > div[class*="flex"]
+  > div[class*="flex"]:not(.justify-between)
   > button:first-child:hover:not(:disabled),
 .products-workspace-polish
   section:has(> input[type="file"][accept*="image"])
-  > div[class*="flex"]
+  > div[class*="flex"]:not(.justify-between)
   > button:first-child:focus-visible {
-  border-color: rgb(249 115 22 / 0.7) !important;
+  border-color: rgb(249 115 22 / 0.68) !important;
   background:
-    radial-gradient(circle at 50% 18%, rgb(249 115 22 / 0.14), transparent 46%),
-    linear-gradient(180deg, hsl(var(--background)) 0%, rgb(255 247 237 / 0.7) 100%) !important;
+    radial-gradient(circle at 50% 16%, rgb(249 115 22 / 0.13), transparent 48%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.2) 100%) !important;
   box-shadow:
-    0 6px 18px rgb(15 23 42 / 0.08),
+    0 7px 20px rgb(15 23 42 / 0.075),
     0 0 0 3px rgb(249 115 22 / 0.08);
   outline: none;
+  transform: translateY(-1px);
 }
 
 .products-workspace-polish
   section:has(> input[type="file"][accept*="image"])
-  > div[class*="flex"]
+  > div[class*="flex"]:not(.justify-between)
   > button:first-child
   > svg {
   box-sizing: content-box;
@@ -58,15 +94,15 @@
   height: 1rem !important;
   margin-bottom: 0.3rem !important;
   padding: 0.42rem;
-  border: 1px solid rgb(249 115 22 / 0.16);
+  border: 1px solid rgb(249 115 22 / 0.17);
   border-radius: 9999px;
-  background: rgb(249 115 22 / 0.08);
+  background: rgb(249 115 22 / 0.085);
   color: rgb(234 88 12) !important;
 }
 
 .products-workspace-polish
   section:has(> input[type="file"][accept*="image"])
-  > div[class*="flex"]
+  > div[class*="flex"]:not(.justify-between)
   > button:first-child
   > span {
   color: hsl(var(--foreground));
@@ -74,72 +110,109 @@
   line-height: 1.2;
 }
 
-/* Dense per-type uploaders keep the same design language without growing. */
+/* Empty main product/service picker: use the available width as a deliberate
+ * drop zone instead of leaving a tiny button floating inside a large blank box. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"]):has(
+    > div.flex.flex-wrap.items-center.justify-between h3
+  ):not(:has(> div.flex.flex-wrap.items-center.gap-2:not(.justify-between) > div.group.relative))
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: none !important;
+  height: 7.25rem !important;
+  min-height: 7.25rem !important;
+  padding-inline: 1.25rem !important;
+  border-radius: 1rem !important;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"]):has(
+    > div.flex.flex-wrap.items-center.justify-between h3
+  ):not(:has(> div.flex.flex-wrap.items-center.gap-2:not(.justify-between) > div.group.relative))
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child
+  > svg {
+  width: 1.15rem !important;
+  height: 1.15rem !important;
+  padding: 0.55rem;
+  margin-bottom: 0.45rem !important;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"]):has(
+    > div.flex.flex-wrap.items-center.justify-between h3
+  ):not(:has(> div.flex.flex-wrap.items-center.gap-2:not(.justify-between) > div.group.relative))
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child
+  > span {
+  font-size: 0.8rem !important;
+}
+
+/* Compact group image pickers keep useful click/drag space but do not grow. */
 .products-workspace-polish
   section:has(> input[type="file"][accept*="image"])
-  > div[class*="flex"]
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child[class*="h-20"][class*="w-24"] {
+  border-radius: 0.85rem !important;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.05);
+}
+
+/* Dense per-type uploaders keep the same language at table scale. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
   > button:first-child[class*="h-12"][class*="w-11"] {
-  border-radius: 0.75rem !important;
+  border-style: solid !important;
+  border-radius: 0.7rem !important;
   background: hsl(var(--background)) !important;
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.045);
 }
 
 .products-workspace-polish
   section:has(> input[type="file"][accept*="image"])
-  > div[class*="flex"]
+  > div[class*="flex"]:not(.justify-between)
   > button:first-child[class*="h-12"][class*="w-11"]
   > svg {
-  width: 0.8rem !important;
-  height: 0.8rem !important;
-  margin-bottom: 0.1rem !important;
-  padding: 0.18rem;
+  width: 0.78rem !important;
+  height: 0.78rem !important;
+  margin-bottom: 0.08rem !important;
+  padding: 0.16rem;
 }
 
 .products-workspace-polish
   section:has(> input[type="file"][accept*="image"])
-  > div[class*="flex"]
+  > div[class*="flex"]:not(.justify-between)
   > button:first-child[class*="h-12"][class*="w-11"]
   > span {
   font-size: 0.55rem !important;
   line-height: 0.7rem !important;
 }
 
-/* Existing thumbnails should feel like part of the same component. */
+/* Existing thumbnails belong visually to the same picker instead of looking
+ * like unrelated boxes placed beside the upload action. */
 .products-workspace-polish
   section:has(> input[type="file"][accept*="image"])
-  > div[class*="flex"]
+  > div[class*="flex"]:not(.justify-between)
   > div.group.relative {
   border-color: hsl(var(--border)) !important;
   border-radius: 0.9rem !important;
   box-shadow: 0 2px 8px rgb(15 23 42 / 0.06);
 }
 
-/* The secondary upload action in the main image section follows the picker. */
 .products-workspace-polish
   section:has(> input[type="file"][accept*="image"])
-  > div.flex.flex-wrap.items-center.justify-between
-  > button {
-  border-color: hsl(var(--border));
-  border-radius: 0.8rem !important;
-  background: hsl(var(--background));
-  box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
-  font-weight: 700;
-}
-
-.products-workspace-polish
-  section:has(> input[type="file"][accept*="image"])
-  > div.flex.flex-wrap.items-center.justify-between
-  > button:hover:not(:disabled) {
-  border-color: rgb(249 115 22 / 0.55);
-  background: rgb(255 247 237 / 0.65);
+  > div[class*="flex"]:not(.justify-between)
+  > div.group.relative:hover {
+  border-color: rgb(249 115 22 / 0.35) !important;
+  box-shadow: 0 5px 14px rgb(15 23 42 / 0.08);
 }
 
 /*
  * Group fields are bulk-action drafts, not a readout of the saved variant
  * values. Suppress inherited/default placeholders (especially “0”) so a
  * reopened product never looks as if its saved group values were reset.
- * The helper text below each field still explains that an empty Apply clears
- * an override back to the product default.
  */
 .products-workspace-polish
   div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"]
