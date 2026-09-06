@@ -82,6 +82,7 @@ export function CatalogEditorShell({
   const dirty = catalogEditorHasUnsavedChanges(initialFingerprint, form);
   const createMode = isCreateTitle(lang, title);
   const displayTitle = createMode ? title : editTitleForItemType(lang, form.item_type);
+  const hasVariants = form.item_type === 'product' && form.variants.length > 0;
 
   const requestClose = () => {
     if (saving) return;
@@ -175,7 +176,15 @@ export function CatalogEditorShell({
 
   return (
     <>
-      <div ref={shellRef} className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background" dir={lang === 'en' ? 'ltr' : 'rtl'} role="dialog" aria-modal="true" aria-label={displayTitle}>
+      <div
+        ref={shellRef}
+        className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background"
+        data-catalog-has-variants={hasVariants ? 'true' : 'false'}
+        dir={lang === 'en' ? 'ltr' : 'rtl'}
+        role="dialog"
+        aria-modal="true"
+        aria-label={displayTitle}
+      >
         <div className="catalog-editor-frame flex h-[100dvh] w-full flex-col overflow-hidden bg-background">
           <header className="catalog-editor-header shrink-0 border-b bg-background/95 px-4 py-3 backdrop-blur sm:px-6 lg:px-10">
             <div className="mx-auto flex w-full max-w-[1500px] items-start justify-between gap-4">
