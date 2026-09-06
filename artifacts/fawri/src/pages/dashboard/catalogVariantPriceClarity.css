@@ -21,7 +21,9 @@ html[lang="ar"]
   > div:has(> label > input[data-catalog-primary-input="true"])
   > label:nth-child(3)
   > span:first-child::after {
-  content: " الافتراضي";
+  content: "الافتراضي";
+  display: inline-block;
+  margin-inline-start: 0.3em;
 }
 
 html[lang="ku"]
