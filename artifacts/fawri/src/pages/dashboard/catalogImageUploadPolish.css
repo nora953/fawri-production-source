@@ -280,3 +280,83 @@
   color: transparent !important;
   opacity: 0 !important;
 }
+
+/*
+ * Filled main product/service image picker: keep the professional empty-state
+ * drop zone, but collapse the saved-image state into a single shallow media
+ * rail. This rule is deliberately scoped to editorMode="main" so grouped and
+ * per-type image controls keep their established geometry.
+ */
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.8rem !important;
+  min-height: 0 !important;
+  padding: 0.6rem 0.75rem !important;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.justify-between {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content;
+  margin: 0 !important;
+  flex-wrap: nowrap !important;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between) {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0.15rem !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child {
+  width: 4.75rem !important;
+  min-width: 4.75rem !important;
+  height: 4rem !important;
+  min-height: 4rem !important;
+  padding-inline: 0.4rem !important;
+  border-radius: 0.78rem !important;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > div.group.relative {
+  width: 4rem !important;
+  min-width: 4rem !important;
+  height: 4rem !important;
+  min-height: 4rem !important;
+  border-radius: 0.78rem !important;
+}
+
+@media (max-width: 639px) {
+  .products-workspace-polish
+    section[data-catalog-image-editor="main"][data-catalog-image-state="filled"] {
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+
+  .products-workspace-polish
+    section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+    > div.flex.flex-wrap.items-center.gap-2:not(.justify-between) {
+    width: 100% !important;
+  }
+}
