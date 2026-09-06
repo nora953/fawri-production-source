@@ -234,9 +234,14 @@ export function CatalogImageUploadEditor({
   const imageStripClass = denseSummary
     ? 'flex flex-nowrap items-center justify-center gap-1.5 overflow-hidden'
     : 'flex flex-wrap items-center gap-2';
+  const editorMode = denseSummary ? 'dense' : hideHeading ? 'embedded' : 'main';
 
   return (
-    <section className={compact ? compactShellClass : 'w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4'}>
+    <section
+      data-catalog-image-editor={editorMode}
+      data-catalog-image-state={images.length > 0 ? 'filled' : 'empty'}
+      className={compact ? compactShellClass : 'w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4'}
+    >
       <input
         ref={inputRef}
         type="file"
@@ -282,18 +287,34 @@ export function CatalogImageUploadEditor({
         </button>
 
         {visibleImages.map(({ image, index }) => (
-          <div key={image.key} className={`group relative ${compactThumbSize} shrink-0 overflow-hidden rounded-xl border bg-background`}>
+          <div
+            key={image.key}
+            className={`group relative ${compactThumbSize} shrink-0 overflow-hidden rounded-xl border bg-background`}
+            role={denseSummary ? 'button' : undefined}
+            tabIndex={denseSummary ? 0 : undefined}
+            aria-label={denseSummary ? `${labels.viewImages} (${images.length})` : undefined}
+            onKeyDown={event => {
+              if (!denseSummary || (event.key !== 'Enter' && event.key !== ' ')) return;
+              event.preventDefault();
+              setGalleryOpen(true);
+            }}
+          >
             <ResilientImage
               image={image}
               alt={image.alt || labels.title}
               failureLabel={labels.previewFailed}
               className="h-full w-full cursor-zoom-in object-cover"
-              onClick={() => setLightboxIndex(index)}
+              onClick={() => denseSummary ? setGalleryOpen(true) : setLightboxIndex(index)}
             />
-            {index === 0 && (
+            {index === 0 && !denseSummary && (
               <span className="absolute start-1 top-1 inline-flex items-center rounded-full bg-background/95 px-1 py-0.5 text-[8px] font-bold shadow-sm">
                 <Star className="me-0.5 h-2.5 w-2.5 fill-current text-orange-500" />
                 {labels.primary}
+              </span>
+            )}
+            {denseSummary && images.length > 1 && (
+              <span className="pointer-events-none absolute start-1 top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-background/95 px-1.5 py-0.5 text-[8px] font-extrabold shadow-sm">
+                {images.length}
               </span>
             )}
             <button
@@ -306,20 +327,6 @@ export function CatalogImageUploadEditor({
             </button>
           </div>
         ))}
-
-        {denseSummary && images.length > 0 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="h-12 w-14 shrink-0 flex-col gap-0 rounded-xl px-1 text-[9px] leading-3"
-            onClick={() => setGalleryOpen(true)}
-          >
-            <ImageIcon className="mb-0.5 h-4 w-4" />
-            <span>{labels.viewImages}</span>
-            <span className="font-bold">({images.length})</span>
-          </Button>
-        )}
       </div>
 
       {!compact && images.length > 0 && (
