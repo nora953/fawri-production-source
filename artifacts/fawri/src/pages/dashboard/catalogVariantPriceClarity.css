@@ -40,8 +40,20 @@ html[lang="en"]
   .catalog-editor-body-grid
   > div:has(> label > input[data-catalog-primary-input="true"])
   > label:nth-child(3)
+  > span:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="en"]
+  .catalog-editor-shell[data-catalog-has-variants="true"]
+  .catalog-editor-body-grid
+  > div:has(> label > input[data-catalog-primary-input="true"])
+  > label:nth-child(3)
   > span:first-child::after {
-  content: " (default)";
+  content: "Default sale price";
+  display: inline-block;
+  font-size: 0.875rem;
+  white-space: nowrap;
 }
 
 .catalog-editor-shell[data-catalog-has-variants="true"]
