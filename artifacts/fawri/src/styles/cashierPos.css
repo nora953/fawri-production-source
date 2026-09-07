@@ -180,3 +180,116 @@ html[data-cashier-view='pos'] header button.bg-amber-500[title]::before {
     right: 1.1rem;
   }
 }
+
+/* Cashier catalog cards must remain scan-friendly even when merchant-provided
+   names, variant labels, SKUs or barcodes are unusually long. Keep this scoped
+   to the POS catalog so cart/history/report layouts remain untouched. */
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child {
+  min-width: 0;
+  overflow: hidden;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child {
+  min-width: 0;
+  overflow-x: hidden !important;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid {
+  width: 100%;
+  min-width: 0;
+  align-content: start;
+  grid-auto-rows: 1fr;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  min-height: 160px;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  isolation: isolate;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > div:first-child {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > div:first-child > span:first-child {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  justify-self: start;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > div:first-child > span:last-child {
+  max-width: 100%;
+  white-space: nowrap;
+  justify-self: end;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > h3 {
+  display: -webkit-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > p {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > div:last-child {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  margin-top: auto !important;
+  padding-top: 0.75rem;
+  border-top: 1px solid #f1f5f9;
+  gap: 0.75rem;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > div:last-child > span:first-child {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > div:last-child > span:last-child {
+  min-width: 0;
+  max-width: 11rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 639px) {
+  html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button {
+    min-height: 148px;
+  }
+}
