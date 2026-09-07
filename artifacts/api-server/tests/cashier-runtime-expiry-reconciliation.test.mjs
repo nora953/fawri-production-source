@@ -15,14 +15,11 @@ const router = fs.readFileSync(
   "utf8",
 );
 
-test("cashier runtime materializes time-derived terminal states only", () => {
-  for (const table of [
-    "cashier_station_pairing_challenges",
-    "cashier_station_credentials",
-    "cashier_operator_sessions",
-  ]) {
-    assert.match(service, new RegExp(`UPDATE ${table}`));
-  }
+test("cashier runtime expires only short-lived cashier authorities", () => {
+  assert.match(service, /UPDATE cashier_station_pairing_challenges/);
+  assert.match(service, /UPDATE cashier_operator_sessions/);
+  assert.doesNotMatch(service, /UPDATE cashier_station_credentials\s+SET status = 'expired'/);
+  assert.match(service, /station_credentials_expired: 0/);
   assert.match(service, /SET status = 'expired'/);
   assert.match(service, /status = 'active'/);
   assert.match(service, /expires_at <= now\(\)/);

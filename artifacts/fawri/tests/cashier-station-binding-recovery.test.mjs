@@ -14,6 +14,10 @@ const gate = fs.readFileSync(
   path.join(root, 'src/components/cashier/CashierOperatorGate.tsx'),
   'utf8',
 );
+const entry = fs.readFileSync(
+  path.join(root, 'src/cashierMain.tsx'),
+  'utf8',
+);
 
 test('invalid station credentials clear only station binding fields', () => {
   assert.match(recovery, /CASHIER_STATION_CREDENTIAL_INVALID/);
@@ -39,4 +43,18 @@ test('cashier gate self-recovers to pairing instead of generic error', () => {
   assert.match(gate, /clearInvalidCashierStationBinding/);
   assert.match(gate, /setState\(\{ kind: 'pair', binding: null \}\)/);
   assert.match(gate, /if \(await recoverStationBinding\(error\)\) return;/);
+});
+
+test('stale station expiry metadata is refreshed before the cashier gate renders', () => {
+  assert.match(recovery, /refreshDurableCashierStationBindingMetadata/);
+  assert.match(recovery, /identity\.station_token/);
+  assert.match(recovery, /identity\.station_credential_expires_at/);
+  assert.match(recovery, /DURABLE_STATION_METADATA_TTL_MS/);
+
+  const refresh = entry.indexOf(
+    'await refreshDurableCashierStationBindingMetadata()',
+  );
+  const render = entry.indexOf("createRoot(document.getElementById('cashier-root')!)");
+  assert.ok(refresh >= 0, 'durable station metadata refresh must run at startup');
+  assert.ok(render > refresh, 'station metadata must refresh before the gate renders');
 });

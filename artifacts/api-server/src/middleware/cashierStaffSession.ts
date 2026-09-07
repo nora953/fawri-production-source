@@ -7,6 +7,7 @@ import {
   type CashierStationContext,
 } from "../services/postgresCashierStaffAuthority";
 import type { CashierStaffPermission } from "../services/cashierStaffPolicy";
+import { refreshDurableCashierStationCredentialAuthoritative } from "../services/cashierRuntimeExpiryReconciliation";
 
 export const CASHIER_STATION_TOKEN_HEADER = "x-fawri-cashier-station-token";
 export const CASHIER_OPERATOR_TOKEN_HEADER = "x-fawri-cashier-operator-token";
@@ -73,9 +74,15 @@ export async function requireCashierStationCredential(
   next: NextFunction,
 ): Promise<void> {
   try {
+    const stationToken = cashierStationToken(req);
+    const deviceId = cashierDeviceId(req);
+    await refreshDurableCashierStationCredentialAuthoritative({
+      stationToken,
+      deviceId,
+    });
     const context = await authenticateCashierStationAuthoritative({
-      stationToken: cashierStationToken(req),
-      deviceId: cashierDeviceId(req),
+      stationToken,
+      deviceId,
     });
     (res as CashierResponse).locals.cashierStation = context;
     res.setHeader("Cache-Control", "no-store");
@@ -94,10 +101,16 @@ export function requireCashierOperatorSession(
     next: NextFunction,
   ): Promise<void> => {
     try {
+      const stationToken = cashierStationToken(req);
+      const deviceId = cashierDeviceId(req);
+      await refreshDurableCashierStationCredentialAuthoritative({
+        stationToken,
+        deviceId,
+      });
       const context = await authenticateCashierOperatorAuthoritative({
-        stationToken: cashierStationToken(req),
+        stationToken,
         operatorToken: cashierOperatorToken(req),
-        deviceId: cashierDeviceId(req),
+        deviceId,
         ...(requiredPermission ? { requiredPermission } : {}),
       });
       (res as CashierResponse).locals.cashierOperator = context;

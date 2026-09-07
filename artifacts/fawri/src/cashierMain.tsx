@@ -22,6 +22,7 @@ import {
   invalidateCashierOperatorSession,
 } from '@/lib/cashierOperatorSessionRuntime';
 import { refreshCashierOperatorPolicyFromCloud } from '@/lib/cashierOperatorPolicyRefresh';
+import { refreshDurableCashierStationBindingMetadata } from '@/lib/cashierStationBindingRecovery';
 import {
   cashierNetworkAttemptAllowed,
   installCashierConnectivityAuthority,
@@ -246,20 +247,26 @@ const operationalPage = sync ? (
   <CashierPosPage />
 );
 
-createRoot(document.getElementById('cashier-root')!).render(
-  diagnostics ? (
-    <CashierLocalShellPage />
-  ) : (
-    <I18nProvider>
-      <CashierOperatorGate bypass={demoRequested}>
-        {operationalPage}
-      </CashierOperatorGate>
-    </I18nProvider>
-  ),
-);
+async function bootstrapCashier(): Promise<void> {
+  await refreshDurableCashierStationBindingMetadata().catch(() => undefined);
 
-if (!diagnostics && !sync && !demoRequested) {
-  startCashierPosAutoSync();
+  createRoot(document.getElementById('cashier-root')!).render(
+    diagnostics ? (
+      <CashierLocalShellPage />
+    ) : (
+      <I18nProvider>
+        <CashierOperatorGate bypass={demoRequested}>
+          {operationalPage}
+        </CashierOperatorGate>
+      </I18nProvider>
+    ),
+  );
+
+  if (!diagnostics && !sync && !demoRequested) {
+    startCashierPosAutoSync();
+  }
+
+  void registerCashierOfflineAppShell();
 }
 
-void registerCashierOfflineAppShell();
+void bootstrapCashier();
