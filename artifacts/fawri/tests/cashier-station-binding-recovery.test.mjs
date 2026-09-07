@@ -45,11 +45,18 @@ test('cashier gate self-recovers to pairing instead of generic error', () => {
   assert.match(gate, /if \(await recoverStationBinding\(error\)\) return;/);
 });
 
-test('stale station expiry metadata is refreshed before the cashier gate renders', () => {
+test('paired-device metadata is made non-expiring before the cashier gate renders', () => {
   assert.match(recovery, /refreshDurableCashierStationBindingMetadata/);
   assert.match(recovery, /identity\.station_token/);
-  assert.match(recovery, /identity\.station_credential_expires_at/);
-  assert.match(recovery, /DURABLE_STATION_METADATA_TTL_MS/);
+  assert.match(
+    recovery,
+    /DURABLE_STATION_METADATA_EXPIRES_AT = '9999-12-31T23:59:59\.999Z'/,
+  );
+  assert.match(
+    recovery,
+    /station_credential_expires_at: DURABLE_STATION_METADATA_EXPIRES_AT/,
+  );
+  assert.doesNotMatch(recovery, /DURABLE_STATION_METADATA_TTL_MS/);
 
   const refresh = entry.indexOf(
     'await refreshDurableCashierStationBindingMetadata()',

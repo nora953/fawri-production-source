@@ -7,7 +7,7 @@ const STATION_BINDING_INVALID_CODES = new Set([
   'CASHIER_STATION_CREDENTIAL_INVALID',
   'CASHIER_STATION_PAIRING_REQUIRED',
 ]);
-const DURABLE_STATION_METADATA_TTL_MS = 180 * 24 * 60 * 60 * 1000;
+const DURABLE_STATION_METADATA_EXPIRES_AT = '9999-12-31T23:59:59.999Z';
 
 function codeOf(error: unknown): string {
   if (!error || typeof error !== 'object' || !('code' in error)) return '';
@@ -20,9 +20,10 @@ export function isCashierStationBindingInvalidError(error: unknown): boolean {
 
 /**
  * The station credential expiry field is retained as compatibility metadata,
- * but it is no longer allowed to tear down a valid paired-device binding.
- * Refresh stale metadata before the cashier gate reads the binding; the server
- * still validates token/device/version/station state and explicit revocation.
+ * but it is never allowed to tear down an otherwise valid paired-device binding.
+ * Normalize it to a non-expiring client sentinel before the cashier gate reads
+ * the binding; the server remains authoritative for token/device/version/station
+ * state and explicit revocation.
  */
 export async function refreshDurableCashierStationBindingMetadata(): Promise<void> {
   const identity = await getOrCreateCashierDeviceIdentity();
@@ -34,16 +35,16 @@ export async function refreshDurableCashierStationBindingMetadata(): Promise<voi
     return;
   }
 
-  const expiresAt = identity.station_credential_expires_at
-    ? new Date(identity.station_credential_expires_at).getTime()
-    : Number.NaN;
-  if (Number.isFinite(expiresAt) && expiresAt > Date.now()) return;
+  if (
+    identity.station_credential_expires_at ===
+    DURABLE_STATION_METADATA_EXPIRES_AT
+  ) {
+    return;
+  }
 
   await writeCashierDeviceIdentity({
     ...identity,
-    station_credential_expires_at: new Date(
-      Date.now() + DURABLE_STATION_METADATA_TTL_MS,
-    ).toISOString(),
+    station_credential_expires_at: DURABLE_STATION_METADATA_EXPIRES_AT,
   });
 }
 
