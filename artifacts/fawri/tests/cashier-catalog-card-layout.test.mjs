@@ -18,3 +18,9 @@ test('cashier catalog cards contain long merchant identifiers without overlap', 
   assert.match(css, /text-overflow: ellipsis/);
   assert.match(css, /-webkit-line-clamp: 2/);
 });
+
+test('cashier catalog metadata separates inventory from long SKU or barcode', () => {
+  assert.match(css, /grid-template-areas:\s*\n\s*'stock'\s*\n\s*'identifier'/);
+  assert.match(css, /grid-area: identifier;[\s\S]*direction: ltr;[\s\S]*unicode-bidi: isolate/);
+  assert.match(css, /grid-area: stock;[\s\S]*width: max-content;[\s\S]*max-width: 100%/);
+});
