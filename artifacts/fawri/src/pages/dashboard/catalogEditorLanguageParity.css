@@ -52,7 +52,7 @@ html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~=
 }
 
 html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea::placeholder,
-html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
   text-align: start !important;
   unicode-bidi: plaintext;
 }
@@ -82,13 +82,31 @@ html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~=
 /* Arabic changes the action heading to "حذف" only for the compact single-option
  * table. Mirror that scope in English; grouped/multi-option tables keep the
  * generic Action heading because their action cells are not delete-only. */
-html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child {
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child {
   font-size: 0 !important;
 }
 
 html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child::after {
   content: 'Delete';
   font-size: 0.75rem;
+}
+
+/* Sorani mirrors the approved Arabic delete-only heading in the compact table. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child::after {
+  content: 'سڕینەوە';
+  font-size: 0.75rem;
+}
+
+/* Sorani product pricing wording matches the frozen Arabic reference:
+ * "Default sale price" without parenthetical/attached wording. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:not(:has([data-catalog-service-details="true"])) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:not(:has([data-catalog-service-details="true"])) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child::after {
+  content: 'نرخی فرۆشتنی بنەڕەتی';
+  font-size: 0.875rem;
 }
 
 /* --------------------------------------------------------------------------
