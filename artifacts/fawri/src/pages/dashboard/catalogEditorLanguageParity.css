@@ -52,7 +52,7 @@ html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~=
 }
 
 html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea::placeholder,
-html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
   text-align: start !important;
   unicode-bidi: plaintext;
 }
