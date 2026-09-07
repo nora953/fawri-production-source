@@ -293,3 +293,62 @@ html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:
     min-height: 148px;
   }
 }
+
+/* Final metadata polish: inventory and identifier are deliberately separated.
+   This keeps the scanning hierarchy calm and prevents the bottom row from
+   becoming visually dense on narrow cards or with long merchant identifiers. */
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button {
+  min-height: 178px;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > div:last-child {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas:
+    'stock'
+    'identifier';
+  align-items: stretch;
+  gap: 0.4rem !important;
+  padding-top: 0.65rem;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > div:last-child > span:first-child {
+  grid-area: identifier;
+  width: 100%;
+  padding: 0.32rem 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.6875rem;
+  line-height: 1.25;
+  text-align: left;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button > div:last-child > span:last-child {
+  grid-area: stock;
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  width: max-content;
+  max-width: 100%;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button:disabled > div:last-child > span:last-child {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+@media (max-width: 639px) {
+  html[data-cashier-view='pos'] main > div > div.grid > section:first-child > div:last-child > div.grid > button {
+    min-height: 168px;
+  }
+}
