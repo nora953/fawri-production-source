@@ -41,6 +41,7 @@ import type { Lang } from '@/lib/types';
 type PromotionDraft = {
   name: string;
   scope: CatalogPromotionScope;
+  item_type: CatalogProduct['item_type'];
   product_id: string;
   variant_id: string;
   effect: CatalogPromotionEffect;
@@ -65,8 +66,12 @@ const COPY: Record<Lang, Record<string, string>> = {
     namePlaceholder: 'مثال: عرض نهاية الأسبوع',
     scope: 'نوع العرض',
     catalog: 'منتج أو خدمة',
+    product: 'منتج',
+    service: 'خدمة',
     delivery: 'توصيل مجاني',
     item: 'المنتج أو الخدمة',
+    productItem: 'المنتج',
+    serviceItem: 'الخدمة',
     variant: 'التركيبة (اختياري)',
     allVariants: 'كل التركيبات / العنصر بالكامل',
     effect: 'نوع الخصم',
@@ -124,8 +129,12 @@ const COPY: Record<Lang, Record<string, string>> = {
     namePlaceholder: 'نموونە: ئۆفەری کۆتایی هەفتە',
     scope: 'جۆری ئۆفەر',
     catalog: 'بەرهەم یان خزمەتگوزاری',
+    product: 'بەرهەم',
+    service: 'خزمەتگوزاری',
     delivery: 'گەیاندنی بەخۆڕایی',
     item: 'بەرهەم یان خزمەتگوزاری',
+    productItem: 'بەرهەم',
+    serviceItem: 'خزمەتگوزاری',
     variant: 'تێکەڵە (ئارەزوومەندانە)',
     allVariants: 'هەموو تێکەڵەکان / تەواوی بابەت',
     effect: 'جۆری داشکاندن',
@@ -183,8 +192,12 @@ const COPY: Record<Lang, Record<string, string>> = {
     namePlaceholder: 'e.g. Weekend offer',
     scope: 'Promotion type',
     catalog: 'Product or service',
+    product: 'Product',
+    service: 'Service',
     delivery: 'Free delivery',
     item: 'Product or service',
+    productItem: 'Product',
+    serviceItem: 'Service',
     variant: 'Combination (optional)',
     allVariants: 'All combinations / whole item',
     effect: 'Discount type',
@@ -237,6 +250,7 @@ function emptyDraft(): PromotionDraft {
   return {
     name: '',
     scope: 'catalog_item',
+    item_type: 'product',
     product_id: '',
     variant_id: '',
     effect: 'percentage_off',
@@ -396,6 +410,10 @@ export default function CatalogPromotionsPage() {
   }, [reload, copy.loadFailed]);
 
   const productMap = useMemo(() => new Map(products.map(product => [product.id, product])), [products]);
+  const targetItems = useMemo(
+    () => products.filter(product => product.item_type === draft.item_type),
+    [products, draft.item_type],
+  );
   const selectedProduct = productMap.get(draft.product_id);
   const currencyDigits = context?.currency_fraction_digits ?? 0;
   const currencyCode = context?.currency_code || '';
@@ -413,11 +431,13 @@ export default function CatalogPromotionsPage() {
     if (!context) return;
     const starts = localParts(promotion.starts_local);
     const ends = localParts(promotion.ends_local);
+    const promotionProduct = promotion.product_id ? productMap.get(promotion.product_id) : undefined;
     createKey.current = null;
     setEditing(promotion);
     setDraft({
       name: promotion.name,
       scope: promotion.scope,
+      item_type: promotionProduct?.item_type || 'product',
       product_id: promotion.product_id || '',
       variant_id: promotion.variant_id || '',
       effect: promotion.effect,
@@ -476,7 +496,7 @@ export default function CatalogPromotionsPage() {
       };
     }
 
-    if (!draft.product_id) return null;
+    if (!draft.product_id || selectedProduct?.item_type !== draft.item_type) return null;
     if (draft.variant_id && !selectedProduct?.variants.some(variant => variant.id === draft.variant_id)) return null;
 
     if (draft.effect === 'percentage_off') {
@@ -628,6 +648,7 @@ export default function CatalogPromotionsPage() {
                 ? product?.variants.find(item => item.id === promotion.variant_id)
                 : undefined;
               const valueText = promotionValueText(promotion, context);
+              const catalogTargetLabel = product?.item_type === 'service' ? copy.service : copy.product;
               return (
                 <article key={promotion.id} className="overflow-hidden rounded-3xl border bg-card shadow-sm">
                   <div className="p-5">
@@ -643,7 +664,7 @@ export default function CatalogPromotionsPage() {
                             ) : (
                               <Tag className="mr-1 h-3 w-3" />
                             )}
-                            {promotion.scope === 'delivery' ? copy.delivery : copy.catalog}
+                            {promotion.scope === 'delivery' ? copy.delivery : catalogTargetLabel}
                           </Badge>
                         </div>
                         <h2 className="text-lg font-extrabold">{promotion.name}</h2>
@@ -733,40 +754,43 @@ export default function CatalogPromotionsPage() {
                   <label className="space-y-1 text-sm font-semibold">
                     <span>{copy.scope}</span>
                     <select
-                      value={draft.scope}
+                      value={draft.scope === 'delivery' ? 'delivery' : draft.item_type}
                       onChange={event => {
-                        const scope = event.target.value as CatalogPromotionScope;
+                        const target = event.target.value as CatalogProduct['item_type'] | 'delivery';
+                        const scope: CatalogPromotionScope = target === 'delivery' ? 'delivery' : 'catalog_item';
                         setDraft(current => ({
                           ...current,
                           scope,
+                          item_type: target === 'service' ? 'service' : 'product',
                           effect:
                             scope === 'delivery'
                               ? 'free_delivery'
                               : current.effect === 'free_delivery'
                                 ? 'percentage_off'
                                 : current.effect,
-                          product_id: scope === 'delivery' ? '' : current.product_id,
-                          variant_id: scope === 'delivery' ? '' : current.variant_id,
+                          product_id: '',
+                          variant_id: '',
                           value: scope === 'delivery' ? '' : current.value,
                         }));
                       }}
                       className="h-11 w-full rounded-xl border border-input bg-background px-3"
                     >
-                      <option value="catalog_item">{copy.catalog}</option>
+                      <option value="product">{copy.product}</option>
+                      <option value="service">{copy.service}</option>
                       <option value="delivery">{copy.delivery}</option>
                     </select>
                   </label>
 
                   {draft.scope === 'catalog_item' && (
                     <label className="space-y-1 text-sm font-semibold">
-                      <span>{copy.item}</span>
+                      <span>{draft.item_type === 'service' ? copy.serviceItem : copy.productItem}</span>
                       <select
                         value={draft.product_id}
                         onChange={event => setDraft(current => ({ ...current, product_id: event.target.value, variant_id: '' }))}
                         className="h-11 w-full rounded-xl border border-input bg-background px-3"
                       >
                         <option value="">—</option>
-                        {products.map(product => (
+                        {targetItems.map(product => (
                           <option key={product.id} value={product.id}>{product.name}</option>
                         ))}
                       </select>
@@ -937,7 +961,7 @@ export default function CatalogPromotionsPage() {
               </section>
             </div>
 
-            <div className="grid shrink-0 grid-cols-2 gap-3 border-t bg-background px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6">
+            <div dir="ltr" className="grid shrink-0 grid-cols-2 gap-3 border-t bg-background px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:px-6">
               <Button type="button" variant="outline" className="h-11 rounded-xl" disabled={saving} onClick={() => closeEditor()}>
                 {copy.cancel}
               </Button>
