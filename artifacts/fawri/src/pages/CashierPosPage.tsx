@@ -27,6 +27,7 @@ type SaleSuccess = {
   totalMinor: number;
   currencyCode: string;
   fractionDigits: number;
+  changeDueMinor?: number;
 };
 
 type PosLabels = (typeof CASHIER_UI_COPY)[Lang]['pos'];
@@ -44,6 +45,29 @@ function formatMoney(
   lang: Lang,
 ): string {
   return formatMerchantMoneyMinor(amountMinor, currencyCode, fractionDigits, lang);
+}
+
+function normalizeCashDigits(value: string): string {
+  const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+  const easternArabic = '۰۱۲۳۴۵۶۷۸۹';
+  const normalized = String(value || '')
+    .split('')
+    .map(character => {
+      const arabicIndex = arabicIndic.indexOf(character);
+      if (arabicIndex >= 0) return String(arabicIndex);
+      const easternIndex = easternArabic.indexOf(character);
+      if (easternIndex >= 0) return String(easternIndex);
+      return character;
+    })
+    .join('')
+    .replace(/[^0-9]/g, '');
+  return normalized.replace(/^0+(?=\d)/, '');
+}
+
+function parseCashTenderMinor(value: string): number | null {
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
 function catalogMatches(
@@ -92,6 +116,9 @@ function errorMessage(error: unknown, labels: PosLabels): string {
     message.includes('CASHIER_OFFLINE_INVENTORY_AUTHORITY_REQUIRED')
   ) {
     return labels.errorOfflineInventoryAuthorityRequired;
+  }
+  if (code.includes('CASH_TENDER') || code.includes('CASH_CHANGE')) {
+    return labels.errorCashTenderInvalid;
   }
   return labels.errorSaleFailed;
 }
@@ -150,6 +177,7 @@ export default function CashierPosPage() {
   const [quote, setQuote] = useState<CashierResolvedSalePricing | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<CashierPaymentMethod>('cash');
+  const [cashTenderText, setCashTenderText] = useState('');
   const [externalConfirmed, setExternalConfirmed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
@@ -266,6 +294,26 @@ export default function CashierPosPage() {
     };
   }, [labels, runtime, saleLines]);
 
+  const cashTenderedMinor = useMemo(
+    () => parseCashTenderMinor(cashTenderText),
+    [cashTenderText],
+  );
+  const changeDueMinor = useMemo(() => {
+    if (
+      paymentMethod !== 'cash' ||
+      !quote ||
+      cashTenderedMinor === null ||
+      cashTenderedMinor < quote.total_minor
+    ) {
+      return null;
+    }
+    const change = cashTenderedMinor - quote.total_minor;
+    return Number.isSafeInteger(change) && change >= 0 ? change : null;
+  }, [cashTenderedMinor, paymentMethod, quote]);
+  const cashTenderReady =
+    paymentMethod !== 'cash' ||
+    Boolean(quote && cashTenderedMinor !== null && changeDueMinor !== null);
+
   const addItem = useCallback((item: CashierCatalogLookup) => {
     const key = itemKey(item);
     setError(null);
@@ -327,7 +375,12 @@ export default function CashierPosPage() {
 
   const completeSale = useCallback(async () => {
     if (!runtime || cart.length === 0 || !quote || quoteError) return;
-    if (paymentMethod !== 'cash' && !externalConfirmed) {
+    if (paymentMethod === 'cash') {
+      if (cashTenderedMinor === null || changeDueMinor === null) {
+        setError(labels.errorCashTenderInvalid);
+        return;
+      }
+    } else if (!externalConfirmed) {
       setError(labels.errorConfirmExternalPayment);
       return;
     }
@@ -343,6 +396,12 @@ export default function CashierPosPage() {
         operation_id: operationId,
         payment_method: paymentMethod,
         payment_status: 'paid',
+        ...(paymentMethod === 'cash' && cashTenderedMinor !== null && changeDueMinor !== null
+          ? {
+              cash_tendered_minor: cashTenderedMinor,
+              change_due_minor: changeDueMinor,
+            }
+          : {}),
         lines: saleLines,
       });
       setSuccess({
@@ -350,11 +409,15 @@ export default function CashierPosPage() {
         totalMinor: result.sale.total_minor,
         currencyCode: result.sale.currency_code,
         fractionDigits: result.sale.currency_fraction_digits,
+        ...(result.sale.change_due_minor !== undefined
+          ? { changeDueMinor: result.sale.change_due_minor }
+          : {}),
       });
       setCart([]);
       setActiveCartKey(null);
       setCompactPage(0);
       setPaymentMethod('cash');
+      setCashTenderText('');
       setExternalConfirmed(false);
       await refreshCatalog(runtime, query, false);
       searchRef.current?.focus();
@@ -364,7 +427,7 @@ export default function CashierPosPage() {
     } finally {
       setCommitting(false);
     }
-  }, [cart.length, externalConfirmed, labels, paymentMethod, query, quote, quoteError, refreshCatalog, runtime, saleLines]);
+  }, [cart.length, cashTenderedMinor, changeDueMinor, externalConfirmed, labels, paymentMethod, query, quote, quoteError, refreshCatalog, runtime, saleLines]);
 
   const cartCount = cart.reduce((sum, line) => sum + line.quantity, 0);
   const quoteByKey = useMemo(() => {
@@ -444,7 +507,14 @@ export default function CashierPosPage() {
         {success ? (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             <strong>{labels.saleSuccess}</strong>
-            <span dir="ltr">{formatMoney(success.totalMinor, success.currencyCode, success.fractionDigits, lang)}</span>
+            <div className="flex flex-wrap items-center gap-3">
+              <span dir="ltr">{formatMoney(success.totalMinor, success.currencyCode, success.fractionDigits, lang)}</span>
+              {success.changeDueMinor !== undefined ? (
+                <strong>
+                  {labels.changeDue}: <span dir="ltr">{formatMoney(success.changeDueMinor, success.currencyCode, success.fractionDigits, lang)}</span>
+                </strong>
+              ) : null}
+            </div>
           </div>
         ) : null}
 
@@ -513,7 +583,7 @@ export default function CashierPosPage() {
                 <h2 className="font-bold">{labels.cart}</h2>
                 <p className="mt-0.5 text-xs text-slate-500">{labels.cartCount(cartCount)}</p>
               </div>
-              {cart.length > 0 ? <button type="button" onClick={() => setCart([])} className="text-xs font-semibold text-red-600 hover:underline">{labels.clearCart}</button> : null}
+              {cart.length > 0 ? <button type="button" onClick={() => { setCart([]); setCashTenderText(''); }} className="text-xs font-semibold text-red-600 hover:underline">{labels.clearCart}</button> : null}
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3">
@@ -606,19 +676,55 @@ export default function CashierPosPage() {
                     ['electronic', labels.electronic],
                     ['other', labels.other],
                   ] as Array<[CashierPaymentMethod, string]>).map(([method, label]) => (
-                    <button type="button" key={method} onClick={() => { setPaymentMethod(method); setExternalConfirmed(false); }} className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${paymentMethod === method ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>{label}</button>
+                    <button type="button" key={method} onClick={() => { setPaymentMethod(method); setCashTenderText(''); setExternalConfirmed(false); }} className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${paymentMethod === method ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>{label}</button>
                   ))}
                 </div>
               </div>
 
-              {paymentMethod !== 'cash' ? (
+              {paymentMethod === 'cash' ? (
+                <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5">
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <label htmlFor="cashier-cash-received" className="text-xs font-bold text-slate-700">{labels.cashReceived}</label>
+                    <button
+                      type="button"
+                      disabled={!quote}
+                      onClick={() => { if (quote) setCashTenderText(String(quote.total_minor)); }}
+                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50"
+                    >
+                      {labels.exactCash}
+                    </button>
+                  </div>
+                  <input
+                    id="cashier-cash-received"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    value={cashTenderText}
+                    onChange={event => setCashTenderText(normalizeCashDigits(event.target.value))}
+                    placeholder={labels.cashReceivedPlaceholder}
+                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-end text-base font-bold outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                    dir="ltr"
+                  />
+                  <div className={`mt-2 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm ${changeDueMinor !== null ? 'bg-emerald-50 text-emerald-800' : 'bg-white text-slate-500'}`}>
+                    <span className="font-semibold">{labels.changeDue}</span>
+                    <strong dir="ltr">
+                      {quote && changeDueMinor !== null
+                        ? formatMoney(changeDueMinor, quote.currency_code, quote.currency_fraction_digits, lang)
+                        : '—'}
+                    </strong>
+                  </div>
+                  {quote && cashTenderedMinor !== null && cashTenderedMinor < quote.total_minor ? (
+                    <p className="mt-1.5 text-xs font-semibold text-red-600">{labels.cashInsufficient}</p>
+                  ) : null}
+                </div>
+              ) : (
                 <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs leading-5 text-amber-900">
                   <input type="checkbox" checked={externalConfirmed} onChange={event => setExternalConfirmed(event.target.checked)} className="mt-1 h-4 w-4" />
                   <span>{labels.externalPaymentConfirmed}</span>
                 </label>
-              ) : null}
+              )}
 
-              <button type="button" onClick={() => void completeSale()} disabled={cart.length === 0 || !quote || Boolean(quoteError) || committing || (paymentMethod !== 'cash' && !externalConfirmed)} className="mt-2.5 h-11 w-full rounded-xl bg-orange-600 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
+              <button type="button" onClick={() => void completeSale()} disabled={cart.length === 0 || !quote || Boolean(quoteError) || committing || !cashTenderReady || (paymentMethod !== 'cash' && !externalConfirmed)} className="mt-2.5 h-11 w-full rounded-xl bg-orange-600 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
                 {committing ? labels.completingSale : labels.completeSale}
               </button>
             </div>
