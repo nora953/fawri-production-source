@@ -149,6 +149,10 @@ export type CashierSaleSnapshot = CashierMoneyContext & {
   total_minor: number;
   payment_method: CashierPaymentMethod;
   payment_status: CashierPaymentStatus;
+  /** Cash received from the customer. Present only for cash sales created after P1. */
+  cash_tendered_minor?: number;
+  /** Cash change returned to the customer. Present only for cash sales created after P1. */
+  change_due_minor?: number;
   payment_provider?: string;
   payment_reference?: string;
   note?: string;
@@ -239,6 +243,10 @@ export type CashierCommitSaleInput = {
   operation_id: string;
   payment_method: CashierPaymentMethod;
   payment_status: CashierPaymentStatus;
+  /** Required for new cash sales; must be >= the authoritative computed total. */
+  cash_tendered_minor?: number;
+  /** Required for new cash sales; must equal cash_tendered_minor - computed total. */
+  change_due_minor?: number;
   payment_provider?: string;
   payment_reference?: string;
   note?: string;
