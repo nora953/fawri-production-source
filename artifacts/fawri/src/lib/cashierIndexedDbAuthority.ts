@@ -677,6 +677,47 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         at: occurredAtDate,
       });
 
+      let cashTenderedMinor: number | undefined;
+      let changeDueMinor: number | undefined;
+      const hasCashTenderMetadata =
+        input.cash_tendered_minor !== undefined || input.change_due_minor !== undefined;
+      if (input.payment_method === 'cash') {
+        // Legacy queued cash sales created before P1 may omit tender metadata.
+        // New P1 UI always sends both values; when present they are validated
+        // against the authoritative sale-time total before any inventory write.
+        if (hasCashTenderMetadata) {
+          if (
+            !isNonNegativeSafeInteger(Number(input.cash_tendered_minor)) ||
+            !isNonNegativeSafeInteger(Number(input.change_due_minor))
+          ) {
+            throw new CashierIndexedDbError(
+              'CASHIER_CASH_TENDER_INVALID',
+              'Cash tender and change must be safe non-negative minor-unit integers',
+            );
+          }
+          cashTenderedMinor = Number(input.cash_tendered_minor);
+          changeDueMinor = Number(input.change_due_minor);
+          if (cashTenderedMinor < pricing.total_minor) {
+            throw new CashierIndexedDbError(
+              'CASHIER_CASH_TENDER_INSUFFICIENT',
+              'Cash received is less than the sale total',
+            );
+          }
+          const expectedChange = cashTenderedMinor - pricing.total_minor;
+          if (!Number.isSafeInteger(expectedChange) || changeDueMinor !== expectedChange) {
+            throw new CashierIndexedDbError(
+              'CASHIER_CASH_CHANGE_INVALID',
+              'Cash change does not match the authoritative sale total',
+            );
+          }
+        }
+      } else if (hasCashTenderMetadata) {
+        throw new CashierIndexedDbError(
+          'CASHIER_CASH_TENDER_PAYMENT_METHOD_INVALID',
+          'Cash tender metadata is allowed only for cash payments',
+        );
+      }
+
       const deviceSequence = await nextDeviceSequence(meta);
       const occurredAt = pricing.priced_at;
       const inventoryMovements: CashierInventoryMovement[] = [];
@@ -738,6 +779,12 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         currency_fraction_digits: pricing.currency_fraction_digits,
         payment_method: input.payment_method,
         payment_status: input.payment_status,
+        ...(cashTenderedMinor !== undefined
+          ? { cash_tendered_minor: cashTenderedMinor }
+          : {}),
+        ...(changeDueMinor !== undefined
+          ? { change_due_minor: changeDueMinor }
+          : {}),
         ...(input.payment_provider
           ? { payment_provider: input.payment_provider.trim() }
           : {}),
