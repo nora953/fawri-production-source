@@ -10,13 +10,15 @@ async function source(path) {
 
 test('cashier sync validates cash received and change without breaking legacy queued cash sales', async () => {
   const authority = await source('src/services/postgresCashierSyncAuthority.ts');
+  const typeStart = authority.indexOf('type CashierSale = {');
   const parseStart = authority.indexOf('function parseSale(value: unknown)');
-  const returnStart = authority.indexOf('return {', authority.indexOf('let cashTenderedMinor', parseStart));
-  const body = authority.slice(parseStart, returnStart + 2500);
+  const parseEnd = authority.indexOf('function parseMovement', parseStart);
+  const saleType = authority.slice(typeStart, parseStart);
+  const body = authority.slice(parseStart, parseEnd);
 
-  assert.ok(parseStart >= 0);
-  assert.match(body, /cash_tendered_minor\?: number/);
-  assert.match(body, /change_due_minor\?: number/);
+  assert.ok(typeStart >= 0 && parseStart > typeStart && parseEnd > parseStart);
+  assert.match(saleType, /cash_tendered_minor\?: number/);
+  assert.match(saleType, /change_due_minor\?: number/);
   assert.match(body, /const hasCashTenderMetadata/);
   assert.match(body, /if \(paymentMethod === "cash"\)/);
   assert.match(body, /if \(hasCashTenderMetadata\)/);
