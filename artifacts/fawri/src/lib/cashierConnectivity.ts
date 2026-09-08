@@ -9,6 +9,7 @@ export type CashierConnectivityState = {
 };
 
 const CONNECTIVITY_EVENT = 'fawri:cashier-connectivity';
+const TRANSIENT_GATEWAY_STATUSES = new Set([502, 503, 504]);
 
 function nativeNavigatorOnlineReader(): () => boolean {
   if (typeof navigator === 'undefined') return () => true;
@@ -96,6 +97,13 @@ function isCashierApiRequest(input: unknown): boolean {
   }
 }
 
+function isTransientCashierGatewayResponse(
+  cashierRequest: boolean,
+  response: Response,
+): boolean {
+  return cashierRequest && TRANSIENT_GATEWAY_STATUSES.has(response.status);
+}
+
 export function getCashierConnectivityState(): CashierConnectivityState {
   return currentState;
 }
@@ -163,6 +171,12 @@ export function installCashierConnectivityAuthority(): void {
     const cashierRequest = isCashierApiRequest(args[0]);
     try {
       const response = await originalFetch(...args);
+      if (isTransientCashierGatewayResponse(cashierRequest, response)) {
+        markCashierNetworkFailure();
+        throw new TypeError(
+          `Cashier service temporarily unavailable (${response.status})`,
+        );
+      }
       if (cashierRequest) markCashierNetworkResponse();
       return response;
     } catch (cause) {
