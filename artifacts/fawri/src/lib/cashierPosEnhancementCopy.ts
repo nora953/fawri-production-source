@@ -1,0 +1,37 @@
+import type { Lang } from '@/lib/types';
+
+export const CASHIER_POS_ENHANCEMENT_COPY = {
+  ar: {
+    checkout: 'الدفع',
+    checkoutTitle: 'إتمام الدفع',
+    checkoutSubtitle: 'راجع الإجمالي واختر طريقة الدفع قبل تسجيل البيع.',
+    closeCheckout: 'إغلاق',
+    cancelCheckout: 'رجوع',
+    confirmSale: 'تأكيد البيع',
+    scannerReady: 'قارئ الباركود جاهز — امسح من أي مكان في شاشة البيع.',
+    scannerNotFound: 'لم يتم العثور على منتج أو متغير بهذا الباركود أو SKU.',
+    scannerAmbiguous: 'هذا الباركود أو SKU مرتبط بأكثر من عنصر. صححه من صفحة المنتجات قبل البيع.',
+  },
+  ku: {
+    checkout: 'پارەدان',
+    checkoutTitle: 'تەواوکردنی پارەدان',
+    checkoutSubtitle: 'کۆی گشتی و شێوازی پارەدان بپشکنە پێش تۆمارکردنی فرۆشتن.',
+    closeCheckout: 'داخستن',
+    cancelCheckout: 'گەڕانەوە',
+    confirmSale: 'پشتڕاستکردنەوەی فرۆشتن',
+    scannerReady: 'خوێنەری بارکۆد ئامادەیە — لە هەر شوێنێکی پەڕەی فرۆشتن بارکۆد بخوێنەوە.',
+    scannerNotFound: 'هیچ بەرهەم یان جۆرێک بەم بارکۆد یان SKU نەدۆزرایەوە.',
+    scannerAmbiguous: 'ئەم بارکۆد یان SKU ـە بە زیاتر لە یەک دانەوە بەستراوە. پێش فرۆشتن لە پەڕەی بەرهەمەکان چاکی بکە.',
+  },
+  en: {
+    checkout: 'Pay',
+    checkoutTitle: 'Complete payment',
+    checkoutSubtitle: 'Review the total and choose a payment method before recording the sale.',
+    closeCheckout: 'Close',
+    cancelCheckout: 'Back',
+    confirmSale: 'Confirm sale',
+    scannerReady: 'Barcode scanner ready — scan from anywhere on the sales screen.',
+    scannerNotFound: 'No product or variant was found for this barcode or SKU.',
+    scannerAmbiguous: 'This barcode or SKU belongs to more than one item. Correct it on the Products page before selling.',
+  },
+} as const satisfies Record<Lang, Record<string, string>>;
