@@ -14,6 +14,7 @@ type Props = {
   dir: 'rtl' | 'ltr';
   labels: PosLabels;
   quote: CashierResolvedSalePricing | null;
+  error?: string | null;
   paymentMethod: CashierPaymentMethod;
   cashTenderText: string;
   cashTenderedMinor: number | null;
@@ -44,6 +45,7 @@ export default function CashierCheckoutModal({
   dir,
   labels,
   quote,
+  error,
   paymentMethod,
   cashTenderText,
   cashTenderedMinor,
@@ -114,6 +116,12 @@ export default function CashierCheckoutModal({
         </header>
 
         <div className="space-y-4 p-5">
+          {error ? (
+            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
+              {error}
+            </div>
+          ) : null}
+
           <div className="rounded-2xl bg-slate-950 px-4 py-4 text-white">
             <div className="flex items-end justify-between gap-4">
               <span className="text-sm font-semibold text-slate-300">{labels.total}</span>
