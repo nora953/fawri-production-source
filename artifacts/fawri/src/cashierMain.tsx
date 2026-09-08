@@ -14,6 +14,10 @@ import { I18nProvider } from '@/lib/i18n';
 import { storedCashierCopy } from '@/lib/cashierUiCopy';
 import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
 import {
+  installCashierOfflineOperatorResume,
+  restoreCashierOfflineOperatorSession,
+} from '@/lib/cashierOfflineOperatorResume';
+import {
   syncCashierOperatorCatalogFromCloud,
   syncCashierOperatorOutboxToCloud,
 } from '@/lib/cashierOperatorCloudSync';
@@ -45,6 +49,7 @@ const reports = params.get('reports') === '1';
 const demoRequested = params.get('demo') === '1';
 
 installCashierConnectivityAuthority();
+installCashierOfflineOperatorResume();
 
 const AUTO_SYNC_INTERVAL_MS = 3_000;
 const AUTO_SYNC_RETRY_BACKOFF_MS = 30_000;
@@ -249,6 +254,7 @@ const operationalPage = sync ? (
 
 async function bootstrapCashier(): Promise<void> {
   await refreshDurableCashierStationBindingMetadata().catch(() => undefined);
+  await restoreCashierOfflineOperatorSession().catch(() => null);
 
   createRoot(document.getElementById('cashier-root')!).render(
     diagnostics ? (
