@@ -68,6 +68,8 @@ type CashierSale = {
   currency_fraction_digits: 0;
   payment_method: "cash" | "card" | "electronic" | "other";
   payment_status: "paid" | "pending";
+  cash_tendered_minor?: number;
+  change_due_minor?: number;
   payment_provider?: string;
   payment_reference?: string;
   note?: string;
@@ -378,6 +380,51 @@ function parseSale(value: unknown): CashierSale {
   ) {
     throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale totals are inconsistent", 400);
   }
+
+  let cashTenderedMinor: number | undefined;
+  let changeDueMinor: number | undefined;
+  const hasCashTenderMetadata =
+    raw.cash_tendered_minor !== undefined || raw.change_due_minor !== undefined;
+  if (paymentMethod === "cash") {
+    // Backward compatibility: queued legacy cash sales created before P1 may
+    // omit tender metadata. P1+ clients send both fields and they are verified.
+    if (hasCashTenderMetadata) {
+      if (raw.cash_tendered_minor === undefined || raw.change_due_minor === undefined) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_INVALID",
+          "cash tender metadata must include received cash and change",
+          400,
+        );
+      }
+      cashTenderedMinor = nonNegativeInteger(
+        raw.cash_tendered_minor,
+        "sale.cash_tendered_minor",
+      );
+      changeDueMinor = nonNegativeInteger(raw.change_due_minor, "sale.change_due_minor");
+      if (cashTenderedMinor < claimedTotal) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_CASH_TENDER_INSUFFICIENT",
+          "cash received is less than the sale total",
+          409,
+        );
+      }
+      const expectedChange = cashTenderedMinor - claimedTotal;
+      if (!Number.isSafeInteger(expectedChange) || changeDueMinor !== expectedChange) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_CASH_CHANGE_INVALID",
+          "cash change does not match the sale total",
+          409,
+        );
+      }
+    }
+  } else if (hasCashTenderMetadata) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_INVALID",
+      "cash tender metadata is allowed only for cash payments",
+      400,
+    );
+  }
+
   return {
     sale_id: identifier(raw.sale_id, "sale.sale_id"),
     operation_id: identifier(raw.operation_id, "sale.operation_id"),
@@ -397,6 +444,10 @@ function parseSale(value: unknown): CashierSale {
     currency_fraction_digits: 0,
     payment_method: paymentMethod as CashierSale["payment_method"],
     payment_status: paymentStatus as CashierSale["payment_status"],
+    ...(cashTenderedMinor !== undefined
+      ? { cash_tendered_minor: cashTenderedMinor }
+      : {}),
+    ...(changeDueMinor !== undefined ? { change_due_minor: changeDueMinor } : {}),
     ...(raw.payment_provider
       ? { payment_provider: optionalText(raw.payment_provider, "sale.payment_provider", 100) }
       : {}),
@@ -809,6 +860,12 @@ async function insertCanonicalOrder(
       subtotal_minor: bundle.sale.subtotal_minor,
       discount_minor: bundle.sale.discount_minor,
       total_minor: bundle.sale.total_minor,
+      ...(bundle.sale.cash_tendered_minor !== undefined
+        ? { cash_tendered_minor: bundle.sale.cash_tendered_minor }
+        : {}),
+      ...(bundle.sale.change_due_minor !== undefined
+        ? { change_due_minor: bundle.sale.change_due_minor }
+        : {}),
       sale_snapshot: bundle.sale,
     },
   };
