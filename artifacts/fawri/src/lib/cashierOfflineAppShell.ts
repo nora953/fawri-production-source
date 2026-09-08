@@ -10,7 +10,7 @@ export type CashierOfflineShellDiagnostics = {
 };
 
 const CASHIER_SW_PATH = '/cashier-sw.js';
-const CASHIER_SW_VERSION = 'v2';
+const CASHIER_SW_VERSION = 'v3';
 const CASHIER_CACHE_NAME = `fawri-cashier-shell-${CASHIER_SW_VERSION}`;
 const FIXED_WARM_URLS = [
   '/cashier.html',
