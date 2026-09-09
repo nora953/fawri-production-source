@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const pos = fs.readFileSync(new URL('../src/pages/CashierPosPage.tsx', import.meta.url), 'utf8');
 const history = fs.readFileSync(new URL('../src/pages/CashierHistoryPage.tsx', import.meta.url), 'utf8');
+const reports = fs.readFileSync(new URL('../src/pages/CashierReportsPage.tsx', import.meta.url), 'utf8');
 const syncPage = fs.readFileSync(new URL('../src/pages/CashierCatalogSyncPage.tsx', import.meta.url), 'utf8');
 const productsRoute = fs.readFileSync(new URL('../src/pages/dashboard/ProductsPage.tsx', import.meta.url), 'utf8');
 const productsWorkspace = fs.readFileSync(new URL('../src/pages/dashboard/ProductsWorkspacePage.tsx', import.meta.url), 'utf8');
@@ -17,6 +18,7 @@ const app = fs.readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const cashierMain = fs.readFileSync(new URL('../src/cashierMain.tsx', import.meta.url), 'utf8');
 const cashierCopy = fs.readFileSync(new URL('../src/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
 const posEnhancementCopy = fs.readFileSync(new URL('../src/lib/cashierPosEnhancementCopy.ts', import.meta.url), 'utf8');
+const operatorSessionUi = fs.readFileSync(new URL('../src/lib/cashierOperatorSessionUi.ts', import.meta.url), 'utf8');
 const i18n = fs.readFileSync(new URL('../src/lib/i18n.tsx', import.meta.url), 'utf8');
 const merchantCommerceUx = fs.readFileSync(new URL('../src/styles/merchantCommerceUxFixes.css', import.meta.url), 'utf8');
 
@@ -35,6 +37,24 @@ test('cashier catalog opening and manual search failures are localized and acces
   assert.ok(pos.includes('role="alert"'));
   assert.equal((posEnhancementCopy.match(/catalogOpenFailed:/g) || []).length, 3);
   assert.equal((posEnhancementCopy.match(/searchFailed:/g) || []).length, 3);
+});
+
+test('cashier operational pages fail closed into operator authorization when the session ends', () => {
+  assert.match(operatorSessionUi, /CASHIER_OPERATOR_LOGIN_REQUIRED/);
+  assert.match(operatorSessionUi, /CASHIER_OPERATOR_SESSION_INVALID/);
+  assert.match(operatorSessionUi, /fawri:cashier-operator-session-invalidated/);
+
+  for (const page of [history, reports, syncPage]) {
+    assert.match(page, /isCashierOperatorSessionEnded/);
+    assert.match(page, /publishCashierOperatorSessionInvalidated/);
+    assert.match(page, /role="alert"/);
+  }
+
+  assert.match(history, /performReturn[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
+  assert.match(history, /performVoid[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
+  assert.match(reports, /buildReport\(rangeOptions\(range\)\)[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
+  assert.match(syncPage, /syncCashierOperatorOutboxToCloud\(\)[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
+  assert.match(syncPage, /syncCashierOperatorCatalogFromCloud\(\)[\s\S]*isCashierOperatorSessionEnded\(catalogCause\)/);
 });
 
 test('cashier and active catalog do not use Arabic thousands separators for merchant money', () => {
