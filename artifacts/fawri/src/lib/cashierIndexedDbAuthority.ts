@@ -677,6 +677,46 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         at: occurredAtDate,
       });
 
+      const manualDiscountMinor = Number(input.manual_discount_minor || 0);
+      if (
+        !isNonNegativeSafeInteger(manualDiscountMinor) ||
+        manualDiscountMinor > pricing.total_minor
+      ) {
+        throw new CashierIndexedDbError(
+          'CASHIER_MANUAL_DISCOUNT_INVALID',
+          'Manual discount must be a safe amount not exceeding the post-promotion total',
+        );
+      }
+      const manualDiscountReason = String(input.manual_discount_reason || '')
+        .normalize('NFKC')
+        .trim();
+      if (
+        manualDiscountMinor > 0 &&
+        (!manualDiscountReason || manualDiscountReason.length > 200 || /[\u0000-\u001f\u007f]/.test(manualDiscountReason))
+      ) {
+        throw new CashierIndexedDbError(
+          'CASHIER_MANUAL_DISCOUNT_REASON_REQUIRED',
+          'A valid reason is required for a manual discount',
+        );
+      }
+      if (manualDiscountMinor === 0 && manualDiscountReason) {
+        throw new CashierIndexedDbError(
+          'CASHIER_MANUAL_DISCOUNT_INVALID',
+          'A manual discount reason cannot exist without a manual discount',
+        );
+      }
+      const finalTotalMinor = pricing.total_minor - manualDiscountMinor;
+      const totalDiscountMinor = pricing.discount_minor + manualDiscountMinor;
+      if (
+        !isNonNegativeSafeInteger(finalTotalMinor) ||
+        !isNonNegativeSafeInteger(totalDiscountMinor)
+      ) {
+        throw new CashierIndexedDbError(
+          'CASHIER_MANUAL_DISCOUNT_INVALID',
+          'Manual discount arithmetic is unsafe',
+        );
+      }
+
       let cashTenderedMinor: number | undefined;
       let changeDueMinor: number | undefined;
       const hasCashTenderMetadata =
@@ -684,7 +724,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       if (input.payment_method === 'cash') {
         // Legacy queued cash sales created before P1 may omit tender metadata.
         // New P1 UI always sends both values; when present they are validated
-        // against the authoritative sale-time total before any inventory write.
+        // against the authoritative final total after promotions/manual discount.
         if (hasCashTenderMetadata) {
           if (
             !isNonNegativeSafeInteger(Number(input.cash_tendered_minor)) ||
@@ -697,13 +737,13 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
           }
           cashTenderedMinor = Number(input.cash_tendered_minor);
           changeDueMinor = Number(input.change_due_minor);
-          if (cashTenderedMinor < pricing.total_minor) {
+          if (cashTenderedMinor < finalTotalMinor) {
             throw new CashierIndexedDbError(
               'CASHIER_CASH_TENDER_INSUFFICIENT',
               'Cash received is less than the sale total',
             );
           }
-          const expectedChange = cashTenderedMinor - pricing.total_minor;
+          const expectedChange = cashTenderedMinor - finalTotalMinor;
           if (!Number.isSafeInteger(expectedChange) || changeDueMinor !== expectedChange) {
             throw new CashierIndexedDbError(
               'CASHIER_CASH_CHANGE_INVALID',
@@ -773,8 +813,15 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         status: 'completed',
         lines: saleLines,
         subtotal_minor: pricing.subtotal_minor,
-        discount_minor: pricing.discount_minor,
-        total_minor: pricing.total_minor,
+        promotion_discount_minor: pricing.discount_minor,
+        ...(manualDiscountMinor > 0
+          ? {
+              manual_discount_minor: manualDiscountMinor,
+              manual_discount_reason: manualDiscountReason,
+            }
+          : {}),
+        discount_minor: totalDiscountMinor,
+        total_minor: finalTotalMinor,
         currency_code: pricing.currency_code,
         currency_fraction_digits: pricing.currency_fraction_digits,
         payment_method: input.payment_method,
