@@ -11,6 +11,7 @@ import {
   Brain,
   Radio,
   CreditCard,
+  Calculator,
   LogOut,
   Bell,
   Headphones,
@@ -30,6 +31,7 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
   exact?: boolean;
   badge?: number;
+  fullPage?: boolean;
 };
 
 function isActiveRoute(
@@ -74,6 +76,8 @@ export function BottomNav() {
   const [location, setLocation] = useLocation();
   const [moreOpen, setMoreOpen] = useState(false);
   const unreadNotifications = useUnreadMerchantNotificationCount();
+  const cashierLabel =
+    lang === "en" ? "Cashier" : lang === "ku" ? "کاشێر" : "الكاشير";
 
   const mainItems: NavItem[] = [
     {
@@ -100,6 +104,12 @@ export function BottomNav() {
   ];
 
   const moreItems: NavItem[] = [
+    {
+      href: "/cashier.html",
+      label: cashierLabel,
+      icon: Calculator,
+      fullPage: true,
+    },
     {
       href: "/dashboard/notifications",
       label: t.notifications_title,
@@ -140,7 +150,7 @@ export function BottomNav() {
 
   const isMoreActive = useMemo(() => {
     return moreItems.some((item) =>
-      isActiveRoute(location, item.href, item.exact),
+      !item.fullPage && isActiveRoute(location, item.href, item.exact),
     );
   }, [location, moreItems]);
 
@@ -215,20 +225,14 @@ export function BottomNav() {
         >
           <div className="flex flex-col gap-1" dir={dir}>
             {moreItems.map((item) => {
-              const isActive = isActiveRoute(location, item.href, item.exact);
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={handleNavigate}
-                  aria-current={isActive ? "page" : undefined}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors ${
-                    isActive
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-accent"
-                  }`}
-                >
+              const isActive = !item.fullPage && isActiveRoute(location, item.href, item.exact);
+              const className = `flex items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors ${
+                isActive
+                  ? "bg-accent text-accent-foreground"
+                  : "hover:bg-accent"
+              }`;
+              const content = (
+                <>
                   <span className="relative inline-flex shrink-0">
                     <item.icon className="h-4 w-4 text-muted-foreground" />
                     <NavBadge
@@ -237,6 +241,33 @@ export function BottomNav() {
                     />
                   </span>
                   <span className="truncate">{item.label}</span>
+                </>
+              );
+
+              if (item.fullPage) {
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={handleNavigate}
+                    className={className}
+                  >
+                    {content}
+                  </a>
+                );
+              }
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={handleNavigate}
+                  aria-current={isActive ? "page" : undefined}
+                  className={className}
+                >
+                  {content}
                 </Link>
               );
             })}

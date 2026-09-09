@@ -15,6 +15,7 @@ import { useI18n } from "@/lib/i18n";
 import SupportPreviewLauncher from "@/components/admin/SupportPreviewLauncher";
 import EmergencyIncidentNoticeBanner from "@/components/EmergencyIncidentNoticeBanner";
 import "@/styles/emergency-access-compact.css";
+import "@/styles/merchantCommerceUxFixes.css";
 
 // Layouts
 import { DashboardLayout } from "@/components/layout/DashboardLayout";

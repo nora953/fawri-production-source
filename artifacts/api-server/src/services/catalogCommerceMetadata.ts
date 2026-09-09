@@ -20,11 +20,23 @@ export type CatalogCommerceFields = {
   item_type: CatalogItemType;
   track_inventory: boolean;
   service_details?: CatalogServiceDetails;
+  /** Merchant-private reporting cost. It must never be used in customer facts. */
+  cost_iqd?: number;
+  /** Merchant-private variant costs keyed by canonical variant signature. */
+  variant_costs_iqd?: Record<string, number>;
 };
 
-export type CatalogCommerceProduct = CatalogProduct & CatalogCommerceFields;
+export type CatalogCommerceVariant = CatalogProduct["variants"][number] & {
+  cost_iqd?: number;
+};
+
+export type CatalogCommerceProduct = Omit<CatalogProduct, "variants"> &
+  Omit<CatalogCommerceFields, "variant_costs_iqd"> & {
+    variants: CatalogCommerceVariant[];
+  };
 
 const METADATA_KEY = "fawri_catalog_v2";
+const MAX_REPORTING_COST_IQD = 1_000_000_000_000;
 const ITEM_TYPES = new Set<CatalogItemType>(["product", "service"]);
 const SERVICE_PRICE_TYPES = new Set<CatalogServicePriceType>([
   "fixed",
@@ -85,6 +97,33 @@ function boundedInteger(
   return parsed;
 }
 
+function reportingCost(
+  value: unknown,
+  field: string,
+  options: { fallback?: number; persisted?: boolean } = {},
+): number | undefined {
+  if (value === undefined) return options.fallback;
+  if (value === null || value === "") return undefined;
+  const parsed = Number(value);
+  if (
+    !Number.isSafeInteger(parsed) ||
+    parsed < 0 ||
+    parsed > MAX_REPORTING_COST_IQD
+  ) {
+    throw new CatalogRuntimeError(
+      options.persisted
+        ? "CATALOG_REPORTING_COST_STATE_INVALID"
+        : "CATALOG_REPORTING_COST_INVALID",
+      options.persisted
+        ? "catalog reporting cost state is invalid"
+        : `${field} must be a valid non-negative IQD amount`,
+      options.persisted ? 503 : 400,
+      { field, max: MAX_REPORTING_COST_IQD },
+    );
+  }
+  return parsed;
+}
+
 function itemType(value: unknown, fallback: CatalogItemType): CatalogItemType {
   const normalized = normalizedText(value || fallback) as CatalogItemType;
   if (!ITEM_TYPES.has(normalized)) {
@@ -130,6 +169,64 @@ function serviceLocationMode(
   return normalized;
 }
 
+function variantSignature(value: unknown): string {
+  const variant = record(value);
+  const options = record(variant.options);
+  const entries = Object.entries(options)
+    .map(([name, optionValue]) =>
+      `${normalizedText(name)}=${normalizedText(optionValue)}`,
+    )
+    .filter((entry) => entry !== "=")
+    .sort();
+  if (entries.length > 0) return entries.join("|");
+  const name = normalizedText(variant.name);
+  return name ? `name=${name}` : "";
+}
+
+function variantCostsFromStored(value: unknown): Record<string, number> {
+  const raw = record(value);
+  const entries = Object.entries(raw);
+  if (entries.length > 100) {
+    throw new CatalogRuntimeError(
+      "CATALOG_REPORTING_COST_STATE_INVALID",
+      "catalog variant reporting cost state is invalid",
+      503,
+    );
+  }
+  const costs: Record<string, number> = {};
+  for (const [signature, rawCost] of entries) {
+    if (!signature || signature.length > 1_000) {
+      throw new CatalogRuntimeError(
+        "CATALOG_REPORTING_COST_STATE_INVALID",
+        "catalog variant reporting cost signature is invalid",
+        503,
+      );
+    }
+    const cost = reportingCost(rawCost, "variant.cost_iqd", { persisted: true });
+    if (cost !== undefined) costs[signature] = cost;
+  }
+  return costs;
+}
+
+function variantCostsFromInput(
+  input: Record<string, unknown>,
+  existing: Record<string, number>,
+): Record<string, number> {
+  if (!hasOwn(input, "variants")) return { ...existing };
+  if (!Array.isArray(input.variants)) return {};
+  const next: Record<string, number> = {};
+  for (const rawVariant of input.variants) {
+    const variant = record(rawVariant);
+    const signature = variantSignature(variant);
+    if (!signature) continue;
+    const cost = hasOwn(variant, "cost_iqd")
+      ? reportingCost(variant.cost_iqd, "variant.cost_iqd")
+      : existing[signature];
+    if (cost !== undefined) next[signature] = cost;
+  }
+  return next;
+}
+
 export function defaultCatalogCommerceFields(): CatalogCommerceFields {
   return {
     item_type: "product",
@@ -147,11 +244,20 @@ export function catalogCommerceFromMetadata(metadataValue: unknown): CatalogComm
     resolvedItemType === "service"
       ? false
       : booleanValue(stored.track_inventory, true);
+  const cost = reportingCost(stored.cost_iqd, "cost_iqd", { persisted: true });
+  const variantCosts = variantCostsFromStored(stored.variant_costs_iqd);
+  const reportingFields = {
+    ...(cost !== undefined ? { cost_iqd: cost } : {}),
+    ...(Object.keys(variantCosts).length > 0
+      ? { variant_costs_iqd: variantCosts }
+      : {}),
+  };
 
   if (resolvedItemType !== "service") {
     return {
       item_type: resolvedItemType,
       track_inventory: resolvedTrackInventory,
+      ...reportingFields,
     };
   }
 
@@ -180,6 +286,7 @@ export function catalogCommerceFromMetadata(metadataValue: unknown): CatalogComm
       price_type: servicePriceType(rawService.price_type, "fixed"),
       location_mode: serviceLocationMode(rawService.location_mode, "merchant"),
     },
+    ...reportingFields,
   };
 }
 
@@ -192,6 +299,19 @@ export function normalizeCatalogCommerceInput(
   const resolvedItemType = hasOwn(input, "item_type")
     ? itemType(input.item_type, fallback.item_type)
     : fallback.item_type;
+  const cost = hasOwn(input, "cost_iqd")
+    ? reportingCost(input.cost_iqd, "cost_iqd")
+    : fallback.cost_iqd;
+  const variantCosts =
+    resolvedItemType === "service"
+      ? {}
+      : variantCostsFromInput(input, fallback.variant_costs_iqd || {});
+  const reportingFields = {
+    ...(cost !== undefined ? { cost_iqd: cost } : {}),
+    ...(Object.keys(variantCosts).length > 0
+      ? { variant_costs_iqd: variantCosts }
+      : {}),
+  };
 
   const requestedTrackInventory = hasOwn(input, "track_inventory")
     ? booleanValue(input.track_inventory, fallback.track_inventory)
@@ -211,6 +331,7 @@ export function normalizeCatalogCommerceInput(
     return {
       item_type: "product",
       track_inventory: requestedTrackInventory,
+      ...reportingFields,
     };
   }
 
@@ -260,6 +381,7 @@ export function normalizeCatalogCommerceInput(
           )
         : existingService?.location_mode ?? "merchant",
     },
+    ...reportingFields,
   };
 }
 
@@ -268,12 +390,14 @@ export function catalogCommerceMetadataPatch(
 ): Record<string, unknown> {
   return {
     [METADATA_KEY]: {
-      version: 1,
+      version: 2,
       item_type: fields.item_type,
       track_inventory: fields.track_inventory,
       ...(fields.service_details
         ? { service_details: { ...fields.service_details } }
         : {}),
+      cost_iqd: fields.cost_iqd ?? null,
+      variant_costs_iqd: fields.variant_costs_iqd || {},
     },
   };
 }
@@ -281,8 +405,24 @@ export function catalogCommerceMetadataPatch(
 export function applyCatalogCommerceFields<T extends CatalogProduct>(
   product: T,
   fields: CatalogCommerceFields,
-): T & CatalogCommerceFields {
-  return Object.assign(product, {
+): T & Omit<CatalogCommerceFields, "variant_costs_iqd"> & {
+  variants: CatalogCommerceVariant[];
+} {
+  const mutable = product as T & {
+    cost_iqd?: number;
+    variants: CatalogCommerceVariant[];
+  };
+  if (fields.cost_iqd === undefined) delete mutable.cost_iqd;
+  else mutable.cost_iqd = fields.cost_iqd;
+
+  const costs = fields.variant_costs_iqd || {};
+  for (const variant of mutable.variants) {
+    const cost = costs[variantSignature(variant)];
+    if (cost === undefined) delete variant.cost_iqd;
+    else variant.cost_iqd = cost;
+  }
+
+  return Object.assign(mutable, {
     item_type: fields.item_type,
     track_inventory: fields.track_inventory,
     ...(fields.service_details
@@ -294,19 +434,41 @@ export function applyCatalogCommerceFields<T extends CatalogProduct>(
 export function catalogCommerceFieldsOf(product: unknown): CatalogCommerceFields {
   const value = record(product);
   const resolvedItemType = itemType(value.item_type, "product");
+  const cost = reportingCost(value.cost_iqd, "cost_iqd");
+  const variantCosts: Record<string, number> = {};
+  if (Array.isArray(value.variants)) {
+    for (const rawVariant of value.variants) {
+      const variant = record(rawVariant);
+      const signature = variantSignature(variant);
+      const variantCost = reportingCost(variant.cost_iqd, "variant.cost_iqd");
+      if (signature && variantCost !== undefined) variantCosts[signature] = variantCost;
+    }
+  }
+  const reportingFields = {
+    ...(cost !== undefined ? { cost_iqd: cost } : {}),
+    ...(Object.keys(variantCosts).length > 0
+      ? { variant_costs_iqd: variantCosts }
+      : {}),
+  };
+
   if (resolvedItemType === "service") {
-    return normalizeCatalogCommerceInput(
-      {
-        item_type: "service",
-        track_inventory: false,
-        service_details: record(value.service_details),
-      },
-      { item_type: "service", track_inventory: false },
-    );
+    return {
+      ...normalizeCatalogCommerceInput(
+        {
+          item_type: "service",
+          track_inventory: false,
+          service_details: record(value.service_details),
+          ...(cost !== undefined ? { cost_iqd: cost } : {}),
+        },
+        { item_type: "service", track_inventory: false },
+      ),
+      ...reportingFields,
+    };
   }
   return {
     item_type: "product",
     track_inventory: booleanValue(value.track_inventory, true),
+    ...reportingFields,
   };
 }
 

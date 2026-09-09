@@ -1,5 +1,5 @@
 import { COMMON_UI_COPY } from '@/lib/translations/commonUi';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
@@ -15,10 +15,6 @@ import { useI18n } from '@/lib/i18n';
 import { FAWRI_UI_BASELINE_CLASS } from '@/lib/fawriUiBaseline';
 import type { Merchant } from '@/lib/types';
 import { useMerchantRealtimeConnection } from '@/hooks/useMerchantRealtime';
-import {
-  readCashierDashboardRefreshToken,
-  subscribeCashierDashboardRefresh,
-} from '@/lib/cashierDashboardRefresh';
 
 const PRODUCT_READ_ONLY_STATUSES = new Set([
   'warning_2',
@@ -75,47 +71,6 @@ function AuthorizedDashboard({
   const productsReadOnly =
     location.startsWith('/dashboard/products') &&
     PRODUCT_READ_ONLY_STATUSES.has(merchant.retention_status || '');
-  const lastCashierRefreshToken = useRef(readCashierDashboardRefreshToken());
-  const pendingCashierRefresh = useRef(false);
-
-  useEffect(() => {
-    const refreshTarget =
-      location.startsWith('/dashboard/products') ||
-      location.startsWith('/dashboard/orders');
-
-    const refreshForToken = (token: string | null) => {
-      if (!token || token === lastCashierRefreshToken.current) return;
-      lastCashierRefreshToken.current = token;
-      if (!refreshTarget) return;
-
-      if (document.visibilityState === 'hidden') {
-        pendingCashierRefresh.current = true;
-        return;
-      }
-
-      window.location.reload();
-    };
-
-    const unsubscribe = subscribeCashierDashboardRefresh(refreshForToken);
-    const checkLatestToken = () => {
-      if (document.visibilityState !== 'visible') return;
-      if (pendingCashierRefresh.current) {
-        pendingCashierRefresh.current = false;
-        window.location.reload();
-        return;
-      }
-      refreshForToken(readCashierDashboardRefreshToken());
-    };
-
-    document.addEventListener('visibilitychange', checkLatestToken);
-    window.addEventListener('focus', checkLatestToken);
-
-    return () => {
-      unsubscribe();
-      document.removeEventListener('visibilitychange', checkLatestToken);
-      window.removeEventListener('focus', checkLatestToken);
-    };
-  }, [location]);
 
   return (
     <div className="flex min-h-[100dvh] bg-background">

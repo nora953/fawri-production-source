@@ -90,6 +90,33 @@ test("Knowledge asks for area in per-area mode and resolves explicit tenant rate
   assert.match(explicit?.answerText || "", /50,000/);
 });
 
+test("Knowledge formats delivery minor units using the merchant currency", async () => {
+  const sql = new FakeSql(async (query) => {
+    if (query.includes("JOIN merchant_settings")) {
+      return [settings({
+        merchant_currency_code: "USD",
+        free_delivery_threshold_iqd: 5_000,
+      })];
+    }
+    if (query.includes("FROM merchant_delivery_area_rates")) {
+      return [rate({ fee_iqd: 1_999 })];
+    }
+    if (query.includes("FROM commerce_promotions")) return [];
+    return [];
+  });
+  const resolver = new PostgresOperationalFactResolver(sql);
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "delivery to المنصور",
+    language: "en",
+  });
+
+  assert.equal(result?.factType, "delivery_policy");
+  assert.match(result?.answerText || "", /19\.99 USD/);
+  assert.match(result?.answerText || "", /50\.00 USD/);
+  assert.equal((result?.answerText || "").includes("IQD"), false);
+});
+
 test("active free-delivery promotion is applied to the delivery fact Fawri discloses", async () => {
   const sql = new FakeSql(async (query) => {
     if (query.includes("JOIN merchant_settings")) return [

@@ -11,11 +11,19 @@ import {
 } from '@/lib/cashierPosRuntime';
 import { subscribeCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import {
+  CASHIER_CATALOG_OPEN_ERROR_COPY,
+  CASHIER_SEARCH_ERROR_COPY,
+} from '@/lib/cashierSearchErrorCopy';
+import {
   getCashierSyncUiState,
   requestCashierSync,
   subscribeCashierSyncUiState,
   type CashierSyncUiState,
 } from '@/lib/cashierSyncUiState';
+import { CASHIER_UI_COPY } from '@/lib/cashierUiCopy';
+import { useI18n } from '@/lib/i18n';
+import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import type { Lang } from '@/lib/types';
 
 type CartLine = { item: CashierCatalogLookup; quantity: number };
 type SaleSuccess = {
@@ -25,48 +33,65 @@ type SaleSuccess = {
   fractionDigits: number;
 };
 
-// Render the whole compact-cart strip. CSS keeps the scrollbar hidden for small carts
-// and exposes a horizontal scrollbar once the cart reaches 10 distinct items
-// (one active item + nine compact cards).
+type PosLabels = (typeof CASHIER_UI_COPY)[Lang]['pos'];
+
 const COMPACT_ITEMS_PER_PAGE = 100;
 
 function itemKey(item: { product_id: string; variant_id?: string }): string {
   return `${item.product_id}\u0000${item.variant_id || ''}`;
 }
 
-function formatMoney(amountMinor: number, currencyCode: string, fractionDigits: number): string {
-  const divisor = 10 ** fractionDigits;
-  try {
-    return new Intl.NumberFormat('ar-IQ', {
-      style: 'currency',
-      currency: currencyCode,
-      minimumFractionDigits: fractionDigits,
-      maximumFractionDigits: fractionDigits,
-    }).format(amountMinor / divisor);
-  } catch {
-    return `${(amountMinor / divisor).toLocaleString('ar-IQ')} ${currencyCode}`;
-  }
+function formatMoney(
+  amountMinor: number,
+  currencyCode: string,
+  fractionDigits: number,
+  lang: Lang,
+): string {
+  return formatMerchantMoneyMinor(amountMinor, currencyCode, fractionDigits, lang);
 }
 
-function errorMessage(error: unknown): string {
+function catalogMatches(
+  current: CashierCatalogLookup[],
+  next: CashierCatalogLookup[],
+): boolean {
+  if (current.length !== next.length) return false;
+  return current.every((item, index) => {
+    const candidate = next[index];
+    return Boolean(candidate) &&
+      itemKey(item) === itemKey(candidate) &&
+      item.name === candidate.name &&
+      item.variant_name === candidate.variant_name &&
+      item.sku === candidate.sku &&
+      item.barcode === candidate.barcode &&
+      item.item_type === candidate.item_type &&
+      item.track_inventory === candidate.track_inventory &&
+      item.stock_quantity === candidate.stock_quantity &&
+      item.base_unit_price_minor === candidate.base_unit_price_minor &&
+      item.currency_code === candidate.currency_code &&
+      item.currency_fraction_digits === candidate.currency_fraction_digits &&
+      item.catalog_version === candidate.catalog_version;
+  });
+}
+
+function errorMessage(error: unknown, labels: PosLabels): string {
   const code =
     typeof error === 'object' && error && 'code' in error
       ? String((error as { code?: unknown }).code || '')
       : '';
   const message = error instanceof Error ? error.message : String(error || '');
   if (code === 'CASHIER_OUT_OF_STOCK' || message.includes('CASHIER_OUT_OF_STOCK')) {
-    return 'الكمية المطلوبة غير متوفرة في المخزون.';
+    return labels.errorOutOfStock;
   }
   if (code === 'CASHIER_PROMOTION_CONFLICT' || message.includes('PROMOTION_CONFLICT')) {
-    return 'يوجد تعارض بين العروض الحالية. لم يتم تسجيل البيع.';
+    return labels.errorPromotionConflict;
   }
   if (code.includes('CURRENCY') || message.includes('CURRENCY')) {
-    return 'لا يمكن جمع عناصر بعملات مختلفة في عملية بيع واحدة.';
+    return labels.errorCurrencyConflict;
   }
   if (message.includes('ITEM_NOT_FOUND')) {
-    return 'أحد عناصر السلة لم يعد متاحًا.';
+    return labels.errorItemNotFound;
   }
-  return 'تعذر إكمال البيع. لم يتم تسجيل العملية.';
+  return labels.errorSaleFailed;
 }
 
 function isSyncSessionRequired(code?: string): boolean {
@@ -76,15 +101,21 @@ function isSyncSessionRequired(code?: string): boolean {
   );
 }
 
-function syncButtonLabel(state: CashierSyncUiState): string {
-  if (state.status === 'syncing') return 'جارٍ المزامنة...';
-  if (state.status === 'synced') return 'تمت المزامنة';
+function syncButtonLabel(state: CashierSyncUiState, labels: PosLabels): string {
+  if (state.status === 'syncing') return labels.syncing;
+  if (state.status === 'synced') return labels.synced;
   if (state.status === 'needs_attention') {
     return isSyncSessionRequired(state.code)
-      ? 'تسجيل الدخول مطلوب'
-      : 'مزامنة مطلوبة';
+      ? labels.loginRequired
+      : labels.syncRequired;
   }
-  return 'مزامنة';
+  return labels.sync;
+}
+
+function syncAttentionMessage(state: CashierSyncUiState, labels: PosLabels): string {
+  return isSyncSessionRequired(state.code)
+    ? labels.syncSessionMessage
+    : labels.syncRetryMessage;
 }
 
 function syncButtonClassName(state: CashierSyncUiState): string {
@@ -103,6 +134,8 @@ function syncButtonClassName(state: CashierSyncUiState): string {
 }
 
 export default function CashierPosPage() {
+  const { lang, dir } = useI18n();
+  const labels = CASHIER_UI_COPY[lang].pos;
   const demoMode =
     import.meta.env.VITE_CASHIER_SMOKE === '1' &&
     new URLSearchParams(window.location.search).get('demo') === '1';
@@ -127,12 +160,17 @@ export default function CashierPosPage() {
   const [success, setSuccess] = useState<SaleSuccess | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
-  const refreshCatalog = useCallback(async (activeRuntime: CashierPosRuntime, nextQuery: string) => {
-    setSearching(true);
+  const refreshCatalog = useCallback(async (
+    activeRuntime: CashierPosRuntime,
+    nextQuery: string,
+    visible = true,
+  ) => {
+    if (visible) setSearching(true);
     try {
-      setCatalog(await activeRuntime.searchCatalog(nextQuery, 50));
+      const next = await activeRuntime.searchCatalog(nextQuery, 50);
+      setCatalog(current => catalogMatches(current, next) ? current : next);
     } finally {
-      setSearching(false);
+      if (visible) setSearching(false);
     }
   }, []);
 
@@ -146,8 +184,8 @@ export default function CashierPosPage() {
         setRuntime(created);
         await refreshCatalog(created, '');
       })
-      .catch(cause => {
-        if (!stopped) setError(errorMessage(cause));
+      .catch(() => {
+        if (!stopped) setError(CASHIER_CATALOG_OPEN_ERROR_COPY[lang]);
       })
       .finally(() => {
         if (!stopped) setLoading(false);
@@ -156,7 +194,7 @@ export default function CashierPosPage() {
       stopped = true;
       if (activeRuntime) void activeRuntime.close().catch(() => undefined);
     };
-  }, [demoMode, refreshCatalog]);
+  }, [demoMode, lang, refreshCatalog]);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -173,7 +211,7 @@ export default function CashierPosPage() {
   useEffect(() => {
     if (!runtime) return;
     return subscribeCashierCatalogRefresh(() => {
-      void refreshCatalog(runtime, query).catch(() => undefined);
+      void refreshCatalog(runtime, query, false).catch(() => undefined);
     });
   }, [query, refreshCatalog, runtime]);
 
@@ -216,7 +254,7 @@ export default function CashierPosPage() {
         .catch(cause => {
           if (!stopped) {
             setQuote(null);
-            setQuoteError(errorMessage(cause));
+            setQuoteError(errorMessage(cause, labels));
           }
         });
     }, 80);
@@ -224,7 +262,7 @@ export default function CashierPosPage() {
       stopped = true;
       window.clearTimeout(timer);
     };
-  }, [runtime, saleLines]);
+  }, [labels, runtime, saleLines]);
 
   const addItem = useCallback((item: CashierCatalogLookup) => {
     const key = itemKey(item);
@@ -240,7 +278,7 @@ export default function CashierPosPage() {
         typeof item.stock_quantity === 'number' &&
         currentQuantity >= item.stock_quantity
       ) {
-        setError('لا توجد كمية إضافية متاحة من هذا العنصر.');
+        setError(labels.errorNoExtraStock);
         return current;
       }
       if (existing) {
@@ -250,7 +288,7 @@ export default function CashierPosPage() {
       }
       return [...current, { item, quantity: 1 }];
     });
-  }, []);
+  }, [labels]);
 
   const updateQuantity = useCallback((key: string, next: number) => {
     setError(null);
@@ -260,35 +298,40 @@ export default function CashierPosPage() {
         if (next <= 0) return [];
         const max = line.item.track_inventory ? line.item.stock_quantity : undefined;
         if (typeof max === 'number' && next > max) {
-          setError('الكمية المطلوبة أكبر من المخزون المتاح.');
+          setError(labels.errorQuantityExceedsStock);
           return [line];
         }
         return [{ ...line, quantity: next }];
       }),
     );
-  }, []);
+  }, [labels]);
 
   const performSearch = useCallback(async () => {
     if (!runtime) return;
     setError(null);
     const value = query.trim();
-    if (value) {
-      const exact = await runtime.lookupExact(value).catch(() => null);
-      if (exact) {
-        addItem(exact);
-        setQuery('');
-        await refreshCatalog(runtime, '');
-        searchRef.current?.focus();
-        return;
+    try {
+      if (value) {
+        const exact = await runtime.lookupExact(value).catch(() => null);
+        if (exact) {
+          addItem(exact);
+          setQuery('');
+          await refreshCatalog(runtime, '', false);
+          searchRef.current?.focus();
+          return;
+        }
       }
+      await refreshCatalog(runtime, value);
+    } catch {
+      setError(CASHIER_SEARCH_ERROR_COPY[lang]);
+      searchRef.current?.focus();
     }
-    await refreshCatalog(runtime, value);
-  }, [addItem, query, refreshCatalog, runtime]);
+  }, [addItem, lang, query, refreshCatalog, runtime]);
 
   const completeSale = useCallback(async () => {
     if (!runtime || cart.length === 0 || !quote || quoteError) return;
     if (paymentMethod !== 'cash' && !externalConfirmed) {
-      setError('أكد استلام أو نجاح الدفع قبل إتمام البيع.');
+      setError(labels.errorConfirmExternalPayment);
       return;
     }
     setCommitting(true);
@@ -316,15 +359,15 @@ export default function CashierPosPage() {
       setCompactPage(0);
       setPaymentMethod('cash');
       setExternalConfirmed(false);
-      await refreshCatalog(runtime, query);
+      await refreshCatalog(runtime, query, false);
       searchRef.current?.focus();
     } catch (cause) {
-      setError(errorMessage(cause));
-      await refreshCatalog(runtime, query).catch(() => undefined);
+      setError(errorMessage(cause, labels));
+      await refreshCatalog(runtime, query, false).catch(() => undefined);
     } finally {
       setCommitting(false);
     }
-  }, [cart.length, externalConfirmed, paymentMethod, query, quote, quoteError, refreshCatalog, runtime, saleLines]);
+  }, [cart.length, externalConfirmed, labels, paymentMethod, query, quote, quoteError, refreshCatalog, runtime, saleLines]);
 
   const cartCount = cart.reduce((sum, line) => sum + line.quantity, 0);
   const quoteByKey = useMemo(() => {
@@ -353,27 +396,29 @@ export default function CashierPosPage() {
   );
 
   const syncDisabled = !online || syncUiState.status === 'syncing';
-  const syncNeedsAttention =
-    syncUiState.status === 'needs_attention' && Boolean(syncUiState.message);
+  const syncNeedsAttention = syncUiState.status === 'needs_attention';
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-[100dvh] lg:overflow-hidden" dir="rtl">
+    <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-[100dvh] lg:overflow-hidden" dir={dir}>
       <div className="mx-auto flex min-h-screen max-w-[1500px] flex-col p-3 lg:h-full lg:min-h-0 lg:p-4">
         <header className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <div className="flex items-center gap-3">
             <img src="/fawri-logo.svg" alt="Fawri" className="h-10 w-10 object-contain" />
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold">الكاشير</h1>
-              {demoMode ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">وضع اختبار</span> : null}
+              <h1 className="text-xl font-bold">{labels.title}</h1>
+              {demoMode ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-800">{labels.demoMode}</span> : null}
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5">
             <div className="flex items-center gap-2 text-sm">
               <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
-                {online ? 'متصل' : 'غير متصل'}
+                {online ? labels.online : labels.offline}
               </span>
               <a href="/cashier.html?history=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
-                سجل المبيعات
+                {labels.history}
+              </a>
+              <a href="/cashier.html?reports=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
+                {labels.reports}
               </a>
               <button
                 type="button"
@@ -383,26 +428,26 @@ export default function CashierPosPage() {
                 aria-describedby={syncNeedsAttention ? 'cashier-sync-message' : undefined}
                 className={syncButtonClassName(syncUiState)}
               >
-                {syncButtonLabel(syncUiState)}
+                {syncButtonLabel(syncUiState, labels)}
               </button>
             </div>
             {syncNeedsAttention ? (
               <p
                 id="cashier-sync-message"
                 role="status"
-                className="max-w-[430px] rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-right text-xs font-medium leading-5 text-amber-800"
+                className="max-w-[430px] rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-start text-xs font-medium leading-5 text-amber-800"
               >
-                {syncUiState.message}
+                {syncAttentionMessage(syncUiState, labels)}
               </p>
             ) : null}
           </div>
         </header>
 
-        {error ? <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
+        {error ? <div role="alert" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
         {success ? (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            <strong>تم البيع بنجاح.</strong>
-            <span>{formatMoney(success.totalMinor, success.currencyCode, success.fractionDigits)}</span>
+            <strong>{labels.saleSuccess}</strong>
+            <span dir="ltr">{formatMoney(success.totalMinor, success.currencyCode, success.fractionDigits, lang)}</span>
           </div>
         ) : null}
 
@@ -411,10 +456,10 @@ export default function CashierPosPage() {
             <div className="border-b border-slate-100 p-4">
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="font-bold">المنتجات والخدمات</h2>
-                  <p className="mt-0.5 text-xs text-slate-500">ابحث باسم المنتج أو SKU أو امسح الباركود ثم اضغط Enter.</p>
+                  <h2 className="font-bold">{labels.productsServices}</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">{labels.searchHint}</p>
                 </div>
-                <span className="text-xs text-slate-500">{catalog.length} نتيجة</span>
+                <span className="text-xs text-slate-500">{labels.resultCount(catalog.length)}</span>
               </div>
               <div className="flex gap-2">
                 <input
@@ -422,40 +467,40 @@ export default function CashierPosPage() {
                   value={query}
                   onChange={event => setQuery(event.target.value)}
                   onKeyDown={event => { if (event.key === 'Enter') void performSearch(); }}
-                  placeholder="الاسم، SKU أو الباركود"
+                  placeholder={labels.searchPlaceholder}
                   className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                   autoFocus
                 />
                 <button type="button" onClick={() => void performSearch()} disabled={!runtime || searching} className="h-11 rounded-xl bg-slate-900 px-5 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50">
-                  {searching ? 'جارٍ البحث...' : 'بحث'}
+                  {searching ? labels.searching : labels.search}
                 </button>
               </div>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               {loading ? (
-                <div className="flex h-full min-h-56 items-center justify-center text-sm text-slate-500">جارٍ فتح الكتالوج...</div>
+                <div className="flex h-full min-h-56 items-center justify-center text-sm text-slate-500">{labels.openingCatalog}</div>
               ) : catalog.length === 0 ? (
                 <div className="flex h-full min-h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center">
                   <div className="mb-3 text-3xl">⌁</div>
-                  <h3 className="font-bold">لا توجد منتجات جاهزة للبيع</h3>
-                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">حدّث المنتجات عند توفر الاتصال ثم أعد فتح الكاشير.</p>
+                  <h3 className="font-bold">{labels.noProducts}</h3>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{labels.noProductsHint}</p>
                 </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {catalog.map(item => {
                     const soldOut = item.track_inventory && Number(item.stock_quantity || 0) <= 0;
                     return (
-                      <button type="button" key={itemKey(item)} onClick={() => addItem(item)} disabled={soldOut} className="rounded-2xl border border-slate-200 p-4 text-right transition hover:border-orange-300 hover:bg-orange-50/40 disabled:cursor-not-allowed disabled:opacity-50">
+                      <button type="button" key={itemKey(item)} onClick={() => addItem(item)} disabled={soldOut} className="rounded-2xl border border-slate-200 p-4 text-start transition hover:border-orange-300 hover:bg-orange-50/40 disabled:cursor-not-allowed disabled:opacity-50">
                         <div className="mb-3 flex items-start justify-between gap-3">
-                          <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{item.item_type === 'service' ? 'خدمة' : 'منتج'}</span>
-                          <span className="text-base font-bold">{formatMoney(item.base_unit_price_minor, item.currency_code, item.currency_fraction_digits)}</span>
+                          <span className="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">{item.item_type === 'service' ? labels.service : labels.product}</span>
+                          <span className="text-base font-bold" dir="ltr">{formatMoney(item.base_unit_price_minor, item.currency_code, item.currency_fraction_digits, lang)}</span>
                         </div>
                         <h3 className="font-bold leading-6">{item.name}</h3>
                         {item.variant_name ? <p className="mt-1 text-xs text-slate-500">{item.variant_name}</p> : null}
                         <div className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-500">
-                          <span>{item.sku || item.barcode || 'بدون رمز'}</span>
-                          <span className={soldOut ? 'font-bold text-red-600' : ''}>{item.track_inventory ? `المخزون: ${item.stock_quantity ?? 0}` : 'لا يتتبع المخزون'}</span>
+                          <span>{item.sku || item.barcode || labels.noCode}</span>
+                          <span className={soldOut ? 'font-bold text-red-600' : ''}>{item.track_inventory ? labels.stock(item.stock_quantity ?? 0) : labels.inventoryUntracked}</span>
                         </div>
                       </button>
                     );
@@ -468,17 +513,17 @@ export default function CashierPosPage() {
           <aside className="flex min-h-[520px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:min-h-0 lg:max-h-full">
             <div className="flex shrink-0 items-center justify-between border-b border-slate-100 p-4">
               <div>
-                <h2 className="font-bold">السلة</h2>
-                <p className="mt-0.5 text-xs text-slate-500">{cartCount} عنصر</p>
+                <h2 className="font-bold">{labels.cart}</h2>
+                <p className="mt-0.5 text-xs text-slate-500">{labels.cartCount(cartCount)}</p>
               </div>
-              {cart.length > 0 ? <button type="button" onClick={() => setCart([])} className="text-xs font-semibold text-red-600 hover:underline">تفريغ السلة</button> : null}
+              {cart.length > 0 ? <button type="button" onClick={() => setCart([])} className="text-xs font-semibold text-red-600 hover:underline">{labels.clearCart}</button> : null}
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3">
               {!activeLine ? (
                 <div className="flex h-full flex-col items-center justify-center text-center text-sm text-slate-500">
                   <div className="mb-2 text-3xl">🛒</div>
-                  اختر منتجًا أو امسح باركود لبدء البيع.
+                  {labels.emptyCart}
                 </div>
               ) : (() => {
                 const activeKey = itemKey(activeLine.item);
@@ -494,14 +539,14 @@ export default function CashierPosPage() {
                           {activeLine.item.variant_name ? <p className="mt-0.5 truncate text-xs text-slate-500">{activeLine.item.variant_name}</p> : null}
                           {activePrice?.promotion ? <p className="mt-1 text-xs font-semibold text-emerald-700">{activePrice.promotion.promotion_name}</p> : null}
                         </div>
-                        <strong className="whitespace-nowrap text-base">{formatMoney(activeTotal, activeLine.item.currency_code, activeLine.item.currency_fraction_digits)}</strong>
+                        <strong className="whitespace-nowrap text-base" dir="ltr">{formatMoney(activeTotal, activeLine.item.currency_code, activeLine.item.currency_fraction_digits, lang)}</strong>
                       </div>
                       <div className="mt-2 flex items-end justify-between gap-3">
                         <div>
-                          <p className="text-[11px] text-slate-500">سعر الوحدة</p>
-                          <p className="text-sm font-semibold">{formatMoney(activeUnit, activeLine.item.currency_code, activeLine.item.currency_fraction_digits)}</p>
+                          <p className="text-[11px] text-slate-500">{labels.unitPrice}</p>
+                          <p className="text-sm font-semibold" dir="ltr">{formatMoney(activeUnit, activeLine.item.currency_code, activeLine.item.currency_fraction_digits, lang)}</p>
                         </div>
-                        <div className="flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm">
+                        <div className="flex items-center overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm" dir="ltr">
                           <button type="button" onClick={() => updateQuantity(activeKey, activeLine.quantity - 1)} className="h-10 w-12 text-xl hover:bg-slate-50">−</button>
                           <span className="min-w-12 text-center text-base font-bold">{activeLine.quantity}</span>
                           <button type="button" onClick={() => updateQuantity(activeKey, activeLine.quantity + 1)} className="h-10 w-12 text-xl hover:bg-slate-50">+</button>
@@ -512,12 +557,12 @@ export default function CashierPosPage() {
                     {compactLines.length > 0 ? (
                       <div className="shrink-0 rounded-xl border border-slate-100 bg-slate-50/70 p-2">
                         <div className="mb-1.5 flex items-center justify-between gap-2">
-                          <span className="text-[11px] font-semibold text-slate-500">عناصر أخرى — اضغط للتعديل</span>
+                          <span className="text-[11px] font-semibold text-slate-500">{labels.otherItems}</span>
                           {compactPageCount > 1 ? <span className="text-[11px] text-slate-400">{compactPage + 1}/{compactPageCount}</span> : null}
                         </div>
                         <div className="flex items-stretch gap-1.5">
                           {compactPageCount > 1 ? (
-                            <button type="button" onClick={() => setCompactPage(page => (page - 1 + compactPageCount) % compactPageCount)} className="w-7 shrink-0 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-100">›</button>
+                            <button type="button" onClick={() => setCompactPage(page => (page - 1 + compactPageCount) % compactPageCount)} className="w-7 shrink-0 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-100">‹</button>
                           ) : null}
                           <div className="grid min-w-0 flex-1 grid-cols-2 gap-1.5 sm:grid-cols-4">
                             {visibleCompactLines.map(line => {
@@ -526,18 +571,18 @@ export default function CashierPosPage() {
                               const unit = priced?.effective_unit_price_minor ?? line.item.base_unit_price_minor;
                               const total = priced?.line_total_minor ?? unit * line.quantity;
                               return (
-                                <button type="button" key={key} onClick={() => setActiveCartKey(key)} className="min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-right transition hover:border-orange-300 hover:bg-orange-50">
+                                <button type="button" key={key} onClick={() => setActiveCartKey(key)} className="min-w-0 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-start transition hover:border-orange-300 hover:bg-orange-50">
                                   <p className="truncate text-[11px] font-bold">{line.item.name}</p>
                                   <div className="mt-0.5 flex items-center justify-between gap-1 text-[10px] text-slate-500">
                                     <span>×{line.quantity}</span>
-                                    <span className="truncate">{formatMoney(total, line.item.currency_code, line.item.currency_fraction_digits)}</span>
+                                    <span className="truncate" dir="ltr">{formatMoney(total, line.item.currency_code, line.item.currency_fraction_digits, lang)}</span>
                                   </div>
                                 </button>
                               );
                             })}
                           </div>
                           {compactPageCount > 1 ? (
-                            <button type="button" onClick={() => setCompactPage(page => (page + 1) % compactPageCount)} className="w-7 shrink-0 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-100">‹</button>
+                            <button type="button" onClick={() => setCompactPage(page => (page + 1) % compactPageCount)} className="w-7 shrink-0 rounded-lg border border-slate-200 bg-white text-sm font-bold text-slate-500 hover:bg-slate-100">›</button>
                           ) : null}
                         </div>
                       </div>
@@ -550,19 +595,19 @@ export default function CashierPosPage() {
             <div className="shrink-0 border-t border-slate-100 bg-white p-3">
               {quoteError ? <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{quoteError}</div> : null}
               <div className="space-y-1 text-sm">
-                <div className="flex justify-between text-slate-500"><span>المجموع قبل الخصم</span><span>{quote ? formatMoney(quote.subtotal_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
-                <div className="flex justify-between text-emerald-700"><span>الخصم</span><span>{quote ? `− ${formatMoney(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits)}` : '—'}</span></div>
-                <div className="flex justify-between border-t border-slate-100 pt-1.5 text-lg font-bold"><span>الإجمالي</span><span>{quote ? formatMoney(quote.total_minor, quote.currency_code, quote.currency_fraction_digits) : '—'}</span></div>
+                <div className="flex justify-between text-slate-500"><span>{labels.subtotal}</span><span dir="ltr">{quote ? formatMoney(quote.subtotal_minor, quote.currency_code, quote.currency_fraction_digits, lang) : '—'}</span></div>
+                <div className="flex justify-between text-emerald-700"><span>{labels.discount}</span><span dir="ltr">{quote ? `− ${formatMoney(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits, lang)}` : '—'}</span></div>
+                <div className="flex justify-between border-t border-slate-100 pt-1.5 text-lg font-bold"><span>{labels.total}</span><span dir="ltr">{quote ? formatMoney(quote.total_minor, quote.currency_code, quote.currency_fraction_digits, lang) : '—'}</span></div>
               </div>
 
               <div className="mt-2.5">
-                <label className="mb-1.5 block text-xs font-bold text-slate-600">طريقة الدفع</label>
+                <label className="mb-1.5 block text-xs font-bold text-slate-600">{labels.paymentMethod}</label>
                 <div className="grid grid-cols-2 gap-1.5">
                   {([
-                    ['cash', 'نقدي'],
-                    ['card', 'بطاقة'],
-                    ['electronic', 'إلكتروني'],
-                    ['other', 'أخرى'],
+                    ['cash', labels.cash],
+                    ['card', labels.card],
+                    ['electronic', labels.electronic],
+                    ['other', labels.other],
                   ] as Array<[CashierPaymentMethod, string]>).map(([method, label]) => (
                     <button type="button" key={method} onClick={() => { setPaymentMethod(method); setExternalConfirmed(false); }} className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${paymentMethod === method ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>{label}</button>
                   ))}
@@ -572,12 +617,12 @@ export default function CashierPosPage() {
               {paymentMethod !== 'cash' ? (
                 <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs leading-5 text-amber-900">
                   <input type="checkbox" checked={externalConfirmed} onChange={event => setExternalConfirmed(event.target.checked)} className="mt-1 h-4 w-4" />
-                  <span>أؤكد أن الدفع تم بنجاح.</span>
+                  <span>{labels.externalPaymentConfirmed}</span>
                 </label>
               ) : null}
 
               <button type="button" onClick={() => void completeSale()} disabled={cart.length === 0 || !quote || Boolean(quoteError) || committing || (paymentMethod !== 'cash' && !externalConfirmed)} className="mt-2.5 h-11 w-full rounded-xl bg-orange-600 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
-                {committing ? 'جارٍ إتمام البيع...' : 'إتمام البيع'}
+                {committing ? labels.completingSale : labels.completeSale}
               </button>
             </div>
           </aside>

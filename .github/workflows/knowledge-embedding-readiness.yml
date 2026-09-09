@@ -9,6 +9,9 @@ on:
       - "artifacts/api-server/src/index.ts"
       - "artifacts/api-server/src/services/runtimeProviderBootstrap.ts"
       - "artifacts/api-server/src/services/metaChannelRuntime.ts"
+      - "artifacts/api-server/src/services/currencyMoneyRuntime.ts"
+      - "artifacts/api-server/src/services/deliveryPricing.ts"
+      - "artifacts/api-server/src/services/commerceDeliveryPricing.ts"
       - "artifacts/api-server/src/services/knowledge/**"
       - "artifacts/api-server/src/services/ai/knowledgeDecisionEngine.ts"
       - "artifacts/api-server/tests/knowledge-*.test.ts"
@@ -82,6 +85,7 @@ jobs:
           pnpm exec tsx --test --test-concurrency=1 \
             artifacts/api-server/tests/knowledge-postgres-runtime.test.ts \
             artifacts/api-server/tests/knowledge-postgres-operational-facts.test.ts \
+            artifacts/api-server/tests/knowledge-delivery-area-rates.test.ts \
             artifacts/api-server/tests/knowledge-ai-runtime.test.ts \
             artifacts/api-server/tests/knowledge-ai-security.test.ts \
             artifacts/api-server/tests/knowledge-openai-embedding-provider.test.ts \

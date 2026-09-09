@@ -1,0 +1,26 @@
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > label,
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > div {
+  display: grid;
+  grid-template-rows: 1.25rem 3rem;
+  align-items: start;
+  row-gap: 0.5rem;
+}
+
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > label > :not([hidden]) ~ :not([hidden]),
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > div > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 0 !important;
+}
+
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > label > span:first-child,
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > div > p:first-child {
+  display: flex;
+  min-height: 1.25rem;
+  align-items: center;
+  line-height: 1.25rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > label > input,
+.products-workspace-polish .catalog-editor-shell details > div.border-t > div.grid.items-start > div > div.grid {
+  align-self: start;
+  min-height: 3rem;
+}

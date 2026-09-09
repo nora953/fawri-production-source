@@ -16,6 +16,8 @@ type Translations = typeof en;
 interface I18nContextType {
   t: Translations;
   lang: Lang;
+  /** Backward-compatible alias for older page helpers. */
+  language: Lang;
   setLang: (lang: Lang) => void;
   dir: 'ltr' | 'rtl';
   isRTL: boolean;
@@ -62,6 +64,26 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     );
   }, [lang]);
 
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== LANG_STORAGE_KEY || !isValidLang(event.newValue)) return;
+      setLangState(event.newValue);
+    };
+
+    const handleLanguageChange = (event: Event) => {
+      const next = (event as CustomEvent<{ lang?: string }>).detail?.lang || null;
+      if (!isValidLang(next)) return;
+      setLangState(next);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('fawri-language-change', handleLanguageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('fawri-language-change', handleLanguageChange);
+    };
+  }, []);
+
   const setLang = useCallback((newLang: Lang) => {
     if (!isValidLang(newLang)) return;
     setLangState(newLang);
@@ -73,6 +95,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     return {
       t: translations[lang] || ar,
       lang,
+      language: lang,
       setLang,
       dir,
       isRTL: dir === 'rtl',

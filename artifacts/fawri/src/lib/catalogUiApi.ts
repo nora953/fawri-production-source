@@ -34,6 +34,8 @@ export type CatalogVariant = {
   sku?: string;
   barcode?: string;
   price_iqd?: number;
+  /** Merchant-private cost used only for cashier profit reporting. */
+  cost_iqd?: number;
   stock_quantity: number;
   weight_g?: number;
   length_mm?: number;
@@ -51,6 +53,7 @@ export type CatalogVariantInput = CatalogPhysicalMeasurementInput & {
   sku?: string;
   barcode?: string;
   price_iqd?: number | null;
+  cost_iqd?: number | null;
   stock_quantity?: number;
   quantity?: number;
   options?: Record<string, string>;
@@ -70,6 +73,8 @@ export type CatalogProduct = {
   sku?: string;
   barcode?: string;
   price_iqd: number;
+  /** Merchant-private cost used only for cashier profit reporting. */
+  cost_iqd?: number;
   compare_at_price_iqd?: number;
   stock_quantity: number;
   low_stock_threshold: number;
@@ -97,6 +102,7 @@ export type CatalogProductInput = CatalogPhysicalMeasurementInput & {
   sku?: string;
   barcode?: string;
   price_iqd: number;
+  cost_iqd?: number | null;
   compare_at_price_iqd?: number | null;
   stock_quantity?: number;
   low_stock_threshold?: number;

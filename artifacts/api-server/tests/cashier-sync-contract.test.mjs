@@ -87,10 +87,14 @@ test('browser deletes a local outbox operation only after a complete server ackn
 
 test('cashier keeps one manual sync action and auto-syncs real POS operations while online', async () => {
   const page = await webSource('src/pages/CashierCatalogSyncPage.tsx');
+  const copy = await webSource('src/lib/cashierUiCopy.ts');
   const entry = await webSource('src/cashierMain.tsx');
 
   assert.match(page, /syncCashierOutboxToCloud/);
-  assert.match(page, /مزامنة الآن/);
+  assert.match(page, /labels\.syncNow/);
+  assert.match(copy, /syncNow:\s*'مزامنة الآن'/);
+  assert.match(copy, /syncNow:\s*'ئێستا هاوکات بکە'/);
+  assert.match(copy, /syncNow:\s*'Sync now'/);
   assert.match(page, /pending_after/);
 
   assert.match(entry, /if \(!diagnostics\) \{\s*installAuthClientCutover\(\);\s*\}/);
@@ -102,6 +106,7 @@ test('cashier keeps one manual sync action and auto-syncs real POS operations wh
   assert.match(entry, /AUTO_SYNC_RETRY_BACKOFF_MS/);
   assert.match(entry, /result\.pending_after === 0/);
   assert.match(entry, /!diagnostics && !sync && !demoRequested/);
+  assert.match(entry, /storedCashierCopy\(\)\.runtime/);
 
   const upload = entry.indexOf('const result = await syncCashierOutboxToCloud()');
   const dashboardRefresh = entry.indexOf('publishCashierDashboardRefresh()', upload);

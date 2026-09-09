@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   currencyFractionDigits,
+  formatMinorCurrencyNumber,
   majorCurrencyStringToMinorUnits,
   minorUnitsToMajorCurrencyString,
 } from "../src/services/currencyMoneyRuntime";
@@ -25,6 +26,12 @@ test("minor units round-trip to stable merchant-facing decimal strings", () => {
   assert.equal(minorUnitsToMajorCurrencyString(50_000, "IQD"), "50000");
   assert.equal(minorUnitsToMajorCurrencyString(1_050, "USD"), "10.50");
   assert.equal(minorUnitsToMajorCurrencyString(10_500, "KWD"), "10.500");
+});
+
+test("minor-unit number formatting respects each currency scale", () => {
+  assert.equal(formatMinorCurrencyNumber(50_000, "IQD"), "50,000");
+  assert.equal(formatMinorCurrencyNumber(1_999, "USD"), "19.99");
+  assert.equal(formatMinorCurrencyNumber(1_234, "JOD"), "1.234");
 });
 
 test("unsupported fractional precision is rejected instead of rounded", () => {

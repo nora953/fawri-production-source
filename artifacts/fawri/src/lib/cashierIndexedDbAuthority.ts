@@ -257,6 +257,15 @@ function validateCatalogItem(item: CashierCatalogLookup): void {
     );
   }
   if (
+    item.unit_cost_minor !== undefined &&
+    !isNonNegativeSafeInteger(item.unit_cost_minor)
+  ) {
+    throw new CashierIndexedDbError(
+      'CASHIER_CATALOG_COST_INVALID',
+      'Catalog reporting cost must be a safe non-negative minor-unit integer',
+    );
+  }
+  if (
     item.effective_unit_price_minor !== undefined &&
     (!isNonNegativeSafeInteger(item.effective_unit_price_minor) ||
       item.effective_unit_price_minor > item.base_unit_price_minor)
@@ -704,6 +713,9 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         (line, index) => ({
           line_id: lineId(operationId, index),
           ...line,
+          ...(records[index].unit_cost_minor !== undefined
+            ? { unit_cost_minor: records[index].unit_cost_minor }
+            : {}),
         }),
       );
 

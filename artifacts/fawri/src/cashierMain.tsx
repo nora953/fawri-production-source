@@ -3,10 +3,14 @@ import CashierCatalogSyncPage from '@/pages/CashierCatalogSyncPage';
 import CashierHistoryPage from '@/pages/CashierHistoryPage';
 import CashierLocalShellPage from '@/pages/CashierLocalShellPage';
 import CashierPosPage from '@/pages/CashierPosPage';
+import CashierReportsPage from '@/pages/CashierReportsPage';
 import '@/index.css';
 import '@/styles/fawriUiBaseline.css';
 import '@/styles/fawriLanguageAuthority.css';
 import '@/styles/cashierPos.css';
+import '@/styles/merchantCommerceUxFixes.css';
+import { I18nProvider } from '@/lib/i18n';
+import { storedCashierCopy } from '@/lib/cashierUiCopy';
 import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
 import { installAuthClientCutover } from '@/lib/authClientCutover';
 import { syncCashierOutboxToCloud } from '@/lib/cashierCloudOutboxSync';
@@ -25,15 +29,12 @@ const diagnostics =
   diagnosticsRequested && import.meta.env.VITE_CASHIER_DIAGNOSTICS === '1';
 const sync = params.get('sync') === '1';
 const history = params.get('history') === '1';
+const reports = params.get('reports') === '1';
 const demoRequested = params.get('demo') === '1';
 
 const AUTO_SYNC_INTERVAL_MS = 3_000;
 const AUTO_SYNC_RETRY_BACKOFF_MS = 30_000;
 
-// Installing the Auth v2 transport does not make local POS operation depend on
-// the network. It only equips optional same-origin API calls with the stable
-// device identifier and HttpOnly merchant session when a background/manual
-// sync is attempted. Local browsing, pricing and sale commit remain IndexedDB-first.
 if (!diagnostics) {
   installAuthClientCutover();
 }
@@ -66,11 +67,12 @@ function startCashierPosAutoSync(): () => void {
     visible = false,
   ) => {
     if (stopped || running) return;
+    const labels = storedCashierCopy().runtime;
 
     if (!cashierIsOnline()) {
       publishCashierSyncUiState({
         status: 'offline',
-        message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
+        message: labels.offlineUpload,
       });
       return;
     }
@@ -81,7 +83,7 @@ function startCashierPosAutoSync(): () => void {
     if (visible) {
       publishCashierSyncUiState({
         status: 'syncing',
-        message: 'جارٍ مزامنة عمليات الكاشير.',
+        message: labels.syncingOperations,
       });
     }
 
@@ -91,15 +93,10 @@ function startCashierPosAutoSync(): () => void {
         result.uploaded_operations > 0 || result.replayed_operations > 0;
 
       if (changedCloudState) {
-        // Orders and inventory are already canonical on the server after ACK.
-        // Tell any open merchant dashboard tabs to refetch their server state.
         publishCashierDashboardRefresh();
       }
 
       if (reconcileCatalog && result.pending_after === 0) {
-        // Refresh the local catalog after pending cashier writes are safely ACKed.
-        // Then tell the mounted POS to reread IndexedDB immediately instead of
-        // requiring a page reload or a second merchant action.
         await syncCashierCatalogFromCloud();
         publishCashierCatalogRefresh();
         publishCashierDashboardRefresh();
@@ -111,7 +108,7 @@ function startCashierPosAutoSync(): () => void {
         publishCashierSyncUiState({
           status: 'needs_attention',
           pending: result.pending_after,
-          message: 'بعض عمليات الكاشير ما زالت بانتظار المزامنة. اضغط للمحاولة مرة أخرى.',
+          message: labels.pendingOperations,
         });
       } else {
         const shouldAnnounceSuccess =
@@ -120,7 +117,7 @@ function startCashierPosAutoSync(): () => void {
           publishCashierSyncUiState({
             status: 'synced',
             pending: 0,
-            message: 'تمت المزامنة بنجاح.',
+            message: labels.synced,
           });
           window.setTimeout(() => {
             if (getCashierSyncUiState().status === 'synced') {
@@ -137,20 +134,21 @@ function startCashierPosAutoSync(): () => void {
       const uiCode = sessionRequired
         ? 'CASHIER_OUTBOX_SESSION_REQUIRED'
         : rawCode;
+      const latestLabels = storedCashierCopy().runtime;
 
       if (!cashierIsOnline()) {
         publishCashierSyncUiState({
           status: 'offline',
           code: uiCode,
-          message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
+          message: latestLabels.offlineUpload,
         });
       } else {
         publishCashierSyncUiState({
           status: 'needs_attention',
           code: uiCode,
           message: sessionRequired
-            ? 'انتهت جلسة التاجر. سجّل الدخول ثم اضغط المزامنة.'
-            : 'تعذر إكمال المزامنة التلقائية. اضغط للمحاولة مرة أخرى.',
+            ? latestLabels.sessionExpired
+            : latestLabels.autoSyncFailed,
         });
       }
       nextAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
@@ -166,12 +164,10 @@ function startCashierPosAutoSync(): () => void {
   const handleOffline = () => {
     publishCashierSyncUiState({
       status: 'offline',
-      message: 'سيتم رفع العمليات تلقائيًا عند عودة الاتصال.',
+      message: storedCashierCopy().runtime.offlineUpload,
     });
   };
   const handleFocus = () => {
-    // Returning from the merchant product editor should pull the latest catalog
-    // immediately; do not make the merchant press the sync button just to see it.
     nextAttemptAt = 0;
     void attempt(true, true, false);
   };
@@ -187,8 +183,6 @@ function startCashierPosAutoSync(): () => void {
     void attempt(false, false, false);
   }, AUTO_SYNC_INTERVAL_MS);
 
-  // On an online open, reconcile both pending cashier writes and the current
-  // authoritative catalog so newly created products/variants are visible.
   window.setTimeout(() => {
     void attempt(true, false, false);
   }, 0);
@@ -207,26 +201,30 @@ document.documentElement.dataset.cashierView = diagnostics
   ? 'diagnostics'
   : sync
     ? 'sync'
-    : history
-      ? 'history'
-      : 'pos';
+    : reports
+      ? 'reports'
+      : history
+        ? 'history'
+        : 'pos';
+
+const operationalPage = sync ? (
+  <CashierCatalogSyncPage />
+) : reports ? (
+  <CashierReportsPage />
+) : history ? (
+  <CashierHistoryPage />
+) : (
+  <CashierPosPage />
+);
 
 createRoot(document.getElementById('cashier-root')!).render(
   diagnostics ? (
     <CashierLocalShellPage />
-  ) : sync ? (
-    <CashierCatalogSyncPage />
-  ) : history ? (
-    <CashierHistoryPage />
   ) : (
-    <CashierPosPage />
+    <I18nProvider>{operationalPage}</I18nProvider>
   ),
 );
 
-// Demo fixtures intentionally never upload. Real cashier operational views keep
-// a small serialized best-effort sync loop so online operations reach the cloud
-// without a merchant click, while offline operations remain durable until
-// connectivity or an authenticated merchant session returns.
 if (!diagnostics && !sync && !demoRequested) {
   startCashierPosAutoSync();
 }

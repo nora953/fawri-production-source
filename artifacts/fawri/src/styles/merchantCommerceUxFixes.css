@@ -1,0 +1,8 @@
+/* Merchant commerce UX refinements discovered during live closeout QA. */
+
+/* Cashier history currently renders the secondary action first in the DOM.
+   Reversing the flex row puts the primary confirmation on inline-start:
+   right for RTL Arabic/Kurdish and left for LTR English. */
+html[data-cashier-view="history"] .fixed.inset-0.z-50 .mt-5.flex.gap-2 {
+  flex-direction: row-reverse;
+}

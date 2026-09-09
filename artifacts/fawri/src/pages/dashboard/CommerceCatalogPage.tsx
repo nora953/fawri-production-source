@@ -43,6 +43,17 @@ import {
 } from '@/lib/catalogUiApi';
 import { catalogImagePreviewUrl } from '@/lib/catalogMediaUiApi';
 import {
+  catalogMoneyFormForAuthority,
+  catalogMoneyFormForDisplay,
+  validateCatalogMoneyForm,
+} from '@/lib/catalogMoneyFormAdapter';
+import {
+  catalogCurrencyStep,
+  getCatalogCommerceContext,
+  type CatalogCommerceContext,
+} from '@/lib/catalogPromotionUiApi';
+import { subscribeCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
+import {
   catalogProductFormFromProduct,
   catalogProductInputFromForm,
   createEmptyCatalogProductForm,
@@ -51,6 +62,7 @@ import {
   type CatalogProductFormState,
 } from '@/lib/catalogProductEditor';
 import { useI18n } from '@/lib/i18n';
+import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
 import { getCurrentMerchant } from '@/lib/store';
 import type { Lang, ProductStatus } from '@/lib/types';
 
@@ -405,13 +417,14 @@ export default function CommerceCatalogPage() {
   const copy = COPY[lang] || COPY.en;
   const merchant = getCurrentMerchant();
   const fawriBrand = lang === 'ar' ? 'فوري' : lang === 'ku' ? 'فەوری' : 'Fawri';
-  const priceExample = lang === 'ar' ? 'مثال: 15000' : lang === 'ku' ? 'نموونە: 15000' : 'e.g. 15000';
-  const comparePriceExample = lang === 'ar' ? 'مثال: 20000' : lang === 'ku' ? 'نموونە: 20000' : 'e.g. 20000';
 
   const createAttempt = useRef<CatalogIdempotencyAttempt | null>(null);
   const inventoryAttempt = useRef<CatalogIdempotencyAttempt | null>(null);
+  const pendingCashierRefresh = useRef(false);
+  const loadedOnce = useRef(false);
 
   const [items, setItems] = useState<CatalogProduct[]>([]);
+  const [commerceContext, setCommerceContext] = useState<CatalogCommerceContext | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [reload, setReload] = useState(0);
@@ -424,6 +437,15 @@ export default function CommerceCatalogPage() {
   const [inventoryValues, setInventoryValues] = useState<Record<string, string>>({});
   const [inventoryBusy, setInventoryBusy] = useState<string | null>(null);
   const [expandedInventoryProducts, setExpandedInventoryProducts] = useState<Record<string, boolean>>({});
+
+  const fractionDigits = commerceContext?.currency_fraction_digits ?? 0;
+  const moneyStep = catalogCurrencyStep(fractionDigits);
+  const priceExample = fractionDigits > 0
+    ? (lang === 'ar' ? 'مثال: 19.99' : lang === 'ku' ? 'نموونە: 19.99' : 'e.g. 19.99')
+    : (lang === 'ar' ? 'مثال: 15000' : lang === 'ku' ? 'نموونە: 15000' : 'e.g. 15000');
+  const comparePriceExample = fractionDigits > 0
+    ? (lang === 'ar' ? 'مثال: 25.50' : lang === 'ku' ? 'نموونە: 25.50' : 'e.g. 25.50')
+    : (lang === 'ar' ? 'مثال: 20000' : lang === 'ku' ? 'نموونە: 20000' : 'e.g. 20000');
 
   const statusOptions = useMemo(() => [
     { value: 'available' as const, label: copy.available },
@@ -457,12 +479,16 @@ export default function CommerceCatalogPage() {
         if (active) setLoading(false);
         return;
       }
-      setLoading(true);
+      if (!loadedOnce.current) setLoading(true);
       setLoadError(false);
       try {
-        const loaded = await listCatalogProducts();
+        const [loaded, context] = await Promise.all([
+          listCatalogProducts(),
+          getCatalogCommerceContext(),
+        ]);
         if (!active) return;
         setItems(loaded);
+        setCommerceContext(context);
         const drafts: Record<string, string> = {};
         for (const product of loaded) {
           if (!tracksInventory(product)) continue;
@@ -476,16 +502,36 @@ export default function CommerceCatalogPage() {
       } catch (error) {
         console.error('Catalog load failed:', error);
         if (active) {
+          setCommerceContext(null);
           setLoadError(true);
           toast.error(copy.loadFailed);
         }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          loadedOnce.current = true;
+          setLoading(false);
+        }
       }
     }
     void load();
     return () => { active = false; };
   }, [merchant?.id, reload, copy.loadFailed]);
+
+  useEffect(() => {
+    return subscribeCashierDashboardRefresh(() => {
+      if (formOpen || saving) {
+        pendingCashierRefresh.current = true;
+        return;
+      }
+      setReload(value => value + 1);
+    });
+  }, [formOpen, saving]);
+
+  useEffect(() => {
+    if (formOpen || saving || !pendingCashierRefresh.current) return;
+    pendingCashierRefresh.current = false;
+    setReload(value => value + 1);
+  }, [formOpen, saving]);
 
   const visible = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
@@ -508,9 +554,16 @@ export default function CommerceCatalogPage() {
   };
 
   const openEdit = (product: CatalogProduct) => {
+    if (!commerceContext) {
+      toast.error(copy.loadFailed);
+      return;
+    }
     createAttempt.current = null;
     setEditingId(product.id);
-    const nextForm = catalogProductFormFromProduct(product);
+    const nextForm = catalogMoneyFormForDisplay(
+      catalogProductFormFromProduct(product),
+      commerceContext.currency_fraction_digits,
+    );
     if (nextForm.item_type === 'service' && nextForm.status === 'low_stock') nextForm.status = 'available';
     setForm(nextForm);
     setFormOpen(true);
@@ -530,14 +583,35 @@ export default function CommerceCatalogPage() {
     setExpandedInventoryProducts(current => ({ ...current, [productId]: !current[productId] }));
   };
 
-  const validate = () => {
-    const code = validateCatalogProductForm(form);
-    if (!code) return true;
+  const validate = (): CatalogProductFormState | null => {
+    if (!commerceContext) {
+      toast.error(copy.loadFailed);
+      return null;
+    }
+    const moneyCode = validateCatalogMoneyForm(form, commerceContext.currency_fraction_digits);
+    if (moneyCode) {
+      if (moneyCode === 'price' || moneyCode === 'compare_price' || moneyCode === 'variant_price') {
+        toast.error(copy.invalidPrice);
+      } else {
+        toast.error(copy.invalidForm);
+      }
+      return null;
+    }
+    const authorityForm = catalogMoneyFormForAuthority(
+      form,
+      commerceContext.currency_fraction_digits,
+    );
+    if (!authorityForm) {
+      toast.error(copy.invalidPrice);
+      return null;
+    }
+    const code = validateCatalogProductForm(authorityForm);
+    if (!code) return authorityForm;
     if (code === 'name') toast.error(copy.invalidName);
     else if (code === 'price' || code === 'compare_price') toast.error(copy.invalidPrice);
     else if (code === 'quantity' || code === 'variant_quantity') toast.error(copy.invalidQuantity);
     else toast.error(copy.invalidForm);
-    return false;
+    return null;
   };
 
   const loadConflict = async (productId: string, error: unknown) => {
@@ -546,7 +620,12 @@ export default function CommerceCatalogPage() {
       const latest = await getCatalogProduct(productId);
       setItems(current => upsert(current, latest));
       syncInventory(latest);
-      if (editingId === productId) setForm(catalogProductFormFromProduct(latest));
+      if (editingId === productId && commerceContext) {
+        setForm(catalogMoneyFormForDisplay(
+          catalogProductFormFromProduct(latest),
+          commerceContext.currency_fraction_digits,
+        ));
+      }
     } catch (reloadError) {
       console.error('Catalog conflict reload failed:', reloadError);
     }
@@ -555,10 +634,12 @@ export default function CommerceCatalogPage() {
   };
 
   const save = async () => {
-    if (saving || !validate()) return;
+    if (saving) return;
+    const authorityForm = validate();
+    if (!authorityForm) return;
     setSaving(true);
     try {
-      const input = catalogProductInputFromForm(form, editingId ? items.find(item => item.id === editingId) : undefined);
+      const input = catalogProductInputFromForm(authorityForm, editingId ? items.find(item => item.id === editingId) : undefined);
       if (editingId) {
         const current = items.find(item => item.id === editingId);
         if (!current) throw new Error('catalog item missing');
@@ -732,10 +813,10 @@ export default function CommerceCatalogPage() {
                 <div className="grid grid-cols-2 gap-3 p-4">
                   <div className="rounded-2xl bg-muted/40 p-3">
                     <div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Tag className="h-4 w-4" />{copy.price}</div>
-                    <p className="text-xl font-extrabold">{service?.price_type === 'custom' ? copy.customPrice : service?.price_type === 'free' ? copy.freePrice : `${product.price_iqd.toLocaleString(lang === 'en' ? 'en-US' : 'ar-IQ')} ${copy.currency}`}</p>
+                    <p className="text-xl font-extrabold" dir="ltr">{service?.price_type === 'custom' ? copy.customPrice : service?.price_type === 'free' ? copy.freePrice : commerceContext ? formatMerchantMoneyMinor(product.price_iqd, commerceContext.currency_code, commerceContext.currency_fraction_digits, lang) : '—'}</p>
                   </div>
                   <div className="rounded-2xl bg-muted/40 p-3">
-                    {type === 'service' ? <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{copy.duration}</div><p className="text-xl font-extrabold">{service?.duration_minutes ? `${service.duration_minutes} ${copy.minute}` : '—'}</p></> : <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Boxes className="h-4 w-4" />{copy.quantity}</div><p className="text-xl font-extrabold">{tracksInventory(product) ? product.stock_quantity.toLocaleString() : copy.inventoryNotTracked}</p></>}
+                    {type === 'service' ? <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><CalendarClock className="h-4 w-4" />{copy.duration}</div><p className="text-xl font-extrabold">{service?.duration_minutes ? `${service.duration_minutes} ${copy.minute}` : '—'}</p></> : <><div className="mb-2 flex items-center gap-2 text-sm text-muted-foreground"><Boxes className="h-4 w-4" />{copy.quantity}</div><p className="text-xl font-extrabold">{tracksInventory(product) ? product.stock_quantity.toLocaleString('en-US') : copy.inventoryNotTracked}</p></>}
                   </div>
                 </div>
 
@@ -812,21 +893,15 @@ export default function CommerceCatalogPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="space-y-1 text-sm font-semibold">
               <span>{copy.salePrice}</span>
-              <div className="relative">
-                <Input type="number" min={0} dir="ltr" value={form.current_price} onChange={event => patchForm({ current_price: event.target.value })} disabled={form.item_type === 'service' && (form.service_price_type === 'free' || form.service_price_type === 'custom')} placeholder={priceExample} className="h-11 rounded-xl pe-14" />
-                <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">{copy.currency}</span>
-              </div>
+              <Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={form.current_price} onChange={event => patchForm({ current_price: event.target.value })} disabled={form.item_type === 'service' && (form.service_price_type === 'free' || form.service_price_type === 'custom')} placeholder={priceExample} className="h-11 rounded-xl" />
             </label>
             <label className="space-y-1 text-sm font-semibold">
               <span>{copy.originalPrice}</span>
-              <div className="relative">
-                <Input type="number" min={0} dir="ltr" value={form.original_price} onChange={event => patchForm({ original_price: event.target.value })} placeholder={comparePriceExample} className="h-11 rounded-xl pe-14" />
-                <span className="pointer-events-none absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">{copy.currency}</span>
-              </div>
+              <Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={form.original_price} onChange={event => patchForm({ original_price: event.target.value })} placeholder={comparePriceExample} className="h-11 rounded-xl" />
             </label>
           </div>
 
-          <CatalogProductDetailsEditor lang={lang} form={form} editing={Boolean(editingId)} onChange={patchForm} />
+          <CatalogProductDetailsEditor lang={lang} form={form} editing={Boolean(editingId)} moneyStep={moneyStep} onChange={patchForm} />
           <CatalogImageUploadEditor images={form.image_refs} onChange={image_refs => patchForm({ image_refs })} maxImages={20} />
 
           <label className="space-y-1 text-sm font-semibold rounded-2xl border bg-muted/10 p-4">

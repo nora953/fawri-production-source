@@ -14,17 +14,43 @@ async function source(relativePath) {
 test("active order and settings pages are server-only", async () => {
   const files = await Promise.all([
     source("artifacts/fawri/src/pages/dashboard/OrdersPage.ts"),
+    source("artifacts/fawri/src/pages/dashboard/OrdersWorkspacePage.tsx"),
     source("artifacts/fawri/src/pages/dashboard/SettingsPage.ts"),
+    source("artifacts/fawri/src/pages/dashboard/MerchantSettingsPage.tsx"),
     source("artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx"),
     source("artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx"),
   ]);
   const combined = files.join("\n");
   assert.doesNotMatch(combined, /localStorage|sessionStorage/i);
-  assert.match(files[0], /ServerOrdersPage/);
-  assert.match(files[1], /ServerSettingsPage/);
-  assert.match(files[2], /fetch\('\/api\/orders'/);
-  assert.match(files[3], /fetch\('\/api\/settings'/);
+  assert.match(files[0], /OrdersWorkspacePage/);
+  assert.match(files[1], /ServerOrdersPage/);
+  assert.match(files[2], /MerchantSettingsPage/);
+  assert.match(files[3], /ServerSettingsPage/);
+  assert.match(files[4], /fetch\('\/api\/orders'/);
+  assert.match(files[5], /fetch\('\/api\/settings'/);
   assert.doesNotMatch(combined, /fallback.*local|local.*fallback/i);
+});
+
+test("orders and delivery settings use authoritative store currency", async () => {
+  const ordersPage = await source(
+    "artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx",
+  );
+  const settingsPage = await source(
+    "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx",
+  );
+
+  assert.match(ordersPage, /getMerchantRegionalContext/);
+  assert.match(ordersPage, /formatMerchantMoneyMinor/);
+  assert.match(ordersPage, /regional\.currency_code/);
+  assert.match(ordersPage, /regional\.currency_fraction_digits/);
+  assert.doesNotMatch(ordersPage, /toLocaleString\([^)]*\).*IQD/);
+
+  assert.match(settingsPage, /getMerchantRegionalContext/);
+  assert.match(settingsPage, /catalogMajorAmountToMinor/);
+  assert.match(settingsPage, /catalogMinorAmountToMajor/);
+  assert.match(settingsPage, /catalogCurrencyStep/);
+  assert.match(settingsPage, /regional\.currency_code/);
+  assert.match(settingsPage, /regional\.currency_fraction_digits/);
 });
 
 test("generic payment endpoint cannot write terminal states", async () => {

@@ -127,6 +127,7 @@ test("explicit order id is tenant filtered and returns no customer PII", async (
     total_iqd: 72000,
     version: 5,
     updated_at: "2026-08-07T20:00:00.000Z",
+    merchant_currency_code: "IQD",
   }] : []);
   const resolver = new PostgresOperationalFactResolver(sql);
   const result = await resolver.resolve({
@@ -138,8 +139,35 @@ test("explicit order id is tenant filtered and returns no customer PII", async (
   assert.equal(result?.factType, "order_status");
   assert.equal(result?.recordId, "ord-123");
   assert.match(result?.answerText || "", /confirmed/);
-  assert.match(sql.queries[0].sql, /WHERE merchant_id = \$1 AND id = \$2/);
+  assert.match(result?.answerText || "", /72,000 دينار/);
+  assert.match(sql.queries[0].sql, /JOIN merchants m ON m\.id = o\.merchant_id/);
+  assert.match(sql.queries[0].sql, /WHERE o\.merchant_id = \$1 AND o\.id = \$2/);
   assert.deepEqual(sql.queries[0].values, ["merchant-a", "ord-123"]);
+});
+
+test("order fact formats total using merchant currency minor-unit scale", async () => {
+  const sql = new FakeSql(async (query) => query.includes("FROM orders") ? [{
+    id: "ord-usd",
+    merchant_id: "merchant-a",
+    status: "confirmed",
+    payment_method: "cash_on_delivery",
+    payment_status: "cash_on_delivery",
+    total_iqd: 7_299,
+    version: 2,
+    updated_at: "2026-08-07T20:00:00.000Z",
+    merchant_currency_code: "USD",
+  }] : []);
+  const resolver = new PostgresOperationalFactResolver(sql);
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "order status ord-usd",
+    language: "en",
+  });
+
+  assert.equal(result?.factType, "order_status");
+  assert.equal(result?.recordId, "ord-usd");
+  assert.match(result?.answerText || "", /72\.99 USD/);
+  assert.equal((result?.answerText || "").includes("IQD"), false);
 });
 
 test("order fact without explicit id and warranty without structured authority fail closed", async () => {

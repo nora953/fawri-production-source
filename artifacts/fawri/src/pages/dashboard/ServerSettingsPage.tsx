@@ -8,6 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Loader2, RefreshCw, Save } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  catalogCurrencyStep,
+  catalogMajorAmountToMinor,
+  catalogMinorAmountToMajor,
+} from '@/lib/catalogPromotionUiApi';
+import {
+  getMerchantRegionalContext,
+  type MerchantRegionalContext,
+} from '@/lib/merchantRegionalUiApi';
 
 type ReplyLanguage = 'auto' | 'ar' | 'ku' | 'en';
 type DeliveryPricingMode = 'flat' | 'per_area';
@@ -128,6 +137,7 @@ export default function ServerSettingsPage() {
   const commonCopy = COMMON_UI_COPY[language];
   const [settings, setSettings] = useState<MerchantSettings | null>(null);
   const [draft, setDraft] = useState<MerchantSettings | null>(null);
+  const [regional, setRegional] = useState<MerchantRegionalContext | null>(null);
   const [areasText, setAreasText] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -153,14 +163,18 @@ export default function ServerSettingsPage() {
   const loadSettings = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const response = await fetch('/api/settings', {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      });
+      const [response, regionalContext] = await Promise.all([
+        fetch('/api/settings', {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        }),
+        getMerchantRegionalContext(),
+      ]);
       const data = await response.json().catch(() => null);
       if (!response.ok || data?.ok !== true || !data.settings) {
         throw new Error(data?.error || copy.loadFailed);
       }
+      setRegional(regionalContext);
       applyServerState(data.settings as MerchantSettings);
       setError('');
     } catch (loadError) {
@@ -337,7 +351,7 @@ export default function ServerSettingsPage() {
     }
   };
 
-  if (loading && !draft) {
+  if (loading && (!draft || !regional)) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
@@ -346,7 +360,7 @@ export default function ServerSettingsPage() {
     );
   }
 
-  if (!draft) {
+  if (!draft || !regional) {
     return (
       <div className="min-h-screen bg-background p-4" dir={i18n.dir}>
         <div className="mx-auto max-w-3xl rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-destructive">
@@ -355,6 +369,14 @@ export default function ServerSettingsPage() {
       </div>
     );
   }
+
+  const currencyCode = regional.currency_code;
+  const currencyFractionDigits = regional.currency_fraction_digits;
+  const currencyStep = catalogCurrencyStep(currencyFractionDigits);
+  const displayMoney = (amountMinor: number) =>
+    catalogMinorAmountToMajor(amountMinor, currencyFractionDigits);
+  const parseMoney = (amountMajor: string) =>
+    catalogMajorAmountToMinor(amountMajor, currencyFractionDigits);
 
   return (
     <main className="min-h-screen bg-background p-4 pb-28" dir={i18n.dir}>
@@ -478,40 +500,58 @@ export default function ServerSettingsPage() {
             </label>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <label className="space-y-2 text-sm font-medium">
-                <span>{copy.deliveryFee}</span>
+                <span>{copy.deliveryFee} ({currencyCode})</span>
                 <Input
                   type="number"
                   min={0}
+                  step={currencyStep}
                   disabled={draft.delivery.pricing_mode === 'per_area'}
-                  value={draft.delivery.fee_iqd}
-                  onChange={event =>
+                  value={displayMoney(draft.delivery.fee_iqd)}
+                  onChange={event => {
+                    const minor = parseMoney(event.target.value || '0');
+                    if (minor === null) return;
                     updateDraft(current => ({
                       ...current,
                       delivery: {
                         ...current.delivery,
-                        fee_iqd: Math.max(0, Number(event.target.value || 0)),
+                        fee_iqd: minor,
                       },
-                    }))
-                  }
+                    }));
+                  }}
                 />
               </label>
               <label className="space-y-2 text-sm font-medium">
-                <span>{copy.freeThreshold}</span>
+                <span>{copy.freeThreshold} ({currencyCode})</span>
                 <Input
                   type="number"
                   min={0}
-                  value={draft.delivery.free_delivery_threshold_iqd ?? ''}
-                  onChange={event =>
+                  step={currencyStep}
+                  value={
+                    draft.delivery.free_delivery_threshold_iqd === null
+                      ? ''
+                      : displayMoney(draft.delivery.free_delivery_threshold_iqd)
+                  }
+                  onChange={event => {
+                    if (!event.target.value) {
+                      updateDraft(current => ({
+                        ...current,
+                        delivery: {
+                          ...current.delivery,
+                          free_delivery_threshold_iqd: null,
+                        },
+                      }));
+                      return;
+                    }
+                    const minor = parseMoney(event.target.value);
+                    if (minor === null) return;
                     updateDraft(current => ({
                       ...current,
                       delivery: {
                         ...current.delivery,
-                        free_delivery_threshold_iqd: event.target.value
-                          ? Math.max(0, Number(event.target.value))
-                          : null,
+                        free_delivery_threshold_iqd: minor,
                       },
-                    }))
-                  }
+                    }));
+                  }}
                 />
               </label>
               <label className="space-y-2 text-sm font-medium">
@@ -575,16 +615,17 @@ export default function ServerSettingsPage() {
                       />
                     </label>
                     <label className="space-y-1 text-sm font-medium">
-                      <span>{copy.areaFee}</span>
+                      <span>{copy.areaFee} ({currencyCode})</span>
                       <Input
                         type="number"
                         min={0}
-                        value={rate.fee_iqd}
-                        onChange={event =>
-                          updateAreaRate(index, {
-                            fee_iqd: Math.max(0, Number(event.target.value || 0)),
-                          })
-                        }
+                        step={currencyStep}
+                        value={displayMoney(rate.fee_iqd)}
+                        onChange={event => {
+                          const minor = parseMoney(event.target.value || '0');
+                          if (minor === null) return;
+                          updateAreaRate(index, { fee_iqd: minor });
+                        }}
                       />
                     </label>
                     <Button

@@ -17,6 +17,12 @@ import {
   XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import { subscribeCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
+import {
+  getMerchantRegionalContext,
+  type MerchantRegionalContext,
+} from '@/lib/merchantRegionalUiApi';
 
 type ServerOrder = Order & {
   version: number;
@@ -196,10 +202,18 @@ function orderTotal(order: ServerOrder): number {
   );
 }
 
-function money(value: number, language: LanguageCode): string {
-  return `${new Intl.NumberFormat(
-    language === 'en' ? 'en-US' : 'ar-IQ',
-  ).format(value)} IQD`;
+function money(
+  value: number,
+  language: LanguageCode,
+  regional: MerchantRegionalContext | null,
+): string {
+  if (!regional) return '—';
+  return formatMerchantMoneyMinor(
+    value,
+    regional.currency_code,
+    regional.currency_fraction_digits,
+    language,
+  );
 }
 
 function statusVariant(status: OrderStatus) {
@@ -220,6 +234,7 @@ export default function ServerOrdersPage() {
   const language = languageCode(i18n);
   const labels = textFor(language);
   const [orders, setOrders] = useState<ServerOrder[]>([]);
+  const [regional, setRegional] = useState<MerchantRegionalContext | null>(null);
   const linkedOrderIdRef = useRef(requestedOrderId());
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -238,15 +253,19 @@ export default function ServerOrdersPage() {
   const loadOrders = async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const response = await fetch('/api/orders', {
-        headers: { Accept: 'application/json' },
-        cache: 'no-store',
-      });
+      const [response, regionalContext] = await Promise.all([
+        fetch('/api/orders', {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        }),
+        getMerchantRegionalContext(),
+      ]);
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.ok || !Array.isArray(data.orders)) {
         throw new Error(data?.error || labels.loadFailed);
       }
       const nextOrders = data.orders as ServerOrder[];
+      setRegional(regionalContext);
       setOrders(nextOrders);
       setLoadError('');
       setSelectedOrderId(current => {
@@ -274,6 +293,12 @@ export default function ServerOrdersPage() {
       if (!pendingOrderId) void loadOrders(true);
     }, 10_000);
     return () => window.clearInterval(interval);
+  }, [pendingOrderId, language]);
+
+  useEffect(() => {
+    return subscribeCashierDashboardRefresh(() => {
+      if (!pendingOrderId) void loadOrders(true);
+    });
   }, [pendingOrderId, language]);
 
   const filteredOrders = useMemo(() => {
@@ -485,7 +510,7 @@ export default function ServerOrdersPage() {
                         {PAYMENT_LABELS[language][order.payment_status]}
                       </span>
                       <span className="font-bold">
-                        {money(orderTotal(order), language)}
+                        {money(orderTotal(order), language, regional)}
                       </span>
                     </div>
                   </button>
@@ -547,6 +572,7 @@ export default function ServerOrdersPage() {
                           {money(
                             Number(item.price || 0) * Number(item.quantity || 0),
                             language,
+                            regional,
                           )}
                         </p>
                       </div>
@@ -554,7 +580,7 @@ export default function ServerOrdersPage() {
                   </div>
                   <div className="mt-3 flex justify-between rounded-xl bg-primary/5 p-4 text-lg font-extrabold">
                     <span>{labels.total}</span>
-                    <span>{money(orderTotal(selectedOrder), language)}</span>
+                    <span>{money(orderTotal(selectedOrder), language, regional)}</span>
                   </div>
                 </div>
 

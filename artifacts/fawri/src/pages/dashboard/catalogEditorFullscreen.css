@@ -192,6 +192,18 @@ html[lang="ku"] .products-workspace-polish .catalog-editor-shell.fawri-ui-baseli
   justify-content: flex-start;
 }
 
+/*
+ * Shipping measurements keep their original width proportions. On desktop,
+ * align the two field groups by their bottom edge so weight and all three
+ * dimensions sit on one horizontal line even though their headings differ.
+ */
+@media (min-width: 1024px) {
+  .products-workspace-polish .catalog-editor-shell details.group > .space-y-3.border-t.p-4 > .grid.items-start.gap-4 {
+    grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.3fr) !important;
+    align-items: end !important;
+  }
+}
+
 @media (max-width: 1000px) {
   .products-workspace-polish .catalog-editor-body-grid {
     grid-template-columns: minmax(0, 1fr) !important;

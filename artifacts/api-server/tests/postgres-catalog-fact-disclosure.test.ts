@@ -2,10 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { PostgresOperationalFactResolver } from "../src/services/knowledge/postgresOperationalFactResolver";
-import { KnowledgeRuntimeGateError } from "../src/services/knowledge/postgresKnowledgeRuntime";
 import type { KnowledgeSqlExecutor } from "../src/services/knowledge/postgresKnowledgeRuntime";
 
-function productRow(quantity: number, currency = "IQD") {
+function productRow(quantity: number, currency = "IQD", currentPrice = 15000) {
   return {
     id: "prd-shirt",
     merchant_id: "merchant-a",
@@ -14,7 +13,7 @@ function productRow(quantity: number, currency = "IQD") {
     name: "قميص",
     sku: null,
     barcode: null,
-    current_price_iqd: 15000,
+    current_price_iqd: currentPrice,
     quantity,
     low_stock_threshold: 2,
     variant_stock_mode: false,
@@ -202,21 +201,15 @@ test("expired promotion cannot leak a stale discounted price", async () => {
   assert.equal(String(result?.recordId).includes("promotion:"), false);
 });
 
-test("legacy IQD catalog fails closed for a non-IQD merchant until money migration", async () => {
+test("Fawri catalog price disclosure follows the merchant currency scale", async () => {
   const resolver = new PostgresOperationalFactResolver(
-    sqlWithProducts([productRow(11, "USD")]),
+    sqlWithProducts([productRow(11, "USD", 1_999)]),
   );
-  await assert.rejects(
-    () =>
-      resolver.resolve({
-        merchantId: "merchant-a",
-        customerText: "price قميص",
-        language: "en",
-      }),
-    (error: unknown) => {
-      assert.ok(error instanceof KnowledgeRuntimeGateError);
-      assert.equal(error.code, "CATALOG_CURRENCY_MIGRATION_REQUIRED");
-      return true;
-    },
-  );
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "price قميص",
+    language: "en",
+  });
+  assert.equal(result?.factType, "product_price");
+  assert.equal(result?.answerText, "قميص is 19.99 USD.");
 });

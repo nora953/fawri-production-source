@@ -167,6 +167,10 @@ function assertSafeMinor(value: number, label: string): number {
   return value;
 }
 
+function optionalSafeMinor(value: number | undefined, label: string): number | undefined {
+  return value === undefined ? undefined : assertSafeMinor(Number(value), label);
+}
+
 function localItemsFromProduct(
   product: CatalogProduct,
   context: CatalogCommerceContext,
@@ -190,22 +194,30 @@ function localItemsFromProduct(
   } as const;
 
   if (Array.isArray(product.variants) && product.variants.length > 0) {
-    return product.variants.map(variant => ({
-      ...base,
-      variant_id: variant.id,
-      variant_name: variant.name || undefined,
-      sku: variant.sku || product.sku || undefined,
-      barcode: variant.barcode || undefined,
-      stock_quantity: product.track_inventory
-        ? assertSafeMinor(Number(variant.stock_quantity), 'variant stock')
-        : undefined,
-      base_unit_price_minor: assertSafeMinor(
-        Number(variant.price_iqd ?? product.price_iqd),
-        'variant price',
-      ),
-    }));
+    return product.variants.map(variant => {
+      const cost = optionalSafeMinor(
+        variant.cost_iqd ?? product.cost_iqd,
+        'variant reporting cost',
+      );
+      return {
+        ...base,
+        variant_id: variant.id,
+        variant_name: variant.name || undefined,
+        sku: variant.sku || product.sku || undefined,
+        barcode: variant.barcode || undefined,
+        stock_quantity: product.track_inventory
+          ? assertSafeMinor(Number(variant.stock_quantity), 'variant stock')
+          : undefined,
+        base_unit_price_minor: assertSafeMinor(
+          Number(variant.price_iqd ?? product.price_iqd),
+          'variant price',
+        ),
+        ...(cost !== undefined ? { unit_cost_minor: cost } : {}),
+      };
+    });
   }
 
+  const cost = optionalSafeMinor(product.cost_iqd, 'product reporting cost');
   return [
     {
       ...base,
@@ -215,6 +227,7 @@ function localItemsFromProduct(
         ? assertSafeMinor(Number(product.stock_quantity), 'product stock')
         : undefined,
       base_unit_price_minor: assertSafeMinor(Number(product.price_iqd), 'product price'),
+      ...(cost !== undefined ? { unit_cost_minor: cost } : {}),
     },
   ];
 }

@@ -83,6 +83,8 @@ export type CashierSaleLineSnapshot = {
   quantity: number;
   base_unit_price_minor: number;
   effective_unit_price_minor: number;
+  /** Merchant-private sale-time cost evidence used only for profit reporting. */
+  unit_cost_minor?: number;
   discount_minor: number;
   line_total_minor: number;
   promotion?: CashierPromotionSnapshot;
@@ -211,6 +213,8 @@ export type CashierCatalogLookup = CashierMoneyContext & {
   track_inventory: boolean;
   stock_quantity?: number;
   base_unit_price_minor: number;
+  /** Merchant-private cost projection. It is snapshotted into a sale, never shown to customers. */
+  unit_cost_minor?: number;
   /**
    * Legacy/display projection only. Sale commit must resolve effective price
    * from base price + the current local promotion snapshot at sale time.
