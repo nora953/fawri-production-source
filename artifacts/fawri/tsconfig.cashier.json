@@ -2,6 +2,7 @@
   "extends": "./tsconfig.json",
   "files": [
     "src/pages/CashierPosPage.tsx",
+    "src/pages/dashboard/CashierDiscountPoliciesPage.tsx",
     "src/components/cashier/CashierCheckoutModal.tsx",
     "src/lib/cashierBarcodeScanner.ts",
     "src/lib/cashierPosEnhancementCopy.ts"
