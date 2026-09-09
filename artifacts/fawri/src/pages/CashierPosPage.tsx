@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import CashierCheckoutModal from '@/components/cashier/CashierCheckoutModal';
+import {
+  appendCashierScannerKey,
+  completeCashierScannerBuffer,
+  emptyCashierScannerBuffer,
+  isCashierScannerTerminator,
+  type CashierScannerBuffer,
+} from '@/lib/cashierBarcodeScanner';
 import type {
   CashierCatalogLookup,
   CashierPaymentMethod,
   CashierSaleLineInput,
 } from '@/lib/cashierLocalContracts';
+import { CASHIER_POS_ENHANCEMENT_COPY } from '@/lib/cashierPosEnhancementCopy';
 import type { CashierResolvedSalePricing } from '@/lib/cashierSalePricingRuntime';
 import {
   createCashierPosRuntime,
@@ -50,7 +59,7 @@ function formatMoney(
 function normalizeCashDigits(value: string): string {
   const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
   const easternArabic = '۰۱۲۳۴۵۶۷۸۹';
-  const normalized = String(value || '')
+  return String(value || '')
     .split('')
     .map(character => {
       const arabicIndex = arabicIndic.indexOf(character);
@@ -60,14 +69,20 @@ function normalizeCashDigits(value: string): string {
       return character;
     })
     .join('')
-    .replace(/[^0-9]/g, '');
-  return normalized.replace(/^0+(?=\d)/, '');
+    .replace(/[^0-9]/g, '')
+    .replace(/^0+(?=\d)/, '');
 }
 
 function parseCashTenderMinor(value: string): number | null {
   if (!value) return null;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function runtimeErrorCode(error: unknown): string {
+  return typeof error === 'object' && error && 'code' in error
+    ? String((error as { code?: unknown }).code || '')
+    : '';
 }
 
 function catalogMatches(
@@ -94,10 +109,7 @@ function catalogMatches(
 }
 
 function errorMessage(error: unknown, labels: PosLabels): string {
-  const code =
-    typeof error === 'object' && error && 'code' in error
-      ? String((error as { code?: unknown }).code || '')
-      : '';
+  const code = runtimeErrorCode(error);
   const message = error instanceof Error ? error.message : String(error || '');
   if (code === 'CASHIER_OUT_OF_STOCK' || message.includes('CASHIER_OUT_OF_STOCK')) {
     return labels.errorOutOfStock;
@@ -165,9 +177,11 @@ function syncButtonClassName(state: CashierSyncUiState): string {
 export default function CashierPosPage() {
   const { lang, dir } = useI18n();
   const labels = CASHIER_UI_COPY[lang].pos;
+  const extra = CASHIER_POS_ENHANCEMENT_COPY[lang];
   const demoMode =
     import.meta.env.VITE_CASHIER_SMOKE === '1' &&
     new URLSearchParams(window.location.search).get('demo') === '1';
+
   const [runtime, setRuntime] = useState<CashierPosRuntime | null>(null);
   const [catalog, setCatalog] = useState<CashierCatalogLookup[]>([]);
   const [query, setQuery] = useState('');
@@ -176,6 +190,7 @@ export default function CashierPosPage() {
   const [compactPage, setCompactPage] = useState(0);
   const [quote, setQuote] = useState<CashierResolvedSalePricing | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<CashierPaymentMethod>('cash');
   const [cashTenderText, setCashTenderText] = useState('');
   const [externalConfirmed, setExternalConfirmed] = useState(false);
@@ -188,7 +203,9 @@ export default function CashierPosPage() {
   );
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SaleSuccess | null>(null);
+
   const searchRef = useRef<HTMLInputElement>(null);
+  const scannerBufferRef = useRef<CashierScannerBuffer>(emptyCashierScannerBuffer());
 
   const refreshCatalog = useCallback(async (
     activeRuntime: CashierPosRuntime,
@@ -249,6 +266,7 @@ export default function CashierPosPage() {
     if (cart.length === 0) {
       setActiveCartKey(null);
       setCompactPage(0);
+      setCheckoutOpen(false);
       return;
     }
     if (!activeCartKey || !cart.some(line => itemKey(line.item) === activeCartKey)) {
@@ -257,12 +275,11 @@ export default function CashierPosPage() {
   }, [activeCartKey, cart]);
 
   const saleLines = useMemo<CashierSaleLineInput[]>(
-    () =>
-      cart.map(line => ({
-        product_id: line.item.product_id,
-        ...(line.item.variant_id ? { variant_id: line.item.variant_id } : {}),
-        quantity: line.quantity,
-      })),
+    () => cart.map(line => ({
+      product_id: line.item.product_id,
+      ...(line.item.variant_id ? { variant_id: line.item.variant_id } : {}),
+      quantity: line.quantity,
+    })),
     [cart],
   );
 
@@ -298,6 +315,7 @@ export default function CashierPosPage() {
     () => parseCashTenderMinor(cashTenderText),
     [cashTenderText],
   );
+
   const changeDueMinor = useMemo(() => {
     if (
       paymentMethod !== 'cash' ||
@@ -310,14 +328,23 @@ export default function CashierPosPage() {
     const change = cashTenderedMinor - quote.total_minor;
     return Number.isSafeInteger(change) && change >= 0 ? change : null;
   }, [cashTenderedMinor, paymentMethod, quote]);
+
   const cashTenderReady =
     paymentMethod !== 'cash' ||
     Boolean(quote && cashTenderedMinor !== null && changeDueMinor !== null);
+
+  const resetPaymentDraft = useCallback(() => {
+    setCashTenderText('');
+    setExternalConfirmed(false);
+    setError(null);
+  }, []);
 
   const addItem = useCallback((item: CashierCatalogLookup) => {
     const key = itemKey(item);
     setError(null);
     setSuccess(null);
+    setCashTenderText('');
+    setExternalConfirmed(false);
     setActiveCartKey(key);
     setCompactPage(0);
     setCart(current => {
@@ -342,6 +369,8 @@ export default function CashierPosPage() {
 
   const updateQuantity = useCallback((key: string, next: number) => {
     setError(null);
+    setCashTenderText('');
+    setExternalConfirmed(false);
     setCart(current =>
       current.flatMap(line => {
         if (itemKey(line.item) !== key) return [line];
@@ -356,22 +385,87 @@ export default function CashierPosPage() {
     );
   }, [labels]);
 
+  const scannerError = useCallback((cause: unknown): string => {
+    const code = runtimeErrorCode(cause);
+    if (code === 'CASHIER_BARCODE_AMBIGUOUS' || code === 'CASHIER_SKU_AMBIGUOUS') {
+      return extra.scannerAmbiguous;
+    }
+    return errorMessage(cause, labels);
+  }, [extra.scannerAmbiguous, labels]);
+
+  const addExactCode = useCallback(async (value: string, source: 'scanner' | 'search') => {
+    if (!runtime) return false;
+    try {
+      const exact = await runtime.lookupExact(value);
+      if (!exact) {
+        if (source === 'scanner') setError(extra.scannerNotFound);
+        return false;
+      }
+      addItem(exact);
+      setQuery('');
+      await refreshCatalog(runtime, '', false);
+      return true;
+    } catch (cause) {
+      setError(scannerError(cause));
+      return false;
+    }
+  }, [addItem, extra.scannerNotFound, refreshCatalog, runtime, scannerError]);
+
   const performSearch = useCallback(async () => {
     if (!runtime) return;
     setError(null);
     const value = query.trim();
-    if (value) {
-      const exact = await runtime.lookupExact(value).catch(() => null);
-      if (exact) {
-        addItem(exact);
-        setQuery('');
-        await refreshCatalog(runtime, '', false);
-        searchRef.current?.focus();
-        return;
-      }
+    if (value && await addExactCode(value, 'search')) {
+      searchRef.current?.focus();
+      return;
     }
     await refreshCatalog(runtime, value);
-  }, [addItem, query, refreshCatalog, runtime]);
+  }, [addExactCode, query, refreshCatalog, runtime]);
+
+  useEffect(() => {
+    scannerBufferRef.current = emptyCashierScannerBuffer();
+    if (!runtime || checkoutOpen) return;
+
+    const handleScannerKey = (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.altKey || event.metaKey || event.repeat) return;
+      const atMs = event.timeStamp;
+
+      if (isCashierScannerTerminator(event.key)) {
+        const code = completeCashierScannerBuffer(scannerBufferRef.current, atMs);
+        scannerBufferRef.current = emptyCashierScannerBuffer();
+        if (!code) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setQuery('');
+        void addExactCode(code, 'scanner');
+        return;
+      }
+
+      if (event.key.length === 1) {
+        scannerBufferRef.current = appendCashierScannerKey(
+          scannerBufferRef.current,
+          event.key,
+          atMs,
+        );
+      }
+    };
+
+    window.addEventListener('keydown', handleScannerKey, true);
+    return () => window.removeEventListener('keydown', handleScannerKey, true);
+  }, [addExactCode, checkoutOpen, runtime]);
+
+  const openCheckout = useCallback(() => {
+    if (!quote || quoteError || cart.length === 0) return;
+    setError(null);
+    setCheckoutOpen(true);
+  }, [cart.length, quote, quoteError]);
+
+  const closeCheckout = useCallback(() => {
+    if (committing) return;
+    setError(null);
+    setCheckoutOpen(false);
+    window.setTimeout(() => searchRef.current?.focus(), 0);
+  }, [committing]);
 
   const completeSale = useCallback(async () => {
     if (!runtime || cart.length === 0 || !quote || quoteError) return;
@@ -384,6 +478,7 @@ export default function CashierPosPage() {
       setError(labels.errorConfirmExternalPayment);
       return;
     }
+
     setCommitting(true);
     setError(null);
     setSuccess(null);
@@ -404,6 +499,7 @@ export default function CashierPosPage() {
           : {}),
         lines: saleLines,
       });
+
       setSuccess({
         saleId: result.sale.sale_id,
         totalMinor: result.sale.total_minor,
@@ -413,14 +509,16 @@ export default function CashierPosPage() {
           ? { changeDueMinor: result.sale.change_due_minor }
           : {}),
       });
+      setCheckoutOpen(false);
       setCart([]);
       setActiveCartKey(null);
       setCompactPage(0);
       setPaymentMethod('cash');
       setCashTenderText('');
       setExternalConfirmed(false);
-      await refreshCatalog(runtime, query, false);
-      searchRef.current?.focus();
+      await refreshCatalog(runtime, '', false);
+      setQuery('');
+      window.setTimeout(() => searchRef.current?.focus(), 0);
     } catch (cause) {
       setError(errorMessage(cause, labels));
       await refreshCatalog(runtime, query, false).catch(() => undefined);
@@ -457,6 +555,12 @@ export default function CashierPosPage() {
 
   const syncDisabled = !online || syncUiState.status === 'syncing';
   const syncNeedsAttention = syncUiState.status === 'needs_attention';
+  const checkoutCanSubmit =
+    cart.length > 0 &&
+    Boolean(quote) &&
+    !quoteError &&
+    cashTenderReady &&
+    (paymentMethod === 'cash' || externalConfirmed);
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 lg:h-[100dvh] lg:overflow-hidden" dir={dir}>
@@ -503,7 +607,11 @@ export default function CashierPosPage() {
           </div>
         </header>
 
-        {error ? <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
+        {!checkoutOpen && error ? (
+          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {error}
+          </div>
+        ) : null}
         {success ? (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             <strong>{labels.saleSuccess}</strong>
@@ -542,6 +650,10 @@ export default function CashierPosPage() {
                   {searching ? labels.searching : labels.search}
                 </button>
               </div>
+              <div className="mt-2 inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                <span aria-hidden="true">▣</span>
+                <span>{extra.scannerReady}</span>
+              </div>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
@@ -566,7 +678,7 @@ export default function CashierPosPage() {
                         <h3 className="font-bold leading-6">{item.name}</h3>
                         {item.variant_name ? <p className="mt-1 text-xs text-slate-500">{item.variant_name}</p> : null}
                         <div className="mt-3 flex items-center justify-between gap-2 text-xs text-slate-500">
-                          <span>{item.sku || item.barcode || labels.noCode}</span>
+                          <span className="min-w-0 truncate" dir="ltr">{item.sku || item.barcode || labels.noCode}</span>
                           <span className={soldOut ? 'font-bold text-red-600' : ''}>{item.track_inventory ? labels.stock(item.stock_quantity ?? 0) : labels.inventoryUntracked}</span>
                         </div>
                       </button>
@@ -583,7 +695,18 @@ export default function CashierPosPage() {
                 <h2 className="font-bold">{labels.cart}</h2>
                 <p className="mt-0.5 text-xs text-slate-500">{labels.cartCount(cartCount)}</p>
               </div>
-              {cart.length > 0 ? <button type="button" onClick={() => { setCart([]); setCashTenderText(''); }} className="text-xs font-semibold text-red-600 hover:underline">{labels.clearCart}</button> : null}
+              {cart.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCart([]);
+                    resetPaymentDraft();
+                  }}
+                  className="text-xs font-semibold text-red-600 hover:underline"
+                >
+                  {labels.clearCart}
+                </button>
+              ) : null}
             </div>
 
             <div className="flex min-h-0 flex-1 flex-col gap-2.5 overflow-hidden p-3">
@@ -667,70 +790,54 @@ export default function CashierPosPage() {
                 <div className="flex justify-between border-t border-slate-100 pt-1.5 text-lg font-bold"><span>{labels.total}</span><span dir="ltr">{quote ? formatMoney(quote.total_minor, quote.currency_code, quote.currency_fraction_digits, lang) : '—'}</span></div>
               </div>
 
-              <div className="mt-2.5">
-                <label className="mb-1.5 block text-xs font-bold text-slate-600">{labels.paymentMethod}</label>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {([
-                    ['cash', labels.cash],
-                    ['card', labels.card],
-                    ['electronic', labels.electronic],
-                    ['other', labels.other],
-                  ] as Array<[CashierPaymentMethod, string]>).map(([method, label]) => (
-                    <button type="button" key={method} onClick={() => { setPaymentMethod(method); setCashTenderText(''); setExternalConfirmed(false); }} className={`rounded-lg border px-3 py-1.5 text-sm font-semibold ${paymentMethod === method ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>{label}</button>
-                  ))}
-                </div>
-              </div>
-
-              {paymentMethod === 'cash' ? (
-                <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50/70 p-2.5">
-                  <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <label htmlFor="cashier-cash-received" className="text-xs font-bold text-slate-700">{labels.cashReceived}</label>
-                    <button
-                      type="button"
-                      disabled={!quote}
-                      onClick={() => { if (quote) setCashTenderText(String(quote.total_minor)); }}
-                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-50"
-                    >
-                      {labels.exactCash}
-                    </button>
-                  </div>
-                  <input
-                    id="cashier-cash-received"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    value={cashTenderText}
-                    onChange={event => setCashTenderText(normalizeCashDigits(event.target.value))}
-                    placeholder={labels.cashReceivedPlaceholder}
-                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-end text-base font-bold outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-                    dir="ltr"
-                  />
-                  <div className={`mt-2 flex items-center justify-between rounded-lg px-2.5 py-1.5 text-sm ${changeDueMinor !== null ? 'bg-emerald-50 text-emerald-800' : 'bg-white text-slate-500'}`}>
-                    <span className="font-semibold">{labels.changeDue}</span>
-                    <strong dir="ltr">
-                      {quote && changeDueMinor !== null
-                        ? formatMoney(changeDueMinor, quote.currency_code, quote.currency_fraction_digits, lang)
-                        : '—'}
-                    </strong>
-                  </div>
-                  {quote && cashTenderedMinor !== null && cashTenderedMinor < quote.total_minor ? (
-                    <p className="mt-1.5 text-xs font-semibold text-red-600">{labels.cashInsufficient}</p>
-                  ) : null}
-                </div>
-              ) : (
-                <label className="mt-2 flex cursor-pointer items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs leading-5 text-amber-900">
-                  <input type="checkbox" checked={externalConfirmed} onChange={event => setExternalConfirmed(event.target.checked)} className="mt-1 h-4 w-4" />
-                  <span>{labels.externalPaymentConfirmed}</span>
-                </label>
-              )}
-
-              <button type="button" onClick={() => void completeSale()} disabled={cart.length === 0 || !quote || Boolean(quoteError) || committing || !cashTenderReady || (paymentMethod !== 'cash' && !externalConfirmed)} className="mt-2.5 h-11 w-full rounded-xl bg-orange-600 text-sm font-bold text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300">
-                {committing ? labels.completingSale : labels.completeSale}
+              <button
+                type="button"
+                onClick={openCheckout}
+                disabled={cart.length === 0 || !quote || Boolean(quoteError) || committing}
+                className="mt-3 h-12 w-full rounded-xl bg-orange-600 text-base font-black text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {extra.checkout}
               </button>
             </div>
           </aside>
         </div>
       </div>
+
+      <CashierCheckoutModal
+        open={checkoutOpen}
+        lang={lang}
+        dir={dir}
+        labels={labels}
+        quote={quote}
+        error={error}
+        paymentMethod={paymentMethod}
+        cashTenderText={cashTenderText}
+        cashTenderedMinor={cashTenderedMinor}
+        changeDueMinor={changeDueMinor}
+        externalConfirmed={externalConfirmed}
+        committing={committing}
+        canSubmit={checkoutCanSubmit}
+        onPaymentMethodChange={method => {
+          setPaymentMethod(method);
+          setCashTenderText('');
+          setExternalConfirmed(false);
+          setError(null);
+        }}
+        onCashTenderChange={value => {
+          setCashTenderText(normalizeCashDigits(value));
+          setError(null);
+        }}
+        onExactCash={() => {
+          if (quote) setCashTenderText(String(quote.total_minor));
+          setError(null);
+        }}
+        onExternalConfirmedChange={confirmed => {
+          setExternalConfirmed(confirmed);
+          setError(null);
+        }}
+        onClose={closeCheckout}
+        onSubmit={() => void completeSale()}
+      />
     </main>
   );
 }
