@@ -52,6 +52,9 @@ const OrdersPage = lazy(() => import("@/pages/dashboard/OrdersPage"));
 const CashierManagementPage = lazy(
   () => import("@/pages/dashboard/CashierManagementPage"),
 );
+const CashierDiscountPoliciesPage = lazy(
+  () => import("@/pages/dashboard/CashierDiscountPoliciesPage"),
+);
 const CashierCentralReportsPage = lazy(
   () => import("@/pages/dashboard/CashierCentralReportsPage"),
 );
@@ -182,6 +185,10 @@ function AppRouter() {
 
         <Route path="/dashboard/cashiers/reports">
           {() => <DashboardRoute Page={CashierCentralReportsPage} />}
+        </Route>
+
+        <Route path="/dashboard/cashiers/discounts">
+          {() => <DashboardRoute Page={CashierDiscountPoliciesPage} />}
         </Route>
 
         <Route path="/dashboard/cashiers">
