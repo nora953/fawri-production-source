@@ -8,18 +8,28 @@ async function source(path) {
   return readFile(new URL(path, root), 'utf8');
 }
 
-test('override approval schema is sale-bound, one-operation-only, expiring and auditable', async () => {
-  const schema = await source('scripts/apply-cashier-discount-policy-schema.ts');
+test('override approval schema is canonical, sale-bound, one-operation-only, expiring and auditable', async () => {
+  const schema = await source('../../lib/db/drizzle/0015_cashier_discount_override_authority.sql');
   assert.match(schema, /merchant_cashier_discount_override_approvals/);
-  assert.match(schema, /operator_staff_id text NOT NULL/);
-  assert.match(schema, /approver_staff_id text NOT NULL/);
-  assert.match(schema, /operation_id text NOT NULL/);
-  assert.match(schema, /manual_discount_minor bigint NOT NULL/);
-  assert.match(schema, /manual_discount_reason text NOT NULL/);
-  assert.match(schema, /expires_at timestamptz NOT NULL/);
-  assert.match(schema, /consumed_at timestamptz NULL/);
-  assert.match(schema, /CHECK \(operator_staff_id <> approver_staff_id\)/);
-  assert.match(schema, /UNIQUE \(merchant_id, operation_id\)/);
+  assert.match(schema, /"operator_staff_id" text NOT NULL/);
+  assert.match(schema, /"approver_staff_id" text NOT NULL/);
+  assert.match(schema, /"operation_id" text NOT NULL/);
+  assert.match(schema, /"manual_discount_minor" bigint NOT NULL/);
+  assert.match(schema, /"manual_discount_reason" text NOT NULL/);
+  assert.match(schema, /"expires_at" timestamp with time zone NOT NULL/);
+  assert.match(schema, /"consumed_at" timestamp with time zone/);
+  assert.match(schema, /cashier_discount_override_not_self_approved/);
+  assert.match(schema, /merchant_cashier_discount_override_merchant_operation_unique/);
+  assert.match(schema, /cashier_discount_override_station_merchant_fk/);
+  assert.match(schema, /cashier_discount_override_operator_merchant_fk/);
+  assert.match(schema, /cashier_discount_override_approver_merchant_fk/);
+});
+
+test('canonical migration expands PostgreSQL permission authority for manual discount and override', async () => {
+  const schema = await source('../../lib/db/drizzle/0015_cashier_discount_override_authority.sql');
+  assert.match(schema, /merchant_cashier_staff_permissions_permission_check/);
+  assert.match(schema, /sale\.discount/);
+  assert.match(schema, /sale\.discount_override/);
 });
 
 test('override issuance requires another active manager, explicit permission, policy and PIN', async () => {
@@ -54,10 +64,7 @@ test('delayed sync validates approval against sale creation time instead of sync
   assert.match(overrideAuthority, /approvalCreatedAt = toMillis\(approval\.created_at\)/);
   assert.match(overrideAuthority, /approvalExpiresAt = toMillis\(approval\.expires_at\)/);
   assert.match(overrideAuthority, /saleOccurredAt > approvalExpiresAt/);
-  assert.doesNotMatch(
-    overrideAuthority,
-    /toMillis\(approval\.expires_at\) <= Date\.now\(\)/,
-  );
+  assert.doesNotMatch(overrideAuthority, /toMillis\(approval\.expires_at\) <= Date\.now\(\)/);
 });
 
 test('consumed approval remains retry-safe only for its exact operation and sale window', async () => {
