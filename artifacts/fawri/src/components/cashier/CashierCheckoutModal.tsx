@@ -1,7 +1,12 @@
 import { useEffect, useRef } from 'react';
 import CashierManualDiscountEditor from './CashierManualDiscountEditor';
+import CashierDiscountOverrideEditor from './CashierDiscountOverrideEditor';
 import type { CashierPaymentMethod } from '@/lib/cashierLocalContracts';
 import type { CashierOperatorDiscountPolicy } from '@/lib/cashierDiscountPolicyClient';
+import type {
+  CashierDiscountOverrideApproval,
+  CashierDiscountOverrideApprover,
+} from '@/lib/cashierDiscountOverrideClient';
 import type { CashierManualDiscountResolution } from '@/lib/cashierManualDiscount';
 import type { CashierResolvedSalePricing } from '@/lib/cashierSalePricingRuntime';
 import { CASHIER_POS_ENHANCEMENT_COPY } from '@/lib/cashierPosEnhancementCopy';
@@ -35,6 +40,14 @@ type Props = {
   manualDiscountReason: string;
   manualDiscountResolution: CashierManualDiscountResolution | null;
   manualDiscountInvalid: boolean;
+  overrideNeeded: boolean;
+  overrideApprovers: CashierDiscountOverrideApprover[];
+  overrideApproversLoading: boolean;
+  overrideSelectedApproverId: string;
+  overridePin: string;
+  overrideApproval: CashierDiscountOverrideApproval | null;
+  overrideApprovalLoading: boolean;
+  overrideErrorCode: string | null;
   onPaymentMethodChange: (method: CashierPaymentMethod) => void;
   onCashTenderChange: (value: string) => void;
   onExactCash: () => void;
@@ -44,6 +57,9 @@ type Props = {
   onManualDiscountKindChange: (kind: 'amount' | 'percentage') => void;
   onManualDiscountValueChange: (value: string) => void;
   onManualDiscountReasonChange: (value: string) => void;
+  onOverrideApproverChange: (staffId: string) => void;
+  onOverridePinChange: (pin: string) => void;
+  onOverrideApprove: () => void;
   onClose: () => void;
   onSubmit: () => void;
 };
@@ -81,6 +97,14 @@ export default function CashierCheckoutModal({
   manualDiscountReason,
   manualDiscountResolution,
   manualDiscountInvalid,
+  overrideNeeded,
+  overrideApprovers,
+  overrideApproversLoading,
+  overrideSelectedApproverId,
+  overridePin,
+  overrideApproval,
+  overrideApprovalLoading,
+  overrideErrorCode,
   onPaymentMethodChange,
   onCashTenderChange,
   onExactCash,
@@ -90,6 +114,9 @@ export default function CashierCheckoutModal({
   onManualDiscountKindChange,
   onManualDiscountValueChange,
   onManualDiscountReasonChange,
+  onOverrideApproverChange,
+  onOverridePinChange,
+  onOverrideApprove,
   onClose,
   onSubmit,
 }: Props) {
@@ -99,17 +126,17 @@ export default function CashierCheckoutModal({
   useEffect(() => {
     if (!open) return;
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !committing) onClose();
+      if (event.key === 'Escape' && !committing && !overrideApprovalLoading) onClose();
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [committing, onClose, open]);
+  }, [committing, onClose, open, overrideApprovalLoading]);
 
   useEffect(() => {
-    if (!open || paymentMethod !== 'cash') return;
+    if (!open || paymentMethod !== 'cash' || overrideNeeded) return;
     const timer = window.setTimeout(() => cashInputRef.current?.focus(), 0);
     return () => window.clearTimeout(timer);
-  }, [open, paymentMethod]);
+  }, [open, overrideNeeded, paymentMethod]);
 
   if (!open || !quote || finalTotalMinor === null) return null;
 
@@ -141,7 +168,7 @@ export default function CashierCheckoutModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={committing}
+            disabled={committing || overrideApprovalLoading}
             className="rounded-xl border border-slate-200 px-3 py-1.5 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
           >
             {extra.closeCheckout}
@@ -196,6 +223,22 @@ export default function CashierCheckoutModal({
             onKindChange={onManualDiscountKindChange}
             onValueChange={onManualDiscountValueChange}
             onReasonChange={onManualDiscountReasonChange}
+          />
+
+          <CashierDiscountOverrideEditor
+            lang={lang}
+            needed={overrideNeeded}
+            online={online}
+            approvers={overrideApprovers}
+            approversLoading={overrideApproversLoading}
+            selectedApproverId={overrideSelectedApproverId}
+            pin={overridePin}
+            approval={overrideApproval}
+            approvalLoading={overrideApprovalLoading}
+            errorCode={overrideErrorCode}
+            onApproverChange={onOverrideApproverChange}
+            onPinChange={onOverridePinChange}
+            onApprove={onOverrideApprove}
           />
 
           <div>
@@ -286,7 +329,7 @@ export default function CashierCheckoutModal({
           <button
             type="button"
             onClick={onClose}
-            disabled={committing}
+            disabled={committing || overrideApprovalLoading}
             className="h-12 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
           >
             {extra.cancelCheckout}
@@ -294,7 +337,7 @@ export default function CashierCheckoutModal({
           <button
             type="button"
             onClick={onSubmit}
-            disabled={!canSubmit || committing}
+            disabled={!canSubmit || committing || overrideApprovalLoading}
             className="h-12 rounded-xl bg-orange-600 text-sm font-black text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
           >
             {committing ? labels.completingSale : extra.confirmSale}
