@@ -16,6 +16,7 @@ const bottomNav = fs.readFileSync(new URL('../src/components/layout/BottomNav.ts
 const app = fs.readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const cashierMain = fs.readFileSync(new URL('../src/cashierMain.tsx', import.meta.url), 'utf8');
 const cashierCopy = fs.readFileSync(new URL('../src/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
+const searchErrorCopy = fs.readFileSync(new URL('../src/lib/cashierSearchErrorCopy.ts', import.meta.url), 'utf8');
 const i18n = fs.readFileSync(new URL('../src/lib/i18n.tsx', import.meta.url), 'utf8');
 const merchantCommerceUx = fs.readFileSync(new URL('../src/styles/merchantCommerceUxFixes.css', import.meta.url), 'utf8');
 const catalogEditorFullscreen = fs.readFileSync(new URL('../src/pages/dashboard/catalogEditorFullscreen.css', import.meta.url), 'utf8');
@@ -25,6 +26,18 @@ test('automatic cashier catalog refresh stays silent and preserves unchanged cat
   assert.match(pos, /catalogMatches\(current, next\) \? current : next/);
   assert.match(pos, /if \(visible\) setSearching\(true\)/);
   assert.match(pos, /if \(visible\) setSearching\(false\)/);
+});
+
+test('manual cashier catalog search failures surface a localized accessible error', () => {
+  assert.match(pos, /CASHIER_SEARCH_ERROR_COPY/);
+  assert.match(
+    pos,
+    /const performSearch = useCallback\(async \(\) => \{[\s\S]*try \{[\s\S]*await refreshCatalog\(runtime, value\);[\s\S]*\} catch \{[\s\S]*setError\(CASHIER_SEARCH_ERROR_COPY\[lang\]\);[\s\S]*searchRef\.current\?\.focus\(\);/,
+  );
+  assert.match(pos, /\{error \? <div role="alert"/);
+  assert.match(searchErrorCopy, /ar:\s*'/);
+  assert.match(searchErrorCopy, /ku:\s*'/);
+  assert.match(searchErrorCopy, /en:\s*'/);
 });
 
 test('cashier and active catalog do not use Arabic thousands separators for merchant money', () => {
