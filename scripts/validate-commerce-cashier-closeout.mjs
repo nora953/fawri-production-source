@@ -47,6 +47,7 @@ const steps = [
       'artifacts/api-server/tests/cashier-http-route-reachability.test.mjs',
       'artifacts/api-server/tests/cashier-discount-override-authority.test.mjs',
       'artifacts/api-server/tests/cashier-discount-override-readiness.test.mjs',
+      'artifacts/api-server/tests/cashier-discount-override-live-readiness.test.mjs',
       'artifacts/fawri/tests/cashier-manager-override-checkout.test.mjs',
     ],
   },
