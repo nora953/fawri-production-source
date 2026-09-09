@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "files": [
+    "src/pages/CashierPosPage.tsx",
+    "src/components/cashier/CashierCheckoutModal.tsx",
+    "src/lib/cashierBarcodeScanner.ts",
+    "src/lib/cashierPosEnhancementCopy.ts"
+  ],
+  "include": [],
+  "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
+  "compilerOptions": {
+    "incremental": false,
+    "noEmit": true
+  }
+}
