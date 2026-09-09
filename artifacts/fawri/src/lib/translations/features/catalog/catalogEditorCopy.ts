@@ -368,7 +368,11 @@ export const CATALOG_PRODUCT_DETAILS_COPY = {
     width: 'العرض (سم)',
     height: 'الارتفاع (سم)',
     currentInventoryLocked: 'بعد الحفظ',
-    groupCount: (count: number) => `${count} نوع`,
+    groupCount: (count: number) => {
+      if (count === 1) return 'نوع واحد';
+      if (count === 2) return 'نوعان';
+      return `${count} أنواع`;
+    },
     groupSale: 'سعر بيع لكل هذه المجموعة',
     groupCost: 'كلفة لكل هذه المجموعة',
     groupStock: 'مخزون لكل نوع في المجموعة',

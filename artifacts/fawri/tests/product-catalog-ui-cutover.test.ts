@@ -166,7 +166,9 @@ test('active catalog money follows merchant currency scale instead of a fixed IQ
   assert.match(catalogPage, /catalogMoneyFormForDisplay/);
   assert.match(catalogPage, /catalogMoneyFormForAuthority/);
   assert.match(catalogPage, /validateCatalogMoneyForm/);
-  assert.match(catalogPage, /formatMerchantMoneyMinor/);
+  assert.match(catalogPage, /formatMerchantNumber/);
+  assert.match(catalogPage, /merchantCurrencyLabel/);
+  assert.match(catalogPage, /catalogEffectivePriceRange/);
   assert.match(catalogPage, /currency_fraction_digits/);
   assert.doesNotMatch(catalogPage, /t\.products_currency/);
 });

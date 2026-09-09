@@ -20,6 +20,10 @@ import {
 } from '@/lib/cashierPosRuntime';
 import { subscribeCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import {
+  isCashierOperatorSessionEnded,
+  publishCashierOperatorSessionInvalidated,
+} from '@/lib/cashierOperatorSessionUi';
+import {
   getCashierSyncUiState,
   requestCashierSync,
   subscribeCashierSyncUiState,
@@ -232,7 +236,12 @@ export default function CashierPosPage() {
         await refreshCatalog(created, '');
       })
       .catch(cause => {
-        if (!stopped) setError(errorMessage(cause, labels));
+        if (stopped) return;
+        if (isCashierOperatorSessionEnded(cause)) {
+          publishCashierOperatorSessionInvalidated();
+          return;
+        }
+        setError(extra.catalogOpenFailed);
       })
       .finally(() => {
         if (!stopped) setLoading(false);
@@ -241,7 +250,7 @@ export default function CashierPosPage() {
       stopped = true;
       if (activeRuntime) void activeRuntime.close().catch(() => undefined);
     };
-  }, [demoMode, labels, refreshCatalog]);
+  }, [demoMode, extra.catalogOpenFailed, refreshCatalog]);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -406,6 +415,7 @@ export default function CashierPosPage() {
       await refreshCatalog(runtime, '', false);
       return true;
     } catch (cause) {
+      if (source === 'search') throw cause;
       setError(scannerError(cause));
       return false;
     }
@@ -415,12 +425,22 @@ export default function CashierPosPage() {
     if (!runtime) return;
     setError(null);
     const value = query.trim();
-    if (value && await addExactCode(value, 'search')) {
+    try {
+      if (value && await addExactCode(value, 'search')) {
+        searchRef.current?.focus();
+        return;
+      }
+      await refreshCatalog(runtime, value);
+    } catch (cause) {
+      const code = runtimeErrorCode(cause);
+      setError(
+        code === 'CASHIER_BARCODE_AMBIGUOUS' || code === 'CASHIER_SKU_AMBIGUOUS'
+          ? extra.scannerAmbiguous
+          : extra.searchFailed,
+      );
       searchRef.current?.focus();
-      return;
     }
-    await refreshCatalog(runtime, value);
-  }, [addExactCode, query, refreshCatalog, runtime]);
+  }, [addExactCode, extra.scannerAmbiguous, extra.searchFailed, query, refreshCatalog, runtime]);
 
   useEffect(() => {
     scannerBufferRef.current = emptyCashierScannerBuffer();
@@ -520,6 +540,11 @@ export default function CashierPosPage() {
       setQuery('');
       window.setTimeout(() => searchRef.current?.focus(), 0);
     } catch (cause) {
+      if (isCashierOperatorSessionEnded(cause)) {
+        setCheckoutOpen(false);
+        publishCashierOperatorSessionInvalidated();
+        return;
+      }
       setError(errorMessage(cause, labels));
       await refreshCatalog(runtime, query, false).catch(() => undefined);
     } finally {
@@ -608,7 +633,7 @@ export default function CashierPosPage() {
         </header>
 
         {!checkoutOpen && error ? (
-          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <div role="alert" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             {error}
           </div>
         ) : null}

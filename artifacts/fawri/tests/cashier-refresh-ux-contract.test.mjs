@@ -4,6 +4,7 @@ import fs from 'node:fs';
 
 const pos = fs.readFileSync(new URL('../src/pages/CashierPosPage.tsx', import.meta.url), 'utf8');
 const history = fs.readFileSync(new URL('../src/pages/CashierHistoryPage.tsx', import.meta.url), 'utf8');
+const reports = fs.readFileSync(new URL('../src/pages/CashierReportsPage.tsx', import.meta.url), 'utf8');
 const syncPage = fs.readFileSync(new URL('../src/pages/CashierCatalogSyncPage.tsx', import.meta.url), 'utf8');
 const productsRoute = fs.readFileSync(new URL('../src/pages/dashboard/ProductsPage.tsx', import.meta.url), 'utf8');
 const productsWorkspace = fs.readFileSync(new URL('../src/pages/dashboard/ProductsWorkspacePage.tsx', import.meta.url), 'utf8');
@@ -16,14 +17,48 @@ const bottomNav = fs.readFileSync(new URL('../src/components/layout/BottomNav.ts
 const app = fs.readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const cashierMain = fs.readFileSync(new URL('../src/cashierMain.tsx', import.meta.url), 'utf8');
 const cashierCopy = fs.readFileSync(new URL('../src/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
+const posEnhancementCopy = fs.readFileSync(new URL('../src/lib/cashierPosEnhancementCopy.ts', import.meta.url), 'utf8');
+const operatorSessionUi = fs.readFileSync(new URL('../src/lib/cashierOperatorSessionUi.ts', import.meta.url), 'utf8');
 const i18n = fs.readFileSync(new URL('../src/lib/i18n.tsx', import.meta.url), 'utf8');
 const merchantCommerceUx = fs.readFileSync(new URL('../src/styles/merchantCommerceUxFixes.css', import.meta.url), 'utf8');
+
+const arabicScriptUiLetters = /[\u0621-\u064A\u066E-\u06D3\u06D5\u06EE-\u06EF\u06FA-\u06FC]/u;
 
 test('automatic cashier catalog refresh stays silent and preserves unchanged catalog state', () => {
   assert.match(pos, /refreshCatalog\(runtime, query, false\)/);
   assert.match(pos, /catalogMatches\(current, next\) \? current : next/);
   assert.match(pos, /if \(visible\) setSearching\(true\)/);
   assert.match(pos, /if \(visible\) setSearching\(false\)/);
+});
+
+test('cashier catalog opening and manual search failures are localized and accessible', () => {
+  assert.ok(pos.includes('setError(extra.catalogOpenFailed);'));
+  assert.ok(pos.includes("if (source === 'search') throw cause;"));
+  assert.ok(pos.includes('extra.searchFailed'));
+  assert.ok(pos.includes('extra.scannerAmbiguous'));
+  assert.ok(pos.includes('role="alert"'));
+  assert.equal((posEnhancementCopy.match(/catalogOpenFailed:/g) || []).length, 3);
+  assert.equal((posEnhancementCopy.match(/searchFailed:/g) || []).length, 3);
+});
+
+test('cashier operational pages fail closed into operator authorization when the session ends', () => {
+  assert.match(operatorSessionUi, /CASHIER_OPERATOR_LOGIN_REQUIRED/);
+  assert.match(operatorSessionUi, /CASHIER_OPERATOR_SESSION_INVALID/);
+  assert.match(operatorSessionUi, /fawri:cashier-operator-session-invalidated/);
+
+  for (const page of [pos, history, reports, syncPage]) {
+    assert.match(page, /isCashierOperatorSessionEnded/);
+    assert.match(page, /publishCashierOperatorSessionInvalidated/);
+    assert.match(page, /role="alert"/);
+  }
+
+  assert.match(pos, /createCashierPosRuntime\(\{ demoMode \}\)[\s\S]*isCashierOperatorSessionEnded\(cause\)[\s\S]*publishCashierOperatorSessionInvalidated\(\)/);
+  assert.match(pos, /runtime\.commitSale\([\s\S]*isCashierOperatorSessionEnded\(cause\)[\s\S]*setCheckoutOpen\(false\)[\s\S]*publishCashierOperatorSessionInvalidated\(\)/);
+  assert.match(history, /performReturn[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
+  assert.match(history, /performVoid[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
+  assert.match(reports, /buildReport\(rangeOptions\(range\)\)[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
+  assert.match(syncPage, /syncCashierOperatorOutboxToCloud\(\)[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
+  assert.match(syncPage, /syncCashierOperatorCatalogFromCloud\(\)[\s\S]*isCashierOperatorSessionEnded\(catalogCause\)/);
 });
 
 test('cashier and active catalog do not use Arabic thousands separators for merchant money', () => {
@@ -113,10 +148,10 @@ test('all operational cashier views inherit merchant Arabic Kurdish or English l
   assert.match(pos, /CASHIER_UI_COPY\[lang\]\.pos/);
   assert.match(history, /CASHIER_UI_COPY\[lang\]\.history/);
   assert.match(syncPage, /CASHIER_UI_COPY\[lang\]\.sync/);
-  assert.doesNotMatch(pos, /[\u0600-\u06ff]/, 'POS component must not keep Arabic-only UI literals');
-  assert.doesNotMatch(history, /[\u0600-\u06ff]/, 'history component must not keep Arabic-only UI literals');
-  assert.doesNotMatch(syncPage, /[\u0600-\u06ff]/, 'sync component must not keep Arabic-only UI literals');
-  assert.doesNotMatch(cashierMain, /[\u0600-\u06ff]/, 'cashier runtime messages must come from the language authority');
+  assert.doesNotMatch(pos, arabicScriptUiLetters, 'POS component must not keep Arabic/Kurdish UI letter literals');
+  assert.doesNotMatch(history, arabicScriptUiLetters, 'history component must not keep Arabic/Kurdish UI letter literals');
+  assert.doesNotMatch(syncPage, arabicScriptUiLetters, 'sync component must not keep Arabic/Kurdish UI letter literals');
+  assert.doesNotMatch(cashierMain, arabicScriptUiLetters, 'cashier runtime messages must come from the language authority');
 });
 
 test('cashier language follows merchant language changes across tabs and merchant pages expose the same language alias', () => {

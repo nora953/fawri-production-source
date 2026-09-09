@@ -36,6 +36,7 @@ test("service commerce metadata preserves booking facts without inventory", () =
       booking_required: true,
       price_type: "from",
       location_mode: "customer",
+      location_modes: ["customer"],
     },
   });
 
