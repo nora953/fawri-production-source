@@ -27,7 +27,37 @@ async function main() {
     CREATE INDEX IF NOT EXISTS merchant_cashier_staff_discount_policies_merchant_idx
       ON merchant_cashier_staff_discount_policies (merchant_id, staff_id)
   `);
-  console.log('[cashier] discount policy schema ready');
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS merchant_cashier_discount_override_approvals (
+      id text PRIMARY KEY,
+      merchant_id text NOT NULL,
+      station_id text NOT NULL,
+      operator_staff_id text NOT NULL,
+      approver_staff_id text NOT NULL,
+      operation_id text NOT NULL,
+      manual_discount_minor bigint NOT NULL,
+      manual_discount_reason text NOT NULL,
+      expires_at timestamptz NOT NULL,
+      consumed_at timestamptz NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      CONSTRAINT cashier_discount_override_amount_positive
+        CHECK (manual_discount_minor > 0),
+      CONSTRAINT cashier_discount_override_reason_nonempty
+        CHECK (char_length(btrim(manual_discount_reason)) BETWEEN 1 AND 200),
+      CONSTRAINT cashier_discount_override_not_self_approved
+        CHECK (operator_staff_id <> approver_staff_id),
+      UNIQUE (merchant_id, operation_id)
+    )
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS merchant_cashier_discount_override_approvals_lookup_idx
+      ON merchant_cashier_discount_override_approvals (merchant_id, operation_id, id)
+  `);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS merchant_cashier_discount_override_approvals_approver_idx
+      ON merchant_cashier_discount_override_approvals (merchant_id, approver_staff_id, created_at DESC)
+  `);
+  console.log('[cashier] discount policy and override schema ready');
 }
 
 main().catch((error) => {
