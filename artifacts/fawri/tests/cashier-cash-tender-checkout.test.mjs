@@ -50,31 +50,52 @@ test('indexeddb validates cash tender against authoritative pricing before inven
   assert.match(authority, /CASHIER_CASH_TENDER_PAYMENT_METHOD_INVALID/);
 });
 
-test('cash checkout UI requires received cash, computes change, and persists both values', async () => {
+test('cash checkout is isolated from the sale screen and persists tender evidence', async () => {
+  const page = await source('src/pages/CashierPosPage.tsx');
+  const modal = await source('src/components/cashier/CashierCheckoutModal.tsx');
+
+  assert.match(page, /const \[checkoutOpen, setCheckoutOpen\] = useState\(false\)/);
+  assert.match(page, /<CashierCheckoutModal/);
+  assert.match(page, /extra\.checkout/);
+  assert.match(page, /cash_tendered_minor: cashTenderedMinor/);
+  assert.match(page, /change_due_minor: changeDueMinor/);
+  assert.doesNotMatch(page, /id="cashier-cash-received"/);
+
+  assert.match(modal, /id="cashier-cash-received"/);
+  assert.match(modal, /data-cashier-checkout="open"/);
+  assert.match(modal, /labels\.cashReceived/);
+  assert.match(modal, /labels\.changeDue/);
+  assert.match(modal, /labels\.cashInsufficient/);
+  assert.match(modal, /onExactCash/);
+  assert.match(modal, /role="dialog"/);
+});
+
+test('cash checkout still requires received cash and computes exact change', async () => {
   const page = await source('src/pages/CashierPosPage.tsx');
 
-  assert.match(page, /const \[cashTenderText, setCashTenderText\] = useState\(''\)/);
   assert.match(page, /normalizeCashDigits/);
   assert.match(page, /cashTenderedMinor < quote\.total_minor/);
   assert.match(page, /const change = cashTenderedMinor - quote\.total_minor/);
   assert.match(page, /setCashTenderText\(String\(quote\.total_minor\)\)/);
-  assert.match(page, /cash_tendered_minor: cashTenderedMinor/);
-  assert.match(page, /change_due_minor: changeDueMinor/);
-  assert.match(page, /!cashTenderReady/);
-  assert.match(page, /labels\.cashReceived/);
-  assert.match(page, /labels\.changeDue/);
-  assert.match(page, /labels\.cashInsufficient/);
+  assert.match(page, /cashTenderReady/);
+  assert.match(page, /checkoutCanSubmit/);
 });
 
-test('cash checkout copy exists in Arabic, Sorani, and English', async () => {
-  const copy = await source('src/lib/cashierUiCopy.ts');
+test('checkout and scanner copy exists in Arabic, Sorani, and English', async () => {
+  const copy = await source('src/lib/cashierPosEnhancementCopy.ts');
+  const baseCopy = await source('src/lib/cashierUiCopy.ts');
 
-  assert.match(copy, /cashReceived: 'المبلغ المستلم'/);
-  assert.match(copy, /exactCash: 'المبلغ بالضبط'/);
-  assert.match(copy, /changeDue: 'الباقي للعميل'/);
-  assert.match(copy, /cashReceived: 'پارەی وەرگیراو'/);
-  assert.match(copy, /changeDue: 'پارەی گەڕاندنەوە بۆ کڕیار'/);
-  assert.match(copy, /cashReceived: 'Cash received'/);
-  assert.match(copy, /exactCash: 'Exact amount'/);
-  assert.match(copy, /changeDue: 'Change due'/);
+  assert.match(copy, /checkout: 'الدفع'/);
+  assert.match(copy, /checkoutTitle: 'إتمام الدفع'/);
+  assert.match(copy, /scannerReady: 'قارئ الباركود جاهز/);
+  assert.match(copy, /checkout: 'پارەدان'/);
+  assert.match(copy, /scannerReady: 'خوێنەری بارکۆد ئامادەیە/);
+  assert.match(copy, /checkout: 'Pay'/);
+  assert.match(copy, /scannerReady: 'Barcode scanner ready/);
+
+  assert.match(baseCopy, /cashReceived: 'المبلغ المستلم'/);
+  assert.match(baseCopy, /exactCash: 'المبلغ بالضبط'/);
+  assert.match(baseCopy, /changeDue: 'الباقي للعميل'/);
+  assert.match(baseCopy, /cashReceived: 'Cash received'/);
+  assert.match(baseCopy, /changeDue: 'Change due'/);
 });
