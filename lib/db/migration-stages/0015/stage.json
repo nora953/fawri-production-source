@@ -1,0 +1,7 @@
+{
+  "index": 15,
+  "name": "cashier_discount_override_authority",
+  "when": 1787715600000,
+  "mode": "manual_sql",
+  "preimage_files": []
+}
