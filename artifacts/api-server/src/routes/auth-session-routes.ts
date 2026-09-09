@@ -212,6 +212,7 @@ router.get("/me", requireSecureMerchantSession, async (_req, res) => {
     });
     return;
   }
+  res.setHeader("Cache-Control", "no-store");
   res.json({ ok: true, ...payload(account) });
 });
 
