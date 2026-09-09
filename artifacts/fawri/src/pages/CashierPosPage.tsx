@@ -20,6 +20,10 @@ import {
 } from '@/lib/cashierPosRuntime';
 import { subscribeCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import {
+  isCashierOperatorSessionEnded,
+  publishCashierOperatorSessionInvalidated,
+} from '@/lib/cashierOperatorSessionUi';
+import {
   getCashierSyncUiState,
   requestCashierSync,
   subscribeCashierSyncUiState,
@@ -231,8 +235,13 @@ export default function CashierPosPage() {
         setRuntime(created);
         await refreshCatalog(created, '');
       })
-      .catch(() => {
-        if (!stopped) setError(extra.catalogOpenFailed);
+      .catch(cause => {
+        if (stopped) return;
+        if (isCashierOperatorSessionEnded(cause)) {
+          publishCashierOperatorSessionInvalidated();
+          return;
+        }
+        setError(extra.catalogOpenFailed);
       })
       .finally(() => {
         if (!stopped) setLoading(false);
@@ -531,6 +540,11 @@ export default function CashierPosPage() {
       setQuery('');
       window.setTimeout(() => searchRef.current?.focus(), 0);
     } catch (cause) {
+      if (isCashierOperatorSessionEnded(cause)) {
+        setCheckoutOpen(false);
+        publishCashierOperatorSessionInvalidated();
+        return;
+      }
       setError(errorMessage(cause, labels));
       await refreshCatalog(runtime, query, false).catch(() => undefined);
     } finally {
