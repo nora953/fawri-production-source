@@ -44,12 +44,14 @@ test('cashier operational pages fail closed into operator authorization when the
   assert.match(operatorSessionUi, /CASHIER_OPERATOR_SESSION_INVALID/);
   assert.match(operatorSessionUi, /fawri:cashier-operator-session-invalidated/);
 
-  for (const page of [history, reports, syncPage]) {
+  for (const page of [pos, history, reports, syncPage]) {
     assert.match(page, /isCashierOperatorSessionEnded/);
     assert.match(page, /publishCashierOperatorSessionInvalidated/);
     assert.match(page, /role="alert"/);
   }
 
+  assert.match(pos, /createCashierPosRuntime\(\{ demoMode \}\)[\s\S]*isCashierOperatorSessionEnded\(cause\)[\s\S]*publishCashierOperatorSessionInvalidated\(\)/);
+  assert.match(pos, /runtime\.commitSale\([\s\S]*isCashierOperatorSessionEnded\(cause\)[\s\S]*setCheckoutOpen\(false\)[\s\S]*publishCashierOperatorSessionInvalidated\(\)/);
   assert.match(history, /performReturn[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
   assert.match(history, /performVoid[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
   assert.match(reports, /buildReport\(rangeOptions\(range\)\)[\s\S]*isCashierOperatorSessionEnded\(cause\)/);
