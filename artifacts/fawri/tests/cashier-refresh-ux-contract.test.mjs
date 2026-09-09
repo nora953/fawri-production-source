@@ -16,6 +16,7 @@ const bottomNav = fs.readFileSync(new URL('../src/components/layout/BottomNav.ts
 const app = fs.readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const cashierMain = fs.readFileSync(new URL('../src/cashierMain.tsx', import.meta.url), 'utf8');
 const cashierCopy = fs.readFileSync(new URL('../src/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
+const posEnhancementCopy = fs.readFileSync(new URL('../src/lib/cashierPosEnhancementCopy.ts', import.meta.url), 'utf8');
 const i18n = fs.readFileSync(new URL('../src/lib/i18n.tsx', import.meta.url), 'utf8');
 const merchantCommerceUx = fs.readFileSync(new URL('../src/styles/merchantCommerceUxFixes.css', import.meta.url), 'utf8');
 
@@ -24,6 +25,16 @@ test('automatic cashier catalog refresh stays silent and preserves unchanged cat
   assert.match(pos, /catalogMatches\(current, next\) \? current : next/);
   assert.match(pos, /if \(visible\) setSearching\(true\)/);
   assert.match(pos, /if \(visible\) setSearching\(false\)/);
+});
+
+test('cashier catalog opening and manual search failures are localized and accessible', () => {
+  assert.ok(pos.includes('setError(extra.catalogOpenFailed);'));
+  assert.ok(pos.includes("if (source === 'search') throw cause;"));
+  assert.ok(pos.includes('extra.searchFailed'));
+  assert.ok(pos.includes('extra.scannerAmbiguous'));
+  assert.ok(pos.includes('role="alert"'));
+  assert.equal((posEnhancementCopy.match(/catalogOpenFailed:/g) || []).length, 3);
+  assert.equal((posEnhancementCopy.match(/searchFailed:/g) || []).length, 3);
 });
 
 test('cashier and active catalog do not use Arabic thousands separators for merchant money', () => {
