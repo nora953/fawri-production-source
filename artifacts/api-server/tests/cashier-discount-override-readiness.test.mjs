@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import {
   CASHIER_DISCOUNT_OVERRIDE_COLUMNS,
@@ -6,6 +7,8 @@ import {
   CASHIER_DISCOUNT_POLICY_COLUMNS,
   evaluateCashierDiscountOverrideReadiness,
 } from '../../../lib/db/scripts/lib/cashier-discount-override-readiness.mjs';
+
+const repoRoot = new URL('../../../', import.meta.url);
 
 function readyFacts() {
   return {
@@ -18,6 +21,29 @@ function readyFacts() {
     constraint_names: [...CASHIER_DISCOUNT_OVERRIDE_REQUIRED_CONSTRAINTS],
   };
 }
+
+test('canonical 0015 migration stage reproduces the committed SQL authority exactly', async () => {
+  const stage = JSON.parse(
+    await readFile(new URL('lib/db/migration-stages/0015/stage.json', repoRoot), 'utf8'),
+  );
+  assert.deepEqual(stage, {
+    index: 15,
+    name: 'cashier_discount_override_authority',
+    when: 1787715600000,
+    mode: 'manual_sql',
+    preimage_files: [],
+  });
+
+  const archivedSql = await readFile(
+    new URL('lib/db/migration-stages/0015/manual.sql', repoRoot),
+    'utf8',
+  );
+  const committedSql = await readFile(
+    new URL('lib/db/drizzle/0015_cashier_discount_override_authority.sql', repoRoot),
+    'utf8',
+  );
+  assert.equal(archivedSql, committedSql);
+});
 
 test('canonical cashier discount override schema is ready only when every authority fact is present', () => {
   const result = evaluateCashierDiscountOverrideReadiness(readyFacts());
