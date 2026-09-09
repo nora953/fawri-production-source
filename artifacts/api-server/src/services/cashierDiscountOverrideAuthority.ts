@@ -13,6 +13,7 @@ import {
 } from './operationalPostgresAuthority';
 
 const APPROVAL_TTL_MINUTES = 5;
+const APPROVAL_CLOCK_SKEW_MS = 60 * 1000;
 const PIN_FAILURE_LIMIT = 5;
 const PIN_LOCK_MS = 15 * 60 * 1000;
 
@@ -384,6 +385,7 @@ export async function consumeCashierDiscountOverrideApproval(
     stationId: string;
     operatorStaffId: string;
     operationId: string;
+    saleOccurredAt: string;
     approvalId: string;
     manualDiscountMinor: number;
     reason: string;
@@ -427,17 +429,27 @@ export async function consumeCashierDiscountOverrideApproval(
     );
   }
 
-  // Once an approval has been consumed it remains valid only for this exact
-  // operation id. This preserves safe idempotent retry after a lost response.
-  if (approval.consumed_at) return;
-
-  if (toMillis(approval.expires_at) <= Date.now()) {
+  // The manager approval is valid only for a sale created during the approval
+  // window. Sync may happen later because cashier sales are local-first; wall
+  // clock time at retry/sync must not strand an already-approved local sale.
+  const saleOccurredAt = toMillis(input.saleOccurredAt);
+  const approvalCreatedAt = toMillis(approval.created_at);
+  const approvalExpiresAt = toMillis(approval.expires_at);
+  if (
+    saleOccurredAt < approvalCreatedAt - APPROVAL_CLOCK_SKEW_MS ||
+    saleOccurredAt > approvalExpiresAt
+  ) {
     throw new CashierStaffAuthorityError(
       'CASHIER_DISCOUNT_OVERRIDE_EXPIRED',
-      'manager discount override approval has expired',
+      'manager discount override approval was not valid when this sale was created',
       403,
     );
   }
+
+  // Once an approval has been consumed it remains valid only for this exact
+  // operation id and exact sale binding. This preserves safe idempotent retry
+  // after a lost response without reopening the approval for another sale.
+  if (approval.consumed_at) return;
 
   const approver = await loadApprover(target, input.merchantId, approval.approver_staff_id, true);
   if (!approver) {
