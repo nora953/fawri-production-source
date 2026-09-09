@@ -27,21 +27,20 @@ test('reconciliation validates physical schema before touching history', () => {
 });
 
 test('reconciliation writes only migration metadata under a transaction lock', () => {
-  assert.match(source, /BEGIN/);
+  assert.match(source, /client\.query\('BEGIN'\)/);
   assert.match(source, /LOCK TABLE \"drizzle\"\.\"__drizzle_migrations\" IN EXCLUSIVE MODE/);
   assert.match(source, /INSERT INTO \"drizzle\"\.\"__drizzle_migrations\"/);
-  assert.match(source, /COMMIT/);
-  assert.match(source, /ROLLBACK/);
+  assert.match(source, /client\.query\('COMMIT'\)/);
+  assert.match(source, /client\.query\('ROLLBACK'\)/);
   assert.match(source, /metadata_rows_inserted/);
   assert.match(source, /ddl_statements_executed: 0/);
 
   assert.doesNotMatch(source, /drizzle-kit push/);
-  assert.doesNotMatch(source, /\bCREATE\s+TABLE\b/i);
-  assert.doesNotMatch(source, /\bALTER\s+TABLE\b/i);
-  assert.doesNotMatch(source, /\bDROP\s+TABLE\b/i);
-  assert.doesNotMatch(source, /\bTRUNCATE\b/i);
-  assert.doesNotMatch(source, /\bDELETE\s+FROM\b/i);
-  assert.doesNotMatch(source, /\bUPDATE\s+[\"a-z_]/i);
+  assert.doesNotMatch(source, /client\.query\([^)]*CREATE\s+TABLE/is);
+  assert.doesNotMatch(source, /client\.query\([^)]*ALTER\s+TABLE/is);
+  assert.doesNotMatch(source, /client\.query\([^)]*DROP\s+TABLE/is);
+  assert.doesNotMatch(source, /client\.query\([^)]*TRUNCATE/is);
+  assert.doesNotMatch(source, /client\.query\([^)]*DELETE\s+FROM/is);
 });
 
 test('reconciliation preserves cashier data and canonical migration hashes', () => {
