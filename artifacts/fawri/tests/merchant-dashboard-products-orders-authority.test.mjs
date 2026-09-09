@@ -52,7 +52,8 @@ test('active products page does not require browser merchant state and gates sta
   assert.match(page, /setAuthorityReady\(false\);[\s\S]*listCatalogProducts\(\)/);
   assert.match(page, /setInventoryValues\(drafts\);\s*setAuthorityReady\(true\)/);
   assert.match(page, /\}, \[reload\]\);/);
-  assert.match(page, /if \(saving \|\| !authorityReady\)/);
+  assert.match(page, /const mutationBusy = saving \|\| inventoryBusy !== null \|\| deletingId !== null/);
+  assert.match(page, /const save = async[\s\S]*if \(!authorityReady\)[\s\S]*if \(mutationBusy\) return/);
   assert.match(page, /const remove = async[\s\S]*if \(!authorityReady\)/);
   assert.match(page, /const setInventory = async[\s\S]*if \(!authorityReady\)/);
   assert.match(page, /const adjustInventory = async[\s\S]*if \(!authorityReady\)/);
