@@ -127,10 +127,11 @@ function archivedShadow(value: unknown): Record<string, unknown> {
 }
 
 function assertItemTypeImmutable(
-  current: { item_type?: unknown },
+  currentValue: unknown,
   input: Record<string, unknown>,
 ): void {
   if (!Object.prototype.hasOwnProperty.call(input, "item_type")) return;
+  const current = asRecord(currentValue);
   const currentType = current.item_type === "service" ? "service" : "product";
   const requestedType = String(input.item_type || "").trim();
   if (!requestedType || requestedType === currentType) return;
