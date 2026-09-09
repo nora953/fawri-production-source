@@ -45,10 +45,26 @@ test('approval is bound to tenant, station, operator, operation, amount and norm
   assert.match(authority, /consumed_at = now\(\)/);
 });
 
-test('consumed approval remains retry-safe only for its exact operation', async () => {
+test('delayed sync validates approval against sale creation time instead of sync wall clock', async () => {
+  const overrideAuthority = await source('src/services/cashierDiscountOverrideAuthority.ts');
+  const saleAuthority = await source('src/services/cashierOperatorDiscountAuthority.ts');
+  assert.match(saleAuthority, /occurredAt: instant\(envelope\.occurred_at, 'sale\.occurred_at'\)/);
+  assert.match(saleAuthority, /saleOccurredAt: sale\.occurredAt/);
+  assert.match(overrideAuthority, /saleOccurredAt: string/);
+  assert.match(overrideAuthority, /approvalCreatedAt = toMillis\(approval\.created_at\)/);
+  assert.match(overrideAuthority, /approvalExpiresAt = toMillis\(approval\.expires_at\)/);
+  assert.match(overrideAuthority, /saleOccurredAt > approvalExpiresAt/);
+  assert.doesNotMatch(
+    overrideAuthority,
+    /toMillis\(approval\.expires_at\) <= Date\.now\(\)/,
+  );
+});
+
+test('consumed approval remains retry-safe only for its exact operation and sale window', async () => {
   const authority = await source('src/services/cashierDiscountOverrideAuthority.ts');
   assert.match(authority, /if \(approval\.consumed_at\) return/);
   assert.match(authority, /approval has been consumed it remains valid only for this exact/);
+  assert.match(authority, /saleOccurredAt < approvalCreatedAt - APPROVAL_CLOCK_SKEW_MS/);
 });
 
 test('operator routes expose eligible approvers and PIN-backed approval issuance', async () => {
