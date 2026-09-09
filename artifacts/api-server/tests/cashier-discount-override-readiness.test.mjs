@@ -45,6 +45,24 @@ test('canonical 0015 migration stage reproduces the committed SQL authority exac
   assert.equal(archivedSql, committedSql);
 });
 
+test('guarded 0015 apply is exact-target, database-bound and exposes a read-only preflight', async () => {
+  const source = await readFile(
+    new URL('lib/db/scripts/apply-cashier-discount-override.mjs', repoRoot),
+    'utf8',
+  );
+  assert.match(source, /TARGET_TAG = '0015_cashier_discount_override_authority'/);
+  assert.match(source, /EXPECTED_PREVIOUS_TAG = '0014_cashier_operation_attribution'/);
+  assert.match(source, /EXPECTED_TARGET_SQL_SHA256 = '[a-f0-9]{64}'/);
+  assert.match(source, /process\.argv\.includes\('--check'\)/);
+  assert.match(source, /FAWRI_EXPECT_DATABASE is required/);
+  assert.match(source, /FAWRI_ALLOW_CASHIER_DISCOUNT_MIGRATION=1 is required/);
+  assert.match(source, /history\.length, targetIndex/);
+  assert.match(source, /assertNoOutOfBandSchema\(factsBefore\)/);
+  assert.match(source, /database_writes_performed: false/);
+  assert.match(source, /database_writes_performed: true/);
+  assert.doesNotMatch(source, /drizzle-kit push/);
+});
+
 test('canonical cashier discount override schema is ready only when every authority fact is present', () => {
   const result = evaluateCashierDiscountOverrideReadiness(readyFacts());
   assert.equal(result.ok, true);
