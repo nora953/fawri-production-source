@@ -8,6 +8,7 @@ import {
   syncCashierOperatorCompensationAuthoritative,
   syncCashierOperatorSaleAuthoritative,
 } from "../services/cashierOperatorCommerceAuthority";
+import { assertCashierOperatorManualDiscountAuthority } from "../services/cashierOperatorDiscountAuthority";
 import { buildCashierOperatorReportAuthoritative } from "../services/postgresCashierOperatorReportAuthority";
 import { assertCashierOperatorCompensationScope } from "../services/cashierOperatorSaleScope";
 import { CashierStaffAuthorityError } from "../services/postgresCashierStaffAuthority";
@@ -98,8 +99,15 @@ router.post(
   requireCashierOperatorSession("sale.create"),
   async (req: Request, res: Response) => {
     try {
+      const context = operatorContext(res);
+      // Manual-discount authority is re-read from PostgreSQL immediately before
+      // sale reconciliation. Browser state alone can never grant a discount.
+      await assertCashierOperatorManualDiscountAuthority({
+        context,
+        body: req.body,
+      });
       const result = await syncCashierOperatorSaleAuthoritative({
-        context: operatorContext(res),
+        context,
         body: req.body,
       });
       res.setHeader("Cache-Control", "no-store");
