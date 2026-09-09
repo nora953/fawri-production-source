@@ -705,6 +705,18 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
           'A manual discount reason cannot exist without a manual discount',
         );
       }
+      const manualDiscountOverrideApprovalId = input.manual_discount_override_approval_id
+        ? requiredIdentifier(
+            input.manual_discount_override_approval_id,
+            'manual discount override approval id',
+          )
+        : undefined;
+      if (manualDiscountMinor === 0 && manualDiscountOverrideApprovalId) {
+        throw new CashierIndexedDbError(
+          'CASHIER_MANUAL_DISCOUNT_INVALID',
+          'Manager approval proof cannot exist without a manual discount',
+        );
+      }
       const finalTotalMinor = pricing.total_minor - manualDiscountMinor;
       const totalDiscountMinor = pricing.discount_minor + manualDiscountMinor;
       if (
@@ -818,6 +830,12 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
           ? {
               manual_discount_minor: manualDiscountMinor,
               manual_discount_reason: manualDiscountReason,
+              ...(manualDiscountOverrideApprovalId
+                ? {
+                    manual_discount_override_approval_id:
+                      manualDiscountOverrideApprovalId,
+                  }
+                : {}),
             }
           : {}),
         discount_minor: totalDiscountMinor,
