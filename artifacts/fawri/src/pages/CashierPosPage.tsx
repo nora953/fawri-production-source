@@ -10,7 +10,10 @@ import {
   type CashierPosRuntime,
 } from '@/lib/cashierPosRuntime';
 import { subscribeCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
-import { CASHIER_SEARCH_ERROR_COPY } from '@/lib/cashierSearchErrorCopy';
+import {
+  CASHIER_CATALOG_OPEN_ERROR_COPY,
+  CASHIER_SEARCH_ERROR_COPY,
+} from '@/lib/cashierSearchErrorCopy';
 import {
   getCashierSyncUiState,
   requestCashierSync,
@@ -181,8 +184,8 @@ export default function CashierPosPage() {
         setRuntime(created);
         await refreshCatalog(created, '');
       })
-      .catch(cause => {
-        if (!stopped) setError(errorMessage(cause, labels));
+      .catch(() => {
+        if (!stopped) setError(CASHIER_CATALOG_OPEN_ERROR_COPY[lang]);
       })
       .finally(() => {
         if (!stopped) setLoading(false);
@@ -191,7 +194,7 @@ export default function CashierPosPage() {
       stopped = true;
       if (activeRuntime) void activeRuntime.close().catch(() => undefined);
     };
-  }, [demoMode, labels, refreshCatalog]);
+  }, [demoMode, lang, refreshCatalog]);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
