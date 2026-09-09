@@ -11,6 +11,8 @@ export const CASHIER_POS_ENHANCEMENT_COPY = {
     scannerReady: 'قارئ الباركود جاهز — امسح من أي مكان في شاشة البيع.',
     scannerNotFound: 'لم يتم العثور على منتج أو متغير بهذا الباركود أو SKU.',
     scannerAmbiguous: 'هذا الباركود أو SKU مرتبط بأكثر من عنصر. صححه من صفحة المنتجات قبل البيع.',
+    catalogOpenFailed: 'تعذر فتح كتالوج الكاشير على هذا الجهاز. أعد فتح الكاشير أو حاول المزامنة.',
+    searchFailed: 'تعذر البحث في كتالوج الكاشير. حاول مرة أخرى.',
   },
   ku: {
     checkout: 'پارەدان',
@@ -22,6 +24,8 @@ export const CASHIER_POS_ENHANCEMENT_COPY = {
     scannerReady: 'خوێنەری بارکۆد ئامادەیە — لە هەر شوێنێکی پەڕەی فرۆشتن بارکۆد بخوێنەوە.',
     scannerNotFound: 'هیچ بەرهەم یان جۆرێک بەم بارکۆد یان SKU نەدۆزرایەوە.',
     scannerAmbiguous: 'ئەم بارکۆد یان SKU ـە بە زیاتر لە یەک دانەوە بەستراوە. پێش فرۆشتن لە پەڕەی بەرهەمەکان چاکی بکە.',
+    catalogOpenFailed: 'کردنەوەی کاتەلۆگی کاشێر لەم ئامێرە سەرکەوتوو نەبوو. کاشێر دووبارە بکەرەوە یان هاوکاتکردن هەوڵ بدە.',
+    searchFailed: 'گەڕان لە کاتەلۆگی کاشێر سەرکەوتوو نەبوو. دووبارە هەوڵ بدە.',
   },
   en: {
     checkout: 'Pay',
@@ -33,5 +37,7 @@ export const CASHIER_POS_ENHANCEMENT_COPY = {
     scannerReady: 'Barcode scanner ready — scan from anywhere on the sales screen.',
     scannerNotFound: 'No product or variant was found for this barcode or SKU.',
     scannerAmbiguous: 'This barcode or SKU belongs to more than one item. Correct it on the Products page before selling.',
+    catalogOpenFailed: 'The cashier catalog could not be opened on this device. Reopen the cashier or try syncing.',
+    searchFailed: 'Cashier catalog search failed. Try again.',
   },
 } as const satisfies Record<Lang, Record<string, string>>;
