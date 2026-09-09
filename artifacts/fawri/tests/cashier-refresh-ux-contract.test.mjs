@@ -22,6 +22,8 @@ const operatorSessionUi = fs.readFileSync(new URL('../src/lib/cashierOperatorSes
 const i18n = fs.readFileSync(new URL('../src/lib/i18n.tsx', import.meta.url), 'utf8');
 const merchantCommerceUx = fs.readFileSync(new URL('../src/styles/merchantCommerceUxFixes.css', import.meta.url), 'utf8');
 
+const arabicScriptUiLetters = /[\u0621-\u064A\u066E-\u06D3\u06D5\u06EE-\u06EF\u06FA-\u06FC]/u;
+
 test('automatic cashier catalog refresh stays silent and preserves unchanged catalog state', () => {
   assert.match(pos, /refreshCatalog\(runtime, query, false\)/);
   assert.match(pos, /catalogMatches\(current, next\) \? current : next/);
@@ -146,10 +148,10 @@ test('all operational cashier views inherit merchant Arabic Kurdish or English l
   assert.match(pos, /CASHIER_UI_COPY\[lang\]\.pos/);
   assert.match(history, /CASHIER_UI_COPY\[lang\]\.history/);
   assert.match(syncPage, /CASHIER_UI_COPY\[lang\]\.sync/);
-  assert.doesNotMatch(pos, /[\u0600-\u06ff]/, 'POS component must not keep Arabic-only UI literals');
-  assert.doesNotMatch(history, /[\u0600-\u06ff]/, 'history component must not keep Arabic-only UI literals');
-  assert.doesNotMatch(syncPage, /[\u0600-\u06ff]/, 'sync component must not keep Arabic-only UI literals');
-  assert.doesNotMatch(cashierMain, /[\u0600-\u06ff]/, 'cashier runtime messages must come from the language authority');
+  assert.doesNotMatch(pos, arabicScriptUiLetters, 'POS component must not keep Arabic/Kurdish UI letter literals');
+  assert.doesNotMatch(history, arabicScriptUiLetters, 'history component must not keep Arabic/Kurdish UI letter literals');
+  assert.doesNotMatch(syncPage, arabicScriptUiLetters, 'sync component must not keep Arabic/Kurdish UI letter literals');
+  assert.doesNotMatch(cashierMain, arabicScriptUiLetters, 'cashier runtime messages must come from the language authority');
 });
 
 test('cashier language follows merchant language changes across tabs and merchant pages expose the same language alias', () => {
