@@ -111,8 +111,14 @@ for (const name of serviceFiles()) {
   }
 }
 
+if (!serviceFiles().includes("whatsappActivationRuntimeGuards.ts")) {
+  violations.push({
+    source: "artifacts/api-server/src/services",
+    code: "WHATSAPP_ACTIVATION_RUNTIME_GUARD_MISSING",
+  });
+}
+
 for (const requiredService of [
-  "whatsappActivationRuntimeGuards.ts",
   "whatsappPrivilegedJobPlan.ts",
   "whatsappInboundIntakePlan.ts",
   "whatsappDurableQueuePlan.ts",
