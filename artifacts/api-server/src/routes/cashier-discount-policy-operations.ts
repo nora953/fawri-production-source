@@ -218,10 +218,17 @@ router.put(
 
 router.get(
   '/cashier/operator/discount-policy',
-  requireCashierOperatorSession,
+  requireCashierOperatorSession(),
   async (_req, res) => {
     try {
       const context = getCashierOperatorContext(res);
+      if (!context) {
+        throw new CashierDiscountPolicyAuthorityError(
+          'CASHIER_OPERATOR_SESSION_INVALID',
+          'cashier operator session is unavailable',
+          401,
+        );
+      }
       const policy = await withMerchantOperationalTransaction(
         context.merchant_id,
         async (client) => {
