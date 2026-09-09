@@ -7,6 +7,8 @@ export const CASHIER_STAFF_PERMISSIONS = [
   'sale.view_all',
   'sale.return',
   'sale.void',
+  'sale.discount',
+  'sale.discount_override',
   'inventory.adjust',
   'reports.sales',
   'reports.profit',
@@ -23,8 +25,8 @@ const PERMISSION_SET = new Set<string>(CASHIER_STAFF_PERMISSIONS);
 
 /**
  * Presets include only permissions that the current staff cashier UI/API can
- * actually exercise. Future capabilities may stay in the permission schema,
- * but are never silently granted before their operational route exists.
+ * actually exercise. Manual discount authority is intentionally never granted
+ * by role preset: the merchant must enable it explicitly per employee.
  */
 const RECOMMENDED_ROLE_PERMISSIONS: Record<
   CashierStaffRole,
@@ -42,6 +44,7 @@ const RECOMMENDED_ROLE_PERMISSIONS: Record<
 };
 
 export const CASHIER_SENSITIVE_PERMISSIONS = [
+  'sale.discount_override',
   'reports.profit',
   'catalog.cost',
   'staff.manage',
@@ -102,6 +105,18 @@ export function cashierStaffCan(
   required: CashierStaffPermission,
 ): boolean {
   return permissions.includes(required);
+}
+
+export function cashierStaffMayDiscount(
+  permissions: readonly CashierStaffPermission[],
+): boolean {
+  return cashierStaffCan(permissions, 'sale.discount');
+}
+
+export function cashierStaffMayApproveDiscountOverride(
+  permissions: readonly CashierStaffPermission[],
+): boolean {
+  return cashierStaffCan(permissions, 'sale.discount_override');
 }
 
 export function cashierStaffMayViewProfit(
