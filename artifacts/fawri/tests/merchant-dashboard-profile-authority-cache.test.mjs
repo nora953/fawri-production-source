@@ -11,21 +11,51 @@ function read(relativePath) {
   return readFileSync(path.join(repositoryRoot, relativePath), 'utf8');
 }
 
-test('merchant profile authority is session-derived and explicitly non-cacheable', () => {
-  const source = read('artifacts/api-server/src/routes/auth-session-routes.ts');
-  const merchantProfileRoute = source.match(
-    /router\.get\("\/me", requireSecureMerchantSession,[\s\S]*?\n\}\);/,
-  )?.[0];
+function route(source, pattern, label) {
+  const match = source.match(pattern)?.[0];
+  assert.ok(match, `${label} route must exist`);
+  return match;
+}
 
-  assert.ok(merchantProfileRoute, 'merchant /api/auth/me route must exist');
-  assert.match(merchantProfileRoute, /getAuthContext\(res\)!/);
+function assertNoStoreBefore(source, laterPattern, label) {
+  const headerIndex = source.indexOf('res.setHeader("Cache-Control", "no-store")');
+  const laterIndex = source.search(laterPattern);
+  assert.ok(headerIndex >= 0, `${label} must set Cache-Control: no-store`);
+  assert.ok(laterIndex >= 0, `${label} authority operation must exist`);
+  assert.ok(
+    headerIndex < laterIndex,
+    `${label} must become non-cacheable before authority work or early errors`,
+  );
+}
+
+test('merchant auth authority reads are explicitly non-cacheable on every response path', () => {
+  const source = read('artifacts/api-server/src/routes/auth-session-routes.ts');
+
+  const sessionsRoute = route(
+    source,
+    /router\.get\("\/sessions", requireSecureMerchantSession,[\s\S]*?\n\}\);/,
+    'merchant /api/auth/sessions',
+  );
+  assertNoStoreBefore(sessionsRoute, /getAuthContext\(res\)!/, 'merchant /api/auth/sessions');
+  assert.match(sessionsRoute, /listActiveSessions\([\s\S]*context\.account\.id/);
+
+  const lifecycleRoute = route(
+    source,
+    /router\.get\("\/lifecycle",[\s\S]*?\n\}\);/,
+    'merchant /api/auth/lifecycle',
+  );
+  assertNoStoreBefore(lifecycleRoute, /getSessionToken\(req, "merchant"\)/, 'merchant /api/auth/lifecycle');
+  assert.match(lifecycleRoute, /findMerchantByIdAuthoritative\(/);
+
+  const merchantProfileRoute = route(
+    source,
+    /router\.get\("\/me", requireSecureMerchantSession,[\s\S]*?\n\}\);/,
+    'merchant /api/auth/me',
+  );
+  assertNoStoreBefore(merchantProfileRoute, /getAuthContext\(res\)!/, 'merchant /api/auth/me');
   assert.match(
     merchantProfileRoute,
     /findMerchantByIdAuthoritative\(context\.account\.id\)/,
-  );
-  assert.match(
-    merchantProfileRoute,
-    /res\.setHeader\("Cache-Control", "no-store"\)/,
   );
   assert.match(merchantProfileRoute, /payload\(account\)/);
 });
