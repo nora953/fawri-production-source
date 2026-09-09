@@ -45,7 +45,7 @@ const steps = [
     ],
   },
   {
-    label: 'Cashier reporting cost and sync contracts',
+    label: 'Cashier reporting, sync and manager override contracts',
     command: 'node',
     args: [
       '--test',
@@ -54,6 +54,7 @@ const steps = [
       'artifacts/api-server/tests/cashier-compensation-sync-contract.test.mjs',
       'artifacts/api-server/tests/cashier-order-separation-contract.test.mjs',
       'artifacts/api-server/tests/cashier-http-route-reachability.test.mjs',
+      'artifacts/api-server/tests/cashier-discount-override-authority.test.mjs',
     ],
   },
   {
