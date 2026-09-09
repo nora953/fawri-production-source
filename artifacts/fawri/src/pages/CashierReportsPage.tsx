@@ -3,6 +3,10 @@ import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
 import {
+  isCashierOperatorSessionEnded,
+  publishCashierOperatorSessionInvalidated,
+} from '@/lib/cashierOperatorSessionUi';
+import {
   createCashierOperatorReportsRuntime,
   type CashierOperatorReportRuntimeResult,
   type CashierOperatorReportsRuntime,
@@ -161,11 +165,14 @@ export default function CashierReportsPage() {
         active = created;
         if (!stopped) setRuntime(created);
       })
-      .catch(() => {
-        if (!stopped) {
-          setError(labels.loadFailed);
-          setLoading(false);
+      .catch(cause => {
+        if (stopped) return;
+        if (isCashierOperatorSessionEnded(cause)) {
+          publishCashierOperatorSessionInvalidated();
+          return;
         }
+        setError(labels.loadFailed);
+        setLoading(false);
       });
     return () => {
       stopped = true;
@@ -179,8 +186,12 @@ export default function CashierReportsPage() {
     setError('');
     try {
       setResult(await runtime.buildReport(rangeOptions(range)));
-    } catch {
+    } catch (cause) {
       setResult(null);
+      if (isCashierOperatorSessionEnded(cause)) {
+        publishCashierOperatorSessionInvalidated();
+        return;
+      }
       setError(labels.loadFailed);
     } finally {
       setLoading(false);
@@ -223,7 +234,7 @@ export default function CashierReportsPage() {
           ))}
         </div>
 
-        {error ? <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div> : null}
+        {error ? <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div> : null}
         {loading ? <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-500">{labels.loading}</div> : null}
 
         {!loading && !error && result && !hasData ? (

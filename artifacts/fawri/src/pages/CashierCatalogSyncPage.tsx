@@ -6,6 +6,10 @@ import {
   type CashierOperatorCatalogSyncResult,
   type CashierOperatorOutboxSyncResult,
 } from '@/lib/cashierOperatorCloudSync';
+import {
+  isCashierOperatorSessionEnded,
+  publishCashierOperatorSessionInvalidated,
+} from '@/lib/cashierOperatorSessionUi';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import { CASHIER_UI_COPY, cashierLocale } from '@/lib/cashierUiCopy';
 import { useI18n } from '@/lib/i18n';
@@ -104,6 +108,10 @@ export default function CashierCatalogSyncPage() {
       try {
         outboxResult = await syncCashierOperatorOutboxToCloud();
       } catch (cause) {
+        if (isCashierOperatorSessionEnded(cause)) {
+          publishCashierOperatorSessionInvalidated();
+          return;
+        }
         setError(outboxErrorMessage(cause, labels));
         return;
       }
@@ -116,6 +124,10 @@ export default function CashierCatalogSyncPage() {
       try {
         catalogResult = await syncCashierOperatorCatalogFromCloud();
       } catch (catalogCause) {
+        if (isCashierOperatorSessionEnded(catalogCause)) {
+          publishCashierOperatorSessionInvalidated();
+          return;
+        }
         setError(catalogErrorMessage(catalogCause, labels));
         return;
       }
@@ -159,7 +171,7 @@ export default function CashierCatalogSyncPage() {
             </div>
           </div>
 
-          {error ? <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold leading-6 text-red-700">{error}</div> : null}
+          {error ? <div role="alert" className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold leading-6 text-red-700">{error}</div> : null}
 
           {summary ? (
             <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">

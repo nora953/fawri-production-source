@@ -11,6 +11,11 @@ import {
   cashierOperatorCan,
   getCashierOperatorSession,
 } from '@/lib/cashierOperatorSessionRuntime';
+import {
+  cashierOperatorSessionErrorCode,
+  isCashierOperatorSessionEnded,
+  publishCashierOperatorSessionInvalidated,
+} from '@/lib/cashierOperatorSessionUi';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import { CASHIER_UI_COPY, cashierLocale } from '@/lib/cashierUiCopy';
 import { useI18n } from '@/lib/i18n';
@@ -120,12 +125,6 @@ function saleOperationIds(sale: CashierSaleSnapshot): string[] {
   ];
 }
 
-function syncErrorCode(error: unknown): string {
-  return typeof error === 'object' && error && 'code' in error
-    ? String((error as { code?: unknown }).code || '')
-    : '';
-}
-
 function syncStateLabel(
   pending: boolean,
   online: boolean,
@@ -178,8 +177,13 @@ export default function CashierHistoryPage() {
         setRuntime(created);
         await refresh(created);
       })
-      .catch(() => {
-        if (!stopped) setError(labels.historyFailed);
+      .catch(cause => {
+        if (stopped) return;
+        if (isCashierOperatorSessionEnded(cause)) {
+          publishCashierOperatorSessionInvalidated();
+          return;
+        }
+        setError(labels.historyFailed);
       })
       .finally(() => {
         if (!stopped) setLoading(false);
@@ -193,7 +197,11 @@ export default function CashierHistoryPage() {
   useEffect(() => {
     if (!runtime) return;
     const updateOnline = () => setOnline(navigator.onLine);
-    const refreshLocal = () => void refresh(runtime).catch(() => undefined);
+    const refreshLocal = () => void refresh(runtime).catch(cause => {
+      if (isCashierOperatorSessionEnded(cause)) {
+        publishCashierOperatorSessionInvalidated();
+      }
+    });
     window.addEventListener('online', updateOnline);
     window.addEventListener('offline', updateOnline);
     window.addEventListener('focus', refreshLocal);
@@ -272,11 +280,20 @@ export default function CashierHistoryPage() {
           publishCashierDashboardRefresh();
         }
       } catch (cause) {
-        if (syncErrorCode(cause) === 'CASHIER_OUTBOX_SESSION_REQUIRED') {
+        if (isCashierOperatorSessionEnded(cause)) {
+          setAuthRequired(true);
+          publishCashierOperatorSessionInvalidated();
+          return;
+        }
+        if (cashierOperatorSessionErrorCode(cause) === 'CASHIER_OUTBOX_SESSION_REQUIRED') {
           setAuthRequired(true);
         }
       } finally {
-        await refresh(activeRuntime).catch(() => undefined);
+        await refresh(activeRuntime).catch(cause => {
+          if (isCashierOperatorSessionEnded(cause)) {
+            publishCashierOperatorSessionInvalidated();
+          }
+        });
       }
     },
     [refresh],
@@ -297,8 +314,12 @@ export default function CashierHistoryPage() {
       setNotice(labels.returnedNotice);
       await refresh(runtime);
       void syncAfterLocalChange(runtime);
-    } catch {
+    } catch (cause) {
       setConfirmAction(null);
+      if (isCashierOperatorSessionEnded(cause)) {
+        publishCashierOperatorSessionInvalidated();
+        return;
+      }
       setError(labels.returnFailed);
     } finally {
       setBusy(false);
@@ -318,8 +339,12 @@ export default function CashierHistoryPage() {
       setNotice(labels.voidedSaleNotice);
       await refresh(runtime);
       void syncAfterLocalChange(runtime);
-    } catch {
+    } catch (cause) {
       setConfirmAction(null);
+      if (isCashierOperatorSessionEnded(cause)) {
+        publishCashierOperatorSessionInvalidated();
+        return;
+      }
       setError(labels.voidFailed);
     } finally {
       setBusy(false);
@@ -392,7 +417,7 @@ export default function CashierHistoryPage() {
         ) : null}
 
         {notice ? <div className="mb-3 shrink-0 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{notice}</div> : null}
-        {error ? <div className="mb-3 shrink-0 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
+        {error ? <div role="alert" className="mb-3 shrink-0 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
 
         <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)]">
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-col">
