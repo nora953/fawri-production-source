@@ -2,6 +2,10 @@ import {
   whatsAppLiveCutoverRequested,
   whatsAppOfflineFoundationEnabled,
 } from "./whatsappWebhookContract";
+import {
+  assertWhatsAppActivationEvidenceStructure,
+  snapshotWhatsAppActivationSwitches,
+} from "./whatsappActivationRuntimeGuards";
 
 export type WhatsAppActivationEnvironment =
   | "development"
@@ -164,37 +168,23 @@ const BOOLEAN_EVIDENCE: Array<{
   },
 ];
 
-function assertEvidence(input: WhatsAppActivationEvidence): void {
-  if (!["development", "staging", "production"].includes(input.environment)) {
-    throw Object.assign(new Error("WhatsApp activation environment is invalid"), {
-      code: "WHATSAPP_ACTIVATION_EVIDENCE_INVALID",
-    });
-  }
-  for (const item of BOOLEAN_EVIDENCE) {
-    if (typeof input[item.key] !== "boolean") {
-      throw Object.assign(new Error("WhatsApp activation evidence is invalid"), {
-        code: "WHATSAPP_ACTIVATION_EVIDENCE_INVALID",
-      });
-    }
-  }
-}
-
 /**
- * Evaluates only readiness evidence and feature switches. Secret material is
- * intentionally represented as booleans, never as values, and this function
+ * Evaluates only readiness evidence and inert feature switches. Secret material
+ * is intentionally represented as booleans, never as values, and this function
  * cannot activate a route, store a credential, subscribe a webhook, or send a
- * provider request. A live candidate is restricted to production and requires
- * explicit evidence for the administrative durable queue, separate encrypted
- * privileged-payload authority, and the durable pre-send outbound dispatch
- * persistence boundary before provider transport may be considered ready.
+ * provider request. Evidence and switch inputs are structurally guarded before
+ * any property read so synthetic proxies/accessors cannot execute during the
+ * activation decision. A live candidate is restricted to production and still
+ * requires every explicit readiness gate.
  */
 export function assessWhatsAppActivationReadiness(
   evidence: WhatsAppActivationEvidence,
   env: NodeJS.ProcessEnv = process.env,
 ): WhatsAppActivationReadiness {
-  assertEvidence(evidence);
-  const offlineEnabled = whatsAppOfflineFoundationEnabled(env);
-  const liveRequested = whatsAppLiveCutoverRequested(env);
+  assertWhatsAppActivationEvidenceStructure(evidence);
+  const safeEnv = snapshotWhatsAppActivationSwitches(env);
+  const offlineEnabled = whatsAppOfflineFoundationEnabled(safeEnv);
+  const liveRequested = whatsAppLiveCutoverRequested(safeEnv);
   const blockers: WhatsAppActivationBlocker[] = [];
 
   if (!offlineEnabled) blockers.push("WHATSAPP_OFFLINE_FOUNDATION_DISABLED");
