@@ -212,7 +212,11 @@ export const getCurrentMerchant = (): Merchant | undefined => {
 };
 
 export const refreshCurrentMerchantFromApi = async (): Promise<Merchant | undefined> => {
-  const response = await fetch('/api/auth/me');
+  const response = await fetch('/api/auth/me', {
+    cache: 'no-store',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
   const result = await response.json().catch(() => null);
 
   if (!response.ok || !result?.ok || !result.merchant) {
