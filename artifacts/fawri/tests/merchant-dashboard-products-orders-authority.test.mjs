@@ -57,8 +57,8 @@ test('active products page does not require browser merchant state and gates sta
   assert.match(page, /const remove = async[\s\S]*if \(!authorityReady\)/);
   assert.match(page, /const setInventory = async[\s\S]*if \(!authorityReady\)/);
   assert.match(page, /const adjustInventory = async[\s\S]*if \(!authorityReady\)/);
-  assert.match(page, /disabled=\{!authorityReady\}/);
-  assert.match(page, /busy=\{inventoryBusy === key \|\| !authorityReady\}/);
+  assert.match(page, /disabled=\{!authorityReady \|\| mutationBusy\}/);
+  assert.match(page, /busy=\{mutationBusy \|\| !authorityReady\}/);
 });
 
 test('orders validate canonical payloads and only the newest authority read can apply', () => {
