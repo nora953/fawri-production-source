@@ -5,10 +5,13 @@ on:
     paths:
       - "artifacts/fawri/src/cashierMain.tsx"
       - "artifacts/fawri/src/pages/CashierPosPage.tsx"
+      - "artifacts/fawri/src/pages/CashierHistoryPage.tsx"
       - "artifacts/fawri/src/pages/CashierReportsPage.tsx"
+      - "artifacts/fawri/src/pages/CashierCatalogSyncPage.tsx"
       - "artifacts/fawri/src/lib/cashierCloudCatalogSync.ts"
       - "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts"
       - "artifacts/fawri/src/lib/cashierLocalContracts.ts"
+      - "artifacts/fawri/src/lib/cashierOperatorSessionUi.ts"
       - "artifacts/fawri/src/lib/cashierPosEnhancementCopy.ts"
       - "artifacts/fawri/src/lib/cashierReportsRuntime.ts"
       - "artifacts/fawri/src/lib/cashierSalePricingRuntime.ts"
