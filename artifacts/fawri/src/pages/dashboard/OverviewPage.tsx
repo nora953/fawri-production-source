@@ -102,8 +102,8 @@ export default function OverviewPage() {
       applySubscription(result.subscription);
     };
 
-    const loadStats = async () => {
-      if (active) setStats(loadingStats());
+    const loadStats = async (showLoading = true) => {
+      if (active && showLoading) setStats(loadingStats());
 
       const [conversationsResult, ordersResult, productsResult] =
         await Promise.allSettled([
@@ -127,6 +127,9 @@ export default function OverviewPage() {
     const handleRealtime = (event: Event) => {
       const detail = (event as CustomEvent<MerchantRealtimeDetail>).detail;
       applySubscription(detail?.subscription ?? null);
+      if (detail?.event === 'notifications_updated') {
+        void loadStats(false);
+      }
     };
 
     void loadSubscription();
