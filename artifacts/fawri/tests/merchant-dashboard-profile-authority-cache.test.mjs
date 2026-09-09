@@ -28,7 +28,21 @@ function assertNoStoreBefore(source, laterPattern, label) {
   );
 }
 
-test('merchant auth authority reads are explicitly non-cacheable on every response path', () => {
+test('auth middleware failures remain explicitly non-cacheable', () => {
+  const middleware = read('artifacts/api-server/src/middleware/authSession.ts');
+  const sendAuthError = middleware.match(
+    /export function sendAuthError\([\s\S]*?\n\}/,
+  )?.[0];
+
+  assert.ok(sendAuthError, 'shared auth error responder must exist');
+  assert.match(
+    sendAuthError,
+    /res\.setHeader\("Cache-Control", "no-store"\)/,
+  );
+  assert.match(sendAuthError, /res\.status\(status\)\.json\(/);
+});
+
+test('merchant auth authority reads are explicitly non-cacheable after middleware admission', () => {
   const source = read('artifacts/api-server/src/routes/auth-session-routes.ts');
 
   const sessionsRoute = route(
