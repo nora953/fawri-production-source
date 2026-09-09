@@ -42,8 +42,23 @@ function identifier(value: unknown, field: string): string {
   return normalized;
 }
 
+function instant(value: unknown, field: string): string {
+  const normalized = identifier(value, field);
+  const millis = new Date(normalized).getTime();
+  if (!Number.isFinite(millis)) {
+    throw new CashierSyncError(
+      'CASHIER_OPERATOR_DISCOUNT_INVALID',
+      `${field} is invalid`,
+      400,
+      { field },
+    );
+  }
+  return new Date(millis).toISOString();
+}
+
 function saleEnvelope(body: unknown): {
   operationId: string;
+  occurredAt: string;
   payload: Record<string, unknown>;
 } {
   const raw = record(body);
@@ -67,6 +82,7 @@ function saleEnvelope(body: unknown): {
   const envelope = sales[0];
   return {
     operationId: identifier(envelope.operation_id, 'sale.operation_id'),
+    occurredAt: instant(envelope.occurred_at, 'sale.occurred_at'),
     payload: record(envelope.payload),
   };
 }
@@ -168,6 +184,7 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
         stationId: input.context.station_id,
         operatorStaffId: input.context.staff_id,
         operationId: sale.operationId,
+        saleOccurredAt: sale.occurredAt,
         approvalId,
         manualDiscountMinor: manualDiscount,
         reason,
