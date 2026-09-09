@@ -147,11 +147,8 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
       });
       if (manualDiscount <= limit) return;
 
-      const approvalId = identifier(
-        payload.manual_discount_override_approval_id,
-        'sale.manual_discount_override_approval_id',
-      );
-      if (!approvalId) {
+      const rawApprovalId = String(payload.manual_discount_override_approval_id ?? '').trim();
+      if (!rawApprovalId) {
         throw new CashierSyncError(
           'CASHIER_MANUAL_DISCOUNT_OVERRIDE_REQUIRED',
           'manual discount exceeds this operator limit and requires manager approval',
@@ -162,6 +159,10 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
           },
         );
       }
+      const approvalId = identifier(
+        rawApprovalId,
+        'sale.manual_discount_override_approval_id',
+      );
       await consumeCashierDiscountOverrideApproval(client, {
         merchantId: input.context.merchant_id,
         stationId: input.context.station_id,
