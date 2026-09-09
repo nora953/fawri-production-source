@@ -86,8 +86,13 @@ if (!/AND platform IN \('messenger', 'instagram'\)/.test(metaAuthority)) {
 const forbiddenCapabilities = [
   [/\bfetch\s*\(/, "WHATSAPP_NETWORK_FETCH_PRESENT"],
   [/https?:\/\/graph\.facebook\.com/i, "WHATSAPP_GRAPH_ENDPOINT_PRESENT"],
+  [/(?:from\s+["']node:http["']|require\s*\(\s*["']node:http["']\s*\)|\bhttp\s*\.\s*request\s*\()/, "WHATSAPP_LOW_LEVEL_HTTP_PRESENT"],
+  [/(?:from\s+["']node:https["']|require\s*\(\s*["']node:https["']\s*\)|\bhttps\s*\.\s*request\s*\()/, "WHATSAPP_LOW_LEVEL_HTTPS_PRESENT"],
+  [/(?:from\s+["'](?:node:)?(?:net|tls|dns|dgram|child_process|worker_threads)["']|require\s*\(\s*["'](?:node:)?(?:net|tls|dns|dgram|child_process|worker_threads)["']\s*\))/, "WHATSAPP_LOW_LEVEL_RUNTIME_CAPABILITY_PRESENT"],
+  [/(?:from\s+["']ws["']|require\s*\(\s*["']ws["']\s*\))/, "WHATSAPP_WEBSOCKET_CAPABILITY_PRESENT"],
   [/\bdecryptMetaCredential\b/, "WHATSAPP_CREDENTIAL_DECRYPT_PRESENT"],
   [/\bencryptMetaCredential\b/, "WHATSAPP_CREDENTIAL_ENCRYPT_PRESENT"],
+  [/(?:metaCredentialVault|awsKmsMetaCredentialKeyProvider|metaGraphSendClient|postgresMetaWebhookReplyTransport|postgresMetaChannelAuthority)/, "WHATSAPP_META_LIVE_AUTHORITY_REFERENCE_PRESENT"],
   [/\benqueueDurableJob\s*\(/, "WHATSAPP_QUEUE_WRITE_PRESENT"],
   [/\bstartDurableJobWorker\s*\(/, "WHATSAPP_LIVE_WORKER_PRESENT"],
   [/\bdurableJobQueue\b/, "WHATSAPP_LEGACY_JSON_QUEUE_REFERENCE_PRESENT"],
@@ -107,6 +112,7 @@ for (const name of serviceFiles()) {
 }
 
 for (const requiredService of [
+  "whatsappActivationRuntimeGuards.ts",
   "whatsappPrivilegedJobPlan.ts",
   "whatsappInboundIntakePlan.ts",
   "whatsappDurableQueuePlan.ts",
