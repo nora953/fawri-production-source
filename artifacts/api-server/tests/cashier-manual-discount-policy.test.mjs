@@ -38,10 +38,20 @@ test('discount policy persistence is tenant scoped and missing schema fails clos
   assert.match(authority, /ON CONFLICT \(merchant_id, staff_id\)/);
 });
 
-test('discount policy schema is additive and validates percent and amount ranges', async () => {
-  const schema = await source('scripts/apply-cashier-discount-policy-schema.ts');
-  assert.match(schema, /CREATE TABLE IF NOT EXISTS merchant_cashier_staff_discount_policies/);
-  assert.match(schema, /PRIMARY KEY \(merchant_id, staff_id\)/);
-  assert.match(schema, /max_percentage_bps >= 0 AND max_percentage_bps <= 10000/);
-  assert.match(schema, /max_amount_minor IS NULL OR max_amount_minor >= 0/);
+test('discount policy schema is canonical migration 0015 and validates percent amount and permission authority', async () => {
+  const schema = await source('../../lib/db/drizzle/0015_cashier_discount_override_authority.sql');
+  assert.match(schema, /sale\.discount/);
+  assert.match(schema, /sale\.discount_override/);
+  assert.match(schema, /CREATE TABLE "merchant_cashier_staff_discount_policies"/);
+  assert.match(schema, /PRIMARY KEY\("merchant_id","staff_id"\)/);
+  assert.match(schema, /"max_percentage_bps" >= 0 AND "max_percentage_bps" <= 10000/);
+  assert.match(schema, /"max_amount_minor" IS NULL OR "max_amount_minor" >= 0/);
+  assert.match(schema, /cashier_discount_policy_staff_merchant_fk/);
+});
+
+test('out-of-band cashier discount DDL is disabled', async () => {
+  const apply = await source('scripts/apply-cashier-discount-policy-schema.ts');
+  assert.match(apply, /direct discount-policy DDL is disabled/);
+  assert.match(apply, /0015_cashier_discount_override_authority/);
+  assert.doesNotMatch(apply, /CREATE TABLE|ALTER TABLE|DROP TABLE/);
 });
