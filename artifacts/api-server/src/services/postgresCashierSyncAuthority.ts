@@ -62,6 +62,9 @@ type CashierSale = {
   status: "completed";
   lines: CashierSaleLine[];
   subtotal_minor: number;
+  promotion_discount_minor?: number;
+  manual_discount_minor?: number;
+  manual_discount_reason?: string;
   discount_minor: number;
   total_minor: number;
   currency_code: "IQD";
@@ -349,8 +352,8 @@ function parseSale(value: unknown): CashierSale {
   const lineIds = new Set<string>();
   const itemKeys = new Set<string>();
   let subtotal = 0;
-  let discount = 0;
-  let total = 0;
+  let promotionDiscount = 0;
+  let postPromotionTotal = 0;
   for (const line of lines) {
     if (lineIds.has(line.line_id)) {
       throw new CashierSyncError("CASHIER_SYNC_INVALID", "duplicate sale line id", 400);
@@ -366,17 +369,71 @@ function parseSale(value: unknown): CashierSale {
       safeMultiply(line.base_unit_price_minor, line.quantity, "sale.subtotal"),
       "sale.subtotal",
     );
-    discount = safeAdd(discount, line.discount_minor, "sale.discount");
-    total = safeAdd(total, line.line_total_minor, "sale.total");
+    promotionDiscount = safeAdd(
+      promotionDiscount,
+      line.discount_minor,
+      "sale.promotion_discount",
+    );
+    postPromotionTotal = safeAdd(
+      postPromotionTotal,
+      line.line_total_minor,
+      "sale.post_promotion_total",
+    );
   }
+
   const claimedSubtotal = nonNegativeInteger(raw.subtotal_minor, "sale.subtotal_minor");
+  const manualDiscount = raw.manual_discount_minor === undefined
+    ? 0
+    : nonNegativeInteger(raw.manual_discount_minor, "sale.manual_discount_minor");
+  const manualDiscountReason = raw.manual_discount_reason === undefined
+    ? undefined
+    : optionalText(raw.manual_discount_reason, "sale.manual_discount_reason", 200);
+  if (manualDiscount > postPromotionTotal) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_MANUAL_DISCOUNT_INVALID",
+      "manual discount exceeds post-promotion total",
+      409,
+    );
+  }
+  if (manualDiscount > 0 && !manualDiscountReason) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_MANUAL_DISCOUNT_REASON_REQUIRED",
+      "manual discount reason is required",
+      409,
+    );
+  }
+  if (manualDiscount === 0 && manualDiscountReason) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_MANUAL_DISCOUNT_INVALID",
+      "manual discount reason is not allowed without a discount",
+      400,
+    );
+  }
+  const totalDiscount = safeAdd(
+    promotionDiscount,
+    manualDiscount,
+    "sale.total_discount",
+  );
+  const finalTotal = postPromotionTotal - manualDiscount;
+  if (!Number.isSafeInteger(finalTotal) || finalTotal < 0) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_MANUAL_DISCOUNT_INVALID",
+      "manual discount total is invalid",
+      409,
+    );
+  }
+  const claimedPromotionDiscount = raw.promotion_discount_minor === undefined
+    ? promotionDiscount
+    : nonNegativeInteger(raw.promotion_discount_minor, "sale.promotion_discount_minor");
   const claimedDiscount = nonNegativeInteger(raw.discount_minor, "sale.discount_minor");
   const claimedTotal = nonNegativeInteger(raw.total_minor, "sale.total_minor");
   if (
     claimedSubtotal !== subtotal ||
-    claimedDiscount !== discount ||
-    claimedTotal !== total ||
-    subtotal - discount !== total
+    claimedPromotionDiscount !== promotionDiscount ||
+    claimedDiscount !== totalDiscount ||
+    claimedTotal !== finalTotal ||
+    subtotal - totalDiscount !== finalTotal ||
+    subtotal - promotionDiscount !== postPromotionTotal
   ) {
     throw new CashierSyncError("CASHIER_SYNC_INVALID", "sale totals are inconsistent", 400);
   }
@@ -438,6 +495,13 @@ function parseSale(value: unknown): CashierSale {
     status: "completed",
     lines,
     subtotal_minor: claimedSubtotal,
+    promotion_discount_minor: claimedPromotionDiscount,
+    ...(manualDiscount > 0
+      ? {
+          manual_discount_minor: manualDiscount,
+          manual_discount_reason: manualDiscountReason,
+        }
+      : {}),
     discount_minor: claimedDiscount,
     total_minor: claimedTotal,
     currency_code: "IQD",
@@ -858,6 +922,15 @@ async function insertCanonicalOrder(
       currency_code: bundle.sale.currency_code,
       currency_fraction_digits: bundle.sale.currency_fraction_digits,
       subtotal_minor: bundle.sale.subtotal_minor,
+      ...(bundle.sale.promotion_discount_minor !== undefined
+        ? { promotion_discount_minor: bundle.sale.promotion_discount_minor }
+        : {}),
+      ...(bundle.sale.manual_discount_minor !== undefined
+        ? {
+            manual_discount_minor: bundle.sale.manual_discount_minor,
+            manual_discount_reason: bundle.sale.manual_discount_reason,
+          }
+        : {}),
       discount_minor: bundle.sale.discount_minor,
       total_minor: bundle.sale.total_minor,
       ...(bundle.sale.cash_tendered_minor !== undefined
