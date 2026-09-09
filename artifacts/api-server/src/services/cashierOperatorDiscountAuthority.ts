@@ -5,6 +5,7 @@ import {
   disabledStoredCashierDiscountPolicy,
   loadCashierDiscountPolicies,
 } from './cashierDiscountPolicyAuthority';
+import { consumeCashierDiscountOverrideApproval } from './cashierDiscountOverrideAuthority';
 import type { CashierOperatorContext } from './postgresCashierStaffAuthority';
 import { CashierSyncError } from './postgresCashierSyncAuthority';
 import { withMerchantOperationalTransaction } from './operationalPostgresAuthority';
@@ -28,7 +29,23 @@ function safeNonNegative(value: unknown, field: string): number {
   return parsed;
 }
 
-function salePayload(body: unknown): Record<string, unknown> {
+function identifier(value: unknown, field: string): string {
+  const normalized = String(value ?? '').normalize('NFKC').trim();
+  if (!normalized || normalized.length > 200 || /[\u0000-\u001f\u007f]/.test(normalized)) {
+    throw new CashierSyncError(
+      'CASHIER_OPERATOR_DISCOUNT_INVALID',
+      `${field} is invalid`,
+      400,
+      { field },
+    );
+  }
+  return normalized;
+}
+
+function saleEnvelope(body: unknown): {
+  operationId: string;
+  payload: Record<string, unknown>;
+} {
   const raw = record(body);
   if (!Array.isArray(raw.envelopes)) {
     throw new CashierSyncError(
@@ -47,7 +64,11 @@ function salePayload(body: unknown): Record<string, unknown> {
       400,
     );
   }
-  return record(sales[0].payload);
+  const envelope = sales[0];
+  return {
+    operationId: identifier(envelope.operation_id, 'sale.operation_id'),
+    payload: record(envelope.payload),
+  };
 }
 
 function postPromotionTotal(payload: Record<string, unknown>): number {
@@ -78,7 +99,8 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
   context: CashierOperatorContext;
   body: unknown;
 }): Promise<void> {
-  const payload = salePayload(input.body);
+  const sale = saleEnvelope(input.body);
+  const payload = sale.payload;
   const manualDiscount = payload.manual_discount_minor === undefined
     ? 0
     : safeNonNegative(payload.manual_discount_minor, 'sale.manual_discount_minor');
@@ -102,7 +124,7 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
   }
 
   const postPromotion = postPromotionTotal(payload);
-  const policy = await withMerchantOperationalTransaction(
+  await withMerchantOperationalTransaction(
     input.context.merchant_id,
     async (client) => {
       const policies = await loadCashierDiscountPolicies(
@@ -110,30 +132,45 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
         input.context.merchant_id,
         input.context.staff_id,
       );
-      return policies.get(input.context.staff_id) || disabledStoredCashierDiscountPolicy();
+      const policy = policies.get(input.context.staff_id) || disabledStoredCashierDiscountPolicy();
+
+      if (!policy.enabled) {
+        throw new CashierSyncError(
+          'CASHIER_MANUAL_DISCOUNT_PERMISSION_REQUIRED',
+          'manual discount policy is disabled for this operator',
+          403,
+        );
+      }
+      const limit = cashierManualDiscountLimitMinor({
+        postPromotionTotalMinor: postPromotion,
+        policy,
+      });
+      if (manualDiscount <= limit) return;
+
+      const approvalId = identifier(
+        payload.manual_discount_override_approval_id,
+        'sale.manual_discount_override_approval_id',
+      );
+      if (!approvalId) {
+        throw new CashierSyncError(
+          'CASHIER_MANUAL_DISCOUNT_OVERRIDE_REQUIRED',
+          'manual discount exceeds this operator limit and requires manager approval',
+          403,
+          {
+            requested_discount_minor: manualDiscount,
+            employee_limit_minor: limit,
+          },
+        );
+      }
+      await consumeCashierDiscountOverrideApproval(client, {
+        merchantId: input.context.merchant_id,
+        stationId: input.context.station_id,
+        operatorStaffId: input.context.staff_id,
+        operationId: sale.operationId,
+        approvalId,
+        manualDiscountMinor: manualDiscount,
+        reason,
+      });
     },
   );
-
-  if (!policy.enabled) {
-    throw new CashierSyncError(
-      'CASHIER_MANUAL_DISCOUNT_PERMISSION_REQUIRED',
-      'manual discount policy is disabled for this operator',
-      403,
-    );
-  }
-  const limit = cashierManualDiscountLimitMinor({
-    postPromotionTotalMinor: postPromotion,
-    policy,
-  });
-  if (manualDiscount > limit) {
-    throw new CashierSyncError(
-      'CASHIER_MANUAL_DISCOUNT_OVERRIDE_REQUIRED',
-      'manual discount exceeds this operator limit and requires manager approval',
-      403,
-      {
-        requested_discount_minor: manualDiscount,
-        employee_limit_minor: limit,
-      },
-    );
-  }
 }
