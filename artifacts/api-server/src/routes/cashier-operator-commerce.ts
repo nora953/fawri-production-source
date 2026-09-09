@@ -9,6 +9,10 @@ import {
   syncCashierOperatorSaleAuthoritative,
 } from "../services/cashierOperatorCommerceAuthority";
 import { assertCashierOperatorManualDiscountAuthority } from "../services/cashierOperatorDiscountAuthority";
+import {
+  issueCashierDiscountOverrideApprovalAuthoritative,
+  listCashierDiscountOverrideApproversAuthoritative,
+} from "../services/cashierDiscountOverrideAuthority";
 import { buildCashierOperatorReportAuthoritative } from "../services/postgresCashierOperatorReportAuthority";
 import { assertCashierOperatorCompensationScope } from "../services/cashierOperatorSaleScope";
 import { CashierStaffAuthorityError } from "../services/postgresCashierStaffAuthority";
@@ -88,6 +92,43 @@ router.get(
       });
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, ...result });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/cashier/operator/discount-override/approvers",
+  requireCashierOperatorSession("sale.discount"),
+  async (_req: Request, res: Response) => {
+    try {
+      const approvers = await listCashierDiscountOverrideApproversAuthoritative(
+        operatorContext(res),
+      );
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, approvers });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/cashier/operator/discount-override",
+  requireCashierOperatorSession("sale.discount"),
+  async (req: Request, res: Response) => {
+    try {
+      const approval = await issueCashierDiscountOverrideApprovalAuthoritative({
+        context: operatorContext(res),
+        approverStaffId: req.body?.approver_staff_id,
+        pin: req.body?.pin,
+        operationId: req.body?.operation_id,
+        manualDiscountMinor: req.body?.manual_discount_minor,
+        reason: req.body?.manual_discount_reason,
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.status(201).json({ ok: true, approval });
     } catch (error) {
       sendError(res, error);
     }
