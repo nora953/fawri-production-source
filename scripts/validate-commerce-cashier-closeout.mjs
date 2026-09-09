@@ -5,11 +5,7 @@ const steps = [
     label: 'Cashier sales, pricing and manual discount runtime tests',
     command: 'pnpm',
     args: [
-      'exec',
-      'tsx',
-      '--tsconfig',
-      'artifacts/fawri/tsconfig.json',
-      '--test',
+      'exec','tsx','--tsconfig','artifacts/fawri/tsconfig.json','--test',
       'artifacts/fawri/tests/cashier-sales-report-runtime.test.ts',
       'artifacts/fawri/tests/cashier-sales-report-corruption.test.ts',
       'artifacts/fawri/tests/cashier-sale-pricing-duplicate-lines.test.ts',
@@ -20,11 +16,7 @@ const steps = [
     label: 'Merchant money and cashier refresh UX tests',
     command: 'pnpm',
     args: [
-      'exec',
-      'tsx',
-      '--tsconfig',
-      'artifacts/fawri/tsconfig.json',
-      '--test',
+      'exec','tsx','--tsconfig','artifacts/fawri/tsconfig.json','--test',
       'artifacts/fawri/tests/merchant-money-ui.test.ts',
       'artifacts/fawri/tests/cashier-refresh-ux-contract.test.mjs',
       'artifacts/fawri/tests/catalog-measurement-alignment-contract.test.mjs',
@@ -34,9 +26,7 @@ const steps = [
     label: 'Cashier reporting cost, discount policy and manager override runtime tests',
     command: 'pnpm',
     args: [
-      'exec',
-      'tsx',
-      '--test',
+      'exec','tsx','--test',
       'artifacts/api-server/tests/cashier-reporting-cost-runtime.test.ts',
       'artifacts/api-server/tests/cashier-discount-policy-runtime.test.ts',
       'artifacts/api-server/tests/cashier-discount-override-runtime.test.ts',
@@ -46,7 +36,7 @@ const steps = [
     ],
   },
   {
-    label: 'Cashier reporting, sync and manager override contracts',
+    label: 'Cashier reporting, sync, manager override and schema readiness contracts',
     command: 'node',
     args: [
       '--test',
@@ -56,6 +46,7 @@ const steps = [
       'artifacts/api-server/tests/cashier-order-separation-contract.test.mjs',
       'artifacts/api-server/tests/cashier-http-route-reachability.test.mjs',
       'artifacts/api-server/tests/cashier-discount-override-authority.test.mjs',
+      'artifacts/api-server/tests/cashier-discount-override-readiness.test.mjs',
       'artifacts/fawri/tests/cashier-manager-override-checkout.test.mjs',
     ],
   },
@@ -74,10 +65,7 @@ const steps = [
 for (const step of steps) {
   process.stdout.write(`\n=== ${step.label} ===\n`);
   const result = spawnSync(step.command, step.args, {
-    cwd: process.cwd(),
-    env: process.env,
-    stdio: 'inherit',
-    shell: false,
+    cwd: process.cwd(), env: process.env, stdio: 'inherit', shell: false,
   });
   if (result.error) throw result.error;
   if (result.status !== 0) {
