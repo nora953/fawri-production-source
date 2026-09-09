@@ -90,6 +90,12 @@ function errorMessage(error: unknown, labels: PosLabels): string {
   return labels.errorSaleFailed;
 }
 
+function searchErrorMessage(lang: Lang): string {
+  if (lang === 'ar') return 'تعذر البحث في كتالوج الكاشير. حاول مرة أخرى.';
+  if (lang === 'ku') return 'گەڕان لە کاتەلۆگی کاشێر سەرکەوتوو نەبوو. دووبارە هەوڵ بدە.';
+  return 'Cashier catalog search failed. Try again.';
+}
+
 function isSyncSessionRequired(code?: string): boolean {
   return (
     code === 'CASHIER_OUTBOX_SESSION_REQUIRED' ||
@@ -306,18 +312,23 @@ export default function CashierPosPage() {
     if (!runtime) return;
     setError(null);
     const value = query.trim();
-    if (value) {
-      const exact = await runtime.lookupExact(value).catch(() => null);
-      if (exact) {
-        addItem(exact);
-        setQuery('');
-        await refreshCatalog(runtime, '', false);
-        searchRef.current?.focus();
-        return;
+    try {
+      if (value) {
+        const exact = await runtime.lookupExact(value).catch(() => null);
+        if (exact) {
+          addItem(exact);
+          setQuery('');
+          await refreshCatalog(runtime, '', false);
+          searchRef.current?.focus();
+          return;
+        }
       }
+      await refreshCatalog(runtime, value);
+    } catch {
+      setError(searchErrorMessage(lang));
+      searchRef.current?.focus();
     }
-    await refreshCatalog(runtime, value);
-  }, [addItem, query, refreshCatalog, runtime]);
+  }, [addItem, lang, query, refreshCatalog, runtime]);
 
   const completeSale = useCallback(async () => {
     if (!runtime || cart.length === 0 || !quote || quoteError) return;
@@ -434,7 +445,7 @@ export default function CashierPosPage() {
           </div>
         </header>
 
-        {error ? <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
+        {error ? <div role="alert" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
         {success ? (
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             <strong>{labels.saleSuccess}</strong>
