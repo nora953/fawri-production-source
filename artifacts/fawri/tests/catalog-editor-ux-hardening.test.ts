@@ -135,10 +135,11 @@ test('inventory tracking and Fawri replies share one compact item settings card'
 });
 
 test('multi-option product entry is category-neutral and generated from one option list', () => {
-  assert.match(variantSource, /multiProduct/);
-  assert.match(variantSource, /خيارات المنتج/);
-  assert.match(variantSource, /السعة/);
-  assert.match(variantSource, /النكهة/);
+  assert.match(variantSource, /CATALOG_PRODUCT_DETAILS_COPY/);
+  assert.match(variantSource, /labels\.multiProduct/);
+  assert.match(variantSource, /labels\.options/);
+  assert.match(variantSource, /labels\.optionNamePlaceholder/);
+  assert.match(variantSource, /labels\.optionValuesPlaceholder/);
   assert.match(variantSource, /splitValues/);
   assert.match(variantSource, /regenerateCatalogVariantDrafts/);
   assert.match(variantSource, /variant_option_rows/);
@@ -161,9 +162,12 @@ test('variant rows inherit general price, cost and images unless explicitly over
   assert.match(variantSource, /applyBulkStock/);
 });
 
-test('generated combinations are grouped by the first option with safe group bulk actions', () => {
+test('generated combinations support selectable grouping with safe group bulk actions', () => {
+  assert.match(variantSource, /function optionForGrouping/);
+  assert.match(variantSource, /groupByOptionName/);
+  assert.match(variantSource, /effectiveGroupByOptionName/);
   assert.match(variantSource, /function variantGroups/);
-  assert.match(variantSource, /structuredOptions\(variant\)\[0\]/);
+  assert.match(variantSource, /variantGroups\(form\.variants, effectiveGroupByOptionName\)/);
   assert.match(variantSource, /group\.optionName/);
   assert.match(variantSource, /group\.optionValue/);
   assert.match(variantSource, /applyGroupField/);
@@ -189,8 +193,31 @@ test('unavailable generated combinations can be excluded and restored without un
   assert.match(variantSource, /filter\(variant => !excludedSignatures\.has\(variantSignature\(variant\)\)\)/);
   assert.match(variantSource, /if \(variant\.id\)/);
   assert.match(variantSource, /savedVariantProtected/);
-  assert.match(variantSource, /استبعاد التركيبة/);
-  assert.match(variantSource, /تركيبات غير متوفرة/);
+  assert.match(variantSource, /disabled=\{Boolean\(variant\.id\)\}/);
+  assert.match(variantSource, /savedVariantProtected/);
+});
+
+test('saved inventory stays outside product-editor mutation paths', () => {
+  assert.match(
+    variantSource,
+    /variant\.id \? variant : \{ \.\.\.variant, stock_quantity: value \}/,
+  );
+  assert.match(
+    variantSource,
+    /if \(field === 'stock_quantity' && variant\.id\) return variant/,
+  );
+  assert.match(
+    variantSource,
+    /!variant\.id && form\.track_inventory \? \{ stock_quantity: matching\.stock_quantity \}/,
+  );
+  assert.match(
+    variantSource,
+    /disabled=\{Boolean\(editing && variant\.id\)\}/,
+  );
+  assert.match(
+    variantSource,
+    /value=\{form\.quantity\}[\s\S]*disabled=\{editing\}/,
+  );
 });
 
 test('variant numeric cells and compact image controls stay visually aligned', () => {
@@ -198,8 +225,8 @@ test('variant numeric cells and compact image controls stay visually aligned', (
   assert.match(variantSource, /compact dense hideHeading/);
   assert.match(variantSource, /align-middle/);
   assert.match(imageSource, /dense\?: boolean/);
-  assert.match(imageSource, /h-14 w-16/);
-  assert.match(imageSource, /h-14 w-14/);
+  assert.match(imageSource, /h-12 w-11/);
+  assert.match(imageSource, /h-12 w-12/);
 });
 
 test('catalog image editor stays compact and fetches protected previews before rendering img', () => {
