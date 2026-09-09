@@ -1,0 +1,212 @@
+import {
+  whatsAppLiveCutoverRequested,
+  whatsAppOfflineFoundationEnabled,
+} from "./whatsappWebhookContract";
+import {
+  assertWhatsAppActivationEvidenceStructure,
+  snapshotWhatsAppActivationSwitches,
+} from "./whatsappActivationRuntimeGuards";
+
+export type WhatsAppActivationEnvironment =
+  | "development"
+  | "staging"
+  | "production";
+
+export type WhatsAppActivationEvidence = {
+  environment: WhatsAppActivationEnvironment;
+  explicit_cutover_approved: boolean;
+  deployment_revision_pinned: boolean;
+  dormant_database_barrier_replaced: boolean;
+  channel_identity_verified: boolean;
+  business_verification_ready: boolean;
+  meta_app_configuration_ready: boolean;
+  credential_provider_ready: boolean;
+  provider_credential_configured: boolean;
+  webhook_verification_ready: boolean;
+  webhook_signature_verification_ready: boolean;
+  app_secret_configured: boolean;
+  durable_queue_ready: boolean;
+  encrypted_job_payload_authority_ready: boolean;
+  inbound_persistence_ready: boolean;
+  reply_engine_handoff_ready: boolean;
+  data_policy_ready: boolean;
+  media_policy_ready: boolean;
+  inbound_worker_ready: boolean;
+  outbound_dispatch_persistence_ready: boolean;
+  outbound_transport_ready: boolean;
+  delivery_reconciliation_ready: boolean;
+  observability_ready: boolean;
+};
+
+export type WhatsAppActivationBlocker =
+  | "WHATSAPP_OFFLINE_FOUNDATION_DISABLED"
+  | "WHATSAPP_LIVE_CUTOVER_NOT_REQUESTED"
+  | "WHATSAPP_PRODUCTION_ENVIRONMENT_REQUIRED"
+  | "WHATSAPP_EXPLICIT_CUTOVER_APPROVAL_REQUIRED"
+  | "WHATSAPP_DEPLOYMENT_REVISION_NOT_PINNED"
+  | "WHATSAPP_DORMANT_DATABASE_BARRIER_ACTIVE"
+  | "WHATSAPP_CHANNEL_IDENTITY_NOT_VERIFIED"
+  | "WHATSAPP_BUSINESS_VERIFICATION_NOT_READY"
+  | "WHATSAPP_META_APP_CONFIGURATION_NOT_READY"
+  | "WHATSAPP_CREDENTIAL_PROVIDER_NOT_READY"
+  | "WHATSAPP_PROVIDER_CREDENTIAL_NOT_CONFIGURED"
+  | "WHATSAPP_WEBHOOK_VERIFICATION_NOT_READY"
+  | "WHATSAPP_WEBHOOK_SIGNATURE_VERIFICATION_NOT_READY"
+  | "WHATSAPP_APP_SECRET_NOT_CONFIGURED"
+  | "WHATSAPP_DURABLE_QUEUE_NOT_READY"
+  | "WHATSAPP_ENCRYPTED_JOB_PAYLOAD_AUTHORITY_NOT_READY"
+  | "WHATSAPP_INBOUND_PERSISTENCE_NOT_READY"
+  | "WHATSAPP_REPLY_ENGINE_HANDOFF_NOT_READY"
+  | "WHATSAPP_DATA_POLICY_NOT_READY"
+  | "WHATSAPP_MEDIA_POLICY_NOT_READY"
+  | "WHATSAPP_INBOUND_WORKER_NOT_READY"
+  | "WHATSAPP_OUTBOUND_DISPATCH_PERSISTENCE_NOT_READY"
+  | "WHATSAPP_OUTBOUND_TRANSPORT_NOT_READY"
+  | "WHATSAPP_DELIVERY_RECONCILIATION_NOT_READY"
+  | "WHATSAPP_OBSERVABILITY_NOT_READY";
+
+export type WhatsAppActivationReadiness = {
+  mode: "dormant" | "blocked" | "activation_candidate";
+  environment: WhatsAppActivationEnvironment;
+  offline_foundation_enabled: boolean;
+  live_cutover_requested: boolean;
+  ready_for_external_activation: boolean;
+  blockers: WhatsAppActivationBlocker[];
+};
+
+const BOOLEAN_EVIDENCE: Array<{
+  key: Exclude<keyof WhatsAppActivationEvidence, "environment">;
+  blocker: WhatsAppActivationBlocker;
+}> = [
+  {
+    key: "explicit_cutover_approved",
+    blocker: "WHATSAPP_EXPLICIT_CUTOVER_APPROVAL_REQUIRED",
+  },
+  {
+    key: "deployment_revision_pinned",
+    blocker: "WHATSAPP_DEPLOYMENT_REVISION_NOT_PINNED",
+  },
+  {
+    key: "dormant_database_barrier_replaced",
+    blocker: "WHATSAPP_DORMANT_DATABASE_BARRIER_ACTIVE",
+  },
+  {
+    key: "channel_identity_verified",
+    blocker: "WHATSAPP_CHANNEL_IDENTITY_NOT_VERIFIED",
+  },
+  {
+    key: "business_verification_ready",
+    blocker: "WHATSAPP_BUSINESS_VERIFICATION_NOT_READY",
+  },
+  {
+    key: "meta_app_configuration_ready",
+    blocker: "WHATSAPP_META_APP_CONFIGURATION_NOT_READY",
+  },
+  {
+    key: "credential_provider_ready",
+    blocker: "WHATSAPP_CREDENTIAL_PROVIDER_NOT_READY",
+  },
+  {
+    key: "provider_credential_configured",
+    blocker: "WHATSAPP_PROVIDER_CREDENTIAL_NOT_CONFIGURED",
+  },
+  {
+    key: "webhook_verification_ready",
+    blocker: "WHATSAPP_WEBHOOK_VERIFICATION_NOT_READY",
+  },
+  {
+    key: "webhook_signature_verification_ready",
+    blocker: "WHATSAPP_WEBHOOK_SIGNATURE_VERIFICATION_NOT_READY",
+  },
+  {
+    key: "app_secret_configured",
+    blocker: "WHATSAPP_APP_SECRET_NOT_CONFIGURED",
+  },
+  {
+    key: "durable_queue_ready",
+    blocker: "WHATSAPP_DURABLE_QUEUE_NOT_READY",
+  },
+  {
+    key: "encrypted_job_payload_authority_ready",
+    blocker: "WHATSAPP_ENCRYPTED_JOB_PAYLOAD_AUTHORITY_NOT_READY",
+  },
+  {
+    key: "inbound_persistence_ready",
+    blocker: "WHATSAPP_INBOUND_PERSISTENCE_NOT_READY",
+  },
+  {
+    key: "reply_engine_handoff_ready",
+    blocker: "WHATSAPP_REPLY_ENGINE_HANDOFF_NOT_READY",
+  },
+  {
+    key: "data_policy_ready",
+    blocker: "WHATSAPP_DATA_POLICY_NOT_READY",
+  },
+  {
+    key: "media_policy_ready",
+    blocker: "WHATSAPP_MEDIA_POLICY_NOT_READY",
+  },
+  {
+    key: "inbound_worker_ready",
+    blocker: "WHATSAPP_INBOUND_WORKER_NOT_READY",
+  },
+  {
+    key: "outbound_dispatch_persistence_ready",
+    blocker: "WHATSAPP_OUTBOUND_DISPATCH_PERSISTENCE_NOT_READY",
+  },
+  {
+    key: "outbound_transport_ready",
+    blocker: "WHATSAPP_OUTBOUND_TRANSPORT_NOT_READY",
+  },
+  {
+    key: "delivery_reconciliation_ready",
+    blocker: "WHATSAPP_DELIVERY_RECONCILIATION_NOT_READY",
+  },
+  {
+    key: "observability_ready",
+    blocker: "WHATSAPP_OBSERVABILITY_NOT_READY",
+  },
+];
+
+/**
+ * Evaluates only readiness evidence and inert feature switches. Secret material
+ * is intentionally represented as booleans, never as values, and this function
+ * cannot activate a route, store a credential, subscribe a webhook, or send a
+ * provider request. Evidence and switch inputs are structurally guarded before
+ * any property read so synthetic proxies/accessors cannot execute during the
+ * activation decision. A live candidate is restricted to production and still
+ * requires every explicit readiness gate.
+ */
+export function assessWhatsAppActivationReadiness(
+  evidence: WhatsAppActivationEvidence,
+  env: NodeJS.ProcessEnv = process.env,
+): WhatsAppActivationReadiness {
+  assertWhatsAppActivationEvidenceStructure(evidence);
+  const safeEnv = snapshotWhatsAppActivationSwitches(env);
+  const offlineEnabled = whatsAppOfflineFoundationEnabled(safeEnv);
+  const liveRequested = whatsAppLiveCutoverRequested(safeEnv);
+  const blockers: WhatsAppActivationBlocker[] = [];
+
+  if (!offlineEnabled) blockers.push("WHATSAPP_OFFLINE_FOUNDATION_DISABLED");
+  if (!liveRequested) blockers.push("WHATSAPP_LIVE_CUTOVER_NOT_REQUESTED");
+  if (evidence.environment !== "production") {
+    blockers.push("WHATSAPP_PRODUCTION_ENVIRONMENT_REQUIRED");
+  }
+  for (const item of BOOLEAN_EVIDENCE) {
+    if (!evidence[item.key]) blockers.push(item.blocker);
+  }
+
+  const ready = blockers.length === 0;
+  return {
+    mode: ready
+      ? "activation_candidate"
+      : !liveRequested
+        ? "dormant"
+        : "blocked",
+    environment: evidence.environment,
+    offline_foundation_enabled: offlineEnabled,
+    live_cutover_requested: liveRequested,
+    ready_for_external_activation: ready,
+    blockers,
+  };
+}

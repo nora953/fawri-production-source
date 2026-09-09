@@ -85,6 +85,13 @@
       "when": 1787435160000,
       "tag": "0011_commerce_promotions_timezone_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1788393600000,
+      "tag": "0012_whatsapp_dormant_channel_identity",
+      "breakpoints": true
     }
   ]
 }
