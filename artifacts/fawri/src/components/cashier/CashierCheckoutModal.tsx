@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react';
+import CashierManualDiscountEditor from './CashierManualDiscountEditor';
 import type { CashierPaymentMethod } from '@/lib/cashierLocalContracts';
+import type { CashierOperatorDiscountPolicy } from '@/lib/cashierDiscountPolicyClient';
+import type { CashierManualDiscountResolution } from '@/lib/cashierManualDiscount';
 import type { CashierResolvedSalePricing } from '@/lib/cashierSalePricingRuntime';
 import { CASHIER_POS_ENHANCEMENT_COPY } from '@/lib/cashierPosEnhancementCopy';
 import { CASHIER_UI_COPY } from '@/lib/cashierUiCopy';
@@ -10,10 +13,12 @@ type PosLabels = (typeof CASHIER_UI_COPY)[Lang]['pos'];
 
 type Props = {
   open: boolean;
+  online: boolean;
   lang: Lang;
   dir: 'rtl' | 'ltr';
   labels: PosLabels;
   quote: CashierResolvedSalePricing | null;
+  finalTotalMinor: number | null;
   error?: string | null;
   paymentMethod: CashierPaymentMethod;
   cashTenderText: string;
@@ -22,10 +27,23 @@ type Props = {
   externalConfirmed: boolean;
   committing: boolean;
   canSubmit: boolean;
+  discountPolicyLoading: boolean;
+  discountPolicy: CashierOperatorDiscountPolicy;
+  manualDiscountOpen: boolean;
+  manualDiscountKind: 'amount' | 'percentage';
+  manualDiscountValueText: string;
+  manualDiscountReason: string;
+  manualDiscountResolution: CashierManualDiscountResolution | null;
+  manualDiscountInvalid: boolean;
   onPaymentMethodChange: (method: CashierPaymentMethod) => void;
   onCashTenderChange: (value: string) => void;
   onExactCash: () => void;
   onExternalConfirmedChange: (confirmed: boolean) => void;
+  onManualDiscountOpen: () => void;
+  onManualDiscountRemove: () => void;
+  onManualDiscountKindChange: (kind: 'amount' | 'percentage') => void;
+  onManualDiscountValueChange: (value: string) => void;
+  onManualDiscountReasonChange: (value: string) => void;
   onClose: () => void;
   onSubmit: () => void;
 };
@@ -41,10 +59,12 @@ function money(
 
 export default function CashierCheckoutModal({
   open,
+  online,
   lang,
   dir,
   labels,
   quote,
+  finalTotalMinor,
   error,
   paymentMethod,
   cashTenderText,
@@ -53,10 +73,23 @@ export default function CashierCheckoutModal({
   externalConfirmed,
   committing,
   canSubmit,
+  discountPolicyLoading,
+  discountPolicy,
+  manualDiscountOpen,
+  manualDiscountKind,
+  manualDiscountValueText,
+  manualDiscountReason,
+  manualDiscountResolution,
+  manualDiscountInvalid,
   onPaymentMethodChange,
   onCashTenderChange,
   onExactCash,
   onExternalConfirmedChange,
+  onManualDiscountOpen,
+  onManualDiscountRemove,
+  onManualDiscountKindChange,
+  onManualDiscountValueChange,
+  onManualDiscountReasonChange,
   onClose,
   onSubmit,
 }: Props) {
@@ -78,12 +111,12 @@ export default function CashierCheckoutModal({
     return () => window.clearTimeout(timer);
   }, [open, paymentMethod]);
 
-  if (!open || !quote) return null;
+  if (!open || !quote || finalTotalMinor === null) return null;
 
   const insufficient =
     paymentMethod === 'cash' &&
     cashTenderedMinor !== null &&
-    cashTenderedMinor < quote.total_minor;
+    cashTenderedMinor < finalTotalMinor;
 
   return (
     <div
@@ -96,9 +129,9 @@ export default function CashierCheckoutModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="cashier-checkout-title"
-        className="w-full max-w-xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+        className="flex max-h-[94dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
       >
-        <header className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
           <div>
             <h2 id="cashier-checkout-title" className="text-xl font-black text-slate-900">
               {extra.checkoutTitle}
@@ -115,7 +148,7 @@ export default function CashierCheckoutModal({
           </button>
         </header>
 
-        <div className="space-y-4 p-5">
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
           {error ? (
             <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-bold text-red-700">
               {error}
@@ -124,18 +157,46 @@ export default function CashierCheckoutModal({
 
           <div className="rounded-2xl bg-slate-950 px-4 py-4 text-white">
             <div className="flex items-end justify-between gap-4">
-              <span className="text-sm font-semibold text-slate-300">{labels.total}</span>
+              <span className="text-sm font-semibold text-slate-300">
+                {manualDiscountResolution?.manual_discount_minor ? extra.finalTotal : labels.total}
+              </span>
               <strong className="text-3xl font-black" dir="ltr">
-                {money(quote.total_minor, quote.currency_code, quote.currency_fraction_digits, lang)}
+                {money(finalTotalMinor, quote.currency_code, quote.currency_fraction_digits, lang)}
               </strong>
             </div>
             {quote.discount_minor > 0 ? (
               <div className="mt-2 flex justify-between text-xs text-emerald-300">
-                <span>{labels.discount}</span>
+                <span>{extra.promotionDiscount}</span>
                 <span dir="ltr">− {money(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits, lang)}</span>
               </div>
             ) : null}
+            {manualDiscountResolution && manualDiscountResolution.manual_discount_minor > 0 ? (
+              <div className="mt-1 flex justify-between text-xs text-orange-300">
+                <span>{extra.manualDiscount}</span>
+                <span dir="ltr">− {money(manualDiscountResolution.manual_discount_minor, quote.currency_code, quote.currency_fraction_digits, lang)}</span>
+              </div>
+            ) : null}
           </div>
+
+          <CashierManualDiscountEditor
+            lang={lang}
+            online={online}
+            loading={discountPolicyLoading}
+            policy={discountPolicy}
+            currencyCode={quote.currency_code}
+            fractionDigits={quote.currency_fraction_digits}
+            open={manualDiscountOpen}
+            kind={manualDiscountKind}
+            valueText={manualDiscountValueText}
+            reason={manualDiscountReason}
+            resolution={manualDiscountResolution}
+            invalid={manualDiscountInvalid}
+            onOpen={onManualDiscountOpen}
+            onRemove={onManualDiscountRemove}
+            onKindChange={onManualDiscountKindChange}
+            onValueChange={onManualDiscountValueChange}
+            onReasonChange={onManualDiscountReasonChange}
+          />
 
           <div>
             <label className="mb-2 block text-xs font-bold text-slate-600">{labels.paymentMethod}</label>
@@ -221,7 +282,7 @@ export default function CashierCheckoutModal({
           )}
         </div>
 
-        <footer className="grid grid-cols-[0.8fr_1.2fr] gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4">
+        <footer className="grid shrink-0 grid-cols-[0.8fr_1.2fr] gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4">
           <button
             type="button"
             onClick={onClose}
