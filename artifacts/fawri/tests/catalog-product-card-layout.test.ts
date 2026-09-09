@@ -56,7 +56,8 @@ test('summary cards keep SKU out of sight and variant facts inside the wrapping 
 });
 
 test('card keeps only summary facts and opens product details in a dialog', () => {
-  assert.match(pageSource, /details: 'التفاصيل'/);
+  assert.match(pageSource, /COMMERCE_CATALOG_COPY/);
+  assert.match(pageSource, /\{copy\.details\}/);
   assert.match(pageSource, /onClick=\{\(\) => setDetailsProductId\(product\.id\)\}/);
   assert.match(pageSource, /<Eye className="me-1\.5 h-4 w-4" \/>/);
   assert.match(pageSource, /<Dialog open=\{Boolean\(detailsProduct\)\}/);
@@ -100,29 +101,13 @@ test('details dialog presents inventory read-only and routes changes through edi
   assert.match(dialog, /setDetailsProductId\(null\);[\s\S]*openEdit\(product\);/);
 });
 
-test('read-only variant cards center name option summary and quantity as one unit', () => {
-  const summaryRule = cardStyles.match(
-    /\[role="dialog"\] \.rounded-xl\.border\.bg-background\.p-3 > \.mb-2\.flex\.items-start\.justify-between\.gap-3 \{[\s\S]*?\n\}/,
-  )?.[0] || '';
-  assert.match(summaryRule, /flex-direction:\s*column/);
-  assert.match(summaryRule, /align-items:\s*center !important/);
-  assert.match(summaryRule, /justify-content:\s*center !important/);
-  assert.match(summaryRule, /text-align:\s*center/);
-
-  const labelRule = cardStyles.match(
-    /\[role="dialog"\] \.rounded-xl\.border\.bg-background\.p-3 > \.mb-2\.flex\.items-start\.justify-between\.gap-3 > :first-child \{[\s\S]*?\n\}/,
-  )?.[0] || '';
-  assert.match(labelRule, /width:\s*100%/);
-  assert.match(labelRule, /text-align:\s*center/);
-
-  const quantityRule = cardStyles.match(
-    /\[role="dialog"\] \.rounded-xl\.border\.bg-background\.p-3 > \.mb-2\.flex\.items-start\.justify-between\.gap-3 > :last-child \{[\s\S]*?\n\}/,
-  )?.[0] || '';
-  assert.match(quantityRule, /min-width:\s*2\.5rem/);
-  assert.match(quantityRule, /align-items:\s*center/);
-  assert.match(quantityRule, /justify-content:\s*center/);
-  assert.match(quantityRule, /text-align:\s*center/);
-  assert.match(quantityRule, /align-self:\s*center/);
-
+test('read-only variant cards keep the current horizontal identity and quantity layout', () => {
+  assert.match(cardStyles, /aspect-ratio:\s*auto !important/);
+  assert.match(cardStyles, /flex-direction:\s*row !important/);
+  assert.match(cardStyles, /align-items:\s*center !important/);
+  assert.match(cardStyles, /justify-content:\s*space-between !important/);
+  assert.match(cardStyles, /text-align:\s*start !important/);
+  assert.match(cardStyles, /align-self:\s*center !important/);
+  assert.doesNotMatch(cardStyles, /flex-direction:\s*column !important/);
   assert.doesNotMatch(cardStyles, /grid-template-columns:\s*minmax\(0, 1fr\) minmax\(6rem, 0\.28fr\)/);
 });

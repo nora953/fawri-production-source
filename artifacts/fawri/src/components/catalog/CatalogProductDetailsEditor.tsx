@@ -480,6 +480,10 @@ export function CatalogProductDetailsEditor({
   const excludeVariant = (index: number) => {
     const variant = form.variants[index];
     if (!variant) return;
+    if (variant.id) {
+      setFeedback(labels.savedVariantProtected);
+      return;
+    }
     const signature = variantSignature(variant);
     if (!signature) return;
     const nextExcluded = excluded.some(item => item.signature === signature)
@@ -512,7 +516,7 @@ export function CatalogProductDetailsEditor({
   const applyBulkStock = () => {
     const value = bulkStock.trim();
     if (!/^\d+$/.test(value)) return;
-    onChange({ variants: form.variants.map(variant => ({ ...variant, stock_quantity: value })) });
+    onChange({ variants: form.variants.map(variant => variant.id ? variant : { ...variant, stock_quantity: value }) });
   };
 
   const generateMissingSkus = () => {
@@ -534,6 +538,7 @@ export function CatalogProductDetailsEditor({
     onChange({
       variants: form.variants.map((variant, index) => {
         if (!memberIndexes.has(index)) return variant;
+        if (field === 'stock_quantity' && variant.id) return variant;
         return { ...variant, [field]: value };
       }),
     });
@@ -586,7 +591,7 @@ export function CatalogProductDetailsEditor({
         price_iqd: matching.price_iqd,
         cost_iqd: matching.cost_iqd,
         image_refs: cloneImages(matching.image_refs),
-        ...(form.track_inventory ? { stock_quantity: matching.stock_quantity } : {}),
+        ...(!variant.id && form.track_inventory ? { stock_quantity: matching.stock_quantity } : {}),
       };
     });
 
@@ -629,7 +634,7 @@ export function CatalogProductDetailsEditor({
                 </td>
                 <td className="p-2.5"><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.price_iqd} onChange={event => updateVariant(index, { price_iqd: event.target.value })} placeholder={labels.inheritedSale(form.current_price)} className={`${numericClass} min-w-32`} /></td>
                 <td className="p-2.5"><Input type="number" min={0} step={moneyStep} inputMode="decimal" dir="ltr" value={variant.cost_iqd} onChange={event => updateVariant(index, { cost_iqd: event.target.value })} placeholder={labels.inheritedCost(form.cost_iqd)} className={`${numericClass} min-w-32`} /></td>
-                {form.track_inventory && <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.stock_quantity} onChange={event => updateVariant(index, { stock_quantity: event.target.value })} placeholder="0" className={`${numericClass} w-24`} /></td>}
+                {form.track_inventory && <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.stock_quantity} onChange={event => updateVariant(index, { stock_quantity: event.target.value })} disabled={Boolean(editing && variant.id)} placeholder={editing && variant.id ? labels.currentInventoryLocked : '0'} className={`${numericClass} w-24`} /></td>}
                 <td className="p-2.5"><Input type="text" dir="ltr" value={variant.sku} onChange={event => updateVariant(index, { sku: event.target.value })} className="h-10 min-w-36 rounded-xl text-center font-mono text-xs" /></td>
                 <td className="p-2.5"><Input type="text" inputMode="numeric" dir="ltr" value={variant.barcode} onChange={event => updateVariant(index, { barcode: event.target.value })} className={`${numericClass} min-w-32`} /></td>
                 <td className="w-40 p-2.5 align-middle">
@@ -643,9 +648,10 @@ export function CatalogProductDetailsEditor({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    title={labels.excludeCombination}
-                    aria-label={labels.excludeCombination}
-                    className="h-9 w-9 rounded-xl text-destructive"
+                    disabled={Boolean(variant.id)}
+                    title={variant.id ? labels.savedVariantProtected : labels.excludeCombination}
+                    aria-label={variant.id ? labels.savedVariantProtected : labels.excludeCombination}
+                    className="h-9 w-9 rounded-xl text-destructive disabled:text-muted-foreground"
                     onClick={() => excludeVariant(index)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -664,7 +670,7 @@ export function CatalogProductDetailsEditor({
       {form.track_inventory && !variantManagedInventory && (
         <label className="space-y-1 text-sm font-semibold">
           <span>{labels.quantity}</span>
-          <Input type="text" inputMode="numeric" dir="ltr" value={form.quantity} onChange={event => onChange({ quantity: event.target.value })} className="h-11 rounded-xl text-center tabular-nums" />
+          <Input type="text" inputMode="numeric" dir="ltr" value={form.quantity} onChange={event => onChange({ quantity: event.target.value })} disabled={editing} className="h-11 rounded-xl text-center tabular-nums" />
           {editing && <span className="block text-xs font-normal text-muted-foreground">{labels.inventoryAfterSave}</span>}
         </label>
       )}
