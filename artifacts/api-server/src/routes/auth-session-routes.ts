@@ -62,6 +62,7 @@ router.post("/admin/logout-all", requireSecureAdminSession, async (_req, res) =>
 });
 
 router.get("/sessions", requireSecureMerchantSession, async (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   const context = getAuthContext(res)!;
   res.json({
     ok: true,
@@ -122,6 +123,7 @@ router.post("/admin/change-password", requireSecureAdminSession, (req, res) =>
 );
 
 router.get("/lifecycle", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   const token = getSessionToken(req, "merchant");
   if (!token) {
     sendAuthError(
@@ -186,7 +188,6 @@ router.get("/lifecycle", async (req, res) => {
   }
 
   const accountStatus = account.merchantProfile.accountStatus;
-  res.setHeader("Cache-Control", "no-store");
   res.json({
     ok: true,
     lifecycle: {
@@ -202,6 +203,7 @@ router.get("/lifecycle", async (req, res) => {
 });
 
 router.get("/me", requireSecureMerchantSession, async (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   const context = getAuthContext(res)!;
   const account = await findMerchantByIdAuthoritative(context.account.id);
   if (!account) {
