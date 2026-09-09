@@ -32,6 +32,7 @@ import {
 import { CASHIER_UI_COPY } from '@/lib/cashierUiCopy';
 import { useI18n } from '@/lib/i18n';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import { useCashierManualDiscountCheckout } from '@/lib/useCashierManualDiscountCheckout';
 import type { Lang } from '@/lib/types';
 
 type CartLine = { item: CashierCatalogLookup; quantity: number };
@@ -208,6 +209,9 @@ export default function CashierPosPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SaleSuccess | null>(null);
 
+  const discountCheckout = useCashierManualDiscountCheckout({ quote, online });
+  const finalTotalMinor = discountCheckout.finalTotalMinor ?? quote?.total_minor ?? null;
+
   const searchRef = useRef<HTMLInputElement>(null);
   const scannerBufferRef = useRef<CashierScannerBuffer>(emptyCashierScannerBuffer());
 
@@ -276,6 +280,7 @@ export default function CashierPosPage() {
       setActiveCartKey(null);
       setCompactPage(0);
       setCheckoutOpen(false);
+      discountCheckout.reset();
       return;
     }
     if (!activeCartKey || !cart.some(line => itemKey(line.item) === activeCartKey)) {
@@ -328,25 +333,26 @@ export default function CashierPosPage() {
   const changeDueMinor = useMemo(() => {
     if (
       paymentMethod !== 'cash' ||
-      !quote ||
+      finalTotalMinor === null ||
       cashTenderedMinor === null ||
-      cashTenderedMinor < quote.total_minor
+      cashTenderedMinor < finalTotalMinor
     ) {
       return null;
     }
-    const change = cashTenderedMinor - quote.total_minor;
+    const change = cashTenderedMinor - finalTotalMinor;
     return Number.isSafeInteger(change) && change >= 0 ? change : null;
-  }, [cashTenderedMinor, paymentMethod, quote]);
+  }, [cashTenderedMinor, finalTotalMinor, paymentMethod]);
 
   const cashTenderReady =
     paymentMethod !== 'cash' ||
-    Boolean(quote && cashTenderedMinor !== null && changeDueMinor !== null);
+    Boolean(finalTotalMinor !== null && cashTenderedMinor !== null && changeDueMinor !== null);
 
   const resetPaymentDraft = useCallback(() => {
     setCashTenderText('');
     setExternalConfirmed(false);
+    discountCheckout.remove();
     setError(null);
-  }, []);
+  }, [discountCheckout]);
 
   const addItem = useCallback((item: CashierCatalogLookup) => {
     const key = itemKey(item);
@@ -478,17 +484,20 @@ export default function CashierPosPage() {
     if (!quote || quoteError || cart.length === 0) return;
     setError(null);
     setCheckoutOpen(true);
-  }, [cart.length, quote, quoteError]);
+    void discountCheckout.refreshPolicy();
+  }, [cart.length, discountCheckout, quote, quoteError]);
 
   const closeCheckout = useCallback(() => {
     if (committing) return;
     setError(null);
     setCheckoutOpen(false);
+    discountCheckout.remove();
+    setCashTenderText('');
     window.setTimeout(() => searchRef.current?.focus(), 0);
-  }, [committing]);
+  }, [committing, discountCheckout]);
 
   const completeSale = useCallback(async () => {
-    if (!runtime || cart.length === 0 || !quote || quoteError) return;
+    if (!runtime || cart.length === 0 || !quote || quoteError || !discountCheckout.canSubmit) return;
     if (paymentMethod === 'cash') {
       if (cashTenderedMinor === null || changeDueMinor === null) {
         setError(labels.errorCashTenderInvalid);
@@ -507,10 +516,18 @@ export default function CashierPosPage() {
         typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
           ? crypto.randomUUID()
           : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const manualDiscountMinor = discountCheckout.manualDiscountMinor;
+      const manualDiscountReason = discountCheckout.reason.normalize('NFKC').trim();
       const result = await runtime.commitSale({
         operation_id: operationId,
         payment_method: paymentMethod,
         payment_status: 'paid',
+        ...(manualDiscountMinor > 0
+          ? {
+              manual_discount_minor: manualDiscountMinor,
+              manual_discount_reason: manualDiscountReason,
+            }
+          : {}),
         ...(paymentMethod === 'cash' && cashTenderedMinor !== null && changeDueMinor !== null
           ? {
               cash_tendered_minor: cashTenderedMinor,
@@ -536,6 +553,7 @@ export default function CashierPosPage() {
       setPaymentMethod('cash');
       setCashTenderText('');
       setExternalConfirmed(false);
+      discountCheckout.reset();
       await refreshCatalog(runtime, '', false);
       setQuery('');
       window.setTimeout(() => searchRef.current?.focus(), 0);
@@ -545,12 +563,19 @@ export default function CashierPosPage() {
         publishCashierOperatorSessionInvalidated();
         return;
       }
-      setError(errorMessage(cause, labels));
+      const code = runtimeErrorCode(cause);
+      if (code === 'CASHIER_MANUAL_DISCOUNT_OVERRIDE_REQUIRED') {
+        setError(extra.discountNeedsManager);
+      } else if (code.includes('MANUAL_DISCOUNT')) {
+        setError(extra.discountPolicyUnavailable);
+      } else {
+        setError(errorMessage(cause, labels));
+      }
       await refreshCatalog(runtime, query, false).catch(() => undefined);
     } finally {
       setCommitting(false);
     }
-  }, [cart.length, cashTenderedMinor, changeDueMinor, externalConfirmed, labels, paymentMethod, query, quote, quoteError, refreshCatalog, runtime, saleLines]);
+  }, [cart.length, cashTenderedMinor, changeDueMinor, discountCheckout, externalConfirmed, extra.discountNeedsManager, extra.discountPolicyUnavailable, labels, paymentMethod, query, quote, quoteError, refreshCatalog, runtime, saleLines]);
 
   const cartCount = cart.reduce((sum, line) => sum + line.quantity, 0);
   const quoteByKey = useMemo(() => {
@@ -583,7 +608,9 @@ export default function CashierPosPage() {
   const checkoutCanSubmit =
     cart.length > 0 &&
     Boolean(quote) &&
+    finalTotalMinor !== null &&
     !quoteError &&
+    discountCheckout.canSubmit &&
     cashTenderReady &&
     (paymentMethod === 'cash' || externalConfirmed);
 
@@ -830,11 +857,13 @@ export default function CashierPosPage() {
 
       <CashierCheckoutModal
         open={checkoutOpen}
+        online={online}
         lang={lang}
         dir={dir}
         labels={labels}
         quote={quote}
-        error={error}
+        finalTotalMinor={finalTotalMinor}
+        error={error || (discountCheckout.policyError ? extra.discountPolicyUnavailable : null)}
         paymentMethod={paymentMethod}
         cashTenderText={cashTenderText}
         cashTenderedMinor={cashTenderedMinor}
@@ -842,6 +871,14 @@ export default function CashierPosPage() {
         externalConfirmed={externalConfirmed}
         committing={committing}
         canSubmit={checkoutCanSubmit}
+        discountPolicyLoading={discountCheckout.policyLoading}
+        discountPolicy={discountCheckout.policy}
+        manualDiscountOpen={discountCheckout.editorOpen}
+        manualDiscountKind={discountCheckout.kind}
+        manualDiscountValueText={discountCheckout.valueText}
+        manualDiscountReason={discountCheckout.reason}
+        manualDiscountResolution={discountCheckout.resolution}
+        manualDiscountInvalid={discountCheckout.invalid}
         onPaymentMethodChange={method => {
           setPaymentMethod(method);
           setCashTenderText('');
@@ -853,11 +890,35 @@ export default function CashierPosPage() {
           setError(null);
         }}
         onExactCash={() => {
-          if (quote) setCashTenderText(String(quote.total_minor));
+          if (finalTotalMinor !== null) setCashTenderText(String(finalTotalMinor));
           setError(null);
         }}
         onExternalConfirmedChange={confirmed => {
           setExternalConfirmed(confirmed);
+          setError(null);
+        }}
+        onManualDiscountOpen={() => {
+          discountCheckout.openEditor();
+          setCashTenderText('');
+          setError(null);
+        }}
+        onManualDiscountRemove={() => {
+          discountCheckout.remove();
+          setCashTenderText('');
+          setError(null);
+        }}
+        onManualDiscountKindChange={kind => {
+          discountCheckout.setKind(kind);
+          setCashTenderText('');
+          setError(null);
+        }}
+        onManualDiscountValueChange={value => {
+          discountCheckout.setValueText(value);
+          setCashTenderText('');
+          setError(null);
+        }}
+        onManualDiscountReasonChange={reason => {
+          discountCheckout.setReason(reason);
           setError(null);
         }}
         onClose={closeCheckout}
