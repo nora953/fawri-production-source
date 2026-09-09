@@ -10,6 +10,7 @@ import {
   type CashierPosRuntime,
 } from '@/lib/cashierPosRuntime';
 import { subscribeCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
+import { CASHIER_SEARCH_ERROR_COPY } from '@/lib/cashierSearchErrorCopy';
 import {
   getCashierSyncUiState,
   requestCashierSync,
@@ -88,12 +89,6 @@ function errorMessage(error: unknown, labels: PosLabels): string {
     return labels.errorItemNotFound;
   }
   return labels.errorSaleFailed;
-}
-
-function searchErrorMessage(lang: Lang): string {
-  if (lang === 'ar') return 'تعذر البحث في كتالوج الكاشير. حاول مرة أخرى.';
-  if (lang === 'ku') return 'گەڕان لە کاتەلۆگی کاشێر سەرکەوتوو نەبوو. دووبارە هەوڵ بدە.';
-  return 'Cashier catalog search failed. Try again.';
 }
 
 function isSyncSessionRequired(code?: string): boolean {
@@ -325,7 +320,7 @@ export default function CashierPosPage() {
       }
       await refreshCatalog(runtime, value);
     } catch {
-      setError(searchErrorMessage(lang));
+      setError(CASHIER_SEARCH_ERROR_COPY[lang]);
       searchRef.current?.focus();
     }
   }, [addItem, lang, query, refreshCatalog, runtime]);
