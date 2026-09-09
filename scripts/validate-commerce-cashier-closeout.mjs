@@ -31,7 +31,7 @@ const steps = [
     ],
   },
   {
-    label: 'Cashier reporting cost, discount policy runtime and disclosure tests',
+    label: 'Cashier reporting cost, discount policy and manager override runtime tests',
     command: 'pnpm',
     args: [
       'exec',
@@ -39,6 +39,7 @@ const steps = [
       '--test',
       'artifacts/api-server/tests/cashier-reporting-cost-runtime.test.ts',
       'artifacts/api-server/tests/cashier-discount-policy-runtime.test.ts',
+      'artifacts/api-server/tests/cashier-discount-override-runtime.test.ts',
       'artifacts/api-server/tests/catalog-reporting-cost-postgres-guard.test.ts',
       'artifacts/api-server/tests/postgres-catalog-reporting-cost-disclosure.test.ts',
       'artifacts/api-server/tests/catalog-commerce-metadata.test.ts',
