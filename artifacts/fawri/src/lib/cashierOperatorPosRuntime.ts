@@ -2,6 +2,10 @@ import {
   IndexedDbCashierAuthority,
 } from './cashierIndexedDbAuthority';
 import {
+  cashierDiscountLimitMinor,
+  loadCurrentCashierDiscountPolicy,
+} from './cashierDiscountPolicyClient';
+import {
   createCashierPosRuntime,
   type CashierPosRuntime,
 } from './cashierPosBaseRuntime';
@@ -52,6 +56,53 @@ async function assertOfflineInventoryPermission(
   }
 }
 
+async function assertManualDiscountPermission(
+  runtime: CashierPosRuntime,
+  input: CashierCommitSaleInput,
+): Promise<void> {
+  const discount = Number(input.manual_discount_minor || 0);
+  if (!Number.isSafeInteger(discount) || discount < 0) {
+    throw new CashierOperatorPosError(
+      'CASHIER_MANUAL_DISCOUNT_INVALID',
+      'Manual discount is invalid',
+    );
+  }
+  if (discount === 0) return;
+  const reason = String(input.manual_discount_reason || '').normalize('NFKC').trim();
+  if (!reason || reason.length > 200) {
+    throw new CashierOperatorPosError(
+      'CASHIER_MANUAL_DISCOUNT_REASON_REQUIRED',
+      'A manual discount reason is required',
+    );
+  }
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    throw new CashierOperatorPosError(
+      'CASHIER_MANUAL_DISCOUNT_ONLINE_REQUIRED',
+      'Manual discounts require an online authority check',
+    );
+  }
+  const [policy, pricing] = await Promise.all([
+    loadCurrentCashierDiscountPolicy(),
+    runtime.quote(input.lines),
+  ]);
+  if (!policy.enabled) {
+    throw new CashierOperatorPosError(
+      'CASHIER_MANUAL_DISCOUNT_PERMISSION_REQUIRED',
+      'This operator is not allowed to apply manual discounts',
+    );
+  }
+  const limit = cashierDiscountLimitMinor({
+    postPromotionTotalMinor: pricing.total_minor,
+    policy,
+  });
+  if (discount > limit) {
+    throw new CashierOperatorPosError(
+      'CASHIER_MANUAL_DISCOUNT_OVERRIDE_REQUIRED',
+      'Manual discount exceeds this operator limit and requires manager approval',
+    );
+  }
+}
+
 export async function createCashierOperatorPosRuntime(options?: {
   demoMode?: boolean;
 }): Promise<CashierPosRuntime> {
@@ -87,6 +138,7 @@ export async function createCashierOperatorPosRuntime(options?: {
         );
       }
       await assertOfflineInventoryPermission(base, input, currentSession);
+      await assertManualDiscountPermission(base, input);
       await bindCashierOperationToCurrentOperator(input.operation_id, 'sale');
       return base.commitSale(input);
     },
