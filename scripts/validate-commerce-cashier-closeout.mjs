@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 
 const steps = [
   {
-    label: 'Cashier sales and pricing runtime tests',
+    label: 'Cashier sales, pricing and manual discount runtime tests',
     command: 'pnpm',
     args: [
       'exec',
@@ -13,6 +13,7 @@ const steps = [
       'artifacts/fawri/tests/cashier-sales-report-runtime.test.ts',
       'artifacts/fawri/tests/cashier-sales-report-corruption.test.ts',
       'artifacts/fawri/tests/cashier-sale-pricing-duplicate-lines.test.ts',
+      'artifacts/fawri/tests/cashier-manual-discount-runtime.test.ts',
     ],
   },
   {
@@ -30,13 +31,14 @@ const steps = [
     ],
   },
   {
-    label: 'Cashier reporting cost runtime and disclosure tests',
+    label: 'Cashier reporting cost, discount policy runtime and disclosure tests',
     command: 'pnpm',
     args: [
       'exec',
       'tsx',
       '--test',
       'artifacts/api-server/tests/cashier-reporting-cost-runtime.test.ts',
+      'artifacts/api-server/tests/cashier-discount-policy-runtime.test.ts',
       'artifacts/api-server/tests/catalog-reporting-cost-postgres-guard.test.ts',
       'artifacts/api-server/tests/postgres-catalog-reporting-cost-disclosure.test.ts',
       'artifacts/api-server/tests/catalog-commerce-metadata.test.ts',
