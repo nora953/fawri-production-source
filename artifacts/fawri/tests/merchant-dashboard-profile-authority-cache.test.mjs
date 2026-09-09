@@ -74,6 +74,19 @@ test('merchant auth authority reads are explicitly non-cacheable after middlewar
   assert.match(merchantProfileRoute, /payload\(account\)/);
 });
 
+test('merchant profile refresh explicitly bypasses browser cache', () => {
+  const store = read('artifacts/fawri/src/lib/store.ts');
+  const refresh = store.match(
+    /export const refreshCurrentMerchantFromApi = async[\s\S]*?\n\};/,
+  )?.[0];
+
+  assert.ok(refresh, 'merchant profile refresh function must exist');
+  assert.match(refresh, /fetch\('\/api\/auth\/me', \{/);
+  assert.match(refresh, /cache: 'no-store'/);
+  assert.match(refresh, /credentials: 'include'/);
+  assert.match(refresh, /headers: \{ Accept: 'application\/json' \}/);
+});
+
 test('dashboard profile acceptance remains bound to lifecycle merchant identity', () => {
   const layout = read('artifacts/fawri/src/components/layout/DashboardLayout.tsx');
 
