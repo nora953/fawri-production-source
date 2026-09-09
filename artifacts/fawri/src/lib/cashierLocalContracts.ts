@@ -150,6 +150,8 @@ export type CashierSaleSnapshot = CashierMoneyContext & {
   /** Merchant-authorized manual discount applied after automatic promotions. */
   manual_discount_minor?: number;
   manual_discount_reason?: string;
+  /** Opaque server-issued manager approval bound to this sale operation. */
+  manual_discount_override_approval_id?: string;
   /** Total discount = promotion discount + manual discount. */
   discount_minor: number;
   total_minor: number;
@@ -253,6 +255,8 @@ export type CashierCommitSaleInput = {
   manual_discount_minor?: number;
   /** Required whenever manual_discount_minor is greater than zero. */
   manual_discount_reason?: string;
+  /** Opaque manager approval proof when the manual discount exceeds employee authority. */
+  manual_discount_override_approval_id?: string;
   /** Required for new cash sales; must be >= the authoritative computed total. */
   cash_tendered_minor?: number;
   /** Required for new cash sales; must equal cash_tendered_minor - computed total. */
