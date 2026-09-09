@@ -1,9 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY,
   loadCurrentCashierDiscountPolicy,
   type CashierOperatorDiscountPolicy,
 } from './cashierDiscountPolicyClient';
+import {
+  listCashierDiscountOverrideApprovers,
+  requestCashierDiscountOverrideApproval,
+  type CashierDiscountOverrideApproval,
+  type CashierDiscountOverrideApprover,
+} from './cashierDiscountOverrideClient';
 import {
   resolveCashierManualDiscount,
   type CashierManualDiscountResolution,
@@ -27,10 +33,33 @@ function digits(value: string): string {
     .replace(/^0+(?=\d)/, '');
 }
 
+function pinDigits(value: string): string {
+  const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+  const easternArabic = '۰۱۲۳۴۵۶۷۸۹';
+  return String(value || '')
+    .split('')
+    .map((character) => {
+      const a = arabicIndic.indexOf(character);
+      if (a >= 0) return String(a);
+      const e = easternArabic.indexOf(character);
+      if (e >= 0) return String(e);
+      return character;
+    })
+    .join('')
+    .replace(/[^0-9]/g, '')
+    .slice(0, 8);
+}
+
 function safeNumber(value: string): number | null {
   if (!value) return null;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function approvalLive(approval: CashierDiscountOverrideApproval | null): boolean {
+  if (!approval) return false;
+  const expiresAt = new Date(approval.expires_at).getTime();
+  return Number.isFinite(expiresAt) && expiresAt > Date.now();
 }
 
 export type CashierManualDiscountCheckoutState = {
@@ -46,18 +75,30 @@ export type CashierManualDiscountCheckoutState = {
   finalTotalMinor: number | null;
   invalid: boolean;
   canSubmit: boolean;
+  overrideNeeded: boolean;
+  overrideApprovers: CashierDiscountOverrideApprover[];
+  overrideApproversLoading: boolean;
+  overrideSelectedApproverId: string;
+  overridePin: string;
+  overrideApproval: CashierDiscountOverrideApproval | null;
+  overrideApprovalLoading: boolean;
+  overrideErrorCode: string | null;
   refreshPolicy: () => Promise<void>;
   openEditor: () => void;
   remove: () => void;
   setKind: (kind: 'amount' | 'percentage') => void;
   setValueText: (value: string) => void;
   setReason: (value: string) => void;
+  setOverrideSelectedApproverId: (value: string) => void;
+  setOverridePin: (value: string) => void;
+  approveOverride: () => Promise<void>;
   reset: () => void;
 };
 
 export function useCashierManualDiscountCheckout(input: {
   quote: CashierResolvedSalePricing | null;
   online: boolean;
+  operationId: string | null;
 }): CashierManualDiscountCheckoutState {
   const [policy, setPolicy] = useState<CashierOperatorDiscountPolicy>(
     DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY,
@@ -68,16 +109,35 @@ export function useCashierManualDiscountCheckout(input: {
   const [kind, setKindState] = useState<'amount' | 'percentage'>('amount');
   const [valueText, setValueTextState] = useState('');
   const [reason, setReasonState] = useState('');
+  const [overrideApprovers, setOverrideApprovers] = useState<CashierDiscountOverrideApprover[]>([]);
+  const [overrideApproversLoading, setOverrideApproversLoading] = useState(false);
+  const [overrideSelectedApproverId, setOverrideSelectedApproverIdState] = useState('');
+  const [overridePin, setOverridePinState] = useState('');
+  const [overrideApproval, setOverrideApproval] = useState<CashierDiscountOverrideApproval | null>(null);
+  const [overrideApprovalLoading, setOverrideApprovalLoading] = useState(false);
+  const [overrideErrorCode, setOverrideErrorCode] = useState<string | null>(null);
+
+  const clearOverride = useCallback((clearApprovers = false) => {
+    setOverrideApproval(null);
+    setOverridePinState('');
+    setOverrideErrorCode(null);
+    if (clearApprovers) {
+      setOverrideApprovers([]);
+      setOverrideSelectedApproverIdState('');
+    }
+  }, []);
 
   const resetDraft = useCallback(() => {
     setEditorOpen(false);
     setKindState('amount');
     setValueTextState('');
     setReasonState('');
-  }, []);
+    clearOverride(true);
+  }, [clearOverride]);
 
   const refreshPolicy = useCallback(async () => {
     setPolicyError(false);
+    clearOverride(true);
     if (!input.online) {
       setPolicy(DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY);
       resetDraft();
@@ -95,7 +155,7 @@ export function useCashierManualDiscountCheckout(input: {
     } finally {
       setPolicyLoading(false);
     }
-  }, [input.online, resetDraft]);
+  }, [clearOverride, input.online, resetDraft]);
 
   const numericValue = safeNumber(valueText);
   const draftValue = numericValue === null
@@ -103,7 +163,8 @@ export function useCashierManualDiscountCheckout(input: {
     : kind === 'percentage'
       ? numericValue * 100
       : numericValue;
-  const reasonValid = reason.normalize('NFKC').trim().length > 0 && reason.length <= 200;
+  const normalizedReason = reason.normalize('NFKC').trim();
+  const reasonValid = normalizedReason.length > 0 && reason.length <= 200;
 
   const resolution = useMemo(() => {
     if (!input.quote) return null;
@@ -124,14 +185,14 @@ export function useCashierManualDiscountCheckout(input: {
           value: draftValue,
           // The durable commit still requires the real reason. This placeholder
           // exists only so the UI can preview arithmetic before the reason is typed.
-          reason: reasonValid ? reason.normalize('NFKC').trim() : 'discount-preview',
+          reason: reasonValid ? normalizedReason : 'discount-preview',
         },
         policy,
       });
     } catch {
       return null;
     }
-  }, [draftValue, editorOpen, input.quote, kind, policy, reason, reasonValid]);
+  }, [draftValue, editorOpen, input.quote, kind, normalizedReason, policy, reasonValid]);
 
   const manualDiscountMinor = editorOpen
     ? Number(resolution?.manual_discount_minor || 0)
@@ -145,12 +206,128 @@ export function useCashierManualDiscountCheckout(input: {
     !reasonValid ||
     !resolution
   );
+  const overrideNeeded = Boolean(
+    editorOpen &&
+    !invalid &&
+    resolution &&
+    resolution.manual_discount_minor > 0 &&
+    !resolution.allowed_without_override
+  );
+  const overrideApproved = overrideNeeded && approvalLive(overrideApproval);
   const canSubmit = !editorOpen || Boolean(
     !invalid &&
     resolution &&
     resolution.manual_discount_minor > 0 &&
-    resolution.allowed_without_override
+    (resolution.allowed_without_override || overrideApproved)
   );
+
+  const quoteBinding = input.quote
+    ? `${input.quote.subtotal_minor}:${input.quote.discount_minor}:${input.quote.total_minor}`
+    : 'none';
+
+  useEffect(() => {
+    clearOverride(true);
+  }, [clearOverride, input.operationId, quoteBinding]);
+
+  useEffect(() => {
+    if (!overrideApproval) return;
+    const expiresAt = new Date(overrideApproval.expires_at).getTime();
+    if (!Number.isFinite(expiresAt)) {
+      clearOverride();
+      return;
+    }
+    const remaining = expiresAt - Date.now();
+    if (remaining <= 0) {
+      clearOverride();
+      return;
+    }
+    const timer = window.setTimeout(() => clearOverride(), remaining + 25);
+    return () => window.clearTimeout(timer);
+  }, [clearOverride, overrideApproval]);
+
+  useEffect(() => {
+    if (!overrideNeeded || !input.online || !input.operationId) {
+      if (!overrideNeeded) clearOverride(true);
+      return;
+    }
+    let stopped = false;
+    setOverrideApproversLoading(true);
+    setOverrideErrorCode(null);
+    void listCashierDiscountOverrideApprovers()
+      .then((values) => {
+        if (stopped) return;
+        setOverrideApprovers(values);
+        setOverrideSelectedApproverIdState((current) =>
+          values.some((approver) => approver.id === current)
+            ? current
+            : values[0]?.id || '',
+        );
+      })
+      .catch((error: unknown) => {
+        if (stopped) return;
+        setOverrideApprovers([]);
+        setOverrideSelectedApproverIdState('');
+        setOverrideErrorCode(
+          typeof error === 'object' && error && 'code' in error
+            ? String((error as { code?: unknown }).code || 'CASHIER_DISCOUNT_OVERRIDE_APPROVERS_LOAD_FAILED')
+            : 'CASHIER_DISCOUNT_OVERRIDE_APPROVERS_LOAD_FAILED',
+        );
+      })
+      .finally(() => {
+        if (!stopped) setOverrideApproversLoading(false);
+      });
+    return () => {
+      stopped = true;
+    };
+  }, [clearOverride, input.online, input.operationId, overrideNeeded]);
+
+  const approveOverride = useCallback(async () => {
+    if (
+      !overrideNeeded ||
+      !input.online ||
+      !input.operationId ||
+      !overrideSelectedApproverId ||
+      !/^\d{4,8}$/.test(overridePin) ||
+      !resolution ||
+      resolution.manual_discount_minor <= 0 ||
+      !reasonValid
+    ) {
+      setOverrideErrorCode('CASHIER_DISCOUNT_OVERRIDE_INPUT_INVALID');
+      return;
+    }
+    setOverrideApprovalLoading(true);
+    setOverrideErrorCode(null);
+    try {
+      const approval = await requestCashierDiscountOverrideApproval({
+        approverStaffId: overrideSelectedApproverId,
+        pin: overridePin,
+        operationId: input.operationId,
+        manualDiscountMinor: resolution.manual_discount_minor,
+        reason: normalizedReason,
+      });
+      setOverrideApproval(approval);
+    } catch (error: unknown) {
+      setOverrideApproval(null);
+      setOverrideErrorCode(
+        typeof error === 'object' && error && 'code' in error
+          ? String((error as { code?: unknown }).code || 'CASHIER_DISCOUNT_OVERRIDE_APPROVAL_FAILED')
+          : 'CASHIER_DISCOUNT_OVERRIDE_APPROVAL_FAILED',
+      );
+    } finally {
+      // Never retain a manager PIN after the authorization request.
+      setOverridePinState('');
+      setOverrideApprovalLoading(false);
+    }
+  }, [
+    input.online,
+    input.operationId,
+    normalizedReason,
+    overrideNeeded,
+    overridePin,
+    overrideSelectedApproverId,
+    reasonValid,
+    resolution,
+  ]);
 
   return {
     policy,
@@ -165,15 +342,39 @@ export function useCashierManualDiscountCheckout(input: {
     finalTotalMinor,
     invalid,
     canSubmit,
+    overrideNeeded,
+    overrideApprovers,
+    overrideApproversLoading,
+    overrideSelectedApproverId,
+    overridePin,
+    overrideApproval,
+    overrideApprovalLoading,
+    overrideErrorCode,
     refreshPolicy,
     openEditor: () => setEditorOpen(true),
     remove: resetDraft,
     setKind: (next) => {
+      clearOverride();
       setKindState(next);
       setValueTextState('');
     },
-    setValueText: (value) => setValueTextState(digits(value)),
-    setReason: (value) => setReasonState(value.slice(0, 200)),
+    setValueText: (value) => {
+      clearOverride();
+      setValueTextState(digits(value));
+    },
+    setReason: (value) => {
+      clearOverride();
+      setReasonState(value.slice(0, 200));
+    },
+    setOverrideSelectedApproverId: (value) => {
+      clearOverride();
+      setOverrideSelectedApproverIdState(value);
+    },
+    setOverridePin: (value) => {
+      setOverrideErrorCode(null);
+      setOverridePinState(pinDigits(value));
+    },
+    approveOverride,
     reset: () => {
       setPolicy(DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY);
       setPolicyError(false);
