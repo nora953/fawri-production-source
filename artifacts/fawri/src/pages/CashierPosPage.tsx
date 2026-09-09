@@ -231,8 +231,8 @@ export default function CashierPosPage() {
         setRuntime(created);
         await refreshCatalog(created, '');
       })
-      .catch(cause => {
-        if (!stopped) setError(errorMessage(cause, labels));
+      .catch(() => {
+        if (!stopped) setError(extra.catalogOpenFailed);
       })
       .finally(() => {
         if (!stopped) setLoading(false);
@@ -241,7 +241,7 @@ export default function CashierPosPage() {
       stopped = true;
       if (activeRuntime) void activeRuntime.close().catch(() => undefined);
     };
-  }, [demoMode, labels, refreshCatalog]);
+  }, [demoMode, extra.catalogOpenFailed, refreshCatalog]);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -406,6 +406,7 @@ export default function CashierPosPage() {
       await refreshCatalog(runtime, '', false);
       return true;
     } catch (cause) {
+      if (source === 'search') throw cause;
       setError(scannerError(cause));
       return false;
     }
@@ -415,12 +416,22 @@ export default function CashierPosPage() {
     if (!runtime) return;
     setError(null);
     const value = query.trim();
-    if (value && await addExactCode(value, 'search')) {
+    try {
+      if (value && await addExactCode(value, 'search')) {
+        searchRef.current?.focus();
+        return;
+      }
+      await refreshCatalog(runtime, value);
+    } catch (cause) {
+      const code = runtimeErrorCode(cause);
+      setError(
+        code === 'CASHIER_BARCODE_AMBIGUOUS' || code === 'CASHIER_SKU_AMBIGUOUS'
+          ? extra.scannerAmbiguous
+          : extra.searchFailed,
+      );
       searchRef.current?.focus();
-      return;
     }
-    await refreshCatalog(runtime, value);
-  }, [addExactCode, query, refreshCatalog, runtime]);
+  }, [addExactCode, extra.scannerAmbiguous, extra.searchFailed, query, refreshCatalog, runtime]);
 
   useEffect(() => {
     scannerBufferRef.current = emptyCashierScannerBuffer();
@@ -608,7 +619,7 @@ export default function CashierPosPage() {
         </header>
 
         {!checkoutOpen && error ? (
-          <div className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <div role="alert" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             {error}
           </div>
         ) : null}
