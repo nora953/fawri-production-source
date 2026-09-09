@@ -34,6 +34,21 @@ function evidence(overrides: Partial<WhatsAppActivationEvidence> = {}): WhatsApp
   };
 }
 
+function enabledEnv(): NodeJS.ProcessEnv {
+  return {
+    FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
+    FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
+  } as NodeJS.ProcessEnv;
+}
+
+function expectEvidenceInvalid(run: () => unknown): void {
+  assert.throws(
+    run,
+    (error: unknown) =>
+      (error as { code?: string }).code === "WHATSAPP_ACTIVATION_EVIDENCE_INVALID",
+  );
+}
+
 test("readiness remains dormant while live cutover is not explicitly requested", () => {
   const result = assessWhatsAppActivationReadiness(evidence(), {
     FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
@@ -44,10 +59,7 @@ test("readiness remains dormant while live cutover is not explicitly requested",
 });
 
 test("staging can never become an external activation candidate", () => {
-  const result = assessWhatsAppActivationReadiness(evidence({ environment: "staging" }), {
-    FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
-    FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
-  } as NodeJS.ProcessEnv);
+  const result = assessWhatsAppActivationReadiness(evidence({ environment: "staging" }), enabledEnv());
   assert.equal(result.mode, "blocked");
   assert.equal(result.ready_for_external_activation, false);
   assert.deepEqual(result.blockers, ["WHATSAPP_PRODUCTION_ENVIRONMENT_REQUIRED"]);
@@ -56,10 +68,7 @@ test("staging can never become an external activation candidate", () => {
 test("dormant database barrier independently blocks activation", () => {
   const result = assessWhatsAppActivationReadiness(
     evidence({ dormant_database_barrier_replaced: false }),
-    {
-      FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
-      FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
-    } as NodeJS.ProcessEnv,
+    enabledEnv(),
   );
   assert.equal(result.mode, "blocked");
   assert.equal(result.ready_for_external_activation, false);
@@ -77,10 +86,7 @@ test("every external dependency must be explicitly evidenced", () => {
       outbound_dispatch_persistence_ready: false,
       outbound_transport_ready: false,
     }),
-    {
-      FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
-      FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
-    } as NodeJS.ProcessEnv,
+    enabledEnv(),
   );
   assert.equal(result.ready_for_external_activation, false);
   assert.ok(result.blockers.includes("WHATSAPP_CREDENTIAL_PROVIDER_NOT_READY"));
@@ -99,10 +105,7 @@ test("every external dependency must be explicitly evidenced", () => {
 test("encrypted privileged payload authority is independent from durable queue readiness", () => {
   const result = assessWhatsAppActivationReadiness(
     evidence({ encrypted_job_payload_authority_ready: false }),
-    {
-      FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
-      FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
-    } as NodeJS.ProcessEnv,
+    enabledEnv(),
   );
   assert.equal(result.mode, "blocked");
   assert.equal(result.ready_for_external_activation, false);
@@ -115,10 +118,7 @@ test("encrypted privileged payload authority is independent from durable queue r
 test("outbound transport cannot substitute for durable pre-send dispatch persistence", () => {
   const result = assessWhatsAppActivationReadiness(
     evidence({ outbound_dispatch_persistence_ready: false }),
-    {
-      FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
-      FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
-    } as NodeJS.ProcessEnv,
+    enabledEnv(),
   );
   assert.equal(result.mode, "blocked");
   assert.ok(
@@ -135,10 +135,7 @@ test("internal persistence, reply, data, and media gates independently block cut
       data_policy_ready: false,
       media_policy_ready: false,
     }),
-    {
-      FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
-      FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
-    } as NodeJS.ProcessEnv,
+    enabledEnv(),
   );
   assert.equal(result.mode, "blocked");
   assert.ok(result.blockers.includes("WHATSAPP_INBOUND_PERSISTENCE_NOT_READY"));
@@ -148,10 +145,7 @@ test("internal persistence, reply, data, and media gates independently block cut
 });
 
 test("complete production evidence produces only an activation candidate, not activation", () => {
-  const result = assessWhatsAppActivationReadiness(evidence(), {
-    FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
-    FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
-  } as NodeJS.ProcessEnv);
+  const result = assessWhatsAppActivationReadiness(evidence(), enabledEnv());
   assert.deepEqual(result, {
     mode: "activation_candidate",
     environment: "production",
@@ -167,4 +161,67 @@ test("readiness accepts no secret values", () => {
   assert.equal(serializedKeys.includes("token"), false);
   assert.equal(serializedKeys.includes("password"), false);
   assert.equal(serializedKeys.includes("secret_value"), false);
+});
+
+test("activation evidence accessors are rejected without invocation", () => {
+  const forged = evidence() as WhatsAppActivationEvidence & Record<string, unknown>;
+  let invoked = false;
+  Object.defineProperty(forged, "explicit_cutover_approved", {
+    enumerable: true,
+    configurable: true,
+    get() {
+      invoked = true;
+      return true;
+    },
+  });
+
+  expectEvidenceInvalid(() => assessWhatsAppActivationReadiness(forged, enabledEnv()));
+  assert.equal(invoked, false);
+});
+
+test("activation evidence proxies and unsupported fields fail closed", () => {
+  expectEvidenceInvalid(() =>
+    assessWhatsAppActivationReadiness(
+      new Proxy(evidence(), {}) as WhatsAppActivationEvidence,
+      enabledEnv(),
+    ),
+  );
+
+  const extra = evidence() as WhatsAppActivationEvidence & Record<string, unknown>;
+  extra.untrusted_activation_override = true;
+  expectEvidenceInvalid(() => assessWhatsAppActivationReadiness(extra, enabledEnv()));
+});
+
+test("activation switch accessors are rejected without invocation", () => {
+  let invoked = false;
+  const forgedEnv: NodeJS.ProcessEnv = {};
+  Object.defineProperty(forgedEnv, "FAWRI_WHATSAPP_LIVE_CUTOVER", {
+    enumerable: true,
+    configurable: true,
+    get() {
+      invoked = true;
+      return "1";
+    },
+  });
+
+  expectEvidenceInvalid(() => assessWhatsAppActivationReadiness(evidence(), forgedEnv));
+  assert.equal(invoked, false);
+});
+
+test("activation switches cannot be inherited or proxied into readiness", () => {
+  const inherited = Object.create({
+    FAWRI_WHATSAPP_OFFLINE_FOUNDATION: "1",
+    FAWRI_WHATSAPP_LIVE_CUTOVER: "1",
+  }) as NodeJS.ProcessEnv;
+  const inheritedResult = assessWhatsAppActivationReadiness(evidence(), inherited);
+  assert.equal(inheritedResult.ready_for_external_activation, false);
+  assert.ok(inheritedResult.blockers.includes("WHATSAPP_OFFLINE_FOUNDATION_DISABLED"));
+  assert.ok(inheritedResult.blockers.includes("WHATSAPP_LIVE_CUTOVER_NOT_REQUESTED"));
+
+  expectEvidenceInvalid(() =>
+    assessWhatsAppActivationReadiness(
+      evidence(),
+      new Proxy(enabledEnv(), {}) as NodeJS.ProcessEnv,
+    ),
+  );
 });
