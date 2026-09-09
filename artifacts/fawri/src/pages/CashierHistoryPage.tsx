@@ -11,6 +11,11 @@ import {
   cashierOperatorCan,
   getCashierOperatorSession,
 } from '@/lib/cashierOperatorSessionRuntime';
+import {
+  cashierOperatorSessionErrorCode,
+  isCashierOperatorSessionEnded,
+  publishCashierOperatorSessionInvalidated,
+} from '@/lib/cashierOperatorSessionUi';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import { CASHIER_UI_COPY, cashierLocale } from '@/lib/cashierUiCopy';
 import { useI18n } from '@/lib/i18n';
@@ -120,26 +125,6 @@ function saleOperationIds(sale: CashierSaleSnapshot): string[] {
   ];
 }
 
-function syncErrorCode(error: unknown): string {
-  return typeof error === 'object' && error && 'code' in error
-    ? String((error as { code?: unknown }).code || '')
-    : '';
-}
-
-function operatorSessionEnded(error: unknown): boolean {
-  const code = syncErrorCode(error);
-  return (
-    code === 'CASHIER_OPERATOR_LOGIN_REQUIRED' ||
-    code === 'CASHIER_OPERATOR_SESSION_INVALID'
-  );
-}
-
-function publishOperatorSessionInvalidated(): void {
-  window.dispatchEvent(
-    new CustomEvent('fawri:cashier-operator-session-invalidated'),
-  );
-}
-
 function syncStateLabel(
   pending: boolean,
   online: boolean,
@@ -194,8 +179,8 @@ export default function CashierHistoryPage() {
       })
       .catch(cause => {
         if (stopped) return;
-        if (operatorSessionEnded(cause)) {
-          publishOperatorSessionInvalidated();
+        if (isCashierOperatorSessionEnded(cause)) {
+          publishCashierOperatorSessionInvalidated();
           return;
         }
         setError(labels.historyFailed);
@@ -213,7 +198,9 @@ export default function CashierHistoryPage() {
     if (!runtime) return;
     const updateOnline = () => setOnline(navigator.onLine);
     const refreshLocal = () => void refresh(runtime).catch(cause => {
-      if (operatorSessionEnded(cause)) publishOperatorSessionInvalidated();
+      if (isCashierOperatorSessionEnded(cause)) {
+        publishCashierOperatorSessionInvalidated();
+      }
     });
     window.addEventListener('online', updateOnline);
     window.addEventListener('offline', updateOnline);
@@ -293,17 +280,19 @@ export default function CashierHistoryPage() {
           publishCashierDashboardRefresh();
         }
       } catch (cause) {
-        if (operatorSessionEnded(cause)) {
+        if (isCashierOperatorSessionEnded(cause)) {
           setAuthRequired(true);
-          publishOperatorSessionInvalidated();
+          publishCashierOperatorSessionInvalidated();
           return;
         }
-        if (syncErrorCode(cause) === 'CASHIER_OUTBOX_SESSION_REQUIRED') {
+        if (cashierOperatorSessionErrorCode(cause) === 'CASHIER_OUTBOX_SESSION_REQUIRED') {
           setAuthRequired(true);
         }
       } finally {
         await refresh(activeRuntime).catch(cause => {
-          if (operatorSessionEnded(cause)) publishOperatorSessionInvalidated();
+          if (isCashierOperatorSessionEnded(cause)) {
+            publishCashierOperatorSessionInvalidated();
+          }
         });
       }
     },
@@ -327,8 +316,8 @@ export default function CashierHistoryPage() {
       void syncAfterLocalChange(runtime);
     } catch (cause) {
       setConfirmAction(null);
-      if (operatorSessionEnded(cause)) {
-        publishOperatorSessionInvalidated();
+      if (isCashierOperatorSessionEnded(cause)) {
+        publishCashierOperatorSessionInvalidated();
         return;
       }
       setError(labels.returnFailed);
@@ -352,8 +341,8 @@ export default function CashierHistoryPage() {
       void syncAfterLocalChange(runtime);
     } catch (cause) {
       setConfirmAction(null);
-      if (operatorSessionEnded(cause)) {
-        publishOperatorSessionInvalidated();
+      if (isCashierOperatorSessionEnded(cause)) {
+        publishCashierOperatorSessionInvalidated();
         return;
       }
       setError(labels.voidFailed);
