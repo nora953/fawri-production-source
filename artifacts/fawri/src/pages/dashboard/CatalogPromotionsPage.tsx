@@ -373,6 +373,7 @@ export default function CatalogPromotionsPage() {
   const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [authorityReady, setAuthorityReady] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<CatalogPromotion | null>(null);
   const [draft, setDraft] = useState<PromotionDraft>(emptyDraft);
@@ -381,6 +382,7 @@ export default function CatalogPromotionsPage() {
   useEffect(() => {
     let active = true;
     async function load() {
+      setAuthorityReady(false);
       setLoading(true);
       setLoadFailed(false);
       try {
@@ -393,9 +395,11 @@ export default function CatalogPromotionsPage() {
         setContext(nextContext);
         setProducts(nextProducts);
         setPromotions(nextPromotions);
+        setAuthorityReady(true);
       } catch (error) {
         console.error('Promotion load failed:', error);
         if (active) {
+          setAuthorityReady(false);
           setLoadFailed(true);
           toast.error(copy.loadFailed);
         }
@@ -420,7 +424,7 @@ export default function CatalogPromotionsPage() {
   const moneyStep = catalogCurrencyStep(currencyDigits);
 
   const openCreate = () => {
-    if (!context) return;
+    if (!authorityReady || !context) return;
     createKey.current = null;
     setEditing(null);
     setDraft(emptyDraft());
@@ -428,7 +432,7 @@ export default function CatalogPromotionsPage() {
   };
 
   const openEdit = (promotion: CatalogPromotion) => {
-    if (!context) return;
+    if (!authorityReady || !context) return;
     const starts = localParts(promotion.starts_local);
     const ends = localParts(promotion.ends_local);
     const promotionProduct = promotion.product_id ? productMap.get(promotion.product_id) : undefined;
@@ -539,6 +543,10 @@ export default function CatalogPromotionsPage() {
 
   const save = async () => {
     if (saving) return;
+    if (!authorityReady || !context) {
+      toast.error(copy.loadFailed);
+      return;
+    }
     const input = promotionInput();
     if (!input) {
       toast.error(copy.invalid);
@@ -575,6 +583,10 @@ export default function CatalogPromotionsPage() {
   };
 
   const remove = async (promotion: CatalogPromotion) => {
+    if (!authorityReady) {
+      toast.error(copy.loadFailed);
+      return;
+    }
     if (!window.confirm(copy.deleteConfirm)) return;
     try {
       await deleteCatalogPromotion(promotion.id, promotion.version);
@@ -603,7 +615,7 @@ export default function CatalogPromotionsPage() {
             <Button
               type="button"
               onClick={openCreate}
-              disabled={!context || loading}
+              disabled={!authorityReady || !context || loading}
               className="h-11 shrink-0 rounded-xl bg-orange-500 px-5 font-bold text-white hover:bg-orange-600"
             >
               <Plus className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />
@@ -676,10 +688,10 @@ export default function CatalogPromotionsPage() {
                         )}
                       </div>
                       <div className="flex shrink-0 gap-2">
-                        <Button type="button" variant="outline" size="icon" className="h-9 w-9 rounded-xl" title={copy.edit} onClick={() => openEdit(promotion)}>
+                        <Button type="button" variant="outline" size="icon" className="h-9 w-9 rounded-xl" title={copy.edit} disabled={!authorityReady || saving} onClick={() => openEdit(promotion)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-destructive" title={copy.delete} onClick={() => void remove(promotion)}>
+                        <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-destructive" title={copy.delete} disabled={!authorityReady || saving} onClick={() => void remove(promotion)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -965,7 +977,7 @@ export default function CatalogPromotionsPage() {
               <Button type="button" variant="outline" className="h-11 rounded-xl" disabled={saving} onClick={() => closeEditor()}>
                 {copy.cancel}
               </Button>
-              <Button type="button" className="h-11 rounded-xl bg-orange-500 font-bold text-white hover:bg-orange-600" disabled={saving} onClick={() => void save()}>
+              <Button type="button" className="h-11 rounded-xl bg-orange-500 font-bold text-white hover:bg-orange-600" disabled={saving || !authorityReady} onClick={() => void save()}>
                 {saving ? copy.saving : copy.save}
               </Button>
             </div>

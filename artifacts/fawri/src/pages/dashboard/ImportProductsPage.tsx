@@ -15,6 +15,11 @@ import {
   type CatalogProductInput,
   type CatalogVariantInput,
 } from '@/lib/catalogUiApi';
+import {
+  CatalogPromotionApiError,
+  catalogMajorAmountToMinor,
+  getCatalogCommerceContext,
+} from '@/lib/catalogPromotionUiApi';
 
 type ImportField =
   | 'product_name'
@@ -83,7 +88,8 @@ function normalizeCell(value: unknown): string {
 
 function normalizeDigits(value: unknown): string {
   return normalizeCell(value)
-    .replace(/[,\s]/g, '')
+    .replace(/[,٬\s]/g, '')
+    .replace(/٫/g, '.')
     .replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
     .replace(/[۰-۹]/g, digit => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
 }
@@ -93,6 +99,12 @@ function parseNonNegativeInteger(value: unknown): number | null {
   if (!normalized) return 0;
   const parsed = Number(normalized);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function parseCatalogPrice(value: unknown, fractionDigits: number): number | null {
+  const normalized = normalizeDigits(value);
+  if (!normalized) return 0;
+  return catalogMajorAmountToMinor(normalized, fractionDigits);
 }
 
 function parseBoolean(value: unknown, fallback = true): boolean | null {
@@ -317,7 +329,7 @@ export default function ImportProductsPage() {
     await processFile(file);
   };
 
-  const validateAndBuildImport = (): {
+  const validateAndBuildImport = (fractionDigits: number): {
     products: CatalogProductInput[];
     errors: string[];
   } => {
@@ -351,7 +363,7 @@ export default function ImportProductsPage() {
         ? normalizeCell(row[mapping.description])
         : '';
       const price = mapping.price
-        ? parseNonNegativeInteger(row[mapping.price])
+        ? parseCatalogPrice(row[mapping.price], fractionDigits)
         : 0;
       const quantity = mapping.quantity
         ? parseNonNegativeInteger(row[mapping.quantity])
@@ -386,9 +398,9 @@ export default function ImportProductsPage() {
       if (price === null) {
         errors.push(
           `${label}: ${localText(lang, {
-            ar: 'السعر يجب أن يكون رقمًا صحيحًا غير سالب.',
-            ku: 'نرخ دەبێت ژمارەیەکی تەواو و نەفی نەبێت.',
-            en: 'price must be a non-negative integer.',
+            ar: 'السعر يجب أن يكون مبلغًا صالحًا غير سالب بعملة المتجر.',
+            ku: 'نرخ دەبێت بڕێکی دروست و نەفی نەبێت بە دراوی فرۆشگا.',
+            en: 'price must be a valid non-negative amount in the store currency.',
           })}`,
         );
       }
@@ -474,32 +486,35 @@ export default function ImportProductsPage() {
   const handleImport = async () => {
     if (!merchant || isImporting) return;
 
-    const { products, errors } = validateAndBuildImport();
-    if (errors.length > 0) {
-      setValidationErrors(errors);
-      toast.error(
-        localText(lang, {
-          ar: 'لم يتم الاستيراد. صحح الأخطاء المعروضة أولًا.',
-          ku: 'هاوردەکردن نەکرا. سەرەتا هەڵە پیشاندراوەکان چاک بکە.',
-          en: 'Nothing was imported. Fix the displayed errors first.',
-        }),
-      );
-      return;
-    }
-    if (products.length === 0) {
-      setValidationErrors([
-        localText(lang, {
-          ar: 'لا توجد منتجات صالحة للاستيراد.',
-          ku: 'هیچ بەرهەمێکی دروست بۆ هاوردەکردن نییە.',
-          en: 'There are no valid products to import.',
-        }),
-      ]);
-      return;
-    }
-
     setValidationErrors([]);
     setIsImporting(true);
     try {
+      const context = await getCatalogCommerceContext();
+      const { products, errors } = validateAndBuildImport(
+        context.currency_fraction_digits,
+      );
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        toast.error(
+          localText(lang, {
+            ar: 'لم يتم الاستيراد. صحح الأخطاء المعروضة أولًا.',
+            ku: 'هاوردەکردن نەکرا. سەرەتا هەڵە پیشاندراوەکان چاک بکە.',
+            en: 'Nothing was imported. Fix the displayed errors first.',
+          }),
+        );
+        return;
+      }
+      if (products.length === 0) {
+        setValidationErrors([
+          localText(lang, {
+            ar: 'لا توجد منتجات صالحة للاستيراد.',
+            ku: 'هیچ بەرهەمێکی دروست بۆ هاوردەکردن نییە.',
+            en: 'There are no valid products to import.',
+          }),
+        ]);
+        return;
+      }
+
       const attempt = idempotencyAttemptForRequest(
         importAttemptRef.current,
         'catalog-import',
@@ -515,7 +530,7 @@ export default function ImportProductsPage() {
     } catch (error) {
       console.error('Canonical catalog import failed:', error);
       const serverError =
-        error instanceof CatalogApiError
+        error instanceof CatalogApiError || error instanceof CatalogPromotionApiError
           ? `${error.code}: ${error.message}`
           : localText(lang, {
               ar: 'فشل طلب الاستيراد إلى الخادم.',
