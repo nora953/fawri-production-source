@@ -28,6 +28,18 @@ test('automatic cashier catalog refresh stays silent and preserves unchanged cat
   assert.match(pos, /if \(visible\) setSearching\(false\)/);
 });
 
+test('cashier catalog opening failures use catalog-specific localized error copy', () => {
+  assert.match(pos, /CASHIER_CATALOG_OPEN_ERROR_COPY/);
+  assert.match(
+    pos,
+    /createCashierPosRuntime\(\{ demoMode \}\)[\s\S]*\.catch\(\(\) => \{[\s\S]*setError\(CASHIER_CATALOG_OPEN_ERROR_COPY\[lang\]\)/,
+  );
+  assert.match(searchErrorCopy, /CASHIER_CATALOG_OPEN_ERROR_COPY/);
+  assert.match(searchErrorCopy, /ar:\s*'/);
+  assert.match(searchErrorCopy, /ku:\s*'/);
+  assert.match(searchErrorCopy, /en:\s*'/);
+});
+
 test('manual cashier catalog search failures surface a localized accessible error', () => {
   assert.match(pos, /CASHIER_SEARCH_ERROR_COPY/);
   assert.match(
