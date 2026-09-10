@@ -13,6 +13,7 @@ import '@/styles/merchantCommerceUxFixes.css';
 import { I18nProvider } from '@/lib/i18n';
 import { storedCashierCopy } from '@/lib/cashierUiCopy';
 import { registerCashierOfflineAppShell } from '@/lib/cashierOfflineAppShell';
+import { installCashierFastCheckoutKeyboard } from '@/lib/cashierFastCheckoutKeyboard';
 import {
   installCashierOfflineOperatorResume,
   restoreCashierOfflineOperatorSession,
@@ -267,6 +268,10 @@ async function bootstrapCashier(): Promise<void> {
       </I18nProvider>
     ),
   );
+
+  if (!diagnostics && !sync && !history && !reports) {
+    installCashierFastCheckoutKeyboard();
+  }
 
   if (!diagnostics && !sync && !demoRequested) {
     startCashierPosAutoSync();
