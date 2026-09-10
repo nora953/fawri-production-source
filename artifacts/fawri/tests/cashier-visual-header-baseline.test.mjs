@@ -18,21 +18,30 @@ test('cashier visual QA stylesheet participates in the offline asset graph', () 
   assert.match(serviceWorker, /htmlAssetPaths\(shellText\)/);
 });
 
-test('operator session controls sit beside the POS brand without consuming a separate page row', () => {
+test('RTL cashier identity cluster stays inside the POS header footprint', () => {
+  assert.match(css, /html\[data-cashier-view='pos'\] main > div > header \{[\s\S]*position: relative;/);
   assert.match(
     css,
     /#cashier-root > div\.relative > div\.fixed:first-child[\s\S]*position: absolute !important;/,
   );
-  assert.match(css, /inset-inline-start: 9\.75rem !important;/);
-  assert.match(css, /background: transparent !important;/);
-  assert.match(css, /> span \{[\s\S]*background: #f8fafc;/);
-  assert.match(css, /> button \{[\s\S]*white-space: nowrap;/);
+  assert.match(css, /inset-inline-start: 13\.4rem !important;/);
+  assert.match(css, /> button \{[\s\S]*order: 1;/);
+  assert.match(css, /> span \{[\s\S]*order: 2;/);
+  assert.match(css, /direction: rtl;/);
   assert.doesNotMatch(css, /height: calc\(100dvh - 46px\) !important;/);
   assert.doesNotMatch(css, /position: sticky !important;/);
 });
 
+test('runtime connectivity badge is visually moved beside the cashier brand', () => {
+  assert.match(
+    css,
+    /header > div:last-child > div:first-child > span:first-child \{[\s\S]*position: absolute;/,
+  );
+  assert.match(css, /inset-inline-start: 8\.45rem;/);
+  assert.match(css, /transform: translateY\(-50%\);/);
+});
+
 test('POS header controls keep a consistent translated-label friendly baseline', () => {
-  assert.match(css, /html\[data-cashier-view='pos'\] main > div > header/);
   assert.match(css, /min-height: 36px;/);
   assert.match(css, /white-space: nowrap;/);
   assert.match(css, /row-gap: 0\.5rem !important;/);
