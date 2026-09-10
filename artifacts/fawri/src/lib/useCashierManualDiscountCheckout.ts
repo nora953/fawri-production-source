@@ -62,6 +62,18 @@ function approvalLive(approval: CashierDiscountOverrideApproval | null): boolean
   return Number.isFinite(expiresAt) && expiresAt > Date.now();
 }
 
+function errorCode(error: unknown): string {
+  return typeof error === 'object' && error && 'code' in error
+    ? String((error as { code?: unknown }).code || '')
+    : '';
+}
+
+function newOverrideOperationId(): string {
+  return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export type CashierManualDiscountCheckoutState = {
   policy: CashierOperatorDiscountPolicy;
   policyLoading: boolean;
@@ -268,9 +280,7 @@ export function useCashierManualDiscountCheckout(input: {
         setOverrideApprovers([]);
         setOverrideSelectedApproverIdState('');
         setOverrideErrorCode(
-          typeof error === 'object' && error && 'code' in error
-            ? String((error as { code?: unknown }).code || 'CASHIER_DISCOUNT_OVERRIDE_APPROVERS_LOAD_FAILED')
-            : 'CASHIER_DISCOUNT_OVERRIDE_APPROVERS_LOAD_FAILED',
+          errorCode(error) || 'CASHIER_DISCOUNT_OVERRIDE_APPROVERS_LOAD_FAILED',
         );
       })
       .finally(() => {
@@ -297,21 +307,34 @@ export function useCashierManualDiscountCheckout(input: {
     }
     setOverrideApprovalLoading(true);
     setOverrideErrorCode(null);
-    try {
-      const approval = await requestCashierDiscountOverrideApproval({
+    const pinForRequest = overridePin;
+    const requestForOperation = (operationId: string) =>
+      requestCashierDiscountOverrideApproval({
         approverStaffId: overrideSelectedApproverId,
-        pin: overridePin,
-        operationId: input.operationId,
+        pin: pinForRequest,
+        operationId,
         manualDiscountMinor: resolution.manual_discount_minor,
         reason: normalizedReason,
       });
+    try {
+      let approval: CashierDiscountOverrideApproval;
+      try {
+        approval = await requestForOperation(input.operationId);
+      } catch (error: unknown) {
+        if (errorCode(error) !== 'CASHIER_DISCOUNT_OVERRIDE_OPERATION_CONFLICT') {
+          throw error;
+        }
+        // A completed/expired approval request permanently owns its operation id.
+        // Renew the approval with a fresh sale operation id while preserving the
+        // old approval as immutable audit evidence. The runtime commits the sale
+        // with the operation id carried by the renewed approval binding.
+        approval = await requestForOperation(newOverrideOperationId());
+      }
       setOverrideApproval(approval);
     } catch (error: unknown) {
       setOverrideApproval(null);
       setOverrideErrorCode(
-        typeof error === 'object' && error && 'code' in error
-          ? String((error as { code?: unknown }).code || 'CASHIER_DISCOUNT_OVERRIDE_APPROVAL_FAILED')
-          : 'CASHIER_DISCOUNT_OVERRIDE_APPROVAL_FAILED',
+        errorCode(error) || 'CASHIER_DISCOUNT_OVERRIDE_APPROVAL_FAILED',
       );
     } finally {
       // Never retain a manager PIN after the authorization request.
