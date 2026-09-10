@@ -40,6 +40,13 @@ export const CASHIER_RECEIPT_COPY = {
     other: 'أخرى',
     thankYou: 'شكرًا لكم',
     printReceipt: 'طباعة الإيصال',
+    reprintReceipt: 'إعادة طباعة الإيصال',
+    reprintMarker: 'نسخة معاد طباعتها',
+    currentStatus: 'الحالة الحالية',
+    statusCompleted: 'مكتمل',
+    statusPartialReturn: 'مرتجع جزئيًا',
+    statusFullyReturned: 'مرتجع بالكامل',
+    statusVoided: 'ملغي',
     printShortcut: 'F9',
     autoPrintOn: 'الطباعة التلقائية: مفعلة',
     autoPrintOff: 'الطباعة التلقائية: متوقفة',
@@ -51,6 +58,7 @@ export const CASHIER_RECEIPT_COPY = {
     demoStoreName: 'متجر تجريبي',
     storeNameUnavailable: 'المتجر',
     printFailed: 'تم البيع، لكن تعذر فتح طباعة الإيصال. يمكنك المحاولة من زر طباعة الإيصال.',
+    reprintFailed: 'تعذر فتح إعادة طباعة الإيصال. حاول مرة أخرى.',
     settingsUnavailable: 'تعذر حفظ إعداد الطباعة على هذا الجهاز.',
   },
   ku: {
@@ -72,6 +80,13 @@ export const CASHIER_RECEIPT_COPY = {
     other: 'هی تر',
     thankYou: 'سوپاس',
     printReceipt: 'چاپی پسوڵە',
+    reprintReceipt: 'دووبارە چاپکردنەوەی پسوڵە',
+    reprintMarker: 'وەشانی دووبارە چاپکراو',
+    currentStatus: 'دۆخی ئێستا',
+    statusCompleted: 'تەواو بوو',
+    statusPartialReturn: 'بەشێکی گەڕێنراوەتەوە',
+    statusFullyReturned: 'بە تەواوی گەڕێنراوەتەوە',
+    statusVoided: 'هەڵوەشاوەتەوە',
     printShortcut: 'F9',
     autoPrintOn: 'چاپی خۆکار: چالاکە',
     autoPrintOff: 'چاپی خۆکار: ناچالاکە',
@@ -83,6 +98,7 @@ export const CASHIER_RECEIPT_COPY = {
     demoStoreName: 'فرۆشگای تاقیکردنەوە',
     storeNameUnavailable: 'فرۆشگا',
     printFailed: 'فرۆشتن تەواو بوو، بەڵام چاپی پسوڵە نەکرایەوە. دەتوانیت دووبارە هەوڵ بدەیت.',
+    reprintFailed: 'نەتوانرا پسوڵەکە دووبارە چاپ بکرێتەوە. تکایە دووبارە هەوڵ بدە.',
     settingsUnavailable: 'نەتوانرا ڕێکخستنی چاپ لەم ئامێرە پاشەکەوت بکرێت.',
   },
   en: {
@@ -104,6 +120,13 @@ export const CASHIER_RECEIPT_COPY = {
     other: 'Other',
     thankYou: 'Thank you',
     printReceipt: 'Print receipt',
+    reprintReceipt: 'Reprint receipt',
+    reprintMarker: 'Reprinted copy',
+    currentStatus: 'Current status',
+    statusCompleted: 'Completed',
+    statusPartialReturn: 'Partially returned',
+    statusFullyReturned: 'Fully returned',
+    statusVoided: 'Voided',
     printShortcut: 'F9',
     autoPrintOn: 'Auto print: On',
     autoPrintOff: 'Auto print: Off',
@@ -115,6 +138,7 @@ export const CASHIER_RECEIPT_COPY = {
     demoStoreName: 'Demo Store',
     storeNameUnavailable: 'Store',
     printFailed: 'The sale completed, but receipt printing could not be opened. You can retry with Print receipt.',
+    reprintFailed: 'The receipt reprint could not be opened. Please try again.',
     settingsUnavailable: 'Print settings could not be saved on this device.',
   },
 } as const;
@@ -239,12 +263,26 @@ function paperLayout(width: CashierReceiptPaperWidthMm) {
       };
 }
 
+function receiptCurrentStatus(sale: CashierSaleSnapshot, lang: Lang): string {
+  const copy = CASHIER_RECEIPT_COPY[lang];
+  if (sale.status === 'voided' || sale.void) return copy.statusVoided;
+  const soldQuantity = sale.lines.reduce((sum, line) => sum + line.quantity, 0);
+  const returnedQuantity = (sale.returns || []).reduce(
+    (sum, item) => sum + item.lines.reduce((lineSum, line) => lineSum + line.quantity, 0),
+    0,
+  );
+  if (soldQuantity > 0 && returnedQuantity >= soldQuantity) return copy.statusFullyReturned;
+  if (returnedQuantity > 0) return copy.statusPartialReturn;
+  return copy.statusCompleted;
+}
+
 export function renderCashierReceiptHtml(input: {
   sale: CashierSaleSnapshot;
   lang: Lang;
   stationLabel?: string;
   storeName?: string;
   paperWidthMm?: CashierReceiptPaperWidthMm;
+  reprint?: boolean;
 }): string {
   const { sale, lang } = input;
   const copy = CASHIER_RECEIPT_COPY[lang];
@@ -286,6 +324,12 @@ export function renderCashierReceiptHtml(input: {
   const station = input.stationLabel
     ? `<div class="station">${escapeHtml(input.stationLabel)}</div>`
     : '';
+  const reprint = input.reprint
+    ? `<div class="reprint">
+        <strong>${escapeHtml(copy.reprintMarker)}</strong>
+        <div class="summary-row"><span>${escapeHtml(copy.currentStatus)}</span><strong>${escapeHtml(receiptCurrentStatus(sale, lang))}</strong></div>
+      </div>`
+    : '';
 
   return `<!doctype html>
 <html lang="${escapeHtml(lang)}" dir="${dir}">
@@ -302,6 +346,8 @@ export function renderCashierReceiptHtml(input: {
   .brand { font-size: ${layout.brandFontPx}px; font-weight: 800; overflow-wrap: anywhere; }
   .title { margin-top: 2px; font-size: ${layout.titleFontPx}px; font-weight: 700; }
   .station { margin-top: 2px; font-size: 9px; }
+  .reprint { margin-top: 7px; padding: 6px 0; border-top: 1px dashed #555; border-bottom: 1px dashed #555; text-align: center; }
+  .reprint .summary-row { margin-top: 4px; text-align: start; }
   .meta { padding: 7px 0; border-bottom: 1px dashed #555; }
   .meta-row, .summary-row { display: flex; justify-content: space-between; gap: 6px; }
   .meta-row + .meta-row, .summary-row + .summary-row { margin-top: 3px; }
@@ -327,6 +373,7 @@ export function renderCashierReceiptHtml(input: {
       <div class="title">${escapeHtml(copy.receiptTitle)}</div>
       ${station}
     </div>
+    ${reprint}
     <div class="meta">
       <div class="meta-row"><span>${escapeHtml(copy.saleReference)}</span><strong>${escapeHtml(sale.sale_id)}</strong></div>
       <div class="meta-row"><span>${escapeHtml(copy.saleTime)}</span><span>${escapeHtml(formatReceiptDate(sale.occurred_at, lang))}</span></div>
@@ -362,6 +409,7 @@ export async function printCashierReceipt(input: {
   stationLabel?: string;
   storeName?: string;
   paperWidthMm?: CashierReceiptPaperWidthMm;
+  reprint?: boolean;
 }): Promise<void> {
   if (typeof document === 'undefined' || typeof window === 'undefined') {
     throw new Error('CASHIER_RECEIPT_PRINT_UNAVAILABLE');
