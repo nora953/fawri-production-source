@@ -85,7 +85,7 @@ test('receipt renders authoritative sale snapshot, merchant store name and escap
   assert.doesNotMatch(html, /<script>alert/);
 });
 
-test('receipt supports 80mm and 58mm thermal rolls with automatic content length', () => {
+test('receipt supports 80mm and 58mm thermal content while the printer driver owns continuous roll length', () => {
   const sale = saleFixture();
   sale.lines = Array.from({ length: 40 }, (_, index) => ({
     ...sale.lines[0],
@@ -96,14 +96,16 @@ test('receipt supports 80mm and 58mm thermal rolls with automatic content length
   const html80 = renderCashierReceiptHtml({ sale, lang: 'ar', storeName: 'متجر', paperWidthMm: 80 });
   const html58 = renderCashierReceiptHtml({ sale, lang: 'ar', storeName: 'متجر', paperWidthMm: 58 });
 
-  assert.match(html80, /@page \{ size: 80mm auto; margin: 4mm; \}/);
-  assert.match(html80, /body \{ width: 72mm;/);
-  assert.match(html58, /@page \{ size: 58mm auto; margin: 3mm; \}/);
-  assert.match(html58, /body \{ width: 52mm;/);
+  assert.match(html80, /@page \{ size: auto; margin: 0; \}/);
+  assert.match(html80, /body \{ width: 80mm; padding: 4mm;/);
+  assert.match(html58, /@page \{ size: auto; margin: 0; \}/);
+  assert.match(html58, /body \{ width: 58mm; padding: 3mm;/);
   assert.match(html80, /منتج طويل 40/);
   assert.match(html58, /منتج طويل 40/);
   assert.doesNotMatch(html80, /\.receipt \{[^}]*height\s*:/s);
   assert.doesNotMatch(html58, /\.receipt \{[^}]*height\s*:/s);
+  assert.doesNotMatch(html80, /size:\s*80mm\s+auto/);
+  assert.doesNotMatch(html58, /size:\s*58mm\s+auto/);
 });
 
 test('receipt never discloses raw cost or opaque cost evidence', () => {
@@ -221,6 +223,6 @@ test('receipt store profile is tenant-bound, minimal and cached for offline prin
   assert.match(authority, /SELECT store_name\s+FROM merchants\s+WHERE id = \$1/s);
   assert.doesNotMatch(authority, /owner_name|phone|email/);
   assert.match(client, /cashierOperatorHeaders\(session\)/);
-  assert.match(client, /writeCachedCashierReceiptProfile\(session\.device_id, profile\)/);
+  assert.match(client, /writeCachedCashierReceiptProfile\(session\.context\.device_id, profile\)/);
   assert.match(main, /installCashierReceiptProfileRefresh\(\)/);
 });
