@@ -14,6 +14,7 @@ const steps = [
       'artifacts/fawri/tests/cashier-sale-commit-single-flight.test.ts',
       'artifacts/fawri/tests/cashier-operator-local-database-readiness.test.ts',
       'artifacts/fawri/tests/cashier-receipt-printing.test.ts',
+      'artifacts/fawri/tests/cashier-history-reprint.test.ts',
     ],
   },
   {
