@@ -11,8 +11,15 @@ import type {
   CashierCatalogLookup,
   CashierPaymentMethod,
   CashierSaleLineInput,
+  CashierSaleSnapshot,
 } from '@/lib/cashierLocalContracts';
 import { CASHIER_POS_ENHANCEMENT_COPY } from '@/lib/cashierPosEnhancementCopy';
+import {
+  CASHIER_RECEIPT_COPY,
+  printCashierReceipt,
+  readCashierReceiptPrintSettings,
+  writeCashierReceiptPrintSettings,
+} from '@/lib/cashierReceiptPrinting';
 import type { CashierResolvedSalePricing } from '@/lib/cashierSalePricingRuntime';
 import {
   createCashierPosRuntime,
@@ -42,6 +49,7 @@ type SaleSuccess = {
   currencyCode: string;
   fractionDigits: number;
   changeDueMinor?: number;
+  receipt: CashierSaleSnapshot;
 };
 
 type PosLabels = (typeof CASHIER_UI_COPY)[Lang]['pos'];
@@ -189,6 +197,7 @@ export default function CashierPosPage() {
   const { lang, dir } = useI18n();
   const labels = CASHIER_UI_COPY[lang].pos;
   const extra = CASHIER_POS_ENHANCEMENT_COPY[lang];
+  const receiptLabels = CASHIER_RECEIPT_COPY[lang];
   const demoMode =
     import.meta.env.VITE_CASHIER_SMOKE === '1' &&
     new URLSearchParams(window.location.search).get('demo') === '1';
@@ -215,6 +224,8 @@ export default function CashierPosPage() {
   );
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SaleSuccess | null>(null);
+  const [receiptAutoPrint, setReceiptAutoPrint] = useState(false);
+  const [receiptPrintError, setReceiptPrintError] = useState<string | null>(null);
 
   const discountCheckout = useCashierManualDiscountCheckout({
     quote,
@@ -266,6 +277,16 @@ export default function CashierPosPage() {
       if (activeRuntime) void activeRuntime.close().catch(() => undefined);
     };
   }, [demoMode, extra.catalogOpenFailed, refreshCatalog]);
+
+  useEffect(() => {
+    if (!runtime) {
+      setReceiptAutoPrint(false);
+      return;
+    }
+    setReceiptAutoPrint(
+      readCashierReceiptPrintSettings(runtime.deviceId).auto_print,
+    );
+  }, [runtime]);
 
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
@@ -366,10 +387,53 @@ export default function CashierPosPage() {
     setError(null);
   }, [discountCheckout]);
 
+  const printReceipt = useCallback((sale: CashierSaleSnapshot) => {
+    setReceiptPrintError(null);
+    void printCashierReceipt({ sale, lang }).catch(() => {
+      setReceiptPrintError(receiptLabels.printFailed);
+    });
+  }, [lang, receiptLabels.printFailed]);
+
+  const toggleReceiptAutoPrint = useCallback(() => {
+    if (!runtime) return;
+    const next = !receiptAutoPrint;
+    const saved = writeCashierReceiptPrintSettings(runtime.deviceId, {
+      auto_print: next,
+    });
+    if (!saved) {
+      setReceiptPrintError(receiptLabels.settingsUnavailable);
+      return;
+    }
+    setReceiptAutoPrint(next);
+    setReceiptPrintError(null);
+  }, [receiptAutoPrint, receiptLabels.settingsUnavailable, runtime]);
+
+  useEffect(() => {
+    if (!success) return;
+    const handleReceiptShortcut = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        !(event.ctrlKey || event.metaKey) ||
+        event.altKey ||
+        event.shiftKey ||
+        event.key.toLowerCase() !== 'p'
+      ) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      printReceipt(success.receipt);
+    };
+    window.addEventListener('keydown', handleReceiptShortcut, true);
+    return () => window.removeEventListener('keydown', handleReceiptShortcut, true);
+  }, [printReceipt, success]);
+
   const addItem = useCallback((item: CashierCatalogLookup) => {
     const key = itemKey(item);
     setError(null);
     setSuccess(null);
+    setReceiptPrintError(null);
     setCashTenderText('');
     setExternalConfirmed(false);
     setActiveCartKey(key);
@@ -532,6 +596,7 @@ export default function CashierPosPage() {
     setCommitting(true);
     setError(null);
     setSuccess(null);
+    setReceiptPrintError(null);
     try {
       const manualDiscountMinor = discountCheckout.manualDiscountMinor;
       const manualDiscountReason = discountCheckout.reason.normalize('NFKC').trim();
@@ -568,7 +633,9 @@ export default function CashierPosPage() {
         ...(result.sale.change_due_minor !== undefined
           ? { changeDueMinor: result.sale.change_due_minor }
           : {}),
+        receipt: result.sale,
       });
+      if (receiptAutoPrint) printReceipt(result.sale);
       setCheckoutOpen(false);
       setCheckoutOperationId(null);
       setCart([]);
@@ -600,7 +667,7 @@ export default function CashierPosPage() {
     } finally {
       setCommitting(false);
     }
-  }, [cart.length, cashTenderedMinor, changeDueMinor, checkoutOperationId, discountCheckout, externalConfirmed, extra.discountNeedsManager, extra.discountPolicyUnavailable, labels, paymentMethod, query, quote, quoteError, refreshCatalog, runtime, saleLines]);
+  }, [cart.length, cashTenderedMinor, changeDueMinor, checkoutOperationId, discountCheckout, externalConfirmed, extra.discountNeedsManager, extra.discountPolicyUnavailable, labels, paymentMethod, printReceipt, query, quote, quoteError, receiptAutoPrint, refreshCatalog, runtime, saleLines]);
 
   const cartCount = cart.reduce((sum, line) => sum + line.quantity, 0);
   const quoteByKey = useMemo(() => {
@@ -652,10 +719,20 @@ export default function CashierPosPage() {
             </div>
           </div>
           <div className="flex flex-col items-end gap-1.5">
-            <div className="flex items-center gap-2 text-sm">
+            <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
               <span className={`rounded-full px-3 py-1.5 font-semibold ${online ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-700'}`}>
                 {online ? labels.online : labels.offline}
               </span>
+              <button
+                type="button"
+                onClick={toggleReceiptAutoPrint}
+                disabled={!runtime}
+                aria-pressed={receiptAutoPrint}
+                title={receiptLabels.autoPrintHint}
+                className={`rounded-lg border px-3 py-1.5 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${receiptAutoPrint ? 'border-emerald-300 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'}`}
+              >
+                {receiptAutoPrint ? receiptLabels.autoPrintOn : receiptLabels.autoPrintOff}
+              </button>
               <a href="/cashier.html?history=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
                 {labels.history}
               </a>
@@ -691,7 +768,7 @@ export default function CashierPosPage() {
           </div>
         ) : null}
         {success ? (
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             <strong>{labels.saleSuccess}</strong>
             <div className="flex flex-wrap items-center gap-3">
               <span dir="ltr">{formatMoney(success.totalMinor, success.currencyCode, success.fractionDigits, lang)}</span>
@@ -700,7 +777,19 @@ export default function CashierPosPage() {
                   {labels.changeDue}: <span dir="ltr">{formatMoney(success.changeDueMinor, success.currencyCode, success.fractionDigits, lang)}</span>
                 </strong>
               ) : null}
+              <button
+                type="button"
+                onClick={() => printReceipt(success.receipt)}
+                className="rounded-lg border border-emerald-300 bg-white px-3 py-1.5 font-bold text-emerald-800 transition hover:bg-emerald-100"
+              >
+                {receiptLabels.printReceipt} <span dir="ltr">({receiptLabels.printShortcut})</span>
+              </button>
             </div>
+          </div>
+        ) : null}
+        {receiptPrintError ? (
+          <div role="status" className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-semibold text-amber-800">
+            {receiptPrintError}
           </div>
         ) : null}
 
