@@ -13,6 +13,7 @@ import {
   issueCashierDiscountOverrideApprovalAuthoritative,
   listCashierDiscountOverrideApproversAuthoritative,
 } from "../services/cashierDiscountOverrideAuthority";
+import { getCashierReceiptProfileAuthoritative } from "../services/cashierReceiptProfileAuthority";
 import { buildCashierOperatorReportAuthoritative } from "../services/postgresCashierOperatorReportAuthority";
 import { assertCashierOperatorCompensationScope } from "../services/cashierOperatorSaleScope";
 import { CashierStaffAuthorityError } from "../services/postgresCashierStaffAuthority";
@@ -74,6 +75,23 @@ router.get(
       );
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, ...snapshot });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/cashier/operator/receipt-profile",
+  requireCashierOperatorSession("sale.create"),
+  async (_req: Request, res: Response) => {
+    try {
+      const context = operatorContext(res);
+      const profile = await getCashierReceiptProfileAuthoritative({
+        merchantId: context.merchant_id,
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, receipt_profile: profile });
     } catch (error) {
       sendError(res, error);
     }
