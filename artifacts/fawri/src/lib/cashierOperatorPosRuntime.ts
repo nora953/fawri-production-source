@@ -9,6 +9,7 @@ import {
   forgetCashierDiscountOverrideOperationBinding,
   resolveCashierDiscountOverrideSaleInput,
 } from './cashierDiscountOverrideOperationBinding';
+import { ensureCashierOperatorLocalDatabaseReady } from './cashierOperatorLocalDatabaseReadiness';
 import {
   createCashierPosRuntime,
   type CashierPosRuntime,
@@ -20,6 +21,7 @@ import {
   getCashierOperatorSession,
   type CashierOperatorSession,
 } from './cashierOperatorSessionRuntime';
+import { cashierSaleCommitSingleFlight } from './cashierSaleCommitSingleFlight';
 
 export class CashierOperatorPosError extends Error {
   readonly code: string;
@@ -146,14 +148,23 @@ export async function createCashierOperatorPosRuntime(options?: {
       // operation id while the checkout UI still holds its original draft id.
       // Resolve and validate that live approval binding before any local write.
       const effectiveInput = resolveCashierDiscountOverrideSaleInput(input);
-      await assertOfflineInventoryPermission(base, effectiveInput, currentSession);
-      await assertManualDiscountPermission(base, effectiveInput);
-      await bindCashierOperationToCurrentOperator(effectiveInput.operation_id, 'sale');
-      const result = await base.commitSale(effectiveInput);
-      forgetCashierDiscountOverrideOperationBinding(
-        effectiveInput.manual_discount_override_approval_id,
-      );
-      return result;
+      const flightKey = `${currentSession.context.merchant_id}\u0000${effectiveInput.operation_id}`;
+
+      return cashierSaleCommitSingleFlight.run(flightKey, async () => {
+        // Opening the operator-local security database can otherwise remain
+        // pending forever when an older Fawri tab blocks the v3 upgrade.
+        // Prove readiness first so the cashier gets a fail-closed error rather
+        // than an indefinitely disabled sale button.
+        await ensureCashierOperatorLocalDatabaseReady();
+        await assertOfflineInventoryPermission(base, effectiveInput, currentSession);
+        await assertManualDiscountPermission(base, effectiveInput);
+        await bindCashierOperationToCurrentOperator(effectiveInput.operation_id, 'sale');
+        const result = await base.commitSale(effectiveInput);
+        forgetCashierDiscountOverrideOperationBinding(
+          effectiveInput.manual_discount_override_approval_id,
+        );
+        return result;
+      });
     },
   };
 }
