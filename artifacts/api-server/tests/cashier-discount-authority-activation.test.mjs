@@ -41,7 +41,10 @@ test('activation grants cashier 10-percent-style authority separately from manag
   assert.match(script, /cashier: \{[\s\S]*can_approve_override: false/);
 });
 
-test('activation touches only discount authority and keeps session snapshots coherent', () => {
+test('activation serializes staff authority writes and keeps session snapshots coherent', () => {
+  assert.match(script, /pg_advisory_xact_lock/);
+  assert.match(script, /FOR UPDATE/);
+  assert.match(script, /loadState\(client, apply\)/);
   assert.match(script, /permission IN \('sale\.discount','sale\.discount_override'\)/);
   assert.match(script, /ON CONFLICT \(merchant_id, staff_id\) DO UPDATE/);
   assert.match(script, /SET version = version \+ 1, updated_at = now\(\)/);
