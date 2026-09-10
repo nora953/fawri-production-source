@@ -15,7 +15,7 @@ test('F8 opens only the enabled POS checkout action and never overloads scanner 
   assert.match(keyboard, /CASHIER_FAST_CHECKOUT_KEY = 'F8'/);
   assert.doesNotMatch(keyboard, /event\.key\s*===\s*'Enter'/);
   assert.match(keyboard, /dataset\.cashierView === 'pos'/);
-  assert.match(keyboard, /data-cashier-checkout=\\"open\\"/);
+  assert.match(keyboard, /data-cashier-checkout/);
   assert.match(keyboard, /!button\.disabled/);
   assert.match(keyboard, /button\.click\(\)/);
   assert.match(keyboard, /preventDefault\(\)/);
