@@ -1,20 +1,31 @@
 /* Cashier Visual QA baseline — presentation only. Functional behavior remains
    protected by the cashier functional-freeze gate. */
 
-/* Keep the active operator/shift controls visually beside the POS brand instead
-   of consuming a separate row. The gate still owns the same logout behavior;
-   this layer only changes placement and density. */
-html[data-cashier-operator-ready='1'] #cashier-root > div.relative > div.fixed:first-child {
+/* Arabic/RTL desktop identity cluster:
+   brand -> online/offline -> end shift -> merchant-defined station name.
+   The operator gate still owns logout/session behavior; this layer only places
+   those existing controls inside the header footprint so no extra page row is
+   introduced. */
+html[data-cashier-view='pos'] main > div > header {
+  position: relative;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding-block: 0.65rem !important;
+}
+
+html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
   position: absolute !important;
-  top: 1.4rem !important;
+  top: 1.15rem !important;
   left: auto !important;
   right: auto !important;
-  inset-inline-start: 9.75rem !important;
+  inset-inline-start: 13.4rem !important;
   transform: none !important;
   z-index: 80 !important;
+  display: flex !important;
   width: auto !important;
-  max-width: min(34vw, 29rem) !important;
+  max-width: 19rem !important;
   min-height: 34px;
+  align-items: center;
   justify-content: flex-start;
   gap: 0.4rem !important;
   padding: 0 !important;
@@ -25,49 +36,66 @@ html[data-cashier-operator-ready='1'] #cashier-root > div.relative > div.fixed:f
   backdrop-filter: none !important;
 }
 
-html[data-cashier-operator-ready='1'] #cashier-root > div.relative > div.fixed:first-child > span {
-  display: inline-flex;
-  min-width: 0;
-  max-width: min(21vw, 18rem) !important;
+/* Put the real logout action immediately after connection state. */
+html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > button {
+  order: 1;
   min-height: 32px;
-  align-items: center;
-  padding-inline: 0.7rem;
+  flex: 0 0 auto;
+  padding-inline: 0.72rem !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.7rem !important;
+  background: #fff !important;
+  color: #475569 !important;
+  box-shadow: none !important;
+  white-space: nowrap;
+}
+
+/* The source session text ends with station_name. Keep the visual chip compact
+   and bias overflow toward that final merchant-defined station label, e.g.
+   "كاشير 1 - المنصور" / "كاشير 7 - الكرادة". */
+html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > span {
+  order: 2;
+  display: block;
+  width: min(11rem, 18vw);
+  min-width: 0;
+  min-height: 32px;
+  padding: 0.45rem 0.7rem;
   overflow: hidden;
   border: 1px solid #e2e8f0;
   border-radius: 0.7rem;
   background: #f8fafc;
   color: #475569 !important;
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.3;
+  direction: rtl;
+  unicode-bidi: plaintext;
+  text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-html[data-cashier-operator-ready='1'] #cashier-root > div.relative > div.fixed:first-child > button {
+/* Move the existing server/runtime-derived online badge from the general action
+   group into the brand cluster. It remains the exact same React state. */
+html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 8.45rem;
+  transform: translateY(-50%);
+  z-index: 81;
   min-height: 32px;
-  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
   padding-inline: 0.75rem !important;
-  border-radius: 0.7rem !important;
-  border-color: #e2e8f0 !important;
-  background: #fff !important;
-  box-shadow: none !important;
   white-space: nowrap;
 }
 
-/* The session controls are absolute and therefore consume no page height. */
+/* Session controls are absolute and therefore consume no page height. */
 html[data-cashier-operator-ready='1'] #cashier-root > div.relative > main {
   min-height: 0;
 }
 
-/* Desktop POS header: calm, aligned controls with enough room for translated
-   labels and without increasing the overall vertical footprint. */
-html[data-cashier-view='pos'] main > div > header {
-  align-items: center !important;
-  gap: 0.75rem !important;
-  padding-block: 0.65rem !important;
-}
-
+/* General translated-label friendly header baseline. */
 html[data-cashier-view='pos'] main > div > header > div:last-child {
   min-width: 0;
   flex: 1 1 auto;
@@ -94,37 +122,50 @@ html[data-cashier-view='pos'] main > div > header select {
   min-width: 68px;
 }
 
-/* Keep the brand block visually stable while action labels wrap naturally. */
 html[data-cashier-view='pos'] main > div > header > div:first-child {
   flex: 0 0 auto;
 }
 
+/* Tablet: keep the same hierarchy but reduce the station footprint. */
 @media (max-width: 1023px) {
-  html[data-cashier-operator-ready='1'] #cashier-root > div.relative > div.fixed:first-child {
-    top: 1.25rem !important;
-    inset-inline-start: 9rem !important;
-    max-width: min(42vw, 24rem) !important;
+  html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
+    top: 1.05rem !important;
+    inset-inline-start: 12.5rem !important;
+    max-width: 16rem !important;
   }
 
-  html[data-cashier-operator-ready='1'] #cashier-root > div.relative > div.fixed:first-child > span {
-    max-width: min(23vw, 13rem) !important;
+  html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > span {
+    width: min(9rem, 17vw);
+  }
+
+  html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
+    inset-inline-start: 8.1rem;
   }
 }
 
+/* Mobile gets a deliberately tighter cluster; station identity may collapse
+   while logout and connectivity remain reachable. */
 @media (max-width: 639px) {
-  html[data-cashier-operator-ready='1'] #cashier-root > div.relative > div.fixed:first-child {
-    top: 1.15rem !important;
-    inset-inline-start: 8.25rem !important;
-    max-width: calc(100vw - 10rem) !important;
+  html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
+    top: 1rem !important;
+    inset-inline-start: 11.4rem !important;
+    max-width: calc(100vw - 12rem) !important;
   }
 
-  html[data-cashier-operator-ready='1'] #cashier-root > div.relative > div.fixed:first-child > span {
+  html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > span {
     display: none;
   }
 
-  html[data-cashier-operator-ready='1'] #cashier-root > div.relative > div.fixed:first-child > button {
+  html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > button {
     min-height: 30px;
-    padding-inline: 0.6rem !important;
+    padding-inline: 0.55rem !important;
+    font-size: 0.7rem;
+  }
+
+  html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
+    inset-inline-start: 7.55rem;
+    min-height: 30px;
+    padding-inline: 0.55rem !important;
     font-size: 0.7rem;
   }
 
