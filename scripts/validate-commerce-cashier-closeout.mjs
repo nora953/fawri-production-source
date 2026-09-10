@@ -56,6 +56,7 @@ const steps = [
       'artifacts/fawri/tests/cashier-manager-override-renewal.test.mjs',
       'artifacts/fawri/tests/cashier-discount-authority-management-ui.test.mjs',
       'artifacts/fawri/tests/cashier-fast-checkout-exact-cash.test.mjs',
+      'artifacts/fawri/tests/cashier-fast-checkout-keyboard.test.mjs',
     ],
   },
   {
