@@ -31,6 +31,34 @@ test('automatic cashier catalog refresh stays silent and preserves unchanged cat
   assert.match(pos, /if \(visible\) setSearching\(false\)/);
 });
 
+test('cashier auto-sync keeps durable operation upload independent from catalog and policy refresh failures', () => {
+  assert.match(cashierMain, /let nextOutboxAttemptAt = 0;/);
+  assert.match(cashierMain, /let nextRefreshAttemptAt = 0;/);
+  assert.match(cashierMain, /AUTO_SYNC_RETRY_BACKOFF_MS/);
+  assert.match(cashierMain, /AUTO_REFRESH_RETRY_BACKOFF_MS/);
+
+  const outboxIndex = cashierMain.indexOf('result = await syncCashierOperatorOutboxToCloud()');
+  const policyIndex = cashierMain.indexOf('await refreshCashierOperatorPolicyFromCloud()', outboxIndex);
+  const catalogIndex = cashierMain.indexOf('await syncCashierOperatorCatalogFromCloud()', policyIndex);
+  assert.ok(outboxIndex >= 0, 'operator outbox must be synchronized');
+  assert.ok(policyIndex > outboxIndex, 'policy refresh must not block already-durable operation upload');
+  assert.ok(catalogIndex > policyIndex, 'catalog reconciliation follows operation upload and policy refresh');
+
+  assert.match(
+    cashierMain,
+    /catch \(cause\) \{[\s\S]*publishCashierOperationSyncFailure\(cause\);[\s\S]*nextOutboxAttemptAt = Date\.now\(\) \+ AUTO_SYNC_RETRY_BACKOFF_MS;[\s\S]*return;[\s\S]*\}/,
+  );
+  assert.match(
+    cashierMain,
+    /Catalog\/policy refresh is a separate, non-destructive background concern\.[\s\S]*nextRefreshAttemptAt = Date\.now\(\) \+ AUTO_REFRESH_RETRY_BACKOFF_MS;/,
+  );
+  assert.doesNotMatch(
+    cashierMain,
+    /nextRefreshAttemptAt = Date\.now\(\) \+ AUTO_REFRESH_RETRY_BACKOFF_MS;[\s\S]{0,180}nextOutboxAttemptAt = Date\.now\(\) \+ AUTO_SYNC_RETRY_BACKOFF_MS;/,
+    'a non-session catalog refresh failure must not back off later sale uploads',
+  );
+});
+
 test('cashier catalog opening and manual search failures are localized and accessible', () => {
   assert.ok(pos.includes('setError(extra.catalogOpenFailed);'));
   assert.ok(pos.includes("if (source === 'search') throw cause;"));
