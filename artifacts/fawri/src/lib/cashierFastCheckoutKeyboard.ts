@@ -110,6 +110,7 @@ export function installCashierFastCheckoutKeyboard(): () => void {
       event.altKey ||
       event.metaKey ||
       event.defaultPrevented ||
+      wholeLineRemovalRunning ||
       !cashierPosIsActive() ||
       checkoutIsOpen()
     ) {
@@ -131,7 +132,7 @@ export function installCashierFastCheckoutKeyboard(): () => void {
     }
 
     const button = activeCartDecrementButton();
-    if (!button || wholeLineRemovalRunning) return;
+    if (!button) return;
 
     event.preventDefault();
     event.stopPropagation();
