@@ -59,19 +59,36 @@ export async function ensureCashierOperatorLocalDatabaseReady(): Promise<void> {
 
   const database = await new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open(OPERATOR_LOCAL_DATABASE, OPERATOR_LOCAL_VERSION);
-    let blocked = false;
+    let failed = false;
+
+    const fail = (error: Error) => {
+      if (failed) return;
+      failed = true;
+      reject(error);
+    };
 
     request.onupgradeneeded = () => {
       try {
         upgradeOperatorLocalSchema(request);
       } catch (error) {
-        reject(error);
+        try {
+          request.transaction?.abort();
+        } catch {
+          // Best effort: the upgrade may already be aborting.
+        }
+        fail(
+          error instanceof Error
+            ? error
+            : new CashierOperatorLocalDatabaseReadinessError(
+                'CASHIER_OPERATOR_LOCAL_DATABASE_UPGRADE_FAILED',
+                'Cashier local security database upgrade failed',
+              ),
+        );
       }
     };
 
     request.onblocked = () => {
-      blocked = true;
-      reject(
+      fail(
         new CashierOperatorLocalDatabaseReadinessError(
           'CASHIER_OPERATOR_LOCAL_DATABASE_BLOCKED',
           'Cashier local security storage is blocked by another Fawri tab',
@@ -80,7 +97,7 @@ export async function ensureCashierOperatorLocalDatabaseReady(): Promise<void> {
     };
 
     request.onerror = () => {
-      reject(
+      fail(
         new CashierOperatorLocalDatabaseReadinessError(
           'CASHIER_OPERATOR_LOCAL_DATABASE_OPEN_FAILED',
           request.error?.message || 'Could not open cashier local security storage',
@@ -90,7 +107,7 @@ export async function ensureCashierOperatorLocalDatabaseReady(): Promise<void> {
 
     request.onsuccess = () => {
       const opened = request.result;
-      if (blocked) {
+      if (failed) {
         opened.close();
         return;
       }
