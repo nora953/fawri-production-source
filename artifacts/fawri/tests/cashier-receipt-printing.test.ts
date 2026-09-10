@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import test from 'node:test';
 import type { CashierSaleSnapshot } from '../src/lib/cashierLocalContracts';
 import {
+  CASHIER_RECEIPT_COPY,
   readCashierReceiptPrintSettings,
   renderCashierReceiptHtml,
   writeCashierReceiptPrintSettings,
@@ -87,16 +88,24 @@ test('receipt printing uses an isolated iframe instead of printing the cashier p
   assert.match(source, /PRINT_FRAME_TIMEOUT_MS/);
 });
 
-test('POS exposes manual receipt print, Ctrl+P and device-scoped auto print after a completed sale', () => {
+test('POS exposes manual receipt print, F9 and device-scoped auto print after a completed sale', () => {
   const source = fs.readFileSync(
     new URL('../src/pages/CashierPosPage.tsx', import.meta.url),
     'utf8',
   );
+  const keyboard = fs.readFileSync(
+    new URL('../src/lib/cashierFastCheckoutKeyboard.ts', import.meta.url),
+    'utf8',
+  );
 
+  assert.equal(CASHIER_RECEIPT_COPY.ar.printShortcut, 'F9');
+  assert.equal(CASHIER_RECEIPT_COPY.ku.printShortcut, 'F9');
+  assert.equal(CASHIER_RECEIPT_COPY.en.printShortcut, 'F9');
   assert.match(source, /receipt: result\.sale/);
   assert.match(source, /onClick=\{\(\) => printReceipt\(success\.receipt\)\}/);
-  assert.match(source, /event\.key\.toLowerCase\(\) !== 'p'/);
-  assert.match(source, /event\.ctrlKey \|\| event\.metaKey/);
+  assert.match(keyboard, /CASHIER_RECEIPT_PRINT_KEY = 'F9'/);
+  assert.match(keyboard, /receiptPrintButton/);
+  assert.match(keyboard, /stopImmediatePropagation\(\)/);
   assert.match(source, /writeCashierReceiptPrintSettings\(runtime\.deviceId/);
   assert.match(source, /readCashierReceiptPrintSettings\(runtime\.deviceId\)\.auto_print/);
   assert.match(source, /if \(receiptAutoPrint\) printReceipt\(result\.sale\)/);
