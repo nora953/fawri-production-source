@@ -11,6 +11,8 @@ const steps = [
       'artifacts/fawri/tests/cashier-sale-pricing-duplicate-lines.test.ts',
       'artifacts/fawri/tests/cashier-manual-discount-runtime.test.ts',
       'artifacts/fawri/tests/cashier-discount-override-operation-binding.test.ts',
+      'artifacts/fawri/tests/cashier-sale-commit-single-flight.test.ts',
+      'artifacts/fawri/tests/cashier-operator-local-database-readiness.test.ts',
     ],
   },
   {
