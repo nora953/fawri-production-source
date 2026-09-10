@@ -49,6 +49,7 @@ const steps = [
       'artifacts/api-server/tests/cashier-discount-override-readiness.test.mjs',
       'artifacts/api-server/tests/cashier-discount-override-live-readiness.test.mjs',
       'artifacts/fawri/tests/cashier-manager-override-checkout.test.mjs',
+      'artifacts/fawri/tests/cashier-discount-authority-management-ui.test.mjs',
     ],
   },
   {
