@@ -2,14 +2,22 @@ import type {
   CashierPaymentMethod,
   CashierSaleSnapshot,
 } from '@/lib/cashierLocalContracts';
+import { readCachedCashierReceiptProfile } from '@/lib/cashierReceiptProfileClient';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
 import type { Lang } from '@/lib/types';
 
 const RECEIPT_SETTINGS_PREFIX = 'fawri.cashier.receipt-print.v1';
 const PRINT_FRAME_TIMEOUT_MS = 60_000;
 
+export type CashierReceiptPaperWidthMm = 58 | 80;
 export type CashierReceiptPrintSettings = {
   auto_print: boolean;
+  paper_width_mm: CashierReceiptPaperWidthMm;
+};
+
+const DEFAULT_RECEIPT_PRINT_SETTINGS: CashierReceiptPrintSettings = {
+  auto_print: false,
+  paper_width_mm: 80,
 };
 
 export const CASHIER_RECEIPT_COPY = {
@@ -36,8 +44,14 @@ export const CASHIER_RECEIPT_COPY = {
     autoPrintOn: 'الطباعة التلقائية: مفعلة',
     autoPrintOff: 'الطباعة التلقائية: متوقفة',
     autoPrintHint: 'في نسخة المتصفح تفتح نافذة الطباعة تلقائيًا بعد نجاح البيع. الطباعة الصامتة المباشرة تحتاج تكامل جهاز/وضع Kiosk.',
+    paperWidthLabel: 'عرض رول الإيصال',
+    paperWidthHint: 'اختر نفس عرض رول طابعة الإيصالات المستخدمة على هذا الكاشير.',
+    paper80: '80 مم',
+    paper58: '58 مم',
+    demoStoreName: 'متجر تجريبي',
+    storeNameUnavailable: 'المتجر',
     printFailed: 'تم البيع، لكن تعذر فتح طباعة الإيصال. يمكنك المحاولة من زر طباعة الإيصال.',
-    settingsUnavailable: 'تعذر حفظ إعداد الطباعة التلقائية على هذا الجهاز.',
+    settingsUnavailable: 'تعذر حفظ إعداد الطباعة على هذا الجهاز.',
   },
   ku: {
     receiptTitle: 'پسوڵەی فرۆشتن',
@@ -62,8 +76,14 @@ export const CASHIER_RECEIPT_COPY = {
     autoPrintOn: 'چاپی خۆکار: چالاکە',
     autoPrintOff: 'چاپی خۆکار: ناچالاکە',
     autoPrintHint: 'لە وەشانی وێبدا دوای فرۆشتنی سەرکەوتوو پەنجەرەی چاپ خۆکارانە دەکرێتەوە. چاپی بێ پەنجەرە پێویستی بە Kiosk یان پەیوەندی چاپکەر هەیە.',
+    paperWidthLabel: 'پانی ڕۆڵی پسوڵە',
+    paperWidthHint: 'هەمان پانی ڕۆڵی چاپکەری پسوڵەی ئەم کاشێرە هەڵبژێرە.',
+    paper80: '80 مم',
+    paper58: '58 مم',
+    demoStoreName: 'فرۆشگای تاقیکردنەوە',
+    storeNameUnavailable: 'فرۆشگا',
     printFailed: 'فرۆشتن تەواو بوو، بەڵام چاپی پسوڵە نەکرایەوە. دەتوانیت دووبارە هەوڵ بدەیت.',
-    settingsUnavailable: 'نەتوانرا ڕێکخستنی چاپی خۆکار لەم ئامێرە پاشەکەوت بکرێت.',
+    settingsUnavailable: 'نەتوانرا ڕێکخستنی چاپ لەم ئامێرە پاشەکەوت بکرێت.',
   },
   en: {
     receiptTitle: 'Sales receipt',
@@ -88,8 +108,14 @@ export const CASHIER_RECEIPT_COPY = {
     autoPrintOn: 'Auto print: On',
     autoPrintOff: 'Auto print: Off',
     autoPrintHint: 'In the browser build, the print dialog opens automatically after a successful sale. Silent direct printing requires kiosk mode or a local printer bridge.',
+    paperWidthLabel: 'Receipt roll width',
+    paperWidthHint: 'Choose the same width as the receipt roll installed on this cashier printer.',
+    paper80: '80 mm',
+    paper58: '58 mm',
+    demoStoreName: 'Demo Store',
+    storeNameUnavailable: 'Store',
     printFailed: 'The sale completed, but receipt printing could not be opened. You can retry with Print receipt.',
-    settingsUnavailable: 'Auto-print settings could not be saved on this device.',
+    settingsUnavailable: 'Print settings could not be saved on this device.',
   },
 } as const;
 
@@ -97,30 +123,41 @@ function storageKey(deviceId: string): string {
   return `${RECEIPT_SETTINGS_PREFIX}.${encodeURIComponent(String(deviceId || 'unknown'))}`;
 }
 
+function normalizePaperWidth(value: unknown): CashierReceiptPaperWidthMm {
+  return Number(value) === 58 ? 58 : 80;
+}
+
 export function readCashierReceiptPrintSettings(
   deviceId: string,
 ): CashierReceiptPrintSettings {
-  if (typeof localStorage === 'undefined') return { auto_print: false };
+  if (typeof localStorage === 'undefined') return { ...DEFAULT_RECEIPT_PRINT_SETTINGS };
   try {
     const raw = localStorage.getItem(storageKey(deviceId));
-    if (!raw) return { auto_print: false };
+    if (!raw) return { ...DEFAULT_RECEIPT_PRINT_SETTINGS };
     const parsed = JSON.parse(raw) as Partial<CashierReceiptPrintSettings>;
-    return { auto_print: parsed.auto_print === true };
+    return {
+      auto_print: parsed.auto_print === true,
+      paper_width_mm: normalizePaperWidth(parsed.paper_width_mm),
+    };
   } catch {
-    return { auto_print: false };
+    return { ...DEFAULT_RECEIPT_PRINT_SETTINGS };
   }
 }
 
 export function writeCashierReceiptPrintSettings(
   deviceId: string,
-  settings: CashierReceiptPrintSettings,
+  patch: Partial<CashierReceiptPrintSettings>,
 ): boolean {
   if (typeof localStorage === 'undefined') return false;
   try {
-    localStorage.setItem(
-      storageKey(deviceId),
-      JSON.stringify({ auto_print: settings.auto_print === true }),
-    );
+    const current = readCashierReceiptPrintSettings(deviceId);
+    const next: CashierReceiptPrintSettings = {
+      auto_print: patch.auto_print === undefined ? current.auto_print : patch.auto_print === true,
+      paper_width_mm: patch.paper_width_mm === undefined
+        ? current.paper_width_mm
+        : normalizePaperWidth(patch.paper_width_mm),
+    };
+    localStorage.setItem(storageKey(deviceId), JSON.stringify(next));
     return true;
   } catch {
     return false;
@@ -134,6 +171,14 @@ function escapeHtml(value: unknown): string {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+function normalizedReceiptStoreName(value: unknown): string | null {
+  const storeName = String(value ?? '').normalize('NFKC').trim();
+  if (!storeName || storeName.length > 200 || /[\u0000-\u001f\u007f]/.test(storeName)) {
+    return null;
+  }
+  return storeName;
 }
 
 function receiptLocale(lang: Lang): string {
@@ -172,14 +217,47 @@ function money(sale: CashierSaleSnapshot, amountMinor: number, lang: Lang): stri
   );
 }
 
+function paperLayout(width: CashierReceiptPaperWidthMm) {
+  return width === 58
+    ? {
+        pageWidthMm: 58,
+        marginMm: 3,
+        bodyWidthMm: 52,
+        bodyFontPx: 9.5,
+        brandFontPx: 16,
+        titleFontPx: 11,
+        qtyWidthMm: 8,
+        moneyWidthMm: 17,
+      }
+    : {
+        pageWidthMm: 80,
+        marginMm: 4,
+        bodyWidthMm: 72,
+        bodyFontPx: 11,
+        brandFontPx: 18,
+        titleFontPx: 12,
+        qtyWidthMm: 12,
+        moneyWidthMm: 24,
+      };
+}
+
 export function renderCashierReceiptHtml(input: {
   sale: CashierSaleSnapshot;
   lang: Lang;
   stationLabel?: string;
+  storeName?: string;
+  paperWidthMm?: CashierReceiptPaperWidthMm;
 }): string {
   const { sale, lang } = input;
   const copy = CASHIER_RECEIPT_COPY[lang];
   const dir = lang === 'en' ? 'ltr' : 'rtl';
+  const paperWidth = normalizePaperWidth(input.paperWidthMm);
+  const layout = paperLayout(paperWidth);
+  const cachedStoreName = readCachedCashierReceiptProfile(sale.device_id)?.store_name;
+  const storeName =
+    normalizedReceiptStoreName(input.storeName) ||
+    normalizedReceiptStoreName(cachedStoreName) ||
+    (sale.local_merchant_id === 'demo-merchant' ? copy.demoStoreName : copy.storeNameUnavailable);
   const lines = sale.lines.map(line => {
     const variant = line.variant_name_snapshot
       ? `<div class="variant">${escapeHtml(line.variant_name_snapshot)}</div>`
@@ -215,30 +293,31 @@ export function renderCashierReceiptHtml(input: {
 <html lang="${escapeHtml(lang)}" dir="${dir}">
 <head>
 <meta charset="utf-8" />
-<title>${escapeHtml(copy.receiptTitle)} ${escapeHtml(sale.sale_id)}</title>
+<title>${escapeHtml(storeName)} — ${escapeHtml(copy.receiptTitle)} ${escapeHtml(sale.sale_id)}</title>
 <style>
-  @page { size: 80mm auto; margin: 4mm; }
+  @page { size: ${layout.pageWidthMm}mm auto; margin: ${layout.marginMm}mm; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: #fff; color: #111; }
-  body { width: 72mm; font-family: Arial, Tahoma, sans-serif; font-size: 11px; line-height: 1.35; }
+  body { width: ${layout.bodyWidthMm}mm; font-family: Arial, Tahoma, sans-serif; font-size: ${layout.bodyFontPx}px; line-height: 1.35; }
   .receipt { width: 100%; }
   .header { text-align: center; padding-bottom: 8px; border-bottom: 1px dashed #555; }
-  .brand { font-size: 18px; font-weight: 800; letter-spacing: .3px; }
-  .title { margin-top: 2px; font-size: 12px; font-weight: 700; }
-  .station { margin-top: 2px; font-size: 10px; }
+  .brand { font-size: ${layout.brandFontPx}px; font-weight: 800; overflow-wrap: anywhere; }
+  .title { margin-top: 2px; font-size: ${layout.titleFontPx}px; font-weight: 700; }
+  .station { margin-top: 2px; font-size: 9px; }
   .meta { padding: 7px 0; border-bottom: 1px dashed #555; }
-  .meta-row, .summary-row { display: flex; justify-content: space-between; gap: 8px; }
+  .meta-row, .summary-row { display: flex; justify-content: space-between; gap: 6px; }
   .meta-row + .meta-row, .summary-row + .summary-row { margin-top: 3px; }
-  table { width: 100%; border-collapse: collapse; margin-top: 7px; }
-  th { font-size: 10px; font-weight: 700; border-bottom: 1px solid #999; padding: 0 0 4px; }
-  td { vertical-align: top; padding: 6px 0; border-bottom: 1px dotted #bbb; }
-  .item-cell { padding-inline-end: 4px; }
+  .meta-row strong { overflow-wrap: anywhere; text-align: end; }
+  table { width: 100%; border-collapse: collapse; margin-top: 7px; table-layout: fixed; }
+  th { font-size: 9px; font-weight: 700; border-bottom: 1px solid #999; padding: 0 0 4px; }
+  td { vertical-align: top; padding: 6px 0; border-bottom: 1px dotted #bbb; overflow-wrap: anywhere; }
+  .item-cell { padding-inline-end: 3px; }
   .item-name { font-weight: 700; }
-  .variant, .unit { color: #555; font-size: 9px; margin-top: 1px; }
-  .qty { width: 12mm; text-align: center; white-space: nowrap; }
-  .money { width: 24mm; text-align: end; white-space: nowrap; font-weight: 700; }
+  .variant, .unit { color: #555; font-size: 8.5px; margin-top: 1px; }
+  .qty { width: ${layout.qtyWidthMm}mm; text-align: center; white-space: nowrap; }
+  .money { width: ${layout.moneyWidthMm}mm; text-align: end; white-space: nowrap; font-weight: 700; }
   .summary { padding-top: 7px; }
-  .summary-row.total { margin-top: 6px; padding-top: 6px; border-top: 1px solid #111; font-size: 13px; }
+  .summary-row.total { margin-top: 6px; padding-top: 6px; border-top: 1px solid #111; font-size: 12px; }
   .payment { margin-top: 7px; padding-top: 7px; border-top: 1px dashed #555; }
   .footer { text-align: center; margin-top: 10px; padding-top: 7px; border-top: 1px dashed #555; font-weight: 700; }
 </style>
@@ -246,7 +325,7 @@ export function renderCashierReceiptHtml(input: {
 <body>
   <div class="receipt">
     <div class="header">
-      <div class="brand">Fawri</div>
+      <div class="brand">${escapeHtml(storeName)}</div>
       <div class="title">${escapeHtml(copy.receiptTitle)}</div>
       ${station}
     </div>
@@ -283,11 +362,18 @@ export async function printCashierReceipt(input: {
   sale: CashierSaleSnapshot;
   lang: Lang;
   stationLabel?: string;
+  storeName?: string;
+  paperWidthMm?: CashierReceiptPaperWidthMm;
 }): Promise<void> {
   if (typeof document === 'undefined' || typeof window === 'undefined') {
     throw new Error('CASHIER_RECEIPT_PRINT_UNAVAILABLE');
   }
 
+  const settings = readCashierReceiptPrintSettings(input.sale.device_id);
+  const renderInput = {
+    ...input,
+    paperWidthMm: input.paperWidthMm ?? settings.paper_width_mm,
+  };
   const frame = document.createElement('iframe');
   frame.setAttribute('aria-hidden', 'true');
   frame.style.position = 'fixed';
@@ -303,7 +389,7 @@ export async function printCashierReceipt(input: {
     frame.onload = () => resolve();
     frame.onerror = () => reject(new Error('CASHIER_RECEIPT_PRINT_FRAME_FAILED'));
   });
-  frame.srcdoc = renderCashierReceiptHtml(input);
+  frame.srcdoc = renderCashierReceiptHtml(renderInput);
   document.body.appendChild(frame);
 
   try {
