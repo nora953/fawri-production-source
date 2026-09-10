@@ -16,6 +16,7 @@ import type {
 import { CASHIER_POS_ENHANCEMENT_COPY } from '@/lib/cashierPosEnhancementCopy';
 import {
   CASHIER_RECEIPT_COPY,
+  type CashierReceiptPaperWidthMm,
   printCashierReceipt,
   readCashierReceiptPrintSettings,
   writeCashierReceiptPrintSettings,
@@ -225,6 +226,7 @@ export default function CashierPosPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SaleSuccess | null>(null);
   const [receiptAutoPrint, setReceiptAutoPrint] = useState(false);
+  const [receiptPaperWidth, setReceiptPaperWidth] = useState<CashierReceiptPaperWidthMm>(80);
   const [receiptPrintError, setReceiptPrintError] = useState<string | null>(null);
 
   const discountCheckout = useCashierManualDiscountCheckout({
@@ -281,11 +283,12 @@ export default function CashierPosPage() {
   useEffect(() => {
     if (!runtime) {
       setReceiptAutoPrint(false);
+      setReceiptPaperWidth(80);
       return;
     }
-    setReceiptAutoPrint(
-      readCashierReceiptPrintSettings(runtime.deviceId).auto_print,
-    );
+    const settings = readCashierReceiptPrintSettings(runtime.deviceId);
+    setReceiptAutoPrint(settings.auto_print);
+    setReceiptPaperWidth(settings.paper_width_mm);
   }, [runtime]);
 
   useEffect(() => {
@@ -408,26 +411,18 @@ export default function CashierPosPage() {
     setReceiptPrintError(null);
   }, [receiptAutoPrint, receiptLabels.settingsUnavailable, runtime]);
 
-  useEffect(() => {
-    if (!success) return;
-    const handleReceiptShortcut = (event: KeyboardEvent) => {
-      if (
-        event.defaultPrevented ||
-        event.repeat ||
-        !(event.ctrlKey || event.metaKey) ||
-        event.altKey ||
-        event.shiftKey ||
-        event.key.toLowerCase() !== 'p'
-      ) {
-        return;
-      }
-      event.preventDefault();
-      event.stopPropagation();
-      printReceipt(success.receipt);
-    };
-    window.addEventListener('keydown', handleReceiptShortcut, true);
-    return () => window.removeEventListener('keydown', handleReceiptShortcut, true);
-  }, [printReceipt, success]);
+  const updateReceiptPaperWidth = useCallback((width: CashierReceiptPaperWidthMm) => {
+    if (!runtime) return;
+    const saved = writeCashierReceiptPrintSettings(runtime.deviceId, {
+      paper_width_mm: width,
+    });
+    if (!saved) {
+      setReceiptPrintError(receiptLabels.settingsUnavailable);
+      return;
+    }
+    setReceiptPaperWidth(width);
+    setReceiptPrintError(null);
+  }, [receiptLabels.settingsUnavailable, runtime]);
 
   const addItem = useCallback((item: CashierCatalogLookup) => {
     const key = itemKey(item);
@@ -733,6 +728,23 @@ export default function CashierPosPage() {
               >
                 {receiptAutoPrint ? receiptLabels.autoPrintOn : receiptLabels.autoPrintOff}
               </button>
+              <label
+                title={receiptLabels.paperWidthHint}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-semibold text-slate-700"
+              >
+                <span>{receiptLabels.paperWidthLabel}</span>
+                <select
+                  value={receiptPaperWidth}
+                  onChange={event => updateReceiptPaperWidth(Number(event.target.value) === 58 ? 58 : 80)}
+                  disabled={!runtime}
+                  aria-label={receiptLabels.paperWidthLabel}
+                  className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-bold outline-none focus:border-orange-400"
+                  dir="ltr"
+                >
+                  <option value={80}>{receiptLabels.paper80}</option>
+                  <option value={58}>{receiptLabels.paper58}</option>
+                </select>
+              </label>
               <a href="/cashier.html?history=1" className="rounded-lg border border-slate-200 px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50">
                 {labels.history}
               </a>
