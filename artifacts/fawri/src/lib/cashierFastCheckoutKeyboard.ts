@@ -1,7 +1,9 @@
 import { CASHIER_POS_ENHANCEMENT_COPY } from './cashierPosEnhancementCopy';
+import { CASHIER_RECEIPT_COPY } from './cashierReceiptPrinting';
 import { readStoredCashierLanguage } from './cashierUiCopy';
 
 const CASHIER_FAST_CHECKOUT_KEY = 'F8';
+const CASHIER_RECEIPT_PRINT_KEY = 'F9';
 const CASHIER_CART_UNDO_KEY = 'Delete';
 const CASHIER_DECREMENT_LABEL = '−';
 
@@ -21,6 +23,16 @@ function checkoutButton(): HTMLButtonElement | null {
     !button.disabled &&
     button.textContent?.trim() === label &&
     !button.closest('[data-cashier-checkout="open"]'),
+  ) || null;
+}
+
+function receiptPrintButton(): HTMLButtonElement | null {
+  if (typeof document === 'undefined') return null;
+  const label = CASHIER_RECEIPT_COPY[readStoredCashierLanguage()].printReceipt;
+  const buttons = Array.from(document.querySelectorAll<HTMLButtonElement>('button'));
+  return buttons.find(button =>
+    !button.disabled &&
+    button.textContent?.includes(label),
   ) || null;
 }
 
@@ -104,6 +116,21 @@ export function installCashierFastCheckoutKeyboard(): () => void {
   let wholeLineRemovalRunning = false;
 
   const handleKeyDown = (event: KeyboardEvent) => {
+    if (!cashierPosIsActive()) return;
+
+    // Ctrl/Cmd+P belongs to the browser and would print the whole POS page.
+    // Block it inside the cashier surface so operators use F9 for the receipt.
+    if (
+      (event.ctrlKey || event.metaKey) &&
+      !event.altKey &&
+      !event.shiftKey &&
+      event.key.toLowerCase() === 'p'
+    ) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+
     if (
       event.repeat ||
       event.ctrlKey ||
@@ -111,7 +138,6 @@ export function installCashierFastCheckoutKeyboard(): () => void {
       event.metaKey ||
       event.defaultPrevented ||
       wholeLineRemovalRunning ||
-      !cashierPosIsActive() ||
       checkoutIsOpen()
     ) {
       return;
@@ -119,6 +145,16 @@ export function installCashierFastCheckoutKeyboard(): () => void {
 
     if (event.key === CASHIER_FAST_CHECKOUT_KEY && !event.shiftKey) {
       const button = checkoutButton();
+      if (!button) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      button.click();
+      return;
+    }
+
+    if (event.key === CASHIER_RECEIPT_PRINT_KEY && !event.shiftKey) {
+      const button = receiptPrintButton();
       if (!button) return;
 
       event.preventDefault();
