@@ -45,7 +45,7 @@ export const CASHIER_RECEIPT_COPY = {
     autoPrintOff: 'الطباعة التلقائية: متوقفة',
     autoPrintHint: 'في نسخة المتصفح تفتح نافذة الطباعة تلقائيًا بعد نجاح البيع. الطباعة الصامتة المباشرة تحتاج تكامل جهاز/وضع Kiosk.',
     paperWidthLabel: 'عرض رول الإيصال',
-    paperWidthHint: 'اختر نفس عرض رول طابعة الإيصالات المستخدمة على هذا الكاشير.',
+    paperWidthHint: 'اختر نفس عرض رول طابعة الإيصالات المستخدمة على هذا الكاشير، واضبط Driver الطابعة على نفس عرض الرول.',
     paper80: '80 مم',
     paper58: '58 مم',
     demoStoreName: 'متجر تجريبي',
@@ -77,7 +77,7 @@ export const CASHIER_RECEIPT_COPY = {
     autoPrintOff: 'چاپی خۆکار: ناچالاکە',
     autoPrintHint: 'لە وەشانی وێبدا دوای فرۆشتنی سەرکەوتوو پەنجەرەی چاپ خۆکارانە دەکرێتەوە. چاپی بێ پەنجەرە پێویستی بە Kiosk یان پەیوەندی چاپکەر هەیە.',
     paperWidthLabel: 'پانی ڕۆڵی پسوڵە',
-    paperWidthHint: 'هەمان پانی ڕۆڵی چاپکەری پسوڵەی ئەم کاشێرە هەڵبژێرە.',
+    paperWidthHint: 'هەمان پانی ڕۆڵی چاپکەری پسوڵەی ئەم کاشێرە هەڵبژێرە و Driver ـی چاپکەر لەسەر هەمان پانی دابنێ.',
     paper80: '80 مم',
     paper58: '58 مم',
     demoStoreName: 'فرۆشگای تاقیکردنەوە',
@@ -109,7 +109,7 @@ export const CASHIER_RECEIPT_COPY = {
     autoPrintOff: 'Auto print: Off',
     autoPrintHint: 'In the browser build, the print dialog opens automatically after a successful sale. Silent direct printing requires kiosk mode or a local printer bridge.',
     paperWidthLabel: 'Receipt roll width',
-    paperWidthHint: 'Choose the same width as the receipt roll installed on this cashier printer.',
+    paperWidthHint: 'Choose the same width as the receipt roll on this cashier and set the printer driver to that same roll width.',
     paper80: '80 mm',
     paper58: '58 mm',
     demoStoreName: 'Demo Store',
@@ -220,9 +220,8 @@ function money(sale: CashierSaleSnapshot, amountMinor: number, lang: Lang): stri
 function paperLayout(width: CashierReceiptPaperWidthMm) {
   return width === 58
     ? {
-        pageWidthMm: 58,
-        marginMm: 3,
-        bodyWidthMm: 52,
+        paperWidthMm: 58,
+        paddingMm: 3,
         bodyFontPx: 9.5,
         brandFontPx: 16,
         titleFontPx: 11,
@@ -230,9 +229,8 @@ function paperLayout(width: CashierReceiptPaperWidthMm) {
         moneyWidthMm: 17,
       }
     : {
-        pageWidthMm: 80,
-        marginMm: 4,
-        bodyWidthMm: 72,
+        paperWidthMm: 80,
+        paddingMm: 4,
         bodyFontPx: 11,
         brandFontPx: 18,
         titleFontPx: 12,
@@ -295,10 +293,10 @@ export function renderCashierReceiptHtml(input: {
 <meta charset="utf-8" />
 <title>${escapeHtml(storeName)} — ${escapeHtml(copy.receiptTitle)} ${escapeHtml(sale.sale_id)}</title>
 <style>
-  @page { size: ${layout.pageWidthMm}mm auto; margin: ${layout.marginMm}mm; }
+  @page { size: auto; margin: 0; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: #fff; color: #111; }
-  body { width: ${layout.bodyWidthMm}mm; font-family: Arial, Tahoma, sans-serif; font-size: ${layout.bodyFontPx}px; line-height: 1.35; }
+  body { width: ${layout.paperWidthMm}mm; padding: ${layout.paddingMm}mm; font-family: Arial, Tahoma, sans-serif; font-size: ${layout.bodyFontPx}px; line-height: 1.35; }
   .receipt { width: 100%; }
   .header { text-align: center; padding-bottom: 8px; border-bottom: 1px dashed #555; }
   .brand { font-size: ${layout.brandFontPx}px; font-weight: 800; overflow-wrap: anywhere; }
