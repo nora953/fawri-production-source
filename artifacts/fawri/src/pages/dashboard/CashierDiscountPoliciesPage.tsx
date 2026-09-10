@@ -39,7 +39,7 @@ const TEXT: Record<Lang, Record<string, string>> = {
     enabled: 'السماح بخصم يدوي',
     maxPercent: 'الحد الأقصى للنسبة %',
     maxAmount: 'الحد الأقصى للمبلغ (اختياري)',
-    override: 'السماح لهذا الموظف باعتماد خصم يتجاوز حد موظف آخر',
+    override: 'السماح لهذا المدير باعتماد خصم يتجاوز حد موظف آخر',
     save: 'حفظ سياسة الخصم',
     saving: 'جارٍ الحفظ...',
     loading: 'جارٍ تحميل الموظفين...',
@@ -48,26 +48,29 @@ const TEXT: Record<Lang, Record<string, string>> = {
     disabledPolicy: 'الخصم اليدوي غير مسموح لهذا الموظف.',
     active: 'نشط', disabledStatus: 'معطل', cashier: 'كاشير', manager: 'مدير',
     hint: 'لا يغيّر الخصم السعر الأصلي للمنتج. يحفظ كسطر مستقل بعد خصومات العروض حتى تبقى الأرباح والتقارير قابلة للتدقيق.',
+    permissionHint: 'هذه السياسة لا تمنح الصلاحية وحدها. فعّل أيضًا صلاحية الخصم اليدوي للموظف من صفحة الكاشيرات والموظفين، وللمدير فعّل صلاحية اعتماد تجاوز حد الخصم.',
   },
   ku: {
     title: 'دەسەڵاتی داشکاندنی کارمەندانی کاشێر',
     subtitle: 'بۆ هەر کارمەندێک ڕێگەپێدان و سنووری داشکاندن دیاری بکە.',
     back: 'گەڕانەوە بۆ کاشێر و کارمەندان',
     enabled: 'ڕێگەدان بە داشکاندنی دەستی', maxPercent: 'زۆرترین ڕێژە %',
-    maxAmount: 'زۆرترین بڕ (ئارەزوومەندانە)', override: 'ڕێگەدان بە پەسەندکردنی تێپەڕاندنی سنووری کارمەندێکی تر',
+    maxAmount: 'زۆرترین بڕ (ئارەزوومەندانە)', override: 'ڕێگەدان بە بەڕێوەبەر بۆ پەسەندکردنی تێپەڕاندنی سنووری کارمەندێکی تر',
     save: 'پاشەکەوتکردنی سیاسەت', saving: 'پاشەکەوت دەکرێت...', loading: 'کارمەندان بار دەکرێن...',
     failed: 'بارکردن یان پاشەکەوتکردن سەرکەوتوو نەبوو.', saved: 'سیاسەتی داشکاندن پاشەکەوت کرا.',
     disabledPolicy: 'داشکاندنی دەستی بۆ ئەم کارمەندە ڕێگەپێدراو نییە.', active: 'چالاک', disabledStatus: 'ناچالاک', cashier: 'کاشێر', manager: 'بەڕێوەبەر',
     hint: 'داشکاندن نرخی بنەڕەتی کاڵا ناگۆڕێت؛ بە جیاوازی دوای داشکاندنی ئۆفەرەکان تۆمار دەکرێت.',
+    permissionHint: 'ئەم سیاسەتە بە تەنها دەسەڵات نادات. دەسەڵاتی داشکاندنی دەستی بۆ کارمەند و دەسەڵاتی پەسەندکردنی تێپەڕاندن بۆ بەڕێوەبەر لە پەڕەی کاشێر و کارمەندان چالاک بکە.',
   },
   en: {
     title: 'Cashier employee discount authority',
     subtitle: 'Set who may discount, their maximum range, and who may approve an override.',
     back: 'Back to cashiers & staff', enabled: 'Allow manual discount', maxPercent: 'Maximum percentage %',
-    maxAmount: 'Maximum amount (optional)', override: 'Allow this employee to approve a discount above another employee’s limit',
+    maxAmount: 'Maximum amount (optional)', override: 'Allow this manager to approve a discount above another employee’s limit',
     save: 'Save discount policy', saving: 'Saving...', loading: 'Loading staff...', failed: 'Could not load or save the discount policy.', saved: 'Discount policy saved.',
     disabledPolicy: 'Manual discount is not allowed for this employee.', active: 'Active', disabledStatus: 'Disabled', cashier: 'Cashier', manager: 'Manager',
     hint: 'Manual discount never changes the product list price. It is recorded separately after promotion discounts so profit and reporting remain auditable.',
+    permissionHint: 'Policy alone does not grant authority. Also grant Manual discount on the Cashiers & Staff page; managers who approve overrides also need the Discount override approval permission.',
   },
 };
 
@@ -154,7 +157,8 @@ export default function CashierDiscountPoliciesPage() {
             enabled: draft.enabled,
             max_percentage_bps: Math.round(percent * 100),
             max_amount_minor: amount,
-            can_approve_override: draft.enabled && draft.canApproveOverride,
+            can_approve_override:
+              member.role === 'manager' && draft.enabled && draft.canApproveOverride,
           },
         }),
       });
@@ -187,6 +191,7 @@ export default function CashierDiscountPoliciesPage() {
       </div>
 
       <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">{copy.hint}</div>
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">{copy.permissionHint}</div>
       {message ? <div className={`rounded-xl border px-4 py-3 text-sm font-bold ${message.kind === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-red-200 bg-red-50 text-red-700'}`}>{message.text}</div> : null}
 
       {loading ? <div className="rounded-2xl border bg-white p-8 text-center text-sm text-slate-500">{copy.loading}</div> : (
@@ -217,10 +222,12 @@ export default function CashierDiscountPoliciesPage() {
                       {copy.maxAmount}
                       <input type="number" min="0" step="1" value={draft.maxAmount} onChange={event => updateDraft(member.id, { maxAmount: event.target.value })} className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3 outline-none focus:border-orange-400" dir="ltr" />
                     </label>
-                    <label className="md:col-span-2 flex cursor-pointer items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-950">
-                      <input type="checkbox" checked={draft.canApproveOverride} onChange={event => updateDraft(member.id, { canApproveOverride: event.target.checked })} className="mt-1" />
-                      <span>{copy.override}</span>
-                    </label>
+                    {member.role === 'manager' ? (
+                      <label className="md:col-span-2 flex cursor-pointer items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-950">
+                        <input type="checkbox" checked={draft.canApproveOverride} onChange={event => updateDraft(member.id, { canApproveOverride: event.target.checked })} className="mt-1" />
+                        <span>{copy.override}</span>
+                      </label>
+                    ) : null}
                   </div>
                 ) : <p className="mt-3 text-sm text-slate-500">{copy.disabledPolicy}</p>}
 
