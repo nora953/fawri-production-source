@@ -16,7 +16,7 @@ test('manager override client uses operator-authenticated online routes and neve
   assert.doesNotMatch(client, /localStorage|sessionStorage|indexedDB/);
 });
 
-test('checkout reserves one operation id before approval and commits that exact operation', async () => {
+test('checkout reserves an initial operation id and carries manager proof into the sale draft', async () => {
   const page = await source('src/pages/CashierPosPage.tsx');
   assert.match(page, /const \[checkoutOperationId, setCheckoutOperationId\] = useState<string \| null>\(null\)/);
   assert.match(page, /setCheckoutOperationId\(newSaleOperationId\(\)\)/);
@@ -24,6 +24,15 @@ test('checkout reserves one operation id before approval and commits that exact 
   assert.match(page, /operation_id: checkoutOperationId/);
   assert.match(page, /manual_discount_override_approval_id:[\s\S]*discountCheckout\.overrideApproval\.approval_id/);
   assert.doesNotMatch(page, /const operationId =[\s\S]{0,160}crypto\.randomUUID\(\)/);
+});
+
+test('renewed approval can replace the durable sale operation id without mutating the checkout page draft', async () => {
+  const hook = await source('src/lib/useCashierManualDiscountCheckout.ts');
+  const runtime = await source('src/lib/cashierOperatorPosRuntime.ts');
+  assert.match(hook, /CASHIER_DISCOUNT_OVERRIDE_OPERATION_CONFLICT/);
+  assert.match(hook, /requestForOperation\(newOverrideOperationId\(\)\)/);
+  assert.match(runtime, /resolveCashierDiscountOverrideSaleInput\(input\)/);
+  assert.match(runtime, /base\.commitSale\(effectiveInput\)/);
 });
 
 test('manager proof is invalidated with checkout binding changes and PIN is never retained', async () => {
