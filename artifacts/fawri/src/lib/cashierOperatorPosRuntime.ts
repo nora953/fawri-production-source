@@ -6,6 +6,10 @@ import {
   loadCurrentCashierDiscountPolicy,
 } from './cashierDiscountPolicyClient';
 import {
+  forgetCashierDiscountOverrideOperationBinding,
+  resolveCashierDiscountOverrideSaleInput,
+} from './cashierDiscountOverrideOperationBinding';
+import {
   createCashierPosRuntime,
   type CashierPosRuntime,
 } from './cashierPosBaseRuntime';
@@ -95,7 +99,7 @@ async function assertManualDiscountPermission(
     postPromotionTotalMinor: pricing.total_minor,
     policy,
   });
-  if (discount > limit) {
+  if (discount > limit && !input.manual_discount_override_approval_id) {
     throw new CashierOperatorPosError(
       'CASHIER_MANUAL_DISCOUNT_OVERRIDE_REQUIRED',
       'Manual discount exceeds this operator limit and requires manager approval',
@@ -137,10 +141,19 @@ export async function createCashierOperatorPosRuntime(options?: {
           'This operator is not allowed to create sales',
         );
       }
-      await assertOfflineInventoryPermission(base, input, currentSession);
-      await assertManualDiscountPermission(base, input);
-      await bindCashierOperationToCurrentOperator(input.operation_id, 'sale');
-      return base.commitSale(input);
+
+      // A renewed manager approval may intentionally bind the sale to a fresh
+      // operation id while the checkout UI still holds its original draft id.
+      // Resolve and validate that live approval binding before any local write.
+      const effectiveInput = resolveCashierDiscountOverrideSaleInput(input);
+      await assertOfflineInventoryPermission(base, effectiveInput, currentSession);
+      await assertManualDiscountPermission(base, effectiveInput);
+      await bindCashierOperationToCurrentOperator(effectiveInput.operation_id, 'sale');
+      const result = await base.commitSale(effectiveInput);
+      forgetCashierDiscountOverrideOperationBinding(
+        effectiveInput.manual_discount_override_approval_id,
+      );
+      return result;
     },
   };
 }
