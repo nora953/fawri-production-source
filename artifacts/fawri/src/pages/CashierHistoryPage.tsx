@@ -17,6 +17,12 @@ import {
   publishCashierOperatorSessionInvalidated,
 } from '@/lib/cashierOperatorSessionUi';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
+import {
+  CASHIER_RECEIPT_COPY,
+  printCashierReceipt,
+  readCashierReceiptPrintSettings,
+} from '@/lib/cashierReceiptPrinting';
+import { readCachedCashierReceiptProfile } from '@/lib/cashierReceiptProfileClient';
 import { CASHIER_UI_COPY, cashierLocale } from '@/lib/cashierUiCopy';
 import { useI18n } from '@/lib/i18n';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
@@ -137,6 +143,7 @@ function syncStateLabel(
 export default function CashierHistoryPage() {
   const { lang, dir } = useI18n();
   const labels = CASHIER_UI_COPY[lang].history;
+  const receiptLabels = CASHIER_RECEIPT_COPY[lang];
   const [runtime, setRuntime] = useState<CashierHistoryRuntime | null>(null);
   const [sales, setSales] = useState<CashierSaleSnapshot[]>([]);
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
@@ -148,6 +155,7 @@ export default function CashierHistoryPage() {
   const [authRequired, setAuthRequired] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [receiptPrintError, setReceiptPrintError] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<ConfirmAction>(null);
   const [canReturnPermission, setCanReturnPermission] = useState(false);
   const [canVoidPermission, setCanVoidPermission] = useState(false);
@@ -224,6 +232,7 @@ export default function CashierHistoryPage() {
     setConfirmAction(null);
     setNotice(null);
     setError(null);
+    setReceiptPrintError(null);
   }, [selectedSaleId]);
 
   const selectedPending = useMemo(() => {
@@ -269,6 +278,46 @@ export default function CashierHistoryPage() {
         .filter(line => line.quantity > 0),
     [returnDraft, returnableLines],
   );
+
+  const reprintSelectedReceipt = useCallback(() => {
+    if (!runtime || !selectedSale || busy || confirmAction) return;
+    const settings = readCashierReceiptPrintSettings(runtime.deviceId);
+    const profile = readCachedCashierReceiptProfile(runtime.deviceId);
+    setReceiptPrintError(null);
+    void printCashierReceipt({
+      sale: selectedSale,
+      lang,
+      paperWidthMm: settings.paper_width_mm,
+      ...(profile?.store_name ? { storeName: profile.store_name } : {}),
+      reprint: true,
+    }).catch(() => {
+      setReceiptPrintError(receiptLabels.reprintFailed);
+    });
+  }, [busy, confirmAction, lang, receiptLabels.reprintFailed, runtime, selectedSale]);
+
+  useEffect(() => {
+    if (!runtime || !selectedSale) return;
+    const handleReprintShortcut = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        event.repeat ||
+        event.ctrlKey ||
+        event.altKey ||
+        event.metaKey ||
+        event.shiftKey ||
+        event.key !== 'F9' ||
+        busy ||
+        confirmAction
+      ) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      reprintSelectedReceipt();
+    };
+    window.addEventListener('keydown', handleReprintShortcut, true);
+    return () => window.removeEventListener('keydown', handleReprintShortcut, true);
+  }, [busy, confirmAction, reprintSelectedReceipt, runtime, selectedSale]);
 
   const syncAfterLocalChange = useCallback(
     async (activeRuntime: CashierHistoryRuntime) => {
@@ -418,6 +467,7 @@ export default function CashierHistoryPage() {
 
         {notice ? <div className="mb-3 shrink-0 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{notice}</div> : null}
         {error ? <div role="alert" className="mb-3 shrink-0 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">{error}</div> : null}
+        {receiptPrintError ? <div role="status" className="mb-3 shrink-0 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{receiptPrintError}</div> : null}
 
         <div className="grid gap-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)]">
           <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:flex lg:min-h-0 lg:flex-col">
@@ -482,9 +532,19 @@ export default function CashierHistoryPage() {
                     </div>
                     <p className="text-xs text-slate-500">{labels.saleReference(saleReference(selectedSale.sale_id))}</p>
                   </div>
-                  <div className="text-end">
-                    <strong className="block text-xl" dir="ltr">{formatMoney(selectedSale.total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits, lang)}</strong>
-                    <span className="text-xs text-slate-500">{formatDate(selectedSale.occurred_at, lang)}</span>
+                  <div className="flex flex-col items-end gap-2 text-end">
+                    <div>
+                      <strong className="block text-xl" dir="ltr">{formatMoney(selectedSale.total_minor, selectedSale.currency_code, selectedSale.currency_fraction_digits, lang)}</strong>
+                      <span className="text-xs text-slate-500">{formatDate(selectedSale.occurred_at, lang)}</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={reprintSelectedReceipt}
+                      disabled={busy || Boolean(confirmAction)}
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {receiptLabels.reprintReceipt} <span dir="ltr">({receiptLabels.printShortcut})</span>
+                    </button>
                   </div>
                 </div>
 
