@@ -55,6 +55,7 @@ installCashierOfflineOperatorResume();
 
 const AUTO_SYNC_INTERVAL_MS = 3_000;
 const AUTO_SYNC_RETRY_BACKOFF_MS = 30_000;
+const AUTO_REFRESH_RETRY_BACKOFF_MS = 30_000;
 
 function syncErrorCode(error: unknown): string {
   return typeof error === 'object' && error && 'code' in error
@@ -75,10 +76,46 @@ function cashierIsOnline(): boolean {
   return navigator.onLine !== false;
 }
 
+function invalidateCashierSessionFromSync(): void {
+  invalidateCashierOperatorSession();
+  window.dispatchEvent(
+    new CustomEvent('fawri:cashier-operator-session-invalidated'),
+  );
+}
+
+function publishCashierOperationSyncFailure(cause: unknown): void {
+  const rawCode = syncErrorCode(cause);
+  const sessionRequired = isOperatorSessionRequired(rawCode);
+  const uiCode = sessionRequired
+    ? 'CASHIER_OPERATOR_LOGIN_REQUIRED'
+    : rawCode;
+  const latestLabels = storedCashierCopy().runtime;
+
+  if (sessionRequired) invalidateCashierSessionFromSync();
+
+  if (!cashierIsOnline()) {
+    publishCashierSyncUiState({
+      status: 'offline',
+      code: uiCode,
+      message: latestLabels.offlineUpload,
+    });
+    return;
+  }
+
+  publishCashierSyncUiState({
+    status: 'needs_attention',
+    code: uiCode,
+    message: sessionRequired
+      ? latestLabels.sessionExpired
+      : latestLabels.autoSyncFailed,
+  });
+}
+
 function startCashierPosAutoSync(): () => void {
   let stopped = false;
   let running = false;
-  let nextAttemptAt = 0;
+  let nextOutboxAttemptAt = 0;
+  let nextRefreshAttemptAt = 0;
 
   const attempt = async (
     reconcileCatalog = false,
@@ -98,7 +135,7 @@ function startCashierPosAutoSync(): () => void {
       return;
     }
 
-    if (!force && Date.now() < nextAttemptAt) return;
+    if (!force && Date.now() < nextOutboxAttemptAt) return;
 
     running = true;
     if (visible) {
@@ -109,10 +146,16 @@ function startCashierPosAutoSync(): () => void {
     }
 
     try {
-      if (reconcileCatalog || force) {
-        await refreshCashierOperatorPolicyFromCloud();
+      let result;
+      try {
+        result = await syncCashierOperatorOutboxToCloud();
+        nextOutboxAttemptAt = 0;
+      } catch (cause) {
+        publishCashierOperationSyncFailure(cause);
+        nextOutboxAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
+        return;
       }
-      const result = await syncCashierOperatorOutboxToCloud();
+
       const changedCloudState =
         result.uploaded_operations > 0 || result.replayed_operations > 0;
 
@@ -120,76 +163,68 @@ function startCashierPosAutoSync(): () => void {
         publishCashierDashboardRefresh();
       }
 
-      if (reconcileCatalog && result.pending_after === 0) {
-        await syncCashierOperatorCatalogFromCloud();
-        publishCashierCatalogRefresh();
-        publishCashierDashboardRefresh();
-      }
-
-      nextAttemptAt = 0;
-
       if (result.pending_after > 0) {
         publishCashierSyncUiState({
           status: 'needs_attention',
           pending: result.pending_after,
           message: labels.pendingOperations,
         });
-      } else {
-        const shouldAnnounceSuccess =
-          visible || getCashierSyncUiState().status === 'needs_attention';
-        if (shouldAnnounceSuccess) {
-          publishCashierSyncUiState({
-            status: 'synced',
-            pending: 0,
-            message: labels.synced,
-          });
-          window.setTimeout(() => {
-            if (getCashierSyncUiState().status === 'synced') {
-              publishCashierSyncUiState({ status: 'idle', pending: 0 });
-            }
-          }, 2_500);
-        } else if (getCashierSyncUiState().status !== 'idle') {
-          publishCashierSyncUiState({ status: 'idle', pending: 0 });
+        return;
+      }
+
+      const shouldAnnounceSuccess =
+        visible || getCashierSyncUiState().status === 'needs_attention';
+      if (shouldAnnounceSuccess) {
+        publishCashierSyncUiState({
+          status: 'synced',
+          pending: 0,
+          message: labels.synced,
+        });
+        window.setTimeout(() => {
+          if (getCashierSyncUiState().status === 'synced') {
+            publishCashierSyncUiState({ status: 'idle', pending: 0 });
+          }
+        }, 2_500);
+      } else if (getCashierSyncUiState().status !== 'idle') {
+        publishCashierSyncUiState({ status: 'idle', pending: 0 });
+      }
+
+      const refreshRequested = reconcileCatalog || force;
+      if (
+        !refreshRequested ||
+        (!force && Date.now() < nextRefreshAttemptAt)
+      ) {
+        return;
+      }
+
+      try {
+        await refreshCashierOperatorPolicyFromCloud();
+        if (reconcileCatalog) {
+          await syncCashierOperatorCatalogFromCloud();
+          publishCashierCatalogRefresh();
+          publishCashierDashboardRefresh();
         }
+        nextRefreshAttemptAt = 0;
+      } catch (cause) {
+        const rawCode = syncErrorCode(cause);
+        if (isOperatorSessionRequired(rawCode)) {
+          publishCashierOperationSyncFailure(cause);
+          nextOutboxAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
+          return;
+        }
+        // Catalog/policy refresh is a separate, non-destructive background concern.
+        // It must never turn an already-synced outbox into a false
+        // "sync required" state or delay upload of a later sale.
+        nextRefreshAttemptAt = Date.now() + AUTO_REFRESH_RETRY_BACKOFF_MS;
       }
-    } catch (cause) {
-      const rawCode = syncErrorCode(cause);
-      const sessionRequired = isOperatorSessionRequired(rawCode);
-      const uiCode = sessionRequired
-        ? 'CASHIER_OPERATOR_LOGIN_REQUIRED'
-        : rawCode;
-      const latestLabels = storedCashierCopy().runtime;
-
-      if (sessionRequired) {
-        invalidateCashierOperatorSession();
-        window.dispatchEvent(
-          new CustomEvent('fawri:cashier-operator-session-invalidated'),
-        );
-      }
-
-      if (!cashierIsOnline()) {
-        publishCashierSyncUiState({
-          status: 'offline',
-          code: uiCode,
-          message: latestLabels.offlineUpload,
-        });
-      } else {
-        publishCashierSyncUiState({
-          status: 'needs_attention',
-          code: uiCode,
-          message: sessionRequired
-            ? latestLabels.sessionExpired
-            : latestLabels.autoSyncFailed,
-        });
-      }
-      nextAttemptAt = Date.now() + AUTO_SYNC_RETRY_BACKOFF_MS;
     } finally {
       running = false;
     }
   };
 
   const handleOnline = () => {
-    nextAttemptAt = 0;
+    nextOutboxAttemptAt = 0;
+    nextRefreshAttemptAt = 0;
     void attempt(true, true, true);
   };
   const handleOffline = () => {
@@ -199,15 +234,17 @@ function startCashierPosAutoSync(): () => void {
     });
   };
   const handleFocus = () => {
-    nextAttemptAt = 0;
-    void attempt(true, true, false);
+    nextOutboxAttemptAt = 0;
+    void attempt(true, false, false);
   };
   const handleSessionChange = () => {
-    nextAttemptAt = 0;
+    nextOutboxAttemptAt = 0;
+    nextRefreshAttemptAt = 0;
     void attempt(true, true, false);
   };
   const unsubscribeManualRequest = subscribeCashierSyncRequests(() => {
-    nextAttemptAt = 0;
+    nextOutboxAttemptAt = 0;
+    nextRefreshAttemptAt = 0;
     void attempt(true, true, true);
   });
 
