@@ -18,13 +18,17 @@ test('cashier visual QA stylesheet participates in the offline asset graph', () 
   assert.match(serviceWorker, /htmlAssetPaths\(shellText\)/);
 });
 
-test('operator session controls occupy their own layout row instead of covering the cashier header', () => {
+test('operator session controls sit beside the POS brand without consuming a separate page row', () => {
   assert.match(
     css,
-    /#cashier-root > div\.relative > div\.fixed:first-child[\s\S]*position: sticky !important;/,
+    /#cashier-root > div\.relative > div\.fixed:first-child[\s\S]*position: absolute !important;/,
   );
-  assert.match(css, /height: calc\(100dvh - 46px\) !important;/);
-  assert.match(css, /border-bottom: 1px solid #e2e8f0 !important;/);
+  assert.match(css, /inset-inline-start: 9\.75rem !important;/);
+  assert.match(css, /background: transparent !important;/);
+  assert.match(css, /> span \{[\s\S]*background: #f8fafc;/);
+  assert.match(css, /> button \{[\s\S]*white-space: nowrap;/);
+  assert.doesNotMatch(css, /height: calc\(100dvh - 46px\) !important;/);
+  assert.doesNotMatch(css, /position: sticky !important;/);
 });
 
 test('POS header controls keep a consistent translated-label friendly baseline', () => {
