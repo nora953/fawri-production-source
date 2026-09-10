@@ -27,6 +27,7 @@ import {
   invalidateCashierOperatorSession,
 } from '@/lib/cashierOperatorSessionRuntime';
 import { refreshCashierOperatorPolicyFromCloud } from '@/lib/cashierOperatorPolicyRefresh';
+import { installCashierReceiptProfileRefresh } from '@/lib/cashierReceiptProfileClient';
 import { refreshDurableCashierStationBindingMetadata } from '@/lib/cashierStationBindingRecovery';
 import {
   cashierNetworkAttemptAllowed,
@@ -271,6 +272,7 @@ async function bootstrapCashier(): Promise<void> {
 
   if (!diagnostics && !sync && !history && !reports) {
     installCashierFastCheckoutKeyboard();
+    if (!demoRequested) installCashierReceiptProfileRefresh();
   }
 
   if (!diagnostics && !sync && !demoRequested) {
