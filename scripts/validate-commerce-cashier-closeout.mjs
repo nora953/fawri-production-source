@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 
 const steps = [
   {
-    label: 'Cashier sales, pricing and manual discount runtime tests',
+    label: 'Cashier sales, pricing, receipt printing and manual discount runtime tests',
     command: 'pnpm',
     args: [
       'exec','tsx','--tsconfig','artifacts/fawri/tsconfig.json','--test',
@@ -13,6 +13,7 @@ const steps = [
       'artifacts/fawri/tests/cashier-discount-override-operation-binding.test.ts',
       'artifacts/fawri/tests/cashier-sale-commit-single-flight.test.ts',
       'artifacts/fawri/tests/cashier-operator-local-database-readiness.test.ts',
+      'artifacts/fawri/tests/cashier-receipt-printing.test.ts',
     ],
   },
   {
