@@ -10,6 +10,7 @@ const steps = [
       'artifacts/fawri/tests/cashier-sales-report-corruption.test.ts',
       'artifacts/fawri/tests/cashier-sale-pricing-duplicate-lines.test.ts',
       'artifacts/fawri/tests/cashier-manual-discount-runtime.test.ts',
+      'artifacts/fawri/tests/cashier-discount-override-operation-binding.test.ts',
     ],
   },
   {
@@ -50,6 +51,7 @@ const steps = [
       'artifacts/api-server/tests/cashier-discount-override-live-readiness.test.mjs',
       'artifacts/api-server/tests/cashier-discount-authority-activation.test.mjs',
       'artifacts/fawri/tests/cashier-manager-override-checkout.test.mjs',
+      'artifacts/fawri/tests/cashier-manager-override-renewal.test.mjs',
       'artifacts/fawri/tests/cashier-discount-authority-management-ui.test.mjs',
     ],
   },
