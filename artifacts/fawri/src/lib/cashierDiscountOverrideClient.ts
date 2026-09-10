@@ -2,6 +2,7 @@ import {
   cashierOperatorHeaders,
   getCashierOperatorSession,
 } from './cashierOperatorSessionRuntime';
+import { rememberCashierDiscountOverrideOperationBinding } from './cashierDiscountOverrideOperationBinding';
 
 export type CashierDiscountOverrideApprover = {
   id: string;
@@ -12,6 +13,7 @@ export type CashierDiscountOverrideApproval = {
   approval_id: string;
   approver_staff_id: string;
   expires_at: string;
+  operation_id: string;
 };
 
 export class CashierDiscountOverrideClientError extends Error {
@@ -151,9 +153,18 @@ export async function requestCashierDiscountOverrideApproval(input: {
       502,
     );
   }
+  const normalizedExpiresAt = new Date(expiresAtMs).toISOString();
+  rememberCashierDiscountOverrideOperationBinding({
+    approvalId,
+    operationId: input.operationId,
+    manualDiscountMinor: input.manualDiscountMinor,
+    reason: input.reason,
+    expiresAt: normalizedExpiresAt,
+  });
   return {
     approval_id: approvalId,
     approver_staff_id: approverStaffId,
-    expires_at: new Date(expiresAtMs).toISOString(),
+    expires_at: normalizedExpiresAt,
+    operation_id: input.operationId,
   };
 }
