@@ -29,6 +29,17 @@ test('F8 checkout lookup follows the active cashier language instead of hard-cod
   assert.doesNotMatch(keyboard, /'الدفع'|'Pay'|'پارەدان'/);
 });
 
+test('F9 prints only the completed-sale receipt action while Ctrl or Cmd P cannot print the POS page', () => {
+  assert.match(keyboard, /CASHIER_RECEIPT_PRINT_KEY = 'F9'/);
+  assert.match(keyboard, /CASHIER_RECEIPT_COPY/);
+  assert.match(keyboard, /receiptPrintButton/);
+  assert.match(keyboard, /event\.key === CASHIER_RECEIPT_PRINT_KEY/);
+  assert.match(keyboard, /button\.textContent\?\.includes\(label\)/);
+  assert.match(keyboard, /event\.key\.toLowerCase\(\) === 'p'/);
+  assert.match(keyboard, /event\.preventDefault\(\)/);
+  assert.match(keyboard, /event\.stopImmediatePropagation\(\)/);
+});
+
 test('Delete undoes exactly one active cart unit without becoming a clear-cart shortcut', () => {
   assert.match(keyboard, /CASHIER_CART_UNDO_KEY = 'Delete'/);
   assert.match(keyboard, /activeCartDecrementButton/);
