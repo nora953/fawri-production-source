@@ -86,3 +86,34 @@ test('receipt printing uses an isolated iframe instead of printing the cashier p
   assert.match(source, /afterprint/);
   assert.match(source, /PRINT_FRAME_TIMEOUT_MS/);
 });
+
+test('POS exposes manual receipt print, Ctrl+P and device-scoped auto print after a completed sale', () => {
+  const source = fs.readFileSync(
+    new URL('../src/pages/CashierPosPage.tsx', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(source, /receipt: result\.sale/);
+  assert.match(source, /onClick=\{\(\) => printReceipt\(success\.receipt\)\}/);
+  assert.match(source, /event\.key\.toLowerCase\(\) !== 'p'/);
+  assert.match(source, /event\.ctrlKey \|\| event\.metaKey/);
+  assert.match(source, /writeCashierReceiptPrintSettings\(runtime\.deviceId/);
+  assert.match(source, /readCashierReceiptPrintSettings\(runtime\.deviceId\)\.auto_print/);
+  assert.match(source, /if \(receiptAutoPrint\) printReceipt\(result\.sale\)/);
+});
+
+test('receipt print failure is non-fatal to the committed sale path', () => {
+  const source = fs.readFileSync(
+    new URL('../src/pages/CashierPosPage.tsx', import.meta.url),
+    'utf8',
+  );
+
+  const commitIndex = source.indexOf('const result = await runtime.commitSale');
+  const successIndex = source.indexOf('setSuccess({', commitIndex);
+  const autoPrintIndex = source.indexOf('if (receiptAutoPrint) printReceipt(result.sale)', successIndex);
+  assert.ok(commitIndex >= 0);
+  assert.ok(successIndex > commitIndex);
+  assert.ok(autoPrintIndex > successIndex);
+  assert.match(source, /printCashierReceipt\(\{ sale, lang \}\)\.catch\(\(\) => \{/);
+  assert.doesNotMatch(source, /await printCashierReceipt/);
+});
