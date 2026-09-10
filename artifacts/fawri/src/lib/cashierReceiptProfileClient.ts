@@ -80,7 +80,7 @@ export async function refreshCurrentCashierReceiptProfile(): Promise<CashierRece
     store_name: storeName,
     cached_at: new Date().toISOString(),
   };
-  writeCachedCashierReceiptProfile(session.device_id, profile);
+  writeCachedCashierReceiptProfile(session.context.device_id, profile);
   return profile;
 }
 
