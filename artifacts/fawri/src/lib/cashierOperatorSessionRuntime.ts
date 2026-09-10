@@ -16,6 +16,8 @@ export type CashierClientPermission =
   | 'sale.view_all'
   | 'sale.return'
   | 'sale.void'
+  | 'sale.discount'
+  | 'sale.discount_override'
   | 'inventory.adjust'
   | 'reports.sales'
   | 'reports.profit'
