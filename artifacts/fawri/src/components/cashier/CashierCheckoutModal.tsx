@@ -121,16 +121,62 @@ export default function CashierCheckoutModal({
   onSubmit,
 }: Props) {
   const cashInputRef = useRef<HTMLInputElement>(null);
+  const cashTouchedRef = useRef(false);
+  const previousExactTotalRef = useRef<number | null>(null);
   const extra = CASHIER_POS_ENHANCEMENT_COPY[lang];
 
   useEffect(() => {
+    if (!open) {
+      cashTouchedRef.current = false;
+      previousExactTotalRef.current = null;
+      return;
+    }
+    if (paymentMethod !== 'cash') {
+      cashTouchedRef.current = false;
+      previousExactTotalRef.current = null;
+      return;
+    }
+    if (
+      previousExactTotalRef.current !== finalTotalMinor &&
+      !cashTouchedRef.current
+    ) {
+      previousExactTotalRef.current = finalTotalMinor;
+      onExactCash();
+    }
+  }, [finalTotalMinor, onExactCash, open, paymentMethod]);
+
+  useEffect(() => {
     if (!open) return;
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !committing && !overrideApprovalLoading) onClose();
+    const handleKeyboard = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (!committing && !overrideApprovalLoading) onClose();
+        return;
+      }
+      if (
+        event.key !== 'Enter' ||
+        event.repeat ||
+        committing ||
+        overrideApprovalLoading ||
+        !canSubmit ||
+        paymentMethod !== 'cash'
+      ) {
+        return;
+      }
+
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName.toLowerCase();
+        if (tag === 'textarea' || tag === 'select' || tag === 'button') return;
+        if (tag === 'input' && target.id !== 'cashier-cash-received') return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      onSubmit();
     };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [committing, onClose, open, overrideApprovalLoading]);
+    window.addEventListener('keydown', handleKeyboard);
+    return () => window.removeEventListener('keydown', handleKeyboard);
+  }, [canSubmit, committing, onClose, onSubmit, open, overrideApprovalLoading, paymentMethod]);
 
   useEffect(() => {
     if (!open || paymentMethod !== 'cash' || overrideNeeded) return;
@@ -274,7 +320,11 @@ export default function CashierCheckoutModal({
                 </label>
                 <button
                   type="button"
-                  onClick={onExactCash}
+                  onClick={() => {
+                    cashTouchedRef.current = false;
+                    previousExactTotalRef.current = finalTotalMinor;
+                    onExactCash();
+                  }}
                   className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-100"
                 >
                   {labels.exactCash}
@@ -287,7 +337,10 @@ export default function CashierCheckoutModal({
                 inputMode="numeric"
                 autoComplete="off"
                 value={cashTenderText}
-                onChange={event => onCashTenderChange(event.target.value)}
+                onChange={event => {
+                  cashTouchedRef.current = true;
+                  onCashTenderChange(event.target.value);
+                }}
                 placeholder={labels.cashReceivedPlaceholder}
                 className="h-14 w-full rounded-xl border border-slate-300 bg-white px-4 text-end text-2xl font-black outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                 dir="ltr"
