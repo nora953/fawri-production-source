@@ -18,7 +18,7 @@ test('cashier visual QA stylesheet participates in the offline asset graph', () 
   assert.match(serviceWorker, /htmlAssetPaths\(shellText\)/);
 });
 
-test('RTL cashier identity cluster stays inside the POS header footprint', () => {
+test('RTL cashier shift controls stay inside the POS header footprint', () => {
   assert.match(css, /html\[data-cashier-view='pos'\] main > div > header \{[\s\S]*position: relative;/);
   assert.match(
     css,
@@ -26,9 +26,8 @@ test('RTL cashier identity cluster stays inside the POS header footprint', () =>
   );
   assert.match(css, /top: 2rem !important;/);
   assert.match(css, /inset-inline-start: 13\.4rem !important;/);
-  assert.match(css, /> button \{[\s\S]*order: 1;[\s\S]*align-items: center !important;[\s\S]*justify-content: center !important;/);
-  assert.match(css, /> span \{[\s\S]*order: 2;[\s\S]*align-items: center;/);
-  assert.match(css, /unicode-bidi: isolate;/);
+  assert.match(css, /> button \{[\s\S]*align-items: center !important;[\s\S]*justify-content: center !important;/);
+  assert.match(css, /> span \{[\s\S]*display: none !important;/);
   assert.doesNotMatch(css, /height: calc\(100dvh - 46px\) !important;/);
   assert.doesNotMatch(css, /position: sticky !important;/);
 });
