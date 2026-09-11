@@ -2,7 +2,7 @@
    protected by the cashier functional-freeze gate. */
 
 /* Arabic/RTL desktop identity cluster:
-   brand -> online/offline -> end shift.
+   brand -> end shift -> online/offline.
    The old operator/role/station sentence is intentionally hidden because it
    duplicates internal session information and crowds the cashier header. */
 html[data-cashier-view='pos'] main > div > header {
@@ -17,7 +17,7 @@ html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > d
   top: 2rem !important;
   left: auto !important;
   right: auto !important;
-  inset-inline-start: 13.4rem !important;
+  inset-inline-start: 8rem !important;
   transform: none !important;
   z-index: 80 !important;
   display: flex !important;
@@ -37,7 +37,7 @@ html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > d
 }
 
 /* Keep the real logout action precisely centred on the same vertical axis as
-   the brand/status row. */
+   the brand/status row, close to the brand while retaining deliberate space. */
 html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > button {
   order: 1;
   display: inline-flex !important;
@@ -63,13 +63,13 @@ html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > d
   display: none !important;
 }
 
-/* Move the existing runtime-derived connectivity badge from the general action
-   group into the brand cluster. Replace the rounded pill with a compact soft
-   rectangle that reads as status rather than as a primary action. */
+/* Move the existing runtime-derived connectivity badge to the LEFT of the end
+   shift action in RTL. Keep it a compact soft rectangle that reads as status
+   rather than as a primary action. */
 html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
   position: absolute;
   top: 50%;
-  inset-inline-start: 8.45rem;
+  inset-inline-start: 16.25rem;
   transform: translateY(-50%);
   z-index: 81;
   display: inline-flex;
@@ -137,19 +137,19 @@ html[data-cashier-view='pos'] main > div > header > div:first-child {
 @media (max-width: 1023px) {
   html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
     top: 1.9rem !important;
-    inset-inline-start: 12.5rem !important;
+    inset-inline-start: 7.5rem !important;
     max-width: 9rem !important;
   }
 
   html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
-    inset-inline-start: 8.1rem;
+    inset-inline-start: 15rem;
   }
 }
 
 @media (max-width: 639px) {
   html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
     top: 1.8rem !important;
-    inset-inline-start: 11.4rem !important;
+    inset-inline-start: 7rem !important;
     max-width: calc(100vw - 12rem) !important;
     height: 30px;
     min-height: 30px;
@@ -163,7 +163,7 @@ html[data-cashier-view='pos'] main > div > header > div:first-child {
   }
 
   html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
-    inset-inline-start: 7.55rem;
+    inset-inline-start: 13.5rem;
     height: 30px;
     min-height: 30px;
     padding-inline: 0.55rem !important;
