@@ -24,21 +24,25 @@ test('RTL cashier identity cluster stays inside the POS header footprint', () =>
     css,
     /#cashier-root > div\.relative > div\.fixed:first-child[\s\S]*position: absolute !important;/,
   );
+  assert.match(css, /top: 2rem !important;/);
   assert.match(css, /inset-inline-start: 13\.4rem !important;/);
-  assert.match(css, /> button \{[\s\S]*order: 1;/);
-  assert.match(css, /> span \{[\s\S]*order: 2;/);
-  assert.match(css, /direction: rtl;/);
+  assert.match(css, /> button \{[\s\S]*order: 1;[\s\S]*align-items: center !important;[\s\S]*justify-content: center !important;/);
+  assert.match(css, /> span \{[\s\S]*order: 2;[\s\S]*align-items: center;/);
+  assert.match(css, /unicode-bidi: isolate;/);
   assert.doesNotMatch(css, /height: calc\(100dvh - 46px\) !important;/);
   assert.doesNotMatch(css, /position: sticky !important;/);
 });
 
-test('runtime connectivity badge is visually moved beside the cashier brand', () => {
+test('runtime connectivity badge is a soft rectangular status beside the cashier brand', () => {
   assert.match(
     css,
     /header > div:last-child > div:first-child > span:first-child \{[\s\S]*position: absolute;/,
   );
   assert.match(css, /inset-inline-start: 8\.45rem;/);
   assert.match(css, /transform: translateY\(-50%\);/);
+  assert.match(css, /border-radius: 0\.625rem !important;/);
+  assert.match(css, /span:first-child\.bg-emerald-50 \{[\s\S]*border: 1px solid #a7f3d0 !important;[\s\S]*background: #ecfdf5 !important;/);
+  assert.match(css, /span:first-child\.bg-slate-100 \{[\s\S]*border: 1px solid #cbd5e1 !important;[\s\S]*background: #f8fafc !important;/);
 });
 
 test('POS header controls keep a consistent translated-label friendly baseline', () => {
