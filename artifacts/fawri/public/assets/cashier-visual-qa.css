@@ -2,10 +2,9 @@
    protected by the cashier functional-freeze gate. */
 
 /* Arabic/RTL desktop identity cluster:
-   brand -> online/offline -> end shift -> merchant-defined station name.
-   The operator gate still owns logout/session behavior; this layer only places
-   those existing controls inside the header footprint so no extra page row is
-   introduced. */
+   brand -> online/offline -> end shift.
+   The old operator/role/station sentence is intentionally hidden because it
+   duplicates internal session information and crowds the cashier header. */
 html[data-cashier-view='pos'] main > div > header {
   position: relative;
   align-items: center !important;
@@ -23,12 +22,12 @@ html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > d
   z-index: 80 !important;
   display: flex !important;
   width: auto !important;
-  max-width: 19rem !important;
+  max-width: 10rem !important;
   height: 32px;
   min-height: 32px;
   align-items: center !important;
   justify-content: flex-start;
-  gap: 0.4rem !important;
+  gap: 0 !important;
   padding: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -37,8 +36,8 @@ html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > d
   backdrop-filter: none !important;
 }
 
-/* Put the real logout action immediately after connection state and keep it
-   precisely centred on the same vertical axis as the brand/status row. */
+/* Keep the real logout action precisely centred on the same vertical axis as
+   the brand/status row. */
 html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > button {
   order: 1;
   display: inline-flex !important;
@@ -57,31 +56,11 @@ html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > d
   white-space: nowrap;
 }
 
-/* The session text ends with station_name. Keep the visual chip compact and
-   clip from the leading side so the merchant-defined station label remains the
-   useful visible part on constrained widths. */
+/* Do not expose the verbose internal session sentence in the POS header.
+   Station identity can be presented later as its own dedicated label using the
+   merchant-defined station_name rather than this mixed operator/role string. */
 html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > span {
-  order: 2;
-  display: inline-flex;
-  width: min(11rem, 18vw);
-  min-width: 0;
-  height: 32px;
-  min-height: 32px;
-  align-items: center;
-  padding: 0 0.7rem;
-  overflow: hidden;
-  border: 1px solid #e2e8f0;
-  border-radius: 0.65rem;
-  background: #f8fafc;
-  color: #475569 !important;
-  font-size: 0.72rem;
-  font-weight: 700;
-  line-height: 1.3;
-  direction: rtl;
-  unicode-bidi: isolate;
-  text-align: right;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  display: none !important;
 }
 
 /* Move the existing runtime-derived connectivity badge from the general action
@@ -155,16 +134,11 @@ html[data-cashier-view='pos'] main > div > header > div:first-child {
   flex: 0 0 auto;
 }
 
-/* Tablet: keep the same hierarchy but reduce the station footprint. */
 @media (max-width: 1023px) {
   html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
     top: 1.9rem !important;
     inset-inline-start: 12.5rem !important;
-    max-width: 16rem !important;
-  }
-
-  html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > span {
-    width: min(9rem, 17vw);
+    max-width: 9rem !important;
   }
 
   html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
@@ -172,8 +146,6 @@ html[data-cashier-view='pos'] main > div > header > div:first-child {
   }
 }
 
-/* Mobile gets a deliberately tighter cluster; station identity may collapse
-   while logout and connectivity remain reachable. */
 @media (max-width: 639px) {
   html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
     top: 1.8rem !important;
@@ -181,10 +153,6 @@ html[data-cashier-view='pos'] main > div > header > div:first-child {
     max-width: calc(100vw - 12rem) !important;
     height: 30px;
     min-height: 30px;
-  }
-
-  html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > span {
-    display: none;
   }
 
   html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > button {
