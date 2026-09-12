@@ -6,10 +6,8 @@ html[data-cashier-view='pos'] aside > div:nth-child(2) {
   padding: 0.5rem !important;
 }
 
-/* Compact-cart layout authority. The earlier implementation fixed this region
-   to a 70px strip with a 58px scrolling row. That geometry clipped the second
-   line (quantity/total) once the cart cards became two-row cards. Keep the
-   active line flexible and let the compact panel size to its actual content. */
+/* Compact-cart layout authority. Keep the active line flexible and let the
+   compact panel size to its actual two-row card content. */
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) {
   display: grid !important;
   grid-template-rows: minmax(128px, 1fr) auto;
@@ -35,29 +33,37 @@ html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) >
   display: flex !important;
 }
 
+/* This is the compact-panel paging row: previous arrow + four-card grid + next arrow. */
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child {
+  display: flex !important;
+  align-items: stretch !important;
+  gap: 0.375rem !important;
+  width: 100%;
+  min-width: 0;
   height: auto;
   min-height: 68px;
   overflow: hidden;
 }
 
-html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div {
-  display: flex !important;
-  flex-flow: row nowrap !important;
+/* The inner card container must remain a grid. A previous generic descendant
+   selector forced this exact element to flex, which squeezed the cards into
+   narrow vertical columns and hid their quantity/price row. */
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > .cashier-cart-compact-grid {
+  display: grid !important;
+  flex: 1 1 0%;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   align-items: stretch !important;
   gap: 0.375rem !important;
-  width: 100%;
+  width: auto;
   min-width: 0;
-  height: auto !important;
   min-height: 68px;
   box-sizing: border-box;
   overflow: hidden !important;
 }
 
-/* These direct buttons are the previous/next controls. Keep them narrow so the
-   four-card grid owns the available width; do not reuse the old 104x40 card
-   geometry here. */
-html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div > button {
+/* Only the two direct paging buttons are narrow. Compact product cards live
+   inside .cashier-cart-compact-grid and must never inherit this geometry. */
+html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > button {
   flex: 0 0 1.75rem !important;
   width: 1.75rem !important;
   min-width: 1.75rem !important;
