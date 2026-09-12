@@ -3,9 +3,8 @@ import {
   cashierOperatorHeaders,
   getCashierOperatorSession,
   getCashierPendingEnvelopeCount,
+  invalidateCashierOperatorSession,
 } from './cashierOperatorSessionRuntime';
-
-const OPERATOR_STORAGE_KEY = 'fawri.cashier.operator-session.v1';
 
 async function responsePayload(
   response: Response,
@@ -65,7 +64,5 @@ export async function endCashierOperatorShiftWithPin(pinValue: string): Promise<
     );
   }
 
-  if (typeof sessionStorage !== 'undefined') {
-    sessionStorage.removeItem(OPERATOR_STORAGE_KEY);
-  }
+  invalidateCashierOperatorSession();
 }
