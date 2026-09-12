@@ -3,6 +3,11 @@ import type {
   CashierSaleLineSnapshot,
   CashierSaleSnapshot,
 } from './cashierLocalContracts';
+import {
+  allocateCashierSaleNetByLine,
+  cashierRefundForAllocatedLine,
+  type CashierSaleLineAllocation,
+} from './cashierSaleAccounting';
 
 type CostAwareSaleLine = CashierSaleLineSnapshot & {
   /** Optional owner-only sale-time cost snapshot. Staff devices normally omit it. */
@@ -62,6 +67,10 @@ type CurrencyAccumulator = Omit<
 > & {
   profit_minor: number;
   products: Map<string, ProductAccumulator>;
+};
+
+type SaleAccounting = {
+  byLineId: Map<string, CashierSaleLineAllocation>;
 };
 
 function safeNonNegativeInteger(value: unknown, label: string): number {
@@ -218,14 +227,32 @@ function addCostContribution(
   );
 }
 
-function validateSale(sale: CashierSaleSnapshot): void {
+function saleAccounting(sale: CashierSaleSnapshot): SaleAccounting {
+  try {
+    const allocations = allocateCashierSaleNetByLine(sale.lines, sale.total_minor);
+    return { byLineId: new Map(allocations.map(item => [item.line_id, item])) };
+  } catch {
+    throw new Error('CASHIER_REPORT_INVALID_SALE_TOTAL');
+  }
+}
+
+function allocationFor(
+  accounting: SaleAccounting,
+  lineId: string,
+): CashierSaleLineAllocation {
+  const allocation = accounting.byLineId.get(lineId);
+  if (!allocation) throw new Error('CASHIER_REPORT_RETURN_LINE_NOT_FOUND');
+  return allocation;
+}
+
+function validateSale(sale: CashierSaleSnapshot): SaleAccounting {
   if (sale.source !== 'cashier' || !Array.isArray(sale.lines) || sale.lines.length === 0) {
     throw new Error('CASHIER_REPORT_INVALID_SALE');
   }
   reportCurrencyKey(sale);
   const lineIds = new Set<string>();
   const itemKeys = new Set<string>();
-  let total = 0;
+  let effectiveBasis = 0;
   for (const line of sale.lines) {
     const quantity = safePositiveInteger(line.quantity, 'sold_quantity');
     const price = safeNonNegativeInteger(
@@ -241,15 +268,24 @@ function validateSale(sale: CashierSaleSnapshot): void {
     }
     lineIds.add(line.line_id);
     itemKeys.add(lineKey(line));
-    total = safeAdd(total, lineTotal, 'sale_total');
+    effectiveBasis = safeAdd(effectiveBasis, lineTotal, 'sale_basis');
     if (line.unit_cost_minor !== undefined) {
       safeNonNegativeInteger(line.unit_cost_minor, 'unit_cost');
     }
   }
-  if (total !== safeNonNegativeInteger(sale.total_minor, 'sale_total')) {
+  const saleTotal = safeNonNegativeInteger(sale.total_minor, 'sale_total');
+  if (saleTotal > effectiveBasis) {
+    throw new Error('CASHIER_REPORT_INVALID_SALE_TOTAL');
+  }
+  const manualDiscount = sale.manual_discount_minor;
+  if (
+    manualDiscount !== undefined &&
+    safeNonNegativeInteger(manualDiscount, 'manual_discount') !== effectiveBasis - saleTotal
+  ) {
     throw new Error('CASHIER_REPORT_INVALID_SALE_TOTAL');
   }
 
+  const accounting = saleAccounting(sale);
   const returns = sale.returns || [];
   if (sale.void && returns.length > 0) {
     throw new Error('CASHIER_REPORT_VOID_AFTER_RETURN');
@@ -264,7 +300,7 @@ function validateSale(sale: CashierSaleSnapshot): void {
       throw new Error('CASHIER_REPORT_DUPLICATE_OPERATION');
     }
     operationIds.add(snapshot.operation_id);
-    validateReturnSnapshot(sale, snapshot, returnedByLine);
+    validateReturnSnapshot(sale, snapshot, returnedByLine, accounting);
   }
   if (sale.void) {
     if (operationIds.has(sale.void.operation_id)) {
@@ -274,19 +310,21 @@ function validateSale(sale: CashierSaleSnapshot): void {
       sale.void.sale_id !== sale.sale_id ||
       sale.void.currency_code !== sale.currency_code ||
       sale.void.currency_fraction_digits !== sale.currency_fraction_digits ||
-      safeNonNegativeInteger(sale.void.refund_total_minor, 'void_refund') !== sale.total_minor
+      safeNonNegativeInteger(sale.void.refund_total_minor, 'void_refund') !== saleTotal
     ) {
       throw new Error('CASHIER_REPORT_INVALID_VOID');
     }
     requiredInstant(sale.void.occurred_at, 'void_time');
   }
   requiredInstant(sale.occurred_at, 'sale_time');
+  return accounting;
 }
 
 function validateReturnSnapshot(
   sale: CashierSaleSnapshot,
   snapshot: CashierReturnSnapshot,
   returnedByLine: Map<string, number>,
+  accounting: SaleAccounting,
 ): void {
   if (
     snapshot.sale_id !== sale.sale_id ||
@@ -315,15 +353,27 @@ function validateReturnSnapshot(
       original.effective_unit_price_minor,
       'effective_price',
     );
+    const alreadyReturned = returnedByLine.get(original.line_id) || 0;
+    const allocation = allocationFor(accounting, original.line_id);
+    let expectedRefund: number;
+    try {
+      expectedRefund = cashierRefundForAllocatedLine({
+        allocatedNetMinor: allocation.allocated_net_minor,
+        soldQuantity: original.quantity,
+        returnedBeforeQuantity: alreadyReturned,
+        returnQuantity: quantity,
+      });
+    } catch {
+      throw new Error('CASHIER_REPORT_RETURN_EXCEEDS_SALE');
+    }
     if (
       returned.product_id !== original.product_id ||
       returned.variant_id !== original.variant_id ||
       returned.effective_unit_price_minor !== originalPrice ||
-      refund !== safeMultiply(originalPrice, quantity, 'return_refund')
+      refund !== expectedRefund
     ) {
       throw new Error('CASHIER_REPORT_RETURN_MISMATCH');
     }
-    const alreadyReturned = returnedByLine.get(original.line_id) || 0;
     const cumulative = safeAdd(alreadyReturned, quantity, 'returned_quantity');
     if (cumulative > original.quantity) {
       throw new Error('CASHIER_REPORT_RETURN_EXCEEDS_SALE');
@@ -339,6 +389,7 @@ function validateReturnSnapshot(
 function applySale(
   currencies: Map<string, CurrencyAccumulator>,
   sale: CashierSaleSnapshot,
+  accounting: SaleAccounting,
   from?: Date,
   to?: Date,
 ): boolean {
@@ -365,7 +416,7 @@ function applySale(
   for (const rawLine of sale.lines) {
     const line = rawLine as CostAwareSaleLine;
     const quantity = safePositiveInteger(line.quantity, 'sold_quantity');
-    const revenue = safeNonNegativeInteger(line.line_total_minor, 'line_total');
+    const revenue = allocationFor(accounting, line.line_id).allocated_net_minor;
     accumulator.sold_units = safeAdd(accumulator.sold_units, quantity, 'sold_units');
     accumulator.net_units = safeAdd(accumulator.net_units, quantity, 'net_units');
     addProductRow(accumulator, line, quantity, revenue);
@@ -417,6 +468,7 @@ function applyReturn(
 function applyVoid(
   currencies: Map<string, CurrencyAccumulator>,
   sale: CashierSaleSnapshot,
+  accounting: SaleAccounting,
   saleInRange: boolean,
   from?: Date,
   to?: Date,
@@ -447,7 +499,7 @@ function applyVoid(
   for (const rawLine of sale.lines) {
     const line = rawLine as CostAwareSaleLine;
     const quantity = safePositiveInteger(line.quantity, 'sold_quantity');
-    const revenue = safeNonNegativeInteger(line.line_total_minor, 'line_total');
+    const revenue = allocationFor(accounting, line.line_id).allocated_net_minor;
     accumulator.returned_units = safeAdd(
       accumulator.returned_units,
       quantity,
@@ -530,13 +582,13 @@ export function buildCashierSalesReport(
   let includedSales = 0;
 
   for (const sale of sales) {
-    validateSale(sale);
-    const saleInRange = applySale(currencies, sale, from, to);
+    const accounting = validateSale(sale);
+    const saleInRange = applySale(currencies, sale, accounting, from, to);
     if (saleInRange) includedSales += 1;
     for (const snapshot of sale.returns || []) {
       applyReturn(currencies, sale, snapshot, from, to);
     }
-    applyVoid(currencies, sale, saleInRange, from, to);
+    applyVoid(currencies, sale, accounting, saleInRange, from, to);
   }
 
   return {

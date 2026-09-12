@@ -4,6 +4,11 @@ import {
   withMerchantOperationalTransaction,
 } from "./operationalPostgresAuthority";
 import { CashierStaffAuthorityError } from "./postgresCashierStaffAuthority";
+import {
+  allocateCashierSaleNetByLine,
+  cashierRefundForAllocatedLine,
+  type CashierSaleLineAllocation,
+} from "./cashierSaleAccounting";
 
 const MAX_REPORT_SALES = 50_000;
 const DEFAULT_TOP_PRODUCTS = 10;
@@ -56,6 +61,10 @@ type ParsedSale = {
   total_minor: number;
   lines: SaleLine[];
   compensations: Compensation[];
+};
+
+type SaleAccounting = {
+  byLineId: Map<string, CashierSaleLineAllocation>;
 };
 
 export type CashierCentralProductRow = {
@@ -131,6 +140,14 @@ type ReportRange = {
   to?: string;
 };
 
+function evidenceError(message: string): CashierStaffAuthorityError {
+  return new CashierStaffAuthorityError(
+    "CASHIER_REPORT_EVIDENCE_INVALID",
+    message,
+    409,
+  );
+}
+
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -140,11 +157,7 @@ function record(value: unknown): Record<string, unknown> {
 function nonNegativeInteger(value: unknown, field: string, allowZero = true): number {
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed < 0 || (!allowZero && parsed === 0)) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      `cashier report evidence contains invalid ${field}`,
-      409,
-    );
+    throw evidenceError(`cashier report evidence contains invalid ${field}`);
   }
   return parsed;
 }
@@ -176,11 +189,7 @@ function safeMultiply(left: number, right: number, field: string): number {
 function text(value: unknown, field: string, maxLength = 300): string {
   const normalized = String(value ?? "").normalize("NFKC").trim();
   if (!normalized || normalized.length > maxLength) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      `cashier report evidence contains invalid ${field}`,
-      409,
-    );
+    throw evidenceError(`cashier report evidence contains invalid ${field}`);
   }
   return normalized;
 }
@@ -188,11 +197,7 @@ function text(value: unknown, field: string, maxLength = 300): string {
 function currencyCode(value: unknown): string {
   const code = String(value ?? "").trim().toUpperCase();
   if (!/^[A-Z]{3}$/.test(code)) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier report evidence contains invalid currency",
-      409,
-    );
+    throw evidenceError("cashier report evidence contains invalid currency");
   }
   return code;
 }
@@ -200,11 +205,7 @@ function currencyCode(value: unknown): string {
 function evidenceInstant(value: unknown, field: string): string {
   const parsed = new Date(String(value ?? ""));
   if (!Number.isFinite(parsed.getTime())) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      `cashier report evidence contains invalid ${field}`,
-      409,
-    );
+    throw evidenceError(`cashier report evidence contains invalid ${field}`);
   }
   return parsed.toISOString();
 }
@@ -250,11 +251,7 @@ function parseSaleLine(value: unknown): SaleLine {
   );
   const lineTotal = nonNegativeInteger(raw.line_total_minor, "line_total_minor");
   if (safeMultiply(effectiveUnitPrice, quantity, "line total") !== lineTotal) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier report sale line total is inconsistent",
-      409,
-    );
+    throw evidenceError("cashier report sale line total is inconsistent");
   }
   return {
     line_id: text(raw.line_id, "line_id"),
@@ -277,11 +274,7 @@ function parseCompensation(value: unknown): Compensation {
   const raw = record(value);
   const kind = String(raw.kind || "");
   if (kind !== "return" && kind !== "void") {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier report compensation evidence is invalid",
-      409,
-    );
+    throw evidenceError("cashier report compensation evidence is invalid");
   }
   return {
     kind,
@@ -294,11 +287,7 @@ function parseCompensation(value: unknown): Compensation {
 function parseReturnLines(compensation: Compensation): ReturnLine[] {
   const values = compensation.snapshot.lines;
   if (!Array.isArray(values) || values.length === 0) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier return lines are missing",
-      409,
-    );
+    throw evidenceError("cashier return lines are missing");
   }
   return values.map((value) => {
     const raw = record(value);
@@ -318,41 +307,41 @@ function parseReturnLines(compensation: Compensation): ReturnLine[] {
 
 function originalLineById(sale: ParsedSale, lineId: string): SaleLine {
   const line = sale.lines.find((candidate) => candidate.line_id === lineId);
-  if (!line) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier return references an unknown sale line",
-      409,
-    );
-  }
+  if (!line) throw evidenceError("cashier return references an unknown sale line");
   return line;
 }
 
-function validateSaleEvidence(sale: ParsedSale): void {
+function accountingForSale(sale: ParsedSale): SaleAccounting {
+  try {
+    const allocations = allocateCashierSaleNetByLine(sale.lines, sale.total_minor);
+    return { byLineId: new Map(allocations.map((item) => [item.line_id, item])) };
+  } catch {
+    throw evidenceError("cashier sale total does not reconcile with line evidence");
+  }
+}
+
+function allocationFor(
+  accounting: SaleAccounting,
+  lineId: string,
+): CashierSaleLineAllocation {
+  const allocation = accounting.byLineId.get(lineId);
+  if (!allocation) throw evidenceError("cashier sale line allocation is missing");
+  return allocation;
+}
+
+function validateSaleEvidence(sale: ParsedSale): SaleAccounting {
   const lineIds = new Set<string>();
   const itemKeys = new Set<string>();
-  let saleTotal = 0;
   for (const line of sale.lines) {
     const itemKey = `${line.product_id}\u0000${line.variant_id || ""}`;
     if (lineIds.has(line.line_id) || itemKeys.has(itemKey)) {
-      throw new CashierStaffAuthorityError(
-        "CASHIER_REPORT_EVIDENCE_INVALID",
-        "cashier sale contains duplicate line evidence",
-        409,
-      );
+      throw evidenceError("cashier sale contains duplicate line evidence");
     }
     lineIds.add(line.line_id);
     itemKeys.add(itemKey);
-    saleTotal = safeAdd(saleTotal, line.line_total_minor, "sale total");
-  }
-  if (saleTotal !== sale.total_minor) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier sale total does not match line evidence",
-      409,
-    );
   }
 
+  const accounting = accountingForSale(sale);
   const compensationIds = new Set<string>();
   const returnedByLine = new Map<string, number>();
   let voidCount = 0;
@@ -362,11 +351,7 @@ function validateSaleEvidence(sale: ParsedSale): void {
       compensation.operation_id === sale.operation_id ||
       compensationIds.has(compensation.operation_id)
     ) {
-      throw new CashierStaffAuthorityError(
-        "CASHIER_REPORT_EVIDENCE_INVALID",
-        "cashier compensation operation identity is duplicated",
-        409,
-      );
+      throw evidenceError("cashier compensation operation identity is duplicated");
     }
     compensationIds.add(compensation.operation_id);
 
@@ -375,11 +360,7 @@ function validateSaleEvidence(sale: ParsedSale): void {
       `${compensation.kind}.sale_id`,
     );
     if (snapshotSaleId !== sale.sale_id) {
-      throw new CashierStaffAuthorityError(
-        "CASHIER_REPORT_EVIDENCE_INVALID",
-        "cashier compensation references a different sale",
-        409,
-      );
+      throw evidenceError("cashier compensation references a different sale");
     }
     if (
       currencyCode(compensation.snapshot.currency_code) !== sale.currency_code ||
@@ -388,11 +369,7 @@ function validateSaleEvidence(sale: ParsedSale): void {
         `${compensation.kind}.currency_fraction_digits`,
       ) !== sale.currency_fraction_digits
     ) {
-      throw new CashierStaffAuthorityError(
-        "CASHIER_REPORT_EVIDENCE_INVALID",
-        "cashier compensation currency does not match original sale",
-        409,
-      );
+      throw evidenceError("cashier compensation currency does not match original sale");
     }
 
     if (compensation.kind === "void") {
@@ -402,11 +379,7 @@ function validateSaleEvidence(sale: ParsedSale): void {
         "void.refund_total_minor",
       );
       if (refund !== sale.total_minor) {
-        throw new CashierStaffAuthorityError(
-          "CASHIER_REPORT_EVIDENCE_INVALID",
-          "cashier void total does not match original sale",
-          409,
-        );
+        throw evidenceError("cashier void total does not match original sale");
       }
       continue;
     }
@@ -417,43 +390,37 @@ function validateSaleEvidence(sale: ParsedSale): void {
     let refundTotal = 0;
     for (const returned of returnLines) {
       if (returnLineIds.has(returned.original_line_id)) {
-        throw new CashierStaffAuthorityError(
-          "CASHIER_REPORT_EVIDENCE_INVALID",
-          "cashier return contains duplicate line evidence",
-          409,
-        );
+        throw evidenceError("cashier return contains duplicate line evidence");
       }
       returnLineIds.add(returned.original_line_id);
       const original = originalLineById(sale, returned.original_line_id);
+      const returnedBefore = returnedByLine.get(original.line_id) || 0;
+      let expectedRefund: number;
+      try {
+        expectedRefund = cashierRefundForAllocatedLine({
+          allocatedNetMinor: allocationFor(accounting, original.line_id).allocated_net_minor,
+          soldQuantity: original.quantity,
+          returnedBeforeQuantity: returnedBefore,
+          returnQuantity: returned.quantity,
+        });
+      } catch {
+        throw evidenceError("cashier cumulative return exceeds original sold quantity");
+      }
       if (
         returned.product_id !== original.product_id ||
         returned.variant_id !== original.variant_id ||
         returned.effective_unit_price_minor !== original.effective_unit_price_minor ||
-        returned.refund_minor !==
-          safeMultiply(
-            original.effective_unit_price_minor,
-            returned.quantity,
-            "return refund",
-          )
+        returned.refund_minor !== expectedRefund
       ) {
-        throw new CashierStaffAuthorityError(
-          "CASHIER_REPORT_EVIDENCE_INVALID",
-          "cashier return line does not match original sale evidence",
-          409,
-        );
+        throw evidenceError("cashier return line does not match original sale evidence");
       }
-      const returnedBefore = returnedByLine.get(original.line_id) || 0;
       const returnedAfter = safeAdd(
         returnedBefore,
         returned.quantity,
         "cumulative return quantity",
       );
       if (returnedAfter > original.quantity) {
-        throw new CashierStaffAuthorityError(
-          "CASHIER_REPORT_EVIDENCE_INVALID",
-          "cashier cumulative return exceeds original sold quantity",
-          409,
-        );
+        throw evidenceError("cashier cumulative return exceeds original sold quantity");
       }
       returnedByLine.set(original.line_id, returnedAfter);
       refundTotal = safeAdd(refundTotal, returned.refund_minor, "return refund total");
@@ -465,21 +432,14 @@ function validateSaleEvidence(sale: ParsedSale): void {
         "return.refund_total_minor",
       )
     ) {
-      throw new CashierStaffAuthorityError(
-        "CASHIER_REPORT_EVIDENCE_INVALID",
-        "cashier return total is inconsistent",
-        409,
-      );
+      throw evidenceError("cashier return total is inconsistent");
     }
   }
 
   if (voidCount > 1 || (voidCount > 0 && returnCount > 0)) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier sale compensation lifecycle is inconsistent",
-      409,
-    );
+    throw evidenceError("cashier sale compensation lifecycle is inconsistent");
   }
+  return accounting;
 }
 
 function parseSale(row: CashierCentralReportEvidenceRow): ParsedSale {
@@ -489,37 +449,21 @@ function parseSale(row: CashierCentralReportEvidenceRow): ParsedSale {
     String(snapshot.source || "") !== "cashier" ||
     String(snapshot.status || "") !== "completed"
   ) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier report sale lifecycle is invalid",
-      409,
-    );
+    throw evidenceError("cashier report sale lifecycle is invalid");
   }
   if (!Array.isArray(snapshot.lines) || snapshot.lines.length === 0) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier report sale lines are missing",
-      409,
-    );
+    throw evidenceError("cashier report sale lines are missing");
   }
   const fractionDigits = nonNegativeInteger(
     snapshot.currency_fraction_digits,
     "currency_fraction_digits",
   );
   if (fractionDigits > 6) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier report currency precision is invalid",
-      409,
-    );
+    throw evidenceError("cashier report currency precision is invalid");
   }
   const saleId = text(snapshot.sale_id, "sale_id");
   if (saleId !== row.id) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier report sale identity is inconsistent",
-      409,
-    );
+    throw evidenceError("cashier report sale identity is inconsistent");
   }
   const sale: ParsedSale = {
     sale_id: saleId,
@@ -605,9 +549,6 @@ function addCostContribution(
   revenueContribution: number,
   direction: 1 | -1,
 ): void {
-  // These counters intentionally track all units whose cost affects the period,
-  // not algebraic net units. That keeps profit completeness truthful for a
-  // return-only period where the monetary contribution itself is negative.
   if (line.unit_cost_minor === undefined) {
     currency.cost_unknown_net_units = safeAdd(
       currency.cost_unknown_net_units,
@@ -636,6 +577,7 @@ function applySaleOperation(
   range: ReportRange,
 ): void {
   if (!inRange(sale.occurred_at, range)) return;
+  const accounting = accountingForSale(sale);
   report.sale_count = safeAdd(report.sale_count, 1, "sale count");
   const currency = reportCurrency(report, sale);
   currency.sale_count = safeAdd(currency.sale_count, 1, "currency sale count");
@@ -655,10 +597,11 @@ function applySaleOperation(
     "net revenue",
   );
   for (const line of sale.lines) {
+    const revenue = allocationFor(accounting, line.line_id).allocated_net_minor;
     currency.sold_units = safeAdd(currency.sold_units, line.quantity, "sold units");
     currency.net_units = safeAdd(currency.net_units, line.quantity, "net units");
-    addProductDelta(currency, line, line.quantity, line.line_total_minor);
-    addCostContribution(currency, line, line.quantity, line.line_total_minor, 1);
+    addProductDelta(currency, line, line.quantity, revenue);
+    addCostContribution(currency, line, line.quantity, revenue, 1);
   }
 }
 
@@ -715,6 +658,7 @@ function applyVoidOperation(
   range: ReportRange,
 ): void {
   if (!inRange(compensation.occurred_at, range)) return;
+  const accounting = accountingForSale(sale);
   const currency = reportCurrency(report, sale);
   const refund = nonNegativeInteger(
     compensation.snapshot.refund_total_minor,
@@ -739,14 +683,15 @@ function applyVoidOperation(
     "net revenue",
   );
   for (const line of sale.lines) {
+    const revenue = allocationFor(accounting, line.line_id).allocated_net_minor;
     currency.returned_units = safeAdd(
       currency.returned_units,
       line.quantity,
       "returned units",
     );
     currency.net_units = safeAdd(currency.net_units, -line.quantity, "net units");
-    addProductDelta(currency, line, -line.quantity, -line.line_total_minor);
-    addCostContribution(currency, line, line.quantity, line.line_total_minor, -1);
+    addProductDelta(currency, line, -line.quantity, -revenue);
+    addCostContribution(currency, line, line.quantity, revenue, -1);
   }
 }
 
@@ -855,11 +800,7 @@ function buildResultFromRows(
 
   for (const row of rows) {
     if (seenSaleIds.has(row.id)) {
-      throw new CashierStaffAuthorityError(
-        "CASHIER_REPORT_EVIDENCE_INVALID",
-        "cashier sale has duplicate sale attribution evidence",
-        409,
-      );
+      throw evidenceError("cashier sale has duplicate sale attribution evidence");
     }
     seenSaleIds.add(row.id);
     const sale = parseSale(row);
