@@ -6,9 +6,13 @@ html[data-cashier-view='pos'] aside > div:nth-child(2) {
   padding: 0.5rem !important;
 }
 
+/* Compact-cart layout authority. The earlier implementation fixed this region
+   to a 70px strip with a 58px scrolling row. That geometry clipped the second
+   line (quantity/total) once the cart cards became two-row cards. Keep the
+   active line flexible and let the compact panel size to its actual content. */
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) {
   display: grid !important;
-  grid-template-rows: minmax(128px, 1fr) 70px;
+  grid-template-rows: minmax(128px, 1fr) auto;
   gap: 0.5rem !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
@@ -21,72 +25,46 @@ html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) >
 }
 
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) {
-  height: 70px !important;
-  min-height: 70px !important;
-  padding: 0.35rem !important;
+  height: auto !important;
+  min-height: 92px !important;
+  padding: 0.5rem !important;
   overflow: hidden !important;
 }
 
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:first-child {
-  display: none !important;
+  display: flex !important;
 }
 
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child {
-  height: 100%;
-  min-height: 0;
+  height: auto;
+  min-height: 68px;
   overflow: hidden;
 }
 
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div {
   display: flex !important;
   flex-flow: row nowrap !important;
-  align-items: flex-start !important;
+  align-items: stretch !important;
   gap: 0.375rem !important;
   width: 100%;
   min-width: 0;
-  height: 58px !important;
+  height: auto !important;
+  min-height: 68px;
   box-sizing: border-box;
-  overflow-x: auto !important;
-  overflow-y: hidden !important;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden !important;
 }
 
-html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div::-webkit-scrollbar {
-  height: 0;
-}
-
+/* These direct buttons are the previous/next controls. Keep them narrow so the
+   four-card grid owns the available width; do not reuse the old 104x40 card
+   geometry here. */
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div > button {
-  flex: 0 0 104px !important;
-  width: 104px;
-  min-width: 104px !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
+  flex: 0 0 1.75rem !important;
+  width: 1.75rem !important;
+  min-width: 1.75rem !important;
+  height: auto !important;
+  min-height: 68px !important;
+  max-height: none !important;
   box-sizing: border-box;
-  scroll-snap-align: start;
-}
-
-html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div:has(> button:nth-child(5)) {
-  scrollbar-width: thin;
-  scrollbar-color: #94a3b8 #e2e8f0;
-  padding-bottom: 10px;
-}
-
-html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div:has(> button:nth-child(5))::-webkit-scrollbar {
-  height: 6px;
-}
-
-html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div:has(> button:nth-child(5))::-webkit-scrollbar-track {
-  background: #e2e8f0;
-  border-radius: 999px;
-}
-
-html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) > div:last-child > div:has(> button:nth-child(5))::-webkit-scrollbar-thumb {
-  background: #94a3b8;
-  border-radius: 999px;
 }
 
 html[data-cashier-view='pos'] aside > div:last-child {
@@ -167,7 +145,7 @@ html[data-cashier-view='pos'] header button.bg-amber-500[title]::before {
 
   html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) {
     height: auto !important;
-    min-height: 70px !important;
+    min-height: 92px !important;
   }
 
   html[data-cashier-view='pos'] header button.bg-amber-500[title]::after {
