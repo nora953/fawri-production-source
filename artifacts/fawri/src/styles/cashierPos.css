@@ -24,7 +24,7 @@ html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) >
 
 html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) {
   height: auto !important;
-  min-height: 92px !important;
+  min-height: 112px !important;
   padding: 0.5rem !important;
   overflow: hidden !important;
 }
@@ -151,7 +151,7 @@ html[data-cashier-view='pos'] header button.bg-amber-500[title]::before {
 
   html[data-cashier-view='pos'] aside > div:nth-child(2):has(> div:nth-child(2)) > div:nth-child(2) {
     height: auto !important;
-    min-height: 92px !important;
+    min-height: 112px !important;
   }
 
   html[data-cashier-view='pos'] header button.bg-amber-500[title]::after {

@@ -42,7 +42,7 @@ test('compact cart card text, quantity and totals remain contained and readable'
 
 test('cashierPos keeps the paging row, four-card grid and arrow geometry separate', () => {
   assert.match(cashierPosCss, /grid-template-rows: minmax\(128px, 1fr\) auto;/);
-  assert.match(cashierPosCss, /> div:nth-child\(2\) \{[\s\S]*height: auto !important;[\s\S]*min-height: 92px !important;/);
+  assert.match(cashierPosCss, /> div:nth-child\(2\) \{[\s\S]*height: auto !important;[\s\S]*min-height: 112px !important;/);
   assert.match(
     cashierPosCss,
     /> div:last-child > \.cashier-cart-compact-grid \{[\s\S]*display: grid !important;[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\) !important;/,
