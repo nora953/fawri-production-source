@@ -134,6 +134,64 @@ html[data-cashier-view='pos'] main > div > header > div:first-child {
   flex: 0 0 auto;
 }
 
+/* Compact cart cards: keep Arabic/Kurdish/English names, quantity and money
+   inside their card instead of allowing the lower line to spill out. */
+html[data-cashier-view='pos'] .cashier-cart-compact-panel {
+  overflow: hidden;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-grid {
+  align-items: stretch;
+  overflow: hidden;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-card {
+  display: grid;
+  min-width: 0;
+  min-height: 64px;
+  grid-template-rows: minmax(2.25rem, auto) auto;
+  align-content: stretch;
+  overflow: hidden;
+  padding: 0.5rem 0.55rem !important;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-name {
+  display: -webkit-box;
+  min-width: 0;
+  max-height: 2.6em;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-meta {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 0.3rem;
+  line-height: 1.2;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-qty {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-price {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 1023px) {
   html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
     top: 1.9rem !important;
@@ -177,5 +235,9 @@ html[data-cashier-view='pos'] main > div > header > div:first-child {
 
   html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child {
     justify-content: flex-start !important;
+  }
+
+  html[data-cashier-view='pos'] .cashier-cart-compact-card {
+    min-height: 60px;
   }
 }
