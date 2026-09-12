@@ -8,7 +8,7 @@ const css = fs.readFileSync(
   'utf8',
 );
 
-test('compact cart cards expose stable visual hooks without changing cart behavior', () => {
+test('compact cart cards expose stable visual hooks without changing item selection behavior', () => {
   assert.match(page, /cashier-cart-compact-panel/);
   assert.match(page, /cashier-cart-compact-grid/);
   assert.match(page, /cashier-cart-compact-card/);
@@ -19,9 +19,19 @@ test('compact cart cards expose stable visual hooks without changing cart behavi
   assert.match(page, /onClick=\{\(\) => setActiveCartKey\(key\)\}/);
 });
 
-test('compact cart card text and totals remain contained inside each card', () => {
-  assert.match(css, /\.cashier-cart-compact-card \{[\s\S]*min-height: 64px;[\s\S]*overflow: hidden;/);
+test('compact cart pages at four items so the strip never tries to cram the whole cart into one row', () => {
+  assert.match(page, /const COMPACT_ITEMS_PER_PAGE = 4;/);
+  assert.match(page, /compactPageCount > 1/);
+  assert.match(page, /setCompactPage\(page => \(page - 1 \+ compactPageCount\) % compactPageCount\)/);
+  assert.match(page, /setCompactPage\(page => \(page \+ 1\) % compactPageCount\)/);
+});
+
+test('compact cart card text, quantity and totals remain contained and readable', () => {
+  assert.match(css, /\.cashier-cart-compact-panel \{[\s\S]*min-height: 92px;[\s\S]*overflow: hidden !important;/);
+  assert.match(css, /\.cashier-cart-compact-grid \{[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\) !important;/);
+  assert.match(css, /\.cashier-cart-compact-card \{[\s\S]*min-height: 68px;[\s\S]*overflow: hidden;/);
   assert.match(css, /\.cashier-cart-compact-name \{[\s\S]*-webkit-line-clamp: 2;[\s\S]*overflow-wrap: anywhere;/);
-  assert.match(css, /\.cashier-cart-compact-meta \{[\s\S]*grid-template-columns: auto minmax\(0, 1fr\);/);
+  assert.match(css, /\.cashier-cart-compact-meta \{[\s\S]*grid-template-columns: auto minmax\(0, 1fr\);[\s\S]*overflow: hidden;/);
   assert.match(css, /\.cashier-cart-compact-price \{[\s\S]*overflow: hidden;[\s\S]*text-overflow: ellipsis;[\s\S]*white-space: nowrap;/);
+  assert.match(css, /scrollbar-width: none;/);
 });
