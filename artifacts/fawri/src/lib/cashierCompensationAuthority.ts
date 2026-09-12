@@ -15,6 +15,10 @@ import {
   isPositiveSafeInteger,
 } from './cashierLocalContracts';
 import type { IndexedDbCashierConfig } from './cashierIndexedDbAuthority';
+import {
+  allocateCashierSaleNetByLine,
+  cashierRefundForAllocatedLine,
+} from './cashierSaleAccounting';
 
 const DATABASE_VERSION = 2;
 const STORE_META = 'meta';
@@ -314,6 +318,50 @@ function returnedQuantityForLine(sale: CashierSaleSnapshot, lineId: string): num
   return total;
 }
 
+function saleAllocatedNetByLine(sale: CashierSaleSnapshot): Map<string, number> {
+  try {
+    return new Map(
+      allocateCashierSaleNetByLine(sale.lines, sale.total_minor).map(item => [
+        item.line_id,
+        item.allocated_net_minor,
+      ]),
+    );
+  } catch {
+    throw new CashierCompensationError(
+      'CASHIER_COMPENSATION_SALE_PRICING_INVALID',
+      'Original sale pricing cannot be reconciled safely',
+    );
+  }
+}
+
+function discountAwareReturnRefundMinor(input: {
+  allocatedNetByLine: Map<string, number>;
+  line: CashierSaleLineSnapshot;
+  alreadyReturned: number;
+  returnQuantity: number;
+}): number {
+  const allocatedNetMinor = input.allocatedNetByLine.get(input.line.line_id);
+  if (allocatedNetMinor === undefined) {
+    throw new CashierCompensationError(
+      'CASHIER_COMPENSATION_SALE_PRICING_INVALID',
+      'Original sale line pricing allocation is missing',
+    );
+  }
+  try {
+    return cashierRefundForAllocatedLine({
+      allocatedNetMinor,
+      soldQuantity: input.line.quantity,
+      returnedBeforeQuantity: input.alreadyReturned,
+      returnQuantity: input.returnQuantity,
+    });
+  } catch {
+    throw new CashierCompensationError(
+      'CASHIER_COMPENSATION_SALE_PRICING_INVALID',
+      'Return refund cannot be reconciled with the amount originally paid',
+    );
+  }
+}
+
 function originalSaleMovementId(sale: CashierSaleSnapshot, lineIndex: number): string {
   return `movement:${sale.operation_id}:${lineIndex + 1}`;
 }
@@ -522,6 +570,7 @@ export class IndexedDbCashierCompensationAuthority
           'Only a paid sale can be returned; pending sales must be voided',
         );
       }
+      const allocatedNetByLine = saleAllocatedNetByLine(sale);
 
       const originalMovements = (await requestResult(
         movements.index('operation_id').getAll(sale.operation_id),
@@ -543,11 +592,12 @@ export class IndexedDbCashierCompensationAuthority
           );
         }
 
-        const refundMinor = safeMultiply(
-          line.effective_unit_price_minor,
-          requestLine.quantity,
-          'return line refund',
-        );
+        const refundMinor = discountAwareReturnRefundMinor({
+          allocatedNetByLine,
+          line,
+          alreadyReturned,
+          returnQuantity: requestLine.quantity,
+        });
         refundTotalMinor = safeAdd(refundTotalMinor, refundMinor, 'return refund total');
         returnLines.push({
           original_line_id: line.line_id,

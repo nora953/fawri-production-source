@@ -6,6 +6,10 @@ import {
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import { CashierSyncError } from "./postgresCashierSyncAuthority";
+import {
+  allocateCashierSaleNetByLine,
+  cashierRefundForAllocatedLine,
+} from "./cashierSaleAccounting";
 
 const CASHIER_SCHEMA_VERSION = 1;
 const MAX_ENVELOPES = 128;
@@ -291,13 +295,6 @@ function parseReturnLine(value: unknown): ReturnLine {
     "return.line.effective_unit_price_minor",
   );
   const refund = nonNegativeInteger(raw.refund_minor, "return.line.refund_minor");
-  if (refund !== safeMultiply(effective, quantity, "return.line.refund_minor")) {
-    throw new CashierSyncError(
-      "CASHIER_SYNC_INVALID",
-      "return line refund is inconsistent",
-      400,
-    );
-  }
   return {
     original_line_id: identifier(raw.original_line_id, "return.line.original_line_id"),
     product_id: identifier(raw.product_id, "return.line.product_id"),
@@ -1164,6 +1161,23 @@ function originalLineById(sale: OriginalSale, lineId: string): OriginalSaleLine 
   return line;
 }
 
+function saleAllocatedNetByLine(sale: OriginalSale): Map<string, number> {
+  try {
+    return new Map(
+      allocateCashierSaleNetByLine(sale.lines, sale.total_minor).map((item) => [
+        item.line_id,
+        item.allocated_net_minor,
+      ]),
+    );
+  } catch {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
+      "original cashier sale pricing cannot be reconciled safely",
+      409,
+    );
+  }
+}
+
 function returnedQuantity(
   compensations: StoredCompensation[],
   lineId: string,
@@ -1235,6 +1249,7 @@ async function applyReturn(
     );
   }
 
+  const allocatedNetByLine = saleAllocatedNetByLine(originalSale);
   let expectedRefundTotal = 0;
   let mutationCount = 0;
   for (const requested of snapshot.lines) {
@@ -1260,15 +1275,33 @@ async function applyReturn(
         { original_line_id: line.line_id, remaining_quantity: Math.max(0, remaining) },
       );
     }
-    const expectedRefund = safeMultiply(
-      line.effective_unit_price_minor,
-      requested.quantity,
-      "return refund",
-    );
+    const allocatedNetMinor = allocatedNetByLine.get(line.line_id);
+    if (allocatedNetMinor === undefined) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
+        "original cashier sale line pricing allocation is missing",
+        409,
+      );
+    }
+    let expectedRefund: number;
+    try {
+      expectedRefund = cashierRefundForAllocatedLine({
+        allocatedNetMinor,
+        soldQuantity: line.quantity,
+        returnedBeforeQuantity: alreadyReturned,
+        returnQuantity: requested.quantity,
+      });
+    } catch {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
+        "return refund cannot be reconciled with the amount originally paid",
+        409,
+      );
+    }
     if (requested.refund_minor !== expectedRefund) {
       throw new CashierSyncError(
         "CASHIER_COMPENSATION_ORIGINAL_SALE_MISMATCH",
-        "return refund does not match original sale price",
+        "return refund does not match the amount originally paid",
         409,
       );
     }
