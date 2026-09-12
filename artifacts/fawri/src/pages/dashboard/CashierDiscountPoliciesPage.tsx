@@ -39,6 +39,7 @@ const TEXT: Record<Lang, Record<string, string>> = {
     enabled: 'السماح بخصم يدوي',
     maxPercent: 'الحد الأقصى للنسبة %',
     maxAmount: 'الحد الأقصى للمبلغ (اختياري)',
+    effectiveLimitHint: 'الحد الفعلي للخصم هو الأقل بين حد النسبة وحد المبلغ. إذا تركت حد المبلغ فارغًا، يطبق حد النسبة فقط.',
     override: 'السماح لهذا المدير باعتماد خصم يتجاوز حد موظف آخر',
     save: 'حفظ سياسة الخصم',
     saving: 'جارٍ الحفظ...',
@@ -55,7 +56,9 @@ const TEXT: Record<Lang, Record<string, string>> = {
     subtitle: 'بۆ هەر کارمەندێک ڕێگەپێدان و سنووری داشکاندن دیاری بکە.',
     back: 'گەڕانەوە بۆ کاشێر و کارمەندان',
     enabled: 'ڕێگەدان بە داشکاندنی دەستی', maxPercent: 'زۆرترین ڕێژە %',
-    maxAmount: 'زۆرترین بڕ (ئارەزوومەندانە)', override: 'ڕێگەدان بە بەڕێوەبەر بۆ پەسەندکردنی تێپەڕاندنی سنووری کارمەندێکی تر',
+    maxAmount: 'زۆرترین بڕ (ئارەزوومەندانە)',
+    effectiveLimitHint: 'سنووری ڕاستەقینەی داشکاندن کەمترینی سنووری ڕێژە و سنووری بڕە. ئەگەر سنووری بڕ بەتاڵ بهێڵیت، تەنها سنووری ڕێژە جێبەجێ دەکرێت.',
+    override: 'ڕێگەدان بە بەڕێوەبەر بۆ پەسەندکردنی تێپەڕاندنی سنووری کارمەندێکی تر',
     save: 'پاشەکەوتکردنی سیاسەت', saving: 'پاشەکەوت دەکرێت...', loading: 'کارمەندان بار دەکرێن...',
     failed: 'بارکردن یان پاشەکەوتکردن سەرکەوتوو نەبوو.', saved: 'سیاسەتی داشکاندن پاشەکەوت کرا.',
     disabledPolicy: 'داشکاندنی دەستی بۆ ئەم کارمەندە ڕێگەپێدراو نییە.', active: 'چالاک', disabledStatus: 'ناچالاک', cashier: 'کاشێر', manager: 'بەڕێوەبەر',
@@ -66,7 +69,9 @@ const TEXT: Record<Lang, Record<string, string>> = {
     title: 'Cashier employee discount authority',
     subtitle: 'Set who may discount, their maximum range, and who may approve an override.',
     back: 'Back to cashiers & staff', enabled: 'Allow manual discount', maxPercent: 'Maximum percentage %',
-    maxAmount: 'Maximum amount (optional)', override: 'Allow this manager to approve a discount above another employee’s limit',
+    maxAmount: 'Maximum amount (optional)',
+    effectiveLimitHint: 'The effective discount limit is the lower of the percentage limit and the amount limit. Leave the amount blank to use only the percentage limit.',
+    override: 'Allow this manager to approve a discount above another employee’s limit',
     save: 'Save discount policy', saving: 'Saving...', loading: 'Loading staff...', failed: 'Could not load or save the discount policy.', saved: 'Discount policy saved.',
     disabledPolicy: 'Manual discount is not allowed for this employee.', active: 'Active', disabledStatus: 'Disabled', cashier: 'Cashier', manager: 'Manager',
     hint: 'Manual discount never changes the product list price. It is recorded separately after promotion discounts so profit and reporting remain auditable.',
@@ -222,6 +227,9 @@ export default function CashierDiscountPoliciesPage() {
                       {copy.maxAmount}
                       <input type="number" min="0" step="1" value={draft.maxAmount} onChange={event => updateDraft(member.id, { maxAmount: event.target.value })} className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3 outline-none focus:border-orange-400" dir="ltr" />
                     </label>
+                    <p className="md:col-span-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-semibold leading-5 text-blue-900">
+                      {copy.effectiveLimitHint}
+                    </p>
                     {member.role === 'manager' ? (
                       <label className="md:col-span-2 flex cursor-pointer items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-950">
                         <input type="checkbox" checked={draft.canApproveOverride} onChange={event => updateDraft(member.id, { canApproveOverride: event.target.checked })} className="mt-1" />
