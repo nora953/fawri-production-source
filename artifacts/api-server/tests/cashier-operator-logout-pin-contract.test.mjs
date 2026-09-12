@@ -43,7 +43,8 @@ test('cashier UI sends only PIN after explicit end-shift confirmation', async ()
 
   assert.match(runtime, /body: JSON\.stringify\(\{ pin \}\)/);
   assert.doesNotMatch(runtime, /staff_id/);
-  assert.match(runtime, /invalidateCashierOperatorSession\(\)/);
+  assert.match(runtime, /sessionStorage\.removeItem\(OPERATOR_STORAGE_KEY\)/);
+  assert.match(runtime, /fawri\.cashier\.operator-session\.v1/);
 
   assert.match(dialog, /تأكيد إنهاء المناوبة/);
   assert.match(dialog, /type="password"/);
