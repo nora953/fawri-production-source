@@ -77,12 +77,25 @@ export async function enforceCashierDiscountOverrideRoleInvariant(input: {
       [merchantId, staffId],
     );
 
+    const cleanedSessions = await operationalQueryRows<ChangedRow>(
+      client,
+      `UPDATE cashier_operator_sessions
+          SET permission_snapshot = COALESCE(permission_snapshot, '[]'::jsonb)
+                                    - 'sale.discount_override'
+        WHERE merchant_id = $1
+          AND staff_id = $2
+          AND status = 'active'
+          AND COALESCE(permission_snapshot, '[]'::jsonb) ? 'sale.discount_override'
+        RETURNING id AS changed`,
+      [merchantId, staffId],
+    );
+
     const policyChanged = await clearStoredOverrideFlagIfAvailable(
       client,
       merchantId,
       staffId,
     );
 
-    return removedPermissions.length > 0 || policyChanged;
+    return removedPermissions.length > 0 || cleanedSessions.length > 0 || policyChanged;
   });
 }
