@@ -28,6 +28,16 @@ test('non-manager cleanup removes only override authority and clears the stored 
   assert.match(service, /version = version \+ 1/);
 });
 
+test('non-manager cleanup also scrubs override permission from active session snapshots', async () => {
+  const service = await api('src/services/cashierStaffDiscountRoleHardening.ts');
+
+  assert.match(service, /UPDATE cashier_operator_sessions/);
+  assert.match(service, /permission_snapshot = COALESCE\(permission_snapshot, '\[\]'::jsonb\)/);
+  assert.match(service, /- 'sale\.discount_override'/);
+  assert.match(service, /status = 'active'/);
+  assert.match(service, /\? 'sale\.discount_override'/);
+});
+
 test('optional discount policy table compatibility uses a savepoint and catches only undefined-table', async () => {
   const service = await api('src/services/cashierStaffDiscountRoleHardening.ts');
 
