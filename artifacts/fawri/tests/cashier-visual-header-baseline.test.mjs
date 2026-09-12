@@ -12,8 +12,8 @@ const serviceWorker = fs.readFileSync(
   'utf8',
 );
 
-test('cashier visual QA stylesheet participates in the offline asset graph', () => {
-  assert.match(html, /href="\/assets\/cashier-visual-qa\.css"/);
+test('cashier visual QA stylesheet participates in the offline asset graph with a revisioned cache key', () => {
+  assert.match(html, /href="\/assets\/cashier-visual-qa\.css\?v=[^"]+"/);
   assert.match(serviceWorker, /url\.pathname\.startsWith\('\/assets\/'\)/);
   assert.match(serviceWorker, /htmlAssetPaths\(shellText\)/);
 });
