@@ -18,6 +18,7 @@ on:
       - "artifacts/api-server/tests/cashier-operator-logout-pin-contract.test.mjs"
       - "artifacts/api-server/tests/cashier-operator-logout-pin-postgres.integration.test.ts"
       - "artifacts/api-server/tests/cashier-operator-own-history-scope-contract.test.mjs"
+      - "artifacts/api-server/tests/cashier-operator-own-history-scope-postgres.integration.test.ts"
       - "artifacts/fawri/src/components/cashier/CashierEndShiftButton.tsx"
       - "artifacts/fawri/src/components/cashier/CashierOperatorGate.tsx"
       - "artifacts/fawri/src/lib/cashierEndShiftRuntime.ts"
@@ -110,3 +111,8 @@ jobs:
         run: >-
           pnpm --filter @workspace/api-server exec tsx --test
           ./tests/cashier-operator-logout-pin-postgres.integration.test.ts
+
+      - name: Prove cashier own sales survive shift rollover
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/cashier-operator-own-history-scope-postgres.integration.test.ts
