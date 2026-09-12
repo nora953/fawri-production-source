@@ -11,10 +11,17 @@ on:
       - "artifacts/api-server/src/services/operationalPostgresAuthority.ts"
       - "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts"
       - "artifacts/api-server/src/services/cashierOperatorCommerceAuthority.ts"
+      - "artifacts/api-server/src/services/cashierOperatorShiftCloseAuthority.ts"
       - "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts"
       - "artifacts/api-server/tests/cashier-operational-cutoff-postgres.integration.test.ts"
+      - "artifacts/api-server/tests/cashier-operator-logout-pin-contract.test.mjs"
+      - "artifacts/api-server/tests/cashier-operator-logout-pin-postgres.integration.test.ts"
+      - "artifacts/fawri/src/components/cashier/CashierEndShiftButton.tsx"
+      - "artifacts/fawri/src/components/cashier/CashierOperatorGate.tsx"
+      - "artifacts/fawri/src/lib/cashierEndShiftRuntime.ts"
       - "lib/db/**"
       - ".github/workflows/cashier-operational-cutoff.yml"
+      - "scripts/validate-cashier-ux-regression.mjs"
       - "scripts/ci-run-redacted.mjs"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -71,6 +78,17 @@ jobs:
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
 
+      - name: Type-check cashier frontend
+        run: pnpm --filter @workspace/fawri run typecheck
+
+      - name: Validate cashier UX regression contract
+        run: pnpm run cashier:validate
+
+      - name: Prove cashier end-shift PIN source contract
+        run: >-
+          pnpm --filter @workspace/api-server exec node --test
+          ./tests/cashier-operator-logout-pin-contract.test.mjs
+
       - name: Initialize disposable PostgreSQL runtime schema
         run: pnpm --filter @workspace/db run push-force
 
@@ -78,3 +96,8 @@ jobs:
         run: >-
           pnpm --filter @workspace/api-server exec tsx --test
           ./tests/cashier-operational-cutoff-postgres.integration.test.ts
+
+      - name: Prove cashier shift close requires employee PIN
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/cashier-operator-logout-pin-postgres.integration.test.ts
