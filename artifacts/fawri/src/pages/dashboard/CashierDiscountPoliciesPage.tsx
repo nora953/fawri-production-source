@@ -239,7 +239,7 @@ export default function CashierDiscountPoliciesPage() {
                   </div>
                 ) : <p className="mt-3 text-sm text-slate-500">{copy.disabledPolicy}</p>}
 
-                <div className="mt-4 flex justify-end">
+                <div className={`mt-4 flex ${dir === 'rtl' ? 'justify-start' : 'justify-end'}`}>
                   <button type="button" onClick={() => void save(member)} disabled={savingId === member.id} className="rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-black text-white hover:bg-orange-700 disabled:opacity-50">
                     {savingId === member.id ? copy.saving : copy.save}
                   </button>
