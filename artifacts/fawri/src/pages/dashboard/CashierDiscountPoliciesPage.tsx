@@ -45,10 +45,11 @@ const TEXT: Record<Lang, Record<string, string>> = {
     loading: 'جارٍ تحميل الموظفين...',
     failed: 'تعذر تحميل أو حفظ سياسة الخصم.',
     saved: 'تم حفظ سياسة الخصم.',
+    percentRequired: 'أدخل الحد الأقصى للنسبة. اكتب 0 صراحةً إذا كنت تقصد أن يكون الحد صفراً.',
     disabledPolicy: 'الخصم اليدوي غير مسموح لهذا الموظف.',
     active: 'نشط', disabledStatus: 'معطل', cashier: 'كاشير', manager: 'مدير',
     hint: 'لا يغيّر الخصم السعر الأصلي للمنتج. يحفظ كسطر مستقل بعد خصومات العروض حتى تبقى الأرباح والتقارير قابلة للتدقيق.',
-    permissionHint: 'هذه السياسة لا تمنح الصلاحية وحدها. فعّل أيضًا صلاحية الخصم اليدوي للموظف من صفحة الكاشيرات والموظفين، وللمدير فعّل صلاحية اعتماد تجاوز حد الخصم.',
+    permissionHint: 'عند حفظ سياسة الخصم، يحدّث فوري صلاحيات الخصم المرتبطة للموظف تلقائيًا. لا تحتاج لتفعيلها مرة ثانية من صفحة الكاشيرات والموظفين.',
   },
   ku: {
     title: 'دەسەڵاتی داشکاندنی کارمەندانی کاشێر',
@@ -58,9 +59,10 @@ const TEXT: Record<Lang, Record<string, string>> = {
     maxAmount: 'زۆرترین بڕ (ئارەزوومەندانە)', override: 'ڕێگەدان بە بەڕێوەبەر بۆ پەسەندکردنی تێپەڕاندنی سنووری کارمەندێکی تر',
     save: 'پاشەکەوتکردنی سیاسەت', saving: 'پاشەکەوت دەکرێت...', loading: 'کارمەندان بار دەکرێن...',
     failed: 'بارکردن یان پاشەکەوتکردن سەرکەوتوو نەبوو.', saved: 'سیاسەتی داشکاندن پاشەکەوت کرا.',
+    percentRequired: 'زۆرترین ڕێژە بنووسە. ئەگەر مەبەستت سنووری سفرە، 0 بە ڕوونی بنووسە.',
     disabledPolicy: 'داشکاندنی دەستی بۆ ئەم کارمەندە ڕێگەپێدراو نییە.', active: 'چالاک', disabledStatus: 'ناچالاک', cashier: 'کاشێر', manager: 'بەڕێوەبەر',
     hint: 'داشکاندن نرخی بنەڕەتی کاڵا ناگۆڕێت؛ بە جیاوازی دوای داشکاندنی ئۆفەرەکان تۆمار دەکرێت.',
-    permissionHint: 'ئەم سیاسەتە بە تەنها دەسەڵات نادات. دەسەڵاتی داشکاندنی دەستی بۆ کارمەند و دەسەڵاتی پەسەندکردنی تێپەڕاندن بۆ بەڕێوەبەر لە پەڕەی کاشێر و کارمەندان چالاک بکە.',
+    permissionHint: 'کاتێک سیاسەتی داشکاندن پاشەکەوت دەکەیت، فەوری دەسەڵاتە پەیوەندیدارەکانی داشکاندن بۆ کارمەند بە خۆکار نوێ دەکاتەوە؛ پێویست ناکات دووبارە لە پەڕەی کاشێر و کارمەندان چالاکیان بکەیت.',
   },
   en: {
     title: 'Cashier employee discount authority',
@@ -68,9 +70,10 @@ const TEXT: Record<Lang, Record<string, string>> = {
     back: 'Back to cashiers & staff', enabled: 'Allow manual discount', maxPercent: 'Maximum percentage %',
     maxAmount: 'Maximum amount (optional)', override: 'Allow this manager to approve a discount above another employee’s limit',
     save: 'Save discount policy', saving: 'Saving...', loading: 'Loading staff...', failed: 'Could not load or save the discount policy.', saved: 'Discount policy saved.',
+    percentRequired: 'Enter the maximum percentage. Type 0 explicitly if you intend the limit to be zero.',
     disabledPolicy: 'Manual discount is not allowed for this employee.', active: 'Active', disabledStatus: 'Disabled', cashier: 'Cashier', manager: 'Manager',
     hint: 'Manual discount never changes the product list price. It is recorded separately after promotion discounts so profit and reporting remain auditable.',
-    permissionHint: 'Policy alone does not grant authority. Also grant Manual discount on the Cashiers & Staff page; managers who approve overrides also need the Discount override approval permission.',
+    permissionHint: 'Saving this discount policy automatically syncs the staff member’s related discount permissions. No second permission change is needed on the Cashiers & Staff page.',
   },
 };
 
@@ -139,7 +142,12 @@ export default function CashierDiscountPoliciesPage() {
     const row = policies[member.id];
     const draft = drafts[member.id];
     if (!row || !draft) return;
-    const percent = Number(draft.maxPercent || 0);
+    const percentInput = draft.maxPercent.trim();
+    if (percentInput === '') {
+      setMessage({ kind: 'error', text: copy.percentRequired });
+      return;
+    }
+    const percent = Number(percentInput);
     const amount = draft.maxAmount.trim() === '' ? null : Number(draft.maxAmount);
     if (!Number.isFinite(percent) || percent < 0 || percent > 100 || (amount !== null && (!Number.isSafeInteger(amount) || amount < 0))) {
       setMessage({ kind: 'error', text: copy.failed });
