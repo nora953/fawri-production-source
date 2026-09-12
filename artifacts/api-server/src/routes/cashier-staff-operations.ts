@@ -18,11 +18,11 @@ import {
   listCashierStaffAuthoritative,
   listCashierStationsAuthoritative,
   loginCashierOperatorAuthoritative,
-  logoutCashierOperatorAuthoritative,
   redeemCashierStationPairingAuthoritative,
   updateCashierStaffAuthoritative,
   updateCashierStationAuthoritative,
 } from "../services/postgresCashierStaffAuthority";
+import { logoutCashierOperatorWithPinAuthoritative } from "../services/cashierOperatorShiftCloseAuthority";
 import { buildCashierCentralReportAuthoritative } from "../services/postgresCashierCentralReportAuthority";
 import {
   listCashierStationConfigurationsAuthoritative,
@@ -402,7 +402,7 @@ router.get(
 router.post(
   "/cashier/operator/logout",
   requireCashierOperatorSession(),
-  async (_req: Request, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const operator = getCashierOperatorContext(res);
       if (!operator) {
@@ -412,7 +412,10 @@ router.post(
           401,
         );
       }
-      await logoutCashierOperatorAuthoritative(operator);
+      await logoutCashierOperatorWithPinAuthoritative({
+        context: operator,
+        pin: req.body?.pin,
+      });
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true });
     } catch (error) {
