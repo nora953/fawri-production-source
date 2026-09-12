@@ -17,6 +17,11 @@ test('cashier logout route requires PIN and binds verification to authenticated 
   const route = await apiSource('src/routes/cashier-staff-operations.ts');
   const authority = await apiSource('src/services/cashierOperatorShiftCloseAuthority.ts');
 
+  assert.match(
+    route,
+    /router\.post\(\s*["']\/cashier\/operator\/logout["']/,
+    'backend must expose the PIN-confirmed cashier logout endpoint',
+  );
   assert.match(route, /logoutCashierOperatorWithPinAuthoritative\(\{/);
   assert.match(route, /context: operator/);
   assert.match(route, /pin: req\.body\?\.pin/);
@@ -41,6 +46,11 @@ test('cashier UI sends only PIN after explicit end-shift confirmation', async ()
   const dialog = await repoSource('artifacts/fawri/src/components/cashier/CashierEndShiftButton.tsx');
   const gate = await repoSource('artifacts/fawri/src/components/cashier/CashierOperatorGate.tsx');
 
+  assert.match(
+    runtime,
+    /fetch\(['"]\/api\/cashier\/operator\/logout['"]/,
+    'cashier UI must call the PIN-confirmed cashier logout endpoint',
+  );
   assert.match(runtime, /body: JSON\.stringify\(\{ pin \}\)/);
   assert.doesNotMatch(runtime, /staff_id/);
   assert.match(runtime, /invalidateCashierOperatorSession\(\)/);
