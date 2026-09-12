@@ -1,214 +1,252 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useI18n } from '@/lib/i18n';
-import type { Lang } from '@/lib/types';
+import CashierCheckoutModal from '@/components/cashier/CashierCheckoutModal';
 import {
-  CASHIER_POS_ENHANCEMENT_COPY,
-  formatCashierMinorMoney,
-  itemKey,
-  type CashierCatalogLookup,
-  type CashierResolvedSalePricing,
-  type CashierSaleLineInput,
-  type CashierSaleSnapshot,
-} from '@/lib/cashierPosUi';
+  appendCashierScannerKey,
+  completeCashierScannerBuffer,
+  emptyCashierScannerBuffer,
+  isCashierScannerTerminator,
+  type CashierScannerBuffer,
+} from '@/lib/cashierBarcodeScanner';
+import type {
+  CashierCatalogLookup,
+  CashierPaymentMethod,
+  CashierSaleLineInput,
+  CashierSaleSnapshot,
+} from '@/lib/cashierLocalContracts';
+import { CASHIER_POS_ENHANCEMENT_COPY } from '@/lib/cashierPosEnhancementCopy';
+import {
+  CASHIER_RECEIPT_COPY,
+  type CashierReceiptPaperWidthMm,
+  printCashierReceipt,
+  readCashierReceiptPrintSettings,
+  writeCashierReceiptPrintSettings,
+} from '@/lib/cashierReceiptPrinting';
+import type { CashierResolvedSalePricing } from '@/lib/cashierSalePricingRuntime';
 import {
   createCashierPosRuntime,
   type CashierPosRuntime,
-} from '@/lib/cashierOperatorPosRuntime';
+} from '@/lib/cashierPosRuntime';
+import { subscribeCashierCatalogRefresh } from '@/lib/cashierCatalogRefresh';
 import {
-  emptyCashierScannerBuffer,
-  appendCashierScannerKey,
-  completeCashierScannerBuffer,
-  isCashierScannerTerminator,
-} from '@/lib/cashierBarcodeScanner';
-import {
-  subscribeCashierCatalogRefresh,
-} from '@/lib/cashierCatalogRefresh';
-import {
-  publishCashierOperatorSessionInvalidated,
   isCashierOperatorSessionEnded,
-} from '@/lib/cashierOperatorSessionEvents';
+  publishCashierOperatorSessionInvalidated,
+} from '@/lib/cashierOperatorSessionUi';
 import {
-  subscribeCashierSyncUiState,
+  getCashierSyncUiState,
   requestCashierSync,
+  subscribeCashierSyncUiState,
   type CashierSyncUiState,
 } from '@/lib/cashierSyncUiState';
-import {
-  readCashierReceiptPrintSettings,
-  writeCashierReceiptPrintSettings,
-  type CashierReceiptPaperWidthMm,
-} from '@/lib/cashierReceiptPrintSettings';
-import {
-  printCashierReceipt,
-} from '@/lib/cashierReceiptPrinter';
-import {
-  CASHIER_RECEIPT_COPY,
-} from '@/lib/cashierReceiptCopy';
-import {
-  useCashierManualDiscountCheckout,
-} from '@/lib/useCashierManualDiscountCheckout';
-import CashierCheckoutModal from '@/components/cashier/CashierCheckoutModal';
+import { CASHIER_UI_COPY } from '@/lib/cashierUiCopy';
+import { useI18n } from '@/lib/i18n';
+import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import { useCashierManualDiscountCheckout } from '@/lib/useCashierManualDiscountCheckout';
+import type { Lang } from '@/lib/types';
 
-const COMPACT_ITEMS_PER_PAGE = 4;
-
-const LOCAL_COPY: Record<Lang, {
-  catalogOpenFailed: string;
-  scannerAmbiguous: string;
-  scannerNotFound: string;
-  searchFailed: string;
-  discountNeedsManager: string;
-  discountPolicyUnavailable: string;
-}> = {
-  ar: {
-    catalogOpenFailed: 'تعذر فتح كتالوج الكاشير.',
-    scannerAmbiguous: 'الباركود أو SKU يطابق أكثر من منتج. صحح البيانات من لوحة التاجر.',
-    scannerNotFound: 'لم يتم العثور على منتج مطابق للباركود.',
-    searchFailed: 'تعذر تنفيذ البحث.',
-    discountNeedsManager: 'هذا الخصم يحتاج موافقة مدير.',
-    discountPolicyUnavailable: 'تعذر التحقق من سياسة الخصم. حاول مرة أخرى.',
-  },
-  ku: {
-    catalogOpenFailed: 'کردنەوەی کاتالۆگی کاشێر سەرکەوتوو نەبوو.',
-    scannerAmbiguous: 'بارکۆد یان SKU زیاتر لە یەک بەرهەم دەگونجێت.',
-    scannerNotFound: 'هیچ بەرهەمێک بۆ ئەم بارکۆدە نەدۆزرایەوە.',
-    searchFailed: 'گەڕان سەرکەوتوو نەبوو.',
-    discountNeedsManager: 'ئەم داشکاندنە پێویستی بە پەسەندی بەڕێوەبەر هەیە.',
-    discountPolicyUnavailable: 'پشکنینی یاسای داشکاندن سەرکەوتوو نەبوو.',
-  },
-  en: {
-    catalogOpenFailed: 'Could not open the cashier catalog.',
-    scannerAmbiguous: 'The barcode or SKU matches more than one item. Fix the catalog data first.',
-    scannerNotFound: 'No item matched that barcode.',
-    searchFailed: 'Search failed.',
-    discountNeedsManager: 'This discount requires manager approval.',
-    discountPolicyUnavailable: 'Could not verify the discount policy. Try again.',
-  },
+type CartLine = { item: CashierCatalogLookup; quantity: number };
+type SaleSuccess = {
+  saleId: string;
+  totalMinor: number;
+  currencyCode: string;
+  fractionDigits: number;
+  changeDueMinor?: number;
+  receipt: CashierSaleSnapshot;
 };
 
+type PosLabels = (typeof CASHIER_UI_COPY)[Lang]['pos'];
+
+const COMPACT_ITEMS_PER_PAGE = 100;
+
+function itemKey(item: { product_id: string; variant_id?: string }): string {
+  return `${item.product_id}\u0000${item.variant_id || ''}`;
+}
+
 function formatMoney(
-  minor: number,
+  amountMinor: number,
   currencyCode: string,
   fractionDigits: number,
   lang: Lang,
 ): string {
-  return formatCashierMinorMoney(minor, currencyCode, fractionDigits, lang);
-}
-
-function runtimeErrorCode(cause: unknown): string {
-  if (cause && typeof cause === 'object' && 'code' in cause) {
-    return String((cause as { code?: unknown }).code || '');
-  }
-  return '';
-}
-
-function errorMessage(
-  cause: unknown,
-  labels: (typeof CASHIER_POS_ENHANCEMENT_COPY)[Lang],
-): string {
-  const code = runtimeErrorCode(cause);
-  if (code === 'CASHIER_BARCODE_AMBIGUOUS' || code === 'CASHIER_SKU_AMBIGUOUS') return labels.errorBarcodeAmbiguous;
-  if (code === 'CASHIER_NO_STOCK') return labels.errorNoStock;
-  if (code === 'CASHIER_QUANTITY_EXCEEDS_STOCK') return labels.errorQuantityExceedsStock;
-  if (cause instanceof Error && cause.message) return cause.message;
-  return labels.errorGeneric;
-}
-
-function syncButtonClassName(state: CashierSyncUiState): string {
-  if (state.status === 'needs_attention') {
-    return 'rounded-lg border border-amber-300 bg-amber-500 px-3 py-1.5 font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50';
-  }
-  return 'rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50';
-}
-
-function syncButtonLabel(
-  state: CashierSyncUiState,
-  labels: (typeof CASHIER_POS_ENHANCEMENT_COPY)[Lang],
-): string {
-  if (state.status === 'syncing') return labels.syncing;
-  if (state.status === 'needs_attention') return labels.syncNeeded;
-  return labels.sync;
-}
-
-function syncAttentionMessage(
-  state: CashierSyncUiState,
-  labels: (typeof CASHIER_POS_ENHANCEMENT_COPY)[Lang],
-): string {
-  return state.message || labels.syncAttention;
+  return formatMerchantMoneyMinor(amountMinor, currencyCode, fractionDigits, lang);
 }
 
 function normalizeCashDigits(value: string): string {
-  return value
-    .replace(/[٠-٩]/g, character => String('٠١٢٣٤٥٦٧٨٩'.indexOf(character)))
-    .replace(/[۰-۹]/g, character => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(character)))
-    .replace(/[^0-9]/g, '');
+  const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+  const easternArabic = '۰۱۲۳۴۵۶۷۸۹';
+  return String(value || '')
+    .split('')
+    .map(character => {
+      const arabicIndex = arabicIndic.indexOf(character);
+      if (arabicIndex >= 0) return String(arabicIndex);
+      const easternIndex = easternArabic.indexOf(character);
+      if (easternIndex >= 0) return String(easternIndex);
+      return character;
+    })
+    .join('')
+    .replace(/[^0-9]/g, '')
+    .replace(/^0+(?=\d)/, '');
 }
 
 function parseCashTenderMinor(value: string): number | null {
-  const normalized = normalizeCashDigits(value);
-  if (!normalized) return null;
-  const parsed = Number(normalized);
+  if (!value) return null;
+  const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
 function newSaleOperationId(): string {
-  const cryptoObject = globalThis.crypto;
-  if (cryptoObject && typeof cryptoObject.randomUUID === 'function') {
-    return `cashier-sale-${cryptoObject.randomUUID()}`;
-  }
-  return `cashier-sale-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export default function CashierPosPage({ demoMode = false }: { demoMode?: boolean }) {
+function runtimeErrorCode(error: unknown): string {
+  return typeof error === 'object' && error && 'code' in error
+    ? String((error as { code?: unknown }).code || '')
+    : '';
+}
+
+function catalogMatches(
+  current: CashierCatalogLookup[],
+  next: CashierCatalogLookup[],
+): boolean {
+  if (current.length !== next.length) return false;
+  return current.every((item, index) => {
+    const candidate = next[index];
+    return Boolean(candidate) &&
+      itemKey(item) === itemKey(candidate) &&
+      item.name === candidate.name &&
+      item.variant_name === candidate.variant_name &&
+      item.sku === candidate.sku &&
+      item.barcode === candidate.barcode &&
+      item.item_type === candidate.item_type &&
+      item.track_inventory === candidate.track_inventory &&
+      item.stock_quantity === candidate.stock_quantity &&
+      item.base_unit_price_minor === candidate.base_unit_price_minor &&
+      item.currency_code === candidate.currency_code &&
+      item.currency_fraction_digits === candidate.currency_fraction_digits &&
+      item.catalog_version === candidate.catalog_version;
+  });
+}
+
+function errorMessage(error: unknown, labels: PosLabels): string {
+  const code = runtimeErrorCode(error);
+  const message = error instanceof Error ? error.message : String(error || '');
+  if (code === 'CASHIER_OUT_OF_STOCK' || message.includes('CASHIER_OUT_OF_STOCK')) {
+    return labels.errorOutOfStock;
+  }
+  if (code === 'CASHIER_PROMOTION_CONFLICT' || message.includes('PROMOTION_CONFLICT')) {
+    return labels.errorPromotionConflict;
+  }
+  if (code.includes('CURRENCY') || message.includes('CURRENCY')) {
+    return labels.errorCurrencyConflict;
+  }
+  if (message.includes('ITEM_NOT_FOUND')) {
+    return labels.errorItemNotFound;
+  }
+  if (
+    code === 'CASHIER_OFFLINE_INVENTORY_AUTHORITY_REQUIRED' ||
+    message.includes('CASHIER_OFFLINE_INVENTORY_AUTHORITY_REQUIRED')
+  ) {
+    return labels.errorOfflineInventoryAuthorityRequired;
+  }
+  if (code.includes('CASH_TENDER') || code.includes('CASH_CHANGE')) {
+    return labels.errorCashTenderInvalid;
+  }
+  return labels.errorSaleFailed;
+}
+
+function isSyncSessionRequired(code?: string): boolean {
+  return (
+    code === 'CASHIER_OUTBOX_SESSION_REQUIRED' ||
+    code === 'CASHIER_CLOUD_SESSION_REQUIRED'
+  );
+}
+
+function syncButtonLabel(state: CashierSyncUiState, labels: PosLabels): string {
+  if (state.status === 'syncing') return labels.syncing;
+  if (state.status === 'synced') return labels.synced;
+  if (state.status === 'needs_attention') {
+    return isSyncSessionRequired(state.code)
+      ? labels.loginRequired
+      : labels.syncRequired;
+  }
+  return labels.sync;
+}
+
+function syncAttentionMessage(state: CashierSyncUiState, labels: PosLabels): string {
+  return isSyncSessionRequired(state.code)
+    ? labels.syncSessionMessage
+    : labels.syncRetryMessage;
+}
+
+function syncButtonClassName(state: CashierSyncUiState): string {
+  const base =
+    'rounded-lg border px-3 py-1.5 font-semibold transition disabled:cursor-not-allowed disabled:opacity-60';
+  if (state.status === 'needs_attention') {
+    return `${base} border-amber-500 bg-amber-500 text-white hover:bg-amber-600`;
+  }
+  if (state.status === 'syncing') {
+    return `${base} border-slate-900 bg-slate-900 text-white`;
+  }
+  if (state.status === 'synced') {
+    return `${base} border-emerald-300 bg-emerald-50 text-emerald-700`;
+  }
+  return `${base} border-slate-200 bg-white text-slate-700 hover:bg-slate-50`;
+}
+
+export default function CashierPosPage() {
   const { lang, dir } = useI18n();
-  const labels = CASHIER_POS_ENHANCEMENT_COPY[lang] || CASHIER_POS_ENHANCEMENT_COPY.en;
-  const extra = LOCAL_COPY[lang] || LOCAL_COPY.en;
-  const receiptLabels = CASHIER_RECEIPT_COPY[lang] || CASHIER_RECEIPT_COPY.en;
+  const labels = CASHIER_UI_COPY[lang].pos;
+  const extra = CASHIER_POS_ENHANCEMENT_COPY[lang];
+  const receiptLabels = CASHIER_RECEIPT_COPY[lang];
+  const demoMode =
+    import.meta.env.VITE_CASHIER_SMOKE === '1' &&
+    new URLSearchParams(window.location.search).get('demo') === '1';
+
   const [runtime, setRuntime] = useState<CashierPosRuntime | null>(null);
   const [catalog, setCatalog] = useState<CashierCatalogLookup[]>([]);
   const [query, setQuery] = useState('');
-  const [searching, setSearching] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [cart, setCart] = useState<Array<{ item: CashierCatalogLookup; quantity: number }>>([]);
+  const [cart, setCart] = useState<CartLine[]>([]);
   const [activeCartKey, setActiveCartKey] = useState<string | null>(null);
   const [compactPage, setCompactPage] = useState(0);
   const [quote, setQuote] = useState<CashierResolvedSalePricing | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutOperationId, setCheckoutOperationId] = useState<string | null>(null);
-  const [committing, setCommitting] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'electronic' | 'other'>('cash');
+  const [paymentMethod, setPaymentMethod] = useState<CashierPaymentMethod>('cash');
   const [cashTenderText, setCashTenderText] = useState('');
   const [externalConfirmed, setExternalConfirmed] = useState(false);
-  const [online, setOnline] = useState(() => typeof navigator === 'undefined' ? true : navigator.onLine);
+  const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [committing, setCommitting] = useState(false);
+  const [online, setOnline] = useState(() => navigator.onLine);
+  const [syncUiState, setSyncUiState] = useState<CashierSyncUiState>(() =>
+    getCashierSyncUiState(),
+  );
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<{
-    saleId: string;
-    totalMinor: number;
-    currencyCode: string;
-    fractionDigits: number;
-    changeDueMinor?: number;
-    receipt: CashierSaleSnapshot;
-  } | null>(null);
-  const [receiptPrintError, setReceiptPrintError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<SaleSuccess | null>(null);
   const [receiptAutoPrint, setReceiptAutoPrint] = useState(false);
   const [receiptPaperWidth, setReceiptPaperWidth] = useState<CashierReceiptPaperWidthMm>(80);
-  const [syncUiState, setSyncUiState] = useState<CashierSyncUiState>({ status: 'idle' });
-  const searchRef = useRef<HTMLInputElement | null>(null);
-  const scannerBufferRef = useRef(emptyCashierScannerBuffer());
+  const [receiptPrintError, setReceiptPrintError] = useState<string | null>(null);
+
   const discountCheckout = useCashierManualDiscountCheckout({
+    quote,
     online,
     operationId: checkoutOperationId,
-    quote,
   });
-  const finalTotalMinor = discountCheckout.resolution?.finalTotalMinor ?? quote?.total_minor ?? null;
+  const finalTotalMinor = discountCheckout.finalTotalMinor ?? quote?.total_minor ?? null;
+
+  const searchRef = useRef<HTMLInputElement>(null);
+  const scannerBufferRef = useRef<CashierScannerBuffer>(emptyCashierScannerBuffer());
 
   const refreshCatalog = useCallback(async (
-    currentRuntime: CashierPosRuntime,
-    value: string,
+    activeRuntime: CashierPosRuntime,
+    nextQuery: string,
     visible = true,
   ) => {
     if (visible) setSearching(true);
     try {
-      const next = await currentRuntime.search(value);
+      const next = await activeRuntime.searchCatalog(nextQuery, 50);
       setCatalog(current => catalogMatches(current, next) ? current : next);
     } finally {
       if (visible) setSearching(false);
@@ -1035,26 +1073,4 @@ export default function CashierPosPage({ demoMode = false }: { demoMode?: boolea
       />
     </main>
   );
-}
-
-function catalogMatches(a: CashierCatalogLookup[], b: CashierCatalogLookup[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let index = 0; index < a.length; index += 1) {
-    const left = a[index];
-    const right = b[index];
-    if (
-      left.product_id !== right.product_id ||
-      left.variant_id !== right.variant_id ||
-      left.name !== right.name ||
-      left.variant_name !== right.variant_name ||
-      left.base_unit_price_minor !== right.base_unit_price_minor ||
-      left.currency_code !== right.currency_code ||
-      left.currency_fraction_digits !== right.currency_fraction_digits ||
-      left.sku !== right.sku ||
-      left.barcode !== right.barcode ||
-      left.track_inventory !== right.track_inventory ||
-      left.stock_quantity !== right.stock_quantity
-    ) return false;
-  }
-  return true;
 }
