@@ -21,6 +21,7 @@ import {
   redeemCashierStationPairingAuthoritative,
   updateCashierStaffAuthoritative,
   updateCashierStationAuthoritative,
+  type CashierStaffView,
 } from "../services/postgresCashierStaffAuthority";
 import { logoutCashierOperatorWithPinAuthoritative } from "../services/cashierOperatorShiftCloseAuthority";
 import { buildCashierCentralReportAuthoritative } from "../services/postgresCashierCentralReportAuthority";
@@ -29,6 +30,7 @@ import {
   updateCashierStationConfigurationAuthoritative,
 } from "../services/cashierStationConfigurationAuthority";
 import { buildCashierCentralActivityAuthoritative } from "../services/postgresCashierCentralActivityAuthority";
+import { enforceCashierDiscountOverrideRoleInvariant } from "../services/cashierStaffDiscountRoleHardening";
 
 const router = Router();
 
@@ -119,6 +121,24 @@ function optionalBoolean(value: unknown, field: string): boolean | undefined {
   return value;
 }
 
+async function hardenDiscountOverrideRole(
+  merchant: string,
+  staff: CashierStaffView,
+): Promise<CashierStaffView> {
+  if (staff.role === "manager") return staff;
+  const changed = await enforceCashierDiscountOverrideRoleInvariant({
+    merchantId: merchant,
+    staffId: staff.id,
+  });
+  if (!changed) return staff;
+  return {
+    ...staff,
+    permissions: staff.permissions.filter(
+      (permission) => permission !== "sale.discount_override",
+    ),
+  };
+}
+
 router.get(
   "/cashier/management/report",
   requireMerchantAuthority,
@@ -160,13 +180,15 @@ router.post(
   requireMerchantAuthority,
   async (req: Request, res: Response) => {
     try {
-      const staff = await createCashierStaffAuthoritative({
-        merchantId: merchantId(res),
+      const merchant = merchantId(res);
+      const created = await createCashierStaffAuthoritative({
+        merchantId: merchant,
         displayName: req.body?.display_name,
         role: req.body?.role,
         pin: req.body?.pin,
         permissions: req.body?.permissions,
       });
+      const staff = await hardenDiscountOverrideRole(merchant, created);
       res.setHeader("Cache-Control", "no-store");
       res.status(201).json({ ok: true, staff });
     } catch (error) {
@@ -180,8 +202,9 @@ router.patch(
   requireMerchantAuthority,
   async (req: Request, res: Response) => {
     try {
-      const staff = await updateCashierStaffAuthoritative({
-        merchantId: merchantId(res),
+      const merchant = merchantId(res);
+      const updated = await updateCashierStaffAuthoritative({
+        merchantId: merchant,
         staffId: req.params.staffId,
         expectedVersion: req.body?.expected_version,
         displayName: req.body?.display_name,
@@ -190,6 +213,7 @@ router.patch(
         pin: req.body?.pin,
         permissions: req.body?.permissions,
       });
+      const staff = await hardenDiscountOverrideRole(merchant, updated);
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, staff });
     } catch (error) {
