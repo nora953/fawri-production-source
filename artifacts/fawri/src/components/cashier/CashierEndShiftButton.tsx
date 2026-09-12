@@ -191,9 +191,10 @@ export default function CashierEndShiftButton({
                 </p>
               ) : null}
 
-              <div className="mt-5 grid grid-cols-2 gap-3">
+              <div className="mt-5 grid grid-cols-2 gap-3" dir="ltr">
                 <button
                   type="button"
+                  dir={dir}
                   disabled={busy}
                   onClick={close}
                   className="h-11 rounded-xl border border-slate-300 bg-white font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
@@ -202,6 +203,7 @@ export default function CashierEndShiftButton({
                 </button>
                 <button
                   type="submit"
+                  dir={dir}
                   disabled={busy || !/^\d{4,8}$/.test(pin)}
                   className="h-11 rounded-xl bg-orange-600 font-bold text-white hover:bg-orange-700 disabled:opacity-50"
                 >
