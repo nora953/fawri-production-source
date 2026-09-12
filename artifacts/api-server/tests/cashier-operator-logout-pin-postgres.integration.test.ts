@@ -54,6 +54,7 @@ test(
     const phone = randomPhone();
     const password = "CashierEndShift1!";
     const employeePin = "2468";
+    const otherEmployeePin = "1357";
     const deviceId = `cashier-end-shift-device-${suffix}`;
     let merchantId = "";
 
@@ -93,6 +94,12 @@ test(
       role: "cashier",
       pin: employeePin,
     });
+    await cashier.createCashierStaffAuthoritative({
+      merchantId,
+      displayName: `Other End Shift Manager ${suffix}`,
+      role: "manager",
+      pin: otherEmployeePin,
+    });
     const station = await cashier.createCashierStationAuthoritative({
       merchantId,
       name: `End Shift Station ${suffix}`,
@@ -119,7 +126,7 @@ test(
     await assert.rejects(
       shiftClose.logoutCashierOperatorWithPinAuthoritative({
         context: operator.context,
-        pin: "1111",
+        pin: otherEmployeePin,
       }),
       (error: unknown) => {
         const candidate = error as { code?: unknown; status?: unknown };
@@ -127,10 +134,10 @@ test(
         assert.equal(candidate.status, 401);
         return true;
       },
-      "a wrong PIN must not close the authenticated employee shift",
+      "another active employee PIN must not close the authenticated employee shift",
     );
 
-    const afterWrongPin = await pool.query(
+    const afterOtherEmployeePin = await pool.query(
       `SELECT sh.status::text AS shift_status,
               os.status::text AS session_status,
               staff.failed_pin_attempts,
@@ -147,11 +154,11 @@ test(
         LIMIT 1`,
       [operator.context.shift_id, operator.context.operator_session_id, merchantId],
     );
-    assert.equal(afterWrongPin.rows.length, 1);
-    assert.equal(afterWrongPin.rows[0].shift_status, "open");
-    assert.equal(afterWrongPin.rows[0].session_status, "active");
-    assert.equal(Number(afterWrongPin.rows[0].failed_pin_attempts), 1);
-    assert.equal(afterWrongPin.rows[0].pin_locked_until, null);
+    assert.equal(afterOtherEmployeePin.rows.length, 1);
+    assert.equal(afterOtherEmployeePin.rows[0].shift_status, "open");
+    assert.equal(afterOtherEmployeePin.rows[0].session_status, "active");
+    assert.equal(Number(afterOtherEmployeePin.rows[0].failed_pin_attempts), 1);
+    assert.equal(afterOtherEmployeePin.rows[0].pin_locked_until, null);
 
     const stillAuthenticated = await cashier.authenticateCashierOperatorAuthoritative({
       stationToken: paired.station_token,
