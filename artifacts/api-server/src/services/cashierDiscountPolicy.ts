@@ -33,6 +33,20 @@ function safeInteger(value: unknown, field: string, minimum: number, maximum: nu
   return number;
 }
 
+function requiredPercentageBps(value: unknown): number {
+  if (
+    value === undefined
+    || value === null
+    || (typeof value === 'string' && value.trim() === '')
+  ) {
+    throw new CashierDiscountPolicyError(
+      'CASHIER_DISCOUNT_POLICY_INVALID',
+      'max_percentage_bps is required when manual discount is enabled',
+    );
+  }
+  return safeInteger(value, 'max_percentage_bps', 0, 10_000);
+}
+
 export function normalizeCashierManualDiscountPolicy(
   value: unknown,
 ): CashierManualDiscountPolicy {
@@ -47,12 +61,9 @@ export function normalizeCashierManualDiscountPolicy(
   }
   const input = value as Record<string, unknown>;
   const enabled = input.enabled === true;
-  const maxPercentageBps = safeInteger(
-    input.max_percentage_bps ?? 0,
-    'max_percentage_bps',
-    0,
-    10_000,
-  );
+  const maxPercentageBps = enabled
+    ? requiredPercentageBps(input.max_percentage_bps)
+    : safeInteger(input.max_percentage_bps ?? 0, 'max_percentage_bps', 0, 10_000);
   const maxAmountMinor =
     input.max_amount_minor === undefined || input.max_amount_minor === null || input.max_amount_minor === ''
       ? null
@@ -67,6 +78,19 @@ export function normalizeCashierManualDiscountPolicy(
     max_percentage_bps: maxPercentageBps,
     max_amount_minor: maxAmountMinor,
     can_approve_override: canApproveOverride,
+  };
+}
+
+export function restrictCashierManualDiscountPolicyForRole(
+  policy: CashierManualDiscountPolicy,
+  role: unknown,
+): CashierManualDiscountPolicy {
+  if (role === 'manager') {
+    return { ...policy };
+  }
+  return {
+    ...policy,
+    can_approve_override: false,
   };
 }
 
