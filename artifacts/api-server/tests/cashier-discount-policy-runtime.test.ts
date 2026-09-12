@@ -6,6 +6,7 @@ import {
   cashierManualDiscountLimitMinor,
   cashierManualDiscountWithinPolicy,
   normalizeCashierManualDiscountPolicy,
+  restrictCashierManualDiscountPolicyForRole,
 } from '../src/services/cashierDiscountPolicy.ts';
 
 test('disabled or missing policy normalizes to a fail-closed authority', () => {
@@ -46,6 +47,58 @@ test('enabled policy normalizes percentage, optional amount and override capabil
       max_amount_minor: 1_500,
       can_approve_override: true,
     },
+  );
+});
+
+test('enabled policy requires an explicit percentage while explicit zero remains valid', () => {
+  for (const maxPercentageBps of [undefined, null, '', '   ']) {
+    assert.throws(
+      () => normalizeCashierManualDiscountPolicy({
+        enabled: true,
+        max_percentage_bps: maxPercentageBps,
+      }),
+      (error: unknown) => {
+        assert.ok(error instanceof CashierDiscountPolicyError);
+        assert.equal(error.code, 'CASHIER_DISCOUNT_POLICY_INVALID');
+        return true;
+      },
+    );
+  }
+
+  assert.deepEqual(
+    normalizeCashierManualDiscountPolicy({
+      enabled: true,
+      max_percentage_bps: 0,
+      max_amount_minor: null,
+    }),
+    {
+      enabled: true,
+      max_percentage_bps: 0,
+      max_amount_minor: null,
+      can_approve_override: false,
+    },
+  );
+});
+
+test('override approval capability is preserved only for managers', () => {
+  const policy = normalizeCashierManualDiscountPolicy({
+    enabled: true,
+    max_percentage_bps: 1_000,
+    max_amount_minor: 4_000,
+    can_approve_override: true,
+  });
+
+  assert.equal(
+    restrictCashierManualDiscountPolicyForRole(policy, 'manager').can_approve_override,
+    true,
+  );
+  assert.equal(
+    restrictCashierManualDiscountPolicyForRole(policy, 'cashier').can_approve_override,
+    false,
+  );
+  assert.equal(
+    restrictCashierManualDiscountPolicyForRole(policy, 'unexpected-role').can_approve_override,
+    false,
   );
 });
 
