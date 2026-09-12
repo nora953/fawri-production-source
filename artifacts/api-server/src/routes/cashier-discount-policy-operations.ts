@@ -16,6 +16,7 @@ import {
 import {
   CashierDiscountPolicyError,
   normalizeCashierManualDiscountPolicy,
+  restrictCashierManualDiscountPolicyForRole,
 } from '../services/cashierDiscountPolicy';
 import {
   operationalQueryRows,
@@ -28,6 +29,10 @@ type StaffVersionRow = Record<string, unknown> & {
   id: string;
   version: number | string;
   status: string;
+};
+
+type StaffPolicyTargetRow = StaffVersionRow & {
+  role: string;
 };
 
 type PermissionRow = Record<string, unknown> & {
@@ -115,9 +120,9 @@ router.put(
       }
       const policy = normalizeCashierManualDiscountPolicy(req.body?.discount_policy);
       const result = await withMerchantOperationalTransaction(id, async (client) => {
-        const rows = await operationalQueryRows<StaffVersionRow>(
+        const rows = await operationalQueryRows<StaffPolicyTargetRow>(
           client,
-          `SELECT id, version, status
+          `SELECT id, version, status, role
              FROM merchant_cashier_staff
             WHERE merchant_id = $1 AND id = $2
             LIMIT 1
@@ -139,6 +144,10 @@ router.put(
             409,
           );
         }
+        const effectivePolicy = restrictCashierManualDiscountPolicyForRole(
+          policy,
+          current.role,
+        );
 
         await client.query(
           `DELETE FROM merchant_cashier_staff_permissions
@@ -146,7 +155,7 @@ router.put(
               AND permission IN ('sale.discount', 'sale.discount_override')`,
           [id, staffId],
         );
-        if (policy.enabled) {
+        if (effectivePolicy.enabled) {
           await client.query(
             `INSERT INTO merchant_cashier_staff_permissions
                (merchant_id, staff_id, permission, granted_at)
@@ -154,7 +163,7 @@ router.put(
              ON CONFLICT DO NOTHING`,
             [id, staffId],
           );
-          if (policy.can_approve_override) {
+          if (effectivePolicy.can_approve_override) {
             await client.query(
               `INSERT INTO merchant_cashier_staff_permissions
                  (merchant_id, staff_id, permission, granted_at)
@@ -168,7 +177,7 @@ router.put(
         const stored = await upsertCashierDiscountPolicy(client, {
           merchantId: id,
           staffId,
-          policy,
+          policy: effectivePolicy,
         });
         const updated = await operationalQueryRows<StaffVersionRow>(
           client,
