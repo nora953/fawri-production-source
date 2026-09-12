@@ -56,16 +56,13 @@ html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > d
   white-space: nowrap;
 }
 
-/* Do not expose the verbose internal session sentence in the POS header.
-   Station identity can be presented later as its own dedicated label using the
-   merchant-defined station_name rather than this mixed operator/role string. */
+/* Do not expose the verbose internal session sentence in the POS header. */
 html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child > span {
   display: none !important;
 }
 
 /* Move the existing runtime-derived connectivity badge to the LEFT of the end
-   shift action in RTL. Keep it a compact soft rectangle that reads as status
-   rather than as a primary action. */
+   shift action in RTL. Keep it a compact soft rectangle. */
 html[data-cashier-view='pos'] main > div > header > div:last-child > div:first-child > span:first-child {
   position: absolute;
   top: 50%;
@@ -134,25 +131,37 @@ html[data-cashier-view='pos'] main > div > header > div:first-child {
   flex: 0 0 auto;
 }
 
-/* Compact cart cards: keep Arabic/Kurdish/English names, quantity and money
-   inside their card instead of allowing the lower line to spill out. */
+/* Compact cart cards: one calm row of four items per page. Names may use two
+   lines, while quantity and total always reserve their own lower row. */
 html[data-cashier-view='pos'] .cashier-cart-compact-panel {
+  min-width: 0;
+  min-height: 92px;
+  overflow: hidden !important;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-panel > div:last-child {
+  min-width: 0;
   overflow: hidden;
 }
 
 html[data-cashier-view='pos'] .cashier-cart-compact-grid {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
   align-items: stretch;
-  overflow: hidden;
+  overflow: hidden !important;
 }
 
 html[data-cashier-view='pos'] .cashier-cart-compact-card {
   display: grid;
+  width: 100%;
   min-width: 0;
-  min-height: 64px;
-  grid-template-rows: minmax(2.25rem, auto) auto;
+  min-height: 68px;
+  grid-template-rows: minmax(2.15rem, 1fr) 1.15rem;
   align-content: stretch;
   overflow: hidden;
-  padding: 0.5rem 0.55rem !important;
+  padding: 0.48rem 0.55rem !important;
 }
 
 html[data-cashier-view='pos'] .cashier-cart-compact-name {
@@ -171,13 +180,16 @@ html[data-cashier-view='pos'] .cashier-cart-compact-meta {
   display: grid;
   min-width: 0;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: end;
-  gap: 0.3rem;
-  line-height: 1.2;
+  align-items: center;
+  gap: 0.35rem;
+  overflow: hidden;
+  line-height: 1.15;
 }
 
 html[data-cashier-view='pos'] .cashier-cart-compact-qty {
-  flex: 0 0 auto;
+  min-width: 1.25rem;
+  color: #64748b;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -185,11 +197,24 @@ html[data-cashier-view='pos'] .cashier-cart-compact-price {
   display: block;
   min-width: 0;
   overflow: hidden;
-  font-size: 0.62rem;
-  font-weight: 600;
+  color: #334155;
+  font-size: 0.64rem;
+  font-weight: 700;
   text-align: end;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* No native scrollbar should appear inside the compact item strip. Navigation
+   is handled by the existing previous/next buttons whenever another page exists. */
+html[data-cashier-view='pos'] .cashier-cart-compact-panel,
+html[data-cashier-view='pos'] .cashier-cart-compact-panel * {
+  scrollbar-width: none;
+}
+
+html[data-cashier-view='pos'] .cashier-cart-compact-panel::-webkit-scrollbar,
+html[data-cashier-view='pos'] .cashier-cart-compact-panel *::-webkit-scrollbar {
+  display: none;
 }
 
 @media (max-width: 1023px) {
@@ -237,7 +262,11 @@ html[data-cashier-view='pos'] .cashier-cart-compact-price {
     justify-content: flex-start !important;
   }
 
+  html[data-cashier-view='pos'] .cashier-cart-compact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
   html[data-cashier-view='pos'] .cashier-cart-compact-card {
-    min-height: 60px;
+    min-height: 66px;
   }
 }
