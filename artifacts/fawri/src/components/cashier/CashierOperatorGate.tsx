@@ -8,13 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import CashierEndShiftButton from '@/components/cashier/CashierEndShiftButton';
 import {
   cashierOperatorCan,
   getCashierOperatorSession,
   getCashierStationBinding,
   listCashierLoginStaff,
   loginCashierOperator,
-  logoutCashierOperator,
   pairCashierStation,
   validateCashierOperatorSession,
   type CashierLoginStaff,
@@ -342,27 +342,6 @@ export default function CashierOperatorGate({ children, bypass = false }: { chil
     }
   };
 
-  const logout = async () => {
-    setBusy(true);
-    try {
-      await logoutCashierOperator();
-      window.dispatchEvent(new CustomEvent('fawri:cashier-operator-session-changed'));
-      setPin('');
-      setNotice('');
-      setOperatorName('');
-      await load();
-    } catch (error) {
-      if (await recoverStationBinding(error)) return;
-      setState(current => ({
-        kind: 'error',
-        binding: current.kind === 'ready' || current.kind === 'login' ? current.binding : null,
-        message: errorText(error, labels),
-      }));
-    } finally {
-      setBusy(false);
-    }
-  };
-
   if (state.kind === 'loading') {
     return <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6" dir={dir}><div className="rounded-2xl border border-slate-200 bg-white px-8 py-7 text-sm text-slate-600 shadow-sm">{labels.syncPreparing}</div></main>;
   }
@@ -429,7 +408,17 @@ export default function CashierOperatorGate({ children, bypass = false }: { chil
     <div className="relative">
       <div className="fixed left-1/2 top-3 z-[80] flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-2 rounded-xl border border-slate-200 bg-white/95 p-2 text-xs shadow-lg backdrop-blur">
         <span className="max-w-[50vw] truncate font-semibold text-slate-600">{operatorName || roleLabel(state.session.context.role)} · {roleLabel(state.session.context.role)} · {state.binding.station_name}</span>
-        <button type="button" disabled={busy} onClick={() => void logout()} className="shrink-0 rounded-lg border border-slate-200 px-2.5 py-1.5 font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-50">{busy ? labels.loggingOut : labels.logout}</button>
+        <CashierEndShiftButton
+          operatorName={operatorName || roleLabel(state.session.context.role)}
+          onStationBindingInvalid={recoverStationBinding}
+          onEnded={async () => {
+            window.dispatchEvent(new CustomEvent('fawri:cashier-operator-session-changed'));
+            setPin('');
+            setNotice('');
+            setOperatorName('');
+            await load();
+          }}
+        />
       </div>
       {children}
     </div>
