@@ -55,7 +55,7 @@ type SaleSuccess = {
 
 type PosLabels = (typeof CASHIER_UI_COPY)[Lang]['pos'];
 
-const COMPACT_ITEMS_PER_PAGE = 100;
+const COMPACT_ITEMS_PER_PAGE = 4;
 
 function itemKey(item: { product_id: string; variant_id?: string }): string {
   return `${item.product_id}\u0000${item.variant_id || ''}`;
