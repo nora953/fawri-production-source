@@ -40,11 +40,25 @@ test('compact cart card text, quantity and totals remain contained and readable'
   assert.match(css, /scrollbar-width: none;/);
 });
 
-test('legacy cashierPos geometry cannot clip the two-row compact cards', () => {
+test('cashierPos keeps the paging row, four-card grid and arrow geometry separate', () => {
   assert.match(cashierPosCss, /grid-template-rows: minmax\(128px, 1fr\) auto;/);
   assert.match(cashierPosCss, /> div:nth-child\(2\) \{[\s\S]*height: auto !important;[\s\S]*min-height: 92px !important;/);
-  assert.match(cashierPosCss, /> div:nth-child\(2\) > div:first-child \{[\s\S]*display: flex !important;/);
-  assert.match(cashierPosCss, /> div:last-child > div \{[\s\S]*height: auto !important;[\s\S]*min-height: 68px;[\s\S]*overflow: hidden !important;/);
+  assert.match(
+    cashierPosCss,
+    /> div:last-child > \.cashier-cart-compact-grid \{[\s\S]*display: grid !important;[\s\S]*grid-template-columns: repeat\(4, minmax\(0, 1fr\)\) !important;/,
+  );
+  assert.match(
+    cashierPosCss,
+    /> div:last-child > button \{[\s\S]*flex: 0 0 1\.75rem !important;[\s\S]*min-width: 1\.75rem !important;/,
+  );
+  assert.doesNotMatch(
+    cashierPosCss,
+    /> div:last-child > div \{[\s\S]{0,300}display: flex !important;/,
+  );
+  assert.doesNotMatch(
+    cashierPosCss,
+    /> div:last-child > div > button \{[\s\S]{0,300}flex: 0 0 1\.75rem !important;/,
+  );
   assert.doesNotMatch(cashierPosCss, /grid-template-rows: minmax\(128px, 1fr\) 70px;/);
   assert.doesNotMatch(cashierPosCss, /height: 58px !important;/);
   assert.doesNotMatch(cashierPosCss, /flex: 0 0 104px !important;/);
