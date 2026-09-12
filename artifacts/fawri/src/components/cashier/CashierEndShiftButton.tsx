@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 import { endCashierOperatorShiftWithPin } from '@/lib/cashierEndShiftRuntime';
@@ -137,23 +138,10 @@ export default function CashierEndShiftButton({
     }
   };
 
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => {
-          setPin('');
-          setErrorMessage('');
-          setOpen(true);
-        }}
-        className="shrink-0 rounded-lg border border-slate-200 px-2.5 py-1.5 font-bold text-slate-700 hover:bg-slate-50"
-      >
-        {labels.endShift}
-      </button>
-
-      {open ? (
+  const modal = open && typeof document !== 'undefined'
+    ? createPortal(
         <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[1px]"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-[1px]"
           dir={dir}
           role="presentation"
         >
@@ -222,8 +210,25 @@ export default function CashierEndShiftButton({
               </div>
             </form>
           </section>
-        </div>
-      ) : null}
+        </div>,
+        document.body,
+      )
+    : null;
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          setPin('');
+          setErrorMessage('');
+          setOpen(true);
+        }}
+        className="shrink-0 rounded-lg border border-slate-200 px-2.5 py-1.5 font-bold text-slate-700 hover:bg-slate-50"
+      >
+        {labels.endShift}
+      </button>
+      {modal}
     </>
   );
 }
