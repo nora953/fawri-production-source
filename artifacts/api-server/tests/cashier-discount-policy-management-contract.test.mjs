@@ -28,6 +28,15 @@ test('merchant policy update is versioned and rewrites only discount permissions
   assert.match(route, /permission_snapshot = \$3::jsonb/);
 });
 
+test('merchant policy update derives override approval from the stored staff role', async () => {
+  const route = await api('src/routes/cashier-discount-policy-operations.ts');
+  assert.match(route, /SELECT id, version, status, role/);
+  assert.match(route, /restrictCashierManualDiscountPolicyForRole/);
+  assert.match(route, /current\.role/);
+  assert.match(route, /effectivePolicy\.can_approve_override/);
+  assert.match(route, /policy: effectivePolicy/);
+});
+
 test('operator can read only policy bound to authenticated merchant and staff', async () => {
   const route = await api('src/routes/cashier-discount-policy-operations.ts');
   const start = route.indexOf("'/cashier/operator/discount-policy'");
@@ -50,4 +59,14 @@ test('merchant discount policy UI exposes percent amount and override controls',
   assert.match(page, /صلاحيات خصم موظفي الكاشير/);
   assert.match(page, /Cashier employee discount authority/);
   assert.match(page, /دەسەڵاتی داشکاندنی کارمەندانی کاشێر/);
+});
+
+test('merchant discount policy UI rejects a blank percentage and explains permission sync truthfully', async () => {
+  const page = await web('src/pages/dashboard/CashierDiscountPoliciesPage.tsx');
+  assert.match(page, /draft\.maxPercent\.trim\(\)/);
+  assert.match(page, /copy\.percentRequired/);
+  assert.doesNotMatch(page, /هذه السياسة لا تمنح الصلاحية وحدها/);
+  assert.doesNotMatch(page, /Policy alone does not grant authority/);
+  assert.match(page, /يحدّث فوري صلاحيات الخصم المرتبطة للموظف تلقائيًا/);
+  assert.match(page, /automatically syncs the staff member’s related discount permissions/);
 });
