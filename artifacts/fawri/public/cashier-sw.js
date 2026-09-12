@@ -1,5 +1,5 @@
 const CACHE_PREFIX = 'fawri-cashier-shell-';
-const CACHE_VERSION = 'v3';
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `fawri-cashier-shell-${CACHE_VERSION}`;
 const FIXED_SUPPORT = [
   '/manifest.webmanifest',
