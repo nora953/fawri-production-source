@@ -50,6 +50,8 @@ test('cashier UI sends only PIN after explicit end-shift confirmation', async ()
   assert.match(dialog, /inputMode="numeric"/);
   assert.match(dialog, /endCashierOperatorShiftWithPin\(pin\)/);
   assert.match(dialog, /CASHIER_OPERATOR_INVALID/);
+  assert.match(dialog, /createPortal\(/);
+  assert.match(dialog, /document\.body/);
 
   assert.match(gate, /<CashierEndShiftButton/);
   assert.doesNotMatch(gate, /logoutCashierOperator\(/);
