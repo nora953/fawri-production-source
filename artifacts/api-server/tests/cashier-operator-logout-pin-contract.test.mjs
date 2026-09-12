@@ -52,6 +52,11 @@ test('cashier UI sends only PIN after explicit end-shift confirmation', async ()
   assert.match(dialog, /CASHIER_OPERATOR_INVALID/);
   assert.match(dialog, /createPortal\(/);
   assert.match(dialog, /document\.body/);
+  assert.match(
+    dialog,
+    /className="mt-5 grid grid-cols-2 gap-3" dir="ltr"/,
+    'end-shift action columns must keep cancel left and confirm right in RTL languages',
+  );
 
   assert.match(gate, /<CashierEndShiftButton/);
   assert.doesNotMatch(gate, /logoutCashierOperator\(/);
