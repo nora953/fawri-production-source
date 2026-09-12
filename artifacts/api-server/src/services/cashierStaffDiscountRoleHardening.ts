@@ -1,6 +1,7 @@
 import {
   operationalQueryRows,
   withMerchantOperationalTransaction,
+  type OperationalTransactionClient,
 } from './operationalPostgresAuthority';
 
 type StaffRoleRow = Record<string, unknown> & {
@@ -17,7 +18,7 @@ function schemaMissing(error: unknown): boolean {
 }
 
 async function clearStoredOverrideFlagIfAvailable(
-  client: Parameters<Parameters<typeof withMerchantOperationalTransaction>[1]>[0],
+  client: OperationalTransactionClient,
   merchantId: string,
   staffId: string,
 ): Promise<boolean> {
