@@ -136,9 +136,11 @@ export default function CashierManualDiscountEditor({
             className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-end text-base font-black outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
             dir="ltr"
           />
-          <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-xs font-bold text-slate-400">
-            {kind === 'percentage' ? '%' : currencyCode}
-          </span>
+          {valueText.trim().length === 0 ? (
+            <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-xs font-bold text-slate-400">
+              {kind === 'percentage' ? '%' : currencyCode}
+            </span>
+          ) : null}
         </div>
       </label>
 
