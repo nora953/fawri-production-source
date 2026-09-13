@@ -6,6 +6,7 @@ const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'ut
 
 const pos = read('../src/pages/CashierPosPage.tsx');
 const checkout = read('../src/components/cashier/CashierCheckoutModal.tsx');
+const discountEditor = read('../src/components/cashier/CashierManualDiscountEditor.tsx');
 const keyboard = read('../src/lib/cashierFastCheckoutKeyboard.ts');
 const scanner = read('../src/lib/cashierBarcodeScanner.ts');
 const operatorRuntime = read('../src/lib/cashierOperatorPosRuntime.ts');
@@ -14,6 +15,7 @@ const receiptProfile = read('../src/lib/cashierReceiptProfileClient.ts');
 const history = read('../src/pages/CashierHistoryPage.tsx');
 const main = read('../src/cashierMain.tsx');
 const copy = read('../src/lib/cashierUiCopy.ts');
+const enhancementCopy = read('../src/lib/cashierPosEnhancementCopy.ts');
 
 test('functional freeze keeps the scanner and keyboard-first sale path intact', () => {
   assert.match(scanner, /MAX_INTER_KEY_GAP_MS = 90/);
@@ -36,6 +38,22 @@ test('functional freeze keeps exact-cash Enter and fail-safe Escape checkout beh
   assert.match(checkout, /event\.key !== 'Enter'/);
   assert.match(checkout, /paymentMethod !== 'cash'/);
   assert.match(checkout, /!canSubmit/);
+});
+
+test('functional freeze keeps manual discount reasons touch-first without losing audit text', () => {
+  assert.match(discountEditor, /copy\.discountReasonCustomerRecovery/);
+  assert.match(discountEditor, /copy\.discountReasonLoyalty/);
+  assert.match(discountEditor, /copy\.discountReasonPriceMatch/);
+  assert.match(discountEditor, /copy\.discountReasonDamagedItem/);
+  assert.match(discountEditor, /copy\.discountReasonSpecialOffer/);
+  assert.match(discountEditor, /copy\.discountReasonClearance/);
+  assert.match(discountEditor, /copy\.discountReasonOther/);
+  assert.match(discountEditor, /onReasonChange\(option\)/);
+  assert.match(discountEditor, /aria-pressed=\{selectedReason === option\}/);
+  assert.match(discountEditor, /copy\.discountReasonAddNote/);
+  assert.match(discountEditor, /note\.trim\(\) === ''\s*\? selectedReason/);
+  assert.match(enhancementCopy, /discountReasonRequired: 'اختر سبب الخصم قبل تأكيد البيع\.'/);
+  assert.match(enhancementCopy, /discountReasonRequired: 'Choose a discount reason before confirming the sale\.'/);
 });
 
 test('functional freeze keeps sale commit single-flight and manager approval fail-closed', () => {
