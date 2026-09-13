@@ -71,6 +71,29 @@ test('functional freeze keeps discount numeric entry unit-free and checkout-scop
   assert.match(discountCheckout, /resetDraft\(\)/);
 });
 
+test('functional freeze keeps checkout money hierarchy touch-readable and validation truthful', () => {
+  assert.match(checkout, /function MoneyValue/);
+  assert.match(checkout, /text-base font-black leading-6 text-slate-100/);
+  assert.match(checkout, /text-\[2rem\] font-black leading-none tracking-tight text-white/);
+  assert.match(checkout, /text-lg font-extrabold text-slate-300/);
+  assert.match(checkout, /space-y-2 border-t border-white\/10 pt-3/);
+  assert.match(discountEditor, /h-11 rounded-xl border px-3 text-sm font-bold transition/);
+  assert.match(discountEditor, /h-12 w-full rounded-xl[\s\S]*text-xl font-black/);
+  assert.match(discountEditor, /min-h-11 rounded-xl border/);
+  assert.match(
+    discountEditor,
+    /reasonMissing \? copy\.discountReasonRequired : copy\.discountValueInvalid/,
+  );
+  assert.match(
+    enhancementCopy,
+    /discountValueInvalid: 'تحقق من قيمة الخصم قبل تأكيد البيع\.'/,
+  );
+  assert.match(
+    enhancementCopy,
+    /discountValueInvalid: 'Check the discount value before confirming the sale\.'/,
+  );
+});
+
 test('functional freeze keeps manager ceiling rejection explicit and fail-closed', () => {
   assert.match(
     overrideEditor,
