@@ -57,9 +57,10 @@ test('functional freeze keeps manual discount reasons touch-first without losing
   assert.match(enhancementCopy, /discountReasonRequired: 'Choose a discount reason before confirming the sale\.'/);
 });
 
-test('functional freeze keeps discount numeric entry uncluttered and checkout-scoped', () => {
-  assert.match(discountEditor, /!valueText \? \(/);
-  assert.match(discountEditor, /kind === 'percentage' \? '%' : currencyCode/);
+test('functional freeze keeps discount numeric entry unit-free and checkout-scoped', () => {
+  assert.match(discountEditor, /placeholder="0"/);
+  assert.doesNotMatch(discountEditor, /kind === 'percentage' \? '%' : currencyCode/);
+  assert.doesNotMatch(discountEditor, /pointer-events-none absolute inset-y-0/);
   assert.match(discountCheckout, /previousOperationIdRef/);
   assert.match(
     discountCheckout,
