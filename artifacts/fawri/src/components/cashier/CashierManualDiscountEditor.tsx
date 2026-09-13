@@ -151,21 +151,15 @@ export default function CashierManualDiscountEditor({
 
       <label className="mt-3 block text-xs font-bold text-slate-700">
         {copy.discountValue}
-        <div className="relative mt-1.5">
-          <input
-            type="text"
-            inputMode="numeric"
-            value={valueText}
-            onChange={(event) => onValueChange(event.target.value)}
-            className="h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-end text-base font-black outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-            dir="ltr"
-          />
-          {!valueText ? (
-            <span className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-xs font-bold text-slate-400">
-              {kind === 'percentage' ? '%' : currencyCode}
-            </span>
-          ) : null}
-        </div>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={valueText}
+          onChange={(event) => onValueChange(event.target.value)}
+          placeholder="0"
+          className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-end text-base font-black outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+          dir="ltr"
+        />
       </label>
 
       <div className="mt-3">
