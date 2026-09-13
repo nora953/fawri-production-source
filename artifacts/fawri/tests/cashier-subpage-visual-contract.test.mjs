@@ -5,6 +5,7 @@ import test from 'node:test';
 const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'utf8');
 
 const visualQa = read('../public/assets/cashier-visual-qa.css');
+const historyPolish = read('../public/assets/cashier-history-polish.css');
 const history = read('../src/pages/CashierHistoryPage.tsx');
 const reports = read('../src/pages/CashierReportsPage.tsx');
 const cashierHtml = read('../cashier.html');
@@ -45,6 +46,15 @@ test('cashier history return controls remain touch-sized', () => {
   assert.match(visualQa, /button\.h-8\.w-8[\s\S]*width: 2\.5rem !important;[\s\S]*height: 2\.5rem !important;/);
 });
 
-test('cashier shell cache-busts the polished visual contract', () => {
+test('cashier history keeps mixed sale references readable and evidence metadata clear', () => {
+  assert.match(historyPolish, /unicode-bidi: plaintext;/);
+  assert.match(historyPolish, /font-variant-numeric: tabular-nums;/);
+  assert.match(historyPolish, /font-size: 0\.75rem !important;/);
+  assert.match(historyPolish, /scrollbar-width: thin;/);
+  assert.match(historyPolish, /width: 7px;/);
+});
+
+test('cashier shell cache-busts the polished visual contracts', () => {
   assert.match(cashierHtml, /cashier-visual-qa\.css\?v=subpage-polish-v1/);
+  assert.match(cashierHtml, /cashier-history-polish\.css\?v=history-readability-v1/);
 });
