@@ -3,6 +3,8 @@ import {
   getCashierOperatorSession,
 } from './cashierOperatorSessionRuntime';
 
+export type CashierManualDiscountKind = 'amount' | 'percentage';
+
 export type CashierOperatorDiscountPolicy = {
   enabled: boolean;
   max_percentage_bps: number;
@@ -72,14 +74,17 @@ function parsePolicy(value: unknown): CashierOperatorDiscountPolicy {
 export function cashierDiscountLimitMinor(input: {
   postPromotionTotalMinor: number;
   policy: CashierOperatorDiscountPolicy;
+  kind: CashierManualDiscountKind;
 }): number {
   const total = safeInteger(input.postPromotionTotalMinor);
   if (total === null || !input.policy.enabled || total === 0) return 0;
+  if (input.kind === 'amount') {
+    return input.policy.max_amount_minor === null
+      ? 0
+      : Math.min(total, input.policy.max_amount_minor);
+  }
   const percentageLimit = Math.floor((total * input.policy.max_percentage_bps) / 10_000);
-  const amountLimit = input.policy.max_amount_minor;
-  return amountLimit === null
-    ? Math.min(total, percentageLimit)
-    : Math.min(total, percentageLimit, amountLimit);
+  return Math.min(total, percentageLimit);
 }
 
 export async function loadCurrentCashierDiscountPolicy(): Promise<CashierOperatorDiscountPolicy> {
