@@ -1,6 +1,9 @@
 import crypto from 'node:crypto';
 import { verifyPassword } from './authPasswordService';
-import { cashierManualDiscountLimitMinor } from './cashierDiscountPolicy';
+import {
+  cashierManualDiscountLimitMinor,
+  type CashierManualDiscountKind,
+} from './cashierDiscountPolicy';
 import {
   disabledStoredCashierDiscountPolicy,
   loadCashierDiscountPolicies,
@@ -404,6 +407,7 @@ export async function consumeCashierDiscountOverrideApproval(
     approvalId: string;
     manualDiscountMinor: number;
     discountBaseMinor: number;
+    discountKind?: CashierManualDiscountKind;
     reason: string;
   },
 ): Promise<void> {
@@ -446,9 +450,6 @@ export async function consumeCashierDiscountOverrideApproval(
     );
   }
 
-  // The manager approval is valid only for a sale created during the approval
-  // window. Sync may happen later because cashier sales are local-first; wall
-  // clock time at retry/sync must not strand an already-approved local sale.
   const saleOccurredAt = toMillis(input.saleOccurredAt);
   const approvalCreatedAt = toMillis(approval.created_at);
   const approvalExpiresAt = toMillis(approval.expires_at);
@@ -463,9 +464,6 @@ export async function consumeCashierDiscountOverrideApproval(
     );
   }
 
-  // Once an approval has been consumed it remains valid only for this exact
-  // operation id and exact sale binding. This preserves safe idempotent retry
-  // after a lost response without reopening the approval for another sale.
   if (approval.consumed_at) return;
 
   const approver = await loadApprover(target, input.merchantId, approval.approver_staff_id, true);
@@ -480,6 +478,7 @@ export async function consumeCashierDiscountOverrideApproval(
   const managerLimitMinor = cashierManualDiscountLimitMinor({
     postPromotionTotalMinor: discountBaseMinor,
     policy: approverPolicy,
+    kind: input.discountKind,
   });
   if (input.manualDiscountMinor > managerLimitMinor) {
     throw new CashierStaffAuthorityError(
