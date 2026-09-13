@@ -92,25 +92,28 @@ const baseInput = {
   reason: 'customer recovery',
 };
 
-test('approved local sale at the exact manager limit remains syncable after approval wall-clock expiry', async () => {
-  const { target, updates } = authorityTarget();
+test('approved percentage discount at the exact manager percentage limit remains syncable after approval expiry', async () => {
+  const { target, updates } = authorityTarget({ managerMaxAmountMinor: 100 });
   await consumeCashierDiscountOverrideApproval(target, {
     ...baseInput,
-    // The sale happened during the five-minute manager approval window. The
-    // test executes much later, proving sync wall-clock time is not authority.
-    // 50% of a 500-minor-unit discount base is exactly 250.
+    discountKind: 'percentage',
     saleOccurredAt: '2026-09-09T10:03:00.000Z',
   });
   assert.equal(updates.length, 1);
   assert.match(updates[0], /SET consumed_at = now\(\)/);
 });
 
-test('manager percentage ceiling rejects one minor unit above the allowed override', async () => {
-  const { target, updates } = authorityTarget({ manualDiscountMinor: 251 });
+test('manager percentage ceiling ignores the manager fixed amount limit and rejects one unit above 50%', async () => {
+  const { target, updates } = authorityTarget({
+    manualDiscountMinor: 251,
+    managerMaxPercentageBps: 5_000,
+    managerMaxAmountMinor: 999,
+  });
   await assert.rejects(
     consumeCashierDiscountOverrideApproval(target, {
       ...baseInput,
       manualDiscountMinor: 251,
+      discountKind: 'percentage',
       saleOccurredAt: '2026-09-09T10:03:00.000Z',
     }),
     (error: unknown) => {
@@ -123,16 +126,17 @@ test('manager percentage ceiling rejects one minor unit above the allowed overri
   assert.equal(updates.length, 0);
 });
 
-test('manager monetary ceiling rejects one minor unit above the allowed override', async () => {
+test('manager fixed amount ceiling ignores the manager percentage limit and rejects one unit above amount authority', async () => {
   const { target, updates } = authorityTarget({
     manualDiscountMinor: 201,
-    managerMaxPercentageBps: 10_000,
+    managerMaxPercentageBps: 100,
     managerMaxAmountMinor: 200,
   });
   await assert.rejects(
     consumeCashierDiscountOverrideApproval(target, {
       ...baseInput,
       manualDiscountMinor: 201,
+      discountKind: 'amount',
       saleOccurredAt: '2026-09-09T10:03:00.000Z',
     }),
     (error: unknown) => {
@@ -150,6 +154,7 @@ test('sale created after the manager approval window fails closed', async () => 
   await assert.rejects(
     consumeCashierDiscountOverrideApproval(target, {
       ...baseInput,
+      discountKind: 'percentage',
       saleOccurredAt: '2026-09-09T10:05:00.001Z',
     }),
     (error: unknown) => {
@@ -162,12 +167,13 @@ test('sale created after the manager approval window fails closed', async () => 
   assert.equal(updates.length, 0);
 });
 
-test('consumed exact-operation retry still validates the original sale window', async () => {
+test('consumed exact-operation retry still validates the original sale window and type', async () => {
   const { target, updates } = authorityTarget({
     consumedAt: '2026-09-09T10:03:10.000Z',
   });
   await consumeCashierDiscountOverrideApproval(target, {
     ...baseInput,
+    discountKind: 'percentage',
     saleOccurredAt: '2026-09-09T10:03:00.000Z',
   });
   assert.equal(updates.length, 0);
