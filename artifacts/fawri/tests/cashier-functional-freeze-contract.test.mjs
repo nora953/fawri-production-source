@@ -128,6 +128,16 @@ test('functional freeze keeps manager ceiling rejection explicit and fail-closed
   );
 });
 
+test('functional freeze keeps manager approval visually aligned with checkout', () => {
+  assert.match(overrideEditor, /rounded-2xl border border-orange-200 bg-orange-50\/50 p-3\.5/);
+  assert.match(overrideEditor, /text-base font-black text-slate-900/);
+  assert.match(overrideEditor, /text-\[13px\] font-medium leading-5 text-slate-600/);
+  assert.match(overrideEditor, /h-12 w-full rounded-xl border border-slate-300 bg-white/);
+  assert.match(overrideEditor, /text-center text-xl font-black tracking-\[0\.35em\]/);
+  assert.match(overrideEditor, /rounded-lg border border-red-100 bg-red-50/);
+  assert.match(overrideEditor, /h-12 w-full rounded-xl bg-orange-600/);
+});
+
 test('functional freeze keeps server-verified cashier reachability and physical checkout action sides', () => {
   assert.match(connectivity, /CASHIER_REACHABILITY_PATH = '\/healthz'/);
   assert.match(connectivity, /return currentState\.online \|\| readNativeNavigatorOnline\(\)/);
