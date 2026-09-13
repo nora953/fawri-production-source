@@ -295,29 +295,29 @@ export default function CashierCheckoutModal({
               <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
                 {hasPromotionDiscount ? (
                   <div className="flex items-center justify-between gap-3 text-emerald-200">
-                    <span className="text-sm font-bold">{extra.promotionDiscount}</span>
+                    <span className="text-[15px] font-extrabold">{extra.promotionDiscount}</span>
                     <MoneyValue
                       amountMinor={quote.discount_minor}
                       currencyCode={quote.currency_code}
                       fractionDigits={quote.currency_fraction_digits}
                       lang={lang}
                       negative
-                      amountClassName="text-base font-black"
-                      currencyClassName="text-sm font-bold text-emerald-300"
+                      amountClassName="text-lg font-black"
+                      currencyClassName="text-[15px] font-extrabold text-emerald-300"
                     />
                   </div>
                 ) : null}
                 {hasManualDiscount && manualDiscountResolution ? (
                   <div className="flex items-center justify-between gap-3 text-orange-200">
-                    <span className="text-sm font-bold">{extra.manualDiscount}</span>
+                    <span className="text-[15px] font-extrabold">{extra.manualDiscount}</span>
                     <MoneyValue
                       amountMinor={manualDiscountResolution.manual_discount_minor}
                       currencyCode={quote.currency_code}
                       fractionDigits={quote.currency_fraction_digits}
                       lang={lang}
                       negative
-                      amountClassName="text-base font-black"
-                      currencyClassName="text-sm font-bold text-orange-300"
+                      amountClassName="text-lg font-black"
+                      currencyClassName="text-[15px] font-extrabold text-orange-300"
                     />
                   </div>
                 ) : null}
