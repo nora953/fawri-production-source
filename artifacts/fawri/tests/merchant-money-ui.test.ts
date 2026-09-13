@@ -6,6 +6,9 @@ import {
   formatMerchantMoneyMinor,
   formatMerchantNumber,
   merchantCurrencyLabel,
+  merchantMoneyMajorInputToMinor,
+  merchantMoneyMinorToMajorInput,
+  merchantSafeFractionDigits,
 } from '../src/lib/moneyUi';
 
 test('merchant money localizes Arabic IQD digits while generic numbers stay Latin', () => {
@@ -31,4 +34,39 @@ test('Arabic IQD avoids thousands separators while English IQD keeps ASCII group
 test('non-IQD currencies keep their explicit currency code', () => {
   assert.equal(merchantCurrencyLabel('usd', 'ar'), 'USD');
   assert.equal(formatMerchantMoneyMinor(12_345, 'USD', 2, 'en'), '123.45\u00a0USD');
+});
+
+test('cashier discount money conversion supports zero-decimal currencies such as IQD', () => {
+  assert.equal(merchantSafeFractionDigits(0), 0);
+  assert.equal(merchantMoneyMajorInputToMinor('1250', 0), 1250);
+  assert.equal(merchantMoneyMinorToMajorInput(1250, 0), '1250');
+  assert.equal(merchantMoneyMajorInputToMinor('1.0', 0), null);
+});
+
+test('cashier discount money conversion preserves two-decimal currency precision', () => {
+  assert.equal(merchantMoneyMajorInputToMinor('12.34', 2), 1234);
+  assert.equal(merchantMoneyMajorInputToMinor('12,34', 2), 1234);
+  assert.equal(merchantMoneyMajorInputToMinor('12.3', 2), 1230);
+  assert.equal(merchantMoneyMinorToMajorInput(1234, 2), '12.34');
+  assert.equal(merchantMoneyMinorToMajorInput(1200, 2), '12');
+});
+
+test('cashier discount money conversion preserves three-decimal currency precision', () => {
+  assert.equal(merchantMoneyMajorInputToMinor('1.234', 3), 1234);
+  assert.equal(merchantMoneyMajorInputToMinor('1.2', 3), 1200);
+  assert.equal(merchantMoneyMinorToMajorInput(1234, 3), '1.234');
+  assert.equal(merchantMoneyMinorToMajorInput(1200, 3), '1.2');
+  assert.equal(merchantMoneyMajorInputToMinor('1.2345', 3), null);
+});
+
+test('cashier discount money conversion rejects malformed, negative and unsafe values', () => {
+  for (const value of ['', ' ', '-1', '1..2', 'abc', '1,2,3']) {
+    assert.equal(merchantMoneyMajorInputToMinor(value, 2), null);
+  }
+  assert.equal(
+    merchantMoneyMajorInputToMinor(String(Number.MAX_SAFE_INTEGER), 2),
+    null,
+  );
+  assert.equal(merchantMoneyMinorToMajorInput(-1, 2), '');
+  assert.equal(merchantMoneyMinorToMajorInput(Number.MAX_SAFE_INTEGER + 1, 2), '');
 });
