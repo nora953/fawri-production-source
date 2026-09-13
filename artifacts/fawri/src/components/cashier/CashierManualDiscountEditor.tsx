@@ -122,17 +122,17 @@ export default function CashierManualDiscountEditor({
   return (
     <div className="rounded-2xl border border-orange-200 bg-orange-50/40 p-4">
       <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-base font-black leading-6 text-slate-900">{copy.manualDiscount}</p>
-          <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-sm font-semibold text-slate-600">
-            <span>{copy.discountEmployeeLimit}:</span>
+          <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-orange-100 bg-white/80 px-2.5 py-2 text-sm font-semibold text-slate-600">
+            <span className="leading-5">{copy.discountEmployeeLimit}</span>
             {kind === 'amount' && amountLimitParts ? (
-              <strong className="inline-flex items-baseline gap-1 font-black text-slate-800" dir="ltr">
+              <strong className="inline-flex shrink-0 items-baseline gap-1 text-[15px] font-black text-slate-900" dir="ltr">
                 {amountLimitParts.currency ? <span dir="rtl">{amountLimitParts.currency}</span> : null}
                 <span dir="ltr">{amountLimitParts.amount}</span>
               </strong>
             ) : (
-              <strong className="font-black text-slate-800" dir="ltr">
+              <strong className="shrink-0 text-[15px] font-black text-slate-900" dir="ltr">
                 {policy.max_percentage_bps / 100}%
               </strong>
             )}
@@ -141,7 +141,7 @@ export default function CashierManualDiscountEditor({
         <button
           type="button"
           onClick={onRemove}
-          className="min-h-9 rounded-lg px-2 py-1.5 text-sm font-bold text-red-600 transition hover:bg-red-50"
+          className="min-h-9 shrink-0 rounded-lg px-2 py-1.5 text-sm font-bold text-red-600 transition hover:bg-red-50"
         >
           {copy.removeDiscount}
         </button>
@@ -198,6 +198,8 @@ export default function CashierManualDiscountEditor({
                 setShowReasonNote(false);
               }}
               className={`min-h-11 rounded-xl border px-2.5 py-2 text-[13px] font-bold leading-5 transition sm:text-sm ${
+                option === copy.discountReasonOther ? 'col-span-2 sm:col-span-3 ' : ''
+              }${
                 selectedReason === option
                   ? 'border-orange-500 bg-orange-100 text-orange-800 ring-2 ring-orange-100'
                   : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
@@ -212,7 +214,7 @@ export default function CashierManualDiscountEditor({
           <button
             type="button"
             onClick={() => setShowReasonNote(current => !current)}
-            className="mt-2 min-h-9 rounded-lg px-1 text-sm font-bold text-slate-600 underline decoration-dotted underline-offset-4"
+            className="mt-2 inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
           >
             {copy.discountReasonAddNote}
           </button>
@@ -236,22 +238,24 @@ export default function CashierManualDiscountEditor({
               }
             }}
             placeholder={copy.discountReasonNotePlaceholder}
-            className="mt-2 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+            className="mt-2 h-10 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
           />
         ) : null}
       </div>
 
       {resolvedDiscountParts ? (
-        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3">
-          <span className="text-sm font-black text-slate-800">{copy.manualDiscount}</span>
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3">
+          <span className="text-[15px] font-black text-slate-900">{copy.manualDiscount}</span>
           <strong className="inline-flex items-baseline gap-1.5 whitespace-nowrap text-red-600" dir="ltr">
             {resolvedDiscountParts.currency ? (
-              <span className="text-sm font-bold text-red-500" dir="rtl">
+              <span className="text-[15px] font-extrabold text-red-500" dir="rtl">
                 {resolvedDiscountParts.currency}
               </span>
             ) : null}
-            <span className="text-lg font-black">−</span>
-            <span className="text-lg font-black" dir="ltr">{resolvedDiscountParts.amount}</span>
+            <span className="inline-flex items-baseline gap-0.5">
+              <span className="text-lg font-black">−</span>
+              <span className="text-lg font-black" dir="ltr">{resolvedDiscountParts.amount}</span>
+            </span>
           </strong>
         </div>
       ) : null}
