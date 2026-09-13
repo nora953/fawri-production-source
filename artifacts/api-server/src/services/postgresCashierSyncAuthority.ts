@@ -63,6 +63,7 @@ type CashierSale = {
   lines: CashierSaleLine[];
   subtotal_minor: number;
   promotion_discount_minor?: number;
+  manual_discount_kind?: "amount" | "percentage";
   manual_discount_minor?: number;
   manual_discount_reason?: string;
   discount_minor: number;
@@ -388,6 +389,20 @@ function parseSale(value: unknown): CashierSale {
   const manualDiscountReason = raw.manual_discount_reason === undefined
     ? undefined
     : optionalText(raw.manual_discount_reason, "sale.manual_discount_reason", 200);
+  const manualDiscountKindRaw = raw.manual_discount_kind === undefined
+    ? undefined
+    : identifier(raw.manual_discount_kind, "sale.manual_discount_kind", 32);
+  const manualDiscountKind = manualDiscountKindRaw === undefined
+    ? undefined
+    : manualDiscountKindRaw === "amount" || manualDiscountKindRaw === "percentage"
+      ? manualDiscountKindRaw
+      : (() => {
+          throw new CashierSyncError(
+            "CASHIER_SYNC_MANUAL_DISCOUNT_INVALID",
+            "manual discount type is invalid",
+            400,
+          );
+        })();
   if (manualDiscount > postPromotionTotal) {
     throw new CashierSyncError(
       "CASHIER_SYNC_MANUAL_DISCOUNT_INVALID",
@@ -402,10 +417,10 @@ function parseSale(value: unknown): CashierSale {
       409,
     );
   }
-  if (manualDiscount === 0 && manualDiscountReason) {
+  if (manualDiscount === 0 && (manualDiscountReason || manualDiscountKind)) {
     throw new CashierSyncError(
       "CASHIER_SYNC_MANUAL_DISCOUNT_INVALID",
-      "manual discount reason is not allowed without a discount",
+      "manual discount metadata is not allowed without a discount",
       400,
     );
   }
@@ -443,8 +458,6 @@ function parseSale(value: unknown): CashierSale {
   const hasCashTenderMetadata =
     raw.cash_tendered_minor !== undefined || raw.change_due_minor !== undefined;
   if (paymentMethod === "cash") {
-    // Backward compatibility: queued legacy cash sales created before P1 may
-    // omit tender metadata. P1+ clients send both fields and they are verified.
     if (hasCashTenderMetadata) {
       if (raw.cash_tendered_minor === undefined || raw.change_due_minor === undefined) {
         throw new CashierSyncError(
@@ -498,6 +511,7 @@ function parseSale(value: unknown): CashierSale {
     promotion_discount_minor: claimedPromotionDiscount,
     ...(manualDiscount > 0
       ? {
+          ...(manualDiscountKind ? { manual_discount_kind: manualDiscountKind } : {}),
           manual_discount_minor: manualDiscount,
           manual_discount_reason: manualDiscountReason,
         }
@@ -927,6 +941,9 @@ async function insertCanonicalOrder(
         : {}),
       ...(bundle.sale.manual_discount_minor !== undefined
         ? {
+            ...(bundle.sale.manual_discount_kind
+              ? { manual_discount_kind: bundle.sale.manual_discount_kind }
+              : {}),
             manual_discount_minor: bundle.sale.manual_discount_minor,
             manual_discount_reason: bundle.sale.manual_discount_reason,
           }
