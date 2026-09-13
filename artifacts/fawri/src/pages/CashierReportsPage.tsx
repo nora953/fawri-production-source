@@ -19,6 +19,8 @@ type Copy = {
   subtitle: string;
   back: string;
   history: string;
+  online: string;
+  offline: string;
   today: string;
   seven: string;
   thirty: string;
@@ -50,6 +52,8 @@ const COPY: Record<Lang, Copy> = {
     subtitle: 'تقارير مبنية على وقت تنفيذ البيع والمرتجع والإلغاء ضمن نطاق صلاحيات الموظف.',
     back: 'العودة للكاشير',
     history: 'سجل المبيعات',
+    online: 'متصل',
+    offline: 'غير متصل',
     today: 'اليوم',
     seven: '7 أيام',
     thirty: '30 يوم',
@@ -79,6 +83,8 @@ const COPY: Record<Lang, Copy> = {
     subtitle: 'ڕاپۆرت بەپێی کاتی جێبەجێکردنی فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوە و دەسەڵاتی کارمەند.',
     back: 'گەڕانەوە بۆ کاشێر',
     history: 'تۆماری فرۆشتن',
+    online: 'پەیوەستە',
+    offline: 'پەیوەست نییە',
     today: 'ئەمڕۆ',
     seven: '7 ڕۆژ',
     thirty: '30 ڕۆژ',
@@ -108,6 +114,8 @@ const COPY: Record<Lang, Copy> = {
     subtitle: 'Reports use sale, return and void operation time within the employee’s authorized scope.',
     back: 'Back to cashier',
     history: 'Sales history',
+    online: 'Online',
+    offline: 'Offline',
     today: 'Today',
     seven: '7 days',
     thirty: '30 days',
@@ -154,6 +162,7 @@ export default function CashierReportsPage() {
   const [runtime, setRuntime] = useState<CashierOperatorReportsRuntime | null>(null);
   const [range, setRange] = useState<RangeKey>('today');
   const [result, setResult] = useState<CashierOperatorReportRuntimeResult | null>(null);
+  const [online, setOnline] = useState(() => navigator.onLine);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -179,6 +188,16 @@ export default function CashierReportsPage() {
       if (active) void active.close().catch(() => undefined);
     };
   }, [labels.loadFailed]);
+
+  useEffect(() => {
+    const updateOnline = () => setOnline(navigator.onLine);
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
+    return () => {
+      window.removeEventListener('online', updateOnline);
+      window.removeEventListener('offline', updateOnline);
+    };
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!runtime) return;
@@ -213,7 +232,7 @@ export default function CashierReportsPage() {
 
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900" dir={dir}>
-      <div className="mx-auto max-w-[1450px] p-3 lg:p-5">
+      <div className="mx-auto max-w-[1500px] p-3 lg:p-4">
         <header className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
           <div className="flex items-center gap-3">
             <img src="/fawri-logo.svg" alt="Fawri" className="h-10 w-10 object-contain" />
@@ -221,10 +240,13 @@ export default function CashierReportsPage() {
               <h1 className="text-xl font-bold">{labels.title}</h1>
               <p className="mt-0.5 text-xs text-slate-500">{labels.subtitle}</p>
             </div>
+            <span className={`inline-flex h-8 items-center justify-center rounded-[0.625rem] border px-3 text-xs font-bold shadow-sm ${online ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-300 bg-slate-50 text-slate-700'}`}>
+              {online ? labels.online : labels.offline}
+            </span>
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <a href="/cashier.html?history=1" className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-bold text-slate-700 transition hover:bg-slate-50">{labels.history}</a>
-            <a href="/cashier.html" className="rounded-xl bg-slate-900 px-4 py-2 font-bold text-white transition hover:bg-slate-800">{labels.back}</a>
+            <a href="/cashier.html" className="rounded-xl border border-slate-200 bg-white px-4 py-2 font-bold text-slate-700 transition hover:bg-slate-50">{labels.back}</a>
           </div>
         </header>
 
