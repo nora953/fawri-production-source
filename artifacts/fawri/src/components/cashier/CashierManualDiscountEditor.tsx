@@ -50,6 +50,15 @@ export default function CashierManualDiscountEditor({
   const [showReasonNote, setShowReasonNote] = useState(false);
   const money = (value: number) =>
     formatMerchantMoneyMinor(value, currencyCode, fractionDigits, lang);
+  const splitMoney = (value: number) => {
+    const formatted = money(value);
+    const separator = formatted.lastIndexOf('\u00a0');
+    if (separator < 0) return { amount: formatted, currency: '' };
+    return {
+      amount: formatted.slice(0, separator),
+      currency: formatted.slice(separator + 1),
+    };
+  };
   const reasonOptions = [
     copy.discountReasonCustomerRecovery,
     copy.discountReasonLoyalty,
@@ -67,6 +76,7 @@ export default function CashierManualDiscountEditor({
     : '';
   const customLegacyReason = reason.trim() !== '' && selectedReason === null;
   const noteVisible = showReasonNote || selectedNote !== '' || customLegacyReason;
+  const reasonMissing = reason.normalize('NFKC').trim() === '';
 
   useEffect(() => {
     if (!open) setShowReasonNote(false);
@@ -74,7 +84,7 @@ export default function CashierManualDiscountEditor({
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-500">
         {copy.discountPolicyLoading}
       </div>
     );
@@ -82,7 +92,7 @@ export default function CashierManualDiscountEditor({
 
   if (!online) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
+      <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-500">
         {copy.discountOnlineRequired}
       </div>
     );
@@ -95,30 +105,43 @@ export default function CashierManualDiscountEditor({
       <button
         type="button"
         onClick={onOpen}
-        className="w-full rounded-xl border border-dashed border-orange-300 bg-orange-50/50 px-3 py-2.5 text-sm font-bold text-orange-700 transition hover:bg-orange-50"
+        className="h-11 w-full rounded-xl border border-dashed border-orange-300 bg-orange-50/50 px-3 text-sm font-bold text-orange-700 transition hover:bg-orange-50"
       >
         + {copy.addDiscount}
       </button>
     );
   }
 
-  const limitText = kind === 'amount'
-    ? money(policy.max_amount_minor ?? 0)
-    : `${policy.max_percentage_bps / 100}%`;
+  const amountLimitParts = kind === 'amount'
+    ? splitMoney(policy.max_amount_minor ?? 0)
+    : null;
+  const resolvedDiscountParts = resolution && resolution.manual_discount_minor > 0
+    ? splitMoney(resolution.manual_discount_minor)
+    : null;
 
   return (
-    <div className="rounded-2xl border border-orange-200 bg-orange-50/40 p-3">
-      <div className="mb-3 flex items-center justify-between gap-2">
+    <div className="rounded-2xl border border-orange-200 bg-orange-50/40 p-4">
+      <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-black text-slate-900">{copy.manualDiscount}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500">
-            {copy.discountEmployeeLimit}: <strong dir="ltr">{limitText}</strong>
-          </p>
+          <p className="text-base font-black leading-6 text-slate-900">{copy.manualDiscount}</p>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-sm font-semibold text-slate-600">
+            <span>{copy.discountEmployeeLimit}:</span>
+            {kind === 'amount' && amountLimitParts ? (
+              <strong className="inline-flex items-baseline gap-1 font-black text-slate-800" dir="ltr">
+                <span dir="ltr">{amountLimitParts.amount}</span>
+                {amountLimitParts.currency ? <span dir="rtl">{amountLimitParts.currency}</span> : null}
+              </strong>
+            ) : (
+              <strong className="font-black text-slate-800" dir="ltr">
+                {policy.max_percentage_bps / 100}%
+              </strong>
+            )}
+          </div>
         </div>
         <button
           type="button"
           onClick={onRemove}
-          className="text-xs font-bold text-red-600 hover:underline"
+          className="min-h-9 rounded-lg px-2 py-1.5 text-sm font-bold text-red-600 transition hover:bg-red-50"
         >
           {copy.removeDiscount}
         </button>
@@ -128,10 +151,10 @@ export default function CashierManualDiscountEditor({
         <button
           type="button"
           onClick={() => onKindChange('amount')}
-          className={`h-9 rounded-lg border text-xs font-bold ${
+          className={`h-11 rounded-xl border px-3 text-sm font-bold transition ${
             kind === 'amount'
               ? 'border-orange-500 bg-white text-orange-700 ring-2 ring-orange-100'
-              : 'border-slate-200 bg-white text-slate-600'
+              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
           }`}
         >
           {copy.discountAmount}
@@ -139,17 +162,17 @@ export default function CashierManualDiscountEditor({
         <button
           type="button"
           onClick={() => onKindChange('percentage')}
-          className={`h-9 rounded-lg border text-xs font-bold ${
+          className={`h-11 rounded-xl border px-3 text-sm font-bold transition ${
             kind === 'percentage'
               ? 'border-orange-500 bg-white text-orange-700 ring-2 ring-orange-100'
-              : 'border-slate-200 bg-white text-slate-600'
+              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
           }`}
         >
           {copy.discountPercent}
         </button>
       </div>
 
-      <label className="mt-3 block text-xs font-bold text-slate-700">
+      <label className="mt-3 block text-sm font-bold text-slate-700">
         {copy.discountValue}
         <input
           type="text"
@@ -157,13 +180,13 @@ export default function CashierManualDiscountEditor({
           value={valueText}
           onChange={(event) => onValueChange(event.target.value)}
           placeholder="0"
-          className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-end text-base font-black outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+          className="mt-1.5 h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-end text-xl font-black outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
           dir="ltr"
         />
       </label>
 
       <div className="mt-3">
-        <p className="text-xs font-bold text-slate-700">{copy.discountReason}</p>
+        <p className="text-sm font-bold text-slate-700">{copy.discountReason}</p>
         <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {reasonOptions.map(option => (
             <button
@@ -174,7 +197,7 @@ export default function CashierManualDiscountEditor({
                 onReasonChange(option);
                 setShowReasonNote(false);
               }}
-              className={`min-h-10 rounded-xl border px-2 py-2 text-xs font-bold transition ${
+              className={`min-h-11 rounded-xl border px-2.5 py-2 text-[13px] font-bold leading-5 transition sm:text-sm ${
                 selectedReason === option
                   ? 'border-orange-500 bg-orange-100 text-orange-800 ring-2 ring-orange-100'
                   : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
@@ -189,7 +212,7 @@ export default function CashierManualDiscountEditor({
           <button
             type="button"
             onClick={() => setShowReasonNote(current => !current)}
-            className="mt-2 text-xs font-bold text-slate-600 underline decoration-dotted underline-offset-4"
+            className="mt-2 min-h-9 rounded-lg px-1 text-sm font-bold text-slate-600 underline decoration-dotted underline-offset-4"
           >
             {copy.discountReasonAddNote}
           </button>
@@ -213,25 +236,35 @@ export default function CashierManualDiscountEditor({
               }
             }}
             placeholder={copy.discountReasonNotePlaceholder}
-            className="mt-2 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+            className="mt-2 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
           />
         ) : null}
       </div>
 
-      {resolution && resolution.manual_discount_minor > 0 ? (
-        <div className="mt-3 flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm">
-          <span className="font-bold text-slate-600">{copy.manualDiscount}</span>
-          <strong className="text-red-600" dir="ltr">− {money(resolution.manual_discount_minor)}</strong>
+      {resolvedDiscountParts ? (
+        <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3">
+          <span className="text-sm font-black text-slate-800">{copy.manualDiscount}</span>
+          <strong className="inline-flex items-baseline gap-1.5 whitespace-nowrap text-red-600" dir="ltr">
+            <span className="text-lg font-black">−</span>
+            <span className="text-lg font-black" dir="ltr">{resolvedDiscountParts.amount}</span>
+            {resolvedDiscountParts.currency ? (
+              <span className="text-sm font-bold text-red-500" dir="rtl">
+                {resolvedDiscountParts.currency}
+              </span>
+            ) : null}
+          </strong>
         </div>
       ) : null}
 
       {resolution && !resolution.allowed_without_override && resolution.manual_discount_minor > 0 ? (
-        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-2 text-xs font-bold leading-5 text-amber-800">
+        <p className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-sm font-bold leading-6 text-amber-800">
           {copy.discountNeedsManager}
         </p>
       ) : null}
       {invalid ? (
-        <p className="mt-2 text-xs font-bold text-red-600">{copy.discountReasonRequired}</p>
+        <p className="mt-2 text-sm font-bold leading-6 text-red-600">
+          {reasonMissing ? copy.discountReasonRequired : copy.discountValueInvalid}
+        </p>
       ) : null}
     </div>
   );
