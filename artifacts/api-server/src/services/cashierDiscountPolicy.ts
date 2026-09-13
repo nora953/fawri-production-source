@@ -47,6 +47,20 @@ function requiredPercentageBps(value: unknown): number {
   return safeInteger(value, 'max_percentage_bps', 0, 10_000);
 }
 
+function requiredAmountMinor(value: unknown): number {
+  if (
+    value === undefined
+    || value === null
+    || (typeof value === 'string' && value.trim() === '')
+  ) {
+    throw new CashierDiscountPolicyError(
+      'CASHIER_DISCOUNT_POLICY_INVALID',
+      'max_amount_minor is required when manual discount is enabled',
+    );
+  }
+  return safeInteger(value, 'max_amount_minor', 1, Number.MAX_SAFE_INTEGER);
+}
+
 export function normalizeCashierManualDiscountPolicy(
   value: unknown,
 ): CashierManualDiscountPolicy {
@@ -64,8 +78,9 @@ export function normalizeCashierManualDiscountPolicy(
   const maxPercentageBps = enabled
     ? requiredPercentageBps(input.max_percentage_bps)
     : safeInteger(input.max_percentage_bps ?? 0, 'max_percentage_bps', 0, 10_000);
-  const maxAmountMinor =
-    input.max_amount_minor === undefined || input.max_amount_minor === null || input.max_amount_minor === ''
+  const maxAmountMinor = enabled
+    ? requiredAmountMinor(input.max_amount_minor)
+    : input.max_amount_minor === undefined || input.max_amount_minor === null || input.max_amount_minor === ''
       ? null
       : safeInteger(input.max_amount_minor, 'max_amount_minor', 0, Number.MAX_SAFE_INTEGER);
   const canApproveOverride = input.can_approve_override === true;
