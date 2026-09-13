@@ -20,26 +20,37 @@ html[data-cashier-view='history'] main > div > div.grid > section:last-child > d
   font-variant-numeric: tabular-nums;
 }
 
-/* The history detail pane scrolls on the inline-end side for RTL. Keep the
-   scrollbar available but visually quiet so it does not become a page divider. */
-html[data-cashier-view='history'] main > div > div.grid > section:last-child {
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 transparent;
-}
+/* Desktop history should read as one page, not nested scrolling panes.
+   Let both sale list and sale details grow with their content. If the content
+   exceeds the viewport, only the browser page scrolls. */
+@media (min-width: 1024px) {
+  html[data-cashier-view='history'] main {
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+  }
 
-html[data-cashier-view='history'] main > div > div.grid > section:last-child::-webkit-scrollbar {
-  width: 7px;
-}
+  html[data-cashier-view='history'] main > div {
+    height: auto !important;
+    min-height: 100vh !important;
+  }
 
-html[data-cashier-view='history'] main > div > div.grid > section:last-child::-webkit-scrollbar-track {
-  background: transparent;
-}
+  html[data-cashier-view='history'] main > div > div.grid {
+    min-height: 0 !important;
+    flex: 0 0 auto !important;
+  }
 
-html[data-cashier-view='history'] main > div > div.grid > section:last-child::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
-  border-radius: 999px;
-  background: #cbd5e1;
-  background-clip: padding-box;
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child,
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child {
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2 {
+    min-height: 0 !important;
+    flex: 0 0 auto !important;
+    overflow: visible !important;
+  }
 }
 
 /* Keep return quantity numerals visually centred between the touch targets. */
