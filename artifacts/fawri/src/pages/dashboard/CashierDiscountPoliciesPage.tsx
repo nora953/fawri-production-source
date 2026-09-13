@@ -42,69 +42,69 @@ type Draft = {
 const TEXT: Record<Lang, Record<string, string>> = {
   ar: {
     title: 'صلاحيات خصم موظفي الكاشير',
-    subtitle: 'حدد لكل موظف هل يسمح له بالخصم، وحديه النسبي والمالي، ومن يملك اعتماد تجاوز الحد.',
+    subtitle: 'حدد حدود الخصم لكل موظف، ومن يحق له اعتماد التجاوز.',
     back: 'العودة للكاشيرات والموظفين',
-    enabled: 'السماح بخصم يدوي',
-    maxPercent: 'الحد الأقصى للنسبة %',
-    maxAmount: 'الحد الأقصى لقيمة الخصم',
-    combinedLimitHint: 'يعمل الحدّان معًا: يُحسب الخصم بالنسبة المحددة، ولا يُسمح لقيمته بتجاوز الحد المالي. يُطبَّق الحد الأقل دائمًا.',
-    currentLimit: 'السياسة الحالية: {percent}% على ألا تتجاوز قيمة الخصم {amount}.',
-    override: 'السماح لهذا المدير باعتماد خصم يتجاوز حد موظف آخر، ضمن حدود سياسة الخصم الخاصة بالمدير نفسه.',
+    enabled: 'السماح بالخصم اليدوي',
+    maxPercent: 'النسبة القصوى %',
+    maxAmount: 'الحد المالي للخصم',
+    combinedLimitHint: 'يُطبَّق الحد الأقل بين النسبة والحد المالي.',
+    currentLimit: 'الحد الحالي: {percent}% وبحد أقصى {amount}.',
+    override: 'السماح لهذا المدير باعتماد تجاوز حد موظف آخر ضمن حدود خصمه.',
     save: 'حفظ سياسة الخصم',
     saving: 'جارٍ الحفظ...',
     loading: 'جارٍ تحميل الموظفين...',
     failed: 'تعذر تحميل أو حفظ سياسة الخصم.',
     saved: 'تم حفظ سياسة الخصم.',
-    percentRequired: 'أدخل الحد الأقصى للنسبة. اكتب 0 صراحةً إذا كنت تقصد أن يكون الحد صفراً.',
-    amountRequired: 'أدخل الحد الأقصى لقيمة الخصم بالعملة المحددة، ويجب أن يكون أكبر من صفر.',
+    percentRequired: 'أدخل النسبة القصوى، أو 0 إذا كان الحد صفراً.',
+    amountRequired: 'أدخل مبلغ خصم أكبر من صفر.',
     disabledPolicy: 'الخصم اليدوي غير مسموح لهذا الموظف.',
     active: 'نشط', disabledStatus: 'معطل', cashier: 'كاشير', manager: 'مدير',
-    hint: 'لا يغيّر الخصم السعر الأصلي للمنتج. يحفظ كسطر مستقل بعد خصومات العروض حتى تبقى الأرباح والتقارير قابلة للتدقيق.',
-    permissionHint: 'عند حفظ سياسة الخصم، يحدّث فوري صلاحيات الخصم المرتبطة للموظف تلقائيًا. لا تحتاج لتفعيلها مرة ثانية من صفحة الكاشيرات والموظفين.',
+    hint: 'الخصم لا يغيّر سعر المنتج الأصلي ويُسجَّل بشكل مستقل.',
+    permissionHint: 'حفظ السياسة يحدّث صلاحيات الموظف تلقائيًا.',
   },
   ku: {
     title: 'دەسەڵاتی داشکاندنی کارمەندانی کاشێر',
-    subtitle: 'بۆ هەر کارمەندێک ڕێگەپێدان، سنووری ڕێژە و سنووری بڕ و دەسەڵاتی پەسەندکردنی تێپەڕاندن دیاری بکە.',
+    subtitle: 'سنووری داشکاندن بۆ هەر کارمەندێک و دەسەڵاتی پەسەندکردنی تێپەڕاندن دیاری بکە.',
     back: 'گەڕانەوە بۆ کاشێر و کارمەندان',
     enabled: 'ڕێگەدان بە داشکاندنی دەستی',
     maxPercent: 'زۆرترین ڕێژە %',
-    maxAmount: 'زۆرترین بڕی داشکاندن',
-    combinedLimitHint: 'هەردوو سنوورەکە پێکەوە کار دەکەن: داشکاندن بە ڕێژەکە هەژمار دەکرێت، بەڵام نابێت لە سنووری دارایی زیاتر بێت. هەمیشە سنووری کەمتر جێبەجێ دەکرێت.',
-    currentLimit: 'سیاسەتی ئێستا: {percent}% بە مەرجێک بڕی داشکاندن لە {amount} زیاتر نەبێت.',
-    override: 'ڕێگەدان بە ئەم بەڕێوەبەرە بۆ پەسەندکردنی داشکاندنی زیاتر لە سنووری کارمەندێکی تر، تەنها لە ناو سنوورەکانی سیاسەتی داشکاندنی خۆی.',
+    maxAmount: 'سنووری دارایی داشکاندن',
+    combinedLimitHint: 'هەمیشە سنووری کەمتر لە ڕێژە و بڕی دارایی جێبەجێ دەکرێت.',
+    currentLimit: 'سنووری ئێستا: {percent}% و زۆرترین {amount}.',
+    override: 'ڕێگەدان بە ئەم بەڕێوەبەرە بۆ پەسەندکردنی تێپەڕاندن لە سنووری کارمەندێکی تر، لە ناو سنووری خۆی.',
     save: 'پاشەکەوتکردنی سیاسەت',
     saving: 'پاشەکەوت دەکرێت...',
     loading: 'کارمەندان بار دەکرێن...',
     failed: 'بارکردن یان پاشەکەوتکردن سەرکەوتوو نەبوو.',
     saved: 'سیاسەتی داشکاندن پاشەکەوت کرا.',
-    percentRequired: 'زۆرترین ڕێژە بنووسە. ئەگەر مەبەستت سنووری سفرە، 0 بە ڕوونی بنووسە.',
-    amountRequired: 'زۆرترین بڕی داشکاندن بە دراوی دیاریکراو بنووسە؛ دەبێت لە سفر زیاتر بێت.',
+    percentRequired: 'زۆرترین ڕێژە بنووسە، یان 0 ئەگەر سنوور سفرە.',
+    amountRequired: 'بڕێکی داشکاندن لە سفر زیاتر بنووسە.',
     disabledPolicy: 'داشکاندنی دەستی بۆ ئەم کارمەندە ڕێگەپێدراو نییە.',
     active: 'چالاک', disabledStatus: 'ناچالاک', cashier: 'کاشێر', manager: 'بەڕێوەبەر',
-    hint: 'داشکاندن نرخی بنەڕەتی کاڵا ناگۆڕێت؛ بە جیاوازی دوای داشکاندنی ئۆفەرەکان تۆمار دەکرێت.',
-    permissionHint: 'کاتێک سیاسەتی داشکاندن پاشەکەوت دەکەیت، فەوری دەسەڵاتە پەیوەندیدارەکانی داشکاندن بۆ کارمەند بە خۆکار نوێ دەکاتەوە؛ پێویست ناکات دووبارە لە پەڕەی کاشێر و کارمەندان چالاکیان بکەیت.',
+    hint: 'داشکاندن نرخی بنەڕەتی کاڵا ناگۆڕێت و بە جیاوازی تۆمار دەکرێت.',
+    permissionHint: 'پاشەکەوتکردنی سیاسەت دەسەڵاتەکانی کارمەند بە خۆکار نوێ دەکاتەوە.',
   },
   en: {
     title: 'Cashier employee discount authority',
-    subtitle: 'Set who may discount, their percentage and monetary ceilings, and who may approve an override.',
+    subtitle: 'Set each employee’s discount limits and who may approve an override.',
     back: 'Back to cashiers & staff',
     enabled: 'Allow manual discount',
-    maxPercent: 'Maximum percentage %',
-    maxAmount: 'Maximum discount amount',
-    combinedLimitHint: 'Both limits apply together: the percentage discount is calculated first, but its value may not exceed the monetary ceiling. The lower limit always wins.',
-    currentLimit: 'Current policy: {percent}% with a maximum discount value of {amount}.',
-    override: 'Allow this manager to approve another employee’s over-limit discount only within this manager’s own discount policy limits.',
+    maxPercent: 'Maximum %',
+    maxAmount: 'Discount amount limit',
+    combinedLimitHint: 'The lower of the percentage and amount limits always applies.',
+    currentLimit: 'Current limit: {percent}% up to {amount}.',
+    override: 'Allow this manager to approve another employee’s over-limit discount within the manager’s own limit.',
     save: 'Save discount policy',
     saving: 'Saving...',
     loading: 'Loading staff...',
     failed: 'Could not load or save the discount policy.',
     saved: 'Discount policy saved.',
-    percentRequired: 'Enter the maximum percentage. Type 0 explicitly if you intend the limit to be zero.',
-    amountRequired: 'Enter the maximum discount amount in the configured currency. It must be greater than zero.',
+    percentRequired: 'Enter the maximum percentage, or 0 for a zero limit.',
+    amountRequired: 'Enter a discount amount greater than zero.',
     disabledPolicy: 'Manual discount is not allowed for this employee.',
     active: 'Active', disabledStatus: 'Disabled', cashier: 'Cashier', manager: 'Manager',
-    hint: 'Manual discount never changes the product list price. It is recorded separately after promotion discounts so profit and reporting remain auditable.',
-    permissionHint: 'Saving this discount policy automatically syncs the staff member’s related discount permissions. No second permission change is needed on the Cashiers & Staff page.',
+    hint: 'Manual discounts do not change the product’s original price and are recorded separately.',
+    permissionHint: 'Saving the policy updates the employee’s discount permissions automatically.',
   },
 };
 
@@ -311,13 +311,12 @@ export default function CashierDiscountPoliciesPage() {
                       <input type="number" min="0" max="100" step="0.01" value={draft.maxPercent} onChange={event => updateDraft(member.id, { maxPercent: event.target.value })} className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3 outline-none focus:border-orange-400" dir="ltr" />
                     </label>
 
-                    <div className="space-y-3">
-                      <label className="block text-sm font-bold text-slate-700">
-                        {copy.maxAmount} ({currencyLabel})
-                        <input type="number" min={amountStep} step={amountStep} value={draft.maxAmount} onChange={event => updateDraft(member.id, { maxAmount: event.target.value })} className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3 outline-none focus:border-orange-400" dir="ltr" />
-                      </label>
-                      <div className="flex justify-center">{saveButton}</div>
-                    </div>
+                    <label className="block text-sm font-bold text-slate-700">
+                      {copy.maxAmount} ({currencyLabel})
+                      <input type="number" min={amountStep} step={amountStep} value={draft.maxAmount} onChange={event => updateDraft(member.id, { maxAmount: event.target.value })} className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3 outline-none focus:border-orange-400" dir="ltr" />
+                    </label>
+
+                    <div className="md:col-span-2 flex justify-start">{saveButton}</div>
 
                     <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-6 text-slate-700">
                       <div>{copy.combinedLimitHint}</div>
@@ -334,7 +333,7 @@ export default function CashierDiscountPoliciesPage() {
                 ) : (
                   <div className="mt-3 space-y-3">
                     <p className="text-sm text-slate-500">{copy.disabledPolicy}</p>
-                    <div className="flex justify-center">{saveButton}</div>
+                    <div className="flex justify-start">{saveButton}</div>
                   </div>
                 )}
               </section>
