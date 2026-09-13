@@ -187,6 +187,7 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
         saleOccurredAt: sale.occurredAt,
         approvalId,
         manualDiscountMinor: manualDiscount,
+        discountBaseMinor: postPromotion,
         reason,
       });
     },
