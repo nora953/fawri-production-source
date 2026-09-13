@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { CASHIER_POS_ENHANCEMENT_COPY } from '@/lib/cashierPosEnhancementCopy';
 import type { CashierOperatorDiscountPolicy } from '@/lib/cashierDiscountPolicyClient';
 import type { CashierManualDiscountResolution } from '@/lib/cashierManualDiscount';
@@ -24,6 +25,8 @@ type Props = {
   onReasonChange: (value: string) => void;
 };
 
+const REASON_NOTE_SEPARATOR = ' — ';
+
 export default function CashierManualDiscountEditor({
   lang,
   online,
@@ -44,8 +47,30 @@ export default function CashierManualDiscountEditor({
   onReasonChange,
 }: Props) {
   const copy = CASHIER_POS_ENHANCEMENT_COPY[lang];
+  const [showReasonNote, setShowReasonNote] = useState(false);
   const money = (value: number) =>
     formatMerchantMoneyMinor(value, currencyCode, fractionDigits, lang);
+  const reasonOptions = [
+    copy.discountReasonCustomerRecovery,
+    copy.discountReasonLoyalty,
+    copy.discountReasonPriceMatch,
+    copy.discountReasonDamagedItem,
+    copy.discountReasonSpecialOffer,
+    copy.discountReasonClearance,
+    copy.discountReasonOther,
+  ];
+  const selectedReason = reasonOptions.find(option =>
+    reason === option || reason.startsWith(`${option}${REASON_NOTE_SEPARATOR}`),
+  ) ?? null;
+  const selectedNote = selectedReason && reason.startsWith(`${selectedReason}${REASON_NOTE_SEPARATOR}`)
+    ? reason.slice(`${selectedReason}${REASON_NOTE_SEPARATOR}`.length)
+    : '';
+  const customLegacyReason = reason.trim() !== '' && selectedReason === null;
+  const noteVisible = showReasonNote || selectedNote !== '' || customLegacyReason;
+
+  useEffect(() => {
+    if (!open) setShowReasonNote(false);
+  }, [open]);
 
   if (loading) {
     return (
@@ -142,17 +167,61 @@ export default function CashierManualDiscountEditor({
         </div>
       </label>
 
-      <label className="mt-3 block text-xs font-bold text-slate-700">
-        {copy.discountReason}
-        <input
-          type="text"
-          maxLength={200}
-          value={reason}
-          onChange={(event) => onReasonChange(event.target.value)}
-          placeholder={copy.discountReasonPlaceholder}
-          className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-        />
-      </label>
+      <div className="mt-3">
+        <p className="text-xs font-bold text-slate-700">{copy.discountReason}</p>
+        <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {reasonOptions.map(option => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={selectedReason === option}
+              onClick={() => {
+                onReasonChange(option);
+                setShowReasonNote(false);
+              }}
+              className={`min-h-10 rounded-xl border px-2 py-2 text-xs font-bold transition ${
+                selectedReason === option
+                  ? 'border-orange-500 bg-orange-100 text-orange-800 ring-2 ring-orange-100'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              {option}
+            </button>
+          ))}
+        </div>
+
+        {selectedReason ? (
+          <button
+            type="button"
+            onClick={() => setShowReasonNote(current => !current)}
+            className="mt-2 text-xs font-bold text-slate-600 underline decoration-dotted underline-offset-4"
+          >
+            {copy.discountReasonAddNote}
+          </button>
+        ) : null}
+
+        {noteVisible ? (
+          <input
+            type="text"
+            maxLength={selectedReason ? 120 : 200}
+            value={selectedReason ? selectedNote : reason}
+            onChange={(event) => {
+              const note = event.target.value;
+              if (selectedReason) {
+                onReasonChange(
+                  note.trim() === ''
+                    ? selectedReason
+                    : `${selectedReason}${REASON_NOTE_SEPARATOR}${note}`,
+                );
+              } else {
+                onReasonChange(note);
+              }
+            }}
+            placeholder={copy.discountReasonNotePlaceholder}
+            className="mt-2 h-11 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+          />
+        ) : null}
+      </div>
 
       {resolution && resolution.manual_discount_minor > 0 ? (
         <div className="mt-3 flex items-center justify-between rounded-xl bg-white px-3 py-2 text-sm">
