@@ -33,7 +33,7 @@ test('disabled or missing policy normalizes to a fail-closed authority', () => {
   );
 });
 
-test('enabled policy normalizes percentage, required amount and override capability', () => {
+test('enabled policy normalizes independent percentage and amount authority', () => {
   assert.deepEqual(
     normalizeCashierManualDiscountPolicy({
       enabled: true,
@@ -50,7 +50,7 @@ test('enabled policy normalizes percentage, required amount and override capabil
   );
 });
 
-test('enabled policy requires explicit percentage and a positive monetary ceiling', () => {
+test('enabled policy requires explicit percentage and a positive monetary limit', () => {
   for (const maxPercentageBps of [undefined, null, '', '   ']) {
     assert.throws(
       () => normalizeCashierManualDiscountPolicy({
@@ -118,56 +118,108 @@ test('override approval capability is preserved only for managers', () => {
   );
 });
 
-test('runtime limit uses post-promotion total and the stricter percentage or amount cap', () => {
-  const percentageCapped = normalizeCashierManualDiscountPolicy({
+test('runtime applies only the selected discount type limit', () => {
+  const policy = normalizeCashierManualDiscountPolicy({
     enabled: true,
-    max_percentage_bps: 2_500,
-    max_amount_minor: 9_999,
+    max_percentage_bps: 500,
+    max_amount_minor: 2_000,
   });
-  assert.equal(
-    cashierManualDiscountLimitMinor({
-      postPromotionTotalMinor: 10_001,
-      policy: percentageCapped,
-    }),
-    2_500,
-  );
 
-  const amountCapped = normalizeCashierManualDiscountPolicy({
-    enabled: true,
-    max_percentage_bps: 5_000,
-    max_amount_minor: 1_200,
-  });
   assert.equal(
     cashierManualDiscountLimitMinor({
       postPromotionTotalMinor: 10_000,
-      policy: amountCapped,
+      policy,
+      kind: 'amount',
     }),
-    1_200,
+    2_000,
+    'a 2,000 fixed discount is valid even though it equals 20% of this small sale',
+  );
+  assert.equal(
+    cashierManualDiscountLimitMinor({
+      postPromotionTotalMinor: 10_000,
+      policy,
+      kind: 'percentage',
+    }),
+    500,
+    'a percentage discount remains capped at 5% independently of the fixed amount limit',
+  );
+
+  assert.equal(
+    cashierManualDiscountLimitMinor({
+      postPromotionTotalMinor: 300_000,
+      policy,
+      kind: 'percentage',
+    }),
+    15_000,
+    '5% of a large sale is allowed even when it exceeds the fixed 2,000 amount limit',
+  );
+  assert.equal(
+    cashierManualDiscountLimitMinor({
+      postPromotionTotalMinor: 300_000,
+      policy,
+      kind: 'amount',
+    }),
+    2_000,
   );
 });
 
-test('policy boundary accepts the exact employee limit and rejects one minor unit above it', () => {
+test('policy boundaries are independent for amount and percentage discounts', () => {
   const policy = normalizeCashierManualDiscountPolicy({
     enabled: true,
-    max_percentage_bps: 5_000,
-    max_amount_minor: 1_200,
+    max_percentage_bps: 500,
+    max_amount_minor: 2_000,
   });
 
   assert.equal(
     cashierManualDiscountWithinPolicy({
       postPromotionTotalMinor: 10_000,
-      manualDiscountMinor: 1_200,
+      manualDiscountMinor: 2_000,
       policy,
+      kind: 'amount',
     }),
     true,
   );
   assert.equal(
     cashierManualDiscountWithinPolicy({
       postPromotionTotalMinor: 10_000,
-      manualDiscountMinor: 1_201,
+      manualDiscountMinor: 2_001,
       policy,
+      kind: 'amount',
     }),
     false,
+  );
+  assert.equal(
+    cashierManualDiscountWithinPolicy({
+      postPromotionTotalMinor: 10_000,
+      manualDiscountMinor: 500,
+      policy,
+      kind: 'percentage',
+    }),
+    true,
+  );
+  assert.equal(
+    cashierManualDiscountWithinPolicy({
+      postPromotionTotalMinor: 10_000,
+      manualDiscountMinor: 501,
+      policy,
+      kind: 'percentage',
+    }),
+    false,
+  );
+});
+
+test('legacy kind-less durable evidence stays conservative', () => {
+  const policy = normalizeCashierManualDiscountPolicy({
+    enabled: true,
+    max_percentage_bps: 500,
+    max_amount_minor: 2_000,
+  });
+  assert.equal(
+    cashierManualDiscountLimitMinor({
+      postPromotionTotalMinor: 10_000,
+      policy,
+    }),
+    500,
   );
 });
 
@@ -179,6 +231,7 @@ test('disabled policy permits no positive manual discount', () => {
       postPromotionTotalMinor: 10_000,
       manualDiscountMinor: 0,
       policy,
+      kind: 'amount',
     }),
     true,
   );
@@ -187,6 +240,7 @@ test('disabled policy permits no positive manual discount', () => {
       postPromotionTotalMinor: 10_000,
       manualDiscountMinor: 1,
       policy,
+      kind: 'amount',
     }),
     false,
   );
@@ -212,11 +266,13 @@ test('invalid policy and money inputs fail closed with stable policy error code'
     () => cashierManualDiscountLimitMinor({
       postPromotionTotalMinor: -1,
       policy: validPolicy,
+      kind: 'amount' as const,
     }),
     () => cashierManualDiscountWithinPolicy({
       postPromotionTotalMinor: 1_000,
       manualDiscountMinor: -1,
       policy: validPolicy,
+      kind: 'percentage' as const,
     }),
   ];
 
