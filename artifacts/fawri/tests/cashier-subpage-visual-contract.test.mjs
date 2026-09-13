@@ -50,11 +50,18 @@ test('cashier history keeps mixed sale references readable and evidence metadata
   assert.match(historyPolish, /unicode-bidi: plaintext;/);
   assert.match(historyPolish, /font-variant-numeric: tabular-nums;/);
   assert.match(historyPolish, /font-size: 0\.75rem !important;/);
-  assert.match(historyPolish, /scrollbar-width: thin;/);
-  assert.match(historyPolish, /width: 7px;/);
+});
+
+test('cashier history uses page flow instead of nested desktop scroll panes', () => {
+  assert.match(historyPolish, /Desktop history should read as one page, not nested scrolling panes/);
+  assert.match(historyPolish, /html\[data-cashier-view='history'\] main \{[\s\S]*height: auto !important;[\s\S]*overflow: visible !important;/);
+  assert.match(historyPolish, /main > div > div\.grid \{[\s\S]*flex: 0 0 auto !important;/);
+  assert.match(historyPolish, /section:first-child,[\s\S]*section:last-child \{[\s\S]*overflow: visible !important;/);
+  assert.match(historyPolish, /section:first-child > div\.p-2 \{[\s\S]*overflow: visible !important;/);
+  assert.doesNotMatch(historyPolish, /scrollbar-width:\s*thin/);
 });
 
 test('cashier shell cache-busts the polished visual contracts', () => {
   assert.match(cashierHtml, /cashier-visual-qa\.css\?v=subpage-polish-v1/);
-  assert.match(cashierHtml, /cashier-history-polish\.css\?v=history-readability-v1/);
+  assert.match(cashierHtml, /cashier-history-polish\.css\?v=history-readability-v2/);
 });
