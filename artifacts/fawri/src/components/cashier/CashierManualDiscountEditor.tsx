@@ -128,8 +128,8 @@ export default function CashierManualDiscountEditor({
             <span>{copy.discountEmployeeLimit}:</span>
             {kind === 'amount' && amountLimitParts ? (
               <strong className="inline-flex items-baseline gap-1 font-black text-slate-800" dir="ltr">
-                <span dir="ltr">{amountLimitParts.amount}</span>
                 {amountLimitParts.currency ? <span dir="rtl">{amountLimitParts.currency}</span> : null}
+                <span dir="ltr">{amountLimitParts.amount}</span>
               </strong>
             ) : (
               <strong className="font-black text-slate-800" dir="ltr">
@@ -245,13 +245,13 @@ export default function CashierManualDiscountEditor({
         <div className="mt-4 flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3">
           <span className="text-sm font-black text-slate-800">{copy.manualDiscount}</span>
           <strong className="inline-flex items-baseline gap-1.5 whitespace-nowrap text-red-600" dir="ltr">
-            <span className="text-lg font-black">−</span>
-            <span className="text-lg font-black" dir="ltr">{resolvedDiscountParts.amount}</span>
             {resolvedDiscountParts.currency ? (
               <span className="text-sm font-bold text-red-500" dir="rtl">
                 {resolvedDiscountParts.currency}
               </span>
             ) : null}
+            <span className="text-lg font-black">−</span>
+            <span className="text-lg font-black" dir="ltr">{resolvedDiscountParts.amount}</span>
           </strong>
         </div>
       ) : null}
