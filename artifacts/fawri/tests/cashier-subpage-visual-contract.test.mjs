@@ -34,6 +34,13 @@ test('cashier reports exposes live connectivity with the POS badge hierarchy', (
   assert.match(reports, /offline: 'غير متصل'/);
 });
 
+test('cashier reports isolates top-product rank and mixed-direction names', () => {
+  assert.match(reports, /<span className="shrink-0 text-slate-400" dir="ltr">#\{index \+ 1\}<\/span>/);
+  assert.match(reports, /<bdi dir="auto" className="min-w-0 break-words">\{product\.product_name\}<\/bdi>/);
+  assert.match(reports, /<bdi dir="auto">\{product\.variant_name\}<\/bdi>/);
+  assert.doesNotMatch(reports, /<span className="me-2 text-slate-400">#\{index \+ 1\}<\/span>\{product\.product_name\}/);
+});
+
 test('cashier operational subpages share the POS desktop canvas and quiet back action', () => {
   assert.match(visualQa, /data-cashier-view='history'[\s\S]*data-cashier-view='reports'[\s\S]*max-width: 1500px !important;/);
   assert.match(visualQa, /data-cashier-view='reports'[\s\S]*a\[href='\/cashier\.html'\][\s\S]*background: #fff !important;/);
