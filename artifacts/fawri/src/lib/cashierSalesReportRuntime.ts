@@ -94,6 +94,65 @@ function safeMultiply(left: number, right: number, label: string): number {
   return value;
 }
 
+function manualDiscountMinor(sale: CashierSaleSnapshot): number {
+  return safeNonNegativeInteger(sale.manual_discount_minor ?? 0, 'manual_discount');
+}
+
+/**
+ * Allocate a sale-level manual discount across immutable sale lines without
+ * floating point. The resulting line revenues always sum to sale.total_minor,
+ * preserving truthful product revenue/profit attribution while the sale-level
+ * total remains the authoritative amount actually charged.
+ */
+function adjustedLineRevenueById(sale: CashierSaleSnapshot): Map<string, number> {
+  let preDiscountTotal = 0;
+  for (const line of sale.lines) {
+    preDiscountTotal = safeAdd(
+      preDiscountTotal,
+      safeNonNegativeInteger(line.line_total_minor, 'line_total'),
+      'pre_discount_total',
+    );
+  }
+  const manualDiscount = manualDiscountMinor(sale);
+  if (manualDiscount > preDiscountTotal) {
+    throw new Error('CASHIER_REPORT_INVALID_SALE_TOTAL');
+  }
+
+  let remainingBase = BigInt(preDiscountTotal);
+  let remainingDiscount = BigInt(manualDiscount);
+  const adjusted = new Map<string, number>();
+
+  sale.lines.forEach((line, index) => {
+    const lineTotal = safeNonNegativeInteger(line.line_total_minor, 'line_total');
+    const lineBase = BigInt(lineTotal);
+    let allocatedDiscount = 0n;
+    if (remainingDiscount > 0n) {
+      allocatedDiscount =
+        index === sale.lines.length - 1
+          ? remainingDiscount
+          : remainingBase > 0n
+            ? (remainingDiscount * lineBase) / remainingBase
+            : 0n;
+    }
+    if (allocatedDiscount < 0n || allocatedDiscount > lineBase) {
+      throw new Error('CASHIER_REPORT_INVALID_SALE_TOTAL');
+    }
+    const adjustedRevenueBig = lineBase - allocatedDiscount;
+    const adjustedRevenue = Number(adjustedRevenueBig);
+    if (!Number.isSafeInteger(adjustedRevenue) || adjustedRevenue < 0) {
+      throw new Error('CASHIER_REPORT_OVERFLOW_LINE_REVENUE');
+    }
+    adjusted.set(line.line_id, adjustedRevenue);
+    remainingBase -= lineBase;
+    remainingDiscount -= allocatedDiscount;
+  });
+
+  if (remainingDiscount !== 0n || remainingBase !== 0n) {
+    throw new Error('CASHIER_REPORT_INVALID_SALE_TOTAL');
+  }
+  return adjusted;
+}
+
 function validInstant(value: string | Date | undefined, label: string): Date | undefined {
   if (value === undefined) return undefined;
   const date = value instanceof Date ? value : new Date(value);
@@ -225,7 +284,7 @@ function validateSale(sale: CashierSaleSnapshot): void {
   reportCurrencyKey(sale);
   const lineIds = new Set<string>();
   const itemKeys = new Set<string>();
-  let total = 0;
+  let totalBeforeManualDiscount = 0;
   for (const line of sale.lines) {
     const quantity = safePositiveInteger(line.quantity, 'sold_quantity');
     const price = safeNonNegativeInteger(
@@ -241,12 +300,21 @@ function validateSale(sale: CashierSaleSnapshot): void {
     }
     lineIds.add(line.line_id);
     itemKeys.add(lineKey(line));
-    total = safeAdd(total, lineTotal, 'sale_total');
+    totalBeforeManualDiscount = safeAdd(
+      totalBeforeManualDiscount,
+      lineTotal,
+      'sale_total',
+    );
     if (line.unit_cost_minor !== undefined) {
       safeNonNegativeInteger(line.unit_cost_minor, 'unit_cost');
     }
   }
-  if (total !== safeNonNegativeInteger(sale.total_minor, 'sale_total')) {
+  const manualDiscount = manualDiscountMinor(sale);
+  const saleTotal = safeNonNegativeInteger(sale.total_minor, 'sale_total');
+  if (
+    manualDiscount > totalBeforeManualDiscount ||
+    totalBeforeManualDiscount - manualDiscount !== saleTotal
+  ) {
     throw new Error('CASHIER_REPORT_INVALID_SALE_TOTAL');
   }
 
@@ -362,10 +430,14 @@ function applySale(
     saleTotal,
     'net_revenue',
   );
+  const adjustedRevenue = adjustedLineRevenueById(sale);
   for (const rawLine of sale.lines) {
     const line = rawLine as CostAwareSaleLine;
     const quantity = safePositiveInteger(line.quantity, 'sold_quantity');
-    const revenue = safeNonNegativeInteger(line.line_total_minor, 'line_total');
+    const revenue = adjustedRevenue.get(line.line_id);
+    if (revenue === undefined) {
+      throw new Error('CASHIER_REPORT_INVALID_SALE_TOTAL');
+    }
     accumulator.sold_units = safeAdd(accumulator.sold_units, quantity, 'sold_units');
     accumulator.net_units = safeAdd(accumulator.net_units, quantity, 'net_units');
     addProductRow(accumulator, line, quantity, revenue);
@@ -444,10 +516,14 @@ function applyVoid(
     -refund,
     'net_revenue',
   );
+  const adjustedRevenue = adjustedLineRevenueById(sale);
   for (const rawLine of sale.lines) {
     const line = rawLine as CostAwareSaleLine;
     const quantity = safePositiveInteger(line.quantity, 'sold_quantity');
-    const revenue = safeNonNegativeInteger(line.line_total_minor, 'line_total');
+    const revenue = adjustedRevenue.get(line.line_id);
+    if (revenue === undefined) {
+      throw new Error('CASHIER_REPORT_INVALID_SALE_TOTAL');
+    }
     accumulator.returned_units = safeAdd(
       accumulator.returned_units,
       quantity,
