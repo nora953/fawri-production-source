@@ -8,6 +8,7 @@ const steps = [
       'exec','tsx','--tsconfig','artifacts/fawri/tsconfig.json','--test',
       'artifacts/fawri/tests/cashier-sales-report-runtime.test.ts',
       'artifacts/fawri/tests/cashier-sales-report-corruption.test.ts',
+      'artifacts/fawri/tests/cashier-sales-report-manual-discount.test.ts',
       'artifacts/fawri/tests/cashier-sale-pricing-duplicate-lines.test.ts',
       'artifacts/fawri/tests/cashier-manual-discount-runtime.test.ts',
       'artifacts/fawri/tests/cashier-discount-override-operation-binding.test.ts',
@@ -32,6 +33,7 @@ const steps = [
     command: 'pnpm',
     args: [
       'exec','tsx','--test',
+      'artifacts/api-server/tests/cashier-central-report-manual-discount.test.ts',
       'artifacts/api-server/tests/cashier-reporting-cost-runtime.test.ts',
       'artifacts/api-server/tests/cashier-discount-policy-runtime.test.ts',
       'artifacts/api-server/tests/cashier-discount-override-runtime.test.ts',
