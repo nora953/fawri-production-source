@@ -58,12 +58,19 @@ html[data-cashier-view='history'] main > div > div.grid > section:last-child > d
     overflow-y: auto !important;
     overflow-x: hidden !important;
     overscroll-behavior: contain;
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
   }
 
+  /* Chromium/Opera: use the WebKit scrollbar path exclusively. Do not set the
+     standardized scrollbar-width/color here because modern Chromium can give
+     those properties precedence and resurrect the native Windows stepper
+     arrows. */
   html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar {
     width: 7px;
+    background: transparent;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-track {
+    background: transparent;
   }
 
   html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-thumb {
@@ -71,15 +78,33 @@ html[data-cashier-view='history'] main > div > div.grid > section:last-child > d
     background: #cbd5e1;
   }
 
-  /* Chromium/Opera can expose native stepper arrows at the ends of a custom
-     scrollbar. Keep scrolling and the thumb, but remove those browser-native
-     buttons so the sales list matches the rest of the cashier chrome. */
-  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-button {
-    display: none;
-    width: 0;
-    height: 0;
-    -webkit-appearance: none;
-    background: transparent;
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-button,
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-button:single-button,
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-button:vertical:start:decrement,
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-button:vertical:end:increment {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background: transparent !important;
+  }
+
+  /* Firefox does not implement ::-webkit-scrollbar. Give only that fallback
+     the standardized thin scrollbar so Chromium/Opera stays on the custom
+     arrow-free path above. */
+  @supports not selector(::-webkit-scrollbar) {
+    html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2 {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
   }
 
   /* Detail card: no internal scrolling. Tighten vertical rhythm slightly so a
