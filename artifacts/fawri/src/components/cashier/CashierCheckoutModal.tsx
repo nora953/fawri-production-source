@@ -73,6 +73,50 @@ function money(
   return formatMerchantMoneyMinor(amountMinor, currencyCode, fractionDigits, lang);
 }
 
+function moneyParts(
+  amountMinor: number,
+  currencyCode: string,
+  fractionDigits: number,
+  lang: Lang,
+): { amount: string; currency: string } {
+  const formatted = money(amountMinor, currencyCode, fractionDigits, lang);
+  const separator = formatted.lastIndexOf('\u00a0');
+  if (separator < 0) return { amount: formatted, currency: '' };
+  return {
+    amount: formatted.slice(0, separator),
+    currency: formatted.slice(separator + 1),
+  };
+}
+
+function MoneyValue({
+  amountMinor,
+  currencyCode,
+  fractionDigits,
+  lang,
+  negative = false,
+  amountClassName,
+  currencyClassName,
+}: {
+  amountMinor: number;
+  currencyCode: string;
+  fractionDigits: number;
+  lang: Lang;
+  negative?: boolean;
+  amountClassName: string;
+  currencyClassName: string;
+}) {
+  const parts = moneyParts(amountMinor, currencyCode, fractionDigits, lang);
+  return (
+    <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap" dir="ltr">
+      {negative ? <span className={amountClassName}>−</span> : null}
+      <span className={amountClassName} dir="ltr">{parts.amount}</span>
+      {parts.currency ? (
+        <span className={currencyClassName} dir="rtl">{parts.currency}</span>
+      ) : null}
+    </span>
+  );
+}
+
 export default function CashierCheckoutModal({
   open,
   online,
@@ -190,6 +234,10 @@ export default function CashierCheckoutModal({
     paymentMethod === 'cash' &&
     cashTenderedMinor !== null &&
     cashTenderedMinor < finalTotalMinor;
+  const hasPromotionDiscount = quote.discount_minor > 0;
+  const hasManualDiscount = Boolean(
+    manualDiscountResolution && manualDiscountResolution.manual_discount_minor > 0,
+  );
 
   return (
     <div
@@ -228,25 +276,51 @@ export default function CashierCheckoutModal({
             </div>
           ) : null}
 
-          <div className="rounded-2xl bg-slate-950 px-4 py-4 text-white">
-            <div className="flex items-end justify-between gap-4">
-              <span className="text-sm font-semibold text-slate-300">
-                {manualDiscountResolution?.manual_discount_minor ? extra.finalTotal : labels.total}
+          <div className="rounded-2xl bg-slate-950 px-5 py-4 text-white">
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-base font-black leading-6 text-slate-100">
+                {hasManualDiscount ? extra.finalTotal : labels.total}
               </span>
-              <strong className="text-3xl font-black" dir="ltr">
-                {money(finalTotalMinor, quote.currency_code, quote.currency_fraction_digits, lang)}
-              </strong>
+              <MoneyValue
+                amountMinor={finalTotalMinor}
+                currencyCode={quote.currency_code}
+                fractionDigits={quote.currency_fraction_digits}
+                lang={lang}
+                amountClassName="text-[2rem] font-black leading-none tracking-tight text-white"
+                currencyClassName="text-lg font-extrabold text-slate-300"
+              />
             </div>
-            {quote.discount_minor > 0 ? (
-              <div className="mt-2 flex justify-between text-xs text-emerald-300">
-                <span>{extra.promotionDiscount}</span>
-                <span dir="ltr">− {money(quote.discount_minor, quote.currency_code, quote.currency_fraction_digits, lang)}</span>
-              </div>
-            ) : null}
-            {manualDiscountResolution && manualDiscountResolution.manual_discount_minor > 0 ? (
-              <div className="mt-1 flex justify-between text-xs text-orange-300">
-                <span>{extra.manualDiscount}</span>
-                <span dir="ltr">− {money(manualDiscountResolution.manual_discount_minor, quote.currency_code, quote.currency_fraction_digits, lang)}</span>
+
+            {hasPromotionDiscount || hasManualDiscount ? (
+              <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
+                {hasPromotionDiscount ? (
+                  <div className="flex items-center justify-between gap-3 text-emerald-200">
+                    <span className="text-sm font-bold">{extra.promotionDiscount}</span>
+                    <MoneyValue
+                      amountMinor={quote.discount_minor}
+                      currencyCode={quote.currency_code}
+                      fractionDigits={quote.currency_fraction_digits}
+                      lang={lang}
+                      negative
+                      amountClassName="text-base font-black"
+                      currencyClassName="text-sm font-bold text-emerald-300"
+                    />
+                  </div>
+                ) : null}
+                {hasManualDiscount && manualDiscountResolution ? (
+                  <div className="flex items-center justify-between gap-3 text-orange-200">
+                    <span className="text-sm font-bold">{extra.manualDiscount}</span>
+                    <MoneyValue
+                      amountMinor={manualDiscountResolution.manual_discount_minor}
+                      currencyCode={quote.currency_code}
+                      fractionDigits={quote.currency_fraction_digits}
+                      lang={lang}
+                      negative
+                      amountClassName="text-base font-black"
+                      currencyClassName="text-sm font-bold text-orange-300"
+                    />
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -288,7 +362,7 @@ export default function CashierCheckoutModal({
           />
 
           <div>
-            <label className="mb-2 block text-xs font-bold text-slate-600">{labels.paymentMethod}</label>
+            <label className="mb-2 block text-sm font-bold text-slate-700">{labels.paymentMethod}</label>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {([
                 ['cash', labels.cash],
@@ -353,11 +427,18 @@ export default function CashierCheckoutModal({
               }`}>
                 <div className="flex items-center justify-between gap-3">
                   <span className="font-bold">{labels.changeDue}</span>
-                  <strong className="text-xl" dir="ltr">
-                    {changeDueMinor !== null
-                      ? money(changeDueMinor, quote.currency_code, quote.currency_fraction_digits, lang)
-                      : '—'}
-                  </strong>
+                  {changeDueMinor !== null ? (
+                    <MoneyValue
+                      amountMinor={changeDueMinor}
+                      currencyCode={quote.currency_code}
+                      fractionDigits={quote.currency_fraction_digits}
+                      lang={lang}
+                      amountClassName="text-xl font-black"
+                      currencyClassName="text-sm font-bold opacity-80"
+                    />
+                  ) : (
+                    <strong className="text-xl">—</strong>
+                  )}
                 </div>
               </div>
 
