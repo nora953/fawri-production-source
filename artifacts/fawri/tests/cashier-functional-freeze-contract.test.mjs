@@ -77,6 +77,8 @@ test('functional freeze keeps checkout money hierarchy touch-readable and valida
   assert.match(checkout, /text-\[2rem\] font-black leading-none tracking-tight text-white/);
   assert.match(checkout, /text-lg font-extrabold text-slate-300/);
   assert.match(checkout, /space-y-2 border-t border-white\/10 pt-3/);
+  assert.match(checkout, /text-\[15px\] font-extrabold/);
+  assert.match(checkout, /amountClassName="text-lg font-black"/);
   assert.match(
     checkout,
     /parts\.currency[\s\S]*negative \?[\s\S]*parts\.amount/,
@@ -84,6 +86,10 @@ test('functional freeze keeps checkout money hierarchy touch-readable and valida
   assert.match(discountEditor, /h-11 rounded-xl border px-3 text-sm font-bold transition/);
   assert.match(discountEditor, /h-12 w-full rounded-xl[\s\S]*text-xl font-black/);
   assert.match(discountEditor, /min-h-11 rounded-xl border/);
+  assert.match(discountEditor, /rounded-lg border border-orange-100 bg-white\/80/);
+  assert.match(discountEditor, /option === copy\.discountReasonOther \? 'col-span-2 sm:col-span-3 '/);
+  assert.match(discountEditor, /inline-flex min-h-10 items-center justify-center rounded-xl border border-slate-200/);
+  assert.match(discountEditor, /inline-flex items-baseline gap-0\.5/);
   assert.match(
     discountEditor,
     /amountLimitParts\.currency[\s\S]*amountLimitParts\.amount/,
