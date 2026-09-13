@@ -13,7 +13,7 @@ function policy(
   return {
     enabled: true,
     max_percentage_bps: 2_000,
-    max_amount_minor: null,
+    max_amount_minor: 5_000,
     can_approve_override: false,
     version: 1,
     ...overrides,
@@ -31,7 +31,7 @@ function expectDiscountError(
   });
 }
 
-test('amount discount is applied after promotion and preserves exact accounting totals', () => {
+test('amount discount is applied after promotion and uses only the fixed amount authority', () => {
   const result = resolveCashierManualDiscount({
     subtotalMinor: 10_000,
     promotionDiscountMinor: 1_000,
@@ -46,16 +46,17 @@ test('amount discount is applied after promotion and preserves exact accounting 
   assert.deepEqual(result, {
     promotion_discount_minor: 1_000,
     post_promotion_total_minor: 9_000,
+    manual_discount_kind: 'amount',
     manual_discount_minor: 1_500,
     manual_discount_percentage_bps: 1_666,
     total_discount_minor: 2_500,
     final_total_minor: 7_500,
     allowed_without_override: true,
-    employee_limit_minor: 1_800,
+    employee_limit_minor: 5_000,
   });
 });
 
-test('percentage discount uses the post-promotion total and floors fractional minor units', () => {
+test('percentage discount uses the post-promotion total and only the percentage authority', () => {
   const result = resolveCashierManualDiscount({
     subtotalMinor: 12_001,
     promotionDiscountMinor: 2_000,
@@ -64,10 +65,11 @@ test('percentage discount uses the post-promotion total and floors fractional mi
       value: 2_500,
       reason: 'Campaign adjustment',
     },
-    policy: policy({ max_percentage_bps: 3_000 }),
+    policy: policy({ max_percentage_bps: 3_000, max_amount_minor: 1_000 }),
   });
 
   assert.equal(result.post_promotion_total_minor, 10_001);
+  assert.equal(result.manual_discount_kind, 'percentage');
   assert.equal(result.manual_discount_minor, 2_500);
   assert.equal(result.manual_discount_percentage_bps, 2_500);
   assert.equal(result.total_discount_minor, 4_500);
@@ -76,7 +78,43 @@ test('percentage discount uses the post-promotion total and floors fractional mi
   assert.equal(result.allowed_without_override, true);
 });
 
-test('employee authority uses the stricter percentage and fixed amount cap at the exact boundary', () => {
+test('fixed amount authority may exceed the configured percentage on a small sale', () => {
+  const independentPolicy = policy({
+    max_percentage_bps: 500,
+    max_amount_minor: 2_000,
+  });
+
+  const result = resolveCashierManualDiscount({
+    subtotalMinor: 10_000,
+    promotionDiscountMinor: 0,
+    draft: { kind: 'amount', value: 2_000, reason: 'Customer recovery' },
+    policy: independentPolicy,
+  });
+
+  assert.equal(result.manual_discount_percentage_bps, 2_000);
+  assert.equal(result.employee_limit_minor, 2_000);
+  assert.equal(result.allowed_without_override, true);
+});
+
+test('percentage authority may exceed the fixed amount limit on a large sale', () => {
+  const independentPolicy = policy({
+    max_percentage_bps: 500,
+    max_amount_minor: 2_000,
+  });
+
+  const result = resolveCashierManualDiscount({
+    subtotalMinor: 300_000,
+    promotionDiscountMinor: 0,
+    draft: { kind: 'percentage', value: 500, reason: 'Loyal customer' },
+    policy: independentPolicy,
+  });
+
+  assert.equal(result.manual_discount_minor, 15_000);
+  assert.equal(result.employee_limit_minor, 15_000);
+  assert.equal(result.allowed_without_override, true);
+});
+
+test('amount boundary accepts the exact fixed limit and rejects one minor unit above it', () => {
   const cappedPolicy = policy({
     max_percentage_bps: 5_000,
     max_amount_minor: 1_200,
@@ -109,7 +147,7 @@ test('disabled policy fails closed for any non-zero manual discount', () => {
     policy: policy({
       enabled: false,
       max_percentage_bps: 10_000,
-      max_amount_minor: null,
+      max_amount_minor: 5_000,
       can_approve_override: true,
     }),
   });
@@ -127,6 +165,7 @@ test('no manual discount remains valid even when discount authority is disabled'
     policy: policy({ enabled: false }),
   });
 
+  assert.equal(result.manual_discount_kind, null);
   assert.equal(result.manual_discount_minor, 0);
   assert.equal(result.total_discount_minor, 500);
   assert.equal(result.final_total_minor, 4_500);
