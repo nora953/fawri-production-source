@@ -91,9 +91,20 @@ test('delayed sync validates approval against sale creation time instead of sync
 
 test('consumed approval remains retry-safe only for its exact operation and sale window', async () => {
   const authority = await source('src/services/cashierDiscountOverrideAuthority.ts');
-  assert.match(authority, /if \(approval\.consumed_at\) return/);
-  assert.match(authority, /approval has been consumed it remains valid only for this exact/);
+  assert.match(authority, /WHERE merchant_id = \$1 AND id = \$2 AND operation_id = \$3/);
+  assert.match(authority, /approval\.station_id !== input\.stationId/);
+  assert.match(authority, /approval\.operator_staff_id !== input\.operatorStaffId/);
+  assert.match(authority, /Number\(approval\.manual_discount_minor\) !== input\.manualDiscountMinor/);
+  assert.match(authority, /approval\.manual_discount_reason !== input\.reason/);
   assert.match(authority, /saleOccurredAt < approvalCreatedAt - APPROVAL_CLOCK_SKEW_MS/);
+  assert.match(authority, /if \(approval\.consumed_at\) return/);
+
+  const exactBindingCheck = authority.indexOf('approval.station_id !== input.stationId');
+  const saleWindowCheck = authority.indexOf('saleOccurredAt < approvalCreatedAt - APPROVAL_CLOCK_SKEW_MS');
+  const consumedRetry = authority.indexOf('if (approval.consumed_at) return');
+  assert.ok(exactBindingCheck >= 0, 'retry must validate the exact sale binding');
+  assert.ok(saleWindowCheck > exactBindingCheck, 'retry must validate the original sale window');
+  assert.ok(consumedRetry > saleWindowCheck, 'consumed approval may replay only after binding and window validation');
 });
 
 test('operator routes expose eligible approvers and PIN-backed approval issuance', async () => {
