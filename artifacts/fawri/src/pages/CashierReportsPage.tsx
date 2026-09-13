@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
@@ -65,7 +65,7 @@ const COPY: Record<Lang, Copy> = {
     profit: 'الربح الإجمالي',
     operations: 'عمليات البيع',
     units: 'صافي القطع المباعة',
-    refunds: 'المرتجعات والإلغاءات',
+    refunds: 'قيمة المرتجعات والإلغاءات',
     average: 'متوسط عملية البيع',
     returns: 'عمليات المرتجع',
     voids: 'عمليات الإلغاء',
@@ -96,7 +96,7 @@ const COPY: Record<Lang, Copy> = {
     profit: 'قازانجی گشتی',
     operations: 'مامەڵەکانی فرۆشتن',
     units: 'دانەی فرۆشراوی خاوێن',
-    refunds: 'گەڕاندنەوە و هەڵوەشاندنەوە',
+    refunds: 'بەهای گەڕاندنەوە و هەڵوەشاندنەوە',
     average: 'ناوەندی مامەڵەی فرۆشتن',
     returns: 'کرداری گەڕاندنەوە',
     voids: 'کرداری هەڵوەشاندنەوە',
@@ -127,7 +127,7 @@ const COPY: Record<Lang, Copy> = {
     profit: 'Gross profit',
     operations: 'Sales operations',
     units: 'Net units sold',
-    refunds: 'Returns & voids',
+    refunds: 'Returns & voids value',
     average: 'Average sale ticket',
     returns: 'Return operations',
     voids: 'Void operations',
@@ -276,13 +276,17 @@ export default function CashierReportsPage() {
                     {result.can_view_profit ? <Metric title={labels.profit} value={profit === null ? '—' : money(profit)} /> : null}
                     <Metric title={labels.operations} value={String(currency.sale_count)} />
                     <Metric title={labels.units} value={String(currency.net_units)} />
-                    <Metric title={labels.refunds} value={money(currency.refunds_minor)} />
+                    <Metric
+                      title={labels.refunds}
+                      value={money(currency.refunds_minor)}
+                      meta={(
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-semibold text-slate-500">
+                          <span>{labels.returns}: <bdi dir="ltr" className="font-bold text-slate-700">{currency.return_count}</bdi></span>
+                          <span>{labels.voids}: <bdi dir="ltr" className="font-bold text-slate-700">{currency.voided_sale_count}</bdi></span>
+                        </div>
+                      )}
+                    />
                     <Metric title={labels.average} value={average} />
-                  </div>
-
-                  <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
-                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{labels.returns}: <b dir="ltr">{currency.return_count}</b></span>
-                    <span className="rounded-full border border-slate-200 bg-white px-3 py-1.5">{labels.voids}: <b dir="ltr">{currency.voided_sale_count}</b></span>
                   </div>
 
                   {result.can_view_profit && currency.profit_status === 'partial' ? (
@@ -329,11 +333,12 @@ export default function CashierReportsPage() {
   );
 }
 
-function Metric({ title, value }: { title: string; value: string }) {
+function Metric({ title, value, meta }: { title: string; value: string; meta?: ReactNode }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
       <p className="text-xs font-semibold text-slate-500">{title}</p>
-      <p className="mt-2 truncate text-xl font-extrabold" dir="ltr">{value}</p>
+      <p className="mt-2 truncate text-xl font-extrabold"><bdi dir="ltr">{value}</bdi></p>
+      {meta ? <div className="mt-2 border-t border-slate-100 pt-2">{meta}</div> : null}
     </div>
   );
 }
