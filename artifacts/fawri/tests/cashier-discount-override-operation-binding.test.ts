@@ -12,6 +12,7 @@ function saleInput(approvalId: string) {
     operation_id: 'checkout-operation-old',
     payment_method: 'cash' as const,
     payment_status: 'paid' as const,
+    manual_discount_kind: 'percentage' as const,
     manual_discount_minor: 5390,
     manual_discount_reason: 'اختبار خصم 11%',
     manual_discount_override_approval_id: approvalId,
@@ -27,6 +28,7 @@ test('renewed manager approval replaces the durable sale operation id only throu
     approvalId,
     operationId: 'checkout-operation-renewed',
     manualDiscountMinor: 5390,
+    discountKind: 'percentage',
     reason: 'اختبار خصم 11%',
     expiresAt: new Date(Date.now() + 60_000).toISOString(),
   });
@@ -34,6 +36,7 @@ test('renewed manager approval replaces the durable sale operation id only throu
   const resolved = resolveCashierDiscountOverrideSaleInput(saleInput(approvalId));
   assert.equal(resolved.operation_id, 'checkout-operation-renewed');
   assert.equal(resolved.manual_discount_override_approval_id, approvalId);
+  assert.equal(resolved.manual_discount_kind, 'percentage');
 
   forgetCashierDiscountOverrideOperationBinding(approvalId);
   assert.throws(
@@ -44,12 +47,13 @@ test('renewed manager approval replaces the durable sale operation id only throu
   );
 });
 
-test('approval binding cannot be reused for a different amount or reason', () => {
+test('approval binding cannot be reused for a different amount, type, or reason', () => {
   const approvalId = 'approval-binding-mismatch';
   rememberCashierDiscountOverrideOperationBinding({
     approvalId,
     operationId: 'operation-bound',
     manualDiscountMinor: 5390,
+    discountKind: 'percentage',
     reason: 'اختبار خصم 11%',
     expiresAt: new Date(Date.now() + 60_000).toISOString(),
   });
@@ -58,6 +62,15 @@ test('approval binding cannot be reused for a different amount or reason', () =>
     () => resolveCashierDiscountOverrideSaleInput({
       ...saleInput(approvalId),
       manual_discount_minor: 5400,
+    }),
+    (error: unknown) =>
+      error instanceof CashierDiscountOverrideOperationBindingError &&
+      error.code === 'CASHIER_DISCOUNT_OVERRIDE_INVALID',
+  );
+  assert.throws(
+    () => resolveCashierDiscountOverrideSaleInput({
+      ...saleInput(approvalId),
+      manual_discount_kind: 'amount',
     }),
     (error: unknown) =>
       error instanceof CashierDiscountOverrideOperationBindingError &&
@@ -81,6 +94,7 @@ test('expired or fabricated approval proof cannot unlock a local over-limit sale
       approvalId: 'approval-expired',
       operationId: 'operation-expired',
       manualDiscountMinor: 5390,
+      discountKind: 'percentage',
       reason: 'اختبار خصم 11%',
       expiresAt: new Date(Date.now() - 1_000).toISOString(),
     }),
