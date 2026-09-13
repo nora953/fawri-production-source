@@ -102,10 +102,9 @@ export default function CashierManualDiscountEditor({
     );
   }
 
-  const limitPercent = policy.max_percentage_bps / 100;
-  const limitText = policy.max_amount_minor === null
-    ? `${limitPercent}%`
-    : `${limitPercent}% · ${money(policy.max_amount_minor)}`;
+  const limitText = kind === 'amount'
+    ? money(policy.max_amount_minor ?? 0)
+    : `${policy.max_percentage_bps / 100}%`;
 
   return (
     <div className="rounded-2xl border border-orange-200 bg-orange-50/40 p-3">
