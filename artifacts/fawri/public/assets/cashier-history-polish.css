@@ -20,9 +20,8 @@ html[data-cashier-view='history'] main > div > div.grid > section:last-child > d
   font-variant-numeric: tabular-nums;
 }
 
-/* Desktop history should read as one page, not nested scrolling panes.
-   Let both sale list and sale details grow with their content. If the content
-   exceeds the viewport, only the browser page scrolls. */
+/* Desktop history uses one bounded scroll surface only: the potentially long
+   sales list. Selected-sale details stay fully expanded with no nested scroll. */
 @media (min-width: 1024px) {
   html[data-cashier-view='history'] main {
     height: auto !important;
@@ -38,18 +37,65 @@ html[data-cashier-view='history'] main > div > div.grid > section:last-child > d
   html[data-cashier-view='history'] main > div > div.grid {
     min-height: 0 !important;
     flex: 0 0 auto !important;
+    align-items: start;
   }
 
-  html[data-cashier-view='history'] main > div > div.grid > section:first-child,
-  html[data-cashier-view='history'] main > div > div.grid > section:last-child {
+  /* Sales card: keep its header fixed and let only the sale rows scroll. */
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child {
+    display: flex !important;
     min-height: 0 !important;
-    overflow: visible !important;
+    height: clamp(22rem, calc(100dvh - 10rem), 44rem);
+    max-height: 44rem;
+    flex-direction: column !important;
+    overflow: hidden !important;
   }
 
   html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2 {
     min-height: 0 !important;
-    flex: 0 0 auto !important;
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar {
+    width: 7px;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: #cbd5e1;
+  }
+
+  /* Detail card: no internal scrolling. Tighten vertical rhythm slightly so a
+     normal one- or two-line sale fits comfortably without looking oversized. */
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child {
+    min-height: 0 !important;
+    align-self: start;
     overflow: visible !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div:first-child {
+    padding-block: 0.75rem !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div.grid {
+    gap: 0.5rem !important;
+    padding-block: 0.75rem !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div.p-4 {
+    padding-block: 0.75rem !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div.p-4 > div.mb-3 {
+    margin-bottom: 0.5rem !important;
+  }
+
+  html[data-cashier-view='history'] main > div > div.grid > section:last-child > div > div.p-4 .rounded-xl.border.border-slate-200.p-3 {
+    padding-block: 0.625rem !important;
   }
 }
 
