@@ -323,6 +323,8 @@ export function useCashierManualDiscountCheckout(input: {
         pin: pinForRequest,
         operationId,
         manualDiscountMinor: resolution.manual_discount_minor,
+        discountBaseMinor: resolution.post_promotion_total_minor,
+        discountKind: kind,
         reason: normalizedReason,
       });
     try {
@@ -353,6 +355,7 @@ export function useCashierManualDiscountCheckout(input: {
   }, [
     input.online,
     input.operationId,
+    kind,
     normalizedReason,
     overrideNeeded,
     overridePin,
