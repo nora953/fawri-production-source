@@ -63,6 +63,23 @@ test('server derives stock decrement from sale lines and rejects extra or missin
   assert.match(source, /CASHIER_SYNC_MOVEMENT_MISMATCH/);
 });
 
+test('manual discount type is durable from checkout through local and cloud sale evidence', async () => {
+  const pos = await webSource('src/pages/CashierPosPage.tsx');
+  const local = await webSource('src/lib/cashierIndexedDbAuthority.ts');
+  const contracts = await webSource('src/lib/cashierLocalContracts.ts');
+  const sync = await apiSource('src/services/postgresCashierSyncAuthority.ts');
+  const authority = await apiSource('src/services/cashierOperatorDiscountAuthority.ts');
+
+  assert.match(pos, /manual_discount_kind: discountCheckout\.kind/);
+  assert.match(contracts, /manual_discount_kind\?: CashierManualDiscountKind/);
+  assert.match(local, /manual_discount_kind: manualDiscountKind/);
+  assert.match(sync, /manual_discount_kind\?: "amount" \| "percentage"/);
+  assert.match(sync, /manual_discount_kind: manualDiscountKind/);
+  assert.match(sync, /manual_discount_kind: bundle\.sale\.manual_discount_kind/);
+  assert.match(authority, /const kind = discountKind\(payload\.manual_discount_kind\)/);
+  assert.match(authority, /discountKind: kind/);
+});
+
 test('operator browser deletes a local outbox operation only after complete server acknowledgement', async () => {
   const source = await webSource('src/lib/cashierOperatorCloudSync.ts');
 
