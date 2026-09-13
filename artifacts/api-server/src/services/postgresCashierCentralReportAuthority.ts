@@ -54,6 +54,7 @@ type ParsedSale = {
   currency_code: string;
   currency_fraction_digits: number;
   total_minor: number;
+  manual_discount_minor: number;
   lines: SaleLine[];
   compensations: Compensation[];
 };
@@ -171,6 +172,74 @@ function safeMultiply(left: number, right: number, field: string): number {
     );
   }
   return value;
+}
+
+/**
+ * Allocate a sale-level manual discount across immutable sale lines using
+ * integer arithmetic only. The adjusted line revenue always sums exactly to
+ * the amount actually charged, so product revenue and profit remain truthful.
+ */
+function adjustedLineRevenueById(sale: ParsedSale): Map<string, number> {
+  let preDiscountTotal = 0;
+  for (const line of sale.lines) {
+    preDiscountTotal = safeAdd(
+      preDiscountTotal,
+      line.line_total_minor,
+      "pre-discount total",
+    );
+  }
+  if (sale.manual_discount_minor > preDiscountTotal) {
+    throw new CashierStaffAuthorityError(
+      "CASHIER_REPORT_EVIDENCE_INVALID",
+      "cashier manual discount exceeds sale line evidence",
+      409,
+    );
+  }
+
+  let remainingBase = BigInt(preDiscountTotal);
+  let remainingDiscount = BigInt(sale.manual_discount_minor);
+  const adjusted = new Map<string, number>();
+
+  sale.lines.forEach((line, index) => {
+    const lineBase = BigInt(line.line_total_minor);
+    let allocatedDiscount = 0n;
+    if (remainingDiscount > 0n) {
+      allocatedDiscount =
+        index === sale.lines.length - 1
+          ? remainingDiscount
+          : remainingBase > 0n
+            ? (remainingDiscount * lineBase) / remainingBase
+            : 0n;
+    }
+    if (allocatedDiscount < 0n || allocatedDiscount > lineBase) {
+      throw new CashierStaffAuthorityError(
+        "CASHIER_REPORT_EVIDENCE_INVALID",
+        "cashier manual discount allocation is inconsistent",
+        409,
+      );
+    }
+    const adjustedRevenueBig = lineBase - allocatedDiscount;
+    const adjustedRevenue = Number(adjustedRevenueBig);
+    if (!Number.isSafeInteger(adjustedRevenue) || adjustedRevenue < 0) {
+      throw new CashierStaffAuthorityError(
+        "CASHIER_REPORT_OVERFLOW",
+        "cashier report adjusted line revenue overflowed safe integer range",
+        409,
+      );
+    }
+    adjusted.set(line.line_id, adjustedRevenue);
+    remainingBase -= lineBase;
+    remainingDiscount -= allocatedDiscount;
+  });
+
+  if (remainingDiscount !== 0n || remainingBase !== 0n) {
+    throw new CashierStaffAuthorityError(
+      "CASHIER_REPORT_EVIDENCE_INVALID",
+      "cashier manual discount allocation is incomplete",
+      409,
+    );
+  }
+  return adjusted;
 }
 
 function text(value: unknown, field: string, maxLength = 300): string {
@@ -331,7 +400,7 @@ function originalLineById(sale: ParsedSale, lineId: string): SaleLine {
 function validateSaleEvidence(sale: ParsedSale): void {
   const lineIds = new Set<string>();
   const itemKeys = new Set<string>();
-  let saleTotal = 0;
+  let preDiscountTotal = 0;
   for (const line of sale.lines) {
     const itemKey = `${line.product_id}\u0000${line.variant_id || ""}`;
     if (lineIds.has(line.line_id) || itemKeys.has(itemKey)) {
@@ -343,12 +412,19 @@ function validateSaleEvidence(sale: ParsedSale): void {
     }
     lineIds.add(line.line_id);
     itemKeys.add(itemKey);
-    saleTotal = safeAdd(saleTotal, line.line_total_minor, "sale total");
+    preDiscountTotal = safeAdd(
+      preDiscountTotal,
+      line.line_total_minor,
+      "sale total",
+    );
   }
-  if (saleTotal !== sale.total_minor) {
+  if (
+    sale.manual_discount_minor > preDiscountTotal ||
+    preDiscountTotal - sale.manual_discount_minor !== sale.total_minor
+  ) {
     throw new CashierStaffAuthorityError(
       "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier sale total does not match line evidence",
+      "cashier sale total does not match line and manual discount evidence",
       409,
     );
   }
@@ -528,6 +604,10 @@ function parseSale(row: CashierCentralReportEvidenceRow): ParsedSale {
     currency_code: currencyCode(snapshot.currency_code),
     currency_fraction_digits: fractionDigits,
     total_minor: nonNegativeInteger(snapshot.total_minor, "total_minor"),
+    manual_discount_minor: nonNegativeInteger(
+      snapshot.manual_discount_minor ?? 0,
+      "manual_discount_minor",
+    ),
     lines: snapshot.lines.map(parseSaleLine),
     compensations: Array.isArray(cashier.compensations)
       ? cashier.compensations.map(parseCompensation)
@@ -654,11 +734,20 @@ function applySaleOperation(
     sale.total_minor,
     "net revenue",
   );
+  const adjustedRevenue = adjustedLineRevenueById(sale);
   for (const line of sale.lines) {
+    const lineRevenue = adjustedRevenue.get(line.line_id);
+    if (lineRevenue === undefined) {
+      throw new CashierStaffAuthorityError(
+        "CASHIER_REPORT_EVIDENCE_INVALID",
+        "cashier adjusted line revenue is missing",
+        409,
+      );
+    }
     currency.sold_units = safeAdd(currency.sold_units, line.quantity, "sold units");
     currency.net_units = safeAdd(currency.net_units, line.quantity, "net units");
-    addProductDelta(currency, line, line.quantity, line.line_total_minor);
-    addCostContribution(currency, line, line.quantity, line.line_total_minor, 1);
+    addProductDelta(currency, line, line.quantity, lineRevenue);
+    addCostContribution(currency, line, line.quantity, lineRevenue, 1);
   }
 }
 
@@ -738,15 +827,24 @@ function applyVoidOperation(
     -refund,
     "net revenue",
   );
+  const adjustedRevenue = adjustedLineRevenueById(sale);
   for (const line of sale.lines) {
+    const lineRevenue = adjustedRevenue.get(line.line_id);
+    if (lineRevenue === undefined) {
+      throw new CashierStaffAuthorityError(
+        "CASHIER_REPORT_EVIDENCE_INVALID",
+        "cashier adjusted line revenue is missing",
+        409,
+      );
+    }
     currency.returned_units = safeAdd(
       currency.returned_units,
       line.quantity,
       "returned units",
     );
     currency.net_units = safeAdd(currency.net_units, -line.quantity, "net units");
-    addProductDelta(currency, line, -line.quantity, -line.line_total_minor);
-    addCostContribution(currency, line, line.quantity, line.line_total_minor, -1);
+    addProductDelta(currency, line, -line.quantity, -lineRevenue);
+    addCostContribution(currency, line, line.quantity, lineRevenue, -1);
   }
 }
 
