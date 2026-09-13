@@ -1,8 +1,11 @@
-import type { CashierOperatorDiscountPolicy } from './cashierDiscountPolicyClient';
+import type {
+  CashierManualDiscountKind,
+  CashierOperatorDiscountPolicy,
+} from './cashierDiscountPolicyClient';
 import { cashierDiscountLimitMinor } from './cashierDiscountPolicyClient';
 
 export type CashierManualDiscountDraft = {
-  kind: 'amount' | 'percentage';
+  kind: CashierManualDiscountKind;
   value: number;
   reason: string;
 };
@@ -10,6 +13,7 @@ export type CashierManualDiscountDraft = {
 export type CashierManualDiscountResolution = {
   promotion_discount_minor: number;
   post_promotion_total_minor: number;
+  manual_discount_kind: CashierManualDiscountKind | null;
   manual_discount_minor: number;
   manual_discount_percentage_bps: number;
   total_discount_minor: number;
@@ -68,21 +72,18 @@ export function resolveCashierManualDiscount(input: {
     );
   }
   const postPromotionTotal = subtotal - promotionDiscount;
-  const employeeLimit = cashierDiscountLimitMinor({
-    postPromotionTotalMinor: postPromotionTotal,
-    policy: input.policy,
-  });
 
   if (!input.draft) {
     return {
       promotion_discount_minor: promotionDiscount,
       post_promotion_total_minor: postPromotionTotal,
+      manual_discount_kind: null,
       manual_discount_minor: 0,
       manual_discount_percentage_bps: 0,
       total_discount_minor: promotionDiscount,
       final_total_minor: postPromotionTotal,
       allowed_without_override: true,
-      employee_limit_minor: employeeLimit,
+      employee_limit_minor: 0,
     };
   }
 
@@ -116,6 +117,11 @@ export function resolveCashierManualDiscount(input: {
       'Manual discount exceeds the post-promotion total',
     );
   }
+  const employeeLimit = cashierDiscountLimitMinor({
+    postPromotionTotalMinor: postPromotionTotal,
+    policy: input.policy,
+    kind: input.draft.kind,
+  });
   const totalDiscount = promotionDiscount + manualDiscount;
   const finalTotal = postPromotionTotal - manualDiscount;
   if (!Number.isSafeInteger(totalDiscount) || !Number.isSafeInteger(finalTotal)) {
@@ -127,6 +133,7 @@ export function resolveCashierManualDiscount(input: {
   return {
     promotion_discount_minor: promotionDiscount,
     post_promotion_total_minor: postPromotionTotal,
+    manual_discount_kind: input.draft.kind,
     manual_discount_minor: manualDiscount,
     manual_discount_percentage_bps: percentageBps,
     total_discount_minor: totalDiscount,
