@@ -6,6 +6,7 @@ const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'ut
 
 const visualQa = read('../public/assets/cashier-visual-qa.css');
 const historyPolish = read('../public/assets/cashier-history-polish.css');
+const reportsPolish = read('../public/assets/cashier-reports-polish.css');
 const history = read('../src/pages/CashierHistoryPage.tsx');
 const reports = read('../src/pages/CashierReportsPage.tsx');
 const cashierHtml = read('../cashier.html');
@@ -39,6 +40,13 @@ test('cashier reports isolates top-product rank and mixed-direction names', () =
   assert.match(reports, /<bdi dir="auto" className="min-w-0 break-words">\{product\.product_name\}<\/bdi>/);
   assert.match(reports, /<bdi dir="auto">\{product\.variant_name\}<\/bdi>/);
   assert.doesNotMatch(reports, /<span className="me-2 text-slate-400">#\{index \+ 1\}<\/span>\{product\.product_name\}/);
+});
+
+test('cashier report metric values follow the page direction without losing numeric isolation', () => {
+  assert.match(reportsPolish, /main\[dir='rtl'\][\s\S]*section > div\.grid > div > p\.mt-2 \{[\s\S]*text-align: right !important;/);
+  assert.match(reportsPolish, /main\[dir='ltr'\][\s\S]*section > div\.grid > div > p\.mt-2 \{[\s\S]*text-align: left !important;/);
+  assert.match(reportsPolish, /font-variant-numeric: tabular-nums;/);
+  assert.match(reportsPolish, /unicode-bidi: isolate;/);
 });
 
 test('cashier operational subpages share the POS desktop canvas and quiet back action', () => {
@@ -76,4 +84,5 @@ test('cashier history keeps sale details compact without a nested scroll surface
 test('cashier shell cache-busts the polished visual contracts', () => {
   assert.match(cashierHtml, /cashier-visual-qa\.css\?v=subpage-polish-v1/);
   assert.match(cashierHtml, /cashier-history-polish\.css\?v=history-sales-scroll-v3/);
+  assert.match(cashierHtml, /cashier-reports-polish\.css\?v=reports-metric-align-v1/);
 });
