@@ -2,6 +2,9 @@ import type { CashierDiscountOverrideApproval, CashierDiscountOverrideApprover }
 import { CASHIER_POS_ENHANCEMENT_COPY } from '@/lib/cashierPosEnhancementCopy';
 import type { Lang } from '@/lib/types';
 
+const SELECT_CHEVRON_BACKGROUND =
+  `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`;
+
 type Props = {
   lang: Lang;
   needed: boolean;
@@ -35,6 +38,7 @@ export default function CashierDiscountOverrideEditor({
 }: Props) {
   if (!needed) return null;
   const copy = CASHIER_POS_ENHANCEMENT_COPY[lang];
+  const rtl = lang !== 'en';
 
   if (approval) {
     const manager = approvers.find((item) => item.id === approval.approver_staff_id);
@@ -88,7 +92,16 @@ export default function CashierDiscountOverrideEditor({
               value={selectedApproverId}
               onChange={(event) => onApproverChange(event.target.value)}
               disabled={approvalLoading}
-              className="mt-1.5 h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-sm font-bold outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:opacity-60"
+              dir={rtl ? 'rtl' : 'ltr'}
+              style={{
+                backgroundImage: SELECT_CHEVRON_BACKGROUND,
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: '14px 14px',
+                backgroundPosition: rtl ? 'left 0.65rem center' : 'right 0.65rem center',
+              }}
+              className={`mt-1.5 h-12 w-full appearance-none rounded-xl border border-slate-300 bg-white text-sm font-bold outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:opacity-60 ${
+                rtl ? 'pl-8 pr-3 text-right' : 'pl-3 pr-8 text-left'
+              }`}
             >
               {approvers.map((approver) => (
                 <option key={approver.id} value={approver.id}>{approver.display_name}</option>
