@@ -63,6 +63,7 @@ const steps = [
       'artifacts/fawri/tests/cashier-fast-checkout-exact-cash.test.mjs',
       'artifacts/fawri/tests/cashier-fast-checkout-keyboard.test.mjs',
       'artifacts/fawri/tests/cashier-functional-freeze-contract.test.mjs',
+      'artifacts/fawri/tests/cashier-language-parity-contract.test.mjs',
     ],
   },
   {
