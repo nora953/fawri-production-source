@@ -5,6 +5,8 @@ export type CashierManualDiscountPolicy = {
   can_approve_override: boolean;
 };
 
+export type CashierManualDiscountKind = 'amount' | 'percentage';
+
 export const DISABLED_CASHIER_MANUAL_DISCOUNT_POLICY: CashierManualDiscountPolicy = {
   enabled: false,
   max_percentage_bps: 0,
@@ -109,9 +111,21 @@ export function restrictCashierManualDiscountPolicyForRole(
   };
 }
 
+function percentageLimitMinor(total: number, policy: CashierManualDiscountPolicy): number {
+  const limit = Math.floor((total * policy.max_percentage_bps) / 10_000);
+  if (!Number.isSafeInteger(limit) || limit < 0) {
+    throw new CashierDiscountPolicyError(
+      'CASHIER_DISCOUNT_POLICY_INVALID',
+      'cashier percentage discount limit is invalid',
+    );
+  }
+  return Math.min(total, limit);
+}
+
 export function cashierManualDiscountLimitMinor(input: {
   postPromotionTotalMinor: number;
   policy: CashierManualDiscountPolicy;
+  kind?: CashierManualDiscountKind;
 }): number {
   const total = safeInteger(
     input.postPromotionTotalMinor,
@@ -121,26 +135,24 @@ export function cashierManualDiscountLimitMinor(input: {
   );
   if (!input.policy.enabled || total === 0) return 0;
 
-  const percentageLimit = Math.floor(
-    (total * input.policy.max_percentage_bps) / 10_000,
-  );
-  if (!Number.isSafeInteger(percentageLimit) || percentageLimit < 0) {
-    throw new CashierDiscountPolicyError(
-      'CASHIER_DISCOUNT_POLICY_INVALID',
-      'cashier percentage discount limit is invalid',
-    );
-  }
+  const percentLimit = percentageLimitMinor(total, input.policy);
+  const amountLimit = input.policy.max_amount_minor === null
+    ? 0
+    : Math.min(total, input.policy.max_amount_minor);
 
-  const amountLimit = input.policy.max_amount_minor;
-  return amountLimit === null
-    ? Math.min(total, percentageLimit)
-    : Math.min(total, percentageLimit, amountLimit);
+  if (input.kind === 'amount') return amountLimit;
+  if (input.kind === 'percentage') return percentLimit;
+
+  // Compatibility only for durable sales created before discount kind became
+  // explicit. Fail conservatively by retaining the historical stricter limit.
+  return Math.min(percentLimit, amountLimit);
 }
 
 export function cashierManualDiscountWithinPolicy(input: {
   postPromotionTotalMinor: number;
   manualDiscountMinor: number;
   policy: CashierManualDiscountPolicy;
+  kind?: CashierManualDiscountKind;
 }): boolean {
   const discount = safeInteger(
     input.manualDiscountMinor,
@@ -151,5 +163,6 @@ export function cashierManualDiscountWithinPolicy(input: {
   return discount <= cashierManualDiscountLimitMinor({
     postPromotionTotalMinor: input.postPromotionTotalMinor,
     policy: input.policy,
+    kind: input.kind,
   });
 }
