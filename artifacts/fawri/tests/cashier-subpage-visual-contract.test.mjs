@@ -47,6 +47,18 @@ test('cashier report metric values follow the page direction without losing nume
   assert.match(reportsPolish, /main\[dir='ltr'\][\s\S]*section > div\.grid > div > p\.mt-2 \{[\s\S]*text-align: left !important;/);
   assert.match(reportsPolish, /font-variant-numeric: tabular-nums;/);
   assert.match(reportsPolish, /unicode-bidi: isolate;/);
+  assert.match(reports, /<p className="mt-2 truncate text-xl font-extrabold"><bdi dir="ltr">\{value\}<\/bdi><\/p>/);
+  assert.doesNotMatch(reports, /<p className="mt-2 truncate text-xl font-extrabold" dir="ltr">\{value\}<\/p>/);
+});
+
+test('cashier reports groups return and void counts inside their monetary metric', () => {
+  assert.match(reports, /refunds: 'قيمة المرتجعات والإلغاءات'/);
+  assert.match(reports, /refunds: 'Returns & voids value'/);
+  assert.match(reports, /title=\{labels\.refunds\}[\s\S]*value=\{money\(currency\.refunds_minor\)\}[\s\S]*meta=\{/);
+  assert.match(reports, /\{labels\.returns\}: <bdi dir="ltr" className="font-bold text-slate-700">\{currency\.return_count\}<\/bdi>/);
+  assert.match(reports, /\{labels\.voids\}: <bdi dir="ltr" className="font-bold text-slate-700">\{currency\.voided_sale_count\}<\/bdi>/);
+  assert.match(reports, /\{meta \? <div className="mt-2 border-t border-slate-100 pt-2">\{meta\}<\/div> : null\}/);
+  assert.doesNotMatch(reports, /<div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-500">/);
 });
 
 test('cashier operational subpages share the POS desktop canvas and quiet back action', () => {
