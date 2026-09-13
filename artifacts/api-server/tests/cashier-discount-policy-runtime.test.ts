@@ -33,7 +33,7 @@ test('disabled or missing policy normalizes to a fail-closed authority', () => {
   );
 });
 
-test('enabled policy normalizes percentage, optional amount and override capability', () => {
+test('enabled policy normalizes percentage, required amount and override capability', () => {
   assert.deepEqual(
     normalizeCashierManualDiscountPolicy({
       enabled: true,
@@ -50,12 +50,28 @@ test('enabled policy normalizes percentage, optional amount and override capabil
   );
 });
 
-test('enabled policy requires an explicit percentage while explicit zero remains valid', () => {
+test('enabled policy requires explicit percentage and a positive monetary ceiling', () => {
   for (const maxPercentageBps of [undefined, null, '', '   ']) {
     assert.throws(
       () => normalizeCashierManualDiscountPolicy({
         enabled: true,
         max_percentage_bps: maxPercentageBps,
+        max_amount_minor: 1_000,
+      }),
+      (error: unknown) => {
+        assert.ok(error instanceof CashierDiscountPolicyError);
+        assert.equal(error.code, 'CASHIER_DISCOUNT_POLICY_INVALID');
+        return true;
+      },
+    );
+  }
+
+  for (const maxAmountMinor of [undefined, null, '', '   ', 0]) {
+    assert.throws(
+      () => normalizeCashierManualDiscountPolicy({
+        enabled: true,
+        max_percentage_bps: 1_000,
+        max_amount_minor: maxAmountMinor,
       }),
       (error: unknown) => {
         assert.ok(error instanceof CashierDiscountPolicyError);
@@ -69,12 +85,12 @@ test('enabled policy requires an explicit percentage while explicit zero remains
     normalizeCashierManualDiscountPolicy({
       enabled: true,
       max_percentage_bps: 0,
-      max_amount_minor: null,
+      max_amount_minor: 1_000,
     }),
     {
       enabled: true,
       max_percentage_bps: 0,
-      max_amount_minor: null,
+      max_amount_minor: 1_000,
       can_approve_override: false,
     },
   );
@@ -103,15 +119,15 @@ test('override approval capability is preserved only for managers', () => {
 });
 
 test('runtime limit uses post-promotion total and the stricter percentage or amount cap', () => {
-  const percentageOnly = normalizeCashierManualDiscountPolicy({
+  const percentageCapped = normalizeCashierManualDiscountPolicy({
     enabled: true,
     max_percentage_bps: 2_500,
-    max_amount_minor: null,
+    max_amount_minor: 9_999,
   });
   assert.equal(
     cashierManualDiscountLimitMinor({
       postPromotionTotalMinor: 10_001,
-      policy: percentageOnly,
+      policy: percentageCapped,
     }),
     2_500,
   );
@@ -177,10 +193,16 @@ test('disabled policy permits no positive manual discount', () => {
 });
 
 test('invalid policy and money inputs fail closed with stable policy error code', () => {
+  const validPolicy = normalizeCashierManualDiscountPolicy({
+    enabled: true,
+    max_percentage_bps: 1_000,
+    max_amount_minor: 1_000,
+  });
   const invalidInputs = [
     () => normalizeCashierManualDiscountPolicy({
       enabled: true,
       max_percentage_bps: 10_001,
+      max_amount_minor: 1_000,
     }),
     () => normalizeCashierManualDiscountPolicy({
       enabled: true,
@@ -189,18 +211,12 @@ test('invalid policy and money inputs fail closed with stable policy error code'
     }),
     () => cashierManualDiscountLimitMinor({
       postPromotionTotalMinor: -1,
-      policy: normalizeCashierManualDiscountPolicy({
-        enabled: true,
-        max_percentage_bps: 1_000,
-      }),
+      policy: validPolicy,
     }),
     () => cashierManualDiscountWithinPolicy({
       postPromotionTotalMinor: 1_000,
       manualDiscountMinor: -1,
-      policy: normalizeCashierManualDiscountPolicy({
-        enabled: true,
-        max_percentage_bps: 1_000,
-      }),
+      policy: validPolicy,
     }),
   ];
 

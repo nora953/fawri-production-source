@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { getMerchantRegionalContext, type MerchantRegionalContext } from '@/lib/merchantRegionalUiApi';
-import { formatMerchantMoneyMinor, merchantCurrencyLabel } from '@/lib/moneyUi';
+import {
+  formatMerchantMoneyMinor,
+  merchantCurrencyLabel,
+  merchantMoneyMajorInputToMinor,
+  merchantMoneyMinorToMajorInput,
+  merchantSafeFractionDigits,
+} from '@/lib/moneyUi';
 import type { Lang } from '@/lib/types';
 
 type Staff = {
@@ -102,44 +108,13 @@ const TEXT: Record<Lang, Record<string, string>> = {
   },
 };
 
-function safeFractionDigits(value: number): number {
-  return Number.isSafeInteger(value) ? Math.min(6, Math.max(0, value)) : 0;
-}
-
-function minorToMajorInput(minor: number, fractionDigits: number): string {
-  const digits = safeFractionDigits(fractionDigits);
-  if (!Number.isSafeInteger(minor) || minor < 0) return '';
-  if (digits === 0) return String(minor);
-  const scale = 10 ** digits;
-  const whole = Math.floor(minor / scale);
-  const fraction = String(minor % scale).padStart(digits, '0').replace(/0+$/, '');
-  return fraction ? `${whole}.${fraction}` : String(whole);
-}
-
-function majorInputToMinor(value: string, fractionDigits: number): number | null {
-  const normalized = value.trim().replace(',', '.');
-  if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
-  const digits = safeFractionDigits(fractionDigits);
-  const [whole, fraction = ''] = normalized.split('.');
-  if (fraction.length > digits) return null;
-  try {
-    const scale = 10n ** BigInt(digits);
-    const fractionPadded = digits === 0 ? '0' : fraction.padEnd(digits, '0');
-    const minor = (BigInt(whole) * scale) + BigInt(fractionPadded || '0');
-    if (minor > BigInt(Number.MAX_SAFE_INTEGER)) return null;
-    return Number(minor);
-  } catch {
-    return null;
-  }
-}
-
 function draftFromPolicy(policy: Policy, fractionDigits: number): Draft {
   return {
     enabled: policy.enabled,
     maxPercent: String(policy.max_percentage_bps / 100),
     maxAmount: policy.max_amount_minor === null
       ? ''
-      : minorToMajorInput(policy.max_amount_minor, fractionDigits),
+      : merchantMoneyMinorToMajorInput(policy.max_amount_minor, fractionDigits),
     canApproveOverride: policy.can_approve_override,
   };
 }
@@ -173,7 +148,7 @@ export default function CashierDiscountPoliciesPage() {
       const rows = (Array.isArray(policyPayload.policies) ? policyPayload.policies : []) as PolicyRow[];
       const nextPolicies: Record<string, PolicyRow> = {};
       const nextDrafts: Record<string, Draft> = {};
-      const fractionDigits = safeFractionDigits(regionalContext.currency_fraction_digits);
+      const fractionDigits = merchantSafeFractionDigits(regionalContext.currency_fraction_digits);
       for (const row of rows) {
         nextPolicies[row.staff_id] = row;
         nextDrafts[row.staff_id] = draftFromPolicy(row.discount_policy, fractionDigits);
@@ -192,7 +167,7 @@ export default function CashierDiscountPoliciesPage() {
   useEffect(() => { void load(); }, [load]);
 
   const visibleStaff = useMemo(() => staff.filter(item => policies[item.id]), [policies, staff]);
-  const fractionDigits = safeFractionDigits(regional?.currency_fraction_digits ?? 0);
+  const fractionDigits = merchantSafeFractionDigits(regional?.currency_fraction_digits ?? 0);
   const currencyLabel = merchantCurrencyLabel(regional?.currency_code ?? '', lang);
   const amountStep = fractionDigits === 0 ? '1' : `0.${'0'.repeat(Math.max(0, fractionDigits - 1))}1`;
 
@@ -229,7 +204,7 @@ export default function CashierDiscountPoliciesPage() {
         return;
       }
       percentageBps = Math.round(percentTimes100);
-      amountMinor = majorInputToMinor(draft.maxAmount, fractionDigits);
+      amountMinor = merchantMoneyMajorInputToMinor(draft.maxAmount, fractionDigits);
       if (amountMinor === null || amountMinor <= 0) {
         setMessage({ kind: 'error', text: copy.amountRequired });
         return;
@@ -293,7 +268,7 @@ export default function CashierDiscountPoliciesPage() {
             const draft = drafts[member.id];
             if (!draft) return null;
             const amountMinor = regional
-              ? majorInputToMinor(draft.maxAmount, fractionDigits)
+              ? merchantMoneyMajorInputToMinor(draft.maxAmount, fractionDigits)
               : null;
             const policySummary = draft.enabled && amountMinor !== null && amountMinor > 0 && draft.maxPercent.trim() !== ''
               ? copy.currentLimit

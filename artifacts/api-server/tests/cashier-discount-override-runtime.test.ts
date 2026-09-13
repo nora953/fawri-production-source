@@ -6,6 +6,9 @@ import type { OperationalQueryTarget } from '../src/services/operationalPostgres
 
 type ApprovalFixture = {
   consumedAt?: string | null;
+  manualDiscountMinor?: number;
+  managerMaxPercentageBps?: number;
+  managerMaxAmountMinor?: number;
 };
 
 function authorityTarget(fixture: ApprovalFixture = {}): {
@@ -28,7 +31,7 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
             operator_staff_id: 'cashier-1',
             approver_staff_id: 'manager-1',
             operation_id: 'operation-1',
-            manual_discount_minor: 250,
+            manual_discount_minor: fixture.manualDiscountMinor ?? 250,
             manual_discount_reason: 'customer recovery',
             created_at: '2026-09-09T10:00:00.000Z',
             expires_at: '2026-09-09T10:05:00.000Z',
@@ -61,8 +64,8 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
             merchant_id: 'merchant-1',
             staff_id: 'manager-1',
             enabled: true,
-            max_percentage_bps: 10000,
-            max_amount_minor: null,
+            max_percentage_bps: fixture.managerMaxPercentageBps ?? 5_000,
+            max_amount_minor: fixture.managerMaxAmountMinor ?? 300,
             can_approve_override: true,
             version: 3,
           }] as unknown as T[],
@@ -85,19 +88,61 @@ const baseInput = {
   operationId: 'operation-1',
   approvalId: 'approval-1',
   manualDiscountMinor: 250,
+  discountBaseMinor: 500,
   reason: 'customer recovery',
 };
 
-test('approved local sale remains syncable after approval wall-clock expiry', async () => {
+test('approved local sale at the exact manager limit remains syncable after approval wall-clock expiry', async () => {
   const { target, updates } = authorityTarget();
   await consumeCashierDiscountOverrideApproval(target, {
     ...baseInput,
     // The sale happened during the five-minute manager approval window. The
     // test executes much later, proving sync wall-clock time is not authority.
+    // 50% of a 500-minor-unit discount base is exactly 250.
     saleOccurredAt: '2026-09-09T10:03:00.000Z',
   });
   assert.equal(updates.length, 1);
   assert.match(updates[0], /SET consumed_at = now\(\)/);
+});
+
+test('manager percentage ceiling rejects one minor unit above the allowed override', async () => {
+  const { target, updates } = authorityTarget({ manualDiscountMinor: 251 });
+  await assert.rejects(
+    consumeCashierDiscountOverrideApproval(target, {
+      ...baseInput,
+      manualDiscountMinor: 251,
+      saleOccurredAt: '2026-09-09T10:03:00.000Z',
+    }),
+    (error: unknown) => {
+      assert.ok(error instanceof CashierStaffAuthorityError);
+      assert.equal(error.code, 'CASHIER_DISCOUNT_OVERRIDE_MANAGER_LIMIT_EXCEEDED');
+      assert.equal(error.status, 403);
+      return true;
+    },
+  );
+  assert.equal(updates.length, 0);
+});
+
+test('manager monetary ceiling rejects one minor unit above the allowed override', async () => {
+  const { target, updates } = authorityTarget({
+    manualDiscountMinor: 201,
+    managerMaxPercentageBps: 10_000,
+    managerMaxAmountMinor: 200,
+  });
+  await assert.rejects(
+    consumeCashierDiscountOverrideApproval(target, {
+      ...baseInput,
+      manualDiscountMinor: 201,
+      saleOccurredAt: '2026-09-09T10:03:00.000Z',
+    }),
+    (error: unknown) => {
+      assert.ok(error instanceof CashierStaffAuthorityError);
+      assert.equal(error.code, 'CASHIER_DISCOUNT_OVERRIDE_MANAGER_LIMIT_EXCEEDED');
+      assert.equal(error.status, 403);
+      return true;
+    },
+  );
+  assert.equal(updates.length, 0);
 });
 
 test('sale created after the manager approval window fails closed', async () => {
