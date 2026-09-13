@@ -8,6 +8,7 @@ const pos = read('../src/pages/CashierPosPage.tsx');
 const checkout = read('../src/components/cashier/CashierCheckoutModal.tsx');
 const discountEditor = read('../src/components/cashier/CashierManualDiscountEditor.tsx');
 const discountCheckout = read('../src/lib/useCashierManualDiscountCheckout.ts');
+const connectivity = read('../src/lib/cashierConnectivity.ts');
 const keyboard = read('../src/lib/cashierFastCheckoutKeyboard.ts');
 const scanner = read('../src/lib/cashierBarcodeScanner.ts');
 const operatorRuntime = read('../src/lib/cashierOperatorPosRuntime.ts');
@@ -67,6 +68,21 @@ test('functional freeze keeps discount numeric entry unit-free and checkout-scop
     /input\.operationId && input\.operationId !== previousOperationId/,
   );
   assert.match(discountCheckout, /resetDraft\(\)/);
+});
+
+test('functional freeze keeps server-verified cashier reachability and physical checkout action sides', () => {
+  assert.match(connectivity, /CASHIER_REACHABILITY_PATH = '\/healthz'/);
+  assert.match(connectivity, /return currentState\.online \|\| readNativeNavigatorOnline\(\)/);
+  assert.match(connectivity, /function browserOffline\(\)[\s\S]*probeCashierConnectivity\(\)/);
+  assert.match(connectivity, /if \(!currentState\.online\) void probeCashierConnectivity\(\)/);
+  assert.match(checkout, /<footer\s+dir="ltr"/);
+
+  const footerIndex = checkout.indexOf('<footer');
+  const backIndex = checkout.indexOf('{extra.cancelCheckout}', footerIndex);
+  const confirmIndex = checkout.indexOf('extra.confirmSale', footerIndex);
+  assert.ok(footerIndex >= 0, 'checkout footer must exist');
+  assert.ok(backIndex > footerIndex, 'back action must remain the physical left footer action');
+  assert.ok(confirmIndex > backIndex, 'confirm action must remain the physical right footer action');
 });
 
 test('functional freeze keeps sale commit single-flight and manager approval fail-closed', () => {
