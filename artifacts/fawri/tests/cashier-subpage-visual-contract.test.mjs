@@ -83,8 +83,10 @@ test('cashier history keeps mixed sale references readable and evidence metadata
 test('cashier history gives scrolling only to the bounded sales list on desktop', () => {
   assert.match(historyPolish, /one bounded scroll surface only: the potentially long[\s\S]*sales list/);
   assert.match(historyPolish, /section:first-child \{[\s\S]*height: clamp\(22rem, calc\(100dvh - 10rem\), 44rem\);[\s\S]*overflow: hidden !important;/);
-  assert.match(historyPolish, /section:first-child > div\.p-2 \{[\s\S]*overflow-y: auto !important;[\s\S]*scrollbar-width: thin;/);
-  assert.match(historyPolish, /::-webkit-scrollbar-button \{[\s\S]*display: none;[\s\S]*width: 0;[\s\S]*height: 0;/);
+  assert.match(historyPolish, /section:first-child > div\.p-2 \{[\s\S]*overflow-y: auto !important;[\s\S]*overscroll-behavior: contain;/);
+  assert.match(historyPolish, /::-webkit-scrollbar \{[\s\S]*width: 7px;[\s\S]*background: transparent;/);
+  assert.match(historyPolish, /::-webkit-scrollbar-button[\s\S]*display: none !important;[\s\S]*width: 0 !important;[\s\S]*height: 0 !important;/);
+  assert.match(historyPolish, /@supports not selector\(::-webkit-scrollbar\) \{[\s\S]*scrollbar-width: thin;[\s\S]*scrollbar-color: #cbd5e1 transparent;/);
   assert.match(historyPolish, /section:last-child \{[\s\S]*overflow: visible !important;/);
 });
 
@@ -112,6 +114,6 @@ test('cashier history page-height polish cannot stretch the operator gate loader
 
 test('cashier shell cache-busts the polished visual contracts', () => {
   assert.match(cashierHtml, /cashier-visual-qa\.css\?v=subpage-polish-v1/);
-  assert.match(cashierHtml, /cashier-history-polish\.css\?v=history-sales-scroll-v4/);
+  assert.match(cashierHtml, /cashier-history-polish\.css\?v=history-sales-scroll-v5/);
   assert.match(cashierHtml, /cashier-reports-polish\.css\?v=reports-metric-align-v1/);
 });
