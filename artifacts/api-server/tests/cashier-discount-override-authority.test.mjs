@@ -44,6 +44,28 @@ test('override issuance requires another active manager, explicit permission, po
   assert.match(authority, /PIN_LOCK_MS = 15 \* 60 \* 1000/);
 });
 
+test('manager approval is checked immediately against the selected discount type and current sale base', async () => {
+  const authority = await source('src/services/cashierDiscountOverrideAuthority.ts');
+  const routes = await source('src/routes/cashier-operator-commerce.ts');
+
+  assert.match(routes, /discountBaseMinor: req\.body\?\.discount_base_minor/);
+  assert.match(routes, /discountKind: req\.body\?\.discount_kind/);
+  assert.match(authority, /const discountBaseMinor = nonNegativeMoney\(input\.discountBaseMinor/);
+  assert.match(authority, /const kind = discountKind\(input\.discountKind\)/);
+  assert.match(authority, /requesterLimitMinor = cashierManualDiscountLimitMinor\(/);
+  assert.match(authority, /CASHIER_DISCOUNT_OVERRIDE_NOT_REQUIRED/);
+  assert.match(authority, /managerLimitMinor = cashierManualDiscountLimitMinor\(/);
+  assert.match(authority, /kind,/);
+  assert.match(authority, /CASHIER_DISCOUNT_OVERRIDE_MANAGER_LIMIT_EXCEEDED/);
+
+  const pinCheck = authority.indexOf('await verifyApproverPin');
+  const managerLimit = authority.indexOf('const managerLimitMinor = cashierManualDiscountLimitMinor', pinCheck);
+  const approvalInsert = authority.indexOf('INSERT INTO merchant_cashier_discount_override_approvals', managerLimit);
+  assert.ok(pinCheck >= 0, 'manager PIN must be verified');
+  assert.ok(managerLimit > pinCheck, 'manager type-specific limit must be checked after manager PIN verification');
+  assert.ok(approvalInsert > managerLimit, 'approval evidence must be stored only after manager limit validation');
+});
+
 test('approval is bound to tenant, station, operator, operation, amount and normalized reason', async () => {
   const authority = await source('src/services/cashierDiscountOverrideAuthority.ts');
   assert.match(authority, /approval\.station_id !== input\.stationId/);
@@ -82,6 +104,8 @@ test('operator routes expose eligible approvers and PIN-backed approval issuance
   assert.match(routes, /approverStaffId: req\.body\?\.approver_staff_id/);
   assert.match(routes, /operationId: req\.body\?\.operation_id/);
   assert.match(routes, /manualDiscountMinor: req\.body\?\.manual_discount_minor/);
+  assert.match(routes, /discountBaseMinor: req\.body\?\.discount_base_minor/);
+  assert.match(routes, /discountKind: req\.body\?\.discount_kind/);
 });
 
 test('sale sync accepts manager proof only when employee limit is exceeded', async () => {
@@ -91,4 +115,5 @@ test('sale sync accepts manager proof only when employee limit is exceeded', asy
   assert.match(authority, /CASHIER_MANUAL_DISCOUNT_OVERRIDE_REQUIRED/);
   assert.match(authority, /consumeCashierDiscountOverrideApproval/);
   assert.match(authority, /operationId: sale\.operationId/);
+  assert.match(authority, /discountKind: kind/);
 });
