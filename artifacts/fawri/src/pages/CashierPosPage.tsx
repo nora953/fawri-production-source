@@ -601,6 +601,7 @@ export default function CashierPosPage() {
         payment_status: 'paid',
         ...(manualDiscountMinor > 0
           ? {
+              manual_discount_kind: discountCheckout.kind,
               manual_discount_minor: manualDiscountMinor,
               manual_discount_reason: manualDiscountReason,
               ...(discountCheckout.overrideApproval
