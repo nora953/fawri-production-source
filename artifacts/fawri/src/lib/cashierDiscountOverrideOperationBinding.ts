@@ -1,9 +1,13 @@
-import type { CashierCommitSaleInput } from './cashierLocalContracts';
+import type {
+  CashierCommitSaleInput,
+  CashierManualDiscountKind,
+} from './cashierLocalContracts';
 
 export type CashierDiscountOverrideOperationBinding = {
   approvalId: string;
   operationId: string;
   manualDiscountMinor: number;
+  discountKind: CashierManualDiscountKind;
   reason: string;
   expiresAt: string;
 };
@@ -53,10 +57,19 @@ function positiveMoney(value: unknown): number {
   return amount;
 }
 
+function discountKind(value: unknown): CashierManualDiscountKind {
+  if (value === 'amount' || value === 'percentage') return value;
+  throw new CashierDiscountOverrideOperationBindingError(
+    'CASHIER_DISCOUNT_OVERRIDE_BINDING_INVALID',
+    'manual discount type is invalid',
+  );
+}
+
 export function rememberCashierDiscountOverrideOperationBinding(input: {
   approvalId: string;
   operationId: string;
   manualDiscountMinor: number;
+  discountKind: CashierManualDiscountKind;
   reason: string;
   expiresAt: string;
 }): CashierDiscountOverrideOperationBinding {
@@ -71,6 +84,7 @@ export function rememberCashierDiscountOverrideOperationBinding(input: {
     approvalId: identifier(input.approvalId, 'approval id'),
     operationId: identifier(input.operationId, 'operation id'),
     manualDiscountMinor: positiveMoney(input.manualDiscountMinor),
+    discountKind: discountKind(input.discountKind),
     reason: reason(input.reason),
     expiresAt: new Date(expiresAtMs).toISOString(),
   };
@@ -105,6 +119,7 @@ export function resolveCashierDiscountOverrideSaleInput(
   const normalizedReason = reason(input.manual_discount_reason);
   if (
     amount !== binding.manualDiscountMinor ||
+    input.manual_discount_kind !== binding.discountKind ||
     normalizedReason !== binding.reason
   ) {
     throw new CashierDiscountOverrideOperationBindingError(
