@@ -48,6 +48,7 @@ export default function CashierManualDiscountEditor({
 }: Props) {
   const copy = CASHIER_POS_ENHANCEMENT_COPY[lang];
   const [showReasonNote, setShowReasonNote] = useState(false);
+  const textDir = lang === 'en' ? 'ltr' : 'rtl';
   const money = (value: number) =>
     formatMerchantMoneyMinor(value, currencyCode, fractionDigits, lang);
   const splitMoney = (value: number) => {
@@ -121,30 +122,21 @@ export default function CashierManualDiscountEditor({
 
   return (
     <div className="rounded-2xl border border-orange-200 bg-orange-50/40 p-4">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-base font-black leading-6 text-slate-900">{copy.manualDiscount}</p>
-          <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-orange-100 bg-white/80 px-2.5 py-2 text-sm font-semibold text-slate-600">
-            <span className="leading-5">{copy.discountEmployeeLimit}</span>
-            {kind === 'amount' && amountLimitParts ? (
-              <strong className="inline-flex shrink-0 items-baseline gap-1 text-[15px] font-black text-slate-900" dir="ltr">
-                {amountLimitParts.currency ? <span dir="rtl">{amountLimitParts.currency}</span> : null}
-                <span dir="ltr">{amountLimitParts.amount}</span>
-              </strong>
-            ) : (
-              <strong className="shrink-0 text-[15px] font-black text-slate-900" dir="ltr">
-                {policy.max_percentage_bps / 100}%
-              </strong>
-            )}
-          </div>
+      <div className="mb-3 min-w-0">
+        <p className="text-base font-black leading-6 text-slate-900">{copy.manualDiscount}</p>
+        <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-orange-100 bg-white/80 px-2.5 py-2 text-sm font-semibold text-slate-600">
+          <span className="leading-5">{copy.discountEmployeeLimit}</span>
+          {kind === 'amount' && amountLimitParts ? (
+            <strong className="inline-flex shrink-0 items-baseline gap-1 text-[15px] font-black text-slate-900" dir="ltr">
+              {amountLimitParts.currency ? <span dir="rtl">{amountLimitParts.currency}</span> : null}
+              <span dir="ltr">{amountLimitParts.amount}</span>
+            </strong>
+          ) : (
+            <strong className="shrink-0 text-[15px] font-black text-slate-900" dir="ltr">
+              {policy.max_percentage_bps / 100}%
+            </strong>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="min-h-9 shrink-0 rounded-lg px-2 py-1.5 text-sm font-bold text-red-600 transition hover:bg-red-50"
-        >
-          {copy.removeDiscount}
-        </button>
       </div>
 
       <div className="grid grid-cols-2 gap-2">
@@ -172,18 +164,28 @@ export default function CashierManualDiscountEditor({
         </button>
       </div>
 
-      <label className="mt-3 block text-sm font-bold text-slate-700">
-        {copy.discountValue}
-        <input
-          type="text"
-          inputMode="numeric"
-          value={valueText}
-          onChange={(event) => onValueChange(event.target.value)}
-          placeholder="0"
-          className="mt-1.5 h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-end text-xl font-black outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
-          dir="ltr"
-        />
-      </label>
+      <div className="mt-3 grid grid-cols-[9rem_minmax(0,1fr)] items-end gap-2" dir="ltr">
+        <button
+          type="button"
+          onClick={onRemove}
+          dir={textDir}
+          className="h-12 rounded-xl border border-red-200 bg-red-50 px-2.5 text-[13px] font-black leading-4 text-red-700 shadow-sm transition hover:border-red-300 hover:bg-red-100 active:bg-red-100"
+        >
+          {copy.removeDiscount}
+        </button>
+        <label className="block min-w-0 text-sm font-bold text-slate-700" dir={textDir}>
+          {copy.discountValue}
+          <input
+            type="text"
+            inputMode="numeric"
+            value={valueText}
+            onChange={(event) => onValueChange(event.target.value)}
+            placeholder="0"
+            className="mt-1.5 h-12 w-full rounded-xl border border-slate-300 bg-white px-3 text-end text-xl font-black outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+            dir="ltr"
+          />
+        </label>
+      </div>
 
       <div className="mt-3">
         <p className="text-sm font-bold text-slate-700">{copy.discountReason}</p>
