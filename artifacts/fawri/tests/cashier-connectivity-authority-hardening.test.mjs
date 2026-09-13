@@ -32,8 +32,20 @@ test('cashier connectivity bridge makes existing navigator consumers read author
   assert.match(authority, /next\.source !== 'browser'/);
 });
 
-test('cashier entry installs connectivity authority before rendering and keeps retry eligibility on native browser signal', async () => {
+test('cashier server reachability overrides false native offline signals and keeps recovery self-starting', async () => {
+  const authority = await source('src/lib/cashierConnectivity.ts');
   const entry = await source('src/cashierMain.tsx');
+
+  assert.match(authority, /CASHIER_REACHABILITY_PATH = '\/healthz'/);
+  assert.match(authority, /CASHIER_REACHABILITY_TIMEOUT_MS = 2_500/);
+  assert.match(authority, /CASHIER_OFFLINE_REPROBE_MS = 10_000/);
+  assert.match(authority, /window\.fetch\(CASHIER_REACHABILITY_PATH/);
+  assert.match(authority, /if \(!response\.ok\)[\s\S]*markCashierNetworkFailure\(\)/);
+  assert.match(authority, /markCashierNetworkResponse\(\);[\s\S]*return true/);
+  assert.match(authority, /return currentState\.online \|\| readNativeNavigatorOnline\(\)/);
+  assert.match(authority, /function browserOffline\(\)[\s\S]*probeCashierConnectivity\(\)/);
+  assert.match(authority, /if \(!currentState\.online\) void probeCashierConnectivity\(\)/);
+  assert.match(authority, /void probeCashierConnectivity\(\);[\s\S]*window\.setInterval/);
 
   assert.match(entry, /installCashierConnectivityAuthority/);
   assert.match(entry, /cashierNetworkAttemptAllowed/);
