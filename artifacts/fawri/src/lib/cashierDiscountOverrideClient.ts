@@ -2,6 +2,7 @@ import {
   cashierOperatorHeaders,
   getCashierOperatorSession,
 } from './cashierOperatorSessionRuntime';
+import type { CashierManualDiscountKind } from './cashierDiscountPolicyClient';
 import { rememberCashierDiscountOverrideOperationBinding } from './cashierDiscountOverrideOperationBinding';
 
 export type CashierDiscountOverrideApprover = {
@@ -112,6 +113,8 @@ export async function requestCashierDiscountOverrideApproval(input: {
   pin: string;
   operationId: string;
   manualDiscountMinor: number;
+  discountBaseMinor: number;
+  discountKind: CashierManualDiscountKind;
   reason: string;
 }): Promise<CashierDiscountOverrideApproval> {
   const response = await fetch('/api/cashier/operator/discount-override', {
@@ -123,6 +126,8 @@ export async function requestCashierDiscountOverrideApproval(input: {
       pin: input.pin,
       operation_id: input.operationId,
       manual_discount_minor: input.manualDiscountMinor,
+      discount_base_minor: input.discountBaseMinor,
+      discount_kind: input.discountKind,
       manual_discount_reason: input.reason.normalize('NFKC').trim(),
     }),
   });
@@ -158,6 +163,7 @@ export async function requestCashierDiscountOverrideApproval(input: {
     approvalId,
     operationId: input.operationId,
     manualDiscountMinor: input.manualDiscountMinor,
+    discountKind: input.discountKind,
     reason: input.reason,
     expiresAt: normalizedExpiresAt,
   });
