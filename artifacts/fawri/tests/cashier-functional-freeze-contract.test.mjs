@@ -7,6 +7,7 @@ const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'ut
 const pos = read('../src/pages/CashierPosPage.tsx');
 const checkout = read('../src/components/cashier/CashierCheckoutModal.tsx');
 const discountEditor = read('../src/components/cashier/CashierManualDiscountEditor.tsx');
+const overrideEditor = read('../src/components/cashier/CashierDiscountOverrideEditor.tsx');
 const discountCheckout = read('../src/lib/useCashierManualDiscountCheckout.ts');
 const connectivity = read('../src/lib/cashierConnectivity.ts');
 const keyboard = read('../src/lib/cashierFastCheckoutKeyboard.ts');
@@ -68,6 +69,22 @@ test('functional freeze keeps discount numeric entry unit-free and checkout-scop
     /input\.operationId && input\.operationId !== previousOperationId/,
   );
   assert.match(discountCheckout, /resetDraft\(\)/);
+});
+
+test('functional freeze keeps manager ceiling rejection explicit and fail-closed', () => {
+  assert.match(
+    overrideEditor,
+    /CASHIER_DISCOUNT_OVERRIDE_MANAGER_LIMIT_EXCEEDED/,
+  );
+  assert.match(overrideEditor, /copy\.managerApprovalManagerLimitExceeded/);
+  assert.match(
+    enhancementCopy,
+    /managerApprovalManagerLimitExceeded: 'هذا الخصم يتجاوز حد صلاحية المدير لهذا النوع من الخصم\.'/,
+  );
+  assert.match(
+    enhancementCopy,
+    /managerApprovalManagerLimitExceeded: 'This discount exceeds this manager’s allowed limit for this discount type\.'/,
+  );
 });
 
 test('functional freeze keeps server-verified cashier reachability and physical checkout action sides', () => {
