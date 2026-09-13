@@ -217,6 +217,122 @@ html[data-cashier-view='pos'] .cashier-cart-compact-panel *::-webkit-scrollbar {
   display: none;
 }
 
+/* History and report subpages use the page header as their only chrome. The
+   operator dock is a POS-only shift control and must not float over these
+   read/compensation views. */
+html[data-cashier-view='history'] #cashier-root > div.relative > div.fixed:first-child,
+html[data-cashier-view='reports'] #cashier-root > div.relative > div.fixed:first-child {
+  display: none !important;
+}
+
+/* Keep operational subpages on the same desktop canvas as the cashier itself. */
+html[data-cashier-view='history'] main > div,
+html[data-cashier-view='reports'] main > div {
+  max-width: 1500px !important;
+}
+
+@media (min-width: 1024px) {
+  html[data-cashier-view='history'] main > div,
+  html[data-cashier-view='reports'] main > div {
+    padding: 1rem !important;
+  }
+}
+
+/* Sales history: dissolve the old status/back wrapper so the runtime-derived
+   connectivity badge sits directly beside the page identity. Push only the
+   navigation action to the far edge, matching the POS header hierarchy. */
+html[data-cashier-view='history'] main > div > header {
+  justify-content: flex-start !important;
+  gap: 0.65rem !important;
+  padding-block: 0.65rem !important;
+}
+
+html[data-cashier-view='history'] main > div > header > div:last-child {
+  display: contents !important;
+}
+
+html[data-cashier-view='history'] main > div > header > div:last-child > span {
+  display: inline-flex;
+  height: 32px;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.72rem !important;
+  border-radius: 0.625rem !important;
+  font-size: 0.75rem;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  white-space: nowrap;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.035);
+}
+
+html[data-cashier-view='history'] main > div > header > div:last-child > span.bg-emerald-50 {
+  border: 1px solid #a7f3d0 !important;
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+}
+
+html[data-cashier-view='history'] main > div > header > div:last-child > span.bg-slate-100 {
+  border: 1px solid #cbd5e1 !important;
+  background: #f8fafc !important;
+  color: #475569 !important;
+}
+
+html[data-cashier-view='history'] main > div > header > div:last-child > a {
+  margin-inline-start: auto !important;
+  min-height: 36px;
+}
+
+/* Return controls are cashier actions, not inline links. Keep them clearly
+   touchable and visually subordinate to the final compensation action. */
+html[data-cashier-view='history'] section button.text-orange-600 {
+  min-height: 38px;
+  padding: 0.45rem 0.8rem !important;
+  border: 1px solid #fed7aa;
+  border-radius: 0.65rem;
+  background: #fff7ed;
+  color: #c2410c !important;
+  text-decoration: none !important;
+}
+
+html[data-cashier-view='history'] section button.text-orange-600:hover {
+  border-color: #fdba74;
+  background: #ffedd5;
+  color: #9a3412 !important;
+}
+
+html[data-cashier-view='history'] section div[dir='ltr'] > button.h-8.w-8 {
+  width: 2.5rem !important;
+  height: 2.5rem !important;
+  min-width: 2.5rem !important;
+  min-height: 2.5rem !important;
+}
+
+html[data-cashier-view='history'] section div[dir='ltr'] > span.min-w-8 {
+  min-width: 2.25rem !important;
+}
+
+html[data-cashier-view='history'] main > div > div.grid > section:last-child button {
+  min-height: 40px;
+}
+
+/* Reports use the same quiet navigation style as History instead of presenting
+   Back as a destructive/primary black action. */
+html[data-cashier-view='reports'] main > div > header {
+  padding-block: 0.65rem !important;
+}
+
+html[data-cashier-view='reports'] main > div > header a[href='/cashier.html'] {
+  border: 1px solid #e2e8f0 !important;
+  background: #fff !important;
+  color: #334155 !important;
+  box-shadow: none !important;
+}
+
+html[data-cashier-view='reports'] main > div > header a[href='/cashier.html']:hover {
+  background: #f8fafc !important;
+}
+
 @media (max-width: 1023px) {
   html[data-cashier-operator-ready='1'][data-cashier-view='pos'] #cashier-root > div.relative > div.fixed:first-child {
     top: 1.9rem !important;
@@ -268,5 +384,30 @@ html[data-cashier-view='pos'] .cashier-cart-compact-panel *::-webkit-scrollbar {
 
   html[data-cashier-view='pos'] .cashier-cart-compact-card {
     min-height: 66px;
+  }
+
+  html[data-cashier-view='history'] main > div > header {
+    align-items: center !important;
+  }
+
+  html[data-cashier-view='history'] main > div > header > div:first-child {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  html[data-cashier-view='history'] main > div > header > div:first-child > div {
+    min-width: 0;
+  }
+
+  html[data-cashier-view='history'] main > div > header > div:first-child p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html[data-cashier-view='history'] main > div > header > div:last-child > a {
+    width: 100%;
+    margin-inline-start: 0 !important;
+    text-align: center;
   }
 }
