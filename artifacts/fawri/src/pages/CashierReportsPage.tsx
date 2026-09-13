@@ -301,8 +301,11 @@ export default function CashierReportsPage() {
                         {currency.top_products.map((product, index) => (
                           <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-4 py-3">
                             <div className="min-w-0">
-                              <p className="font-bold"><span className="me-2 text-slate-400">#{index + 1}</span>{product.product_name}</p>
-                              {product.variant_name ? <p className="mt-0.5 text-xs text-slate-500">{product.variant_name}</p> : null}
+                              <p className="flex min-w-0 items-baseline gap-2 font-bold">
+                                <span className="shrink-0 text-slate-400" dir="ltr">#{index + 1}</span>
+                                <bdi dir="auto" className="min-w-0 break-words">{product.product_name}</bdi>
+                              </p>
+                              {product.variant_name ? <p className="mt-0.5 text-xs text-slate-500"><bdi dir="auto">{product.variant_name}</bdi></p> : null}
                             </div>
                             <div className="shrink-0 text-end">
                               <p className="font-bold">{product.net_units} {labels.sold}</p>
