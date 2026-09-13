@@ -21,15 +21,17 @@ html[data-cashier-view='history'] main > div > div.grid > section:last-child > d
 }
 
 /* Desktop history uses one bounded scroll surface only: the potentially long
-   sales list. Selected-sale details stay fully expanded with no nested scroll. */
+   sales list. Selected-sale details stay fully expanded with no nested scroll.
+   Scope the page-height rules below the ready operator wrapper so they never
+   stretch the operator gate/loading card before permission validation ends. */
 @media (min-width: 1024px) {
-  html[data-cashier-view='history'] main {
+  html[data-cashier-view='history'] #cashier-root > div.relative > main {
     height: auto !important;
     min-height: 100vh !important;
     overflow: visible !important;
   }
 
-  html[data-cashier-view='history'] main > div {
+  html[data-cashier-view='history'] #cashier-root > div.relative > main > div {
     height: auto !important;
     min-height: 100vh !important;
   }
@@ -67,6 +69,17 @@ html[data-cashier-view='history'] main > div > div.grid > section:last-child > d
   html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-thumb {
     border-radius: 999px;
     background: #cbd5e1;
+  }
+
+  /* Chromium/Opera can expose native stepper arrows at the ends of a custom
+     scrollbar. Keep scrolling and the thumb, but remove those browser-native
+     buttons so the sales list matches the rest of the cashier chrome. */
+  html[data-cashier-view='history'] main > div > div.grid > section:first-child > div.p-2::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+    -webkit-appearance: none;
+    background: transparent;
   }
 
   /* Detail card: no internal scrolling. Tighten vertical rhythm slightly so a
