@@ -52,16 +52,21 @@ test('cashier history keeps mixed sale references readable and evidence metadata
   assert.match(historyPolish, /font-size: 0\.75rem !important;/);
 });
 
-test('cashier history uses page flow instead of nested desktop scroll panes', () => {
-  assert.match(historyPolish, /Desktop history should read as one page, not nested scrolling panes/);
-  assert.match(historyPolish, /html\[data-cashier-view='history'\] main \{[\s\S]*height: auto !important;[\s\S]*overflow: visible !important;/);
-  assert.match(historyPolish, /main > div > div\.grid \{[\s\S]*flex: 0 0 auto !important;/);
-  assert.match(historyPolish, /section:first-child,[\s\S]*section:last-child \{[\s\S]*overflow: visible !important;/);
-  assert.match(historyPolish, /section:first-child > div\.p-2 \{[\s\S]*overflow: visible !important;/);
-  assert.doesNotMatch(historyPolish, /scrollbar-width:\s*thin/);
+test('cashier history gives scrolling only to the bounded sales list on desktop', () => {
+  assert.match(historyPolish, /one bounded scroll surface only: the potentially long[\s\S]*sales list/);
+  assert.match(historyPolish, /section:first-child \{[\s\S]*height: clamp\(22rem, calc\(100dvh - 10rem\), 44rem\);[\s\S]*overflow: hidden !important;/);
+  assert.match(historyPolish, /section:first-child > div\.p-2 \{[\s\S]*overflow-y: auto !important;[\s\S]*scrollbar-width: thin;/);
+  assert.match(historyPolish, /section:last-child \{[\s\S]*overflow: visible !important;/);
+});
+
+test('cashier history keeps sale details compact without a nested scroll surface', () => {
+  assert.match(historyPolish, /Detail card: no internal scrolling/);
+  assert.match(historyPolish, /section:last-child > div > div:first-child \{[\s\S]*padding-block: 0\.75rem !important;/);
+  assert.match(historyPolish, /section:last-child > div > div\.grid \{[\s\S]*gap: 0\.5rem !important;[\s\S]*padding-block: 0\.75rem !important;/);
+  assert.match(historyPolish, /section:last-child > div > div\.p-4 \{[\s\S]*padding-block: 0\.75rem !important;/);
 });
 
 test('cashier shell cache-busts the polished visual contracts', () => {
   assert.match(cashierHtml, /cashier-visual-qa\.css\?v=subpage-polish-v1/);
-  assert.match(cashierHtml, /cashier-history-polish\.css\?v=history-readability-v2/);
+  assert.match(cashierHtml, /cashier-history-polish\.css\?v=history-sales-scroll-v3/);
 });
