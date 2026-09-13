@@ -378,9 +378,13 @@ export default function CashierCheckoutModal({
           )}
         </div>
 
-        <footer className="grid shrink-0 grid-cols-[0.8fr_1.2fr] gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4">
+        <footer
+          dir="ltr"
+          className="grid shrink-0 grid-cols-[0.8fr_1.2fr] gap-2 border-t border-slate-100 bg-slate-50 px-5 py-4"
+        >
           <button
             type="button"
+            dir={dir}
             onClick={onClose}
             disabled={committing || overrideApprovalLoading}
             className="h-12 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50"
@@ -389,6 +393,7 @@ export default function CashierCheckoutModal({
           </button>
           <button
             type="button"
+            dir={dir}
             onClick={onSubmit}
             disabled={!canSubmit || committing || overrideApprovalLoading}
             className="h-12 rounded-xl bg-orange-600 text-sm font-black text-white shadow-sm transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:bg-slate-300"
