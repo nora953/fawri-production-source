@@ -7,6 +7,7 @@ const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'ut
 const pos = read('../src/pages/CashierPosPage.tsx');
 const checkout = read('../src/components/cashier/CashierCheckoutModal.tsx');
 const discountEditor = read('../src/components/cashier/CashierManualDiscountEditor.tsx');
+const discountCheckout = read('../src/lib/useCashierManualDiscountCheckout.ts');
 const keyboard = read('../src/lib/cashierFastCheckoutKeyboard.ts');
 const scanner = read('../src/lib/cashierBarcodeScanner.ts');
 const operatorRuntime = read('../src/lib/cashierOperatorPosRuntime.ts');
@@ -54,6 +55,17 @@ test('functional freeze keeps manual discount reasons touch-first without losing
   assert.match(discountEditor, /note\.trim\(\) === ''\s*\? selectedReason/);
   assert.match(enhancementCopy, /discountReasonRequired: 'اختر سبب الخصم قبل تأكيد البيع\.'/);
   assert.match(enhancementCopy, /discountReasonRequired: 'Choose a discount reason before confirming the sale\.'/);
+});
+
+test('functional freeze keeps discount numeric entry uncluttered and checkout-scoped', () => {
+  assert.match(discountEditor, /!valueText \? \(/);
+  assert.match(discountEditor, /kind === 'percentage' \? '%' : currencyCode/);
+  assert.match(discountCheckout, /previousOperationIdRef/);
+  assert.match(
+    discountCheckout,
+    /input\.operationId && input\.operationId !== previousOperationId/,
+  );
+  assert.match(discountCheckout, /resetDraft\(\)/);
 });
 
 test('functional freeze keeps sale commit single-flight and manager approval fail-closed', () => {
