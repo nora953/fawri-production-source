@@ -23,10 +23,21 @@ test('cashier history keeps connectivity beside identity and navigation at the f
   assert.match(visualQa, /data-cashier-view='history'[\s\S]*span\.bg-emerald-50[\s\S]*border: 1px solid #a7f3d0 !important;/);
 });
 
+test('cashier reports exposes live connectivity with the POS badge hierarchy', () => {
+  assert.match(reports, /const \[online, setOnline\] = useState\(\(\) => navigator\.onLine\)/);
+  assert.match(reports, /window\.addEventListener\('online', updateOnline\)/);
+  assert.match(reports, /window\.addEventListener\('offline', updateOnline\)/);
+  assert.match(reports, /online \? labels\.online : labels\.offline/);
+  assert.match(reports, /inline-flex h-8 items-center justify-center rounded-\[0\.625rem\]/);
+  assert.match(reports, /online: 'متصل'/);
+  assert.match(reports, /offline: 'غير متصل'/);
+});
+
 test('cashier operational subpages share the POS desktop canvas and quiet back action', () => {
   assert.match(visualQa, /data-cashier-view='history'[\s\S]*data-cashier-view='reports'[\s\S]*max-width: 1500px !important;/);
   assert.match(visualQa, /data-cashier-view='reports'[\s\S]*a\[href='\/cashier\.html'\][\s\S]*background: #fff !important;/);
-  assert.match(reports, /href="\/cashier\.html"/);
+  assert.match(reports, /max-w-\[1500px\] p-3 lg:p-4/);
+  assert.match(reports, /href="\/cashier\.html" className="rounded-xl border border-slate-200 bg-white/);
 });
 
 test('cashier history return controls remain touch-sized', () => {
