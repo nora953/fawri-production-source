@@ -1,5 +1,6 @@
 import {
   cashierManualDiscountLimitMinor,
+  type CashierManualDiscountKind,
 } from './cashierDiscountPolicy';
 import {
   disabledStoredCashierDiscountPolicy,
@@ -54,6 +55,17 @@ function instant(value: unknown, field: string): string {
     );
   }
   return new Date(millis).toISOString();
+}
+
+function discountKind(value: unknown): CashierManualDiscountKind | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (value === 'amount' || value === 'percentage') return value;
+  throw new CashierSyncError(
+    'CASHIER_OPERATOR_DISCOUNT_INVALID',
+    'sale.manual_discount_kind is invalid',
+    400,
+    { field: 'sale.manual_discount_kind' },
+  );
 }
 
 function saleEnvelope(body: unknown): {
@@ -139,6 +151,7 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
     );
   }
 
+  const kind = discountKind(payload.manual_discount_kind);
   const postPromotion = postPromotionTotal(payload);
   await withMerchantOperationalTransaction(
     input.context.merchant_id,
@@ -160,6 +173,7 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
       const limit = cashierManualDiscountLimitMinor({
         postPromotionTotalMinor: postPromotion,
         policy,
+        kind,
       });
       if (manualDiscount <= limit) return;
 
@@ -188,6 +202,7 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
         approvalId,
         manualDiscountMinor: manualDiscount,
         discountBaseMinor: postPromotion,
+        discountKind: kind,
         reason,
       });
     },
