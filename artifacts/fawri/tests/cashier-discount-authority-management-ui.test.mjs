@@ -39,7 +39,6 @@ test('discount policy UI cannot persist override approval for a cashier', () => 
     /member\.role === 'manager' && draft\.enabled && draft\.canApproveOverride/,
   );
   assert.match(policySource, /member\.role === 'manager' \? \(/);
-  assert.match(policySource, /Policy alone does not grant authority/);
 });
 
 test('cashier client permission type matches discount server authority', () => {

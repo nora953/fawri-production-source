@@ -108,7 +108,9 @@ test('cashier keeps one operator-aware manual sync action and auto-syncs real PO
   assert.match(entry, /window\.addEventListener\('online', handleOnline\)/);
   assert.match(entry, /window\.setInterval/);
   assert.match(entry, /AUTO_SYNC_RETRY_BACKOFF_MS/);
-  assert.match(entry, /result\.pending_after === 0/);
+  assert.match(entry, /if \(result\.pending_after > 0\)/);
+  assert.match(entry, /status: 'synced'/);
+  assert.match(entry, /pending: 0/);
   assert.match(entry, /!diagnostics && !sync && !demoRequested/);
   assert.match(entry, /storedCashierCopy\(\)\.runtime/);
 
