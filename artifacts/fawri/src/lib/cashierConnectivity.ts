@@ -10,6 +10,9 @@ export type CashierConnectivityState = {
 
 const CONNECTIVITY_EVENT = 'fawri:cashier-connectivity';
 const TRANSIENT_GATEWAY_STATUSES = new Set([502, 503, 504]);
+const CASHIER_REACHABILITY_PATH = '/healthz';
+const CASHIER_REACHABILITY_TIMEOUT_MS = 2_500;
+const CASHIER_OFFLINE_REPROBE_MS = 10_000;
 
 function nativeNavigatorOnlineReader(): () => boolean {
   if (typeof navigator === 'undefined') return () => true;
@@ -39,6 +42,7 @@ let currentState: CashierConnectivityState = {
 };
 let installed = false;
 let broadcastingCompatibilityEvent = false;
+let reachabilityProbe: Promise<boolean> | null = null;
 
 function publishCashierConnectivity(next: CashierConnectivityState): void {
   const onlineChanged = currentState.online !== next.online;
@@ -68,11 +72,19 @@ function publishCashierConnectivity(next: CashierConnectivityState): void {
 function browserOnline(): void {
   if (broadcastingCompatibilityEvent) return;
   publishCashierConnectivity({ online: true, source: 'browser' });
+  void probeCashierConnectivity();
 }
 
 function browserOffline(): void {
   if (broadcastingCompatibilityEvent) return;
-  publishCashierConnectivity({ online: false, source: 'browser' });
+  // Browser/OS connectivity flags are advisory only. Some desktop browsers can
+  // report offline while the same-origin Fawri service is still reachable.
+  // Verify the actual service before locking online-only cashier capabilities.
+  void probeCashierConnectivity();
+}
+
+function probeOnFocus(): void {
+  if (!currentState.online) void probeCashierConnectivity();
 }
 
 function requestUrl(input: unknown): string {
@@ -113,7 +125,7 @@ export function cashierConnectivityIsOnline(): boolean {
 }
 
 export function cashierNetworkAttemptAllowed(): boolean {
-  return readNativeNavigatorOnline();
+  return currentState.online || readNativeNavigatorOnline();
 }
 
 export function markCashierOffline(): void {
@@ -126,6 +138,43 @@ export function markCashierNetworkFailure(): void {
 
 export function markCashierNetworkResponse(): void {
   publishCashierConnectivity({ online: true, source: 'network_response' });
+}
+
+export function probeCashierConnectivity(): Promise<boolean> {
+  if (typeof window === 'undefined') return Promise.resolve(true);
+  if (reachabilityProbe) return reachabilityProbe;
+
+  const controller = new AbortController();
+  const timeout = window.setTimeout(
+    () => controller.abort(),
+    CASHIER_REACHABILITY_TIMEOUT_MS,
+  );
+
+  reachabilityProbe = window.fetch(CASHIER_REACHABILITY_PATH, {
+    method: 'GET',
+    cache: 'no-store',
+    credentials: 'same-origin',
+    headers: { Accept: 'application/json' },
+    signal: controller.signal,
+  })
+    .then((response) => {
+      if (!response.ok) {
+        markCashierNetworkFailure();
+        return false;
+      }
+      markCashierNetworkResponse();
+      return true;
+    })
+    .catch(() => {
+      markCashierNetworkFailure();
+      return false;
+    })
+    .finally(() => {
+      window.clearTimeout(timeout);
+      reachabilityProbe = null;
+    });
+
+  return reachabilityProbe;
 }
 
 export function subscribeCashierConnectivity(
@@ -165,6 +214,7 @@ export function installCashierConnectivityAuthority(): void {
 
   window.addEventListener('online', browserOnline);
   window.addEventListener('offline', browserOffline);
+  window.addEventListener('focus', probeOnFocus);
 
   const originalFetch = window.fetch.bind(window);
   const wrappedFetch: typeof window.fetch = async (...args) => {
@@ -187,4 +237,12 @@ export function installCashierConnectivityAuthority(): void {
     }
   };
   window.fetch = wrappedFetch;
+
+  // Establish transport truth immediately, even when navigator.onLine starts
+  // with a false negative. Genuine offline states are periodically re-probed so
+  // recovery does not depend on the browser emitting a reliable online event.
+  void probeCashierConnectivity();
+  window.setInterval(() => {
+    if (!currentState.online) void probeCashierConnectivity();
+  }, CASHIER_OFFLINE_REPROBE_MS);
 }
