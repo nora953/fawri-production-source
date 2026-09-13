@@ -60,6 +60,8 @@ export default function CashierDiscountOverrideEditor({
   const pinReady = /^\d{4,8}$/.test(pin);
   const locked = errorCode === 'CASHIER_PIN_LOCKED';
   const invalidPin = errorCode === 'CASHIER_OPERATOR_INVALID';
+  const managerLimitExceeded =
+    errorCode === 'CASHIER_DISCOUNT_OVERRIDE_MANAGER_LIMIT_EXCEEDED';
 
   return (
     <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-3">
@@ -114,7 +116,9 @@ export default function CashierDiscountOverrideEditor({
                 ? copy.managerApprovalLocked
                 : invalidPin
                   ? copy.managerApprovalInvalidPin
-                  : copy.managerApprovalFailed}
+                  : managerLimitExceeded
+                    ? copy.managerApprovalManagerLimitExceeded
+                    : copy.managerApprovalFailed}
             </p>
           ) : null}
 
