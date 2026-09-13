@@ -3,10 +3,10 @@ import { createPortal } from 'react-dom';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 
-const LANGUAGE_OPTIONS: Array<{ id: Lang; label: string }> = [
-  { id: 'ar', label: 'العربية' },
-  { id: 'ku', label: 'کوردی' },
-  { id: 'en', label: 'English' },
+const LANGUAGE_OPTIONS: Array<{ id: Lang; label: string; title: string }> = [
+  { id: 'ar', label: 'AR', title: 'العربية' },
+  { id: 'ku', label: 'KU', title: 'کوردی' },
+  { id: 'en', label: 'EN', title: 'English' },
 ];
 
 const SWITCHER_LABEL: Record<Lang, string> = {
@@ -58,7 +58,7 @@ export default function CashierLanguageSwitcher() {
       dir={dir}
       role="group"
       aria-label={SWITCHER_LABEL[lang]}
-      className="inline-flex h-9 shrink-0 items-center overflow-hidden rounded-xl border border-slate-200 bg-white p-0.5 text-[11px] font-bold shadow-sm"
+      className="flex shrink-0 items-center overflow-hidden rounded-xl border border-slate-200 bg-white p-0.5 text-[11px] font-bold shadow-sm"
     >
       {LANGUAGE_OPTIONS.map(language => (
         <button
@@ -66,7 +66,9 @@ export default function CashierLanguageSwitcher() {
           type="button"
           onClick={() => setLang(language.id)}
           aria-pressed={lang === language.id}
-          className={`h-8 rounded-lg px-2.5 transition-colors ${
+          aria-label={language.title}
+          title={language.title}
+          className={`rounded-lg px-2 py-1.5 transition-colors ${
             lang === language.id
               ? 'bg-orange-500 text-white shadow-sm'
               : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
