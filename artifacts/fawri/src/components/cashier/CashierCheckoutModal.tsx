@@ -108,11 +108,11 @@ function MoneyValue({
   const parts = moneyParts(amountMinor, currencyCode, fractionDigits, lang);
   return (
     <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap" dir="ltr">
-      {negative ? <span className={amountClassName}>−</span> : null}
-      <span className={amountClassName} dir="ltr">{parts.amount}</span>
       {parts.currency ? (
         <span className={currencyClassName} dir="rtl">{parts.currency}</span>
       ) : null}
+      {negative ? <span className={amountClassName}>−</span> : null}
+      <span className={amountClassName} dir="ltr">{parts.amount}</span>
     </span>
   );
 }
