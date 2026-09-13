@@ -106,6 +106,16 @@ function nonNegativeMoney(value: unknown, field: string): number {
   return parsed;
 }
 
+function discountKind(value: unknown): CashierManualDiscountKind {
+  if (value === 'amount' || value === 'percentage') return value;
+  throw new CashierStaffAuthorityError(
+    'CASHIER_DISCOUNT_OVERRIDE_INPUT_INVALID',
+    'discount_kind is invalid',
+    400,
+    { field: 'discount_kind' },
+  );
+}
+
 function normalizedReason(value: unknown): string {
   const reason = String(value ?? '').normalize('NFKC').trim();
   if (!reason || reason.length > 200 || /[\u0000-\u001f\u007f]/.test(reason)) {
@@ -286,6 +296,8 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
   pin: unknown;
   operationId: unknown;
   manualDiscountMinor: unknown;
+  discountBaseMinor: unknown;
+  discountKind: unknown;
   reason: unknown;
 }): Promise<CashierDiscountOverrideApprovalView> {
   if (!input.context.permissions.includes('sale.discount')) {
@@ -298,7 +310,17 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
   const approverStaffId = identifier(input.approverStaffId, 'approver_staff_id');
   const operationId = identifier(input.operationId, 'operation_id');
   const manualDiscountMinor = positiveMoney(input.manualDiscountMinor, 'manual_discount_minor');
+  const discountBaseMinor = nonNegativeMoney(input.discountBaseMinor, 'discount_base_minor');
+  const kind = discountKind(input.discountKind);
   const reason = normalizedReason(input.reason);
+  if (manualDiscountMinor > discountBaseMinor) {
+    throw new CashierStaffAuthorityError(
+      'CASHIER_DISCOUNT_OVERRIDE_INPUT_INVALID',
+      'manual discount exceeds the discount base',
+      400,
+      { field: 'manual_discount_minor' },
+    );
+  }
   if (approverStaffId === input.context.staff_id) {
     throw new CashierStaffAuthorityError(
       'CASHIER_DISCOUNT_OVERRIDE_SELF_APPROVAL_FORBIDDEN',
@@ -322,6 +344,22 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
         403,
       );
     }
+    const requesterLimitMinor = cashierManualDiscountLimitMinor({
+      postPromotionTotalMinor: discountBaseMinor,
+      policy: requesterPolicy,
+      kind,
+    });
+    if (manualDiscountMinor <= requesterLimitMinor) {
+      throw new CashierStaffAuthorityError(
+        'CASHIER_DISCOUNT_OVERRIDE_NOT_REQUIRED',
+        'manual discount is already within the operator policy limit',
+        409,
+        {
+          requested_discount_minor: manualDiscountMinor,
+          employee_limit_minor: requesterLimitMinor,
+        },
+      );
+    }
 
     const approver = await loadApprover(
       client,
@@ -336,8 +374,29 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
         403,
       );
     }
-    await assertApproverAuthority(client, input.context.merchant_id, approver);
+    const approverPolicy = await assertApproverAuthority(
+      client,
+      input.context.merchant_id,
+      approver,
+    );
     await verifyApproverPin(client, input.context.merchant_id, approver, input.pin);
+
+    const managerLimitMinor = cashierManualDiscountLimitMinor({
+      postPromotionTotalMinor: discountBaseMinor,
+      policy: approverPolicy,
+      kind,
+    });
+    if (manualDiscountMinor > managerLimitMinor) {
+      throw new CashierStaffAuthorityError(
+        'CASHIER_DISCOUNT_OVERRIDE_MANAGER_LIMIT_EXCEEDED',
+        'manual discount exceeds the approving manager policy limit',
+        403,
+        {
+          requested_discount_minor: manualDiscountMinor,
+          manager_limit_minor: managerLimitMinor,
+        },
+      );
+    }
 
     const approvalId = `cashier_discount_override_${crypto.randomUUID()}`;
     let rows: ApprovalRow[];
