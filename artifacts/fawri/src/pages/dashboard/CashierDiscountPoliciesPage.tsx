@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from '@/lib/reactCompat';
 import { useI18n } from '@/lib/i18n';
 import { getMerchantRegionalContext, type MerchantRegionalContext } from '@/lib/merchantRegionalUiApi';
 import {
@@ -42,65 +42,65 @@ type Draft = {
 const TEXT: Record<Lang, Record<string, string>> = {
   ar: {
     title: 'صلاحيات خصم موظفي الكاشير',
-    subtitle: 'حدد حدود الخصم لكل موظف، ومن يحق له اعتماد التجاوز.',
+    subtitle: 'حدد حدًا مستقلًا للخصم بالمبلغ وحدًا مستقلًا للخصم بالنسبة.',
     back: 'العودة للكاشيرات والموظفين',
     enabled: 'السماح بالخصم اليدوي',
-    maxPercent: 'النسبة القصوى %',
-    maxAmount: 'الحد المالي للخصم',
-    combinedLimitHint: 'يُطبَّق الحد الأقل بين النسبة والحد المالي.',
-    currentLimit: 'الحد الحالي: {percent}% وبحد أقصى {amount}.',
-    override: 'السماح لهذا المدير باعتماد تجاوز حد موظف آخر ضمن حدود خصمه.',
+    maxPercent: 'الحد الأقصى للخصم بالنسبة %',
+    maxAmount: 'الحد الأقصى للخصم بالمبلغ',
+    independentLimitHint: 'يُطبَّق حد النوع الذي يختاره الموظف فقط. تجاوز هذا الحد يتطلب موافقة مدير.',
+    currentLimit: 'المبلغ: حتى {amount} · النسبة: حتى {percent}%.',
+    override: 'السماح لهذا المدير باعتماد تجاوز حد موظف آخر ضمن حد النوع نفسه المسموح للمدير.',
     save: 'حفظ',
     saving: 'جارٍ الحفظ...',
     loading: 'جارٍ تحميل الموظفين...',
     failed: 'تعذر تحميل أو حفظ سياسة الخصم.',
     saved: 'تم حفظ سياسة الخصم.',
-    percentRequired: 'أدخل النسبة القصوى، أو 0 إذا كان الحد صفراً.',
-    amountRequired: 'أدخل مبلغ خصم أكبر من صفر.',
+    percentRequired: 'أدخل الحد الأقصى للنسبة، أو 0 لمنع الخصم بالنسبة.',
+    amountRequired: 'أدخل حد الخصم بالمبلغ أكبر من صفر.',
     disabledPolicy: 'الخصم اليدوي غير مسموح لهذا الموظف.',
     active: 'نشط', disabledStatus: 'معطل', cashier: 'كاشير', manager: 'مدير',
-    hint: 'الخصم لا يغيّر سعر المنتج الأصلي ويُسجَّل بشكل مستقل.',
+    hint: 'الخصم اليدوي لا يغيّر سعر المنتج الأصلي ويُسجَّل بشكل مستقل.',
     permissionHint: 'حفظ السياسة يحدّث صلاحيات الموظف تلقائيًا.',
   },
   ku: {
     title: 'دەسەڵاتی داشکاندنی کارمەندانی کاشێر',
-    subtitle: 'سنووری داشکاندن بۆ هەر کارمەندێک و دەسەڵاتی پەسەندکردنی تێپەڕاندن دیاری بکە.',
+    subtitle: 'سنوورێکی جیاواز بۆ بڕی داشکاندن و سنوورێکی جیاواز بۆ ڕێژە دیاری بکە.',
     back: 'گەڕانەوە بۆ کاشێر و کارمەندان',
     enabled: 'ڕێگەدان بە داشکاندنی دەستی',
-    maxPercent: 'زۆرترین ڕێژە %',
-    maxAmount: 'سنووری دارایی داشکاندن',
-    combinedLimitHint: 'هەمیشە سنووری کەمتر لە ڕێژە و بڕی دارایی جێبەجێ دەکرێت.',
-    currentLimit: 'سنووری ئێستا: {percent}% و زۆرترین {amount}.',
-    override: 'ڕێگەدان بە ئەم بەڕێوەبەرە بۆ پەسەندکردنی تێپەڕاندن لە سنووری کارمەندێکی تر، لە ناو سنووری خۆی.',
+    maxPercent: 'زۆرترین سنووری داشکاندن بە ڕێژە %',
+    maxAmount: 'زۆرترین سنووری داشکاندن بە بڕ',
+    independentLimitHint: 'تەنها سنووری ئەو جۆرەی کارمەند هەڵیدەبژێرێت جێبەجێ دەکرێت. تێپەڕاندنی سنوور پەسەندی بەڕێوەبەر پێویستە.',
+    currentLimit: 'بڕ: تا {amount} · ڕێژە: تا {percent}%.',
+    override: 'ڕێگەدان بە بەڕێوەبەر بۆ پەسەندکردنی تێپەڕاندنی سنووری کارمەندێکی تر لە سنووری هەمان جۆری خۆی.',
     save: 'پاشەکەوت',
     saving: 'پاشەکەوت دەکرێت...',
     loading: 'کارمەندان بار دەکرێن...',
     failed: 'بارکردن یان پاشەکەوتکردن سەرکەوتوو نەبوو.',
     saved: 'سیاسەتی داشکاندن پاشەکەوت کرا.',
-    percentRequired: 'زۆرترین ڕێژە بنووسە، یان 0 ئەگەر سنوور سفرە.',
-    amountRequired: 'بڕێکی داشکاندن لە سفر زیاتر بنووسە.',
+    percentRequired: 'زۆرترین ڕێژە بنووسە، یان 0 بۆ ڕێگەنەدان بە داشکاندنی ڕێژەیی.',
+    amountRequired: 'سنووری داشکاندن بە بڕێکی لە سفر زیاتر بنووسە.',
     disabledPolicy: 'داشکاندنی دەستی بۆ ئەم کارمەندە ڕێگەپێدراو نییە.',
     active: 'چالاک', disabledStatus: 'ناچالاک', cashier: 'کاشێر', manager: 'بەڕێوەبەر',
-    hint: 'داشکاندن نرخی بنەڕەتی کاڵا ناگۆڕێت و بە جیاوازی تۆمار دەکرێت.',
+    hint: 'داشکاندنی دەستی نرخی بنەڕەتی کاڵا ناگۆڕێت و بە جیاوازی تۆمار دەکرێت.',
     permissionHint: 'پاشەکەوتکردنی سیاسەت دەسەڵاتەکانی کارمەند بە خۆکار نوێ دەکاتەوە.',
   },
   en: {
     title: 'Cashier employee discount authority',
-    subtitle: 'Set each employee’s discount limits and who may approve an override.',
+    subtitle: 'Set an independent fixed-amount limit and an independent percentage limit.',
     back: 'Back to cashiers & staff',
     enabled: 'Allow manual discount',
-    maxPercent: 'Maximum %',
-    maxAmount: 'Discount amount limit',
-    combinedLimitHint: 'The lower of the percentage and amount limits always applies.',
-    currentLimit: 'Current limit: {percent}% up to {amount}.',
-    override: 'Allow this manager to approve another employee’s over-limit discount within the manager’s own limit.',
+    maxPercent: 'Maximum percentage discount %',
+    maxAmount: 'Maximum fixed discount amount',
+    independentLimitHint: 'Only the limit for the discount type selected by the employee applies. Exceeding that limit requires manager approval.',
+    currentLimit: 'Amount: up to {amount} · Percentage: up to {percent}%.',
+    override: 'Allow this manager to approve another employee’s over-limit discount within the manager’s limit for the same discount type.',
     save: 'Save',
     saving: 'Saving...',
     loading: 'Loading staff...',
     failed: 'Could not load or save the discount policy.',
     saved: 'Discount policy saved.',
-    percentRequired: 'Enter the maximum percentage, or 0 for a zero limit.',
-    amountRequired: 'Enter a discount amount greater than zero.',
+    percentRequired: 'Enter the maximum percentage, or 0 to disable percentage discounts.',
+    amountRequired: 'Enter a fixed discount amount greater than zero.',
     disabledPolicy: 'Manual discount is not allowed for this employee.',
     active: 'Active', disabledStatus: 'Disabled', cashier: 'Cashier', manager: 'Manager',
     hint: 'Manual discounts do not change the product’s original price and are recorded separately.',
@@ -112,9 +112,7 @@ function draftFromPolicy(policy: Policy, fractionDigits: number): Draft {
   return {
     enabled: policy.enabled,
     maxPercent: String(policy.max_percentage_bps / 100),
-    maxAmount: policy.max_amount_minor === null
-      ? ''
-      : merchantMoneyMinorToMajorInput(policy.max_amount_minor, fractionDigits),
+    maxAmount: policy.max_amount_minor === null ? '' : merchantMoneyMinorToMajorInput(policy.max_amount_minor, fractionDigits),
     canApproveOverride: policy.can_approve_override,
   };
 }
@@ -141,9 +139,7 @@ export default function CashierDiscountPoliciesPage() {
       ]);
       const staffPayload = await staffResponse.json();
       const policyPayload = await policyResponse.json();
-      if (!staffResponse.ok || staffPayload.ok !== true || !policyResponse.ok || policyPayload.ok !== true) {
-        throw new Error('LOAD_FAILED');
-      }
+      if (!staffResponse.ok || staffPayload.ok !== true || !policyResponse.ok || policyPayload.ok !== true) throw new Error('LOAD_FAILED');
       const staffList = (Array.isArray(staffPayload.staff) ? staffPayload.staff : []) as Staff[];
       const rows = (Array.isArray(policyPayload.policies) ? policyPayload.policies : []) as PolicyRow[];
       const nextPolicies: Record<string, PolicyRow> = {};
@@ -172,10 +168,7 @@ export default function CashierDiscountPoliciesPage() {
   const amountStep = fractionDigits === 0 ? '1' : `0.${'0'.repeat(Math.max(0, fractionDigits - 1))}1`;
 
   const updateDraft = (staffId: string, patch: Partial<Draft>) => {
-    setDrafts(current => ({
-      ...current,
-      [staffId]: { ...current[staffId], ...patch },
-    }));
+    setDrafts(current => ({ ...current, [staffId]: { ...current[staffId], ...patch } }));
   };
 
   const save = async (member: Staff) => {
@@ -193,13 +186,7 @@ export default function CashierDiscountPoliciesPage() {
       }
       const percent = Number(percentInput);
       const percentTimes100 = percent * 100;
-      if (
-        !Number.isFinite(percent)
-        || percent < 0
-        || percent > 100
-        || !Number.isSafeInteger(Math.round(percentTimes100))
-        || Math.abs(percentTimes100 - Math.round(percentTimes100)) > 1e-7
-      ) {
+      if (!Number.isFinite(percent) || percent < 0 || percent > 100 || !Number.isSafeInteger(Math.round(percentTimes100)) || Math.abs(percentTimes100 - Math.round(percentTimes100)) > 1e-7) {
         setMessage({ kind: 'error', text: copy.failed });
         return;
       }
@@ -223,8 +210,7 @@ export default function CashierDiscountPoliciesPage() {
             enabled: draft.enabled,
             max_percentage_bps: percentageBps,
             max_amount_minor: amountMinor,
-            can_approve_override:
-              member.role === 'manager' && draft.enabled && draft.canApproveOverride,
+            can_approve_override: member.role === 'manager' && draft.enabled && draft.canApproveOverride,
           },
         }),
       });
@@ -236,10 +222,7 @@ export default function CashierDiscountPoliciesPage() {
         discount_policy: payload.discount_policy as Policy,
       };
       setPolicies(current => ({ ...current, [member.id]: nextRow }));
-      setDrafts(current => ({
-        ...current,
-        [member.id]: draftFromPolicy(nextRow.discount_policy, fractionDigits),
-      }));
+      setDrafts(current => ({ ...current, [member.id]: draftFromPolicy(nextRow.discount_policy, fractionDigits) }));
       setMessage({ kind: 'ok', text: copy.saved });
     } catch {
       setMessage({ kind: 'error', text: copy.failed });
@@ -267,26 +250,14 @@ export default function CashierDiscountPoliciesPage() {
           {visibleStaff.map(member => {
             const draft = drafts[member.id];
             if (!draft) return null;
-            const amountMinor = regional
-              ? merchantMoneyMajorInputToMinor(draft.maxAmount, fractionDigits)
-              : null;
+            const amountMinor = regional ? merchantMoneyMajorInputToMinor(draft.maxAmount, fractionDigits) : null;
             const policySummary = draft.enabled && amountMinor !== null && amountMinor > 0 && draft.maxPercent.trim() !== ''
               ? copy.currentLimit
                 .replace('{percent}', draft.maxPercent.trim())
-                .replace('{amount}', formatMerchantMoneyMinor(
-                  amountMinor,
-                  regional?.currency_code ?? '',
-                  fractionDigits,
-                  lang,
-                ))
+                .replace('{amount}', formatMerchantMoneyMinor(amountMinor, regional?.currency_code ?? '', fractionDigits, lang))
               : null;
             const saveButton = (
-              <button
-                type="button"
-                onClick={() => void save(member)}
-                disabled={savingId !== null || !regional}
-                className="rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-black text-white hover:bg-orange-700 disabled:opacity-50"
-              >
+              <button type="button" onClick={() => void save(member)} disabled={savingId !== null || !regional} className="rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-black text-white hover:bg-orange-700 disabled:opacity-50">
                 {savingId === member.id ? copy.saving : copy.save}
               </button>
             );
@@ -319,7 +290,7 @@ export default function CashierDiscountPoliciesPage() {
                     <div className="md:col-span-2 flex justify-start">{saveButton}</div>
 
                     <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-6 text-slate-700">
-                      <div>{copy.combinedLimitHint}</div>
+                      <div>{copy.independentLimitHint}</div>
                       {policySummary ? <div className="mt-1 font-bold text-slate-900">{policySummary}</div> : null}
                     </div>
 
