@@ -114,7 +114,7 @@ test('cashier keeps one operator-aware manual sync action and auto-syncs real PO
   assert.match(entry, /!diagnostics && !sync && !demoRequested/);
   assert.match(entry, /storedCashierCopy\(\)\.runtime/);
 
-  const upload = entry.indexOf('const result = await syncCashierOperatorOutboxToCloud()');
+  const upload = entry.indexOf('result = await syncCashierOperatorOutboxToCloud()');
   const dashboardRefresh = entry.indexOf('publishCashierDashboardRefresh()', upload);
   const catalogRefresh = entry.indexOf('await syncCashierOperatorCatalogFromCloud()', upload);
 
