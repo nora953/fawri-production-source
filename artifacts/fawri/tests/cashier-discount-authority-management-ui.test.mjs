@@ -41,6 +41,20 @@ test('discount policy UI cannot persist override approval for a cashier', () => 
   assert.match(policySource, /member\.role === 'manager' \? \(/);
 });
 
+test('discount policy UI presents fixed amount and percentage as independent limits', () => {
+  assert.match(
+    policySource,
+    /يُطبَّق حد النوع الذي يختاره الموظف فقط\. تجاوز هذا الحد يتطلب موافقة مدير\./,
+  );
+  assert.match(
+    policySource,
+    /Only the limit for the discount type selected by the employee applies\. Exceeding that limit requires manager approval\./,
+  );
+  assert.match(policySource, /المبلغ: حتى \{amount\} · النسبة: حتى \{percent\}%\./);
+  assert.doesNotMatch(policySource, /الحد الأقل بين النسبة والحد المالي/);
+  assert.doesNotMatch(policySource, /The lower of the percentage and amount limits/);
+});
+
 test('cashier client permission type matches discount server authority', () => {
   assert.match(operatorSessionSource, /\| 'sale\.discount'/);
   assert.match(operatorSessionSource, /\| 'sale\.discount_override'/);
