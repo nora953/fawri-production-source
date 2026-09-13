@@ -74,6 +74,13 @@ async function assertManualDiscountPermission(
     );
   }
   if (discount === 0) return;
+  const kind = input.manual_discount_kind;
+  if (kind !== 'amount' && kind !== 'percentage') {
+    throw new CashierOperatorPosError(
+      'CASHIER_MANUAL_DISCOUNT_INVALID',
+      'Manual discount type is required',
+    );
+  }
   const reason = String(input.manual_discount_reason || '').normalize('NFKC').trim();
   if (!reason || reason.length > 200) {
     throw new CashierOperatorPosError(
@@ -100,6 +107,7 @@ async function assertManualDiscountPermission(
   const limit = cashierDiscountLimitMinor({
     postPromotionTotalMinor: pricing.total_minor,
     policy,
+    kind,
   });
   if (discount > limit && !input.manual_discount_override_approval_id) {
     throw new CashierOperatorPosError(
@@ -144,17 +152,10 @@ export async function createCashierOperatorPosRuntime(options?: {
         );
       }
 
-      // A renewed manager approval may intentionally bind the sale to a fresh
-      // operation id while the checkout UI still holds its original draft id.
-      // Resolve and validate that live approval binding before any local write.
       const effectiveInput = resolveCashierDiscountOverrideSaleInput(input);
       const flightKey = `${currentSession.context.merchant_id}\u0000${effectiveInput.operation_id}`;
 
       return cashierSaleCommitSingleFlight.run(flightKey, async () => {
-        // Opening the operator-local security database can otherwise remain
-        // pending forever when an older Fawri tab blocks the v3 upgrade.
-        // Prove readiness first so the cashier gets a fail-closed error rather
-        // than an indefinitely disabled sale button.
         await ensureCashierOperatorLocalDatabaseReady();
         await assertOfflineInventoryPermission(base, effectiveInput, currentSession);
         await assertManualDiscountPermission(base, effectiveInput);
