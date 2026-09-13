@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY,
   loadCurrentCashierDiscountPolicy,
@@ -128,6 +128,7 @@ export function useCashierManualDiscountCheckout(input: {
   const [overrideApproval, setOverrideApproval] = useState<CashierDiscountOverrideApproval | null>(null);
   const [overrideApprovalLoading, setOverrideApprovalLoading] = useState(false);
   const [overrideErrorCode, setOverrideErrorCode] = useState<string | null>(null);
+  const previousOperationIdRef = useRef<string | null>(null);
 
   const clearOverride = useCallback((clearApprovers = false) => {
     setOverrideApproval(null);
@@ -146,6 +147,14 @@ export function useCashierManualDiscountCheckout(input: {
     setReasonState('');
     clearOverride(true);
   }, [clearOverride]);
+
+  useEffect(() => {
+    const previousOperationId = previousOperationIdRef.current;
+    previousOperationIdRef.current = input.operationId;
+    if (input.operationId && input.operationId !== previousOperationId) {
+      resetDraft();
+    }
+  }, [input.operationId, resetDraft]);
 
   const refreshPolicy = useCallback(async () => {
     setPolicyError(false);
@@ -401,6 +410,7 @@ export function useCashierManualDiscountCheckout(input: {
     reset: () => {
       setPolicy(DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY);
       setPolicyError(false);
+      previousOperationIdRef.current = null;
       resetDraft();
     },
   };
