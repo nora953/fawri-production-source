@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { verifyPassword } from './authPasswordService';
+import { cashierManualDiscountLimitMinor } from './cashierDiscountPolicy';
 import {
   disabledStoredCashierDiscountPolicy,
   loadCashierDiscountPolicies,
@@ -89,6 +90,19 @@ function positiveMoney(value: unknown, field: string): number {
   return parsed;
 }
 
+function nonNegativeMoney(value: unknown, field: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+    throw new CashierStaffAuthorityError(
+      'CASHIER_DISCOUNT_OVERRIDE_INPUT_INVALID',
+      `${field} is invalid`,
+      400,
+      { field },
+    );
+  }
+  return parsed;
+}
+
 function normalizedReason(value: unknown): string {
   const reason = String(value ?? '').normalize('NFKC').trim();
   if (!reason || reason.length > 200 || /[\u0000-\u001f\u007f]/.test(reason)) {
@@ -151,7 +165,7 @@ async function assertApproverAuthority(
   target: OperationalQueryTarget,
   merchantId: string,
   approver: ApproverRow,
-): Promise<void> {
+): Promise<ReturnType<typeof disabledStoredCashierDiscountPolicy>> {
   if (approver.status !== 'active' || approver.revoked_at || approver.role !== 'manager') {
     throw new CashierStaffAuthorityError(
       'CASHIER_DISCOUNT_OVERRIDE_APPROVER_REQUIRED',
@@ -183,6 +197,7 @@ async function assertApproverAuthority(
       403,
     );
   }
+  return policy;
 }
 
 async function verifyApproverPin(
@@ -388,9 +403,11 @@ export async function consumeCashierDiscountOverrideApproval(
     saleOccurredAt: string;
     approvalId: string;
     manualDiscountMinor: number;
+    discountBaseMinor: number;
     reason: string;
   },
 ): Promise<void> {
+  const discountBaseMinor = nonNegativeMoney(input.discountBaseMinor, 'discount_base_minor');
   let rows: ApprovalRow[];
   try {
     rows = await operationalQueryRows<ApprovalRow>(
@@ -459,7 +476,22 @@ export async function consumeCashierDiscountOverrideApproval(
       403,
     );
   }
-  await assertApproverAuthority(target, input.merchantId, approver);
+  const approverPolicy = await assertApproverAuthority(target, input.merchantId, approver);
+  const managerLimitMinor = cashierManualDiscountLimitMinor({
+    postPromotionTotalMinor: discountBaseMinor,
+    policy: approverPolicy,
+  });
+  if (input.manualDiscountMinor > managerLimitMinor) {
+    throw new CashierStaffAuthorityError(
+      'CASHIER_DISCOUNT_OVERRIDE_MANAGER_LIMIT_EXCEEDED',
+      'manual discount exceeds the approving manager policy limit',
+      403,
+      {
+        requested_discount_minor: input.manualDiscountMinor,
+        manager_limit_minor: managerLimitMinor,
+      },
+    );
+  }
 
   await target.query(
     `UPDATE merchant_cashier_discount_override_approvals
