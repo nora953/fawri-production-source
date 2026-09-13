@@ -4,6 +4,7 @@ import CashierHistoryPage from '@/pages/CashierHistoryPage';
 import CashierLocalShellPage from '@/pages/CashierLocalShellPage';
 import CashierPosPage from '@/pages/CashierPosPage';
 import CashierReportsPage from '@/pages/CashierReportsPage';
+import CashierLanguageSwitcher from '@/components/cashier/CashierLanguageSwitcher';
 import CashierOperatorGate from '@/components/cashier/CashierOperatorGate';
 import '@/index.css';
 import '@/styles/fawriUiBaseline.css';
@@ -300,6 +301,7 @@ async function bootstrapCashier(): Promise<void> {
       <CashierLocalShellPage />
     ) : (
       <I18nProvider>
+        <CashierLanguageSwitcher />
         <CashierOperatorGate bypass={demoRequested}>
           {operationalPage}
         </CashierOperatorGate>
