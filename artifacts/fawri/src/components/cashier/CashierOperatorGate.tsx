@@ -50,6 +50,8 @@ const COPY: Record<Lang, {
   logout: string;
   loggingOut: string;
   syncPreparing: string;
+  historyPreparing: string;
+  reportsPreparing: string;
   paired: string;
   roleCashier: string;
   roleManager: string;
@@ -85,6 +87,8 @@ const COPY: Record<Lang, {
     logout: 'إنهاء المناوبة',
     loggingOut: 'جارٍ إنهاء المناوبة...',
     syncPreparing: 'جارٍ تجهيز كتالوج الكاشير...',
+    historyPreparing: 'جارٍ فتح سجل المبيعات...',
+    reportsPreparing: 'جارٍ فتح تقارير المبيعات...',
     paired: 'تم ربط الجهاز. اختر الموظف لبدء المناوبة.',
     roleCashier: 'كاشير',
     roleManager: 'مدير',
@@ -120,6 +124,8 @@ const COPY: Record<Lang, {
     logout: 'کۆتایی مناوبە',
     loggingOut: 'مناوبە کۆتایی پێدێت...',
     syncPreparing: 'کاتالۆگی کاشێر ئامادە دەکرێت...',
+    historyPreparing: 'تۆماری فرۆشتن دەکرێتەوە...',
+    reportsPreparing: 'ڕاپۆرتەکانی فرۆشتن دەکرێنەوە...',
     paired: 'ئامێرەکە بەسترا. کارمەند هەڵبژێرە بۆ دەستپێکردنی مناوبە.',
     roleCashier: 'کاشێر',
     roleManager: 'بەڕێوەبەر',
@@ -155,6 +161,8 @@ const COPY: Record<Lang, {
     logout: 'End shift',
     loggingOut: 'Ending shift...',
     syncPreparing: 'Preparing cashier catalog...',
+    historyPreparing: 'Opening sales history...',
+    reportsPreparing: 'Opening sales reports...',
     paired: 'Device paired. Choose an employee to start a shift.',
     roleCashier: 'Cashier',
     roleManager: 'Manager',
@@ -207,6 +215,13 @@ function pageAllowed(session: CashierOperatorSession): boolean {
   }
   if (params.get('sync') === '1') return cashierOperatorCan(session, 'sale.create');
   return cashierOperatorCan(session, 'sale.create');
+}
+
+function pageLoadingLabel(labels: Labels): string {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('history') === '1') return labels.historyPreparing;
+  if (params.get('reports') === '1') return labels.reportsPreparing;
+  return labels.syncPreparing;
 }
 
 export default function CashierOperatorGate({ children, bypass = false }: { children: ReactNode; bypass?: boolean }) {
@@ -343,7 +358,13 @@ export default function CashierOperatorGate({ children, bypass = false }: { chil
   };
 
   if (state.kind === 'loading') {
-    return <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6" dir={dir}><div className="rounded-2xl border border-slate-200 bg-white px-8 py-7 text-sm text-slate-600 shadow-sm">{labels.syncPreparing}</div></main>;
+    return (
+      <main className="cashier-operator-gate-loading flex min-h-screen items-center justify-center bg-slate-50 p-6" dir={dir}>
+        <div className="max-w-sm rounded-2xl border border-slate-200 bg-white px-6 py-4 text-center text-sm font-medium text-slate-600 shadow-sm">
+          {pageLoadingLabel(labels)}
+        </div>
+      </main>
+    );
   }
 
   if (state.kind === 'error') {
