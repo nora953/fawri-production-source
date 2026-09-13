@@ -132,7 +132,6 @@ function requestResult<T>(request: IDBRequest<T>): Promise<T> {
   });
 }
 
-/** Register this immediately after opening a write transaction. */
 function writeTransactionDone(transaction: IDBTransaction): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     transaction.oncomplete = () => resolve();
@@ -405,7 +404,6 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       : undefined;
     this.deviceId = requiredIdentifier(config.deviceId, 'device id');
     this.now = config.now || (() => new Date());
-    // Keep the original database name so schema v1 installations upgrade in place.
     this.databasePromise = openDatabase(
       config.databaseName || `fawri-cashier-${this.localMerchantId}-v1`,
     );
@@ -419,11 +417,6 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     (await this.databasePromise).close();
   }
 
-  /**
-   * Catalog ingress stores base commerce facts only. Legacy effective-price and
-   * promotion projections are deliberately discarded so sale commit cannot use
-   * stale scheduled/minimum-subtotal promotion results.
-   */
   async upsertCatalogSnapshot(
     items: CashierCatalogLookup[],
     options: IndexedDbCatalogSeedOptions = {},
@@ -463,10 +456,6 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     }
   }
 
-  /**
-   * Replace the complete local promotion projection atomically. Removed cloud
-   * promotions therefore cannot survive locally as stale pricing rules.
-   */
   async replacePromotionSnapshot(rules: CashierPromotionRule[]): Promise<void> {
     const timestampDate = this.now();
     const timestamp = validInstant(timestampDate, 'promotion snapshot time');
@@ -666,9 +655,6 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       const occurredAtDate = this.now();
       validInstant(occurredAtDate, 'sale time');
 
-      // Pricing is fully resolved before inventory/sale/outbox writes. Any stale,
-      // corrupt, conflicting, mixed-currency, or time-invalid promotion state
-      // throws here and the transaction is aborted without partial writes.
       const pricing = resolveCashierSalePricing({
         merchantId: this.pricingMerchantId,
         catalog: records.map(pricingCatalogItem),
@@ -685,6 +671,23 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         throw new CashierIndexedDbError(
           'CASHIER_MANUAL_DISCOUNT_INVALID',
           'Manual discount must be a safe amount not exceeding the post-promotion total',
+        );
+      }
+      const manualDiscountKind = input.manual_discount_kind;
+      if (
+        manualDiscountMinor > 0 &&
+        manualDiscountKind !== 'amount' &&
+        manualDiscountKind !== 'percentage'
+      ) {
+        throw new CashierIndexedDbError(
+          'CASHIER_MANUAL_DISCOUNT_INVALID',
+          'Manual discount type is required for a manual discount',
+        );
+      }
+      if (manualDiscountMinor === 0 && manualDiscountKind !== undefined) {
+        throw new CashierIndexedDbError(
+          'CASHIER_MANUAL_DISCOUNT_INVALID',
+          'Manual discount type cannot exist without a manual discount',
         );
       }
       const manualDiscountReason = String(input.manual_discount_reason || '')
@@ -734,9 +737,6 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       const hasCashTenderMetadata =
         input.cash_tendered_minor !== undefined || input.change_due_minor !== undefined;
       if (input.payment_method === 'cash') {
-        // Legacy queued cash sales created before P1 may omit tender metadata.
-        // New P1 UI always sends both values; when present they are validated
-        // against the authoritative final total after promotions/manual discount.
         if (hasCashTenderMetadata) {
           if (
             !isNonNegativeSafeInteger(Number(input.cash_tendered_minor)) ||
@@ -828,6 +828,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         promotion_discount_minor: pricing.discount_minor,
         ...(manualDiscountMinor > 0
           ? {
+              manual_discount_kind: manualDiscountKind,
               manual_discount_minor: manualDiscountMinor,
               manual_discount_reason: manualDiscountReason,
               ...(manualDiscountOverrideApprovalId
@@ -914,13 +915,12 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     input: CashierInventoryAdjustmentInput,
   ): Promise<CashierInventoryMovement> {
     const operationId = requiredIdentifier(input.operation_id, 'operation id');
-    if (!Number.isSafeInteger(input.delta) || input.delta === 0) {
+    if (!Number.isInteger(input.delta) || input.delta === 0) {
       throw new CashierIndexedDbError(
         'CASHIER_INVENTORY_DELTA_INVALID',
-        'Inventory adjustment must be a non-zero safe integer',
+        'Inventory adjustment must be a non-zero integer',
       );
     }
-
     const database = await this.databasePromise;
     const transaction = database.transaction(
       [STORE_META, STORE_CATALOG, STORE_MOVEMENTS, STORE_OUTBOX],
@@ -931,16 +931,7 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     const catalog = transaction.objectStore(STORE_CATALOG);
     const movements = transaction.objectStore(STORE_MOVEMENTS);
     const outbox = transaction.objectStore(STORE_OUTBOX);
-
     try {
-      const existing = (await requestResult(
-        movements.index('operation_id').get(operationId),
-      )) as CashierInventoryMovement | undefined;
-      if (existing) {
-        await completion;
-        return existing;
-      }
-
       const record = (await requestResult(
         catalog.get(catalogKey(input.product_id, input.variant_id)),
       )) as CatalogRecord | undefined;
@@ -956,25 +947,19 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
           'This catalog item does not track inventory',
         );
       }
-
       const currentStock = Number(record.stock_quantity);
       const nextStock = currentStock + input.delta;
-      if (
-        !isNonNegativeSafeInteger(currentStock) ||
-        !isNonNegativeSafeInteger(nextStock)
-      ) {
+      if (!isNonNegativeSafeInteger(nextStock)) {
         throw new CashierIndexedDbError(
-          'CASHIER_INVENTORY_RESULT_INVALID',
-          'Inventory adjustment would produce an invalid stock quantity',
+          'CASHIER_INVENTORY_NEGATIVE',
+          'Inventory cannot become negative',
         );
       }
-
       const deviceSequence = await nextDeviceSequence(meta);
       const occurredAt = validInstant(this.now(), 'inventory adjustment time');
       record.stock_quantity = nextStock;
       record.local_updated_at = occurredAt;
       catalog.put(record);
-
       const movement: CashierInventoryMovement = {
         movement_id: movementId(operationId, 0),
         operation_id: operationId,
@@ -995,7 +980,6 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
         occurred_at: occurredAt,
       };
       movements.put(movement);
-
       const envelope: CashierSyncEnvelope<CashierInventoryMovement> = {
         schema_version: CASHIER_LOCAL_SCHEMA_VERSION,
         operation_id: operationId,
@@ -1009,13 +993,8 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
       };
       outbox.put({
         ...envelope,
-        outbox_id: outboxId(
-          operationId,
-          'inventory_movement',
-          movement.movement_id,
-        ),
+        outbox_id: outboxId(operationId, 'inventory_movement', movement.movement_id),
       } satisfies OutboxRecord);
-
       await completion;
       return movement;
     } catch (error) {
