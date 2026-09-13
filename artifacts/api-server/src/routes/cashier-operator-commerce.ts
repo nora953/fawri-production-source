@@ -143,6 +143,8 @@ router.post(
         pin: req.body?.pin,
         operationId: req.body?.operation_id,
         manualDiscountMinor: req.body?.manual_discount_minor,
+        discountBaseMinor: req.body?.discount_base_minor,
+        discountKind: req.body?.discount_kind,
         reason: req.body?.manual_discount_reason,
       });
       res.setHeader("Cache-Control", "no-store");
