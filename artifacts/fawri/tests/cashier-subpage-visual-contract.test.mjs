@@ -9,6 +9,7 @@ const historyPolish = read('../public/assets/cashier-history-polish.css');
 const reportsPolish = read('../public/assets/cashier-reports-polish.css');
 const history = read('../src/pages/CashierHistoryPage.tsx');
 const reports = read('../src/pages/CashierReportsPage.tsx');
+const operatorGate = read('../src/components/cashier/CashierOperatorGate.tsx');
 const cashierHtml = read('../cashier.html');
 
 test('cashier history and reports do not expose the floating shift dock', () => {
@@ -83,6 +84,7 @@ test('cashier history gives scrolling only to the bounded sales list on desktop'
   assert.match(historyPolish, /one bounded scroll surface only: the potentially long[\s\S]*sales list/);
   assert.match(historyPolish, /section:first-child \{[\s\S]*height: clamp\(22rem, calc\(100dvh - 10rem\), 44rem\);[\s\S]*overflow: hidden !important;/);
   assert.match(historyPolish, /section:first-child > div\.p-2 \{[\s\S]*overflow-y: auto !important;[\s\S]*scrollbar-width: thin;/);
+  assert.match(historyPolish, /::-webkit-scrollbar-button \{[\s\S]*display: none;[\s\S]*width: 0;[\s\S]*height: 0;/);
   assert.match(historyPolish, /section:last-child \{[\s\S]*overflow: visible !important;/);
 });
 
@@ -93,8 +95,23 @@ test('cashier history keeps sale details compact without a nested scroll surface
   assert.match(historyPolish, /section:last-child > div > div\.p-4 \{[\s\S]*padding-block: 0\.75rem !important;/);
 });
 
+test('cashier operator gate uses route-aware loading copy without catalog flash on subpages', () => {
+  assert.match(operatorGate, /historyPreparing: 'جارٍ فتح سجل المبيعات\.\.\.'/);
+  assert.match(operatorGate, /reportsPreparing: 'جارٍ فتح تقارير المبيعات\.\.\.'/);
+  assert.match(operatorGate, /if \(params\.get\('history'\) === '1'\) return labels\.historyPreparing;/);
+  assert.match(operatorGate, /if \(params\.get\('reports'\) === '1'\) return labels\.reportsPreparing;/);
+  assert.match(operatorGate, /cashier-operator-gate-loading/);
+  assert.match(operatorGate, /\{pageLoadingLabel\(labels\)\}/);
+});
+
+test('cashier history page-height polish cannot stretch the operator gate loader', () => {
+  assert.match(historyPolish, /#cashier-root > div\.relative > main \{[\s\S]*min-height: 100vh !important;/);
+  assert.match(historyPolish, /#cashier-root > div\.relative > main > div \{[\s\S]*min-height: 100vh !important;/);
+  assert.doesNotMatch(historyPolish, /html\[data-cashier-view='history'\] main > div \{[\s\S]*min-height: 100vh !important;/);
+});
+
 test('cashier shell cache-busts the polished visual contracts', () => {
   assert.match(cashierHtml, /cashier-visual-qa\.css\?v=subpage-polish-v1/);
-  assert.match(cashierHtml, /cashier-history-polish\.css\?v=history-sales-scroll-v3/);
+  assert.match(cashierHtml, /cashier-history-polish\.css\?v=history-sales-scroll-v4/);
   assert.match(cashierHtml, /cashier-reports-polish\.css\?v=reports-metric-align-v1/);
 });
