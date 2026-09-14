@@ -111,6 +111,26 @@ test('Arabic is the canonical cashier copy authority for Kurdish Sorani and Engl
   assertFlatLanguageParity(reports, 'CashierReportsPage COPY');
 });
 
+test('reviewed Sorani cashier terminology stays local and consistent', () => {
+  const uiKu = languageBlocks(uiCopy, 'CASHIER_UI_COPY').ku;
+  const receiptKu = languageBlocks(receiptCopy, 'CASHIER_RECEIPT_COPY').ku;
+  const operatorKu = languageBlocks(operatorGate, 'CashierOperatorGate COPY').ku;
+  const endShiftKu = languageBlocks(endShift, 'CashierEndShiftButton COPY').ku;
+
+  assert.match(operatorKu, /شەفت/);
+  assert.doesNotMatch(operatorKu, /مناوبە/);
+  assert.match(endShiftKu, /شەفت/);
+  assert.doesNotMatch(endShiftKu, /مناوبە/);
+
+  assert.match(uiKu, /inventoryUntracked: 'بەدواداچوونی کۆگا چالاک نییە'/);
+  assert.match(uiKu, /cash: 'نەقد'/);
+  assert.doesNotMatch(uiKu, /cash: 'نەقدی'/);
+
+  assert.match(receiptKu, /paper80: '80 ملم'/);
+  assert.match(receiptKu, /paper58: '58 ملم'/);
+  assert.doesNotMatch(receiptKu, /paper(?:80|58): '\d+ مم'/);
+});
+
 test('all operational cashier surfaces inherit the active Arabic Sorani or English direction', () => {
   assert.match(i18n, /return lang === 'en' \? 'ltr' : 'rtl'/);
   assert.match(main, /<I18nProvider>[\s\S]*<CashierOperatorGate[\s\S]*\{operationalPage\}/);
