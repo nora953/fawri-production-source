@@ -10,8 +10,10 @@ html[data-cashier-view="history"] .fixed.inset-0.z-50 .mt-5.flex.gap-2 {
 /* English POS header parity.
    English uses normal document flow instead of the RTL absolute-position
    treatment from cashier-visual-qa.css. The end-shift trigger is portaled into
-   the brand cluster by CashierEndShiftButton; flattening the controls wrapper
-   places the runtime connectivity badge immediately after that cluster. */
+   the brand cluster by CashierEndShiftButton. The connectivity badge then uses
+   an auto logical end margin to split the header into the same two groups as
+   the frozen Arabic reference: identity/status at inline-start and operational
+   controls at inline-end. No viewport coordinates are involved. */
 html[lang="en"][data-cashier-view="pos"] main > div > header {
   justify-content: flex-start !important;
 }
@@ -26,4 +28,5 @@ html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child > 
   inset: auto !important;
   transform: none !important;
   z-index: auto !important;
+  margin-inline-end: auto !important;
 }
