@@ -151,7 +151,7 @@ export const CASHIER_POS_ENHANCEMENT_COPY = {
     managerApprovalAction: 'Approve discount',
     managerApprovalChecking: 'Checking approval...',
     managerApprovalLoading: 'Loading authorized managers...',
-    managerApprovalApproved: 'Manager approval is recorded for this discount.',
+    managerApprovalApproved: 'The manager approved this discount.',
     managerApprovalNoApprovers: 'No manager is authorized to approve a discount above this employee’s limit.',
     managerApprovalOnlineRequired: 'Manager approval requires an internet connection.',
     managerApprovalInvalidPin: 'The manager PIN is incorrect.',
