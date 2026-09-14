@@ -73,6 +73,15 @@ html[data-cashier-view="history"] #cashier-root main section:first-child > div.p
   border-color: #fde68a !important;
 }
 
+/* Sorani uses a longer destructive-confirmation phrase than Arabic and English.
+   Keep the reviewed wording intact, but keep the confirm action on one line so
+   the dialog mirrors the Arabic reference without increasing button height. */
+html[lang="ku"][data-cashier-view="history"] .fixed.inset-0.z-50 .mt-5.flex.gap-2 > button:last-child {
+  white-space: nowrap !important;
+  font-size: 0.75rem !important;
+  padding-inline: 0.75rem !important;
+}
+
 /* English POS header parity.
    English uses normal document flow instead of the RTL absolute-position
    treatment from cashier-visual-qa.css. The end-shift trigger is portaled into
