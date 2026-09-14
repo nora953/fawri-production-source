@@ -6,3 +6,34 @@
 html[data-cashier-view="history"] .fixed.inset-0.z-50 .mt-5.flex.gap-2 {
   flex-direction: row-reverse;
 }
+
+/* English POS header parity.
+   The operator shift control is intentionally scoped to English POS only so the
+   frozen Arabic reference remains untouched. Keep the functional End shift
+   control beside the English Cashier title, hide the redundant operator badge
+   that was visually colliding with the title, and remove the floating-shell
+   chrome so the control reads as part of the reviewed header. */
+html[lang="en"][data-cashier-view="pos"] #cashier-root > .relative > .fixed {
+  top: 1rem !important;
+  left: max(10.5rem, calc((100vw - 1500px) / 2 + 10.5rem)) !important;
+  right: auto !important;
+  transform: none !important;
+  max-width: none !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+html[lang="en"][data-cashier-view="pos"] #cashier-root > .relative > .fixed > span {
+  display: none !important;
+}
+
+@media (max-width: 760px) {
+  html[lang="en"][data-cashier-view="pos"] #cashier-root > .relative > .fixed {
+    top: 4.75rem !important;
+    left: 1rem !important;
+  }
+}
