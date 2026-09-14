@@ -22,14 +22,16 @@ html[data-cashier-view="history"] #cashier-root main section:last-child > div > 
   flex-direction: row-reverse;
 }
 
-/* Arabic history secondary actions use the same outlined destructive-control
-   treatment as Void sale. This keeps Return all and Receipt reprint visually
-   consistent with the reviewed Arabic action hierarchy without changing any
-   action behavior. Sorani/English are reviewed separately after Arabic closes. */
+/* Reviewed Arabic history secondary/destructive controls use one consistent
+   button surface. Receipt reprint, Return all and Void sale keep the same red
+   outline/text hierarchy, but use a light-gray surface instead of white so they
+   read clearly as buttons. Return selected remains the orange primary action.
+   Sorani/English are reviewed separately after Arabic closes. */
 html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:last-child > button,
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button {
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button,
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t > div:last-child > button:first-child {
   border: 1px solid #fecaca !important;
-  background: #ffffff !important;
+  background: #f8fafc !important;
   color: #b91c1c !important;
   border-radius: 0.75rem !important;
   padding: 0.625rem 1rem !important;
@@ -39,8 +41,9 @@ html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-chi
 }
 
 html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:last-child > button:hover,
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button:hover {
-  background: #fef2f2 !important;
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button:hover,
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t > div:last-child > button:first-child:hover {
+  background: #f1f5f9 !important;
 }
 
 /* English POS header parity.
