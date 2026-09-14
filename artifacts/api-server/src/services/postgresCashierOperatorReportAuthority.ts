@@ -25,7 +25,7 @@ export type CashierOperatorServerReportResult = {
   generated_at: string;
   sales_scanned: number;
   source: "server_cashier";
-  scope: "own_shift" | "station";
+  scope: "own_staff" | "station";
   can_view_profit: boolean;
   report: CashierCentralReport;
 };
@@ -75,7 +75,8 @@ function redactProfit(report: CashierCentralReport): CashierCentralReport {
  * Online operator reporting is server-derived so reports.profit can expose an
  * aggregate profit result without ever sending raw product cost to a cashier
  * device. sale.view_all widens the report to the current paired station/device;
- * otherwise the report is restricted to the active employee shift.
+ * otherwise the report contains this employee's sales across all of their
+ * shifts on the current paired station/device.
  */
 export async function buildCashierOperatorReportAuthoritative(input: {
   context: CashierOperatorContext;
@@ -124,15 +125,12 @@ export async function buildCashierOperatorReportAuthoritative(input: {
           AND sale_attribution.device_id = $3
           AND (
             $4::boolean
-            OR (
-              sale_attribution.staff_id = $5
-              AND sale_attribution.shift_id = $6
-            )
+            OR sale_attribution.staff_id = $5
           )
           AND (
             (
-              ($7::text IS NULL OR o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' >= $7::text)
-              AND ($8::text IS NULL OR o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' < $8::text)
+              ($6::text IS NULL OR o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' >= $6::text)
+              AND ($7::text IS NULL OR o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' < $7::text)
             )
             OR EXISTS (
               SELECT 1
@@ -143,19 +141,18 @@ export async function buildCashierOperatorReportAuthoritative(input: {
                     ELSE '[]'::jsonb
                   END
                 ) AS compensation
-               WHERE ($7::text IS NULL OR compensation->>'occurred_at' >= $7::text)
-                 AND ($8::text IS NULL OR compensation->>'occurred_at' < $8::text)
+               WHERE ($6::text IS NULL OR compensation->>'occurred_at' >= $6::text)
+                 AND ($7::text IS NULL OR compensation->>'occurred_at' < $7::text)
             )
           )
         ORDER BY o.metadata->'cashier_sync'->'sale_snapshot'->>'occurred_at' DESC, o.id
-        LIMIT $9`,
+        LIMIT $8`,
       [
         context.merchant_id,
         context.station_id,
         context.device_id,
         canViewAll,
         context.staff_id,
-        context.shift_id,
         reportRange.from || null,
         reportRange.to || null,
         MAX_OPERATOR_REPORT_SALES + 1,
@@ -181,7 +178,7 @@ export async function buildCashierOperatorReportAuthoritative(input: {
       generated_at: result.generated_at,
       sales_scanned: result.sales_scanned,
       source: "server_cashier",
-      scope: canViewAll ? "station" : "own_shift",
+      scope: canViewAll ? "station" : "own_staff",
       can_view_profit: canViewProfit,
       report: canViewProfit ? result.report : redactProfit(result.report),
     };

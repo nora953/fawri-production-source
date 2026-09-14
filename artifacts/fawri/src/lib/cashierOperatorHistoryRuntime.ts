@@ -47,8 +47,7 @@ function canSeeSale(
   if (cashierOperatorCan(session, 'sale.view_all')) return true;
   return (
     cashierOperatorCan(session, 'sale.view_own') &&
-    binding.staff_id === session.context.staff_id &&
-    binding.shift_id === session.context.shift_id
+    binding.staff_id === session.context.staff_id
   );
 }
 
