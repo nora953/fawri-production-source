@@ -22,14 +22,12 @@ html[data-cashier-view="history"] #cashier-root main section:last-child > div > 
   flex-direction: row-reverse;
 }
 
-/* Reviewed Arabic history secondary/destructive controls use one consistent
-   button surface. Receipt reprint, Return all and Void sale keep the same red
-   outline/text hierarchy, but use a light-gray surface instead of white so they
-   read clearly as buttons. Return selected remains the orange primary action.
-   Sorani/English are reviewed separately after Arabic closes. */
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:last-child > button,
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button,
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t > div:last-child > button:first-child {
+/* The reviewed Arabic history is the visual authority for all three languages.
+   Receipt reprint, Return all and Void sale use one light-gray destructive
+   secondary surface. Return selected remains the orange primary action. */
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:last-child > button,
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button,
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t > div:last-child > button:first-child {
   border: 1px solid #fecaca !important;
   background: #f8fafc !important;
   color: #b91c1c !important;
@@ -40,28 +38,38 @@ html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-chi
   line-height: 1.25rem !important;
 }
 
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:last-child > button:hover,
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button:hover,
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t > div:last-child > button:first-child:hover {
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:last-child > button:hover,
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button:hover,
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t > div:last-child > button:first-child:hover {
   background: #f1f5f9 !important;
 }
 
-/* Arabic history status chips share one outlined pill language without forcing
-   equal dimensions. Completed already carries its state border in the component;
-   add the matching solid outline to the adjacent sync-state chip only. Padding
-   and font size stay untouched so the hierarchy between list and detail cards is
-   preserved. */
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child {
+/* Completed already carries its state border in the component. Give the adjacent
+   sync-state chip the same outlined pill language in Arabic, Sorani and English
+   without forcing equal padding or font size. */
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child {
   border-style: solid !important;
   border-width: 1px !important;
   border-radius: 9999px !important;
 }
 
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child.bg-emerald-50 {
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child.bg-emerald-50 {
   border-color: #a7f3d0 !important;
 }
 
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child.bg-amber-50 {
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child.bg-amber-50 {
+  border-color: #fde68a !important;
+}
+
+/* Sale-list sync state uses the same compact outlined-pill language as the
+   Completed state in all three languages. */
+html[data-cashier-view="history"] #cashier-root main section:first-child > div.p-2 > button > div.flex.items-end.justify-between.gap-3 > span {
+  border: 1px solid #a7f3d0 !important;
+  border-radius: 9999px !important;
+  padding: 0.125rem 0.5rem !important;
+}
+
+html[data-cashier-view="history"] #cashier-root main section:first-child > div.p-2 > button > div.flex.items-end.justify-between.gap-3 > span.text-amber-700 {
   border-color: #fde68a !important;
 }
 
@@ -87,14 +95,4 @@ html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child > 
   transform: none !important;
   z-index: auto !important;
   margin-inline-end: auto !important;
-}
-
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:first-child > div.p-2 > button > div.flex.items-end.justify-between.gap-3 > span {
-  border: 1px solid #a7f3d0 !important;
-  border-radius: 9999px !important;
-  padding: 0.125rem 0.5rem !important;
-}
-
-html[lang="ar"][data-cashier-view="history"] #cashier-root main section:first-child > div.p-2 > button > div.flex.items-end.justify-between.gap-3 > span.text-amber-700 {
-  border-color: #fde68a !important;
 }
