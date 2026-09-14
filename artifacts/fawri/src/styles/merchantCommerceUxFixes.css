@@ -8,31 +8,22 @@ html[data-cashier-view="history"] .fixed.inset-0.z-50 .mt-5.flex.gap-2 {
 }
 
 /* English POS header parity.
-   The operator shift control is scoped to English POS only so the frozen Arabic
-   reference remains untouched. Keep the functional End shift action after the
-   full Fawri + Cashier title block and remove only the floating operator badge
-   chrome that otherwise collides with the LTR header. */
-html[lang="en"][data-cashier-view="pos"] #cashier-root > .relative > .fixed {
-  top: 1rem !important;
-  left: max(13.5rem, calc((100vw - 1500px) / 2 + 13.5rem)) !important;
-  right: auto !important;
+   English uses normal document flow instead of the RTL absolute-position
+   treatment from cashier-visual-qa.css. The end-shift trigger is portaled into
+   the brand cluster by CashierEndShiftButton; flattening the controls wrapper
+   places the runtime connectivity badge immediately after that cluster. */
+html[lang="en"][data-cashier-view="pos"] main > div > header {
+  justify-content: flex-start !important;
+}
+
+html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child,
+html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child > div:first-child {
+  display: contents !important;
+}
+
+html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child > div:first-child > span:first-child {
+  position: static !important;
+  inset: auto !important;
   transform: none !important;
-  max-width: none !important;
-  gap: 0 !important;
-  padding: 0 !important;
-  border-color: transparent !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-}
-
-html[lang="en"][data-cashier-view="pos"] #cashier-root > .relative > .fixed > span {
-  display: none !important;
-}
-
-@media (max-width: 760px) {
-  html[lang="en"][data-cashier-view="pos"] #cashier-root > .relative > .fixed {
-    top: 4.75rem !important;
-    left: 1rem !important;
-  }
+  z-index: auto !important;
 }
