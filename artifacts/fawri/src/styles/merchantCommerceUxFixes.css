@@ -96,3 +96,11 @@ html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child > 
   z-index: auto !important;
   margin-inline-end: auto !important;
 }
+
+/* The reviewed Arabic/Sorani end-shift dialog keeps Cancel on the left and the
+   destructive confirmation on the right. English mirrors that physical order:
+   End shift on the left, Cancel on the right. Button text and behavior are
+   unchanged; only the English action grid direction is mirrored. */
+html[lang="en"][data-cashier-view="pos"] [role="dialog"] form > .mt-5.grid.grid-cols-2.gap-3 {
+  direction: rtl !important;
+}
