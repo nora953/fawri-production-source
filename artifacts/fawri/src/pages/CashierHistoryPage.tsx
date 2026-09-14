@@ -50,10 +50,22 @@ function formatMoney(
 
 function formatDate(value: string, lang: Lang): string {
   try {
+    const date = new Date(value);
+    if (lang === 'ku') {
+      return new Intl.DateTimeFormat(cashierLocale(lang), {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23',
+        numberingSystem: 'arab',
+      }).format(date);
+    }
     return new Intl.DateTimeFormat(cashierLocale(lang), {
       dateStyle: 'medium',
       timeStyle: 'short',
-    }).format(new Date(value));
+    }).format(date);
   } catch {
     return value;
   }
