@@ -122,6 +122,12 @@ test('reviewed Sorani cashier terminology stays local and consistent', () => {
   assert.match(endShiftKu, /شەفت/);
   assert.doesNotMatch(endShiftKu, /مناوبە/);
 
+  assert.match(uiKu, /productsServices: 'بەرهەمەکان و خزمەتەکان'/);
+  assert.match(uiKu, /service: 'خزمەت'/);
+  assert.match(uiKu, /product: 'بەرهەم'/);
+  assert.doesNotMatch(uiKu, /service: 'خزمەتگوزاری'/);
+  assert.doesNotMatch(uiKu, /productsServices: 'بەرهەم و خزمەتگوزارییەکان'/);
+
   assert.match(uiKu, /inventoryUntracked: 'بەدواداچوونی کۆگا چالاک نییە'/);
   assert.match(uiKu, /cash: 'نەقد'/);
   assert.doesNotMatch(uiKu, /cash: 'نەقدی'/);
