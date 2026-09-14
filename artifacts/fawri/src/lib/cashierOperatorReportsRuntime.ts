@@ -22,7 +22,7 @@ const MAX_REPORT_SALES = 50_000;
 export type CashierOperatorReportRuntimeResult = {
   report: CashierSalesReport;
   source: 'local_cashier' | 'server_cashier';
-  scope?: 'own_shift' | 'station';
+  scope?: 'own_staff' | 'station';
   sales_scanned: number;
   generated_at: string;
   can_view_profit: boolean;
@@ -145,8 +145,7 @@ function bindingVisible(
   if (cashierOperatorCan(session, 'sale.view_all')) return true;
   return (
     cashierOperatorCan(session, 'sale.view_own') &&
-    binding.staff_id === session.context.staff_id &&
-    binding.shift_id === session.context.shift_id
+    binding.staff_id === session.context.staff_id
   );
 }
 
@@ -217,7 +216,7 @@ async function serverReport(
     );
   }
   const scope = payload.scope;
-  if (scope !== 'own_shift' && scope !== 'station') {
+  if (scope !== 'own_staff' && scope !== 'station') {
     throw new CashierOperatorReportsError(
       'CASHIER_OPERATOR_REPORT_INVALID',
       'Cashier server report scope is invalid',
@@ -323,7 +322,7 @@ export async function createCashierOperatorReportsRuntime(): Promise<CashierOper
       return {
         report: canViewProfit ? report : redactProfit(report),
         source: 'local_cashier',
-        scope: cashierOperatorCan(currentSession, 'sale.view_all') ? 'station' : 'own_shift',
+        scope: cashierOperatorCan(currentSession, 'sale.view_all') ? 'station' : 'own_staff',
         sales_scanned: visibleSales.length,
         generated_at: new Date().toISOString(),
         can_view_profit: canViewProfit,
