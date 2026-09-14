@@ -8,14 +8,13 @@ html[data-cashier-view="history"] .fixed.inset-0.z-50 .mt-5.flex.gap-2 {
 }
 
 /* English POS header parity.
-   The operator shift control is intentionally scoped to English POS only so the
-   frozen Arabic reference remains untouched. Keep the functional End shift
-   control beside the English Cashier title, hide the redundant operator badge
-   that was visually colliding with the title, and remove the floating-shell
-   chrome so the control reads as part of the reviewed header. */
+   The operator shift control is scoped to English POS only so the frozen Arabic
+   reference remains untouched. Keep the functional End shift action after the
+   full Fawri + Cashier title block and remove only the floating operator badge
+   chrome that otherwise collides with the LTR header. */
 html[lang="en"][data-cashier-view="pos"] #cashier-root > .relative > .fixed {
   top: 1rem !important;
-  left: max(10.5rem, calc((100vw - 1500px) / 2 + 10.5rem)) !important;
+  left: max(13.5rem, calc((100vw - 1500px) / 2 + 13.5rem)) !important;
   right: auto !important;
   transform: none !important;
   max-width: none !important;
