@@ -114,3 +114,12 @@ html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child > 
 html[lang="en"][data-cashier-view="pos"] [role="dialog"] form > .mt-5.grid.grid-cols-2.gap-3 {
   direction: rtl !important;
 }
+
+/* Checkout follows the same physical mirroring rule as the reviewed cashier
+   dialogs. Arabic/Sorani keep Back on the left and Confirm sale on the right.
+   English mirrors the footer grid so Confirm sale is on the left and Back is on
+   the right while preserving the primary button's larger 1.2fr track. Each
+   button keeps its own language direction, so only placement changes. */
+html[lang="en"][data-cashier-view="pos"] [data-cashier-checkout="open"] > section > footer {
+  direction: rtl !important;
+}
