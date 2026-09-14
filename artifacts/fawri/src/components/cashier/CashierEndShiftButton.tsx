@@ -96,13 +96,16 @@ export default function CashierEndShiftButton({
       return;
     }
 
+    const params = new URLSearchParams(window.location.search);
+    const isPos = params.get('history') !== '1' && params.get('reports') !== '1' && params.get('sync') !== '1';
+    if (!isPos) {
+      setHeaderTarget(null);
+      return;
+    }
+
     const resolveTarget = () => {
-      if (document.documentElement.dataset.cashierView !== 'pos') {
-        setHeaderTarget(null);
-        return;
-      }
       const nextTarget = document.querySelector<HTMLElement>(
-        "html[lang='en'][data-cashier-view='pos'] main > div > header > div:first-child",
+        '#cashier-root main > div > header > div:first-child',
       );
       setHeaderTarget(current => current === nextTarget ? current : nextTarget);
     };
