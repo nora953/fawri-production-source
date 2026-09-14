@@ -8,6 +8,7 @@ const source = fs.readFileSync(
 );
 
 const arabic = source.slice(source.indexOf('  ar: {'), source.indexOf('  ku: {'));
+const sorani = source.slice(source.indexOf('  ku: {'), source.indexOf('  en: {'));
 
 test('Arabic sales reports use the reviewed return and average-value terminology', () => {
   assert.match(
@@ -20,4 +21,17 @@ test('Arabic sales reports use the reviewed return and average-value terminology
   assert.match(arabic, /localSource: 'المصدر: سجل الكاشير المحلي الموثوق — وضع عدم الاتصال'/);
 
   assert.doesNotMatch(arabic, /المرتجع|المرتجعات|Offline/);
+});
+
+test('Sorani sales reports match the reviewed Arabic meaning without English offline wording', () => {
+  assert.match(
+    sorani,
+    /subtitle: 'ڕاپۆرتەکان لەسەر بنەمای کاتی جێبەجێکردنی کردارەکانی فرۆشتن، گەڕاندنەوە و هەڵوەشاندنەوە لە چوارچێوەی دەسەڵاتی کارمەند\.'/,
+  );
+  assert.match(sorani, /refunds: 'بەهای گەڕاندنەوە و هەڵوەشاندنەوە'/);
+  assert.match(sorani, /average: 'تێکڕای بەهای مامەڵەی فرۆشتن'/);
+  assert.match(sorani, /returns: 'کرداری گەڕاندنەوە'/);
+  assert.match(sorani, /localSource: 'سەرچاوە: تۆماری متمانەپێکراوی ناوخۆیی کاشێر — دۆخی بێ پەیوەندی'/);
+
+  assert.doesNotMatch(sorani, /Offline|ناوەندی مامەڵەی فرۆشتن/);
 });
