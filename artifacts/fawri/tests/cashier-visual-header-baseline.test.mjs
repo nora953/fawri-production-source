@@ -54,7 +54,13 @@ test('runtime connectivity badge is left of end shift in RTL and stays softly re
 
 test('English POS header uses normal flow instead of RTL positioning coordinates', () => {
   assert.match(endShift, /data-cashier-end-shift-trigger="true"/);
-  assert.match(endShift, /html\[lang='en'\]\[data-cashier-view='pos'\] main > div > header > div:first-child/);
+  assert.match(endShift, /new URLSearchParams\(window\.location\.search\)/);
+  assert.match(endShift, /params\.get\('history'\) !== '1'/);
+  assert.match(endShift, /params\.get\('reports'\) !== '1'/);
+  assert.match(endShift, /params\.get\('sync'\) !== '1'/);
+  assert.match(endShift, /#cashier-root main > div > header > div:first-child/);
+  assert.doesNotMatch(endShift, /document\.documentElement\.dataset\.cashierView !== 'pos'/);
+  assert.doesNotMatch(endShift, /html\[lang='en'\]\[data-cashier-view='pos'\] main > div > header > div:first-child/);
   assert.match(endShift, /headerTarget \? createPortal\(trigger, headerTarget\) : null/);
   assert.match(
     commerceFixes,
