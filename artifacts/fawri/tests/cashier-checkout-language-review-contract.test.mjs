@@ -17,3 +17,10 @@ test('customer compensation discount reason stays semantically aligned across ca
   assert.match(english, /discountReasonCustomerRecovery: 'Customer compensation'/);
   assert.doesNotMatch(english, /discountReasonCustomerRecovery: 'Customer recovery'/);
 });
+
+test('manager approval success message states the same completed action across cashier languages', () => {
+  assert.match(arabic, /managerApprovalApproved: 'تمت موافقة المدير على هذا الخصم\.'/);
+  assert.match(sorani, /managerApprovalApproved: 'بەڕێوەبەر ئەم داشکاندنەی پەسەند کرد\.'/);
+  assert.match(english, /managerApprovalApproved: 'The manager approved this discount\.'/);
+  assert.doesNotMatch(english, /managerApprovalApproved: 'Manager approval is recorded for this discount\.'/);
+});
