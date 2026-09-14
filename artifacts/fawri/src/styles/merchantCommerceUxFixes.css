@@ -46,6 +46,25 @@ html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-chi
   background: #f1f5f9 !important;
 }
 
+/* Arabic history status chips share one outlined pill language without forcing
+   equal dimensions. Completed already carries its state border in the component;
+   add the matching solid outline to the adjacent sync-state chip only. Padding
+   and font size stay untouched so the hierarchy between list and detail cards is
+   preserved. */
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child {
+  border-style: solid !important;
+  border-width: 1px !important;
+  border-radius: 9999px !important;
+}
+
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child.bg-emerald-50 {
+  border-color: #a7f3d0 !important;
+}
+
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child.bg-amber-50 {
+  border-color: #fde68a !important;
+}
+
 /* English POS header parity.
    English uses normal document flow instead of the RTL absolute-position
    treatment from cashier-visual-qa.css. The end-shift trigger is portaled into
