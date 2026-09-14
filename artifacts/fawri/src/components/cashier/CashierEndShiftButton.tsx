@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
@@ -88,6 +88,30 @@ export default function CashierEndShiftButton({
   const [pin, setPin] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [headerTarget, setHeaderTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (lang !== 'en' || typeof document === 'undefined') {
+      setHeaderTarget(null);
+      return;
+    }
+
+    const resolveTarget = () => {
+      if (document.documentElement.dataset.cashierView !== 'pos') {
+        setHeaderTarget(null);
+        return;
+      }
+      const nextTarget = document.querySelector<HTMLElement>(
+        "html[lang='en'][data-cashier-view='pos'] main > div > header > div:first-child",
+      );
+      setHeaderTarget(current => current === nextTarget ? current : nextTarget);
+    };
+
+    resolveTarget();
+    const observer = new MutationObserver(resolveTarget);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [lang]);
 
   const close = () => {
     if (busy) return;
@@ -217,19 +241,28 @@ export default function CashierEndShiftButton({
       )
     : null;
 
+  const trigger = (
+    <button
+      type="button"
+      data-cashier-end-shift-trigger="true"
+      onClick={() => {
+        setPin('');
+        setErrorMessage('');
+        setOpen(true);
+      }}
+      className="h-8 shrink-0 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
+    >
+      {labels.endShift}
+    </button>
+  );
+
+  const triggerNode = lang === 'en'
+    ? (headerTarget ? createPortal(trigger, headerTarget) : null)
+    : trigger;
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          setPin('');
-          setErrorMessage('');
-          setOpen(true);
-        }}
-        className="shrink-0 rounded-lg border border-slate-200 px-2.5 py-1.5 font-bold text-slate-700 hover:bg-slate-50"
-      >
-        {labels.endShift}
-      </button>
+      {triggerNode}
       {modal}
     </>
   );
