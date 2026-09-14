@@ -70,3 +70,14 @@ test('history sale-list sync state uses a compact outlined pill in all languages
     /html\[lang="ar"\]\[data-cashier-view="history"\]/,
   );
 });
+
+test('Sorani void confirmation stays on one line without changing the reviewed wording', () => {
+  assert.match(
+    commerceFixes,
+    /html\[lang="ku"\]\[data-cashier-view="history"\] \.fixed\.inset-0\.z-50 \.mt-5\.flex\.gap-2 > button:last-child \{[\s\S]*white-space: nowrap !important;[\s\S]*font-size: 0\.75rem !important;[\s\S]*padding-inline: 0\.75rem !important;/,
+  );
+  assert.match(
+    historyPage,
+    /confirmAction === 'void' \? labels\.confirmVoid : labels\.confirmReturn/,
+  );
+});
