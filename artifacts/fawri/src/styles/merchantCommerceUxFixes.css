@@ -22,6 +22,27 @@ html[data-cashier-view="history"] #cashier-root main section:last-child > div > 
   flex-direction: row-reverse;
 }
 
+/* Arabic history secondary actions use the same outlined destructive-control
+   treatment as Void sale. This keeps Return all and Receipt reprint visually
+   consistent with the reviewed Arabic action hierarchy without changing any
+   action behavior. Sorani/English are reviewed separately after Arabic closes. */
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:last-child > button,
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button {
+  border: 1px solid #fecaca !important;
+  background: #ffffff !important;
+  color: #b91c1c !important;
+  border-radius: 0.75rem !important;
+  padding: 0.625rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25rem !important;
+}
+
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:last-child > button:hover,
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button:hover {
+  background: #fef2f2 !important;
+}
+
 /* English POS header parity.
    English uses normal document flow instead of the RTL absolute-position
    treatment from cashier-visual-qa.css. The end-shift trigger is portaled into
