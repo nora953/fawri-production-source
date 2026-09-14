@@ -7,6 +7,14 @@ const css = fs.readFileSync(
   new URL('../public/assets/cashier-visual-qa.css', import.meta.url),
   'utf8',
 );
+const commerceFixes = fs.readFileSync(
+  new URL('../src/styles/merchantCommerceUxFixes.css', import.meta.url),
+  'utf8',
+);
+const endShift = fs.readFileSync(
+  new URL('../src/components/cashier/CashierEndShiftButton.tsx', import.meta.url),
+  'utf8',
+);
 const serviceWorker = fs.readFileSync(
   new URL('../public/cashier-sw.js', import.meta.url),
   'utf8',
@@ -42,6 +50,23 @@ test('runtime connectivity badge is left of end shift in RTL and stays softly re
   assert.match(css, /border-radius: 0\.625rem !important;/);
   assert.match(css, /span:first-child\.bg-emerald-50 \{[\s\S]*border: 1px solid #a7f3d0 !important;[\s\S]*background: #ecfdf5 !important;/);
   assert.match(css, /span:first-child\.bg-slate-100 \{[\s\S]*border: 1px solid #cbd5e1 !important;[\s\S]*background: #f8fafc !important;/);
+});
+
+test('English POS header uses normal flow instead of RTL positioning coordinates', () => {
+  assert.match(endShift, /data-cashier-end-shift-trigger="true"/);
+  assert.match(endShift, /html\[lang='en'\]\[data-cashier-view='pos'\] main > div > header > div:first-child/);
+  assert.match(endShift, /headerTarget \? createPortal\(trigger, headerTarget\) : null/);
+  assert.match(
+    commerceFixes,
+    /html\[lang="en"\]\[data-cashier-view="pos"\] main > div > header \{[\s\S]*justify-content: flex-start !important;/,
+  );
+  assert.match(commerceFixes, /display: contents !important;/);
+  assert.match(
+    commerceFixes,
+    /span:first-child \{[\s\S]*position: static !important;[\s\S]*transform: none !important;/,
+  );
+  assert.doesNotMatch(commerceFixes, /html\[lang="en"\][\s\S]*left: max\(/);
+  assert.doesNotMatch(commerceFixes, /html\[lang="en"\][\s\S]*inset-inline-start: [0-9]/);
 });
 
 test('POS header controls keep a consistent translated-label friendly baseline', () => {
