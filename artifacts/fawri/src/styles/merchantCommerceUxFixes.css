@@ -7,6 +7,21 @@ html[data-cashier-view="history"] .fixed.inset-0.z-50 .mt-5.flex.gap-2 {
   flex-direction: row-reverse;
 }
 
+/* Cashier history compensation actions mirror with page direction.
+   The current DOM renders the explanatory copy first and the action group second,
+   while the action group renders Void before Return selected. Reversing both rows
+   gives the reviewed physical order without changing behavior:
+   - Arabic/Sorani RTL: Return selected at the right edge, Void immediately left.
+   - English LTR: the mirrored arrangement, Return selected at the left edge and
+     Void immediately right. */
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t {
+  flex-direction: row-reverse;
+}
+
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t > div:last-child {
+  flex-direction: row-reverse;
+}
+
 /* English POS header parity.
    English uses normal document flow instead of the RTL absolute-position
    treatment from cashier-visual-qa.css. The end-shift trigger is portaled into
