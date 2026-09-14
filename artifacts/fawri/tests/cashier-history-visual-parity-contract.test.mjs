@@ -55,3 +55,14 @@ test('Arabic history detail sync chip matches the outlined pill shape without fo
     /span:last-child \{[\s\S]{0,250}(padding|font-size):/,
   );
 });
+
+test('Arabic history sale-list sync state uses a compact outlined pill', () => {
+  assert.match(
+    commerceFixes,
+    /html\[lang="ar"\]\[data-cashier-view="history"\] #cashier-root main section:first-child > div\.p-2 > button > div\.flex\.items-end\.justify-between\.gap-3 > span \{[\s\S]*border: 1px solid #a7f3d0 !important;[\s\S]*border-radius: 9999px !important;[\s\S]*padding: 0\.125rem 0\.5rem !important;/,
+  );
+  assert.match(
+    commerceFixes,
+    /span\.text-amber-700 \{[\s\S]*border-color: #fde68a !important;/,
+  );
+});
