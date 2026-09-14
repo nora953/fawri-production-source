@@ -63,7 +63,7 @@ test('English POS header uses normal flow instead of RTL positioning coordinates
   assert.match(commerceFixes, /display: contents !important;/);
   assert.match(
     commerceFixes,
-    /span:first-child \{[\s\S]*position: static !important;[\s\S]*transform: none !important;/,
+    /span:first-child \{[\s\S]*position: static !important;[\s\S]*transform: none !important;[\s\S]*margin-inline-end: auto !important;/,
   );
   assert.doesNotMatch(commerceFixes, /html\[lang="en"\][\s\S]*left: max\(/);
   assert.doesNotMatch(commerceFixes, /html\[lang="en"\][\s\S]*inset-inline-start: [0-9]/);
