@@ -36,3 +36,22 @@ test('Arabic history reprint Return all and Void sale share the reviewed light-g
     /html\[lang="ar"\]\[data-cashier-view="history"\][\s\S]*button:first-child:hover \{[\s\S]*background: #f1f5f9 !important;/,
   );
 });
+
+test('Arabic history detail sync chip matches the outlined pill shape without forcing equal size', () => {
+  assert.match(
+    commerceFixes,
+    /html\[lang="ar"\]\[data-cashier-view="history"\][\s\S]*div\.mb-1\.flex\.flex-wrap\.items-center\.gap-2 > span:last-child \{[\s\S]*border-style: solid !important;[\s\S]*border-width: 1px !important;[\s\S]*border-radius: 9999px !important;/,
+  );
+  assert.match(
+    commerceFixes,
+    /span:last-child\.bg-emerald-50 \{[\s\S]*border-color: #a7f3d0 !important;/,
+  );
+  assert.match(
+    commerceFixes,
+    /span:last-child\.bg-amber-50 \{[\s\S]*border-color: #fde68a !important;/,
+  );
+  assert.doesNotMatch(
+    commerceFixes,
+    /span:last-child \{[\s\S]{0,250}(padding|font-size):/,
+  );
+});
