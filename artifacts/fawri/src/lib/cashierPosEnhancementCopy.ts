@@ -128,7 +128,7 @@ export const CASHIER_POS_ENHANCEMENT_COPY = {
     discountPercent: 'Percent %',
     discountValue: 'Discount value',
     discountReason: 'Discount reason',
-    discountReasonCustomerRecovery: 'Customer recovery',
+    discountReasonCustomerRecovery: 'Customer compensation',
     discountReasonLoyalty: 'Loyal customer / loyalty',
     discountReasonPriceMatch: 'Price match',
     discountReasonDamagedItem: 'Damaged item',
