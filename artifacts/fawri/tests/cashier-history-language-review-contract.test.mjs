@@ -6,6 +6,10 @@ const uiCopy = fs.readFileSync(
   new URL('../src/lib/cashierUiCopy.ts', import.meta.url),
   'utf8',
 );
+const historyPage = fs.readFileSync(
+  new URL('../src/pages/CashierHistoryPage.tsx', import.meta.url),
+  'utf8',
+);
 
 test('reviewed cashier history Arabic English and Sorani wording stays aligned', () => {
   // Arabic canonical reference.
@@ -45,4 +49,11 @@ test('reviewed cashier history Arabic English and Sorani wording stays aligned',
   assert.match(uiCopy, /returnAll: 'Return all'/);
   assert.match(uiCopy, /voidSale: 'Void sale'/);
   assert.match(uiCopy, /returnSelected: 'Return selected'/);
+});
+
+test('Sorani cashier history timestamps stay numeric and use a 24-hour clock', () => {
+  assert.match(
+    historyPage,
+    /if \(lang === 'ku'\) \{[\s\S]*year: 'numeric',[\s\S]*month: '2-digit',[\s\S]*day: '2-digit',[\s\S]*hour: '2-digit',[\s\S]*minute: '2-digit',[\s\S]*hourCycle: 'h23',[\s\S]*numberingSystem: 'arab'/,
+  );
 });
