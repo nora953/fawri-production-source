@@ -88,3 +88,13 @@ html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child > 
   z-index: auto !important;
   margin-inline-end: auto !important;
 }
+
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:first-child > div.p-2 > button > div.flex.items-end.justify-between.gap-3 > span {
+  border: 1px solid #a7f3d0 !important;
+  border-radius: 9999px !important;
+  padding: 0.125rem 0.5rem !important;
+}
+
+html[lang="ar"][data-cashier-view="history"] #cashier-root main section:first-child > div.p-2 > button > div.flex.items-end.justify-between.gap-3 > span.text-amber-700 {
+  border-color: #fde68a !important;
+}
