@@ -21,8 +21,10 @@ test("merchant lifecycle client uses only the secure server lifecycle endpoint",
   assert.match(lifecycle, /'approved'/);
   assert.match(lifecycle, /'rejected'/);
   assert.match(lifecycle, /'suspended'/);
+  assert.match(lifecycle, /result\.lifecycle\.merchant_id/);
   assert.doesNotMatch(lifecycle, /localStorage|sessionStorage/);
-  assert.doesNotMatch(lifecycle, /phone|merchant_id|Authorization/);
+  assert.doesNotMatch(lifecycle, /\bphone\b|Authorization/);
+  assert.doesNotMatch(lifecycle, /body\s*:/);
 });
 
 test("PendingPage refreshes server status, backs off, cleans polling, and uses secure logout", async () => {
@@ -46,8 +48,11 @@ test("DashboardLayout permits only authoritative approved lifecycle state", asyn
 
   assert.match(layout, /checkMerchantLifecycle\(controller\.signal\)/);
   assert.match(layout, /lifecycle\.lifecycle\.account_status !== 'approved'/);
+  assert.match(layout, /lifecycle\.reason === 'unauthenticated'/);
+  assert.match(layout, /routeToLogin\(\)/);
+  assert.match(layout, /routeToLifecycle\(\)/);
+  assert.match(layout, /setLocation\('\/login'\)/);
   assert.match(layout, /setLocation\('\/pending'\)/);
-  assert.match(layout, /lifecycle\.reason === 'unauthenticated' \? '\/login' : '\/pending'/);
   assert.match(layout, /window\.setTimeout\(\(\) => void verifyAccess\(\), 30_000\)/);
   assert.match(layout, /window\.clearTimeout/);
   assert.match(layout, /controller\?\.abort\(\)/);
