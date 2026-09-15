@@ -13,12 +13,16 @@ function read(relativePath) {
 
 test("active orders page is server-authoritative", () => {
   const entry = read("artifacts/fawri/src/pages/dashboard/OrdersPage.tsx");
+  const workspace = read(
+    "artifacts/fawri/src/pages/dashboard/OrdersWorkspacePage.tsx",
+  );
   const page = read(
     "artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx",
   );
-  const combined = `${entry}\n${page}`;
+  const combined = `${entry}\n${workspace}\n${page}`;
 
-  assert.match(entry, /ServerOrdersPage/);
+  assert.match(entry, /OrdersWorkspacePage/);
+  assert.match(workspace, /ServerOrdersPage/);
   for (const forbidden of [
     "getOrders",
     "saveOrders",
