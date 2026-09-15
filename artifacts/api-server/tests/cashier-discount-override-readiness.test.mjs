@@ -30,8 +30,9 @@ test('canonical 0015 migration stage reproduces the committed SQL authority exac
     index: 15,
     name: 'cashier_discount_override_authority',
     when: 1787715600000,
-    mode: 'manual_sql',
-    preimage_files: [],
+    mode: 'reviewed_sql',
+    sql_sha256: '3b04f71b9b5af0af26ab158cf6a23ff7a9861f1103d9f886b37dba5e98fcc321',
+    preimage_files: ['cashier-discount.ts', 'cashier-staff.ts', 'index.ts'],
   });
 
   const archivedSql = await readFile(
