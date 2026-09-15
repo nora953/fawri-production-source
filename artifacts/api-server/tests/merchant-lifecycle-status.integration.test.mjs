@@ -253,6 +253,7 @@ test("merchant lifecycle status is self-scoped and remains operationally fail-cl
   assert.equal(pending.response.status, 200, JSON.stringify(pending.body));
   assert.equal(pending.response.headers.get("cache-control"), "no-store");
   assert.deepEqual(pending.body?.lifecycle, {
+    merchant_id: "merchant-pending",
     account_status: "pending_review",
     merchant_status: "pending_activation",
     onboarding_status: "pending_review",
