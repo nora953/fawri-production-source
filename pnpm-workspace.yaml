@@ -47,7 +47,7 @@ overrides:
   'baseline-browser-mapping@2.10.28': 2.11.24
   'body-parser@2.2.2': 2.3.0
   'brace-expansion@5.0.6': 5.0.9
-  'browserslist@4.28.2': 4.29.0
+  'browserslist@4.28.2': 4.28.7
   'fast-uri@3.1.2': 3.1.8
   'js-yaml@4.1.1': 4.3.2
   'linkify-it@5.0.0': 5.0.2
