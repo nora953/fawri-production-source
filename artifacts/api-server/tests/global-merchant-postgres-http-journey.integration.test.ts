@@ -580,7 +580,8 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
 
   const logout = await fetch(`${baseUrl}/api/cashier/operator/logout`, {
     method: "POST",
-    headers: cashierHeaders,
+    headers: { ...cashierHeaders, "Content-Type": "application/json" },
+    body: JSON.stringify({ pin: CASHIER_PIN }),
   });
   assert.equal(logout.status, 200);
   assert.deepEqual(await json(logout), { ok: true });
