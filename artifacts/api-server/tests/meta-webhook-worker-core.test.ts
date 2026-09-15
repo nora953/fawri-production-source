@@ -67,7 +67,7 @@ function subscription() {
     addon_reply_batches: [],
     billing_anchor_day: 1,
     start_date: "2026-08-01T00:00:00.000Z",
-    expires_at: "2026-09-01T00:00:00.000Z",
+    expires_at: "2099-09-01T00:00:00.000Z",
     status: "active",
     auto_reply_enabled: true,
     emergency_credit_used: 0,
