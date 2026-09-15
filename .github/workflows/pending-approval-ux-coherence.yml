@@ -91,7 +91,7 @@ jobs:
       - name: Run Auth v2 security and cutover proofs
         run: |
           pnpm --filter @workspace/api-server exec tsx --test ./tests/auth-security-store.test.ts
-          node --test artifacts/api-server/tests/auth-cutover-contract.test.mjs
+          pnpm --filter @workspace/api-server exec tsx --test ./tests/auth-cutover-contract.test.mjs
 
       - name: Type-check Fawri frontend
         run: pnpm --filter @workspace/fawri run typecheck
