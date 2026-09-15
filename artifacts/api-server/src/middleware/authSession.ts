@@ -325,15 +325,21 @@ async function authenticate(
       expectedKind,
       ...(deviceId ? { deviceId } : {}),
     });
-    if (rotated) {
-      setAuthSessionCookie(res, expectedKind, rotated);
-      context.session = rotated.session;
+    if (!rotated) {
+      // Another request won the row lock and rotated this exact credential.
+      // Fail this stale request instead of allowing multiple operations under a
+      // credential whose authority has already moved. Do not clear the cookie:
+      // the winning response may be carrying the valid replacement cookie.
+      sendAuthError(
+        res,
+        401,
+        "SESSION_INVALID",
+        `${expectedKind} session was already rotated`,
+      );
+      return;
     }
-    // A concurrent request can rotate the same already-validated session first.
-    // In that race rotateSession() returns null because the old row is now marked
-    // as rotated. Do not clear the browser cookie or turn this already-authenticated
-    // request into a 401: the winning response carries the replacement cookie.
-    // Genuine invalid/expired sessions are still rejected by validateSession above.
+    setAuthSessionCookie(res, expectedKind, rotated);
+    context.session = rotated.session;
   }
 
   next();
