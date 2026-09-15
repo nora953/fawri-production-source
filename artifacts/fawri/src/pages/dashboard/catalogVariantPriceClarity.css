@@ -1,0 +1,93 @@
+/*
+ * Variant price clarity.
+ *
+ * Once a product has generated types, the product-level sale price is an
+ * inheritance fallback rather than the only selling price. Keep the original
+ * form field and value semantics, but make that role explicit to merchants in
+ * Arabic, Sorani Kurdish, and English.
+ */
+
+.catalog-editor-shell[data-catalog-has-variants="true"]
+  .catalog-editor-body-grid
+  > div:has(> label > input[data-catalog-primary-input="true"])
+  > label:nth-child(3)
+  > span:first-child::after {
+  font-weight: inherit;
+}
+
+html[lang="ar"]
+  .catalog-editor-shell[data-catalog-has-variants="true"]
+  .catalog-editor-body-grid
+  > div:has(> label > input[data-catalog-primary-input="true"])
+  > label:nth-child(3)
+  > span:first-child::after {
+  content: "الافتراضي";
+  display: inline-block;
+  margin-inline-start: 0.3em;
+}
+
+html[lang="ku"]
+  .catalog-editor-shell[data-catalog-has-variants="true"]
+  .catalog-editor-body-grid
+  > div:has(> label > input[data-catalog-primary-input="true"])
+  > label:nth-child(3)
+  > span:first-child::after {
+  content: " (بنەڕەتی)";
+}
+
+html[lang="en"]
+  .catalog-editor-shell[data-catalog-has-variants="true"]
+  .catalog-editor-body-grid
+  > div:has(> label > input[data-catalog-primary-input="true"])
+  > label:nth-child(3)
+  > span:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="en"]
+  .catalog-editor-shell[data-catalog-has-variants="true"]
+  .catalog-editor-body-grid
+  > div:has(> label > input[data-catalog-primary-input="true"])
+  > label:nth-child(3)
+  > span:first-child::after {
+  content: "Default sale price";
+  display: inline-block;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.catalog-editor-shell[data-catalog-has-variants="true"]
+  .catalog-editor-body-grid
+  > div:has(> label > input[data-catalog-primary-input="true"])
+  > label:nth-child(3)::after {
+  display: block;
+  margin-top: 0.25rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.7rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+html[lang="ar"]
+  .catalog-editor-shell[data-catalog-has-variants="true"]
+  .catalog-editor-body-grid
+  > div:has(> label > input[data-catalog-primary-input="true"])
+  > label:nth-child(3)::after {
+  content: "يُستخدم فقط للأنواع التي لا تحتوي على سعر بيع خاص.";
+}
+
+html[lang="ku"]
+  .catalog-editor-shell[data-catalog-has-variants="true"]
+  .catalog-editor-body-grid
+  > div:has(> label > input[data-catalog-primary-input="true"])
+  > label:nth-child(3)::after {
+  content: "تەنها بۆ ئەو جۆرانە بەکاردێت کە نرخی فرۆشتنی تایبەتیان نییە.";
+}
+
+html[lang="en"]
+  .catalog-editor-shell[data-catalog-has-variants="true"]
+  .catalog-editor-body-grid
+  > div:has(> label > input[data-catalog-primary-input="true"])
+  > label:nth-child(3)::after {
+  content: "Used only for types that do not have a special sale price.";
+}

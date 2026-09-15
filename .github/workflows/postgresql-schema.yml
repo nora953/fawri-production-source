@@ -1,0 +1,170 @@
+name: PostgreSQL schema validation
+
+on:
+  pull_request:
+    paths:
+      - "lib/db/**"
+      - "scripts/audit-fawri-data.mjs"
+      - "scripts/audit-fawri-json-data.mjs"
+      - "scripts/audit-fawri-background-jobs.mjs"
+      - "scripts/audit-manual-conversation-operations.mjs"
+      - "scripts/audit-transitional-migration-readiness.mjs"
+      - "scripts/plan-postgresql-migration.mjs"
+      - "scripts/run-postgresql-migration-plan.mjs"
+      - "scripts/lib/**"
+      - "scripts/tests/**"
+      - ".github/workflows/postgresql-schema.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+  push:
+    branches:
+      - "hardening/**"
+      - "foundation/**"
+    paths:
+      - "lib/db/**"
+      - "scripts/audit-fawri-data.mjs"
+      - "scripts/audit-fawri-json-data.mjs"
+      - "scripts/audit-fawri-background-jobs.mjs"
+      - "scripts/audit-manual-conversation-operations.mjs"
+      - "scripts/audit-transitional-migration-readiness.mjs"
+      - "scripts/plan-postgresql-migration.mjs"
+      - "scripts/run-postgresql-migration-plan.mjs"
+      - "scripts/lib/**"
+      - "scripts/tests/**"
+      - ".github/workflows/postgresql-schema.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postgresql-schema-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-schema:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Check JSON and migration tools syntax
+        run: |
+          node --check ./scripts/audit-fawri-data.mjs
+          node --check ./scripts/audit-fawri-json-data.mjs
+          node --check ./scripts/audit-fawri-background-jobs.mjs
+          node --check ./scripts/audit-manual-conversation-operations.mjs
+          node --check ./scripts/audit-transitional-migration-readiness.mjs
+          node --check ./scripts/plan-postgresql-migration.mjs
+          node --check ./scripts/run-postgresql-migration-plan.mjs
+          node --check ./scripts/lib/postgresql-migration-plan.mjs
+          node --check ./scripts/lib/transitional-migration-readiness.mjs
+          node --check ./scripts/tests/audit-fawri-data.test.mjs
+          node --check ./scripts/tests/audit-background-jobs.test.mjs
+          node --check ./scripts/tests/audit-manual-conversation-operations.test.mjs
+          node --check ./scripts/tests/audit-transitional-migration-readiness.test.mjs
+          node --check ./scripts/tests/plan-postgresql-migration.test.mjs
+          node --check ./scripts/tests/plan-postgresql-contract.test.mjs
+          node --check ./scripts/tests/transitional-secret-redaction.test.mjs
+          node --check ./scripts/tests/validated-migration-transitional-gate.test.mjs
+          node --check ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs
+          node --check ./scripts/tests/fixtures/create-transitional-migration-fixture.mjs
+          node --check ./lib/db/scripts/generate-migration.mjs
+          node --check ./lib/db/scripts/lib/migration-write.mjs
+          node --check ./lib/db/scripts/smoke-migration.mjs
+          node --check ./lib/db/scripts/rollback-migration.mjs
+          node --check ./lib/db/scripts/commit-migration.mjs
+
+      - name: Test migration dry-run safety
+        run: pnpm run migration:test
+
+      - name: Type-check database package
+        run: pnpm --filter @workspace/db run typecheck
+
+      - name: Generate and verify canonical Drizzle history
+        run: >-
+          FAWRI_MIGRATION_OUTPUT_DIR="$RUNNER_TEMP/fawri-drizzle-generated"
+          pnpm --filter @workspace/db run schema:generate
+
+      - name: Verify committed migration is reproducible
+        run: |
+          test -n "$(find lib/db/drizzle -maxdepth 1 -type f -name '*.sql' -print -quit)"
+          test -f lib/db/drizzle/meta/_journal.json
+          test -f "$RUNNER_TEMP/fawri-drizzle-generated/meta/0014_snapshot.json"
+          git diff --exit-code -- lib/db/drizzle
+
+      - name: Restore generated snapshots for disposable smoke expectations
+        run: |
+          for snapshot in "$RUNNER_TEMP/fawri-drizzle-generated"/meta/*_snapshot.json; do
+            name="$(basename "$snapshot")"
+            if [ ! -f "lib/db/drizzle/meta/$name" ]; then
+              cp "$snapshot" "lib/db/drizzle/meta/$name"
+            fi
+          done
+
+      - name: Apply migration to disposable PostgreSQL
+        env:
+          FAWRI_ALLOW_MIGRATION_SMOKE: "1"
+        run: pnpm --filter @workspace/db run schema:smoke
+
+      - name: Insert validated plan and always roll it back
+        env:
+          FAWRI_ALLOW_MIGRATION_ROLLBACK_TEST: "1"
+        run: |
+          fixture_dir="$(mktemp -d)"
+          trap 'rm -rf "$fixture_dir"' EXIT
+          node ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs "$fixture_dir"
+          node ./scripts/tests/fixtures/create-transitional-migration-fixture.mjs "$fixture_dir"
+          node ./lib/db/scripts/rollback-migration.mjs "$fixture_dir"
+
+      - name: Commit validated plan, reconcile values, and clean up
+        env:
+          FAWRI_ALLOW_MIGRATION_COMMIT_TEST: "1"
+        run: |
+          fixture_dir="$(mktemp -d)"
+          trap 'rm -rf "$fixture_dir"' EXIT
+          node ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs "$fixture_dir"
+          node ./scripts/tests/fixtures/create-transitional-migration-fixture.mjs "$fixture_dir"
+          node ./lib/db/scripts/commit-migration.mjs "$fixture_dir"
+
+      - name: Upload generated migration
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgresql-schema-migration
+          path: ${{ runner.temp }}/fawri-drizzle-generated
+          if-no-files-found: error
+          retention-days: 7

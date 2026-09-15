@@ -1,0 +1,82 @@
+name: Order operations
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/app.ts"
+      - "artifacts/api-server/src/routes/order-operations.ts"
+      - "artifacts/api-server/src/services/orderOperationsRuntime.ts"
+      - "artifacts/api-server/src/services/merchantRuntime.ts"
+      - "artifacts/api-server/tests/order-operations*.test.*"
+      - "artifacts/api-server/tests/orders-settings-static-contract.test.mjs"
+      - "artifacts/fawri/src/pages/dashboard/OrdersPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx"
+      - ".github/workflows/order-operations.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  push:
+    branches:
+      - "hardening/**"
+    paths:
+      - "artifacts/api-server/src/app.ts"
+      - "artifacts/api-server/src/routes/order-operations.ts"
+      - "artifacts/api-server/src/services/orderOperationsRuntime.ts"
+      - "artifacts/api-server/src/services/merchantRuntime.ts"
+      - "artifacts/api-server/tests/order-operations*.test.*"
+      - "artifacts/api-server/tests/orders-settings-static-contract.test.mjs"
+      - "artifacts/fawri/src/pages/dashboard/OrdersPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/ServerOrdersPage.tsx"
+      - ".github/workflows/order-operations.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: order-operations-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-orders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Check integration test syntax
+        run: node --check artifacts/api-server/tests/order-operations.integration.test.mjs
+
+      - name: Type-check API server and frontend
+        run: |
+          pnpm --filter @workspace/api-server run typecheck
+          pnpm --filter ./artifacts/fawri run typecheck
+
+      - name: Test order state and concurrency service
+        run: pnpm exec tsx --test artifacts/api-server/tests/order-operations-runtime.test.ts
+
+      - name: Test store currency order UI contract
+        run: node --test artifacts/api-server/tests/orders-settings-static-contract.test.mjs
+
+      - name: Build API server and frontend
+        run: |
+          pnpm --filter @workspace/api-server run build
+          pnpm --filter ./artifacts/fawri run build
+
+      - name: Test authenticated order operations API
+        run: node --test artifacts/api-server/tests/order-operations.integration.test.mjs

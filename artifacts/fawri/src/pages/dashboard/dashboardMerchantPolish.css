@@ -1,0 +1,250 @@
+/* Merchant-facing density polish for the catalog and orders workspaces.
+ * Keep these overrides scoped so operational logic and unrelated dashboard pages
+ * are unaffected.
+ */
+
+.products-workspace-polish article {
+  width: 100%;
+  max-width: 28rem;
+  justify-self: start;
+  border-radius: 1rem !important;
+}
+
+.products-workspace-polish article > div.border-b {
+  padding: 0.75rem !important;
+}
+
+.products-workspace-polish article h2 {
+  font-size: 1rem !important;
+  line-height: 1.45rem !important;
+}
+
+.products-workspace-polish article > div.grid.grid-cols-2 {
+  gap: 0.5rem !important;
+  padding: 0.75rem !important;
+}
+
+.products-workspace-polish article > div.grid.grid-cols-2 > div {
+  border-radius: 0.75rem !important;
+  padding: 0.625rem !important;
+}
+
+.products-workspace-polish article > div.grid.grid-cols-2 .mb-2 {
+  margin-bottom: 0.35rem !important;
+}
+
+.products-workspace-polish article > div.grid.grid-cols-2 .text-xl {
+  font-size: 1rem !important;
+  line-height: 1.4rem !important;
+}
+
+.products-workspace-polish article > div.px-4 {
+  padding-inline: 0.75rem !important;
+  padding-bottom: 0.75rem !important;
+}
+
+.products-workspace-polish article > div.px-4 > div.rounded-2xl {
+  border-radius: 0.75rem !important;
+  padding: 0.625rem !important;
+}
+
+.products-workspace-polish article > div.px-4 > div.rounded-2xl > p.mb-3 {
+  margin-bottom: 0.5rem !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 {
+  padding: 0.5rem !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 > .mb-2 {
+  margin-bottom: 0.375rem !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 > .grid {
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto 2.25rem !important;
+  gap: 0.375rem !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 .h-10 {
+  height: 2.25rem !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 .w-10 {
+  width: 2.25rem !important;
+}
+
+.products-workspace-polish article .rounded-xl.border.bg-background.p-3 button:not(.w-10) {
+  padding-inline: 0.75rem !important;
+}
+
+/* Order status and payment status are one visual pair. Use the same label row,
+ * control height, padding and radius for both fields.
+ */
+.orders-page-polish .grid.gap-4.md\:grid-cols-2 {
+  align-items: stretch;
+  gap: 0.625rem !important;
+}
+
+.orders-page-polish .grid.gap-4.md\:grid-cols-2 > label,
+.orders-page-polish .grid.gap-4.md\:grid-cols-2 > div {
+  display: grid;
+  min-width: 0;
+  grid-template-rows: 1.125rem 2.5rem;
+  gap: 0.375rem;
+  margin: 0 !important;
+  align-content: start;
+}
+
+.orders-page-polish .grid.gap-4.md\:grid-cols-2 > label > *,
+.orders-page-polish .grid.gap-4.md\:grid-cols-2 > div > * {
+  margin-top: 0 !important;
+}
+
+.orders-page-polish .grid.gap-4.md\:grid-cols-2 > label > span,
+.orders-page-polish .grid.gap-4.md\:grid-cols-2 > div > span {
+  display: flex;
+  height: 1.125rem;
+  min-height: 1.125rem;
+  align-items: center;
+  line-height: 1.125rem;
+}
+
+.orders-page-polish .grid.gap-4.md\:grid-cols-2 > label > select,
+.orders-page-polish .grid.gap-4.md\:grid-cols-2 > div > div {
+  box-sizing: border-box;
+  width: 100%;
+  height: 2.5rem !important;
+  min-height: 2.5rem !important;
+  border-radius: 0.625rem !important;
+  padding-inline: 0.75rem !important;
+}
+
+@media (min-width: 1024px) {
+  /* DashboardLayout already owns the viewport. Fit Orders into that main area
+   * instead of nesting another 100dvh page inside its padding.
+   */
+  body:has(.orders-page-polish) {
+    overflow: hidden;
+  }
+
+  main:has(.orders-page-polish) {
+    box-sizing: border-box;
+    height: 100dvh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow: hidden !important;
+    padding: 0.75rem !important;
+  }
+
+  main:has(.orders-page-polish) > div,
+  main:has(.orders-page-polish) > div > div,
+  .orders-page-polish {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .orders-page-polish {
+    overflow: hidden;
+  }
+
+  .orders-page-polish > div {
+    box-sizing: border-box;
+    height: 100%;
+    min-height: 0 !important;
+    overflow: hidden;
+    padding: 0 !important;
+  }
+
+  .orders-page-polish > div > div {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .orders-page-polish > div > div > .grid {
+    display: grid;
+    min-height: 0 !important;
+    height: auto !important;
+    flex: 1 1 auto;
+    gap: 0.625rem !important;
+    overflow: hidden;
+  }
+
+  .orders-page-polish > div > div > .grid > * {
+    min-height: 0;
+    max-height: 100%;
+  }
+
+  .orders-page-polish > div > div > .grid > :first-child {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .orders-page-polish > div > div > .grid > :first-child > div:first-child {
+    padding: 0.625rem !important;
+  }
+
+  .orders-page-polish > div > div > .grid > :first-child > div:last-child {
+    min-height: 0;
+    max-height: none !important;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .orders-page-polish > div > div > .grid > :first-child > div:last-child::-webkit-scrollbar {
+    display: none;
+  }
+
+  .orders-page-polish > div > div > .grid > :last-child {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .orders-page-polish > div > div > .grid > :last-child::-webkit-scrollbar {
+    display: none;
+  }
+
+  .orders-page-polish > div > div > .grid > :last-child > div:first-child {
+    padding: 0.625rem 0.875rem !important;
+  }
+
+  .orders-page-polish .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.375rem !important;
+  }
+
+  .orders-page-polish .p-5 {
+    padding: 0.625rem !important;
+  }
+
+  .orders-page-polish .grid.gap-3.sm\:grid-cols-3 {
+    gap: 0.375rem !important;
+  }
+
+  .orders-page-polish .grid.gap-3.sm\:grid-cols-3 > div {
+    padding: 0.5rem !important;
+  }
+
+  .orders-page-polish .space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0.25rem !important;
+  }
+
+  .orders-page-polish .mt-3.flex.justify-between.rounded-xl {
+    margin-top: 0.375rem !important;
+    padding: 0.625rem !important;
+    font-size: 1rem !important;
+  }
+
+  /* Only the order-status select is visually lower than the payment-status box
+   * because of native select rendering. Move that control up to the exact peer
+   * baseline without moving either label or the payment field.
+   */
+  .orders-page-polish .grid.gap-4.md\:grid-cols-2 > label > select {
+    margin-top: 0 !important;
+    transform: translateY(-10px);
+  }
+}

@@ -16,37 +16,110 @@ const save = (key: string, value: unknown) => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
+const MERCHANT_SESSION_ID_KEY = 'fawri_merchant_session_id';
+const LEGACY_MERCHANT_SESSION_ID_KEY = 'fawri_session';
+const LEGACY_ADMIN_SESSION_TOKEN_KEY = 'fawri_admin_session_token';
+const ADMIN_DEVICE_ID_KEY = 'fawri_admin_device_id';
+
 export const getSession = (): string | null =>
-  localStorage.getItem('fawri_session');
+  sessionStorage.getItem(MERCHANT_SESSION_ID_KEY);
 
 export const setSession = (id: string) =>
-  localStorage.setItem('fawri_session', id);
+  sessionStorage.setItem(MERCHANT_SESSION_ID_KEY, id);
 
-const ADMIN_SESSION_TOKEN_KEY = 'fawri_admin_session_token';
+export const clearMerchantTabSession = () =>
+  sessionStorage.removeItem(MERCHANT_SESSION_ID_KEY);
 
+function createDeviceId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `device-${crypto.randomUUID()}`;
+  }
+
+  return `device-${Date.now()}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+}
+
+export const getAdminDeviceId = (): string => {
+  let deviceId = localStorage.getItem(ADMIN_DEVICE_ID_KEY) || '';
+  if (!/^[A-Za-z0-9._:-]{16,128}$/.test(deviceId)) {
+    deviceId = createDeviceId().slice(0, 128);
+    localStorage.setItem(ADMIN_DEVICE_ID_KEY, deviceId);
+  }
+  return deviceId;
+};
+
+export const getAdminDeviceLabel = (): string => {
+  const userAgent = navigator.userAgent;
+  const platform = /Android/i.test(userAgent)
+    ? 'Android phone'
+    : /iPhone|iPad|iPod/i.test(userAgent)
+      ? 'Apple mobile device'
+      : /Windows/i.test(userAgent)
+        ? 'Windows computer'
+        : /Macintosh|Mac OS X/i.test(userAgent)
+          ? 'Mac computer'
+          : /Linux/i.test(userAgent)
+            ? 'Linux computer'
+            : 'Browser device';
+  const browser = /OPR\/|Opera\//i.test(userAgent)
+    ? 'Opera'
+    : /Edg\//i.test(userAgent)
+      ? 'Edge'
+      : /Firefox\//i.test(userAgent)
+        ? 'Firefox'
+        : /Chrome\//i.test(userAgent)
+          ? 'Chrome'
+          : /Safari\//i.test(userAgent)
+            ? 'Safari'
+            : 'Browser';
+  return `${platform} / ${browser}`;
+};
+
+/**
+ * Compatibility presence signal for legacy UI callers only.
+ *
+ * Auth v2 credentials live exclusively in the HttpOnly admin session cookie.
+ * This function never reads or returns a bearer token; admin API responses remain
+ * the authoritative proof of authentication and authorization.
+ */
 export const getAdminSessionToken = (): string | null =>
-  sessionStorage.getItem(ADMIN_SESSION_TOKEN_KEY);
+  typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')
+    ? 'auth-v2-cookie-session'
+    : null;
 
-export const setAdminSessionToken = (token: string) =>
-  sessionStorage.setItem(ADMIN_SESSION_TOKEN_KEY, token);
+/** Retired bearer-token writers are intentionally reduced to legacy cleanup. */
+export const setAdminSessionToken = (_token: string) =>
+  sessionStorage.removeItem(LEGACY_ADMIN_SESSION_TOKEN_KEY);
 
 export const clearAdminSessionToken = () =>
-  sessionStorage.removeItem(ADMIN_SESSION_TOKEN_KEY);
+  sessionStorage.removeItem(LEGACY_ADMIN_SESSION_TOKEN_KEY);
 
-export const getAdminAuthHeaders = (): Record<string, string> => {
-  const token = getAdminSessionToken();
+export const getAdminAuthHeaders = (): Record<string, string> => ({
+  'X-Fawri-Device-Id': getAdminDeviceId(),
+});
 
-  return token
-    ? { Authorization: `Bearer ${token}` }
-    : {};
+export const clearAdminSession = () => {
+  clearAdminSessionToken();
+  void fetch('/api/auth/admin/logout', {
+    method: 'POST',
+    headers: getAdminAuthHeaders(),
+    keepalive: true,
+  }).catch(() => undefined);
 };
 
 export const clearSession = () => {
-  const hadSession = Boolean(localStorage.getItem('fawri_session'));
-  localStorage.removeItem('fawri_session');
-  clearAdminSessionToken();
+  const isAdminRoute =
+    typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
 
-  if (hadSession) {
+  if (isAdminRoute) {
+    clearMerchantTabSession();
+    clearAdminSession();
+    return;
+  }
+
+  const hadMerchantSession = Boolean(getSession());
+  clearMerchantTabSession();
+
+  if (hadMerchantSession) {
     void fetch('/api/auth/logout', {
       method: 'POST',
       keepalive: true,
@@ -77,10 +150,19 @@ const syncProductsWithBotServer = (merchantId: string, products: Product[]) => {
 export const initStore = () => {
   const merchants = safeParse<Merchant[]>('fawri_merchants', []);
   const cleanedMerchants = merchants.filter(
-    merchant =>
-      merchant.id !== 'merchant-demo' &&
-      !(merchant.is_admin === true && merchant.phone === '07800000001')
+    merchant => merchant.id !== 'merchant-demo' && merchant.is_admin !== true
   );
+
+  const legacySessionId = localStorage.getItem(LEGACY_MERCHANT_SESSION_ID_KEY);
+  if (
+    !getSession() &&
+    !getAdminSessionToken() &&
+    legacySessionId &&
+    cleanedMerchants.some(merchant => merchant.id === legacySessionId)
+  ) {
+    setSession(legacySessionId);
+  }
+  localStorage.removeItem(LEGACY_MERCHANT_SESSION_ID_KEY);
 
   if (
     !localStorage.getItem('fawri_merchants') ||
@@ -116,19 +198,25 @@ export const getMerchants = (): Merchant[] =>
   safeParse<Merchant[]>('fawri_merchants', []);
 
 export const saveMerchants = (merchants: Merchant[]) =>
-  save('fawri_merchants', merchants);
+  save(
+    'fawri_merchants',
+    merchants.filter(merchant => merchant.is_admin !== true),
+  );
 
 export const getCurrentMerchant = (): Merchant | undefined => {
   const id = getSession();
   if (!id) return undefined;
-  return getMerchants().find(merchant => merchant.id === id);
+  return getMerchants().find(
+    merchant => merchant.id === id && merchant.is_admin !== true,
+  );
 };
 
 export const refreshCurrentMerchantFromApi = async (): Promise<Merchant | undefined> => {
-  const merchantId = getSession();
-  if (!merchantId) return undefined;
-
-  const response = await fetch('/api/auth/me');
+  const response = await fetch('/api/auth/me', {
+    cache: 'no-store',
+    credentials: 'include',
+    headers: { Accept: 'application/json' },
+  });
   const result = await response.json().catch(() => null);
 
   if (!response.ok || !result?.ok || !result.merchant) {
@@ -136,6 +224,9 @@ export const refreshCurrentMerchantFromApi = async (): Promise<Merchant | undefi
   }
 
   const apiMerchant = result.merchant as Merchant;
+  if (apiMerchant.is_admin === true) {
+    throw new Error('Administrator accounts cannot use the merchant dashboard');
+  }
   setSession(apiMerchant.id);
 
   const merchants = getMerchants();
@@ -175,10 +266,6 @@ export const createSubscriptionForPlan = (
   };
 
   const selectedPlan = planMap[plan];
-  const subscriptions = getSubscriptions().filter(
-    subscription => subscription.merchant_id !== merchantId
-  );
-
   const newSubscription: Subscription = {
     id: `sub-${merchantId}-${Date.now()}`,
     merchant_id: merchantId,
@@ -198,7 +285,6 @@ export const createSubscriptionForPlan = (
     pending_next_cycle_deduction: 0,
   };
 
-  saveSubscriptions([...subscriptions, newSubscription]);
   return newSubscription;
 };
 

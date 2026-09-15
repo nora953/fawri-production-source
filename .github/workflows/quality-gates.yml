@@ -1,0 +1,106 @@
+name: Final quality gates
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/**"
+      - "lib/**"
+      - "scripts/**"
+      - "package.json"
+      - "**/package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "tsconfig*.json"
+      - ".github/workflows/quality-gates.yml"
+      - ".github/workflows/security-supply-chain.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: final-quality-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-tool-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
+      - name: Check final quality/security script syntax
+        run: |
+          node --check scripts/security-ci-lib.mjs
+          node --check scripts/security-final-audit.mjs
+          node --check scripts/ci-run-redacted.mjs
+          node --check scripts/security-final-audit.test.mjs
+          node --check scripts/ci-run-redacted.test.mjs
+
+      - name: Run quality/security script tests
+        run: >-
+          node --test --test-concurrency=1
+          scripts/security-final-audit.test.mjs
+          scripts/ci-run-redacted.test.mjs
+
+      - name: Validate additive workflow and lockfile policy
+        run: node scripts/security-final-audit.mjs policy
+
+  full-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run full repository typecheck with redaction guard
+        run: node scripts/ci-run-redacted.mjs --label full-typecheck -- pnpm run typecheck
+
+  full-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run full repository build with redaction guard
+        run: node scripts/ci-run-redacted.mjs --label full-build -- pnpm -r --if-present run build

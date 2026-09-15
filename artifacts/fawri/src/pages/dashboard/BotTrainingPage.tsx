@@ -1,3 +1,4 @@
+import { BOT_TRAINING_PAGE_LOCALE_BY_LANG } from '@/lib/translations/features/pages/dashboard/BotTrainingPage';
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -1137,11 +1138,7 @@ function getStatusIcon(status: TrainingStatus) {
 function formatDate(value: string, lang: Lang): string {
   if (!value) return "";
 
-  const localeByLang: Record<Lang, string> = {
-    ar: "ar-IQ",
-    ku: "ckb-IQ",
-    en: "en-IQ",
-  };
+  const localeByLang: Record<Lang, string> = BOT_TRAINING_PAGE_LOCALE_BY_LANG;
 
   try {
     return new Intl.DateTimeFormat(localeByLang[lang], {

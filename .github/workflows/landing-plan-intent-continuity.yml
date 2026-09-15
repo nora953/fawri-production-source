@@ -1,0 +1,78 @@
+name: Landing plan intent continuity
+
+on:
+  push:
+    branches:
+      - parallel/landing-plan-intent-continuity
+      - parallel/integration-coordinator
+    paths:
+      - artifacts/fawri/src/pages/LandingPage.tsx
+      - artifacts/fawri/src/pages/SignupPage.tsx
+      - artifacts/fawri/tests/landing-plan-intent-continuity.test.mjs
+      - artifacts/api-server/src/routes/auth-public-routes.ts
+      - artifacts/api-server/src/services/authAccountRepository.ts
+      - artifacts/api-server/tests/landing-plan-intent-continuity.test.ts
+      - .github/workflows/landing-plan-intent-continuity.yml
+  pull_request:
+    paths:
+      - artifacts/fawri/src/pages/LandingPage.tsx
+      - artifacts/fawri/src/pages/SignupPage.tsx
+      - artifacts/fawri/tests/landing-plan-intent-continuity.test.mjs
+      - artifacts/api-server/src/routes/auth-public-routes.ts
+      - artifacts/api-server/src/services/authAccountRepository.ts
+      - artifacts/api-server/tests/landing-plan-intent-continuity.test.ts
+      - .github/workflows/landing-plan-intent-continuity.yml
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Requested plan contract tests
+        run: |
+          pnpm --filter @workspace/fawri exec node --test ./tests/landing-plan-intent-continuity.test.mjs
+          pnpm --filter @workspace/api-server exec tsx --test ./tests/landing-plan-intent-continuity.test.ts
+
+      - name: Auth OTP continuity regression
+        run: |
+          pnpm --filter @workspace/fawri exec node --test ./tests/auth-otp-contract-continuity.test.mjs
+          pnpm --filter @workspace/api-server exec node --test ./tests/auth-otp-contract-continuity.test.mjs
+
+      - name: Pending lifecycle regression
+        run: |
+          pnpm --filter @workspace/fawri exec node --test ./tests/pending-approval-coherence.test.mjs
+          pnpm --filter @workspace/api-server build
+          pnpm --filter @workspace/api-server exec node --test ./tests/merchant-lifecycle-status.integration.test.mjs
+
+      - name: Relevant auth session regression
+        run: pnpm --filter @workspace/api-server test:merchant-session
+
+      - name: Frontend typecheck and build
+        run: |
+          pnpm --filter @workspace/fawri typecheck
+          pnpm --filter @workspace/fawri build
+
+      - name: API typecheck and build
+        run: |
+          pnpm --filter @workspace/api-server typecheck
+          pnpm --filter @workspace/api-server build

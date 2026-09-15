@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   mkdtemp,
   mkdir,
@@ -87,6 +87,57 @@ function trainingRequest(id, merchantId) {
   };
 }
 
+function catalogProduct(id, merchantId, name, stockQuantity) {
+  return {
+    id,
+    merchant_id: merchantId,
+    name,
+    price_iqd: 1000,
+    stock_quantity: stockQuantity,
+    low_stock_threshold: 1,
+    status: stockQuantity > 1 ? "available" : "low_stock",
+    allow_fawri_reply: true,
+    image_refs: [],
+    variants: [],
+    created_at: "2026-07-24T00:00:00.000Z",
+    updated_at: "2026-07-24T00:00:00.000Z",
+    version: 1,
+  };
+}
+
+function runCatalogSuite(command, args) {
+  const result = spawnSync(command, args, {
+    cwd: apiRoot,
+    env: { ...process.env, NODE_ENV: "test" },
+    encoding: "utf8",
+  });
+  assert.equal(
+    result.status,
+    0,
+    [result.stdout, result.stderr].filter(Boolean).join("\n"),
+  );
+}
+
+test("catalog runtime, server contract, and bot authority adapter suites pass", () => {
+  const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
+  runCatalogSuite(pnpm, [
+    "exec",
+    "tsx",
+    "--test",
+    "./tests/catalog-inventory.test.ts",
+  ]);
+  runCatalogSuite(process.execPath, [
+    "--test",
+    "./tests/catalog-server-contract.test.mjs",
+  ]);
+  runCatalogSuite(pnpm, [
+    "exec",
+    "tsx",
+    "--test",
+    "./tests/bot-catalog-authority.test.ts",
+  ]);
+});
+
 async function reservePort() {
   const server = net.createServer();
 
@@ -134,7 +185,7 @@ function getSetCookie(response) {
 }
 
 function cookiePair(setCookie) {
-  assert.match(setCookie, /^fawri_merchant_session=/);
+  assert.match(setCookie, /^fawri_merchant_session_v2=/);
   return setCookie.split(";", 1)[0];
 }
 
@@ -180,16 +231,16 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
     JSON.stringify({
       productsByMerchant: {
         "merchant-a": [{
-          id: "product-a",
+          id: "legacy-product-a",
           merchant_id: "merchant-a",
-          name: "Product A",
-          quantity: 3,
+          name: "Legacy Product A",
+          quantity: 99,
         }],
         "merchant-b": [{
-          id: "product-b",
+          id: "legacy-product-b",
           merchant_id: "merchant-b",
-          name: "Product B",
-          quantity: 4,
+          name: "Legacy Product B",
+          quantity: 99,
         }],
       },
       conversationsByMerchant: {
@@ -220,6 +271,27 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
       },
       orderDraftsByConversation: {},
       lastSyncedMerchantId: null,
+    }),
+  );
+
+  await writeFile(
+    path.join(dataDir, "catalog-inventory.json"),
+    JSON.stringify({
+      version: 1,
+      merchants: {
+        "merchant-a": {
+          products: {
+            "product-a": catalogProduct("product-a", "merchant-a", "Product A", 3),
+          },
+          idempotency: {},
+        },
+        "merchant-b": {
+          products: {
+            "product-b": catalogProduct("product-b", "merchant-b", "Product B", 4),
+          },
+          idempotency: {},
+        },
+      },
     }),
   );
 
@@ -321,6 +393,21 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
   assert.equal(loginB.response.status, 200);
   const cookieB = cookiePair(loginB.setCookie);
 
+  await t.test("rejects bearer and legacy cookie fallbacks", async () => {
+    const separator = cookieA.indexOf("=");
+    const sessionValue = cookieA.slice(separator + 1);
+
+    const bearerOnly = await apiFetch("/api/auth/me", {
+      headers: { Authorization: `Bearer ${sessionValue}` },
+    });
+    assert.equal(bearerOnly.status, 401);
+
+    const legacyCookieOnly = await apiFetch("/api/auth/me", {
+      headers: { Cookie: `fawri_merchant_session=${sessionValue}` },
+    });
+    assert.equal(legacyCookieOnly.status, 401);
+  });
+
   await t.test("derives identity from the signed session", async () => {
     const me = await parseJson(await apiFetch(
       "/api/auth/me?merchantId=merchant-b",
@@ -335,23 +422,33 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
     assert.equal(tampered.status, 401);
   });
 
-  await t.test("isolates product, conversation, order, and Meta reads", async () => {
+  await t.test("isolates server catalog, conversation, order, and Meta reads", async () => {
     const productsA = await parseJson(await apiFetch(
       "/api/products?merchantId=merchant-b",
       { headers: { Cookie: cookieA } },
     ));
+    assert.equal(productsA.body.authority, "server_catalog");
     assert.deepEqual(
       productsA.body.products.map((item) => item.id),
       ["product-a"],
+    );
+    assert.equal(
+      productsA.body.products.some((item) => item.id === "legacy-product-a"),
+      false,
     );
 
     const productsB = await parseJson(await apiFetch(
       "/api/products?merchantId=merchant-a",
       { headers: { Cookie: cookieB } },
     ));
+    assert.equal(productsB.body.authority, "server_catalog");
     assert.deepEqual(
       productsB.body.products.map((item) => item.id),
       ["product-b"],
+    );
+    assert.equal(
+      productsB.body.products.some((item) => item.id === "legacy-product-b"),
+      false,
     );
 
     const crossTenantPath = await apiFetch(
@@ -388,7 +485,7 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
     );
   });
 
-  await t.test("forces product writes into the authenticated tenant", async () => {
+  await t.test("rejects legacy product writes without changing either tenant catalog", async () => {
     const sync = await parseJson(await apiFetch("/api/bot/products/sync", {
       method: "POST",
       headers: {
@@ -400,13 +497,22 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
         products: [{
           id: "injected-product",
           merchant_id: "merchant-b",
-          name: "Authenticated A Product",
+          name: "Injected Legacy Product",
         }],
       }),
     }));
 
-    assert.equal(sync.response.status, 200);
+    assert.equal(sync.response.status, 410);
+    assert.equal(sync.body.code, "LEGACY_PRODUCT_AUTHORITY_DISABLED");
     assert.equal(sync.body.merchant_id, "merchant-a");
+
+    const productsA = await parseJson(await apiFetch("/api/products", {
+      headers: { Cookie: cookieA },
+    }));
+    assert.deepEqual(
+      productsA.body.products.map((item) => item.id),
+      ["product-a"],
+    );
 
     const productsB = await parseJson(await apiFetch("/api/products", {
       headers: { Cookie: cookieB },
@@ -417,8 +523,8 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
     );
   });
 
-  await t.test("isolates saved answers and training actions", async () => {
-    const created = await parseJson(await apiFetch("/api/saved-answers", {
+  await t.test("legacy knowledge authority stays disabled", async () => {
+    const savedAnswers = await parseJson(await apiFetch("/api/saved-answers", {
       method: "POST",
       headers: {
         Cookie: cookieA,
@@ -431,36 +537,15 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
         language: "en",
       }),
     }));
-    assert.equal(created.response.status, 201);
-    assert.equal(created.body.answer.merchant_id, "merchant-a");
+    assert.equal(savedAnswers.response.status, 410);
+    assert.equal(savedAnswers.body.code, "LEGACY_KNOWLEDGE_AUTHORITY_DISABLED");
 
-    const answersB = await parseJson(await apiFetch(
-      "/api/saved-answers?merchantId=merchant-a",
-      { headers: { Cookie: cookieB } },
-    ));
-    assert.equal(answersB.body.answers.length, 0);
-
-    const trainingA = await parseJson(await apiFetch(
+    const training = await parseJson(await apiFetch(
       "/api/bot-training/requests?merchantId=merchant-b",
       { headers: { Cookie: cookieA } },
     ));
-    assert.deepEqual(
-      trainingA.body.requests.map((item) => item.id),
-      ["training-a"],
-    );
-
-    const rejectOtherTenant = await apiFetch(
-      "/api/bot-training/requests/training-b/reject",
-      {
-        method: "POST",
-        headers: {
-          Cookie: cookieA,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ merchantId: "merchant-b" }),
-      },
-    );
-    assert.equal(rejectOtherTenant.status, 404);
+    assert.equal(training.response.status, 410);
+    assert.equal(training.body.code, "LEGACY_KNOWLEDGE_AUTHORITY_DISABLED");
   });
 
   await t.test("changes only the authenticated merchant password", async () => {
@@ -501,37 +586,29 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
     assert.equal(unchangedMerchantB.response.status, 200);
   });
 
-  await t.test("requires a session for Meta login and rejects tampered state", async () => {
+  await t.test("requires a secure session before the Meta cutover gate", async () => {
     const withoutSession = await apiFetch(
       "/api/meta/login?merchantId=merchant-a",
       { redirect: "manual" },
     );
     assert.equal(withoutSession.status, 401);
 
-    const loginRedirect = await apiFetch(
+    const freshLogin = await login("07111111111", "MerchantA2@");
+    assert.equal(freshLogin.response.status, 200);
+    const freshCookie = cookiePair(freshLogin.setCookie);
+
+    const gatedMetaLogin = await parseJson(await apiFetch(
       "/api/meta/login?merchantId=merchant-b&platform=messenger",
       {
-        headers: { Cookie: cookieA },
+        headers: { Cookie: freshCookie },
         redirect: "manual",
       },
+    ));
+    assert.equal(gatedMetaLogin.response.status, 503);
+    assert.equal(
+      gatedMetaLogin.body.code,
+      "META_CHANNEL_CONNECTION_CUTOVER_PENDING",
     );
-    assert.equal(loginRedirect.status, 302);
-
-    const location = loginRedirect.headers.get("location");
-    assert.ok(location);
-    const state = new URL(location).searchParams.get("state");
-    assert.ok(state);
-
-    const [payload, signature] = state.split(".");
-    const alteredSignature =
-      `${signature[0] === "a" ? "b" : "a"}${signature.slice(1)}`;
-    const tamperedState = `${payload}.${alteredSignature}`;
-
-    const callback = await apiFetch(
-      `/api/meta/callback?code=fake&state=${encodeURIComponent(tamperedState)}`,
-    );
-    assert.equal(callback.status, 400);
-    assert.equal(await callback.text(), "Invalid or expired Meta state");
   });
 
   await t.test("rejects a session after the merchant account is deleted", async () => {
@@ -555,7 +632,7 @@ test("merchant session authenticates and isolates tenant APIs", async (t) => {
     });
     assert.equal(logout.status, 200);
     const clearedCookie = getSetCookie(logout);
-    assert.match(clearedCookie, /^fawri_merchant_session=/);
+    assert.match(clearedCookie, /^fawri_merchant_session_v2=/);
     assert.match(clearedCookie, /Expires=Thu, 01 Jan 1970 00:00:00 GMT/i);
   });
 });

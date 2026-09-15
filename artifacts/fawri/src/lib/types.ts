@@ -1,13 +1,29 @@
 export type MerchantStatus = 'pending_activation' | 'approved' | 'rejected' | 'suspended';
+export type AccountStatus = 'pending_review' | 'approved' | 'rejected' | 'suspended';
+export type OnboardingStatus =
+  | 'pending_review'
+  | 'awaiting_channel'
+  | 'channel_connected'
+  | 'activation_expired';
+export type TrialStatus =
+  | 'eligible'
+  | 'not_started'
+  | 'active'
+  | 'expired'
+  | 'already_used'
+  | 'ineligible';
+export type SignupSource = 'landing_trial' | 'landing_plan' | 'login' | 'direct';
+export type RequestedPlan = 'silver' | 'gold' | 'diamond';
 export type AdminRole = 'owner_admin' | 'assistant_admin';
 
 export type AdminPermission =
-  | 'manage_admins'
-  | 'manage_merchants'
+  | 'view_merchants'
+  | 'manage_merchant_status'
   | 'manage_subscriptions'
   | 'manage_channels'
   | 'view_logs'
-  | 'inspection_sessions';
+  | 'inspect_merchant_sessions'
+  | 'manage_support';
 
 export type MerchantDeleteReason =
   | 'policy_violation'
@@ -52,6 +68,15 @@ export type OrderPaymentStatus =
   | 'failed'
   | 'manual_review';
 
+export type PaymentConfirmationSource =
+  | 'merchant_confirmed'
+  | 'provider_verified';
+
+export type PaymentReconciliationStatus =
+  | 'clear'
+  | 'reconciliation_required'
+  | 'resolved';
+
 export interface Merchant {
   id: string;
   owner_name: string;
@@ -70,6 +95,18 @@ export interface Merchant {
   admin_role?: AdminRole;
   permissions?: AdminPermission[];
   admin_enabled?: boolean;
+  otp_verified?: boolean;
+  must_change_password?: boolean;
+  account_status?: AccountStatus;
+  onboarding_status?: OnboardingStatus;
+  trial_status?: TrialStatus;
+  signup_source?: SignupSource;
+  requested_plan?: RequestedPlan | null;
+  approved_at?: string;
+  channel_activation_deadline?: string;
+  first_channel_connected_at?: string;
+  trial_started_at?: string;
+  trial_expires_at?: string;
 
   subscription_started_at?: string;
   subscription_expires_at?: string;
@@ -115,6 +152,20 @@ export interface Subscription {
   reply_limit: number;
   replies_used: number;
   replies_remaining: number;
+  base_reply_limit?: number;
+  base_replies_used?: number;
+  base_replies_remaining?: number;
+  addon_replies_remaining?: number;
+  addon_reply_batches?: Array<{
+    id: string;
+    source?: 'purchase' | 'emergency';
+    purchased_at: string;
+    expires_at: string;
+    amount: number;
+    remaining: number;
+    expiry_reminder_sent_at?: string;
+  }>;
+  billing_anchor_day?: number;
   start_date: string;
   expires_at: string;
   status: 'pending_activation' | 'active' | 'expired' | 'replies_exhausted' | 'suspended';
@@ -123,8 +174,183 @@ export interface Subscription {
   emergency_credit_amount: number;
   emergency_credit_remaining: number;
   emergency_credit_activated: boolean;
+  emergency_debt?: number;
   pending_next_cycle_deduction: number;
+  expiry_reminder_sent_at?: string;
+  expired_notification_sent_at?: string;
 }
+
+export interface MerchantBalanceNotification {
+  id: string;
+  merchant_id: string;
+  type: 'subscription_balance_purchase';
+  purchased_replies: number;
+  emergency_debt_paid: number;
+  addon_replies_added: number;
+  emergency_debt_remaining: number;
+  base_replies_remaining: number;
+  emergency_replies_remaining: number;
+  addon_replies_remaining: number;
+  total_replies_available: number;
+  addon_batch_id?: string;
+  addon_batch_expires_at?: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantSubscriptionPlanNotification {
+  id: string;
+  merchant_id: string;
+  type: 'subscription_plan_event';
+  operation: 'activate' | 'change' | 'renew';
+  plan_name: Subscription['plan_name'];
+  previous_plan_name?: Subscription['plan_name'];
+  start_date: string;
+  expires_at: string;
+  emergency_debt_paid: number;
+  emergency_debt_remaining: number;
+  base_replies_remaining: number;
+  addon_replies_remaining: number;
+  total_replies_available: number;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantEmergencyActivationNotification {
+  id: string;
+  merchant_id: string;
+  type: 'subscription_emergency_activated';
+  addon_batch_id: string;
+  emergency_replies_added: number;
+  emergency_debt: number;
+  expires_at: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantSubscriptionExpiryReminderNotification {
+  id: string;
+  merchant_id: string;
+  type: 'subscription_expiry_reminder';
+  plan_name: Subscription['plan_name'];
+  expires_at: string;
+  days_remaining: number;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantSubscriptionExpiredNotification {
+  id: string;
+  merchant_id: string;
+  type: 'subscription_expired';
+  plan_name: Subscription['plan_name'];
+  expired_at: string;
+  addon_replies_remaining: number;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantAddonExpiryReminderNotification {
+  id: string;
+  merchant_id: string;
+  type: 'addon_expiry_reminder';
+  addon_batch_id: string;
+  source: 'purchase' | 'emergency';
+  remaining_replies: number;
+  expires_at: string;
+  days_remaining: number;
+  created_at: string;
+  read_at?: string;
+}
+
+export type MerchantSubscriptionNotification =
+  | MerchantSubscriptionPlanNotification
+  | MerchantEmergencyActivationNotification
+  | MerchantSubscriptionExpiryReminderNotification
+  | MerchantSubscriptionExpiredNotification
+  | MerchantAddonExpiryReminderNotification;
+
+export interface MerchantInspectionNotification {
+  id: string;
+  merchant_id: string;
+  type: 'inspection_session_request';
+  ticket_id: string;
+  inspection_request_id: string;
+  ticket_subject: string;
+  admin_name: string;
+  mode: 'live_observation' | 'independent_read_only';
+  request_expires_at: string;
+  action_url: string;
+  request_status: 'pending' | 'approved' | 'rejected' | 'expired';
+  consent_decision?: 'approved' | 'rejected';
+  responded_at?: string;
+  session_expires_at?: string;
+  ended_at?: string;
+  end_reason?:
+    | 'request_timeout'
+    | 'approval_window_expired'
+    | 'ticket_resolved'
+    | 'ticket_closed'
+    | 'merchant_terminated';
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantSupportReplyReminderNotification {
+  id: string;
+  merchant_id: string;
+  type: 'support_reply_reminder';
+  ticket_id: string;
+  ticket_subject: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantNewOrderNotification {
+  id: string;
+  merchant_id: string;
+  type: 'operational_new_order';
+  order_id: string;
+  conversation_id?: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantCustomerMessageNotification {
+  id: string;
+  merchant_id: string;
+  type: 'operational_customer_message';
+  conversation_id: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export interface MerchantPaymentConflictNotification {
+  id: string;
+  merchant_id: string;
+  type: 'operational_payment_conflict';
+  order_id: string;
+  conversation_id?: string;
+  provider?: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+}
+
+export type MerchantOperationalNotification =
+  | MerchantNewOrderNotification
+  | MerchantCustomerMessageNotification
+  | MerchantPaymentConflictNotification;
+
+export type MerchantNotification =
+  | MerchantBalanceNotification
+  | MerchantSubscriptionNotification
+  | MerchantInspectionNotification
+  | MerchantSupportReplyReminderNotification
+  | MerchantOperationalNotification;
 
 export type ProductStatus =
   | 'available'
@@ -226,6 +452,16 @@ export interface Order {
   payment_verified_at?: string;
   payment_verified_by?: string;
   payment_rejection_reason?: string;
+  payment_confirmation_source?: PaymentConfirmationSource;
+  payment_provider?: string;
+  payment_provider_transaction_ref?: string;
+  payment_provider_last_event_id?: string;
+  payment_reconciliation_status?: PaymentReconciliationStatus;
+  payment_conflict_code?: string;
+  payment_conflict_at?: string;
+  payment_conflict_resolved_at?: string;
+  payment_conflict_resolved_by?: string;
+  payment_conflict_resolution_note?: string;
 
   created_at: string;
 }
@@ -294,7 +530,10 @@ export interface AdminLogMeta {
 
 export interface AdminLog {
   id: string;
+  admin_id?: string;
+  admin_name?: string;
   admin_phone: string;
+  admin_role?: AdminRole;
   action_type: string;
   merchant_id: string;
   merchant_name: string;

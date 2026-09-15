@@ -1,0 +1,16 @@
+@media (min-width: 640px) and (max-width: 1399px) {
+  html[lang="ku"] div[dir="rtl"].min-h-screen > header > div:first-child {
+    flex-wrap: wrap;
+  }
+
+  html[lang="ku"] div[dir="rtl"].min-h-screen > header > div:first-child > div:first-child {
+    min-width: 0;
+    flex: 1 1 28rem;
+  }
+
+  html[lang="ku"] div[dir="rtl"].min-h-screen > header > div:first-child > div:last-child {
+    max-width: 100%;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
+  }
+}

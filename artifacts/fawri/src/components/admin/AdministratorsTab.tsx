@@ -1,7 +1,11 @@
+import { ADMINISTRATORS_TAB_ADMINISTRATOR_PASSWORD_TEXT, ADMINISTRATORS_TAB_WORK_MONITOR_TEXT, ADMINISTRATORS_TAB_PERMISSION_TEXT, ADMINISTRATORS_TAB_ADMINISTRATOR_STATUS_TEXT } from '@/lib/translations/features/components/admin/AdministratorsTab';
 import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "wouter";
 import {
+  Activity,
   CalendarDays,
   CheckCircle2,
+  KeyRound,
   Eye,
   EyeOff,
   Loader2,
@@ -39,15 +43,18 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 
+import AssistantPasswordResetDialog from "@/components/admin/AssistantPasswordResetDialog";
+
 type AdminRole = "owner_admin" | "assistant_admin";
 
 type AdminPermission =
-  | "manage_admins"
-  | "manage_merchants"
+  | "view_merchants"
+  | "manage_merchant_status"
   | "manage_subscriptions"
   | "manage_channels"
   | "view_logs"
-  | "inspection_sessions";
+  | "inspect_merchant_sessions"
+  | "manage_support";
 
 type SupportedLanguage = "ar" | "en" | "ku";
 
@@ -65,6 +72,11 @@ interface AdminAccount {
   permissions: AdminPermission[];
   admin_enabled: boolean;
   otp_verified: boolean;
+  must_change_password: boolean;
+  work_status?: "active" | "idle" | "offline";
+  open_session_count?: number;
+  last_activity_at?: string | null;
+  pending_device_count?: number;
 }
 
 interface AdministratorsApiResponse {
@@ -200,104 +212,28 @@ export default function AdministratorsTab({
   adminText,
 }: AdministratorsTabProps) {
   const language = getInterfaceLanguage();
+  const [, setLocation] = useLocation();
 
   // The official administration dictionary is now the primary source.
   // The old internal dictionary remains temporarily below only as a
   // rollback reference until visual verification is completed.
   const permissionList: readonly AdminPermission[] = [
-    "manage_merchants",
+    "view_merchants",
+    "manage_merchant_status",
     "manage_subscriptions",
     "manage_channels",
     "view_logs",
-    "inspection_sessions",
+    "inspect_merchant_sessions",
+    "manage_support",
   ];
 
-  const permissionText = {
-    ar: {
-      button: "إدارة الصلاحيات",
-      title: "صلاحيات المسؤول المساعد",
-      description: "حدد الأقسام والإجراءات التي يستطيع هذا المسؤول الوصول إليها.",
-      manage_admins: "إدارة المسؤولين",
-      manage_merchants: "إدارة التجار",
-      manage_subscriptions: "إدارة الاشتراكات",
-      manage_channels: "إدارة القنوات",
-      view_logs: "عرض سجل النشاط",
-      inspection_sessions: "جلسات الفحص",
-      cancel: "إلغاء",
-      save: "حفظ الصلاحيات",
-      saving: "جارٍ الحفظ...",
-      success: "تم تحديث صلاحيات المسؤول بنجاح",
-      error: "تعذر تحديث الصلاحيات",
-      connectionError: "تعذر الاتصال بالخادم",
-    },
-    en: {
-      button: "Manage permissions",
-      title: "Assistant administrator permissions",
-      description: "Select the sections and actions this administrator can access.",
-      manage_admins: "Manage administrators",
-      manage_merchants: "Manage merchants",
-      manage_subscriptions: "Manage subscriptions",
-      manage_channels: "Manage channels",
-      view_logs: "View activity logs",
-      inspection_sessions: "Inspection sessions",
-      cancel: "Cancel",
-      save: "Save permissions",
-      saving: "Saving...",
-      success: "Administrator permissions updated successfully",
-      error: "Could not update permissions",
-      connectionError: "Could not connect to the server",
-    },
-    ku: {
-      button: "بەڕێوەبردنی دەسەڵاتەکان",
-      title: "دەسەڵاتەکانی بەڕێوەبەری یاریدەدەر",
-      description: "ئەو بەشانە دیاری بکە کە ئەم بەڕێوەبەرە دەتوانێت دەستی پێیان بگات.",
-      manage_admins: "بەڕێوەبردنی بەڕێوەبەران",
-      manage_merchants: "بەڕێوەبردنی بازرگانان",
-      manage_subscriptions: "بەڕێوەبردنی بەشداریکردنەکان",
-      manage_channels: "بەڕێوەبردنی کەناڵەکان",
-      view_logs: "بینینی تۆماری چالاکی",
-      inspection_sessions: "دانیشتنەکانی پشکنین",
-      cancel: "هەڵوەشاندنەوە",
-      save: "پاشەکەوتکردنی دەسەڵاتەکان",
-      saving: "پاشەکەوت دەکرێت...",
-      success: "دەسەڵاتەکانی بەڕێوەبەر بە سەرکەوتوویی نوێکرانەوە",
-      error: "نوێکردنەوەی دەسەڵاتەکان سەرکەوتوو نەبوو",
-      connectionError: "پەیوەندی بە ڕاژەکارەوە نەکرا",
-    },
-  }[language];
+  const permissionText = ADMINISTRATORS_TAB_PERMISSION_TEXT[language];
 
-  const administratorStatusText = {
-    ar: {
-      enable: "تفعيل المسؤول",
-      disable: "تعطيل المسؤول",
-      enabling: "جارٍ التفعيل...",
-      disabling: "جارٍ التعطيل...",
-      enabledSuccess: "تم تفعيل المسؤول بنجاح",
-      disabledSuccess: "تم تعطيل المسؤول بنجاح",
-      error: "تعذر تحديث حالة المسؤول",
-      connectionError: "تعذر الاتصال بالخادم",
-    },
-    en: {
-      enable: "Enable administrator",
-      disable: "Disable administrator",
-      enabling: "Enabling...",
-      disabling: "Disabling...",
-      enabledSuccess: "Administrator enabled successfully",
-      disabledSuccess: "Administrator disabled successfully",
-      error: "Unable to update administrator status",
-      connectionError: "Unable to connect to the server",
-    },
-    ku: {
-      enable: "چالاککردنی بەڕێوەبەر",
-      disable: "ناچالاککردنی بەڕێوەبەر",
-      enabling: "چالاک دەکرێت...",
-      disabling: "ناچالاک دەکرێت...",
-      enabledSuccess: "بەڕێوەبەر بە سەرکەوتوویی چالاک کرا",
-      disabledSuccess: "بەڕێوەبەر بە سەرکەوتوویی ناچالاک کرا",
-      error: "نوێکردنەوەی دۆخی بەڕێوەبەر سەرکەوتوو نەبوو",
-      connectionError: "پەیوەندی بە ڕاژەکارەوە نەکرا",
-    },
-  }[language];
+  const administratorStatusText = ADMINISTRATORS_TAB_ADMINISTRATOR_STATUS_TEXT[language];
+
+  const administratorPasswordText = ADMINISTRATORS_TAB_ADMINISTRATOR_PASSWORD_TEXT[language];
+
+  const workMonitorText = ADMINISTRATORS_TAB_WORK_MONITOR_TEXT[language];
 
   const t = {
     loading: adminText.administratorsLoading,
@@ -346,8 +282,17 @@ export default function AdministratorsTab({
   const [selectedPermissions, setSelectedPermissions] =
     useState<AdminPermission[]>([]);
   const [isSavingPermissions, setIsSavingPermissions] = useState(false);
+  const originalPermissions = selectedAdministrator?.permissions ?? [];
+  const hasPermissionChanges =
+    selectedAdministrator?.admin_role === "assistant_admin" &&
+    (selectedPermissions.length !== originalPermissions.length ||
+      selectedPermissions.some(
+        (permission) => !originalPermissions.includes(permission),
+      ));
   const [updatingAdministratorStatusId, setUpdatingAdministratorStatusId] =
     useState<string | null>(null);
+  const [passwordResetAdministrator, setPasswordResetAdministrator] =
+    useState<AdminAccount | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -361,9 +306,11 @@ export default function AdministratorsTab({
     language,
   });
 
-  const loadAdministrators = useCallback(async () => {
-    setIsLoading(true);
-    setLoadError(false);
+  const loadAdministrators = useCallback(async (silent = false) => {
+    if (!silent) {
+      setIsLoading(true);
+      setLoadError(false);
+    }
 
     try {
       const response = await fetch("/api/auth/admins", {
@@ -381,15 +328,22 @@ export default function AdministratorsTab({
       setAdministrators(data.admins);
     } catch (error) {
       console.error("Administrators API load failed:", error);
-      setAdministrators([]);
-      setLoadError(true);
+      if (!silent) {
+        setAdministrators([]);
+        setLoadError(true);
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void loadAdministrators();
+    const timer = window.setInterval(
+      () => void loadAdministrators(true),
+      30_000,
+    );
+    return () => window.clearInterval(timer);
   }, [loadAdministrators]);
 
   const resetCreateForm = () => {
@@ -540,6 +494,7 @@ export default function AdministratorsTab({
   const handleSavePermissions = async () => {
     if (
       isSavingPermissions ||
+      !hasPermissionChanges ||
       !selectedAdministrator ||
       selectedAdministrator.admin_role !== "assistant_admin"
     ) {
@@ -652,8 +607,8 @@ export default function AdministratorsTab({
   };
 
   return (
-    <section className="space-y-4" dir={adminText.dir}>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <section className="space-y-3" dir={adminText.dir}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <ShieldCheck className="h-5 w-5" aria-hidden="true" />
@@ -753,7 +708,7 @@ export default function AdministratorsTab({
       )}
 
       {!isLoading && !loadError && administrators.length > 0 && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid items-start gap-3 lg:grid-cols-2">
           {administrators.map((administrator) => {
             const isOwner = administrator.admin_role === "owner_admin";
             const isEnabled = administrator.admin_enabled !== false;
@@ -761,9 +716,9 @@ export default function AdministratorsTab({
             return (
               <Card key={administrator.id} className="overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="flex items-start justify-between gap-3 border-b bg-muted/30 p-4 sm:p-5">
+                  <div className="flex items-start justify-between gap-3 border-b bg-muted/30 p-3.5">
                     <div className="flex min-w-0 items-start gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                         {isOwner ? (
                           <ShieldCheck className="h-5 w-5" aria-hidden="true" />
                         ) : (
@@ -776,7 +731,7 @@ export default function AdministratorsTab({
                           {administrator.owner_name || "—"}
                         </h3>
 
-                        <p className="mt-1 truncate text-sm text-muted-foreground">
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
                           {isOwner ? t.ownerAdmin : t.assistantAdmin}
                         </p>
                       </div>
@@ -790,61 +745,116 @@ export default function AdministratorsTab({
                     </Badge>
                   </div>
 
-                  <div className="space-y-4 p-4 sm:p-5">
-                    <div className="flex items-start gap-3">
-                      <Phone
-                        className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                      />
+                  <div className="space-y-3 p-3.5">
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <div className="flex min-w-0 items-start gap-2 rounded-xl border border-border/70 bg-muted/20 p-2.5">
+                        <Phone
+                          className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+                          aria-hidden="true"
+                        />
 
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground">
-                          {t.phone}
-                        </p>
-                        <p
-                          className="mt-1 break-all text-sm font-medium"
-                          dir="ltr"
-                        >
-                          {administrator.phone || "—"}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-[11px] text-muted-foreground">
+                            {t.phone}
+                          </p>
+                          <p
+                            className="mt-0.5 break-all text-xs font-semibold"
+                            dir="ltr"
+                          >
+                            {administrator.phone || "—"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-start gap-3">
-                      <UserRound
-                        className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                      />
+                      <div className="flex min-w-0 items-start gap-2 rounded-xl border border-border/70 bg-muted/20 p-2.5">
+                        <UserRound
+                          className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+                          aria-hidden="true"
+                        />
 
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground">
-                          {t.language}
-                        </p>
-                        <p className="mt-1 text-sm font-medium">
-                          {t.languages[administrator.language] ??
-                            administrator.language}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-[11px] text-muted-foreground">
+                            {t.language}
+                          </p>
+                          <p className="mt-0.5 text-xs font-semibold">
+                            {t.languages[administrator.language] ??
+                              administrator.language}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-start gap-3">
-                      <CalendarDays
-                        className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
-                        aria-hidden="true"
-                      />
+                      <div className="flex min-w-0 items-start gap-2 rounded-xl border border-border/70 bg-muted/20 p-2.5">
+                        <CalendarDays
+                          className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+                          aria-hidden="true"
+                        />
 
-                      <div className="min-w-0">
-                        <p className="text-xs text-muted-foreground">
-                          {t.createdAt}
-                        </p>
-                        <p className="mt-1 text-sm font-medium">
-                          {formatDate(administrator.created_at, language)}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-[11px] text-muted-foreground">
+                            {t.createdAt}
+                          </p>
+                          <p className="mt-0.5 text-xs font-semibold">
+                            {formatDate(administrator.created_at, language)}
+                          </p>
+                        </div>
                       </div>
                     </div>
 
                     {!isOwner && (
-                      <div className="space-y-2 border-t pt-4">
+                      <div className="flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-sm font-semibold">
+                            <span
+                              className={
+                                "h-3 w-3 shrink-0 rounded-full " +
+                                (administrator.work_status === "active"
+                                  ? "bg-emerald-500 shadow-[0_0_0_4px_rgba(16,185,129,0.14)]"
+                                  : administrator.work_status === "idle"
+                                    ? "bg-amber-500"
+                                    : "bg-slate-400")
+                              }
+                              aria-hidden="true"
+                            />
+                            <span>
+                              {administrator.work_status === "active"
+                                ? workMonitorText.active
+                                : administrator.work_status === "idle"
+                                  ? workMonitorText.idle
+                                  : workMonitorText.offline}
+                            </span>
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {workMonitorText.sessions}: {administrator.open_session_count ?? 0}
+                          </p>
+                          {(administrator.pending_device_count ?? 0) > 0 && (
+                            <p className="mt-1 text-xs font-semibold text-orange-600">
+                              {administrator.pending_device_count}{" "}
+                              {(administrator.pending_device_count ?? 0) === 1
+                                ? workMonitorText.pendingDevice
+                                : workMonitorText.pendingDevices}
+                            </p>
+                          )}
+                        </div>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full gap-2 sm:w-auto"
+                          onClick={() =>
+                            setLocation(`/admin/work-monitor/${administrator.id}`)
+                          }
+                        >
+                          <Activity className="h-4 w-4" aria-hidden="true" />
+                          {workMonitorText.button}
+                          <Badge variant="secondary" className="ms-1 px-1.5 py-0">
+                            {administrator.open_session_count ?? 0}
+                          </Badge>
+                        </Button>
+                      </div>
+                    )}
+
+                    {!isOwner && (
+                      <div className="grid gap-2 border-t pt-3 sm:grid-cols-3">
                         <Button
                           type="button"
                           variant="outline"
@@ -852,6 +862,16 @@ export default function AdministratorsTab({
                           onClick={() => openPermissionDialog(administrator)}
                         >
                           {permissionText.button}
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full gap-2"
+                          onClick={() => setPasswordResetAdministrator(administrator)}
+                        >
+                          <KeyRound className="h-4 w-4" aria-hidden="true" />
+                          {administratorPasswordText.button}
                         </Button>
 
                         <Button
@@ -885,7 +905,13 @@ export default function AdministratorsTab({
                       </div>
                     )}
 
-                    <div className="flex items-center gap-2 border-t pt-4 text-sm">
+                    {administrator.must_change_password && !isOwner && (
+                      <Badge variant="outline" className="border-orange-300 bg-orange-50 text-orange-700">
+                        {administratorPasswordText.required}
+                      </Badge>
+                    )}
+
+                    <div className="flex items-center gap-2 border-t pt-3 text-xs">
                       {administrator.otp_verified ? (
                         <>
                           <CheckCircle2
@@ -914,9 +940,26 @@ export default function AdministratorsTab({
         </div>
       )}
 
+      <AssistantPasswordResetDialog
+        open={passwordResetAdministrator !== null}
+        administratorId={passwordResetAdministrator?.id || ""}
+        administratorName={passwordResetAdministrator?.owner_name || ""}
+        onOpenChange={(open) => {
+          if (!open) setPasswordResetAdministrator(null);
+        }}
+        onSuccess={() => {
+          setPasswordResetAdministrator(null);
+          void loadAdministrators();
+        }}
+      />
+
       <Dialog open={isCreateDialogOpen} onOpenChange={handleCreateDialogChange}>
         <DialogContent
-          className="sm:max-w-lg"
+          className={
+            adminText.dir === "rtl"
+              ? "sm:max-w-lg [&>button]:left-4 [&>button]:right-auto"
+              : "sm:max-w-lg"
+          }
           dir={adminText.dir}
           onEscapeKeyDown={(event) => {
             if (isCreating) event.preventDefault();
@@ -926,21 +969,30 @@ export default function AdministratorsTab({
           }}
         >
           <DialogHeader
-            className={adminText.dir === "rtl" ? "text-right" : "text-left"}
+            className={
+              language === "ar" || language === "ku"
+                ? "text-right sm:!text-right"
+                : adminText.dir === "rtl"
+                  ? "text-right"
+                  : "text-left"
+            }
           >
             <DialogTitle>{t.dialogTitle}</DialogTitle>
             <DialogDescription>{t.dialogDescription}</DialogDescription>
           </DialogHeader>
 
           <form
-            className="space-y-5"
+            className="space-y-4"
             onSubmit={(event) => {
               event.preventDefault();
               void handleCreateAdministrator();
             }}
           >
             <div className="space-y-2">
-              <Label htmlFor="administrator-owner-name">
+              <Label
+                htmlFor="administrator-owner-name"
+                className="block min-h-5 leading-5"
+              >
                 {t.nameLabel}
               </Label>
 
@@ -961,7 +1013,10 @@ export default function AdministratorsTab({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="administrator-phone">
+              <Label
+                htmlFor="administrator-phone"
+                className="block min-h-5 leading-5"
+              >
                 {t.phoneInputLabel}
               </Label>
 
@@ -985,7 +1040,10 @@ export default function AdministratorsTab({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="administrator-password">
+              <Label
+                htmlFor="administrator-password"
+                className="block min-h-5 leading-5"
+              >
                 {t.passwordLabel}
               </Label>
 
@@ -1007,27 +1065,49 @@ export default function AdministratorsTab({
                   }}
                 />
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  disabled={isCreating}
-                  className="absolute end-1 top-1/2 h-8 w-8 -translate-y-1/2"
-                  onClick={() => setShowPassword((current) => !current)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" aria-hidden="true" />
-                  ) : (
-                    <Eye className="h-4 w-4" aria-hidden="true" />
-                  )}
+                {language === "ar" || language === "ku" ? (
+                  <button
+                    type="button"
+                    aria-label={t.passwordLabel}
+                    disabled={isCreating}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    )}
 
-                  <span className="sr-only">{t.passwordLabel}</span>
-                </Button>
+                    <span className="sr-only">{t.passwordLabel}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    aria-label={t.passwordLabel}
+                    disabled={isCreating}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition hover:text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" aria-hidden="true" />
+                    ) : (
+                      <Eye className="h-4 w-4" aria-hidden="true" />
+                    )}
+
+                    <span className="sr-only">{t.passwordLabel}</span>
+                  </button>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="administrator-language">
+              <Label
+                htmlFor="administrator-language"
+                className="block min-h-5 leading-5"
+              >
                 {t.languageInputLabel}
               </Label>
 
@@ -1102,7 +1182,11 @@ export default function AdministratorsTab({
         }}
       >
         <DialogContent
-          className="sm:max-w-lg"
+          className={
+            adminText.dir === "rtl"
+              ? "sm:max-w-lg [&>button]:left-4 [&>button]:right-auto"
+              : "sm:max-w-lg"
+          }
           dir={adminText.dir}
           onEscapeKeyDown={(event) => {
             if (isSavingPermissions) event.preventDefault();
@@ -1112,15 +1196,21 @@ export default function AdministratorsTab({
           }}
         >
           <DialogHeader
-            className={adminText.dir === "rtl" ? "text-right" : "text-left"}
+            className={
+              adminText.dir === "rtl"
+                ? "pl-14 text-right sm:!text-right"
+                : "pr-14 text-left"
+            }
           >
             <DialogTitle>{permissionText.title}</DialogTitle>
 
             <DialogDescription>
-              {permissionText.description}
-              {selectedAdministrator?.owner_name
-                ? ` (${selectedAdministrator.owner_name})`
-                : ""}
+              <span className="block">{permissionText.description}</span>
+              {selectedAdministrator?.owner_name && (
+                <span className="mt-1 block" dir="auto">
+                  ({selectedAdministrator.owner_name})
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -1161,7 +1251,11 @@ export default function AdministratorsTab({
 
             <Button
               type="button"
-              disabled={isSavingPermissions || !selectedAdministrator}
+              disabled={
+                isSavingPermissions ||
+                !selectedAdministrator ||
+                !hasPermissionChanges
+              }
               onClick={() => void handleSavePermissions()}
             >
               {isSavingPermissions && (

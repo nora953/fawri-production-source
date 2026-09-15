@@ -1,0 +1,1 @@
+ALTER TYPE "public"."auth_otp_purpose" ADD VALUE 'admin_device_verification';

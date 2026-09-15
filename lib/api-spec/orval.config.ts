@@ -22,13 +22,12 @@ export default defineConfig({
       },
     },
     output: {
-      workspace: apiClientReactSrc,
-      target: "generated",
+      target: path.resolve(apiClientReactSrc, "generated", "api.ts"),
       client: "react-query",
       mode: "split",
       baseUrl: "/api",
       clean: true,
-      prettier: true,
+      formatter: "prettier",
       override: {
         fetch: {
           includeHttpResponseReturnType: false,
@@ -48,20 +47,22 @@ export default defineConfig({
       },
     },
     output: {
-      workspace: apiZodSrc,
       client: "zod",
-      target: "generated",
-      schemas: { path: "generated/types", type: "typescript" },
+      target: path.resolve(apiZodSrc, "generated", "api.ts"),
+      schemas: {
+        path: path.resolve(apiZodSrc, "generated", "types"),
+        type: "typescript",
+      },
       mode: "split",
       clean: true,
-      prettier: true,
+      formatter: "prettier",
       override: {
         zod: {
           coerce: {
-            query: ['boolean', 'number', 'string'],
-            param: ['boolean', 'number', 'string'],
-            body: ['bigint', 'date'],
-            response: ['bigint', 'date'],
+            query: ["boolean", "number", "string"],
+            param: ["boolean", "number", "string"],
+            body: ["bigint", "date"],
+            response: ["bigint", "date"],
           },
         },
         useDates: true,

@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { getFawriDataFilePath } from "../lib/dataPaths";
 import { Router, type Request, type Response } from "express";
 import { registerMerchantBotTrainingDeletion } from "../services/merchantBotTraining";
 import {
@@ -262,7 +263,7 @@ function findLearnedAnswerIndex(
 }
 
 function readTrainingRequestsDb(): TrainingRequestsDb {
-  const filePath = getDataFilePath("training-requests.json");
+  const filePath = getFawriDataFilePath("training-requests.json");
 
   try {
     const raw = fs.readFileSync(filePath, "utf8");
@@ -279,14 +280,14 @@ function readTrainingRequestsDb(): TrainingRequestsDb {
 }
 
 function writeTrainingRequestsDb(db: TrainingRequestsDb): void {
-  const filePath = getDataFilePath("training-requests.json");
+  const filePath = getFawriDataFilePath("training-requests.json");
 
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(db, null, 2), "utf8");
 }
 
 function readLearnedAnswersDb(): LearnedAnswersDb {
-  const filePath = getDataFilePath("learned-answers.json");
+  const filePath = getFawriDataFilePath("learned-answers.json");
 
   try {
     const raw = fs.readFileSync(filePath, "utf8");
@@ -303,27 +304,10 @@ function readLearnedAnswersDb(): LearnedAnswersDb {
 }
 
 function writeLearnedAnswersDb(db: LearnedAnswersDb): void {
-  const filePath = getDataFilePath("learned-answers.json");
+  const filePath = getFawriDataFilePath("learned-answers.json");
 
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(db, null, 2), "utf8");
-}
-
-function getDataFilePath(fileName: string): string {
-  const candidates = [
-    path.resolve(process.cwd(), "data", fileName),
-    path.resolve(process.cwd(), "..", "data", fileName),
-    path.resolve(process.cwd(), "..", "..", "data", fileName),
-    path.resolve("/home/runner/workspace", "data", fileName),
-  ];
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
-  }
-
-  return candidates[0];
 }
 
 function sendError(res: Response, statusCode: number, error: string): void {

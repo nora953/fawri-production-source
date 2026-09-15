@@ -1,0 +1,418 @@
+name: Fawri catalog editor quality hardening
+
+on:
+  push:
+    branches:
+      - foundation/integration-candidate
+    paths:
+      - .github/workflows/fawri-one-shot-catalog-editor-quality-hardening.yml
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: foundation/integration-candidate
+          fetch-depth: 0
+
+      - name: Enable pnpm
+        shell: bash
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.26.1 --activate
+          pnpm install --frozen-lockfile
+
+      - name: Harden catalog editor language and layout parity
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+
+          root = Path('.')
+          central = root / 'artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts'
+          page = root / 'artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx'
+          details = root / 'artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx'
+          item_type = root / 'artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx'
+          images = root / 'artifacts/fawri/src/components/catalog/CatalogImageUploadEditor.tsx'
+          shell = root / 'artifacts/fawri/src/components/catalog/CatalogEditorShell.tsx'
+          contract = root / 'artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs'
+          render_test = root / 'artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx'
+          permanent_workflow = root / '.github/workflows/catalog-editor-quality.yml'
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly one occurrence, found {count}: {old!r}')
+              return text.replace(old, new, 1)
+
+          c = central.read_text(encoding='utf-8')
+
+          # Keep even small dynamic strings inside the feature translation authority.
+          c = replace_once(c, "  basePriceHint: string;\n", "  basePriceHint: string;\n  priceExample: (value: string) => string;\n", 'priceExample type')
+          c = replace_once(c, "    basePriceHint: '',\n    price: 'السعر',", "    basePriceHint: '',\n    priceExample: (value: string) => `مثال: ${value}`,\n    price: 'السعر',", 'ar priceExample')
+          c = replace_once(c, "    basePriceHint: '',\n    price: 'نرخ',", "    basePriceHint: '',\n    priceExample: (value: string) => `نموونە: ${value}`,\n    price: 'نرخ',", 'ku priceExample')
+          c = replace_once(c, "    basePriceHint: '',\n    price: 'Price',", "    basePriceHint: '',\n    priceExample: (value: string) => `e.g. ${value}`,\n    price: 'Price',", 'en priceExample')
+
+          replacements = {
+              # Sorani catalog-page completeness.
+              "    noItemsHint: 'یەکەم بەرهەم یان خزمەتگوزاری زیاد بکە.',": "    noItemsHint: 'یەکەم بەرهەم یان خزمەتگوزاری زیاد بکە تا فەوری بتوانێت زانیارییە متمانەپێکراوەکانی کەتەلۆگ بەکاربهێنێت.',",
+              "    versionConflict: 'ئەم بابەتە لە شوێنێکی تر گۆڕدراوە. نوێترین وەشان بارکرا.',": "    versionConflict: 'ئەم بابەتە لە شوێنێکی تر گۆڕدراوە. نوێترین وەشان بارکرا؛ پێداچوونەوەی بۆ بکە و دووبارە پاشەکەوتی بکە.',",
+              "    categoryPlaceholder: 'نموونە: ئەلیکترۆنیات، خزمەتگوزاری',": "    categoryPlaceholder: 'نموونە: ئەلیکترۆنیات، چاودێری، خزمەتگوزاریی ماڵەوە',",
+              "    booking: 'حجز',": "    booking: 'کاتگرتن',",
+              "    descriptionPlaceholder: 'زانیارییەکی ڕوون کە فەوری بتوانێت پشتی پێ ببەستێت.',": "    descriptionPlaceholder: 'زانیارییەکی ڕوون کە فەوری بتوانێت لە کاتی وەڵامدانەوە بە کڕیار پشتی پێ ببەستێت.',",
+
+              # Arabic terminology consistency and clear default-value semantics.
+              "    cost: 'كلفة خاصة — اختياري',": "    cost: 'تكلفة خاصة — اختياري',",
+              "    inheritedSale: (value: string) => `العام: ${value || 'سعر المنتج'}`,": "    inheritedSale: (value: string) => `الافتراضي: ${value || 'سعر المنتج'}`,",
+              "    inheritedCost: (value: string) => `العام: ${value || 'كلفة المنتج'}`,": "    inheritedCost: (value: string) => `الافتراضي: ${value || 'تكلفة المنتج'}`,",
+              "    inheritanceTitle: 'البيانات العامة تطبق تلقائيًا',": "    inheritanceTitle: 'القيم الافتراضية تُطبّق تلقائيًا',",
+              "    inheritanceHint: (price: string, cost: string) => `سعر البيع ${price || '—'} والكلفة ${cost || '—'} وصور المنتج هي الافتراضية لكل الأنواع. اكتب فقط القيمة المختلفة عند الحاجة.`,": "    inheritanceHint: (price: string, cost: string) => `سعر البيع ${price || '—'} والتكلفة ${cost || '—'} وصور المنتج هي القيم الافتراضية لكل الأنواع. أدخل فقط القيم المختلفة عند الحاجة.`,",
+              "    clearOverrideHint: 'اتركه فارغًا واضغط تطبيق للرجوع إلى القيمة العامة.',": "    clearOverrideHint: 'اتركه فارغًا واضغط تطبيق للرجوع إلى القيمة الافتراضية.',",
+              "    excludedTitle: 'أنواع غير متوفرة',": "    excludedTitle: 'أنواع مستبعدة',",
+
+              # Sorani product-detail semantics.
+              "    inventoryAfterSave: 'کۆگای جۆر پاشەکەوتکراوەکان دوای پاشەکەوتکردن لە ئامرازەکانی کۆگا بگۆڕە.',": "    inventoryAfterSave: 'کۆگای جۆرە پاشەکەوتکراوەکان دوای پاشەکەوتکردن لە ئامرازەکانی کۆگا بگۆڕە تا هەموو جووڵەکانی کۆگا تۆمارکراو بمێننەوە.',",
+              "    multiProductHint: 'ئەگەر بەرهەمەکە وەشانە جیاوازەکانی هەیە وەک ڕەنگ، قەبارە، کێش، تام یان ماددە چالاکی بکە.',": "    multiProductHint: 'ئەگەر بەرهەمەکە جۆری جیاوازی هەیە وەک ڕەنگ، گنجایش، کێش، تام، ماددە یان قەبارە، چالاکی بکە.',",
+              "    valuesHint: 'بەهاکان بە کۆما جیا بکەوە.',": "    valuesHint: 'بەهاکان بە کۆمای عەرەبی یان ئینگلیزی جیا بکەوە.',",
+              "    inheritedSale: (value: string) => `گشتی: ${value || 'نرخی بەرهەم'}`,": "    inheritedSale: (value: string) => `بنەڕەتی: ${value || 'نرخی بەرهەم'}`,",
+              "    inheritedCost: (value: string) => `گشتی: ${value || 'تێچووی بەرهەم'}`,": "    inheritedCost: (value: string) => `بنەڕەتی: ${value || 'تێچووی بەرهەم'}`,",
+              "    inheritanceTitle: 'داتای گشتی خۆکار جێبەجێ دەبێت',": "    inheritanceTitle: 'بەها بنەڕەتییەکان خۆکار جێبەجێ دەبن',",
+              "    inheritanceHint: (price: string, cost: string) => `نرخی ${price || '—'} و تێچووی ${cost || '—'} و وێنەکانی بەرهەم بۆ هەموو جۆرەکان بنەڕەتین. تەنها جیاوازییەکان بنووسە.`,": "    inheritanceHint: (price: string, cost: string) => `نرخی فرۆشتن ${price || '—'} و تێچوو ${cost || '—'} و وێنەکانی بەرهەم بەها بنەڕەتییەکانی هەموو جۆرەکانن. تەنها بەها جیاوازەکان بنووسە.`,",
+              "    tooMany: 'ژمارەی جۆرەکان لە 100 زیاترە.',": "    tooMany: 'ژمارەی جۆرەکان لە 100 زیاترە. ژمارەی بەهاکان کەم بکەرەوە.',",
+              "    existingVariants: 'ئەم بەرهەمە جۆری پاشەکەوتکراوی هەیە و ناتوانرێت چەند هەڵبژاردەیی ناچالاک بکرێت.',": "    existingVariants: 'ئەم بەرهەمە جۆری پاشەکەوتکراوی هەیە. تا جۆرەکان لابنرێن یان دەستکاری بکرێن ناتوانیت دۆخی چەند هەڵبژاردەیی ناچالاک بکەیت.',",
+              "    legacy: 'ئەم بەرهەمە جۆراوجۆری کۆنی هەیە. بۆ پاراستنی داتا لە خشتەکە ماوەتەوە.',": "    legacy: 'ئەم بەرهەمە جۆرە کۆنی هەیە کە هەڵبژاردەکانیان بە شێوەی ڕێکخراو تۆمار نەکراون. بۆ ئەوەی هیچ داتایەک لەدەست نەچێت لە خشتەکەدا ماونەتەوە.',",
+              "    clearOverrideHint: 'بە بەتاڵی بهێڵەوە و جێبەجێ بکە بۆ گەڕانەوە بۆ نرخی گشتی.',": "    clearOverrideHint: 'بە بەتاڵی بهێڵەوە و جێبەجێکردن هەڵبژێرە بۆ گەڕانەوە بۆ بەهای بنەڕەتی.',",
+              "    excludeCombination: 'لابردنی جۆر',": "    excludeCombination: 'دەرخستنی جۆر',",
+              "    excludedTitle: 'جۆر بەردەست نییەکان',": "    excludedTitle: 'جۆرە دەرخراوەکان',",
+              "    excludedHint: 'ئەم جۆرانە لە نوێکردنەوەدا دووبارە دروست نابن. پێش پاشەکەوتکردن دەتوانیت بیانگەڕێنیتەوە.',": "    excludedHint: 'ئەم جۆرە دەرخراوانە کاتێک جۆرەکان دووبارە دروست دەکەیت ناگەڕێنەوە. پێش پاشەکەوتکردن دەتوانیت بیانگەڕێنیتەوە.',",
+
+              # English default/exclusion terminology mirrors Arabic meaning exactly.
+              "    inheritanceTitle: 'General data applies automatically',": "    inheritanceTitle: 'Default values apply automatically',",
+              "    inheritanceHint: (price: string, cost: string) => `Sale price ${price || '—'}, cost ${cost || '—'}, and product images are the defaults for every variant. Enter only what is different.`,": "    inheritanceHint: (price: string, cost: string) => `Sale price ${price || '—'}, cost ${cost || '—'}, and product images are the default values for every variant. Enter only values that are different.`,",
+              "    clearOverrideHint: 'Leave blank and apply to return to the general value.',": "    clearOverrideHint: 'Leave blank and apply to return to the default value.',",
+              "    excludedTitle: 'Unavailable variants',": "    excludedTitle: 'Excluded variants',",
+
+              # Item-type copy: same meaning, not merely approximate wording.
+              "    productHint: 'سلعة يمكن بيعها وتتبع مخزونها وباركودها وخياراتها.',": "    productHint: 'سلعة قابلة للبيع يمكن تتبع مخزونها وباركودها وخياراتها.',",
+              "    chooseTypeHint: 'Choose a product or service. You can switch before saving without losing the data you already entered.',": "    chooseTypeHint: 'Choose a product you sell or a service your business provides. You can switch before saving without losing the data you already entered.',",
+              "    productHint: 'A sellable item with optional inventory, barcode, and product options.',": "    productHint: 'A sellable item whose inventory, barcode, and product options can be tracked.',",
+              "    chooseTypeHint: 'بەرهەم یان خزمەتگوزاری هەڵبژێرە. پێش پاشەکەوتکردن دەتوانیت بگۆڕیت بەبێ لەدەستدانی داتای نووسراو.',": "    chooseTypeHint: 'بەرهەمێک کە دەیفرۆشیت یان خزمەتگوزارییەک کە کاروبارەکەت پێشکەشی دەکات هەڵبژێرە. پێش پاشەکەوتکردن دەتوانیت بگۆڕیت بەبێ لەدەستدانی داتای نووسراو.',",
+              "    productHint: 'کاڵایەک بۆ فرۆشتن و بەدواداچوونی کۆگا و بارکۆد و هەڵبژاردەکان.',": "    productHint: 'کاڵایەکی فرۆشراو کە دەتوانرێت کۆگا، بارکۆد و هەڵبژاردەکانی بەدواداچوون بکرێن.',",
+              "    serviceHint: 'خزمەتگوزارییەک کە فەوری دەتوانێت ڕوونی بکاتەوە و بۆ داواکاری یان حجز یارمەتی بدات.',": "    serviceHint: 'خزمەتگوزارییەک کە فەوری دەتوانێت ڕوونی بکاتەوە و بۆ داواکاری یان کاتگرتن یارمەتی بدات.',",
+              "    itemSettingsHint: 'ڕێکخستنە سەرەکییەکانی ئەم بابەتە.',": "    itemSettingsHint: 'ڕێکخستنە کورتییەکانی کارپێکردنی ئەم بابەتە.',",
+              "    serviceDetailsHint: 'ئەم زانیارییانە یارمەتی فەوری دەدەن وەڵامی ورد بدات.',": "    serviceDetailsHint: 'ئەم زانیارییانە یارمەتی فەوری دەدەن پرسیارەکانی خزمەتگوزاری بە وردی وەڵام بداتەوە.',",
+              "    bufferHint: 'ئارەزوومەندانە، دواتر لە حجزەکان بەکاردێت.',": "    bufferHint: 'ئارەزوومەندانە، دواتر لە بەڕێوەبردنی کاتگرتنەکان بەکاردێت.',",
+              "    bookingRequired: 'پێویستی بە حجز هەیە',": "    bookingRequired: 'پێویستی بە کاتگرتن هەیە',",
+              "    bookingRequiredHint: 'ئەگەر کڕیار پێویستی بە کات یان حجز پێشتر هەیە چالاکی بکە.',": "    bookingRequiredHint: 'ئەگەر کڕیار پێویستی بە داواکردنی کات یان کاتگرتنی خزمەتگوزاری پێشتر هەیە، چالاکی بکە.',",
+
+              # Sorani image actions should describe plural image selection like AR/EN.
+              "    upload: 'زیادکردنی وێنە',": "    upload: 'زیادکردنی وێنەکان',",
+          }
+
+          for old, new in replacements.items():
+              c = replace_once(c, old, new, 'translation replacement')
+
+          central.write_text(c, encoding='utf-8')
+
+          # Make the editor shell one explicit full-width column and bind direction to the requested locale.
+          s = shell.read_text(encoding='utf-8')
+          s = replace_once(
+              s,
+              '<div ref={shellRef} className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background" role="dialog" aria-modal="true" aria-label={title}>',
+              '<div ref={shellRef} className="catalog-editor-shell fawri-ui-baseline fixed inset-0 z-[100] bg-background" dir={lang === \'en\' ? \'ltr\' : \'rtl\'} role="dialog" aria-modal="true" aria-label={title}>',
+              'shell direction',
+          )
+          s = replace_once(
+              s,
+              'className="catalog-editor-body-grid mx-auto grid w-full max-w-[1500px] grid-cols-12 gap-5"',
+              'className="catalog-editor-body-grid mx-auto grid w-full max-w-[1500px] grid-cols-1 gap-5"',
+              'single-column editor grid',
+          )
+          shell.write_text(s, encoding='utf-8')
+
+          # Explicit width guards keep EN/LTR and KU/RTL aligned exactly like Arabic.
+          it = item_type.read_text(encoding='utf-8')
+          it = replace_once(it, '<div className="space-y-3 rounded-2xl border bg-muted/10 p-4">', '<div className="w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4">', 'item type root width')
+          item_type.write_text(it, encoding='utf-8')
+
+          d = details.read_text(encoding='utf-8')
+          d = replace_once(d, '<div className="space-y-4">', '<div className="w-full min-w-0 space-y-4">', 'product details root width')
+          d = d.replace('className="overflow-x-auto rounded-2xl border bg-background"', 'className="w-full min-w-0 overflow-x-auto rounded-2xl border bg-background"')
+          if d.count('maxImages={10}') != 2:
+              raise SystemExit(f'variant image limit regression: expected 2 maxImages=10, got {d.count("maxImages={10}")}')
+          details.write_text(d, encoding='utf-8')
+
+          im = images.read_text(encoding='utf-8')
+          im = replace_once(im, "  const compactShellClass = hideHeading\n    ? (dense ? 'space-y-1' : 'space-y-2')\n    : `${dense ? 'space-y-1 rounded-lg p-1.5' : 'space-y-2 rounded-xl p-2.5'} border bg-muted/10`;", "  const compactShellClass = hideHeading\n    ? `w-full min-w-0 ${dense ? 'space-y-1' : 'space-y-2'}`\n    : `w-full min-w-0 ${dense ? 'space-y-1 rounded-lg p-1.5' : 'space-y-2 rounded-xl p-2.5'} border bg-muted/10`;", 'image editor width')
+          im = replace_once(im, "<section className={compact ? compactShellClass : 'space-y-3 rounded-2xl border bg-muted/10 p-4'}>", "<section className={compact ? compactShellClass : 'w-full min-w-0 space-y-3 rounded-2xl border bg-muted/10 p-4'}>", 'image editor noncompact width')
+          images.write_text(im, encoding='utf-8')
+
+          p = page.read_text(encoding='utf-8')
+          old_price = "  const priceExample = fractionDigits > 0\n    ? (lang === 'ar' ? 'مثال: 19.99' : lang === 'ku' ? 'نموونە: 19.99' : 'e.g. 19.99')\n    : (lang === 'ar' ? 'مثال: 15000' : lang === 'ku' ? 'نموونە: 15000' : 'e.g. 15000');"
+          p = replace_once(p, old_price, "  const priceExample = copy.priceExample(fractionDigits > 0 ? '19.99' : '15000');", 'central price example')
+          p = replace_once(p, '<CatalogImageUploadEditor images={form.image_refs} onChange={image_refs => patchForm({ image_refs })} maxImages={20} />', '<CatalogImageUploadEditor images={form.image_refs} onChange={image_refs => patchForm({ image_refs })} maxImages={20} />', 'top image editor stable anchor')
+          duplicate = "\n          <div className=\"catalog-editor-fawri-field space-y-2 text-sm font-semibold\">\n            <span className=\"catalog-editor-fawri-label\">{copy.fawri}</span>\n            <div className=\"catalog-editor-fawri-control flex min-h-[7rem] flex-1 items-center justify-between gap-4 rounded-xl border border-input bg-background px-4 py-4\">\n              <p className=\"max-w-md text-xs font-normal leading-5 text-muted-foreground\">{copy.fawriHint}</p>\n              <Toggle checked={form.allow_fawri_reply} onChange={allow_fawri_reply => patchForm({ allow_fawri_reply })} />\n            </div>\n          </div>"
+          p = replace_once(p, duplicate, '', 'duplicate Fawri reply control')
+          page.write_text(p, encoding='utf-8')
+
+          # Strengthen the existing source contract.
+          t = contract.read_text(encoding='utf-8')
+          t = t.replace("const images = read('../src/components/catalog/CatalogImageUploadEditor.tsx');\n", "const images = read('../src/components/catalog/CatalogImageUploadEditor.tsx');\nconst shell = read('../src/components/catalog/CatalogEditorShell.tsx');\n")
+          t = t.replace("  assert.doesNotMatch(details, /maxImages=\\{5\\}/);\n", "  assert.doesNotMatch(details, /maxImages=\\{5\\}/);\n  assert.doesNotMatch(central, /التركيبة|تێکەڵ|حجز/);\n  assert.doesNotMatch(central, /actions: 'Delete'|actions: 'حذف'|actions: 'سڕینەوە'/);\n")
+          t += "\n" + """test('catalog editor visual parity is structurally language-neutral', () => {\n  assert.match(shell, /dir=\\{lang === 'en' \\? 'ltr' : 'rtl'\\}/);\n  assert.match(shell, /catalog-editor-body-grid[^\\n]*grid-cols-1/);\n  assert.doesNotMatch(shell, /catalog-editor-body-grid[^\\n]*grid-cols-12/);\n  assert.match(details, /w-full min-w-0 space-y-4/);\n  assert.match(itemType, /w-full min-w-0 space-y-3/);\n  assert.match(images, /w-full min-w-0/);\n  assert.doesNotMatch(page, /catalog-editor-fawri-field/);\n  assert.doesNotMatch(page, /lang === 'ar' \\? 'مثال:/);\n});\n"""
+          contract.write_text(t, encoding='utf-8')
+
+          render_test.write_text(r'''import test from 'node:test';
+import assert from 'node:assert/strict';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+
+import { CatalogItemTypeEditor } from '../src/components/catalog/CatalogItemTypeEditor';
+import { CatalogProductDetailsEditor } from '../src/components/catalog/CatalogProductDetailsEditor';
+import { I18nProvider } from '../src/lib/i18n';
+import {
+  CATALOG_ITEM_TYPE_COPY,
+  CATALOG_PRODUCT_DETAILS_COPY,
+  COMMERCE_CATALOG_COPY,
+} from '../src/lib/translations/features/catalog/catalogEditorCopy';
+import type { CatalogProductFormState } from '../src/lib/catalogProductEditor';
+import type { Lang } from '../src/lib/types';
+
+const storageState = { lang: 'ar' as Lang };
+Object.defineProperty(globalThis, 'localStorage', {
+  configurable: true,
+  value: {
+    getItem: () => storageState.lang,
+    setItem: () => undefined,
+    removeItem: () => undefined,
+    clear: () => undefined,
+    key: () => null,
+    length: 0,
+  },
+});
+
+function formFixture(): CatalogProductFormState {
+  return {
+    item_type: 'product',
+    track_inventory: true,
+    service_duration_minutes: '',
+    service_buffer_minutes: '0',
+    service_booking_required: true,
+    service_price_type: 'fixed',
+    service_location_mode: 'merchant',
+    name: 'Mixer',
+    sku: 'FWR-MIXER',
+    barcode: '',
+    category: 'Electronics',
+    description: 'Mixer',
+    original_price: '',
+    current_price: '49000',
+    cost_iqd: '25000',
+    quantity: '23',
+    weight_kg: '',
+    length_cm: '',
+    width_cm: '',
+    height_cm: '',
+    status: 'available',
+    allow_fawri_reply: true,
+    image_refs: [],
+    variants: [
+      {
+        key: 'variant-red',
+        name: 'Red',
+        sku: 'FWR-RED',
+        barcode: '',
+        price_iqd: '',
+        cost_iqd: '',
+        stock_quantity: '11',
+        weight_kg: '',
+        length_cm: '',
+        width_cm: '',
+        height_cm: '',
+        image_refs: [],
+        options: [{ key: 'color-red', name: 'Color', value: 'Red' }],
+      },
+    ],
+  };
+}
+
+function sortedKeys(value: object) {
+  return Object.keys(value).sort();
+}
+
+function renderDetails(lang: Lang) {
+  storageState.lang = lang;
+  return renderToStaticMarkup(
+    <I18nProvider>
+      <CatalogProductDetailsEditor
+        lang={lang}
+        form={formFixture()}
+        editing
+        moneyStep="1"
+        onChange={() => undefined}
+      />
+    </I18nProvider>,
+  );
+}
+
+function renderItemType(lang: Lang) {
+  storageState.lang = lang;
+  return renderToStaticMarkup(
+    <CatalogItemTypeEditor lang={lang} form={formFixture()} onChange={() => undefined} />,
+  );
+}
+
+test('catalog dictionaries have identical key sets across ar/en/ku', () => {
+  for (const dictionary of [COMMERCE_CATALOG_COPY, CATALOG_ITEM_TYPE_COPY, CATALOG_PRODUCT_DETAILS_COPY]) {
+    assert.deepEqual(sortedKeys(dictionary.ar), sortedKeys(dictionary.en));
+    assert.deepEqual(sortedKeys(dictionary.ar), sortedKeys(dictionary.ku));
+  }
+});
+
+test('rendered variant headers are canonical in all three languages', () => {
+  const ar = renderDetails('ar');
+  const en = renderDetails('en');
+  const ku = renderDetails('ku');
+
+  assert.match(ar, /النوع/);
+  assert.match(ar, /الإجراء/);
+  assert.doesNotMatch(ar, /التركيبة/);
+
+  assert.match(en, /Variant/);
+  assert.match(en, /Action/);
+  assert.doesNotMatch(en, /Product combinations|Combination image/);
+
+  assert.match(ku, /جۆر/);
+  assert.match(ku, /کردار/);
+  assert.doesNotMatch(ku, /تێکەڵ/);
+});
+
+test('Sorani rendered item-type copy contains no Arabic booking fallback', () => {
+  const ku = renderItemType('ku');
+  assert.match(ku, /کاتگرتن/);
+  assert.doesNotMatch(ku, /حجز/);
+});
+
+test('all rendered product-details roots use the same full-width layout contract', () => {
+  for (const lang of ['ar', 'en', 'ku'] as const) {
+    const html = renderDetails(lang);
+    assert.match(html, /w-full min-w-0 space-y-4/);
+  }
+});
+''', encoding='utf-8')
+
+          permanent_workflow.write_text(r'''name: Catalog editor quality
+
+on:
+  push:
+    branches:
+      - foundation/integration-candidate
+    paths:
+      - 'artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx'
+      - 'artifacts/fawri/src/components/catalog/**'
+      - 'artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts'
+      - 'artifacts/fawri/tests/catalog-editor-*.test.*'
+      - '.github/workflows/catalog-editor-quality.yml'
+  pull_request:
+    paths:
+      - 'artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx'
+      - 'artifacts/fawri/src/components/catalog/**'
+      - 'artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts'
+      - 'artifacts/fawri/tests/catalog-editor-*.test.*'
+      - '.github/workflows/catalog-editor-quality.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.26.1 --activate
+          pnpm install --frozen-lockfile
+      - name: Localization and layout source contract
+        run: node --test artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs
+      - name: Rendered localization parity
+        run: pnpm exec tsx --test artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx
+      - name: Typecheck
+        working-directory: artifacts/fawri
+        run: pnpm run typecheck
+      - name: Build
+        working-directory: artifacts/fawri
+        run: pnpm run build
+''', encoding='utf-8')
+
+          # Final static guards before tests even run.
+          combined = '\n'.join([
+              central.read_text(encoding='utf-8'),
+              details.read_text(encoding='utf-8'),
+              item_type.read_text(encoding='utf-8'),
+              page.read_text(encoding='utf-8'),
+          ])
+          forbidden = ['التركيبة', 'تێکەڵ', 'Product combinations', 'Generate / update combinations', "actions: 'Delete'", "actions: 'حذف'", "actions: 'سڕینەوە'"]
+          for token in forbidden:
+              if token in combined:
+                  raise SystemExit(f'forbidden legacy catalog token remains: {token}')
+          if 'حجز' in central.read_text(encoding='utf-8'):
+              raise SystemExit('Arabic booking fallback remains in Sorani catalog copy')
+          PY
+
+      - name: Source localization and layout contract
+        run: node --test artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs
+
+      - name: Rendered localization parity
+        run: pnpm exec tsx --test artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx
+
+      - name: Typecheck
+        working-directory: artifacts/fawri
+        run: pnpm run typecheck
+
+      - name: Build
+        working-directory: artifacts/fawri
+        run: pnpm run build
+
+      - name: Validate exact scope
+        shell: bash
+        run: |
+          git diff --check
+          git diff --exit-code -- . \
+            ':(exclude)artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts' \
+            ':(exclude)artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogImageUploadEditor.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogEditorShell.tsx' \
+            ':(exclude)artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs' \
+            ':(exclude)artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx' \
+            ':(exclude).github/workflows/catalog-editor-quality.yml' \
+            ':(exclude).github/workflows/fawri-one-shot-catalog-editor-quality-hardening.yml'
+
+      - name: Remove temporary workflow and commit
+        shell: bash
+        run: |
+          rm .github/workflows/fawri-one-shot-catalog-editor-quality-hardening.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add \
+            artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts \
+            artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx \
+            artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx \
+            artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx \
+            artifacts/fawri/src/components/catalog/CatalogImageUploadEditor.tsx \
+            artifacts/fawri/src/components/catalog/CatalogEditorShell.tsx \
+            artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs \
+            artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx \
+            .github/workflows/catalog-editor-quality.yml \
+            .github/workflows/fawri-one-shot-catalog-editor-quality-hardening.yml
+          git commit -m 'Harden catalog editor language and layout parity'
+          git push origin HEAD:foundation/integration-candidate

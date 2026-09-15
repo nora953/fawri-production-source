@@ -1,0 +1,144 @@
+/*
+ * Single-option catalog products (for example: Color = Red, White, Black)
+ * do not need both a group card and a one-row variant table for every value.
+ *
+ * IMPORTANT: all :has() / :not() predicates below are chained on the SAME
+ * section element. Do not insert whitespace between those predicates: whitespace
+ * would turn the next predicate into a descendant selector and the rule would no
+ * longer match the option editor section.
+ */
+
+/* Hide the inherited-values explainer for a true single-option product. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .rounded-xl.border.border-orange-200 {
+  display: none !important;
+}
+
+/* Keep the compact Variants toolbar, but remove the implementation/history note. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .flex.flex-col.gap-2.rounded-xl.border.bg-background.p-3 > div:first-child > p.mt-1.text-xs {
+  display: none !important;
+}
+
+/* One visual container for all values of the single option. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 {
+  overflow: hidden !important;
+  gap: 0 !important;
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  background: hsl(var(--background));
+  box-shadow: 0 6px 18px -18px rgb(15 23 42 / 0.45);
+}
+
+/* Each generated group now contributes only its actual variant row. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section {
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Remove the duplicate group-level editor (Color: Red + price/cost/stock/image).
+ * With one option, the variant row below already owns exactly the same values. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section > .space-y-3.border-b.bg-muted\/20.p-3 {
+  display: none !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section > .p-2\.5 {
+  padding: 0 !important;
+}
+
+/* Flatten the per-value one-row tables into one continuous merchant-facing list.
+ * A single-option row must fit its card: compact the cells instead of creating
+ * an inner horizontal scrollbar. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section .overflow-x-auto.rounded-2xl.border.bg-background {
+  overflow-x: hidden !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table {
+  width: 100% !important;
+  min-width: 0 !important;
+  table-layout: fixed;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table :where(th, td) {
+  padding-inline: 0.45rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 tbody input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]) {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-inline-size: 0 !important;
+  padding-inline: 0.4rem !important;
+  font-size: 0.75rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 tbody input.font-mono {
+  font-size: 0.7rem !important;
+  letter-spacing: -0.02em;
+}
+
+/* SKU is a Latin technical identifier even when the interface language is RTL.
+ * English already renders it with Inter and therefore gets visibly better edge
+ * clearance. Use the exact same Latin metric in Arabic/Sorani for SKU fields so
+ * the identifier fits the same fixed card width without hiding its final glyph. */
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell input.font-mono,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell input.font-mono {
+  font-family: "Inter", Arial, sans-serif !important;
+}
+
+/* Inventory is a short numeric value, so it should not consume the same width
+ * as prices or identifiers. Give that reclaimed space to the image controls. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table:has(thead tr > th:nth-child(8)) :where(th:nth-child(4), td:nth-child(4)) {
+  width: 5.75rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table :where(th:first-child, td:first-child) {
+  width: 7.5rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table :where(th[class~="w-40"], td[class~="w-40"]) {
+  width: 11.5rem !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 table :where(th:last-child, td:last-child) {
+  width: 3.75rem !important;
+}
+
+/* The column heading belongs to the first table only. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:not(:first-child) thead {
+  display: none !important;
+}
+
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:not(:first-child) tbody > tr:first-child {
+  border-top: 1px solid hsl(var(--border)) !important;
+}
+
+/* The column title already says that the variant image is optional. Repeating
+ * "no custom image = product image" under every row adds noise and unnecessary
+ * height, so keep that fallback behavior implicit in the single-option table. */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 tbody td[class~="w-40"] p {
+  display: none !important;
+}
+
+/* For one option, the first column is the variant itself, not "remaining options". */
+.products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ar"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
+  content: 'النوع';
+  font-size: 0.75rem;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
+  content: 'جۆر';
+  font-size: 0.75rem;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
+  content: 'Variant';
+  font-size: 0.75rem;
+}

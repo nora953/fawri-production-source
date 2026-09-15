@@ -1,0 +1,196 @@
+.fawri-ui-baseline {
+  --fawri-control-height: 3rem;
+  --fawri-control-radius: 0.75rem;
+  --fawri-field-gap: 0.5rem;
+  --fawri-field-column-gap: 1.5rem;
+  --fawri-label-size: 0.875rem;
+  --fawri-label-line-height: 1.25rem;
+  --fawri-hint-size: 0.75rem;
+  --fawri-hint-line-height: 1.25rem;
+}
+
+.fawri-ui-baseline label {
+  font-size: var(--fawri-label-size);
+  line-height: var(--fawri-label-line-height);
+}
+
+/*
+ * Canonical merchant field structure. This makes older label-wrapped controls
+ * render like the reviewed Signup/Login field group: header, 8px gap, control.
+ */
+.fawri-ui-baseline label:has(> input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"])),
+.fawri-ui-baseline label:has(> select),
+.fawri-ui-baseline label:has(> textarea),
+.fawri-ui-baseline label:has(> button[role="combobox"]) {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--fawri-field-gap) !important;
+}
+
+.fawri-ui-baseline label:has(> input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"])) > *,
+.fawri-ui-baseline label:has(> select) > *,
+.fawri-ui-baseline label:has(> textarea) > *,
+.fawri-ui-baseline label:has(> button[role="combobox"]) > * {
+  margin-top: 0 !important;
+}
+
+.fawri-ui-baseline label:has(> input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"])) > span:first-child,
+.fawri-ui-baseline label:has(> select) > span:first-child,
+.fawri-ui-baseline label:has(> textarea) > span:first-child,
+.fawri-ui-baseline label:has(> button[role="combobox"]) > span:first-child {
+  display: flex;
+  min-height: 1.25rem;
+  align-items: center;
+  line-height: var(--fawri-label-line-height);
+  font-weight: 600;
+  text-align: start;
+  padding-inline: 0.125rem;
+}
+
+/* Signup uses gap-6 for paired fields; keep merchant two-column field rows equal. */
+.fawri-ui-baseline .grid:has(> label:has(> input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]))),
+.fawri-ui-baseline .grid:has(> label:has(> select)),
+.fawri-ui-baseline .grid:has(> label:has(> textarea)),
+.fawri-ui-baseline .grid:has(> label:has(> button[role="combobox"])) {
+  column-gap: var(--fawri-field-column-gap) !important;
+  row-gap: var(--fawri-field-column-gap) !important;
+}
+
+/*
+ * Compound schedule ranges stay readable in RTL: start and end are separate
+ * full-width field groups, while date/time remain a compact pair inside each.
+ */
+.fawri-ui-baseline .grid:has(> label > div > input[placeholder="YYYY/MM/DD"]) {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 1rem !important;
+}
+
+.fawri-ui-baseline label:has(> div > input[placeholder="YYYY/MM/DD"]) {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--fawri-field-gap) !important;
+}
+
+.fawri-ui-baseline label:has(> div > input[placeholder="YYYY/MM/DD"]) > span:first-child {
+  display: flex;
+  min-height: 1.25rem;
+  align-items: center;
+  line-height: var(--fawri-label-line-height);
+  font-weight: 600;
+  text-align: start;
+  padding-inline: 0.125rem;
+}
+
+.fawri-ui-baseline label:has(> div > input[placeholder="YYYY/MM/DD"]) > div {
+  grid-template-columns: minmax(0, 1fr) minmax(7rem, 0.35fr) !important;
+  gap: 0.75rem !important;
+  margin-top: 0 !important;
+}
+
+.fawri-ui-baseline :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+  select,
+  button[role="combobox"]
+) {
+  min-height: var(--fawri-control-height) !important;
+  border-radius: var(--fawri-control-radius) !important;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.fawri-ui-baseline textarea {
+  border-radius: var(--fawri-control-radius) !important;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+.fawri-ui-baseline :where(input, textarea)::placeholder {
+  font-weight: 400;
+  color: hsl(var(--muted-foreground));
+}
+
+.fawri-ui-baseline :where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+  select,
+  textarea,
+  button[role="combobox"]
+):focus-visible,
+.fawri-ui-baseline select:focus {
+  border-color: hsl(var(--primary)) !important;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.12) !important;
+  outline: none !important;
+}
+
+.fawri-ui-baseline select {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: hsl(var(--background));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-size: 14px 14px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.fawri-ui-baseline[dir="rtl"] select,
+[dir="rtl"] .fawri-ui-baseline select {
+  background-position: left 0.75rem center;
+  padding-left: 2.25rem !important;
+  padding-right: 0.75rem !important;
+  text-align: right;
+}
+
+.fawri-ui-baseline[dir="ltr"] select,
+[dir="ltr"] .fawri-ui-baseline select {
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem !important;
+  padding-left: 0.75rem !important;
+  text-align: left;
+}
+
+.fawri-ui-baseline :where(input[type="checkbox"], input[type="radio"]) {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  flex: 0 0 auto;
+  accent-color: hsl(var(--primary));
+}
+
+.fawri-ui-baseline :where(label, div):has(> input[type="checkbox"]) {
+  gap: 0.75rem !important;
+}
+
+.fawri-ui-baseline :where(label, div):has(> input[type="checkbox"]) > input[type="checkbox"] {
+  order: -1;
+  margin-top: 0.125rem !important;
+}
+
+.fawri-ui-baseline label > span:not(:first-child) {
+  line-height: var(--fawri-hint-line-height);
+}
+
+.fawri-ui-baseline .border-t > button {
+  min-height: var(--fawri-control-height) !important;
+  border-radius: var(--fawri-control-radius) !important;
+  font-weight: 700;
+}
+
+.dark .fawri-ui-baseline select {
+  background-color: hsl(var(--background));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23e2e8f0' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+
+@media (max-width: 640px) {
+  .fawri-ui-baseline :where(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+    select,
+    textarea,
+    button[role="combobox"]
+  ) {
+    max-width: 100%;
+  }
+
+  .fawri-ui-baseline label:has(> div > input[placeholder="YYYY/MM/DD"]) > div {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

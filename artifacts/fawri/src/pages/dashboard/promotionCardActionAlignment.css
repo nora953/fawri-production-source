@@ -1,0 +1,156 @@
+/*
+ * Promotion cards keep edit/delete as compact icon controls, matching Product
+ * summary cards. The scope badge gets logical icon spacing, and the discount
+ * summary is lifted slightly so it keeps breathing room above start/end.
+ */
+@media (min-width: 1280px) {
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 {
+    display: flex !important;
+    grid-template-columns: none !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 0.5rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button,
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child,
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:last-child {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    min-width: 2.5rem !important;
+    min-height: 2.5rem !important;
+    padding: 0 !important;
+    border-radius: 0.75rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child > svg {
+    flex: 0 0 auto;
+    margin: 0 !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .flex.shrink-0.gap-2 > button:first-child::after {
+    content: none !important;
+    display: none !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .min-w-0.flex-1 > .mb-3 > .rounded-full.bg-background {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .flex > .min-w-0.flex-1 > .mb-3 > .rounded-full.bg-background > svg {
+    flex: 0 0 auto;
+    margin: 0 !important;
+  }
+
+  .products-workspace-polish > .min-h-screen > .mx-auto > .grid:has(> article > .grid.border-t) > article > .p-5 > .inline-flex {
+    transform: translateY(-0.35rem);
+  }
+
+  /* Keep the catalog header description on one desktop line without forcing
+   * narrow/mobile layouts to overflow. */
+  .products-workspace-polish > .min-h-screen > header > .flex:first-child > div:first-child > p {
+    max-width: none !important;
+    white-space: nowrap !important;
+  }
+}
+
+/*
+ * Promotion header context: keep the pricing notice and store authority facts
+ * visually distinct without introducing another card. Desktop keeps one clean
+ * row; narrow screens stack the authority facts with a subtle divider.
+ */
+.products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] {
+  column-gap: 1.5rem !important;
+  row-gap: 0.5rem !important;
+}
+
+.products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 500;
+  color: rgb(154 52 18);
+}
+
+.products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:last-child {
+  flex: 0 0 auto;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:last-child [dir="ltr"] {
+  color: hsl(var(--foreground));
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+/*
+ * Make the Add promotion CTA visibly intentional instead of merely moving the
+ * plus glyph. The plus gets its own soft chip, so RTL/LTR both keep a balanced
+ * icon-to-label rhythm and the control reads as one composed action.
+ */
+.products-workspace-polish > .min-h-screen > .mx-auto > header > .flex:first-child > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.7rem !important;
+  height: 3rem !important;
+  min-height: 3rem !important;
+  padding-inline: 0.8rem 1.05rem !important;
+  border-radius: 1rem !important;
+  line-height: 1 !important;
+  box-shadow: 0 8px 18px rgb(249 115 22 / 0.16) !important;
+}
+
+.products-workspace-polish > .min-h-screen > .mx-auto > header > .flex:first-child > button > svg {
+  box-sizing: border-box !important;
+  flex: 0 0 auto;
+  width: 1.8rem !important;
+  height: 1.8rem !important;
+  padding: 0.34rem !important;
+  margin: 0 !important;
+  border-radius: 0.6rem !important;
+  background: rgb(255 255 255 / 0.16) !important;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22) !important;
+  stroke-width: 2.25 !important;
+}
+
+/*
+ * Keep the catalog Add product/service CTA visually identical to Add promotion.
+ * The selector targets only the primary first action; Import remains unchanged.
+ */
+.products-workspace-polish > .min-h-screen > header > .flex:first-child > .flex.shrink-0 > button:first-child {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.7rem !important;
+  height: 3rem !important;
+  min-height: 3rem !important;
+  padding-inline: 0.8rem 1.05rem !important;
+  border-radius: 1rem !important;
+  line-height: 1 !important;
+  box-shadow: 0 8px 18px rgb(249 115 22 / 0.16) !important;
+}
+
+.products-workspace-polish > .min-h-screen > header > .flex:first-child > .flex.shrink-0 > button:first-child > svg {
+  box-sizing: border-box !important;
+  flex: 0 0 auto;
+  width: 1.8rem !important;
+  height: 1.8rem !important;
+  padding: 0.34rem !important;
+  margin: 0 !important;
+  border-radius: 0.6rem !important;
+  background: rgb(255 255 255 / 0.16) !important;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22) !important;
+  stroke-width: 2.25 !important;
+}
+
+@media (max-width: 639px) {
+  .products-workspace-polish > .min-h-screen > .mx-auto > header > [class~="border-orange-200"][class~="bg-orange-50/70"] > span:last-child {
+    width: 100%;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgb(249 115 22 / 0.14);
+    white-space: normal;
+  }
+}

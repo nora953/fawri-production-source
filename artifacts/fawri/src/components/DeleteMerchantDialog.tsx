@@ -64,6 +64,11 @@ export default function DeleteMerchantDialog({
       ? adminText.deletionReasonRetention
       : adminText.deletionReasonPolicy;
 
+  const textAlignmentClass =
+    adminText.dir === "rtl"
+      ? "!text-right sm:!text-right"
+      : "!text-left sm:!text-left";
+
   const getErrorMessage = (error?: string, status?: number) => {
     if (status === 403) return adminText.permissionDenied;
     if (error?.includes("credentials")) return adminText.deletionWrongPassword;
@@ -206,9 +211,22 @@ export default function DeleteMerchantDialog({
 
   return (
     <Dialog open onOpenChange={(open) => !open && !isLoading && onClose()}>
-      <DialogContent className="max-w-md" dir={adminText.dir}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-destructive">
+      <DialogContent
+        className={`flex max-h-[90vh] w-full max-w-lg flex-col gap-4 overflow-hidden p-0 ${
+          adminText.dir === "rtl"
+            ? "[&>button]:left-4 [&>button]:right-auto"
+            : "[&>button]:right-4 [&>button]:left-auto"
+        }`}
+        dir={adminText.dir}
+      >
+        <DialogHeader
+          className={`w-full px-6 pb-0 pt-5 ${textAlignmentClass} ${
+            adminText.dir === "rtl" ? "pl-14" : "pr-14"
+          }`}
+        >
+          <DialogTitle
+            className={`flex w-full items-center gap-2 text-lg leading-6 text-destructive ${textAlignmentClass}`}
+          >
             <Trash2 className="h-5 w-5" />
             {isOwner
               ? adminText.deletionReviewTitle
@@ -216,27 +234,42 @@ export default function DeleteMerchantDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="rounded-xl border bg-muted/40 p-4 text-sm">
-          <p className="font-bold">{merchant.store_name}</p>
-          <p className="mt-1 text-muted-foreground">
-            {merchant.owner_name} · {merchant.phone}
-          </p>
-        </div>
+        <div
+          className={`min-h-0 flex-1 space-y-4 overflow-y-auto px-6 pb-2 ${textAlignmentClass}`}
+        >
+          <div
+            className={`rounded-xl border bg-muted/40 p-4 text-sm ${textAlignmentClass}`}
+          >
+            <p className="font-bold">{merchant.store_name}</p>
+            <p className="mt-1 text-muted-foreground">
+              {merchant.owner_name}
+              <span className="mx-1">·</span>
+              <span dir="ltr">{merchant.phone}</span>
+            </p>
+          </div>
 
-        {step === "reason" && (
-          <div className="space-y-4">
+          {step === "reason" && (
+            <div className={`space-y-4 ${textAlignmentClass}`}>
             <div className="space-y-3">
-              <Label>{adminText.deletionReasonLabel}</Label>
+              <Label className={`block ${textAlignmentClass}`}>
+                {adminText.deletionReasonLabel}
+              </Label>
 
-              <label className="flex cursor-pointer items-start gap-3 rounded-xl border p-3">
+              <label
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition-colors ${
+                  reason === "policy_violation"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/40"
+                }`}
+              >
                 <input
                   type="radio"
                   name="delete-reason"
                   checked={reason === "policy_violation"}
                   onChange={() => setReason("policy_violation")}
-                  className="mt-1"
+                  className="mt-1 accent-primary"
                 />
-                <span>
+                <span className={`min-w-0 flex-1 ${textAlignmentClass}`}>
                   <span className="block font-semibold">
                     {adminText.deletionReasonPolicy}
                   </span>
@@ -247,10 +280,12 @@ export default function DeleteMerchantDialog({
               </label>
 
               <label
-                className={`flex items-start gap-3 rounded-xl border p-3 ${
+                className={`flex items-start gap-3 rounded-xl border p-3 transition-colors ${
                   retentionEligible
-                    ? "cursor-pointer"
-                    : "cursor-not-allowed opacity-50"
+                    ? reason === "retention_expired"
+                      ? "cursor-pointer border-primary bg-primary/5"
+                      : "cursor-pointer border-border hover:border-primary/40"
+                    : "cursor-not-allowed border-border bg-muted/30 opacity-60"
                 }`}
               >
                 <input
@@ -259,9 +294,9 @@ export default function DeleteMerchantDialog({
                   checked={reason === "retention_expired"}
                   disabled={!retentionEligible}
                   onChange={() => setReason("retention_expired")}
-                  className="mt-1"
+                  className="mt-1 accent-primary"
                 />
-                <span>
+                <span className={`min-w-0 flex-1 ${textAlignmentClass}`}>
                   <span className="block font-semibold">
                     {adminText.deletionReasonRetention}
                   </span>
@@ -272,12 +307,16 @@ export default function DeleteMerchantDialog({
               </label>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="deletion-request-details">
+            <div className={`space-y-2 ${textAlignmentClass}`}>
+              <Label
+                htmlFor="deletion-request-details"
+                className={`block ${textAlignmentClass}`}
+              >
                 {adminText.deletionDetailsLabel}
               </Label>
               <Textarea
                 id="deletion-request-details"
+                className={`min-h-28 resize-none ${textAlignmentClass}`}
                 value={details}
                 onChange={(event) => setDetails(event.target.value)}
                 placeholder={adminText.deletionDetailsPlaceholder}
@@ -288,9 +327,9 @@ export default function DeleteMerchantDialog({
           </div>
         )}
 
-        {step === "review" && deletionRequest && (
-          <div className="space-y-3 text-sm">
-            <div className="rounded-xl border p-3">
+          {step === "review" && deletionRequest && (
+            <div className={`space-y-3 text-sm ${textAlignmentClass}`}>
+            <div className={`rounded-xl border p-3 ${textAlignmentClass}`}>
               <p className="text-xs text-muted-foreground">
                 {adminText.deletionRequestedBy}
               </p>
@@ -298,7 +337,7 @@ export default function DeleteMerchantDialog({
                 {deletionRequest.requested_by_admin_name} · {deletionRequest.requested_by_admin_phone}
               </p>
             </div>
-            <div className="rounded-xl border p-3">
+            <div className={`rounded-xl border p-3 ${textAlignmentClass}`}>
               <p className="text-xs text-muted-foreground">
                 {adminText.deletionReasonLabel}
               </p>
@@ -310,18 +349,22 @@ export default function DeleteMerchantDialog({
           </div>
         )}
 
-        {step === "password" && (
-          <div className="space-y-4">
+          {step === "password" && (
+            <div className={`space-y-4 ${textAlignmentClass}`}>
             <p className="text-sm text-muted-foreground">
               {adminText.deletionOwnerPasswordDescription}
             </p>
             <div className="space-y-2">
-              <Label htmlFor="delete-owner-password">
+              <Label
+                htmlFor="delete-owner-password"
+                className={`block ${textAlignmentClass}`}
+              >
                 {adminText.deletionOwnerPasswordLabel}
               </Label>
               <Input
                 id="delete-owner-password"
                 type="password"
+                dir="ltr"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 onKeyDown={(event) => {
@@ -334,8 +377,10 @@ export default function DeleteMerchantDialog({
           </div>
         )}
 
-        {step === "final" && (
-          <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-4">
+          {step === "final" && (
+            <div
+              className={`rounded-xl border border-destructive/40 bg-destructive/10 p-4 ${textAlignmentClass}`}
+            >
             <div className="flex items-start gap-3">
               <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
               <div>
@@ -353,7 +398,12 @@ export default function DeleteMerchantDialog({
           </div>
         )}
 
-        <DialogFooter className="flex-row-reverse gap-2 sm:justify-start">
+        </div>
+
+        <DialogFooter
+          className="flex flex-col gap-2 border-t px-6 pb-5 pt-4 sm:flex-row-reverse sm:justify-start [&>button]:h-auto [&>button]:min-h-10 [&>button]:w-full [&>button]:whitespace-normal [&>button]:px-4 [&>button]:py-2 sm:[&>button]:w-auto"
+          dir="ltr"
+        >
           {step === "reason" && (
             <Button
               onClick={() => void submitDeletionRequest()}

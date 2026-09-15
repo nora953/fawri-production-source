@@ -1,0 +1,85 @@
+name: Meta OAuth operational cutoff
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/app.ts"
+      - "artifacts/api-server/src/middleware/merchantOperationalAccess.ts"
+      - "artifacts/api-server/src/routes/indexModulePart4.ts"
+      - "artifacts/api-server/src/services/merchantOperationalAccess.ts"
+      - "artifacts/api-server/src/services/operationalPostgresAuthority.ts"
+      - "artifacts/api-server/src/services/postgresMetaChannelAuthority.ts"
+      - "artifacts/api-server/tests/meta-oauth-callback-operational-cutoff-contract.test.mjs"
+      - "artifacts/api-server/tests/meta-oauth-operational-cutoff-postgres.integration.test.ts"
+      - "lib/db/**"
+      - ".github/workflows/meta-oauth-operational-cutoff.yml"
+      - "scripts/ci-run-redacted.mjs"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: meta-oauth-operational-cutoff-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-meta-oauth-operational-cutoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label meta-oauth-operational-cutoff-frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Check callback contract syntax
+        run: node --check artifacts/api-server/tests/meta-oauth-callback-operational-cutoff-contract.test.mjs
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Build API server
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Initialize disposable PostgreSQL runtime schema
+        run: pnpm --filter @workspace/db run push-force
+
+      - name: Prove callback and credential persistence obey merchant cutoff
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/meta-oauth-callback-operational-cutoff-contract.test.mjs
+          ./tests/meta-oauth-operational-cutoff-postgres.integration.test.ts
