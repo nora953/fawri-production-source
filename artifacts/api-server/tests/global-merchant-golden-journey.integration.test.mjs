@@ -552,7 +552,10 @@ test(
 
     const logout = await jsonRequest(`${baseUrl}/api/cashier/operator/logout`, {
       method: "POST",
-      headers: operatorHeaders(stationToken, operatorToken, cashierDeviceId),
+      headers: operatorHeaders(stationToken, operatorToken, cashierDeviceId, {
+        "Content-Type": "application/json",
+      }),
+      body: JSON.stringify({ pin: staffPin }),
     });
     assert.equal(logout.response.status, 200, JSON.stringify(logout.body));
     assert.equal(logout.body?.ok, true);
