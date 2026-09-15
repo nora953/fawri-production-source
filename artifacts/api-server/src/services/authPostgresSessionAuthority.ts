@@ -602,13 +602,13 @@ async function revokePostgres(
     if (
       !row ||
       row.kind !== expectedKind ||
-      row.status !== "active" ||
       !safeEqual(row.token_hash, fingerprint("session", parsed.secret))
     ) {
       return false;
     }
 
     if (reason === "expired") {
+      if (row.status !== "active") return false;
       const expired = await queryRows<{ id: string }>(
         client,
         `UPDATE account_sessions
@@ -620,15 +620,50 @@ async function revokePostgres(
       return expired.length === 1;
     }
 
-    const revoked = await queryRows<{ id: string }>(
-      client,
-      `UPDATE account_sessions
-          SET status = 'revoked', revoked_at = $2, revoke_reason = $3
-        WHERE id = $1 AND status = 'active'
-        RETURNING id`,
-      [row.id, new Date(), reason],
-    );
-    return revoked.length === 1;
+    const accountId = row.account_id;
+    let current = row;
+    const visited = new Set<string>();
+    for (let depth = 0; depth < 64; depth += 1) {
+      if (visited.has(current.id)) {
+        throw new Error("AUTH_POSTGRES_ROTATION_LINEAGE_CYCLE");
+      }
+      visited.add(current.id);
+
+      if (current.status === "active") {
+        const revoked = await queryRows<{ id: string }>(
+          client,
+          `UPDATE account_sessions
+              SET status = 'revoked', revoked_at = $2, revoke_reason = $3
+            WHERE id = $1 AND status = 'active'
+            RETURNING id`,
+          [current.id, new Date(), reason],
+        );
+        return revoked.length === 1;
+      }
+
+      if (
+        current.status !== "revoked" ||
+        current.revoke_reason !== "rotated" ||
+        !current.replaced_by_session_id
+      ) {
+        return false;
+      }
+
+      const replacements = await queryRows<SessionRow>(
+        client,
+        `SELECT *
+           FROM account_sessions
+          WHERE id = $1 AND account_id = $2 AND kind = $3
+          FOR UPDATE`,
+        [current.replaced_by_session_id, accountId, expectedKind],
+      );
+      if (!replacements[0]) {
+        return false;
+      }
+      current = replacements[0];
+    }
+
+    throw new Error("AUTH_POSTGRES_ROTATION_LINEAGE_TOO_DEEP");
   });
 }
 
