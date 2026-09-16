@@ -57,8 +57,8 @@ const COPY: Record<Lang, Copy> = {
     title: 'الكاشيرات والموظفون', subtitle: 'إدارة أجهزة الكاشير والموظفين والصلاحيات والربط الآمن.', staff: 'الموظفون', stations: 'محطات الكاشير',
     addStaff: 'إضافة موظف', name: 'اسم الموظف', role: 'الدور', cashier: 'كاشير', manager: 'مدير', pin: 'رمز الدخول من 4 إلى 8 أرقام', saveStaff: 'إضافة الموظف', permissions: 'الصلاحيات', discountPolicies: 'سياسات الخصم',
     createSales: 'إنشاء المبيعات', ownSales: 'عرض مبيعاته', allSales: 'رؤية مبيعات الموظفين الآخرين', returns: 'تنفيذ المرتجعات', voids: 'إلغاء عملية بيع كاملة', manualDiscount: 'تنفيذ خصم يدوي', discountOverride: 'اعتماد تجاوز حد الخصم', salesReports: 'عرض تقارير المبيعات', profitReports: 'عرض الأرباح',
-    discountWarning: 'صلاحيات الخصم حساسة ولا تُمنح تلقائيًا حسب الدور. بعد منحها اضبط حدود الموظف من صفحة سياسات الخصم. اعتماد التجاوز متاح للمدير فقط.', profitWarning: 'صلاحية الأرباح حساسة. لا تمنحها إلا لموظف موثوق.', active: 'نشط', disabled: 'معطل', revoked: 'ملغى نهائيًا', disable: 'تعطيل', enable: 'تفعيل', edit: 'تعديل', cancel: 'إلغاء', saveChanges: 'حفظ التعديلات', editStaff: 'تعديل الموظف', newPin: 'رمز دخول جديد (اختياري)',
-    addStation: 'إضافة محطة كاشير', stationName: 'اسم المحطة', branchKey: 'رمز الفرع', branchLabel: 'اسم الفرع (اختياري)', offlineAuthority: 'السماح لهذه المحطة ببيع المخزون المتابع أثناء انقطاع الإنترنت', offlineHint: 'يمكن تعيين محطة واحدة فقط لكل فرع كسلطة مخزون أثناء انقطاع الإنترنت.', offlineBadge: 'مخزون متاح دون اتصال', saveStation: 'إضافة المحطة', editStation: 'تعديل المحطة', paired: 'مربوطة', notPaired: 'غير مربوطة', pair: 'إنشاء رمز ربط', stationStatus: 'حالة المحطة', disableStation: 'تعطيل المحطة', enableStation: 'تفعيل المحطة', activeStationHint: 'تعطيل المحطة يسحب صلاحية الجهاز الحالي فورًا وينهي أي مناوبة نشطة ويمنع أي بيع جديد.', disabledStationHint: 'المحطة معطلة وغير قابلة للاستخدام. فعّلها ثم أنشئ رمز ربط جديدًا للجهاز.', disableStationWarning: 'تعطيل هذه المحطة سيفك ربط الجهاز فورًا وينهي أي مناوبة نشطة. عند إعادة التفعيل يجب إنشاء رمز ربط جديد. هل تريد المتابعة؟',
+    discountWarning: 'صلاحية الخصم لا تُمنح تلقائيًا. بعد تفعيلها، حدّد حد الموظف من صفحة سياسات الخصم. أي خصم يتجاوز الحد يحتاج موافقة مدير مخوّل.', profitWarning: 'صلاحية الأرباح حساسة. لا تمنحها إلا لموظف موثوق.', active: 'نشط', disabled: 'معطل', revoked: 'ملغى نهائيًا', disable: 'تعطيل', enable: 'تفعيل', edit: 'تعديل', cancel: 'إلغاء', saveChanges: 'حفظ التعديلات', editStaff: 'تعديل الموظف', newPin: 'رمز دخول جديد (اختياري)',
+    addStation: 'إضافة محطة كاشير', stationName: 'اسم المحطة', branchKey: 'رمز الفرع', branchLabel: 'اسم الفرع (اختياري)', offlineAuthority: 'السماح لهذه المحطة ببيع المنتجات ذات المخزون المتابع أثناء انقطاع الإنترنت', offlineHint: 'يمكن تفعيل هذا الخيار لمحطة واحدة فقط في كل فرع. عند انقطاع الإنترنت، تُمنع المحطات الأخرى من بيع المنتجات ذات المخزون المتابع لتجنب تعارض الكميات.', offlineBadge: 'مخزون متاح دون اتصال', saveStation: 'إضافة المحطة', editStation: 'تعديل المحطة', paired: 'مربوطة', notPaired: 'غير مربوطة', pair: 'إنشاء رمز ربط', stationStatus: 'حالة المحطة', disableStation: 'تعطيل المحطة', enableStation: 'تفعيل المحطة', activeStationHint: 'تعطيل المحطة يسحب صلاحية الجهاز الحالي فورًا وينهي أي مناوبة نشطة ويمنع أي بيع جديد.', disabledStationHint: 'المحطة معطلة وغير قابلة للاستخدام. فعّلها ثم أنشئ رمز ربط جديدًا للجهاز.', disableStationWarning: 'تعطيل هذه المحطة سيفك ربط الجهاز فورًا وينهي أي مناوبة نشطة. عند إعادة التفعيل يجب إنشاء رمز ربط جديد. هل تريد المتابعة؟',
     pairingTitle: 'رمز ربط الجهاز', pairingHint: 'افتح الكاشير على الجهاز الجديد وأدخل هذا الرمز. صالح لمدة 10 دقائق ويستخدم مرة واحدة.', expires: 'ينتهي', copyCode: 'نسخ الرمز', copied: 'تم النسخ', close: 'إغلاق',
     loading: 'جارٍ تحميل بيانات الكاشير...', failed: 'تعذر تنفيذ العملية. حاول مرة أخرى.', emptyStaff: 'لا يوجد موظفون حتى الآن.', emptyStations: 'لا توجد محطات كاشير حتى الآن.', saving: 'جارٍ الحفظ...', sessionExpired: 'انتهت جلسة التاجر. سجّل الدخول من جديد ثم أعد المحاولة.', versionConflict: 'تم تعديل بيانات الموظف في مكان آخر. حدّث الصفحة ثم أعد المحاولة.', stationVersionConflict: 'تم تعديل إعدادات المحطة في مكان آخر. حدّث الصفحة ثم أعد المحاولة.', offlineConflict: 'هناك محطة أخرى في هذا الفرع تملك صلاحية بيع المخزون أثناء انقطاع الإنترنت.',
   },
@@ -767,10 +767,10 @@ export default function CashierManagementPage() {
           </div>
           <PermissionGrid value={editPermissions} toggle={permission => changePermission(setEditPermissions, permission)} staffRole={editRole} />
           <div className="mt-4 flex gap-2">
-            <button type="button" onClick={cancelEdit} disabled={busy} className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-bold">{l.cancel}</button>
-            <button type="button" onClick={() => void saveStaffEdit(editingMember)} disabled={busy || !editName.trim() || Boolean(editPin && !/^\d{4,8}$/.test(editPin))} className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50">
+            <button type="button" onClick={() => void saveStaffEdit(editingMember)} disabled={busy || !editName.trim() || Boolean(editPin && !/^\d{4,8}$/.test(editPin))} className={`flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50 ${lang === 'ar' ? 'order-1' : 'order-2'}`}>
               {busy ? l.saving : l.saveChanges}
             </button>
+            <button type="button" onClick={cancelEdit} disabled={busy} className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-bold ${lang === 'ar' ? 'order-2' : 'order-1'}`}>{l.cancel}</button>
           </div>
         </Modal>
       ) : null}
@@ -835,10 +835,10 @@ export default function CashierManagementPage() {
             <span><strong className="block text-sm">{l.offlineAuthority}</strong><span className="mt-1 block text-xs text-muted-foreground">{l.offlineHint}</span></span>
           </label>
           <div className="mt-4 flex gap-2">
-            <button type="button" onClick={cancelStationEdit} disabled={busy} className="flex-1 rounded-lg border px-4 py-2.5 text-sm font-bold">{l.cancel}</button>
-            <button type="button" onClick={() => void saveStationEdit(editingStation)} disabled={busy || !editStationName.trim() || !editBranchKey.trim()} className="flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50">
+            <button type="button" onClick={() => void saveStationEdit(editingStation)} disabled={busy || !editStationName.trim() || !editBranchKey.trim()} className={`flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50 ${lang === 'ar' ? 'order-1' : 'order-2'}`}>
               {busy ? l.saving : l.saveChanges}
             </button>
+            <button type="button" onClick={cancelStationEdit} disabled={busy} className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-bold ${lang === 'ar' ? 'order-2' : 'order-1'}`}>{l.cancel}</button>
           </div>
         </Modal>
       ) : null}
