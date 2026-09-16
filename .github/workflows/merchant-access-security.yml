@@ -1,0 +1,116 @@
+name: Merchant access security
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/app.ts"
+      - "artifacts/api-server/src/middleware/**"
+      - "artifacts/api-server/src/services/merchantOperationalAccess.ts"
+      - "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts"
+      - "artifacts/api-server/src/services/metaPageDirectory.ts"
+      - "artifacts/api-server/src/services/merchantReplyEntitlement.ts"
+      - "artifacts/api-server/src/services/durableJobQueue.ts"
+      - "artifacts/api-server/src/routes/auth.ts"
+      - "artifacts/api-server/src/routes/auth-security.ts"
+      - "artifacts/api-server/src/routes/merchant-notifications-pg.ts"
+      - "artifacts/api-server/src/routes/index.ts"
+      - "artifacts/api-server/src/routes/bot-training.ts"
+      - "artifacts/api-server/src/routes/saved-answers.ts"
+      - "artifacts/api-server/tests/auth-cutover-contract.test.mjs"
+      - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs"
+      - "artifacts/api-server/tests/meta-webhook-security.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
+      - "artifacts/api-server/tests/durable-job-queue.test.ts"
+      - "artifacts/api-server/package.json"
+      - ".github/workflows/merchant-access-security.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  push:
+    branches:
+      - "hardening/**"
+      - "foundation/**"
+    paths:
+      - "artifacts/api-server/src/app.ts"
+      - "artifacts/api-server/src/middleware/**"
+      - "artifacts/api-server/src/services/merchantOperationalAccess.ts"
+      - "artifacts/api-server/src/services/postgresMerchantNotificationAuthority.ts"
+      - "artifacts/api-server/src/services/metaPageDirectory.ts"
+      - "artifacts/api-server/src/services/merchantReplyEntitlement.ts"
+      - "artifacts/api-server/src/services/durableJobQueue.ts"
+      - "artifacts/api-server/src/routes/auth.ts"
+      - "artifacts/api-server/src/routes/auth-security.ts"
+      - "artifacts/api-server/src/routes/merchant-notifications-pg.ts"
+      - "artifacts/api-server/src/routes/index.ts"
+      - "artifacts/api-server/src/routes/bot-training.ts"
+      - "artifacts/api-server/src/routes/saved-answers.ts"
+      - "artifacts/api-server/tests/auth-cutover-contract.test.mjs"
+      - "artifacts/api-server/tests/merchant-session.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-status-access.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs"
+      - "artifacts/api-server/tests/meta-webhook-security.integration.test.mjs"
+      - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
+      - "artifacts/api-server/tests/durable-job-queue.test.ts"
+      - "artifacts/api-server/package.json"
+      - ".github/workflows/merchant-access-security.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merchant-access-security-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-merchant-access:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Check JavaScript test syntax
+        run: |
+          node --check artifacts/api-server/tests/auth-cutover-contract.test.mjs
+          node --check artifacts/api-server/tests/merchant-session.integration.test.mjs
+          node --check artifacts/api-server/tests/merchant-status-access.integration.test.mjs
+          node --check artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs
+          node --check artifacts/api-server/tests/meta-webhook-security.integration.test.mjs
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Test reply entitlement service
+        run: pnpm --filter @workspace/api-server run test:reply-entitlement
+
+      - name: Test durable retry queue and DLQ
+        run: pnpm --filter @workspace/api-server run test:durable-queue
+
+      - name: Build API server
+        run: pnpm --filter @workspace/api-server run build
+
+      - name: Test merchant session, cutover, status, and webhook enforcement
+        run: >-
+          node --test
+          artifacts/api-server/tests/auth-cutover-contract.test.mjs
+          artifacts/api-server/tests/merchant-session.integration.test.mjs
+          artifacts/api-server/tests/merchant-status-access.integration.test.mjs
+          artifacts/api-server/tests/merchant-operational-postgres-authority-contract.test.mjs
+          artifacts/api-server/tests/meta-webhook-security.integration.test.mjs

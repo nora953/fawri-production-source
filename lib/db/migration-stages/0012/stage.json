@@ -1,0 +1,7 @@
+{
+  "index": 12,
+  "name": "catalog_variant_signature_guard",
+  "when": 1787600400000,
+  "mode": "manual_sql",
+  "preimage_files": []
+}

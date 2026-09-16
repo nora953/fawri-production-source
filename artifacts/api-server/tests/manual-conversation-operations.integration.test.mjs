@@ -1,0 +1,757 @@
+import assert from "node:assert/strict";
+import crypto from "node:crypto";
+import { spawn } from "node:child_process";
+import http from "node:http";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import net from "node:net";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import test from "node:test";
+
+const testDirectory = path.dirname(fileURLToPath(import.meta.url));
+const apiRoot = path.resolve(testDirectory, "..");
+const serverEntry = path.join(apiRoot, "dist", "index.mjs");
+
+function merchant(id, phone) {
+  return {
+    id,
+    owner_name: `Owner ${id}`,
+    store_name: `Store ${id}`,
+    phone,
+    password: `Password-${id}-1!`,
+    activity_type: "retail",
+    status: "approved",
+    account_status: "approved",
+    onboarding_status: "channel_connected",
+    trial_status: "active",
+    signup_source: "direct",
+    language: "en",
+    theme_preference: "auto",
+    created_at: "2026-08-01T00:00:00.000Z",
+    otp_verified: true,
+    warning_stage: 0,
+    retention_status: "protected",
+  };
+}
+
+async function reservePort() {
+  const server = net.createServer();
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  await new Promise((resolve, reject) => {
+    server.close((error) => (error ? reject(error) : resolve()));
+  });
+  return address.port;
+}
+
+async function waitForServer(baseUrl, child, logs) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    if (child.exitCode !== null) {
+      throw new Error(`API server exited early.\n${logs()}`);
+    }
+    try {
+      const response = await fetch(`${baseUrl}/api/healthz`);
+      if (response.ok) return;
+    } catch {
+      // Server is still starting.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`API server did not become ready.\n${logs()}`);
+}
+
+function getSetCookie(response) {
+  const values =
+    typeof response.headers.getSetCookie === "function"
+      ? response.headers.getSetCookie()
+      : [];
+  return values[0] || response.headers.get("set-cookie") || "";
+}
+
+function cookiePair(setCookie) {
+  assert.match(setCookie, /^fawri_merchant_session_v2=/);
+  return setCookie.split(";", 1)[0];
+}
+
+async function jsonResponse(response) {
+  return {
+    response,
+    body: await response.json().catch(() => null),
+  };
+}
+
+async function startFakeMetaServer(t) {
+  const requests = [];
+  const server = http.createServer(async (req, res) => {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const rawBody = Buffer.concat(chunks).toString("utf8");
+    const body = rawBody ? JSON.parse(rawBody) : {};
+    requests.push({ url: req.url, body });
+
+    res.setHeader("Content-Type", "application/json");
+    if (body?.message?.text === "force confirmed failure") {
+      res.statusCode = 400;
+      res.end(
+        JSON.stringify({
+          error: { code: 19001, message: "confirmed test failure" },
+        }),
+      );
+      return;
+    }
+
+    res.statusCode = 200;
+    res.end(JSON.stringify({ message_id: `meta-message-${requests.length}` }));
+  });
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  assert.ok(address && typeof address === "object");
+  t.after(
+    () =>
+      new Promise((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      }),
+  );
+  return {
+    baseUrl: `http://127.0.0.1:${address.port}`,
+    requests,
+  };
+}
+
+function signedWebhook(secret, body) {
+  const rawBody = JSON.stringify(body);
+  const signature = crypto
+    .createHmac("sha256", secret)
+    .update(rawBody)
+    .digest("hex");
+  return {
+    rawBody,
+    signature: `sha256=${signature}`,
+  };
+}
+
+function encryptedCredential(token, keyId, key, associatedData) {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+  cipher.setAAD(Buffer.from(associatedData, "utf8"));
+  const ciphertext = Buffer.concat([
+    cipher.update(token, "utf8"),
+    cipher.final(),
+  ]);
+  return {
+    version: 1,
+    algorithm: "aes-256-gcm",
+    key_id: keyId,
+    iv: iv.toString("base64"),
+    ciphertext: ciphertext.toString("base64"),
+    auth_tag: cipher.getAuthTag().toString("base64"),
+  };
+}
+
+test("manual conversation operations are server-authoritative and idempotent", async (t) => {
+  const runtimeDirectory = await mkdtemp(
+    path.join(os.tmpdir(), "fawri-manual-conversation-"),
+  );
+  const dataDirectory = path.join(runtimeDirectory, "data");
+  await mkdir(dataDirectory, { recursive: true });
+
+  const merchantA = merchant("merchant-a", "07111111111");
+  const merchantB = merchant("merchant-b", "07222222222");
+  await writeFile(
+    path.join(dataDirectory, "merchants.json"),
+    JSON.stringify({
+      merchants: [merchantA, merchantB],
+      subscriptions: [],
+      otps: [],
+      admin_logs: [],
+      deletion_requests: [],
+      channel_overrides: {},
+      admin_notes: {},
+      merchant_notifications: [],
+      support_tickets: [],
+    }),
+  );
+  await writeFile(
+    path.join(dataDirectory, "fawri-runtime-db.json"),
+    JSON.stringify({
+      productsByMerchant: {},
+      conversationsByMerchant: {
+        "merchant-a": [
+          {
+            id: "messenger-customer-a",
+            merchant_id: "merchant-a",
+            platform: "messenger",
+            customer_name: "Customer A",
+            customer_handle: "customer-a",
+            status: "auto_replying",
+            assigned_to_human: false,
+            needs_training: false,
+            updated_at: "2026-08-06T10:00:00.000Z",
+            messages: [
+              {
+                id: "customer-message-a",
+                external_message_id: "incoming-a",
+                conversation_id: "messenger-customer-a",
+                sender: "customer",
+                text: "Hello",
+                created_at: "2026-08-06T10:00:00.000Z",
+                counted_as_auto_reply: false,
+                status: "received",
+              },
+            ],
+          },
+        ],
+        "merchant-b": [
+          {
+            id: "messenger-customer-b",
+            merchant_id: "merchant-b",
+            platform: "messenger",
+            customer_name: "Customer B",
+            customer_handle: "customer-b",
+            status: "auto_replying",
+            assigned_to_human: false,
+            needs_training: false,
+            updated_at: "2026-08-06T10:00:00.000Z",
+            messages: [],
+          },
+        ],
+      },
+      metaPagesByPageId: {
+        "page-a": {
+          merchant_id: "merchant-a",
+          page_id: "page-a",
+          page_name: "Page A",
+          connected_at: "2026-08-01T00:00:00.000Z",
+          platform: "messenger",
+        },
+        "page-b": {
+          merchant_id: "merchant-b",
+          page_id: "page-b",
+          page_name: "Page B",
+          connected_at: "2026-08-01T00:00:00.000Z",
+          platform: "messenger",
+        },
+      },
+      ordersByMerchant: {},
+      orderDraftsByConversation: {},
+      lastSyncedMerchantId: null,
+    }),
+  );
+
+  const metaCredentialKeyId = "manual-integration-key";
+  const metaCredentialKey = crypto.randomBytes(32);
+  const channelTimestamp = "2026-08-01T00:00:00.000Z";
+  await writeFile(
+    path.join(dataDirectory, "meta-channels.json"),
+    JSON.stringify({
+      version: 1,
+      channels: [
+        {
+          id: "channel-a",
+          merchant_id: "merchant-a",
+          platform: "messenger",
+          page_id: "page-a",
+          page_name: "Page A",
+          status: "active",
+          credential: encryptedCredential(
+            "token-a",
+            metaCredentialKeyId,
+            metaCredentialKey,
+            "fawri:meta:merchant-a:messenger:page-a",
+          ),
+          webhook_subscribed: true,
+          connection_version: 1,
+          connected_at: channelTimestamp,
+          created_at: channelTimestamp,
+          updated_at: channelTimestamp,
+        },
+        {
+          id: "channel-b",
+          merchant_id: "merchant-b",
+          platform: "messenger",
+          page_id: "page-b",
+          page_name: "Page B",
+          status: "active",
+          credential: encryptedCredential(
+            "token-b",
+            metaCredentialKeyId,
+            metaCredentialKey,
+            "fawri:meta:merchant-b:messenger:page-b",
+          ),
+          webhook_subscribed: true,
+          connection_version: 1,
+          connected_at: channelTimestamp,
+          created_at: channelTimestamp,
+          updated_at: channelTimestamp,
+        },
+      ],
+    }),
+  );
+  await writeFile(
+    path.join(dataDirectory, "background-jobs.json"),
+    JSON.stringify({ version: 1, jobs: [] }),
+  );
+  await writeFile(
+    path.join(dataDirectory, "processed-meta-events.json"),
+    JSON.stringify({ events: {} }),
+  );
+  await writeFile(
+    path.join(dataDirectory, "reply-reservations.json"),
+    JSON.stringify({ reservations: {} }),
+  );
+
+  const fakeMeta = await startFakeMetaServer(t);
+  const port = await reservePort();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  const metaAppSecret = "test-meta-app-secret";
+  let serverOutput = "";
+  const child = spawn(process.execPath, [serverEntry], {
+    cwd: runtimeDirectory,
+    env: {
+      ...process.env,
+      NODE_ENV: "test",
+      PORT: String(port),
+      LOG_LEVEL: "silent",
+      BOT_DEBUG: "false",
+      FAWRI_PASSWORD_SALT: "test-password-salt",
+      FAWRI_ADMIN_SESSION_SECRET: "test-admin-session-secret",
+      FAWRI_MERCHANT_SESSION_SECRET: "test-merchant-session-secret",
+      FAWRI_META_TOKEN_KEY_ID: metaCredentialKeyId,
+      FAWRI_META_TOKEN_KEY_BASE64: metaCredentialKey.toString("base64"),
+      META_VERIFY_TOKEN: "test-meta-verify-token",
+      META_APP_ID: "test-meta-app",
+      META_APP_SECRET: metaAppSecret,
+      META_CONFIG_ID: "test-meta-config",
+      META_REDIRECT_URI: `${baseUrl}/api/meta/callback`,
+      META_GRAPH_BASE_URL: fakeMeta.baseUrl,
+      FAWRI_DISABLE_JOB_WORKERS: "1",
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  child.stdout.on("data", (chunk) => {
+    serverOutput += String(chunk);
+  });
+  child.stderr.on("data", (chunk) => {
+    serverOutput += String(chunk);
+  });
+
+  t.after(async () => {
+    if (child.exitCode === null) {
+      child.kill("SIGTERM");
+      await Promise.race([
+        new Promise((resolve) => child.once("exit", resolve)),
+        new Promise((resolve) => setTimeout(resolve, 2_000)),
+      ]);
+    }
+    await rm(runtimeDirectory, { recursive: true, force: true });
+  });
+
+  await waitForServer(baseUrl, child, () => serverOutput);
+  const apiFetch = (url, options = {}) => fetch(`${baseUrl}${url}`, options);
+
+  const login = await jsonResponse(
+    await apiFetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: merchantA.phone,
+        password: merchantA.password,
+      }),
+    }),
+  );
+  assert.equal(login.response.status, 200, JSON.stringify(login.body));
+  const cookie = cookiePair(getSetCookie(login.response));
+  const authenticatedHeaders = { Cookie: cookie };
+
+  const initial = await jsonResponse(
+    await apiFetch("/api/conversations", { headers: authenticatedHeaders }),
+  );
+  assert.equal(initial.response.status, 200, JSON.stringify(initial.body));
+  assert.equal(initial.body.conversations.length, 1);
+  assert.equal(initial.body.conversations[0].status, "auto_replying");
+
+  const beforeTakeover = await jsonResponse(
+    await apiFetch("/api/conversations/messenger-customer-a/messages", {
+      method: "POST",
+      headers: {
+        ...authenticatedHeaders,
+        "Content-Type": "application/json",
+        "Idempotency-Key": "manual-before-takeover-0001",
+      },
+      body: JSON.stringify({ text: "must be blocked" }),
+    }),
+  );
+  assert.equal(beforeTakeover.response.status, 409);
+  assert.equal(beforeTakeover.body.code, "MANUAL_TAKEOVER_REQUIRED");
+  assert.equal(fakeMeta.requests.length, 0);
+
+  const takeover = await jsonResponse(
+    await apiFetch("/api/conversations/messenger-customer-a/takeover", {
+      method: "POST",
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(takeover.response.status, 200, JSON.stringify(takeover.body));
+  assert.equal(takeover.body.conversation.status, "manual");
+  assert.equal(takeover.body.conversation.assigned_to_human, true);
+  assert.equal(takeover.body.conversation.page_id, "page-a");
+
+  const suppressedEventId = "meta:page-a:incoming-during-manual";
+  const suppressedBody = {
+    object: "page",
+    entry: [
+      {
+        id: "page-a",
+        messaging: [
+          {
+            sender: { id: "customer-a" },
+            message: {
+              mid: "incoming-during-manual",
+              text: "Do not auto reply",
+            },
+          },
+        ],
+      },
+    ],
+  };
+  const signed = signedWebhook(metaAppSecret, suppressedBody);
+  const suppressed = await apiFetch("/api/meta/webhook", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Hub-Signature-256": signed.signature,
+    },
+    body: signed.rawBody,
+  });
+  assert.equal(suppressed.status, 200);
+  assert.equal(
+    fakeMeta.requests.length,
+    0,
+    "manual takeover allowed an automated Meta reply",
+  );
+
+  const queueAfterSuppression = JSON.parse(
+    await readFile(path.join(dataDirectory, "background-jobs.json"), "utf8"),
+  );
+  const suppressedReplyJobs = queueAfterSuppression.jobs.filter(
+    (job) =>
+      job.type === "meta.webhook.reply" &&
+      job.dedupe_key === suppressedEventId,
+  );
+  assert.equal(
+    suppressedReplyJobs.length,
+    0,
+    "manual takeover enqueued an automated reply job",
+  );
+  const suppressedTerminalJobs = queueAfterSuppression.jobs.filter(
+    (job) =>
+      job.type === "meta.webhook.terminal" &&
+      job.dedupe_key === suppressedEventId,
+  );
+  assert.equal(suppressedTerminalJobs.length, 1);
+  const [suppressedTerminalJob] = suppressedTerminalJobs;
+  assert.equal(suppressedTerminalJob.type, "meta.webhook.terminal");
+  assert.equal(suppressedTerminalJob.status, "queued");
+  assert.equal(suppressedTerminalJob.attempts, 0);
+  assert.equal(suppressedTerminalJob.priority, 20);
+  assert.equal(suppressedTerminalJob.max_attempts, 1);
+
+  const processedAfterSuppression = JSON.parse(
+    await readFile(
+      path.join(dataDirectory, "processed-meta-events.json"),
+      "utf8",
+    ),
+  );
+  assert.ok(
+    Object.hasOwn(processedAfterSuppression.events, suppressedEventId),
+  );
+
+  const overlayAfterSuppression = JSON.parse(
+    await readFile(
+      path.join(dataDirectory, "manual-conversation-operations.json"),
+      "utf8",
+    ),
+  );
+  const suppressedInboundMessages =
+    overlayAfterSuppression.conversations["merchant-a"][
+      "messenger-customer-a"
+    ].inbound_messages.filter(
+      (message) => message.external_message_id === "incoming-during-manual",
+    );
+  assert.equal(suppressedInboundMessages.length, 1);
+  assert.equal(suppressedInboundMessages[0].counted_as_auto_reply, false);
+  assert.equal(suppressedInboundMessages[0].status, "received");
+
+  const notificationsAfterInbound = await jsonResponse(
+    await apiFetch("/api/auth/notifications?limit=50", {
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(notificationsAfterInbound.response.status, 200);
+  const inboundNotifications = notificationsAfterInbound.body.notifications.filter(
+    (notification) => notification.type === "operational_customer_message",
+  );
+  assert.equal(inboundNotifications.length, 1);
+  assert.equal(inboundNotifications[0].merchant_id, "merchant-a");
+  assert.equal(inboundNotifications[0].conversation_id, "messenger-customer-a");
+  assert.equal(
+    inboundNotifications[0].action_url,
+    "/dashboard/conversations?conversation=messenger-customer-a",
+  );
+  assert.equal(Object.hasOwn(inboundNotifications[0], "body"), false);
+  assert.equal(Object.hasOwn(inboundNotifications[0], "text"), false);
+
+  const duplicateSuppressed = await apiFetch("/api/meta/webhook", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Hub-Signature-256": signed.signature,
+    },
+    body: signed.rawBody,
+  });
+  assert.equal(duplicateSuppressed.status, 200);
+  const notificationsAfterRetry = await jsonResponse(
+    await apiFetch("/api/auth/notifications?limit=50", {
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(
+    notificationsAfterRetry.body.notifications.filter(
+      (notification) => notification.type === "operational_customer_message",
+    ).length,
+    1,
+    "duplicate Meta webhook duplicated merchant notification",
+  );
+
+  const requestKey = "manual-success-request-0001";
+  const sent = await jsonResponse(
+    await apiFetch("/api/conversations/messenger-customer-a/messages", {
+      method: "POST",
+      headers: {
+        ...authenticatedHeaders,
+        "Content-Type": "application/json",
+        "Idempotency-Key": requestKey,
+      },
+      body: JSON.stringify({ text: "Manual reply sent" }),
+    }),
+  );
+  assert.equal(sent.response.status, 201, JSON.stringify(sent.body));
+  assert.equal(sent.body.message.sender, "merchant");
+  assert.equal(sent.body.message.status, "sent");
+  assert.equal(sent.body.message.text, "Manual reply sent");
+  assert.equal(fakeMeta.requests.length, 1);
+  assert.match(fakeMeta.requests[0].url, /access_token=token-a/);
+  assert.deepEqual(fakeMeta.requests[0].body, {
+    recipient: { id: "customer-a" },
+    message: { text: "Manual reply sent" },
+  });
+
+  const notificationsAfterOutbound = await jsonResponse(
+    await apiFetch("/api/auth/notifications?limit=50", {
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(
+    notificationsAfterOutbound.body.notifications.filter(
+      (notification) => notification.type === "operational_customer_message",
+    ).length,
+    1,
+    "manual outbound reply masqueraded as inbound notification",
+  );
+
+  const unreadBeforeRead = await jsonResponse(
+    await apiFetch("/api/auth/notifications?unread=1&limit=50", {
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(
+    unreadBeforeRead.body.notifications.filter(
+      (notification) => notification.type === "operational_customer_message",
+    ).length,
+    1,
+  );
+  const markNotificationRead = await jsonResponse(
+    await apiFetch(
+      `/api/auth/notifications/${encodeURIComponent(inboundNotifications[0].id)}/read`,
+      { method: "PATCH", headers: authenticatedHeaders },
+    ),
+  );
+  assert.equal(markNotificationRead.response.status, 200);
+  assert.ok(markNotificationRead.body.notification.read_at);
+  const unreadAfterRead = await jsonResponse(
+    await apiFetch("/api/auth/notifications?unread=1&limit=50", {
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(
+    unreadAfterRead.body.notifications.filter(
+      (notification) => notification.type === "operational_customer_message",
+    ).length,
+    0,
+  );
+
+  const merchantBLogin = await jsonResponse(
+    await apiFetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        phone: merchantB.phone,
+        password: merchantB.password,
+      }),
+    }),
+  );
+  assert.equal(merchantBLogin.response.status, 200, JSON.stringify(merchantBLogin.body));
+  const merchantBCookie = cookiePair(getSetCookie(merchantBLogin.response));
+  const merchantBNotifications = await jsonResponse(
+    await apiFetch("/api/auth/notifications?limit=50", {
+      headers: { Cookie: merchantBCookie },
+    }),
+  );
+  assert.equal(merchantBNotifications.response.status, 200);
+  assert.equal(
+    merchantBNotifications.body.notifications.some(
+      (notification) => notification.merchant_id === "merchant-a",
+    ),
+    false,
+    "merchant B could read merchant A notification",
+  );
+
+  const duplicate = await jsonResponse(
+    await apiFetch("/api/conversations/messenger-customer-a/messages", {
+      method: "POST",
+      headers: {
+        ...authenticatedHeaders,
+        "Content-Type": "application/json",
+        "Idempotency-Key": requestKey,
+      },
+      body: JSON.stringify({ text: "Manual reply sent" }),
+    }),
+  );
+  assert.equal(duplicate.response.status, 200, JSON.stringify(duplicate.body));
+  assert.equal(duplicate.body.deduplicated, true);
+  assert.equal(fakeMeta.requests.length, 1, "duplicate request resent to Meta");
+
+  const reusedKey = await jsonResponse(
+    await apiFetch("/api/conversations/messenger-customer-a/messages", {
+      method: "POST",
+      headers: {
+        ...authenticatedHeaders,
+        "Content-Type": "application/json",
+        "Idempotency-Key": requestKey,
+      },
+      body: JSON.stringify({ text: "Different content" }),
+    }),
+  );
+  assert.equal(reusedKey.response.status, 409);
+  assert.equal(reusedKey.body.code, "IDEMPOTENCY_KEY_REUSED");
+  assert.equal(fakeMeta.requests.length, 1);
+
+  const failed = await jsonResponse(
+    await apiFetch("/api/conversations/messenger-customer-a/messages", {
+      method: "POST",
+      headers: {
+        ...authenticatedHeaders,
+        "Content-Type": "application/json",
+        "Idempotency-Key": "manual-failure-request-0001",
+      },
+      body: JSON.stringify({ text: "force confirmed failure" }),
+    }),
+  );
+  assert.equal(failed.response.status, 502);
+  assert.equal(failed.body.code, "MANUAL_REPLY_DELIVERY_FAILED");
+  assert.equal(fakeMeta.requests.length, 2);
+
+  const afterFailure = await jsonResponse(
+    await apiFetch("/api/conversations", { headers: authenticatedHeaders }),
+  );
+  assert.equal(afterFailure.response.status, 200);
+  const merchantMessages = afterFailure.body.conversations[0].messages.filter(
+    (message) => message.sender === "merchant",
+  );
+  assert.deepEqual(
+    merchantMessages.map((message) => message.text),
+    ["Manual reply sent"],
+    "failed reply was stored as if it had been delivered",
+  );
+
+  const crossMerchant = await jsonResponse(
+    await apiFetch("/api/conversations/messenger-customer-b/takeover", {
+      method: "POST",
+      headers: authenticatedHeaders,
+    }),
+  );
+  assert.equal(crossMerchant.response.status, 404);
+  assert.equal(crossMerchant.body.code, "CONVERSATION_NOT_FOUND");
+
+  const returned = await jsonResponse(
+    await apiFetch(
+      "/api/conversations/messenger-customer-a/return-to-fawri",
+      {
+        method: "POST",
+        headers: authenticatedHeaders,
+      },
+    ),
+  );
+  assert.equal(returned.response.status, 200, JSON.stringify(returned.body));
+  assert.equal(returned.body.conversation.status, "auto_replying");
+  assert.equal(returned.body.conversation.assigned_to_human, false);
+
+  const afterReturn = await jsonResponse(
+    await apiFetch("/api/conversations/messenger-customer-a/messages", {
+      method: "POST",
+      headers: {
+        ...authenticatedHeaders,
+        "Content-Type": "application/json",
+        "Idempotency-Key": "manual-after-return-0001",
+      },
+      body: JSON.stringify({ text: "must be blocked again" }),
+    }),
+  );
+  assert.equal(afterReturn.response.status, 409);
+  assert.equal(afterReturn.body.code, "MANUAL_TAKEOVER_REQUIRED");
+  assert.equal(fakeMeta.requests.length, 2);
+
+  const baseRuntime = JSON.parse(
+    await readFile(path.join(dataDirectory, "fawri-runtime-db.json"), "utf8"),
+  );
+  assert.equal(
+    baseRuntime.conversationsByMerchant["merchant-a"][0].messages.length,
+    1,
+    "manual operations modified the legacy bot runtime conversation",
+  );
+  assert.equal(
+    Object.hasOwn(baseRuntime.metaPagesByPageId["page-a"], "page_access_token"),
+    false,
+  );
+  const encryptedStore = await readFile(
+    path.join(dataDirectory, "meta-channels.json"),
+    "utf8",
+  );
+  assert.equal(encryptedStore.includes("token-a"), false);
+  assert.equal(encryptedStore.includes("token-b"), false);
+  assert.equal(serverOutput.includes("token-a"), false);
+  assert.equal(serverOutput.includes("token-b"), false);
+
+  const overlay = JSON.parse(
+    await readFile(
+      path.join(dataDirectory, "manual-conversation-operations.json"),
+      "utf8",
+    ),
+  );
+  const overlayConversation =
+    overlay.conversations["merchant-a"]["messenger-customer-a"];
+  assert.equal(overlayConversation.manual_messages.length, 1);
+  assert.equal(overlayConversation.requests[requestKey].status, "sent");
+  assert.equal(
+    overlayConversation.requests["manual-failure-request-0001"].status,
+    "failed",
+  );
+});

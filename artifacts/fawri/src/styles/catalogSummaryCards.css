@@ -1,0 +1,207 @@
+/* Catalog summary cards are intentionally text-first. Product media and long identifiers belong in the details dialog. */
+[data-catalog-summary-card="true"] {
+  min-height: 12.25rem !important;
+}
+
+[data-catalog-summary-card="true"] > :first-child {
+  display: none !important;
+}
+
+[data-catalog-summary-card="true"] > [dir] {
+  width: 100%;
+  padding: 0.875rem !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto auto 1fr auto;
+  row-gap: 0.45rem;
+}
+
+/* SKU stays available in the details dialog but no longer consumes summary-card space. */
+[data-catalog-summary-card="true"] > [dir] > :first-child {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+[data-catalog-summary-card="true"] > [dir] > :first-child > p[dir="ltr"] {
+  display: none !important;
+}
+
+/* All compact product facts live in the same wrapping badge row. */
+[data-catalog-summary-card="true"] > [dir] > :nth-child(2) {
+  grid-column: 1;
+  grid-row: 2;
+  width: 100%;
+  max-width: 100%;
+  margin-top: 0 !important;
+  min-height: 0 !important;
+  align-self: start;
+}
+
+[data-catalog-summary-card="true"] > [dir] > :nth-child(3) {
+  grid-column: 1;
+  grid-row: 3;
+  margin-top: 0.35rem !important;
+}
+
+[data-catalog-summary-card="true"] > [dir] > :last-child {
+  grid-column: 1;
+  grid-row: 5;
+  margin-top: 0.35rem !important;
+}
+
+/*
+ * Catalog money is rendered as two DOM fields: amount + currency. Force their
+ * visual order independently from the surrounding RTL page. The currency field
+ * itself is LTR so the canonical Iraqi token stays exactly "د.ع" rather than
+ * being reordered to "ع.د" by the Unicode bidi algorithm.
+ */
+p[dir="ltr"] > span.inline-flex[dir="ltr"] {
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  flex-direction: row !important;
+}
+
+p[dir="ltr"] > span.inline-flex[dir="ltr"] > span:first-child {
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  order: 1;
+}
+
+p[dir="ltr"] > span.inline-flex[dir="ltr"] > span:last-child {
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  order: 2;
+}
+
+/*
+ * Product details are presentation-only. Keep the product/variant identity and
+ * current quantity visible, while mutation controls stay in the edit screen.
+ */
+[role="dialog"] [class~="grid-cols-[auto_1fr_auto_auto]"] {
+  display: none !important;
+}
+
+/* The number beside the Details variants heading is redundant in the read-only view. */
+[role="dialog"] section[class~="bg-muted/10"] > .mb-3.flex.items-center.justify-between.gap-3 > .rounded-full {
+  display: none !important;
+}
+
+/*
+ * Inventory details use one geometry for both states:
+ *   - products with variants
+ *   - a product with one base inventory record and no variants
+ *
+ * The previous stylesheet explicitly forced the no-variant wrapper into four
+ * columns and gave its only child aspect-ratio: 1/1, which is why the blender
+ * became a tall square tile. The source component already renders both states
+ * with the same two-column compact grid; preserve that geometry here and never
+ * apply a square aspect ratio to an inventory summary card.
+ */
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2,
+[role="dialog"] section[class~="bg-muted/10"] > .space-y-2 {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start !important;
+  gap: 0.5rem !important;
+  width: 100% !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2 > *,
+[role="dialog"] section[class~="bg-muted/10"] > .space-y-2 > * {
+  box-sizing: border-box !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: auto !important;
+  margin-top: 0 !important;
+  align-self: start !important;
+}
+
+/* Legacy non-compact single-SKU markup, if present in an old hydrated preview,
+ * must follow the same horizontal card structure rather than centered-square UI. */
+[role="dialog"] section[class~="bg-muted/10"] > :is(.grid.gap-2.sm\:grid-cols-2, .space-y-2) > .rounded-xl.border.bg-background.p-3 {
+  display: block !important;
+  padding: 0.5rem 0.625rem !important;
+  text-align: start !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > :is(.grid.gap-2.sm\:grid-cols-2, .space-y-2) > .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 {
+  display: flex !important;
+  min-height: 2.75rem !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 0.75rem !important;
+  width: 100% !important;
+  margin: 0 !important;
+  text-align: start !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > :is(.grid.gap-2.sm\:grid-cols-2, .space-y-2) > .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :first-child {
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  text-align: start !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > :is(.grid.gap-2.sm\:grid-cols-2, .space-y-2) > .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :first-child > p {
+  margin-inline: 0 !important;
+  text-align: start !important;
+}
+
+[role="dialog"] section[class~="bg-muted/10"] > :is(.grid.gap-2.sm\:grid-cols-2, .space-y-2) > .rounded-xl.border.bg-background.p-3 > .mb-2.flex.items-start.justify-between.gap-3 > :last-child {
+  align-self: center !important;
+}
+
+@media (max-width: 640px) {
+  [role="dialog"] section[class~="bg-muted/10"] > .grid.gap-2.sm\:grid-cols-2,
+  [role="dialog"] section[class~="bg-muted/10"] > .space-y-2 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid:has(> [data-catalog-summary-card="true"]) {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.875rem !important;
+  }
+
+  /*
+   * Desktop cards use one deterministic internal template. Reserving the same
+   * height for title/category, badges, metrics, breathing room, and actions
+   * keeps the divider and action row on one horizontal baseline even when one
+   * product has a category or several variant badges and another does not.
+   */
+  [data-catalog-summary-card="true"] {
+    height: 18.75rem !important;
+    min-height: 18.75rem !important;
+  }
+
+  [data-catalog-summary-card="true"] > [dir] {
+    grid-template-rows: 4.75rem 3.25rem 4rem 0.75rem 3rem;
+    row-gap: 0.3rem;
+  }
+
+  [data-catalog-summary-card="true"] > [dir] > :first-child {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  [data-catalog-summary-card="true"] > [dir] > :nth-child(2) {
+    height: 3.25rem;
+    overflow: hidden;
+    align-content: start;
+  }
+
+  [data-catalog-summary-card="true"] > [dir] > :nth-child(3) {
+    height: 4rem;
+    margin-top: 0 !important;
+  }
+
+  [data-catalog-summary-card="true"] > [dir] > :last-child {
+    height: 3rem;
+    margin-top: 0 !important;
+  }
+}

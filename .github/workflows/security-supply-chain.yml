@@ -1,0 +1,140 @@
+name: Final security and supply chain
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/**"
+      - "lib/**"
+      - "scripts/**"
+      - "package.json"
+      - "**/package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - ".github/workflows/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: final-security-supply-chain-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  repository-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
+      - name: Test redaction and fail-closed audit tooling
+        run: >-
+          node --test --test-concurrency=1
+          scripts/security-final-audit.test.mjs
+          scripts/ci-run-redacted.test.mjs
+
+      - name: Validate additive workflow and lockfile policy
+        run: node scripts/security-final-audit.mjs policy
+
+      - name: Scan tracked repository content for secrets and credentials
+        run: node scripts/security-final-audit.mjs repository
+
+  lockfile-integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Validate lockfile policy
+        run: node scripts/security-final-audit.mjs policy
+
+      - name: Verify frozen install with lifecycle scripts disabled
+        run: node scripts/ci-run-redacted.mjs --label lockfile-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Verify dependency state was not rewritten
+        run: git diff --exit-code -- pnpm-lock.yaml pnpm-workspace.yaml package.json "**/package.json"
+
+  dependency-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependency graph without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label dependency-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Audit dependencies and report severity counts only
+        run: node scripts/security-final-audit.mjs dependency
+
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository with pull request history
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
+      - name: Detect dependency graph changes and enforce manifest-lockfile sync
+        id: dependency-review
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/security-final-audit.mjs dependency-review "$BASE_SHA"
+
+      - name: Verify changed dependency graph with frozen install and lifecycle scripts disabled
+        if: steps.dependency-review.outputs.dependency_changed == 'true'
+        run: node scripts/ci-run-redacted.mjs --label dependency-review-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Validate lockfile policy for changed dependency graph
+        if: steps.dependency-review.outputs.dependency_changed == 'true'
+        run: node scripts/security-final-audit.mjs policy
+
+      - name: Audit full head dependency graph for High or Critical vulnerabilities
+        if: steps.dependency-review.outputs.dependency_changed == 'true'
+        run: node scripts/security-final-audit.mjs dependency

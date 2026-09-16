@@ -1,0 +1,362 @@
+/*
+ * Shared catalog image-upload polish.
+ *
+ * CatalogImageUploadEditor is reused by create/edit product, create/edit
+ * service, grouped variant images, and per-variant images. Keep upload
+ * behavior untouched while every picker shares one professional visual
+ * language. The main product/service picker gets one clear empty-state target;
+ * embedded group/type pickers remain compact so catalog geometry is stable.
+ */
+
+/* Main product/service image area: calm container, one title, one upload CTA. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"]):has(
+    > div.flex.flex-wrap.items-center.justify-between h3
+  ) {
+  padding: 0.9rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 1rem !important;
+  background: hsl(var(--muted) / 0.08) !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.025);
+}
+
+/* The picker tile below already performs upload and drag/drop. Hiding this
+ * duplicate heading action removes the two competing “Add images” buttons. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div.flex.flex-wrap.items-center.justify-between
+  > button {
+  display: none !important;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div.flex.flex-wrap.items-center.justify-between
+  h3 {
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+/* Every actual picker tile. Exclude the heading row so only the real
+ * drag/drop target receives the upload treatment. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
+  > button:first-child {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-width: 1px !important;
+  border-style: dashed !important;
+  border-color: hsl(var(--border)) !important;
+  border-radius: 0.95rem !important;
+  background:
+    radial-gradient(circle at 50% 16%, rgb(249 115 22 / 0.075), transparent 44%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.14) 100%) !important;
+  box-shadow:
+    0 1px 2px rgb(15 23 42 / 0.035),
+    inset 0 1px 0 hsl(var(--background) / 0.75);
+  color: hsl(var(--foreground));
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
+  > button:first-child:hover:not(:disabled),
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
+  > button:first-child:focus-visible {
+  border-color: rgb(249 115 22 / 0.68) !important;
+  background:
+    radial-gradient(circle at 50% 16%, rgb(249 115 22 / 0.13), transparent 48%),
+    linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--muted) / 0.2) 100%) !important;
+  box-shadow:
+    0 7px 20px rgb(15 23 42 / 0.075),
+    0 0 0 3px rgb(249 115 22 / 0.08);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
+  > button:first-child
+  > svg {
+  box-sizing: content-box;
+  width: 1rem !important;
+  height: 1rem !important;
+  margin-bottom: 0.3rem !important;
+  padding: 0.42rem;
+  border: 1px solid rgb(249 115 22 / 0.17);
+  border-radius: 9999px;
+  background: rgb(249 115 22 / 0.085);
+  color: rgb(234 88 12) !important;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
+  > button:first-child
+  > span {
+  color: hsl(var(--foreground));
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+/* Empty main product/service picker: use the available width as a deliberate
+ * drop zone instead of leaving a tiny button floating inside a large blank box. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"]):has(
+    > div.flex.flex-wrap.items-center.justify-between h3
+  ):not(:has(> div.flex.flex-wrap.items-center.gap-2:not(.justify-between) > div.group.relative))
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child {
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: none !important;
+  height: 7.25rem !important;
+  min-height: 7.25rem !important;
+  padding-inline: 1.25rem !important;
+  border-radius: 1rem !important;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"]):has(
+    > div.flex.flex-wrap.items-center.justify-between h3
+  ):not(:has(> div.flex.flex-wrap.items-center.gap-2:not(.justify-between) > div.group.relative))
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child
+  > svg {
+  width: 1.15rem !important;
+  height: 1.15rem !important;
+  padding: 0.55rem;
+  margin-bottom: 0.45rem !important;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"]):has(
+    > div.flex.flex-wrap.items-center.justify-between h3
+  ):not(:has(> div.flex.flex-wrap.items-center.gap-2:not(.justify-between) > div.group.relative))
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child
+  > span {
+  font-size: 0.8rem !important;
+}
+
+/* Once main product/service images exist, turn the large empty canvas into a
+ * compact media rail. This keeps the card deliberate instead of leaving the
+ * thumbnail and upload tile floating in a wide blank area. */
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"] {
+  padding-block: 0.75rem !important;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between) {
+  min-height: 5.25rem;
+  padding: 0.45rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.9rem;
+  background: hsl(var(--background));
+  box-shadow: inset 0 1px 0 hsl(var(--muted) / 0.22);
+  align-items: center;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child {
+  width: 5.25rem !important;
+  min-width: 5.25rem !important;
+  height: 4.35rem !important;
+  min-height: 4.35rem !important;
+  padding-inline: 0.5rem !important;
+  border-radius: 0.8rem !important;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > div.group.relative {
+  width: 4.35rem !important;
+  height: 4.35rem !important;
+  border-radius: 0.8rem !important;
+}
+
+/* Compact group image pickers keep useful click/drag space but do not grow. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child[class*="h-20"][class*="w-24"] {
+  border-radius: 0.85rem !important;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 0.05);
+}
+
+/* Dense per-type uploaders keep the same language at table scale. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
+  > button:first-child[class*="h-12"][class*="w-11"] {
+  border-style: solid !important;
+  border-radius: 0.7rem !important;
+  background: hsl(var(--background)) !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.045);
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
+  > button:first-child[class*="h-12"][class*="w-11"]
+  > svg {
+  width: 0.78rem !important;
+  height: 0.78rem !important;
+  margin-bottom: 0.08rem !important;
+  padding: 0.16rem;
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
+  > button:first-child[class*="h-12"][class*="w-11"]
+  > span {
+  font-size: 0.55rem !important;
+  line-height: 0.7rem !important;
+}
+
+/* Dense cells now use the thumbnail itself as the gallery entry point. The
+ * count badge on the thumbnail replaces the previous third “view images” tile. */
+.products-workspace-polish
+  section[data-catalog-image-editor="dense"]
+  > div[class*="flex"]
+  > div.group.relative {
+  cursor: pointer;
+  outline: none;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="dense"]
+  > div[class*="flex"]
+  > div.group.relative:focus-visible {
+  border-color: rgb(249 115 22 / 0.72) !important;
+  box-shadow: 0 0 0 3px rgb(249 115 22 / 0.1) !important;
+}
+
+/* Existing thumbnails belong visually to the same picker instead of looking
+ * like unrelated boxes placed beside the upload action. */
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
+  > div.group.relative {
+  border-color: hsl(var(--border)) !important;
+  border-radius: 0.9rem !important;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 0.06);
+}
+
+.products-workspace-polish
+  section:has(> input[type="file"][accept*="image"])
+  > div[class*="flex"]:not(.justify-between)
+  > div.group.relative:hover {
+  border-color: rgb(249 115 22 / 0.35) !important;
+  box-shadow: 0 5px 14px rgb(15 23 42 / 0.08);
+}
+
+/*
+ * Group fields are bulk-action drafts, not a readout of the saved variant
+ * values. Suppress inherited/default placeholders (especially “0”) so a
+ * reopened product never looks as if its saved group values were reset.
+ */
+.products-workspace-polish
+  div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"]
+  > label
+  input::placeholder {
+  color: transparent !important;
+  opacity: 0 !important;
+}
+
+/*
+ * Filled main product/service image picker: keep the professional empty-state
+ * drop zone, but collapse the saved-image state into a single shallow media
+ * rail. This rule is deliberately scoped to editorMode="main" so grouped and
+ * per-type image controls keep their established geometry.
+ */
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.8rem !important;
+  min-height: 0 !important;
+  padding: 0.6rem 0.75rem !important;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.justify-between {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: max-content;
+  margin: 0 !important;
+  flex-wrap: nowrap !important;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between) {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0.15rem !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > button:first-child {
+  width: 4.75rem !important;
+  min-width: 4.75rem !important;
+  height: 4rem !important;
+  min-height: 4rem !important;
+  padding-inline: 0.4rem !important;
+  border-radius: 0.78rem !important;
+}
+
+.products-workspace-polish
+  section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+  > div.flex.flex-wrap.items-center.gap-2:not(.justify-between)
+  > div.group.relative {
+  width: 4rem !important;
+  min-width: 4rem !important;
+  height: 4rem !important;
+  min-height: 4rem !important;
+  border-radius: 0.78rem !important;
+}
+
+@media (max-width: 639px) {
+  .products-workspace-polish
+    section[data-catalog-image-editor="main"][data-catalog-image-state="filled"] {
+    align-items: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+
+  .products-workspace-polish
+    section[data-catalog-image-editor="main"][data-catalog-image-state="filled"]
+    > div.flex.flex-wrap.items-center.gap-2:not(.justify-between) {
+    width: 100% !important;
+  }
+}

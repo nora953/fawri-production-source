@@ -3,83 +3,163 @@ import { useI18n } from '@/lib/i18n';
 import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Upload as UploadIcon, Download, CheckCircle } from 'lucide-react';
+import { Upload as UploadIcon, Download, CheckCircle, AlertTriangle } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { getCurrentMerchant, getProducts, saveProducts } from '@/lib/store';
-import { Product, ProductStatus, ProductVariant } from '@/lib/types';
+import { getCurrentMerchant } from '@/lib/store';
+import type { Lang, ProductStatus } from '@/lib/types';
+import {
+  CatalogApiError,
+  idempotencyAttemptForRequest,
+  importCatalogProducts,
+  type CatalogIdempotencyAttempt,
+  type CatalogProductInput,
+  type CatalogVariantInput,
+} from '@/lib/catalogUiApi';
+import {
+  CatalogPromotionApiError,
+  catalogMajorAmountToMinor,
+  getCatalogCommerceContext,
+} from '@/lib/catalogPromotionUiApi';
 
 type ImportField =
   | 'product_name'
+  | 'external_ref'
   | 'sku'
   | 'barcode'
   | 'category'
+  | 'description'
   | 'price'
   | 'quantity'
+  | 'status'
+  | 'allow_fawri_reply'
   | 'color'
   | 'size';
 
 type ImportRow = Record<string, unknown>;
 type ImportMapping = Record<ImportField, string>;
 
+type ImportReport = {
+  imported: number;
+  skipped: number;
+};
+
 const importFields: ImportField[] = [
   'product_name',
+  'external_ref',
   'sku',
   'barcode',
   'category',
+  'description',
   'price',
   'quantity',
+  'status',
+  'allow_fawri_reply',
   'color',
   'size',
 ];
 
 const emptyMapping: ImportMapping = {
   product_name: '',
+  external_ref: '',
   sku: '',
   barcode: '',
   category: '',
+  description: '',
   price: '',
   quantity: '',
+  status: '',
+  allow_fawri_reply: '',
   color: '',
   size: '',
 };
+
+const validStatuses = new Set<ProductStatus>([
+  'available',
+  'low_stock',
+  'out_of_stock',
+  'draft',
+  'hidden_from_fawri',
+]);
 
 function normalizeCell(value: unknown): string {
   if (value === null || value === undefined) return '';
   return String(value).trim();
 }
 
-function parseNumericCell(value: unknown): number {
-  const normalized = normalizeCell(value)
-    .replace(/[,\s]/g, '')
+function normalizeDigits(value: unknown): string {
+  return normalizeCell(value)
+    .replace(/[,٬\s]/g, '')
+    .replace(/٫/g, '.')
     .replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
     .replace(/[۰-۹]/g, digit => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
+}
 
+function parseNonNegativeInteger(value: unknown): number | null {
+  const normalized = normalizeDigits(value);
+  if (!normalized) return 0;
   const parsed = Number(normalized);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+function parseCatalogPrice(value: unknown, fractionDigits: number): number | null {
+  const normalized = normalizeDigits(value);
+  if (!normalized) return 0;
+  return catalogMajorAmountToMinor(normalized, fractionDigits);
+}
+
+function parseBoolean(value: unknown, fallback = true): boolean | null {
+  const normalized = normalizeCell(value).toLowerCase();
+  if (!normalized) return fallback;
+  if (['true', '1', 'yes', 'on', 'نعم', 'بەڵێ'].includes(normalized)) return true;
+  if (['false', '0', 'no', 'off', 'لا', 'نەخێر'].includes(normalized)) return false;
+  return null;
+}
+
+function localText(
+  lang: Lang,
+  values: { ar: string; ku: string; en: string },
+): string {
+  return values[lang] || values.en;
+}
+
+function rowLabel(lang: Lang, rowNumber: number): string {
+  return localText(lang, {
+    ar: `الصف ${rowNumber}`,
+    ku: `ڕیزی ${rowNumber}`,
+    en: `Row ${rowNumber}`,
+  });
 }
 
 export default function ImportProductsPage() {
-  const { t, dir, isRTL } = useI18n();
+  const { t, lang, dir, isRTL } = useI18n();
   const merchant = getCurrentMerchant();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const importAttemptRef = useRef<CatalogIdempotencyAttempt | null>(null);
 
   const [fileData, setFileData] = useState<ImportRow[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [mapping, setMapping] = useState<ImportMapping>(emptyMapping);
   const [step, setStep] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
-  const [report, setReport] = useState<{
-    imported: number;
-    skipped: number;
-  } | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [report, setReport] = useState<ImportReport | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   const fieldLabels: Record<ImportField, string> = {
     product_name: t.import_field_product_name,
+    external_ref: localText(lang, {
+      ar: 'المرجع الخارجي',
+      ku: 'ناسنامەی دەرەکی',
+      en: 'External reference',
+    }),
     sku: t.import_field_sku,
     barcode: t.import_field_barcode,
     category: t.import_field_category,
+    description: t.products_description,
     price: t.import_field_price,
     quantity: t.import_field_quantity,
+    status: t.products_status,
+    allow_fawri_reply: t.products_allowFawri,
     color: t.import_field_color,
     size: t.import_field_size,
   };
@@ -107,28 +187,33 @@ export default function ImportProductsPage() {
       }
 
       const headers = Object.keys(rows[0]).map(header => header.trim());
-
       if (headers.length === 0) {
         toast.error(t.import_file_empty);
         return;
       }
 
       const autoMap: ImportMapping = { ...emptyMapping };
-
       headers.forEach(header => {
         const normalizedHeader = header.toLowerCase();
 
         if (
           normalizedHeader.includes('product_name') ||
           normalizedHeader.includes('product name') ||
-          normalizedHeader.includes('name') ||
+          normalizedHeader === 'name' ||
           normalizedHeader.includes('اسم المنتج') ||
           normalizedHeader.includes('ناوی کاڵا') ||
           normalizedHeader.includes('ناوی بەرهەم')
         ) {
           autoMap.product_name = header;
         }
-
+        if (
+          normalizedHeader.includes('external_ref') ||
+          normalizedHeader.includes('external ref') ||
+          normalizedHeader === 'code' ||
+          normalizedHeader.includes('الكود')
+        ) {
+          autoMap.external_ref = header;
+        }
         if (
           normalizedHeader.includes('sku') ||
           normalizedHeader.includes('رمز') ||
@@ -136,7 +221,6 @@ export default function ImportProductsPage() {
         ) {
           autoMap.sku = header;
         }
-
         if (
           normalizedHeader.includes('barcode') ||
           normalizedHeader.includes('باركود') ||
@@ -144,7 +228,6 @@ export default function ImportProductsPage() {
         ) {
           autoMap.barcode = header;
         }
-
         if (
           normalizedHeader.includes('category') ||
           normalizedHeader.includes('فئة') ||
@@ -154,7 +237,13 @@ export default function ImportProductsPage() {
         ) {
           autoMap.category = header;
         }
-
+        if (
+          normalizedHeader.includes('description') ||
+          normalizedHeader.includes('الوصف') ||
+          normalizedHeader.includes('وەسف')
+        ) {
+          autoMap.description = header;
+        }
         if (
           normalizedHeader.includes('price') ||
           normalizedHeader.includes('سعر') ||
@@ -162,7 +251,6 @@ export default function ImportProductsPage() {
         ) {
           autoMap.price = header;
         }
-
         if (
           normalizedHeader.includes('quantity') ||
           normalizedHeader.includes('qty') ||
@@ -172,7 +260,20 @@ export default function ImportProductsPage() {
         ) {
           autoMap.quantity = header;
         }
-
+        if (
+          normalizedHeader === 'status' ||
+          normalizedHeader.includes('الحالة') ||
+          normalizedHeader.includes('دۆخ')
+        ) {
+          autoMap.status = header;
+        }
+        if (
+          normalizedHeader.includes('allow_fawri_reply') ||
+          normalizedHeader.includes('allow fawri') ||
+          normalizedHeader.includes('fawri reply')
+        ) {
+          autoMap.allow_fawri_reply = header;
+        }
         if (
           normalizedHeader.includes('color') ||
           normalizedHeader.includes('لون') ||
@@ -181,7 +282,6 @@ export default function ImportProductsPage() {
         ) {
           autoMap.color = header;
         }
-
         if (
           normalizedHeader.includes('size') ||
           normalizedHeader.includes('حجم') ||
@@ -193,10 +293,12 @@ export default function ImportProductsPage() {
         }
       });
 
+      importAttemptRef.current = null;
       setColumns(headers);
       setFileData(rows);
       setMapping(autoMap);
       setReport(null);
+      setValidationErrors([]);
       setStep(2);
     } catch (error) {
       console.error('Import file read failed:', error);
@@ -205,11 +307,10 @@ export default function ImportProductsPage() {
   };
 
   const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
+    event: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const file = event.target.files?.[0];
     event.target.value = '';
-
     if (!file) return;
     await processFile(file);
   };
@@ -220,134 +321,248 @@ export default function ImportProductsPage() {
 
     const file = event.dataTransfer.files?.[0];
     if (!file) return;
-
     const extension = file.name.split('.').pop()?.toLowerCase();
-
     if (!extension || !['xlsx', 'xls', 'csv'].includes(extension)) {
       toast.error(t.import_file_read_error);
       return;
     }
-
     await processFile(file);
   };
 
-  const handleImport = () => {
-    if (!merchant) return;
+  const validateAndBuildImport = (fractionDigits: number): {
+    products: CatalogProductInput[];
+    errors: string[];
+  } => {
+    const products: CatalogProductInput[] = [];
+    const errors: string[] = [];
 
-    if (!mapping.product_name || !mapping.sku) {
-      toast.error(t.import_mapping_required);
-      return;
+    if (!mapping.product_name) {
+      errors.push(
+        localText(lang, {
+          ar: 'يجب ربط عمود اسم المنتج.',
+          ku: 'دەبێت ستوونی ناوی بەرهەم دیاری بکرێت.',
+          en: 'Product name must be mapped.',
+        }),
+      );
+      return { products, errors };
     }
 
-    const currentProducts = getProducts(merchant.id);
-    const existingSkus = new Set(
-      currentProducts
-        .map(product => product.sku.trim().toLowerCase())
-        .filter(Boolean)
-    );
-
-    let importedCount = 0;
-    let skippedCount = 0;
-
-    const newProducts: Product[] = [];
-
     fileData.forEach((row, index) => {
+      const rowNumber = index + 2;
+      const label = rowLabel(lang, rowNumber);
       const name = normalizeCell(row[mapping.product_name]);
-      const sku = normalizeCell(row[mapping.sku]);
-      const normalizedSku = sku.toLowerCase();
-
-      if (!name || !sku || existingSkus.has(normalizedSku)) {
-        skippedCount += 1;
-        return;
-      }
-
-      const price = mapping.price
-        ? parseNumericCell(row[mapping.price])
-        : 0;
-
-      const quantity = mapping.quantity
-        ? Math.floor(parseNumericCell(row[mapping.quantity]))
-        : 0;
-
-      const barcode = mapping.barcode
-        ? normalizeCell(row[mapping.barcode])
+      const externalRef = mapping.external_ref
+        ? normalizeCell(row[mapping.external_ref])
         : '';
-
+      const sku = mapping.sku ? normalizeCell(row[mapping.sku]) : '';
+      const barcode = mapping.barcode ? normalizeCell(row[mapping.barcode]) : '';
       const category = mapping.category
         ? normalizeCell(row[mapping.category])
         : '';
-
-      const color = mapping.color
-        ? normalizeCell(row[mapping.color])
+      const description = mapping.description
+        ? normalizeCell(row[mapping.description])
         : '';
-
-      const size = mapping.size
-        ? normalizeCell(row[mapping.size])
+      const price = mapping.price
+        ? parseCatalogPrice(row[mapping.price], fractionDigits)
+        : 0;
+      const quantity = mapping.quantity
+        ? parseNonNegativeInteger(row[mapping.quantity])
+        : 0;
+      const color = mapping.color ? normalizeCell(row[mapping.color]) : '';
+      const size = mapping.size ? normalizeCell(row[mapping.size]) : '';
+      const requestedStatus = mapping.status
+        ? normalizeCell(row[mapping.status])
         : '';
+      const allowFawriReply = mapping.allow_fawri_reply
+        ? parseBoolean(row[mapping.allow_fawri_reply], true)
+        : true;
 
-      const variants: ProductVariant[] =
+      if (!name) {
+        errors.push(
+          `${label}: ${localText(lang, {
+            ar: 'اسم المنتج مطلوب.',
+            ku: 'ناوی بەرهەم پێویستە.',
+            en: 'product name is required.',
+          })}`,
+        );
+      }
+      if (!externalRef && !sku && !barcode) {
+        errors.push(
+          `${label}: ${localText(lang, {
+            ar: 'يجب توفير مرجع خارجي أو SKU أو باركود.',
+            ku: 'دەبێت ناسنامەی دەرەکی یان SKU یان بارکۆد هەبێت.',
+            en: 'external reference, SKU, or barcode is required.',
+          })}`,
+        );
+      }
+      if (price === null) {
+        errors.push(
+          `${label}: ${localText(lang, {
+            ar: 'السعر يجب أن يكون مبلغًا صالحًا غير سالب بعملة المتجر.',
+            ku: 'نرخ دەبێت بڕێکی دروست و نەفی نەبێت بە دراوی فرۆشگا.',
+            en: 'price must be a valid non-negative amount in the store currency.',
+          })}`,
+        );
+      }
+      if (quantity === null) {
+        errors.push(
+          `${label}: ${localText(lang, {
+            ar: 'الكمية يجب أن تكون رقمًا صحيحًا غير سالب.',
+            ku: 'بڕ دەبێت ژمارەیەکی تەواو و نەفی نەبێت.',
+            en: 'quantity must be a non-negative integer.',
+          })}`,
+        );
+      }
+      if (requestedStatus && !validStatuses.has(requestedStatus as ProductStatus)) {
+        errors.push(
+          `${label}: ${localText(lang, {
+            ar: 'حالة المنتج غير صالحة.',
+            ku: 'دۆخی بەرهەم دروست نییە.',
+            en: 'product status is invalid.',
+          })}`,
+        );
+      }
+      if (allowFawriReply === null) {
+        errors.push(
+          `${label}: ${localText(lang, {
+            ar: 'قيمة السماح برد فوري يجب أن تكون نعم/لا.',
+            ku: 'بەهای وەڵامی فەوری دەبێت بەڵێ/نەخێر بێت.',
+            en: 'allow Fawri reply must be a boolean value.',
+          })}`,
+        );
+      }
+
+      if (
+        !name ||
+        (!externalRef && !sku && !barcode) ||
+        price === null ||
+        quantity === null ||
+        (requestedStatus && !validStatuses.has(requestedStatus as ProductStatus)) ||
+        allowFawriReply === null
+      ) {
+        return;
+      }
+
+      const variants: CatalogVariantInput[] =
         color || size
           ? [
               {
-                color: color || undefined,
-                size: size || undefined,
-                quantity,
-                sku,
+                name: [color, size].filter(Boolean).join(' / '),
+                stock_quantity: quantity,
+                options: {
+                  ...(color ? { Color: color } : {}),
+                  ...(size ? { Size: size } : {}),
+                },
+                image_refs: [],
               },
             ]
           : [];
 
-      const status: ProductStatus =
-        quantity > 0 ? 'available' : 'out_of_stock';
+      const status = requestedStatus
+        ? (requestedStatus as ProductStatus)
+        : quantity > 0
+          ? 'available'
+          : 'out_of_stock';
 
-      importedCount += 1;
-      existingSkus.add(normalizedSku);
-
-      newProducts.push({
-        id: `prod-imp-${Date.now()}-${index}`,
-        merchant_id: merchant.id,
-        code: `B${1000 + currentProducts.length + importedCount}`,
+      products.push({
+        ...(externalRef ? { external_ref: externalRef } : {}),
         name,
-        sku,
-        barcode,
-        category,
-        description: '',
-        original_price: price,
-        current_price: price,
-        quantity,
+        ...(description ? { description } : {}),
+        ...(category ? { category } : {}),
+        ...(sku ? { sku } : {}),
+        ...(barcode ? { barcode } : {}),
+        price_iqd: price,
+        ...(variants.length === 0 ? { stock_quantity: quantity } : {}),
         status,
-        allow_fawri_reply: true,
-        images: [],
+        allow_fawri_reply: allowFawriReply,
         variants,
-        created_at: new Date().toISOString(),
-      });
+        image_refs: [],
+      } as CatalogProductInput);
     });
 
-    if (newProducts.length > 0) {
-      saveProducts(
-        [...currentProducts, ...newProducts],
-        merchant.id
+    return { products, errors };
+  };
+
+  const handleImport = async () => {
+    if (!merchant || isImporting) return;
+
+    setValidationErrors([]);
+    setIsImporting(true);
+    try {
+      const context = await getCatalogCommerceContext();
+      const { products, errors } = validateAndBuildImport(
+        context.currency_fraction_digits,
       );
+      if (errors.length > 0) {
+        setValidationErrors(errors);
+        toast.error(
+          localText(lang, {
+            ar: 'لم يتم الاستيراد. صحح الأخطاء المعروضة أولًا.',
+            ku: 'هاوردەکردن نەکرا. سەرەتا هەڵە پیشاندراوەکان چاک بکە.',
+            en: 'Nothing was imported. Fix the displayed errors first.',
+          }),
+        );
+        return;
+      }
+      if (products.length === 0) {
+        setValidationErrors([
+          localText(lang, {
+            ar: 'لا توجد منتجات صالحة للاستيراد.',
+            ku: 'هیچ بەرهەمێکی دروست بۆ هاوردەکردن نییە.',
+            en: 'There are no valid products to import.',
+          }),
+        ]);
+        return;
+      }
+
+      const attempt = idempotencyAttemptForRequest(
+        importAttemptRef.current,
+        'catalog-import',
+        { products },
+      );
+      importAttemptRef.current = attempt;
+
+      const created = await importCatalogProducts(products, attempt.key);
+      importAttemptRef.current = null;
+      setReport({ imported: created.length, skipped: 0 });
+      setStep(3);
+      toast.success(`${t.import_success_message}: ${created.length}`);
+    } catch (error) {
+      console.error('Canonical catalog import failed:', error);
+      const serverError =
+        error instanceof CatalogApiError || error instanceof CatalogPromotionApiError
+          ? `${error.code}: ${error.message}`
+          : localText(lang, {
+              ar: 'فشل طلب الاستيراد إلى الخادم.',
+              ku: 'داواکاری هاوردەکردن بۆ سێرڤەر سەرکەوتوو نەبوو.',
+              en: 'The server import request failed.',
+            });
+      setValidationErrors([serverError]);
+      toast.error(
+        localText(lang, {
+          ar: 'لم يتم حفظ أي صف لأن الاستيراد فشل.',
+          ku: 'هیچ ڕیزێک پاشەکەوت نەکرا چونکە هاوردەکردن شکستی هێنا.',
+          en: 'No rows were saved because the import failed.',
+        }),
+      );
+    } finally {
+      setIsImporting(false);
     }
-
-    setReport({
-      imported: importedCount,
-      skipped: skippedCount,
-    });
-
-    setStep(3);
-    toast.success(`${t.import_success_message}: ${importedCount}`);
   };
 
   const downloadTemplate = () => {
     const worksheet = XLSX.utils.json_to_sheet([
       {
         product_name: 'Test Product',
+        external_ref: 'EXT-001',
         sku: 'TST-001',
         barcode: '123456',
         category: 'General',
+        description: 'Example product',
         price: 10000,
         quantity: 10,
+        status: 'available',
+        allow_fawri_reply: 'true',
         color: 'Red',
         size: 'M',
       },
@@ -359,19 +574,21 @@ export default function ImportProductsPage() {
   };
 
   const resetImport = () => {
+    importAttemptRef.current = null;
     setFileData([]);
     setColumns([]);
     setMapping(emptyMapping);
     setReport(null);
+    setValidationErrors([]);
     setIsDragging(false);
+    setIsImporting(false);
     setStep(1);
   };
 
+  if (!merchant) return null;
+
   return (
-    <div
-      className="mx-auto max-w-4xl space-y-6"
-      dir={dir}
-    >
+    <div className="mx-auto max-w-4xl space-y-6" dir={dir}>
       <h1 className="text-2xl font-bold">{t.import_title}</h1>
 
       <div className="mb-8 flex gap-4">
@@ -384,7 +601,6 @@ export default function ImportProductsPage() {
         >
           1. {t.upload_file}
         </div>
-
         <div
           className={`flex-1 rounded-xl border p-4 ${
             step >= 2
@@ -394,7 +610,6 @@ export default function ImportProductsPage() {
         >
           2. {t.col_map}
         </div>
-
         <div
           className={`flex-1 rounded-xl border p-4 ${
             step >= 3
@@ -423,22 +638,13 @@ export default function ImportProductsPage() {
           }}
           onDragLeave={event => {
             event.preventDefault();
-
-            if (event.currentTarget === event.target) {
-              setIsDragging(false);
-            }
+            if (event.currentTarget === event.target) setIsDragging(false);
           }}
           onDrop={handleDrop}
         >
           <UploadIcon className="mb-4 h-12 w-12 text-muted-foreground" />
-
-          <h3 className="mb-2 text-lg font-medium">
-            {t.import_drag_drop}
-          </h3>
-
-          <p className="mb-6 text-muted-foreground">
-            {t.import_supported_formats}
-          </p>
+          <h3 className="mb-2 text-lg font-medium">{t.import_drag_drop}</h3>
+          <p className="mb-6 text-muted-foreground">{t.import_supported_formats}</p>
 
           <input
             ref={fileInputRef}
@@ -463,13 +669,7 @@ export default function ImportProductsPage() {
               className="rounded-xl px-8"
               onClick={downloadTemplate}
             >
-              <Download
-                className={
-                  isRTL
-                    ? 'ml-2 h-4 w-4'
-                    : 'mr-2 h-4 w-4'
-                }
-              />
+              <Download className={isRTL ? 'ml-2 h-4 w-4' : 'mr-2 h-4 w-4'} />
               {t.download_template}
             </Button>
           </div>
@@ -479,40 +679,38 @@ export default function ImportProductsPage() {
       {step === 2 && (
         <div className="space-y-6">
           <div className="rounded-xl border bg-card p-6">
-            <h3 className="mb-4 text-lg font-medium">
-              {t.col_map}
-            </h3>
+            <h3 className="mb-2 text-lg font-medium">{t.col_map}</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              {localText(lang, {
+                ar: 'اسم المنتج مطلوب، وكل صف يجب أن يحتوي على مرجع خارجي أو SKU أو باركود.',
+                ku: 'ناوی بەرهەم پێویستە و هەر ڕیزێک دەبێت ناسنامەی دەرەکی یان SKU یان بارکۆدی هەبێت.',
+                en: 'Product name is required, and every row must have an external reference, SKU, or barcode.',
+              })}
+            </p>
 
             <div className="grid gap-x-8 gap-y-4 md:grid-cols-2">
               {importFields.map(field => (
-                <div
-                  key={field}
-                  className="flex flex-col gap-1.5"
-                >
+                <div key={field} className="flex flex-col gap-1.5">
                   <label className="text-sm font-medium">
                     {fieldLabels[field]}
-                    {(field === 'product_name' || field === 'sku') && ' *'}
+                    {field === 'product_name' && ' *'}
                   </label>
 
                   <select
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
                     value={mapping[field]}
-                    onChange={event =>
+                    onChange={event => {
+                      importAttemptRef.current = null;
+                      setValidationErrors([]);
                       setMapping(current => ({
                         ...current,
                         [field]: event.target.value,
-                      }))
-                    }
+                      }));
+                    }}
                   >
-                    <option value="">
-                      -- {t.import_ignore} --
-                    </option>
-
+                    <option value="">-- {t.import_ignore} --</option>
                     {columns.map(column => (
-                      <option
-                        key={column}
-                        value={column}
-                      >
+                      <option key={column} value={column}>
                         {column}
                       </option>
                     ))}
@@ -521,20 +719,44 @@ export default function ImportProductsPage() {
               ))}
             </div>
 
+            {validationErrors.length > 0 && (
+              <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800">
+                <div className="mb-2 flex items-center gap-2 font-semibold">
+                  <AlertTriangle className="h-4 w-4" />
+                  {localText(lang, {
+                    ar: 'أخطاء الاستيراد',
+                    ku: 'هەڵەکانی هاوردەکردن',
+                    en: 'Import errors',
+                  })}
+                </div>
+                <ul className="list-disc space-y-1 px-5 text-sm">
+                  {validationErrors.slice(0, 20).map((error, index) => (
+                    <li key={`${error}-${index}`}>{error}</li>
+                  ))}
+                </ul>
+                {validationErrors.length > 20 && (
+                  <p className="mt-2 text-xs">
+                    +{validationErrors.length - 20}{' '}
+                    {localText(lang, {
+                      ar: 'أخطاء إضافية',
+                      ku: 'هەڵەی زیاتر',
+                      en: 'more errors',
+                    })}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="mt-8 flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={resetImport}
-              >
+              <Button type="button" variant="outline" onClick={resetImport}>
                 {t.import_back}
               </Button>
-
               <Button
                 type="button"
-                onClick={handleImport}
+                onClick={() => void handleImport()}
+                disabled={isImporting}
               >
-                {t.import}
+                {isImporting ? t.products_saving : t.import}
               </Button>
             </div>
           </div>
@@ -543,33 +765,22 @@ export default function ImportProductsPage() {
             <div className="border-b p-4 font-medium">
               {t.preview} ({t.import_preview_first_rows})
             </div>
-
             <div className="overflow-x-auto">
               <table className="w-full text-start text-sm">
                 <thead className="bg-muted/50">
                   <tr>
                     {importFields.map(field => (
-                      <th
-                        key={field}
-                        className="px-4 py-2 text-start"
-                      >
+                      <th key={field} className="px-4 py-2 text-start">
                         {fieldLabels[field]}
                       </th>
                     ))}
                   </tr>
                 </thead>
-
                 <tbody>
                   {fileData.slice(0, 3).map((row, index) => (
-                    <tr
-                      key={index}
-                      className="border-t"
-                    >
+                    <tr key={index} className="border-t">
                       {importFields.map(field => (
-                        <td
-                          key={field}
-                          className="whitespace-nowrap px-4 py-2"
-                        >
+                        <td key={field} className="whitespace-nowrap px-4 py-2">
                           {mapping[field]
                             ? normalizeCell(row[mapping[field]]) || '-'
                             : '-'}
@@ -589,47 +800,33 @@ export default function ImportProductsPage() {
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600">
             <CheckCircle className="h-8 w-8" />
           </div>
-
-          <h3 className="mb-6 text-2xl font-bold">
-            {t.import_completed_title}
-          </h3>
+          <h3 className="mb-6 text-2xl font-bold">{t.import_completed_title}</h3>
 
           <div className="mb-8 grid w-full max-w-sm grid-cols-2 gap-4">
             <div className="rounded-lg bg-muted p-4 text-center">
-              <div className="text-3xl font-bold text-green-600">
-                {report.imported}
-              </div>
-              <div className="mt-1 text-sm text-muted-foreground">
-                {t.imported}
-              </div>
+              <div className="text-3xl font-bold text-green-600">{report.imported}</div>
+              <div className="mt-1 text-sm text-muted-foreground">{t.imported}</div>
             </div>
-
             <div className="rounded-lg bg-muted p-4 text-center">
-              <div className="text-3xl font-bold text-amber-600">
-                {report.skipped}
-              </div>
-              <div className="mt-1 text-sm text-muted-foreground">
-                {t.skipped}
-              </div>
+              <div className="text-3xl font-bold text-amber-600">{report.skipped}</div>
+              <div className="mt-1 text-sm text-muted-foreground">{t.skipped}</div>
             </div>
           </div>
 
+          <p className="mb-6 text-sm text-muted-foreground">
+            {localText(lang, {
+              ar: 'الاستيراد ذري: إذا فشل أي صف فلن يُحفظ أي صف.',
+              ku: 'هاوردەکردن یەکپارچەیە: ئەگەر هەر ڕیزێک شکستی هێنا هیچ ڕیزێک پاشەکەوت ناکرێت.',
+              en: 'Import is atomic: if any row fails, no rows are saved.',
+            })}
+          </p>
+
           <div className="flex flex-wrap justify-center gap-4">
-            <Button
-              type="button"
-              onClick={resetImport}
-            >
+            <Button type="button" onClick={resetImport}>
               {t.import_another_file}
             </Button>
-
-            <Button
-              type="button"
-              variant="outline"
-              asChild
-            >
-              <Link href="/dashboard/products">
-                {t.import_go_to_products}
-              </Link>
+            <Button type="button" variant="outline" asChild>
+              <Link href="/dashboard/products">{t.import_go_to_products}</Link>
             </Button>
           </div>
         </div>

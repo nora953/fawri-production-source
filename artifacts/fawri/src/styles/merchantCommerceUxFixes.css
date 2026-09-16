@@ -1,0 +1,125 @@
+/* Merchant commerce UX refinements discovered during live closeout QA. */
+
+/* Cashier history currently renders the secondary action first in the DOM.
+   Reversing the flex row puts the primary confirmation on inline-start:
+   right for RTL Arabic/Kurdish and left for LTR English. */
+html[data-cashier-view="history"] .fixed.inset-0.z-50 .mt-5.flex.gap-2 {
+  flex-direction: row-reverse;
+}
+
+/* Cashier history compensation actions mirror with page direction.
+   The current DOM renders the explanatory copy first and the action group second,
+   while the action group renders Void before Return selected. Reversing both rows
+   gives the reviewed physical order without changing behavior:
+   - Arabic/Sorani RTL: Return selected at the right edge, Void immediately left.
+   - English LTR: the mirrored arrangement, Return selected at the left edge and
+     Void immediately right. */
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t {
+  flex-direction: row-reverse;
+}
+
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t > div:last-child {
+  flex-direction: row-reverse;
+}
+
+/* The reviewed Arabic history is the visual authority for all three languages.
+   Receipt reprint, Return all and Void sale use one light-gray destructive
+   secondary surface. Return selected remains the orange primary action. */
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:last-child > button,
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button,
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t > div:last-child > button:first-child {
+  border: 1px solid #fecaca !important;
+  background: #f8fafc !important;
+  color: #b91c1c !important;
+  border-radius: 0.75rem !important;
+  padding: 0.625rem 1rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25rem !important;
+}
+
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:last-child > button:hover,
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mb-3.flex.items-center.justify-between.gap-3 > button:hover,
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div.p-4 > .mt-4.flex.flex-wrap.items-center.justify-between.gap-3.border-t > div:last-child > button:first-child:hover {
+  background: #f1f5f9 !important;
+}
+
+/* Completed already carries its state border in the component. Give the adjacent
+   sync-state chip the same outlined pill language in Arabic, Sorani and English
+   without forcing equal padding or font size. */
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child {
+  border-style: solid !important;
+  border-width: 1px !important;
+  border-radius: 9999px !important;
+}
+
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child.bg-emerald-50 {
+  border-color: #a7f3d0 !important;
+}
+
+html[data-cashier-view="history"] #cashier-root main section:last-child > div > div:first-child > div:first-child > div.mb-1.flex.flex-wrap.items-center.gap-2 > span:last-child.bg-amber-50 {
+  border-color: #fde68a !important;
+}
+
+/* Sale-list sync state uses the same compact outlined-pill language as the
+   Completed state in all three languages. */
+html[data-cashier-view="history"] #cashier-root main section:first-child > div.p-2 > button > div.flex.items-end.justify-between.gap-3 > span {
+  border: 1px solid #a7f3d0 !important;
+  border-radius: 9999px !important;
+  padding: 0.125rem 0.5rem !important;
+}
+
+html[data-cashier-view="history"] #cashier-root main section:first-child > div.p-2 > button > div.flex.items-end.justify-between.gap-3 > span.text-amber-700 {
+  border-color: #fde68a !important;
+}
+
+/* Sorani uses a longer destructive-confirmation phrase than Arabic and English.
+   Keep the reviewed wording intact and keep the confirm action on one line, but
+   use a readable 13px label so it remains visually balanced with the Arabic
+   reference without increasing button height. */
+html[lang="ku"][data-cashier-view="history"] .fixed.inset-0.z-50 .mt-5.flex.gap-2 > button:last-child {
+  white-space: nowrap !important;
+  font-size: 0.8125rem !important;
+  padding-inline: 0.5rem !important;
+}
+
+/* English POS header parity.
+   English uses normal document flow instead of the RTL absolute-position
+   treatment from cashier-visual-qa.css. The end-shift trigger is portaled into
+   the brand cluster by CashierEndShiftButton. The connectivity badge then uses
+   an auto logical end margin to split the header into the same two groups as
+   the frozen Arabic reference: identity/status at inline-start and operational
+   controls at inline-end. No viewport coordinates are involved. */
+html[lang="en"][data-cashier-view="pos"] main > div > header {
+  justify-content: flex-start !important;
+}
+
+html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child,
+html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child > div:first-child {
+  display: contents !important;
+}
+
+html[lang="en"][data-cashier-view="pos"] main > div > header > div:last-child > div:first-child > span:first-child {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  z-index: auto !important;
+  margin-inline-end: auto !important;
+}
+
+/* The reviewed Arabic/Sorani end-shift dialog keeps Cancel on the left and the
+   destructive confirmation on the right. English mirrors that physical order:
+   End shift on the left, Cancel on the right. Button text and behavior are
+   unchanged; only the English action grid direction is mirrored. */
+html[lang="en"][data-cashier-view="pos"] [role="dialog"] form > .mt-5.grid.grid-cols-2.gap-3 {
+  direction: rtl !important;
+}
+
+/* Checkout follows the same physical mirroring rule as the reviewed cashier
+   dialogs. Arabic/Sorani keep Back on the left and Confirm sale on the right.
+   English mirrors the footer grid so Confirm sale is on the left and Back is on
+   the right while preserving the primary button's larger 1.2fr track. Each
+   button keeps its own language direction, so only placement changes. */
+html[lang="en"][data-cashier-view="pos"] [data-cashier-checkout="open"] > section > footer {
+  direction: rtl !important;
+}

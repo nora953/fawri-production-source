@@ -1,0 +1,89 @@
+name: Complete migration safety
+
+on:
+  pull_request:
+    paths:
+      - "scripts/audit-manual-conversation-operations.mjs"
+      - "scripts/audit-order-operations.mjs"
+      - "scripts/audit-merchant-settings.mjs"
+      - "scripts/lib/postgresql-migration-plan*.mjs"
+      - "scripts/lib/postgresql-migration-write-readiness.mjs"
+      - "scripts/run-postgresql-migration-plan-complete.mjs"
+      - "scripts/tests/complete-*.test.mjs"
+      - "scripts/tests/operational-overlay-write-readiness.test.mjs"
+      - "scripts/tests/locked-migration-operational-safety.test.mjs"
+      - "scripts/tests/validated-order-operations-gate.test.mjs"
+      - "lib/db/scripts/run-*-migration-with-operational-locks.mjs"
+      - ".github/workflows/complete-migration-safety.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  push:
+    branches:
+      - "hardening/**"
+    paths:
+      - "scripts/audit-manual-conversation-operations.mjs"
+      - "scripts/audit-order-operations.mjs"
+      - "scripts/audit-merchant-settings.mjs"
+      - "scripts/lib/postgresql-migration-plan*.mjs"
+      - "scripts/lib/postgresql-migration-write-readiness.mjs"
+      - "scripts/run-postgresql-migration-plan-complete.mjs"
+      - "scripts/tests/complete-*.test.mjs"
+      - "scripts/tests/operational-overlay-write-readiness.test.mjs"
+      - "scripts/tests/locked-migration-operational-safety.test.mjs"
+      - "scripts/tests/validated-order-operations-gate.test.mjs"
+      - "lib/db/scripts/run-*-migration-with-operational-locks.mjs"
+      - ".github/workflows/complete-migration-safety.yml"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: complete-migration-safety-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-complete-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Check complete migration tool syntax
+        run: |
+          node --check scripts/lib/postgresql-migration-plan-complete.mjs
+          node --check scripts/lib/postgresql-migration-plan-safe.mjs
+          node --check scripts/lib/postgresql-migration-write-readiness.mjs
+          node --check scripts/run-postgresql-migration-plan-complete.mjs
+          node --check lib/db/scripts/run-migration-with-operational-locks.mjs
+          node --check lib/db/scripts/run-complete-migration-with-operational-locks.mjs
+          node --check scripts/tests/complete-migration-operational-gates.test.mjs
+          node --check scripts/tests/complete-locked-migration-safety.test.mjs
+          node --check scripts/tests/operational-overlay-write-readiness.test.mjs
+          node --check scripts/tests/locked-migration-operational-safety.test.mjs
+          node --check scripts/tests/validated-order-operations-gate.test.mjs
+
+      - name: Test complete migration planning and operational locks
+        run: >-
+          node --test
+          scripts/tests/complete-migration-operational-gates.test.mjs
+          scripts/tests/complete-locked-migration-safety.test.mjs
+          scripts/tests/operational-overlay-write-readiness.test.mjs
+          scripts/tests/locked-migration-operational-safety.test.mjs
+          scripts/tests/validated-order-operations-gate.test.mjs

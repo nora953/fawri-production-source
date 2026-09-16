@@ -1,0 +1,155 @@
+name: Merchant settings
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/routes/merchant-settings.ts"
+      - "artifacts/api-server/src/routes/retention-guard.ts"
+      - "artifacts/api-server/src/middleware/authSession.ts"
+      - "artifacts/api-server/src/services/authPostgresSessionAuthority.ts"
+      - "artifacts/api-server/src/services/merchantSettingsRuntime.ts"
+      - "artifacts/api-server/src/services/metaWebhookWorker.ts"
+      - "artifacts/api-server/src/services/operationalPostgresAuthority.ts"
+      - "artifacts/api-server/src/services/postgresMerchantSettingsAuthority.ts"
+      - "artifacts/api-server/tests/merchant-settings*.test.*"
+      - "artifacts/api-server/tests/orders-settings-static-contract.test.mjs"
+      - "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/SettingsPage.tsx"
+      - "scripts/audit-merchant-settings.mjs"
+      - "scripts/tests/audit-merchant-settings.test.mjs"
+      - "scripts/tests/server-authoritative-settings-contract.test.mjs"
+      - "lib/db/src/**"
+      - "lib/db/package.json"
+      - ".github/workflows/merchant-settings.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  push:
+    branches:
+      - "hardening/**"
+    paths:
+      - "artifacts/api-server/src/routes/merchant-settings.ts"
+      - "artifacts/api-server/src/routes/retention-guard.ts"
+      - "artifacts/api-server/src/middleware/authSession.ts"
+      - "artifacts/api-server/src/services/authPostgresSessionAuthority.ts"
+      - "artifacts/api-server/src/services/merchantSettingsRuntime.ts"
+      - "artifacts/api-server/src/services/metaWebhookWorker.ts"
+      - "artifacts/api-server/src/services/operationalPostgresAuthority.ts"
+      - "artifacts/api-server/src/services/postgresMerchantSettingsAuthority.ts"
+      - "artifacts/api-server/tests/merchant-settings*.test.*"
+      - "artifacts/api-server/tests/orders-settings-static-contract.test.mjs"
+      - "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/SettingsPage.tsx"
+      - "scripts/audit-merchant-settings.mjs"
+      - "scripts/tests/audit-merchant-settings.test.mjs"
+      - "scripts/tests/server-authoritative-settings-contract.test.mjs"
+      - "lib/db/src/**"
+      - "lib/db/package.json"
+      - ".github/workflows/merchant-settings.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merchant-settings-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-settings:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies without package build scripts
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Check audit and integration test syntax
+        run: |
+          node --check scripts/audit-merchant-settings.mjs
+          node --check scripts/tests/audit-merchant-settings.test.mjs
+          node --check artifacts/api-server/tests/merchant-settings.integration.test.mjs
+
+      - name: Type-check API server and frontend
+        run: |
+          pnpm --filter @workspace/api-server run typecheck
+          pnpm --filter ./artifacts/fawri run typecheck
+
+      - name: Test settings service, worker enforcement, and audit
+        run: >-
+          pnpm exec tsx --test
+          artifacts/api-server/tests/merchant-settings-runtime.test.ts
+          artifacts/api-server/tests/merchant-settings-meta-worker.test.ts
+          scripts/tests/audit-merchant-settings.test.mjs
+          scripts/tests/server-authoritative-settings-contract.test.mjs
+
+      - name: Test store currency settings UI contract
+        run: node --test artifacts/api-server/tests/orders-settings-static-contract.test.mjs
+
+      - name: Build API server and frontend
+        run: |
+          pnpm --filter @workspace/api-server run build
+          pnpm --filter ./artifacts/fawri run build
+
+      - name: Test authenticated settings API
+        run: node --test artifacts/api-server/tests/merchant-settings.integration.test.mjs
+
+  verify-settings-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label settings-postgres-frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Initialize disposable PostgreSQL runtime schema
+        run: pnpm --filter @workspace/db run push-force
+
+      - name: Run secure settings PostgreSQL HTTP authority proof
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/merchant-settings-postgres-http.integration.test.ts

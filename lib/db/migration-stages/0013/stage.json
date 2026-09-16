@@ -1,0 +1,11 @@
+{
+  "index": 13,
+  "name": "cashier_staff_station_authority",
+  "when": 1787706000000,
+  "mode": "reviewed_sql",
+  "sql_sha256": "ba05d067ae0863278125c0dd696f03ca833a5884445b4d5ec2d0018c8ecc1353",
+  "preimage_files": [
+    "cashier-staff.ts",
+    "index.ts"
+  ]
+}

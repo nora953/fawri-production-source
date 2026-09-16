@@ -1,0 +1,77 @@
+name: Global merchant golden journey
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/**"
+      - "artifacts/api-server/tests/global-merchant-auth-bootstrap-postgres.integration.test.mjs"
+      - "artifacts/api-server/tests/global-merchant-golden-journey.integration.test.mjs"
+      - "artifacts/api-server/package.json"
+      - "lib/db/src/**"
+      - "lib/db/drizzle.config.ts"
+      - "lib/db/package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "package.json"
+      - ".github/workflows/global-merchant-golden-journey.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: global-merchant-golden-journey-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  merchant-journey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_golden
+          POSTGRES_PASSWORD: fawri_golden
+          POSTGRES_DB: fawri_golden_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_golden -d fawri_golden_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_golden:fawri_golden@127.0.0.1:5432/fawri_golden_ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      # This is a disposable runtime-schema fixture, not migration-history
+      # validation. Migration reproducibility is owned by the PostgreSQL schema
+      # gate; the golden journey only needs the canonical current schema so it
+      # can prove one connected merchant runtime against PostgreSQL.
+      - name: Initialize disposable PostgreSQL runtime schema
+        run: pnpm --filter @workspace/db run push-force
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Run secure auth bootstrap and connected merchant journey
+        run: pnpm --filter @workspace/api-server run test:global-merchant-journey

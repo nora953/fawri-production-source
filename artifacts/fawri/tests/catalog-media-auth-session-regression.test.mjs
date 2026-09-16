@@ -1,0 +1,91 @@
+import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import test from 'node:test';
+
+const imageSource = await readFile(
+  new URL('../src/components/catalog/CatalogImageUploadEditor.tsx', import.meta.url),
+  'utf8',
+);
+const protectedCardImageSource = await readFile(
+  new URL('../src/components/catalog/CatalogProtectedImage.tsx', import.meta.url),
+  'utf8',
+);
+const catalogPageSource = await readFile(
+  new URL('../src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx', import.meta.url),
+  'utf8',
+);
+const authSource = await readFile(
+  new URL('../../api-server/src/middleware/authSession.ts', import.meta.url),
+  'utf8',
+);
+const dashboardSource = await readFile(
+  new URL('../src/components/layout/DashboardLayout.tsx', import.meta.url),
+  'utf8',
+);
+const fullscreenCss = await readFile(
+  new URL('../src/pages/dashboard/catalogEditorFullscreen.css', import.meta.url),
+  'utf8',
+);
+
+test('protected catalog images are fetched through authenticated fetch before img rendering', () => {
+  assert.match(imageSource, /function protectedPreviewRequest/);
+  assert.match(imageSource, /fetch\(protectedRequest/);
+  assert.match(imageSource, /credentials: 'same-origin'/);
+  assert.match(imageSource, /URL\.createObjectURL\(blob\)/);
+  assert.match(imageSource, /src=\{source\}/);
+  assert.doesNotMatch(imageSource, /<img[^>]+src=\{catalogImagePreviewUrl/);
+});
+
+test('saved product cards also fetch protected media before assigning img src', () => {
+  assert.match(protectedCardImageSource, /catalogImagePreviewUrl/);
+  assert.match(protectedCardImageSource, /fetch\(protectedRequest/);
+  assert.match(protectedCardImageSource, /credentials: 'same-origin'/);
+  assert.match(protectedCardImageSource, /blob\.type\.startsWith\('image\/'\)/);
+  assert.match(protectedCardImageSource, /URL\.createObjectURL\(blob\)/);
+  assert.match(protectedCardImageSource, /src=\{source\}/);
+  assert.match(catalogPageSource, /CatalogProtectedImage/);
+  assert.doesNotMatch(catalogPageSource, /<img src=\{primary\}/);
+  assert.doesNotMatch(catalogPageSource, /const primary = imageUrl\(product\)/);
+});
+
+test('a lost concurrent rotation race does not clear an already validated browser session', () => {
+  const rotationStart = authSource.indexOf('if (validated.needsRotation)');
+  const nextCall = authSource.indexOf('\n  next();', rotationStart);
+  assert.ok(rotationStart >= 0 && nextCall > rotationStart);
+  const rotationBlock = authSource.slice(rotationStart, nextCall);
+
+  assert.match(rotationBlock, /rotateSession/);
+  assert.match(rotationBlock, /if \(rotated\)/);
+  assert.match(rotationBlock, /setAuthSessionCookie/);
+  assert.doesNotMatch(rotationBlock, /clearAuthSessionCookie/);
+  assert.doesNotMatch(rotationBlock, /SESSION_ROTATION_FAILED/);
+});
+
+test('a stale SESSION_INVALID response cannot delete a fresher rotated cookie', () => {
+  const invalidStart = authSource.indexOf('if (!validated)');
+  const accountLookup = authSource.indexOf('\n  const authAccount =', invalidStart);
+  assert.ok(invalidStart >= 0 && accountLookup > invalidStart);
+  const invalidBlock = authSource.slice(invalidStart, accountLookup);
+
+  assert.match(invalidBlock, /SESSION_INVALID/);
+  assert.match(invalidBlock, /stale 401 response/);
+  assert.doesNotMatch(invalidBlock, /clearAuthSessionCookie/);
+
+  // Confirmed security/account revocations still clear their cookies.
+  assert.match(authSource, /SESSION_ACCOUNT_INVALID[\s\S]*clearAuthSessionCookie|clearAuthSessionCookie[\s\S]*SESSION_ACCOUNT_INVALID/);
+  assert.match(authSource, /SESSION_VERSION_REVOKED/);
+});
+
+test('merchant dashboard confirms an unauthenticated lifecycle result before routing to login', () => {
+  assert.match(dashboardSource, /SESSION_401_CONFIRM_DELAYS_MS = \[150, 650\]/);
+  assert.match(dashboardSource, /for \(const delay of SESSION_401_CONFIRM_DELAYS_MS\)/);
+  assert.match(dashboardSource, /lifecycle = await checkMerchantLifecycle\(controller\.signal\)/);
+  assert.match(dashboardSource, /if \(lifecycle\.reason === 'unauthenticated'\)[\s\S]*routeToLogin\(\)/);
+});
+
+test('simplified catalog editor top-level sections use the full workspace width', () => {
+  assert.match(fullscreenCss, /catalog-editor-body-grid > \*/);
+  assert.match(fullscreenCss, /grid-column:\s*1 \/ -1 !important/);
+  assert.doesNotMatch(fullscreenCss, /catalog-editor-body-grid > :nth-child\(6\)/);
+  assert.doesNotMatch(fullscreenCss, /catalog-editor-body-grid > :nth-child\(7\)/);
+});

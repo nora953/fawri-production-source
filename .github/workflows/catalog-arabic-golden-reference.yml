@@ -1,0 +1,41 @@
+name: Catalog Arabic Golden Reference
+
+on:
+  push:
+    branches:
+      - foundation/integration-candidate
+    paths:
+      - 'artifacts/fawri/src/components/catalog/**'
+      - 'artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx'
+      - 'artifacts/fawri/src/pages/dashboard/ProductsWorkspacePage.tsx'
+      - 'artifacts/fawri/src/pages/dashboard/catalog*.css'
+      - 'artifacts/fawri/src/lib/catalog*.ts'
+      - 'artifacts/fawri/src/lib/translations/features/catalog/**'
+      - 'artifacts/fawri/tests/catalog-arabic-*.test.mjs'
+      - 'artifacts/fawri/package.json'
+      - 'docs/catalog-arabic-golden-reference.md'
+  pull_request:
+    paths:
+      - 'artifacts/fawri/src/components/catalog/**'
+      - 'artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx'
+      - 'artifacts/fawri/src/pages/dashboard/ProductsWorkspacePage.tsx'
+      - 'artifacts/fawri/src/pages/dashboard/catalog*.css'
+      - 'artifacts/fawri/src/lib/catalog*.ts'
+      - 'artifacts/fawri/src/lib/translations/features/catalog/**'
+      - 'artifacts/fawri/tests/catalog-arabic-*.test.mjs'
+      - 'artifacts/fawri/package.json'
+      - 'docs/catalog-arabic-golden-reference.md'
+
+permissions:
+  contents: read
+
+jobs:
+  golden-reference:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify locked Arabic product and service editor reference
+        run: node --test artifacts/fawri/tests/catalog-arabic-service-golden-guard.test.mjs artifacts/fawri/tests/catalog-arabic-golden-reference.test.mjs

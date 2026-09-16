@@ -1,0 +1,260 @@
+/*
+ * Emergency-access desktop layout refinements.
+ * Assistant screens may use a fixed viewport when the request/session grid is
+ * the final section. Owner screens keep normal page scrolling because they
+ * include authorization, alert, notice, and audit sections below the grid.
+ */
+
+html[lang='ar']
+  .emergency-access-route
+  main
+  > div.grid:nth-child(2)
+  > div:first-child
+  > div:last-child
+  .space-y-2
+  > label {
+  position: relative;
+  top: -0.125rem;
+}
+
+/*
+ * Keep Arabic labels RTL while isolating date/time values as one LTR run.
+ * This prevents slashes, colons, Arabic digits, and ص/م from being visually
+ * reordered by the surrounding request-card direction.
+ */
+html[lang='ar']
+  .emergency-access-route
+  main
+  > div.grid:nth-child(2)
+  > div:last-child
+  .mt-3.grid
+  > span:nth-child(2),
+html[lang='ar']
+  .emergency-access-route
+  main
+  > div.grid:nth-child(2)
+  > div:last-child
+  .mt-3.grid
+  > span:nth-child(4) {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  direction: rtl;
+  flex-wrap: wrap;
+}
+
+html[lang='ar']
+  .emergency-access-route
+  main
+  > div.grid:nth-child(2)
+  > div:last-child
+  .mt-3.grid
+  > span:nth-child(2)
+  > strong,
+html[lang='ar']
+  .emergency-access-route
+  main
+  > div.grid:nth-child(2)
+  > div:last-child
+  .mt-3.grid
+  > span:nth-child(4)
+  > strong {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  white-space: nowrap;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 1024px) and (min-height: 640px) {
+  /* Shared compact spacing for the assistant and owner request forms. */
+  .emergency-access-route header > div {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .emergency-access-route main {
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .emergency-access-route main > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  .emergency-access-route main > div:first-child > div {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
+
+  .emergency-access-route main > div.grid:nth-child(2) {
+    gap: 0.75rem;
+  }
+
+  .emergency-access-route
+    main
+    > div.grid:nth-child(2)
+    > div
+    > div:first-child {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .emergency-access-route
+    main
+    > div.grid:nth-child(2)
+    > div
+    > div:last-child {
+    padding: 0.5rem 1rem 0.75rem;
+  }
+
+  .emergency-access-route
+    main
+    > div.grid:nth-child(2)
+    > div:first-child
+    > div:last-child
+    > *
+    + * {
+    margin-top: 0.625rem !important;
+  }
+
+  .emergency-access-route textarea {
+    height: 5rem;
+    min-height: 5rem;
+    resize: none;
+  }
+
+  /*
+   * Keep the request/session card at a stable desktop height for both roles.
+   * Historical and active requests scroll inside the card instead of pushing
+   * owner-only authorization, alert, notice, and audit sections downward.
+   */
+  .emergency-access-route
+    main
+    > div.grid:nth-child(2)
+    > div:last-child {
+    display: flex;
+    min-height: 0;
+    max-height: clamp(22rem, 56vh, 31rem);
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .emergency-access-route
+    main
+    > div.grid:nth-child(2)
+    > div:last-child
+    > div:last-child {
+    min-height: 0;
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  /* Owner-only sections stay scrollable but use denser card spacing. */
+  .emergency-access-route:has(main > div.grid:nth-child(2) + div)
+    main
+    > div:nth-child(3)
+    > div:first-child {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:nth-child(2) + div)
+    main
+    > div:nth-child(3)
+    > div:last-child {
+    padding: 0.5rem 1rem 0.75rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:nth-child(2) + div)
+    main
+    > div.grid:nth-child(4) {
+    gap: 0.75rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:nth-child(2) + div)
+    main
+    > div.grid:nth-child(4)
+    > div
+    > div:first-child {
+    padding: 0.75rem 1rem 0.5rem;
+  }
+
+  .emergency-access-route:has(main > div.grid:nth-child(2) + div)
+    main
+    > div.grid:nth-child(4)
+    > div
+    > div:last-child {
+    padding: 0.5rem 1rem 0.75rem;
+  }
+
+  /* Assistant-only fixed-height layout. */
+  .emergency-access-route:has(main > div.grid:last-child) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child) > div {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child) main {
+    display: flex;
+    height: calc(100dvh - 4.25rem);
+    min-height: 0;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow: hidden;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child) main > * + * {
+    margin-top: 0 !important;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child {
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div
+    > div:last-child {
+    min-height: 0;
+    flex: 1 1 auto;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div:last-child
+    > div:last-child {
+    overflow-y: auto;
+  }
+
+  .emergency-access-route:has(main > div.grid:last-child)
+    main
+    > div.grid:last-child
+    > div:last-child
+    > div:last-child
+    > p {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+}

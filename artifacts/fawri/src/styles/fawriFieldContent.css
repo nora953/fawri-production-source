@@ -1,0 +1,70 @@
+/*
+ * Project-wide field-content alignment.
+ *
+ * Keep labels and surrounding layout untouched; only the content rendered inside
+ * merchant/public/admin form controls is centered. Individual dense editors own
+ * their compact sizing so the global rule never forces a horizontal scrollbar.
+ */
+
+:where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+  textarea,
+  select,
+  button[role="combobox"]
+) {
+  text-align: center !important;
+}
+
+:where(input, textarea)::placeholder {
+  text-align: center !important;
+  text-overflow: clip;
+}
+
+/* Preserve the natural language direction of placeholders while the control
+ * itself may intentionally use LTR for numbers/SKU/barcodes. */
+[dir="rtl"] :where(input, textarea)::placeholder {
+  direction: rtl;
+  unicode-bidi: plaintext;
+}
+
+[dir="ltr"] :where(input, textarea)::placeholder {
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+
+select {
+  text-align-last: center;
+}
+
+/* Radix/select-style fields previously clamped selected text to one line.
+ * Let translated values remain readable without changing surrounding labels. */
+button[role="combobox"] {
+  height: auto !important;
+}
+
+button[role="combobox"] > span {
+  min-width: 0;
+  flex: 1 1 auto;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  -webkit-line-clamp: unset !important;
+}
+
+/* Arabic merchant prose starts at the natural reading edge rather than in the
+ * visual centre. Keep compact numeric/identifier fields centred; only the long
+ * description and the option-values entry use right-aligned RTL input. */
+html[lang="ar"] .catalog-editor-shell .catalog-editor-description-field textarea,
+html[lang="ar"] .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2) {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: plaintext;
+}
+
+html[lang="ar"] .catalog-editor-shell .catalog-editor-description-field textarea::placeholder,
+html[lang="ar"] .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: plaintext;
+}

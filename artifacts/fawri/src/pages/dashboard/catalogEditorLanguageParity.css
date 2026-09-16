@@ -1,0 +1,272 @@
+/*
+ * Catalog editor language parity overrides.
+ *
+ * Arabic is the reviewed golden reference and is intentionally NOT targeted in
+ * this file. Sorani Kurdish and English inherit the same editor geometry and
+ * only receive direction/reading-edge corrections required by their scripts.
+ */
+
+/* Sorani Kurdish follows the same RTL interaction model as the approved Arabic
+ * editor while keeping the dedicated Kurdish font authority. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell {
+  direction: rtl;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell .catalog-editor-header,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell details > summary {
+  text-align: right;
+}
+
+/* Free prose/product-option values may contain another language than the active
+ * UI. Their dir="auto" is installed at runtime, so align to that detected reading
+ * edge instead of forcing every saved value to RTL. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2) {
+  text-align: start !important;
+  unicode-bidi: plaintext;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea::placeholder,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
+  text-align: start !important;
+  unicode-bidi: plaintext;
+}
+
+/* English mirrors the same approved geometry. Interface chrome is LTR, while
+ * merchant-entered prose follows its own detected script direction. */
+html[lang="en"] .products-workspace-polish .catalog-editor-shell {
+  direction: ltr;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-header,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell details > summary {
+  text-align: left;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2) {
+  text-align: start !important;
+  unicode-bidi: plaintext;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell .catalog-editor-description-field textarea::placeholder,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]) > .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 > input:nth-of-type(2)::placeholder {
+  text-align: start !important;
+  unicode-bidi: plaintext;
+}
+
+/* Keep dense English/Kurdish type headings inside the exact Arabic card
+ * geometry instead of letting longer translated labels increase row height. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell .space-y-4 table thead th,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell .space-y-4 table thead th {
+  line-height: 1.15;
+  text-wrap: balance;
+}
+
+/* Long toolbar labels may be wider in Kurdish/English. Allow the text to use the
+ * existing button width without forcing the button or card wider. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell button,
+html[lang="en"] .products-workspace-polish .catalog-editor-shell button {
+  min-width: 0;
+}
+
+/* The Arabic golden reference calls each generated sellable entry "النوع".
+ * The older compact-table CSS writes "Variant" directly, bypassing the copy
+ * dictionary, so correct that legacy visual label for English only. */
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:first-child::after {
+  content: 'Type' !important;
+}
+
+/* Arabic changes the action heading to "حذف" only for the compact single-option
+ * table. Mirror that scope in English; grouped/multi-option tables keep the
+ * generic Action heading because their action cells are not delete-only. */
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child,
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child {
+  font-size: 0 !important;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child::after {
+  content: 'Delete';
+  font-size: 0.75rem;
+}
+
+/* Sorani mirrors the approved Arabic delete-only heading in the compact table. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell section[class~="space-y-4"]:has(> div:first-child button[role="switch"]):has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2):not(:has(> .space-y-2 > .grid.rounded-xl.border.bg-background.p-2 ~ .grid.rounded-xl.border.bg-background.p-2)) > .space-y-3 > .space-y-4 > section:first-child thead th:last-child::after {
+  content: 'سڕینەوە';
+  font-size: 0.75rem;
+}
+
+/* Sorani product pricing wording matches the frozen Arabic reference:
+ * "Default sale price" without parenthetical/attached wording. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:not(:has([data-catalog-service-details="true"])) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:not(:has([data-catalog-service-details="true"])) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child::after {
+  content: 'نرخی فرۆشتنی بنەڕەتی';
+  font-size: 0.875rem;
+}
+
+/* --------------------------------------------------------------------------
+ * English service-editor parity.
+ *
+ * The approved Arabic service editor is the frozen reference. Every rule below
+ * is English-only and mirrors that approved structure without targeting Arabic.
+ * -------------------------------------------------------------------------- */
+
+/* Match the Arabic service flow:
+ * item type -> name/category/price -> service details -> remaining fields. */
+html[lang="en"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > * {
+  order: 3;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > [data-catalog-item-type-editor="true"] {
+  order: 0;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) {
+  order: 1;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > [data-catalog-service-details="true"] {
+  order: 2;
+}
+
+/* A service has no tracked inventory, so use the service-specific subtitle from
+ * the Arabic reference instead of the generic product/inventory subtitle. */
+html[lang="en"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p {
+  font-size: 0 !important;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p::after {
+  content: "Add the service information once; Fawri uses it in the cashier, replies, and to assist customers.";
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  html[lang="en"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p::after {
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+  }
+}
+
+/* Match Arabic service pricing semantics: service uses Price, not Sale price. */
+html[lang="en"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child::after {
+  content: "Price";
+  font-size: 0.875rem;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"][data-service-price-type="from"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child::after {
+  content: "Price starts from";
+}
+
+/* The service-location control has a wrapper because it can reveal multiple
+ * locations. Match the exact control baseline used by the other three fields. */
+html[lang="en"] .products-workspace-polish [data-catalog-service-details="true"] > .grid > div:nth-child(4) > select {
+  margin-top: 0.5rem !important;
+}
+
+/* A service is requested, not inventory-backed merchandise for sale. */
+html[lang="en"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p:first-child::after {
+  content: "Available for request";
+  font-size: 0.875rem;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p.mt-1 {
+  font-size: 0 !important;
+}
+
+html[lang="en"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p.mt-1::after {
+  content: "Set whether this service is currently available to customers.";
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+/* --------------------------------------------------------------------------
+ * Sorani service-editor parity.
+ *
+ * Arabic and English are locked references. Rules below are Sorani-only and
+ * mirror the approved Arabic RTL flow without changing the locked product view.
+ * -------------------------------------------------------------------------- */
+
+/* Match the Arabic service flow:
+ * item type -> name/category/price -> service details -> remaining fields. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > * {
+  order: 3;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > [data-catalog-item-type-editor="true"] {
+  order: 0;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) {
+  order: 1;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > [data-catalog-service-details="true"] {
+  order: 2;
+}
+
+/* Use the approved service-specific subtitle instead of the generic inventory
+ * subtitle that remains correct for the locked Sorani product editor. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p::after {
+  content: "زانیاریی خزمەتگوزارییەکە تەنها جارێک زیاد بکە؛ فەوری لە کاشێر و وەڵامەکان و بۆ یارمەتیدانی کڕیاران بەکاری دەهێنێت.";
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .catalog-editor-header p::after {
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+  }
+}
+
+/* Service pricing follows the Arabic semantics: Price / Price starts from. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child::after {
+  content: "نرخ";
+  font-size: 0.875rem;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-shell:has([data-catalog-service-details="true"][data-service-price-type="from"]) .grid.gap-4.md\:grid-cols-3:has([data-catalog-primary-input="true"]) > label:nth-child(3) > span:first-child::after {
+  content: "نرخ دەستپێدەکات لە";
+}
+
+/* A service is requested rather than sold from inventory. */
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p:first-child {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p:first-child::after {
+  content: "بۆ داواکردن بەردەستە";
+  font-size: 0.875rem;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p.mt-1 {
+  font-size: 0 !important;
+}
+
+html[lang="ku"] .products-workspace-polish .catalog-editor-body-grid:has(> [data-catalog-service-details="true"]) > div:has(> button[role="switch"]) > div > p.mt-1::after {
+  content: "دیاری بکە ئایا ئەم خزمەتگوزارییە لە ئێستادا بۆ کڕیاران بەردەستە.";
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}

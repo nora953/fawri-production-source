@@ -1,0 +1,521 @@
+import express, {
+  Router,
+  type NextFunction,
+  type Request,
+  type Response,
+} from "express";
+import {
+  getMerchantIdFromSession,
+  requireMerchantSession,
+} from "./auth";
+import { CatalogRuntimeError } from "../services/catalogInventoryRuntime";
+import {
+  CATALOG_IMAGE_MAX_BYTES,
+  CatalogMediaError,
+  readCatalogImage,
+  storeCatalogImage,
+} from "../services/catalogMediaStorage";
+import { CommercePromotionError } from "../services/commercePromotionRuntime";
+import { CurrencyMoneyError } from "../services/currencyMoneyRuntime";
+import { MerchantRegionalError } from "../services/merchantRegionalRuntime";
+import { OperationalPostgresAuthorityError } from "../services/operationalPostgresAuthority";
+import {
+  createCommercePromotionAuthoritative,
+  deleteCommercePromotionAuthoritative,
+  listCommercePromotionsAuthoritative,
+  updateCommercePromotionAuthoritative,
+} from "../services/postgresCommercePromotionAuthority";
+import {
+  MerchantCommerceContextError,
+  getMerchantCommerceContextAuthoritative,
+} from "../services/postgresMerchantRegionalAuthority";
+import {
+  adjustCatalogInventoryAuthoritative,
+  createCatalogProductAuthoritative,
+  deleteCatalogProductAuthoritative,
+  getCatalogProductAuthoritative,
+  importCatalogProductsAuthoritative,
+  listCatalogProductsAuthoritative,
+  setCatalogInventoryAuthoritative,
+  updateCatalogProductAuthoritative,
+} from "../services/postgresCatalogAuthority";
+
+const router = Router();
+const catalogImageBodyParser = express.raw({
+  type: ["image/jpeg", "image/png", "image/webp"],
+  limit: CATALOG_IMAGE_MAX_BYTES,
+});
+
+function parameter(value: unknown): string {
+  if (Array.isArray(value)) return String(value[0] || "").trim();
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function idempotencyKey(req: Request): string {
+  return parameter(req.get("Idempotency-Key") || req.body?.idempotency_key);
+}
+
+function productBody(req: Request): Record<string, unknown> {
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const nested = (body as Record<string, unknown>).product;
+  return nested && typeof nested === "object" && !Array.isArray(nested)
+    ? (nested as Record<string, unknown>)
+    : (body as Record<string, unknown>);
+}
+
+function promotionBody(req: Request): Record<string, unknown> {
+  const body = req.body && typeof req.body === "object" ? req.body : {};
+  const nested = (body as Record<string, unknown>).promotion;
+  return nested && typeof nested === "object" && !Array.isArray(nested)
+    ? (nested as Record<string, unknown>)
+    : (body as Record<string, unknown>);
+}
+
+function rejectMerchantOverride(
+  req: Request,
+  res: Response,
+  sessionMerchantId: string,
+): boolean {
+  const requested = parameter(
+    req.body?.merchant_id ??
+      req.body?.product?.merchant_id ??
+      req.body?.promotion?.merchant_id,
+  );
+  if (requested && requested !== sessionMerchantId) {
+    res.setHeader("Cache-Control", "no-store");
+    res.status(403).json({
+      ok: false,
+      code: "MERCHANT_ACCESS_FORBIDDEN",
+      error: "merchant access is forbidden",
+    });
+    return true;
+  }
+  return false;
+}
+
+function postgresErrorCode(error: unknown): string {
+  if (!error || typeof error !== "object") return "";
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" ? code.trim() : "";
+}
+
+function sendError(res: Response, error: unknown): void {
+  res.setHeader("Cache-Control", "no-store");
+  if (
+    error instanceof CatalogRuntimeError ||
+    error instanceof CatalogMediaError ||
+    error instanceof CommercePromotionError ||
+    error instanceof MerchantRegionalError ||
+    error instanceof CurrencyMoneyError ||
+    error instanceof MerchantCommerceContextError ||
+    error instanceof OperationalPostgresAuthorityError
+  ) {
+    res.status(error.status).json({
+      ok: false,
+      code: error.code,
+      error: error.message,
+      ...(error instanceof CatalogRuntimeError ||
+      error instanceof CommercePromotionError ||
+      error instanceof MerchantRegionalError ||
+      error instanceof CurrencyMoneyError
+        ? error.details || {}
+        : {}),
+    });
+    return;
+  }
+
+  const databaseCode = postgresErrorCode(error);
+  if (databaseCode === "23514") {
+    console.error("Catalog database constraint failed:", error);
+    res.status(409).json({
+      ok: false,
+      code: "CATALOG_DATABASE_CONSTRAINT_FAILED",
+      error: "catalog data violates a database constraint",
+    });
+    return;
+  }
+  if (databaseCode === "42P01" || databaseCode === "42703") {
+    console.error("Catalog database schema is not ready:", error);
+    res.status(503).json({
+      ok: false,
+      code: "CATALOG_SCHEMA_NOT_READY",
+      error: "catalog database schema is not ready",
+    });
+    return;
+  }
+  if (
+    databaseCode.startsWith("08") ||
+    databaseCode === "28P01" ||
+    databaseCode === "3D000"
+  ) {
+    console.error("Catalog database is unavailable:", error);
+    res.status(503).json({
+      ok: false,
+      code: "CATALOG_DATABASE_UNAVAILABLE",
+      error: "catalog database is unavailable",
+    });
+    return;
+  }
+
+  console.error("Catalog operation failed:", error);
+  res.status(500).json({
+    ok: false,
+    code: "CATALOG_OPERATION_FAILED",
+    error: "catalog operation failed",
+  });
+}
+
+function parseCatalogImageBody(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  catalogImageBodyParser(req, res, (error?: unknown) => {
+    if (!error) {
+      next();
+      return;
+    }
+    const status = Number((error as { status?: unknown })?.status || 400);
+    res.setHeader("Cache-Control", "no-store");
+    res.status(status === 413 ? 413 : 400).json({
+      ok: false,
+      code: status === 413 ? "CATALOG_IMAGE_TOO_LARGE" : "CATALOG_IMAGE_INVALID",
+      error: status === 413 ? "catalog image is too large" : "catalog image is invalid",
+      max_bytes: CATALOG_IMAGE_MAX_BYTES,
+    });
+  });
+}
+
+router.post(
+  "/catalog/media/images",
+  requireMerchantSession,
+  parseCatalogImageBody,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (!Buffer.isBuffer(req.body)) {
+        throw new CatalogMediaError(
+          "CATALOG_IMAGE_REQUIRED",
+          "catalog image is required",
+          400,
+        );
+      }
+      const asset = await storeCatalogImage({
+        merchantId,
+        buffer: req.body,
+        suppliedMime: req.get("Content-Type"),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.status(201).json({ ok: true, asset });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/catalog/media/images",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const asset = await readCatalogImage({
+        merchantId,
+        storageKey: parameter(req.query.storage_key),
+      });
+      res.setHeader("Cache-Control", "private, max-age=300");
+      res.setHeader("Content-Type", asset.mime_type);
+      res.setHeader("ETag", `\"${asset.sha256}\"`);
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.status(200).send(asset.buffer);
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/catalog/context",
+  requireMerchantSession,
+  async (_req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const context = await getMerchantCommerceContextAuthoritative(merchantId);
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, context });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/catalog/promotions",
+  requireMerchantSession,
+  async (_req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const promotions = await listCommercePromotionsAuthoritative(merchantId);
+      res.setHeader("Cache-Control", "no-store");
+      res.json({
+        ok: true,
+        merchant_id: merchantId,
+        count: promotions.length,
+        promotions,
+      });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/catalog/promotions",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const result = await createCommercePromotionAuthoritative({
+        merchantId,
+        idempotencyKey: idempotencyKey(req),
+        input: promotionBody(req),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      if (result.replayed) res.setHeader("Idempotent-Replay", "true");
+      res.status(result.replayed ? 200 : 201).json({
+        ok: true,
+        replayed: result.replayed,
+        promotion: result.promotion,
+      });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.patch(
+  "/catalog/promotions/:promotionId",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const promotion = await updateCommercePromotionAuthoritative({
+        merchantId,
+        promotionId: parameter(req.params.promotionId),
+        expectedVersion: req.body?.expected_version,
+        input: promotionBody(req),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, promotion });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.delete(
+  "/catalog/promotions/:promotionId",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const result = await deleteCommercePromotionAuthoritative({
+        merchantId,
+        promotionId: parameter(req.params.promotionId),
+        expectedVersion:
+          req.body?.expected_version ?? parameter(req.query.expected_version),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/catalog/products",
+  requireMerchantSession,
+  async (_req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const products = await listCatalogProductsAuthoritative(merchantId);
+      res.setHeader("Cache-Control", "no-store");
+      res.json({
+        ok: true,
+        merchant_id: merchantId,
+        count: products.length,
+        products,
+      });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/catalog/products/:productId",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const product = await getCatalogProductAuthoritative(
+        merchantId,
+        parameter(req.params.productId),
+      );
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, product });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/catalog/products",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const result = await createCatalogProductAuthoritative({
+        merchantId,
+        idempotencyKey: idempotencyKey(req),
+        input: productBody(req),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      if (result.replayed) res.setHeader("Idempotent-Replay", "true");
+      res.status(result.replayed ? 200 : 201).json({
+        ok: true,
+        replayed: result.replayed,
+        product: result.product,
+      });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/catalog/products/import",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const result = await importCatalogProductsAuthoritative({
+        merchantId,
+        idempotencyKey: idempotencyKey(req),
+        items: req.body?.products,
+      });
+      res.setHeader("Cache-Control", "no-store");
+      if (result.replayed) res.setHeader("Idempotent-Replay", "true");
+      res.status(result.replayed ? 200 : 201).json({
+        ok: true,
+        replayed: result.replayed,
+        created_count: result.created_count,
+        products: result.products,
+      });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.patch(
+  "/catalog/products/:productId",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const product = await updateCatalogProductAuthoritative({
+        merchantId,
+        productId: parameter(req.params.productId),
+        expectedVersion: req.body?.expected_version,
+        input: productBody(req),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, product });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.delete(
+  "/catalog/products/:productId",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const result = await deleteCatalogProductAuthoritative({
+        merchantId,
+        productId: parameter(req.params.productId),
+        expectedVersion:
+          req.body?.expected_version ?? parameter(req.query.expected_version),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/inventory/products/:productId/set",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const product = await setCatalogInventoryAuthoritative({
+        merchantId,
+        productId: parameter(req.params.productId),
+        variantId: req.body?.variant_id,
+        expectedVersion: req.body?.expected_version,
+        quantity: req.body?.quantity,
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, product });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/inventory/products/:productId/adjust",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const result = await adjustCatalogInventoryAuthoritative({
+        merchantId,
+        productId: parameter(req.params.productId),
+        variantId: req.body?.variant_id,
+        expectedVersion: req.body?.expected_version,
+        delta: req.body?.delta,
+        reason: req.body?.reason,
+        idempotencyKey: idempotencyKey(req),
+      });
+      res.setHeader("Cache-Control", "no-store");
+      if (result.replayed) res.setHeader("Idempotent-Replay", "true");
+      res.json({
+        ok: true,
+        replayed: result.replayed,
+        product: result.product,
+      });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+export default router;

@@ -1,0 +1,59 @@
+name: Legacy bot debug retirement
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/routes/index.ts"
+      - "artifacts/api-server/src/routes/indexModulePart1.ts"
+      - "artifacts/api-server/src/routes/indexModulePart3.ts"
+      - "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts"
+      - "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts"
+      - "artifacts/api-server/tests/legacy-bot-debug-retirement-contract.test.mjs"
+      - ".github/workflows/legacy-bot-debug-retirement.yml"
+  push:
+    branches:
+      - "foundation/**"
+    paths:
+      - "artifacts/api-server/src/routes/index.ts"
+      - "artifacts/api-server/src/routes/indexModulePart1.ts"
+      - "artifacts/api-server/src/routes/indexModulePart3.ts"
+      - "artifacts/api-server/src/routes/legacyBotDebugRouteGuard.ts"
+      - "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts"
+      - "artifacts/api-server/tests/legacy-bot-debug-retirement-contract.test.mjs"
+      - ".github/workflows/legacy-bot-debug-retirement.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-bot-debug-retirement-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-debug-retirement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Check regression syntax
+        run: node --check artifacts/api-server/tests/legacy-bot-debug-retirement-contract.test.mjs
+
+      - name: Prove legacy bot debug is retired
+        run: node --test artifacts/api-server/tests/legacy-bot-debug-retirement-contract.test.mjs

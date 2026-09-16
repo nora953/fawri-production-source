@@ -1,0 +1,231 @@
+/*
+ * Edit-mode-only catalog polish.
+ *
+ * Creation keeps the full Product / Service chooser. Existing items already
+ * have a stored type, so edit mode uses a compact locked-type summary and
+ * gives more vertical space back to the merchant's editable data.
+ */
+
+[data-catalog-item-type-mode="edit-locked"] {
+  padding-block: 0.75rem;
+  row-gap: 0.75rem;
+}
+
+[data-catalog-item-type-mode="edit-locked"] > div:first-child {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 1rem;
+  row-gap: 0.25rem;
+}
+
+[data-catalog-item-type-mode="edit-locked"] > div:first-child > p:last-child {
+  margin-top: 0;
+}
+
+[data-catalog-item-type-mode="edit-locked"] [data-catalog-item-type-locked="true"] {
+  align-self: start;
+  border-radius: 0.875rem;
+  padding: 0.75rem 1rem;
+}
+
+@media (min-width: 1024px) {
+  [data-catalog-item-type-mode="edit-locked"] > div:nth-child(2) {
+    grid-template-columns: minmax(240px, 0.72fr) minmax(0, 1.28fr);
+    align-items: start;
+  }
+}
+
+/*
+ * Variant grouping toolbar.
+ *
+ * Desktop uses three visual zones inside one balanced card:
+ *   - type summary on the reading-start side
+ *   - grouping selector in the true horizontal center
+ *   - bulk actions on the opposite side
+ *
+ * Grouping is only a view preference, so it must not look like another bulk
+ * action or hang below the card.
+ */
+.products-workspace-polish
+  div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]:has(
+    > div.flex.flex-wrap.items-center.gap-2 > label > span + select
+  ) {
+  position: relative;
+  min-height: 6.25rem;
+  align-items: center !important;
+  padding-block: 1rem;
+  padding-inline: 1.1rem;
+}
+
+.products-workspace-polish
+  div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
+  > div.flex.flex-wrap.items-center.gap-2
+  > label:has(> span + select) {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.35rem;
+  width: 11.5rem;
+  min-width: 11.5rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.products-workspace-polish
+  div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
+  > div.flex.flex-wrap.items-center.gap-2
+  > label:has(> span + select)
+  > span {
+  display: block;
+  width: 100%;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.products-workspace-polish
+  div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
+  > div.flex.flex-wrap.items-center.gap-2
+  > label:has(> span + select)
+  > select {
+  display: block !important;
+  width: 11.5rem !important;
+  min-width: 11.5rem !important;
+  max-width: 11.5rem !important;
+  height: 2.35rem !important;
+  min-height: 2.35rem !important;
+  margin: 0 !important;
+  padding-block: 0 !important;
+  padding-inline: 0.8rem 2rem !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.75rem !important;
+  background-color: hsl(var(--background)) !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 0.05) !important;
+  color: hsl(var(--foreground));
+  font-size: 0.8125rem !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  text-align: center;
+  outline: none !important;
+}
+
+.products-workspace-polish
+  div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
+  > div.flex.flex-wrap.items-center.gap-2
+  > label:has(> span + select)
+  > select:focus {
+  border-color: rgb(249 115 22 / 0.75) !important;
+  box-shadow: 0 0 0 3px rgb(249 115 22 / 0.1) !important;
+}
+
+@media (min-width: 1024px) {
+  .products-workspace-polish
+    div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]:has(
+      > div.flex.flex-wrap.items-center.gap-2 > label > span + select
+    )
+    > div:first-child {
+    max-width: 31%;
+  }
+
+  .products-workspace-polish
+    div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]:has(
+      > div.flex.flex-wrap.items-center.gap-2 > label > span + select
+    )
+    > div.flex.flex-wrap.items-center.gap-2 {
+    max-width: 34%;
+    align-self: center;
+  }
+
+  .products-workspace-polish
+    div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
+    > div.flex.flex-wrap.items-center.gap-2
+    > label:has(> span + select) {
+    position: absolute;
+    left: 50%;
+    top: calc(50% - 0.4rem);
+    transform: translate(-50%, -50%);
+    z-index: 1;
+  }
+}
+
+@media (max-width: 1023px) {
+  .products-workspace-polish
+    div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]:has(
+      > div.flex.flex-wrap.items-center.gap-2 > label > span + select
+    ) {
+    min-height: 0;
+  }
+
+  .products-workspace-polish
+    div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
+    > div.flex.flex-wrap.items-center.gap-2
+    > label:has(> span + select) {
+    flex-basis: 100%;
+    margin-block: 0.15rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .products-workspace-polish
+    div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
+    > div.flex.flex-wrap.items-center.gap-2
+    > label:has(> span + select) {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .products-workspace-polish
+    div[class*="lg:flex-row"][class*="lg:items-center"][class*="lg:justify-between"]
+    > div.flex.flex-wrap.items-center.gap-2
+    > label:has(> span + select)
+    > select {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+}
+
+/*
+ * Group-level variant controls.
+ *
+ * The image picker is intentionally taller than a numeric field. On wide
+ * screens we reserve one shared control row so the image picker and the three
+ * value controls share the same vertical centre while their labels and helper
+ * text stay on common baselines. This keeps the four-column group card calm
+ * without shrinking the image target or changing any catalog behaviour.
+ */
+@media (min-width: 1280px) {
+  .products-workspace-polish
+    div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"] {
+    align-items: start;
+  }
+
+  .products-workspace-polish
+    div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"]
+    > * {
+    display: grid;
+    grid-template-rows: auto 5rem auto;
+    row-gap: 0.25rem;
+    align-items: start;
+  }
+
+  .products-workspace-polish
+    div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"]
+    > *
+    > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 0 !important;
+  }
+
+  .products-workspace-polish
+    div.grid.gap-3[class~="xl:grid-cols-[1fr_1fr_1fr_minmax(15rem,1.2fr)]"]
+    > *
+    > :nth-child(2) {
+    align-self: center;
+  }
+}

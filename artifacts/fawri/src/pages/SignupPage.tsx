@@ -9,9 +9,20 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { normalizePhoneNumber, validatePhone, validatePassword } from '@/lib/validators';
+import {
+  clearPendingSignupChallenge,
+  createOtpChallengeContext,
+  savePendingSignupChallenge,
+} from '@/lib/authOtpChallenge';
 import { toast } from 'sonner';
 import { PolicyModal, type PolicyTab } from '@/components/PolicyModal';
 
+type RequestedPlan = 'silver' | 'gold' | 'diamond';
+
+function getRequestedPlanFromSearch(search: string): RequestedPlan | null {
+  const plan = new URLSearchParams(search).get('plan');
+  return plan === 'silver' || plan === 'gold' || plan === 'diamond' ? plan : null;
+}
 
 function cacheMerchantLocally(merchant: any) {
   if (!merchant?.id) return;
@@ -29,6 +40,14 @@ export default function SignupPage() {
   const fieldInputClass = "h-12 rounded-xl";
   const fieldInvalidInputClass = "border-red-500 focus-visible:ring-red-500";
   const [, setLocation] = useLocation();
+  const requestedPlan = getRequestedPlanFromSearch(
+    typeof window === 'undefined' ? '' : window.location.search,
+  );
+  const requestedPlanLabel = requestedPlan
+    ? { silver: t.plan_silver, gold: t.plan_gold, diamond: t.plan_diamond }[requestedPlan]
+    : null;
+  const requestedPlanPrefix =
+    lang === 'ar' ? 'الخطة المطلوبة' : lang === 'ku' ? 'پلانی داواکراو' : 'Requested plan';
   const [loading, setLoading] = useState(false);
   const [showPolicyModal, setShowPolicyModal] = useState(false);
   const [policyTab, setPolicyTab] = useState<PolicyTab>('privacy');
@@ -171,6 +190,7 @@ export default function SignupPage() {
     }
 
     setLoading(true);
+    clearPendingSignupChallenge();
 
     try {
       const finalActivity = isOther ? formData.custom_activity.trim() : formData.activity_type;
@@ -185,6 +205,7 @@ export default function SignupPage() {
           password: formData.password.trim(),
           activity_type: finalActivity,
           language: lang,
+          ...(requestedPlan ? { requested_plan: requestedPlan } : {}),
         }),
       });
 
@@ -195,20 +216,21 @@ export default function SignupPage() {
         return;
       }
 
-      cacheMerchantLocally(result.merchant);
-      localStorage.setItem('fawri_signup_phone', result.merchant.phone);
-      localStorage.setItem('fawri_signup_merchant_id', result.merchant.id);
+      const challenge = createOtpChallengeContext({
+        challengeId: result.challenge_id,
+        phone: result.merchant.phone,
+        purpose: 'signup',
+        expiresAt: result.expires_at,
+        retryAfterSeconds: result.retry_after_seconds,
+      });
 
-      const retryAfterSeconds = Number(result.retry_after_seconds || 0);
-      if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
-        localStorage.setItem(
-          'fawri_signup_otp_resend_until',
-          String(Date.now() + retryAfterSeconds * 1000)
-        );
-      } else {
-        localStorage.removeItem('fawri_signup_otp_resend_until');
+      if (!challenge) {
+        toast.error(t.signup_create_error);
+        return;
       }
 
+      cacheMerchantLocally(result.merchant);
+      savePendingSignupChallenge(challenge);
       setLocation('/verify-otp');
     } catch (error) {
       console.error('Signup request failed:', error);
@@ -232,6 +254,14 @@ export default function SignupPage() {
             {brandName}
           </Link>
           <h1 className="text-2xl font-bold">{t.signup_title}</h1>
+          {requestedPlanLabel ? (
+            <p
+              className="mx-auto mt-3 w-fit rounded-xl border border-primary/20 bg-primary/5 px-4 py-2 text-sm font-semibold text-foreground"
+              data-testid="requested-plan"
+            >
+              {requestedPlanPrefix}: <span className="font-extrabold">{requestedPlanLabel}</span>
+            </p>
+          ) : null}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6" noValidate>

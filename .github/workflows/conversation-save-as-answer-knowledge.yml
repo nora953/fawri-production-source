@@ -1,0 +1,75 @@
+name: Conversation save as answer knowledge
+
+on:
+  push:
+    branches:
+      - parallel/conversation-save-as-answer-knowledge
+    paths:
+      - .github/workflows/conversation-save-as-answer-knowledge.yml
+      - artifacts/fawri/src/lib/conversationSavedAnswer.ts
+      - artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx
+      - artifacts/fawri/tests/conversation-save-as-answer-knowledge.test.ts
+  pull_request:
+    paths:
+      - artifacts/fawri/src/lib/conversationSavedAnswer.ts
+      - artifacts/fawri/src/pages/dashboard/ConversationsPage.tsx
+      - artifacts/fawri/tests/conversation-save-as-answer-knowledge.test.ts
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify coordinator baseline
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin parallel/integration-coordinator
+          test "$(git rev-parse origin/parallel/integration-coordinator)" = "64a65667bab8609ac7f39f4975490f3a2f342ea4"
+          test "$(git merge-base HEAD 64a65667bab8609ac7f39f4975490f3a2f342ea4)" = "64a65667bab8609ac7f39f4975490f3a2f342ea4"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Conversation save-as-answer contract
+        run: pnpm exec tsx --test ./artifacts/fawri/tests/conversation-save-as-answer-knowledge.test.ts
+
+      - name: Knowledge saved-answer regressions
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/knowledge-ai-runtime.test.ts
+
+      - name: Knowledge PostgreSQL provenance regressions
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/knowledge-postgres-runtime.test.ts
+
+      - name: Manual conversation regression
+        run: pnpm --filter @workspace/api-server test:manual-conversations
+
+      - name: Operational customer-message notification regression
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/operational-notifications.test.ts
+
+      - name: Frontend typecheck and build
+        run: |
+          pnpm --filter @workspace/fawri typecheck
+          pnpm --filter @workspace/fawri build
+
+      - name: API typecheck and build
+        run: |
+          pnpm --filter @workspace/api-server typecheck
+          pnpm --filter @workspace/api-server build

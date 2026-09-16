@@ -1,0 +1,104 @@
+name: Fawri catalog editor quality hardening v4
+
+on:
+  push:
+    branches:
+      - foundation/integration-candidate
+    paths:
+      - .github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v4.yml
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: foundation/integration-candidate
+          fetch-depth: 0
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.26.1 --activate
+          pnpm install --frozen-lockfile
+
+      - name: Apply the verified v3 patch body
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          workflow = Path('.github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v3.yml').read_text(encoding='utf-8')
+          start_marker = "          python - <<'PY'\n"
+          end_marker = "\n          PY\n\n      - name: Source contract"
+          if start_marker not in workflow or end_marker not in workflow:
+              raise SystemExit('Unable to locate verified v3 Python patch body')
+          body = workflow.split(start_marker, 1)[1].split(end_marker, 1)[0]
+          lines = []
+          for line in body.splitlines():
+              if line.startswith('          '):
+                  lines.append(line[10:])
+              else:
+                  lines.append(line)
+          code = '\n'.join(lines) + '\n'
+          exec(compile(code, '<catalog-quality-hardening>', 'exec'), {'__name__': '__main__'})
+
+          permanent = Path('.github/workflows/catalog-editor-quality.yml')
+          text = permanent.read_text(encoding='utf-8')
+          old = "      - name: Rendered localization parity\n        run: pnpm exec tsx --test artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx"
+          new = "      - name: Rendered localization parity\n        working-directory: artifacts/fawri\n        run: pnpm exec tsx --test tests/catalog-editor-language-parity-render.test.tsx"
+          if text.count(old) != 1:
+              raise SystemExit('Permanent workflow render-test command not found exactly once')
+          permanent.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+
+      - name: Source contract
+        run: node --test artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs
+
+      - name: Rendered language parity
+        working-directory: artifacts/fawri
+        run: pnpm exec tsx --test tests/catalog-editor-language-parity-render.test.tsx
+
+      - name: Typecheck
+        working-directory: artifacts/fawri
+        run: pnpm run typecheck
+
+      - name: Build
+        working-directory: artifacts/fawri
+        run: pnpm run build
+
+      - name: Validate exact scope and persistent guards
+        run: |
+          git diff --check
+          grep -q "working-directory: artifacts/fawri" .github/workflows/catalog-editor-quality.yml
+          grep -q "catalog-editor-language-parity-render.test.tsx" .github/workflows/catalog-editor-quality.yml
+          git diff --exit-code -- . \
+            ':(exclude)artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts' \
+            ':(exclude)artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogImageUploadEditor.tsx' \
+            ':(exclude)artifacts/fawri/src/components/catalog/CatalogEditorShell.tsx' \
+            ':(exclude)artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs' \
+            ':(exclude)artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx' \
+            ':(exclude).github/workflows/catalog-editor-quality.yml' \
+            ':(exclude).github/workflows/fawri-one-shot-catalog-editor-quality-hardening.yml' \
+            ':(exclude).github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v2.yml' \
+            ':(exclude).github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v3.yml' \
+            ':(exclude).github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v4.yml'
+
+      - name: Commit verified hardening
+        run: |
+          rm -f .github/workflows/fawri-one-shot-catalog-editor-quality-hardening.yml
+          rm -f .github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v2.yml
+          rm -f .github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v3.yml
+          rm -f .github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v4.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add artifacts/fawri/src/lib/translations/features/catalog/catalogEditorCopy.ts artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx artifacts/fawri/src/components/catalog/CatalogProductDetailsEditor.tsx artifacts/fawri/src/components/catalog/CatalogItemTypeEditor.tsx artifacts/fawri/src/components/catalog/CatalogImageUploadEditor.tsx artifacts/fawri/src/components/catalog/CatalogEditorShell.tsx artifacts/fawri/tests/catalog-editor-localization-contract.test.mjs artifacts/fawri/tests/catalog-editor-language-parity-render.test.tsx .github/workflows/catalog-editor-quality.yml .github/workflows/fawri-one-shot-catalog-editor-quality-hardening.yml .github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v2.yml .github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v3.yml .github/workflows/fawri-one-shot-catalog-editor-quality-hardening-v4.yml
+          git commit -m 'Harden catalog editor language and layout parity'
+          git push origin HEAD:foundation/integration-candidate
