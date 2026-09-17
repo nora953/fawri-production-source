@@ -98,7 +98,7 @@ test('merchant discount policy UI exposes one merchant-wide type and preserves b
   assert.match(page, /let percentageBps = row\.discount_policy\.max_percentage_bps/);
   assert.match(page, /let amountMinor = row\.discount_policy\.max_amount_minor/);
   assert.match(page, /صلاحيات خصم الكاشير/);
-  assert.match(page, /Cashier employee discount authority/);
+  assert.match(page, /Cashier discount permissions/);
   assert.match(page, /دەسەڵاتی داشکاندنی کارمەندانی کاشێر/);
 });
 
@@ -130,7 +130,18 @@ test('merchant discount policy UI validates the active limit and explains permis
   assert.doesNotMatch(page, /هذه السياسة لا تمنح الصلاحية وحدها/);
   assert.doesNotMatch(page, /Policy alone does not grant authority/);
   assert.match(page, /الحفظ يحدّث الصلاحيات تلقائيًا/);
-  assert.match(page, /updates employee permissions automatically/);
+  assert.match(page, /Saving updates permissions automatically/);
   assert.match(page, /تبقى حدود النوع الآخر محفوظة/);
-  assert.match(page, /does not erase the saved limit for the other type/);
+  assert.match(page, /other type’s limits stay saved/);
+});
+
+test('English cashier management copy matches the Arabic reference meaning', async () => {
+  const page = await web('src/pages/dashboard/CashierManagementPage.tsx');
+  assert.match(page, /Manage cashier devices, staff, permissions and secure pairing\./);
+  assert.match(page, /Discount permission is not granted automatically\./);
+  assert.match(page, /Any discount over the limit requires approval from an authorized manager\./);
+  assert.match(page, /branchKey: 'Branch code'/);
+  assert.match(page, /Only one station per branch can have this authority\./);
+  assert.match(page, /While offline, other stations cannot sell tracked inventory, preventing stock conflicts\./);
+  assert.doesNotMatch(page, /Discount authority is sensitive and is never granted automatically by role/);
 });
