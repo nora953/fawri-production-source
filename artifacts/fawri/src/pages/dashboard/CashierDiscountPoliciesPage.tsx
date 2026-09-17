@@ -392,6 +392,7 @@ export default function CashierDiscountPoliciesPage() {
                         enabled: event.target.checked,
                         canApproveOverride: event.target.checked ? draft.canApproveOverride : false,
                       })}
+                      className="h-4 w-4 accent-orange-600"
                     />
                     {copy.enabled}
                   </label>
@@ -437,7 +438,7 @@ export default function CashierDiscountPoliciesPage() {
                           type="checkbox"
                           checked={draft.canApproveOverride}
                           onChange={event => updateDraft(member.id, { canApproveOverride: event.target.checked })}
-                          className="mt-1"
+                          className="mt-1 h-4 w-4 accent-orange-600"
                         />
                         <span>{copy.override}</span>
                       </label>
