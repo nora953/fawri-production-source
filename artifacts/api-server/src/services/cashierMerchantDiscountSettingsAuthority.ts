@@ -42,6 +42,19 @@ function normalizeExpectedVersion(value: unknown): number {
   return version;
 }
 
+export async function lockMerchantCashierDiscountKindMutation(
+  target: OperationalQueryTarget,
+  merchantId: string,
+): Promise<void> {
+  // Serialize discount-kind changes with manager override issuance. This closes
+  // the narrow race where an approval could otherwise be created immediately
+  // after a kind change invalidated the previous pending approvals.
+  await target.query(
+    `SELECT pg_advisory_xact_lock(hashtext($1))`,
+    [`cashier-discount-kind:${merchantId}`],
+  );
+}
+
 async function invalidatePendingDiscountOverrideApprovals(
   target: OperationalQueryTarget,
   merchantId: string,
@@ -107,6 +120,7 @@ export async function updateMerchantCashierDiscountSetting(
 ): Promise<MerchantCashierDiscountSetting> {
   const expectedVersion = normalizeExpectedVersion(input.expectedVersion);
   const discountKind = normalizeKind(input.discountKind);
+  await lockMerchantCashierDiscountKindMutation(target, input.merchantId);
   const current = await loadMerchantCashierDiscountSetting(target, input.merchantId, true);
   if (current.version !== expectedVersion) {
     throw new CashierDiscountPolicyAuthorityError(
