@@ -767,10 +767,10 @@ export default function CashierManagementPage() {
           </div>
           <PermissionGrid value={editPermissions} toggle={permission => changePermission(setEditPermissions, permission)} staffRole={editRole} />
           <div className="mt-4 flex gap-2">
-            <button type="button" onClick={() => void saveStaffEdit(editingMember)} disabled={busy || !editName.trim() || Boolean(editPin && !/^\d{4,8}$/.test(editPin))} className={`flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50 ${lang === 'ar' ? 'order-1' : 'order-2'}`}>
+            <button type="button" onClick={() => void saveStaffEdit(editingMember)} disabled={busy || !editName.trim() || Boolean(editPin && !/^\d{4,8}$/.test(editPin))} className="order-1 flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50">
               {busy ? l.saving : l.saveChanges}
             </button>
-            <button type="button" onClick={cancelEdit} disabled={busy} className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-bold ${lang === 'ar' ? 'order-2' : 'order-1'}`}>{l.cancel}</button>
+            <button type="button" onClick={cancelEdit} disabled={busy} className="order-2 flex-1 rounded-lg border px-4 py-2.5 text-sm font-bold">{l.cancel}</button>
           </div>
         </Modal>
       ) : null}
@@ -835,10 +835,10 @@ export default function CashierManagementPage() {
             <span><strong className="block text-sm">{l.offlineAuthority}</strong><span className="mt-1 block text-xs text-muted-foreground">{l.offlineHint}</span></span>
           </label>
           <div className="mt-4 flex gap-2">
-            <button type="button" onClick={() => void saveStationEdit(editingStation)} disabled={busy || !editStationName.trim() || !editBranchKey.trim()} className={`flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50 ${lang === 'ar' ? 'order-1' : 'order-2'}`}>
+            <button type="button" onClick={() => void saveStationEdit(editingStation)} disabled={busy || !editStationName.trim() || !editBranchKey.trim()} className="order-1 flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50">
               {busy ? l.saving : l.saveChanges}
             </button>
-            <button type="button" onClick={cancelStationEdit} disabled={busy} className={`flex-1 rounded-lg border px-4 py-2.5 text-sm font-bold ${lang === 'ar' ? 'order-2' : 'order-1'}`}>{l.cancel}</button>
+            <button type="button" onClick={cancelStationEdit} disabled={busy} className="order-2 flex-1 rounded-lg border px-4 py-2.5 text-sm font-bold">{l.cancel}</button>
           </div>
         </Modal>
       ) : null}
