@@ -48,8 +48,9 @@ const TEXT: Record<Lang, Record<string, string>> = {
     maxPercent: 'الحد الأقصى لنسبة الخصم (%)',
     maxAmount: 'الحد الأقصى للخصم بالمبلغ',
     independentLimitHint: 'يُطبَّق الحد بحسب نوع الخصم الذي يختاره الموظف (نسبة أو مبلغ). تجاوز الحد يتطلب موافقة مدير مخوّل.',
+    managerLimitHint: 'هذا هو الحد الأقصى لصلاحية الخصم لهذا المدير. يمكنه اعتماد خصومات الموظفين ضمن حدّه للنوع نفسه فقط، ولا يمكنه تجاوزه. رفع الحد متاح من لوحة التاجر فقط.',
     currentLimit: 'المبلغ: حتى {amount} · النسبة: حتى {percent}%.',
-    override: 'السماح لهذا المدير باعتماد خصم يتجاوز حد موظف آخر، بشرط ألا يتجاوز حد المدير نفسه.',
+    override: 'السماح لهذا المدير باعتماد خصم يتجاوز حد موظف آخر، ضمن حدّه للنوع نفسه.',
     save: 'حفظ', saving: 'جارٍ الحفظ...', loading: 'جارٍ تحميل الموظفين...',
     failed: 'تعذر تحميل أو حفظ سياسة الخصم.', saved: 'تم حفظ سياسة الخصم.',
     percentRequired: 'أدخل الحد الأقصى للنسبة، أو 0 لمنع الخصم بالنسبة.',
@@ -177,6 +178,7 @@ export default function CashierDiscountPoliciesPage() {
       const draft = drafts[member.id]; if (!draft) return null;
       const amountMinor = regional ? merchantMoneyMajorInputToMinor(draft.maxAmount, fractionDigits) : null;
       const policySummary = draft.enabled && amountMinor !== null && amountMinor > 0 && draft.maxPercent.trim() !== '' ? copy.currentLimit.replace('{percent}', draft.maxPercent.trim()).replace('{amount}', formatMerchantMoneyMinor(amountMinor, regional?.currency_code ?? '', fractionDigits, lang)) : null;
+      const limitHint = member.role === 'manager' && lang === 'ar' ? copy.managerLimitHint : copy.independentLimitHint;
       const saveButton = <button type="button" onClick={() => void save(member)} disabled={savingId !== null || !regional} className="rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-black text-white hover:bg-orange-700 disabled:opacity-50">{savingId === member.id ? copy.saving : copy.save}</button>;
       return <section key={member.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-black text-slate-950">{member.display_name}</h2><p className="mt-1 text-xs text-slate-500">{member.role === 'manager' ? copy.manager : copy.cashier} · {member.status === 'active' ? copy.active : copy.disabledStatus}</p></div><label className="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold"><input type="checkbox" checked={draft.enabled} onChange={event => updateDraft(member.id, { enabled: event.target.checked, canApproveOverride: event.target.checked ? draft.canApproveOverride : false })} />{copy.enabled}</label></div>
@@ -184,7 +186,7 @@ export default function CashierDiscountPoliciesPage() {
           <label className="text-sm font-bold text-slate-700">{copy.maxPercent}<input type="number" min="0" max="100" step="0.01" value={draft.maxPercent} onChange={event => updateDraft(member.id, { maxPercent: event.target.value })} className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3 outline-none focus:border-orange-400" dir="ltr" /></label>
           <label className="block text-sm font-bold text-slate-700">{copy.maxAmount} ({currencyLabel})<input type="number" min={amountStep} step={amountStep} value={draft.maxAmount} onChange={event => updateDraft(member.id, { maxAmount: event.target.value })} className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 px-3 outline-none focus:border-orange-400" dir="ltr" /></label>
           <div className="md:col-span-2 flex justify-start">{saveButton}</div>
-          <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-6 text-slate-700"><div>{copy.independentLimitHint}</div>{policySummary ? <div className="mt-1 font-bold text-slate-900">{policySummary}</div> : null}</div>
+          <div className="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-6 text-slate-700"><div>{limitHint}</div>{policySummary ? <div className="mt-1 font-bold text-slate-900">{policySummary}</div> : null}</div>
           {member.role === 'manager' ? <label className="md:col-span-2 flex cursor-pointer items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-950"><input type="checkbox" checked={draft.canApproveOverride} onChange={event => updateDraft(member.id, { canApproveOverride: event.target.checked })} className="mt-1" /><span>{copy.override}</span></label> : null}
         </div> : <div className="mt-3 space-y-3"><p className="text-sm text-slate-500">{copy.disabledPolicy}</p><div className="flex justify-start">{saveButton}</div></div>}
       </section>;
