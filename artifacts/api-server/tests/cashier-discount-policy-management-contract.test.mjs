@@ -97,7 +97,7 @@ test('merchant discount policy UI exposes one merchant-wide type and preserves b
   assert.match(page, /discountSetting\.discount_kind === 'amount'/);
   assert.match(page, /let percentageBps = row\.discount_policy\.max_percentage_bps/);
   assert.match(page, /let amountMinor = row\.discount_policy\.max_amount_minor/);
-  assert.match(page, /صلاحيات خصم موظفي الكاشير/);
+  assert.match(page, /صلاحيات خصم الكاشير/);
   assert.match(page, /Cashier employee discount authority/);
   assert.match(page, /دەسەڵاتی داشکاندنی کارمەندانی کاشێر/);
 });
@@ -129,8 +129,8 @@ test('merchant discount policy UI validates the active limit and explains permis
   assert.match(page, /copy\.amountRequired/);
   assert.doesNotMatch(page, /هذه السياسة لا تمنح الصلاحية وحدها/);
   assert.doesNotMatch(page, /Policy alone does not grant authority/);
-  assert.match(page, /يحدّث صلاحيات الموظف تلقائيًا/);
+  assert.match(page, /الحفظ يحدّث الصلاحيات تلقائيًا/);
   assert.match(page, /updates employee permissions automatically/);
-  assert.match(page, /لا يمسح الحدود المحفوظة للنوع الآخر/);
+  assert.match(page, /تبقى حدود النوع الآخر محفوظة/);
   assert.match(page, /does not erase the saved limit for the other type/);
 });
