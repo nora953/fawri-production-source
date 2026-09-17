@@ -42,6 +42,23 @@ function normalizeExpectedVersion(value: unknown): number {
   return version;
 }
 
+async function invalidatePendingDiscountOverrideApprovals(
+  target: OperationalQueryTarget,
+  merchantId: string,
+): Promise<void> {
+  try {
+    await target.query(
+      `DELETE FROM merchant_cashier_discount_override_approvals
+        WHERE merchant_id = $1 AND consumed_at IS NULL`,
+      [merchantId],
+    );
+  } catch (error) {
+    // Some deployments can have the merchant setting schema before the optional
+    // override authority schema. There is nothing to invalidate in that state.
+    if (!schemaMissing(error)) throw error;
+  }
+}
+
 export async function loadMerchantCashierDiscountSetting(
   target: OperationalQueryTarget,
   merchantId: string,
@@ -131,6 +148,11 @@ export async function updateMerchantCashierDiscountSetting(
       409,
     );
   }
+
+  if (current.discount_kind !== discountKind) {
+    await invalidatePendingDiscountOverrideApprovals(target, input.merchantId);
+  }
+
   return {
     discount_kind: normalizeKind(row.discount_kind),
     version: Number(row.version),
