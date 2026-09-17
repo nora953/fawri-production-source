@@ -46,27 +46,82 @@ test('operator can read only policy bound to authenticated merchant and staff', 
   assert.match(body, /context\.merchant_id/);
   assert.match(body, /context\.staff_id/);
   assert.match(body, /context\.permissions\.includes\('sale\.discount'\)/);
+  assert.match(body, /discount_kind: discountSetting\.discount_kind/);
 });
 
-test('merchant discount policy UI exposes percent amount and override controls', async () => {
+test('merchant-wide discount kind is versioned and invalidates pending approvals when it changes', async () => {
+  const route = await api('src/routes/cashier-discount-policy-operations.ts');
+  const authority = await api('src/services/cashierMerchantDiscountSettingsAuthority.ts');
+
+  assert.match(route, /'\/cashier\/management\/discount-kind'/);
+  assert.match(route, /expectedVersion: req\.body\?\.expected_version/);
+  assert.match(route, /discountKind: req\.body\?\.discount_kind/);
+  assert.match(route, /discount_setting: discountSetting/);
+
+  assert.match(authority, /DEFAULT_MERCHANT_CASHIER_DISCOUNT_KIND[^\n]*'amount'/);
+  assert.match(authority, /CASHIER_DISCOUNT_KIND_VERSION_CONFLICT/);
+  assert.match(authority, /pg_advisory_xact_lock/);
+  assert.match(authority, /DELETE FROM merchant_cashier_discount_override_approvals/);
+  assert.match(authority, /current\.discount_kind !== discountKind/);
+});
+
+test('normal cashier sale rejects a discount kind that differs from the merchant setting', async () => {
+  const authority = await api('src/services/cashierOperatorDiscountAuthority.ts');
+  assert.match(authority, /requestedKind !== discountSetting\.discount_kind/);
+  assert.match(authority, /CASHIER_DISCOUNT_KIND_MISMATCH/);
+  assert.match(authority, /configured_discount_kind: discountSetting\.discount_kind/);
+  assert.match(authority, /kind = discountSetting\.discount_kind/);
+});
+
+test('manager override issuance and consumption both enforce the current merchant discount kind', async () => {
+  const authority = await api('src/services/cashierDiscountOverrideAuthority.ts');
+  const matches = authority.match(/assertMerchantCashierDiscountKind/g) || [];
+
+  assert.ok(matches.length >= 2);
+  assert.match(authority, /lockMerchantCashierDiscountKindMutation/);
+  assert.match(authority, /loadMerchantCashierDiscountSetting\([\s\S]*?true/);
+  assert.match(authority, /managerLimitMinor/);
+  assert.match(authority, /CASHIER_DISCOUNT_OVERRIDE_MANAGER_LIMIT_EXCEEDED/);
+});
+
+test('merchant discount policy UI exposes one merchant-wide type and preserves both stored staff limits', async () => {
   const page = await web('src/pages/dashboard/CashierDiscountPoliciesPage.tsx');
   assert.match(page, /max_percentage_bps/);
   assert.match(page, /max_amount_minor/);
   assert.match(page, /can_approve_override/);
   assert.match(page, /expected_version/);
   assert.match(page, /\/api\/cashier\/management\/discount-policies/);
-  assert.match(page, /\/discount-policy/);
+  assert.match(page, /\/api\/cashier\/management\/discount-kind/);
+  assert.match(page, /discountKindDraft/);
+  assert.match(page, /discountSetting\.discount_kind === 'percentage'/);
+  assert.match(page, /discountSetting\.discount_kind === 'amount'/);
+  assert.match(page, /let percentageBps = row\.discount_policy\.max_percentage_bps/);
+  assert.match(page, /let amountMinor = row\.discount_policy\.max_amount_minor/);
   assert.match(page, /صلاحيات خصم موظفي الكاشير/);
   assert.match(page, /Cashier employee discount authority/);
   assert.match(page, /دەسەڵاتی داشکاندنی کارمەندانی کاشێر/);
 });
 
-test('merchant discount policy UI rejects a blank percentage and explains permission sync truthfully', async () => {
+test('cashier checkout cannot switch the merchant-selected discount kind', async () => {
+  const editor = await web('src/components/cashier/CashierManualDiscountEditor.tsx');
+  const checkout = await web('src/lib/useCashierManualDiscountCheckout.ts');
+
+  assert.doesNotMatch(editor, /onKindChange\('amount'\)/);
+  assert.doesNotMatch(editor, /onKindChange\('percentage'\)/);
+  assert.match(editor, /kind === 'amount' \? copy\.discountAmount : copy\.discountPercent/);
+  assert.match(checkout, /setKindState\(next\.discount_kind\)/);
+  assert.match(checkout, /setKind: \(\) => undefined/);
+});
+
+test('merchant discount policy UI validates the active limit and explains permission sync truthfully', async () => {
   const page = await web('src/pages/dashboard/CashierDiscountPoliciesPage.tsx');
   assert.match(page, /draft\.maxPercent\.trim\(\)/);
   assert.match(page, /copy\.percentRequired/);
+  assert.match(page, /copy\.amountRequired/);
   assert.doesNotMatch(page, /هذه السياسة لا تمنح الصلاحية وحدها/);
   assert.doesNotMatch(page, /Policy alone does not grant authority/);
-  assert.match(page, /يحدّث فوري صلاحيات الخصم المرتبطة للموظف تلقائيًا/);
-  assert.match(page, /automatically syncs the staff member’s related discount permissions/);
+  assert.match(page, /يحدّث صلاحيات الموظف تلقائيًا/);
+  assert.match(page, /updates employee permissions automatically/);
+  assert.match(page, /لا يمسح الحدود المحفوظة للنوع الآخر/);
+  assert.match(page, /does not erase the saved limit for the other type/);
 });
