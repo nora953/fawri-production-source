@@ -229,7 +229,15 @@ export default function CashierDiscountPoliciesPage() {
   const save = async (member: Staff) => {
     const row = policies[member.id];
     const draft = drafts[member.id];
-    if (!row || !draft || !regional || !discountSetting || savingId !== null || savingKind) return;
+    if (
+      !row ||
+      !draft ||
+      !regional ||
+      !discountSetting ||
+      savingId !== null ||
+      savingKind ||
+      discountKindDraft !== discountSetting.discount_kind
+    ) return;
 
     let percentageBps = row.discount_policy.max_percentage_bps;
     let amountMinor = row.discount_policy.max_amount_minor;
@@ -357,9 +365,9 @@ export default function CashierDiscountPoliciesPage() {
             if (!draft || !discountSetting) return null;
             const amountMinor = regional ? merchantMoneyMajorInputToMinor(draft.maxAmount, fractionDigits) : null;
             const policySummary = draft.enabled
-              ? discountSetting.discount_kind === 'amount' && amountMinor !== null && amountMinor > 0
+              ? discountKindDraft === 'amount' && amountMinor !== null && amountMinor > 0
                 ? copy.currentAmountLimit.replace('{amount}', formatMerchantMoneyMinor(amountMinor, regional?.currency_code ?? '', fractionDigits, lang))
-                : discountSetting.discount_kind === 'percentage' && draft.maxPercent.trim() !== ''
+                : discountKindDraft === 'percentage' && draft.maxPercent.trim() !== ''
                   ? copy.currentPercentLimit.replace('{percent}', draft.maxPercent.trim())
                   : null
               : null;
@@ -368,7 +376,12 @@ export default function CashierDiscountPoliciesPage() {
               <button
                 type="button"
                 onClick={() => void save(member)}
-                disabled={savingId !== null || savingKind || !regional}
+                disabled={
+                  savingId !== null ||
+                  savingKind ||
+                  !regional ||
+                  discountKindDraft !== discountSetting.discount_kind
+                }
                 className="rounded-xl bg-orange-600 px-5 py-2.5 text-sm font-black text-white hover:bg-orange-700 disabled:opacity-50"
               >
                 {savingId === member.id ? copy.saving : copy.save}
@@ -399,7 +412,7 @@ export default function CashierDiscountPoliciesPage() {
 
                 {draft.enabled ? (
                   <div className="mt-4 grid gap-3">
-                    {discountSetting.discount_kind === 'percentage' ? (
+                    {discountKindDraft === 'percentage' ? (
                       <label className="text-sm font-bold text-slate-700">
                         {copy.maxPercent}
                         <input
