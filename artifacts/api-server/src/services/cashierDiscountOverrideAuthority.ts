@@ -8,6 +8,11 @@ import {
   disabledStoredCashierDiscountPolicy,
   loadCashierDiscountPolicies,
 } from './cashierDiscountPolicyAuthority';
+import {
+  assertMerchantCashierDiscountKind,
+  loadMerchantCashierDiscountSetting,
+  lockMerchantCashierDiscountKindMutation,
+} from './cashierMerchantDiscountSettingsAuthority';
 import type { CashierOperatorContext } from './postgresCashierStaffAuthority';
 import { CashierStaffAuthorityError } from './postgresCashierStaffAuthority';
 import {
@@ -330,6 +335,14 @@ export async function issueCashierDiscountOverrideApprovalAuthoritative(input: {
   }
 
   return withMerchantOperationalTransaction(input.context.merchant_id, async (client) => {
+    await lockMerchantCashierDiscountKindMutation(client, input.context.merchant_id);
+    const discountSetting = await loadMerchantCashierDiscountSetting(
+      client,
+      input.context.merchant_id,
+      true,
+    );
+    assertMerchantCashierDiscountKind(discountSetting.discount_kind, kind);
+
     const requesterPolicies = await loadCashierDiscountPolicies(
       client,
       input.context.merchant_id,
@@ -471,6 +484,9 @@ export async function consumeCashierDiscountOverrideApproval(
   },
 ): Promise<void> {
   const discountBaseMinor = nonNegativeMoney(input.discountBaseMinor, 'discount_base_minor');
+  const discountSetting = await loadMerchantCashierDiscountSetting(target, input.merchantId, true);
+  const kind = assertMerchantCashierDiscountKind(discountSetting.discount_kind, input.discountKind);
+
   let rows: ApprovalRow[];
   try {
     rows = await operationalQueryRows<ApprovalRow>(
@@ -537,7 +553,7 @@ export async function consumeCashierDiscountOverrideApproval(
   const managerLimitMinor = cashierManualDiscountLimitMinor({
     postPromotionTotalMinor: discountBaseMinor,
     policy: approverPolicy,
-    kind: input.discountKind,
+    kind,
   });
   if (input.manualDiscountMinor > managerLimitMinor) {
     throw new CashierStaffAuthorityError(
