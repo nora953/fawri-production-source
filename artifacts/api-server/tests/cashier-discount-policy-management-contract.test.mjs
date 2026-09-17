@@ -46,7 +46,7 @@ test('operator can read only policy bound to authenticated merchant and staff', 
   assert.match(body, /context\.merchant_id/);
   assert.match(body, /context\.staff_id/);
   assert.match(body, /context\.permissions\.includes\('sale\.discount'\)/);
-  assert.match(body, /discount_kind: discountSetting\.discount_kind/);
+  assert.match(body, /discount_setting: discountSetting/);
 });
 
 test('merchant-wide discount kind is versioned and invalidates pending approvals when it changes', async () => {
