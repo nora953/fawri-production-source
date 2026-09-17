@@ -145,3 +145,14 @@ test('English cashier management copy matches the Arabic reference meaning', asy
   assert.match(page, /While offline, other stations cannot sell tracked inventory, preventing stock conflicts\./);
   assert.doesNotMatch(page, /Discount authority is sensitive and is never granted automatically by role/);
 });
+
+test('cashier edit actions follow page direction instead of a language-name special case', async () => {
+  const page = await web('src/pages/dashboard/CashierManagementPage.tsx');
+  const saveOrders = page.match(/className="order-1 flex-1 rounded-lg bg-primary/g) || [];
+  const cancelOrders = page.match(/className="order-2 flex-1 rounded-lg border/g) || [];
+
+  assert.equal(saveOrders.length, 2);
+  assert.equal(cancelOrders.length, 2);
+  assert.doesNotMatch(page, /lang === 'ar' \? 'order-1' : 'order-2'/);
+  assert.doesNotMatch(page, /lang === 'ar' \? 'order-2' : 'order-1'/);
+});
