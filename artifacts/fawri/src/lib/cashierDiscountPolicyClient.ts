@@ -11,6 +11,7 @@ export type CashierOperatorDiscountPolicy = {
   max_amount_minor: number | null;
   can_approve_override: boolean;
   version: number;
+  discount_kind: CashierManualDiscountKind;
 };
 
 export const DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY: CashierOperatorDiscountPolicy = {
@@ -19,6 +20,7 @@ export const DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY: CashierOperatorDiscountP
   max_amount_minor: null,
   can_approve_override: false,
   version: 0,
+  discount_kind: 'amount',
 };
 
 export class CashierDiscountPolicyClientError extends Error {
@@ -38,9 +40,29 @@ function safeInteger(value: unknown, minimum = 0): number | null {
   return Number.isSafeInteger(parsed) && parsed >= minimum ? parsed : null;
 }
 
-function parsePolicy(value: unknown): CashierOperatorDiscountPolicy {
+function parseDiscountKind(value: unknown): CashierManualDiscountKind {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY;
+    throw new CashierDiscountPolicyClientError(
+      'CASHIER_DISCOUNT_SETTING_RESPONSE_INVALID',
+      'Cashier discount setting response is invalid',
+      502,
+    );
+  }
+  const kind = (value as Record<string, unknown>).discount_kind;
+  if (kind === 'amount' || kind === 'percentage') return kind;
+  throw new CashierDiscountPolicyClientError(
+    'CASHIER_DISCOUNT_SETTING_RESPONSE_INVALID',
+    'Cashier discount setting response is invalid',
+    502,
+  );
+}
+
+function parsePolicy(
+  value: unknown,
+  discountKind: CashierManualDiscountKind,
+): CashierOperatorDiscountPolicy {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { ...DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY, discount_kind: discountKind };
   }
   const raw = value as Record<string, unknown>;
   const enabled = raw.enabled === true;
@@ -61,13 +83,20 @@ function parsePolicy(value: unknown): CashierOperatorDiscountPolicy {
       502,
     );
   }
-  if (!enabled) return { ...DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY, version };
+  if (!enabled) {
+    return {
+      ...DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY,
+      version,
+      discount_kind: discountKind,
+    };
+  }
   return {
     enabled: true,
     max_percentage_bps: percentage,
     max_amount_minor: amount,
     can_approve_override: raw.can_approve_override === true,
     version,
+    discount_kind: discountKind,
   };
 }
 
@@ -111,5 +140,6 @@ export async function loadCurrentCashierDiscountPolicy(): Promise<CashierOperato
       response.status,
     );
   }
-  return parsePolicy(payload.discount_policy);
+  const discountKind = parseDiscountKind(payload.discount_setting);
+  return parsePolicy(payload.discount_policy, discountKind);
 }
