@@ -102,6 +102,15 @@ test('merchant discount policy UI exposes one merchant-wide type and preserves b
   assert.match(page, /دەسەڵاتی داشکاندنی کارمەندانی کاشێر/);
 });
 
+test('merchant discount policy UI previews the selected type before saving it and blocks staff saves until the type is committed', async () => {
+  const page = await web('src/pages/dashboard/CashierDiscountPoliciesPage.tsx');
+  assert.match(page, /discountKindDraft === 'percentage' \? \(/);
+  assert.match(page, /discountKindDraft === 'amount'/);
+  assert.match(page, /discountKindDraft !== discountSetting\.discount_kind/);
+  assert.match(page, /value=\{draft\.maxPercent\}/);
+  assert.match(page, /value=\{draft\.maxAmount\}/);
+});
+
 test('cashier checkout cannot switch the merchant-selected discount kind', async () => {
   const editor = await web('src/components/cashier/CashierManualDiscountEditor.tsx');
   const checkout = await web('src/lib/useCashierManualDiscountCheckout.ts');
