@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { getMerchantRegionalContext, type MerchantRegionalContext } from '@/lib/merchantRegionalUiApi';
 import {
-  formatMerchantMoneyMinor,
   merchantCurrencyLabel,
   merchantMoneyMajorInputToMinor,
   merchantMoneyMinorToMajorInput,
@@ -60,11 +59,9 @@ const TEXT: Record<Lang, Record<string, string>> = {
     enabled: 'السماح بالخصم اليدوي',
     maxPercent: 'الحد الأقصى لنسبة الخصم (%)',
     maxAmount: 'الحد الأقصى للخصم بالمبلغ',
-    independentLimitHint: 'تجاوز حد الموظف يتطلب موافقة مدير مخوّل.',
-    managerLimitHint: 'يمكن لهذا المدير اعتماد تجاوزات الموظفين حتى حدّه فقط.',
-    currentAmountLimit: 'الحد الحالي: حتى {amount}.',
-    currentPercentLimit: 'الحد الحالي: حتى {percent}%.',
-    override: 'السماح للمدير باعتماد تجاوزات الموظفين ضمن حدّه.',
+    independentLimitHint: 'تجاوز هذا الحد يتطلب موافقة مدير مخوّل.',
+    managerLimitHint: 'هذا الحد هو أقصى ما يمكن لهذا المدير اعتماده.',
+    override: 'السماح باعتماد تجاوزات الموظفين ضمن هذا الحد.',
     save: 'حفظ', saving: 'جارٍ الحفظ...', loading: 'جارٍ تحميل الموظفين...',
     failed: 'تعذر تحميل أو حفظ سياسة الخصم.', saved: 'تم حفظ سياسة الخصم.',
     percentRequired: 'أدخل الحد الأقصى للنسبة من 0 إلى 100.',
@@ -85,7 +82,6 @@ const TEXT: Record<Lang, Record<string, string>> = {
     maxPercent: 'زۆرترین سنووری داشکاندن بە ڕێژە %', maxAmount: 'زۆرترین سنووری داشکاندن بە بڕ',
     independentLimitHint: 'تێپەڕاندنی سنووری کارمەند پەسەندی بەڕێوەبەری مۆڵەتپێدراو پێویستە.',
     managerLimitHint: 'ئەمە زۆرترین سنووری دەسەڵاتی ئەم بەڕێوەبەرە و ناتوانێت لێی تێپەڕێت.',
-    currentAmountLimit: 'سنووری ئێستا: تا {amount}.', currentPercentLimit: 'سنووری ئێستا: تا {percent}%.',
     override: 'ڕێگەدان بە بەڕێوەبەر بۆ پەسەندکردنی تێپەڕاندنی سنووری کارمەندێکی تر لە سنووری خۆی.',
     save: 'پاشەکەوت', saving: 'پاشەکەوت دەکرێت...', loading: 'کارمەندان بار دەکرێن...',
     failed: 'بارکردن یان پاشەکەوتکردن سەرکەوتوو نەبوو.', saved: 'سیاسەتی داشکاندن پاشەکەوت کرا.',
@@ -106,7 +102,6 @@ const TEXT: Record<Lang, Record<string, string>> = {
     maxPercent: 'Maximum percentage discount %', maxAmount: 'Maximum fixed discount amount',
     independentLimitHint: 'Exceeding the employee limit requires an authorized manager. The cashier cannot change the discount type.',
     managerLimitHint: 'This is the maximum authority for this manager. They may approve another employee only within this limit.',
-    currentAmountLimit: 'Current limit: up to {amount}.', currentPercentLimit: 'Current limit: up to {percent}%.',
     override: 'Allow this manager to approve another employee’s over-limit discount within the manager’s own limit.',
     save: 'Save', saving: 'Saving...', loading: 'Loading staff...',
     failed: 'Could not load or save the discount policy.', saved: 'Discount policy saved.',
@@ -363,14 +358,6 @@ export default function CashierDiscountPoliciesPage() {
           {visibleStaff.map(member => {
             const draft = drafts[member.id];
             if (!draft || !discountSetting) return null;
-            const amountMinor = regional ? merchantMoneyMajorInputToMinor(draft.maxAmount, fractionDigits) : null;
-            const policySummary = draft.enabled
-              ? discountKindDraft === 'amount' && amountMinor !== null && amountMinor > 0
-                ? copy.currentAmountLimit.replace('{amount}', formatMerchantMoneyMinor(amountMinor, regional?.currency_code ?? '', fractionDigits, lang))
-                : discountKindDraft === 'percentage' && draft.maxPercent.trim() !== ''
-                  ? copy.currentPercentLimit.replace('{percent}', draft.maxPercent.trim())
-                  : null
-              : null;
             const limitHint = member.role === 'manager' ? copy.managerLimitHint : copy.independentLimitHint;
             const saveButton = (
               <button
@@ -443,7 +430,6 @@ export default function CashierDiscountPoliciesPage() {
                     <div className="flex justify-start">{saveButton}</div>
                     <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm leading-6 text-slate-700">
                       <div>{limitHint}</div>
-                      {policySummary ? <div className="mt-1 font-bold text-slate-900">{policySummary}</div> : null}
                     </div>
                     {member.role === 'manager' ? (
                       <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-950">
