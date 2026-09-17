@@ -142,7 +142,6 @@ export function useCashierManualDiscountCheckout(input: {
 
   const resetDraft = useCallback(() => {
     setEditorOpen(false);
-    setKindState('amount');
     setValueTextState('');
     setReasonState('');
     clearOverride(true);
@@ -161,6 +160,7 @@ export function useCashierManualDiscountCheckout(input: {
     clearOverride(true);
     if (!input.online) {
       setPolicy(DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY);
+      setKindState(DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY.discount_kind);
       resetDraft();
       return;
     }
@@ -168,9 +168,11 @@ export function useCashierManualDiscountCheckout(input: {
     try {
       const next = await loadCurrentCashierDiscountPolicy();
       setPolicy(next);
+      setKindState(next.discount_kind);
       if (!next.enabled) resetDraft();
     } catch {
       setPolicy(DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY);
+      setKindState(DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY.discount_kind);
       setPolicyError(true);
       resetDraft();
     } finally {
@@ -204,8 +206,6 @@ export function useCashierManualDiscountCheckout(input: {
         draft: {
           kind,
           value: draftValue,
-          // The durable commit still requires the real reason. This placeholder
-          // exists only so the UI can preview arithmetic before the reason is typed.
           reason: reasonValid ? normalizedReason : 'discount-preview',
         },
         policy,
@@ -335,10 +335,6 @@ export function useCashierManualDiscountCheckout(input: {
         if (errorCode(error) !== 'CASHIER_DISCOUNT_OVERRIDE_OPERATION_CONFLICT') {
           throw error;
         }
-        // A completed/expired approval request permanently owns its operation id.
-        // Renew the approval with a fresh sale operation id while preserving the
-        // old approval as immutable audit evidence. The runtime commits the sale
-        // with the operation id carried by the renewed approval binding.
         approval = await requestForOperation(newOverrideOperationId());
       }
       setOverrideApproval(approval);
@@ -348,7 +344,6 @@ export function useCashierManualDiscountCheckout(input: {
         errorCode(error) || 'CASHIER_DISCOUNT_OVERRIDE_APPROVAL_FAILED',
       );
     } finally {
-      // Never retain a manager PIN after the authorization request.
       setOverridePinState('');
       setOverrideApprovalLoading(false);
     }
@@ -388,11 +383,8 @@ export function useCashierManualDiscountCheckout(input: {
     refreshPolicy,
     openEditor: () => setEditorOpen(true),
     remove: resetDraft,
-    setKind: (next) => {
-      clearOverride();
-      setKindState(next);
-      setValueTextState('');
-    },
+    // Kept for call-site compatibility; the merchant setting is authoritative.
+    setKind: () => undefined,
     setValueText: (value) => {
       clearOverride();
       setValueTextState(digits(value));
@@ -412,6 +404,7 @@ export function useCashierManualDiscountCheckout(input: {
     approveOverride,
     reset: () => {
       setPolicy(DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY);
+      setKindState(DISABLED_CASHIER_OPERATOR_DISCOUNT_POLICY.discount_kind);
       setPolicyError(false);
       previousOperationIdRef.current = null;
       resetDraft();
