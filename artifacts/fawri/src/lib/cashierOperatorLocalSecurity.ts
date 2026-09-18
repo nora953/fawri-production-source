@@ -19,9 +19,10 @@ export type CashierLocalDeviceIdentity = {
 
 export type CashierOperationBinding = {
   operation_id: string;
-  operation_kind: 'sale' | 'return' | 'void';
+  operation_kind: 'sale' | 'return' | 'void' | 'inventory_adjustment';
   merchant_id: string;
   station_id: string;
+  location_id: string;
   staff_id: string;
   shift_id: string;
   device_id: string;
@@ -282,6 +283,7 @@ export async function bindCashierOperation(
         existing.operation_kind === binding.operation_kind &&
         existing.merchant_id === binding.merchant_id &&
         existing.station_id === binding.station_id &&
+        existing.location_id === binding.location_id &&
         existing.staff_id === binding.staff_id &&
         existing.shift_id === binding.shift_id &&
         existing.device_id === binding.device_id;
