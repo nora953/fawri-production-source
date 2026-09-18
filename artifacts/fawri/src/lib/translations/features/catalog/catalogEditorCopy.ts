@@ -60,6 +60,7 @@ export type CommerceCatalogPageCopy = {
   inventoryFailed: string;
   inventoryByLocation: string;
   defaultLocation: string;
+  disabledLocation: string;
   inventoryLocationHint: string;
   inventoryLoading: string;
   inventoryRetry: string;
@@ -145,6 +146,7 @@ export const COMMERCE_CATALOG_COPY: Record<Lang, CommerceCatalogPageCopy> = {
     inventoryFailed: 'تعذر تحديث المخزون.',
     inventoryByLocation: 'المخزون حسب الموقع',
     defaultLocation: 'الموقع الافتراضي',
+    disabledLocation: 'موقع معطّل',
     inventoryLocationHint: 'لكل موقع كمية مستقلة. الكمية الإجمالية أعلاه هي مجموع مخزون المواقع.',
     inventoryLoading: 'جارٍ تحميل مخزون المواقع...',
     inventoryRetry: 'إعادة تحميل المخزون',
@@ -228,6 +230,7 @@ export const COMMERCE_CATALOG_COPY: Record<Lang, CommerceCatalogPageCopy> = {
     inventoryFailed: 'نوێکردنەوەی کۆگا سەرکەوتوو نەبوو.',
     inventoryByLocation: 'کۆگا بەپێی شوێن',
     defaultLocation: 'شوێنی بنەڕەتی',
+    disabledLocation: 'شوێنی ناچالاک',
     inventoryLocationHint: 'هەر شوێنێک بڕی کۆگای سەربەخۆی هەیە. کۆی سەرەوە کۆی کۆگای هەموو شوێنەکانە.',
     inventoryLoading: 'کۆگای شوێنەکان بار دەکرێت...',
     inventoryRetry: 'دووبارە بارکردنەوەی کۆگا',
@@ -311,6 +314,7 @@ export const COMMERCE_CATALOG_COPY: Record<Lang, CommerceCatalogPageCopy> = {
     inventoryFailed: 'Could not update inventory.',
     inventoryByLocation: 'Inventory by location',
     defaultLocation: 'Default location',
+    disabledLocation: 'Disabled location',
     inventoryLocationHint: 'Each location has independent stock. The total above is the combined inventory across locations.',
     inventoryLoading: 'Loading location inventory...',
     inventoryRetry: 'Reload inventory',
