@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { projectCashierCatalogForLocationAuthoritative } from "./cashierLocationInventoryAuthority";
 import {
   issueCashierCostEvidence,
   resolveCashierCostEvidence,
@@ -35,6 +36,7 @@ type AttributionRow = {
   sale_id: string;
   operation_kind: string;
   station_id: string;
+  location_id: string;
   staff_id: string;
   shift_id: string;
   device_id: string;
@@ -240,21 +242,27 @@ export function sanitizeCashierCatalogProduct(
 export async function getCashierOperatorCatalogSnapshotAuthoritative(
   context: CashierOperatorContext,
 ) {
-  const [commerceContext, products, promotions] = await Promise.all([
+  const [commerceContext, baseProducts, promotions] = await Promise.all([
     getMerchantCommerceContextAuthoritative(context.merchant_id),
     listCatalogProductsAuthoritative(context.merchant_id),
     listCommercePromotionsAuthoritative(context.merchant_id),
   ]);
+  const projected = await projectCashierCatalogForLocationAuthoritative({
+    merchantId: context.merchant_id,
+    locationId: context.location_id,
+    products: baseProducts,
+  });
   const includeRawCost = context.permissions.includes("catalog.cost");
   return {
     merchant_id: context.merchant_id,
     station_id: context.station_id,
+    location_id: context.location_id,
     staff_id: context.staff_id,
     shift_id: context.shift_id,
     permissions: context.permissions,
     cost_included: includeRawCost,
     context: commerceContext,
-    products: products.map((product) =>
+    products: projected.products.map((product) =>
       sanitizeCashierCatalogProduct(product, includeRawCost),
     ),
     promotions,
@@ -337,9 +345,9 @@ async function recordAttribution(
   await target.query(
     `INSERT INTO cashier_operation_attribution (
        id, merchant_id, operation_id, sale_id, operation_kind,
-       station_id, staff_id, shift_id, device_id,
+       station_id, location_id, staff_id, shift_id, device_id,
        station_credential_id, operator_session_id, occurred_at, created_at
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now())
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now())
      ON CONFLICT (merchant_id, operation_id) DO NOTHING`,
     [
       attributionId,
@@ -348,6 +356,7 @@ async function recordAttribution(
       saleId,
       kind,
       context.station_id,
+      context.location_id,
       context.staff_id,
       context.shift_id,
       context.device_id,
@@ -358,7 +367,7 @@ async function recordAttribution(
   );
   const rows = await operationalQueryRows<AttributionRow>(
     target,
-    `SELECT operation_id, sale_id, operation_kind, station_id, staff_id,
+    `SELECT operation_id, sale_id, operation_kind, station_id, location_id, staff_id,
             shift_id, device_id, station_credential_id, operator_session_id,
             occurred_at
        FROM cashier_operation_attribution
@@ -378,6 +387,7 @@ async function recordAttribution(
     row.sale_id === saleId &&
     row.operation_kind === kind &&
     row.station_id === context.station_id &&
+    row.location_id === context.location_id &&
     row.staff_id === context.staff_id &&
     row.shift_id === context.shift_id &&
     row.device_id === context.device_id &&
@@ -413,6 +423,7 @@ export async function syncCashierOperatorSaleAuthoritative(input: {
   const verifiedBody = prepareOperatorSaleBody(input.context, input.body);
   const result = await syncCashierSaleAuthoritative({
     merchantId: input.context.merchant_id,
+    locationId: input.context.location_id,
     body: verifiedBody,
   });
   // Attribution is deliberately idempotent and repairable. If this write fails
@@ -436,6 +447,7 @@ export async function syncCashierOperatorCompensationAuthoritative(input: {
   assertOperatorIdentity(input.context, identity);
   const result = await syncCashierCompensationAuthoritative({
     merchantId: input.context.merchant_id,
+    locationId: input.context.location_id,
     body: input.body,
   });
   if (result.compensation_kind !== input.kind) {
