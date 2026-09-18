@@ -133,6 +133,7 @@ async function requireActiveLocation(
   target: OperationalQueryTarget,
   merchantId: string,
   locationId: string,
+  allowInactive = false,
 ): Promise<LocationRow> {
   const rows = await operationalQueryRows<LocationRow>(
     target,
@@ -152,7 +153,7 @@ async function requireActiveLocation(
       { location_id: locationId },
     );
   }
-  if (location.status !== "active") {
+  if (!allowInactive && location.status !== "active") {
     throw new CashierLocationInventoryError(
       "CASHIER_LOCATION_INACTIVE",
       "cashier location is disabled",
@@ -580,6 +581,7 @@ export async function mutateCashierLocationInventoryInTransaction(
     productId: string;
     variantId?: string;
     delta: number;
+    allowInactiveLocation?: boolean;
   },
 ): Promise<CashierLocationInventoryMutationResult> {
   if (!Number.isSafeInteger(input.delta) || input.delta === 0) {
@@ -594,6 +596,7 @@ export async function mutateCashierLocationInventoryInTransaction(
     target,
     input.merchantId,
     input.locationId,
+    input.allowInactiveLocation === true,
   );
   await ensureDefaultAndCurrentInventoryRows(
     target,
