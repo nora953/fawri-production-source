@@ -157,10 +157,14 @@ test('cashier edit actions follow page direction instead of a language-name spec
   assert.doesNotMatch(page, /lang === 'ar' \? 'order-2' : 'order-1'/);
 });
 
-test('pairing code stays Latin and LTR in every interface language', async () => {
+test('pairing code stays ASCII Latin and LTR in every interface language', async () => {
   const page = await web('src/pages/dashboard/CashierManagementPage.tsx');
-  assert.match(page, /\{pairing\.code\}<\/div>/);
-  assert.match(page, /dir="ltr"[\s\S]*lang="en-US"[\s\S]*fontFamily: 'Consolas, "Courier New", monospace'[\s\S]*fontVariantNumeric: 'lining-nums'[\s\S]*fontFeatureSettings: '"locl" 0'/);
+  const authority = await api('src/services/postgresCashierStaffAuthority.ts');
+
+  assert.match(authority, /\^\[A-Za-z0-9_-\]\+\$/);
+  assert.match(page, /unicodeBidi: 'isolate-override'/);
+  assert.match(page, /<bdo dir="ltr" lang="en-US">\{pairing\.code\}<\/bdo>/);
+  assert.match(page, /fontFeatureSettings: '"locl" 0, "lnum" 1'/);
   assert.match(page, /navigator\.clipboard\?\.writeText/);
   assert.match(page, /writeText\(pairing\.code\)/);
 });
