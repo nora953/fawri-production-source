@@ -851,7 +851,17 @@ export default function CashierManagementPage() {
           </div>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{l.pairingHint}</p>
           <div className="mt-4 rounded-xl border bg-muted/40 p-3">
-            <div className="overflow-x-auto whitespace-nowrap rounded-lg bg-background px-3 py-3 text-center font-mono text-base font-bold" dir="ltr" lang="en" style={{ unicodeBidi: 'isolate' }}>{pairing.code}</div>
+            <div
+              className="overflow-x-auto whitespace-nowrap rounded-lg bg-background px-3 py-3 text-center text-base font-bold"
+              dir="ltr"
+              lang="en-US"
+              style={{
+                unicodeBidi: 'isolate',
+                fontFamily: 'Consolas, "Courier New", monospace',
+                fontVariantNumeric: 'lining-nums',
+                fontFeatureSettings: '"locl" 0',
+              }}
+            >{pairing.code}</div>
             <button type="button" onClick={() => void copyPairingCode()} className="mt-3 h-10 w-full rounded-lg bg-slate-900 text-sm font-bold text-white dark:bg-slate-100 dark:text-slate-900">
               {copied ? l.copied : l.copyCode}
             </button>
