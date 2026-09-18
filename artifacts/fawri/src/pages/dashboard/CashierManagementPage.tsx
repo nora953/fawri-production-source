@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
+import { normalizeCashierPairingCode } from '@/lib/cashierPairingCode';
 import {
   Select,
   SelectContent,
@@ -457,10 +458,12 @@ export default function CashierManagementPage() {
         method: 'POST',
         body: '{}',
       });
+      const code = normalizeCashierPairingCode(payload.pairing_code);
+      if (!code) throw new Error('cashier pairing authority returned an invalid code');
       setPairing({
         stationId: station.id,
         stationName: station.name,
-        code: String(payload.pairing_code || ''),
+        code,
         expiresAt: String(payload.expires_at || ''),
       });
     } catch (cause) {
@@ -851,20 +854,25 @@ export default function CashierManagementPage() {
           </div>
           <p className="mt-3 text-sm leading-6 text-muted-foreground">{l.pairingHint}</p>
           <div className="mt-4 rounded-xl border bg-muted/40 p-3">
-            <div
-              className="overflow-x-auto whitespace-nowrap rounded-lg bg-background px-3 py-3 text-center text-base font-bold"
+            <input
+              value={pairing.code}
+              readOnly
+              aria-label={l.pairingTitle}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
               dir="ltr"
               lang="en-US"
+              className="h-12 w-full rounded-lg border-0 bg-background px-3 text-center font-mono text-base font-bold tracking-wide outline-none"
               style={{
                 direction: 'ltr',
-                unicodeBidi: 'isolate-override',
-                fontFamily: 'Consolas, "Courier New", monospace',
+                unicodeBidi: 'isolate',
+                fontFamily: '"Courier New", Consolas, monospace',
                 fontVariantNumeric: 'lining-nums',
                 fontFeatureSettings: '"locl" 0, "lnum" 1',
+                fontLanguageOverride: '"ENG"',
               }}
-            >
-              <bdo dir="ltr" lang="en-US">{pairing.code}</bdo>
-            </div>
+            />
             <button type="button" onClick={() => void copyPairingCode()} className="mt-3 h-10 w-full rounded-lg bg-slate-900 text-sm font-bold text-white dark:bg-slate-100 dark:text-slate-900">
               {copied ? l.copied : l.copyCode}
             </button>
