@@ -3,7 +3,7 @@
   "name": "location_inventory_foundation",
   "when": 1789732800000,
   "mode": "reviewed_sql",
-  "sql_sha256": "2f5147fe5a7591fd9afe8b6059c45f83e5149af873f26a48b221c638db6e7c1c",
+  "sql_sha256": "88ed2429d77b7b8eeb4803c4aecf5fad133fabd277b97d5e08b80b6798aa8279",
   "preimage_files": [
     "locations.ts",
     "index.ts"
