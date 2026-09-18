@@ -120,7 +120,7 @@ function preserveExistingInventoryOnCatalogEdit(
     const existingById = new Map(
       current.variants.map((variant) => [variant.id, variant]),
     );
-    input.variants = input.variants.map((value) => {
+    const variants = input.variants.map((value) => {
       const variant = { ...asRecord(value) };
       const id = String(variant.id || "").trim();
       const existing = id ? existingById.get(id) : undefined;
@@ -129,8 +129,9 @@ function preserveExistingInventoryOnCatalogEdit(
       delete variant.quantity;
       return variant;
     });
+    input.variants = variants;
 
-    if (current.variants.length > 0 || input.variants.length > 0) {
+    if (current.variants.length > 0 || variants.length > 0) {
       delete input.stock_quantity;
       delete input.quantity;
     }
