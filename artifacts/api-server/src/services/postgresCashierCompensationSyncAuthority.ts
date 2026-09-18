@@ -893,16 +893,31 @@ async function loadOriginalInventoryMutations(
   target: OperationalQueryTarget,
   merchantId: string,
   requestHash: string,
+  locationId?: string,
 ): Promise<Map<string, OriginalInventoryMutation>> {
   const rows = await operationalQueryRows<OriginalInventoryMutation>(
     target,
-    `SELECT product_id, variant_id, before_quantity, after_quantity
-       FROM inventory_mutations
-      WHERE merchant_id = $1
-        AND reason_code = 'cashier_sale_sync'
-        AND request_hash = $2
-      ORDER BY product_id, variant_id`,
-    [merchantId, requestHash],
+    locationId
+      ? `SELECT
+           product_id,
+           variant_id,
+           before_on_hand_quantity AS before_quantity,
+           after_on_hand_quantity AS after_quantity
+         FROM location_inventory_mutations
+        WHERE merchant_id = $1
+          AND location_id = $3
+          AND reason_code = 'cashier_sale_sync'
+          AND request_hash = $2
+        ORDER BY product_id, variant_id`
+      : `SELECT product_id, variant_id, before_quantity, after_quantity
+           FROM inventory_mutations
+          WHERE merchant_id = $1
+            AND reason_code = 'cashier_sale_sync'
+            AND request_hash = $2
+          ORDER BY product_id, variant_id`,
+    locationId
+      ? [merchantId, requestHash, locationId]
+      : [merchantId, requestHash],
   );
   const result = new Map<string, OriginalInventoryMutation>();
   for (const row of rows) {
