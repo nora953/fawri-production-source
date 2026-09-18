@@ -502,6 +502,10 @@ export default function CommerceCatalogSimplifiedPage() {
       const latest = await getCatalogProduct(productId);
       setItems(current => upsert(current, latest));
       syncInventory(latest);
+      if (tracksInventory(latest) && detailsProductId === productId) {
+        const snapshot = await getCatalogProductLocationInventory(productId);
+        syncLocationInventory(snapshot);
+      }
       if (editingId === productId && commerceContext) setForm(normalizeEditorForm(latest));
       setAuthorityReady(true);
     } catch (reloadError) {
@@ -593,13 +597,17 @@ export default function CommerceCatalogSimplifiedPage() {
     return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
   };
 
-  const setInventory = async (product: CatalogProduct, variant?: CatalogVariant) => {
+  const setInventory = async (
+    product: CatalogProduct,
+    locationId: string,
+    variant?: CatalogVariant,
+  ) => {
     if (!authorityReady) {
       toast.error(copy.loadFailed);
       return;
     }
     if (mutationBusy) return;
-    const key = inventoryKey(product.id, variant?.id);
+    const key = locationInventoryKey(locationId, product.id, variant?.id);
     const quantity = parseQuantity(inventoryValues[key] ?? '');
     if (quantity === null) {
       toast.error(copy.invalidQuantity);
@@ -607,14 +615,16 @@ export default function CommerceCatalogSimplifiedPage() {
     }
     setInventoryBusy(key);
     try {
-      const updated = await setCatalogInventory({
+      const result = await setCatalogLocationInventory({
         productId: product.id,
+        locationId,
         expectedVersion: product.version,
         quantity,
         ...(variant ? { variantId: variant.id } : {}),
       });
-      setItems(current => upsert(current, updated));
-      syncInventory(updated);
+      setItems(current => upsert(current, result.product));
+      syncInventory(result.product);
+      syncLocationInventory(result.inventory);
       toast.success(copy.inventorySaved);
     } catch (error) {
       if (await loadConflict(product.id, error)) return;
@@ -624,23 +634,33 @@ export default function CommerceCatalogSimplifiedPage() {
     }
   };
 
-  const adjustInventory = async (product: CatalogProduct, delta: number, variant?: CatalogVariant) => {
+  const adjustInventory = async (
+    product: CatalogProduct,
+    locationId: string,
+    delta: number,
+    variant?: CatalogVariant,
+  ) => {
     if (!authorityReady) {
       toast.error(copy.loadFailed);
       return;
     }
     if (mutationBusy) return;
-    const key = inventoryKey(product.id, variant?.id);
+    const key = locationInventoryKey(locationId, product.id, variant?.id);
     const request = {
       productId: product.id,
+      locationId,
       expectedVersion: product.version,
       delta,
       ...(variant ? { variantId: variant.id } : {}),
-      reason: 'merchant commerce catalog inventory UX',
+      reason: 'merchant commerce catalog location inventory UX',
     };
     let attempt: CatalogIdempotencyAttempt;
     try {
-      attempt = idempotencyAttemptForRequest(inventoryAttempt.current, 'catalog-inventory-adjust', request);
+      attempt = idempotencyAttemptForRequest(
+        inventoryAttempt.current,
+        'catalog-location-inventory-adjust',
+        request,
+      );
     } catch {
       toast.error(copy.secureCrypto);
       return;
@@ -648,10 +668,11 @@ export default function CommerceCatalogSimplifiedPage() {
     inventoryAttempt.current = attempt;
     setInventoryBusy(key);
     try {
-      const updated = await adjustCatalogInventory(request, attempt.key);
+      const result = await adjustCatalogLocationInventory(request, attempt.key);
       inventoryAttempt.current = null;
-      setItems(current => upsert(current, updated));
-      syncInventory(updated);
+      setItems(current => upsert(current, result.product));
+      syncInventory(result.product);
+      syncLocationInventory(result.inventory);
       toast.success(copy.inventorySaved);
     } catch (error) {
       if (await loadConflict(product.id, error)) return;
