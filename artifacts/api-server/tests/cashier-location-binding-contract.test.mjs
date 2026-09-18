@@ -55,6 +55,37 @@ test("station creation and branch changes resolve a stable location before persi
   );
 });
 
+test("moving a station to another location invalidates the old paired runtime", async () => {
+  const authority = await api("src/services/postgresCashierStaffAuthority.ts");
+  const configuration = await api(
+    "src/services/cashierStationConfigurationAuthority.ts",
+  );
+
+  for (const source of [authority, configuration]) {
+    assert.match(
+      source,
+      /targetLocation !== null && targetLocation\.id !== current\.location_id/,
+    );
+    assert.match(source, /paired_device_id = NULL/);
+    assert.match(source, /paired_at = NULL/);
+    assert.match(source, /credential_version = credential_version \+ 1/);
+    assert.match(source, /station_location_changed/);
+  }
+
+  assert.match(
+    configuration,
+    /UPDATE cashier_station_pairing_challenges[\s\S]*status = 'revoked'/,
+  );
+  assert.match(
+    configuration,
+    /UPDATE cashier_station_credentials[\s\S]*status = 'revoked'/,
+  );
+  assert.match(
+    configuration,
+    /UPDATE cashier_operator_sessions[\s\S]*status = 'revoked'/,
+  );
+});
+
 test("offline inventory authority uniqueness is location-scoped while API error compatibility remains stable", async () => {
   const schema = await repo("lib/db/src/schema/cashier-staff.ts");
   const authority = await api("src/services/postgresCashierStaffAuthority.ts");
@@ -78,6 +109,10 @@ test("offline inventory authority uniqueness is location-scoped while API error 
 test("0018 keeps secondary branch locations out of online fulfillment and does not invent inventory", async () => {
   const migration = await repo("lib/db/drizzle/0018_cashier_location_binding.sql");
 
+  assert.match(
+    migration,
+    /WHERE NOT EXISTS \([\s\S]*existing\."is_default" = TRUE/,
+  );
   assert.match(migration, /"online_fulfillment_enabled"[\s\S]*FALSE/);
   assert.match(
     migration,
