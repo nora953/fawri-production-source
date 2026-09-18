@@ -483,7 +483,12 @@ async function ensureAndLockItemLevel(
      )
      ON CONFLICT DO NOTHING`,
     [
-      deterministicLevelId(input),
+      deterministicLevelId({
+        merchantId: input.merchantId,
+        locationId: input.location.id,
+        productId: input.productId,
+        ...(input.variantId ? { variantId: input.variantId } : {}),
+      }),
       input.merchantId,
       input.location.id,
       input.productId,
