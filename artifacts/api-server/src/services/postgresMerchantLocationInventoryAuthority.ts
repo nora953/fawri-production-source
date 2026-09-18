@@ -252,7 +252,7 @@ async function productRow(
   return product;
 }
 
-async function requireActiveLocation(
+async function requireInventoryLocation(
   target: OperationalQueryTarget,
   merchantId: string,
   locationId: string,
@@ -279,14 +279,6 @@ async function requireActiveLocation(
       "CATALOG_LOCATION_NOT_FOUND",
       "inventory location was not found",
       404,
-      { location_id: locationId },
-    );
-  }
-  if (location.status !== "active") {
-    throw new CatalogRuntimeError(
-      "CATALOG_LOCATION_INACTIVE",
-      "inventory location is disabled",
-      409,
       { location_id: locationId },
     );
   }
@@ -617,7 +609,7 @@ async function mutateMerchantLocationInventory(input: {
 }): Promise<MerchantLocationInventoryMutationResult> {
   return withMerchantOperationalTransaction(input.merchantId, async (client) => {
     await materializeProductLevels(client, input.merchantId, input.productId);
-    await requireActiveLocation(client, input.merchantId, input.locationId);
+    await requireInventoryLocation(client, input.merchantId, input.locationId);
 
     const request = {
       merchant_id: input.merchantId,
