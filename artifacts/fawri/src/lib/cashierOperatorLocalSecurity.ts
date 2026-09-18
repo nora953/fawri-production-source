@@ -1,6 +1,6 @@
-import {
+import type {
   IndexedDbCashierAuthority,
-  type IndexedDbCashierConfig,
+  IndexedDbCashierConfig,
 } from './cashierIndexedDbAuthority';
 
 const OPERATOR_LOCAL_DATABASE = 'fawri-cashier-operator-local-v1';
@@ -126,6 +126,7 @@ function openExistingCashierDatabase(
 async function localAuthority(
   identity: CashierLocalDeviceIdentity,
 ): Promise<IndexedDbCashierAuthority> {
+  const { IndexedDbCashierAuthority } = await import('./cashierIndexedDbAuthority');
   const config: IndexedDbCashierConfig = {
     localMerchantId: identity.local_merchant_id,
     ...(identity.cloud_merchant_id
