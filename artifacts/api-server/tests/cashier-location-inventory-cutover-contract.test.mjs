@@ -251,3 +251,84 @@ test("sales activity report deliberately excludes inventory adjustments until re
     ) || [];
   assert.equal(filters.length, 3);
 });
+
+test("merchant catalog inventory is location authoritative and legacy writes are safe", async () => {
+  const catalog = await api("src/services/postgresCatalogAuthority.ts");
+  const authority = await api(
+    "src/services/postgresMerchantLocationInventoryAuthority.ts",
+  );
+  const routes = await api("src/routes/catalog-operations.ts");
+  const client = await repo("artifacts/fawri/src/lib/catalogUiApi.ts");
+  const page = await repo(
+    "artifacts/fawri/src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx",
+  );
+
+  assert.match(
+    catalog,
+    /preserveExistingInventoryOnCatalogEdit/,
+  );
+  assert.match(
+    catalog,
+    /resolveSingleInventoryLocationForCompatibilityAuthoritative/,
+  );
+  assert.match(
+    catalog,
+    /setMerchantLocationInventoryAuthoritative/,
+  );
+  assert.match(
+    catalog,
+    /adjustMerchantLocationInventoryAuthoritative/,
+  );
+
+  assert.match(
+    authority,
+    /location_inventory_levels/,
+  );
+  assert.match(
+    authority,
+    /location_inventory_mutations/,
+  );
+  assert.match(
+    authority,
+    /allowInactiveLocation: true/,
+  );
+  assert.match(
+    authority,
+    /CATALOG_LOCATION_REQUIRED/,
+  );
+  assert.doesNotMatch(
+    authority,
+    /WHERE merchant_id = \$1\s+AND status = 'active'/,
+  );
+
+  assert.match(
+    routes,
+    /"\/inventory\/products\/:productId\/locations"/,
+  );
+  assert.match(
+    routes,
+    /"\/inventory\/products\/:productId\/locations\/:locationId\/set"/,
+  );
+  assert.match(
+    routes,
+    /"\/inventory\/products\/:productId\/locations\/:locationId\/adjust"/,
+  );
+
+  assert.match(
+    client,
+    /getCatalogProductLocationInventory/,
+  );
+  assert.match(
+    client,
+    /setCatalogLocationInventory/,
+  );
+  assert.match(
+    client,
+    /adjustCatalogLocationInventory/,
+  );
+
+  assert.match(page, /inventoryByLocation/);
+  assert.match(page, /locationInventoryKey/);
+  assert.match(page, /currentQuantity=\{currentQuantity\}/);
+  assert.match(page, /disabledLocation/);
+});
