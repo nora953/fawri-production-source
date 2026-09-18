@@ -141,11 +141,19 @@ test("new non-main branch creates one stable location with online fulfillment di
 
   assert.equal(first.id, second.id);
   assert.equal(first.legacy_branch_key, "karrada");
-  assert.equal(target.locations.length, 1);
-  assert.equal(target.locations[0].name, "Karrada");
-  assert.equal(target.locations[0].is_default, false);
-  assert.equal(target.locations[0].online_fulfillment_enabled, false);
-  assert.deepEqual(target.insertOnlineFlags, [false]);
+  assert.equal(target.locations.length, 2);
+  const defaultLocation = target.locations.find((row) => row.is_default);
+  const branchLocation = target.locations.find(
+    (row) => row.legacy_branch_key === "karrada",
+  );
+  assert.ok(defaultLocation);
+  assert.equal(defaultLocation.legacy_branch_key, "main");
+  assert.equal(defaultLocation.online_fulfillment_enabled, true);
+  assert.ok(branchLocation);
+  assert.equal(branchLocation.name, "Karrada");
+  assert.equal(branchLocation.is_default, false);
+  assert.equal(branchLocation.online_fulfillment_enabled, false);
+  assert.deepEqual(target.insertOnlineFlags, [true, false]);
 });
 
 test("merchant created after migration can lazily receive one default location", async () => {
