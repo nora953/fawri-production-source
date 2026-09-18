@@ -3,7 +3,7 @@
   "name": "cashier_location_binding",
   "when": 1789819200000,
   "mode": "reviewed_sql",
-  "sql_sha256": "347760c2d2399515aadba2f26c63037050a5345e02e839ec11bb10978b1012b0",
+  "sql_sha256": "75ecf381d809f03d954fba3716ae2ae6498ed39642d785ed7c8e77c2fba2f72a",
   "preimage_files": [
     "locations.ts",
     "cashier-staff.ts",
