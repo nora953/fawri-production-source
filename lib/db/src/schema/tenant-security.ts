@@ -16,7 +16,11 @@ import { merchantChannels } from "./channels";
 import { channelInboundEvents, outboundDeliveries, replyRefunds, replyReservations } from "./channel-messaging";
 import { catalogIdempotencyKeys, catalogIdentifiers, catalogImageReferences, catalogVariantOptions, inventoryMutations, products, productVariants } from "./catalog";
 import { commercePromotions } from "./commerce-promotions";
-import { locationInventoryLevels, merchantLocations } from "./locations";
+import {
+  locationInventoryLevels,
+  locationInventoryMutations,
+  merchantLocations,
+} from "./locations";
 import { replyLedger, subscriptionReplyBatches, subscriptions } from "./subscriptions";
 import { saasBillingEvents, saasBillingOrders, saasBillingRefunds, saasEntitlementApplications } from "./saas-billing";
 import { conversations, messages } from "./conversations";
@@ -93,6 +97,10 @@ export const merchantLocationsTenantPolicy = tenantPolicy(
 export const locationInventoryLevelsTenantPolicy = tenantPolicy(
   "location_inventory_levels_tenant_boundary",
   locationInventoryLevels,
+);
+export const locationInventoryMutationsTenantPolicy = tenantPolicy(
+  "location_inventory_mutations_tenant_boundary",
+  locationInventoryMutations,
 );
 export const commercePromotionsTenantPolicy = tenantPolicy(
   "commerce_promotions_tenant_boundary",
