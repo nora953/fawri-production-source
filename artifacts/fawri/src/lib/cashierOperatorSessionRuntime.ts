@@ -33,6 +33,7 @@ export type CashierDeviceIdentity = CashierLocalDeviceIdentity & {
   last_catalog_sync_at?: string;
   station_id?: string;
   station_name?: string;
+  location_id?: string;
   branch_key?: string;
   branch_label?: string;
   offline_inventory_authority?: boolean;
@@ -44,6 +45,7 @@ export type CashierStationBinding = {
   merchant_id: string;
   station_id: string;
   station_name: string;
+  location_id: string;
   branch_key: string;
   branch_label?: string;
   offline_inventory_authority: boolean;
@@ -175,6 +177,7 @@ function stationBinding(
     !identity.cloud_merchant_id ||
     !identity.station_id ||
     !identity.station_name ||
+    !identity.location_id ||
     !identity.branch_key ||
     !identity.station_token ||
     !identity.station_credential_expires_at
@@ -187,6 +190,7 @@ function stationBinding(
     merchant_id: identity.cloud_merchant_id,
     station_id: identity.station_id,
     station_name: identity.station_name,
+    location_id: identity.location_id,
     branch_key: identity.branch_key,
     ...(identity.branch_label ? { branch_label: identity.branch_label } : {}),
     offline_inventory_authority: identity.offline_inventory_authority === true,
@@ -235,6 +239,7 @@ export async function getCashierOperatorSession(): Promise<CashierOperatorSessio
   if (
     !binding ||
     session.context.station_id !== binding.station_id ||
+    session.context.location_id !== binding.location_id ||
     session.context.device_id !== binding.device_id ||
     session.context.merchant_id !== binding.merchant_id ||
     session.context.station_token !== binding.station_token
@@ -332,6 +337,7 @@ export async function pairCashierStation(
   const merchantId = String(payload.merchant_id || '').trim();
   const stationId = String(payload.station_id || '').trim();
   const stationName = String(payload.station_name || '').trim();
+  const locationId = String(payload.location_id || '').trim();
   const branchKey = String(payload.branch_key || '').trim();
   const stationToken = String(payload.station_token || '').trim();
   const credentialExpiresAt = String(payload.credential_expires_at || '').trim();
@@ -339,6 +345,7 @@ export async function pairCashierStation(
     !merchantId ||
     !stationId ||
     !stationName ||
+    !locationId ||
     !branchKey ||
     !stationToken ||
     !credentialExpiresAt
@@ -363,6 +370,7 @@ export async function pairCashierStation(
     cloud_bound_at: identity.cloud_bound_at || new Date().toISOString(),
     station_id: stationId,
     station_name: stationName,
+    location_id: locationId,
     branch_key: branchKey,
     ...(payload.branch_label
       ? { branch_label: String(payload.branch_label) }
@@ -471,6 +479,7 @@ export async function loginCashierOperator(
     merchant_id: String(serverContext.merchant_id || ''),
     station_id: String(serverContext.station_id || ''),
     station_name: String(serverContext.station_name || binding.station_name),
+    location_id: String(serverContext.location_id || binding.location_id),
     branch_key: String(serverContext.branch_key || binding.branch_key),
     ...(serverContext.branch_label
       ? { branch_label: String(serverContext.branch_label) }
@@ -495,6 +504,7 @@ export async function loginCashierOperator(
   };
   if (
     context.station_id !== binding.station_id ||
+    context.location_id !== binding.location_id ||
     context.device_id !== binding.device_id ||
     context.merchant_id !== binding.merchant_id ||
     !context.credential_id ||
@@ -591,6 +601,7 @@ export async function bindCashierOperationToCurrentOperator(
     operation_kind: operationKind,
     merchant_id: session.context.merchant_id,
     station_id: session.context.station_id,
+    location_id: session.context.location_id,
     staff_id: session.context.staff_id,
     shift_id: session.context.shift_id,
     device_id: session.context.device_id,
