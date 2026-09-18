@@ -20,7 +20,7 @@ export const cashierOperationAttribution = pgTable(
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
     operationId: text("operation_id").notNull(),
-    saleId: text("sale_id").notNull(),
+    saleId: text("sale_id"),
     operationKind: text("operation_kind").notNull(),
     stationId: text("station_id").notNull(),
     locationId: text("location_id").notNull(),
@@ -74,11 +74,11 @@ export const cashierOperationAttribution = pgTable(
     ),
     kindCheck: check(
       "cashier_operation_attribution_kind_check",
-      sql`${table.operationKind} IN ('sale', 'return', 'void')`,
+      sql`(${table.operationKind} IN ('sale', 'return', 'void') AND ${table.saleId} IS NOT NULL) OR (${table.operationKind} = 'inventory_adjustment' AND ${table.saleId} IS NULL)`,
     ),
     identityCheck: check(
       "cashier_operation_attribution_identity_check",
-      sql`char_length(${table.operationId}) BETWEEN 1 AND 200 AND char_length(${table.saleId}) BETWEEN 1 AND 200 AND char_length(${table.deviceId}) BETWEEN 1 AND 200 AND char_length(${table.stationCredentialId}) BETWEEN 1 AND 200 AND char_length(${table.operatorSessionId}) BETWEEN 1 AND 200`,
+      sql`char_length(${table.operationId}) BETWEEN 1 AND 200 AND (${table.saleId} IS NULL OR char_length(${table.saleId}) BETWEEN 1 AND 200) AND char_length(${table.deviceId}) BETWEEN 1 AND 200 AND char_length(${table.stationCredentialId}) BETWEEN 1 AND 200 AND char_length(${table.operatorSessionId}) BETWEEN 1 AND 200`,
     ),
   }),
 );
