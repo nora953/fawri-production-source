@@ -965,12 +965,14 @@ export async function updateCashierStationAuthoritative(input: {
       add("status", status);
       sets.push(status === "revoked" ? "revoked_at = now()" : "revoked_at = NULL");
       if (status !== "active") {
-        sets.push(
-          "offline_inventory_authority = FALSE",
-          "paired_device_id = NULL",
-          "paired_at = NULL",
-          "credential_version = credential_version + 1",
-        );
+        sets.push("offline_inventory_authority = FALSE");
+        if (!locationChanged) {
+          sets.push(
+            "paired_device_id = NULL",
+            "paired_at = NULL",
+            "credential_version = credential_version + 1",
+          );
+        }
       }
     }
 
@@ -998,18 +1000,20 @@ export async function updateCashierStationAuthoritative(input: {
           WHERE merchant_id = $1 AND station_id = $2 AND status = 'active'`,
         [merchantId, stationId],
       );
-      await revokeStationRuntime(
-        client,
-        merchantId,
-        stationId,
-        "station_location_changed",
-      );
-    } else if (status === "disabled" || status === "revoked") {
+    }
+    if (status === "disabled" || status === "revoked") {
       await revokeStationRuntime(
         client,
         merchantId,
         stationId,
         status === "revoked" ? "station_revoked" : "station_disabled",
+      );
+    } else if (locationChanged) {
+      await revokeStationRuntime(
+        client,
+        merchantId,
+        stationId,
+        "station_location_changed",
       );
     }
     return stationView(rows[0]);
