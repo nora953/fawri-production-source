@@ -173,8 +173,11 @@ test('Sorani cashier copy follows the frozen Arabic reference without UI fallbac
   const management = await web('src/pages/dashboard/CashierManagementPage.tsx');
   const discounts = await web('src/pages/dashboard/CashierDiscountPoliciesPage.tsx');
 
-  assert.match(management, /discountWarning: 'دەسەڵاتی داشکاندن خۆکارانە نادرێت\./);
-  assert.match(management, /offlineHint: 'تەنها یەک وێستگە لە هەر لقێک دەتوانێت ئەم دەسەڵاتە هەبێت\. لە کاتی پچڕانی ئینتەرنێت/);
+  assert.match(management, /discountWarning: 'دەسەڵاتی داشکاندن خۆکارانە نادرێت\.[\s\S]*تێپەڕاندنی سنوور پێویستی بە پەسەندی بەڕێوەبەری مۆڵەتپێدراو هەیە\.'/);
+  assert.match(management, /offlineAuthority: 'ڕێگەدان بە ئەم وێستگەیە بۆ فرۆشتنی کۆگای بەدواداچووکراو بەبێ ئینتەرنێت'/);
+  assert.match(management, /offlineHint: 'تەنها یەک وێستگە لە هەر لقێک ئەم دەسەڵاتە هەیە\. وێستگەکانی تر لە کاتی پچڕانی ئینتەرنێت/);
+  assert.match(management, /lang === 'ku' \? 'ckb-IQ'/);
+  assert.match(management, /lang === 'ku' \? \{ hour12: false \} : undefined/);
   assert.doesNotMatch(management, /دەسەڵاتی داشکاندن هەستیارە و بە ڕۆڵ خۆکارانە نادرێت/);
 
   assert.match(discounts, /title: 'دەسەڵاتی داشکاندنی کاشێر'/);
