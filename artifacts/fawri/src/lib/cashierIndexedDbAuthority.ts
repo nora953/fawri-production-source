@@ -18,6 +18,11 @@ import {
   type CashierPromotionRule,
 } from './cashierPromotionRuntime';
 import {
+  bindCashierOperationToCurrentOperator,
+  cashierOperatorCan,
+  getCashierOperatorSession,
+} from './cashierOperatorSessionRuntime';
+import {
   resolveCashierSalePricing,
   type CashierSalePricingCatalogItem,
 } from './cashierSalePricingRuntime';
@@ -932,6 +937,35 @@ export class IndexedDbCashierAuthority implements CashierLocalAuthority {
     input: CashierInventoryAdjustmentInput,
   ): Promise<CashierInventoryMovement> {
     const operationId = requiredIdentifier(input.operation_id, 'operation id');
+
+    if (this.cloudMerchantId) {
+      const session = await getCashierOperatorSession();
+      if (!session) {
+        throw new CashierIndexedDbError(
+          'CASHIER_OPERATOR_LOGIN_REQUIRED',
+          'Cashier operator login is required for inventory adjustment',
+        );
+      }
+      if (
+        session.context.merchant_id !== this.cloudMerchantId ||
+        session.context.device_id !== this.deviceId
+      ) {
+        throw new CashierIndexedDbError(
+          'CASHIER_OPERATOR_CONTEXT_MISMATCH',
+          'Cashier inventory adjustment does not match the active operator context',
+        );
+      }
+      if (!cashierOperatorCan(session, 'inventory.adjust')) {
+        throw new CashierIndexedDbError(
+          'CASHIER_OPERATOR_PERMISSION_REQUIRED',
+          'Inventory adjustment permission is required',
+        );
+      }
+      await bindCashierOperationToCurrentOperator(
+        operationId,
+        'inventory_adjustment',
+      );
+    }
     if (!Number.isSafeInteger(input.delta) || input.delta === 0) {
       throw new CashierIndexedDbError(
         'CASHIER_INVENTORY_DELTA_INVALID',
