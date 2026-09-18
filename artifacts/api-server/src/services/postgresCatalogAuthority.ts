@@ -11,6 +11,11 @@ import {
   withMerchantOperationalTransaction,
 } from "./operationalPostgresAuthority";
 import * as core from "./postgresCatalogAuthorityCore";
+import {
+  adjustMerchantLocationInventoryAuthoritative,
+  resolveSingleInventoryLocationForCompatibilityAuthoritative,
+  setMerchantLocationInventoryAuthoritative,
+} from "./postgresMerchantLocationInventoryAuthority";
 
 export * from "./postgresCatalogAuthorityCore";
 
@@ -377,4 +382,55 @@ export async function updateCatalogProductAuthoritative(
   const updated = await core.updateCatalogProductAuthoritative(internalParams);
   await markArchivedVariants(merchantId, productId, [...archiveIds]);
   return filterArchivedProduct(updated, archiveIds);
+}
+
+export async function setCatalogInventoryAuthoritative(
+  params: Parameters<typeof core.setCatalogInventoryAuthoritative>[0],
+): Promise<Awaited<ReturnType<typeof core.setCatalogInventoryAuthoritative>>> {
+  if (!operationalPostgresAuthorityRequired()) {
+    return core.setCatalogInventoryAuthoritative(params);
+  }
+  const merchantId = normalizeCatalogMerchantId(params.merchantId);
+  const productId = normalizeCatalogProductId(params.productId);
+  const locationId =
+    await resolveSingleInventoryLocationForCompatibilityAuthoritative(
+      merchantId,
+    );
+  await setMerchantLocationInventoryAuthoritative({
+    merchantId,
+    locationId,
+    productId,
+    variantId: params.variantId,
+    expectedVersion: params.expectedVersion,
+    quantity: params.quantity,
+  });
+  return getCatalogProductAuthoritative(merchantId, productId);
+}
+
+export async function adjustCatalogInventoryAuthoritative(
+  params: Parameters<typeof core.adjustCatalogInventoryAuthoritative>[0],
+): Promise<Awaited<ReturnType<typeof core.adjustCatalogInventoryAuthoritative>>> {
+  if (!operationalPostgresAuthorityRequired()) {
+    return core.adjustCatalogInventoryAuthoritative(params);
+  }
+  const merchantId = normalizeCatalogMerchantId(params.merchantId);
+  const productId = normalizeCatalogProductId(params.productId);
+  const locationId =
+    await resolveSingleInventoryLocationForCompatibilityAuthoritative(
+      merchantId,
+    );
+  const mutation = await adjustMerchantLocationInventoryAuthoritative({
+    merchantId,
+    locationId,
+    productId,
+    variantId: params.variantId,
+    expectedVersion: params.expectedVersion,
+    delta: params.delta,
+    idempotencyKey: params.idempotencyKey,
+    reason: params.reason,
+  });
+  return {
+    product: await getCatalogProductAuthoritative(merchantId, productId),
+    replayed: mutation.replayed,
+  };
 }
