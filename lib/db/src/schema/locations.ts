@@ -24,6 +24,7 @@ export const merchantLocations = pgTable(
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    legacyBranchKey: text("legacy_branch_key"),
     status: text("status").notNull().default("active"),
     isDefault: boolean("is_default").notNull().default(false),
     operationalStatus: text("operational_status").notNull().default("open"),
@@ -62,6 +63,11 @@ export const merchantLocations = pgTable(
     merchantDefaultUnique: uniqueIndex("merchant_locations_default_unique")
       .on(table.merchantId)
       .where(sql`${table.isDefault} = TRUE`),
+    merchantLegacyBranchUnique: uniqueIndex(
+      "merchant_locations_legacy_branch_unique",
+    )
+      .on(table.merchantId, table.legacyBranchKey)
+      .where(sql`${table.legacyBranchKey} IS NOT NULL`),
     merchantStatusIndex: index("merchant_locations_merchant_status_idx").on(
       table.merchantId,
       table.status,
@@ -70,6 +76,10 @@ export const merchantLocations = pgTable(
     identityCheck: check(
       "merchant_locations_identity_check",
       sql`char_length(btrim(${table.name})) BETWEEN 1 AND 120`,
+    ),
+    legacyBranchKeyCheck: check(
+      "merchant_locations_legacy_branch_key_check",
+      sql`${table.legacyBranchKey} IS NULL OR char_length(btrim(${table.legacyBranchKey})) BETWEEN 1 AND 120`,
     ),
     statusCheck: check(
       "merchant_locations_status_check",
