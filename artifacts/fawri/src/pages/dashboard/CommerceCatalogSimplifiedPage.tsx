@@ -35,19 +35,21 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  adjustCatalogInventory,
+  adjustCatalogLocationInventory,
   CatalogApiError,
   createCatalogProduct,
   createStrongIdempotencyKey,
   deleteCatalogProduct,
   getCatalogProduct,
+  getCatalogProductLocationInventory,
   idempotencyAttemptForRequest,
   listCatalogProducts,
-  setCatalogInventory,
+  setCatalogLocationInventory,
   updateCatalogProduct,
   type CatalogIdempotencyAttempt,
   type CatalogProduct,
   type CatalogProductInput,
+  type CatalogProductLocationInventory,
   type CatalogVariant,
 } from '@/lib/catalogUiApi';
 import {
@@ -94,6 +96,14 @@ function tracksInventory(product: CatalogProduct): boolean {
 
 function inventoryKey(productId: string, variantId?: string): string {
   return `${productId}:${variantId || 'product'}`;
+}
+
+function locationInventoryKey(
+  locationId: string,
+  productId: string,
+  variantId?: string,
+): string {
+  return `${locationId}:${inventoryKey(productId, variantId)}`;
 }
 
 function upsert(items: CatalogProduct[], product: CatalogProduct): CatalogProduct[] {
@@ -143,10 +153,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boo
   );
 }
 
-function InventoryControl({ copy, product, variant, value, busy, onValue, onSet, onAdjust, compact = false }: {
+function InventoryControl({ copy, product, variant, currentQuantity, value, busy, onValue, onSet, onAdjust, compact = false }: {
   copy: CommerceCatalogPageCopy;
   product: CatalogProduct;
   variant?: CatalogVariant;
+  currentQuantity?: number;
   value: string;
   busy: boolean;
   onValue: (value: string) => void;
@@ -161,7 +172,7 @@ function InventoryControl({ copy, product, variant, value, busy, onValue, onSet,
           <p className={compact ? 'text-sm font-bold leading-5' : 'text-sm font-bold'}>{variant?.name || product.name}</p>
           {variant && variantOptionSummary(variant) && <p className={compact ? 'text-[11px] leading-4 text-muted-foreground' : 'text-xs text-muted-foreground'} dir="auto">{variantOptionSummary(variant)}</p>}
         </div>
-        <Badge variant="outline" className={compact ? 'rounded-full px-2 py-0.5 text-xs' : 'rounded-full'}>{variant?.stock_quantity ?? product.stock_quantity}</Badge>
+        <Badge variant="outline" className={compact ? 'rounded-full px-2 py-0.5 text-xs' : 'rounded-full'}>{currentQuantity ?? variant?.stock_quantity ?? product.stock_quantity}</Badge>
       </div>
       <div className={compact ? 'grid grid-cols-[auto_1fr_auto_auto] gap-1.5' : 'grid grid-cols-[auto_1fr_auto_auto] gap-2'}>
         <Button type="button" variant="outline" size="icon" className={compact ? 'h-9 w-9 rounded-lg' : 'h-10 w-10 rounded-xl'} disabled={busy} onClick={() => onAdjust(-1)}><Minus className="h-4 w-4" /></Button>
