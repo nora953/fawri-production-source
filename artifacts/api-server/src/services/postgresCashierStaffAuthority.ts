@@ -329,7 +329,11 @@ function cashierPin(value: unknown): string {
 }
 
 function secret(prefix: string, bytes: number): string {
-  return `${prefix}_${crypto.randomBytes(bytes).toString("base64url")}`;
+  const value = `${prefix}_${crypto.randomBytes(bytes).toString("base64url")}`;
+  if (!/^[A-Za-z0-9_-]+$/.test(value)) {
+    throw new Error("cashier secret generator produced non-ASCII characters");
+  }
+  return value;
 }
 
 function hashSecret(value: string): string {
