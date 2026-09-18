@@ -102,6 +102,44 @@ function variantId(value: unknown): string {
   return String(asRecord(value).id || "").trim();
 }
 
+function preserveExistingInventoryOnCatalogEdit(
+  inputValue: Record<string, unknown>,
+  current: Awaited<ReturnType<typeof core.getCatalogProductAuthoritative>>,
+): Record<string, unknown> {
+  const input = structuredClone(inputValue);
+  const hasTopLevelStock =
+    Object.prototype.hasOwnProperty.call(input, "stock_quantity") ||
+    Object.prototype.hasOwnProperty.call(input, "quantity");
+
+  if (Array.isArray(input.variants)) {
+    const existingById = new Map(
+      current.variants.map((variant) => [variant.id, variant]),
+    );
+    input.variants = input.variants.map((value) => {
+      const variant = { ...asRecord(value) };
+      const id = String(variant.id || "").trim();
+      const existing = id ? existingById.get(id) : undefined;
+      if (!existing) return variant;
+      variant.stock_quantity = existing.stock_quantity;
+      delete variant.quantity;
+      return variant;
+    });
+
+    if (current.variants.length > 0 || input.variants.length > 0) {
+      delete input.stock_quantity;
+      delete input.quantity;
+    }
+    return input;
+  }
+
+  if (hasTopLevelStock) {
+    input.stock_quantity = current.stock_quantity;
+    delete input.quantity;
+  }
+  return input;
+}
+
+
 function filterArchivedProduct<T>(product: T, archived: Set<string>): T {
   if (archived.size === 0 || !product || typeof product !== "object") return product;
   const carrier = product as T & { variants?: VariantIdentity[] };
@@ -272,9 +310,12 @@ export async function updateCatalogProductAuthoritative(
   const merchantId = normalizeCatalogMerchantId(params.merchantId);
   const productId = normalizeCatalogProductId(params.productId);
   const current = await core.getCatalogProductAuthoritative(merchantId, productId);
-  const input = scopeCatalogImageAttachmentIds(
-    params.input,
-    `${merchantId}\0${productId}`,
+  const input = preserveExistingInventoryOnCatalogEdit(
+    scopeCatalogImageAttachmentIds(
+      params.input,
+      `${merchantId}\0${productId}`,
+    ),
+    current,
   );
   assertItemTypeImmutable(current, input);
 
