@@ -856,12 +856,15 @@ export default function CashierManagementPage() {
               dir="ltr"
               lang="en-US"
               style={{
-                unicodeBidi: 'isolate',
+                direction: 'ltr',
+                unicodeBidi: 'isolate-override',
                 fontFamily: 'Consolas, "Courier New", monospace',
                 fontVariantNumeric: 'lining-nums',
-                fontFeatureSettings: '"locl" 0',
+                fontFeatureSettings: '"locl" 0, "lnum" 1',
               }}
-            >{pairing.code}</div>
+            >
+              <bdo dir="ltr" lang="en-US">{pairing.code}</bdo>
+            </div>
             <button type="button" onClick={() => void copyPairingCode()} className="mt-3 h-10 w-full rounded-lg bg-slate-900 text-sm font-bold text-white dark:bg-slate-100 dark:text-slate-900">
               {copied ? l.copied : l.copyCode}
             </button>
