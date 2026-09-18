@@ -943,9 +943,9 @@ export async function updateCashierStationAuthoritative(input: {
       sets.push(`${fragment} = $${values.length}`);
     };
     if (name !== undefined) add("name", name);
-    if (branchKey !== undefined) {
+    if (branchKey !== undefined && targetLocation) {
       add("branch_key", branchKey);
-      add("location_id", targetLocation?.id);
+      add("location_id", targetLocation.id);
     }
     if (branchLabel !== undefined) add("branch_label", branchLabel);
     if (offlineInventoryAuthority !== undefined) {
