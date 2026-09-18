@@ -35,7 +35,7 @@ class FakeTarget implements OperationalQueryTarget {
           .filter(
             (row) => row.merchant_id === merchantId && row.is_default === true,
           )
-          .slice(0, 1) as T[],
+          .slice(0, 1) as unknown as T[],
       };
     }
 
@@ -52,7 +52,7 @@ class FakeTarget implements OperationalQueryTarget {
               row.merchant_id === merchantId &&
               row.legacy_branch_key === branchKey,
           )
-          .slice(0, 1) as T[],
+          .slice(0, 1) as unknown as T[],
       };
     }
 
