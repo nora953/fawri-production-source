@@ -6,6 +6,7 @@ import {
 import {
   getCashierOperatorCatalogSnapshotAuthoritative,
   syncCashierOperatorCompensationAuthoritative,
+  syncCashierOperatorInventoryAdjustmentAuthoritative,
   syncCashierOperatorSaleAuthoritative,
 } from "../services/cashierOperatorCommerceAuthority";
 import { assertCashierOperatorManualDiscountAuthority } from "../services/cashierOperatorDiscountAuthority";
@@ -169,6 +170,23 @@ router.post(
       });
       const result = await syncCashierOperatorSaleAuthoritative({
         context,
+        body: req.body,
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/cashier/operator/sync/inventory-adjustment",
+  requireCashierOperatorSession("inventory.adjust"),
+  async (req: Request, res: Response) => {
+    try {
+      const result = await syncCashierOperatorInventoryAdjustmentAuthoritative({
+        context: operatorContext(res),
         body: req.body,
       });
       res.setHeader("Cache-Control", "no-store");
