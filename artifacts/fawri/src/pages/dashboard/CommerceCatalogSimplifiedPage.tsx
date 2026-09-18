@@ -961,6 +961,11 @@ export default function CommerceCatalogSimplifiedPage() {
                               {copy.defaultLocation}
                             </Badge>
                           )}
+                          {location.status !== 'active' && (
+                            <Badge variant="outline" className="rounded-full border-zinc-300 bg-zinc-100 text-[11px] text-zinc-700">
+                              {copy.disabledLocation}
+                            </Badge>
+                          )}
                         </div>
 
                         <div className="grid gap-2 sm:grid-cols-2">
