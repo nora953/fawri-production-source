@@ -156,3 +156,11 @@ test('cashier edit actions follow page direction instead of a language-name spec
   assert.doesNotMatch(page, /lang === 'ar' \? 'order-1' : 'order-2'/);
   assert.doesNotMatch(page, /lang === 'ar' \? 'order-2' : 'order-1'/);
 });
+
+test('pairing code stays Latin and LTR in every interface language', async () => {
+  const page = await web('src/pages/dashboard/CashierManagementPage.tsx');
+  assert.match(page, /\{pairing\.code\}<\/div>/);
+  assert.match(page, /dir="ltr" lang="en" style=\{\{ unicodeBidi: 'isolate' \}\}/);
+  assert.match(page, /navigator\.clipboard\?\.writeText/);
+  assert.match(page, /writeText\(pairing\.code\)/);
+});
