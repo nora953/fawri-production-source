@@ -125,6 +125,7 @@ JOIN "merchant_locations" l
   ON l."merchant_id" = p."merchant_id"
  AND l."is_default" = TRUE
 WHERE COALESCE(p."metadata"->'fawri_catalog_v2'->>'item_type', 'product') = 'product'
+  AND p."variant_stock_mode" = FALSE
   AND (
     jsonb_typeof(p."metadata"->'fawri_catalog_v2'->'track_inventory') IS DISTINCT FROM 'boolean'
     OR (p."metadata"->'fawri_catalog_v2'->>'track_inventory')::boolean = TRUE
@@ -166,6 +167,7 @@ JOIN "merchant_locations" l
   ON l."merchant_id" = v."merchant_id"
  AND l."is_default" = TRUE
 WHERE COALESCE(p."metadata"->'fawri_catalog_v2'->>'item_type', 'product') = 'product'
+  AND p."variant_stock_mode" = TRUE
   AND (
     jsonb_typeof(p."metadata"->'fawri_catalog_v2'->'track_inventory') IS DISTINCT FROM 'boolean'
     OR (p."metadata"->'fawri_catalog_v2'->>'track_inventory')::boolean = TRUE
