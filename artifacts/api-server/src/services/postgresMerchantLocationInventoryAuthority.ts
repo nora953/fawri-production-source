@@ -194,7 +194,7 @@ async function ensureDefaultLocation(
   });
 }
 
-async function activeLocations(
+async function inventoryLocations(
   target: OperationalQueryTarget,
   merchantId: string,
 ): Promise<LocationRow[]> {
@@ -210,7 +210,6 @@ async function activeLocations(
        legacy_branch_key
      FROM merchant_locations
     WHERE merchant_id = $1
-      AND status = 'active'
     ORDER BY is_default DESC, name, id`,
     [merchantId],
   );
@@ -299,7 +298,7 @@ async function materializeProductLevels(
   merchantId: string,
   productId: string,
 ): Promise<void> {
-  await activeLocations(target, merchantId);
+  await inventoryLocations(target, merchantId);
   const product = await productRow(target, merchantId, productId);
 
   if (product.variant_stock_mode) {
@@ -344,7 +343,6 @@ async function materializeProductLevels(
         AND product.merchant_id = variant.merchant_id
        JOIN merchant_locations AS location
          ON location.merchant_id = variant.merchant_id
-        AND location.status = 'active'
        WHERE variant.merchant_id = $1
          AND variant.product_id = $2
          AND product.deleted_at IS NULL
@@ -394,7 +392,6 @@ async function materializeProductLevels(
      FROM products AS product
      JOIN merchant_locations AS location
        ON location.merchant_id = product.merchant_id
-      AND location.status = 'active'
      WHERE product.merchant_id = $1
        AND product.id = $2
        AND product.deleted_at IS NULL
@@ -435,7 +432,7 @@ export async function listMerchantInventoryLocationsAuthoritative(
   requirePostgres();
   const merchantId = text(merchantIdValue, "merchant_id", 128);
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const rows = await activeLocations(client, merchantId);
+    const rows = await inventoryLocations(client, merchantId);
     return rows.map(locationDto);
   });
 }
@@ -451,7 +448,7 @@ export async function getMerchantProductLocationInventoryAuthoritative(input: {
   return withMerchantOperationalTransaction(merchantId, async (client) => {
     await materializeProductLevels(client, merchantId, productId);
     const product = await productRow(client, merchantId, productId);
-    const locations = await activeLocations(client, merchantId);
+    const locations = await inventoryLocations(client, merchantId);
     const levels = await operationalQueryRows<LevelRow>(
       client,
       `SELECT
@@ -736,6 +733,7 @@ async function mutateMerchantLocationInventory(input: {
         productId: input.productId,
         ...(input.variantId ? { variantId: input.variantId } : {}),
         delta,
+        allowInactiveLocation: true,
       });
     } catch (error) {
       if (error instanceof CashierLocationInventoryError) {
@@ -790,7 +788,7 @@ export async function resolveSingleInventoryLocationForCompatibilityAuthoritativ
   requirePostgres();
   const merchantId = text(merchantIdValue, "merchant_id", 128);
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const locations = await activeLocations(client, merchantId);
+    const locations = await inventoryLocations(client, merchantId);
     if (locations.length !== 1) {
       throw new CatalogRuntimeError(
         "CATALOG_LOCATION_REQUIRED",
