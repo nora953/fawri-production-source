@@ -936,8 +936,18 @@ export async function updateCashierStationAuthoritative(input: {
               branchLabel === undefined ? current.branch_label : branchLabel,
           });
 
+    const locationChanged =
+      targetLocation !== null && targetLocation.id !== current.location_id;
+
     const values: unknown[] = [merchantId, stationId];
     const sets = ["updated_at = now()"];
+    if (locationChanged) {
+      sets.push(
+        "paired_device_id = NULL",
+        "paired_at = NULL",
+        "credential_version = credential_version + 1",
+      );
+    }
     const add = (fragment: string, value: unknown) => {
       values.push(value);
       sets.push(`${fragment} = $${values.length}`);
@@ -981,7 +991,20 @@ export async function updateCashierStationAuthoritative(input: {
         404,
       );
     }
-    if (status === "disabled" || status === "revoked") {
+    if (locationChanged) {
+      await client.query(
+        `UPDATE cashier_station_pairing_challenges
+            SET status = 'revoked', revoked_at = now()
+          WHERE merchant_id = $1 AND station_id = $2 AND status = 'active'`,
+        [merchantId, stationId],
+      );
+      await revokeStationRuntime(
+        client,
+        merchantId,
+        stationId,
+        "station_location_changed",
+      );
+    } else if (status === "disabled" || status === "revoked") {
       await revokeStationRuntime(
         client,
         merchantId,
