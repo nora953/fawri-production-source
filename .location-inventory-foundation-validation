@@ -1,0 +1,7 @@
+validated_sha=0e607645072d6398cb315c5c4bd2562ac41ed5f0
+typecheck=pass
+metadata_reproducible=pass
+reviewed_sql=pass
+foundation_contract=pass
+schema_smoke=pass
+real_data_backfill=pass
