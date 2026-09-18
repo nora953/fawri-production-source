@@ -212,6 +212,10 @@ export default function CommerceCatalogSimplifiedPage() {
   const [inventoryBusy, setInventoryBusy] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [detailsProductId, setDetailsProductId] = useState<string | null>(null);
+  const [locationInventory, setLocationInventory] = useState<CatalogProductLocationInventory | null>(null);
+  const [locationInventoryLoading, setLocationInventoryLoading] = useState(false);
+  const [locationInventoryError, setLocationInventoryError] = useState(false);
+  const [locationInventoryReload, setLocationInventoryReload] = useState(0);
   const mutationBusy = saving || inventoryBusy !== null || deletingId !== null;
 
   const fractionDigits = commerceContext?.currency_fraction_digits ?? 0;
@@ -227,6 +231,23 @@ export default function CommerceCatalogSimplifiedPage() {
         delete next[inventoryKey(product.id)];
       } else {
         next[inventoryKey(product.id)] = String(product.stock_quantity);
+      }
+      return next;
+    });
+  };
+
+  const syncLocationInventory = (snapshot: CatalogProductLocationInventory) => {
+    setLocationInventory(snapshot);
+    setInventoryValues(current => {
+      const next = { ...current };
+      for (const location of snapshot.locations) {
+        for (const level of location.levels) {
+          next[locationInventoryKey(
+            location.id,
+            snapshot.product_id,
+            level.variant_id,
+          )] = String(level.on_hand_quantity);
+        }
       }
       return next;
     });
@@ -318,6 +339,39 @@ export default function CommerceCatalogSimplifiedPage() {
   const detailsProduct = detailsProductId
     ? items.find(product => product.id === detailsProductId) ?? null
     : null;
+
+  useEffect(() => {
+    let active = true;
+    if (!detailsProductId || !detailsProduct || !tracksInventory(detailsProduct)) {
+      setLocationInventory(null);
+      setLocationInventoryLoading(false);
+      setLocationInventoryError(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setLocationInventoryLoading(true);
+    setLocationInventoryError(false);
+    void getCatalogProductLocationInventory(detailsProductId)
+      .then(snapshot => {
+        if (!active) return;
+        syncLocationInventory(snapshot);
+      })
+      .catch(error => {
+        console.error('Location inventory load failed:', error);
+        if (!active) return;
+        setLocationInventory(null);
+        setLocationInventoryError(true);
+      })
+      .finally(() => {
+        if (active) setLocationInventoryLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [detailsProductId, detailsProduct?.version, locationInventoryReload]);
 
   const freshForm = (): CatalogProductFormState => {
     const next = createEmptyCatalogProductForm();
