@@ -120,6 +120,13 @@
       "when": 1789646400000,
       "tag": "0016_cashier_merchant_discount_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789732800000,
+      "tag": "0017_location_inventory_foundation",
+      "breakpoints": true
     }
   ]
 }
