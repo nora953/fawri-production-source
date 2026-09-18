@@ -709,7 +709,11 @@ async function mutateMerchantLocationInventory(input: {
       }
     }
 
-    if (!Number.isSafeInteger(delta) || delta === 0) {
+    if (
+      typeof delta !== "number" ||
+      !Number.isSafeInteger(delta) ||
+      delta === 0
+    ) {
       throw new CatalogRuntimeError(
         "CATALOG_DELTA_INVALID",
         "inventory delta must be a non-zero integer",
