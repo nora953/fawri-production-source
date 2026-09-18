@@ -809,6 +809,7 @@ async function findOperationUsage(
 function replayFromUsage(
   usage: ExistingOrderRow,
   bundle: ValidatedCompensationBundle,
+  locationId?: string,
 ): CashierCompensationSyncResult | null {
   const metadata = cashierMetadata(usage.metadata);
   if (String(metadata.operation_id || "") === bundle.operationId) {
@@ -822,7 +823,16 @@ function replayFromUsage(
     (item) => item.operation_id === bundle.operationId,
   );
   if (!existing) return null;
+  if (existing.location_id && locationId === undefined) {
+    throw new CashierSyncError(
+      "CASHIER_LOCATION_CONTEXT_REQUIRED",
+      "location-bound cashier compensation requires location context",
+      409,
+      { location_id: existing.location_id },
+    );
+  }
   if (
+    (locationId !== undefined && existing.location_id !== locationId) ||
     usage.id !== bundle.saleId ||
     existing.kind !== bundle.kind ||
     existing.request_hash !== bundle.requestHash ||
@@ -844,6 +854,34 @@ function replayFromUsage(
     inventory_mutation_count: 0,
     accepted_entity_ids: bundle.envelopes.map((item) => item.entity_id),
   };
+}
+
+async function originalSaleAttributedLocation(
+  target: OperationalQueryTarget,
+  merchantId: string,
+  saleId: string,
+): Promise<string | null> {
+  const rows = await operationalQueryRows<{ location_id: string }>(
+    target,
+    `SELECT location_id
+       FROM cashier_operation_attribution
+      WHERE merchant_id = $1
+        AND sale_id = $2
+        AND operation_kind = 'sale'
+      ORDER BY created_at
+      LIMIT 2
+      FOR UPDATE`,
+    [merchantId, saleId],
+  );
+  if (rows.length > 1) {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
+      "original cashier sale has ambiguous location attribution",
+      409,
+      { sale_id: saleId },
+    );
+  }
+  return rows[0]?.location_id || null;
 }
 
 async function assertDeviceSequenceUnused(
@@ -1312,9 +1350,11 @@ function acceptedEntityIds(bundle: ValidatedCompensationBundle): string[] {
 
 function compensationMetadataEntry(
   bundle: ValidatedCompensationBundle,
+  locationId?: string,
 ): StoredCompensation {
   return {
     kind: bundle.kind,
+    ...(locationId ? { location_id: locationId } : {}),
     operation_id: bundle.operationId,
     request_hash: bundle.requestHash,
     device_id: bundle.deviceId,
@@ -1333,6 +1373,7 @@ async function applyReturn(
   originalSale: OriginalSale,
   originalMutations: Map<string, OriginalInventoryMutation>,
   previousCompensations: StoredCompensation[],
+  locationId?: string,
 ): Promise<number> {
   const snapshot = bundle.returnSnapshot!;
   if (
@@ -1418,7 +1459,14 @@ async function applyReturn(
         409,
       );
     }
-    await applyRestock(target, bundle, line, requested.quantity, movement);
+    await applyRestock(
+      target,
+      bundle,
+      line,
+      requested.quantity,
+      movement,
+      locationId,
+    );
     bundle.movements.delete(key);
     mutationCount += 1;
   }
@@ -1438,6 +1486,7 @@ async function applyVoid(
   originalSale: OriginalSale,
   originalMutations: Map<string, OriginalInventoryMutation>,
   previousCompensations: StoredCompensation[],
+  locationId?: string,
 ): Promise<number> {
   const snapshot = bundle.voidSnapshot!;
   if (previousCompensations.length > 0) {
@@ -1482,7 +1531,14 @@ async function applyVoid(
         409,
       );
     }
-    await applyRestock(target, bundle, line, line.quantity, movement);
+    await applyRestock(
+      target,
+      bundle,
+      line,
+      line.quantity,
+      movement,
+      locationId,
+    );
     bundle.movements.delete(key);
     mutationCount += 1;
   }
@@ -1491,9 +1547,14 @@ async function applyVoid(
 
 export async function syncCashierCompensationAuthoritative(params: {
   merchantId: unknown;
+  locationId?: unknown;
   body: unknown;
 }): Promise<CashierCompensationSyncResult> {
   const merchantId = identifier(params.merchantId, "merchant_id");
+  const requestedLocationId =
+    params.locationId === undefined
+      ? undefined
+      : identifier(params.locationId, "location_id");
   if (!operationalPostgresAuthorityRequired()) {
     throw new CashierSyncError(
       "CASHIER_SYNC_POSTGRES_REQUIRED",
@@ -1522,7 +1583,11 @@ export async function syncCashierCompensationAuthoritative(params: {
       bundle.operationId,
     );
     if (operationUsage) {
-      const replay = replayFromUsage(operationUsage, bundle);
+      const replay = replayFromUsage(
+        operationUsage,
+        bundle,
+        requestedLocationId,
+      );
       if (replay) return replay;
     }
 
@@ -1535,6 +1600,52 @@ export async function syncCashierCompensationAuthoritative(params: {
       );
     }
     const metadata = cashierMetadata(order.metadata);
+    const storedLocationId = String(metadata.location_id || "").trim();
+    let resolvedLocationId = requestedLocationId;
+    let originalUsesLocationAudit = false;
+
+    if (storedLocationId) {
+      if (requestedLocationId === undefined) {
+        throw new CashierSyncError(
+          "CASHIER_LOCATION_CONTEXT_REQUIRED",
+          "location-bound cashier sale requires location context for compensation",
+          409,
+          { location_id: storedLocationId },
+        );
+      }
+      if (requestedLocationId !== storedLocationId) {
+        throw new CashierSyncError(
+          "CASHIER_COMPENSATION_LOCATION_MISMATCH",
+          "cashier compensation location does not match the original sale",
+          409,
+          {
+            expected_location_id: storedLocationId,
+            received_location_id: requestedLocationId,
+          },
+        );
+      }
+      resolvedLocationId = storedLocationId;
+      originalUsesLocationAudit = true;
+    } else if (requestedLocationId !== undefined) {
+      const attributedLocationId = await originalSaleAttributedLocation(
+        client,
+        merchantId,
+        order.id,
+      );
+      if (!attributedLocationId || attributedLocationId !== requestedLocationId) {
+        throw new CashierSyncError(
+          "CASHIER_COMPENSATION_LOCATION_MISMATCH",
+          "cashier compensation location does not match historical sale attribution",
+          409,
+          {
+            expected_location_id: attributedLocationId,
+            received_location_id: requestedLocationId,
+          },
+        );
+      }
+      resolvedLocationId = attributedLocationId;
+    }
+
     const originalSale = parseOriginalSale(metadata.sale_snapshot);
     if (
       originalSale.sale_id !== order.id ||
@@ -1567,6 +1678,7 @@ export async function syncCashierCompensationAuthoritative(params: {
       client,
       merchantId,
       originalRequestHash,
+      originalUsesLocationAudit ? resolvedLocationId : undefined,
     );
     validateOriginalInventoryEvidence(originalSale, originalMutations);
 
@@ -1578,6 +1690,7 @@ export async function syncCashierCompensationAuthoritative(params: {
         originalSale,
         originalMutations,
         previousCompensations,
+        resolvedLocationId,
       );
     } else {
       inventoryMutationCount = await applyVoid(
@@ -1586,6 +1699,7 @@ export async function syncCashierCompensationAuthoritative(params: {
         originalSale,
         originalMutations,
         previousCompensations,
+        resolvedLocationId,
       );
     }
     if (bundle.movements.size !== 0) {
@@ -1599,7 +1713,7 @@ export async function syncCashierCompensationAuthoritative(params: {
 
     const nextCompensations = [
       ...previousCompensations,
-      compensationMetadataEntry(bundle),
+      compensationMetadataEntry(bundle, resolvedLocationId),
     ];
     const nextCashierMetadata = {
       ...metadata,
