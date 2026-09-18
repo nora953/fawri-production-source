@@ -1,0 +1,12 @@
+{
+  "index": 18,
+  "name": "cashier_location_binding",
+  "when": 1789819200000,
+  "mode": "reviewed_sql",
+  "sql_sha256": "347760c2d2399515aadba2f26c63037050a5345e02e839ec11bb10978b1012b0",
+  "preimage_files": [
+    "locations.ts",
+    "cashier-staff.ts",
+    "tenant-security.ts"
+  ]
+}
