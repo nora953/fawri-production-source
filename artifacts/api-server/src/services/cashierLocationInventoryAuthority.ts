@@ -552,6 +552,8 @@ export async function mutateCashierLocationInventoryInTransaction(
     input.merchantId,
     input.locationId,
   );
+  await ensureLocationInventoryRows(target, input.merchantId, location);
+
   const productRows = await operationalQueryRows<ProductRow>(
     target,
     `SELECT
