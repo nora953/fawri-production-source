@@ -704,7 +704,9 @@ async function postOperation(
     .map((item) => text(item.entity_id))
     .sort();
 
-  const response = await fetch(`/api/cashier/operator/sync/${kind}`, {
+  const endpoint =
+    kind === 'inventory_adjustment' ? 'inventory-adjustment' : kind;
+  const response = await fetch(`/api/cashier/operator/sync/${endpoint}`, {
     method: 'POST',
     headers: cashierOperatorHeaders(session),
     credentials: 'omit',
@@ -796,6 +798,16 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
       if (kind === 'skip') {
         skipped += 1;
         continue;
+      }
+      if (
+        kind === 'inventory_adjustment' &&
+        !cashierOperatorCan(session, 'inventory.adjust')
+      ) {
+        throw new CashierOperatorCloudSyncError(
+          'CASHIER_OPERATOR_PERMISSION_REQUIRED',
+          'Inventory adjustment permission is required to synchronize this operation',
+          403,
+        );
       }
       let binding = await getCashierOperationBinding(operationId);
       if (!binding) {
