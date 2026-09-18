@@ -1,5 +1,5 @@
 name: Complete and validate 0018 cashier location binding once
-# validation-revision: 2
+# validation-revision: 3
 
 on:
   push:
