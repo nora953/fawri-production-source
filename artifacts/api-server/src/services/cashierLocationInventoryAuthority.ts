@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { resolveCashierLocationForBranch } from "./cashierLocationBindingAuthority";
 import {
   catalogCommerceFieldsOf,
   catalogCommerceFromMetadata,
@@ -280,6 +281,40 @@ async function ensureLocationInventoryRows(
   );
 }
 
+async function ensureDefaultAndCurrentInventoryRows(
+  target: OperationalQueryTarget,
+  merchantId: string,
+  currentLocation: LocationRow,
+): Promise<void> {
+  const defaultBinding = await resolveCashierLocationForBranch(target, {
+    merchantId,
+    branchKey: "main",
+  });
+  const rows = await operationalQueryRows<LocationRow>(
+    target,
+    `SELECT id, is_default, status
+       FROM merchant_locations
+      WHERE merchant_id = $1
+        AND id = $2
+      LIMIT 1
+      FOR UPDATE`,
+    [merchantId, defaultBinding.id],
+  );
+  const defaultLocation = rows[0];
+  if (!defaultLocation || !defaultLocation.is_default) {
+    throw new CashierLocationInventoryError(
+      "CASHIER_LOCATION_INVENTORY_STATE_INVALID",
+      "default merchant location could not be loaded",
+      500,
+    );
+  }
+
+  await ensureLocationInventoryRows(target, merchantId, defaultLocation);
+  if (currentLocation.id !== defaultLocation.id) {
+    await ensureLocationInventoryRows(target, merchantId, currentLocation);
+  }
+}
+
 export async function projectCashierCatalogForLocationAuthoritative(input: {
   merchantId: string;
   locationId: string;
@@ -294,7 +329,11 @@ export async function projectCashierCatalogForLocationAuthoritative(input: {
       input.merchantId,
       input.locationId,
     );
-    await ensureLocationInventoryRows(client, input.merchantId, location);
+    await ensureDefaultAndCurrentInventoryRows(
+      client,
+      input.merchantId,
+      location,
+    );
 
     const rows = await operationalQueryRows<LevelRow>(
       client,
@@ -556,7 +595,11 @@ export async function mutateCashierLocationInventoryInTransaction(
     input.merchantId,
     input.locationId,
   );
-  await ensureLocationInventoryRows(target, input.merchantId, location);
+  await ensureDefaultAndCurrentInventoryRows(
+    target,
+    input.merchantId,
+    location,
+  );
 
   const productRows = await operationalQueryRows<ProductRow>(
     target,
