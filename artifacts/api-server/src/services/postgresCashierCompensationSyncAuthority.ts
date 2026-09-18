@@ -1026,8 +1026,100 @@ async function applyRestock(
   line: OriginalSaleLine,
   quantity: number,
   movement: CompensationMovement,
+  locationId?: string,
 ): Promise<void> {
   assertMovementMatches(bundle, line, quantity, movement);
+
+  if (locationId) {
+    let mutation;
+    try {
+      mutation = await mutateCashierLocationInventoryInTransaction(target, {
+        merchantId: bundle.cloudMerchantId,
+        locationId,
+        productId: line.product_id,
+        ...(line.variant_id ? { variantId: line.variant_id } : {}),
+        delta: quantity,
+      });
+    } catch (error) {
+      if (error instanceof CashierLocationInventoryError) {
+        throw new CashierSyncError(
+          error.code,
+          error.message,
+          error.status,
+          error.details,
+        );
+      }
+      throw error;
+    }
+    if (!mutation.tracked) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_CATALOG_SHAPE_CHANGED",
+        "cashier compensation cannot safely restore inventory after tracking was disabled",
+        409,
+        { product_id: line.product_id },
+      );
+    }
+
+    const keyHash = sha256(
+      `cashier-${bundle.kind}:${bundle.cloudMerchantId}:${bundle.operationId}:${line.line_id}`,
+    );
+    const reasonCode =
+      bundle.kind === "return" ? "cashier_return_sync" : "cashier_void_sync";
+    await target.query(
+      `INSERT INTO location_inventory_mutations (
+         id, merchant_id, location_id, product_id, variant_id, mutation_type,
+         before_on_hand_quantity, after_on_hand_quantity,
+         before_reserved_quantity, after_reserved_quantity,
+         expected_version, resulting_version, actor_type, actor_account_id,
+         operation_id, reason_code, idempotency_key_hash, request_hash,
+         occurred_at, created_at
+       ) VALUES (
+         $1,$2,$3,$4,$5,'adjust',$6,$7,$8,$9,$10,$11,
+         'cashier_operator',NULL,$12,$13,$14,$15,$16,now()
+       )`,
+      [
+        `cashier_loc_comp_${keyHash.slice(0, 35)}`,
+        bundle.cloudMerchantId,
+        locationId,
+        line.product_id,
+        line.variant_id || null,
+        mutation.before_on_hand_quantity,
+        mutation.after_on_hand_quantity,
+        mutation.before_reserved_quantity,
+        mutation.after_reserved_quantity,
+        mutation.location_expected_version,
+        mutation.location_resulting_version,
+        bundle.operationId,
+        reasonCode,
+        keyHash,
+        bundle.requestHash,
+        new Date(bundle.occurredAt),
+      ],
+    );
+    await target.query(
+      `INSERT INTO inventory_mutations (
+         id, merchant_id, product_id, variant_id, mutation_type,
+         before_quantity, after_quantity, expected_version, resulting_version,
+         actor_type, actor_account_id, reason_code, idempotency_key_hash,
+         request_hash, created_at
+       ) VALUES ($1,$2,$3,$4,'adjust',$5,$6,$7,$8,'merchant',$2,$9,$10,$11,$12)`,
+      [
+        `cashier_comp_${keyHash.slice(0, 38)}`,
+        bundle.cloudMerchantId,
+        line.product_id,
+        line.variant_id || null,
+        mutation.legacy_before_quantity,
+        mutation.legacy_after_quantity,
+        mutation.product_expected_version,
+        mutation.product_resulting_version,
+        reasonCode,
+        keyHash,
+        bundle.requestHash,
+        new Date(bundle.occurredAt),
+      ],
+    );
+    return;
+  }
   const products = await operationalQueryRows<ProductRow>(
     target,
     `SELECT id, quantity, low_stock_threshold, version, status
