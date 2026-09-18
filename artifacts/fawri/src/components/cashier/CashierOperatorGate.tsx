@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
+import { normalizeCashierPairingCode } from '@/lib/cashierPairingCode';
 import {
   Select,
   SelectContent,
@@ -386,7 +387,7 @@ export default function CashierOperatorGate({ children, bypass = false }: { chil
           <img src="/fawri-logo.svg" alt="Fawri" className="mb-4 h-12 w-12" />
           <h1 className="text-xl font-bold">{labels.pairTitle}</h1>
           <p className="mt-2 text-sm leading-6 text-slate-500">{labels.pairHint}</p>
-          <label className="mt-5 block text-sm font-semibold">{labels.pairCode}<input value={pairingCode} onChange={event => setPairingCode(event.target.value)} onKeyDown={event => { if (event.key === 'Enter') void pair(); }} autoComplete="off" className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 text-center font-mono text-lg tracking-widest outline-none focus:border-orange-400" dir="ltr" /></label>
+          <label className="mt-5 block text-sm font-semibold">{labels.pairCode}<input value={pairingCode} onChange={event => setPairingCode(normalizeCashierPairingCode(event.target.value))} onKeyDown={event => { if (event.key === 'Enter') void pair(); }} autoComplete="off" autoCapitalize="none" spellCheck={false} inputMode="text" lang="en-US" className="mt-2 h-12 w-full rounded-xl border border-slate-300 px-4 text-center font-mono text-lg tracking-widest outline-none focus:border-orange-400" dir="ltr" style={{ fontFamily: '"Courier New", Consolas, monospace', fontVariantNumeric: 'lining-nums', fontFeatureSettings: '"locl" 0, "lnum" 1', fontLanguageOverride: '"ENG"' }} /></label>
           <button type="button" disabled={busy || !pairingCode.trim()} onClick={() => void pair()} className="mt-4 h-12 w-full rounded-xl bg-orange-600 font-bold text-white disabled:opacity-50">{busy ? labels.pairing : labels.pair}</button>
         </section>
       </main>
