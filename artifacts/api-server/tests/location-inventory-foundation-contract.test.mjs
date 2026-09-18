@@ -33,6 +33,8 @@ test("foundation migration creates one default location and preserves existing s
   assert.match(migration, /"is_default"[\s\S]*TRUE/);
   assert.match(migration, /p\."quantity"/);
   assert.match(migration, /v\."quantity"/);
+  assert.match(migration, /p\."variant_stock_mode" = FALSE/);
+  assert.match(migration, /p\."variant_stock_mode" = TRUE/);
   assert.match(migration, /l\."is_default" = TRUE/);
   assert.match(migration, /'fawri_catalog_v2'/);
   assert.match(migration, /'track_inventory'/);
