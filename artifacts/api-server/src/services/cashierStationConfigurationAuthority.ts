@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { resolveCashierLocationForBranch } from "./cashierLocationBindingAuthority";
 import {
   CashierStaffAuthorityError,
   listCashierStationsAuthoritative,
@@ -14,6 +15,7 @@ import {
 type StationConfigurationRow = {
   id: string;
   name: string;
+  location_id: string;
   branch_key: string;
   branch_label: string | null;
   status: string;
@@ -76,6 +78,7 @@ function expectedEtag(value: unknown): string {
 
 function etagForConfiguration(input: {
   name: string;
+  location_id: string;
   branch_key: string;
   branch_label?: string | null;
   status: string;
@@ -86,6 +89,7 @@ function etagForConfiguration(input: {
     .update(
       JSON.stringify([
         input.name,
+        input.location_id,
         input.branch_key,
         input.branch_label ?? null,
         input.status,
@@ -99,7 +103,7 @@ function etagForConfiguration(input: {
 export function cashierStationConfigurationEtag(
   station: Pick<
     CashierStationView,
-    "name" | "branch_key" | "branch_label" | "status" | "offline_inventory_authority"
+    "name" | "location_id" | "branch_key" | "branch_label" | "status" | "offline_inventory_authority"
   >,
 ): string {
   return etagForConfiguration(station);
@@ -113,7 +117,7 @@ async function stationConfigurationRow(
 ): Promise<StationConfigurationRow | null> {
   const rows = await operationalQueryRows<StationConfigurationRow>(
     target,
-    `SELECT id, name, branch_key, branch_label, status, offline_inventory_authority
+    `SELECT id, name, location_id, branch_key, branch_label, status, offline_inventory_authority
        FROM merchant_cashier_stations
       WHERE merchant_id = $1 AND id = $2
       LIMIT 1${forUpdate ? " FOR UPDATE" : ""}`,
@@ -131,7 +135,7 @@ function translateConfigurationDatabaseError(error: unknown): never {
   if (
     String(candidate?.code || "") === "23505" &&
     String(candidate?.constraint || "").includes(
-      "merchant_cashier_stations_offline_branch_unique",
+      "merchant_cashier_stations_offline_location_unique",
     )
   ) {
     throw new CashierStaffAuthorityError(
@@ -247,6 +251,16 @@ export async function updateCashierStationConfigurationAuthoritative(input: {
       );
     }
 
+    const targetLocation =
+      branchKey === undefined
+        ? null
+        : await resolveCashierLocationForBranch(client, {
+            merchantId,
+            branchKey,
+            branchLabel:
+              branchLabel === undefined ? current.branch_label : branchLabel,
+          });
+
     const values: unknown[] = [merchantId, stationId];
     const sets = ["updated_at = now()"];
     const add = (field: string, value: unknown) => {
@@ -254,7 +268,10 @@ export async function updateCashierStationConfigurationAuthoritative(input: {
       sets.push(`${field} = $${values.length}`);
     };
     if (name !== undefined) add("name", name);
-    if (branchKey !== undefined) add("branch_key", branchKey);
+    if (branchKey !== undefined && targetLocation) {
+      add("branch_key", branchKey);
+      add("location_id", targetLocation.id);
+    }
     if (branchLabel !== undefined) add("branch_label", branchLabel);
     if (offlineInventoryAuthority !== undefined) {
       add("offline_inventory_authority", offlineInventoryAuthority);
@@ -265,7 +282,7 @@ export async function updateCashierStationConfigurationAuthoritative(input: {
       `UPDATE merchant_cashier_stations
           SET ${sets.join(", ")}
         WHERE merchant_id = $1 AND id = $2
-        RETURNING id, name, branch_key, branch_label, status,
+        RETURNING id, name, location_id, branch_key, branch_label, status,
                   offline_inventory_authority`,
       values,
     );
