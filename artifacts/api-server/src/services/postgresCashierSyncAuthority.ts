@@ -1173,6 +1173,15 @@ export async function syncCashierSaleAuthoritative(params: {
     const existing = await loadExistingOrder(client, merchantId, bundle.sale.sale_id);
     if (existing) {
       const cashierMetadata = metadataCashier(existing.metadata);
+      const storedLocationId = String(cashierMetadata.location_id || "").trim();
+      if (storedLocationId && locationId === undefined) {
+        throw new CashierSyncError(
+          "CASHIER_LOCATION_CONTEXT_REQUIRED",
+          "location-bound cashier sale requires location context",
+          409,
+          { location_id: storedLocationId },
+        );
+      }
       if (
         existing.source_channel !== "cashier" ||
         String(cashierMetadata.operation_id || "") !== bundle.operationId ||
