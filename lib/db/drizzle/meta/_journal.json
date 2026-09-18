@@ -134,6 +134,13 @@
       "when": 1789819200000,
       "tag": "0018_cashier_location_binding",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789905600000,
+      "tag": "0019_cashier_location_inventory_cutover",
+      "breakpoints": true
     }
   ]
 }
