@@ -1,5 +1,9 @@
 import crypto from "node:crypto";
 import {
+  CashierLocationInventoryError,
+  mutateCashierLocationInventoryInTransaction,
+} from "./cashierLocationInventoryAuthority";
+import {
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
   withMerchantOperationalTransaction,
@@ -146,6 +150,7 @@ type OriginalInventoryMutation = {
 
 type StoredCompensation = {
   kind: CompensationKind;
+  location_id?: string;
   operation_id: string;
   request_hash: string;
   device_id: string;
@@ -730,6 +735,14 @@ function storedCompensations(metadata: Record<string, unknown>): StoredCompensat
     }
     return {
       kind,
+      ...(raw.location_id
+        ? {
+            location_id: identifier(
+              raw.location_id,
+              "compensation.location_id",
+            ),
+          }
+        : {}),
       operation_id: identifier(raw.operation_id, "compensation.operation_id"),
       request_hash: identifier(raw.request_hash, "compensation.request_hash", 128),
       device_id: identifier(raw.device_id, "compensation.device_id"),
