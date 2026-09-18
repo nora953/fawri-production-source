@@ -11,6 +11,7 @@ import {
   type CashierPromotionRule,
 } from './cashierPromotionRuntime';
 import {
+  bindCashierOperation,
   cashierCostEvidenceKey,
   getCashierCostEvidence,
   getCashierOperationBinding,
@@ -431,6 +432,7 @@ export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOper
   if (
     text(payload.merchant_id) !== session.context.merchant_id ||
     text(payload.station_id) !== session.context.station_id ||
+    text(payload.location_id) !== session.context.location_id ||
     text(payload.staff_id) !== session.context.staff_id ||
     text(payload.shift_id) !== session.context.shift_id
   ) {
@@ -568,7 +570,7 @@ function completeOperationWindow(
 
 function operationKind(
   envelopes: CashierSyncEnvelope[],
-): 'sale' | 'return' | 'void' | 'skip' {
+): 'sale' | 'return' | 'void' | 'inventory_adjustment' | 'skip' {
   if (
     envelopes.some(
       (item) => item.entity_type === 'return' && item.operation === 'append',
@@ -589,6 +591,22 @@ function operationKind(
     )
   ) {
     return 'sale';
+  }
+  if (
+    envelopes.length === 1 &&
+    envelopes[0]?.entity_type === 'inventory_movement' &&
+    envelopes[0]?.operation === 'append'
+  ) {
+    const movement = record(envelopes[0].payload);
+    const reason = text(movement.reason);
+    if (reason === 'restock' || reason === 'manual_adjustment') {
+      return 'inventory_adjustment';
+    }
+    throw new CashierOperatorCloudSyncError(
+      'CASHIER_OPERATOR_ADJUSTMENT_REASON_INVALID',
+      'Standalone inventory movement has an unsupported adjustment reason',
+      409,
+    );
   }
   return 'skip';
 }
@@ -672,7 +690,7 @@ async function saleEnvelopesWithEvidence(
 async function postOperation(
   session: CashierOperatorSession,
   localMerchantId: string,
-  kind: 'sale' | 'return' | 'void',
+  kind: 'sale' | 'return' | 'void' | 'inventory_adjustment',
   envelopes: CashierSyncEnvelope[],
 ): Promise<{ replayed: boolean; operation_id: string }> {
   const prepared =
@@ -715,13 +733,14 @@ async function postOperation(
     !Number.isSafeInteger(expectedDeviceSequence) ||
     !Number.isSafeInteger(deviceSequence) ||
     deviceSequence !== expectedDeviceSequence ||
-    !orderId ||
+    (kind !== 'inventory_adjustment' && !orderId) ||
     acceptedEntityIds.length !== expectedEntityIds.length ||
     acceptedEntityIds.some(
       (entityId, index) =>
         !entityId || entityId !== expectedEntityIds[index],
     ) ||
-    (kind !== 'sale' && compensationKind !== kind);
+    ((kind === 'return' || kind === 'void') &&
+      compensationKind !== kind);
 
   if (acknowledgementInvalid) {
     throw new CashierOperatorCloudSyncError(
@@ -778,7 +797,7 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
         skipped += 1;
         continue;
       }
-      const binding = await getCashierOperationBinding(operationId);
+      let binding = await getCashierOperationBinding(operationId);
       if (!binding) {
         throw new CashierOperatorCloudSyncError(
           'CASHIER_OPERATOR_OPERATION_BINDING_MISSING',
@@ -786,10 +805,17 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
           409,
         );
       }
+      if (!binding.location_id) {
+        binding = await bindCashierOperation({
+          ...binding,
+          location_id: session.context.location_id,
+        });
+      }
       const bindingMatches =
         binding.operation_kind === kind &&
         binding.merchant_id === session.context.merchant_id &&
         binding.station_id === session.context.station_id &&
+        binding.location_id === session.context.location_id &&
         binding.staff_id === session.context.staff_id &&
         binding.shift_id === session.context.shift_id &&
         binding.device_id === session.context.device_id;
