@@ -21,7 +21,10 @@ test("cashier station authority carries stable location identity through views a
   assert.match(authority, /export type CashierStationContext = \{[\s\S]*location_id: string;/);
   assert.match(authority, /location_id: row\.location_id/);
   assert.match(authority, /s\.name AS station_name, s\.location_id, s\.branch_key/);
+  assert.match(authority, /st\.location_id, st\.branch_key, st\.branch_label/);
   assert.match(authority, /location_id: station\.location_id/);
+  const contextMappings = authority.match(/location_id: row\.location_id/g) || [];
+  assert.ok(contextMappings.length >= 2);
 });
 
 test("station creation and branch changes resolve a stable location before persistence", async () => {
