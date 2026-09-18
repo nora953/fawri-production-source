@@ -917,43 +917,143 @@ export default function CommerceCatalogSimplifiedPage() {
 
             {tracksInventory(detailsProduct) && (
               <section className="rounded-2xl border bg-muted/10 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h4 className="text-sm font-extrabold">{detailsProduct.variants.length > 0 ? copy.variantDetails : copy.inventoryDetails}</h4>
-                  {detailsProduct.variants.length > 0 && <Badge variant="outline" className="rounded-full bg-background">{detailsProduct.variants.length}</Badge>}
+                <div className="mb-3 flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="text-sm font-extrabold">{copy.inventoryByLocation}</h4>
+                    {locationInventory && (
+                      <Badge variant="outline" className="rounded-full bg-background">
+                        {locationInventory.locations.length}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {copy.inventoryLocationHint}
+                  </p>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {detailsProduct.variants.length > 0 ? detailsProduct.variants.map(variant => {
-                    const key = inventoryKey(detailsProduct.id, variant.id);
-                    return (
-                      <InventoryControl
-                        key={variant.id}
-                        copy={copy}
-                        product={detailsProduct}
-                        variant={variant}
-                        compact
-                        value={inventoryValues[key] ?? String(variant.stock_quantity)}
-                        busy={mutationBusy || !authorityReady}
-                        onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
-                        onSet={() => void setInventory(detailsProduct, variant)}
-                        onAdjust={delta => void adjustInventory(detailsProduct, delta, variant)}
-                      />
-                    );
-                  }) : (() => {
-                    const key = inventoryKey(detailsProduct.id);
-                    return (
-                      <InventoryControl
-                        copy={copy}
-                        product={detailsProduct}
-                        compact
-                        value={inventoryValues[key] ?? String(detailsProduct.stock_quantity)}
-                        busy={mutationBusy || !authorityReady}
-                        onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
-                        onSet={() => void setInventory(detailsProduct)}
-                        onAdjust={delta => void adjustInventory(detailsProduct, delta)}
-                      />
-                    );
-                  })()}
-                </div>
+
+                {locationInventoryLoading ? (
+                  <div className="flex min-h-24 items-center justify-center rounded-xl border bg-background text-sm text-muted-foreground">
+                    <RefreshCw className="me-2 h-4 w-4 animate-spin" />
+                    {copy.inventoryLoading}
+                  </div>
+                ) : locationInventoryError ? (
+                  <div className="rounded-xl border border-destructive/30 bg-background p-4 text-center">
+                    <p className="text-sm font-semibold text-destructive">{copy.inventoryFailed}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 rounded-xl"
+                      onClick={() => setLocationInventoryReload(value => value + 1)}
+                    >
+                      <RefreshCw className="me-2 h-4 w-4" />
+                      {copy.inventoryRetry}
+                    </Button>
+                  </div>
+                ) : locationInventory ? (
+                  <div className="space-y-3">
+                    {locationInventory.locations.map(location => (
+                      <div key={location.id} className="rounded-xl border bg-background p-3">
+                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                          <p className="font-bold">{location.name}</p>
+                          {location.is_default && (
+                            <Badge variant="outline" className="rounded-full text-[11px]">
+                              {copy.defaultLocation}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {detailsProduct.variants.length > 0
+                            ? detailsProduct.variants.map(variant => {
+                                const level = location.levels.find(
+                                  item => item.variant_id === variant.id,
+                                );
+                                const currentQuantity = level?.on_hand_quantity ?? 0;
+                                const key = locationInventoryKey(
+                                  location.id,
+                                  detailsProduct.id,
+                                  variant.id,
+                                );
+                                return (
+                                  <InventoryControl
+                                    key={`${location.id}:${variant.id}`}
+                                    copy={copy}
+                                    product={detailsProduct}
+                                    variant={variant}
+                                    currentQuantity={currentQuantity}
+                                    compact
+                                    value={inventoryValues[key] ?? String(currentQuantity)}
+                                    busy={mutationBusy || !authorityReady || locationInventoryLoading}
+                                    onValue={value =>
+                                      setInventoryValues(current => ({
+                                        ...current,
+                                        [key]: value,
+                                      }))
+                                    }
+                                    onSet={() =>
+                                      void setInventory(
+                                        detailsProduct,
+                                        location.id,
+                                        variant,
+                                      )
+                                    }
+                                    onAdjust={delta =>
+                                      void adjustInventory(
+                                        detailsProduct,
+                                        location.id,
+                                        delta,
+                                        variant,
+                                      )
+                                    }
+                                  />
+                                );
+                              })
+                            : (() => {
+                                const level = location.levels.find(
+                                  item => !item.variant_id,
+                                );
+                                const currentQuantity = level?.on_hand_quantity ?? 0;
+                                const key = locationInventoryKey(
+                                  location.id,
+                                  detailsProduct.id,
+                                );
+                                return (
+                                  <InventoryControl
+                                    key={`${location.id}:product`}
+                                    copy={copy}
+                                    product={detailsProduct}
+                                    currentQuantity={currentQuantity}
+                                    compact
+                                    value={inventoryValues[key] ?? String(currentQuantity)}
+                                    busy={mutationBusy || !authorityReady || locationInventoryLoading}
+                                    onValue={value =>
+                                      setInventoryValues(current => ({
+                                        ...current,
+                                        [key]: value,
+                                      }))
+                                    }
+                                    onSet={() =>
+                                      void setInventory(
+                                        detailsProduct,
+                                        location.id,
+                                      )
+                                    }
+                                    onAdjust={delta =>
+                                      void adjustInventory(
+                                        detailsProduct,
+                                        location.id,
+                                        delta,
+                                      )
+                                    }
+                                  />
+                                );
+                              })()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </section>
             )}
 
