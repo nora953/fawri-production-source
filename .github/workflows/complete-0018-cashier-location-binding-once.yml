@@ -1,5 +1,5 @@
 name: Complete and validate 0018 cashier location binding once
-# validation-revision: 3
+# validation-revision: 4-final
 
 on:
   push:
@@ -80,23 +80,32 @@ jobs:
       - name: Verify committed schema smoke
         run: pnpm --filter @workspace/db run schema:smoke
 
-      - name: Verify only 0018 snapshot is pending
+      - name: Verify migration metadata is fully committed
         shell: bash
         run: |
           set -euo pipefail
           test -f lib/db/drizzle/meta/0018_snapshot.json
           git diff --exit-code
-          git status --porcelain --untracked-files=all | awk '{print substr($0,4)}' | sort > /tmp/actual-paths
-          printf '%s\n' 'lib/db/drizzle/meta/0018_snapshot.json' > /tmp/expected-paths
-          diff -u /tmp/expected-paths /tmp/actual-paths
+          test -z "$(git status --porcelain --untracked-files=all)"
 
-      - name: Commit canonical 0018 snapshot only
+      - name: Record final validation success
         shell: bash
         run: |
           set -euo pipefail
+          printf '%s\n' \
+            "validated_sha=${GITHUB_SHA}" \
+            "db_typecheck=pass" \
+            "api_typecheck=pass" \
+            "metadata_reproducible=pass" \
+            "reviewed_sql=pass" \
+            "binding_contract=pass" \
+            "resolver_behavior=pass" \
+            "migration_real_data=pass" \
+            "cashier_management_regression=pass" \
+            "schema_smoke=pass" \
+            > .cashier-location-binding-validation
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add lib/db/drizzle/meta/0018_snapshot.json
-          git diff --cached --exit-code --quiet && { echo 'Expected 0018 snapshot was not staged' >&2; exit 1; }
-          git commit -m 'chore(db): commit canonical 0018 snapshot'
+          git add .cashier-location-binding-validation
+          git commit -m 'test(cashier): record location binding validation'
           git push origin HEAD:parallel/cashier-location-binding
