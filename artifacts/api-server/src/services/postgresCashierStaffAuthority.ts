@@ -1519,7 +1519,7 @@ export async function authenticateCashierOperatorAuthoritative(input: {
             os.shift_id, s.role, os.permission_snapshot,
             os.expires_at AS session_expires_at,
             c.id AS credential_id, st.name AS station_name,
-            st.branch_key, st.branch_label, st.offline_inventory_authority,
+            st.location_id, st.branch_key, st.branch_label, st.offline_inventory_authority,
             c.version AS credential_version, c.expires_at
        FROM cashier_operator_sessions os
        JOIN merchant_cashier_staff s
@@ -1589,6 +1589,7 @@ export async function authenticateCashierOperatorAuthoritative(input: {
     merchant_id: row.merchant_id,
     station_id: row.station_id,
     station_name: row.station_name,
+    location_id: row.location_id,
     branch_key: row.branch_key,
     ...(row.branch_label ? { branch_label: row.branch_label } : {}),
     offline_inventory_authority: Boolean(row.offline_inventory_authority),
