@@ -168,3 +168,18 @@ test('pairing code stays ASCII Latin and LTR in every interface language', async
   assert.match(page, /navigator\.clipboard\?\.writeText/);
   assert.match(page, /writeText\(pairing\.code\)/);
 });
+
+test('Sorani cashier copy follows the frozen Arabic reference without UI fallback', async () => {
+  const management = await web('src/pages/dashboard/CashierManagementPage.tsx');
+  const discounts = await web('src/pages/dashboard/CashierDiscountPoliciesPage.tsx');
+
+  assert.match(management, /discountWarning: 'دەسەڵاتی داشکاندن خۆکارانە نادرێت\./);
+  assert.match(management, /offlineHint: 'تەنها یەک وێستگە لە هەر لقێک دەتوانێت ئەم دەسەڵاتە هەبێت\. لە کاتی پچڕانی ئینتەرنێت/);
+  assert.doesNotMatch(management, /دەسەڵاتی داشکاندن هەستیارە و بە ڕۆڵ خۆکارانە نادرێت/);
+
+  assert.match(discounts, /title: 'دەسەڵاتی داشکاندنی کاشێر'/);
+  assert.match(discounts, /subtitle: 'جۆری داشکاندن هەڵبژێرە و سنووری هەر کارمەند دیاری بکە\.'/);
+  assert.match(discounts, /managerLimitHint: 'ئەمە زۆرترین سنوورە کە ئەم بەڕێوەبەرە دەتوانێت پەسەندی بکات\.'/);
+  assert.match(discounts, /hint: 'داشکاندنی دەستی نرخی سەرەکی بەرهەم ناگۆڕێت\.'/);
+  assert.doesNotMatch(discounts, /یەک جۆری داشکاندن بۆ بازرگان هەڵبژێرە/);
+});
