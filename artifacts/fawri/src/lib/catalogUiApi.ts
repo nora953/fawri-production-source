@@ -129,6 +129,46 @@ export type CatalogInventoryAdjustInput = {
   reason?: string;
 };
 
+export type CatalogInventoryLocation = {
+  id: string;
+  name: string;
+  is_default: boolean;
+  status: string;
+  operational_status: string;
+  legacy_branch_key?: string;
+};
+
+export type CatalogLocationInventoryLevel = {
+  variant_id?: string;
+  on_hand_quantity: number;
+  reserved_quantity: number;
+  available_quantity: number;
+  low_stock_threshold: number;
+  version: number;
+  inventory_fresh_at: string;
+};
+
+export type CatalogProductLocationInventory = {
+  merchant_id: string;
+  product_id: string;
+  product_version: number;
+  variant_stock_mode: boolean;
+  locations: Array<
+    CatalogInventoryLocation & {
+      levels: CatalogLocationInventoryLevel[];
+    }
+  >;
+};
+
+export type CatalogLocationInventorySetInput = CatalogInventorySetInput & {
+  locationId: string;
+};
+
+export type CatalogLocationInventoryAdjustInput = CatalogInventoryAdjustInput & {
+  locationId: string;
+};
+
+
 export type CatalogIdempotencyAttempt = {
   key: string;
   request_signature: string;
@@ -405,6 +445,83 @@ export async function adjustCatalogInventory(
     fetcher,
   );
   return data.product;
+}
+
+export async function getCatalogProductLocationInventory(
+  productId: string,
+  fetcher?: CatalogFetch,
+): Promise<CatalogProductLocationInventory> {
+  const data = await requestCatalog<{
+    ok: true;
+    inventory: CatalogProductLocationInventory;
+  }>(
+    `/api/inventory/products/${encodeURIComponent(productId)}/locations`,
+    {},
+    fetcher,
+  );
+  return data.inventory;
+}
+
+export async function setCatalogLocationInventory(
+  input: CatalogLocationInventorySetInput,
+  fetcher?: CatalogFetch,
+): Promise<{
+  replayed: boolean;
+  mutated: boolean;
+  product: CatalogProduct;
+  inventory: CatalogProductLocationInventory;
+}> {
+  return requestCatalog<{
+    ok: true;
+    replayed: boolean;
+    mutated: boolean;
+    product: CatalogProduct;
+    inventory: CatalogProductLocationInventory;
+  }>(
+    `/api/inventory/products/${encodeURIComponent(input.productId)}/locations/${encodeURIComponent(input.locationId)}/set`,
+    {
+      method: 'POST',
+      headers: catalogHeaders(),
+      body: JSON.stringify({
+        expected_version: input.expectedVersion,
+        quantity: input.quantity,
+        ...(input.variantId ? { variant_id: input.variantId } : {}),
+      }),
+    },
+    fetcher,
+  );
+}
+
+export async function adjustCatalogLocationInventory(
+  input: CatalogLocationInventoryAdjustInput,
+  idempotencyKey: string,
+  fetcher?: CatalogFetch,
+): Promise<{
+  replayed: boolean;
+  mutated: boolean;
+  product: CatalogProduct;
+  inventory: CatalogProductLocationInventory;
+}> {
+  return requestCatalog<{
+    ok: true;
+    replayed: boolean;
+    mutated: boolean;
+    product: CatalogProduct;
+    inventory: CatalogProductLocationInventory;
+  }>(
+    `/api/inventory/products/${encodeURIComponent(input.productId)}/locations/${encodeURIComponent(input.locationId)}/adjust`,
+    {
+      method: 'POST',
+      headers: catalogHeaders({ 'Idempotency-Key': idempotencyKey }),
+      body: JSON.stringify({
+        expected_version: input.expectedVersion,
+        delta: input.delta,
+        ...(input.variantId ? { variant_id: input.variantId } : {}),
+        ...(input.reason ? { reason: input.reason } : {}),
+      }),
+    },
+    fetcher,
+  );
 }
 
 export function currentProductFromConflict(error: unknown): CatalogProduct | null {
