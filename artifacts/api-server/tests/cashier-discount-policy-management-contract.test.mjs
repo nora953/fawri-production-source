@@ -99,7 +99,7 @@ test('merchant discount policy UI exposes one merchant-wide type and preserves b
   assert.match(page, /let amountMinor = row\.discount_policy\.max_amount_minor/);
   assert.match(page, /صلاحيات خصم الكاشير/);
   assert.match(page, /Cashier discount permissions/);
-  assert.match(page, /دەسەڵاتی داشکاندنی کارمەندانی کاشێر/);
+  assert.match(page, /دەسەڵاتی داشکاندنی کاشێر/);
 });
 
 test('merchant discount policy UI previews the selected type before saving it and blocks staff saves until the type is committed', async () => {
