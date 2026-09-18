@@ -81,7 +81,7 @@ INSERT INTO "merchant_locations" (
 SELECT
   'location_default_' || md5("id"),
   "id",
-  COALESCE(NULLIF(btrim("store_name"), ''), 'Main Location'),
+  LEFT(COALESCE(NULLIF(btrim("store_name"), ''), 'Main Location'), 120),
   'active',
   TRUE,
   'open',
