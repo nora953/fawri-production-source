@@ -228,7 +228,7 @@ export const COMMERCE_CATALOG_COPY: Record<Lang, CommerceCatalogPageCopy> = {
     inventoryFailed: 'نوێکردنەوەی کۆگا سەرکەوتوو نەبوو.',
     inventoryByLocation: 'کۆگا بەپێی شوێن',
     defaultLocation: 'شوێنی بنەڕەتی',
-    inventoryLocationHint: 'هەر شوێنێک بڕی کۆگای سەربەخۆی هەیە. کۆی سەرەوە کۆی مخزنی هەموو شوێنەکانە.',
+    inventoryLocationHint: 'هەر شوێنێک بڕی کۆگای سەربەخۆی هەیە. کۆی سەرەوە کۆی کۆگای هەموو شوێنەکانە.',
     inventoryLoading: 'کۆگای شوێنەکان بار دەکرێت...',
     inventoryRetry: 'دووبارە بارکردنەوەی کۆگا',
     inventoryDetails: 'وردەکاری کۆگا',
