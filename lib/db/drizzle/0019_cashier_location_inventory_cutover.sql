@@ -1,5 +1,31 @@
 ALTER TABLE "cashier_operation_attribution" ADD COLUMN "location_id" text;
 --> statement-breakpoint
+ALTER TABLE "cashier_operation_attribution"
+ALTER COLUMN "sale_id" DROP NOT NULL;
+--> statement-breakpoint
+ALTER TABLE "cashier_operation_attribution"
+DROP CONSTRAINT "cashier_operation_attribution_kind_check";
+--> statement-breakpoint
+ALTER TABLE "cashier_operation_attribution"
+ADD CONSTRAINT "cashier_operation_attribution_kind_check"
+CHECK (
+  ("operation_kind" IN ('sale','return','void') AND "sale_id" IS NOT NULL)
+  OR ("operation_kind" = 'inventory_adjustment' AND "sale_id" IS NULL)
+);
+--> statement-breakpoint
+ALTER TABLE "cashier_operation_attribution"
+DROP CONSTRAINT "cashier_operation_attribution_identity_check";
+--> statement-breakpoint
+ALTER TABLE "cashier_operation_attribution"
+ADD CONSTRAINT "cashier_operation_attribution_identity_check"
+CHECK (
+  char_length("operation_id") BETWEEN 1 AND 200
+  AND ("sale_id" IS NULL OR char_length("sale_id") BETWEEN 1 AND 200)
+  AND char_length("device_id") BETWEEN 1 AND 200
+  AND char_length("station_credential_id") BETWEEN 1 AND 200
+  AND char_length("operator_session_id") BETWEEN 1 AND 200
+);
+--> statement-breakpoint
 UPDATE "cashier_operation_attribution" AS attribution
 SET "location_id" = station."location_id"
 FROM "merchant_cashier_stations" AS station
