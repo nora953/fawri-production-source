@@ -216,6 +216,92 @@ async function readArchivedVariantIds(
   });
 }
 
+function inventoryTrackingDisabled(input: Record<string, unknown>): boolean {
+  if (!Object.prototype.hasOwnProperty.call(input, "track_inventory")) {
+    return false;
+  }
+  const value = input.track_inventory;
+  return value === false || value === 0 || value === "0" || value === "false";
+}
+
+async function assertLocationInventoryShapeChangeSafe(input: {
+  merchantId: string;
+  productId: string;
+  current: Awaited<ReturnType<typeof core.getCatalogProductAuthoritative>>;
+  requestedVariants: unknown[];
+  newlyRemovedIds: string[];
+  catalogInput: Record<string, unknown>;
+}): Promise<void> {
+  if (!operationalPostgresAuthorityRequired()) return;
+
+  const currentRecord = asRecord(input.current);
+  const currentTracksInventory =
+    currentRecord.item_type !== "service" &&
+    currentRecord.track_inventory !== false;
+  if (!currentTracksInventory) return;
+
+  const convertingSimpleToVariants =
+    input.current.variants.length === 0 &&
+    input.requestedVariants.length > 0;
+  const disablingTracking = inventoryTrackingDisabled(input.catalogInput);
+  const currentHasStock =
+    Number(input.current.stock_quantity || 0) > 0 ||
+    input.current.variants.some(
+      (variant) => Number(variant.stock_quantity || 0) > 0,
+    );
+
+  await withMerchantOperationalTransaction(input.merchantId, async (target) => {
+    const rows = await operationalQueryRows<{
+      variant_id: string | null;
+      on_hand_quantity: number;
+      reserved_quantity: number;
+    }>(
+      target,
+      `SELECT variant_id, on_hand_quantity, reserved_quantity
+         FROM location_inventory_levels
+        WHERE merchant_id = $1
+          AND product_id = $2
+          AND (
+            on_hand_quantity > 0
+            OR reserved_quantity > 0
+          )
+        FOR UPDATE`,
+      [input.merchantId, input.productId],
+    );
+
+    const blockedVariantIds = new Set(input.newlyRemovedIds);
+    const removedVariantHasStock = rows.some(
+      (row) => row.variant_id && blockedVariantIds.has(row.variant_id),
+    );
+    const simpleStockExists = rows.some((row) => row.variant_id === null);
+    const anyLocationStock = rows.length > 0;
+
+    if (
+      (convertingSimpleToVariants &&
+        (currentHasStock || simpleStockExists)) ||
+      (disablingTracking && (currentHasStock || anyLocationStock)) ||
+      removedVariantHasStock
+    ) {
+      throw new CatalogRuntimeError(
+        "CATALOG_INVENTORY_SHAPE_CHANGE_BLOCKED",
+        "catalog inventory shape cannot change while stock or reservations remain",
+        409,
+        {
+          product_id: input.productId,
+          ...(input.newlyRemovedIds.length > 0
+            ? { variant_ids: input.newlyRemovedIds }
+            : {}),
+          conversion: convertingSimpleToVariants
+            ? "simple_to_variants"
+            : disablingTracking
+              ? "inventory_tracking_disabled"
+              : "variant_archive",
+        },
+      );
+    }
+  });
+}
+
 async function assertNoPromotionReferences(
   merchantId: string,
   productId: string,
@@ -354,6 +440,14 @@ export async function updateCatalogProductAuthoritative(
         .map((variant) => variant.id)
     : [];
 
+  await assertLocationInventoryShapeChangeSafe({
+    merchantId,
+    productId,
+    current,
+    requestedVariants,
+    newlyRemovedIds,
+    catalogInput: input,
+  });
   await assertNoPromotionReferences(merchantId, productId, newlyRemovedIds);
   for (const id of newlyRemovedIds) archiveIds.add(id);
 
