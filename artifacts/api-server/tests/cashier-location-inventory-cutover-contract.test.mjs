@@ -332,3 +332,44 @@ test("merchant catalog inventory is location authoritative and legacy writes are
   assert.match(page, /currentQuantity=\{currentQuantity\}/);
   assert.match(page, /disabledLocation/);
 });
+
+test("cloud-bound offline inventory edits bind operator context before local commit", async () => {
+  const indexedDb = await repo(
+    "artifacts/fawri/src/lib/cashierIndexedDbAuthority.ts",
+  );
+  const localSecurity = await repo(
+    "artifacts/fawri/src/lib/cashierOperatorLocalSecurity.ts",
+  );
+
+  assert.match(
+    indexedDb,
+    /if \(this\.cloudMerchantId\)[\s\S]*getCashierOperatorSession\(\)/,
+  );
+  assert.match(
+    indexedDb,
+    /cashierOperatorCan\(session, 'inventory\.adjust'\)/,
+  );
+  assert.match(
+    indexedDb,
+    /bindCashierOperationToCurrentOperator\([\s\S]*'inventory_adjustment'/,
+  );
+
+  const bindPosition = indexedDb.indexOf(
+    "bindCashierOperationToCurrentOperator(",
+  );
+  const transactionPosition = indexedDb.indexOf(
+    "const transaction = database.transaction(",
+    indexedDb.indexOf("async adjustInventory("),
+  );
+  assert.ok(bindPosition > 0);
+  assert.ok(transactionPosition > bindPosition);
+
+  assert.match(
+    localSecurity,
+    /import type \{[\s\S]*IndexedDbCashierAuthority[\s\S]*\} from '\.\/cashierIndexedDbAuthority'/,
+  );
+  assert.match(
+    localSecurity,
+    /await import\('\.\/cashierIndexedDbAuthority'\)/,
+  );
+});
