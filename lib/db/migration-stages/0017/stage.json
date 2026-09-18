@@ -1,0 +1,11 @@
+{
+  "index": 17,
+  "name": "location_inventory_foundation",
+  "when": 1789732800000,
+  "mode": "reviewed_sql",
+  "sql_sha256": "cb7e42c227430e14551220e414b0268229b6fcec1046a685c4c9cbe851a95dca",
+  "preimage_files": [
+    "locations.ts",
+    "index.ts"
+  ]
+}
