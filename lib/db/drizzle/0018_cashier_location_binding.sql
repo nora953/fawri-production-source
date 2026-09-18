@@ -1,5 +1,39 @@
 ALTER TABLE "merchant_locations" ADD COLUMN "legacy_branch_key" text;
 --> statement-breakpoint
+INSERT INTO "merchant_locations" (
+  "id",
+  "merchant_id",
+  "name",
+  "status",
+  "is_default",
+  "operational_status",
+  "online_fulfillment_enabled",
+  "accept_online_orders_when_closed",
+  "version",
+  "created_at",
+  "updated_at"
+)
+SELECT
+  'location_default_' || md5(merchant."id"),
+  merchant."id",
+  LEFT(COALESCE(NULLIF(btrim(merchant."store_name"), ''), 'Main Location'), 120),
+  'active',
+  TRUE,
+  'open',
+  TRUE,
+  TRUE,
+  1,
+  now(),
+  now()
+FROM "merchants" AS merchant
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM "merchant_locations" AS existing
+  WHERE existing."merchant_id" = merchant."id"
+    AND existing."is_default" = TRUE
+)
+ON CONFLICT DO NOTHING;
+--> statement-breakpoint
 UPDATE "merchant_locations"
 SET "legacy_branch_key" = 'main',
     "updated_at" = now()
