@@ -179,6 +179,7 @@ export async function buildCashierCentralActivityAuthoritative(input: {
            LEFT JOIN merchant_cashier_staff staff
              ON staff.merchant_id = attribution.merchant_id AND staff.id = attribution.staff_id
           WHERE attribution.merchant_id = $1
+            AND attribution.operation_kind IN ('sale', 'return', 'void')
             AND ($2::timestamptz IS NULL OR attribution.occurred_at >= $2::timestamptz)
             AND ($3::timestamptz IS NULL OR attribution.occurred_at < $3::timestamptz)
           GROUP BY attribution.staff_id, staff.display_name
@@ -199,6 +200,7 @@ export async function buildCashierCentralActivityAuthoritative(input: {
            LEFT JOIN merchant_cashier_stations station
              ON station.merchant_id = attribution.merchant_id AND station.id = attribution.station_id
           WHERE attribution.merchant_id = $1
+            AND attribution.operation_kind IN ('sale', 'return', 'void')
             AND ($2::timestamptz IS NULL OR attribution.occurred_at >= $2::timestamptz)
             AND ($3::timestamptz IS NULL OR attribution.occurred_at < $3::timestamptz)
           GROUP BY attribution.station_id, station.name, station.branch_key, station.branch_label
@@ -255,6 +257,7 @@ export async function buildCashierCentralActivityAuthoritative(input: {
               LIMIT 1
            ) compensation ON attribution.operation_kind IN ('return', 'void')
           WHERE attribution.merchant_id = $1
+            AND attribution.operation_kind IN ('sale', 'return', 'void')
             AND ($2::timestamptz IS NULL OR attribution.occurred_at >= $2::timestamptz)
             AND ($3::timestamptz IS NULL OR attribution.occurred_at < $3::timestamptz)
           ORDER BY attribution.occurred_at DESC, attribution.operation_id
