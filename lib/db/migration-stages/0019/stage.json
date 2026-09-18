@@ -3,7 +3,7 @@
   "name": "cashier_location_inventory_cutover",
   "when": 1789905600000,
   "mode": "reviewed_sql",
-  "sql_sha256": "9576ac10f1a023022925e0bbd55caf824408c0ef1c954a130ebf174273df08df",
+  "sql_sha256": "239ba935fb6857f13ad6975cc770305af8bf8d87707963b38dec918760f1e3ed",
   "preimage_files": [
     "locations.ts",
     "cashier-operation-attribution.ts",
