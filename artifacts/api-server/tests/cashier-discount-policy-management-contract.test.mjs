@@ -159,12 +159,20 @@ test('cashier edit actions follow page direction instead of a language-name spec
 
 test('pairing code stays ASCII Latin and LTR in every interface language', async () => {
   const page = await web('src/pages/dashboard/CashierManagementPage.tsx');
+  const gate = await web('src/components/cashier/CashierOperatorGate.tsx');
+  const normalizer = await web('src/lib/cashierPairingCode.ts');
   const authority = await api('src/services/postgresCashierStaffAuthority.ts');
 
   assert.match(authority, /\^\[A-Za-z0-9_-\]\+\$/);
-  assert.match(page, /unicodeBidi: 'isolate-override'/);
-  assert.match(page, /<bdo dir="ltr" lang="en-US">\{pairing\.code\}<\/bdo>/);
-  assert.match(page, /fontFeatureSettings: '"locl" 0, "lnum" 1'/);
+  assert.match(normalizer, /\[٠-٩\]/);
+  assert.match(normalizer, /\[۰-۹\]/);
+  assert.match(normalizer, /\[\^A-Za-z0-9_-\]/);
+  assert.match(page, /normalizeCashierPairingCode\(payload\.pairing_code\)/);
+  assert.match(page, /value=\{pairing\.code\}[\s\S]*readOnly[\s\S]*dir="ltr"[\s\S]*lang="en-US"/);
+  assert.match(page, /fontLanguageOverride: '"ENG"'/);
+  assert.doesNotMatch(page, /<bdo[^>]*>\{pairing\.code\}<\/bdo>/);
+  assert.match(gate, /setPairingCode\(normalizeCashierPairingCode\(event\.target\.value\)\)/);
+  assert.match(gate, /lang="en-US"[\s\S]*dir="ltr"[\s\S]*fontLanguageOverride: '"ENG"'/);
   assert.match(page, /navigator\.clipboard\?\.writeText/);
   assert.match(page, /writeText\(pairing\.code\)/);
 });
