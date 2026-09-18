@@ -33,6 +33,7 @@ const MAX_PENDING_ENVELOPES = 1000;
 
 export type CashierOperatorCatalogSyncResult = {
   merchant_id: string;
+  location_id: string;
   currency_code: string;
   product_count: number;
   local_item_count: number;
@@ -460,6 +461,7 @@ export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOper
   const identity = await getOrCreateCashierDeviceIdentity();
   if (
     identity.cloud_merchant_id !== session.context.merchant_id ||
+    identity.location_id !== session.context.location_id ||
     identity.device_id !== session.context.device_id
   ) {
     throw new CashierOperatorCloudSyncError(
@@ -514,6 +516,7 @@ export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOper
 
   return {
     merchant_id: session.context.merchant_id,
+    location_id: session.context.location_id,
     currency_code: currencyCode,
     product_count: productValues.length,
     local_item_count: items.length,
@@ -770,6 +773,7 @@ export async function syncCashierOperatorOutboxToCloud(): Promise<CashierOperato
   const identity = await getOrCreateCashierDeviceIdentity();
   if (
     identity.cloud_merchant_id !== session.context.merchant_id ||
+    identity.location_id !== session.context.location_id ||
     identity.device_id !== session.context.device_id
   ) {
     throw new CashierOperatorCloudSyncError(
