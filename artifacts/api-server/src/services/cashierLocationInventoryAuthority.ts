@@ -1,9 +1,12 @@
 import crypto from "node:crypto";
-import type {
-  CatalogCommerceProduct,
+import {
+  catalogCommerceFieldsOf,
+  catalogCommerceFromMetadata,
 } from "./catalogCommerceMetadata";
-import { catalogCommerceFromMetadata } from "./catalogCommerceMetadata";
-import type { CatalogProductStatus } from "./catalogInventoryRuntime";
+import type {
+  CatalogProduct,
+  CatalogProductStatus,
+} from "./catalogInventoryRuntime";
 import {
   operationalQueryRows,
   withMerchantOperationalTransaction,
@@ -280,10 +283,10 @@ async function ensureLocationInventoryRows(
 export async function projectCashierCatalogForLocationAuthoritative(input: {
   merchantId: string;
   locationId: string;
-  products: CatalogCommerceProduct[];
+  products: CatalogProduct[];
 }): Promise<{
   location_id: string;
-  products: CatalogCommerceProduct[];
+  products: CatalogProduct[];
 }> {
   return withMerchantOperationalTransaction(input.merchantId, async (client) => {
     const location = await requireActiveLocation(
@@ -315,8 +318,9 @@ export async function projectCashierCatalogForLocationAuthoritative(input: {
     );
 
     const products = input.products.map((product) => {
+      const commerce = catalogCommerceFieldsOf(product);
       const tracked =
-        product.item_type === "product" && product.track_inventory !== false;
+        commerce.item_type === "product" && commerce.track_inventory;
       if (!tracked) return structuredClone(product);
 
       if (product.variants.length > 0) {
