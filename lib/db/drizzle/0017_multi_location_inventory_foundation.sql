@@ -96,7 +96,7 @@ CREATE INDEX "cashier_operation_attribution_location_occurred_idx" ON "cashier_o
 --> statement-breakpoint
 CREATE UNIQUE INDEX "merchant_cashier_stations_offline_location_unique" ON "merchant_cashier_stations" USING btree ("merchant_id","location_id") WHERE "location_id" IS NOT NULL AND "offline_inventory_authority" = TRUE AND "status" = 'active';
 --> statement-breakpoint
-CREATE POLICY "merchant_locations_tenant_boundary" ON "merchant_locations" AS RESTRICTIVE FOR ALL TO public USING ((
+CREATE POLICY "merchant_locations_tenant_boundary" ON "merchant_locations" AS PERMISSIVE FOR ALL TO public USING ((
   "merchant_locations"."merchant_id" = nullif(current_setting('fawri.tenant_id', true), '')
   OR EXISTS (
     SELECT 1 FROM database_admin_access_audits AS admin_audit
@@ -118,7 +118,7 @@ CREATE POLICY "merchant_locations_tenant_boundary" ON "merchant_locations" AS RE
   )
 ));
 --> statement-breakpoint
-CREATE POLICY "location_inventory_levels_tenant_boundary" ON "location_inventory_levels" AS RESTRICTIVE FOR ALL TO public USING ((
+CREATE POLICY "location_inventory_levels_tenant_boundary" ON "location_inventory_levels" AS PERMISSIVE FOR ALL TO public USING ((
   "location_inventory_levels"."merchant_id" = nullif(current_setting('fawri.tenant_id', true), '')
   OR EXISTS (
     SELECT 1 FROM database_admin_access_audits AS admin_audit
