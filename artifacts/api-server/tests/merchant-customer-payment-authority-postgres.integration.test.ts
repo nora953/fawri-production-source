@@ -123,8 +123,11 @@ async function seedOnlineFulfillmentFoundation() {
     `INSERT INTO merchant_locations
       (id, merchant_id, name, is_default, operational_status,
        online_fulfillment_enabled, accept_online_orders_while_closed,
-       merchant_priority, inventory_fresh_at)
-     VALUES ($1, $2, 'Payment Proof Main', TRUE, 'open', TRUE, FALSE, 1, now())
+       merchant_priority, inventory_fresh_at, created_at, updated_at)
+     VALUES (
+       $1, $2, 'Payment Proof Main', TRUE, 'open', TRUE, FALSE, 1, now(),
+       now() - interval '1 hour', now()
+     )
      ON CONFLICT (id) DO UPDATE
        SET operational_status = 'open',
            online_fulfillment_enabled = TRUE,
