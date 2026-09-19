@@ -84,7 +84,7 @@ function isSavedAnswerCursor(value: unknown): value is SavedAnswerCursor {
     typeof cursor.id === "string" &&
     cursor.id.length > 0 &&
     typeof cursor.updatedAt === "string" &&
-    Number.isFinite(new Date(cursor.updatedAt).getTime())
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursor.updatedAt)
   );
 }
 
