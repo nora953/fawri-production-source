@@ -13,6 +13,32 @@ import "../services/knowledge/knowledgeLifecycle.js";
 const router = Router();
 router.use(requireMerchantSession);
 
+function readLearnedAnswerPage(req: Request): {
+  limit: number;
+  beforeUpdatedAt?: string;
+  beforeId?: string;
+} | null {
+  const rawLimit = readString(req.query.limit, 12);
+  const limit = rawLimit ? Number(rawLimit) : 500;
+  if (!Number.isInteger(limit) || limit < 1 || limit > 500) return null;
+
+  const beforeUpdatedAt = readString(req.query.beforeUpdatedAt, 80);
+  const beforeId = readString(req.query.beforeId, 160);
+  if (Boolean(beforeUpdatedAt) !== Boolean(beforeId)) return null;
+  if (
+    beforeUpdatedAt &&
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(beforeUpdatedAt)
+  ) {
+    return null;
+  }
+
+  return {
+    limit,
+    ...(beforeUpdatedAt ? { beforeUpdatedAt } : {}),
+    ...(beforeId ? { beforeId } : {}),
+  };
+}
+
 router.get("/runtime", (_req: Request, res: Response): void => {
   const engine = getKnowledgeDecisionEngine();
   res.setHeader("Cache-Control", "no-store");
@@ -69,11 +95,28 @@ router.post("/decision", async (req: Request, res: Response): Promise<void> => {
   }
 });
 
-router.get("/learned-answers", async (_req: Request, res: Response): Promise<void> => {
+router.get("/learned-answers", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
+  const pageInput = readLearnedAnswerPage(req);
+  if (!pageInput) {
+    res.status(400).json({
+      ok: false,
+      code: "INVALID_LEARNED_ANSWER_PAGE",
+      error: "invalid learned answer page",
+    });
+    return;
+  }
+
   try {
-    const answers = await getPostgresKnowledgeManagementRuntime().listLearnedAnswers(merchantId);
-    res.json({ ok: true, answers });
+    const page = await getPostgresKnowledgeManagementRuntime().listLearnedAnswersPage(
+      merchantId,
+      pageInput,
+    );
+    res.json({
+      ok: true,
+      answers: page.answers,
+      nextCursor: page.nextCursor,
+    });
   } catch (error) {
     sendKnowledgeError(res, error);
   }
