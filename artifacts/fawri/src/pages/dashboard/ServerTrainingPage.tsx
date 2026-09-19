@@ -12,6 +12,10 @@ import { SERVER_TRAINING_PAGE_COPY } from "@/lib/translations/features/pages/das
 type Language = "ar" | "ku" | "en";
 type TrainingStatus = "pending_merchant_reply" | "pending_review" | "approved" | "rejected";
 type LoadStatus = "loading" | "ready" | "unavailable";
+type TrainingCursor = {
+  updatedAt: string;
+  id: string;
+};
 
 type TrainingRequest = {
   id: string;
@@ -81,6 +85,18 @@ function isTrainingRequest(value: unknown): value is TrainingRequest {
   );
 }
 
+
+function isTrainingCursor(value: unknown): value is TrainingCursor {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const cursor = value as Record<string, unknown>;
+  return (
+    typeof cursor.id === "string" &&
+    cursor.id.length > 0 &&
+    typeof cursor.updatedAt === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursor.updatedAt)
+  );
+}
+
 async function readJson<T extends { ok?: boolean }>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => null)) as (T & ApiError) | null;
   if (!response.ok || body?.ok !== true) {
@@ -99,42 +115,145 @@ export default function ServerTrainingPage() {
   const [requests, setRequests] = useState<TrainingRequest[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [query, setQuery] = useState("");
+  const [serverQuery, setServerQuery] = useState("");
   const [filter, setFilter] = useState<TrainingStatus | "all">("all");
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
+  const [nextCursor, setNextCursor] = useState<TrainingCursor | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const loadRequestIdRef = useRef(0);
+  const searchPending = query.trim() !== serverQuery;
+
+  useEffect(() => {
+    const normalized = query.trim();
+    const timeoutId = window.setTimeout(() => setServerQuery(normalized), 250);
+    return () => window.clearTimeout(timeoutId);
+  }, [query]);
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestIdRef.current;
     setLoadStatus("loading");
+    setLoadingMore(false);
     setNotice("");
     try {
-      const result = await readJson<{ ok: true; requests: unknown }>(
-        await fetch("/api/knowledge/training-requests", {
+      const params = new URLSearchParams({ limit: "500" });
+      if (serverQuery) params.set("q", serverQuery);
+      if (filter !== "all") params.set("status", filter);
+      const result = await readJson<{
+        ok: true;
+        requests: unknown;
+        nextCursor?: unknown;
+      }>(
+        await fetch(`/api/knowledge/training-requests?${params.toString()}`, {
           credentials: "same-origin",
           cache: "no-store",
           headers: { Accept: "application/json" },
         }),
       );
-      if (!Array.isArray(result.requests) || !result.requests.every(isTrainingRequest)) {
+      if (
+        !Array.isArray(result.requests) ||
+        !result.requests.every(isTrainingRequest) ||
+        !(
+          result.nextCursor === undefined ||
+          result.nextCursor === null ||
+          isTrainingCursor(result.nextCursor)
+        )
+      ) {
         throw new Error("Training authority returned an invalid response");
       }
       if (requestId !== loadRequestIdRef.current) return;
       const nextRequests = result.requests;
       setRequests(nextRequests);
-      setDrafts(
-        Object.fromEntries(
-          nextRequests.map((item) => [item.id, item.suggestedReply || ""]),
+      setDrafts((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          nextRequests.map((item) => [
+            item.id,
+            current[item.id] ?? item.suggestedReply ?? "",
+          ]),
         ),
-      );
+      }));
+      setNextCursor(isTrainingCursor(result.nextCursor) ? result.nextCursor : null);
       setLoadStatus("ready");
     } catch (error) {
       if (requestId !== loadRequestIdRef.current) return;
       console.error("Load training requests failed:", error);
+      setNextCursor(null);
       setLoadStatus("unavailable");
     }
-  }, []);
+  }, [filter, serverQuery]);
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || loadStatus !== "ready" || savingId !== null || loadingMore || searchPending) {
+      return;
+    }
+    const requestId = ++loadRequestIdRef.current;
+    setLoadingMore(true);
+    setNotice("");
+    try {
+      const params = new URLSearchParams({
+        limit: "500",
+        beforeUpdatedAt: nextCursor.updatedAt,
+        beforeId: nextCursor.id,
+      });
+      if (serverQuery) params.set("q", serverQuery);
+      if (filter !== "all") params.set("status", filter);
+      const result = await readJson<{
+        ok: true;
+        requests: unknown;
+        nextCursor?: unknown;
+      }>(
+        await fetch(`/api/knowledge/training-requests?${params.toString()}`, {
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        }),
+      );
+      if (
+        !Array.isArray(result.requests) ||
+        !result.requests.every(isTrainingRequest) ||
+        !(
+          result.nextCursor === undefined ||
+          result.nextCursor === null ||
+          isTrainingCursor(result.nextCursor)
+        )
+      ) {
+        throw new Error("Training authority returned an invalid response");
+      }
+      if (requestId !== loadRequestIdRef.current) return;
+      const pageRequests = result.requests;
+      setRequests((current) => {
+        const knownIds = new Set(current.map((item) => item.id));
+        return [...current, ...pageRequests.filter((item) => !knownIds.has(item.id))];
+      });
+      setDrafts((current) => ({
+        ...current,
+        ...Object.fromEntries(
+          pageRequests.map((item) => [
+            item.id,
+            current[item.id] ?? item.suggestedReply ?? "",
+          ]),
+        ),
+      }));
+      setNextCursor(isTrainingCursor(result.nextCursor) ? result.nextCursor : null);
+    } catch (error) {
+      if (requestId !== loadRequestIdRef.current) return;
+      console.error("Load more training requests failed:", error);
+      setNotice(copy.loadFailed);
+    } finally {
+      if (requestId === loadRequestIdRef.current) setLoadingMore(false);
+    }
+  }, [
+    copy.loadFailed,
+    filter,
+    loadStatus,
+    loadingMore,
+    nextCursor,
+    savingId,
+    searchPending,
+    serverQuery,
+  ]);
 
   useEffect(() => {
     void load();
@@ -143,24 +262,13 @@ export default function ServerTrainingPage() {
     };
   }, [load]);
 
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    return requests.filter((item) => {
-      if (filter !== "all" && item.status !== filter) return false;
-      if (!normalized) return true;
-      return [
-        item.customerTextPreview,
-        item.detectedIntent,
-        item.reason,
-        item.suggestedReply || "",
-      ]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalized);
-    });
-  }, [filter, query, requests]);
+  const filtered = requests;
 
-  const mutationsAllowed = loadStatus === "ready" && savingId === null;
+  const mutationsAllowed =
+    loadStatus === "ready" &&
+    savingId === null &&
+    !loadingMore &&
+    !searchPending;
   const unavailableWithoutData = loadStatus === "unavailable" && requests.length === 0;
   const staleData = loadStatus === "unavailable" && requests.length > 0;
 
@@ -243,7 +351,7 @@ export default function ServerTrainingPage() {
           <Button
             variant="outline"
             onClick={() => void load()}
-            disabled={loadStatus === "loading" || savingId !== null}
+            disabled={loadStatus === "loading" || savingId !== null || loadingMore || searchPending}
           >
             <RefreshCw className="me-2 h-4 w-4" />
             {copy.refresh}
@@ -302,7 +410,7 @@ export default function ServerTrainingPage() {
           </div>
         ) : null}
 
-        {loadStatus === "loading" ? (
+        {loadStatus === "loading" || searchPending ? (
           <div className="rounded-3xl border bg-card p-12 text-center text-muted-foreground">
             {copy.loading}
           </div>
@@ -436,6 +544,19 @@ export default function ServerTrainingPage() {
             })}
           </div>
         )}
+
+        {nextCursor && loadStatus === "ready" && !searchPending ? (
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => void loadMore()}
+              disabled={loadingMore || savingId !== null}
+            >
+              <RefreshCw className={`me-2 h-4 w-4 ${loadingMore ? "animate-spin" : ""}`} />
+              {loadingMore ? copy.loadingMore : copy.loadMore}
+            </Button>
+          </div>
+        ) : null}
       </section>
     </main>
   );
