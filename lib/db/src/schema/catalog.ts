@@ -411,6 +411,7 @@ export const inventoryMutations = pgTable(
       .references(() => merchants.id, { onDelete: "cascade" }),
     productId: text("product_id").notNull(),
     variantId: text("variant_id"),
+    locationId: text("location_id"),
     mutationType: inventoryMutationTypeEnum("mutation_type").notNull(),
     beforeQuantity: integer("before_quantity").notNull(),
     afterQuantity: integer("after_quantity").notNull(),
@@ -450,6 +451,9 @@ export const inventoryMutations = pgTable(
       table.productId,
       table.createdAt,
     ),
+    locationProductCreatedIndex: index(
+      "inventory_mutations_location_product_created_idx",
+    ).on(table.merchantId, table.locationId, table.productId, table.createdAt),
     quantityCheck: check(
       "inventory_mutations_quantity_check",
       sql`${table.beforeQuantity} >= 0 AND ${table.afterQuantity} >= 0`,
