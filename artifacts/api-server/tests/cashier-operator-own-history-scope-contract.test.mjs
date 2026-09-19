@@ -30,8 +30,11 @@ test('sale.view_own keeps the employee sales visible across shifts in local hist
 });
 
 test('online and offline reports use the same own-employee scope across shifts', async () => {
-  const server = await apiSource('src/services/postgresCashierOperatorReportAuthority.ts');
-  const client = await repoSource('artifacts/fawri/src/lib/cashierOperatorReportsRuntime.ts');
+  const [server, client, localSecurity] = await Promise.all([
+    apiSource('src/services/postgresCashierOperatorReportAuthority.ts'),
+    repoSource('artifacts/fawri/src/lib/cashierOperatorReportsRuntime.ts'),
+    repoSource('artifacts/fawri/src/lib/cashierOperatorLocalSecurity.ts'),
+  ]);
 
   assert.match(server, /scope: "own_staff" \| "station"/);
   assert.match(server, /sale_attribution\.station_id = \$2/);
@@ -45,15 +48,20 @@ test('online and offline reports use the same own-employee scope across shifts',
   assert.match(server, /scope: canViewAll \? "station" : "own_staff"/);
 
   assert.match(client, /scope\?: 'own_staff' \| 'station'/);
-  assert.match(client, /binding\.merchant_id !== session\.context\.merchant_id/);
-  assert.match(client, /binding\.station_id !== session\.context\.station_id/);
-  assert.match(client, /binding\.device_id !== session\.context\.device_id/);
-  assert.match(client, /binding\.staff_id === session\.context\.staff_id/);
+  assert.match(client, /getCashierSaleOperationBindingsForReport/);
+  assert.match(client, /merchantId: currentSession\.context\.merchant_id/);
+  assert.match(client, /stationId: currentSession\.context\.station_id/);
+  assert.match(client, /deviceId: currentSession\.context\.device_id/);
+  assert.match(client, /staffId: currentSession\.context\.staff_id/);
   assert.doesNotMatch(
     client,
-    /binding\.shift_id === session\.context\.shift_id/,
+    /currentSession\.context\.shift_id/,
     'offline report fallback must span the employee previous shifts too',
   );
+  assert.match(localSecurity, /binding\.merchant_id === merchantId/);
+  assert.match(localSecurity, /binding\.station_id === stationId/);
+  assert.match(localSecurity, /binding\.device_id === deviceId/);
+  assert.match(localSecurity, /\(!staffId \|\| binding\.staff_id === staffId\)/);
   assert.match(client, /scope !== 'own_staff' && scope !== 'station'/);
   assert.match(client, /\? 'station' : 'own_staff'/);
 });
