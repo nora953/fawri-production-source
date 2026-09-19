@@ -343,6 +343,54 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
       status: "pending_merchant_reply",
     });
     assert.equal(pendingPage.requests.length, 3);
+
+    const approvedFirst = await managementA.approveTrainingRequest({
+      merchantId: merchantIds[0],
+      id: first.id,
+      expectedVersion: first.version,
+      approvedAnswer: "نعم، يوجد توصيل سريع في المناطق المدعومة.",
+    });
+    const approvedSecond = await managementA.approveTrainingRequest({
+      merchantId: merchantIds[0],
+      id: second.id,
+      expectedVersion: second.version,
+      approvedAnswer: "نعم، يمكن الدفع نقداً عند توفر هذه الطريقة.",
+    });
+    const approvedThird = await managementA.approveTrainingRequest({
+      merchantId: merchantIds[0],
+      id: third.id,
+      expectedVersion: third.version,
+      approvedAnswer: "الضمان الإضافي يعتمد على المنتج.",
+    });
+
+    const learnedFirstPage = await managementA.listLearnedAnswersPage(merchantIds[0], {
+      limit: 2,
+    });
+    assert.equal(learnedFirstPage.answers.length, 2);
+    assert.ok(learnedFirstPage.nextCursor);
+
+    const learnedSecondPage = await managementA.listLearnedAnswersPage(merchantIds[0], {
+      limit: 2,
+      beforeUpdatedAt: learnedFirstPage.nextCursor!.updatedAt,
+      beforeId: learnedFirstPage.nextCursor!.id,
+    });
+    assert.equal(learnedSecondPage.answers.length, 1);
+    assert.equal(learnedSecondPage.nextCursor, null);
+
+    const learnedIds = [
+      ...learnedFirstPage.answers,
+      ...learnedSecondPage.answers,
+    ].map((item) => item.id);
+    assert.equal(new Set(learnedIds).size, 3);
+    assert.ok(learnedIds.includes(approvedFirst.learnedAnswer.id));
+    assert.ok(learnedIds.includes(approvedSecond.learnedAnswer.id));
+    assert.ok(learnedIds.includes(approvedThird.learnedAnswer.id));
+
+    const learnedCompatibilityList = await managementA.listLearnedAnswers(merchantIds[0]);
+    assert.deepEqual(
+      [...learnedIds].sort(),
+      learnedCompatibilityList.map((item) => item.id).sort(),
+    );
   });
 
   await t.test("tenant isolation prevents Knowledge records crossing merchants", async () => {
