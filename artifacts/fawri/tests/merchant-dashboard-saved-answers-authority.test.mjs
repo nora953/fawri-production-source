@@ -122,10 +122,11 @@ test("saved answer writes reject invalid categories instead of silently converti
 });
 
 
-test("duplicate create keeps the create draft while edit conflicts still load the current record", () => {
+test("duplicate create and duplicate edit keep drafts while same-record version conflicts load current state", () => {
   assert.match(page, /const currentAnswer = apiError\.current/);
-  assert.match(page, /if \(editing\) \{/);
+  assert.match(page, /if \(editing && currentAnswer\.id === editing\.id\) \{/);
   assert.match(page, /setEditing\(currentAnswer\)/);
+  assert.match(page, /setForm\(\{/);
   assert.match(page, /setNotice\(copy\.conflict\)/);
   assert.match(page, /\} else \{\s*setNotice\(copy\.duplicate\);\s*\}/);
   assert.match(page, /current\.some\(\(item\) => item\.id === currentAnswer\.id\)/);
