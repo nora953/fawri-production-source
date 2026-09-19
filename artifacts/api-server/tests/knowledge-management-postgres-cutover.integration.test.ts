@@ -113,6 +113,28 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
     assert.equal(decision.answerText, "الاستبدال متاح خلال سبعة أيام.");
   });
 
+  await t.test("Saved Answer management rejects invalid categories without creating a row", async () => {
+    await assert.rejects(
+      () =>
+        managementA.createSavedAnswer({
+          merchantId: merchantIds[0],
+          category: "shipping",
+          questionPattern: "هل توجد فئة غير قانونية؟",
+          answerText: "يجب ألا تحفظ هذه الإجابة.",
+          language: "ar",
+        }),
+      (error: unknown) =>
+        (error as { code?: string }).code === "INVALID_SAVED_ANSWER_CATEGORY",
+    );
+
+    const invalid = await pool.query(
+      `SELECT id FROM saved_answers
+        WHERE merchant_id = $1 AND question_pattern = $2`,
+      [merchantIds[0], "هل توجد فئة غير قانونية؟"],
+    );
+    assert.equal(invalid.rowCount, 0);
+  });
+
   await t.test("Training Request created by decision runtime is visible and approvable by merchant management", async () => {
     const managementB = new PostgresKnowledgeManagementRuntime({
       embeddingProvider: fakeEmbedding,
