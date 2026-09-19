@@ -6,12 +6,16 @@ import {
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import { CashierSyncError } from "./postgresCashierSyncAuthority";
+import {
+  CASHIER_REFUND_PRICING_VERSION,
+  cashierAdjustedLineRevenueById,
+  cashierNetReturnRefundMinor,
+} from "./cashierRefundPricing";
 
 const CASHIER_SCHEMA_VERSION = 1;
 const MAX_ENVELOPES = 128;
 const MAX_LINES = 100;
 const MAX_TEXT = 500;
-const CASHIER_RETURN_REFUND_ALLOCATION_VERSION = 2 as const;
 
 type CashierEnvelope = {
   schema_version: number;
@@ -46,6 +50,7 @@ type OriginalSale = {
   currency_code: "IQD";
   currency_fraction_digits: 0;
   total_minor: number;
+  manual_discount_minor: number;
   lines: OriginalSaleLine[];
 };
 
@@ -59,7 +64,7 @@ type ReturnLine = {
 };
 
 type ReturnSnapshot = {
-  refund_allocation_version?: 2;
+  refund_pricing_version?: 2;
   return_id: string;
   operation_id: string;
   sale_id: string;
@@ -322,21 +327,6 @@ function parseReturnSnapshot(value: unknown): ReturnSnapshot {
       409,
     );
   }
-  const allocationVersion =
-    raw.refund_allocation_version === undefined ||
-    raw.refund_allocation_version === null
-      ? undefined
-      : Number(raw.refund_allocation_version);
-  if (
-    allocationVersion !== undefined &&
-    allocationVersion !== CASHIER_RETURN_REFUND_ALLOCATION_VERSION
-  ) {
-    throw new CashierSyncError(
-      "CASHIER_SYNC_SCHEMA_UNSUPPORTED",
-      "cashier return refund allocation version is unsupported",
-      409,
-    );
-  }
   const lines = raw.lines.map(parseReturnLine);
   const lineIds = new Set<string>();
   let refundTotal = 0;
@@ -345,21 +335,6 @@ function parseReturnSnapshot(value: unknown): ReturnSnapshot {
       throw new CashierSyncError("CASHIER_SYNC_INVALID", "duplicate return line", 400);
     }
     lineIds.add(line.original_line_id);
-    if (
-      allocationVersion === undefined &&
-      line.refund_minor !==
-        safeMultiply(
-          line.effective_unit_price_minor,
-          line.quantity,
-          "return.line.refund_minor",
-        )
-    ) {
-      throw new CashierSyncError(
-        "CASHIER_SYNC_INVALID",
-        "legacy return line refund is inconsistent",
-        400,
-      );
-    }
     refundTotal = safeAdd(refundTotal, line.refund_minor, "return.refund_total_minor");
   }
   const claimedRefund = nonNegativeInteger(raw.refund_total_minor, "return.refund_total_minor");
@@ -370,9 +345,23 @@ function parseReturnSnapshot(value: unknown): ReturnSnapshot {
       400,
     );
   }
+  const refundPricingVersion =
+    raw.refund_pricing_version === undefined
+      ? undefined
+      : Number(raw.refund_pricing_version);
+  if (
+    refundPricingVersion !== undefined &&
+    refundPricingVersion !== CASHIER_REFUND_PRICING_VERSION
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_INVALID",
+      "return refund pricing version is unsupported",
+      400,
+    );
+  }
   return {
-    ...(allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION
-      ? { refund_allocation_version: CASHIER_RETURN_REFUND_ALLOCATION_VERSION }
+    ...(refundPricingVersion === CASHIER_REFUND_PRICING_VERSION
+      ? { refund_pricing_version: CASHIER_REFUND_PRICING_VERSION }
       : {}),
     return_id: identifier(raw.return_id, "return.return_id"),
     operation_id: identifier(raw.operation_id, "return.operation_id"),
@@ -479,34 +468,18 @@ function parseOriginalSale(value: unknown): OriginalSale {
   }
   const lines = raw.lines.map((value) => {
     const line = record(value);
-    return {
-      line_id: identifier(line.line_id, "sale.line.line_id"),
-      product_id: identifier(line.product_id, "sale.line.product_id"),
-      ...(line.variant_id
-        ? { variant_id: identifier(line.variant_id, "sale.line.variant_id") }
-        : {}),
-      quantity: positiveInteger(line.quantity, "sale.line.quantity"),
-      effective_unit_price_minor: nonNegativeInteger(
-        line.effective_unit_price_minor,
-        "sale.line.effective_unit_price_minor",
-      ),
-      line_total_minor: nonNegativeInteger(
-        line.line_total_minor,
-        "sale.line.line_total_minor",
-      ),
-    } satisfies OriginalSaleLine;
-  });
-  const lineIds = new Set<string>();
-  const itemKeys = new Set<string>();
-  let preManualDiscountTotal = 0;
-  for (const line of lines) {
+    const quantity = positiveInteger(line.quantity, "sale.line.quantity");
+    const effectiveUnitPriceMinor = nonNegativeInteger(
+      line.effective_unit_price_minor,
+      "sale.line.effective_unit_price_minor",
+    );
+    const lineTotalMinor = nonNegativeInteger(
+      line.line_total_minor,
+      "sale.line.line_total_minor",
+    );
     if (
-      line.line_total_minor !==
-      safeMultiply(
-        line.effective_unit_price_minor,
-        line.quantity,
-        "sale.line.line_total_minor",
-      )
+      lineTotalMinor !==
+      safeMultiply(effectiveUnitPriceMinor, quantity, "sale.line.line_total_minor")
     ) {
       throw new CashierSyncError(
         "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
@@ -514,11 +487,20 @@ function parseOriginalSale(value: unknown): OriginalSale {
         409,
       );
     }
-    preManualDiscountTotal = safeAdd(
-      preManualDiscountTotal,
-      line.line_total_minor,
-      "sale total",
-    );
+    return {
+      line_id: identifier(line.line_id, "sale.line.line_id"),
+      product_id: identifier(line.product_id, "sale.line.product_id"),
+      ...(line.variant_id
+        ? { variant_id: identifier(line.variant_id, "sale.line.variant_id") }
+        : {}),
+      quantity,
+      effective_unit_price_minor: effectiveUnitPriceMinor,
+      line_total_minor: lineTotalMinor,
+    } satisfies OriginalSaleLine;
+  });
+  const lineIds = new Set<string>();
+  const itemKeys = new Set<string>();
+  for (const line of lines) {
     if (lineIds.has(line.line_id) || itemKeys.has(itemKey(line.product_id, line.variant_id))) {
       throw new CashierSyncError(
         "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
@@ -529,15 +511,7 @@ function parseOriginalSale(value: unknown): OriginalSale {
     lineIds.add(line.line_id);
     itemKeys.add(itemKey(line.product_id, line.variant_id));
   }
-  const totalMinor = nonNegativeInteger(raw.total_minor, "sale.total_minor");
-  if (totalMinor > preManualDiscountTotal) {
-    throw new CashierSyncError(
-      "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
-      "original cashier sale total exceeds immutable line evidence",
-      409,
-    );
-  }
-  return {
+  const sale: OriginalSale = {
     sale_id: identifier(raw.sale_id, "sale.sale_id"),
     operation_id: identifier(raw.operation_id, "sale.operation_id"),
     local_merchant_id: identifier(raw.local_merchant_id, "sale.local_merchant_id"),
@@ -550,9 +524,23 @@ function parseOriginalSale(value: unknown): OriginalSale {
     status: "completed",
     currency_code: "IQD",
     currency_fraction_digits: 0,
-    total_minor: totalMinor,
+    total_minor: nonNegativeInteger(raw.total_minor, "sale.total_minor"),
+    manual_discount_minor: nonNegativeInteger(
+      raw.manual_discount_minor ?? 0,
+      "sale.manual_discount_minor",
+    ),
     lines,
   };
+  try {
+    cashierAdjustedLineRevenueById(sale);
+  } catch {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
+      "original cashier sale discount evidence is inconsistent",
+      409,
+    );
+  }
+  return sale;
 }
 
 export function validateCashierCompensationSyncBundle(
@@ -1521,119 +1509,6 @@ async function applyRestock(
   await applyLegacyRestock(target, bundle, line, quantity, movement);
 }
 
-function adjustedLineRevenueById(sale: OriginalSale): Map<string, number> {
-  const preManualDiscountTotal = sale.lines.reduce(
-    (sum, line) => safeAdd(sum, line.line_total_minor, "sale total"),
-    0,
-  );
-  if (sale.total_minor > preManualDiscountTotal) {
-    throw new CashierSyncError(
-      "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
-      "original cashier sale total exceeds immutable line evidence",
-      409,
-    );
-  }
-
-  let remainingBase = BigInt(preManualDiscountTotal);
-  let remainingDiscount = BigInt(preManualDiscountTotal - sale.total_minor);
-  const adjusted = new Map<string, number>();
-
-  sale.lines.forEach((line, index) => {
-    const lineBase = BigInt(line.line_total_minor);
-    const allocatedDiscount =
-      remainingDiscount === 0n
-        ? 0n
-        : index === sale.lines.length - 1
-          ? remainingDiscount
-          : remainingBase > 0n
-            ? (remainingDiscount * lineBase) / remainingBase
-            : 0n;
-    if (allocatedDiscount < 0n || allocatedDiscount > lineBase) {
-      throw new CashierSyncError(
-        "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
-        "cashier manual discount allocation is invalid",
-        409,
-      );
-    }
-    const charged = Number(lineBase - allocatedDiscount);
-    if (!Number.isSafeInteger(charged) || charged < 0) {
-      throw new CashierSyncError(
-        "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
-        "cashier manual discount allocation overflowed",
-        409,
-      );
-    }
-    adjusted.set(line.line_id, charged);
-    remainingBase -= lineBase;
-    remainingDiscount -= allocatedDiscount;
-  });
-
-  if (remainingBase !== 0n || remainingDiscount !== 0n) {
-    throw new CashierSyncError(
-      "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
-      "cashier manual discount allocation is inconsistent",
-      409,
-    );
-  }
-  return adjusted;
-}
-
-function allocatedReturnRefundMinor(input: {
-  sale: OriginalSale;
-  line: OriginalSaleLine;
-  alreadyReturned: number;
-  returnQuantity: number;
-}): number {
-  const returnedAfter = input.alreadyReturned + input.returnQuantity;
-  if (
-    !Number.isSafeInteger(input.alreadyReturned) ||
-    input.alreadyReturned < 0 ||
-    !Number.isSafeInteger(input.returnQuantity) ||
-    input.returnQuantity <= 0 ||
-    !Number.isSafeInteger(returnedAfter) ||
-    returnedAfter > input.line.quantity
-  ) {
-    throw new CashierSyncError(
-      "CASHIER_RETURN_QUANTITY_EXCEEDS_SOLD",
-      "return quantity exceeds the remaining returnable quantity",
-      409,
-      {
-        original_line_id: input.line.line_id,
-        remaining_quantity: Math.max(
-          0,
-          input.line.quantity - input.alreadyReturned,
-        ),
-      },
-    );
-  }
-
-  const chargedLineRevenue = adjustedLineRevenueById(input.sale).get(
-    input.line.line_id,
-  );
-  if (chargedLineRevenue === undefined) {
-    throw new CashierSyncError(
-      "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
-      "cashier return line allocation is missing",
-      409,
-    );
-  }
-  const quantityBig = BigInt(input.line.quantity);
-  const revenueBig = BigInt(chargedLineRevenue);
-  const before =
-    (revenueBig * BigInt(input.alreadyReturned)) / quantityBig;
-  const after =
-    (revenueBig * BigInt(returnedAfter)) / quantityBig;
-  const refund = Number(after - before);
-  if (!Number.isSafeInteger(refund) || refund < 0) {
-    throw new CashierSyncError(
-      "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
-      "cashier return refund allocation overflowed",
-      409,
-    );
-  }
-  return refund;
-}
-
 function originalLineById(sale: OriginalSale, lineId: string): OriginalSaleLine {
   const line = sale.lines.find((item) => item.line_id === lineId);
   if (!line) {
@@ -1669,20 +1544,24 @@ function returnedQuantity(
   return total;
 }
 
-function refundedAmount(
+function returnedRefundMinor(
   compensations: StoredCompensation[],
+  lineId: string,
 ): number {
   let total = 0;
   for (const compensation of compensations) {
     if (compensation.kind !== "return") continue;
-    total = safeAdd(
-      total,
-      nonNegativeInteger(
-        record(compensation.snapshot).refund_total_minor,
-        "stored_return.refund_total_minor",
-      ),
-      "returned refund total",
-    );
+    const snapshot = record(compensation.snapshot);
+    const lines = Array.isArray(snapshot.lines) ? snapshot.lines : [];
+    for (const value of lines) {
+      const line = record(value);
+      if (String(line.original_line_id || "") !== lineId) continue;
+      total = safeAdd(
+        total,
+        nonNegativeInteger(line.refund_minor, "stored_return.refund_minor"),
+        "returned refund",
+      );
+    }
   }
   return total;
 }
@@ -1739,10 +1618,6 @@ async function applyReturn(
 
   let expectedRefundTotal = 0;
   let mutationCount = 0;
-  let remainingSaleRefundMinor = Math.max(
-    0,
-    originalSale.total_minor - refundedAmount(previousCompensations),
-  );
   for (const requested of snapshot.lines) {
     const line = originalLineById(originalSale, requested.original_line_id);
     if (
@@ -1766,31 +1641,20 @@ async function applyReturn(
         { original_line_id: line.line_id, remaining_quantity: Math.max(0, remaining) },
       );
     }
-    const allocatedRefund =
-      snapshot.refund_allocation_version ===
-      CASHIER_RETURN_REFUND_ALLOCATION_VERSION
-        ? allocatedReturnRefundMinor({
-            sale: originalSale,
-            line,
+    const expectedRefund =
+      snapshot.refund_pricing_version === CASHIER_REFUND_PRICING_VERSION
+        ? cashierNetReturnRefundMinor(
+            originalSale,
+            line.line_id,
             alreadyReturned,
-            returnQuantity: requested.quantity,
-          })
+            returnedRefundMinor(previousCompensations, line.line_id),
+            requested.quantity,
+          )
         : safeMultiply(
             line.effective_unit_price_minor,
             requested.quantity,
             "return refund",
           );
-    const expectedRefund =
-      snapshot.refund_allocation_version ===
-      CASHIER_RETURN_REFUND_ALLOCATION_VERSION
-        ? Math.min(allocatedRefund, remainingSaleRefundMinor)
-        : allocatedRefund;
-    if (
-      snapshot.refund_allocation_version ===
-      CASHIER_RETURN_REFUND_ALLOCATION_VERSION
-    ) {
-      remainingSaleRefundMinor -= expectedRefund;
-    }
     if (requested.refund_minor !== expectedRefund) {
       throw new CashierSyncError(
         "CASHIER_COMPENSATION_ORIGINAL_SALE_MISMATCH",
