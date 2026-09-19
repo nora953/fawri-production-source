@@ -5,6 +5,10 @@ import {
   type OperationalSqlClient,
 } from "./operationalPostgresAuthority";
 import {
+  ensureOnlineOrderFulfillmentCommittedWithTarget,
+  OnlineOrderFulfillmentCommitError,
+} from "./postgresOnlineOrderFulfillmentCommit";
+import {
   confirmServerPayment,
   getServerOrder,
   listServerOrders,
@@ -114,6 +118,7 @@ type OrderRow = {
   customer_phone: string | null;
   customer_address: string | null;
   customer_area: string | null;
+  fulfillment_location_id: string | null;
   status: ServerOrderStatus;
   payment_method: ServerPaymentMethod;
   payment_status: ServerPaymentStatus;
@@ -171,7 +176,7 @@ type DecisionRow = {
 
 const ORDER_SELECT = `
 SELECT id, merchant_id, conversation_id, customer_external_id, customer_name,
-       customer_phone, customer_address, customer_area,
+       customer_phone, customer_address, customer_area, fulfillment_location_id,
        status::text AS status, payment_method::text AS payment_method,
        payment_status::text AS payment_status,
        subtotal_iqd, delivery_fee_iqd, total_iqd, source_channel, version,
@@ -363,6 +368,32 @@ function assertOrderTransition(current: ServerOrderStatus, next: ServerOrderStat
   }
 }
 
+async function ensureOnlineFulfillmentForConfirmation(
+  client: OperationalSqlClient,
+  current: OrderRow,
+): Promise<void> {
+  try {
+    await ensureOnlineOrderFulfillmentCommittedWithTarget(client, {
+      merchantId: current.merchant_id,
+      orderId: current.id,
+      customerArea: current.customer_area || current.customer_address || "",
+      sourceChannel: current.source_channel,
+      fulfillmentLocationId: current.fulfillment_location_id,
+      metadata: current.metadata,
+    });
+  } catch (error) {
+    if (error instanceof OnlineOrderFulfillmentCommitError) {
+      throw new OrderOperationError(
+        error.code,
+        error.message,
+        error.status,
+        error.details,
+      );
+    }
+    throw error;
+  }
+}
+
 function assertNonTerminalPaymentTransition(
   method: ServerPaymentMethod,
   current: ServerPaymentStatus,
@@ -449,6 +480,9 @@ export async function updateServerOrderStatusAuthoritative(input: {
     assertVersion(current, version);
     assertOrderTransition(current.status, next);
     if (current.status === next) return mapOrder(client, current);
+    if (next === "confirmed") {
+      await ensureOnlineFulfillmentForConfirmation(client, current);
+    }
     await client.query(
       `UPDATE orders
           SET status = $3::order_status,
@@ -630,6 +664,7 @@ export async function confirmServerPaymentAuthoritative(input: {
         );
       }
       assertOrderTransition(current.status, "confirmed");
+      await ensureOnlineFulfillmentForConfirmation(client, current);
       resultingStatus = "confirmed";
     }
     const providerEvidence =

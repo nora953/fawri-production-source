@@ -20,6 +20,9 @@ const pool = dbModule.pool;
 const accounts = await import(
   "../src/services/postgresMerchantAccountAuthority.js"
 );
+const merchantManagement = await import(
+  "../src/services/postgresMerchantManagementAuthority.js"
+);
 const channels = await import("../src/services/postgresMetaChannelAuthority.js");
 const orders = await import("../src/services/postgresOrderOperationsAuthority.js");
 const providerPayments = await import(
@@ -47,7 +50,21 @@ async function seedMerchant() {
     created.account.id,
   );
   assert.ok(verified?.merchantProfile);
-  return verified!;
+  await merchantManagement.updateMerchantStatusPostgres({
+    merchantId: created.account.id,
+    status: "approved",
+    actorAdminId: created.account.id,
+  });
+  const managed = await merchantManagement.getManagedMerchantPostgres(
+    created.account.id,
+  );
+  assert.equal(managed?.status, "approved");
+  assert.equal(managed?.account_status, "approved");
+  const approved = await accounts.findMerchantByIdAuthoritative(
+    created.account.id,
+  );
+  assert.ok(approved?.merchantProfile);
+  return approved!;
 }
 
 const merchant = await seedMerchant();
@@ -59,6 +76,117 @@ const channel = await channels.connectMetaChannelAuthoritative({
   accessToken: "payment-proof-page-token",
   webhookSubscribed: true,
 });
+
+const fulfillmentLocationId = "payment-proof-location";
+const fulfillmentAreaRateId = "payment-proof-area-mansour";
+const fulfillmentProductId = "payment-proof-product";
+
+async function seedOnlineFulfillmentFoundation() {
+  await raw(
+    `INSERT INTO merchant_settings
+      (merchant_id, delivery_enabled, delivery_pricing_mode, delivery_fee_iqd,
+       delivery_areas, delivery_estimated_days_min, delivery_estimated_days_max)
+     VALUES ($1, TRUE, 'per_area', 0, '[]'::jsonb, 1, 3)
+     ON CONFLICT (merchant_id) DO UPDATE
+       SET delivery_enabled = TRUE,
+           delivery_pricing_mode = 'per_area',
+           delivery_fee_iqd = 0,
+           delivery_areas = '[]'::jsonb,
+           delivery_estimated_days_min = 1,
+           delivery_estimated_days_max = 3,
+           updated_at = now()`,
+    [merchant.account.id],
+  );
+
+  await raw(
+    `INSERT INTO merchant_delivery_area_rates
+      (id, merchant_id, area_name, normalized_area_name, fee_iqd, enabled)
+     VALUES ($1, $2, 'المنصور', 'المنصور', 0, TRUE)
+     ON CONFLICT (merchant_id, normalized_area_name) DO UPDATE
+       SET area_name = EXCLUDED.area_name,
+           fee_iqd = EXCLUDED.fee_iqd,
+           enabled = TRUE,
+           updated_at = now()`,
+    [fulfillmentAreaRateId, merchant.account.id],
+  );
+
+  const canonicalArea = await raw(
+    `SELECT id
+       FROM merchant_delivery_area_rates
+      WHERE merchant_id = $1 AND normalized_area_name = 'المنصور'
+      LIMIT 1`,
+    [merchant.account.id],
+  );
+  assert.equal(canonicalArea.rows.length, 1);
+
+  await raw(
+    `INSERT INTO merchant_locations
+      (id, merchant_id, name, is_default, operational_status,
+       online_fulfillment_enabled, accept_online_orders_while_closed,
+       merchant_priority, inventory_fresh_at, created_at, updated_at)
+     VALUES (
+       $1, $2, 'Payment Proof Main', TRUE, 'open', TRUE, FALSE, 1, now(),
+       now() - interval '1 hour', now()
+     )
+     ON CONFLICT (id) DO UPDATE
+       SET operational_status = 'open',
+           online_fulfillment_enabled = TRUE,
+           accept_online_orders_while_closed = FALSE,
+           inventory_fresh_at = now(),
+           updated_at = now()`,
+    [fulfillmentLocationId, merchant.account.id],
+  );
+
+  await raw(
+    `INSERT INTO merchant_location_delivery_areas
+      (id, merchant_id, location_id, delivery_area_rate_id)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (merchant_id, location_id, delivery_area_rate_id)
+     DO UPDATE SET updated_at = now()`,
+    [
+      "payment-proof-location-area",
+      merchant.account.id,
+      fulfillmentLocationId,
+      canonicalArea.rows[0].id,
+    ],
+  );
+
+  await raw(
+    `INSERT INTO products
+      (id, merchant_id, name, original_price_iqd, current_price_iqd,
+       quantity, low_stock_threshold, version, status, allow_fawri_reply, metadata)
+     VALUES ($1, $2, 'Payment Proof Product', 1000, 1000,
+             1000, 5, 1, 'available', TRUE, '{}'::jsonb)
+     ON CONFLICT (id) DO UPDATE
+       SET quantity = 1000,
+           low_stock_threshold = 5,
+           status = 'available',
+           deleted_at = NULL,
+           updated_at = now()`,
+    [fulfillmentProductId, merchant.account.id],
+  );
+
+  await raw(
+    `INSERT INTO location_inventory_levels
+      (id, merchant_id, location_id, product_id, variant_id,
+       quantity, low_stock_threshold, version)
+     VALUES ($1, $2, $3, $4, NULL, 1000, 5, 1)
+     ON CONFLICT (merchant_id, location_id, product_id)
+       WHERE variant_id IS NULL
+     DO UPDATE SET quantity = 1000,
+                   low_stock_threshold = 5,
+                   version = 1,
+                   updated_at = now()`,
+    [
+      "payment-proof-location-stock",
+      merchant.account.id,
+      fulfillmentLocationId,
+      fulfillmentProductId,
+    ],
+  );
+}
+
+await seedOnlineFulfillmentFoundation();
 
 async function seedElectronicOrder(input: {
   id: string;
@@ -83,9 +211,10 @@ async function seedElectronicOrder(input: {
   await raw(
     `INSERT INTO orders
       (id, merchant_id, conversation_id, customer_external_id, customer_name,
-       customer_phone, customer_address, status, payment_method, payment_status,
+       customer_phone, customer_address, customer_area,
+       status, payment_method, payment_status,
        subtotal_iqd, delivery_fee_iqd, total_iqd, source_channel, version)
-     VALUES ($1, $2, $3, $4, $5, '07710000000', 'Baghdad',
+     VALUES ($1, $2, $3, $4, $5, '07710000000', 'Baghdad', 'المنصور',
              'pending_confirmation', $6::payment_method, 'electronic_pending',
              $7, 0, $7, 'messenger', 1)`,
     [
@@ -95,6 +224,21 @@ async function seedElectronicOrder(input: {
       input.customerId,
       `Customer ${input.id}`,
       input.paymentMethod || "superqi",
+      input.amount,
+    ],
+  );
+  await raw(
+    `INSERT INTO order_items
+      (id, order_id, merchant_id, product_id, product_variant_id,
+       product_name_snapshot, variant_snapshot, quantity,
+       unit_price_iqd, line_total_iqd)
+     VALUES ($1, $2, $3, $4, NULL,
+             'Payment Proof Product', '{}'::jsonb, 1, $5, $5)`,
+    [
+      `${input.id}-item`,
+      input.id,
+      merchant.account.id,
+      fulfillmentProductId,
       input.amount,
     ],
   );
@@ -126,6 +270,25 @@ test("merchant manual confirmation is decisive and records merchant_confirmed pr
   assert.equal(confirmed.payment_reconciliation_status, "clear");
   assert.equal(confirmed.last_payment_decision?.confirmation_source, "merchant_confirmed");
 
+  const manualFulfillment = await raw(
+    `SELECT fulfillment_location_id, metadata
+       FROM orders
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchant.account.id, "order-manual-paid"],
+  );
+  assert.equal(
+    manualFulfillment.rows[0].fulfillment_location_id,
+    fulfillmentLocationId,
+  );
+  assert.equal(
+    manualFulfillment.rows[0].metadata.online_fulfillment_v1.inventory_committed,
+    true,
+  );
+  assert.equal(
+    manualFulfillment.rows[0].metadata.online_fulfillment_v1.location_id,
+    fulfillmentLocationId,
+  );
+
   const decision = await raw(
     `SELECT confirmation_source::text AS confirmation_source
        FROM order_payment_decisions
@@ -144,6 +307,14 @@ test("verified provider paid evidence can confirm a pending order without Fawri 
     amount: 49_000,
     paymentMethod: "fastpay",
   });
+
+  const stockBeforeProviderPaid = await raw(
+    `SELECT quantity
+       FROM location_inventory_levels
+      WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
+        AND variant_id IS NULL`,
+    [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+  );
 
   const result =
     await providerPayments.recordVerifiedProviderPaymentEvidenceAuthoritative({
@@ -188,6 +359,33 @@ test("verified provider paid evidence can confirm a pending order without Fawri 
     });
   assert.equal(replay.deduplicated, true);
 
+  const providerFulfillment = await raw(
+    `SELECT fulfillment_location_id, metadata
+       FROM orders
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchant.account.id, "order-provider-paid"],
+  );
+  assert.equal(
+    providerFulfillment.rows[0].fulfillment_location_id,
+    fulfillmentLocationId,
+  );
+  assert.equal(
+    providerFulfillment.rows[0].metadata.online_fulfillment_v1.inventory_committed,
+    true,
+  );
+
+  const stockAfterProviderReplay = await raw(
+    `SELECT quantity
+       FROM location_inventory_levels
+      WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
+        AND variant_id IS NULL`,
+    [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+  );
+  assert.equal(
+    Number(stockAfterProviderReplay.rows[0].quantity),
+    Number(stockBeforeProviderPaid.rows[0].quantity) - 1,
+  );
+
   const eventCount = await raw(
     `SELECT count(*)::int AS count
        FROM order_payment_provider_events
@@ -195,6 +393,96 @@ test("verified provider paid evidence can confirm a pending order without Fawri 
     [merchant.account.id, "order-provider-paid"],
   );
   assert.equal(eventCount.rows[0].count, 1);
+});
+
+test("provider paid evidence is preserved while stale fulfillment rolls back inventory and requires reconciliation", async () => {
+  await seedElectronicOrder({
+    id: "order-provider-paid-stale",
+    conversationId: "conversation-provider-paid-stale",
+    customerId: "customer-provider-paid-stale",
+    amount: 41_000,
+    paymentMethod: "fastpay",
+  });
+
+  const stockBefore = await raw(
+    `SELECT quantity
+       FROM location_inventory_levels
+      WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
+        AND variant_id IS NULL`,
+    [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+  );
+  await raw(
+    `UPDATE merchant_locations
+        SET inventory_fresh_at = now() - interval '10 minutes',
+            updated_at = now()
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchant.account.id, fulfillmentLocationId],
+  );
+
+  try {
+    const result =
+      await providerPayments.recordVerifiedProviderPaymentEvidenceAuthoritative({
+        merchantId: merchant.account.id,
+        orderId: "order-provider-paid-stale",
+        provider: "fastpay",
+        providerEventId: "fastpay-proof-event-paid-stale-0001",
+        providerTransactionRef: "fastpay-proof-txn-stale-0001",
+        outcome: "paid",
+        amountIqd: 41_000,
+        currency: "IQD",
+        payloadSha256: hash("fastpay-proof-event-paid-stale-0001"),
+        authenticityVerified: true,
+        sanitizedMetadata: { environment: "isolated_test", status: "paid" },
+      });
+
+    assert.equal(result.action, "payment_conflict");
+    assert.equal(result.order.payment_status, "paid");
+    assert.equal(result.order.status, "pending_confirmation");
+    assert.equal(
+      result.order.payment_reconciliation_status,
+      "reconciliation_required",
+    );
+    assert.equal(
+      result.order.payment_conflict_code,
+      "ORDER_FULFILLMENT_CONFIRMATION_REQUIRED",
+    );
+
+    const stockAfter = await raw(
+      `SELECT quantity
+         FROM location_inventory_levels
+        WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
+          AND variant_id IS NULL`,
+      [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+    );
+    assert.equal(
+      Number(stockAfter.rows[0].quantity),
+      Number(stockBefore.rows[0].quantity),
+    );
+
+    const storedEvent = await raw(
+      `SELECT count(*)::int AS count
+         FROM order_payment_provider_events
+        WHERE merchant_id = $1 AND order_id = $2`,
+      [merchant.account.id, "order-provider-paid-stale"],
+    );
+    assert.equal(storedEvent.rows[0].count, 1);
+
+    const controlled = await raw(
+      `SELECT status::text AS status, assigned_to_human
+         FROM conversations
+        WHERE merchant_id = $1 AND id = $2`,
+      [merchant.account.id, "conversation-provider-paid-stale"],
+    );
+    assert.equal(controlled.rows[0].status, "manual");
+    assert.equal(controlled.rows[0].assigned_to_human, true);
+  } finally {
+    await raw(
+      `UPDATE merchant_locations
+          SET inventory_fresh_at = now(), updated_at = now()
+        WHERE merchant_id = $1 AND id = $2`,
+      [merchant.account.id, fulfillmentLocationId],
+    );
+  }
 });
 
 test("provider failure after merchant confirmation preserves merchant paid decision and escalates only that conversation", async () => {
@@ -258,8 +546,10 @@ test("provider failure after merchant confirmation preserves merchant paid decis
   const notifications = await raw(
     `SELECT type, variables
        FROM notifications
-      WHERE merchant_id = $1 AND type = 'operational_payment_conflict'`,
-    [merchant.account.id],
+      WHERE merchant_id = $1
+        AND type = 'operational_payment_conflict'
+        AND variables ->> 'order_id' = $2`,
+    [merchant.account.id, "order-payment-conflict"],
   );
   assert.equal(notifications.rows.length, 1);
   assert.equal(notifications.rows[0].variables.order_id, "order-payment-conflict");

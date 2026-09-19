@@ -129,10 +129,7 @@ export function routeOrderToLocation(input: {
   requested_items: readonly RoutingRequestedItem[];
   candidates: readonly RoutingCandidate[];
 }): LocationRoutingDecision {
-  if (
-    input.requested_items.length === 0 ||
-    requestedTotals(input.requested_items) === null
-  ) {
+  if (requestedTotals(input.requested_items) === null) {
     throw new Error("routing request items are invalid");
   }
 
@@ -155,9 +152,12 @@ export function routeOrderToLocation(input: {
     return { status: "unfulfillable", reason: "location_unavailable" };
   }
 
-  const stockEligible = operational.filter((candidate) =>
-    canFulfillEntireOrder(candidate, input.requested_items),
-  );
+  const requiresInventory = input.requested_items.length > 0;
+  const stockEligible = requiresInventory
+    ? operational.filter((candidate) =>
+        canFulfillEntireOrder(candidate, input.requested_items),
+      )
+    : operational;
   if (stockEligible.length === 0) {
     return {
       status: "unfulfillable",
@@ -165,7 +165,9 @@ export function routeOrderToLocation(input: {
     };
   }
 
-  const fresh = stockEligible.filter((candidate) => candidate.inventory_fresh);
+  const fresh = requiresInventory
+    ? stockEligible.filter((candidate) => candidate.inventory_fresh)
+    : stockEligible;
   if (fresh.length === 0) {
     return {
       status: "pending_fulfillment_confirmation",

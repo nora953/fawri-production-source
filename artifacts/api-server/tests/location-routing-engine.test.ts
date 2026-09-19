@@ -50,6 +50,30 @@ test("duplicate order lines for the same item are summed before routing", () => 
   });
 });
 
+test("service-only orders route without inventory or freshness requirements", () => {
+  const result = routeOrderToLocation({
+    requested_items: [],
+    candidates: [
+      candidate("location-stale", {
+        inventory_fresh: false,
+        merchant_priority: 2,
+        inventory: [],
+      }),
+      candidate("location-priority", {
+        inventory_fresh: false,
+        merchant_priority: 9,
+        inventory: [],
+      }),
+    ],
+  });
+
+  assert.deepEqual(result, {
+    status: "routed",
+    location_id: "location-priority",
+    reason: "merchant_priority",
+  });
+});
+
 test("routing never combines stock across locations", () => {
   const result = routeOrderToLocation({
     requested_items: requested,
