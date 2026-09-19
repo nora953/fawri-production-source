@@ -92,6 +92,11 @@ export function cashierAdjustedLineRevenueById(
   return adjusted;
 }
 
+/**
+ * Divide remaining post-discount line revenue across remaining units. This
+ * keeps repeated partial returns exact and caps v2 refunds after legacy
+ * evidence that may already have refunded more than the new allocation.
+ */
 export function cashierNetReturnRefundMinor(
   sale: CashierRefundPricingSale,
   originalLineId: string,
