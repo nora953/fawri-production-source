@@ -181,12 +181,14 @@ export default function ServerSavedAnswersPage() {
       setAnswers(result.answers);
       setNextCursor(isSavedAnswerCursor(result.nextCursor) ? result.nextCursor : null);
       setLoadStatus("ready");
+      return true;
     } catch (error) {
       if (requestId !== loadRequestIdRef.current) return;
       console.error("Load saved answers failed:", error);
       setNotice(copy.loadFailed);
       setNextCursor(null);
       setLoadStatus("unavailable");
+      return false;
     }
   }, [copy.loadFailed, searchCategories, serverQuery]);
 
@@ -326,12 +328,8 @@ export default function ServerSavedAnswersPage() {
       const apiError = error as ApiError;
       if (apiError.code === "VERSION_CONFLICT" && isSavedAnswer(apiError.current)) {
         const currentAnswer = apiError.current;
-        setAnswers((current) =>
-          current.some((item) => item.id === currentAnswer.id)
-            ? current.map((item) => (item.id === currentAnswer.id ? currentAnswer : item))
-            : [currentAnswer, ...current],
-        );
-        if (editing && currentAnswer.id === editing.id) {
+        const sameRecordConflict = Boolean(editing && currentAnswer.id === editing.id);
+        if (sameRecordConflict) {
           setEditing(currentAnswer);
           setForm({
             category: currentAnswer.category,
@@ -340,9 +338,23 @@ export default function ServerSavedAnswersPage() {
             language: currentAnswer.language,
             active: currentAnswer.active,
           });
-          setNotice(copy.conflict);
+        }
+        if (serverQuery) {
+          const reloaded = await load();
+          setNotice(
+            reloaded
+              ? sameRecordConflict
+                ? copy.conflict
+                : copy.duplicate
+              : copy.loadFailed,
+          );
         } else {
-          setNotice(copy.duplicate);
+          setAnswers((current) =>
+            current.some((item) => item.id === currentAnswer.id)
+              ? current.map((item) => (item.id === currentAnswer.id ? currentAnswer : item))
+              : [currentAnswer, ...current],
+          );
+          setNotice(sameRecordConflict ? copy.conflict : copy.duplicate);
         }
       } else {
         setNotice(copy.saveFailed);
@@ -370,10 +382,15 @@ export default function ServerSavedAnswersPage() {
     } catch (error) {
       const apiError = error as ApiError;
       if (apiError.code === "VERSION_CONFLICT" && isSavedAnswer(apiError.current)) {
-        setAnswers((current) =>
-          current.map((item) => (item.id === apiError.current?.id ? apiError.current : item)),
-        );
-        setNotice(copy.conflict);
+        if (serverQuery) {
+          const reloaded = await load();
+          setNotice(reloaded ? copy.conflict : copy.loadFailed);
+        } else {
+          setAnswers((current) =>
+            current.map((item) => (item.id === apiError.current?.id ? apiError.current : item)),
+          );
+          setNotice(copy.conflict);
+        }
       } else {
         setNotice(copy.saveFailed);
       }
