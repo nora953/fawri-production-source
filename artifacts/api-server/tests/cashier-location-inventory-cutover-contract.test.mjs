@@ -315,6 +315,18 @@ test("merchant catalog inventory is location authoritative and legacy writes are
     authority,
     /CATALOG_LOCATION_REQUIRED/,
   );
+  assert.match(
+    authority,
+    /Number\(level\.version\) !== input\.expectedVersion/,
+  );
+  assert.match(
+    authority,
+    /expectedLocationVersion: input\.expectedVersion/,
+  );
+  assert.doesNotMatch(
+    authority,
+    /product\.version !== input\.expectedVersion/,
+  );
   assert.doesNotMatch(
     authority,
     /WHERE merchant_id = \$1\s+AND status = 'active'/,
@@ -348,6 +360,9 @@ test("merchant catalog inventory is location authoritative and legacy writes are
 
   assert.match(page, /inventoryByLocation/);
   assert.match(page, /locationInventoryKey/);
+  assert.match(page, /inventoryLevelVersion/);
+  assert.match(page, /expectedVersion,/);
+  assert.doesNotMatch(page, /expectedVersion: product\.version/);
   assert.match(page, /currentQuantity=\{currentQuantity\}/);
   assert.match(page, /disabledLocation/);
 });
