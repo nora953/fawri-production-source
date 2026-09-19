@@ -39,6 +39,33 @@ function readLearnedAnswerPage(req: Request): {
   };
 }
 
+function readKnowledgeAuditPage(req: Request): {
+  limit: number;
+  beforeCreatedAt?: string;
+  beforeId?: string;
+} | null {
+  const rawLimit = readString(req.query.limit, 12);
+  const limit = rawLimit ? Number(rawLimit) : 100;
+  if (!Number.isInteger(limit) || limit < 1 || limit > 500) return null;
+
+  const beforeCreatedAt = readString(req.query.beforeCreatedAt, 80);
+  const beforeId = readString(req.query.beforeId, 160);
+  if (Boolean(beforeCreatedAt) !== Boolean(beforeId)) return null;
+  if (
+    beforeCreatedAt &&
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(beforeCreatedAt)
+  ) {
+    return null;
+  }
+
+  return {
+    limit,
+    ...(beforeCreatedAt ? { beforeCreatedAt } : {}),
+    ...(beforeId ? { beforeId } : {}),
+  };
+}
+
+
 router.get("/runtime", (_req: Request, res: Response): void => {
   const engine = getKnowledgeDecisionEngine();
   res.setHeader("Cache-Control", "no-store");
@@ -124,13 +151,26 @@ router.get("/learned-answers", async (req: Request, res: Response): Promise<void
 
 router.get("/audit", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
-  const limit = Number(req.query.limit);
+  const pageInput = readKnowledgeAuditPage(req);
+  if (!pageInput) {
+    res.status(400).json({
+      ok: false,
+      code: "INVALID_KNOWLEDGE_AUDIT_PAGE",
+      error: "invalid knowledge audit page",
+    });
+    return;
+  }
+
   try {
-    const events = await getPostgresKnowledgeManagementRuntime().listAuditEvents(
+    const page = await getPostgresKnowledgeManagementRuntime().listAuditEventsPage(
       merchantId,
-      Number.isInteger(limit) ? limit : 100,
+      pageInput,
     );
-    res.json({ ok: true, events });
+    res.json({
+      ok: true,
+      events: page.events,
+      nextCursor: page.nextCursor,
+    });
   } catch (error) {
     sendKnowledgeError(res, error);
   }
