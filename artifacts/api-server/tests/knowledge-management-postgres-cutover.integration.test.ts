@@ -135,6 +135,48 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
     assert.equal(invalid.rowCount, 0);
   });
 
+  await t.test("Saved Answer management pagination exposes every record without overlap", async () => {
+    const extraOne = await managementA.createSavedAnswer({
+      merchantId: merchantIds[0],
+      category: "delivery",
+      questionPattern: "متى يصل الطلب؟",
+      answerText: "يصل الطلب حسب منطقة التوصيل.",
+      language: "ar",
+    });
+    const extraTwo = await managementA.createSavedAnswer({
+      merchantId: merchantIds[0],
+      category: "payment",
+      questionPattern: "ما طرق الدفع؟",
+      answerText: "طرق الدفع المعتمدة تظهر عند إتمام الطلب.",
+      language: "ar",
+    });
+
+    const firstPage = await managementA.listSavedAnswersPage(merchantIds[0], {
+      limit: 2,
+    });
+    assert.equal(firstPage.answers.length, 2);
+    assert.ok(firstPage.nextCursor);
+
+    const secondPage = await managementA.listSavedAnswersPage(merchantIds[0], {
+      limit: 2,
+      beforeUpdatedAt: firstPage.nextCursor!.updatedAt,
+      beforeId: firstPage.nextCursor!.id,
+    });
+    assert.equal(secondPage.answers.length, 1);
+    assert.equal(secondPage.nextCursor, null);
+
+    const pagedIds = [...firstPage.answers, ...secondPage.answers].map((item) => item.id);
+    assert.equal(new Set(pagedIds).size, 3);
+    assert.ok(pagedIds.includes(extraOne.id));
+    assert.ok(pagedIds.includes(extraTwo.id));
+
+    const fullList = await managementA.listSavedAnswers(merchantIds[0]);
+    assert.deepEqual(
+      [...pagedIds].sort(),
+      fullList.map((item) => item.id).sort(),
+    );
+  });
+
   await t.test("Training Request created by decision runtime is visible and approvable by merchant management", async () => {
     const managementB = new PostgresKnowledgeManagementRuntime({
       embeddingProvider: fakeEmbedding,
@@ -192,7 +234,7 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
       embeddingProvider: fakeEmbedding,
     }).listSavedAnswers(merchantIds[1]);
 
-    assert.equal(managementAList.length, 1);
+    assert.equal(managementAList.length, 3);
     assert.equal(managementBList.length, 0);
     assert.ok(managementAList.every((item) => item.merchantId === merchantIds[0]));
   });
