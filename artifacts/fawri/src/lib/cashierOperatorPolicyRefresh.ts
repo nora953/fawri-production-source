@@ -143,7 +143,8 @@ async function updateLocalStationPolicy(
   if (
     identity.cloud_merchant_id !== context.merchant_id ||
     identity.device_id !== context.device_id ||
-    identity.station_id !== context.station_id
+    identity.station_id !== context.station_id ||
+    identity.location_id !== context.location_id
   ) {
     throw new CashierOperatorPolicyRefreshError(
       'CASHIER_OPERATOR_VALIDATE_RESPONSE_INVALID',
@@ -155,6 +156,7 @@ async function updateLocalStationPolicy(
   const nextIdentity: CashierDeviceIdentity = {
     ...identity,
     station_name: context.station_name,
+    location_id: context.location_id,
     branch_key: context.branch_key,
     offline_inventory_authority: context.offline_inventory_authority,
     station_credential_expires_at: context.credential_expires_at,
