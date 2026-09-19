@@ -23,6 +23,10 @@ const managementRuntime = await readFile(
   new URL("../../api-server/src/services/knowledge/postgresKnowledgeManagementRuntime.ts", import.meta.url),
   "utf8",
 );
+const knowledgeTypes = await readFile(
+  new URL("../../api-server/src/services/knowledge/types.ts", import.meta.url),
+  "utf8",
+);
 
 test("dashboard routes saved answers to the active canonical server page", () => {
   assert.match(app, /import\("@\/pages\/dashboard\/SavedAnswersPage\.ts"\)/);
@@ -72,6 +76,7 @@ test("saved answer mutations retain optimistic version protection", () => {
 
 test("saved answer category choices match the canonical PostgreSQL enum contract", () => {
   assert.match(page, /const CATEGORY_VALUES = \[/);
+  assert.match(knowledgeTypes, /export const SAVED_ANSWER_CATEGORIES = \[/);
   for (const category of [
     "delivery",
     "payment",
@@ -81,12 +86,23 @@ test("saved answer category choices match the canonical PostgreSQL enum contract
     "custom",
   ]) {
     assert.match(page, new RegExp(`"${category}"`));
-    assert.match(serverRoute, new RegExp(`"${category}"`));
-    assert.match(managementRuntime, new RegExp(`"${category}"`));
+    assert.match(knowledgeTypes, new RegExp(`"${category}"`));
   }
   assert.match(page, /CATEGORY_VALUES\.includes\(answer\.category as Category\)/);
   assert.match(page, /CATEGORY_VALUES\.map\(\(value\) =>/);
   assert.match(page, /categoryLabels\[answer\.category\]/);
+  assert.match(serverRoute, /isSavedAnswerCategory/);
+  assert.match(managementRuntime, /isSavedAnswerCategory/);
+  assert.doesNotMatch(
+    serverRoute,
+    /const SAVED_ANSWER_CATEGORIES = new Set/,
+    "route must not maintain a second backend category list",
+  );
+  assert.doesNotMatch(
+    managementRuntime,
+    /const SAVED_ANSWER_CATEGORIES = new Set/,
+    "PostgreSQL runtime must not maintain a second backend category list",
+  );
   assert.doesNotMatch(
     page,
     /<Input[^>]*value=\{form\.category\}/,
