@@ -141,7 +141,11 @@ test("location tables keep tenant boundaries and named foreign keys aligned with
     );
     assert.match(
       migration,
-      new RegExp(`CREATE POLICY "${table}_tenant_boundary"`),
+      new RegExp(`CREATE POLICY "${table}_tenant_boundary" AS PERMISSIVE`),
+    );
+    assert.doesNotMatch(
+      migration,
+      new RegExp(`CREATE POLICY "${table}_tenant_boundary" AS RESTRICTIVE`),
     );
   }
 
@@ -198,7 +202,7 @@ test("migration ledger registers repaired 0016 and reviewed 0017 contiguously", 
   assert.equal(stage17.mode, "reviewed_sql");
   assert.equal(
     stage17.sql_sha256,
-    "a79581a28cb154b5c6139f9ad7bed10de3b24997aa3651ec41597d8a25305d06",
+    "86584eb9b9c5b7a20172fd505470412ec605bd0583b77386a4f0d1280a3e7f75",
   );
   assert.ok(stage17.preimage_files.includes("location-inventory.ts"));
   assert.ok(stage17.preimage_files.includes("merchant-locations.ts"));
