@@ -292,14 +292,16 @@ export default function ServerTrainingPage() {
 
   async function act(
     request: TrainingRequest,
-    action: "propose" | "approve" | "reject",
+    action: "propose" | "approve" | "reject" | "revoke",
   ) {
     if (!mutationsAllowed) return;
     const reply = (drafts[request.id] || "").trim();
-    if (action !== "reject" && !reply) {
+    if ((action === "propose" || action === "approve") && !reply) {
       setNotice(copy.replyRequired);
       return;
     }
+
+    if (action === "revoke" && !window.confirm(copy.confirmRevoke)) return;
 
     setSavingId(request.id);
     setNotice("");
@@ -556,6 +558,16 @@ export default function ServerTrainingPage() {
                       >
                         <XCircle className="me-2 h-4 w-4" />
                         {copy.reject}
+                      </Button>
+                    ) : null}
+                    {isApproved ? (
+                      <Button
+                        variant="outline"
+                        onClick={() => void act(request, "revoke")}
+                        disabled={!mutationsAllowed || busy}
+                      >
+                        <XCircle className="me-2 h-4 w-4" />
+                        {copy.revokeApproval}
                       </Button>
                     ) : null}
                   </div>
