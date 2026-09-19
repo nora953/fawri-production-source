@@ -364,6 +364,61 @@ export class PostgresKnowledgeManagementRuntime {
     } catch (error) { rethrowRead(error); }
   }
 
+  async listSavedAnswersPage(
+    value: string,
+    options: { limit?: number; offset?: number } = {},
+  ): Promise<{
+    answers: SavedAnswerRecord[];
+    limit: number;
+    offset: number;
+    total: number;
+    hasMore: boolean;
+  }> {
+    const merchant = merchantId(value);
+    const requestedLimit = Number(options.limit ?? 500);
+    const requestedOffset = Number(options.offset ?? 0);
+    if (
+      !Number.isInteger(requestedLimit) ||
+      requestedLimit <= 0 ||
+      requestedLimit > 500 ||
+      !Number.isInteger(requestedOffset) ||
+      requestedOffset < 0
+    ) {
+      throw new KnowledgeTransitionError(
+        "INVALID_SAVED_ANSWER_PAGE",
+        "saved answer pagination is invalid",
+      );
+    }
+    try {
+      const result = await this.sql.query<Record<string, unknown>>(
+        `SELECT ${SAVED_COLUMNS}, COUNT(*) OVER()::int AS total_count
+           FROM saved_answers
+          WHERE merchant_id = $1
+          ORDER BY updated_at DESC, id DESC
+          LIMIT $2 OFFSET $3`,
+        [merchant, requestedLimit, requestedOffset],
+      );
+      const answers = result.rows.map((row) => savedFromRow(row, merchant));
+      const totalRaw = result.rows[0]?.total_count;
+      const total =
+        totalRaw === undefined
+          ? requestedOffset === 0
+            ? 0
+            : requestedOffset
+          : Number(totalRaw);
+      if (!Number.isInteger(total) || total < answers.length) {
+        dbError("KNOWLEDGE_STATE_INVALID", "knowledge pagination state is invalid");
+      }
+      return {
+        answers,
+        limit: requestedLimit,
+        offset: requestedOffset,
+        total,
+        hasMore: requestedOffset + answers.length < total,
+      };
+    } catch (error) { rethrowRead(error); }
+  }
+
   async createSavedAnswer(input: {
     merchantId: string; category: string; questionPattern: string; answerText: string;
     language: KnowledgeLanguage; active?: boolean;
