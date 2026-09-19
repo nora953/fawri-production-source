@@ -112,8 +112,8 @@ export type CashierReturnLineSnapshot = {
 };
 
 export type CashierReturnSnapshot = CashierMoneyContext & {
-  /** Version 2 refunds the amount actually charged after sale-level manual discount. */
-  refund_allocation_version?: 2;
+  /** v2 refunds use net sale value after sale-level manual discount allocation. */
+  refund_pricing_version?: 2;
   return_id: string;
   operation_id: string;
   sale_id: string;
