@@ -60,6 +60,14 @@ export function approveMerchantTrainingRequest(input: {
   return getPostgresKnowledgeManagementRuntime().approveTrainingRequest(input);
 }
 
+export function revokeMerchantTrainingApproval(input: {
+  merchantId: string;
+  id: string;
+  expectedVersion: number;
+}) {
+  return getPostgresKnowledgeManagementRuntime().revokeTrainingApproval(input);
+}
+
 export function rejectMerchantTrainingRequest(input: {
   merchantId: string;
   id: string;
