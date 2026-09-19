@@ -330,6 +330,16 @@ async function currentTraining(tx: KnowledgeSqlExecutor, merchant: string, id: s
   return result.rows[0] ? trainingFromRow(result.rows[0], merchant) : null;
 }
 
+export type SavedAnswerPageCursor = {
+  updatedAt: string;
+  id: string;
+};
+
+export type SavedAnswerPage = {
+  answers: SavedAnswerRecord[];
+  nextCursor: SavedAnswerPageCursor | null;
+};
+
 export class PostgresKnowledgeManagementRuntime {
   readonly authorityId = "postgresql_knowledge_management_authority_v1";
   readonly legacyFallbackEnabled = false;
@@ -346,15 +356,73 @@ export class PostgresKnowledgeManagementRuntime {
     });
   }
 
-  async listSavedAnswers(value: string): Promise<SavedAnswerRecord[]> {
+  async listSavedAnswersPage(
+    value: string,
+    options: {
+      limit?: number;
+      beforeUpdatedAt?: string;
+      beforeId?: string;
+    } = {},
+  ): Promise<SavedAnswerPage> {
     const merchant = merchantId(value);
+    const limit = options.limit ?? 500;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+      throw new KnowledgeTransitionError(
+        "INVALID_SAVED_ANSWER_PAGE",
+        "saved answer page limit must be between 1 and 500",
+      );
+    }
+
+    const rawBeforeUpdatedAt = boundedText(options.beforeUpdatedAt, 80);
+    const beforeId = boundedText(options.beforeId, 160);
+    if (Boolean(rawBeforeUpdatedAt) !== Boolean(beforeId)) {
+      throw new KnowledgeTransitionError(
+        "INVALID_SAVED_ANSWER_PAGE",
+        "saved answer page cursor is incomplete",
+      );
+    }
+
+    let beforeUpdatedAt: string | null = null;
+    if (rawBeforeUpdatedAt) {
+      const parsed = new Date(rawBeforeUpdatedAt);
+      if (!Number.isFinite(parsed.getTime())) {
+        throw new KnowledgeTransitionError(
+          "INVALID_SAVED_ANSWER_PAGE",
+          "saved answer page cursor is invalid",
+        );
+      }
+      beforeUpdatedAt = parsed.toISOString();
+    }
+
     try {
       const result = await this.sql.query<Record<string, unknown>>(
-        `SELECT ${SAVED_COLUMNS} FROM saved_answers WHERE merchant_id = $1 ORDER BY updated_at DESC, id DESC LIMIT 500`,
-        [merchant],
+        `SELECT ${SAVED_COLUMNS}
+           FROM saved_answers
+          WHERE merchant_id = $1
+            AND (
+              $2::timestamptz IS NULL
+              OR updated_at < $2::timestamptz
+              OR (updated_at = $2::timestamptz AND id < $3::text)
+            )
+          ORDER BY updated_at DESC, id DESC
+          LIMIT $4`,
+        [merchant, beforeUpdatedAt, beforeId || null, limit + 1],
       );
-      return result.rows.map((row) => savedFromRow(row, merchant));
+      const pageRows = result.rows.slice(0, limit);
+      const answers = pageRows.map((row) => savedFromRow(row, merchant));
+      const last = answers[answers.length - 1];
+      return {
+        answers,
+        nextCursor:
+          result.rows.length > limit && last
+            ? { updatedAt: last.updatedAt, id: last.id }
+            : null,
+      };
     } catch (error) { rethrowRead(error); }
+  }
+
+  async listSavedAnswers(value: string): Promise<SavedAnswerRecord[]> {
+    return (await this.listSavedAnswersPage(value, { limit: 500 })).answers;
   }
 
   async createSavedAnswer(input: {
