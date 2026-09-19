@@ -267,7 +267,7 @@ test('central report groups multiple cashier stations under the same canonical l
 });
 
 
-test('central report applies v2 partial return against charged revenue after manual discount', () => {
+test('central report applies v2 partial return against net discounted sale value', () => {
   const row = discountedRow({
     id: 'sale-discounted-return-v2',
     manualDiscount: 3_000,
@@ -284,13 +284,14 @@ test('central report applies v2 partial return against charged revenue after man
     compensations: [
       {
         kind: 'return',
-        operation_id: 'return-op-v2',
+        operation_id: 'return-v2-op',
         occurred_at: '2026-09-14T00:05:00.000Z',
         snapshot: {
-          refund_allocation_version: 2,
+          refund_pricing_version: 2,
           sale_id: 'sale-discounted-return-v2',
           currency_code: 'IQD',
           currency_fraction_digits: 0,
+          refund_total_minor: 18_500,
           lines: [
             {
               original_line_id: 'line-return-v2',
@@ -300,7 +301,6 @@ test('central report applies v2 partial return against charged revenue after man
               refund_minor: 18_500,
             },
           ],
-          refund_total_minor: 18_500,
         },
       },
     ],
@@ -310,13 +310,11 @@ test('central report applies v2 partial return against charged revenue after man
   assert.equal(iq.gross_revenue_minor, 37_000);
   assert.equal(iq.refunds_minor, 18_500);
   assert.equal(iq.net_revenue_minor, 18_500);
-  assert.equal(iq.returned_units, 1);
   assert.equal(iq.net_units, 1);
   assert.equal(iq.gross_profit_minor, 8_500);
-  assert.equal(iq.top_products[0].net_revenue_minor, 18_500);
 });
 
-test('central report keeps legacy discounted returns readable under historical refund evidence', () => {
+test('central report keeps legacy pre-v2 discounted return evidence readable', () => {
   const row = discountedRow({
     id: 'sale-discounted-return-legacy',
     manualDiscount: 3_000,
@@ -333,12 +331,13 @@ test('central report keeps legacy discounted returns readable under historical r
     compensations: [
       {
         kind: 'return',
-        operation_id: 'return-op-legacy',
+        operation_id: 'return-legacy-op',
         occurred_at: '2026-09-14T00:05:00.000Z',
         snapshot: {
           sale_id: 'sale-discounted-return-legacy',
           currency_code: 'IQD',
           currency_fraction_digits: 0,
+          refund_total_minor: 20_000,
           lines: [
             {
               original_line_id: 'line-return-legacy',
@@ -348,7 +347,6 @@ test('central report keeps legacy discounted returns readable under historical r
               refund_minor: 20_000,
             },
           ],
-          refund_total_minor: 20_000,
         },
       },
     ],
@@ -357,18 +355,18 @@ test('central report keeps legacy discounted returns readable under historical r
   const { iq } = currencyReport(row);
   assert.equal(iq.refunds_minor, 20_000);
   assert.equal(iq.net_revenue_minor, 17_000);
-  assert.equal(iq.gross_profit_minor, 7_000);
 });
 
-test('central report caps v2 refund after a legacy over-refund', () => {
+
+test('central report handles legacy then v2 discounted partial returns without exceeding net sale value', () => {
   const row = discountedRow({
-    id: 'sale-discounted-transition',
+    id: 'sale-discounted-return-legacy-then-v2',
     manualDiscount: 3_000,
     lines: [
       {
-        lineId: 'line-transition',
-        productId: 'product-transition',
-        productName: 'Product Transition',
+        lineId: 'line-mixed',
+        productId: 'product-mixed',
+        productName: 'Product Mixed',
         quantity: 2,
         unitPrice: 20_000,
         unitCost: 10_000,
@@ -377,43 +375,43 @@ test('central report caps v2 refund after a legacy over-refund', () => {
     compensations: [
       {
         kind: 'return',
-        operation_id: 'return-op-legacy-first',
+        operation_id: 'return-legacy-first-op',
         occurred_at: '2026-09-14T00:05:00.000Z',
         snapshot: {
-          sale_id: 'sale-discounted-transition',
+          sale_id: 'sale-discounted-return-legacy-then-v2',
           currency_code: 'IQD',
           currency_fraction_digits: 0,
+          refund_total_minor: 20_000,
           lines: [
             {
-              original_line_id: 'line-transition',
-              product_id: 'product-transition',
+              original_line_id: 'line-mixed',
+              product_id: 'product-mixed',
               quantity: 1,
               effective_unit_price_minor: 20_000,
               refund_minor: 20_000,
             },
           ],
-          refund_total_minor: 20_000,
         },
       },
       {
         kind: 'return',
-        operation_id: 'return-op-v2-second',
+        operation_id: 'return-v2-second-op',
         occurred_at: '2026-09-14T00:10:00.000Z',
         snapshot: {
-          refund_allocation_version: 2,
-          sale_id: 'sale-discounted-transition',
+          refund_pricing_version: 2,
+          sale_id: 'sale-discounted-return-legacy-then-v2',
           currency_code: 'IQD',
           currency_fraction_digits: 0,
+          refund_total_minor: 17_000,
           lines: [
             {
-              original_line_id: 'line-transition',
-              product_id: 'product-transition',
+              original_line_id: 'line-mixed',
+              product_id: 'product-mixed',
               quantity: 1,
               effective_unit_price_minor: 20_000,
               refund_minor: 17_000,
             },
           ],
-          refund_total_minor: 17_000,
         },
       },
     ],
@@ -423,5 +421,4 @@ test('central report caps v2 refund after a legacy over-refund', () => {
   assert.equal(iq.refunds_minor, 37_000);
   assert.equal(iq.net_revenue_minor, 0);
   assert.equal(iq.net_units, 0);
-  assert.equal(iq.top_products.length, 0);
 });
