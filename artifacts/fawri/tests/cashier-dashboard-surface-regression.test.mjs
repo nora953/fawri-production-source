@@ -61,3 +61,15 @@ test('cashier staff PostgreSQL schema and operator gate remain part of the canon
   assert.match(schemaIndex, /export \* from "\.\/cashier-operation-attribution"/);
   assert.match(cashierMain, /CashierOperatorGate/);
 });
+
+
+test('central cashier operation details expose canonical location filtering and truncation transparency', async () => {
+  const reports = await source('artifacts/fawri/src/pages/dashboard/CashierCentralReportsPage.tsx');
+
+  assert.match(reports, /const \[locationFilter, setLocationFilter\] = useState\('all'\)/);
+  assert.match(reports, /item\.location_id \|\| '__legacy_location__'/);
+  assert.match(reports, /labels\.allLocations/);
+  assert.match(reports, /result\.activity\.operation_detail_limit/);
+  assert.match(reports, /detailsAreLimited/);
+  assert.match(reports, /detailsLimited\.replace\('\{limit\}'/);
+});
