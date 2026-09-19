@@ -350,6 +350,16 @@ export type TrainingRequestPage = {
   nextCursor: TrainingRequestPageCursor | null;
 };
 
+export type LearnedAnswerPageCursor = {
+  updatedAt: string;
+  id: string;
+};
+
+export type LearnedAnswerPage = {
+  answers: LearnedAnswerRecord[];
+  nextCursor: LearnedAnswerPageCursor | null;
+};
+
 export class PostgresKnowledgeManagementRuntime {
   readonly authorityId = "postgresql_knowledge_management_authority_v1";
   readonly legacyFallbackEnabled = false;
@@ -993,15 +1003,94 @@ export class PostgresKnowledgeManagementRuntime {
     } catch (error) { rethrowWrite(error); }
   }
 
-  async listLearnedAnswers(value: string): Promise<LearnedAnswerRecord[]> {
+  async listLearnedAnswersPage(
+    value: string,
+    options: {
+      limit?: number;
+      beforeUpdatedAt?: string;
+      beforeId?: string;
+    } = {},
+  ): Promise<LearnedAnswerPage> {
     const merchant = merchantId(value);
+    const limit = options.limit ?? 500;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+      throw new KnowledgeTransitionError(
+        "INVALID_LEARNED_ANSWER_PAGE",
+        "learned answer page limit must be between 1 and 500",
+      );
+    }
+
+    const rawBeforeUpdatedAt = boundedText(options.beforeUpdatedAt, 80);
+    const beforeId = boundedText(options.beforeId, 160);
+    if (Boolean(rawBeforeUpdatedAt) !== Boolean(beforeId)) {
+      throw new KnowledgeTransitionError(
+        "INVALID_LEARNED_ANSWER_PAGE",
+        "learned answer page cursor is incomplete",
+      );
+    }
+
+    let beforeUpdatedAt: string | null = null;
+    if (rawBeforeUpdatedAt) {
+      const cursorPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+      const millisIso = `${rawBeforeUpdatedAt.slice(0, 23)}Z`;
+      if (
+        !cursorPattern.test(rawBeforeUpdatedAt) ||
+        !Number.isFinite(new Date(millisIso).getTime())
+      ) {
+        throw new KnowledgeTransitionError(
+          "INVALID_LEARNED_ANSWER_PAGE",
+          "learned answer page cursor is invalid",
+        );
+      }
+      beforeUpdatedAt = rawBeforeUpdatedAt;
+    }
+
     try {
       const result = await this.sql.query<Record<string, unknown>>(
-        `SELECT ${LEARNED_COLUMNS} FROM learned_answers WHERE merchant_id=$1 ORDER BY updated_at DESC, id DESC LIMIT 500`,
-        [merchant],
+        `SELECT ${LEARNED_COLUMNS},
+                to_char(
+                  updated_at AT TIME ZONE 'UTC',
+                  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+                ) AS cursor_updated_at
+           FROM learned_answers
+          WHERE merchant_id = $1
+            AND (
+              $2::timestamptz IS NULL
+              OR updated_at < $2::timestamptz
+              OR (updated_at = $2::timestamptz AND id < $3::text)
+            )
+          ORDER BY updated_at DESC, id DESC
+          LIMIT $4`,
+        [merchant, beforeUpdatedAt, beforeId || null, limit + 1],
       );
-      return result.rows.map((row) => learnedFromRow(row, merchant));
+      const pageRows = result.rows.slice(0, limit);
+      const answers = pageRows.map((row) => learnedFromRow(row, merchant));
+      const lastRow = pageRows[pageRows.length - 1];
+      const last = answers[answers.length - 1];
+      const cursorUpdatedAt = lastRow
+        ? boundedText(lastRow.cursor_updated_at, 80)
+        : "";
+      if (
+        result.rows.length > limit &&
+        (
+          !last ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursorUpdatedAt)
+        )
+      ) {
+        dbError("KNOWLEDGE_STATE_INVALID", "knowledge pagination state is invalid");
+      }
+      return {
+        answers,
+        nextCursor:
+          result.rows.length > limit && last
+            ? { updatedAt: cursorUpdatedAt, id: last.id }
+            : null,
+      };
     } catch (error) { rethrowRead(error); }
+  }
+
+  async listLearnedAnswers(value: string): Promise<LearnedAnswerRecord[]> {
+    return (await this.listLearnedAnswersPage(value, { limit: 500 })).answers;
   }
 
   async listAuditEvents(value: string, requestedLimit = 100): Promise<KnowledgeAuditEvent[]> {
