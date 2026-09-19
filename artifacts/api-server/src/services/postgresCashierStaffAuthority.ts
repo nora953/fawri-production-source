@@ -585,10 +585,13 @@ function translateDatabaseError(error: unknown): never {
   const candidate = error as { code?: unknown; constraint?: unknown };
   if (String(candidate?.code || "") === "23505") {
     const constraint = String(candidate.constraint || "");
-    if (constraint.includes("merchant_cashier_stations_offline_branch_unique")) {
+    if (
+      constraint.includes("merchant_cashier_stations_offline_branch_unique") ||
+      constraint.includes("merchant_cashier_stations_offline_location_unique")
+    ) {
       throw new CashierStaffAuthorityError(
         "CASHIER_OFFLINE_BRANCH_AUTHORITY_EXISTS",
-        "another active cashier station already owns offline inventory authority for this branch",
+        "another active cashier station already owns offline inventory authority for this location",
         409,
       );
     }
@@ -937,14 +940,36 @@ export async function updateCashierStationAuthoritative(input: {
       );
     }
 
+    const targetLocation =
+      branchKey === undefined
+        ? null
+        : await resolveCashierLocationForBranch(client, {
+            merchantId,
+            branchKey,
+            branchLabel:
+              branchLabel === undefined ? current.branch_label : branchLabel,
+          });
+    const locationChanged =
+      targetLocation !== null && targetLocation.id !== current.location_id;
+
     const values: unknown[] = [merchantId, stationId];
     const sets = ["updated_at = now()"];
+    if (locationChanged) {
+      sets.push(
+        "paired_device_id = NULL",
+        "paired_at = NULL",
+        "credential_version = credential_version + 1",
+      );
+    }
     const add = (fragment: string, value: unknown) => {
       values.push(value);
       sets.push(`${fragment} = $${values.length}`);
     };
     if (name !== undefined) add("name", name);
-    if (branchKey !== undefined) add("branch_key", branchKey);
+    if (branchKey !== undefined && targetLocation) {
+      add("branch_key", branchKey);
+      add("location_id", targetLocation.id);
+    }
     if (branchLabel !== undefined) add("branch_label", branchLabel);
     if (offlineInventoryAuthority !== undefined) {
       add("offline_inventory_authority", offlineInventoryAuthority);
@@ -953,12 +978,14 @@ export async function updateCashierStationAuthoritative(input: {
       add("status", status);
       sets.push(status === "revoked" ? "revoked_at = now()" : "revoked_at = NULL");
       if (status !== "active") {
-        sets.push(
-          "offline_inventory_authority = FALSE",
-          "paired_device_id = NULL",
-          "paired_at = NULL",
-          "credential_version = credential_version + 1",
-        );
+        sets.push("offline_inventory_authority = FALSE");
+        if (!locationChanged) {
+          sets.push(
+            "paired_device_id = NULL",
+            "paired_at = NULL",
+            "credential_version = credential_version + 1",
+          );
+        }
       }
     }
 
@@ -979,12 +1006,27 @@ export async function updateCashierStationAuthoritative(input: {
         404,
       );
     }
+    if (locationChanged) {
+      await client.query(
+        `UPDATE cashier_station_pairing_challenges
+            SET status = 'revoked', revoked_at = now()
+          WHERE merchant_id = $1 AND station_id = $2 AND status = 'active'`,
+        [merchantId, stationId],
+      );
+    }
     if (status === "disabled" || status === "revoked") {
       await revokeStationRuntime(
         client,
         merchantId,
         stationId,
         status === "revoked" ? "station_revoked" : "station_disabled",
+      );
+    } else if (locationChanged) {
+      await revokeStationRuntime(
+        client,
+        merchantId,
+        stationId,
+        "station_location_changed",
       );
     }
     return stationView(rows[0]);
