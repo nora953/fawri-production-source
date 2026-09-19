@@ -24,8 +24,8 @@ test("server refund pricing v2 derives exact discounted refunds", () => {
       ["b", 9_250],
     ],
   );
-  assert.equal(cashierNetReturnRefundMinor(sale, "a", 0, 1), 27_750);
-  assert.equal(cashierNetReturnRefundMinor(sale, "b", 0, 1), 9_250);
+  assert.equal(cashierNetReturnRefundMinor(sale, "a", 0, 0, 1), 27_750);
+  assert.equal(cashierNetReturnRefundMinor(sale, "b", 0, 0, 1), 9_250);
 });
 
 test("server refund pricing preserves exact totals across rounding-sensitive partial returns", () => {
@@ -35,10 +35,23 @@ test("server refund pricing preserves exact totals across rounding-sensitive par
     lines: [{ line_id: "line", quantity: 3, line_total_minor: 3_000 }],
   };
   const refunds = [
-    cashierNetReturnRefundMinor(sale, "line", 0, 1),
-    cashierNetReturnRefundMinor(sale, "line", 1, 1),
-    cashierNetReturnRefundMinor(sale, "line", 2, 1),
+    cashierNetReturnRefundMinor(sale, "line", 0, 0, 1),
+    cashierNetReturnRefundMinor(sale, "line", 1, 0, 1),
+    cashierNetReturnRefundMinor(sale, "line", 2, 0, 1),
   ];
   assert.deepEqual(refunds, [999, 1_000, 1_000]);
   assert.equal(refunds.reduce((sum, item) => sum + item, 0), sale.total_minor);
+});
+
+
+test("server v2 pricing caps a new return after legacy refund evidence", () => {
+  const sale = {
+    manual_discount_minor: 3_000,
+    total_minor: 37_000,
+    lines: [{ line_id: "line", quantity: 2, line_total_minor: 40_000 }],
+  };
+  assert.equal(
+    cashierNetReturnRefundMinor(sale, "line", 1, 20_000, 1),
+    17_000,
+  );
 });
