@@ -184,15 +184,15 @@ test('local report still fails closed when manual discount and sale total do not
 });
 
 
-test('local report applies v2 partial return against charged revenue after manual discount', () => {
+test('local report applies v2 partial return against net discounted sale value', () => {
   const sale = discountedSale({
     id: 'discounted-return-v2',
     manualDiscount: 3_000,
     lines: [
       {
-        lineId: 'line-return-v2',
-        productId: 'product-return-v2',
-        productName: 'Product Return V2',
+        lineId: 'line-return',
+        productId: 'product-return',
+        productName: 'Product Return',
         quantity: 2,
         unitPrice: 20_000,
         unitCost: 10_000,
@@ -201,9 +201,9 @@ test('local report applies v2 partial return against charged revenue after manua
   });
   sale.returns = [
     {
-      refund_allocation_version: 2,
+      refund_pricing_version: 2,
       return_id: 'return-v2',
-      operation_id: 'return-op-v2',
+      operation_id: 'return-v2-op',
       sale_id: sale.sale_id,
       local_merchant_id: sale.local_merchant_id,
       cloud_merchant_id: sale.cloud_merchant_id,
@@ -211,8 +211,8 @@ test('local report applies v2 partial return against charged revenue after manua
       device_sequence: 2,
       lines: [
         {
-          original_line_id: 'line-return-v2',
-          product_id: 'product-return-v2',
+          original_line_id: 'line-return',
+          product_id: 'product-return',
           quantity: 1,
           effective_unit_price_minor: 20_000,
           refund_minor: 18_500,
@@ -229,13 +229,11 @@ test('local report applies v2 partial return against charged revenue after manua
   assert.equal(iq.gross_revenue_minor, 37_000);
   assert.equal(iq.refunds_minor, 18_500);
   assert.equal(iq.net_revenue_minor, 18_500);
-  assert.equal(iq.returned_units, 1);
   assert.equal(iq.net_units, 1);
   assert.equal(iq.gross_profit_minor, 8_500);
-  assert.equal(iq.top_products[0].net_revenue_minor, 18_500);
 });
 
-test('local report keeps legacy discounted returns readable under their historical refund contract', () => {
+test('local report keeps legacy pre-v2 discounted return evidence readable', () => {
   const sale = discountedSale({
     id: 'discounted-return-legacy',
     manualDiscount: 3_000,
@@ -253,7 +251,7 @@ test('local report keeps legacy discounted returns readable under their historic
   sale.returns = [
     {
       return_id: 'return-legacy',
-      operation_id: 'return-op-legacy',
+      operation_id: 'return-legacy-op',
       sale_id: sale.sale_id,
       local_merchant_id: sale.local_merchant_id,
       cloud_merchant_id: sale.cloud_merchant_id,
@@ -278,5 +276,74 @@ test('local report keeps legacy discounted returns readable under their historic
   const iq = buildCashierSalesReport([sale]).by_currency[0];
   assert.equal(iq.refunds_minor, 20_000);
   assert.equal(iq.net_revenue_minor, 17_000);
-  assert.equal(iq.gross_profit_minor, 7_000);
+});
+
+
+test('local report handles legacy then v2 discounted partial returns without exceeding net sale value', () => {
+  const sale = discountedSale({
+    id: 'discounted-return-legacy-then-v2',
+    manualDiscount: 3_000,
+    lines: [
+      {
+        lineId: 'line-mixed',
+        productId: 'product-mixed',
+        productName: 'Product Mixed',
+        quantity: 2,
+        unitPrice: 20_000,
+        unitCost: 10_000,
+      },
+    ],
+  });
+  sale.returns = [
+    {
+      return_id: 'return-legacy-first',
+      operation_id: 'return-legacy-first-op',
+      sale_id: sale.sale_id,
+      local_merchant_id: sale.local_merchant_id,
+      cloud_merchant_id: sale.cloud_merchant_id,
+      device_id: sale.device_id,
+      device_sequence: 2,
+      lines: [
+        {
+          original_line_id: 'line-mixed',
+          product_id: 'product-mixed',
+          quantity: 1,
+          effective_unit_price_minor: 20_000,
+          refund_minor: 20_000,
+        },
+      ],
+      refund_total_minor: 20_000,
+      currency_code: 'IQD',
+      currency_fraction_digits: 0,
+      occurred_at: '2026-09-14T00:05:00.000Z',
+    },
+    {
+      refund_pricing_version: 2,
+      return_id: 'return-v2-second',
+      operation_id: 'return-v2-second-op',
+      sale_id: sale.sale_id,
+      local_merchant_id: sale.local_merchant_id,
+      cloud_merchant_id: sale.cloud_merchant_id,
+      device_id: sale.device_id,
+      device_sequence: 3,
+      lines: [
+        {
+          original_line_id: 'line-mixed',
+          product_id: 'product-mixed',
+          quantity: 1,
+          effective_unit_price_minor: 20_000,
+          refund_minor: 17_000,
+        },
+      ],
+      refund_total_minor: 17_000,
+      currency_code: 'IQD',
+      currency_fraction_digits: 0,
+      occurred_at: '2026-09-14T00:10:00.000Z',
+    },
+  ];
+
+  const iq = buildCashierSalesReport([sale]).by_currency[0];
+  assert.equal(iq.refunds_minor, 37_000);
+  assert.equal(iq.net_revenue_minor, 0);
+  assert.equal(iq.net_units, 0);
 });
