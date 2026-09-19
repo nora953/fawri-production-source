@@ -424,6 +424,19 @@ export default function ServerSavedAnswersPage() {
             ))}
           </div>
         )}
+
+        {nextCursor && loadStatus === "ready" ? (
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => void loadMore()}
+              disabled={loadingMore || saving}
+            >
+              <RefreshCw className={`me-2 h-4 w-4 ${loadingMore ? "animate-spin" : ""}`} />
+              {loadingMore ? copy.loadingMore : copy.loadMore}
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       {open ? (
@@ -474,7 +487,7 @@ export default function ServerSavedAnswersPage() {
             </label>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>{copy.cancel}</Button>
-              <Button type="submit" disabled={saving || loadStatus !== "ready"} className="bg-orange-500 text-white hover:bg-orange-600">
+              <Button type="submit" disabled={saving || loadingMore || loadStatus !== "ready"} className="bg-orange-500 text-white hover:bg-orange-600">
                 {saving ? copy.saving : copy.save}
               </Button>
             </div>
