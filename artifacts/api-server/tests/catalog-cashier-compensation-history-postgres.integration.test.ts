@@ -125,16 +125,16 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
         product_name_snapshot: created.product.name,
         variant_name_snapshot: created.product.variants[0]?.name || "Blue",
         catalog_version: created.product.version,
-        quantity: 1,
+        quantity: 2,
         base_unit_price_minor: 10_000,
         effective_unit_price_minor: 10_000,
         discount_minor: 0,
-        line_total_minor: 10_000,
+        line_total_minor: 20_000,
       },
     ],
-    subtotal_minor: 10_000,
+    subtotal_minor: 20_000,
     discount_minor: 0,
-    total_minor: 10_000,
+    total_minor: 20_000,
     currency_code: "IQD",
     currency_fraction_digits: 0,
     payment_method: "cash",
@@ -150,7 +150,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
     device_sequence: 1,
     product_id: productId,
     variant_id: variantId,
-    delta: -1,
+    delta: -2,
     reason: "sale",
     related_sale_id: saleId,
     occurred_at: soldAt,
@@ -199,7 +199,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
   assert.ok(soldProduct);
   assert.equal(soldProduct.version, 1);
   assert.equal(soldProduct.variants[0]?.id, variantId);
-  assert.equal(soldProduct.variants[0]?.stock_quantity, 4);
+  assert.equal(soldProduct.variants[0]?.stock_quantity, 3);
 
   const locationAfterSale = await pool.query(
     `SELECT quantity, version
@@ -208,7 +208,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
         AND product_id = $3 AND variant_id = $4`,
     [merchantId, locationId, productId, variantId],
   );
-  assert.equal(Number(locationAfterSale.rows[0]?.quantity), 4);
+  assert.equal(Number(locationAfterSale.rows[0]?.quantity), 3);
   assert.equal(Number(locationAfterSale.rows[0]?.version), 2);
 
   const rebuilt = await catalog.updateCatalogProductAuthoritative({
@@ -241,7 +241,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
   });
   assert.equal(rebuilt.version, 2);
   assert.equal(rebuilt.variants[0]?.id, variantId);
-  assert.equal(rebuilt.variants[0]?.stock_quantity, 4);
+  assert.equal(rebuilt.variants[0]?.stock_quantity, 3);
 
   const returnOperationId = `return-op-${suffix}`;
   const returnId = `return-${suffix}`;
@@ -328,7 +328,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
   const restoredProduct = afterReturn.find((item) => item.id === productId);
   assert.ok(restoredProduct);
   assert.equal(restoredProduct.variants[0]?.id, variantId);
-  assert.equal(restoredProduct.variants[0]?.stock_quantity, 5);
+  assert.equal(restoredProduct.variants[0]?.stock_quantity, 4);
 
   assert.equal(restoredProduct.version, 2);
 
@@ -339,7 +339,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
         AND product_id = $3 AND variant_id = $4`,
     [merchantId, locationId, productId, variantId],
   );
-  assert.equal(Number(locationAfterReturn.rows[0]?.quantity), 5);
+  assert.equal(Number(locationAfterReturn.rows[0]?.quantity), 4);
   assert.equal(Number(locationAfterReturn.rows[0]?.version), 3);
 
   const returnMutation = await pool.query(
@@ -352,8 +352,8 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
     [merchantId],
   );
   assert.equal(returnMutation.rows[0]?.location_id, locationId);
-  assert.equal(Number(returnMutation.rows[0]?.before_quantity), 4);
-  assert.equal(Number(returnMutation.rows[0]?.after_quantity), 5);
+  assert.equal(Number(returnMutation.rows[0]?.before_quantity), 3);
+  assert.equal(Number(returnMutation.rows[0]?.after_quantity), 4);
   assert.equal(Number(returnMutation.rows[0]?.expected_version), 2);
   assert.equal(Number(returnMutation.rows[0]?.resulting_version), 3);
 
@@ -368,7 +368,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
   const afterReplay = await catalog.listCatalogProductsAuthoritative(merchantId);
   const replayProduct = afterReplay.find((item) => item.id === productId);
   assert.ok(replayProduct);
-  assert.equal(replayProduct.variants[0]?.stock_quantity, 5);
+  assert.equal(replayProduct.variants[0]?.stock_quantity, 4);
 });
 
 test.after(async () => {
