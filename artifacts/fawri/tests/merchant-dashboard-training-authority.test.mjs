@@ -96,3 +96,12 @@ test("training management search and pagination are server-authoritative", () =>
   assert.match(trainingRouteSource, /req\.query\.q/);
   assert.match(trainingRouteSource, /req\.query\.status/);
 });
+
+
+test("filtered training mutations reload the authoritative result set", () => {
+  assert.match(pageSource, /if \(serverQuery \|\| filter !== "all"\) \{/);
+  assert.match(pageSource, /const reloaded = await load\(\)/);
+  assert.match(pageSource, /if \(!reloaded\) setNotice\(copy\.loadFailed\)/);
+  assert.match(pageSource, /setNotice\(reloaded \? copy\.conflict : copy\.loadFailed\)/);
+  assert.match(pageSource, /else \{\s*replaceCurrent\(current\);/);
+});
