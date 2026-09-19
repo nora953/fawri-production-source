@@ -546,8 +546,10 @@ test("provider failure after merchant confirmation preserves merchant paid decis
   const notifications = await raw(
     `SELECT type, variables
        FROM notifications
-      WHERE merchant_id = $1 AND type = 'operational_payment_conflict'`,
-    [merchant.account.id],
+      WHERE merchant_id = $1
+        AND type = 'operational_payment_conflict'
+        AND variables ->> 'order_id' = $2`,
+    [merchant.account.id, "order-payment-conflict"],
   );
   assert.equal(notifications.rows.length, 1);
   assert.equal(notifications.rows[0].variables.order_id, "order-payment-conflict");
