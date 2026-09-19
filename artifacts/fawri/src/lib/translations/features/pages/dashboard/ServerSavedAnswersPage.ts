@@ -32,6 +32,7 @@ export const SERVER_SAVED_ANSWERS_PAGE_COPY = {
     loadFailed: "تعذر تحميل الإجابات.",
     saveFailed: "تعذر حفظ التغيير.",
     conflict: "تغيرت الإجابة على جهاز آخر. تم تحميل النسخة الحالية.",
+    duplicate: "توجد إجابة محفوظة بهذا السؤال واللغة بالفعل. عدّل السؤال أو افتح الإجابة الموجودة.",
     required: "السؤال والإجابة مطلوبان.",
   },
   ku: {
@@ -64,6 +65,7 @@ export const SERVER_SAVED_ANSWERS_PAGE_COPY = {
     loadFailed: "بارکردنی وەڵامەکان سەرکەوتوو نەبوو.",
     saveFailed: "پاشەکەوتکردنی گۆڕانکاری سەرکەوتوو نەبوو.",
     conflict: "وەڵامەکە لە ئامێرێکی تر گۆڕاوە. وەشانی ئێستا بارکرا.",
+    duplicate: "وەڵامێکی پاشەکەوتکراو بە هەمان پرسیار و زمان هەیە. پرسیارەکە بگۆڕە یان وەڵامە هەبووەکە بکەرەوە.",
     required: "پرسیار و وەڵام پێویستن.",
   },
   en: {
@@ -96,6 +98,7 @@ export const SERVER_SAVED_ANSWERS_PAGE_COPY = {
     loadFailed: "Could not load saved answers.",
     saveFailed: "Could not save the change.",
     conflict: "This answer changed on another device. The current version was loaded.",
+    duplicate: "A saved answer with this question and language already exists. Change the question or edit the existing answer.",
     required: "Question and answer are required.",
   },
 };
