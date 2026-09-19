@@ -55,6 +55,7 @@ export type CashierCentralActivityResult = {
   by_station: CashierCentralStationActivityRow[];
   by_location: CashierCentralLocationActivityRow[];
   operations: CashierCentralOperationActivityRow[];
+  operation_matching_count: number;
   operation_detail_limit: number;
 };
 
@@ -104,6 +105,7 @@ type OperationRow = {
   amount_minor: string | number | null;
   currency_code: string | null;
   currency_fraction_digits: string | number | null;
+  matching_count: number | string;
 };
 
 function identifier(value: unknown, field: string, maxLength = 200): string {
@@ -169,10 +171,24 @@ function operationKind(value: unknown): "sale" | "return" | "void" {
   return kind;
 }
 
+function optionalIdentifier(value: unknown, field: string): string | undefined {
+  if (value === undefined || value === null || value === "" || value === "all") return undefined;
+  return identifier(value, field);
+}
+
+function optionalOperationKind(value: unknown): "sale" | "return" | "void" | undefined {
+  if (value === undefined || value === null || value === "" || value === "all") return undefined;
+  return operationKind(value);
+}
+
 export async function buildCashierCentralActivityAuthoritative(input: {
   merchantId: unknown;
   from?: unknown;
   to?: unknown;
+  detailStaffId?: unknown;
+  detailLocationId?: unknown;
+  detailStationId?: unknown;
+  detailOperationKind?: unknown;
 }): Promise<CashierCentralActivityResult> {
   if (!operationalPostgresAuthorityRequired()) {
     throw new CashierStaffAuthorityError("CASHIER_REPORT_POSTGRES_REQUIRED", "central cashier activity requires PostgreSQL authority", 503);
@@ -180,6 +196,10 @@ export async function buildCashierCentralActivityAuthoritative(input: {
   const merchantId = identifier(input.merchantId, "merchant_id");
   const from = instant(input.from, "from");
   const to = instant(input.to, "to");
+  const detailStaffId = optionalIdentifier(input.detailStaffId, "detail_staff_id");
+  const detailLocationId = optionalIdentifier(input.detailLocationId, "detail_location_id");
+  const detailStationId = optionalIdentifier(input.detailStationId, "detail_station_id");
+  const detailOperationKind = optionalOperationKind(input.detailOperationKind);
   if (from && to && from >= to) {
     throw new CashierStaffAuthorityError("CASHIER_REPORT_RANGE_INVALID", "cashier activity from must be earlier than to", 400);
   }
@@ -258,6 +278,7 @@ export async function buildCashierCentralActivityAuthoritative(input: {
                 station.branch_label,
                 attribution.shift_id,
                 attribution.occurred_at,
+                COUNT(*) OVER()::int AS matching_count,
                 CASE
                   WHEN attribution.operation_kind = 'sale'
                     THEN orders.metadata->'cashier_sync'->'sale_snapshot'->>'total_minor'
@@ -299,9 +320,25 @@ export async function buildCashierCentralActivityAuthoritative(input: {
           WHERE attribution.merchant_id = $1
             AND ($2::timestamptz IS NULL OR attribution.occurred_at >= $2::timestamptz)
             AND ($3::timestamptz IS NULL OR attribution.occurred_at < $3::timestamptz)
+            AND ($4::text IS NULL OR attribution.staff_id = $4::text)
+            AND (
+              $5::text IS NULL
+              OR ($5::text = '__legacy_location__' AND attribution.location_id IS NULL)
+              OR ($5::text <> '__legacy_location__' AND attribution.location_id = $5::text)
+            )
+            AND ($6::text IS NULL OR attribution.station_id = $6::text)
+            AND ($7::text IS NULL OR attribution.operation_kind = $7::text)
           ORDER BY attribution.occurred_at DESC, attribution.operation_id
           LIMIT ${MAX_ACTIVITY_OPERATIONS}`,
-        [merchantId, from || null, to || null],
+        [
+          merchantId,
+          from || null,
+          to || null,
+          detailStaffId || null,
+          detailLocationId || null,
+          detailStationId || null,
+          detailOperationKind || null,
+        ],
       ),
     ]);
 
@@ -351,6 +388,9 @@ export async function buildCashierCentralActivityAuthoritative(input: {
           ...(digits !== undefined ? { currency_fraction_digits: digits } : {}),
         } satisfies CashierCentralOperationActivityRow;
       }),
+      operation_matching_count: operationRows.length > 0
+        ? count(operationRows[0].matching_count, "operation_matching_count")
+        : 0,
       operation_detail_limit: MAX_ACTIVITY_OPERATIONS,
     };
   });
