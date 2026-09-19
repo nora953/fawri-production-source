@@ -412,14 +412,25 @@ async function markFresh(
   target: OperationalQueryTarget,
   merchantId: string,
   locationId: string,
-): Promise<void> {
-  await target.query(
+): Promise<string> {
+  const rows = await operationalQueryRows<{ inventory_fresh_at: Date | string }>(
+    target,
     `UPDATE merchant_locations
         SET inventory_fresh_at = now(),
             updated_at = GREATEST(updated_at, now())
-      WHERE merchant_id = $1 AND id = $2`,
+      WHERE merchant_id = $1 AND id = $2
+      RETURNING inventory_fresh_at`,
     [merchantId, locationId],
   );
+  if (!rows[0]) {
+    throw new LocationInventoryAuthorityError(
+      "LOCATION_INVENTORY_LOCATION_NOT_FOUND",
+      "merchant location was not found",
+      404,
+      { location_id: locationId },
+    );
+  }
+  return new Date(rows[0].inventory_fresh_at).toISOString();
 }
 
 async function recordMutation(
@@ -607,7 +618,6 @@ export async function createLocationInventoryLevelAuthoritative(params: {
       keyHash,
       requestHash: hash,
     });
-    await markFresh(client, merchantId, locationId);
     return { level, replayed: false };
   });
 }
@@ -738,7 +748,6 @@ async function mutateLocationInventoryLevel(params: {
       keyHash,
       requestHash: hash,
     });
-    await markFresh(client, merchantId, locationId);
     return { level, replayed: false };
   });
 }
@@ -769,4 +778,21 @@ export async function adjustLocationInventoryLevelAuthoritative(params: {
   reason?: unknown;
 }): Promise<LocationInventoryMutationResult> {
   return mutateLocationInventoryLevel({ ...params, operation: "adjust" });
+}
+
+
+export async function markLocationInventoryFreshAuthoritative(params: {
+  merchantId: unknown;
+  locationId: unknown;
+}): Promise<{ location_id: string; inventory_fresh_at: string }> {
+  const merchantId = text(params.merchantId, "merchant_id", 128);
+  const locationId = text(params.locationId, "location_id", 160);
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    await requireLocation(client, merchantId, locationId);
+    const inventoryFreshAt = await markFresh(client, merchantId, locationId);
+    return {
+      location_id: locationId,
+      inventory_fresh_at: inventoryFreshAt,
+    };
+  });
 }
