@@ -3,6 +3,7 @@ import type {
   CashierSaleLineSnapshot,
   CashierSaleSnapshot,
 } from './cashierLocalContracts';
+import { cashierNetReturnRefundMinor } from './cashierRefundPricing';
 
 type CostAwareSaleLine = CashierSaleLineSnapshot & {
   /** Optional owner-only sale-time cost snapshot. Staff devices normally omit it. */
@@ -383,15 +384,24 @@ function validateReturnSnapshot(
       original.effective_unit_price_minor,
       'effective_price',
     );
+    const alreadyReturned = returnedByLine.get(original.line_id) || 0;
+    const expectedRefund =
+      snapshot.refund_pricing_version === 2
+        ? cashierNetReturnRefundMinor(
+            sale,
+            original.line_id,
+            alreadyReturned,
+            quantity,
+          )
+        : safeMultiply(originalPrice, quantity, 'return_refund');
     if (
       returned.product_id !== original.product_id ||
       returned.variant_id !== original.variant_id ||
       returned.effective_unit_price_minor !== originalPrice ||
-      refund !== safeMultiply(originalPrice, quantity, 'return_refund')
+      refund !== expectedRefund
     ) {
       throw new Error('CASHIER_REPORT_RETURN_MISMATCH');
     }
-    const alreadyReturned = returnedByLine.get(original.line_id) || 0;
     const cumulative = safeAdd(alreadyReturned, quantity, 'returned_quantity');
     if (cumulative > original.quantity) {
       throw new Error('CASHIER_REPORT_RETURN_EXCEEDS_SALE');
