@@ -396,7 +396,7 @@ export class PostgresKnowledgeManagementRuntime {
 
     try {
       const result = await this.sql.query<Record<string, unknown>>(
-        `SELECT ${SAVED_COLUMNS}
+        `SELECT ${SAVED_COLUMNS}, updated_at::text AS cursor_updated_at
            FROM saved_answers
           WHERE merchant_id = $1
             AND (
@@ -410,12 +410,22 @@ export class PostgresKnowledgeManagementRuntime {
       );
       const pageRows = result.rows.slice(0, limit);
       const answers = pageRows.map((row) => savedFromRow(row, merchant));
+      const lastRow = pageRows[pageRows.length - 1];
       const last = answers[answers.length - 1];
+      const cursorUpdatedAt = lastRow
+        ? boundedText(lastRow.cursor_updated_at, 80)
+        : "";
+      if (
+        result.rows.length > limit &&
+        (!last || !cursorUpdatedAt || !Number.isFinite(new Date(cursorUpdatedAt).getTime()))
+      ) {
+        dbError("KNOWLEDGE_STATE_INVALID", "knowledge pagination state is invalid");
+      }
       return {
         answers,
         nextCursor:
           result.rows.length > limit && last
-            ? { updatedAt: last.updatedAt, id: last.id }
+            ? { updatedAt: cursorUpdatedAt, id: last.id }
             : null,
       };
     } catch (error) { rethrowRead(error); }
