@@ -274,15 +274,20 @@ export default function ServerTrainingPage() {
   const unavailableWithoutData = loadStatus === "unavailable" && requests.length === 0;
   const staleData = loadStatus === "unavailable" && requests.length > 0;
 
-  function replaceCurrent(current: TrainingRequest) {
+  function replaceCurrent(
+    current: TrainingRequest,
+    options: { preserveDraft?: boolean } = {},
+  ) {
     setRequests((items) => [
       current,
       ...items.filter((item) => item.id !== current.id),
     ]);
-    setDrafts((items) => ({
-      ...items,
-      [current.id]: current.suggestedReply || "",
-    }));
+    if (!options.preserveDraft) {
+      setDrafts((items) => ({
+        ...items,
+        [current.id]: current.suggestedReply || "",
+      }));
+    }
   }
 
   async function act(
@@ -340,7 +345,7 @@ export default function ServerTrainingPage() {
           const reloaded = await load();
           setNotice(reloaded ? copy.conflict : copy.loadFailed);
         } else {
-          replaceCurrent(current);
+          replaceCurrent(current, { preserveDraft: true });
           setNotice(copy.conflict);
         }
       } else {
