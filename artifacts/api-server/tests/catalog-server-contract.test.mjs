@@ -41,8 +41,11 @@ test("active products workspace exposes the canonical server-authoritative catal
   assert.match(page, /createCatalogProduct/);
   assert.match(page, /updateCatalogProduct/);
   assert.match(page, /deleteCatalogProduct/);
-  assert.match(page, /setCatalogInventory/);
-  assert.match(page, /adjustCatalogInventory/);
+  assert.match(page, /getCatalogProductLocationInventory/);
+  assert.match(page, /setCatalogLocationInventory/);
+  assert.match(page, /adjustCatalogLocationInventory/);
+  assert.match(page, /inventoryLevelVersion/);
+  assert.doesNotMatch(page, /expectedVersion:\s*product\.version/);
 });
 
 test("catalog inventory routes preserve PostgreSQL authority, version, and variant scope", () => {
