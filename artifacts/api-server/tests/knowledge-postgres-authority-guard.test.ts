@@ -67,3 +67,25 @@ test("learned-answer management is paginated instead of silently truncating at 5
     /return \(await this\.listLearnedAnswersPage\(value, \{ limit: 500 \}\)\)\.answers/,
   );
 });
+
+
+test("Knowledge audit management is paginated instead of capped to an unreachable history", () => {
+  const route = read("routes/knowledge-operations.ts");
+  const runtime = read("services/knowledge/postgresKnowledgeManagementRuntime.ts");
+
+  assert.match(route, /readKnowledgeAuditPage/);
+  assert.match(route, /listAuditEventsPage/);
+  assert.match(route, /nextCursor: page\.nextCursor/);
+  assert.match(route, /INVALID_KNOWLEDGE_AUDIT_PAGE/);
+  assert.match(route, /beforeCreatedAt/);
+
+  assert.match(runtime, /async listAuditEventsPage/);
+  assert.match(runtime, /ORDER BY created_at DESC, id DESC/);
+  assert.match(runtime, /LIMIT \$4/);
+  assert.match(runtime, /cursor_created_at/);
+  assert.match(runtime, /result\.rows\.length > limit/);
+  assert.match(
+    runtime,
+    /return \(await this\.listAuditEventsPage\(value, \{ limit \}\)\)\.events/,
+  );
+});
