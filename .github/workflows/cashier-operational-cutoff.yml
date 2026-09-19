@@ -14,9 +14,11 @@ on:
       - "artifacts/api-server/src/services/cashierOperatorShiftCloseAuthority.ts"
       - "artifacts/api-server/src/services/postgresCashierOperatorReportAuthority.ts"
       - "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts"
+      - "artifacts/api-server/src/services/postgresCashierCompensationSyncAuthority.ts"
       - "artifacts/api-server/src/services/cashierLocationCatalogProjection.ts"
       - "artifacts/api-server/src/services/cashierLocationBindingAuthority.ts"
       - "artifacts/api-server/tests/cashier-operational-cutoff-postgres.integration.test.ts"
+      - "artifacts/api-server/tests/catalog-cashier-compensation-history-postgres.integration.test.ts"
       - "artifacts/api-server/tests/cashier-location-catalog-projection.test.ts"
       - "artifacts/api-server/tests/cashier-location-binding-contract.test.mjs"
       - "artifacts/api-server/tests/cashier-operator-logout-pin-contract.test.mjs"
@@ -123,6 +125,11 @@ jobs:
         run: >-
           pnpm --filter @workspace/api-server exec tsx --test
           ./tests/cashier-operational-cutoff-postgres.integration.test.ts
+
+      - name: Prove cashier location compensation history
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/catalog-cashier-compensation-history-postgres.integration.test.ts
 
       - name: Prove cashier shift close requires employee PIN
         run: >-
