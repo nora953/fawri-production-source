@@ -15,6 +15,10 @@ import {
   isPositiveSafeInteger,
 } from './cashierLocalContracts';
 import type { IndexedDbCashierConfig } from './cashierIndexedDbAuthority';
+import {
+  CASHIER_RETURN_REFUND_ALLOCATION_VERSION,
+  cashierReturnRefundMinor,
+} from './cashierReturnRefundAllocation';
 
 const DATABASE_VERSION = 2;
 const STORE_META = 'meta';
@@ -543,11 +547,12 @@ export class IndexedDbCashierCompensationAuthority
           );
         }
 
-        const refundMinor = safeMultiply(
-          line.effective_unit_price_minor,
-          requestLine.quantity,
-          'return line refund',
-        );
+        const refundMinor = cashierReturnRefundMinor({
+          sale,
+          lineId: line.line_id,
+          alreadyReturnedQuantity: alreadyReturned,
+          returnQuantity: requestLine.quantity,
+        });
         refundTotalMinor = safeAdd(refundTotalMinor, refundMinor, 'return refund total');
         returnLines.push({
           original_line_id: line.line_id,
@@ -611,6 +616,7 @@ export class IndexedDbCashierCompensationAuthority
       }
 
       const snapshot: CashierReturnSnapshot = {
+        refund_allocation_version: CASHIER_RETURN_REFUND_ALLOCATION_VERSION,
         return_id: returnId(operationId),
         operation_id: operationId,
         sale_id: sale.sale_id,
