@@ -5,6 +5,16 @@ export function listMerchantSavedAnswers(merchantId: string) {
   return getPostgresKnowledgeManagementRuntime().listSavedAnswers(merchantId);
 }
 
+export function listMerchantSavedAnswersPage(
+  merchantId: string,
+  options: { limit?: number; offset?: number } = {},
+) {
+  return getPostgresKnowledgeManagementRuntime().listSavedAnswersPage(
+    merchantId,
+    options,
+  );
+}
+
 export function createMerchantSavedAnswer(input: {
   merchantId: string;
   category: string;
