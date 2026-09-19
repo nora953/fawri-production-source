@@ -119,3 +119,16 @@ test("unfiltered training mutations keep latest-updated ordering coherent", () =
     /setRequests\(\(items\) => \[\s*current,\s*\.\.\.items\.filter\(\(item\) => item\.id !== current\.id\),\s*\]\)/,
   );
 });
+
+
+test("training version conflicts preserve the merchant draft while loading current request state", () => {
+  assert.match(pageSource, /options: \{ preserveDraft\?: boolean \} = \{\}/);
+  assert.match(pageSource, /if \(!options\.preserveDraft\) \{/);
+  assert.match(pageSource, /replaceCurrent\(current, \{ preserveDraft: true \}\)/);
+  assert.match(
+    pageSource,
+    /else \{\s*replaceCurrent\(current\);\s*\}/,
+    "successful unfiltered mutations must still adopt the confirmed server reply",
+  );
+  assert.match(copySource, /current state was loaded and your draft was kept/);
+});
