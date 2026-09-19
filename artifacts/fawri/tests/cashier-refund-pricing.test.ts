@@ -55,8 +55,8 @@ test('repeated partial returns sum exactly to the discounted line value', () => 
     lines: [{ id: 'line', quantity: 3, unitPrice: 1_000 }],
   });
   const first = cashierNetReturnRefundMinor(value, 'line', 0, 0, 1);
-  const second = cashierNetReturnRefundMinor(value, 'line', 1, 0, 1);
-  const third = cashierNetReturnRefundMinor(value, 'line', 2, 0, 1);
+  const second = cashierNetReturnRefundMinor(value, 'line', 1, first, 1);
+  const third = cashierNetReturnRefundMinor(value, 'line', 2, first + second, 1);
   assert.deepEqual([first, second, third], [999, 1_000, 1_000]);
   assert.equal(first + second + third, 2_999);
 });
