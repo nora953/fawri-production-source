@@ -6,7 +6,7 @@ import {
 import {
   createMerchantSavedAnswer,
   deleteMerchantSavedAnswer,
-  listMerchantSavedAnswers,
+  listMerchantSavedAnswersPage,
   updateMerchantSavedAnswer,
 } from "../services/savedAnswerRuntime.js";
 import {
@@ -33,11 +33,55 @@ function readSavedAnswerCategory(value: unknown): string | null {
   return SAVED_ANSWER_CATEGORIES.has(candidate) ? candidate : null;
 }
 
-router.get("/", async (_req: Request, res: Response): Promise<void> => {
+function readPageInteger(
+  value: unknown,
+  fallback: number,
+  options: { min: number; max?: number },
+): number | null {
+  if (value === undefined || value === null || value === "") return fallback;
+  if (Array.isArray(value)) return null;
+  const parsed = Number(value);
+  if (
+    !Number.isSafeInteger(parsed) ||
+    parsed < options.min ||
+    (options.max !== undefined && parsed > options.max)
+  ) {
+    return null;
+  }
+  return parsed;
+}
+
+router.get("/", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
+  const limit = readPageInteger(req.query.limit, 500, { min: 1, max: 500 });
+  const offset = readPageInteger(req.query.offset, 0, {
+    min: 0,
+    max: Number.MAX_SAFE_INTEGER,
+  });
+  if (limit === null || offset === null) {
+    res.status(400).json({
+      ok: false,
+      code: "INVALID_SAVED_ANSWER_PAGE",
+      error: "saved answer pagination is invalid",
+    });
+    return;
+  }
   try {
-    const answers = await listMerchantSavedAnswers(merchantId);
-    res.json({ ok: true, answers });
+    const page = await listMerchantSavedAnswersPage(merchantId, {
+      limit,
+      offset,
+    });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({
+      ok: true,
+      answers: page.answers,
+      page: {
+        limit: page.limit,
+        offset: page.offset,
+        total: page.total,
+        hasMore: page.hasMore,
+      },
+    });
   } catch (error) {
     sendKnowledgeError(res, error);
   }
