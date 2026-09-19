@@ -6,7 +6,7 @@ import {
 import {
   createMerchantSavedAnswer,
   deleteMerchantSavedAnswer,
-  listMerchantSavedAnswers,
+  listMerchantSavedAnswersPage,
   updateMerchantSavedAnswer,
 } from "../services/savedAnswerRuntime.js";
 import {
@@ -28,11 +28,49 @@ function readSavedAnswerCategory(value: unknown): SavedAnswerCategory | null {
   return isSavedAnswerCategory(candidate) ? candidate : null;
 }
 
-router.get("/", async (_req: Request, res: Response): Promise<void> => {
+function readSavedAnswerPage(req: Request): {
+  limit: number;
+  beforeUpdatedAt?: string;
+  beforeId?: string;
+} | null {
+  const rawLimit = readString(req.query.limit, 12);
+  const limit = rawLimit ? Number(rawLimit) : 500;
+  if (!Number.isInteger(limit) || limit < 1 || limit > 500) return null;
+
+  const beforeUpdatedAt = readString(req.query.beforeUpdatedAt, 80);
+  const beforeId = readString(req.query.beforeId, 160);
+  if (Boolean(beforeUpdatedAt) !== Boolean(beforeId)) return null;
+  if (beforeUpdatedAt && !Number.isFinite(new Date(beforeUpdatedAt).getTime())) return null;
+
+  return {
+    limit,
+    ...(beforeUpdatedAt ? { beforeUpdatedAt } : {}),
+    ...(beforeId ? { beforeId } : {}),
+  };
+}
+
+router.get("/", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
+  const pageInput = readSavedAnswerPage(req);
+  if (!pageInput) {
+    res.status(400).json({
+      ok: false,
+      code: "INVALID_SAVED_ANSWER_PAGE",
+      error: "invalid saved answer page",
+    });
+    return;
+  }
+
   try {
-    const answers = await listMerchantSavedAnswers(merchantId);
-    res.json({ ok: true, answers });
+    const page = await listMerchantSavedAnswersPage({
+      merchantId,
+      ...pageInput,
+    });
+    res.json({
+      ok: true,
+      answers: page.answers,
+      nextCursor: page.nextCursor,
+    });
   } catch (error) {
     sendKnowledgeError(res, error);
   }
