@@ -20,6 +20,14 @@ const CATEGORY_VALUES = [
 ] as const;
 type Category = (typeof CATEGORY_VALUES)[number];
 type LoadStatus = "loading" | "ready" | "unavailable";
+const SAVED_ANSWER_PAGE_SIZE = 200;
+
+type SavedAnswerPage = {
+  limit: number;
+  offset: number;
+  total: number;
+  hasMore: boolean;
+};
 
 type SavedAnswer = {
   id: string;
@@ -51,6 +59,23 @@ const EMPTY_FORM = {
   language: "ar" as Language,
   active: true,
 };
+
+function isSavedAnswerPage(
+  value: unknown,
+  expectedOffset: number,
+): value is SavedAnswerPage {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const page = value as Record<string, unknown>;
+  return (
+    Number.isInteger(page.limit) &&
+    Number(page.limit) === SAVED_ANSWER_PAGE_SIZE &&
+    Number.isInteger(page.offset) &&
+    Number(page.offset) === expectedOffset &&
+    Number.isInteger(page.total) &&
+    Number(page.total) >= 0 &&
+    typeof page.hasMore === "boolean"
+  );
+}
 
 function isSavedAnswer(value: unknown): value is SavedAnswer {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
@@ -110,18 +135,65 @@ export default function ServerSavedAnswersPage() {
     setLoadStatus("loading");
     setNotice("");
     try {
-      const result = await readJson<{ ok: true; answers: unknown }>(
-        await fetch("/api/knowledge/saved-answers", {
-          credentials: "same-origin",
-          cache: "no-store",
-          headers: { Accept: "application/json" },
-        }),
-      );
-      if (!Array.isArray(result.answers) || !result.answers.every(isSavedAnswer)) {
-        throw new Error("Saved answers authority returned an invalid response");
+      const collected: SavedAnswer[] = [];
+      const seenIds = new Set<string>();
+      let offset = 0;
+
+      while (true) {
+        const params = new URLSearchParams({
+          limit: String(SAVED_ANSWER_PAGE_SIZE),
+          offset: String(offset),
+        });
+        const result = await readJson<{
+          ok: true;
+          answers: unknown;
+          page: unknown;
+        }>(
+          await fetch(`/api/knowledge/saved-answers?${params.toString()}`, {
+            credentials: "same-origin",
+            cache: "no-store",
+            headers: { Accept: "application/json" },
+          }),
+        );
+        if (requestId !== loadRequestIdRef.current) return;
+        if (
+          !Array.isArray(result.answers) ||
+          !result.answers.every(isSavedAnswer) ||
+          !isSavedAnswerPage(result.page, offset)
+        ) {
+          throw new Error("Saved answers authority returned an invalid response");
+        }
+
+        const pageAnswers = result.answers as SavedAnswer[];
+        for (const answer of pageAnswers) {
+          if (seenIds.has(answer.id)) {
+            throw new Error("Saved answers authority returned duplicate records");
+          }
+          seenIds.add(answer.id);
+          collected.push(answer);
+        }
+
+        const consumed = offset + pageAnswers.length;
+        if (
+          consumed > result.page.total ||
+          result.page.hasMore !== (consumed < result.page.total)
+        ) {
+          throw new Error("Saved answers authority returned invalid pagination");
+        }
+        if (!result.page.hasMore) {
+          if (consumed !== result.page.total) {
+            throw new Error("Saved answers authority returned incomplete pagination");
+          }
+          break;
+        }
+        if (pageAnswers.length === 0) {
+          throw new Error("Saved answers authority pagination did not advance");
+        }
+        offset = consumed;
       }
+
       if (requestId !== loadRequestIdRef.current) return;
-      setAnswers(result.answers);
+      setAnswers(collected);
       setLoadStatus("ready");
     } catch (error) {
       if (requestId !== loadRequestIdRef.current) return;
