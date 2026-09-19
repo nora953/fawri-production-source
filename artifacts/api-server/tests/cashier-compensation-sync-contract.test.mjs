@@ -59,6 +59,8 @@ test('return reconciliation derives refund and restock from immutable original s
   assert.match(source, /reason_code = 'cashier_sale_sync'/);
   assert.match(source, /validateOriginalInventoryEvidence/);
   assert.match(source, /requested\.effective_unit_price_minor !== line\.effective_unit_price_minor/);
+  assert.match(source, /snapshot\.refund_pricing_version === CASHIER_REFUND_PRICING_VERSION/);
+  assert.match(source, /cashierNetReturnRefundMinor\(/);
   assert.match(source, /safeMultiply\(\s*line\.effective_unit_price_minor,\s*requested\.quantity/);
   assert.match(source, /returnedQuantity\(previousCompensations, line\.line_id\)/);
   assert.match(source, /requested\.quantity > remaining/);
