@@ -70,6 +70,39 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
   assert.equal(created.product.version, 1);
   assert.equal(created.product.variants[0]?.stock_quantity, 5);
 
+  const locationId = `location-comp-history-${suffix}`;
+  const stationId = `station-comp-history-${suffix}`;
+  await pool.query(
+    `INSERT INTO merchant_locations (
+       id, merchant_id, name, legacy_branch_key, is_default,
+       operational_status, online_fulfillment_enabled,
+       accept_online_orders_while_closed, merchant_priority,
+       created_at, updated_at
+     ) VALUES ($1,$2,'Main Location','main',TRUE,'open',FALSE,FALSE,0,now(),now())`,
+    [locationId, merchantId],
+  );
+  await pool.query(
+    `INSERT INTO merchant_cashier_stations (
+       id, merchant_id, name, branch_key, location_id, status,
+       paired_device_id, offline_inventory_authority, credential_version,
+       paired_at, created_at, updated_at
+     ) VALUES ($1,$2,'Compensation Station','main',$3,'active',$4,FALSE,1,now(),now(),now())`,
+    [stationId, merchantId, locationId, deviceId],
+  );
+  await pool.query(
+    `INSERT INTO location_inventory_levels (
+       id, merchant_id, location_id, product_id, variant_id,
+       quantity, low_stock_threshold, version, created_at, updated_at
+     ) VALUES ($1,$2,$3,$4,$5,5,1,1,now(),now())`,
+    [
+      `location-inventory-comp-history-${suffix}`,
+      merchantId,
+      locationId,
+      productId,
+      variantId,
+    ],
+  );
+
   const saleOperationId = `sale-op-${suffix}`;
   const saleId = `sale-${suffix}`;
   const saleLineId = `sale-line-${suffix}`;
@@ -164,9 +197,19 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
   const afterSale = await catalog.listCatalogProductsAuthoritative(merchantId);
   const soldProduct = afterSale.find((item) => item.id === productId);
   assert.ok(soldProduct);
-  assert.equal(soldProduct.version, 2);
+  assert.equal(soldProduct.version, 1);
   assert.equal(soldProduct.variants[0]?.id, variantId);
   assert.equal(soldProduct.variants[0]?.stock_quantity, 4);
+
+  const locationAfterSale = await pool.query(
+    `SELECT quantity, version
+       FROM location_inventory_levels
+      WHERE merchant_id = $1 AND location_id = $2
+        AND product_id = $3 AND variant_id = $4`,
+    [merchantId, locationId, productId, variantId],
+  );
+  assert.equal(Number(locationAfterSale.rows[0]?.quantity), 4);
+  assert.equal(Number(locationAfterSale.rows[0]?.version), 2);
 
   const rebuilt = await catalog.updateCatalogProductAuthoritative({
     merchantId,
@@ -196,7 +239,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
       })),
     },
   });
-  assert.equal(rebuilt.version, 3);
+  assert.equal(rebuilt.version, 2);
   assert.equal(rebuilt.variants[0]?.id, variantId);
   assert.equal(rebuilt.variants[0]?.stock_quantity, 4);
 
@@ -286,6 +329,33 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
   assert.ok(restoredProduct);
   assert.equal(restoredProduct.variants[0]?.id, variantId);
   assert.equal(restoredProduct.variants[0]?.stock_quantity, 5);
+
+  assert.equal(restoredProduct.version, 2);
+
+  const locationAfterReturn = await pool.query(
+    `SELECT quantity, version
+       FROM location_inventory_levels
+      WHERE merchant_id = $1 AND location_id = $2
+        AND product_id = $3 AND variant_id = $4`,
+    [merchantId, locationId, productId, variantId],
+  );
+  assert.equal(Number(locationAfterReturn.rows[0]?.quantity), 5);
+  assert.equal(Number(locationAfterReturn.rows[0]?.version), 3);
+
+  const returnMutation = await pool.query(
+    `SELECT location_id, before_quantity, after_quantity,
+            expected_version, resulting_version
+       FROM inventory_mutations
+      WHERE merchant_id = $1 AND reason_code = 'cashier_return_sync'
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [merchantId],
+  );
+  assert.equal(returnMutation.rows[0]?.location_id, locationId);
+  assert.equal(Number(returnMutation.rows[0]?.before_quantity), 4);
+  assert.equal(Number(returnMutation.rows[0]?.after_quantity), 5);
+  assert.equal(Number(returnMutation.rows[0]?.expected_version), 2);
+  assert.equal(Number(returnMutation.rows[0]?.resulting_version), 3);
 
   const replay = await compensation.syncCashierCompensationAuthoritative({
     merchantId,
