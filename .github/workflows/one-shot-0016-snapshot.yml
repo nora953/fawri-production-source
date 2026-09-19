@@ -33,12 +33,16 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Generate canonical Drizzle history
-        run: pnpm --filter @workspace/db run schema:generate
+        run: |
+          cp lib/db/drizzle/meta/0017_snapshot.json "$RUNNER_TEMP/0017_snapshot.committed.json"
+          rm lib/db/drizzle/meta/0017_snapshot.json
+          pnpm --filter @workspace/db run schema:generate
 
       - name: Verify reviewed 0016 and 0017 history
         run: |
           test -f lib/db/drizzle/meta/0016_snapshot.json
           test -f lib/db/drizzle/meta/0017_snapshot.json
+          cmp --silent "$RUNNER_TEMP/0017_snapshot.committed.json" lib/db/drizzle/meta/0017_snapshot.json
           echo "fbdb100182428b370f2271ac280cc9316bb1377971826a38b43c15cc40bf1329  lib/db/drizzle/0016_cashier_merchant_discount_kind.sql" | sha256sum --check
           echo "86584eb9b9c5b7a20172fd505470412ec605bd0583b77386a4f0d1280a3e7f75  lib/db/drizzle/0017_multi_location_inventory_foundation.sql" | sha256sum --check
           git diff --exit-code -- lib/db/drizzle/0016_cashier_merchant_discount_kind.sql lib/db/drizzle/0017_multi_location_inventory_foundation.sql lib/db/drizzle/meta/_journal.json
