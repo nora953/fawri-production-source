@@ -163,7 +163,7 @@ test("unknown and ambiguous area results remain fail-closed delivery outcomes", 
     ambiguousFixture.target,
     {
       merchantId: "merchant-a",
-      area: "الجامعة",
+      area: "حي الجامعة",
     },
   );
   assert.deepEqual(ambiguous, {
