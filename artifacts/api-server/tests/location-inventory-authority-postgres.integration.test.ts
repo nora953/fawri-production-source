@@ -231,13 +231,35 @@ test("location inventory allocation and mutations use independent versions and d
     ],
   );
 
-  const freshness = await raw(
+  const freshnessBeforeReconciliation = await raw(
     `SELECT inventory_fresh_at
        FROM merchant_locations
       WHERE merchant_id = $1 AND id = $2`,
     [merchantId, locationId],
   );
-  assert.ok(freshness.rows[0]?.inventory_fresh_at);
+  assert.equal(
+    freshnessBeforeReconciliation.rows[0]?.inventory_fresh_at,
+    null,
+    "single-item mutations must not claim that the whole location inventory is fresh",
+  );
+
+  const markedFresh = await inventory.markLocationInventoryFreshAuthoritative({
+    merchantId,
+    locationId,
+  });
+  assert.equal(markedFresh.location_id, locationId);
+  assert.ok(Number.isFinite(new Date(markedFresh.inventory_fresh_at).getTime()));
+
+  const freshnessAfterReconciliation = await raw(
+    `SELECT inventory_fresh_at
+       FROM merchant_locations
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchantId, locationId],
+  );
+  assert.equal(
+    new Date(freshnessAfterReconciliation.rows[0]?.inventory_fresh_at).toISOString(),
+    markedFresh.inventory_fresh_at,
+  );
 
   const listed = await inventory.listLocationInventoryLevelsAuthoritative({
     merchantId,
