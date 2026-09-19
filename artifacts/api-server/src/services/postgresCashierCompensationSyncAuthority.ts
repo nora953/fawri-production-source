@@ -1669,6 +1669,24 @@ function returnedQuantity(
   return total;
 }
 
+function refundedAmount(
+  compensations: StoredCompensation[],
+): number {
+  let total = 0;
+  for (const compensation of compensations) {
+    if (compensation.kind !== "return") continue;
+    total = safeAdd(
+      total,
+      nonNegativeInteger(
+        record(compensation.snapshot).refund_total_minor,
+        "stored_return.refund_total_minor",
+      ),
+      "returned refund total",
+    );
+  }
+  return total;
+}
+
 function acceptedEntityIds(bundle: ValidatedCompensationBundle): string[] {
   return bundle.envelopes.map((item) => item.entity_id);
 }
@@ -1721,6 +1739,10 @@ async function applyReturn(
 
   let expectedRefundTotal = 0;
   let mutationCount = 0;
+  let remainingSaleRefundMinor = Math.max(
+    0,
+    originalSale.total_minor - refundedAmount(previousCompensations),
+  );
   for (const requested of snapshot.lines) {
     const line = originalLineById(originalSale, requested.original_line_id);
     if (
@@ -1744,7 +1766,7 @@ async function applyReturn(
         { original_line_id: line.line_id, remaining_quantity: Math.max(0, remaining) },
       );
     }
-    const expectedRefund =
+    const allocatedRefund =
       snapshot.refund_allocation_version ===
       CASHIER_RETURN_REFUND_ALLOCATION_VERSION
         ? allocatedReturnRefundMinor({
@@ -1758,6 +1780,17 @@ async function applyReturn(
             requested.quantity,
             "return refund",
           );
+    const expectedRefund =
+      snapshot.refund_allocation_version ===
+      CASHIER_RETURN_REFUND_ALLOCATION_VERSION
+        ? Math.min(allocatedRefund, remainingSaleRefundMinor)
+        : allocatedRefund;
+    if (
+      snapshot.refund_allocation_version ===
+      CASHIER_RETURN_REFUND_ALLOCATION_VERSION
+    ) {
+      remainingSaleRefundMinor -= expectedRefund;
+    }
     if (requested.refund_minor !== expectedRefund) {
       throw new CashierSyncError(
         "CASHIER_COMPENSATION_ORIGINAL_SALE_MISMATCH",
