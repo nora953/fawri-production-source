@@ -13,6 +13,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { merchants } from "./merchants";
+import { merchantDeliveryAreaRates } from "./merchant-settings";
 
 export const merchantLocations = pgTable(
   "merchant_locations",
@@ -104,3 +105,58 @@ export const merchantLocations = pgTable(
 
 export type MerchantLocation = typeof merchantLocations.$inferSelect;
 export type NewMerchantLocation = typeof merchantLocations.$inferInsert;
+
+export const merchantLocationDeliveryAreas = pgTable(
+  "merchant_location_delivery_areas",
+  {
+    id: text("id").primaryKey(),
+    merchantId: text("merchant_id").notNull(),
+    locationId: text("location_id").notNull(),
+    deliveryAreaRateId: text("delivery_area_rate_id").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    merchantForeignKey: foreignKey({
+      name: "merchant_location_delivery_areas_merchant_fk",
+      columns: [table.merchantId],
+      foreignColumns: [merchants.id],
+    }).onDelete("cascade"),
+    locationTenantForeignKey: foreignKey({
+      name: "merchant_location_delivery_areas_location_merchant_fk",
+      columns: [table.locationId, table.merchantId],
+      foreignColumns: [merchantLocations.id, merchantLocations.merchantId],
+    }).onDelete("cascade"),
+    deliveryAreaTenantForeignKey: foreignKey({
+      name: "merchant_location_delivery_areas_area_merchant_fk",
+      columns: [table.deliveryAreaRateId, table.merchantId],
+      foreignColumns: [
+        merchantDeliveryAreaRates.id,
+        merchantDeliveryAreaRates.merchantId,
+      ],
+    }).onDelete("cascade"),
+    merchantLocationAreaUnique: uniqueIndex(
+      "merchant_location_delivery_areas_merchant_location_area_unique",
+    ).on(table.merchantId, table.locationId, table.deliveryAreaRateId),
+    merchantAreaIndex: index(
+      "merchant_location_delivery_areas_merchant_area_idx",
+    ).on(table.merchantId, table.deliveryAreaRateId),
+    locationIndex: index(
+      "merchant_location_delivery_areas_merchant_location_idx",
+    ).on(table.merchantId, table.locationId),
+    timestampCheck: check(
+      "merchant_location_delivery_areas_timestamp_check",
+      sql`${table.updatedAt} >= ${table.createdAt}`,
+    ),
+  }),
+);
+
+export type MerchantLocationDeliveryArea =
+  typeof merchantLocationDeliveryAreas.$inferSelect;
+export type NewMerchantLocationDeliveryArea =
+  typeof merchantLocationDeliveryAreas.$inferInsert;
+
