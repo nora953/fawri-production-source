@@ -264,7 +264,10 @@ test("atomic fulfillment selects one location, rechecks stock and records one mu
   assert.equal(f.state.legacyProductUpdates, 1);
   assert.equal(f.state.orderUpdates.length, 1);
   assert.equal(f.state.orderUpdates[0].values[2], "location-b");
-  assert.match(String(f.state.orderUpdates[0].values[3]), /online_fulfillment_v1/);
+  const snapshot = JSON.parse(String(f.state.orderUpdates[0].values[3]));
+  assert.equal(snapshot.location_id, "location-b");
+  assert.equal(snapshot.inventory_committed, true);
+  assert.equal(snapshot.inventory_mutation_count, 1);
 });
 
 test("stale inventory blocks confirmation before stock is locked or mutated", async () => {
