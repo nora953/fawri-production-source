@@ -67,6 +67,9 @@ type ReplayRow = {
   product_id: string;
   variant_id: string | null;
   request_hash: string;
+  after_quantity: number;
+  resulting_version: number;
+  created_at: Date | string;
 };
 
 function text(value: unknown, field: string, maximum = 200): string {
@@ -357,7 +360,8 @@ async function replayMutation(
 ): Promise<LocationInventoryLevel | null> {
   const rows = await operationalQueryRows<ReplayRow>(
     target,
-    `SELECT location_id, product_id, variant_id, request_hash
+    `SELECT location_id, product_id, variant_id, request_hash,
+            after_quantity, resulting_version, created_at
        FROM inventory_mutations
       WHERE merchant_id = $1 AND idempotency_key_hash = $2
       LIMIT 1`,
@@ -377,12 +381,31 @@ async function replayMutation(
       409,
     );
   }
-  return requireLevel(target, {
+  const current = await requireLevel(target, {
     merchantId: params.merchantId,
     locationId: params.locationId,
     productId: params.productId,
     variantId: params.variantId,
   });
+  return {
+    ...current,
+    quantity: Number(replay.after_quantity),
+    version: Number(replay.resulting_version),
+    updated_at: new Date(replay.created_at).toISOString(),
+  };
+}
+
+async function lockCreationScope(
+  target: OperationalQueryTarget,
+  merchantId: string,
+  locationId: string,
+  productId: string,
+  variantId?: string,
+): Promise<void> {
+  await target.query(
+    "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+    [`location_inventory|${merchantId}|${locationId}|${productId}|${variantId || ""}`],
+  );
 }
 
 async function markFresh(
@@ -497,6 +520,10 @@ export async function createLocationInventoryLevelAuthoritative(params: {
   const productId = text(params.productId, "product_id", 160);
   const variantId = optionalText(params.variantId, "variant_id", 160);
   const quantity = nonNegativeInteger(params.quantity, "quantity");
+  const requestedLowStockThreshold =
+    params.lowStockThreshold === undefined
+      ? undefined
+      : nonNegativeInteger(params.lowStockThreshold, "low_stock_threshold");
   const keyHash = idempotencyHash(params.idempotencyKey);
   const actorAccountId = optionalText(params.actorAccountId, "actor_account_id", 200);
   const reason = optionalText(params.reason, "reason", 500);
@@ -506,8 +533,7 @@ export async function createLocationInventoryLevelAuthoritative(params: {
     product_id: productId,
     variant_id: variantId || null,
     quantity,
-    low_stock_threshold:
-      params.lowStockThreshold === undefined ? null : params.lowStockThreshold,
+    low_stock_threshold: requestedLowStockThreshold ?? null,
     reason: reason || null,
   });
 
@@ -525,10 +551,15 @@ export async function createLocationInventoryLevelAuthoritative(params: {
       variantId,
     );
     const lowStockThreshold =
-      params.lowStockThreshold === undefined
-        ? Number(product.low_stock_threshold)
-        : nonNegativeInteger(params.lowStockThreshold, "low_stock_threshold");
+      requestedLowStockThreshold ?? Number(product.low_stock_threshold);
 
+    await lockCreationScope(
+      client,
+      merchantId,
+      locationId,
+      productId,
+      variantId,
+    );
     const existing = await loadLevel(client, {
       merchantId, locationId, productId, variantId, lock: true,
     });
