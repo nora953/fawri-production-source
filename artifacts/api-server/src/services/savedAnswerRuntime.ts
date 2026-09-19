@@ -13,6 +13,8 @@ export function listMerchantSavedAnswersPage(input: {
   limit?: number;
   beforeUpdatedAt?: string;
   beforeId?: string;
+  search?: string;
+  categories?: readonly SavedAnswerCategory[];
 }) {
   return getPostgresKnowledgeManagementRuntime().listSavedAnswersPage(
     input.merchantId,
@@ -20,6 +22,8 @@ export function listMerchantSavedAnswersPage(input: {
       ...(input.limit !== undefined ? { limit: input.limit } : {}),
       ...(input.beforeUpdatedAt ? { beforeUpdatedAt: input.beforeUpdatedAt } : {}),
       ...(input.beforeId ? { beforeId: input.beforeId } : {}),
+      ...(input.search ? { search: input.search } : {}),
+      ...(input.categories?.length ? { categories: input.categories } : {}),
     },
   );
 }
