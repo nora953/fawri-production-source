@@ -214,18 +214,25 @@ export default function ServerSavedAnswersPage() {
     } catch (error) {
       const apiError = error as ApiError;
       if (apiError.code === "VERSION_CONFLICT" && isSavedAnswer(apiError.current)) {
+        const currentAnswer = apiError.current;
         setAnswers((current) =>
-          current.map((item) => (item.id === apiError.current?.id ? apiError.current : item)),
+          current.some((item) => item.id === currentAnswer.id)
+            ? current.map((item) => (item.id === currentAnswer.id ? currentAnswer : item))
+            : [currentAnswer, ...current],
         );
-        setEditing(apiError.current);
-        setForm({
-          category: apiError.current.category,
-          questionPattern: apiError.current.questionPattern,
-          answerText: apiError.current.answerText,
-          language: apiError.current.language,
-          active: apiError.current.active,
-        });
-        setNotice(copy.conflict);
+        if (editing) {
+          setEditing(currentAnswer);
+          setForm({
+            category: currentAnswer.category,
+            questionPattern: currentAnswer.questionPattern,
+            answerText: currentAnswer.answerText,
+            language: currentAnswer.language,
+            active: currentAnswer.active,
+          });
+          setNotice(copy.conflict);
+        } else {
+          setNotice(copy.duplicate);
+        }
       } else {
         setNotice(copy.saveFailed);
       }
