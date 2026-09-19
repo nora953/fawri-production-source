@@ -139,7 +139,7 @@ test("saved-answer management pagination keeps records reachable beyond the firs
   assert.match(serverRoute, /beforeUpdatedAt/);
   assert.match(serverRoute, /beforeId/);
   assert.match(managementRuntime, /async listSavedAnswersPage/);
-  assert.match(managementRuntime, /LIMIT \$4/);
+  assert.match(managementRuntime, /LIMIT \$6/);
   assert.match(managementRuntime, /result\.rows\.length > limit/);
   assert.match(page, /const \[nextCursor, setNextCursor\]/);
   assert.match(page, /const \[loadingMore, setLoadingMore\]/);
@@ -148,4 +148,26 @@ test("saved-answer management pagination keeps records reachable beyond the firs
   assert.match(page, /copy\.loadMore/);
   assert.match(page, /copy\.loadingMore/);
   assert.match(page, /!saving && !loadingMore/);
+});
+
+
+test("saved-answer search is server-authoritative across all paged records", () => {
+  assert.match(serverRoute, /req\.query\.q/);
+  assert.match(serverRoute, /req\.query\.categories/);
+  assert.match(serverRoute, /isSavedAnswerCategory/);
+  assert.match(managementRuntime, /question_pattern ILIKE \$4 ESCAPE '!'/);
+  assert.match(managementRuntime, /answer_text ILIKE \$4 ESCAPE '!'/);
+  assert.match(managementRuntime, /category::text = ANY\(\$5::text\[\]\)/);
+  assert.match(page, /const \[serverQuery, setServerQuery\]/);
+  assert.match(page, /window\.setTimeout/);
+  assert.match(page, /params\.set\("q", serverQuery\)/);
+  assert.match(page, /params\.set\("categories", searchCategories\.join\(","\)\)/);
+  assert.match(page, /categoryLabels\[value\]\.toLowerCase\(\)\.includes\(normalized\)/);
+  assert.match(page, /const filtered = answers/);
+  assert.doesNotMatch(
+    page,
+    /const filtered = useMemo/,
+    "search must not regress to filtering only the locally loaded pages",
+  );
+  assert.match(page, /!searchPending/);
 });
