@@ -46,7 +46,7 @@ test("requested quantity disclosure is limited to what the customer asked for", 
   assert.equal(answer.includes("11"), false);
 });
 
-test("shortage may disclose only the fulfillable quantity", () => {
+test("shortage answers fulfillment without revealing partial stock", () => {
   const answer = catalogAvailabilityAnswer({
     language: "ar",
     itemName: "قميص",
@@ -55,7 +55,8 @@ test("shortage may disclose only the fulfillable quantity", () => {
     commerce: productCommerce,
     requestedQuantity: 3,
   });
-  assert.equal(answer, "المتوفر حاليًا من قميص هو 2 فقط.");
+  assert.equal(answer, "لا، الكمية المطلوبة من قميص غير متوفرة حاليًا.");
+  assert.equal(answer.includes("2"), false);
 });
 
 test("model numbers are not mistaken for requested quantities", () => {
