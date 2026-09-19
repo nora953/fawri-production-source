@@ -15,6 +15,7 @@ on:
       - "artifacts/api-server/src/services/postgresCashierOperatorReportAuthority.ts"
       - "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts"
       - "artifacts/api-server/tests/cashier-operational-cutoff-postgres.integration.test.ts"
+      - "artifacts/api-server/tests/cashier-location-binding-contract.test.mjs"
       - "artifacts/api-server/tests/cashier-operator-logout-pin-contract.test.mjs"
       - "artifacts/api-server/tests/cashier-operator-logout-pin-postgres.integration.test.ts"
       - "artifacts/api-server/tests/cashier-operator-own-history-scope-contract.test.mjs"
@@ -88,6 +89,11 @@ jobs:
 
       - name: Validate cashier UX regression contract
         run: pnpm run cashier:validate
+
+      - name: Prove cashier canonical location binding
+        run: >-
+          pnpm --filter @workspace/api-server exec node --test
+          ./tests/cashier-location-binding-contract.test.mjs
 
       - name: Prove cashier end-shift PIN source contract
         run: >-
