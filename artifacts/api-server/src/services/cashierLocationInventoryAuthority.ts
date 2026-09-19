@@ -586,6 +586,7 @@ export async function mutateCashierLocationInventoryInTransaction(
     productId: string;
     variantId?: string;
     delta: number;
+    expectedLocationVersion?: number;
     allowInactiveLocation?: boolean;
   },
 ): Promise<CashierLocationInventoryMutationResult> {
@@ -753,6 +754,23 @@ export async function mutateCashierLocationInventoryInTransaction(
       "CASHIER_LOCATION_INVENTORY_STATE_INVALID",
       "location inventory version is invalid",
       500,
+    );
+  }
+  if (
+    input.expectedLocationVersion !== undefined &&
+    locationExpectedVersion !== input.expectedLocationVersion
+  ) {
+    throw new CashierLocationInventoryError(
+      "CASHIER_LOCATION_INVENTORY_VERSION_CONFLICT",
+      "location inventory changed before the requested mutation",
+      409,
+      {
+        location_id: input.locationId,
+        product_id: input.productId,
+        ...(input.variantId ? { variant_id: input.variantId } : {}),
+        expected_version: input.expectedLocationVersion,
+        current_version: locationExpectedVersion,
+      },
     );
   }
   const locationResultingVersion = locationExpectedVersion + 1;
