@@ -17,7 +17,10 @@ import {
   publishCashierOperatorSessionInvalidated,
 } from '@/lib/cashierOperatorSessionUi';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
-import { cashierReturnRefundMinor } from '@/lib/cashierReturnRefundAllocation';
+import {
+  cashierRemainingRefundMinor,
+  cashierReturnRefundMinor,
+} from '@/lib/cashierReturnRefundAllocation';
 import {
   CASHIER_RECEIPT_COPY,
   printCashierReceipt,
@@ -275,6 +278,7 @@ export default function CashierHistoryPage() {
 
   const returnTotal = useMemo(() => {
     if (!selectedSale) return 0;
+    let remainingSaleRefundMinor = cashierRemainingRefundMinor(selectedSale);
     return selectedSale.lines.reduce((total, line) => {
       const remaining = remainingQuantity(selectedSale, line);
       const alreadyReturned = line.quantity - remaining;
@@ -282,12 +286,18 @@ export default function CashierHistoryPage() {
         remaining,
         Math.max(0, Math.trunc(returnDraft[line.line_id] || 0)),
       );
-      return total + cashierReturnRefundMinor({
+      const allocatedRefundMinor = cashierReturnRefundMinor({
         sale: selectedSale,
         lineId: line.line_id,
         alreadyReturnedQuantity: alreadyReturned,
         returnQuantity: quantity,
       });
+      const refundMinor = Math.min(
+        allocatedRefundMinor,
+        remainingSaleRefundMinor,
+      );
+      remainingSaleRefundMinor -= refundMinor;
+      return total + refundMinor;
     }, 0);
   }, [returnDraft, selectedSale]);
 
