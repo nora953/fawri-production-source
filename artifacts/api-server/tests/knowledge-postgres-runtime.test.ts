@@ -64,6 +64,21 @@ function vectorRow(overrides = {}) {
   };
 }
 
+function semanticRow(overrides = {}) {
+  return {
+    id: "saved-a",
+    merchant_id: "merchant-a",
+    question: "سياسة الاستبدال",
+    answer: "الاستبدال خلال 7 أيام.",
+    language: "ar",
+    source: "merchant_approved",
+    kind: "saved_answer",
+    active: true,
+    version: 1,
+    ...overrides,
+  };
+}
+
 class FakeSqlClient {
   queries = [];
   constructor(handler) {
@@ -270,6 +285,52 @@ test("vector retrieval applies tenant/model/language filters before scoring and 
   assert.match(sql.queries[0].sql, /e\.embedding_model = \$2/);
   assert.match(sql.queries[0].sql, /e\.language = \$3/);
   assert.deepEqual(sql.queries[0].values, ["merchant-a", "fake-embedding-v1", "ar"]);
+});
+
+test("approved AI context fails closed instead of using an arbitrary truncated subset", async () => {
+  const rows = Array.from({ length: 201 }, (_, index) =>
+    semanticRow({
+      id: `saved-context-${index}`,
+      question: `Question ${index}`,
+    }),
+  );
+  const sql = new FakeSqlClient(async () => rows);
+  const runtime = new PostgresKnowledgeRuntime({
+    sqlClient: sql,
+    embeddingProvider: fakeEmbedding,
+  });
+
+  await assert.rejects(
+    () => runtime.listApprovedSemanticDocuments("merchant-a"),
+    (error) =>
+      error instanceof KnowledgeRuntimeGateError &&
+      error.code === "KNOWLEDGE_APPROVED_CONTEXT_LIMIT_EXCEEDED",
+  );
+  assert.match(sql.queries[0].sql, /LIMIT 201/);
+});
+
+test("vector retrieval fails closed instead of scoring an arbitrary truncated candidate subset", async () => {
+  const rows = Array.from({ length: 101 }, (_, index) =>
+    vectorRow({ knowledge_id: `saved-vector-${index}` }),
+  );
+  const sql = new FakeSqlClient(async () => rows);
+  const runtime = new PostgresKnowledgeRuntime({
+    sqlClient: sql,
+    embeddingProvider: fakeEmbedding,
+  });
+
+  await assert.rejects(
+    () =>
+      runtime.retrieveSemanticMatch({
+        merchantId: "merchant-a",
+        query: "استبدال",
+        language: "ar",
+      }),
+    (error) =>
+      error instanceof KnowledgeRuntimeGateError &&
+      error.code === "KNOWLEDGE_VECTOR_CANDIDATE_LIMIT_EXCEEDED",
+  );
+  assert.match(sql.queries[0].sql, /LIMIT 101/);
 });
 
 test("vector retrieval rejects cross-tenant, wrong model/dimensions/language, invalid provenance, and stale/corrupt state", async () => {
