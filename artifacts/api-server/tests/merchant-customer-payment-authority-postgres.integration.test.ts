@@ -20,6 +20,9 @@ const pool = dbModule.pool;
 const accounts = await import(
   "../src/services/postgresMerchantAccountAuthority.js"
 );
+const merchantManagement = await import(
+  "../src/services/postgresMerchantManagementAuthority.js"
+);
 const channels = await import("../src/services/postgresMetaChannelAuthority.js");
 const orders = await import("../src/services/postgresOrderOperationsAuthority.js");
 const providerPayments = await import(
@@ -47,7 +50,17 @@ async function seedMerchant() {
     created.account.id,
   );
   assert.ok(verified?.merchantProfile);
-  return verified!;
+  await merchantManagement.updateMerchantStatusPostgres({
+    merchantId: created.account.id,
+    status: "approved",
+    actorAdminId: created.account.id,
+  });
+  const approved = await accounts.findMerchantByIdAuthoritative(
+    created.account.id,
+  );
+  assert.ok(approved?.merchantProfile);
+  assert.equal(approved?.merchantProfile?.status, "approved");
+  return approved!;
 }
 
 const merchant = await seedMerchant();
