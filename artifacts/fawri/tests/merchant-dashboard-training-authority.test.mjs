@@ -132,3 +132,16 @@ test("training version conflicts preserve the merchant draft while loading curre
   );
   assert.match(copySource, /current state was loaded and your draft was kept/);
 });
+
+
+test("approved training answers can be explicitly revoked with optimistic version protection", () => {
+  assert.match(pageSource, /action: "propose" \| "approve" \| "reject" \| "revoke"/);
+  assert.match(pageSource, /action === "revoke" && !window\.confirm\(copy\.confirmRevoke\)/);
+  assert.match(pageSource, /act\(request, "revoke"\)/);
+  assert.match(pageSource, /copy\.revokeApproval/);
+  assert.match(trainingRouteSource, /router\.post\("\/:id\/revoke"/);
+  assert.match(trainingRouteSource, /revokeMerchantTrainingApproval/);
+  assert.match(trainingRouteSource, /readExpectedVersion\(req\)/);
+  assert.match(copySource, /revokeApproval/);
+  assert.match(copySource, /confirmRevoke/);
+});
