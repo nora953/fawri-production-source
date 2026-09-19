@@ -546,9 +546,38 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   assert.equal(productAfterSale.status, 200);
   const productAfterSaleBody = await json(productAfterSale);
   assert.equal(productAfterSaleBody.product.stock_quantity, 4);
+  assert.equal(productAfterSaleBody.product.version, product.version);
+
+  const locationInventoryAfterSale = await pool.query(
+    `SELECT quantity, version
+       FROM location_inventory_levels
+      WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
+        AND variant_id IS NULL`,
+    [merchantAId, station.location_id, product.id],
+  );
+  assert.equal(locationInventoryAfterSale.rows.length, 1);
+  assert.equal(Number(locationInventoryAfterSale.rows[0].quantity), 4);
+  assert.equal(Number(locationInventoryAfterSale.rows[0].version), 2);
+
+  const cashierMutation = await pool.query(
+    `SELECT location_id, before_quantity, after_quantity,
+            expected_version, resulting_version
+       FROM inventory_mutations
+      WHERE merchant_id = $1 AND reason_code = 'cashier_sale_sync'
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [merchantAId],
+  );
+  assert.equal(cashierMutation.rows.length, 1);
+  assert.equal(cashierMutation.rows[0].location_id, station.location_id);
+  assert.equal(Number(cashierMutation.rows[0].before_quantity), 5);
+  assert.equal(Number(cashierMutation.rows[0].after_quantity), 4);
+  assert.equal(Number(cashierMutation.rows[0].expected_version), 1);
+  assert.equal(Number(cashierMutation.rows[0].resulting_version), 2);
 
   const canonicalOrder = await pool.query(
-    `SELECT id, merchant_id, source_channel::text AS source_channel,
+    `SELECT id, merchant_id, fulfillment_location_id,
+            source_channel::text AS source_channel,
             status::text AS status, payment_status::text AS payment_status,
             total_iqd
        FROM orders
@@ -557,6 +586,7 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   );
   assert.equal(canonicalOrder.rows.length, 1);
   assert.equal(canonicalOrder.rows[0].source_channel, "cashier");
+  assert.equal(canonicalOrder.rows[0].fulfillment_location_id, station.location_id);
   assert.equal(canonicalOrder.rows[0].status, "delivered");
   assert.equal(canonicalOrder.rows[0].payment_status, "paid");
   assert.equal(Number(canonicalOrder.rows[0].total_iqd), productPrice);
