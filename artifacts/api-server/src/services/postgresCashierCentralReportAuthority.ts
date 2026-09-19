@@ -487,6 +487,7 @@ function validateSaleEvidence(sale: ParsedSale): void {
   const returnedByLine = new Map<string, number>();
   let voidCount = 0;
   let returnCount = 0;
+  let refundedBefore = 0;
   for (const compensation of sale.compensations) {
     if (
       compensation.operation_id === sale.operation_id ||
@@ -560,6 +561,10 @@ function validateSaleEvidence(sale: ParsedSale): void {
     const returnLines = parseReturnLines(compensation);
     const returnLineIds = new Set<string>();
     let refundTotal = 0;
+    let remainingSaleRefundMinor = Math.max(
+      0,
+      sale.total_minor - refundedBefore,
+    );
     for (const returned of returnLines) {
       if (returnLineIds.has(returned.original_line_id)) {
         throw new CashierStaffAuthorityError(
@@ -583,7 +588,7 @@ function validateSaleEvidence(sale: ParsedSale): void {
           409,
         );
       }
-      const expectedRefund =
+      const allocatedRefund =
         allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION
           ? allocatedReturnRefundMinor({
               sale,
@@ -596,6 +601,13 @@ function validateSaleEvidence(sale: ParsedSale): void {
               returned.quantity,
               "return refund",
             );
+      const expectedRefund =
+        allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION
+          ? Math.min(allocatedRefund, remainingSaleRefundMinor)
+          : allocatedRefund;
+      if (allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION) {
+        remainingSaleRefundMinor -= expectedRefund;
+      }
       if (
         returned.product_id !== original.product_id ||
         returned.variant_id !== original.variant_id ||
@@ -624,6 +636,11 @@ function validateSaleEvidence(sale: ParsedSale): void {
         409,
       );
     }
+    refundedBefore = safeAdd(
+      refundedBefore,
+      refundTotal,
+      "cumulative return refund",
+    );
   }
 
   if (voidCount > 1 || (voidCount > 0 && returnCount > 0)) {
