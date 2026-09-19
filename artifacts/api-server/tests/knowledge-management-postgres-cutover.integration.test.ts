@@ -175,6 +175,23 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
       [...pagedIds].sort(),
       fullList.map((item) => item.id).sort(),
     );
+
+    const searchOlderRecord = await managementA.listSavedAnswersPage(merchantIds[0], {
+      limit: 1,
+      search: "سياسة الاستبدال",
+    });
+    assert.equal(searchOlderRecord.answers.length, 1);
+    assert.equal(searchOlderRecord.answers[0].questionPattern, "ما هي سياسة الاستبدال؟");
+    assert.equal(searchOlderRecord.nextCursor, null);
+
+    const categorySearch = await managementA.listSavedAnswersPage(merchantIds[0], {
+      limit: 1,
+      search: "لا يطابق النص",
+      categories: ["delivery"],
+    });
+    assert.equal(categorySearch.answers.length, 1);
+    assert.equal(categorySearch.answers[0].id, extraOne.id);
+    assert.equal(categorySearch.nextCursor, null);
   });
 
   await t.test("Training Request created by decision runtime is visible and approvable by merchant management", async () => {
