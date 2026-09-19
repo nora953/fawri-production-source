@@ -102,6 +102,21 @@ export function cashierAdjustedLineRevenueById(
   return adjusted;
 }
 
+export function cashierRemainingRefundMinor(
+  sale: CashierSaleSnapshot,
+): number {
+  const saleTotal = nonNegativeSafeInteger(sale.total_minor, 'sale_total');
+  let refunded = 0;
+  for (const snapshot of sale.returns || []) {
+    refunded = safeAdd(
+      refunded,
+      nonNegativeSafeInteger(snapshot.refund_total_minor, 'refund_total'),
+      'refund_total',
+    );
+  }
+  return Math.max(0, saleTotal - refunded);
+}
+
 /**
  * Returns the exact refundable amount for the next quantity of one sale line.
  * Cumulative floor allocation makes repeated partial returns deterministic and
