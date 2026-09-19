@@ -18,10 +18,6 @@ import {
 } from '@/lib/cashierOperatorSessionUi';
 import { publishCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import {
-  cashierRemainingRefundMinor,
-  cashierReturnRefundMinor,
-} from '@/lib/cashierReturnRefundAllocation';
-import {
   CASHIER_RECEIPT_COPY,
   printCashierReceipt,
   readCashierReceiptPrintSettings,
@@ -30,6 +26,7 @@ import { readCachedCashierReceiptProfile } from '@/lib/cashierReceiptProfileClie
 import { CASHIER_UI_COPY, cashierLocale } from '@/lib/cashierUiCopy';
 import { useI18n } from '@/lib/i18n';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import { cashierNetReturnRefundMinor } from '@/lib/cashierRefundPricing';
 import type { Lang } from '@/lib/types';
 
 type ConfirmAction = 'return' | 'void' | null;
@@ -105,6 +102,17 @@ function returnedQuantity(sale: CashierSaleSnapshot, lineId: string): number {
       snapshot.lines
         .filter(line => line.original_line_id === lineId)
         .reduce((sum, line) => sum + line.quantity, 0),
+    0,
+  );
+}
+
+function returnedRefundMinor(sale: CashierSaleSnapshot, lineId: string): number {
+  return (sale.returns || []).reduce(
+    (total, snapshot) =>
+      total +
+      snapshot.lines
+        .filter(line => line.original_line_id === lineId)
+        .reduce((sum, line) => sum + line.refund_minor, 0),
     0,
   );
 }
@@ -278,28 +286,21 @@ export default function CashierHistoryPage() {
 
   const returnTotal = useMemo(() => {
     if (!selectedSale) return 0;
-    let remainingSaleRefundMinor = cashierRemainingRefundMinor(selectedSale);
-    return selectedSale.lines.reduce((total, line) => {
-      const remaining = remainingQuantity(selectedSale, line);
-      const alreadyReturned = line.quantity - remaining;
+    return returnableLines.reduce((total, { line, remaining }) => {
       const quantity = Math.min(
         remaining,
         Math.max(0, Math.trunc(returnDraft[line.line_id] || 0)),
       );
-      const allocatedRefundMinor = cashierReturnRefundMinor({
-        sale: selectedSale,
-        lineId: line.line_id,
-        alreadyReturnedQuantity: alreadyReturned,
-        returnQuantity: quantity,
-      });
-      const refundMinor = Math.min(
-        allocatedRefundMinor,
-        remainingSaleRefundMinor,
+      if (quantity === 0) return total;
+      return total + cashierNetReturnRefundMinor(
+        selectedSale,
+        line.line_id,
+        returnedQuantity(selectedSale, line.line_id),
+        returnedRefundMinor(selectedSale, line.line_id),
+        quantity,
       );
-      remainingSaleRefundMinor -= refundMinor;
-      return total + refundMinor;
     }, 0);
-  }, [returnDraft, selectedSale]);
+  }, [returnDraft, returnableLines, selectedSale]);
 
   const requestedReturnLines = useMemo(
     () =>
