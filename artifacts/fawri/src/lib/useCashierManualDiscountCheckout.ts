@@ -344,6 +344,7 @@ export function useCashierManualDiscountCheckout(input: {
         errorCode(error) || 'CASHIER_DISCOUNT_OVERRIDE_APPROVAL_FAILED',
       );
     } finally {
+      // Never retain a manager PIN beyond the approval request lifecycle.
       setOverridePinState('');
       setOverrideApprovalLoading(false);
     }
