@@ -53,11 +53,19 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       ? "custom"
       : readSavedAnswerCategory(req.body.category);
 
-  if (!questionPattern || !answerText || !language || !category) {
+  if (req.body?.category !== undefined && !category) {
+    res.status(400).json({
+      ok: false,
+      code: "INVALID_SAVED_ANSWER_CATEGORY",
+      error: "invalid saved answer category",
+    });
+    return;
+  }
+  if (!questionPattern || !answerText || !language) {
     res.status(400).json({
       ok: false,
       code: "INVALID_SAVED_ANSWER",
-      error: "questionPattern, answerText, language, and a valid category are required",
+      error: "questionPattern, answerText, and language are required",
     });
     return;
   }
