@@ -220,7 +220,7 @@ export default function ServerSavedAnswersPage() {
             ? current.map((item) => (item.id === currentAnswer.id ? currentAnswer : item))
             : [currentAnswer, ...current],
         );
-        if (editing) {
+        if (editing && currentAnswer.id === editing.id) {
           setEditing(currentAnswer);
           setForm({
             category: currentAnswer.category,
