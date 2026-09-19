@@ -7,6 +7,8 @@ import {
   getMerchantCommerceContextAuthoritative,
 } from "./postgresMerchantRegionalAuthority";
 import { listCatalogProductsAuthoritative } from "./postgresCatalogAuthority";
+import { projectCashierCatalogProductsToLocation } from "./cashierLocationCatalogProjection";
+import { listLocationInventoryLevelsAuthoritative } from "./postgresLocationInventoryAuthority";
 import { listCommercePromotionsAuthoritative } from "./postgresCommercePromotionAuthority";
 import {
   CashierSyncError,
@@ -240,21 +242,31 @@ export function sanitizeCashierCatalogProduct(
 export async function getCashierOperatorCatalogSnapshotAuthoritative(
   context: CashierOperatorContext,
 ) {
-  const [commerceContext, products, promotions] = await Promise.all([
-    getMerchantCommerceContextAuthoritative(context.merchant_id),
-    listCatalogProductsAuthoritative(context.merchant_id),
-    listCommercePromotionsAuthoritative(context.merchant_id),
-  ]);
+  const [commerceContext, products, promotions, locationInventory] =
+    await Promise.all([
+      getMerchantCommerceContextAuthoritative(context.merchant_id),
+      listCatalogProductsAuthoritative(context.merchant_id),
+      listCommercePromotionsAuthoritative(context.merchant_id),
+      listLocationInventoryLevelsAuthoritative({
+        merchantId: context.merchant_id,
+        locationId: context.location_id,
+      }),
+    ]);
+  const locationProducts = projectCashierCatalogProductsToLocation(
+    products,
+    locationInventory,
+  );
   const includeRawCost = context.permissions.includes("catalog.cost");
   return {
     merchant_id: context.merchant_id,
     station_id: context.station_id,
+    location_id: context.location_id,
     staff_id: context.staff_id,
     shift_id: context.shift_id,
     permissions: context.permissions,
     cost_included: includeRawCost,
     context: commerceContext,
-    products: products.map((product) =>
+    products: locationProducts.map((product) =>
       sanitizeCashierCatalogProduct(product, includeRawCost),
     ),
     promotions,
