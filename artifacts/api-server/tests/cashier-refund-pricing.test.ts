@@ -34,11 +34,16 @@ test("server refund pricing preserves exact totals across rounding-sensitive par
     total_minor: 2_999,
     lines: [{ line_id: "line", quantity: 3, line_total_minor: 3_000 }],
   };
-  const refunds = [
-    cashierNetReturnRefundMinor(sale, "line", 0, 0, 1),
-    cashierNetReturnRefundMinor(sale, "line", 1, 0, 1),
-    cashierNetReturnRefundMinor(sale, "line", 2, 0, 1),
-  ];
+  const first = cashierNetReturnRefundMinor(sale, "line", 0, 0, 1);
+  const second = cashierNetReturnRefundMinor(sale, "line", 1, first, 1);
+  const third = cashierNetReturnRefundMinor(
+    sale,
+    "line",
+    2,
+    first + second,
+    1,
+  );
+  const refunds = [first, second, third];
   assert.deepEqual(refunds, [999, 1_000, 1_000]);
   assert.equal(refunds.reduce((sum, item) => sum + item, 0), sale.total_minor);
 });
