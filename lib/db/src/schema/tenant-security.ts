@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import { check, index, pgPolicy, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { adminProfiles } from "./merchants";
+import { merchantLocationDeliveryAreas } from "./merchant-locations";
 import {
   merchantDeliveryAreaRates,
   merchantSettings,
@@ -63,6 +64,10 @@ export const merchantSettingsTenantPolicy = tenantPolicy("merchant_settings_tena
 export const merchantDeliveryAreaRatesTenantPolicy = tenantPolicy(
   "merchant_delivery_area_rates_tenant_boundary",
   merchantDeliveryAreaRates,
+);
+export const merchantLocationDeliveryAreasTenantPolicy = tenantPolicy(
+  "merchant_location_delivery_areas_tenant_boundary",
+  merchantLocationDeliveryAreas,
 );
 export const ordersTenantPolicy = tenantPolicy("orders_tenant_boundary", orders);
 export const orderPaymentDecisionsTenantPolicy = tenantPolicy("order_payment_decisions_tenant_boundary", orderPaymentDecisions);
