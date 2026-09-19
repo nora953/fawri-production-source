@@ -131,7 +131,7 @@ test("duplicate create and duplicate edit keep drafts while same-record version 
   assert.match(page, /setEditing\(currentAnswer\)/);
   assert.match(page, /setForm\(\{/);
   assert.match(page, /setNotice\(copy\.conflict\)/);
-  assert.match(page, /\} else \{\s*setNotice\(copy\.duplicate\);\s*\}/);
+  assert.match(page, /setNotice\(sameRecordConflict \? copy\.conflict : copy\.duplicate\)/);
   assert.match(page, /current\.some\(\(item\) => item\.id === currentAnswer\.id\)/);
 });
 
