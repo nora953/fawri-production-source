@@ -54,9 +54,9 @@ test('repeated partial returns sum exactly to the discounted line value', () => 
     manualDiscount: 1,
     lines: [{ id: 'line', quantity: 3, unitPrice: 1_000 }],
   });
-  const first = cashierNetReturnRefundMinor(value, 'line', 0, 1);
-  const second = cashierNetReturnRefundMinor(value, 'line', 1, 1);
-  const third = cashierNetReturnRefundMinor(value, 'line', 2, 1);
+  const first = cashierNetReturnRefundMinor(value, 'line', 0, 0, 1);
+  const second = cashierNetReturnRefundMinor(value, 'line', 1, 0, 1);
+  const third = cashierNetReturnRefundMinor(value, 'line', 2, 0, 1);
   assert.deepEqual([first, second, third], [999, 1_000, 1_000]);
   assert.equal(first + second + third, 2_999);
 });
@@ -66,5 +66,17 @@ test('one-line discounted return never refunds more than the customer paid', () 
     manualDiscount: 3_000,
     lines: [{ id: 'line', quantity: 1, unitPrice: 40_000 }],
   });
-  assert.equal(cashierNetReturnRefundMinor(value, 'line', 0, 1), 37_000);
+  assert.equal(cashierNetReturnRefundMinor(value, 'line', 0, 0, 1), 37_000);
+});
+
+
+test('v2 refund pricing caps a new return after a legacy over-refund', () => {
+  const value = sale({
+    manualDiscount: 3_000,
+    lines: [{ id: 'line', quantity: 2, unitPrice: 20_000 }],
+  });
+  assert.equal(
+    cashierNetReturnRefundMinor(value, 'line', 1, 20_000, 1),
+    17_000,
+  );
 });
