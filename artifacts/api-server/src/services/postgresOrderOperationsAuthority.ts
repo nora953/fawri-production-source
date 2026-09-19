@@ -7,6 +7,7 @@ import {
 import {
   ensureOnlineOrderFulfillmentCommittedWithTarget,
   OnlineOrderFulfillmentCommitError,
+  releaseOnlineOrderFulfillmentInventoryWithTarget,
 } from "./postgresOnlineOrderFulfillmentCommit";
 import {
   confirmServerPayment,
@@ -394,6 +395,31 @@ async function ensureOnlineFulfillmentForConfirmation(
   }
 }
 
+
+async function releaseOnlineFulfillmentForCancellation(
+  client: OperationalSqlClient,
+  current: OrderRow,
+): Promise<Record<string, unknown> | null> {
+  try {
+    return await releaseOnlineOrderFulfillmentInventoryWithTarget(client, {
+      merchantId: current.merchant_id,
+      orderId: current.id,
+      fulfillmentLocationId: current.fulfillment_location_id,
+      metadata: current.metadata,
+    });
+  } catch (error) {
+    if (error instanceof OnlineOrderFulfillmentCommitError) {
+      throw new OrderOperationError(
+        error.code,
+        error.message,
+        error.status,
+        error.details,
+      );
+    }
+    throw error;
+  }
+}
+
 function assertNonTerminalPaymentTransition(
   method: ServerPaymentMethod,
   current: ServerPaymentStatus,
@@ -483,6 +509,10 @@ export async function updateServerOrderStatusAuthoritative(input: {
     if (next === "confirmed") {
       await ensureOnlineFulfillmentForConfirmation(client, current);
     }
+    const releasedMetadata =
+      next === "cancelled"
+        ? await releaseOnlineFulfillmentForCancellation(client, current)
+        : null;
     await client.query(
       `UPDATE orders
           SET status = $3::order_status,
@@ -490,9 +520,18 @@ export async function updateServerOrderStatusAuthoritative(input: {
               confirmed_at = CASE WHEN $3 = 'confirmed' THEN COALESCE(confirmed_at, now()) ELSE confirmed_at END,
               cancelled_at = CASE WHEN $3 = 'cancelled' THEN COALESCE(cancelled_at, now()) ELSE cancelled_at END,
               delivered_at = CASE WHEN $3 = 'delivered' THEN COALESCE(delivered_at, now()) ELSE delivered_at END,
+              metadata = CASE
+                WHEN $4::jsonb IS NULL THEN metadata
+                ELSE $4::jsonb
+              END,
               updated_at = now()
         WHERE merchant_id = $1 AND id = $2`,
-      [merchantId, orderId, next],
+      [
+        merchantId,
+        orderId,
+        next,
+        releasedMetadata ? JSON.stringify(releasedMetadata) : null,
+      ],
     );
     return mapOrder(client, await loadOrderRow(client, merchantId, orderId));
   });
