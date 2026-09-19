@@ -205,6 +205,38 @@ async function assertNoPromotionReferences(
   });
 }
 
+async function assertNoLocationInventoryReferences(
+  merchantId: string,
+  productId: string,
+  variantIds: string[],
+): Promise<void> {
+  if (variantIds.length === 0 || !operationalPostgresAuthorityRequired()) return;
+  await withMerchantOperationalTransaction(merchantId, async (target) => {
+    const rows = await operationalQueryRows<{ variant_id: string }>(
+      target,
+      `SELECT DISTINCT variant_id
+         FROM location_inventory_levels
+        WHERE merchant_id = $1 AND product_id = $2
+          AND variant_id = ANY($3::text[])`,
+      [merchantId, productId, variantIds],
+    );
+    if (rows.length > 0) {
+      throw new CatalogRuntimeError(
+        "CATALOG_VARIANT_HISTORY_CONFLICT",
+        "variant cannot be archived while location inventory still references it",
+        409,
+        {
+          variant_ids: rows.map((row) => row.variant_id),
+          dependencies: rows.map((row) => ({
+            variant_id: row.variant_id,
+            kind: "location_inventory_levels",
+          })),
+        },
+      );
+    }
+  });
+}
+
 async function markArchivedVariants(
   merchantId: string,
   productId: string,
@@ -308,6 +340,11 @@ export async function updateCatalogProductAuthoritative(
         .map((variant) => variant.id)
     : [];
 
+  await assertNoLocationInventoryReferences(
+    merchantId,
+    productId,
+    newlyRemovedIds,
+  );
   await assertNoPromotionReferences(merchantId, productId, newlyRemovedIds);
   for (const id of newlyRemovedIds) archiveIds.add(id);
 
