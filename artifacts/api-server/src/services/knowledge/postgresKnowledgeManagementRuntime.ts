@@ -340,6 +340,16 @@ export type SavedAnswerPage = {
   nextCursor: SavedAnswerPageCursor | null;
 };
 
+export type TrainingRequestPageCursor = {
+  updatedAt: string;
+  id: string;
+};
+
+export type TrainingRequestPage = {
+  requests: TrainingRequestRecord[];
+  nextCursor: TrainingRequestPageCursor | null;
+};
+
 export class PostgresKnowledgeManagementRuntime {
   readonly authorityId = "postgresql_knowledge_management_authority_v1";
   readonly legacyFallbackEnabled = false;
@@ -599,15 +609,132 @@ export class PostgresKnowledgeManagementRuntime {
     } catch (error) { rethrowWrite(error); }
   }
 
-  async listTrainingRequests(value: string): Promise<TrainingRequestRecord[]> {
+  async listTrainingRequestsPage(
+    value: string,
+    options: {
+      limit?: number;
+      beforeUpdatedAt?: string;
+      beforeId?: string;
+      search?: string;
+      status?: TrainingRequestRecord["status"];
+    } = {},
+  ): Promise<TrainingRequestPage> {
     const merchant = merchantId(value);
+    const limit = options.limit ?? 500;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+      throw new KnowledgeTransitionError(
+        "INVALID_TRAINING_REQUEST_PAGE",
+        "training request page limit must be between 1 and 500",
+      );
+    }
+
+    const rawBeforeUpdatedAt = boundedText(options.beforeUpdatedAt, 80);
+    const beforeId = boundedText(options.beforeId, 160);
+    if (Boolean(rawBeforeUpdatedAt) !== Boolean(beforeId)) {
+      throw new KnowledgeTransitionError(
+        "INVALID_TRAINING_REQUEST_PAGE",
+        "training request page cursor is incomplete",
+      );
+    }
+
+    let beforeUpdatedAt: string | null = null;
+    if (rawBeforeUpdatedAt) {
+      const cursorPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+      const millisIso = `${rawBeforeUpdatedAt.slice(0, 23)}Z`;
+      if (
+        !cursorPattern.test(rawBeforeUpdatedAt) ||
+        !Number.isFinite(new Date(millisIso).getTime())
+      ) {
+        throw new KnowledgeTransitionError(
+          "INVALID_TRAINING_REQUEST_PAGE",
+          "training request page cursor is invalid",
+        );
+      }
+      beforeUpdatedAt = rawBeforeUpdatedAt;
+    }
+
+    const search = boundedText(options.search, 500);
+    const searchPattern = search
+      ? `%${search
+          .replace(/!/g, "!!")
+          .replace(/%/g, "!%")
+          .replace(/_/g, "!_")}%`
+      : null;
+    const requestedStatus = options.status;
+    if (
+      requestedStatus !== undefined &&
+      requestedStatus !== "pending_merchant_reply" &&
+      requestedStatus !== "pending_review" &&
+      requestedStatus !== "approved" &&
+      requestedStatus !== "rejected"
+    ) {
+      throw new KnowledgeTransitionError(
+        "INVALID_TRAINING_REQUEST_PAGE",
+        "training request status filter is invalid",
+      );
+    }
+
     try {
       const result = await this.sql.query<Record<string, unknown>>(
-        `SELECT ${TRAINING_COLUMNS} FROM training_requests WHERE merchant_id=$1 ORDER BY updated_at DESC, id DESC LIMIT 500`,
-        [merchant],
+        `SELECT ${TRAINING_COLUMNS},
+                to_char(
+                  updated_at AT TIME ZONE 'UTC',
+                  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+                ) AS cursor_updated_at
+           FROM training_requests
+          WHERE merchant_id = $1
+            AND (
+              $2::timestamptz IS NULL
+              OR updated_at < $2::timestamptz
+              OR (updated_at = $2::timestamptz AND id < $3::text)
+            )
+            AND (
+              $4::text IS NULL
+              OR customer_text_preview ILIKE $4 ESCAPE '!'
+              OR detected_intent ILIKE $4 ESCAPE '!'
+              OR reason ILIKE $4 ESCAPE '!'
+              OR COALESCE(suggested_reply, '') ILIKE $4 ESCAPE '!'
+            )
+            AND ($5::text IS NULL OR status::text = $5::text)
+          ORDER BY updated_at DESC, id DESC
+          LIMIT $6`,
+        [
+          merchant,
+          beforeUpdatedAt,
+          beforeId || null,
+          searchPattern,
+          requestedStatus || null,
+          limit + 1,
+        ],
       );
-      return result.rows.map((row) => trainingFromRow(row, merchant));
+      const pageRows = result.rows.slice(0, limit);
+      const requests = pageRows.map((row) => trainingFromRow(row, merchant));
+      const lastRow = pageRows[pageRows.length - 1];
+      const last = requests[requests.length - 1];
+      const cursorUpdatedAt = lastRow
+        ? boundedText(lastRow.cursor_updated_at, 80)
+        : "";
+      if (
+        result.rows.length > limit &&
+        (
+          !last ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursorUpdatedAt)
+        )
+      ) {
+        dbError("KNOWLEDGE_STATE_INVALID", "knowledge pagination state is invalid");
+      }
+      return {
+        requests,
+        nextCursor:
+          result.rows.length > limit && last
+            ? { updatedAt: cursorUpdatedAt, id: last.id }
+            : null,
+      };
     } catch (error) { rethrowRead(error); }
+  }
+
+  async listTrainingRequests(value: string): Promise<TrainingRequestRecord[]> {
+    return (await this.listTrainingRequestsPage(value, { limit: 500 })).requests;
   }
 
   async createTrainingRequest(input: {
