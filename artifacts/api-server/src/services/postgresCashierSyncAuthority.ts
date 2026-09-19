@@ -1168,12 +1168,13 @@ async function insertCanonicalOrder(
        payment_provider, payment_provider_transaction_ref,
        confirmed_at, delivered_at, metadata, created_at, updated_at
      ) VALUES (
-       $1,$2,'Cashier sale','delivered',$3,$4,$5,0,$5,'cashier',1,
-       $6,$7,$8,$9,$10,$11,$11,$12::jsonb,$11,$11
+       $1,$2,$3,'Cashier sale','delivered',$4,$5,$6,0,$6,'cashier',1,
+       $7,$8,$9,$10,$11,$12,$12,$13::jsonb,$12,$12
      )`,
     [
       bundle.sale.sale_id,
       bundle.cloudMerchantId,
+      locationId,
       payment.method,
       payment.status,
       bundle.sale.total_minor,
