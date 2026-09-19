@@ -8,7 +8,6 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
-import { merchantLocations } from "./locations";
 import { merchants } from "./merchants";
 import { cashierShifts } from "./cashier-staff";
 
@@ -20,10 +19,9 @@ export const cashierOperationAttribution = pgTable(
       .notNull()
       .references(() => merchants.id, { onDelete: "cascade" }),
     operationId: text("operation_id").notNull(),
-    saleId: text("sale_id"),
+    saleId: text("sale_id").notNull(),
     operationKind: text("operation_kind").notNull(),
     stationId: text("station_id").notNull(),
-    locationId: text("location_id").notNull(),
     staffId: text("staff_id").notNull(),
     shiftId: text("shift_id").notNull(),
     deviceId: text("device_id").notNull(),
@@ -38,11 +36,6 @@ export const cashierOperationAttribution = pgTable(
     merchantOperationUnique: unique(
       "cashier_operation_attribution_merchant_operation_unique",
     ).on(table.merchantId, table.operationId),
-    locationTenantForeignKey: foreignKey({
-      name: "cashier_operation_attribution_location_merchant_fk",
-      columns: [table.locationId, table.merchantId],
-      foreignColumns: [merchantLocations.id, merchantLocations.merchantId],
-    }).onDelete("restrict"),
     shiftIdentityForeignKey: foreignKey({
       name: "cashier_operation_attribution_shift_identity_fk",
       columns: [
@@ -64,9 +57,6 @@ export const cashierOperationAttribution = pgTable(
     stationOccurredIndex: index(
       "cashier_operation_attribution_station_occurred_idx",
     ).on(table.merchantId, table.stationId, table.occurredAt),
-    locationOccurredIndex: index(
-      "cashier_operation_attribution_location_occurred_idx",
-    ).on(table.merchantId, table.locationId, table.occurredAt),
     saleIndex: index("cashier_operation_attribution_sale_idx").on(
       table.merchantId,
       table.saleId,
@@ -74,11 +64,11 @@ export const cashierOperationAttribution = pgTable(
     ),
     kindCheck: check(
       "cashier_operation_attribution_kind_check",
-      sql`(${table.operationKind} IN ('sale', 'return', 'void') AND ${table.saleId} IS NOT NULL) OR (${table.operationKind} = 'inventory_adjustment' AND ${table.saleId} IS NULL)`,
+      sql`${table.operationKind} IN ('sale', 'return', 'void')`,
     ),
     identityCheck: check(
       "cashier_operation_attribution_identity_check",
-      sql`char_length(${table.operationId}) BETWEEN 1 AND 200 AND (${table.saleId} IS NULL OR char_length(${table.saleId}) BETWEEN 1 AND 200) AND char_length(${table.deviceId}) BETWEEN 1 AND 200 AND char_length(${table.stationCredentialId}) BETWEEN 1 AND 200 AND char_length(${table.operatorSessionId}) BETWEEN 1 AND 200`,
+      sql`char_length(${table.operationId}) BETWEEN 1 AND 200 AND char_length(${table.saleId}) BETWEEN 1 AND 200 AND char_length(${table.deviceId}) BETWEEN 1 AND 200 AND char_length(${table.stationCredentialId}) BETWEEN 1 AND 200 AND char_length(${table.operatorSessionId}) BETWEEN 1 AND 200`,
     ),
   }),
 );

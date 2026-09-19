@@ -1,4 +1,8 @@
 import crypto from "node:crypto";
+import {
+  CashierLocationInventoryError,
+  mutateCashierLocationInventoryInTransaction,
+} from "./cashierLocationInventoryAuthority";
 import { catalogCommerceFromMetadata } from "./catalogCommerceMetadata";
 import {
   operationalPostgresAuthorityRequired,
@@ -732,7 +736,121 @@ async function applyInventoryForLine(
   target: OperationalQueryTarget,
   bundle: ValidatedBundle,
   line: CashierSaleLine,
+  locationId?: string,
 ): Promise<boolean> {
+  if (locationId) {
+    const movement = bundle.movements.get(
+      itemKey(line.product_id, line.variant_id),
+    );
+    let mutation;
+    try {
+      mutation = await mutateCashierLocationInventoryInTransaction(target, {
+        merchantId: bundle.cloudMerchantId,
+        locationId,
+        productId: line.product_id,
+        ...(line.variant_id ? { variantId: line.variant_id } : {}),
+        delta: -line.quantity,
+      });
+    } catch (error) {
+      if (error instanceof CashierLocationInventoryError) {
+        throw new CashierSyncError(
+          error.code,
+          error.message,
+          error.status,
+          error.details,
+        );
+      }
+      throw error;
+    }
+
+    if (!mutation.tracked) {
+      if (movement) {
+        throw new CashierSyncError(
+          "CASHIER_SYNC_MOVEMENT_MISMATCH",
+          "non-inventory item must not include a stock movement",
+          409,
+        );
+      }
+      return false;
+    }
+    if (!movement || movement.delta !== -line.quantity) {
+      throw new CashierSyncError(
+        "CASHIER_SYNC_MOVEMENT_MISMATCH",
+        "sale inventory movement does not match sale quantity",
+        409,
+      );
+    }
+    if (
+      movement.product_id !== line.product_id ||
+      movement.variant_id !== line.variant_id ||
+      movement.related_sale_id !== bundle.sale.sale_id
+    ) {
+      throw new CashierSyncError(
+        "CASHIER_SYNC_MOVEMENT_MISMATCH",
+        "sale inventory movement identity mismatch",
+        409,
+      );
+    }
+
+    const keyHash = sha256(
+      `cashier-sale:${bundle.cloudMerchantId}:${bundle.operationId}:${line.line_id}`,
+    );
+    await target.query(
+      `INSERT INTO location_inventory_mutations (
+         id, merchant_id, location_id, product_id, variant_id, mutation_type,
+         before_on_hand_quantity, after_on_hand_quantity,
+         before_reserved_quantity, after_reserved_quantity,
+         expected_version, resulting_version, actor_type, actor_account_id,
+         operation_id, reason_code, idempotency_key_hash, request_hash,
+         occurred_at, created_at
+       ) VALUES (
+         $1,$2,$3,$4,$5,'adjust',$6,$7,$8,$9,$10,$11,
+         'cashier_operator',NULL,$12,'cashier_sale_sync',$13,$14,$15,now()
+       )`,
+      [
+        `cashier_loc_mut_${keyHash.slice(0, 36)}`,
+        bundle.cloudMerchantId,
+        locationId,
+        line.product_id,
+        line.variant_id || null,
+        mutation.before_on_hand_quantity,
+        mutation.after_on_hand_quantity,
+        mutation.before_reserved_quantity,
+        mutation.after_reserved_quantity,
+        mutation.location_expected_version,
+        mutation.location_resulting_version,
+        bundle.operationId,
+        keyHash,
+        bundle.requestHash,
+        new Date(bundle.sale.occurred_at),
+      ],
+    );
+    await target.query(
+      `INSERT INTO inventory_mutations (
+         id, merchant_id, product_id, variant_id, mutation_type,
+         before_quantity, after_quantity, expected_version, resulting_version,
+         actor_type, actor_account_id, reason_code, idempotency_key_hash,
+         request_hash, created_at
+       ) VALUES ($1,$2,$3,$4,'adjust',$5,$6,$7,$8,'merchant',$2,$9,$10,$11,$12)`,
+      [
+        `cashier_mut_${keyHash.slice(0, 40)}`,
+        bundle.cloudMerchantId,
+        line.product_id,
+        line.variant_id || null,
+        mutation.legacy_before_quantity,
+        mutation.legacy_after_quantity,
+        mutation.product_expected_version,
+        mutation.product_resulting_version,
+        "cashier_sale_sync",
+        keyHash,
+        bundle.requestHash,
+        new Date(bundle.sale.occurred_at),
+      ],
+    );
+    bundle.movements.delete(itemKey(line.product_id, line.variant_id));
+    return true;
+  }
+
   const products = await operationalQueryRows<ProductRow>(
     target,
     `SELECT id, quantity, low_stock_threshold, version, status, metadata
@@ -921,6 +1039,7 @@ function orderPayment(sale: CashierSale): {
 async function insertCanonicalOrder(
   target: OperationalQueryTarget,
   bundle: ValidatedBundle,
+  locationId?: string,
 ): Promise<void> {
   const payment = orderPayment(bundle.sale);
   const metadata = {
@@ -928,6 +1047,7 @@ async function insertCanonicalOrder(
       schema_version: CASHIER_SCHEMA_VERSION,
       operation_id: bundle.operationId,
       request_hash: bundle.requestHash,
+      ...(locationId ? { location_id: locationId } : {}),
       local_merchant_id: bundle.localMerchantId,
       device_id: bundle.deviceId,
       device_sequence: String(bundle.deviceSequence),
@@ -1021,9 +1141,14 @@ async function insertCanonicalOrder(
 
 export async function syncCashierSaleAuthoritative(params: {
   merchantId: unknown;
+  locationId?: unknown;
   body: unknown;
 }): Promise<CashierSaleSyncResult> {
   const merchantId = identifier(params.merchantId, "merchant_id");
+  const locationId =
+    params.locationId === undefined
+      ? undefined
+      : identifier(params.locationId, "location_id");
   if (!operationalPostgresAuthorityRequired()) {
     throw new CashierSyncError(
       "CASHIER_SYNC_POSTGRES_REQUIRED",
@@ -1048,12 +1173,23 @@ export async function syncCashierSaleAuthoritative(params: {
     const existing = await loadExistingOrder(client, merchantId, bundle.sale.sale_id);
     if (existing) {
       const cashierMetadata = metadataCashier(existing.metadata);
+      const storedLocationId = String(cashierMetadata.location_id || "").trim();
+      if (storedLocationId && locationId === undefined) {
+        throw new CashierSyncError(
+          "CASHIER_LOCATION_CONTEXT_REQUIRED",
+          "location-bound cashier sale requires location context",
+          409,
+          { location_id: storedLocationId },
+        );
+      }
       if (
         existing.source_channel !== "cashier" ||
         String(cashierMetadata.operation_id || "") !== bundle.operationId ||
         String(cashierMetadata.request_hash || "") !== bundle.requestHash ||
         String(cashierMetadata.device_id || "") !== bundle.deviceId ||
-        String(cashierMetadata.device_sequence || "") !== String(bundle.deviceSequence)
+        String(cashierMetadata.device_sequence || "") !== String(bundle.deviceSequence) ||
+        (locationId !== undefined &&
+          String(cashierMetadata.location_id || "") !== locationId)
       ) {
         throw new CashierSyncError(
           "CASHIER_SYNC_IDEMPOTENCY_CONFLICT",
@@ -1074,7 +1210,11 @@ export async function syncCashierSaleAuthoritative(params: {
     await assertDeviceSequenceUnused(client, bundle);
     let inventoryMutationCount = 0;
     for (const line of bundle.sale.lines) {
-      if (await applyInventoryForLine(client, bundle, line)) inventoryMutationCount += 1;
+      if (
+        await applyInventoryForLine(client, bundle, line, locationId)
+      ) {
+        inventoryMutationCount += 1;
+      }
     }
     if (bundle.movements.size !== 0) {
       throw new CashierSyncError(
@@ -1084,7 +1224,7 @@ export async function syncCashierSaleAuthoritative(params: {
         { remaining_movements: bundle.movements.size },
       );
     }
-    await insertCanonicalOrder(client, bundle);
+    await insertCanonicalOrder(client, bundle, locationId);
     return {
       operation_id: bundle.operationId,
       order_id: bundle.sale.sale_id,

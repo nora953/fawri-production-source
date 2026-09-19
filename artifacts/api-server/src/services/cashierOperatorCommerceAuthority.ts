@@ -1,5 +1,10 @@
 import crypto from "node:crypto";
 import {
+  CashierLocationInventoryError,
+  mutateCashierLocationInventoryInTransaction,
+  projectCashierCatalogForLocationAuthoritative,
+} from "./cashierLocationInventoryAuthority";
+import {
   issueCashierCostEvidence,
   resolveCashierCostEvidence,
 } from "./cashierCostEvidence";
@@ -20,7 +25,11 @@ import {
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 
-export type CashierOperatorOperationKind = "sale" | "return" | "void";
+export type CashierOperatorOperationKind =
+  | "sale"
+  | "return"
+  | "void"
+  | "inventory_adjustment";
 
 type BundleIdentity = {
   cloudMerchantId: string;
@@ -32,9 +41,10 @@ type BundleIdentity = {
 
 type AttributionRow = {
   operation_id: string;
-  sale_id: string;
+  sale_id: string | null;
   operation_kind: string;
   station_id: string;
+  location_id: string;
   staff_id: string;
   shift_id: string;
   device_id: string;
@@ -135,17 +145,33 @@ function primaryEnvelopeForKind(
     }
     return returns[0];
   }
-  const voids = envelopes.filter(
-    (item) => item.entity_type === "sale" && item.operation === "void",
+  if (kind === "void") {
+    const voids = envelopes.filter(
+      (item) => item.entity_type === "sale" && item.operation === "void",
+    );
+    if (voids.length !== 1) {
+      throw new CashierSyncError(
+        "CASHIER_OPERATOR_SYNC_KIND_MISMATCH",
+        "operator void endpoint requires a void operation",
+        403,
+      );
+    }
+    return voids[0];
+  }
+
+  const adjustments = envelopes.filter(
+    (item) =>
+      item.entity_type === "inventory_movement" &&
+      item.operation === "append",
   );
-  if (voids.length !== 1) {
+  if (adjustments.length !== 1 || envelopes.length !== 1) {
     throw new CashierSyncError(
       "CASHIER_OPERATOR_SYNC_KIND_MISMATCH",
-      "operator void endpoint requires a void operation",
+      "operator inventory adjustment requires one standalone inventory movement",
       403,
     );
   }
-  return voids[0];
+  return adjustments[0];
 }
 
 export function cashierOperatorBundleIdentity(
@@ -240,21 +266,27 @@ export function sanitizeCashierCatalogProduct(
 export async function getCashierOperatorCatalogSnapshotAuthoritative(
   context: CashierOperatorContext,
 ) {
-  const [commerceContext, products, promotions] = await Promise.all([
+  const [commerceContext, baseProducts, promotions] = await Promise.all([
     getMerchantCommerceContextAuthoritative(context.merchant_id),
     listCatalogProductsAuthoritative(context.merchant_id),
     listCommercePromotionsAuthoritative(context.merchant_id),
   ]);
+  const projected = await projectCashierCatalogForLocationAuthoritative({
+    merchantId: context.merchant_id,
+    locationId: context.location_id,
+    products: baseProducts,
+  });
   const includeRawCost = context.permissions.includes("catalog.cost");
   return {
     merchant_id: context.merchant_id,
     station_id: context.station_id,
+    location_id: context.location_id,
     staff_id: context.staff_id,
     shift_id: context.shift_id,
     permissions: context.permissions,
     cost_included: includeRawCost,
     context: commerceContext,
-    products: products.map((product) =>
+    products: projected.products.map((product) =>
       sanitizeCashierCatalogProduct(product, includeRawCost),
     ),
     promotions,
@@ -326,7 +358,7 @@ async function recordAttribution(
   input: {
     context: CashierOperatorContext;
     identity: BundleIdentity;
-    saleId: string;
+    saleId?: string;
     kind: CashierOperatorOperationKind;
   },
 ): Promise<void> {
@@ -337,17 +369,18 @@ async function recordAttribution(
   await target.query(
     `INSERT INTO cashier_operation_attribution (
        id, merchant_id, operation_id, sale_id, operation_kind,
-       station_id, staff_id, shift_id, device_id,
+       station_id, location_id, staff_id, shift_id, device_id,
        station_credential_id, operator_session_id, occurred_at, created_at
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,now())
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,now())
      ON CONFLICT (merchant_id, operation_id) DO NOTHING`,
     [
       attributionId,
       context.merchant_id,
       identity.operationId,
-      saleId,
+      saleId || null,
       kind,
       context.station_id,
+      context.location_id,
       context.staff_id,
       context.shift_id,
       context.device_id,
@@ -358,7 +391,7 @@ async function recordAttribution(
   );
   const rows = await operationalQueryRows<AttributionRow>(
     target,
-    `SELECT operation_id, sale_id, operation_kind, station_id, staff_id,
+    `SELECT operation_id, sale_id, operation_kind, station_id, location_id, staff_id,
             shift_id, device_id, station_credential_id, operator_session_id,
             occurred_at
        FROM cashier_operation_attribution
@@ -375,9 +408,10 @@ async function recordAttribution(
     );
   }
   const same =
-    row.sale_id === saleId &&
+    row.sale_id === (saleId || null) &&
     row.operation_kind === kind &&
     row.station_id === context.station_id &&
+    row.location_id === context.location_id &&
     row.staff_id === context.staff_id &&
     row.shift_id === context.shift_id &&
     row.device_id === context.device_id &&
@@ -396,12 +430,336 @@ async function recordAttribution(
 async function persistOperatorAttribution(input: {
   context: CashierOperatorContext;
   identity: BundleIdentity;
-  saleId: string;
+  saleId?: string;
   kind: CashierOperatorOperationKind;
 }): Promise<void> {
   await withMerchantOperationalTransaction(input.context.merchant_id, (client) =>
     recordAttribution(client, input),
   );
+}
+
+type CashierOperatorInventoryAdjustment = {
+  localMerchantId: string;
+  movementId: string;
+  productId: string;
+  variantId?: string;
+  delta: number;
+  reason: "restock" | "manual_adjustment";
+  note?: string;
+  occurredAt: string;
+};
+
+function signedInteger(value: unknown, field: string): number {
+  const parsed = Number(value);
+  if (!Number.isSafeInteger(parsed) || parsed === 0) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_SYNC_INVALID",
+      `${field} must be a non-zero safe integer`,
+      400,
+      { field },
+    );
+  }
+  return parsed;
+}
+
+function parseOperatorInventoryAdjustment(
+  context: CashierOperatorContext,
+  body: unknown,
+  identity: BundleIdentity,
+): CashierOperatorInventoryAdjustment {
+  const raw = record(body);
+  const localMerchantId = identifier(
+    raw.local_merchant_id,
+    "local_merchant_id",
+  );
+  if (!Array.isArray(raw.envelopes) || raw.envelopes.length !== 1) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_SYNC_INVALID",
+      "inventory adjustment requires exactly one envelope",
+      400,
+    );
+  }
+  const envelope = record(raw.envelopes[0]);
+  if (
+    Number(envelope.schema_version) !== 1 ||
+    envelope.entity_type !== "inventory_movement" ||
+    envelope.operation !== "append"
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_SYNC_INVALID",
+      "inventory adjustment envelope is invalid",
+      400,
+    );
+  }
+  if (
+    identifier(envelope.operation_id, "envelope.operation_id") !==
+      identity.operationId ||
+    identifier(envelope.device_id, "envelope.device_id") !==
+      identity.deviceId ||
+    positiveInteger(envelope.device_sequence, "envelope.device_sequence") !==
+      identity.deviceSequence
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_SYNC_INVALID",
+      "inventory adjustment envelope identity mismatch",
+      400,
+    );
+  }
+
+  const movement = record(envelope.payload);
+  const reason = identifier(movement.reason, "movement.reason", 64);
+  if (reason !== "restock" && reason !== "manual_adjustment") {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_ADJUSTMENT_REASON_INVALID",
+      "standalone inventory adjustment reason is not allowed",
+      409,
+      { reason },
+    );
+  }
+  const occurredAt = instant(movement.occurred_at, "movement.occurred_at");
+  const envelopeOccurredAt = instant(
+    envelope.occurred_at,
+    "envelope.occurred_at",
+  );
+  const movementId = identifier(movement.movement_id, "movement.movement_id");
+  if (
+    movementId !== identifier(envelope.entity_id, "envelope.entity_id") ||
+    identifier(movement.operation_id, "movement.operation_id") !==
+      identity.operationId ||
+    identifier(movement.local_merchant_id, "movement.local_merchant_id") !==
+      localMerchantId ||
+    (movement.cloud_merchant_id &&
+      identifier(movement.cloud_merchant_id, "movement.cloud_merchant_id") !==
+        context.merchant_id) ||
+    identifier(movement.device_id, "movement.device_id") !==
+      context.device_id ||
+    positiveInteger(movement.device_sequence, "movement.device_sequence") !==
+      identity.deviceSequence ||
+    occurredAt !== identity.occurredAt ||
+    envelopeOccurredAt !== identity.occurredAt ||
+    movement.related_sale_id
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_OPERATOR_SYNC_INVALID",
+      "inventory adjustment movement identity mismatch",
+      400,
+    );
+  }
+
+  return {
+    localMerchantId,
+    movementId,
+    productId: identifier(movement.product_id, "movement.product_id"),
+    ...(movement.variant_id
+      ? { variantId: identifier(movement.variant_id, "movement.variant_id") }
+      : {}),
+    delta: signedInteger(movement.delta, "movement.delta"),
+    reason,
+    ...(movement.note
+      ? { note: identifier(movement.note, "movement.note", 500) }
+      : {}),
+    occurredAt,
+  };
+}
+
+export async function syncCashierOperatorInventoryAdjustmentAuthoritative(input: {
+  context: CashierOperatorContext;
+  body: unknown;
+}) {
+  const identity = cashierOperatorBundleIdentity(
+    input.body,
+    "inventory_adjustment",
+  );
+  assertOperatorIdentity(input.context, identity);
+  const adjustment = parseOperatorInventoryAdjustment(
+    input.context,
+    input.body,
+    identity,
+  );
+  const requestHash = sha256(
+    JSON.stringify({
+      merchant_id: input.context.merchant_id,
+      location_id: input.context.location_id,
+      local_merchant_id: adjustment.localMerchantId,
+      device_id: input.context.device_id,
+      device_sequence: identity.deviceSequence,
+      operation_id: identity.operationId,
+      movement_id: adjustment.movementId,
+      product_id: adjustment.productId,
+      variant_id: adjustment.variantId || null,
+      delta: adjustment.delta,
+      reason: adjustment.reason,
+      note: adjustment.note || null,
+      occurred_at: adjustment.occurredAt,
+    }),
+  );
+  const keyHash = sha256(
+    `cashier-adjust:${input.context.merchant_id}:${identity.operationId}:${adjustment.movementId}`,
+  );
+
+  const result = await withMerchantOperationalTransaction(
+    input.context.merchant_id,
+    async (client) => {
+      await client.query(
+        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+        [
+          `cashier-device:${input.context.merchant_id}:${input.context.device_id}`,
+        ],
+      );
+
+      const existing = await operationalQueryRows<{
+        id: string;
+        location_id: string;
+        product_id: string;
+        variant_id: string | null;
+        request_hash: string;
+      }>(
+        client,
+        `SELECT id, location_id, product_id, variant_id, request_hash
+           FROM location_inventory_mutations
+          WHERE merchant_id = $1
+            AND operation_id = $2
+            AND reason_code = 'cashier_inventory_adjustment_sync'
+          LIMIT 2
+          FOR UPDATE`,
+        [input.context.merchant_id, identity.operationId],
+      );
+      if (existing.length > 1) {
+        throw new CashierSyncError(
+          "CASHIER_OPERATOR_ADJUSTMENT_STATE_INVALID",
+          "inventory adjustment operation evidence is duplicated",
+          500,
+        );
+      }
+      if (existing[0]) {
+        const same =
+          existing[0].location_id === input.context.location_id &&
+          existing[0].product_id === adjustment.productId &&
+          (existing[0].variant_id || undefined) === adjustment.variantId &&
+          existing[0].request_hash === requestHash;
+        if (!same) {
+          throw new CashierSyncError(
+            "CASHIER_SYNC_IDEMPOTENCY_CONFLICT",
+            "inventory adjustment operation id was already used with different content",
+            409,
+          );
+        }
+        await recordAttribution(client, {
+          context: input.context,
+          identity,
+          kind: "inventory_adjustment",
+        });
+        return {
+          operation_id: identity.operationId,
+          device_sequence: identity.deviceSequence,
+          replayed: true,
+          inventory_mutation_count: 0,
+          accepted_entity_ids: [adjustment.movementId],
+        };
+      }
+
+      let mutation;
+      try {
+        mutation = await mutateCashierLocationInventoryInTransaction(client, {
+          merchantId: input.context.merchant_id,
+          locationId: input.context.location_id,
+          productId: adjustment.productId,
+          ...(adjustment.variantId
+            ? { variantId: adjustment.variantId }
+            : {}),
+          delta: adjustment.delta,
+        });
+      } catch (error) {
+        if (error instanceof CashierLocationInventoryError) {
+          throw new CashierSyncError(
+            error.code,
+            error.message,
+            error.status,
+            error.details,
+          );
+        }
+        throw error;
+      }
+      if (!mutation.tracked) {
+        throw new CashierSyncError(
+          "CASHIER_INVENTORY_NOT_TRACKED",
+          "this catalog item does not track inventory",
+          409,
+          { product_id: adjustment.productId },
+        );
+      }
+
+      await client.query(
+        `INSERT INTO location_inventory_mutations (
+           id, merchant_id, location_id, product_id, variant_id, mutation_type,
+           before_on_hand_quantity, after_on_hand_quantity,
+           before_reserved_quantity, after_reserved_quantity,
+           expected_version, resulting_version, actor_type, actor_account_id,
+           operation_id, reason_code, idempotency_key_hash, request_hash,
+           occurred_at, created_at
+         ) VALUES (
+           $1,$2,$3,$4,$5,'adjust',$6,$7,$8,$9,$10,$11,
+           'cashier_operator',NULL,$12,'cashier_inventory_adjustment_sync',
+           $13,$14,$15,now()
+         )`,
+        [
+          `cashier_loc_adj_${keyHash.slice(0, 37)}`,
+          input.context.merchant_id,
+          input.context.location_id,
+          adjustment.productId,
+          adjustment.variantId || null,
+          mutation.before_on_hand_quantity,
+          mutation.after_on_hand_quantity,
+          mutation.before_reserved_quantity,
+          mutation.after_reserved_quantity,
+          mutation.location_expected_version,
+          mutation.location_resulting_version,
+          identity.operationId,
+          keyHash,
+          requestHash,
+          new Date(adjustment.occurredAt),
+        ],
+      );
+      await client.query(
+        `INSERT INTO inventory_mutations (
+           id, merchant_id, product_id, variant_id, mutation_type,
+           before_quantity, after_quantity, expected_version, resulting_version,
+           actor_type, actor_account_id, reason_code, idempotency_key_hash,
+           request_hash, created_at
+         ) VALUES (
+           $1,$2,$3,$4,'adjust',$5,$6,$7,$8,'merchant',$2,
+           'cashier_inventory_adjustment_sync',$9,$10,$11
+         )`,
+        [
+          `cashier_adj_${keyHash.slice(0, 40)}`,
+          input.context.merchant_id,
+          adjustment.productId,
+          adjustment.variantId || null,
+          mutation.legacy_before_quantity,
+          mutation.legacy_after_quantity,
+          mutation.product_expected_version,
+          mutation.product_resulting_version,
+          keyHash,
+          requestHash,
+          new Date(adjustment.occurredAt),
+        ],
+      );
+      await recordAttribution(client, {
+        context: input.context,
+        identity,
+        kind: "inventory_adjustment",
+      });
+
+      return {
+        operation_id: identity.operationId,
+        device_sequence: identity.deviceSequence,
+        replayed: false,
+        inventory_mutation_count: 1,
+        accepted_entity_ids: [adjustment.movementId],
+      };
+    },
+  );
+  return result;
 }
 
 export async function syncCashierOperatorSaleAuthoritative(input: {
@@ -413,6 +771,7 @@ export async function syncCashierOperatorSaleAuthoritative(input: {
   const verifiedBody = prepareOperatorSaleBody(input.context, input.body);
   const result = await syncCashierSaleAuthoritative({
     merchantId: input.context.merchant_id,
+    locationId: input.context.location_id,
     body: verifiedBody,
   });
   // Attribution is deliberately idempotent and repairable. If this write fails
@@ -436,6 +795,7 @@ export async function syncCashierOperatorCompensationAuthoritative(input: {
   assertOperatorIdentity(input.context, identity);
   const result = await syncCashierCompensationAuthoritative({
     merchantId: input.context.merchant_id,
+    locationId: input.context.location_id,
     body: input.body,
   });
   if (result.compensation_kind !== input.kind) {

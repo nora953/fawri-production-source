@@ -76,14 +76,30 @@ test('small card actions stay separate from the full details action', () => {
   assert.match(pageSource, /variant="outline"[\s\S]*setDetailsProductId\(product\.id\)[\s\S]*copy\.details/);
 });
 
-test('inventory operations remain canonical inside the details modal', () => {
-  assert.match(pageSource, /detailsProduct\.variants\.length > 0 \? detailsProduct\.variants\.map\(variant =>/);
-  assert.match(pageSource, /setInventory\(detailsProduct, variant\)/);
-  assert.match(pageSource, /adjustInventory\(detailsProduct, delta, variant\)/);
-  assert.match(pageSource, /setInventory\(detailsProduct\)/);
-  assert.match(pageSource, /adjustInventory\(detailsProduct, delta\)/);
-  assert.match(pageSource, /setCatalogInventory/);
-  assert.match(pageSource, /adjustCatalogInventory/);
+test('inventory operations remain canonical and location-scoped inside the details modal', () => {
+  assert.match(
+    pageSource,
+    /detailsProduct\.variants\.length > 0\s*\?\s*detailsProduct\.variants\.map\(variant =>/,
+  );
+  assert.match(
+    pageSource,
+    /setInventory\(\s*detailsProduct,\s*location\.id,\s*variant,/,
+  );
+  assert.match(
+    pageSource,
+    /adjustInventory\(\s*detailsProduct,\s*location\.id,\s*delta,\s*variant,/,
+  );
+  assert.match(
+    pageSource,
+    /setInventory\(\s*detailsProduct,\s*location\.id,?\s*\)/,
+  );
+  assert.match(
+    pageSource,
+    /adjustInventory\(\s*detailsProduct,\s*location\.id,\s*delta,?\s*\)/,
+  );
+  assert.match(pageSource, /setCatalogLocationInventory/);
+  assert.match(pageSource, /adjustCatalogLocationInventory/);
+  assert.match(pageSource, /inventoryLevelVersion/);
 });
 
 test('details dialog presents inventory read-only and routes changes through edit', () => {

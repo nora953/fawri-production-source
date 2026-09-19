@@ -390,19 +390,50 @@ test('inventory adjust uses canonical idempotency and expected_version contract'
 });
 
 test('variant-managed inventory UI never exposes a product-level mutation path', () => {
-  const variantBranch = catalogPage.indexOf('detailsProduct.variants.length > 0 ? detailsProduct.variants.map');
-  const simpleBranch = catalogPage.indexOf('}) : (() => {', variantBranch);
-  const variantSet = catalogPage.indexOf('setInventory(detailsProduct, variant)', variantBranch);
-  const variantAdjust = catalogPage.indexOf('adjustInventory(detailsProduct, delta, variant)', variantBranch);
-  const productSet = catalogPage.indexOf('setInventory(detailsProduct)', variantBranch);
-  const productAdjust = catalogPage.indexOf('adjustInventory(detailsProduct, delta)', variantBranch);
+  const variantMatch = /detailsProduct\.variants\.length > 0\s*\?\s*detailsProduct\.variants\.map\(variant =>/.exec(catalogPage);
+  const variantBranch = variantMatch?.index ?? -1;
+  const tail = variantBranch >= 0 ? catalogPage.slice(variantBranch) : '';
+  const simpleMatch = /\}\)\s*:\s*\(\(\)\s*=>\s*\{/.exec(tail);
+  const simpleBranch = simpleMatch ? variantBranch + simpleMatch.index : -1;
+  const variantSection =
+    variantBranch >= 0 && simpleBranch > variantBranch
+      ? catalogPage.slice(variantBranch, simpleBranch)
+      : '';
+  const simpleSection =
+    simpleBranch >= 0 ? catalogPage.slice(simpleBranch) : '';
 
   assert.ok(variantBranch >= 0, 'details modal must branch on variant-managed inventory');
   assert.ok(simpleBranch > variantBranch, 'simple-product controls must stay in the fallback branch');
-  assert.ok(variantSet > variantBranch && variantSet < simpleBranch, 'variant set must stay variant-scoped');
-  assert.ok(variantAdjust > variantBranch && variantAdjust < simpleBranch, 'variant adjust must stay variant-scoped');
-  assert.ok(productSet > simpleBranch, 'product-level set must exist only in the simple-product fallback');
-  assert.ok(productAdjust > simpleBranch, 'product-level adjust must exist only in the simple-product fallback');
+  assert.match(
+    variantSection,
+    /setInventory\(\s*detailsProduct,\s*location\.id,\s*variant,/,
+    'variant set must stay variant- and location-scoped',
+  );
+  assert.match(
+    variantSection,
+    /adjustInventory\(\s*detailsProduct,\s*location\.id,\s*delta,\s*variant,/,
+    'variant adjust must stay variant- and location-scoped',
+  );
+  assert.doesNotMatch(
+    variantSection,
+    /setInventory\(\s*detailsProduct,\s*location\.id\s*\)/,
+    'variant branch must not expose a product-level set',
+  );
+  assert.doesNotMatch(
+    variantSection,
+    /adjustInventory\(\s*detailsProduct,\s*location\.id,\s*delta\s*\)/,
+    'variant branch must not expose a product-level adjustment',
+  );
+  assert.match(
+    simpleSection,
+    /setInventory\(\s*detailsProduct,\s*location\.id,?\s*\)/,
+    'simple-product set must be location-scoped',
+  );
+  assert.match(
+    simpleSection,
+    /adjustInventory\(\s*detailsProduct,\s*location\.id,\s*delta,?\s*\)/,
+    'simple-product adjustment must be location-scoped',
+  );
   assert.match(catalogPage, /CatalogProductDetailsEditor/);
   assert.match(productDetails, /catalogProductStockIsVariantManaged/);
 });

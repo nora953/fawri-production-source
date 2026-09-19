@@ -39,6 +39,12 @@ import {
   setCatalogInventoryAuthoritative,
   updateCatalogProductAuthoritative,
 } from "../services/postgresCatalogAuthority";
+import {
+  adjustMerchantLocationInventoryAuthoritative,
+  getMerchantProductLocationInventoryAuthoritative,
+  listMerchantInventoryLocationsAuthoritative,
+  setMerchantLocationInventoryAuthoritative,
+} from "../services/postgresMerchantLocationInventoryAuthority";
 
 const router = Router();
 const catalogImageBodyParser = express.raw({
@@ -461,6 +467,127 @@ router.delete(
       });
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, ...result });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/inventory/locations",
+  requireMerchantSession,
+  async (_req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const locations =
+        await listMerchantInventoryLocationsAuthoritative(merchantId);
+      res.setHeader("Cache-Control", "no-store");
+      res.json({
+        ok: true,
+        merchant_id: merchantId,
+        count: locations.length,
+        locations,
+      });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
+  "/inventory/products/:productId/locations",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const inventory =
+        await getMerchantProductLocationInventoryAuthoritative({
+          merchantId,
+          productId: parameter(req.params.productId),
+        });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, inventory });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/inventory/products/:productId/locations/:locationId/set",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const productId = parameter(req.params.productId);
+      const mutation = await setMerchantLocationInventoryAuthoritative({
+        merchantId,
+        locationId: parameter(req.params.locationId),
+        productId,
+        variantId: req.body?.variant_id,
+        expectedVersion: req.body?.expected_version,
+        quantity: req.body?.quantity,
+      });
+      const product = await getCatalogProductAuthoritative(
+        merchantId,
+        productId,
+      );
+      const inventory =
+        await getMerchantProductLocationInventoryAuthoritative({
+          merchantId,
+          productId,
+        });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({
+        ok: true,
+        replayed: mutation.replayed,
+        mutated: mutation.mutated,
+        product,
+        inventory,
+      });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.post(
+  "/inventory/products/:productId/locations/:locationId/adjust",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      if (rejectMerchantOverride(req, res, merchantId)) return;
+      const productId = parameter(req.params.productId);
+      const mutation = await adjustMerchantLocationInventoryAuthoritative({
+        merchantId,
+        locationId: parameter(req.params.locationId),
+        productId,
+        variantId: req.body?.variant_id,
+        expectedVersion: req.body?.expected_version,
+        delta: req.body?.delta,
+        reason: req.body?.reason,
+        idempotencyKey: idempotencyKey(req),
+      });
+      const product = await getCatalogProductAuthoritative(
+        merchantId,
+        productId,
+      );
+      const inventory =
+        await getMerchantProductLocationInventoryAuthoritative({
+          merchantId,
+          productId,
+        });
+      res.setHeader("Cache-Control", "no-store");
+      if (mutation.replayed) res.setHeader("Idempotent-Replay", "true");
+      res.json({
+        ok: true,
+        replayed: mutation.replayed,
+        mutated: mutation.mutated,
+        product,
+        inventory,
+      });
     } catch (error) {
       sendError(res, error);
     }

@@ -11,6 +11,11 @@ import {
   withMerchantOperationalTransaction,
 } from "./operationalPostgresAuthority";
 import * as core from "./postgresCatalogAuthorityCore";
+import {
+  adjustMerchantLocationInventoryAuthoritative,
+  resolveSingleInventoryLocationForCompatibilityAuthoritative,
+  setMerchantLocationInventoryAuthoritative,
+} from "./postgresMerchantLocationInventoryAuthority";
 
 export * from "./postgresCatalogAuthorityCore";
 
@@ -102,6 +107,45 @@ function variantId(value: unknown): string {
   return String(asRecord(value).id || "").trim();
 }
 
+function preserveExistingInventoryOnCatalogEdit(
+  inputValue: Record<string, unknown>,
+  current: Awaited<ReturnType<typeof core.getCatalogProductAuthoritative>>,
+): Record<string, unknown> {
+  const input = structuredClone(inputValue);
+  const hasTopLevelStock =
+    Object.prototype.hasOwnProperty.call(input, "stock_quantity") ||
+    Object.prototype.hasOwnProperty.call(input, "quantity");
+
+  if (Array.isArray(input.variants)) {
+    const existingById = new Map(
+      current.variants.map((variant) => [variant.id, variant]),
+    );
+    const variants = input.variants.map((value) => {
+      const variant = { ...asRecord(value) };
+      const id = String(variant.id || "").trim();
+      const existing = id ? existingById.get(id) : undefined;
+      if (!existing) return variant;
+      variant.stock_quantity = existing.stock_quantity;
+      delete variant.quantity;
+      return variant;
+    });
+    input.variants = variants;
+
+    if (current.variants.length > 0 || variants.length > 0) {
+      delete input.stock_quantity;
+      delete input.quantity;
+    }
+    return input;
+  }
+
+  if (hasTopLevelStock) {
+    input.stock_quantity = current.stock_quantity;
+    delete input.quantity;
+  }
+  return input;
+}
+
+
 function filterArchivedProduct<T>(product: T, archived: Set<string>): T {
   if (archived.size === 0 || !product || typeof product !== "object") return product;
   const carrier = product as T & { variants?: VariantIdentity[] };
@@ -170,6 +214,92 @@ async function readArchivedVariantIds(
           [merchantId],
         );
     return new Set(rows.map((row) => row.id));
+  });
+}
+
+function inventoryTrackingDisabled(input: Record<string, unknown>): boolean {
+  if (!Object.prototype.hasOwnProperty.call(input, "track_inventory")) {
+    return false;
+  }
+  const value = input.track_inventory;
+  return value === false || value === 0 || value === "0" || value === "false";
+}
+
+async function assertLocationInventoryShapeChangeSafe(input: {
+  merchantId: string;
+  productId: string;
+  current: Awaited<ReturnType<typeof core.getCatalogProductAuthoritative>>;
+  requestedVariants: unknown[];
+  newlyRemovedIds: string[];
+  catalogInput: Record<string, unknown>;
+}): Promise<void> {
+  if (!operationalPostgresAuthorityRequired()) return;
+
+  const currentRecord = asRecord(input.current);
+  const currentTracksInventory =
+    currentRecord.item_type !== "service" &&
+    currentRecord.track_inventory !== false;
+  if (!currentTracksInventory) return;
+
+  const convertingSimpleToVariants =
+    input.current.variants.length === 0 &&
+    input.requestedVariants.length > 0;
+  const disablingTracking = inventoryTrackingDisabled(input.catalogInput);
+  const currentHasStock =
+    Number(input.current.stock_quantity || 0) > 0 ||
+    input.current.variants.some(
+      (variant) => Number(variant.stock_quantity || 0) > 0,
+    );
+
+  await withMerchantOperationalTransaction(input.merchantId, async (target) => {
+    const rows = await operationalQueryRows<{
+      variant_id: string | null;
+      on_hand_quantity: number;
+      reserved_quantity: number;
+    }>(
+      target,
+      `SELECT variant_id, on_hand_quantity, reserved_quantity
+         FROM location_inventory_levels
+        WHERE merchant_id = $1
+          AND product_id = $2
+          AND (
+            on_hand_quantity > 0
+            OR reserved_quantity > 0
+          )
+        FOR UPDATE`,
+      [input.merchantId, input.productId],
+    );
+
+    const blockedVariantIds = new Set(input.newlyRemovedIds);
+    const removedVariantHasStock = rows.some(
+      (row) => row.variant_id && blockedVariantIds.has(row.variant_id),
+    );
+    const simpleStockExists = rows.some((row) => row.variant_id === null);
+    const anyLocationStock = rows.length > 0;
+
+    if (
+      (convertingSimpleToVariants &&
+        (currentHasStock || simpleStockExists)) ||
+      (disablingTracking && (currentHasStock || anyLocationStock)) ||
+      removedVariantHasStock
+    ) {
+      throw new CatalogRuntimeError(
+        "CATALOG_INVENTORY_SHAPE_CHANGE_BLOCKED",
+        "catalog inventory shape cannot change while stock or reservations remain",
+        409,
+        {
+          product_id: input.productId,
+          ...(input.newlyRemovedIds.length > 0
+            ? { variant_ids: input.newlyRemovedIds }
+            : {}),
+          conversion: convertingSimpleToVariants
+            ? "simple_to_variants"
+            : disablingTracking
+              ? "inventory_tracking_disabled"
+              : "variant_archive",
+        },
+      );
+    }
   });
 }
 
@@ -272,9 +402,12 @@ export async function updateCatalogProductAuthoritative(
   const merchantId = normalizeCatalogMerchantId(params.merchantId);
   const productId = normalizeCatalogProductId(params.productId);
   const current = await core.getCatalogProductAuthoritative(merchantId, productId);
-  const input = scopeCatalogImageAttachmentIds(
-    params.input,
-    `${merchantId}\0${productId}`,
+  const input = preserveExistingInventoryOnCatalogEdit(
+    scopeCatalogImageAttachmentIds(
+      params.input,
+      `${merchantId}\0${productId}`,
+    ),
+    current,
   );
   assertItemTypeImmutable(current, input);
 
@@ -308,6 +441,14 @@ export async function updateCatalogProductAuthoritative(
         .map((variant) => variant.id)
     : [];
 
+  await assertLocationInventoryShapeChangeSafe({
+    merchantId,
+    productId,
+    current,
+    requestedVariants,
+    newlyRemovedIds,
+    catalogInput: input,
+  });
   await assertNoPromotionReferences(merchantId, productId, newlyRemovedIds);
   for (const id of newlyRemovedIds) archiveIds.add(id);
 
@@ -336,4 +477,55 @@ export async function updateCatalogProductAuthoritative(
   const updated = await core.updateCatalogProductAuthoritative(internalParams);
   await markArchivedVariants(merchantId, productId, [...archiveIds]);
   return filterArchivedProduct(updated, archiveIds);
+}
+
+export async function setCatalogInventoryAuthoritative(
+  params: Parameters<typeof core.setCatalogInventoryAuthoritative>[0],
+): Promise<Awaited<ReturnType<typeof core.setCatalogInventoryAuthoritative>>> {
+  if (!operationalPostgresAuthorityRequired()) {
+    return core.setCatalogInventoryAuthoritative(params);
+  }
+  const merchantId = normalizeCatalogMerchantId(params.merchantId);
+  const productId = normalizeCatalogProductId(params.productId);
+  const locationId =
+    await resolveSingleInventoryLocationForCompatibilityAuthoritative(
+      merchantId,
+    );
+  await setMerchantLocationInventoryAuthoritative({
+    merchantId,
+    locationId,
+    productId,
+    variantId: params.variantId,
+    expectedVersion: params.expectedVersion,
+    quantity: params.quantity,
+  });
+  return getCatalogProductAuthoritative(merchantId, productId);
+}
+
+export async function adjustCatalogInventoryAuthoritative(
+  params: Parameters<typeof core.adjustCatalogInventoryAuthoritative>[0],
+): Promise<Awaited<ReturnType<typeof core.adjustCatalogInventoryAuthoritative>>> {
+  if (!operationalPostgresAuthorityRequired()) {
+    return core.adjustCatalogInventoryAuthoritative(params);
+  }
+  const merchantId = normalizeCatalogMerchantId(params.merchantId);
+  const productId = normalizeCatalogProductId(params.productId);
+  const locationId =
+    await resolveSingleInventoryLocationForCompatibilityAuthoritative(
+      merchantId,
+    );
+  const mutation = await adjustMerchantLocationInventoryAuthoritative({
+    merchantId,
+    locationId,
+    productId,
+    variantId: params.variantId,
+    expectedVersion: params.expectedVersion,
+    delta: params.delta,
+    idempotencyKey: params.idempotencyKey,
+    reason: params.reason,
+  });
+  return {
+    product: await getCatalogProductAuthoritative(merchantId, productId),
+    replayed: mutation.replayed,
+  };
 }

@@ -122,6 +122,33 @@ export async function resolveCashierLocationForBranch(
     return location;
   }
 
+  let defaultMerchantLocation = await defaultLocation(
+    target,
+    input.merchantId,
+  );
+  if (!defaultMerchantLocation) {
+    await createLocationIfMissing(target, {
+      merchantId: input.merchantId,
+      branchKey: "main",
+      branchLabel: "Main Location",
+      isDefault: true,
+    });
+    defaultMerchantLocation = await defaultLocation(target, input.merchantId);
+  }
+  if (!defaultMerchantLocation) {
+    throw new Error("default merchant location could not be resolved");
+  }
+  if (defaultMerchantLocation.legacy_branch_key !== "main") {
+    await target.query(
+      `UPDATE merchant_locations
+          SET legacy_branch_key = 'main',
+              updated_at = now()
+        WHERE merchant_id = $1
+          AND id = $2`,
+      [input.merchantId, defaultMerchantLocation.id],
+    );
+  }
+
   let location = await locationByLegacyBranch(
     target,
     input.merchantId,

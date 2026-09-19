@@ -7,6 +7,7 @@ import {
 
 type SaleAttributionRow = {
   station_id: string;
+  location_id: string;
   staff_id: string;
   shift_id: string;
   device_id: string;
@@ -93,7 +94,7 @@ export async function assertCashierOperatorCompensationScope(input: {
     (client) =>
       operationalQueryRows<SaleAttributionRow>(
         client,
-        `SELECT station_id, staff_id, shift_id, device_id
+        `SELECT station_id, location_id, staff_id, shift_id, device_id
            FROM cashier_operation_attribution
           WHERE merchant_id = $1
             AND sale_id = $2
@@ -114,11 +115,12 @@ export async function assertCashierOperatorCompensationScope(input: {
   const attribution = rows[0];
   if (
     attribution.station_id !== context.station_id ||
+    attribution.location_id !== context.location_id ||
     attribution.device_id !== context.device_id
   ) {
     throw new CashierSyncError(
       'CASHIER_OPERATOR_SALE_SCOPE_FORBIDDEN',
-      'cashier sale belongs to another station or device',
+      'cashier sale belongs to another location, station, or device',
       403,
     );
   }

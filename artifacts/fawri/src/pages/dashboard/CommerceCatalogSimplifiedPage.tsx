@@ -35,19 +35,21 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  adjustCatalogInventory,
+  adjustCatalogLocationInventory,
   CatalogApiError,
   createCatalogProduct,
   createStrongIdempotencyKey,
   deleteCatalogProduct,
   getCatalogProduct,
+  getCatalogProductLocationInventory,
   idempotencyAttemptForRequest,
   listCatalogProducts,
-  setCatalogInventory,
+  setCatalogLocationInventory,
   updateCatalogProduct,
   type CatalogIdempotencyAttempt,
   type CatalogProduct,
   type CatalogProductInput,
+  type CatalogProductLocationInventory,
   type CatalogVariant,
 } from '@/lib/catalogUiApi';
 import {
@@ -94,6 +96,14 @@ function tracksInventory(product: CatalogProduct): boolean {
 
 function inventoryKey(productId: string, variantId?: string): string {
   return `${productId}:${variantId || 'product'}`;
+}
+
+function locationInventoryKey(
+  locationId: string,
+  productId: string,
+  variantId?: string,
+): string {
+  return `${locationId}:${inventoryKey(productId, variantId)}`;
 }
 
 function upsert(items: CatalogProduct[], product: CatalogProduct): CatalogProduct[] {
@@ -143,10 +153,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boo
   );
 }
 
-function InventoryControl({ copy, product, variant, value, busy, onValue, onSet, onAdjust, compact = false }: {
+function InventoryControl({ copy, product, variant, currentQuantity, value, busy, onValue, onSet, onAdjust, compact = false }: {
   copy: CommerceCatalogPageCopy;
   product: CatalogProduct;
   variant?: CatalogVariant;
+  currentQuantity?: number;
   value: string;
   busy: boolean;
   onValue: (value: string) => void;
@@ -161,7 +172,7 @@ function InventoryControl({ copy, product, variant, value, busy, onValue, onSet,
           <p className={compact ? 'text-sm font-bold leading-5' : 'text-sm font-bold'}>{variant?.name || product.name}</p>
           {variant && variantOptionSummary(variant) && <p className={compact ? 'text-[11px] leading-4 text-muted-foreground' : 'text-xs text-muted-foreground'} dir="auto">{variantOptionSummary(variant)}</p>}
         </div>
-        <Badge variant="outline" className={compact ? 'rounded-full px-2 py-0.5 text-xs' : 'rounded-full'}>{variant?.stock_quantity ?? product.stock_quantity}</Badge>
+        <Badge variant="outline" className={compact ? 'rounded-full px-2 py-0.5 text-xs' : 'rounded-full'}>{currentQuantity ?? variant?.stock_quantity ?? product.stock_quantity}</Badge>
       </div>
       <div className={compact ? 'grid grid-cols-[auto_1fr_auto_auto] gap-1.5' : 'grid grid-cols-[auto_1fr_auto_auto] gap-2'}>
         <Button type="button" variant="outline" size="icon" className={compact ? 'h-9 w-9 rounded-lg' : 'h-10 w-10 rounded-xl'} disabled={busy} onClick={() => onAdjust(-1)}><Minus className="h-4 w-4" /></Button>
@@ -201,6 +212,10 @@ export default function CommerceCatalogSimplifiedPage() {
   const [inventoryBusy, setInventoryBusy] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [detailsProductId, setDetailsProductId] = useState<string | null>(null);
+  const [locationInventory, setLocationInventory] = useState<CatalogProductLocationInventory | null>(null);
+  const [locationInventoryLoading, setLocationInventoryLoading] = useState(false);
+  const [locationInventoryError, setLocationInventoryError] = useState(false);
+  const [locationInventoryReload, setLocationInventoryReload] = useState(0);
   const mutationBusy = saving || inventoryBusy !== null || deletingId !== null;
 
   const fractionDigits = commerceContext?.currency_fraction_digits ?? 0;
@@ -216,6 +231,23 @@ export default function CommerceCatalogSimplifiedPage() {
         delete next[inventoryKey(product.id)];
       } else {
         next[inventoryKey(product.id)] = String(product.stock_quantity);
+      }
+      return next;
+    });
+  };
+
+  const syncLocationInventory = (snapshot: CatalogProductLocationInventory) => {
+    setLocationInventory(snapshot);
+    setInventoryValues(current => {
+      const next = { ...current };
+      for (const location of snapshot.locations) {
+        for (const level of location.levels) {
+          next[locationInventoryKey(
+            location.id,
+            snapshot.product_id,
+            level.variant_id,
+          )] = String(level.on_hand_quantity);
+        }
       }
       return next;
     });
@@ -307,6 +339,39 @@ export default function CommerceCatalogSimplifiedPage() {
   const detailsProduct = detailsProductId
     ? items.find(product => product.id === detailsProductId) ?? null
     : null;
+
+  useEffect(() => {
+    let active = true;
+    if (!detailsProductId || !detailsProduct || !tracksInventory(detailsProduct)) {
+      setLocationInventory(null);
+      setLocationInventoryLoading(false);
+      setLocationInventoryError(false);
+      return () => {
+        active = false;
+      };
+    }
+
+    setLocationInventoryLoading(true);
+    setLocationInventoryError(false);
+    void getCatalogProductLocationInventory(detailsProductId)
+      .then(snapshot => {
+        if (!active) return;
+        syncLocationInventory(snapshot);
+      })
+      .catch(error => {
+        console.error('Location inventory load failed:', error);
+        if (!active) return;
+        setLocationInventory(null);
+        setLocationInventoryError(true);
+      })
+      .finally(() => {
+        if (active) setLocationInventoryLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [detailsProductId, detailsProduct?.version, locationInventoryReload]);
 
   const freshForm = (): CatalogProductFormState => {
     const next = createEmptyCatalogProductForm();
@@ -432,11 +497,19 @@ export default function CommerceCatalogSimplifiedPage() {
   };
 
   const loadConflict = async (productId: string, error: unknown) => {
-    if (!(error instanceof CatalogApiError) || error.code !== 'CATALOG_VERSION_CONFLICT') return false;
+    if (
+      !(error instanceof CatalogApiError) ||
+      (error.code !== 'CATALOG_VERSION_CONFLICT' &&
+        error.code !== 'CATALOG_LOCATION_INVENTORY_VERSION_CONFLICT')
+    ) return false;
     try {
       const latest = await getCatalogProduct(productId);
       setItems(current => upsert(current, latest));
       syncInventory(latest);
+      if (tracksInventory(latest) && detailsProductId === productId) {
+        const snapshot = await getCatalogProductLocationInventory(productId);
+        syncLocationInventory(snapshot);
+      }
       if (editingId === productId && commerceContext) setForm(normalizeEditorForm(latest));
       setAuthorityReady(true);
     } catch (reloadError) {
@@ -528,28 +601,58 @@ export default function CommerceCatalogSimplifiedPage() {
     return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
   };
 
-  const setInventory = async (product: CatalogProduct, variant?: CatalogVariant) => {
+  const inventoryLevelVersion = (
+    productId: string,
+    locationId: string,
+    variantId?: string,
+  ): number | null => {
+    if (!locationInventory || locationInventory.product_id !== productId) return null;
+    const location = locationInventory.locations.find(item => item.id === locationId);
+    const level = location?.levels.find(item =>
+      variantId ? item.variant_id === variantId : !item.variant_id,
+    );
+    const version = Number(level?.version);
+    return Number.isSafeInteger(version) && version > 0 ? version : null;
+  };
+
+  const setInventory = async (
+    product: CatalogProduct,
+    locationId: string,
+    variant?: CatalogVariant,
+  ) => {
     if (!authorityReady) {
       toast.error(copy.loadFailed);
       return;
     }
     if (mutationBusy) return;
-    const key = inventoryKey(product.id, variant?.id);
+    const key = locationInventoryKey(locationId, product.id, variant?.id);
     const quantity = parseQuantity(inventoryValues[key] ?? '');
     if (quantity === null) {
       toast.error(copy.invalidQuantity);
       return;
     }
+    const expectedVersion = inventoryLevelVersion(
+      product.id,
+      locationId,
+      variant?.id,
+    );
+    if (expectedVersion === null) {
+      toast.error(copy.inventoryFailed);
+      setLocationInventoryReload(value => value + 1);
+      return;
+    }
     setInventoryBusy(key);
     try {
-      const updated = await setCatalogInventory({
+      const result = await setCatalogLocationInventory({
         productId: product.id,
-        expectedVersion: product.version,
+        locationId,
+        expectedVersion,
         quantity,
         ...(variant ? { variantId: variant.id } : {}),
       });
-      setItems(current => upsert(current, updated));
-      syncInventory(updated);
+      setItems(current => upsert(current, result.product));
+      syncInventory(result.product);
+      syncLocationInventory(result.inventory);
       toast.success(copy.inventorySaved);
     } catch (error) {
       if (await loadConflict(product.id, error)) return;
@@ -559,23 +662,43 @@ export default function CommerceCatalogSimplifiedPage() {
     }
   };
 
-  const adjustInventory = async (product: CatalogProduct, delta: number, variant?: CatalogVariant) => {
+  const adjustInventory = async (
+    product: CatalogProduct,
+    locationId: string,
+    delta: number,
+    variant?: CatalogVariant,
+  ) => {
     if (!authorityReady) {
       toast.error(copy.loadFailed);
       return;
     }
     if (mutationBusy) return;
-    const key = inventoryKey(product.id, variant?.id);
+    const key = locationInventoryKey(locationId, product.id, variant?.id);
+    const expectedVersion = inventoryLevelVersion(
+      product.id,
+      locationId,
+      variant?.id,
+    );
+    if (expectedVersion === null) {
+      toast.error(copy.inventoryFailed);
+      setLocationInventoryReload(value => value + 1);
+      return;
+    }
     const request = {
       productId: product.id,
-      expectedVersion: product.version,
+      locationId,
+      expectedVersion,
       delta,
       ...(variant ? { variantId: variant.id } : {}),
-      reason: 'merchant commerce catalog inventory UX',
+      reason: 'merchant commerce catalog location inventory UX',
     };
     let attempt: CatalogIdempotencyAttempt;
     try {
-      attempt = idempotencyAttemptForRequest(inventoryAttempt.current, 'catalog-inventory-adjust', request);
+      attempt = idempotencyAttemptForRequest(
+        inventoryAttempt.current,
+        'catalog-location-inventory-adjust',
+        request,
+      );
     } catch {
       toast.error(copy.secureCrypto);
       return;
@@ -583,10 +706,11 @@ export default function CommerceCatalogSimplifiedPage() {
     inventoryAttempt.current = attempt;
     setInventoryBusy(key);
     try {
-      const updated = await adjustCatalogInventory(request, attempt.key);
+      const result = await adjustCatalogLocationInventory(request, attempt.key);
       inventoryAttempt.current = null;
-      setItems(current => upsert(current, updated));
-      syncInventory(updated);
+      setItems(current => upsert(current, result.product));
+      syncInventory(result.product);
+      syncLocationInventory(result.inventory);
       toast.success(copy.inventorySaved);
     } catch (error) {
       if (await loadConflict(product.id, error)) return;
@@ -831,43 +955,148 @@ export default function CommerceCatalogSimplifiedPage() {
 
             {tracksInventory(detailsProduct) && (
               <section className="rounded-2xl border bg-muted/10 p-4">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <h4 className="text-sm font-extrabold">{detailsProduct.variants.length > 0 ? copy.variantDetails : copy.inventoryDetails}</h4>
-                  {detailsProduct.variants.length > 0 && <Badge variant="outline" className="rounded-full bg-background">{detailsProduct.variants.length}</Badge>}
+                <div className="mb-3 flex flex-col gap-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="text-sm font-extrabold">{copy.inventoryByLocation}</h4>
+                    {locationInventory && (
+                      <Badge variant="outline" className="rounded-full bg-background">
+                        {locationInventory.locations.length}
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {copy.inventoryLocationHint}
+                  </p>
                 </div>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {detailsProduct.variants.length > 0 ? detailsProduct.variants.map(variant => {
-                    const key = inventoryKey(detailsProduct.id, variant.id);
-                    return (
-                      <InventoryControl
-                        key={variant.id}
-                        copy={copy}
-                        product={detailsProduct}
-                        variant={variant}
-                        compact
-                        value={inventoryValues[key] ?? String(variant.stock_quantity)}
-                        busy={mutationBusy || !authorityReady}
-                        onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
-                        onSet={() => void setInventory(detailsProduct, variant)}
-                        onAdjust={delta => void adjustInventory(detailsProduct, delta, variant)}
-                      />
-                    );
-                  }) : (() => {
-                    const key = inventoryKey(detailsProduct.id);
-                    return (
-                      <InventoryControl
-                        copy={copy}
-                        product={detailsProduct}
-                        compact
-                        value={inventoryValues[key] ?? String(detailsProduct.stock_quantity)}
-                        busy={mutationBusy || !authorityReady}
-                        onValue={value => setInventoryValues(current => ({ ...current, [key]: value }))}
-                        onSet={() => void setInventory(detailsProduct)}
-                        onAdjust={delta => void adjustInventory(detailsProduct, delta)}
-                      />
-                    );
-                  })()}
-                </div>
+
+                {locationInventoryLoading ? (
+                  <div className="flex min-h-24 items-center justify-center rounded-xl border bg-background text-sm text-muted-foreground">
+                    <RefreshCw className="me-2 h-4 w-4 animate-spin" />
+                    {copy.inventoryLoading}
+                  </div>
+                ) : locationInventoryError ? (
+                  <div className="rounded-xl border border-destructive/30 bg-background p-4 text-center">
+                    <p className="text-sm font-semibold text-destructive">{copy.inventoryFailed}</p>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-3 rounded-xl"
+                      onClick={() => setLocationInventoryReload(value => value + 1)}
+                    >
+                      <RefreshCw className="me-2 h-4 w-4" />
+                      {copy.inventoryRetry}
+                    </Button>
+                  </div>
+                ) : locationInventory ? (
+                  <div className="space-y-3">
+                    {locationInventory.locations.map(location => (
+                      <div key={location.id} className="rounded-xl border bg-background p-3">
+                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                          <p className="font-bold">{location.name}</p>
+                          {location.is_default && (
+                            <Badge variant="outline" className="rounded-full text-[11px]">
+                              {copy.defaultLocation}
+                            </Badge>
+                          )}
+                          {location.status !== 'active' && (
+                            <Badge variant="outline" className="rounded-full border-zinc-300 bg-zinc-100 text-[11px] text-zinc-700">
+                              {copy.disabledLocation}
+                            </Badge>
+                          )}
+                        </div>
+
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          {detailsProduct.variants.length > 0
+                            ? detailsProduct.variants.map(variant => {
+                                const level = location.levels.find(
+                                  item => item.variant_id === variant.id,
+                                );
+                                const currentQuantity = level?.on_hand_quantity ?? 0;
+                                const key = locationInventoryKey(
+                                  location.id,
+                                  detailsProduct.id,
+                                  variant.id,
+                                );
+                                return (
+                                  <InventoryControl
+                                    key={`${location.id}:${variant.id}`}
+                                    copy={copy}
+                                    product={detailsProduct}
+                                    variant={variant}
+                                    currentQuantity={currentQuantity}
+                                    compact
+                                    value={inventoryValues[key] ?? String(currentQuantity)}
+                                    busy={mutationBusy || !authorityReady || locationInventoryLoading}
+                                    onValue={value =>
+                                      setInventoryValues(current => ({
+                                        ...current,
+                                        [key]: value,
+                                      }))
+                                    }
+                                    onSet={() =>
+                                      void setInventory(
+                                        detailsProduct,
+                                        location.id,
+                                        variant,
+                                      )
+                                    }
+                                    onAdjust={delta =>
+                                      void adjustInventory(
+                                        detailsProduct,
+                                        location.id,
+                                        delta,
+                                        variant,
+                                      )
+                                    }
+                                  />
+                                );
+                              })
+                            : (() => {
+                                const level = location.levels.find(
+                                  item => !item.variant_id,
+                                );
+                                const currentQuantity = level?.on_hand_quantity ?? 0;
+                                const key = locationInventoryKey(
+                                  location.id,
+                                  detailsProduct.id,
+                                );
+                                return (
+                                  <InventoryControl
+                                    key={`${location.id}:product`}
+                                    copy={copy}
+                                    product={detailsProduct}
+                                    currentQuantity={currentQuantity}
+                                    compact
+                                    value={inventoryValues[key] ?? String(currentQuantity)}
+                                    busy={mutationBusy || !authorityReady || locationInventoryLoading}
+                                    onValue={value =>
+                                      setInventoryValues(current => ({
+                                        ...current,
+                                        [key]: value,
+                                      }))
+                                    }
+                                    onSet={() =>
+                                      void setInventory(
+                                        detailsProduct,
+                                        location.id,
+                                      )
+                                    }
+                                    onAdjust={delta =>
+                                      void adjustInventory(
+                                        detailsProduct,
+                                        location.id,
+                                        delta,
+                                      )
+                                    }
+                                  />
+                                );
+                              })()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
               </section>
             )}
 

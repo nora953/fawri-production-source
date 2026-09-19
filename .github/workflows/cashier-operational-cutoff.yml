@@ -11,10 +11,15 @@ on:
       - "artifacts/api-server/src/services/operationalPostgresAuthority.ts"
       - "artifacts/api-server/src/services/postgresCashierStaffAuthority.ts"
       - "artifacts/api-server/src/services/cashierOperatorCommerceAuthority.ts"
+      - "artifacts/api-server/src/services/cashierLocationInventoryAuthority.ts"
+      - "artifacts/api-server/src/services/postgresMerchantLocationInventoryAuthority.ts"
       - "artifacts/api-server/src/services/cashierOperatorShiftCloseAuthority.ts"
       - "artifacts/api-server/src/services/postgresCashierOperatorReportAuthority.ts"
       - "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts"
       - "artifacts/api-server/tests/cashier-operational-cutoff-postgres.integration.test.ts"
+      - "artifacts/api-server/tests/cashier-location-inventory-cutover-contract.test.mjs"
+      - "artifacts/api-server/tests/cashier-location-inventory-authority.integration.test.ts"
+      - "artifacts/api-server/tests/merchant-location-inventory-authority.integration.test.ts"
       - "artifacts/api-server/tests/cashier-operator-logout-pin-contract.test.mjs"
       - "artifacts/api-server/tests/cashier-operator-logout-pin-postgres.integration.test.ts"
       - "artifacts/api-server/tests/cashier-operator-own-history-scope-contract.test.mjs"
@@ -98,6 +103,25 @@ jobs:
         run: >-
           pnpm --filter @workspace/api-server exec node --test
           ./tests/cashier-operator-own-history-scope-contract.test.mjs
+
+      - name: Prove cashier location inventory cutover contract
+        run: >-
+          pnpm --filter @workspace/api-server exec node --test
+          ./tests/cashier-location-inventory-cutover-contract.test.mjs
+
+      - name: Prove cashier location inventory authority
+        env:
+          FAWRI_ALLOW_CASHIER_LOCATION_INVENTORY_AUTHORITY_TEST: "1"
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/cashier-location-inventory-authority.integration.test.ts
+
+      - name: Prove merchant location inventory authority
+        env:
+          FAWRI_ALLOW_MERCHANT_LOCATION_INVENTORY_TEST: "1"
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/merchant-location-inventory-authority.integration.test.ts
 
       - name: Initialize disposable PostgreSQL runtime schema
         run: pnpm --filter @workspace/db run push-force
