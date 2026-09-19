@@ -340,6 +340,22 @@ test("global merchant journey connects secure login, catalog, cashier sale, repo
   );
   const station = (await json(stationCreate)).station;
   assert.ok(station.id);
+  assert.ok(station.location_id);
+
+  await pool.query(
+    `INSERT INTO location_inventory_levels (
+       id, merchant_id, location_id, product_id, variant_id,
+       quantity, low_stock_threshold, version, created_at, updated_at
+     ) VALUES ($1,$2,$3,$4,NULL,$5,$6,1,now(),now())`,
+    [
+      `golden-location-inventory-${proofId}`,
+      merchantAId,
+      station.location_id,
+      product.id,
+      5,
+      1,
+    ],
+  );
 
   const stationListAResponse = await fetch(`${baseUrl}/api/cashier/management/stations`, {
     headers: { Cookie: merchantACookie },
