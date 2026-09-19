@@ -53,7 +53,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
       ? "custom"
       : readSavedAnswerCategory(req.body.category);
 
-  if (req.body?.category !== undefined && !category) {
+  if (!category) {
     res.status(400).json({
       ok: false,
       code: "INVALID_SAVED_ANSWER_CATEGORY",
@@ -103,17 +103,18 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
     res.status(400).json({ ok: false, code: "INVALID_LANGUAGE", error: "invalid language" });
     return;
   }
-  const category =
-    req.body?.category === undefined
-      ? undefined
-      : readSavedAnswerCategory(req.body.category);
-  if (req.body?.category !== undefined && !category) {
-    res.status(400).json({
-      ok: false,
-      code: "INVALID_SAVED_ANSWER_CATEGORY",
-      error: "invalid saved answer category",
-    });
-    return;
+  let category: string | undefined;
+  if (req.body?.category !== undefined) {
+    const parsedCategory = readSavedAnswerCategory(req.body.category);
+    if (!parsedCategory) {
+      res.status(400).json({
+        ok: false,
+        code: "INVALID_SAVED_ANSWER_CATEGORY",
+        error: "invalid saved answer category",
+      });
+      return;
+    }
+    category = parsedCategory;
   }
 
   try {
