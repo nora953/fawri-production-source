@@ -541,6 +541,11 @@ async function persistProductGraph(
         WHERE merchant_id = $1
           AND product_variant_id = ANY($3::text[])
        UNION
+       SELECT variant_id, 'location_inventory_levels'::text AS dependency
+         FROM location_inventory_levels
+        WHERE merchant_id = $1 AND product_id = $2
+          AND variant_id = ANY($3::text[])
+       UNION
        SELECT variant_id, 'commerce_promotions'::text AS dependency
          FROM commerce_promotions
         WHERE merchant_id = $1 AND product_id = $2
