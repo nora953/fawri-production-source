@@ -103,3 +103,36 @@ export async function withMerchantOperationalTransaction<T>(
     return work(client);
   });
 }
+
+export async function withMerchantOperationalSerializableTransaction<T>(
+  merchantIdValue: string,
+  work: (client: OperationalTransactionClient) => Promise<T>,
+): Promise<T> {
+  const merchantId = String(merchantIdValue || "").trim();
+  if (!merchantId || merchantId.length > 200) {
+    throw new OperationalPostgresAuthorityError(
+      "OPERATIONAL_TENANT_INVALID",
+      "merchant tenant is invalid",
+      400,
+    );
+  }
+
+  const pool = await operationalDatabasePool();
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    await client.query("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+    await client.query(
+      "SELECT set_config('fawri.tenant_id', $1, true)",
+      [merchantId],
+    );
+    const result = await work(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
