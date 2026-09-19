@@ -1,14 +1,15 @@
-import type {
-  KnowledgeAuditEvent,
-  KnowledgeFactResolver,
-  KnowledgeFactResolverInput,
-  KnowledgeLanguage,
-  LearnedAnswerRecord,
-  MerchantPolicyContext,
-  SavedAnswerRecord,
-  SemanticDocument,
-  SemanticMatch,
-  TrainingRequestRecord,
+import {
+  isSavedAnswerCategory,
+  type KnowledgeAuditEvent,
+  type KnowledgeFactResolver,
+  type KnowledgeFactResolverInput,
+  type KnowledgeLanguage,
+  type LearnedAnswerRecord,
+  type MerchantPolicyContext,
+  type SavedAnswerRecord,
+  type SemanticDocument,
+  type SemanticMatch,
+  type TrainingRequestRecord,
 } from "./types.js";
 import {
   boundedText,
@@ -558,7 +559,7 @@ function savedAnswerFromRow(
   const answerText = rowText(row.answer_text, 2_000);
   const id = rowText(row.id, 160);
   const category = rowText(row.category, 100);
-  if (!id || !category || !questionPattern || !answerText) {
+  if (!id || !isSavedAnswerCategory(category) || !questionPattern || !answerText) {
     safeError("KNOWLEDGE_STATE_INVALID", "knowledge state is invalid");
   }
   return {
