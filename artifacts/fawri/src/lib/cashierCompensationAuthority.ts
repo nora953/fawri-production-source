@@ -17,6 +17,7 @@ import {
 import type { IndexedDbCashierConfig } from './cashierIndexedDbAuthority';
 import {
   CASHIER_RETURN_REFUND_ALLOCATION_VERSION,
+  cashierRemainingRefundMinor,
   cashierReturnRefundMinor,
 } from './cashierReturnRefundAllocation';
 
@@ -535,6 +536,7 @@ export class IndexedDbCashierCompensationAuthority
       const returnLines: CashierReturnSnapshot['lines'] = [];
       const compensationMovements: CashierInventoryMovement[] = [];
       let refundTotalMinor = 0;
+      let remainingSaleRefundMinor = cashierRemainingRefundMinor(sale);
 
       for (const [returnIndex, requestLine] of normalizedLines.entries()) {
         const { line, index: saleLineIndex } = lineById(sale, requestLine.original_line_id);
@@ -547,12 +549,17 @@ export class IndexedDbCashierCompensationAuthority
           );
         }
 
-        const refundMinor = cashierReturnRefundMinor({
+        const allocatedRefundMinor = cashierReturnRefundMinor({
           sale,
           lineId: line.line_id,
           alreadyReturnedQuantity: alreadyReturned,
           returnQuantity: requestLine.quantity,
         });
+        const refundMinor = Math.min(
+          allocatedRefundMinor,
+          remainingSaleRefundMinor,
+        );
+        remainingSaleRefundMinor -= refundMinor;
         refundTotalMinor = safeAdd(refundTotalMinor, refundMinor, 'return refund total');
         returnLines.push({
           original_line_id: line.line_id,
