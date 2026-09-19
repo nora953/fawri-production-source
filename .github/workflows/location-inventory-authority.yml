@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "artifacts/api-server/src/services/postgresLocationInventoryAuthority.ts"
+      - "artifacts/api-server/src/services/postgresCatalogAuthorityCore.ts"
       - "artifacts/api-server/tests/location-inventory-authority-postgres.integration.test.ts"
       - "lib/db/src/schema/catalog.ts"
       - "lib/db/drizzle/**"
@@ -14,6 +15,7 @@ on:
       - "parallel/location-inventory-authority"
     paths:
       - "artifacts/api-server/src/services/postgresLocationInventoryAuthority.ts"
+      - "artifacts/api-server/src/services/postgresCatalogAuthorityCore.ts"
       - "artifacts/api-server/tests/location-inventory-authority-postgres.integration.test.ts"
       - "lib/db/src/schema/catalog.ts"
       - "lib/db/drizzle/**"
