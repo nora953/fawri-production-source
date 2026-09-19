@@ -468,6 +468,54 @@ function uniqueBest(rows: Array<{ row: Record<string, unknown>; score: number }>
   return matched[0].row;
 }
 
+async function singleLocationInventoryQuantity(params: {
+  sql: KnowledgeSqlExecutor;
+  merchantId: string;
+  productId: string;
+  variantId?: string;
+}): Promise<{ locationId: string; quantity: number }> {
+  let rows: Record<string, unknown>[];
+  try {
+    rows = (
+      await params.sql.query(
+        `SELECT ml.id AS location_id, lil.quantity
+           FROM merchant_locations ml
+           LEFT JOIN location_inventory_levels lil
+             ON lil.merchant_id = ml.merchant_id
+            AND lil.location_id = ml.id
+            AND lil.product_id = $2
+            AND lil.variant_id IS NOT DISTINCT FROM $3::text
+          WHERE ml.merchant_id = $1
+          ORDER BY ml.id
+          LIMIT 2`,
+        [params.merchantId, params.productId, params.variantId || null],
+      )
+    ).rows;
+  } catch {
+    fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+  }
+  if (rows.length !== 1) {
+    fail(
+      "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
+      "stock availability requires one unambiguous merchant location",
+      409,
+    );
+  }
+  const row = rows[0];
+  const locationId = text(row.location_id, 160);
+  if (!locationId || row.quantity === null || row.quantity === undefined) {
+    fail(
+      "KNOWLEDGE_LOCATION_INVENTORY_UNAVAILABLE",
+      "location inventory is unavailable",
+      409,
+    );
+  }
+  return {
+    locationId,
+    quantity: integer(row.quantity),
+  };
+}
+
 async function loadVariants(
   sql: KnowledgeSqlExecutor,
   merchantId: string,
@@ -637,7 +685,7 @@ async function resolveProductFact(params: {
 
   const commerce = commerceFacts(product);
   let unitPrice = integer(product.current_price_iqd);
-  let quantity = commerce.track_inventory ? integer(product.quantity) : 0;
+  let quantity = 0;
   const variantMode = commerce.track_inventory && bool(product.variant_stock_mode);
   let recordId = productId;
   let variantId: string | undefined;
@@ -656,10 +704,20 @@ async function resolveProductFact(params: {
     if (!Number.isSafeInteger(adjustment)) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
     unitPrice = override === null || override === undefined ? unitPrice + adjustment : integer(override);
     if (!Number.isSafeInteger(unitPrice) || unitPrice < 0) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
-    quantity = integer(variant.quantity);
     recordId = text(variant.id, 160);
     variantId = recordId;
     if (!recordId) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+  }
+
+  if (params.kind === "stock" && commerce.track_inventory) {
+    const locationInventory = await singleLocationInventoryQuantity({
+      sql: params.sql,
+      merchantId: params.merchantId,
+      productId,
+      ...(variantId ? { variantId } : {}),
+    });
+    quantity = locationInventory.quantity;
+    recordId = `${recordId}:location:${locationInventory.locationId}`;
   }
 
   if (params.kind === "price") {
@@ -703,7 +761,12 @@ async function resolveProductFact(params: {
     answerText: catalogAvailabilityAnswer({
       language: params.language,
       itemName: productName,
-      status: text(product.status, 40),
+      status:
+        commerce.track_inventory
+          ? quantity > 0
+            ? "available"
+            : "out_of_stock"
+          : text(product.status, 40),
       authoritativeQuantity: quantity,
       commerce,
       requestedQuantity: commerce.track_inventory

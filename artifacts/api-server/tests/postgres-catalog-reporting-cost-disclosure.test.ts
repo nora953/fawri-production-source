@@ -42,6 +42,9 @@ const sql: KnowledgeSqlExecutor = {
   async query(statement) {
     if (statement.includes("FROM products")) return { rows: [product] };
     if (statement.includes("FROM commerce_promotions")) return { rows: [] };
+    if (statement.includes("FROM merchant_locations")) {
+      return { rows: [{ location_id: "location-main", quantity: 11 }] };
+    }
     throw new Error(`unexpected SQL in test: ${statement}`);
   },
 };

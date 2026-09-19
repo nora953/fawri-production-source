@@ -99,11 +99,15 @@ function percentagePromotion(params: {
 function sqlWithProducts(
   rows: Record<string, unknown>[],
   promotions: Record<string, unknown>[] = [],
+  locations: Record<string, unknown>[] = [
+    { location_id: "location-main", quantity: 11 },
+  ],
 ): KnowledgeSqlExecutor {
   return {
     async query(sql) {
       if (sql.includes("FROM products")) return { rows };
       if (sql.includes("FROM commerce_promotions")) return { rows: promotions };
+      if (sql.includes("FROM merchant_locations")) return { rows: locations };
       throw new Error(`unexpected SQL in test: ${sql}`);
     },
   };
@@ -120,8 +124,14 @@ test("PostgreSQL stock answer does not expose total inventory", async () => {
   assert.equal(result?.answerText.includes("11"), false);
 });
 
-test("PostgreSQL stock answer discloses only requested or fulfillable quantity", async () => {
-  const enough = new PostgresOperationalFactResolver(sqlWithProducts([productRow(11)]));
+test("PostgreSQL stock answer uses location inventory and never exposes partial stock", async () => {
+  const enough = new PostgresOperationalFactResolver(
+    sqlWithProducts(
+      [productRow(999)],
+      [],
+      [{ location_id: "location-main", quantity: 11 }],
+    ),
+  );
   const enoughResult = await enough.resolve({
     merchantId: "merchant-a",
     customerText: "اريد 3 قطع قميص هل متوفر",
@@ -130,13 +140,49 @@ test("PostgreSQL stock answer discloses only requested or fulfillable quantity",
   assert.equal(enoughResult?.answerText, "نعم، 3 من قميص متوفرة حاليًا.");
   assert.equal(enoughResult?.answerText.includes("11"), false);
 
-  const shortage = new PostgresOperationalFactResolver(sqlWithProducts([productRow(2)]));
+  const shortage = new PostgresOperationalFactResolver(
+    sqlWithProducts(
+      [productRow(999)],
+      [],
+      [{ location_id: "location-main", quantity: 2 }],
+    ),
+  );
   const shortageResult = await shortage.resolve({
     merchantId: "merchant-a",
     customerText: "اريد 3 قطع قميص هل متوفر",
     language: "ar",
   });
-  assert.equal(shortageResult?.answerText, "المتوفر حاليًا من قميص هو 2 فقط.");
+  assert.equal(
+    shortageResult?.answerText,
+    "لا، الكمية المطلوبة من قميص غير متوفرة حاليًا.",
+  );
+  assert.equal(shortageResult?.answerText.includes("2"), false);
+});
+
+test("multi-location stock question fails closed without routing context", async () => {
+  const resolver = new PostgresOperationalFactResolver(
+    sqlWithProducts(
+      [productRow(999)],
+      [],
+      [
+        { location_id: "location-a", quantity: 20 },
+        { location_id: "location-b", quantity: 20 },
+      ],
+    ),
+  );
+
+  await assert.rejects(
+    () =>
+      resolver.resolve({
+        merchantId: "merchant-a",
+        customerText: "هل قميص متوفر",
+        language: "ar",
+      }),
+    (error: unknown) =>
+      error instanceof Error &&
+      "code" in error &&
+      error.code === "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
+  );
 });
 
 test("service availability is independent of inventory quantity", async () => {

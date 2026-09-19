@@ -57,8 +57,8 @@ export function catalogAvailabilityAnswer(params: {
     return `${params.itemName} ${availableQuantity > 0 ? "متوفر حاليًا" : "غير متوفر حاليًا"}.`;
   }
 
-  const fulfillable = Math.min(params.requestedQuantity, availableQuantity);
-  if (fulfillable === params.requestedQuantity) {
+  const fulfillable = availableQuantity >= params.requestedQuantity;
+  if (fulfillable) {
     if (params.language === "en") {
       return `Yes, ${params.requestedQuantity} of ${params.itemName} are available.`;
     }
@@ -68,19 +68,13 @@ export function catalogAvailabilityAnswer(params: {
     return `نعم، ${params.requestedQuantity} من ${params.itemName} متوفرة حاليًا.`;
   }
 
-  if (fulfillable > 0) {
-    if (params.language === "en") {
-      return `Only ${fulfillable} of ${params.itemName} are currently available.`;
-    }
-    if (params.language === "ku") {
-      return `لە ئێستادا تەنها ${fulfillable} دانە لە ${params.itemName} بەردەستە.`;
-    }
-    return `المتوفر حاليًا من ${params.itemName} هو ${fulfillable} فقط.`;
+  if (params.language === "en") {
+    return `No, the requested quantity of ${params.itemName} is not currently available.`;
   }
-
-  if (params.language === "en") return `${params.itemName} is currently out of stock.`;
-  if (params.language === "ku") return `${params.itemName} لە ئێستادا بەردەست نییە.`;
-  return `${params.itemName} غير متوفر حاليًا.`;
+  if (params.language === "ku") {
+    return `نەخێر، بڕی داواکراو لە ${params.itemName} لە ئێستادا بەردەست نییە.`;
+  }
+  return `لا، الكمية المطلوبة من ${params.itemName} غير متوفرة حاليًا.`;
 }
 
 function currencyLabel(language: "ar" | "ku" | "en", currencyCode: string): string {
