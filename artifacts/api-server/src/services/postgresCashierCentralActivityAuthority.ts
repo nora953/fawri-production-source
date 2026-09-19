@@ -22,8 +22,15 @@ export type CashierCentralStaffActivityRow = CashierCentralActivityRow & {
 export type CashierCentralStationActivityRow = CashierCentralActivityRow & {
   station_id: string;
   station_name: string;
+  location_id: string;
+  location_name: string;
   branch_key?: string;
   branch_label?: string;
+};
+
+export type CashierCentralLocationActivityRow = CashierCentralActivityRow & {
+  location_id: string;
+  location_name: string;
 };
 
 export type CashierCentralOperationActivityRow = {
@@ -46,6 +53,7 @@ export type CashierCentralOperationActivityRow = {
 export type CashierCentralActivityResult = {
   by_staff: CashierCentralStaffActivityRow[];
   by_station: CashierCentralStationActivityRow[];
+  by_location: CashierCentralLocationActivityRow[];
   operations: CashierCentralOperationActivityRow[];
   operation_detail_limit: number;
 };
@@ -62,8 +70,19 @@ type StaffRow = {
 type StationRow = {
   station_id: string;
   station_name: string | null;
+  location_id: string;
+  location_name: string | null;
   branch_key: string | null;
   branch_label: string | null;
+  operation_count: number | string;
+  sale_count: number | string;
+  return_count: number | string;
+  void_count: number | string;
+};
+
+type LocationRow = {
+  location_id: string;
+  location_name: string | null;
   operation_count: number | string;
   sale_count: number | string;
   return_count: number | string;
@@ -166,7 +185,7 @@ export async function buildCashierCentralActivityAuthoritative(input: {
   }
 
   return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const [staffRows, stationRows, operationRows] = await Promise.all([
+    const [staffRows, stationRows, locationRows, operationRows] = await Promise.all([
       operationalQueryRows<StaffRow>(
         client,
         `SELECT attribution.staff_id,
@@ -205,6 +224,26 @@ export async function buildCashierCentralActivityAuthoritative(input: {
           ORDER BY station.name NULLS LAST, attribution.station_id`,
         [merchantId, from || null, to || null],
       ),
+      operationalQueryRows<LocationRow>(
+        client,
+        `SELECT attribution.location_id,
+                location.name AS location_name,
+                COUNT(*)::int AS operation_count,
+                (COUNT(*) FILTER (WHERE attribution.operation_kind = 'sale'))::int AS sale_count,
+                (COUNT(*) FILTER (WHERE attribution.operation_kind = 'return'))::int AS return_count,
+                (COUNT(*) FILTER (WHERE attribution.operation_kind = 'void'))::int AS void_count
+           FROM cashier_operation_attribution attribution
+           LEFT JOIN merchant_locations location
+             ON location.merchant_id = attribution.merchant_id
+            AND location.id = attribution.location_id
+          WHERE attribution.merchant_id = $1
+            AND attribution.location_id IS NOT NULL
+            AND ($2::timestamptz IS NULL OR attribution.occurred_at >= $2::timestamptz)
+            AND ($3::timestamptz IS NULL OR attribution.occurred_at < $3::timestamptz)
+          GROUP BY attribution.location_id, location.name
+          ORDER BY location.name NULLS LAST, attribution.location_id`,
+        [merchantId, from || null, to || null],
+      ),
       operationalQueryRows<OperationRow>(
         client,
         `SELECT attribution.operation_id,
@@ -214,6 +253,8 @@ export async function buildCashierCentralActivityAuthoritative(input: {
                 staff.display_name AS staff_name,
                 attribution.station_id,
                 station.name AS station_name,
+                attribution.location_id,
+                location.name AS location_name,
                 station.branch_key,
                 station.branch_label,
                 attribution.shift_id,
@@ -238,6 +279,8 @@ export async function buildCashierCentralActivityAuthoritative(input: {
              ON staff.merchant_id = attribution.merchant_id AND staff.id = attribution.staff_id
            LEFT JOIN merchant_cashier_stations station
              ON station.merchant_id = attribution.merchant_id AND station.id = attribution.station_id
+           LEFT JOIN merchant_locations location
+             ON location.merchant_id = attribution.merchant_id AND location.id = attribution.location_id
            LEFT JOIN orders
              ON orders.merchant_id = attribution.merchant_id
             AND orders.id = attribution.sale_id
@@ -269,6 +312,11 @@ export async function buildCashierCentralActivityAuthoritative(input: {
         station_id: identifier(row.station_id, "station_id"), station_name: row.station_name || "",
         ...(row.branch_key ? { branch_key: row.branch_key } : {}), ...(row.branch_label ? { branch_label: row.branch_label } : {}), ...counts(row),
       })),
+      by_location: locationRows.map(row => ({
+        location_id: identifier(row.location_id, "location_id"),
+        location_name: row.location_name || "",
+        ...counts(row),
+      })),
       operations: operationRows.map(row => {
         const amount = optionalMoneyInteger(row.amount_minor, "activity.amount_minor");
         const digits = optionalMoneyInteger(row.currency_fraction_digits, "activity.currency_fraction_digits");
@@ -287,6 +335,8 @@ export async function buildCashierCentralActivityAuthoritative(input: {
           staff_name: row.staff_name || "",
           station_id: identifier(row.station_id, "station_id"),
           station_name: row.station_name || "",
+          location_id: identifier(row.location_id, "location_id"),
+          location_name: row.location_name || "",
           ...(row.branch_key ? { branch_key: row.branch_key } : {}),
           ...(row.branch_label ? { branch_label: row.branch_label } : {}),
           shift_id: identifier(row.shift_id, "shift_id"),
