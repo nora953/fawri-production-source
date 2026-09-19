@@ -2,6 +2,10 @@ import crypto from "node:crypto";
 
 import { CatalogRuntimeError } from "./catalogInventoryRuntime";
 import {
+  catalogCommerceFieldsOf,
+  normalizeCatalogCommerceInput,
+} from "./catalogCommerceMetadata";
+import {
   normalizeCatalogMerchantId,
   normalizeCatalogProductId,
 } from "./catalogProductNormalization";
@@ -205,6 +209,42 @@ async function assertNoPromotionReferences(
   });
 }
 
+async function assertNoProductLocationInventory(
+  merchantId: string,
+  productId: string,
+  message: string,
+): Promise<void> {
+  if (!operationalPostgresAuthorityRequired()) return;
+  await withMerchantOperationalTransaction(merchantId, async (target) => {
+    const rows = await operationalQueryRows<{
+      location_id: string;
+      variant_id: string | null;
+      quantity: number;
+    }>(
+      target,
+      `SELECT location_id, variant_id, quantity
+         FROM location_inventory_levels
+        WHERE merchant_id = $1 AND product_id = $2
+        ORDER BY location_id, variant_id NULLS FIRST`,
+      [merchantId, productId],
+    );
+    if (rows.length > 0) {
+      throw new CatalogRuntimeError(
+        "CATALOG_PRODUCT_LOCATION_INVENTORY_CONFLICT",
+        message,
+        409,
+        {
+          locations: rows.map((row) => ({
+            location_id: row.location_id,
+            variant_id: row.variant_id,
+            quantity: Number(row.quantity),
+          })),
+        },
+      );
+    }
+  });
+}
+
 async function assertNoLocationInventoryReferences(
   merchantId: string,
   productId: string,
@@ -309,6 +349,18 @@ export async function updateCatalogProductAuthoritative(
     `${merchantId}\0${productId}`,
   );
   assertItemTypeImmutable(current, input);
+  const currentCommerce = catalogCommerceFieldsOf(current);
+  const requestedCommerce = normalizeCatalogCommerceInput(
+    input,
+    currentCommerce,
+  );
+  if (currentCommerce.track_inventory && !requestedCommerce.track_inventory) {
+    await assertNoProductLocationInventory(
+      merchantId,
+      productId,
+      "inventory tracking cannot be disabled while location inventory levels still exist",
+    );
+  }
 
   if (!operationalPostgresAuthorityRequired()) {
     return core.updateCatalogProductAuthoritative({
