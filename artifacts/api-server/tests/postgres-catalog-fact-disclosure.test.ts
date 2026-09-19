@@ -160,16 +160,49 @@ test("PostgreSQL stock answer uses location inventory and never exposes partial 
 });
 
 test("multi-location stock question fails closed without routing context", async () => {
-  const resolver = new PostgresOperationalFactResolver(
-    sqlWithProducts(
-      [productRow(999)],
-      [],
-      [
-        { location_id: "location-a", quantity: 20 },
-        { location_id: "location-b", quantity: 20 },
-      ],
-    ),
-  );
+  const resolver = new PostgresOperationalFactResolver({
+    async query(sql) {
+      if (sql.includes("FROM products")) {
+        return { rows: [productRow(999)] };
+      }
+      if (sql.includes("SELECT ml.id AS location_id")) {
+        return {
+          rows: [
+            { location_id: "location-a", quantity: 20 },
+            { location_id: "location-b", quantity: 20 },
+          ],
+        };
+      }
+      if (sql.includes("FROM merchant_settings")) {
+        return {
+          rows: [{
+            merchant_id: "merchant-a",
+            version: 1,
+            delivery_enabled: true,
+            delivery_pricing_mode: "per_area",
+            delivery_fee_iqd: 0,
+            free_delivery_threshold_iqd: null,
+            delivery_areas: ["زيونة"],
+            delivery_estimated_days_min: 1,
+            delivery_estimated_days_max: 2,
+          }],
+        };
+      }
+      if (sql.includes("FROM merchant_delivery_area_rates")) {
+        return {
+          rows: [{
+            id: "area-zayouna",
+            merchant_id: "merchant-a",
+            area_name: "زيونة",
+            normalized_area_name: "زيونه",
+            fee_iqd: 0,
+            enabled: true,
+          }],
+        };
+      }
+      throw new Error(`unexpected SQL in test: ${sql}`);
+    },
+  });
 
   await assert.rejects(
     () =>
