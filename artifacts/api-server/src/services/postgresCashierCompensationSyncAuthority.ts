@@ -121,6 +121,7 @@ type ValidatedCompensationBundle = {
 type ExistingOrderRow = {
   id: string;
   source_channel: string;
+  fulfillment_location_id: string | null;
   metadata: Record<string, unknown> | null;
 };
 
@@ -138,6 +139,7 @@ type VariantRow = {
 };
 
 type OriginalInventoryMutation = {
+  location_id: string | null;
   product_id: string;
   variant_id: string | null;
   before_quantity: number;
@@ -750,7 +752,7 @@ async function loadOriginalOrder(
 ): Promise<ExistingOrderRow | null> {
   const rows = await operationalQueryRows<ExistingOrderRow>(
     target,
-    `SELECT id, source_channel, metadata
+    `SELECT id, source_channel, fulfillment_location_id, metadata
        FROM orders
       WHERE merchant_id = $1 AND id = $2
       LIMIT 1
@@ -767,7 +769,7 @@ async function findOperationUsage(
 ): Promise<ExistingOrderRow | null> {
   const rows = await operationalQueryRows<ExistingOrderRow>(
     target,
-    `SELECT id, source_channel, metadata
+    `SELECT id, source_channel, fulfillment_location_id, metadata
        FROM orders
       WHERE merchant_id = $1
         AND source_channel = 'cashier'
@@ -883,7 +885,7 @@ async function loadOriginalInventoryMutations(
 ): Promise<Map<string, OriginalInventoryMutation>> {
   const rows = await operationalQueryRows<OriginalInventoryMutation>(
     target,
-    `SELECT product_id, variant_id, before_quantity, after_quantity
+    `SELECT location_id, product_id, variant_id, before_quantity, after_quantity
        FROM inventory_mutations
       WHERE merchant_id = $1
         AND reason_code = 'cashier_sale_sync'
@@ -909,11 +911,19 @@ async function loadOriginalInventoryMutations(
 function validateOriginalInventoryEvidence(
   originalSale: OriginalSale,
   mutations: Map<string, OriginalInventoryMutation>,
+  expectedLocationId?: string,
 ): void {
   const lines = new Map(
     originalSale.lines.map((line) => [itemKey(line.product_id, line.variant_id), line]),
   );
   for (const [key, mutation] of mutations) {
+    if (expectedLocationId && mutation.location_id !== expectedLocationId) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_ORIGINAL_MOVEMENT_CORRUPT",
+        "original cashier inventory evidence belongs to a different location",
+        409,
+      );
+    }
     const line = lines.get(key);
     if (!line) {
       throw new CashierSyncError(
@@ -992,7 +1002,7 @@ function assertMovementMatches(
   }
 }
 
-async function applyRestock(
+async function applyLegacyRestock(
   target: OperationalQueryTarget,
   bundle: ValidatedCompensationBundle,
   line: OriginalSaleLine,
@@ -1151,6 +1161,305 @@ async function applyRestock(
   );
 }
 
+async function applyLocationRestock(
+  target: OperationalQueryTarget,
+  bundle: ValidatedCompensationBundle,
+  line: OriginalSaleLine,
+  quantity: number,
+  movement: CompensationMovement,
+  locationId: string,
+): Promise<void> {
+  assertMovementMatches(bundle, line, quantity, movement);
+
+  const products = await operationalQueryRows<ProductRow>(
+    target,
+    `SELECT id, quantity, low_stock_threshold, version, status
+       FROM products
+      WHERE merchant_id = $1 AND id = $2 AND deleted_at IS NULL
+      LIMIT 1
+      FOR UPDATE`,
+    [bundle.cloudMerchantId, line.product_id],
+  );
+  const product = products[0];
+  if (!product) {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_PRODUCT_NOT_FOUND",
+      "cashier compensation product no longer exists",
+      409,
+      { product_id: line.product_id },
+    );
+  }
+
+  const variants = await operationalQueryRows<VariantRow>(
+    target,
+    `SELECT id, quantity
+       FROM product_variants
+      WHERE merchant_id = $1 AND product_id = $2
+      ORDER BY id
+      FOR UPDATE`,
+    [bundle.cloudMerchantId, line.product_id],
+  );
+
+  let legacyVariant: VariantRow | undefined;
+  if (line.variant_id) {
+    legacyVariant = variants.find((item) => item.id === line.variant_id);
+    if (!legacyVariant) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_VARIANT_NOT_FOUND",
+        "cashier compensation variant no longer exists",
+        409,
+        { product_id: line.product_id, variant_id: line.variant_id },
+      );
+    }
+  } else if (variants.length > 0) {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_CATALOG_SHAPE_CHANGED",
+      "cashier compensation cannot safely restore a pre-variant sale after catalog shape changed",
+      409,
+      { product_id: line.product_id },
+    );
+  }
+
+  const levels = await operationalQueryRows<{
+    id: string;
+    quantity: number;
+    version: number;
+  }>(
+    target,
+    `SELECT id, quantity, version
+       FROM location_inventory_levels
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND variant_id IS NOT DISTINCT FROM $4::text
+      LIMIT 1
+      FOR UPDATE`,
+    [
+      bundle.cloudMerchantId,
+      locationId,
+      line.product_id,
+      line.variant_id || null,
+    ],
+  );
+  const level = levels[0];
+  if (!level) {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_LOCATION_INVENTORY_MISSING",
+      "original cashier location inventory level no longer exists",
+      409,
+      {
+        location_id: locationId,
+        product_id: line.product_id,
+        ...(line.variant_id ? { variant_id: line.variant_id } : {}),
+      },
+    );
+  }
+
+  const before = Number(level.quantity);
+  const after = before + quantity;
+  const expectedVersion = Number(level.version);
+  if (
+    !Number.isSafeInteger(before) ||
+    before < 0 ||
+    !Number.isSafeInteger(after) ||
+    after < 0 ||
+    !Number.isSafeInteger(expectedVersion) ||
+    expectedVersion <= 0
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_STOCK_INVALID",
+      "cashier compensation would produce invalid location stock",
+      409,
+      {
+        location_id: locationId,
+        product_id: line.product_id,
+      },
+    );
+  }
+  const resultingVersion = expectedVersion + 1;
+
+  const updatedLevel = await operationalQueryRows<{ id: string }>(
+    target,
+    `UPDATE location_inventory_levels
+        SET quantity = $5,
+            version = version + 1,
+            updated_at = now()
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND variant_id IS NOT DISTINCT FROM $4::text
+        AND version = $6
+      RETURNING id`,
+    [
+      bundle.cloudMerchantId,
+      locationId,
+      line.product_id,
+      line.variant_id || null,
+      after,
+      expectedVersion,
+    ],
+  );
+  if (updatedLevel.length !== 1) {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_LOCATION_VERSION_CONFLICT",
+      "location inventory changed during cashier compensation",
+      409,
+      {
+        location_id: locationId,
+        product_id: line.product_id,
+      },
+    );
+  }
+
+  await target.query(
+    `UPDATE merchant_locations
+        SET inventory_fresh_at = now(),
+            updated_at = GREATEST(updated_at, now())
+      WHERE merchant_id = $1 AND id = $2`,
+    [bundle.cloudMerchantId, locationId],
+  );
+
+  const legacyProductBefore = Number(product.quantity);
+  const legacyProductAfter = legacyProductBefore + quantity;
+  if (
+    !Number.isSafeInteger(legacyProductBefore) ||
+    legacyProductBefore < 0 ||
+    !Number.isSafeInteger(legacyProductAfter)
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_STOCK_INVALID",
+      "legacy catalog inventory projection is invalid",
+      409,
+      { product_id: line.product_id },
+    );
+  }
+
+  if (legacyVariant && line.variant_id) {
+    const legacyVariantBefore = Number(legacyVariant.quantity);
+    const legacyVariantAfter = legacyVariantBefore + quantity;
+    if (
+      !Number.isSafeInteger(legacyVariantBefore) ||
+      legacyVariantBefore < 0 ||
+      !Number.isSafeInteger(legacyVariantAfter)
+    ) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_STOCK_INVALID",
+        "legacy variant inventory projection is invalid",
+        409,
+        {
+          product_id: line.product_id,
+          variant_id: line.variant_id,
+        },
+      );
+    }
+    await target.query(
+      `UPDATE product_variants
+          SET quantity = $4,
+              updated_at = now()
+        WHERE merchant_id = $1 AND product_id = $2 AND id = $3`,
+      [
+        bundle.cloudMerchantId,
+        line.product_id,
+        line.variant_id,
+        legacyVariantAfter,
+      ],
+    );
+  }
+
+  const lowStockThreshold = Number(product.low_stock_threshold);
+  if (!Number.isSafeInteger(lowStockThreshold) || lowStockThreshold < 0) {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_STOCK_INVALID",
+      "cashier compensation encountered an invalid low-stock threshold",
+      409,
+    );
+  }
+  const nextStatus = inventoryStatus(
+    product.status,
+    legacyProductAfter,
+    lowStockThreshold,
+  );
+  const updatedProduct = await operationalQueryRows<{ id: string }>(
+    target,
+    `UPDATE products
+        SET quantity = $3,
+            status = $4,
+            updated_at = now()
+      WHERE merchant_id = $1
+        AND id = $2
+        AND version = $5
+        AND deleted_at IS NULL
+      RETURNING id`,
+    [
+      bundle.cloudMerchantId,
+      line.product_id,
+      legacyProductAfter,
+      nextStatus,
+      Number(product.version),
+    ],
+  );
+  if (updatedProduct.length !== 1) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_PRODUCT_VERSION_CONFLICT",
+      "catalog definition changed during cashier compensation reconciliation",
+      409,
+      { product_id: line.product_id },
+    );
+  }
+
+  const keyHash = sha256(
+    `cashier-${bundle.kind}:${bundle.cloudMerchantId}:${locationId}:${bundle.operationId}:${line.line_id}`,
+  );
+  await target.query(
+    `INSERT INTO inventory_mutations (
+       id, merchant_id, location_id, product_id, variant_id, mutation_type,
+       before_quantity, after_quantity, expected_version, resulting_version,
+       actor_type, actor_account_id, reason_code, idempotency_key_hash,
+       request_hash, created_at
+     ) VALUES (
+       $1,$2,$3,$4,$5,'adjust',$6,$7,$8,$9,
+       'cashier',NULL,$10,$11,$12,$13
+     )`,
+    [
+      `cashier_comp_${keyHash.slice(0, 38)}`,
+      bundle.cloudMerchantId,
+      locationId,
+      line.product_id,
+      line.variant_id || null,
+      before,
+      after,
+      expectedVersion,
+      resultingVersion,
+      bundle.kind === "return" ? "cashier_return_sync" : "cashier_void_sync",
+      keyHash,
+      bundle.requestHash,
+      new Date(bundle.occurredAt),
+    ],
+  );
+}
+
+async function applyRestock(
+  target: OperationalQueryTarget,
+  bundle: ValidatedCompensationBundle,
+  line: OriginalSaleLine,
+  quantity: number,
+  movement: CompensationMovement,
+  locationId?: string,
+): Promise<void> {
+  if (locationId) {
+    await applyLocationRestock(
+      target,
+      bundle,
+      line,
+      quantity,
+      movement,
+      locationId,
+    );
+    return;
+  }
+  await applyLegacyRestock(target, bundle, line, quantity, movement);
+}
+
 function originalLineById(sale: OriginalSale, lineId: string): OriginalSaleLine {
   const line = sale.lines.find((item) => item.line_id === lineId);
   if (!line) {
@@ -1213,6 +1522,7 @@ async function applyReturn(
   originalSale: OriginalSale,
   originalMutations: Map<string, OriginalInventoryMutation>,
   previousCompensations: StoredCompensation[],
+  locationId?: string,
 ): Promise<number> {
   const snapshot = bundle.returnSnapshot!;
   if (
@@ -1298,7 +1608,14 @@ async function applyReturn(
         409,
       );
     }
-    await applyRestock(target, bundle, line, requested.quantity, movement);
+    await applyRestock(
+      target,
+      bundle,
+      line,
+      requested.quantity,
+      movement,
+      locationId,
+    );
     bundle.movements.delete(key);
     mutationCount += 1;
   }
@@ -1318,6 +1635,7 @@ async function applyVoid(
   originalSale: OriginalSale,
   originalMutations: Map<string, OriginalInventoryMutation>,
   previousCompensations: StoredCompensation[],
+  locationId?: string,
 ): Promise<number> {
   const snapshot = bundle.voidSnapshot!;
   if (previousCompensations.length > 0) {
@@ -1362,7 +1680,14 @@ async function applyVoid(
         409,
       );
     }
-    await applyRestock(target, bundle, line, line.quantity, movement);
+    await applyRestock(
+      target,
+      bundle,
+      line,
+      line.quantity,
+      movement,
+      locationId,
+    );
     bundle.movements.delete(key);
     mutationCount += 1;
   }
@@ -1441,6 +1766,20 @@ export async function syncCashierCompensationAuthoritative(params: {
       );
     }
     const previousCompensations = storedCompensations(metadata);
+    const metadataLocationId = String(metadata.location_id || "").trim();
+    if (
+      order.fulfillment_location_id &&
+      metadataLocationId &&
+      order.fulfillment_location_id !== metadataLocationId
+    ) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
+        "original cashier sale location evidence is inconsistent",
+        409,
+      );
+    }
+    const locationId =
+      order.fulfillment_location_id || metadataLocationId || undefined;
 
     await assertDeviceSequenceUnused(client, bundle);
     const originalMutations = await loadOriginalInventoryMutations(
@@ -1448,7 +1787,11 @@ export async function syncCashierCompensationAuthoritative(params: {
       merchantId,
       originalRequestHash,
     );
-    validateOriginalInventoryEvidence(originalSale, originalMutations);
+    validateOriginalInventoryEvidence(
+      originalSale,
+      originalMutations,
+      locationId,
+    );
 
     let inventoryMutationCount = 0;
     if (bundle.kind === "return") {
@@ -1458,6 +1801,7 @@ export async function syncCashierCompensationAuthoritative(params: {
         originalSale,
         originalMutations,
         previousCompensations,
+        locationId,
       );
     } else {
       inventoryMutationCount = await applyVoid(
@@ -1466,6 +1810,7 @@ export async function syncCashierCompensationAuthoritative(params: {
         originalSale,
         originalMutations,
         previousCompensations,
+        locationId,
       );
     }
     if (bundle.movements.size !== 0) {
