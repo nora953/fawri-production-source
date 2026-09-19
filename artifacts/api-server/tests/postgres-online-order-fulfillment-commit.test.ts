@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   OnlineOrderFulfillmentCommitError,
   ensureOnlineOrderFulfillmentCommittedWithTarget,
+  releaseOnlineOrderFulfillmentInventoryWithTarget,
 } from "../src/services/postgresOnlineOrderFulfillmentCommit";
 import { normalizeDeliveryAreaName } from "../src/services/deliveryPricing";
 import type { OperationalQueryTarget } from "../src/services/operationalPostgresAuthority";
@@ -211,12 +212,16 @@ function fixture(params?: {
 
       if (sql.startsWith("UPDATE product_variants")) {
         state.legacyVariantUpdates += 1;
-        return { rows: [] as T[] };
+        return {
+          rows: (sql.includes("RETURNING id") ? [{ id: "variant-a" }] : []) as T[],
+        };
       }
 
       if (sql.startsWith("UPDATE products")) {
         state.legacyProductUpdates += 1;
-        return { rows: [] as T[] };
+        return {
+          rows: (sql.includes("RETURNING id") ? [{ id: "product-a" }] : []) as T[],
+        };
       }
 
       if (sql.includes("INSERT INTO inventory_mutations")) {
@@ -268,6 +273,109 @@ test("atomic fulfillment selects one location, rechecks stock and records one mu
   assert.equal(snapshot.location_id, "location-b");
   assert.equal(snapshot.inventory_committed, true);
   assert.equal(snapshot.inventory_mutation_count, 1);
+  assert.deepEqual(snapshot.inventory_items, [
+    {
+      product_id: "product-a",
+      quantity: 2,
+      expected_version: 4,
+      resulting_version: 5,
+    },
+  ]);
+});
+
+test("cancellation release restores the exact committed location inventory once", async () => {
+  const f = fixture();
+  await ensureOnlineOrderFulfillmentCommittedWithTarget(f.target, {
+    merchantId: "merchant-a",
+    orderId: "order-cancel-a",
+    customerArea: "المنصور",
+    sourceChannel: "messenger",
+    metadata: {},
+  });
+
+  const levelA = f.state.inventory.find(
+    (row) => row.location_id === "location-a",
+  );
+  const levelB = f.state.inventory.find(
+    (row) => row.location_id === "location-b",
+  );
+  assert.equal(levelA?.quantity, 5);
+  assert.equal(levelA?.version, 2);
+  assert.equal(levelB?.quantity, 5);
+  assert.equal(levelB?.version, 5);
+
+  const snapshot = JSON.parse(String(f.state.orderUpdates[0].values[3]));
+  const released = await releaseOnlineOrderFulfillmentInventoryWithTarget(
+    f.target,
+    {
+      merchantId: "merchant-a",
+      orderId: "order-cancel-a",
+      fulfillmentLocationId: "location-b",
+      metadata: { online_fulfillment_v1: snapshot },
+    },
+  );
+
+  assert.equal(levelA?.quantity, 5);
+  assert.equal(levelA?.version, 2);
+  assert.equal(levelB?.quantity, 7);
+  assert.equal(levelB?.version, 6);
+  assert.equal(f.state.mutations.length, 2);
+  assert.equal(f.state.legacyProductUpdates, 2);
+  assert.equal(
+    (released?.online_fulfillment_v1 as Record<string, unknown>)
+      .inventory_release_reason,
+    "order_cancelled",
+  );
+  assert.ok(
+    String(
+      (released?.online_fulfillment_v1 as Record<string, unknown>)
+        .inventory_released_at || "",
+    ),
+  );
+
+  const mutationCount = f.state.mutations.length;
+  const replay = await releaseOnlineOrderFulfillmentInventoryWithTarget(
+    f.target,
+    {
+      merchantId: "merchant-a",
+      orderId: "order-cancel-a",
+      fulfillmentLocationId: "location-b",
+      metadata: released,
+    },
+  );
+  assert.equal(replay, null);
+  assert.equal(f.state.mutations.length, mutationCount);
+  assert.equal(levelB?.quantity, 7);
+  assert.equal(levelB?.version, 6);
+});
+
+test("cancellation release fails closed if the order location differs from the committed location", async () => {
+  const f = fixture();
+  await ensureOnlineOrderFulfillmentCommittedWithTarget(f.target, {
+    merchantId: "merchant-a",
+    orderId: "order-cancel-mismatch",
+    customerArea: "المنصور",
+    sourceChannel: "messenger",
+    metadata: {},
+  });
+  const snapshot = JSON.parse(String(f.state.orderUpdates[0].values[3]));
+  const mutationsBefore = f.state.mutations.length;
+
+  await assert.rejects(
+    () =>
+      releaseOnlineOrderFulfillmentInventoryWithTarget(f.target, {
+        merchantId: "merchant-a",
+        orderId: "order-cancel-mismatch",
+        fulfillmentLocationId: "location-a",
+        metadata: { online_fulfillment_v1: snapshot },
+      }),
+    (error: unknown) => {
+      assert.ok(error instanceof OnlineOrderFulfillmentCommitError);
+      assert.equal(error.code, "ORDER_FULFILLMENT_RELEASE_LOCATION_INVALID");
+      return true;
+    },
+  );
+  assert.equal(f.state.mutations.length, mutationsBefore);
 });
 
 test("stale inventory blocks confirmation before stock is locked or mutated", async () => {
@@ -383,4 +491,6 @@ test("service-only order freezes a location without inventory mutation", async (
   assert.equal(f.state.mutations.length, 0);
   assert.equal(f.state.legacyProductUpdates, 0);
   assert.equal(f.state.orderUpdates.length, 1);
+  const snapshot = JSON.parse(String(f.state.orderUpdates[0].values[3]));
+  assert.deepEqual(snapshot.inventory_items, []);
 });
