@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { hashPassword, verifyPassword } from "./authPasswordService";
 import { evaluateMerchantOperationalAccess } from "./merchantOperationalAccess";
+import { resolveCashierLocationForBranch } from "./cashierLocationBindingAuthority";
 import {
   isCashierStaffRole,
   normalizeCashierStaffPermissions,
@@ -47,6 +48,7 @@ type StationRow = {
   id: string;
   merchant_id: string;
   name: string;
+  location_id: string | null;
   branch_key: string;
   branch_label: string | null;
   status: string;
@@ -73,6 +75,7 @@ type StationCredentialRow = {
   merchant_id: string;
   station_id: string;
   station_name: string;
+  location_id: string | null;
   branch_key: string;
   branch_label: string | null;
   offline_inventory_authority: boolean;
@@ -114,6 +117,7 @@ export type CashierStaffView = {
 export type CashierStationView = {
   id: string;
   name: string;
+  location_id: string;
   branch_key: string;
   branch_label?: string;
   status: "active" | "disabled" | "revoked";
@@ -132,6 +136,7 @@ export type CashierStationContext = {
   merchant_id: string;
   station_id: string;
   station_name: string;
+  location_id: string;
   branch_key: string;
   branch_label?: string;
   offline_inventory_authority: boolean;
@@ -455,10 +460,22 @@ function staffView(row: StaffRow, permissions: CashierStaffPermission[]): Cashie
   };
 }
 
+function requireStationLocationId(value: string | null): string {
+  if (!value) {
+    throw new CashierStaffAuthorityError(
+      "CASHIER_LOCATION_BINDING_REQUIRED",
+      "cashier station is not bound to a merchant location",
+      409,
+    );
+  }
+  return value;
+}
+
 function stationView(row: StationRow): CashierStationView {
   return {
     id: row.id,
     name: row.name,
+    location_id: requireStationLocationId(row.location_id),
     branch_key: row.branch_key,
     ...(row.branch_label ? { branch_label: row.branch_label } : {}),
     status: safeStationStatus(row.status),
@@ -500,7 +517,7 @@ async function getStationRow(
 ): Promise<StationRow | null> {
   const rows = await operationalQueryRows<StationRow>(
     target,
-    `SELECT id, merchant_id, name, branch_key, branch_label, status,
+    `SELECT id, merchant_id, name, location_id, branch_key, branch_label, status,
             paired_device_id, offline_inventory_authority, credential_version,
             paired_at, last_seen_at, revoked_at, created_at, updated_at
        FROM merchant_cashier_stations
@@ -568,10 +585,13 @@ function translateDatabaseError(error: unknown): never {
   const candidate = error as { code?: unknown; constraint?: unknown };
   if (String(candidate?.code || "") === "23505") {
     const constraint = String(candidate.constraint || "");
-    if (constraint.includes("merchant_cashier_stations_offline_branch_unique")) {
+    if (
+      constraint.includes("merchant_cashier_stations_offline_branch_unique") ||
+      constraint.includes("merchant_cashier_stations_offline_location_unique")
+    ) {
       throw new CashierStaffAuthorityError(
         "CASHIER_OFFLINE_BRANCH_AUTHORITY_EXISTS",
-        "another active cashier station already owns offline inventory authority for this branch",
+        "another active cashier station already owns offline inventory authority for this location",
         409,
       );
     }
@@ -796,7 +816,7 @@ export async function listCashierStationsAuthoritative(
   return withMerchantOperationalTransaction(merchantId, async (client) => {
     const rows = await operationalQueryRows<StationRow>(
       client,
-      `SELECT id, merchant_id, name, branch_key, branch_label, status,
+      `SELECT id, merchant_id, name, location_id, branch_key, branch_label, status,
               paired_device_id, offline_inventory_authority, credential_version,
               paired_at, last_seen_at, revoked_at, created_at, updated_at
          FROM merchant_cashier_stations
@@ -830,13 +850,20 @@ export async function createCashierStationAuthoritative(input: {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     await client.query(
       `INSERT INTO merchant_cashier_stations (
-         id, merchant_id, name, branch_key, branch_label, status,
+         id, merchant_id, name, location_id, branch_key, branch_label, status,
          offline_inventory_authority, credential_version, created_at, updated_at
-       ) VALUES ($1,$2,$3,$4,$5,'active',$6,1,now(),now())`,
+       ) VALUES ($1,$2,$3,$4,$5,$6,'active',$7,1,now(),now())`,
       [
         stationId,
         merchantId,
         name,
+        (
+          await resolveCashierLocationForBranch(client, {
+            merchantId,
+            branchKey,
+            branchLabel,
+          })
+        ).id,
         branchKey,
         branchLabel,
         offlineInventoryAuthority,
@@ -913,14 +940,36 @@ export async function updateCashierStationAuthoritative(input: {
       );
     }
 
+    const targetLocation =
+      branchKey === undefined
+        ? null
+        : await resolveCashierLocationForBranch(client, {
+            merchantId,
+            branchKey,
+            branchLabel:
+              branchLabel === undefined ? current.branch_label : branchLabel,
+          });
+    const locationChanged =
+      targetLocation !== null && targetLocation.id !== current.location_id;
+
     const values: unknown[] = [merchantId, stationId];
     const sets = ["updated_at = now()"];
+    if (locationChanged) {
+      sets.push(
+        "paired_device_id = NULL",
+        "paired_at = NULL",
+        "credential_version = credential_version + 1",
+      );
+    }
     const add = (fragment: string, value: unknown) => {
       values.push(value);
       sets.push(`${fragment} = $${values.length}`);
     };
     if (name !== undefined) add("name", name);
-    if (branchKey !== undefined) add("branch_key", branchKey);
+    if (branchKey !== undefined && targetLocation) {
+      add("branch_key", branchKey);
+      add("location_id", targetLocation.id);
+    }
     if (branchLabel !== undefined) add("branch_label", branchLabel);
     if (offlineInventoryAuthority !== undefined) {
       add("offline_inventory_authority", offlineInventoryAuthority);
@@ -929,12 +978,14 @@ export async function updateCashierStationAuthoritative(input: {
       add("status", status);
       sets.push(status === "revoked" ? "revoked_at = now()" : "revoked_at = NULL");
       if (status !== "active") {
-        sets.push(
-          "offline_inventory_authority = FALSE",
-          "paired_device_id = NULL",
-          "paired_at = NULL",
-          "credential_version = credential_version + 1",
-        );
+        sets.push("offline_inventory_authority = FALSE");
+        if (!locationChanged) {
+          sets.push(
+            "paired_device_id = NULL",
+            "paired_at = NULL",
+            "credential_version = credential_version + 1",
+          );
+        }
       }
     }
 
@@ -943,7 +994,7 @@ export async function updateCashierStationAuthoritative(input: {
       `UPDATE merchant_cashier_stations
           SET ${sets.join(", ")}
         WHERE merchant_id = $1 AND id = $2
-        RETURNING id, merchant_id, name, branch_key, branch_label, status,
+        RETURNING id, merchant_id, name, location_id, branch_key, branch_label, status,
                   paired_device_id, offline_inventory_authority, credential_version,
                   paired_at, last_seen_at, revoked_at, created_at, updated_at`,
       values,
@@ -955,12 +1006,27 @@ export async function updateCashierStationAuthoritative(input: {
         404,
       );
     }
+    if (locationChanged) {
+      await client.query(
+        `UPDATE cashier_station_pairing_challenges
+            SET status = 'revoked', revoked_at = now()
+          WHERE merchant_id = $1 AND station_id = $2 AND status = 'active'`,
+        [merchantId, stationId],
+      );
+    }
     if (status === "disabled" || status === "revoked") {
       await revokeStationRuntime(
         client,
         merchantId,
         stationId,
         status === "revoked" ? "station_revoked" : "station_disabled",
+      );
+    } else if (locationChanged) {
+      await revokeStationRuntime(
+        client,
+        merchantId,
+        stationId,
+        "station_location_changed",
       );
     }
     return stationView(rows[0]);
@@ -1027,6 +1093,7 @@ export async function redeemCashierStationPairingAuthoritative(input: {
   merchant_id: string;
   station_id: string;
   station_name: string;
+  location_id: string;
   branch_key: string;
   branch_label?: string;
   offline_inventory_authority: boolean;
@@ -1127,6 +1194,7 @@ export async function redeemCashierStationPairingAuthoritative(input: {
       merchant_id: merchantId,
       station_id: station.id,
       station_name: station.name,
+      location_id: requireStationLocationId(station.location_id),
       branch_key: station.branch_key,
       ...(station.branch_label ? { branch_label: station.branch_label } : {}),
       offline_inventory_authority: Boolean(station.offline_inventory_authority),
@@ -1148,7 +1216,7 @@ export async function authenticateCashierStationAuthoritative(input: {
   const rows = await operationalQueryRows<StationCredentialRow>(
     pool,
     `SELECT c.id AS credential_id, c.merchant_id, c.station_id,
-            s.name AS station_name, s.branch_key, s.branch_label,
+            s.name AS station_name, s.location_id, s.branch_key, s.branch_label,
             s.offline_inventory_authority, c.version AS credential_version,
             c.expires_at
        FROM cashier_station_credentials c
@@ -1190,6 +1258,7 @@ export async function authenticateCashierStationAuthoritative(input: {
     merchant_id: row.merchant_id,
     station_id: row.station_id,
     station_name: row.station_name,
+    location_id: requireStationLocationId(row.location_id),
     branch_key: row.branch_key,
     ...(row.branch_label ? { branch_label: row.branch_label } : {}),
     offline_inventory_authority: Boolean(row.offline_inventory_authority),
@@ -1490,7 +1559,7 @@ export async function authenticateCashierOperatorAuthoritative(input: {
             os.shift_id, s.role, os.permission_snapshot,
             os.expires_at AS session_expires_at,
             c.id AS credential_id, st.name AS station_name,
-            st.branch_key, st.branch_label, st.offline_inventory_authority,
+            st.location_id, st.branch_key, st.branch_label, st.offline_inventory_authority,
             c.version AS credential_version, c.expires_at
        FROM cashier_operator_sessions os
        JOIN merchant_cashier_staff s
@@ -1560,6 +1629,7 @@ export async function authenticateCashierOperatorAuthoritative(input: {
     merchant_id: row.merchant_id,
     station_id: row.station_id,
     station_name: row.station_name,
+    location_id: requireStationLocationId(row.location_id),
     branch_key: row.branch_key,
     ...(row.branch_label ? { branch_label: row.branch_label } : {}),
     offline_inventory_authority: Boolean(row.offline_inventory_authority),

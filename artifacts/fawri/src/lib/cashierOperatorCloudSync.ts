@@ -431,6 +431,7 @@ export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOper
   if (
     text(payload.merchant_id) !== session.context.merchant_id ||
     text(payload.station_id) !== session.context.station_id ||
+    text(payload.location_id) !== session.context.location_id ||
     text(payload.staff_id) !== session.context.staff_id ||
     text(payload.shift_id) !== session.context.shift_id
   ) {
@@ -458,7 +459,8 @@ export async function syncCashierOperatorCatalogFromCloud(): Promise<CashierOper
   const identity = await getOrCreateCashierDeviceIdentity();
   if (
     identity.cloud_merchant_id !== session.context.merchant_id ||
-    identity.device_id !== session.context.device_id
+    identity.device_id !== session.context.device_id ||
+    identity.location_id !== session.context.location_id
   ) {
     throw new CashierOperatorCloudSyncError(
       'CASHIER_OPERATOR_DEVICE_MISMATCH',
