@@ -9,6 +9,7 @@ import {
   pgTable,
   text,
   timestamp,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { merchants } from "./merchants";
@@ -138,6 +139,9 @@ export const merchantDeliveryAreaRates = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    idMerchantUnique: unique(
+      "merchant_delivery_area_rates_id_merchant_unique",
+    ).on(table.id, table.merchantId),
     merchantAreaUnique: uniqueIndex(
       "merchant_delivery_area_rates_merchant_area_unique",
     ).on(table.merchantId, table.normalizedAreaName),
