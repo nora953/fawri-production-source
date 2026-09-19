@@ -19,6 +19,10 @@ const serverRoute = await readFile(
   new URL("../../api-server/src/routes/saved-answer-operations.ts", import.meta.url),
   "utf8",
 );
+const managementRuntime = await readFile(
+  new URL("../../api-server/src/services/knowledge/postgresKnowledgeManagementRuntime.ts", import.meta.url),
+  "utf8",
+);
 
 test("dashboard routes saved answers to the active canonical server page", () => {
   assert.match(app, /import\("@\/pages\/dashboard\/SavedAnswersPage\.ts"\)/);
@@ -63,4 +67,40 @@ test("saved answer mutations retain optimistic version protection", () => {
   assert.match(page, /method: "DELETE"/);
   assert.match(page, /expectedVersion: answer\.version/);
   assert.match(page, /VERSION_CONFLICT/);
+});
+
+
+test("saved answer category choices match the canonical PostgreSQL enum contract", () => {
+  assert.match(page, /const CATEGORY_VALUES = \[/);
+  for (const category of [
+    "delivery",
+    "payment",
+    "return_exchange",
+    "product",
+    "warranty",
+    "custom",
+  ]) {
+    assert.match(page, new RegExp(`"${category}"`));
+    assert.match(serverRoute, new RegExp(`"${category}"`));
+    assert.match(managementRuntime, new RegExp(`"${category}"`));
+  }
+  assert.match(page, /CATEGORY_VALUES\.includes\(answer\.category as Category\)/);
+  assert.match(page, /CATEGORY_VALUES\.map\(\(value\) =>/);
+  assert.match(page, /categoryLabels\[answer\.category\]/);
+  assert.doesNotMatch(
+    page,
+    /<Input[^>]*value=\{form\.category\}/,
+    "category must not return to an unrestricted text input",
+  );
+});
+
+test("saved answer writes reject invalid categories instead of silently converting them to custom", () => {
+  assert.match(serverRoute, /INVALID_SAVED_ANSWER_CATEGORY/);
+  assert.match(serverRoute, /readSavedAnswerCategory/);
+  assert.match(managementRuntime, /function inputCategory/);
+  assert.match(managementRuntime, /INVALID_SAVED_ANSWER_CATEGORY/);
+  assert.doesNotMatch(
+    managementRuntime,
+    /SAVED_ANSWER_CATEGORIES\.has\(result\) \? result : "custom"/,
+  );
 });
