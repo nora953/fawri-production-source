@@ -15,22 +15,17 @@ import {
   readString,
   sendKnowledgeError,
 } from "./knowledge-route-utils.js";
+import {
+  isSavedAnswerCategory,
+  type SavedAnswerCategory,
+} from "../services/knowledge/types.js";
 
 const router = Router();
 router.use(requireMerchantSession);
 
-const SAVED_ANSWER_CATEGORIES = new Set([
-  "delivery",
-  "payment",
-  "return_exchange",
-  "product",
-  "warranty",
-  "custom",
-]);
-
-function readSavedAnswerCategory(value: unknown): string | null {
+function readSavedAnswerCategory(value: unknown): SavedAnswerCategory | null {
   const candidate = readString(value, 100);
-  return SAVED_ANSWER_CATEGORIES.has(candidate) ? candidate : null;
+  return isSavedAnswerCategory(candidate) ? candidate : null;
 }
 
 router.get("/", async (_req: Request, res: Response): Promise<void> => {
@@ -103,7 +98,7 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
     res.status(400).json({ ok: false, code: "INVALID_LANGUAGE", error: "invalid language" });
     return;
   }
-  let category: string | undefined;
+  let category: SavedAnswerCategory | undefined;
   if (req.body?.category !== undefined) {
     const parsedCategory = readSavedAnswerCategory(req.body.category);
     if (!parsedCategory) {
