@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { hashPassword, verifyPassword } from "./authPasswordService";
 import { evaluateMerchantOperationalAccess } from "./merchantOperationalAccess";
+import { resolveCashierLocationForBranch } from "./cashierLocationBindingAuthority";
 import {
   isCashierStaffRole,
   normalizeCashierStaffPermissions,
@@ -47,6 +48,7 @@ type StationRow = {
   id: string;
   merchant_id: string;
   name: string;
+  location_id: string | null;
   branch_key: string;
   branch_label: string | null;
   status: string;
@@ -73,6 +75,7 @@ type StationCredentialRow = {
   merchant_id: string;
   station_id: string;
   station_name: string;
+  location_id: string | null;
   branch_key: string;
   branch_label: string | null;
   offline_inventory_authority: boolean;
@@ -114,6 +117,7 @@ export type CashierStaffView = {
 export type CashierStationView = {
   id: string;
   name: string;
+  location_id: string;
   branch_key: string;
   branch_label?: string;
   status: "active" | "disabled" | "revoked";
@@ -132,6 +136,7 @@ export type CashierStationContext = {
   merchant_id: string;
   station_id: string;
   station_name: string;
+  location_id: string;
   branch_key: string;
   branch_label?: string;
   offline_inventory_authority: boolean;
@@ -455,10 +460,22 @@ function staffView(row: StaffRow, permissions: CashierStaffPermission[]): Cashie
   };
 }
 
+function requireStationLocationId(value: string | null): string {
+  if (!value) {
+    throw new CashierStaffAuthorityError(
+      "CASHIER_LOCATION_BINDING_REQUIRED",
+      "cashier station is not bound to a merchant location",
+      409,
+    );
+  }
+  return value;
+}
+
 function stationView(row: StationRow): CashierStationView {
   return {
     id: row.id,
     name: row.name,
+    location_id: requireStationLocationId(row.location_id),
     branch_key: row.branch_key,
     ...(row.branch_label ? { branch_label: row.branch_label } : {}),
     status: safeStationStatus(row.status),
@@ -500,7 +517,7 @@ async function getStationRow(
 ): Promise<StationRow | null> {
   const rows = await operationalQueryRows<StationRow>(
     target,
-    `SELECT id, merchant_id, name, branch_key, branch_label, status,
+    `SELECT id, merchant_id, name, location_id, branch_key, branch_label, status,
             paired_device_id, offline_inventory_authority, credential_version,
             paired_at, last_seen_at, revoked_at, created_at, updated_at
        FROM merchant_cashier_stations
@@ -796,7 +813,7 @@ export async function listCashierStationsAuthoritative(
   return withMerchantOperationalTransaction(merchantId, async (client) => {
     const rows = await operationalQueryRows<StationRow>(
       client,
-      `SELECT id, merchant_id, name, branch_key, branch_label, status,
+      `SELECT id, merchant_id, name, location_id, branch_key, branch_label, status,
               paired_device_id, offline_inventory_authority, credential_version,
               paired_at, last_seen_at, revoked_at, created_at, updated_at
          FROM merchant_cashier_stations
