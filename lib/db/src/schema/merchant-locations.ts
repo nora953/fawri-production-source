@@ -3,6 +3,7 @@ import {
   boolean,
   check,
   doublePrecision,
+  foreignKey,
   index,
   integer,
   pgTable,
@@ -17,9 +18,7 @@ export const merchantLocations = pgTable(
   "merchant_locations",
   {
     id: text("id").primaryKey(),
-    merchantId: text("merchant_id")
-      .notNull()
-      .references(() => merchants.id, { onDelete: "cascade" }),
+    merchantId: text("merchant_id").notNull(),
     name: text("name").notNull(),
     legacyBranchKey: text("legacy_branch_key"),
     isDefault: boolean("is_default").notNull().default(false),
@@ -45,6 +44,11 @@ export const merchantLocations = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    merchantForeignKey: foreignKey({
+      name: "merchant_locations_merchant_fk",
+      columns: [table.merchantId],
+      foreignColumns: [merchants.id],
+    }).onDelete("cascade"),
     idMerchantUnique: unique("merchant_locations_id_merchant_unique").on(
       table.id,
       table.merchantId,

@@ -17,9 +17,7 @@ export const locationInventoryLevels = pgTable(
   "location_inventory_levels",
   {
     id: text("id").primaryKey(),
-    merchantId: text("merchant_id")
-      .notNull()
-      .references(() => merchants.id, { onDelete: "cascade" }),
+    merchantId: text("merchant_id").notNull(),
     locationId: text("location_id").notNull(),
     productId: text("product_id").notNull(),
     variantId: text("variant_id"),
@@ -34,6 +32,11 @@ export const locationInventoryLevels = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    merchantForeignKey: foreignKey({
+      name: "location_inventory_levels_merchant_fk",
+      columns: [table.merchantId],
+      foreignColumns: [merchants.id],
+    }).onDelete("cascade"),
     locationTenantForeignKey: foreignKey({
       name: "location_inventory_levels_location_merchant_fk",
       columns: [table.locationId, table.merchantId],
