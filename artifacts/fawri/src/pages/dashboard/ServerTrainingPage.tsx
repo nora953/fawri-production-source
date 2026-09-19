@@ -176,11 +176,13 @@ export default function ServerTrainingPage() {
       }));
       setNextCursor(isTrainingCursor(result.nextCursor) ? result.nextCursor : null);
       setLoadStatus("ready");
+      return true;
     } catch (error) {
       if (requestId !== loadRequestIdRef.current) return;
       console.error("Load training requests failed:", error);
       setNextCursor(null);
       setLoadStatus("unavailable");
+      return false;
     }
   }, [filter, serverQuery]);
 
@@ -320,7 +322,12 @@ export default function ServerTrainingPage() {
         throw new Error("Training authority returned an invalid mutation response");
       }
       const current = result.request;
-      replaceCurrent(current);
+      if (serverQuery || filter !== "all") {
+        const reloaded = await load();
+        if (!reloaded) setNotice(copy.loadFailed);
+      } else {
+        replaceCurrent(current);
+      }
     } catch (error) {
       const apiError = error as ApiError;
       if (
@@ -328,8 +335,13 @@ export default function ServerTrainingPage() {
         isTrainingRequest(apiError.current)
       ) {
         const current = apiError.current;
-        replaceCurrent(current);
-        setNotice(copy.conflict);
+        if (serverQuery || filter !== "all") {
+          const reloaded = await load();
+          setNotice(reloaded ? copy.conflict : copy.loadFailed);
+        } else {
+          replaceCurrent(current);
+          setNotice(copy.conflict);
+        }
       } else {
         setNotice(copy.actionFailed);
       }
