@@ -321,6 +321,46 @@ export async function getCashierOperationBinding(
   }
 }
 
+
+
+export async function getCashierSaleOperationBindingsForReport(input: {
+  merchantId: string;
+  stationId: string;
+  deviceId: string;
+  staffId?: string;
+}): Promise<CashierOperationBinding[]> {
+  const merchantId = String(input.merchantId || '').trim();
+  const stationId = String(input.stationId || '').trim();
+  const deviceId = String(input.deviceId || '').trim();
+  const staffId = String(input.staffId || '').trim();
+  if (!merchantId || !stationId || !deviceId) {
+    throw new CashierOperatorLocalSecurityError(
+      'CASHIER_REPORT_SCOPE_INVALID',
+      'Cashier report scope is incomplete',
+    );
+  }
+
+  const database = await openOperatorLocalDatabase();
+  try {
+    const transaction = database.transaction(OPERATION_BINDING_STORE, 'readonly');
+    const store = transaction.objectStore(OPERATION_BINDING_STORE);
+    const records = staffId
+      ? ((await requestResult(store.index('staff_id').getAll(staffId))) as CashierOperationBinding[])
+      : ((await requestResult(store.getAll())) as CashierOperationBinding[]);
+
+    return records.filter(
+      (binding) =>
+        binding.operation_kind === 'sale' &&
+        binding.merchant_id === merchantId &&
+        binding.station_id === stationId &&
+        binding.device_id === deviceId &&
+        (!staffId || binding.staff_id === staffId),
+    );
+  } finally {
+    database.close();
+  }
+}
+
 export async function getCashierOperationBindings(
   operationIds: readonly string[],
 ): Promise<Map<string, CashierOperationBinding>> {
