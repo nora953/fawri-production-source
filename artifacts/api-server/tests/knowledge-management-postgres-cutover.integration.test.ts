@@ -192,6 +192,13 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
     assert.equal(categorySearch.answers.length, 1);
     assert.equal(categorySearch.answers[0].id, extraOne.id);
     assert.equal(categorySearch.nextCursor, null);
+
+    const literalWildcardSearch = await managementA.listSavedAnswersPage(merchantIds[0], {
+      limit: 10,
+      search: "%",
+    });
+    assert.equal(literalWildcardSearch.answers.length, 0);
+    assert.equal(literalWildcardSearch.nextCursor, null);
   });
 
   await t.test("Training Request created by decision runtime is visible and approvable by merchant management", async () => {
