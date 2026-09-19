@@ -47,3 +47,23 @@ test('reporting cost is not added to customer-facing operational facts', async (
   assert.doesNotMatch(resolver, /variant_costs_iqd/);
   assert.doesNotMatch(resolver, /cost_iqd/);
 });
+
+
+test('central cashier reporting uses canonical location attribution alongside station compatibility', async () => {
+  const financial = await apiSource('src/services/postgresCashierCentralReportAuthority.ts');
+  const activity = await apiSource('src/services/postgresCashierCentralActivityAuthority.ts');
+  const page = await webSource('src/pages/dashboard/CashierCentralReportsPage.tsx');
+
+  assert.match(financial, /sale_attribution\.location_id/);
+  assert.match(financial, /LEFT JOIN merchant_locations location/);
+  assert.match(financial, /by_location:/);
+
+  assert.match(activity, /attribution\.location_id/);
+  assert.match(activity, /LEFT JOIN merchant_locations location/);
+  assert.match(activity, /GROUP BY attribution\.location_id, location\.name/);
+  assert.match(activity, /by_location:/);
+
+  assert.match(page, /salesByLocation/);
+  assert.match(page, /activityByLocation/);
+  assert.match(page, /item\.location_name \|\| labels\.formerLocation/);
+});
