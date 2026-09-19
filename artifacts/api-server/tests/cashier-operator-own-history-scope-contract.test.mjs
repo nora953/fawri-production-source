@@ -67,3 +67,24 @@ test('online and offline operator reports keep the same top-product limit', asyn
   assert.match(client, /const OPERATOR_REPORT_TOP_PRODUCTS = 10/);
   assert.match(client, /topProductsLimit: OPERATOR_REPORT_TOP_PRODUCTS/);
 });
+
+
+test('offline operator report applies sale scope and report range before the local safety limit', async () => {
+  const [client, localSecurity] = await Promise.all([
+    repoSource('artifacts/fawri/src/lib/cashierOperatorReportsRuntime.ts'),
+    repoSource('artifacts/fawri/src/lib/cashierOperatorLocalSecurity.ts'),
+  ]);
+
+  assert.match(client, /getCashierSaleOperationBindingsForReport/);
+  assert.match(client, /staffId: currentSession\.context\.staff_id/);
+  assert.match(client, /cashierSaleTouchesReportRange/);
+  assert.match(client, /sales\.length > MAX_REPORT_SALES/);
+  assert.doesNotMatch(client, /const allSales = await readSales\(database\)/);
+  assert.match(client, /sales_scanned: visibleSales\.length/);
+
+  assert.match(localSecurity, /store\.index\('staff_id'\)\.getAll\(staffId\)/);
+  assert.match(localSecurity, /binding\.operation_kind === 'sale'/);
+  assert.match(localSecurity, /binding\.merchant_id === merchantId/);
+  assert.match(localSecurity, /binding\.station_id === stationId/);
+  assert.match(localSecurity, /binding\.device_id === deviceId/);
+});
