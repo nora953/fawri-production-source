@@ -497,7 +497,11 @@ export default function CommerceCatalogSimplifiedPage() {
   };
 
   const loadConflict = async (productId: string, error: unknown) => {
-    if (!(error instanceof CatalogApiError) || error.code !== 'CATALOG_VERSION_CONFLICT') return false;
+    if (
+      !(error instanceof CatalogApiError) ||
+      (error.code !== 'CATALOG_VERSION_CONFLICT' &&
+        error.code !== 'CATALOG_LOCATION_INVENTORY_VERSION_CONFLICT')
+    ) return false;
     try {
       const latest = await getCatalogProduct(productId);
       setItems(current => upsert(current, latest));
@@ -597,6 +601,20 @@ export default function CommerceCatalogSimplifiedPage() {
     return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
   };
 
+  const inventoryLevelVersion = (
+    productId: string,
+    locationId: string,
+    variantId?: string,
+  ): number | null => {
+    if (!locationInventory || locationInventory.product_id !== productId) return null;
+    const location = locationInventory.locations.find(item => item.id === locationId);
+    const level = location?.levels.find(item =>
+      variantId ? item.variant_id === variantId : !item.variant_id,
+    );
+    const version = Number(level?.version);
+    return Number.isSafeInteger(version) && version > 0 ? version : null;
+  };
+
   const setInventory = async (
     product: CatalogProduct,
     locationId: string,
@@ -613,12 +631,22 @@ export default function CommerceCatalogSimplifiedPage() {
       toast.error(copy.invalidQuantity);
       return;
     }
+    const expectedVersion = inventoryLevelVersion(
+      product.id,
+      locationId,
+      variant?.id,
+    );
+    if (expectedVersion === null) {
+      toast.error(copy.inventoryFailed);
+      setLocationInventoryReload(value => value + 1);
+      return;
+    }
     setInventoryBusy(key);
     try {
       const result = await setCatalogLocationInventory({
         productId: product.id,
         locationId,
-        expectedVersion: product.version,
+        expectedVersion,
         quantity,
         ...(variant ? { variantId: variant.id } : {}),
       });
@@ -646,10 +674,20 @@ export default function CommerceCatalogSimplifiedPage() {
     }
     if (mutationBusy) return;
     const key = locationInventoryKey(locationId, product.id, variant?.id);
+    const expectedVersion = inventoryLevelVersion(
+      product.id,
+      locationId,
+      variant?.id,
+    );
+    if (expectedVersion === null) {
+      toast.error(copy.inventoryFailed);
+      setLocationInventoryReload(value => value + 1);
+      return;
+    }
     const request = {
       productId: product.id,
       locationId,
-      expectedVersion: product.version,
+      expectedVersion,
       delta,
       ...(variant ? { variantId: variant.id } : {}),
       reason: 'merchant commerce catalog location inventory UX',
