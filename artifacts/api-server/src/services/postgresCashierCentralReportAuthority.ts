@@ -7,6 +7,7 @@ import { CashierStaffAuthorityError } from "./postgresCashierStaffAuthority";
 
 const MAX_REPORT_SALES = 50_000;
 const DEFAULT_TOP_PRODUCTS = 10;
+const CASHIER_RETURN_REFUND_ALLOCATION_VERSION = 2 as const;
 
 export type CashierCentralReportEvidenceRow = {
   id: string;
@@ -247,6 +248,52 @@ function adjustedLineRevenueById(sale: ParsedSale): Map<string, number> {
     );
   }
   return adjusted;
+}
+
+function allocatedReturnRefundMinor(input: {
+  sale: ParsedSale;
+  line: SaleLine;
+  alreadyReturned: number;
+  returnQuantity: number;
+}): number {
+  const returnedAfter = input.alreadyReturned + input.returnQuantity;
+  if (
+    !Number.isSafeInteger(returnedAfter) ||
+    input.alreadyReturned < 0 ||
+    input.returnQuantity <= 0 ||
+    returnedAfter > input.line.quantity
+  ) {
+    throw new CashierStaffAuthorityError(
+      "CASHIER_REPORT_EVIDENCE_INVALID",
+      "cashier return quantity exceeds original sale evidence",
+      409,
+    );
+  }
+  const chargedLineRevenue = adjustedLineRevenueById(input.sale).get(
+    input.line.line_id,
+  );
+  if (chargedLineRevenue === undefined) {
+    throw new CashierStaffAuthorityError(
+      "CASHIER_REPORT_EVIDENCE_INVALID",
+      "cashier return allocation line is missing",
+      409,
+    );
+  }
+  const quantityBig = BigInt(input.line.quantity);
+  const revenueBig = BigInt(chargedLineRevenue);
+  const before =
+    (revenueBig * BigInt(input.alreadyReturned)) / quantityBig;
+  const after =
+    (revenueBig * BigInt(returnedAfter)) / quantityBig;
+  const refund = Number(after - before);
+  if (!Number.isSafeInteger(refund) || refund < 0) {
+    throw new CashierStaffAuthorityError(
+      "CASHIER_REPORT_OVERFLOW",
+      "cashier return allocation overflowed safe integer range",
+      409,
+    );
+  }
+  return refund;
 }
 
 function text(value: unknown, field: string, maxLength = 300): string {
@@ -495,6 +542,21 @@ function validateSaleEvidence(sale: ParsedSale): void {
     }
 
     returnCount += 1;
+    const allocationVersionRaw = compensation.snapshot.refund_allocation_version;
+    const allocationVersion =
+      allocationVersionRaw === undefined || allocationVersionRaw === null
+        ? undefined
+        : Number(allocationVersionRaw);
+    if (
+      allocationVersion !== undefined &&
+      allocationVersion !== CASHIER_RETURN_REFUND_ALLOCATION_VERSION
+    ) {
+      throw new CashierStaffAuthorityError(
+        "CASHIER_REPORT_EVIDENCE_INVALID",
+        "cashier return refund allocation version is unsupported",
+        409,
+      );
+    }
     const returnLines = parseReturnLines(compensation);
     const returnLineIds = new Set<string>();
     let refundTotal = 0;
@@ -508,23 +570,6 @@ function validateSaleEvidence(sale: ParsedSale): void {
       }
       returnLineIds.add(returned.original_line_id);
       const original = originalLineById(sale, returned.original_line_id);
-      if (
-        returned.product_id !== original.product_id ||
-        returned.variant_id !== original.variant_id ||
-        returned.effective_unit_price_minor !== original.effective_unit_price_minor ||
-        returned.refund_minor !==
-          safeMultiply(
-            original.effective_unit_price_minor,
-            returned.quantity,
-            "return refund",
-          )
-      ) {
-        throw new CashierStaffAuthorityError(
-          "CASHIER_REPORT_EVIDENCE_INVALID",
-          "cashier return line does not match original sale evidence",
-          409,
-        );
-      }
       const returnedBefore = returnedByLine.get(original.line_id) || 0;
       const returnedAfter = safeAdd(
         returnedBefore,
@@ -535,6 +580,31 @@ function validateSaleEvidence(sale: ParsedSale): void {
         throw new CashierStaffAuthorityError(
           "CASHIER_REPORT_EVIDENCE_INVALID",
           "cashier cumulative return exceeds original sold quantity",
+          409,
+        );
+      }
+      const expectedRefund =
+        allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION
+          ? allocatedReturnRefundMinor({
+              sale,
+              line: original,
+              alreadyReturned: returnedBefore,
+              returnQuantity: returned.quantity,
+            })
+          : safeMultiply(
+              original.effective_unit_price_minor,
+              returned.quantity,
+              "return refund",
+            );
+      if (
+        returned.product_id !== original.product_id ||
+        returned.variant_id !== original.variant_id ||
+        returned.effective_unit_price_minor !== original.effective_unit_price_minor ||
+        returned.refund_minor !== expectedRefund
+      ) {
+        throw new CashierStaffAuthorityError(
+          "CASHIER_REPORT_EVIDENCE_INVALID",
+          "cashier return line does not match original sale evidence",
           409,
         );
       }
