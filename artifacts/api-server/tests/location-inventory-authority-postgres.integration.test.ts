@@ -268,6 +268,32 @@ test("location inventory allocation and mutations use independent versions and d
   assert.equal(listed.length, 1);
   assert.equal(listed[0]?.quantity, 8);
   assert.equal(listed[0]?.version, 3);
+
+  await assert.rejects(
+    catalog.deleteCatalogProductAuthoritative({
+      merchantId,
+      productId,
+      expectedVersion: legacyCatalog.version,
+    }),
+    (error: unknown) => {
+      const value = error as {
+        code?: unknown;
+        status?: unknown;
+        details?: { locations?: unknown };
+      };
+      assert.equal(value.code, "CATALOG_PRODUCT_LOCATION_INVENTORY_CONFLICT");
+      assert.equal(value.status, 409);
+      assert.ok(Array.isArray(value.details?.locations));
+      return true;
+    },
+  );
+
+  const preservedCatalog = await catalog.getCatalogProductAuthoritative(
+    merchantId,
+    productId,
+  );
+  assert.equal(preservedCatalog.id, productId);
+  assert.equal(preservedCatalog.version, legacyCatalog.version);
 });
 
 test("variant-managed products require variant-scoped location inventory", async () => {
