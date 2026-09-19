@@ -252,6 +252,62 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
     assert.equal(secondDecision.answerText, "نعم، يمكن إضافة بطاقة تهنئة للهدية.");
   });
 
+  await t.test("Training Request management pagination and filters cover the full authority", async () => {
+    const first = await managementA.createTrainingRequest({
+      merchantId: merchantIds[0],
+      customerText: "هل يوجد توصيل سريع؟",
+      detectedIntent: "delivery_speed",
+      detectedLanguage: "ar",
+      reason: "knowledge_gap",
+    });
+    const second = await managementA.createTrainingRequest({
+      merchantId: merchantIds[0],
+      customerText: "هل تقبلون الدفع نقداً؟",
+      detectedIntent: "payment_cash",
+      detectedLanguage: "ar",
+      reason: "knowledge_gap",
+    });
+    const third = await managementA.createTrainingRequest({
+      merchantId: merchantIds[0],
+      customerText: "هل يوجد ضمان إضافي؟",
+      detectedIntent: "warranty_extra",
+      detectedLanguage: "ar",
+      reason: "knowledge_gap",
+    });
+
+    const firstPage = await managementA.listTrainingRequestsPage(merchantIds[0], {
+      limit: 2,
+    });
+    assert.equal(firstPage.requests.length, 2);
+    assert.ok(firstPage.nextCursor);
+
+    const secondPage = await managementA.listTrainingRequestsPage(merchantIds[0], {
+      limit: 2,
+      beforeUpdatedAt: firstPage.nextCursor!.updatedAt,
+      beforeId: firstPage.nextCursor!.id,
+    });
+    assert.equal(secondPage.requests.length, 1);
+    assert.equal(secondPage.nextCursor, null);
+
+    const pagedIds = [...firstPage.requests, ...secondPage.requests].map((item) => item.id);
+    assert.equal(new Set(pagedIds).size, 3);
+    assert.ok(pagedIds.includes(first.id));
+    assert.ok(pagedIds.includes(second.id));
+    assert.ok(pagedIds.includes(third.id));
+
+    const searchPage = await managementA.listTrainingRequestsPage(merchantIds[0], {
+      limit: 10,
+      search: "نقداً",
+    });
+    assert.deepEqual(searchPage.requests.map((item) => item.id), [second.id]);
+
+    const pendingPage = await managementA.listTrainingRequestsPage(merchantIds[0], {
+      limit: 10,
+      status: "pending_merchant_reply",
+    });
+    assert.equal(pendingPage.requests.length, 3);
+  });
+
   await t.test("tenant isolation prevents Knowledge records crossing merchants", async () => {
     const managementAList = await managementA.listSavedAnswers(merchantIds[0]);
     const managementBList = await new PostgresKnowledgeManagementRuntime({
