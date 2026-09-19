@@ -224,6 +224,30 @@ function fixture(params?: {
         };
       }
 
+      if (sql.includes("FROM inventory_mutations")) {
+        const [, locationId, productId, variantId, idempotencyHash] = values;
+        const mutation = state.mutations.find(
+          (entry) =>
+            entry.values[1] === "merchant-a" &&
+            entry.values[2] === locationId &&
+            entry.values[3] === productId &&
+            (entry.values[4] ?? null) === (variantId ?? null) &&
+            entry.values[9] === idempotencyHash,
+        );
+        return {
+          rows: (mutation
+            ? [{
+                product_id: mutation.values[3],
+                variant_id: mutation.values[4],
+                before_quantity: mutation.values[5],
+                after_quantity: mutation.values[6],
+                expected_version: mutation.values[7],
+                resulting_version: mutation.values[8],
+              }]
+            : []) as T[],
+        };
+      }
+
       if (sql.includes("INSERT INTO inventory_mutations")) {
         state.mutations.push({ sql, values: [...values] });
         return { rows: [] as T[] };
@@ -347,6 +371,44 @@ test("cancellation release restores the exact committed location inventory once"
   assert.equal(f.state.mutations.length, mutationCount);
   assert.equal(levelB?.quantity, 7);
   assert.equal(levelB?.version, 6);
+});
+
+test("legacy committed snapshot recovers exact inventory evidence from mutation history", async () => {
+  const f = fixture();
+  await ensureOnlineOrderFulfillmentCommittedWithTarget(f.target, {
+    merchantId: "merchant-a",
+    orderId: "order-legacy-cancel",
+    customerArea: "المنصور",
+    sourceChannel: "messenger",
+    metadata: {},
+  });
+
+  const snapshot = JSON.parse(String(f.state.orderUpdates[0].values[3]));
+  delete snapshot.inventory_items;
+  const levelB = f.state.inventory.find(
+    (row) => row.location_id === "location-b",
+  );
+  assert.equal(levelB?.quantity, 5);
+  assert.equal(levelB?.version, 5);
+
+  const released = await releaseOnlineOrderFulfillmentInventoryWithTarget(
+    f.target,
+    {
+      merchantId: "merchant-a",
+      orderId: "order-legacy-cancel",
+      fulfillmentLocationId: "location-b",
+      metadata: { online_fulfillment_v1: snapshot },
+    },
+  );
+
+  assert.equal(levelB?.quantity, 7);
+  assert.equal(levelB?.version, 6);
+  assert.equal(f.state.mutations.length, 2);
+  assert.equal(
+    (released?.online_fulfillment_v1 as Record<string, unknown>)
+      .inventory_release_reason,
+    "order_cancelled",
+  );
 });
 
 test("cancellation release fails closed if the order location differs from the committed location", async () => {
