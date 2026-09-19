@@ -362,6 +362,8 @@ export class PostgresKnowledgeManagementRuntime {
       limit?: number;
       beforeUpdatedAt?: string;
       beforeId?: string;
+      search?: string;
+      categories?: readonly SavedAnswerCategory[];
     } = {},
   ): Promise<SavedAnswerPage> {
     const merchant = merchantId(value);
@@ -398,6 +400,24 @@ export class PostgresKnowledgeManagementRuntime {
       beforeUpdatedAt = rawBeforeUpdatedAt;
     }
 
+    const search = boundedText(options.search, 500);
+    const searchPattern = search
+      ? `%${search
+          .replace(/!/g, "!!")
+          .replace(/%/g, "!%")
+          .replace(/_/g, "!_")}%`
+      : null;
+    const searchCategories = Array.from(new Set(options.categories || []));
+    if (
+      searchCategories.length > 6 ||
+      searchCategories.some((category) => !isSavedAnswerCategory(category))
+    ) {
+      throw new KnowledgeTransitionError(
+        "INVALID_SAVED_ANSWER_PAGE",
+        "saved answer search categories are invalid",
+      );
+    }
+
     try {
       const result = await this.sql.query<Record<string, unknown>>(
         `SELECT ${SAVED_COLUMNS},
@@ -412,9 +432,28 @@ export class PostgresKnowledgeManagementRuntime {
               OR updated_at < $2::timestamptz
               OR (updated_at = $2::timestamptz AND id < $3::text)
             )
+            AND (
+              ($4::text IS NULL AND cardinality($5::text[]) = 0)
+              OR (
+                $4::text IS NOT NULL
+                AND (
+                  question_pattern ILIKE $4 ESCAPE '!'
+                  OR answer_text ILIKE $4 ESCAPE '!'
+                  OR category::text ILIKE $4 ESCAPE '!'
+                )
+              )
+              OR category::text = ANY($5::text[])
+            )
           ORDER BY updated_at DESC, id DESC
-          LIMIT $4`,
-        [merchant, beforeUpdatedAt, beforeId || null, limit + 1],
+          LIMIT $6`,
+        [
+          merchant,
+          beforeUpdatedAt,
+          beforeId || null,
+          searchPattern,
+          searchCategories,
+          limit + 1,
+        ],
       );
       const pageRows = result.rows.slice(0, limit);
       const answers = pageRows.map((row) => savedFromRow(row, merchant));
