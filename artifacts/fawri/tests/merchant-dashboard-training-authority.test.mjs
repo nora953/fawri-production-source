@@ -58,7 +58,7 @@ test("training reads are race-safe and never represent authority failure as empt
 });
 
 test("training mutations fail closed and retain optimistic version protection", () => {
-  assert.match(pageSource, /mutationsAllowed = loadStatus === "ready" && savingId === null/);
+  assert.match(pageSource, /loadStatus === "ready"[^]*savingId === null[^]*!loadingMore[^]*!searchPending/);
   assert.match(pageSource, /if \(!mutationsAllowed\) return/);
   assert.match(pageSource, /expectedVersion: request\.version/);
   assert.match(pageSource, /result\.request[^]*isTrainingRequest/);
@@ -75,4 +75,24 @@ test("training authority failure copy exists in Arabic, Sorani Kurdish, and Engl
   assert.match(copySource, /unavailableBody/);
   assert.match(copySource, /staleBody/);
   assert.match(copySource, /retry/);
+});
+
+
+test("training management search and pagination are server-authoritative", () => {
+  assert.match(pageSource, /const \[serverQuery, setServerQuery\]/);
+  assert.match(pageSource, /const \[nextCursor, setNextCursor\]/);
+  assert.match(pageSource, /const \[loadingMore, setLoadingMore\]/);
+  assert.match(pageSource, /params\.set\("q", serverQuery\)/);
+  assert.match(pageSource, /params\.set\("status", filter\)/);
+  assert.match(pageSource, /beforeUpdatedAt: nextCursor\.updatedAt/);
+  assert.match(pageSource, /beforeId: nextCursor\.id/);
+  assert.match(pageSource, /copy\.loadMore/);
+  assert.match(pageSource, /copy\.loadingMore/);
+  assert.doesNotMatch(pageSource, /requests\.filter\(/);
+
+  assert.match(trainingRouteSource, /listMerchantTrainingRequestsPage/);
+  assert.match(trainingRouteSource, /INVALID_TRAINING_REQUEST_PAGE/);
+  assert.match(trainingRouteSource, /nextCursor: page\.nextCursor/);
+  assert.match(trainingRouteSource, /req\.query\.q/);
+  assert.match(trainingRouteSource, /req\.query\.status/);
 });
