@@ -250,6 +250,25 @@ test("merchant manual confirmation is decisive and records merchant_confirmed pr
   assert.equal(confirmed.payment_reconciliation_status, "clear");
   assert.equal(confirmed.last_payment_decision?.confirmation_source, "merchant_confirmed");
 
+  const manualFulfillment = await raw(
+    `SELECT fulfillment_location_id, metadata
+       FROM orders
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchant.account.id, "order-manual-paid"],
+  );
+  assert.equal(
+    manualFulfillment.rows[0].fulfillment_location_id,
+    fulfillmentLocationId,
+  );
+  assert.equal(
+    manualFulfillment.rows[0].metadata.online_fulfillment_v1.inventory_committed,
+    true,
+  );
+  assert.equal(
+    manualFulfillment.rows[0].metadata.online_fulfillment_v1.location_id,
+    fulfillmentLocationId,
+  );
+
   const decision = await raw(
     `SELECT confirmation_source::text AS confirmation_source
        FROM order_payment_decisions
@@ -268,6 +287,14 @@ test("verified provider paid evidence can confirm a pending order without Fawri 
     amount: 49_000,
     paymentMethod: "fastpay",
   });
+
+  const stockBeforeProviderPaid = await raw(
+    `SELECT quantity
+       FROM location_inventory_levels
+      WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
+        AND variant_id IS NULL`,
+    [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+  );
 
   const result =
     await providerPayments.recordVerifiedProviderPaymentEvidenceAuthoritative({
@@ -312,6 +339,33 @@ test("verified provider paid evidence can confirm a pending order without Fawri 
     });
   assert.equal(replay.deduplicated, true);
 
+  const providerFulfillment = await raw(
+    `SELECT fulfillment_location_id, metadata
+       FROM orders
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchant.account.id, "order-provider-paid"],
+  );
+  assert.equal(
+    providerFulfillment.rows[0].fulfillment_location_id,
+    fulfillmentLocationId,
+  );
+  assert.equal(
+    providerFulfillment.rows[0].metadata.online_fulfillment_v1.inventory_committed,
+    true,
+  );
+
+  const stockAfterProviderReplay = await raw(
+    `SELECT quantity
+       FROM location_inventory_levels
+      WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
+        AND variant_id IS NULL`,
+    [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+  );
+  assert.equal(
+    Number(stockAfterProviderReplay.rows[0].quantity),
+    Number(stockBeforeProviderPaid.rows[0].quantity) - 1,
+  );
+
   const eventCount = await raw(
     `SELECT count(*)::int AS count
        FROM order_payment_provider_events
@@ -319,6 +373,96 @@ test("verified provider paid evidence can confirm a pending order without Fawri 
     [merchant.account.id, "order-provider-paid"],
   );
   assert.equal(eventCount.rows[0].count, 1);
+});
+
+test("provider paid evidence is preserved while stale fulfillment rolls back inventory and requires reconciliation", async () => {
+  await seedElectronicOrder({
+    id: "order-provider-paid-stale",
+    conversationId: "conversation-provider-paid-stale",
+    customerId: "customer-provider-paid-stale",
+    amount: 41_000,
+    paymentMethod: "fastpay",
+  });
+
+  const stockBefore = await raw(
+    `SELECT quantity
+       FROM location_inventory_levels
+      WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
+        AND variant_id IS NULL`,
+    [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+  );
+  await raw(
+    `UPDATE merchant_locations
+        SET inventory_fresh_at = now() - interval '10 minutes',
+            updated_at = now()
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchant.account.id, fulfillmentLocationId],
+  );
+
+  try {
+    const result =
+      await providerPayments.recordVerifiedProviderPaymentEvidenceAuthoritative({
+        merchantId: merchant.account.id,
+        orderId: "order-provider-paid-stale",
+        provider: "fastpay",
+        providerEventId: "fastpay-proof-event-paid-stale-0001",
+        providerTransactionRef: "fastpay-proof-txn-stale-0001",
+        outcome: "paid",
+        amountIqd: 41_000,
+        currency: "IQD",
+        payloadSha256: hash("fastpay-proof-event-paid-stale-0001"),
+        authenticityVerified: true,
+        sanitizedMetadata: { environment: "isolated_test", status: "paid" },
+      });
+
+    assert.equal(result.action, "payment_conflict");
+    assert.equal(result.order.payment_status, "paid");
+    assert.equal(result.order.status, "pending_confirmation");
+    assert.equal(
+      result.order.payment_reconciliation_status,
+      "reconciliation_required",
+    );
+    assert.equal(
+      result.order.payment_conflict_code,
+      "ORDER_FULFILLMENT_CONFIRMATION_REQUIRED",
+    );
+
+    const stockAfter = await raw(
+      `SELECT quantity
+         FROM location_inventory_levels
+        WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
+          AND variant_id IS NULL`,
+      [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+    );
+    assert.equal(
+      Number(stockAfter.rows[0].quantity),
+      Number(stockBefore.rows[0].quantity),
+    );
+
+    const storedEvent = await raw(
+      `SELECT count(*)::int AS count
+         FROM order_payment_provider_events
+        WHERE merchant_id = $1 AND order_id = $2`,
+      [merchant.account.id, "order-provider-paid-stale"],
+    );
+    assert.equal(storedEvent.rows[0].count, 1);
+
+    const controlled = await raw(
+      `SELECT status::text AS status, assigned_to_human
+         FROM conversations
+        WHERE merchant_id = $1 AND id = $2`,
+      [merchant.account.id, "conversation-provider-paid-stale"],
+    );
+    assert.equal(controlled.rows[0].status, "manual");
+    assert.equal(controlled.rows[0].assigned_to_human, true);
+  } finally {
+    await raw(
+      `UPDATE merchant_locations
+          SET inventory_fresh_at = now(), updated_at = now()
+        WHERE merchant_id = $1 AND id = $2`,
+      [merchant.account.id, fulfillmentLocationId],
+    );
+  }
 });
 
 test("provider failure after merchant confirmation preserves merchant paid decision and escalates only that conversation", async () => {
