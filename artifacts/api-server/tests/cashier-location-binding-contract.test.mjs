@@ -64,3 +64,27 @@ test("pairing and client session persist the exact location id", () => {
     /context\.location_id !== binding\.location_id/,
   );
 });
+
+
+test("branch changes rebind location and revoke stale station runtime", () => {
+  assert.match(
+    staffAuthority,
+    /const targetLocation =[\s\S]*resolveCashierLocationForBranch/,
+  );
+  assert.match(
+    staffAuthority,
+    /add\("location_id", targetLocation\.id\)/,
+  );
+  assert.match(
+    staffAuthority,
+    /credential_version = credential_version \+ 1/,
+  );
+  assert.match(
+    staffAuthority,
+    /station_location_changed/,
+  );
+  assert.match(
+    staffAuthority,
+    /merchant_cashier_stations_offline_location_unique/,
+  );
+});
