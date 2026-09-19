@@ -1006,6 +1006,10 @@ export async function updateCatalogProductAuthoritative(params: {
   productId: unknown;
   expectedVersion: unknown;
   input: CatalogProductInput;
+  locationInventoryGuard?: {
+    forbidProductInventory?: boolean;
+    forbidVariantIds?: string[];
+  };
 }): Promise<CatalogProduct> {
   const merchantId = normalizeCatalogMerchantId(params.merchantId);
   const productId = normalizeCatalogProductId(params.productId);
@@ -1029,6 +1033,79 @@ export async function updateCatalogProductAuthoritative(params: {
         },
       );
     }
+
+    const forbidVariantIds = Array.from(
+      new Set(
+        (params.locationInventoryGuard?.forbidVariantIds || [])
+          .map((value) => String(value || "").trim())
+          .filter(Boolean),
+      ),
+    );
+    if (
+      params.locationInventoryGuard?.forbidProductInventory ||
+      forbidVariantIds.length > 0
+    ) {
+      const locationInventory = await operationalQueryRows<{
+        location_id: string;
+        variant_id: string | null;
+        quantity: number;
+      }>(
+        client,
+        `SELECT location_id, variant_id, quantity
+           FROM location_inventory_levels
+          WHERE merchant_id = $1
+            AND product_id = $2
+            AND (
+              $3::boolean = TRUE
+              OR variant_id = ANY($4::text[])
+            )
+          ORDER BY location_id, variant_id NULLS FIRST
+          FOR UPDATE`,
+        [
+          merchantId,
+          productId,
+          params.locationInventoryGuard?.forbidProductInventory === true,
+          forbidVariantIds,
+        ],
+      );
+      if (locationInventory.length > 0) {
+        if (params.locationInventoryGuard?.forbidProductInventory) {
+          throw new CatalogRuntimeError(
+            "CATALOG_PRODUCT_LOCATION_INVENTORY_CONFLICT",
+            "inventory tracking cannot be disabled while location inventory levels still exist",
+            409,
+            {
+              locations: locationInventory.map((level) => ({
+                location_id: level.location_id,
+                variant_id: level.variant_id,
+                quantity: Number(level.quantity),
+              })),
+            },
+          );
+        }
+        throw new CatalogRuntimeError(
+          "CATALOG_VARIANT_HISTORY_CONFLICT",
+          "variant cannot be archived while location inventory still references it",
+          409,
+          {
+            variant_ids: Array.from(
+              new Set(
+                locationInventory
+                  .map((level) => level.variant_id)
+                  .filter((value): value is string => Boolean(value)),
+              ),
+            ),
+            dependencies: locationInventory
+              .filter((level) => Boolean(level.variant_id))
+              .map((level) => ({
+                variant_id: String(level.variant_id),
+                kind: "location_inventory_levels",
+              })),
+          },
+        );
+      }
+    }
+
     const baseProduct = normalizeCatalogProduct(params.input, {
       merchantId,
       existing: current,
