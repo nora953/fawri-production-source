@@ -18,6 +18,7 @@ import {
 
 const SALES_STORE = 'sales';
 const MAX_REPORT_SALES = 50_000;
+const OPERATOR_REPORT_TOP_PRODUCTS = 10;
 
 export type CashierOperatorReportRuntimeResult = {
   report: CashierSalesReport;
@@ -318,7 +319,10 @@ export async function createCashierOperatorReportsRuntime(): Promise<CashierOper
       const visibleSales = allSales.filter((sale) =>
         bindingVisible(currentSession, bindings.get(sale.operation_id)),
       );
-      const report = buildCashierSalesReport(visibleSales, options);
+      const report = buildCashierSalesReport(visibleSales, {
+        ...options,
+        topProductsLimit: OPERATOR_REPORT_TOP_PRODUCTS,
+      });
       return {
         report: canViewProfit ? report : redactProfit(report),
         source: 'local_cashier',
