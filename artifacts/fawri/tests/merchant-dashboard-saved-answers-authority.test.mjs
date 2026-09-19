@@ -131,3 +131,21 @@ test("duplicate create and duplicate edit keep drafts while same-record version 
   assert.match(page, /\} else \{\s*setNotice\(copy\.duplicate\);\s*\}/);
   assert.match(page, /current\.some\(\(item\) => item\.id === currentAnswer\.id\)/);
 });
+
+
+test("saved-answer management pagination keeps records reachable beyond the first 500", () => {
+  assert.match(serverRoute, /listMerchantSavedAnswersPage/);
+  assert.match(serverRoute, /nextCursor: page\.nextCursor/);
+  assert.match(serverRoute, /beforeUpdatedAt/);
+  assert.match(serverRoute, /beforeId/);
+  assert.match(managementRuntime, /async listSavedAnswersPage/);
+  assert.match(managementRuntime, /LIMIT \$4/);
+  assert.match(managementRuntime, /result\.rows\.length > limit/);
+  assert.match(page, /const \[nextCursor, setNextCursor\]/);
+  assert.match(page, /const \[loadingMore, setLoadingMore\]/);
+  assert.match(page, /beforeUpdatedAt: nextCursor\.updatedAt/);
+  assert.match(page, /beforeId: nextCursor\.id/);
+  assert.match(page, /copy\.loadMore/);
+  assert.match(page, /copy\.loadingMore/);
+  assert.match(page, /!saving && !loadingMore/);
+});
