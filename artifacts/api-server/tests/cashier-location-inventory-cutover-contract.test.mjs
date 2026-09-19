@@ -217,6 +217,9 @@ test("device, session, and operation bindings persist stable location identity",
   const cloudSync = await repo(
     "artifacts/fawri/src/lib/cashierOperatorCloudSync.ts",
   );
+  const policyRefresh = await repo(
+    "artifacts/fawri/src/lib/cashierOperatorPolicyRefresh.ts",
+  );
 
   assert.match(session, /location_id\?: string/);
   assert.match(
@@ -238,6 +241,22 @@ test("device, session, and operation bindings persist stable location identity",
   assert.match(
     cloudSync,
     /text\(payload\.location_id\) !== session\.context\.location_id/,
+  );
+  assert.match(
+    policyRefresh,
+    /location_id: text\(operator\.location_id\)/,
+  );
+  assert.match(
+    policyRefresh,
+    /context\.location_id === session\.context\.location_id/,
+  );
+  assert.match(
+    policyRefresh,
+    /identity\.location_id !== context\.location_id/,
+  );
+  assert.match(
+    policyRefresh,
+    /location_id: context\.location_id/,
   );
 });
 
