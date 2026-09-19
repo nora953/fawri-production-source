@@ -1,0 +1,10 @@
+{
+  "index": 18,
+  "name": "location_inventory_authority",
+  "when": 1789862400000,
+  "mode": "reviewed_sql",
+  "sql_sha256": "2fe0e88d7f2470ce6cd039caaa83a43610f32dbda67347ec30190970ee552992",
+  "preimage_files": [
+    "catalog.ts"
+  ]
+}

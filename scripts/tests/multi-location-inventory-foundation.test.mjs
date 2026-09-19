@@ -184,12 +184,16 @@ test("location tables keep tenant boundaries and named foreign keys aligned with
 test("migration ledger registers repaired 0016 and reviewed 0017 contiguously", () => {
   const journal = JSON.parse(fs.readFileSync(journalPath, "utf8"));
   const entries = journal.entries;
-  assert.equal(entries.at(-2)?.idx, 16);
-  assert.equal(entries.at(-2)?.tag, "0016_cashier_merchant_discount_kind");
-  assert.equal(entries.at(-1)?.idx, 17);
+  const entry16 = entries.find((entry) => entry.idx === 16);
+  const entry17 = entries.find((entry) => entry.idx === 17);
+  assert.equal(entry16?.tag, "0016_cashier_merchant_discount_kind");
   assert.equal(
-    entries.at(-1)?.tag,
+    entry17?.tag,
     "0017_multi_location_inventory_foundation",
+  );
+  assert.ok(
+    entries.some((entry) => entry.idx > 17),
+    "later migrations may extend the journal without invalidating the foundation",
   );
 
   const stage16 = JSON.parse(fs.readFileSync(stage16Path, "utf8"));
