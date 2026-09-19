@@ -3,7 +3,7 @@
   "name": "multi_location_inventory_foundation",
   "when": 1789776000000,
   "mode": "reviewed_sql",
-  "sql_sha256": "a79581a28cb154b5c6139f9ad7bed10de3b24997aa3651ec41597d8a25305d06",
+  "sql_sha256": "86584eb9b9c5b7a20172fd505470412ec605bd0583b77386a4f0d1280a3e7f75",
   "preimage_files": [
     "cashier-operation-attribution.ts",
     "cashier-staff.ts",
