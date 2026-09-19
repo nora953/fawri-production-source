@@ -39,9 +39,11 @@ The context must not contain merchant IDs, customer IDs, tokens, message content
 
 ## Exact production configuration
 
+Production startup requires `FAWRI_META_CREDENTIAL_PROVIDER=aws-kms`. When `NODE_ENV=production`, omitting the provider selection fails closed with `META_CREDENTIAL_PROVIDER_REQUIRED`; legacy environment key variables are not accepted as an implicit production fallback.
+
 The adapter reads:
 
-- `FAWRI_META_AWS_REGION` — AWS region containing the selected KMS key.
+- `FAWRI_META_AWS_REGION` — AWS region containing the selected KMS key. It must exactly match the region encoded in the configured KMS key ARN.
 - `FAWRI_META_AWS_KMS_KEY_ARN` — exact full ARN of the single symmetric customer-managed KMS key. A key ARN is required so returned `Decrypt` / `GenerateDataKey` `KeyId` can be compared exactly.
 - `FAWRI_META_AWS_CURRENT_DEK_ID` — logical DEK id used for all new Meta credential envelopes.
 - `FAWRI_META_AWS_KMS_WRAPPED_DEKS_JSON` — JSON object mapping logical DEK ids to base64 KMS `CiphertextBlob` values.
@@ -81,7 +83,7 @@ KMS plaintext DEKs are copied only into process-memory buffers used by the synch
 
 The default AWS KMS client is destroyed immediately after bootstrap because runtime encryption/decryption uses only the cached DEKs.
 
-No token, plaintext DEK, or AWS exception detail is included in adapter errors or logs.
+No token, plaintext DEK, or AWS exception detail is included in adapter errors or logs. Foreign AWS/network error codes and messages are sanitized into Fawri-owned `META_CREDENTIAL_*` failures rather than being rethrown verbatim.
 
 ## Rotation operation
 
