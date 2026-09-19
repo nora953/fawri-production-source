@@ -39,8 +39,8 @@ export type CashierCentralOperationActivityRow = {
   staff_name: string;
   station_id: string;
   station_name: string;
-  location_id: string;
-  location_name: string;
+  location_id?: string;
+  location_name?: string;
   branch_key?: string;
   branch_label?: string;
   shift_id: string;
@@ -95,7 +95,7 @@ type OperationRow = {
   staff_name: string | null;
   station_id: string;
   station_name: string | null;
-  location_id: string;
+  location_id: string | null;
   location_name: string | null;
   branch_key: string | null;
   branch_label: string | null;
@@ -335,8 +335,12 @@ export async function buildCashierCentralActivityAuthoritative(input: {
           staff_name: row.staff_name || "",
           station_id: identifier(row.station_id, "station_id"),
           station_name: row.station_name || "",
-          location_id: identifier(row.location_id, "location_id"),
-          location_name: row.location_name || "",
+          ...(row.location_id
+            ? {
+                location_id: identifier(row.location_id, "location_id"),
+                ...(row.location_name ? { location_name: row.location_name } : {}),
+              }
+            : {}),
           ...(row.branch_key ? { branch_key: row.branch_key } : {}),
           ...(row.branch_label ? { branch_label: row.branch_label } : {}),
           shift_id: identifier(row.shift_id, "shift_id"),
