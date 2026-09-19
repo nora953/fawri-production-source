@@ -21,6 +21,10 @@ import {
   type CatalogCommerceFields,
 } from "../catalogCommerceMetadata.js";
 import {
+  planOnlineOrderFulfillmentWithTarget,
+} from "../postgresOnlineOrderFulfillmentPlanner.js";
+import type { OperationalQueryTarget } from "../operationalPostgresAuthority.js";
+import {
   catalogAvailabilityAnswer,
   catalogPriceAnswer,
   requestedCatalogQuantity,
@@ -468,12 +472,14 @@ function uniqueBest(rows: Array<{ row: Record<string, unknown>; score: number }>
   return matched[0].row;
 }
 
-async function singleLocationInventoryQuantity(params: {
+async function knowledgeStockAvailability(params: {
   sql: KnowledgeSqlExecutor;
   merchantId: string;
   productId: string;
   variantId?: string;
-}): Promise<{ locationId: string; quantity: number }> {
+  customer: string;
+  requestedQuantity: number | null;
+}): Promise<{ recordSuffix: string; quantity: number }> {
   let rows: Record<string, unknown>[];
   try {
     rows = (
@@ -494,26 +500,105 @@ async function singleLocationInventoryQuantity(params: {
   } catch {
     fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
   }
-  if (rows.length !== 1) {
-    fail(
-      "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
-      "stock availability requires one unambiguous merchant location",
-      409,
-    );
-  }
-  const row = rows[0];
-  const locationId = text(row.location_id, 160);
-  if (!locationId || row.quantity === null || row.quantity === undefined) {
+
+  if (rows.length === 0) {
     fail(
       "KNOWLEDGE_LOCATION_INVENTORY_UNAVAILABLE",
       "location inventory is unavailable",
       409,
     );
   }
-  return {
-    locationId,
-    quantity: integer(row.quantity),
+
+  if (rows.length === 1) {
+    const row = rows[0];
+    const locationId = text(row.location_id, 160);
+    if (!locationId || row.quantity === null || row.quantity === undefined) {
+      fail(
+        "KNOWLEDGE_LOCATION_INVENTORY_UNAVAILABLE",
+        "location inventory is unavailable",
+        409,
+      );
+    }
+    return {
+      recordSuffix: `location:${locationId}`,
+      quantity: integer(row.quantity),
+    };
+  }
+
+  const requestedQuantity = params.requestedQuantity || 1;
+  const target: OperationalQueryTarget = {
+    query: (sql, values = []) => params.sql.query(sql, values),
   };
+
+  let plan;
+  try {
+    plan = await planOnlineOrderFulfillmentWithTarget(target, {
+      merchantId: params.merchantId,
+      area: params.customer,
+      requestedItems: [
+        {
+          product_id: params.productId,
+          ...(params.variantId ? { variant_id: params.variantId } : {}),
+          quantity: requestedQuantity,
+        },
+      ],
+    });
+  } catch (error) {
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String((error as { code?: unknown }).code || "")
+        : "";
+    if (
+      code.startsWith("LOCATION_SERVICE_AREA_") ||
+      code.startsWith("LOCATION_ROUTING_") ||
+      code.startsWith("ONLINE_ORDER_ROUTING_")
+    ) {
+      fail(
+        "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
+        "multi-location stock availability requires an unambiguous customer area",
+        409,
+      );
+    }
+    fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+  }
+
+  if (plan.status !== "routing_ready") {
+    fail(
+      "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
+      "multi-location stock availability requires an unambiguous customer area",
+      409,
+    );
+  }
+
+  if (plan.routing.status === "pending_fulfillment_confirmation") {
+    fail(
+      "KNOWLEDGE_LOCATION_INVENTORY_STALE",
+      "location inventory is not fresh enough for an automatic stock reply",
+      409,
+    );
+  }
+
+  if (plan.routing.status === "routed") {
+    return {
+      recordSuffix: `location:${plan.routing.location_id}`,
+      quantity: requestedQuantity,
+    };
+  }
+
+  if (
+    plan.routing.reason === "insufficient_single_location_inventory"
+  ) {
+    return {
+      recordSuffix: `area:${plan.service_area.area_rate_id || "single"}:unavailable`,
+      quantity: 0,
+    };
+  }
+
+  fail(
+    "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
+    "multi-location stock availability cannot be routed automatically",
+    409,
+  );
 }
 
 async function loadVariants(
@@ -710,14 +795,17 @@ async function resolveProductFact(params: {
   }
 
   if (params.kind === "stock" && commerce.track_inventory) {
-    const locationInventory = await singleLocationInventoryQuantity({
+    const requestedQuantity = requestedCatalogQuantity(params.customer);
+    const locationInventory = await knowledgeStockAvailability({
       sql: params.sql,
       merchantId: params.merchantId,
       productId,
       ...(variantId ? { variantId } : {}),
+      customer: params.customer,
+      requestedQuantity,
     });
     quantity = locationInventory.quantity;
-    recordId = `${recordId}:location:${locationInventory.locationId}`;
+    recordId = `${recordId}:${locationInventory.recordSuffix}`;
   }
 
   if (params.kind === "price") {
