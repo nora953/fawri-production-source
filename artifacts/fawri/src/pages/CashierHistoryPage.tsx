@@ -26,6 +26,7 @@ import { readCachedCashierReceiptProfile } from '@/lib/cashierReceiptProfileClie
 import { CASHIER_UI_COPY, cashierLocale } from '@/lib/cashierUiCopy';
 import { useI18n } from '@/lib/i18n';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import { cashierNetReturnRefundMinor } from '@/lib/cashierRefundPricing';
 import type { Lang } from '@/lib/types';
 
 type ConfirmAction = 'return' | 'void' | null;
@@ -276,7 +277,13 @@ export default function CashierHistoryPage() {
     if (!selectedSale) return 0;
     return selectedSale.lines.reduce((total, line) => {
       const quantity = Math.max(0, Math.trunc(returnDraft[line.line_id] || 0));
-      return total + quantity * line.effective_unit_price_minor;
+      if (quantity === 0) return total;
+      return total + cashierNetReturnRefundMinor(
+        selectedSale,
+        line.line_id,
+        returnedQuantity(selectedSale, line.line_id),
+        quantity,
+      );
     }, 0);
   }, [returnDraft, selectedSale]);
 
