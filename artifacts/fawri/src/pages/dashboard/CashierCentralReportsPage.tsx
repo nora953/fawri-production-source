@@ -44,7 +44,7 @@ type LocationReport = { location_id: string | null; location_name: string; repor
 type ActivityCounts = { operation_count: number; sale_count: number; return_count: number; void_count: number };
 type StaffActivity = ActivityCounts & { staff_id: string; staff_name: string };
 type StationActivity = ActivityCounts & { station_id: string; station_name: string; branch_key?: string; branch_label?: string };
-type LocationActivity = ActivityCounts & { location_id: string; location_name: string };
+type LocationActivity = ActivityCounts & { location_id: string | null; location_name: string };
 
 type OperationActivity = {
   operation_id: string;
@@ -253,7 +253,7 @@ export default function CashierCentralReportsPage() {
         </div>
 
         <div className="grid gap-5 xl:grid-cols-3">
-          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByLocation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_location.length}</span></div><div className="space-y-2">{result.activity.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_location.map(group => <ActivityCard key={group.location_id} name={group.location_name || labels.formerLocation} activity={group} labels={labels} />)}</div></section>
+          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByLocation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_location.length}</span></div><div className="space-y-2">{result.activity.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_location.map(group => <ActivityCard key={group.location_id || '__legacy_location_activity__'} name={group.location_name || labels.formerLocation} activity={group} labels={labels} />)}</div></section>
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStaff}</h2><span className="text-sm text-muted-foreground">{result.activity.by_staff.length}</span></div><div className="space-y-2">{result.activity.by_staff.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_staff.map(group => <ActivityCard key={group.staff_id} name={group.staff_name || labels.formerEmployee} activity={group} labels={labels} />)}</div></section>
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_station.length}</span></div><div className="space-y-2">{result.activity.by_station.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_station.map(group => <ActivityCard key={group.station_id} name={group.station_name || labels.formerStation} secondary={group.branch_label || (group.branch_key ? `${labels.branch}: ${group.branch_key}` : undefined)} activity={group} labels={labels} />)}</div></section>
         </div>
