@@ -1,0 +1,10 @@
+{
+  "index": 19,
+  "name": "location_delivery_area_routing",
+  "when": 1789948800000,
+  "preimage_files": [
+    "merchant-locations.ts",
+    "merchant-settings.ts",
+    "tenant-security.ts"
+  ]
+}
