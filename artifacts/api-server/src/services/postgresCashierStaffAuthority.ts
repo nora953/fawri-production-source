@@ -847,13 +847,20 @@ export async function createCashierStationAuthoritative(input: {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
     await client.query(
       `INSERT INTO merchant_cashier_stations (
-         id, merchant_id, name, branch_key, branch_label, status,
+         id, merchant_id, name, location_id, branch_key, branch_label, status,
          offline_inventory_authority, credential_version, created_at, updated_at
-       ) VALUES ($1,$2,$3,$4,$5,'active',$6,1,now(),now())`,
+       ) VALUES ($1,$2,$3,$4,$5,$6,'active',$7,1,now(),now())`,
       [
         stationId,
         merchantId,
         name,
+        (
+          await resolveCashierLocationForBranch(client, {
+            merchantId,
+            branchKey,
+            branchLabel,
+          })
+        ).id,
         branchKey,
         branchLabel,
         offlineInventoryAuthority,
@@ -960,7 +967,7 @@ export async function updateCashierStationAuthoritative(input: {
       `UPDATE merchant_cashier_stations
           SET ${sets.join(", ")}
         WHERE merchant_id = $1 AND id = $2
-        RETURNING id, merchant_id, name, branch_key, branch_label, status,
+        RETURNING id, merchant_id, name, location_id, branch_key, branch_label, status,
                   paired_device_id, offline_inventory_authority, credential_version,
                   paired_at, last_seen_at, revoked_at, created_at, updated_at`,
       values,
@@ -1044,6 +1051,7 @@ export async function redeemCashierStationPairingAuthoritative(input: {
   merchant_id: string;
   station_id: string;
   station_name: string;
+  location_id: string;
   branch_key: string;
   branch_label?: string;
   offline_inventory_authority: boolean;
@@ -1144,6 +1152,7 @@ export async function redeemCashierStationPairingAuthoritative(input: {
       merchant_id: merchantId,
       station_id: station.id,
       station_name: station.name,
+      location_id: requireStationLocationId(station.location_id),
       branch_key: station.branch_key,
       ...(station.branch_label ? { branch_label: station.branch_label } : {}),
       offline_inventory_authority: Boolean(station.offline_inventory_authority),
@@ -1165,7 +1174,7 @@ export async function authenticateCashierStationAuthoritative(input: {
   const rows = await operationalQueryRows<StationCredentialRow>(
     pool,
     `SELECT c.id AS credential_id, c.merchant_id, c.station_id,
-            s.name AS station_name, s.branch_key, s.branch_label,
+            s.name AS station_name, s.location_id, s.branch_key, s.branch_label,
             s.offline_inventory_authority, c.version AS credential_version,
             c.expires_at
        FROM cashier_station_credentials c
@@ -1207,6 +1216,7 @@ export async function authenticateCashierStationAuthoritative(input: {
     merchant_id: row.merchant_id,
     station_id: row.station_id,
     station_name: row.station_name,
+    location_id: requireStationLocationId(row.location_id),
     branch_key: row.branch_key,
     ...(row.branch_label ? { branch_label: row.branch_label } : {}),
     offline_inventory_authority: Boolean(row.offline_inventory_authority),
@@ -1507,7 +1517,7 @@ export async function authenticateCashierOperatorAuthoritative(input: {
             os.shift_id, s.role, os.permission_snapshot,
             os.expires_at AS session_expires_at,
             c.id AS credential_id, st.name AS station_name,
-            st.branch_key, st.branch_label, st.offline_inventory_authority,
+            st.location_id, st.branch_key, st.branch_label, st.offline_inventory_authority,
             c.version AS credential_version, c.expires_at
        FROM cashier_operator_sessions os
        JOIN merchant_cashier_staff s
@@ -1577,6 +1587,7 @@ export async function authenticateCashierOperatorAuthoritative(input: {
     merchant_id: row.merchant_id,
     station_id: row.station_id,
     station_name: row.station_name,
+    location_id: requireStationLocationId(row.location_id),
     branch_key: row.branch_key,
     ...(row.branch_label ? { branch_label: row.branch_label } : {}),
     offline_inventory_authority: Boolean(row.offline_inventory_authority),
