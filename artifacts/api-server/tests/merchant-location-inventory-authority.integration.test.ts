@@ -240,7 +240,9 @@ test("merchant inventory writes are location scoped and catalog edits cannot ove
       merchantId,
       locationId: branchLocationId,
       productId: "merchant_product",
-      expectedVersion: 3,
+      // Product version is 3 after the catalog edit, while this branch
+      // inventory level is version 2. Location OCC must remain independent.
+      expectedVersion: 2,
       delta: 2,
       idempotencyKey: "merchant-location-adjust-disabled-branch",
       reason: "test disabled location stock administration",
