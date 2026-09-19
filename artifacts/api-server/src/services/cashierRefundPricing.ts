@@ -96,12 +96,17 @@ export function cashierNetReturnRefundMinor(
   sale: CashierRefundPricingSale,
   originalLineId: string,
   alreadyReturned: number,
+  alreadyRefundedMinor: number,
   quantity: number,
 ): number {
   const line = sale.lines.find(item => item.line_id === originalLineId);
   if (!line) throw new Error('CASHIER_REFUND_PRICING_LINE_NOT_FOUND');
   const soldQuantity = safePositiveInteger(line.quantity, 'sold_quantity');
   const returnedBefore = safeNonNegativeInteger(alreadyReturned, 'returned_before');
+  const refundedBefore = safeNonNegativeInteger(
+    alreadyRefundedMinor,
+    'refunded_before',
+  );
   const returnQuantity = safePositiveInteger(quantity, 'return_quantity');
   const returnedAfter = safeAdd(returnedBefore, returnQuantity, 'returned_after');
   if (returnedBefore > soldQuantity || returnedAfter > soldQuantity) {
@@ -112,11 +117,15 @@ export function cashierNetReturnRefundMinor(
   if (adjustedRevenue === undefined) {
     throw new Error('CASHIER_REFUND_PRICING_LINE_NOT_FOUND');
   }
-  const total = BigInt(adjustedRevenue);
-  const units = BigInt(soldQuantity);
-  const prefixBefore = (total * BigInt(returnedBefore)) / units;
-  const prefixAfter = (total * BigInt(returnedAfter)) / units;
-  const refund = Number(prefixAfter - prefixBefore);
+  const remainingRevenue = Math.max(0, adjustedRevenue - refundedBefore);
+  const remainingUnits = soldQuantity - returnedBefore;
+  if (returnQuantity > remainingUnits) {
+    throw new Error('CASHIER_REFUND_PRICING_RETURN_EXCEEDS_SALE');
+  }
+  const refund = Number(
+    (BigInt(remainingRevenue) * BigInt(returnQuantity)) /
+      BigInt(remainingUnits),
+  );
   if (!Number.isSafeInteger(refund) || refund < 0) {
     throw new Error('CASHIER_REFUND_PRICING_OVERFLOW_REFUND');
   }
