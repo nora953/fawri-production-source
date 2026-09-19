@@ -9,6 +9,7 @@ import {
   listMerchantTrainingRequestsPage,
   proposeMerchantTrainingReply,
   rejectMerchantTrainingRequest,
+  revokeMerchantTrainingApproval,
 } from "../services/trainingRuntime.js";
 import {
   readExpectedVersion,
@@ -175,6 +176,30 @@ router.post("/:id/approve", async (req: Request, res: Response): Promise<void> =
         : [],
     });
     res.json({ ok: true, ...result });
+  } catch (error) {
+    sendKnowledgeError(res, error);
+  }
+});
+
+router.post("/:id/revoke", async (req: Request, res: Response): Promise<void> => {
+  const merchantId = getMerchantIdFromSession(res);
+  const expectedVersion = readExpectedVersion(req);
+  if (!expectedVersion) {
+    res.status(428).json({
+      ok: false,
+      code: "EXPECTED_VERSION_REQUIRED",
+      error: "expectedVersion or If-Match is required",
+    });
+    return;
+  }
+
+  try {
+    const request = await revokeMerchantTrainingApproval({
+      merchantId,
+      id: readString(req.params.id, 160),
+      expectedVersion,
+    });
+    res.json({ ok: true, request });
   } catch (error) {
     sendKnowledgeError(res, error);
   }
