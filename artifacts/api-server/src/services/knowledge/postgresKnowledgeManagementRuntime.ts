@@ -109,9 +109,23 @@ function strings(value: unknown, max: number): string[] {
   return resolved.map((item) => boundedText(item, 500));
 }
 
-function category(value: unknown): string {
+function storedCategory(value: unknown): string {
   const result = boundedText(value, 100);
-  return SAVED_ANSWER_CATEGORIES.has(result) ? result : "custom";
+  if (!SAVED_ANSWER_CATEGORIES.has(result)) {
+    dbError("KNOWLEDGE_STATE_INVALID", "knowledge state is invalid");
+  }
+  return result;
+}
+
+function inputCategory(value: unknown): string {
+  const result = boundedText(value, 100);
+  if (!SAVED_ANSWER_CATEGORIES.has(result)) {
+    throw new KnowledgeTransitionError(
+      "INVALID_SAVED_ANSWER_CATEGORY",
+      "saved answer category is invalid",
+    );
+  }
+  return result;
 }
 
 function replySource(value: unknown): SuggestedReplySource | null {
@@ -137,7 +151,7 @@ function savedFromRow(row: Record<string, unknown>, requestedMerchantId: string)
   return {
     id,
     merchantId: requestedMerchantId,
-    category: category(row.category),
+    category: storedCategory(row.category),
     questionPattern,
     answerText,
     language: lang(row.language),
@@ -377,7 +391,7 @@ export class PostgresKnowledgeManagementRuntime {
             language, source, active, version, created_at, updated_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,'merchant_approved',$8,1,NOW(),NOW())
            RETURNING ${SAVED_COLUMNS}`,
-          [id, merchant, category(input.category), question, normalized, answer, language, active],
+          [id, merchant, inputCategory(input.category), question, normalized, answer, language, active],
         );
         const record = savedFromRow(result.rows[0], merchant);
         await syncEmbedding(tx, { merchantId: merchant, kind: "saved_answer", knowledgeId: id, language, embedding });
@@ -402,7 +416,7 @@ export class PostgresKnowledgeManagementRuntime {
     if (current.version !== input.expectedVersion) throw new KnowledgeConflictError("saved answer version conflict", current);
 
     const next = {
-      category: input.category === undefined ? current.category : category(input.category),
+      category: input.category === undefined ? current.category : inputCategory(input.category),
       question: input.questionPattern === undefined ? current.questionPattern : boundedText(input.questionPattern, 500),
       answer: input.answerText === undefined ? current.answerText : boundedText(input.answerText, 2_000),
       language: input.language === undefined ? current.language : lang(input.language),
