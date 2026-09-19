@@ -40,7 +40,12 @@ function readSavedAnswerPage(req: Request): {
   const beforeUpdatedAt = readString(req.query.beforeUpdatedAt, 80);
   const beforeId = readString(req.query.beforeId, 160);
   if (Boolean(beforeUpdatedAt) !== Boolean(beforeId)) return null;
-  if (beforeUpdatedAt && !Number.isFinite(new Date(beforeUpdatedAt).getTime())) return null;
+  if (
+    beforeUpdatedAt &&
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(beforeUpdatedAt)
+  ) {
+    return null;
+  }
 
   return {
     limit,
