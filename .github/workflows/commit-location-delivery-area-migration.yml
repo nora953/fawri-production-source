@@ -1,0 +1,76 @@
+name: Commit location delivery area migration candidate
+
+on:
+  push:
+    branches:
+      - "parallel/location-delivery-area-routing"
+    paths:
+      - "lib/db/src/schema/**"
+      - "lib/db/migration-stages/0019/**"
+      - ".github/workflows/commit-location-delivery-area-migration.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: commit-location-delivery-area-migration
+  cancel-in-progress: false
+
+jobs:
+  commit-canonical-candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: true
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies
+        run: pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check database schema
+        run: pnpm --filter @workspace/db run typecheck
+
+      - name: Generate canonical migration history
+        run: pnpm --filter @workspace/db run schema:generate
+
+      - name: Prove generated diff is exactly stage 0019 metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f lib/db/drizzle/0019_location_delivery_area_routing.sql
+          test -f lib/db/drizzle/meta/0019_snapshot.json
+          test -f lib/db/drizzle/meta/_journal.json
+
+          mapfile -t changed < <(
+            git status --porcelain=v1 --untracked-files=all |
+            sed -E 's/^.. //' |
+            sort
+          )
+          printf '%s\n' "${changed[@]}"
+
+          allowed=$'lib/db/drizzle/0019_location_delivery_area_routing.sql\nlib/db/drizzle/meta/0019_snapshot.json\nlib/db/drizzle/meta/_journal.json'
+          actual="$(printf '%s\n' "${changed[@]}")"
+          test "$actual" = "$allowed"
+
+      - name: Commit canonical generated files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "fawri-migration-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add             lib/db/drizzle/0019_location_delivery_area_routing.sql             lib/db/drizzle/meta/0019_snapshot.json             lib/db/drizzle/meta/_journal.json
+          git commit -m "Generate location delivery area routing migration"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
