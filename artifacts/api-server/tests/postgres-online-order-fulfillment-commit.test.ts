@@ -66,7 +66,7 @@ function fixture(params?: {
       sql: string,
       values: unknown[] = [],
     ) {
-      if (sql.includes("FROM order_items oi")) {
+      if (sql.includes("FROM order_items")) {
         return {
           rows: (params?.orderItems ?? [
             {
