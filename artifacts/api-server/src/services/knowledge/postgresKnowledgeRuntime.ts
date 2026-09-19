@@ -489,6 +489,9 @@ WHERE merchant_id = $1
   AND version > 0
 LIMIT 2`;
 
+const MAX_APPROVED_CONTEXT_DOCUMENTS = 200;
+const MAX_VECTOR_CANDIDATES = 100;
+
 const APPROVED_DOCUMENTS_SQL = `
 SELECT id, merchant_id, question_pattern AS question, answer_text AS answer,
        language, source, 'saved_answer' AS kind, active, version
@@ -503,7 +506,7 @@ WHERE merchant_id = $1
   AND approval_status = 'approved'
   AND safe_to_auto_reply = TRUE
   AND version > 0
-LIMIT 200`;
+LIMIT 201`;
 
 const VECTOR_CANDIDATES_SQL = `
 SELECT e.merchant_id, e.knowledge_kind, e.knowledge_id, e.language,
@@ -544,7 +547,7 @@ WHERE e.merchant_id = $1
   AND l.approval_status = 'approved'
   AND l.safe_to_auto_reply = TRUE
   AND l.version > 0
-LIMIT 100`;
+LIMIT 101`;
 
 function savedAnswerFromRow(
   row: Record<string, unknown>,
@@ -660,6 +663,12 @@ export class PostgresKnowledgeRuntime {
     } catch {
       safeError("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
     }
+    if (result.rows.length > MAX_APPROVED_CONTEXT_DOCUMENTS) {
+      safeError(
+        "KNOWLEDGE_APPROVED_CONTEXT_LIMIT_EXCEEDED",
+        "approved knowledge context exceeds the bounded runtime limit",
+      );
+    }
     return result.rows.map((row) => semanticDocumentFromRow(row, merchantId));
   }
 
@@ -696,6 +705,13 @@ export class PostgresKnowledgeRuntime {
       ]);
     } catch {
       safeError("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+    }
+
+    if (result.rows.length > MAX_VECTOR_CANDIDATES) {
+      safeError(
+        "KNOWLEDGE_VECTOR_CANDIDATE_LIMIT_EXCEEDED",
+        "knowledge vector candidate set exceeds the bounded runtime limit",
+      );
     }
 
     const candidates = result.rows.map((row) => {
