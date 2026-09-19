@@ -83,7 +83,7 @@ test('functional freeze keeps checkout money hierarchy touch-readable and valida
     checkout,
     /parts\.currency[\s\S]*negative \?[\s\S]*parts\.amount/,
   );
-  assert.match(discountEditor, /h-11 rounded-xl border px-3 text-sm font-bold transition/);
+  assert.match(discountEditor, /h-12 rounded-xl border border-red-200 bg-red-50 px-2\.5 text-\[13px\] font-black/);
   assert.match(discountEditor, /h-12 w-full rounded-xl[\s\S]*text-xl font-black/);
   assert.match(discountEditor, /min-h-11 rounded-xl border/);
   assert.match(discountEditor, /rounded-lg border border-orange-100 bg-white\/80/);
