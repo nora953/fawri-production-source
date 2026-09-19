@@ -105,3 +105,9 @@ test("filtered training mutations reload the authoritative result set", () => {
   assert.match(pageSource, /setNotice\(reloaded \? copy\.conflict : copy\.loadFailed\)/);
   assert.match(pageSource, /else \{\s*replaceCurrent\(current\);/);
 });
+
+
+test("training search and status controls are locked while a mutation is active", () => {
+  assert.match(pageSource, /disabled={savingId !== null || loadingMore}/);
+  assert.match(pageSource, /value={filter}[^]*disabled={savingId !== null || loadingMore}/);
+});
