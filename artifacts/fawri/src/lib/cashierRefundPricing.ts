@@ -88,8 +88,9 @@ export function cashierAdjustedLineRevenueById(
 
 /**
  * Return the exact net amount attributable to the next returned units on one
- * sale line. Prefix allocation guarantees repeated partial returns sum exactly
- * to the line's post-manual-discount revenue with no rounding leakage.
+ * sale line. Remaining net revenue is divided across remaining units, so
+ * repeated partial returns sum exactly and legacy over-refunds are never
+ * compounded by new v2 returns.
  */
 export function cashierNetReturnRefundMinor(
   sale: Pick<CashierSaleSnapshot, 'lines' | 'manual_discount_minor' | 'total_minor'>,
