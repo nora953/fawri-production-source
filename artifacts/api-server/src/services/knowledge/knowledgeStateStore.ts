@@ -37,13 +37,23 @@ function emptyState(): KnowledgeRuntimeState {
   };
 }
 
+export type KnowledgeConflictCode =
+  | "VERSION_CONFLICT"
+  | "DUPLICATE_SAVED_ANSWER";
+
 export class KnowledgeConflictError<T> extends Error {
   readonly current: T;
+  readonly code: KnowledgeConflictCode;
 
-  constructor(message: string, current: T) {
+  constructor(
+    message: string,
+    current: T,
+    code: KnowledgeConflictCode = "VERSION_CONFLICT",
+  ) {
     super(message);
     this.name = "KnowledgeConflictError";
     this.current = current;
+    this.code = code;
   }
 }
 
