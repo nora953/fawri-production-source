@@ -29,7 +29,7 @@ export const SERVER_TRAINING_PAGE_COPY = {
     saving: "جارٍ الحفظ…",
     loadFailed: "تعذر تحميل طلبات التدريب.",
     actionFailed: "تعذر تنفيذ العملية.",
-    conflict: "تغير الطلب على جهاز آخر. تم تحميل النسخة الحالية.",
+    conflict: "تغير الطلب على جهاز آخر. تم تحميل الحالة الحالية مع الاحتفاظ بمسودتك.",
     replyRequired: "اكتب إجابة قبل الحفظ أو الاعتماد.",
     approvalNote: "الاعتماد يحول المصدر إلى merchant_approved ويسمح بالاسترجاع الآمن.",
     statuses: {
@@ -66,7 +66,7 @@ export const SERVER_TRAINING_PAGE_COPY = {
     saving: "پاشەکەوت دەکرێت…",
     loadFailed: "بارکردنی داواکارییەکان سەرکەوتوو نەبوو.",
     actionFailed: "کردارەکە سەرکەوتوو نەبوو.",
-    conflict: "داواکارییەکە لە ئامێرێکی تر گۆڕاوە. وەشانی ئێستا بارکرا.",
+    conflict: "داواکارییەکە لە ئامێرێکی تر گۆڕاوە. دۆخی ئێستا بارکرا و ڕەشنووسەکەت پارێزرا.",
     replyRequired: "پێش پاشەکەوتکردن یان پەسەندکردن وەڵامێک بنووسە.",
     approvalNote: "پەسەندکردن سەرچاوەکە دەگۆڕێت بۆ merchant_approved و گەڕانەوەی پارێزراو چالاک دەکات.",
     statuses: {
@@ -103,7 +103,7 @@ export const SERVER_TRAINING_PAGE_COPY = {
     saving: "Saving…",
     loadFailed: "Could not load training requests.",
     actionFailed: "The action could not be completed.",
-    conflict: "This request changed on another device. The current version was loaded.",
+    conflict: "This request changed on another device. The current state was loaded and your draft was kept.",
     replyRequired: "Write an answer before saving or approving.",
     approvalNote: "Approval changes provenance to merchant_approved and enables safe retrieval.",
     statuses: {
