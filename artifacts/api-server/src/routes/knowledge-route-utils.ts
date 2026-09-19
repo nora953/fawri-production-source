@@ -42,7 +42,7 @@ export function sendKnowledgeError(res: Response, error: unknown): void {
   if (error instanceof KnowledgeConflictError) {
     res.status(409).json({
       ok: false,
-      code: "VERSION_CONFLICT",
+      code: error.code,
       error: error.message,
       current: error.current,
     });
