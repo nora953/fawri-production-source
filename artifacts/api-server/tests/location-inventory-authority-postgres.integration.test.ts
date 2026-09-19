@@ -302,6 +302,112 @@ test("variant-managed products require variant-scoped location inventory", async
   assert.equal(created.level.version, 1);
 });
 
+test("catalog variant removal is blocked by migrated location inventory even before mutation history exists", async () => {
+  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
+  const merchantId = await createMerchant(`seeded-variant-${suffix}`);
+  const locationId = await createLocation(merchantId, `seeded-variant-${suffix}`);
+  const productId = `prd-seeded-location-variant-${suffix}`;
+  const variantId = `var-seeded-location-variant-${suffix}`;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId,
+    idempotencyKey: `catalog-seeded-location-variant-${suffix}`,
+    input: {
+      id: productId,
+      name: "Seeded location variant protection",
+      price_iqd: 25_000,
+      stock_quantity: 6,
+      low_stock_threshold: 1,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [
+        {
+          id: variantId,
+          name: "Large",
+          stock_quantity: 6,
+          options: { Size: "L" },
+        },
+      ],
+    },
+  });
+
+  await raw(
+    `INSERT INTO location_inventory_levels (
+       id, merchant_id, location_id, product_id, variant_id,
+       quantity, low_stock_threshold, version
+     ) VALUES ($1,$2,$3,$4,$5,6,1,1)`,
+    [
+      `location_inventory_seeded_${suffix}`,
+      merchantId,
+      locationId,
+      productId,
+      variantId,
+    ],
+  );
+
+  const beforeMutations = await raw(
+    `SELECT count(*)::int AS count
+       FROM inventory_mutations
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND variant_id = $4`,
+    [merchantId, locationId, productId, variantId],
+  );
+  assert.equal(Number(beforeMutations.rows[0]?.count), 0);
+
+  await assert.rejects(
+    catalog.updateCatalogProductAuthoritative({
+      merchantId,
+      productId,
+      expectedVersion: created.product.version,
+      input: {
+        name: "Removal must be rejected",
+        description: created.product.description,
+        category: created.product.category,
+        sku: created.product.sku,
+        barcode: created.product.barcode,
+        price_iqd: created.product.price_iqd,
+        compare_at_price_iqd: created.product.compare_at_price_iqd,
+        low_stock_threshold: created.product.low_stock_threshold,
+        status: created.product.status,
+        allow_fawri_reply: created.product.allow_fawri_reply,
+        image_refs: created.product.image_refs,
+        variants: [],
+      },
+    }),
+    (error: unknown) => {
+      const value = error as {
+        code?: unknown;
+        status?: unknown;
+        details?: { dependencies?: Array<{ kind?: unknown }> };
+      };
+      assert.equal(value.code, "CATALOG_VARIANT_HISTORY_CONFLICT");
+      assert.equal(value.status, 409);
+      assert.ok(
+        value.details?.dependencies?.some(
+          (dependency) => dependency.kind === "location_inventory_levels",
+        ),
+        "variant removal must identify active location inventory as a dependency",
+      );
+      return true;
+    },
+  );
+
+  const preserved = await raw(
+    `SELECT quantity, version
+       FROM location_inventory_levels
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND variant_id = $4`,
+    [merchantId, locationId, productId, variantId],
+  );
+  assert.equal(preserved.rows.length, 1);
+  assert.equal(Number(preserved.rows[0].quantity), 6);
+  assert.equal(Number(preserved.rows[0].version), 1);
+});
+
 test.after(async () => {
   await pool.end();
 });
