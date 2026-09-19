@@ -14,6 +14,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { accounts } from "./accounts";
+import { merchantLocations } from "./merchant-locations";
 import { merchants } from "./merchants";
 
 export const catalogIdentifierKindEnum = pgEnum("catalog_identifier_kind", [
@@ -429,6 +430,11 @@ export const inventoryMutations = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    locationTenantForeignKey: foreignKey({
+      name: "inventory_mutations_location_merchant_fk",
+      columns: [table.locationId, table.merchantId],
+      foreignColumns: [merchantLocations.id, merchantLocations.merchantId],
+    }),
     productTenantForeignKey: foreignKey({
       name: "inventory_mutations_product_tenant_fk",
       columns: [table.productId, table.merchantId],

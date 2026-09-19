@@ -9,6 +9,7 @@
     "cashier-staff.ts",
     "catalog.ts",
     "index.ts",
+    "location-inventory.ts",
     "merchant-locations.ts",
     "orders.ts"
   ]
