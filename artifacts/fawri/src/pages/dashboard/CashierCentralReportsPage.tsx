@@ -89,8 +89,8 @@ type Copy = {
   refunds: string; average: string; voided: string; returns: string; partialProfit: string; unavailableProfit: string;
   topProducts: string; noTop: string; salesByStaff: string; salesByStation: string; salesByLocation: string; activityByStaff: string; activityByStation: string; activityByLocation: string;
   noGroupSales: string; sales: string; saleOps: string; returnOps: string; voidOps: string; totalOps: string; branch: string; location: string;
-  generated: string; source: string; operationDetails: string; operationDetailsHint: string; employeeFilter: string; stationFilter: string;
-  typeFilter: string; allEmployees: string; allStations: string; allTypes: string; employee: string; station: string; shift: string;
+  generated: string; source: string; operationDetails: string; operationDetailsHint: string; detailsLimited: string; employeeFilter: string; locationFilter: string; stationFilter: string;
+  typeFilter: string; allEmployees: string; allLocations: string; allStations: string; allTypes: string; employee: string; station: string; shift: string;
   operationType: string; saleReference: string; dateTime: string; amount: string; noDetails: string; formerEmployee: string; formerStation: string; formerLocation: string;
 };
 
@@ -102,7 +102,7 @@ const COPY: Record<Lang, Copy> = {
     partialProfit: 'الربح الظاهر جزئي لأن تكلفة بعض القطع غير مسجلة.', unavailableProfit: 'بيانات الربح غير متاحة لهذا النطاق. لا يفترض فوري أن التكلفة صفر.', topProducts: 'الأكثر مبيعًا', noTop: 'لا توجد منتجات بصافي بيع موجب في هذه الفترة.',
     salesByStaff: 'الأثر المالي حسب موظف البيع', salesByStation: 'الأثر المالي حسب محطة البيع', salesByLocation: 'الأثر المالي حسب الفرع', activityByStaff: 'العمليات المنفذة حسب الموظف', activityByStation: 'العمليات المنفذة حسب المحطة', activityByLocation: 'العمليات المنفذة حسب الفرع', noGroupSales: 'لا يوجد أثر مالي ضمن هذه الفترة.',
     sales: 'عمليات بيع', saleOps: 'بيع', returnOps: 'إرجاع', voidOps: 'إلغاء', totalOps: 'الإجمالي', branch: 'الفرع', location: 'الفرع', generated: 'آخر تحديث', source: 'المصدر: سجل الكاشير المركزي الموثوق على السيرفر',
-    operationDetails: 'تفاصيل العمليات', operationDetailsHint: 'يعرض من نفّذ كل بيع أو إرجاع أو إلغاء، مع الوقت والفرع والمحطة والمناوبة.', employeeFilter: 'الموظف', stationFilter: 'المحطة', typeFilter: 'نوع العملية', allEmployees: 'كل الموظفين', allStations: 'كل المحطات', allTypes: 'كل العمليات',
+    operationDetails: 'تفاصيل العمليات', operationDetailsHint: 'يعرض من نفّذ كل بيع أو إرجاع أو إلغاء، مع الوقت والفرع والمحطة والمناوبة.', detailsLimited: 'يعرض جدول التفاصيل أحدث {limit} عملية كحد أقصى؛ الملخصات أعلاه تشمل كامل الفترة.', employeeFilter: 'الموظف', locationFilter: 'الفرع', stationFilter: 'المحطة', typeFilter: 'نوع العملية', allEmployees: 'كل الموظفين', allLocations: 'كل الفروع', allStations: 'كل المحطات', allTypes: 'كل العمليات',
     employee: 'الموظف', station: 'المحطة', shift: 'المناوبة', operationType: 'العملية', saleReference: 'مرجع البيع', dateTime: 'التاريخ والوقت', amount: 'المبلغ', noDetails: 'لا توجد عمليات تطابق عوامل التصفية.', formerEmployee: 'موظف سابق', formerStation: 'محطة سابقة', formerLocation: 'فرع غير منسوب',
   },
   ku: {
@@ -112,7 +112,7 @@ const COPY: Record<Lang, Copy> = {
     partialProfit: 'قازانجی پیشاندراو بەشێکییە چونکە تێچووی هەندێک دانە تۆمار نەکراوە.', unavailableProfit: 'زانیاری قازانج بۆ ئەم مەودایە بەردەست نییە. فەوری تێچوو بە سفر دانانێت.', topProducts: 'زۆرترین فرۆشراو', noTop: 'لەو ماوەیەدا هیچ بەرهەمێک بە فرۆشتنی خاوێنی پۆزەتیڤ نییە.',
     salesByStaff: 'کاریگەری دارایی بەپێی کارمەندی فرۆشیار', salesByStation: 'کاریگەری دارایی بەپێی وێستگەی فرۆشتن', salesByLocation: 'کاریگەری دارایی بەپێی لق', activityByStaff: 'کردارە جێبەجێکراوەکان بەپێی کارمەند', activityByStation: 'کردارە جێبەجێکراوەکان بەپێی وێستگە', activityByLocation: 'کردارە جێبەجێکراوەکان بەپێی لق', noGroupSales: 'لەو ماوەیەدا کاریگەری دارایی نییە.',
     sales: 'فرۆشتن', saleOps: 'فرۆشتن', returnOps: 'گەڕاندنەوە', voidOps: 'هەڵوەشاندنەوە', totalOps: 'کۆی گشتی', branch: 'لق', location: 'لق', generated: 'دوایین نوێکردنەوە', source: 'سەرچاوە: تۆماری ناوەندی متمانەپێکراوی کاشێر لە سێرڤەر',
-    operationDetails: 'وردەکاری کردارەکان', operationDetailsHint: 'کارمەند و کات و لق و وێستگە و مناوبەی هەر فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوە پیشان دەدات.', employeeFilter: 'کارمەند', stationFilter: 'وێستگە', typeFilter: 'جۆری کردار', allEmployees: 'هەموو کارمەندان', allStations: 'هەموو وێستگەکان', allTypes: 'هەموو کردارەکان',
+    operationDetails: 'وردەکاری کردارەکان', operationDetailsHint: 'کارمەند و کات و لق و وێستگە و مناوبەی هەر فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوە پیشان دەدات.', detailsLimited: 'خشتەی وردەکاری تەنها نوێترین {limit} کردار پیشان دەدات؛ کورتەکانی سەرەوە هەموو ماوەکە دەگرنەوە.', employeeFilter: 'کارمەند', locationFilter: 'لق', stationFilter: 'وێستگە', typeFilter: 'جۆری کردار', allEmployees: 'هەموو کارمەندان', allLocations: 'هەموو لقەکان', allStations: 'هەموو وێستگەکان', allTypes: 'هەموو کردارەکان',
     employee: 'کارمەند', station: 'وێستگە', shift: 'مناوبە', operationType: 'کردار', saleReference: 'ژمارەی فرۆشتن', dateTime: 'بەروار و کات', amount: 'بڕ', noDetails: 'هیچ کردارێک لەگەڵ پاڵێوەرەکان ناگونجێت.', formerEmployee: 'کارمەندی پێشوو', formerStation: 'وێستگەی پێشوو', formerLocation: 'لقێکی دیارینەکراو',
   },
   en: {
@@ -122,7 +122,7 @@ const COPY: Record<Lang, Copy> = {
     partialProfit: 'Shown profit is partial because cost is missing for some units.', unavailableProfit: 'Profit data is unavailable for this scope. Fawri does not assume missing cost is zero.', topProducts: 'Top products', noTop: 'No products have positive net sales in this period.',
     salesByStaff: 'Financial impact by selling employee', salesByStation: 'Financial impact by selling station', salesByLocation: 'Financial impact by location', activityByStaff: 'Executed operations by employee', activityByStation: 'Executed operations by station', activityByLocation: 'Executed operations by location', noGroupSales: 'No financial impact in this period.',
     sales: 'sales', saleOps: 'Sales', returnOps: 'Returns', voidOps: 'Voids', totalOps: 'Total', branch: 'Branch', location: 'Location', generated: 'Last updated', source: 'Source: trusted central cashier record on the server',
-    operationDetails: 'Operation details', operationDetailsHint: 'Shows who executed each sale, return or void together with its time, location, station and shift.', employeeFilter: 'Employee', stationFilter: 'Station', typeFilter: 'Operation type', allEmployees: 'All employees', allStations: 'All stations', allTypes: 'All operations',
+    operationDetails: 'Operation details', operationDetailsHint: 'Shows who executed each sale, return or void together with its time, location, station and shift.', detailsLimited: 'The detail table shows at most the latest {limit} operations; the summaries above cover the full period.', employeeFilter: 'Employee', locationFilter: 'Location', stationFilter: 'Station', typeFilter: 'Operation type', allEmployees: 'All employees', allLocations: 'All locations', allStations: 'All stations', allTypes: 'All operations',
     employee: 'Employee', station: 'Station', shift: 'Shift', operationType: 'Operation', saleReference: 'Sale reference', dateTime: 'Date & time', amount: 'Amount', noDetails: 'No operations match these filters.', formerEmployee: 'Former employee', formerStation: 'Former station', formerLocation: 'Unattributed location',
   },
 };
@@ -203,7 +203,7 @@ function operationMoney(item: OperationActivity, lang: Lang): string {
 export default function CashierCentralReportsPage() {
   const { lang, dir } = useI18n(); const labels = COPY[lang] || COPY.en;
   const [range, setRange] = useState<RangeKey>('today'); const [result, setResult] = useState<CentralReportResult | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
-  const [staffFilter, setStaffFilter] = useState('all'); const [stationFilter, setStationFilter] = useState('all'); const [kindFilter, setKindFilter] = useState<'all' | OperationKind>('all');
+  const [staffFilter, setStaffFilter] = useState('all'); const [locationFilter, setLocationFilter] = useState('all'); const [stationFilter, setStationFilter] = useState('all'); const [kindFilter, setKindFilter] = useState<'all' | OperationKind>('all');
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -217,7 +217,7 @@ export default function CashierCentralReportsPage() {
   }, [labels.failed, range]);
 
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => { setStaffFilter('all'); setStationFilter('all'); setKindFilter('all'); }, [range]);
+  useEffect(() => { setStaffFilter('all'); setLocationFilter('all'); setStationFilter('all'); setKindFilter('all'); }, [range]);
 
   const ranges = useMemo<Array<[RangeKey, string]>>(() => [['today', labels.today], ['7d', labels.seven], ['30d', labels.thirty], ['all', labels.all]], [labels]);
   const currencies = result?.report.by_currency || [];
@@ -226,10 +226,13 @@ export default function CashierCentralReportsPage() {
   const netUnits = currencies.reduce((sum, currency) => sum + currency.net_units, 0); const voidedSales = currencies.reduce((sum, currency) => sum + currency.voided_sale_count, 0); const returnCount = currencies.reduce((sum, currency) => sum + currency.return_count, 0);
 
   const operationStaff = useMemo(() => Array.from(new Map((result?.activity.operations || []).map(item => [item.staff_id, item.staff_name || labels.formerEmployee])).entries()), [labels.formerEmployee, result]);
+  const operationLocations = useMemo(() => Array.from(new Map((result?.activity.operations || []).map(item => [item.location_id || '__legacy_location__', item.location_name || labels.formerLocation])).entries()), [labels.formerLocation, result]);
   const operationStations = useMemo(() => Array.from(new Map((result?.activity.operations || []).map(item => [item.station_id, item.station_name || labels.formerStation])).entries()), [labels.formerStation, result]);
   const filteredOperations = useMemo(() => (result?.activity.operations || []).filter(item =>
-    (staffFilter === 'all' || item.staff_id === staffFilter) && (stationFilter === 'all' || item.station_id === stationFilter) && (kindFilter === 'all' || item.operation_kind === kindFilter)
-  ), [kindFilter, result, staffFilter, stationFilter]);
+    (staffFilter === 'all' || item.staff_id === staffFilter) && (locationFilter === 'all' || (item.location_id || '__legacy_location__') === locationFilter) && (stationFilter === 'all' || item.station_id === stationFilter) && (kindFilter === 'all' || item.operation_kind === kindFilter)
+  ), [kindFilter, locationFilter, result, staffFilter, stationFilter]);
+  const totalActivityOperations = result ? activityTotal(result) : 0;
+  const detailsAreLimited = Boolean(result && result.activity.operations.length < totalActivityOperations && result.activity.operation_detail_limit > 0);
   const dateLocale = lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en';
 
   return (
@@ -260,11 +263,13 @@ export default function CashierCentralReportsPage() {
 
         <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5" data-testid="cashier-operation-details">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">{labels.operationDetails}</h2><p className="mt-1 text-sm text-muted-foreground">{labels.operationDetailsHint}</p></div><span className="rounded-full border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground">{filteredOperations.length}</span></div>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <label className="text-sm font-semibold">{labels.employeeFilter}<select value={staffFilter} onChange={event => setStaffFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allEmployees}</option>{operationStaff.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
+            <label className="text-sm font-semibold">{labels.locationFilter}<select value={locationFilter} onChange={event => setLocationFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allLocations}</option>{operationLocations.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
             <label className="text-sm font-semibold">{labels.stationFilter}<select value={stationFilter} onChange={event => setStationFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allStations}</option>{operationStations.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
             <label className="text-sm font-semibold">{labels.typeFilter}<select value={kindFilter} onChange={event => setKindFilter(event.target.value as 'all' | OperationKind)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allTypes}</option><option value="sale">{labels.saleOps}</option><option value="return">{labels.returnOps}</option><option value="void">{labels.voidOps}</option></select></label>
           </div>
+          {detailsAreLimited ? <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">{labels.detailsLimited.replace('{limit}', String(result.activity.operation_detail_limit))}</p> : null}
           {filteredOperations.length === 0 ? <p className="mt-4 rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">{labels.noDetails}</p> : (
             <div className="mt-4 overflow-x-auto rounded-xl border"><table className="w-full min-w-[980px] text-sm"><thead className="bg-muted/60 text-xs text-muted-foreground"><tr><th className="px-3 py-2 text-start">{labels.dateTime}</th><th className="px-3 py-2 text-start">{labels.employee}</th><th className="px-3 py-2 text-start">{labels.operationType}</th><th className="px-3 py-2 text-start">{labels.saleReference}</th><th className="px-3 py-2 text-start">{labels.location}</th><th className="px-3 py-2 text-start">{labels.station}</th><th className="px-3 py-2 text-start">{labels.shift}</th><th className="px-3 py-2 text-end">{labels.amount}</th></tr></thead><tbody className="divide-y">{filteredOperations.map(item => <tr key={item.operation_id}><td className="whitespace-nowrap px-3 py-3">{new Date(item.occurred_at).toLocaleString(dateLocale)}</td><td className="px-3 py-3 font-semibold">{item.staff_name || labels.formerEmployee}</td><td className="px-3 py-3"><span className={`rounded-full px-2 py-1 text-xs font-bold ${item.operation_kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : item.operation_kind === 'return' ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>{operationLabel(item.operation_kind, labels)}</span></td><td className="px-3 py-3 font-mono text-xs" dir="ltr">{shortReference(item.sale_id, '#')}</td><td className="px-3 py-3">{item.location_name || labels.formerLocation}</td><td className="px-3 py-3">{item.station_name || labels.formerStation}</td><td className="px-3 py-3 font-mono text-xs" dir="ltr">{shortReference(item.shift_id, '')}</td><td className="whitespace-nowrap px-3 py-3 text-end font-bold" dir="ltr">{operationMoney(item, lang)}</td></tr>)}</tbody></table></div>
           )}
