@@ -19,6 +19,9 @@ const bindingAuthority = read(
 const clientSession = read(
   "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts",
 );
+const policyRefresh = read(
+  "artifacts/fawri/src/lib/cashierOperatorPolicyRefresh.ts",
+);
 
 test("cashier station creation binds a canonical merchant location", () => {
   assert.match(
@@ -87,4 +90,18 @@ test("branch changes rebind location and revoke stale station runtime", () => {
     staffAuthority,
     /merchant_cashier_stations_offline_location_unique/,
   );
+});
+
+
+test("policy refresh cannot silently change cashier location", () => {
+  assert.match(policyRefresh, /location_id: text\(operator\.location_id\)/);
+  assert.match(
+    policyRefresh,
+    /context\.location_id === session\.context\.location_id/,
+  );
+  assert.match(
+    policyRefresh,
+    /identity\.location_id !== context\.location_id/,
+  );
+  assert.match(policyRefresh, /location_id: context\.location_id/);
 });
