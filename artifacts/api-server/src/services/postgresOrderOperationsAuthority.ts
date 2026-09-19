@@ -471,9 +471,16 @@ function inventoryCompensationHash(value: string): string {
   return crypto.createHash("sha256").update(value).digest("hex");
 }
 
-async function compensateCancelledOnlineOrderInventory(
+export type OnlineOrderCancellationCompensationInput = {
+  id: string;
+  merchant_id: string;
+  fulfillment_location_id: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+export async function compensateCancelledOnlineOrderInventoryWithTarget(
   client: OperationalSqlClient,
-  current: OrderRow,
+  current: OnlineOrderCancellationCompensationInput,
 ): Promise<Record<string, unknown> | null> {
   const commit = onlineOrderCommitMetadata(current.metadata);
   if (!commit || commit.inventory_committed !== true) return null;
@@ -759,7 +766,7 @@ export async function updateServerOrderStatusAuthoritative(input: {
     if (current.status === next) return mapOrder(client, current);
     const compensatedMetadata =
       next === "cancelled"
-        ? await compensateCancelledOnlineOrderInventory(client, current)
+        ? await compensateCancelledOnlineOrderInventoryWithTarget(client, current)
         : null;
     await client.query(
       `UPDATE orders
