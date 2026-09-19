@@ -122,9 +122,16 @@ type VariantRow = {
   quantity: number;
 };
 
+type LocationLevelRow = {
+  id: string;
+  quantity: number;
+  version: number;
+};
+
 type ExistingOrderRow = {
   id: string;
   source_channel: string;
+  fulfillment_location_id: string | null;
   metadata: Record<string, unknown> | null;
 };
 
@@ -692,7 +699,7 @@ async function loadExistingOrder(
 ): Promise<ExistingOrderRow | null> {
   const rows = await operationalQueryRows<ExistingOrderRow>(
     target,
-    `SELECT id, source_channel, metadata
+    `SELECT id, source_channel, fulfillment_location_id, metadata
        FROM orders
       WHERE merchant_id = $1 AND id = $2
       LIMIT 1
@@ -700,6 +707,50 @@ async function loadExistingOrder(
     [merchantId, orderId],
   );
   return rows[0] || null;
+}
+
+async function requireCashierDeviceLocation(
+  target: OperationalQueryTarget,
+  params: {
+    merchantId: string;
+    deviceId: string;
+    requestedLocationId?: string;
+  },
+): Promise<string> {
+  const rows = await operationalQueryRows<{ location_id: string | null }>(
+    target,
+    `SELECT location_id
+       FROM merchant_cashier_stations
+      WHERE merchant_id = $1
+        AND paired_device_id = $2
+        AND status = 'active'
+      LIMIT 1
+      FOR UPDATE`,
+    [params.merchantId, params.deviceId],
+  );
+  const locationId = rows[0]?.location_id || "";
+  if (!locationId) {
+    throw new CashierSyncError(
+      "CASHIER_LOCATION_BINDING_REQUIRED",
+      "cashier device is not bound to an active merchant location",
+      409,
+    );
+  }
+  if (
+    params.requestedLocationId &&
+    params.requestedLocationId !== locationId
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_LOCATION_BINDING_MISMATCH",
+      "cashier location does not match the paired device",
+      409,
+      {
+        requested_location_id: params.requestedLocationId,
+        bound_location_id: locationId,
+      },
+    );
+  }
+  return locationId;
 }
 
 async function assertDeviceSequenceUnused(
@@ -732,6 +783,7 @@ async function applyInventoryForLine(
   target: OperationalQueryTarget,
   bundle: ValidatedBundle,
   line: CashierSaleLine,
+  locationId: string,
 ): Promise<boolean> {
   const products = await operationalQueryRows<ProductRow>(
     target,
@@ -744,10 +796,14 @@ async function applyInventoryForLine(
   );
   const product = products[0];
   if (!product) {
-    throw new CashierSyncError("CASHIER_SYNC_PRODUCT_NOT_FOUND", "cashier sale product no longer exists", 409, {
-      product_id: line.product_id,
-    });
+    throw new CashierSyncError(
+      "CASHIER_SYNC_PRODUCT_NOT_FOUND",
+      "cashier sale product no longer exists",
+      409,
+      { product_id: line.product_id },
+    );
   }
+
   const variants = await operationalQueryRows<VariantRow>(
     target,
     `SELECT id, quantity
@@ -757,6 +813,7 @@ async function applyInventoryForLine(
       FOR UPDATE`,
     [bundle.cloudMerchantId, line.product_id],
   );
+
   const tracked = catalogCommerceFromMetadata(product.metadata).track_inventory;
   const movement = bundle.movements.get(itemKey(line.product_id, line.variant_id));
   if (!tracked) {
@@ -769,109 +826,250 @@ async function applyInventoryForLine(
     }
     return false;
   }
-  let before: number;
-  let after: number;
-  let productQuantityAfter: number;
+
+  if (!movement || movement.delta !== -line.quantity) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_MOVEMENT_MISMATCH",
+      "sale inventory movement does not match sale quantity",
+      409,
+    );
+  }
+  if (
+    movement.product_id !== line.product_id ||
+    movement.variant_id !== line.variant_id ||
+    movement.related_sale_id !== bundle.sale.sale_id
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_MOVEMENT_MISMATCH",
+      "sale inventory movement identity mismatch",
+      409,
+    );
+  }
+
+  let legacyVariant: VariantRow | undefined;
   if (variants.length > 0) {
     if (!line.variant_id) {
-      throw new CashierSyncError("CASHIER_SYNC_VARIANT_REQUIRED", "variant id is required", 409, {
-        product_id: line.product_id,
-      });
+      throw new CashierSyncError(
+        "CASHIER_SYNC_VARIANT_REQUIRED",
+        "variant id is required",
+        409,
+        { product_id: line.product_id },
+      );
     }
-    const variant = variants.find((item) => item.id === line.variant_id);
-    if (!variant) {
-      throw new CashierSyncError("CASHIER_SYNC_VARIANT_NOT_FOUND", "cashier sale variant no longer exists", 409, {
+    legacyVariant = variants.find((item) => item.id === line.variant_id);
+    if (!legacyVariant) {
+      throw new CashierSyncError(
+        "CASHIER_SYNC_VARIANT_NOT_FOUND",
+        "cashier sale variant no longer exists",
+        409,
+        {
+          product_id: line.product_id,
+          variant_id: line.variant_id,
+        },
+      );
+    }
+  } else if (line.variant_id) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_VARIANT_NOT_FOUND",
+      "cashier sale variant no longer exists",
+      409,
+      {
         product_id: line.product_id,
         variant_id: line.variant_id,
-      });
-    }
-    before = Number(variant.quantity);
-    after = before - line.quantity;
-    if (!Number.isSafeInteger(before) || !Number.isSafeInteger(after) || after < 0) {
-      throw new CashierSyncError("CASHIER_SYNC_NEGATIVE_STOCK", "cloud stock is insufficient for offline sale", 409, {
+      },
+    );
+  }
+
+  const levels = await operationalQueryRows<LocationLevelRow>(
+    target,
+    `SELECT id, quantity, version
+       FROM location_inventory_levels
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND variant_id IS NOT DISTINCT FROM $4::text
+      LIMIT 1
+      FOR UPDATE`,
+    [
+      bundle.cloudMerchantId,
+      locationId,
+      line.product_id,
+      line.variant_id || null,
+    ],
+  );
+  const level = levels[0];
+  if (!level) {
+    throw new CashierSyncError(
+      "CASHIER_LOCATION_INVENTORY_UNALLOCATED",
+      "cashier location has no inventory allocation for this item",
+      409,
+      {
+        location_id: locationId,
         product_id: line.product_id,
-        variant_id: line.variant_id,
+        ...(line.variant_id ? { variant_id: line.variant_id } : {}),
+      },
+    );
+  }
+
+  const before = Number(level.quantity);
+  const after = before - line.quantity;
+  const expectedVersion = Number(level.version);
+  if (
+    !Number.isSafeInteger(before) ||
+    before < 0 ||
+    !Number.isSafeInteger(after) ||
+    after < 0 ||
+    !Number.isSafeInteger(expectedVersion) ||
+    expectedVersion <= 0
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_NEGATIVE_STOCK",
+      "location stock is insufficient for cashier sale",
+      409,
+      {
+        location_id: locationId,
+        product_id: line.product_id,
+        ...(line.variant_id ? { variant_id: line.variant_id } : {}),
         current_quantity: before,
         requested_quantity: line.quantity,
-      });
-    }
-    if (!movement || movement.delta !== -line.quantity) {
-      throw new CashierSyncError("CASHIER_SYNC_MOVEMENT_MISMATCH", "sale inventory movement does not match sale quantity", 409);
+      },
+    );
+  }
+  const resultingVersion = expectedVersion + 1;
+
+  const updatedLevel = await operationalQueryRows<{ id: string }>(
+    target,
+    `UPDATE location_inventory_levels
+        SET quantity = $5,
+            version = version + 1,
+            updated_at = now()
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND variant_id IS NOT DISTINCT FROM $4::text
+        AND version = $6
+      RETURNING id`,
+    [
+      bundle.cloudMerchantId,
+      locationId,
+      line.product_id,
+      line.variant_id || null,
+      after,
+      expectedVersion,
+    ],
+  );
+  if (updatedLevel.length !== 1) {
+    throw new CashierSyncError(
+      "CASHIER_LOCATION_INVENTORY_VERSION_CONFLICT",
+      "location inventory changed during cashier reconciliation",
+      409,
+      {
+        location_id: locationId,
+        product_id: line.product_id,
+        ...(line.variant_id ? { variant_id: line.variant_id } : {}),
+      },
+    );
+  }
+
+  await target.query(
+    `UPDATE merchant_locations
+        SET inventory_fresh_at = now(),
+            updated_at = GREATEST(updated_at, now())
+      WHERE merchant_id = $1 AND id = $2`,
+    [bundle.cloudMerchantId, locationId],
+  );
+
+  const legacyProductBefore = Number(product.quantity);
+  if (!Number.isSafeInteger(legacyProductBefore) || legacyProductBefore < 0) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_PRODUCT_STATE_INVALID",
+      "legacy catalog inventory projection is invalid",
+      500,
+      { product_id: line.product_id },
+    );
+  }
+  const legacyProductAfter = Math.max(
+    0,
+    legacyProductBefore - line.quantity,
+  );
+
+  if (legacyVariant && line.variant_id) {
+    const legacyVariantBefore = Number(legacyVariant.quantity);
+    if (!Number.isSafeInteger(legacyVariantBefore) || legacyVariantBefore < 0) {
+      throw new CashierSyncError(
+        "CASHIER_SYNC_PRODUCT_STATE_INVALID",
+        "legacy variant inventory projection is invalid",
+        500,
+        {
+          product_id: line.product_id,
+          variant_id: line.variant_id,
+        },
+      );
     }
     await target.query(
       `UPDATE product_variants
-          SET quantity = $4, updated_at = now()
+          SET quantity = GREATEST(quantity - $4, 0),
+              updated_at = now()
         WHERE merchant_id = $1 AND product_id = $2 AND id = $3`,
-      [bundle.cloudMerchantId, line.product_id, line.variant_id, after],
+      [
+        bundle.cloudMerchantId,
+        line.product_id,
+        line.variant_id,
+        line.quantity,
+      ],
     );
-    productQuantityAfter = variants.reduce(
-      (total, item) => total + (item.id === line.variant_id ? after : Number(item.quantity)),
-      0,
-    );
-  } else {
-    if (line.variant_id) {
-      throw new CashierSyncError("CASHIER_SYNC_VARIANT_NOT_FOUND", "cashier sale variant no longer exists", 409, {
-        product_id: line.product_id,
-        variant_id: line.variant_id,
-      });
-    }
-    before = Number(product.quantity);
-    after = before - line.quantity;
-    if (!Number.isSafeInteger(before) || !Number.isSafeInteger(after) || after < 0) {
-      throw new CashierSyncError("CASHIER_SYNC_NEGATIVE_STOCK", "cloud stock is insufficient for offline sale", 409, {
-        product_id: line.product_id,
-        current_quantity: before,
-        requested_quantity: line.quantity,
-      });
-    }
-    if (!movement || movement.delta !== -line.quantity) {
-      throw new CashierSyncError("CASHIER_SYNC_MOVEMENT_MISMATCH", "sale inventory movement does not match sale quantity", 409);
-    }
-    productQuantityAfter = after;
   }
-  if (
-    movement!.product_id !== line.product_id ||
-    movement!.variant_id !== line.variant_id ||
-    movement!.related_sale_id !== bundle.sale.sale_id
-  ) {
-    throw new CashierSyncError("CASHIER_SYNC_MOVEMENT_MISMATCH", "sale inventory movement identity mismatch", 409);
-  }
-  const expectedVersion = Number(product.version);
-  const resultingVersion = expectedVersion + 1;
+
   const nextStatus = inventoryStatus(
     product.status,
-    productQuantityAfter,
+    legacyProductAfter,
     Number(product.low_stock_threshold),
   );
-  const updated = await operationalQueryRows<{ id: string }>(
+  const updatedProduct = await operationalQueryRows<{ id: string }>(
     target,
     `UPDATE products
-        SET quantity = $3,
-            version = version + 1,
+        SET quantity = GREATEST(quantity - $3, 0),
             status = $4,
             updated_at = now()
-      WHERE merchant_id = $1 AND id = $2 AND version = $5 AND deleted_at IS NULL
+      WHERE merchant_id = $1
+        AND id = $2
+        AND version = $5
+        AND deleted_at IS NULL
       RETURNING id`,
-    [bundle.cloudMerchantId, line.product_id, productQuantityAfter, nextStatus, expectedVersion],
+    [
+      bundle.cloudMerchantId,
+      line.product_id,
+      line.quantity,
+      nextStatus,
+      Number(product.version),
+    ],
   );
-  if (updated.length !== 1) {
-    throw new CashierSyncError("CASHIER_SYNC_PRODUCT_VERSION_CONFLICT", "catalog changed during cashier reconciliation", 409, {
-      product_id: line.product_id,
-    });
+  if (updatedProduct.length !== 1) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_PRODUCT_VERSION_CONFLICT",
+      "catalog definition changed during cashier reconciliation",
+      409,
+      { product_id: line.product_id },
+    );
   }
+
   const keyHash = sha256(
-    `cashier-sale:${bundle.cloudMerchantId}:${bundle.operationId}:${line.line_id}`,
+    `cashier-sale:${bundle.cloudMerchantId}:${locationId}:${bundle.operationId}:${line.line_id}`,
   );
   await target.query(
     `INSERT INTO inventory_mutations (
-       id, merchant_id, product_id, variant_id, mutation_type,
+       id, merchant_id, location_id, product_id, variant_id, mutation_type,
        before_quantity, after_quantity, expected_version, resulting_version,
        actor_type, actor_account_id, reason_code, idempotency_key_hash,
        request_hash, created_at
-     ) VALUES ($1,$2,$3,$4,'adjust',$5,$6,$7,$8,'merchant',$2,$9,$10,$11,$12)`,
+     ) VALUES (
+       $1,$2,$3,$4,$5,'adjust',$6,$7,$8,$9,
+       'cashier',NULL,$10,$11,$12,$13
+     )`,
     [
       `cashier_mut_${keyHash.slice(0, 40)}`,
       bundle.cloudMerchantId,
+      locationId,
       line.product_id,
       line.variant_id || null,
       before,
@@ -884,6 +1082,7 @@ async function applyInventoryForLine(
       new Date(bundle.sale.occurred_at),
     ],
   );
+
   bundle.movements.delete(itemKey(line.product_id, line.variant_id));
   return true;
 }
@@ -921,6 +1120,7 @@ function orderPayment(sale: CashierSale): {
 async function insertCanonicalOrder(
   target: OperationalQueryTarget,
   bundle: ValidatedBundle,
+  locationId: string,
 ): Promise<void> {
   const payment = orderPayment(bundle.sale);
   const metadata = {
@@ -930,6 +1130,7 @@ async function insertCanonicalOrder(
       request_hash: bundle.requestHash,
       local_merchant_id: bundle.localMerchantId,
       device_id: bundle.deviceId,
+      location_id: locationId,
       device_sequence: String(bundle.deviceSequence),
       sale_id: bundle.sale.sale_id,
       occurred_at: bundle.sale.occurred_at,
@@ -961,7 +1162,7 @@ async function insertCanonicalOrder(
   };
   await target.query(
     `INSERT INTO orders (
-       id, merchant_id, customer_name, status, payment_method, payment_status,
+       id, merchant_id, fulfillment_location_id, customer_name, status, payment_method, payment_status,
        subtotal_iqd, delivery_fee_iqd, total_iqd, source_channel, version,
        notes, payment_verified_at, payment_confirmation_source,
        payment_provider, payment_provider_transaction_ref,
@@ -1021,9 +1222,14 @@ async function insertCanonicalOrder(
 
 export async function syncCashierSaleAuthoritative(params: {
   merchantId: unknown;
+  locationId?: unknown;
   body: unknown;
 }): Promise<CashierSaleSyncResult> {
   const merchantId = identifier(params.merchantId, "merchant_id");
+  const requestedLocationId =
+    params.locationId === undefined
+      ? undefined
+      : identifier(params.locationId, "location_id");
   if (!operationalPostgresAuthorityRequired()) {
     throw new CashierSyncError(
       "CASHIER_SYNC_POSTGRES_REQUIRED",
@@ -1045,6 +1251,11 @@ export async function syncCashierSaleAuthoritative(params: {
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
       [`cashier-device:${merchantId}:${bundle.deviceId}`],
     );
+    const locationId = await requireCashierDeviceLocation(client, {
+      merchantId,
+      deviceId: bundle.deviceId,
+      ...(requestedLocationId ? { requestedLocationId } : {}),
+    });
     const existing = await loadExistingOrder(client, merchantId, bundle.sale.sale_id);
     if (existing) {
       const cashierMetadata = metadataCashier(existing.metadata);
@@ -1053,6 +1264,8 @@ export async function syncCashierSaleAuthoritative(params: {
         String(cashierMetadata.operation_id || "") !== bundle.operationId ||
         String(cashierMetadata.request_hash || "") !== bundle.requestHash ||
         String(cashierMetadata.device_id || "") !== bundle.deviceId ||
+        (String(cashierMetadata.location_id || existing.fulfillment_location_id || "") &&
+          String(cashierMetadata.location_id || existing.fulfillment_location_id || "") !== locationId) ||
         String(cashierMetadata.device_sequence || "") !== String(bundle.deviceSequence)
       ) {
         throw new CashierSyncError(
@@ -1074,7 +1287,9 @@ export async function syncCashierSaleAuthoritative(params: {
     await assertDeviceSequenceUnused(client, bundle);
     let inventoryMutationCount = 0;
     for (const line of bundle.sale.lines) {
-      if (await applyInventoryForLine(client, bundle, line)) inventoryMutationCount += 1;
+      if (await applyInventoryForLine(client, bundle, line, locationId)) {
+        inventoryMutationCount += 1;
+      }
     }
     if (bundle.movements.size !== 0) {
       throw new CashierSyncError(
@@ -1084,7 +1299,7 @@ export async function syncCashierSaleAuthoritative(params: {
         { remaining_movements: bundle.movements.size },
       );
     }
-    await insertCanonicalOrder(client, bundle);
+    await insertCanonicalOrder(client, bundle, locationId);
     return {
       operation_id: bundle.operationId,
       order_id: bundle.sale.sale_id,
