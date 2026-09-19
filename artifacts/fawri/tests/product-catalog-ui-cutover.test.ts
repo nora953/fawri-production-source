@@ -390,12 +390,13 @@ test('inventory adjust uses canonical idempotency and expected_version contract'
 });
 
 test('variant-managed inventory UI never exposes a product-level mutation path', () => {
-  const variantBranch = catalogPage.indexOf('detailsProduct.variants.length > 0 ? detailsProduct.variants.map');
+  const variantMatch = /detailsProduct\.variants\.length > 0\s*\?\s*detailsProduct\.variants\.map\(variant =>/.exec(catalogPage);
+  const variantBranch = variantMatch?.index ?? -1;
   const simpleBranch = catalogPage.indexOf('}) : (() => {', variantBranch);
-  const variantSet = catalogPage.indexOf('setInventory(detailsProduct, variant)', variantBranch);
-  const variantAdjust = catalogPage.indexOf('adjustInventory(detailsProduct, delta, variant)', variantBranch);
-  const productSet = catalogPage.indexOf('setInventory(detailsProduct)', variantBranch);
-  const productAdjust = catalogPage.indexOf('adjustInventory(detailsProduct, delta)', variantBranch);
+  const variantSet = catalogPage.indexOf('setInventory(\n                                        detailsProduct,\n                                        location.id,\n                                        variant,', variantBranch);
+  const variantAdjust = catalogPage.indexOf('adjustInventory(\n                                        detailsProduct,\n                                        location.id,\n                                        delta,\n                                        variant,', variantBranch);
+  const productSet = catalogPage.indexOf('setInventory(\n                                        detailsProduct,\n                                        location.id,', simpleBranch);
+  const productAdjust = catalogPage.indexOf('adjustInventory(\n                                        detailsProduct,\n                                        location.id,\n                                        delta,', simpleBranch);
 
   assert.ok(variantBranch >= 0, 'details modal must branch on variant-managed inventory');
   assert.ok(simpleBranch > variantBranch, 'simple-product controls must stay in the fallback branch');
