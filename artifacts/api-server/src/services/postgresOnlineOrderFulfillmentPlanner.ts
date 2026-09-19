@@ -1,6 +1,5 @@
 import {
   routeOrderToLocationWithTarget,
-  type LocationRoutingAuthorityError,
 } from "./postgresLocationRoutingAuthority";
 import {
   resolveServiceAreaWithTarget,
