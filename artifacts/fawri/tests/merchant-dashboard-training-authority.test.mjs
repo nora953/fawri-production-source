@@ -111,3 +111,11 @@ test("training search and status controls are locked while a mutation is active"
   assert.match(pageSource, /disabled={savingId !== null || loadingMore}/);
   assert.match(pageSource, /value={filter}[^]*disabled={savingId !== null || loadingMore}/);
 });
+
+
+test("unfiltered training mutations keep latest-updated ordering coherent", () => {
+  assert.match(
+    pageSource,
+    /setRequests\(\(items\) => \[\s*current,\s*\.\.\.items\.filter\(\(item\) => item\.id !== current\.id\),\s*\]\)/,
+  );
+});
