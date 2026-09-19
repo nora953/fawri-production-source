@@ -141,11 +141,11 @@ test("location tables keep tenant boundaries and named foreign keys aligned with
     );
     assert.match(
       migration,
-      new RegExp(`CREATE POLICY "${table}_tenant_boundary" AS PERMISSIVE`),
+      new RegExp(`CREATE POLICY "${table}_tenant_boundary"[\\s\\S]*?AS PERMISSIVE`),
     );
     assert.doesNotMatch(
       migration,
-      new RegExp(`CREATE POLICY "${table}_tenant_boundary" AS RESTRICTIVE`),
+      new RegExp(`CREATE POLICY "${table}_tenant_boundary"[\\s\\S]*?AS RESTRICTIVE`),
     );
   }
 
