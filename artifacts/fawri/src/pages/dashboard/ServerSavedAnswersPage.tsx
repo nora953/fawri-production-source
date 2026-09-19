@@ -20,6 +20,10 @@ const CATEGORY_VALUES = [
 ] as const;
 type Category = (typeof CATEGORY_VALUES)[number];
 type LoadStatus = "loading" | "ready" | "unavailable";
+type SavedAnswerCursor = {
+  updatedAt: string;
+  id: string;
+};
 
 type SavedAnswer = {
   id: string;
@@ -73,6 +77,17 @@ function isSavedAnswer(value: unknown): value is SavedAnswer {
   );
 }
 
+function isSavedAnswerCursor(value: unknown): value is SavedAnswerCursor {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const cursor = value as Record<string, unknown>;
+  return (
+    typeof cursor.id === "string" &&
+    cursor.id.length > 0 &&
+    typeof cursor.updatedAt === "string" &&
+    Number.isFinite(new Date(cursor.updatedAt).getTime())
+  );
+}
+
 async function readJson<T extends { ok?: boolean }>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => null)) as (T & ApiError) | null;
   if (!response.ok || body?.ok !== true) {
@@ -98,6 +113,8 @@ export default function ServerSavedAnswersPage() {
   const [answers, setAnswers] = useState<SavedAnswer[]>([]);
   const [query, setQuery] = useState("");
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
+  const [nextCursor, setNextCursor] = useState<SavedAnswerCursor | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [open, setOpen] = useState(false);
@@ -108,28 +125,92 @@ export default function ServerSavedAnswersPage() {
   const load = useCallback(async () => {
     const requestId = ++loadRequestIdRef.current;
     setLoadStatus("loading");
+    setLoadingMore(false);
     setNotice("");
     try {
-      const result = await readJson<{ ok: true; answers: unknown }>(
-        await fetch("/api/knowledge/saved-answers", {
+      const result = await readJson<{
+        ok: true;
+        answers: unknown;
+        nextCursor?: unknown;
+      }>(
+        await fetch("/api/knowledge/saved-answers?limit=500", {
           credentials: "same-origin",
           cache: "no-store",
           headers: { Accept: "application/json" },
         }),
       );
-      if (!Array.isArray(result.answers) || !result.answers.every(isSavedAnswer)) {
+      if (
+        !Array.isArray(result.answers) ||
+        !result.answers.every(isSavedAnswer) ||
+        !(
+          result.nextCursor === undefined ||
+          result.nextCursor === null ||
+          isSavedAnswerCursor(result.nextCursor)
+        )
+      ) {
         throw new Error("Saved answers authority returned an invalid response");
       }
       if (requestId !== loadRequestIdRef.current) return;
       setAnswers(result.answers);
+      setNextCursor(isSavedAnswerCursor(result.nextCursor) ? result.nextCursor : null);
       setLoadStatus("ready");
     } catch (error) {
       if (requestId !== loadRequestIdRef.current) return;
       console.error("Load saved answers failed:", error);
       setNotice(copy.loadFailed);
+      setNextCursor(null);
       setLoadStatus("unavailable");
     }
   }, [copy.loadFailed]);
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || loadStatus !== "ready" || saving || loadingMore) return;
+    const requestId = ++loadRequestIdRef.current;
+    setLoadingMore(true);
+    setNotice("");
+    try {
+      const params = new URLSearchParams({
+        limit: "500",
+        beforeUpdatedAt: nextCursor.updatedAt,
+        beforeId: nextCursor.id,
+      });
+      const result = await readJson<{
+        ok: true;
+        answers: unknown;
+        nextCursor?: unknown;
+      }>(
+        await fetch(`/api/knowledge/saved-answers?${params.toString()}`, {
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        }),
+      );
+      if (
+        !Array.isArray(result.answers) ||
+        !result.answers.every(isSavedAnswer) ||
+        !(
+          result.nextCursor === undefined ||
+          result.nextCursor === null ||
+          isSavedAnswerCursor(result.nextCursor)
+        )
+      ) {
+        throw new Error("Saved answers authority returned an invalid response");
+      }
+      if (requestId !== loadRequestIdRef.current) return;
+      const pageAnswers = result.answers;
+      setAnswers((current) => {
+        const knownIds = new Set(current.map((item) => item.id));
+        return [...current, ...pageAnswers.filter((item) => !knownIds.has(item.id))];
+      });
+      setNextCursor(isSavedAnswerCursor(result.nextCursor) ? result.nextCursor : null);
+    } catch (error) {
+      if (requestId !== loadRequestIdRef.current) return;
+      console.error("Load more saved answers failed:", error);
+      setNotice(copy.loadFailed);
+    } finally {
+      if (requestId === loadRequestIdRef.current) setLoadingMore(false);
+    }
+  }, [copy.loadFailed, loadStatus, loadingMore, nextCursor, saving]);
 
   useEffect(() => {
     void load();
@@ -154,7 +235,7 @@ export default function ServerSavedAnswersPage() {
     );
   }, [answers, categoryLabels, query]);
 
-  const mutationsAllowed = loadStatus === "ready" && !saving;
+  const mutationsAllowed = loadStatus === "ready" && !saving && !loadingMore;
 
   function startCreate() {
     if (!mutationsAllowed) return;
