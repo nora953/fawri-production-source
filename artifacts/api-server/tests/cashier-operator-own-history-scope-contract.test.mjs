@@ -57,3 +57,13 @@ test('online and offline reports use the same own-employee scope across shifts',
   assert.match(client, /scope !== 'own_staff' && scope !== 'station'/);
   assert.match(client, /\? 'station' : 'own_staff'/);
 });
+
+
+test('online and offline operator reports keep the same top-product limit', async () => {
+  const server = await apiSource('src/services/postgresCashierCentralReportAuthority.ts');
+  const client = await repoSource('artifacts/fawri/src/lib/cashierOperatorReportsRuntime.ts');
+
+  assert.match(server, /const DEFAULT_TOP_PRODUCTS = 10/);
+  assert.match(client, /const OPERATOR_REPORT_TOP_PRODUCTS = 10/);
+  assert.match(client, /topProductsLimit: OPERATOR_REPORT_TOP_PRODUCTS/);
+});
