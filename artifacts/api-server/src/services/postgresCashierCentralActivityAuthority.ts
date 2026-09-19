@@ -27,7 +27,7 @@ export type CashierCentralStationActivityRow = CashierCentralActivityRow & {
 };
 
 export type CashierCentralLocationActivityRow = CashierCentralActivityRow & {
-  location_id: string;
+  location_id: string | null;
   location_name: string;
 };
 
@@ -79,7 +79,7 @@ type StationRow = {
 };
 
 type LocationRow = {
-  location_id: string;
+  location_id: string | null;
   location_name: string | null;
   operation_count: number | string;
   sale_count: number | string;
@@ -237,7 +237,6 @@ export async function buildCashierCentralActivityAuthoritative(input: {
              ON location.merchant_id = attribution.merchant_id
             AND location.id = attribution.location_id
           WHERE attribution.merchant_id = $1
-            AND attribution.location_id IS NOT NULL
             AND ($2::timestamptz IS NULL OR attribution.occurred_at >= $2::timestamptz)
             AND ($3::timestamptz IS NULL OR attribution.occurred_at < $3::timestamptz)
           GROUP BY attribution.location_id, location.name
@@ -313,8 +312,10 @@ export async function buildCashierCentralActivityAuthoritative(input: {
         ...(row.branch_key ? { branch_key: row.branch_key } : {}), ...(row.branch_label ? { branch_label: row.branch_label } : {}), ...counts(row),
       })),
       by_location: locationRows.map(row => ({
-        location_id: identifier(row.location_id, "location_id"),
-        location_name: row.location_name || "",
+        location_id: row.location_id
+          ? identifier(row.location_id, "location_id")
+          : null,
+        location_name: row.location_name || "Unattributed legacy location",
         ...counts(row),
       })),
       operations: operationRows.map(row => {
