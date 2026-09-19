@@ -360,6 +360,16 @@ export type LearnedAnswerPage = {
   nextCursor: LearnedAnswerPageCursor | null;
 };
 
+export type KnowledgeAuditPageCursor = {
+  createdAt: string;
+  id: string;
+};
+
+export type KnowledgeAuditPage = {
+  events: KnowledgeAuditEvent[];
+  nextCursor: KnowledgeAuditPageCursor | null;
+};
+
 export class PostgresKnowledgeManagementRuntime {
   readonly authorityId = "postgresql_knowledge_management_authority_v1";
   readonly legacyFallbackEnabled = false;
@@ -1093,17 +1103,70 @@ export class PostgresKnowledgeManagementRuntime {
     return (await this.listLearnedAnswersPage(value, { limit: 500 })).answers;
   }
 
-  async listAuditEvents(value: string, requestedLimit = 100): Promise<KnowledgeAuditEvent[]> {
+  async listAuditEventsPage(
+    value: string,
+    options: {
+      limit?: number;
+      beforeCreatedAt?: string;
+      beforeId?: string;
+    } = {},
+  ): Promise<KnowledgeAuditPage> {
     const merchant = merchantId(value);
-    const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 500) : 100;
+    const limit = options.limit ?? 100;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+      throw new KnowledgeTransitionError(
+        "INVALID_KNOWLEDGE_AUDIT_PAGE",
+        "knowledge audit page limit must be between 1 and 500",
+      );
+    }
+
+    const rawBeforeCreatedAt = boundedText(options.beforeCreatedAt, 80);
+    const beforeId = boundedText(options.beforeId, 160);
+    if (Boolean(rawBeforeCreatedAt) !== Boolean(beforeId)) {
+      throw new KnowledgeTransitionError(
+        "INVALID_KNOWLEDGE_AUDIT_PAGE",
+        "knowledge audit page cursor is incomplete",
+      );
+    }
+
+    let beforeCreatedAt: string | null = null;
+    if (rawBeforeCreatedAt) {
+      const cursorPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+      const millisIso = `${rawBeforeCreatedAt.slice(0, 23)}Z`;
+      if (
+        !cursorPattern.test(rawBeforeCreatedAt) ||
+        !Number.isFinite(new Date(millisIso).getTime())
+      ) {
+        throw new KnowledgeTransitionError(
+          "INVALID_KNOWLEDGE_AUDIT_PAGE",
+          "knowledge audit page cursor is invalid",
+        );
+      }
+      beforeCreatedAt = rawBeforeCreatedAt;
+    }
+
     try {
       const result = await this.sql.query<Record<string, unknown>>(
         `SELECT id, merchant_id, action, entity_type, entity_id, customer_text_hash,
-                customer_text_length, signal_codes, decision_code, outcome_code, created_at
-         FROM knowledge_audit_events WHERE merchant_id=$1 ORDER BY created_at DESC, id DESC LIMIT $2`,
-        [merchant, limit],
+                customer_text_length, signal_codes, decision_code, outcome_code, created_at,
+                to_char(
+                  created_at AT TIME ZONE 'UTC',
+                  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+                ) AS cursor_created_at
+           FROM knowledge_audit_events
+          WHERE merchant_id=$1
+            AND (
+              $2::timestamptz IS NULL
+              OR created_at < $2::timestamptz
+              OR (created_at = $2::timestamptz AND id < $3::text)
+            )
+          ORDER BY created_at DESC, id DESC
+          LIMIT $4`,
+        [merchant, beforeCreatedAt, beforeId || null, limit + 1],
       );
-      return result.rows.map((row) => {
+
+      const pageRows = result.rows.slice(0, limit);
+      const events = pageRows.map((row) => {
         assertTenant(row, merchant);
         const action = boundedText(row.action, 100);
         const outcomeRaw = boundedText(row.outcome_code, 40);
@@ -1128,7 +1191,37 @@ export class PostgresKnowledgeManagementRuntime {
           createdAt: iso(row.created_at),
         };
       });
+
+      const lastRow = pageRows[pageRows.length - 1];
+      const last = events[events.length - 1];
+      const cursorCreatedAt = lastRow
+        ? boundedText(lastRow.cursor_created_at, 80)
+        : "";
+      if (
+        result.rows.length > limit &&
+        (
+          !last ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursorCreatedAt)
+        )
+      ) {
+        dbError("KNOWLEDGE_STATE_INVALID", "knowledge pagination state is invalid");
+      }
+
+      return {
+        events,
+        nextCursor:
+          result.rows.length > limit && last
+            ? { createdAt: cursorCreatedAt, id: last.id }
+            : null,
+      };
     } catch (error) { rethrowRead(error); }
+  }
+
+  async listAuditEvents(value: string, requestedLimit = 100): Promise<KnowledgeAuditEvent[]> {
+    const limit = Number.isInteger(requestedLimit)
+      ? Math.min(Math.max(requestedLimit, 1), 500)
+      : 100;
+    return (await this.listAuditEventsPage(value, { limit })).events;
   }
 }
 
