@@ -4,6 +4,7 @@ import {
   withMerchantOperationalTransaction,
 } from "./operationalPostgresAuthority";
 import { CashierStaffAuthorityError } from "./postgresCashierStaffAuthority";
+import { cashierNetReturnRefundMinor } from "./cashierRefundPricing";
 
 const MAX_REPORT_SALES = 50_000;
 const DEFAULT_TOP_PRODUCTS = 10;
@@ -508,16 +509,25 @@ function validateSaleEvidence(sale: ParsedSale): void {
       }
       returnLineIds.add(returned.original_line_id);
       const original = originalLineById(sale, returned.original_line_id);
+      const returnedBefore = returnedByLine.get(original.line_id) || 0;
+      const expectedRefund =
+        Number(compensation.snapshot.refund_pricing_version || 0) === 2
+          ? cashierNetReturnRefundMinor(
+              sale,
+              original.line_id,
+              returnedBefore,
+              returned.quantity,
+            )
+          : safeMultiply(
+              original.effective_unit_price_minor,
+              returned.quantity,
+              "return refund",
+            );
       if (
         returned.product_id !== original.product_id ||
         returned.variant_id !== original.variant_id ||
         returned.effective_unit_price_minor !== original.effective_unit_price_minor ||
-        returned.refund_minor !==
-          safeMultiply(
-            original.effective_unit_price_minor,
-            returned.quantity,
-            "return refund",
-          )
+        returned.refund_minor !== expectedRefund
       ) {
         throw new CashierStaffAuthorityError(
           "CASHIER_REPORT_EVIDENCE_INVALID",
@@ -525,7 +535,6 @@ function validateSaleEvidence(sale: ParsedSale): void {
           409,
         );
       }
-      const returnedBefore = returnedByLine.get(original.line_id) || 0;
       const returnedAfter = safeAdd(
         returnedBefore,
         returned.quantity,
