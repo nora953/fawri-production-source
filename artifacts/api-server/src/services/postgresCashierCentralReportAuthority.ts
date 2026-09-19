@@ -439,6 +439,7 @@ function validateSaleEvidence(sale: ParsedSale): void {
 
   const compensationIds = new Set<string>();
   const returnedByLine = new Map<string, number>();
+  const refundedByLine = new Map<string, number>();
   let voidCount = 0;
   let returnCount = 0;
   for (const compensation of sale.compensations) {
@@ -516,6 +517,7 @@ function validateSaleEvidence(sale: ParsedSale): void {
               sale,
               original.line_id,
               returnedBefore,
+              refundedByLine.get(original.line_id) || 0,
               returned.quantity,
             )
           : safeMultiply(
@@ -548,6 +550,14 @@ function validateSaleEvidence(sale: ParsedSale): void {
         );
       }
       returnedByLine.set(original.line_id, returnedAfter);
+      refundedByLine.set(
+        original.line_id,
+        safeAdd(
+          refundedByLine.get(original.line_id) || 0,
+          returned.refund_minor,
+          "cumulative return refund",
+        ),
+      );
       refundTotal = safeAdd(refundTotal, returned.refund_minor, "return refund total");
     }
     if (
