@@ -1544,6 +1544,28 @@ function returnedQuantity(
   return total;
 }
 
+function returnedRefundMinor(
+  compensations: StoredCompensation[],
+  lineId: string,
+): number {
+  let total = 0;
+  for (const compensation of compensations) {
+    if (compensation.kind !== "return") continue;
+    const snapshot = record(compensation.snapshot);
+    const lines = Array.isArray(snapshot.lines) ? snapshot.lines : [];
+    for (const value of lines) {
+      const line = record(value);
+      if (String(line.original_line_id || "") !== lineId) continue;
+      total = safeAdd(
+        total,
+        nonNegativeInteger(line.refund_minor, "stored_return.refund_minor"),
+        "returned refund",
+      );
+    }
+  }
+  return total;
+}
+
 function acceptedEntityIds(bundle: ValidatedCompensationBundle): string[] {
   return bundle.envelopes.map((item) => item.entity_id);
 }
@@ -1625,6 +1647,7 @@ async function applyReturn(
             originalSale,
             line.line_id,
             alreadyReturned,
+            returnedRefundMinor(previousCompensations, line.line_id),
             requested.quantity,
           )
         : safeMultiply(
