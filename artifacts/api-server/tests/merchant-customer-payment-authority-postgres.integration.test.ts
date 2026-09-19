@@ -299,6 +299,163 @@ test("merchant manual confirmation is decisive and records merchant_confirmed pr
   assert.equal(decision.rows[0].confirmation_source, "merchant_confirmed");
 });
 
+test("cancelling a confirmed online order restores the original location inventory exactly once", async () => {
+  await seedElectronicOrder({
+    id: "order-cancel-restock",
+    conversationId: "conversation-cancel-restock",
+    customerId: "customer-cancel-restock",
+    amount: 21_000,
+  });
+
+  const stockBefore = await raw(
+    `SELECT quantity, version
+       FROM location_inventory_levels
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND variant_id IS NULL`,
+    [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+  );
+  const productBefore = await raw(
+    `SELECT quantity
+       FROM products
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchant.account.id, fulfillmentProductId],
+  );
+  const beforeQuantity = Number(stockBefore.rows[0].quantity);
+  const beforeVersion = Number(stockBefore.rows[0].version);
+  const beforeProductQuantity = Number(productBefore.rows[0].quantity);
+
+  const confirmed = await orders.confirmServerPaymentAuthoritative({
+    merchantId: merchant.account.id,
+    orderId: "order-cancel-restock",
+    expectedVersion: 1,
+    actorId: merchant.account.id,
+    requestId: "manual-payment-cancel-restock-0001",
+  });
+  assert.equal(confirmed.status, "confirmed");
+
+  const committed = await raw(
+    `SELECT fulfillment_location_id, metadata
+       FROM orders
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchant.account.id, "order-cancel-restock"],
+  );
+  const fulfillment = committed.rows[0].metadata.online_fulfillment_v1;
+  assert.equal(committed.rows[0].fulfillment_location_id, fulfillmentLocationId);
+  assert.equal(fulfillment.inventory_committed, true);
+  assert.deepEqual(fulfillment.inventory_items, [
+    {
+      product_id: fulfillmentProductId,
+      quantity: 1,
+      expected_version: beforeVersion,
+      resulting_version: beforeVersion + 1,
+    },
+  ]);
+
+  const stockAfterCommit = await raw(
+    `SELECT quantity, version
+       FROM location_inventory_levels
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND variant_id IS NULL`,
+    [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+  );
+  assert.equal(Number(stockAfterCommit.rows[0].quantity), beforeQuantity - 1);
+  assert.equal(Number(stockAfterCommit.rows[0].version), beforeVersion + 1);
+
+  const cancelled = await orders.updateServerOrderStatusAuthoritative({
+    merchantId: merchant.account.id,
+    orderId: "order-cancel-restock",
+    expectedVersion: confirmed.version,
+    status: "cancelled",
+  });
+  assert.equal(cancelled.status, "cancelled");
+
+  const stockAfterCancel = await raw(
+    `SELECT quantity, version
+       FROM location_inventory_levels
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND variant_id IS NULL`,
+    [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+  );
+  const productAfterCancel = await raw(
+    `SELECT quantity
+       FROM products
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchant.account.id, fulfillmentProductId],
+  );
+  assert.equal(Number(stockAfterCancel.rows[0].quantity), beforeQuantity);
+  assert.equal(Number(stockAfterCancel.rows[0].version), beforeVersion + 2);
+  assert.equal(Number(productAfterCancel.rows[0].quantity), beforeProductQuantity);
+
+  const releasedOrder = await raw(
+    `SELECT fulfillment_location_id, metadata
+       FROM orders
+      WHERE merchant_id = $1 AND id = $2`,
+    [merchant.account.id, "order-cancel-restock"],
+  );
+  assert.equal(releasedOrder.rows[0].fulfillment_location_id, fulfillmentLocationId);
+  assert.equal(
+    releasedOrder.rows[0].metadata.online_fulfillment_v1.inventory_release_reason,
+    "order_cancelled",
+  );
+  assert.ok(
+    String(
+      releasedOrder.rows[0].metadata.online_fulfillment_v1
+        .inventory_released_at || "",
+    ),
+  );
+
+  const releaseMutation = await raw(
+    `SELECT location_id, before_quantity, after_quantity,
+            expected_version, resulting_version
+       FROM inventory_mutations
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND reason_code = 'online_order_cancel_compensation'
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [merchant.account.id, fulfillmentLocationId, fulfillmentProductId],
+  );
+  assert.equal(releaseMutation.rows.length, 1);
+  assert.equal(releaseMutation.rows[0].location_id, fulfillmentLocationId);
+  assert.equal(Number(releaseMutation.rows[0].before_quantity), beforeQuantity - 1);
+  assert.equal(Number(releaseMutation.rows[0].after_quantity), beforeQuantity);
+  assert.equal(Number(releaseMutation.rows[0].expected_version), beforeVersion + 1);
+  assert.equal(Number(releaseMutation.rows[0].resulting_version), beforeVersion + 2);
+
+  const releaseCountBeforeReplay = await raw(
+    `SELECT count(*)::int AS count
+       FROM inventory_mutations
+      WHERE merchant_id = $1
+        AND reason_code = 'online_order_cancel_compensation'`,
+    [merchant.account.id],
+  );
+  const replay = await orders.updateServerOrderStatusAuthoritative({
+    merchantId: merchant.account.id,
+    orderId: "order-cancel-restock",
+    expectedVersion: cancelled.version,
+    status: "cancelled",
+  });
+  assert.equal(replay.status, "cancelled");
+  const releaseCountAfterReplay = await raw(
+    `SELECT count(*)::int AS count
+       FROM inventory_mutations
+      WHERE merchant_id = $1
+        AND reason_code = 'online_order_cancel_compensation'`,
+    [merchant.account.id],
+  );
+  assert.equal(
+    releaseCountAfterReplay.rows[0].count,
+    releaseCountBeforeReplay.rows[0].count,
+  );
+});
+
 test("verified provider paid evidence can confirm a pending order without Fawri receiving funds", async () => {
   await seedElectronicOrder({
     id: "order-provider-paid",
