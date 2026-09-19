@@ -22,8 +22,6 @@ export type CashierCentralStaffActivityRow = CashierCentralActivityRow & {
 export type CashierCentralStationActivityRow = CashierCentralActivityRow & {
   station_id: string;
   station_name: string;
-  location_id: string;
-  location_name: string;
   branch_key?: string;
   branch_label?: string;
 };
@@ -41,6 +39,8 @@ export type CashierCentralOperationActivityRow = {
   staff_name: string;
   station_id: string;
   station_name: string;
+  location_id: string;
+  location_name: string;
   branch_key?: string;
   branch_label?: string;
   shift_id: string;
@@ -70,8 +70,6 @@ type StaffRow = {
 type StationRow = {
   station_id: string;
   station_name: string | null;
-  location_id: string;
-  location_name: string | null;
   branch_key: string | null;
   branch_label: string | null;
   operation_count: number | string;
@@ -97,6 +95,8 @@ type OperationRow = {
   staff_name: string | null;
   station_id: string;
   station_name: string | null;
+  location_id: string;
+  location_name: string | null;
   branch_key: string | null;
   branch_label: string | null;
   shift_id: string;
