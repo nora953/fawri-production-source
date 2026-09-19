@@ -14,7 +14,10 @@ on:
       - "artifacts/api-server/src/services/cashierOperatorShiftCloseAuthority.ts"
       - "artifacts/api-server/src/services/postgresCashierOperatorReportAuthority.ts"
       - "artifacts/api-server/src/services/postgresCashierSyncAuthority.ts"
+      - "artifacts/api-server/src/services/cashierLocationCatalogProjection.ts"
+      - "artifacts/api-server/src/services/cashierLocationBindingAuthority.ts"
       - "artifacts/api-server/tests/cashier-operational-cutoff-postgres.integration.test.ts"
+      - "artifacts/api-server/tests/cashier-location-catalog-projection.test.ts"
       - "artifacts/api-server/tests/cashier-location-binding-contract.test.mjs"
       - "artifacts/api-server/tests/cashier-operator-logout-pin-contract.test.mjs"
       - "artifacts/api-server/tests/cashier-operator-logout-pin-postgres.integration.test.ts"
@@ -94,6 +97,11 @@ jobs:
         run: >-
           pnpm --filter @workspace/api-server exec node --test
           ./tests/cashier-location-binding-contract.test.mjs
+
+      - name: Prove cashier location catalog projection
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/cashier-location-catalog-projection.test.ts
 
       - name: Prove cashier end-shift PIN source contract
         run: >-
