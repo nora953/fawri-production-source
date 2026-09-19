@@ -1,0 +1,15 @@
+{
+  "index": 17,
+  "name": "multi_location_inventory_foundation",
+  "when": 1789776000000,
+  "mode": "reviewed_sql",
+  "sql_sha256": "a79581a28cb154b5c6139f9ad7bed10de3b24997aa3651ec41597d8a25305d06",
+  "preimage_files": [
+    "cashier-operation-attribution.ts",
+    "cashier-staff.ts",
+    "catalog.ts",
+    "index.ts",
+    "merchant-locations.ts",
+    "orders.ts"
+  ]
+}

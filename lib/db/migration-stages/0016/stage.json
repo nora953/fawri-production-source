@@ -1,0 +1,10 @@
+{
+  "index": 16,
+  "name": "cashier_merchant_discount_kind",
+  "when": 1789646400000,
+  "mode": "reviewed_sql",
+  "sql_sha256": "fbdb100182428b370f2271ac280cc9316bb1377971826a38b43c15cc40bf1329",
+  "preimage_files": [
+    "cashier-discount.ts"
+  ]
+}
