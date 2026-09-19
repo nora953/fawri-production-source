@@ -1,5 +1,23 @@
 export type KnowledgeLanguage = "ar" | "ku" | "en";
 
+export const SAVED_ANSWER_CATEGORIES = [
+  "delivery",
+  "payment",
+  "return_exchange",
+  "product",
+  "warranty",
+  "custom",
+] as const;
+
+export type SavedAnswerCategory = (typeof SAVED_ANSWER_CATEGORIES)[number];
+
+export function isSavedAnswerCategory(value: unknown): value is SavedAnswerCategory {
+  return (
+    typeof value === "string" &&
+    (SAVED_ANSWER_CATEGORIES as readonly string[]).includes(value)
+  );
+}
+
 export type KnowledgeSource =
   | "database_fact"
   | "merchant_approved"
@@ -30,7 +48,7 @@ export type KnowledgeDecisionAction =
 export type SavedAnswerRecord = {
   id: string;
   merchantId: string;
-  category: string;
+  category: SavedAnswerCategory;
   questionPattern: string;
   answerText: string;
   language: KnowledgeLanguage;
