@@ -31,6 +31,25 @@ const requested = [
   { product_id: "product-b", variant_id: "variant-b1", quantity: 1 },
 ];
 
+test("duplicate order lines for the same item are summed before routing", () => {
+  const result = routeOrderToLocation({
+    requested_items: [
+      { product_id: "product-a", quantity: 3 },
+      { product_id: "product-a", quantity: 3 },
+    ],
+    candidates: [
+      candidate("location-a", {
+        inventory: [{ product_id: "product-a", quantity: 5 }],
+      }),
+    ],
+  });
+
+  assert.deepEqual(result, {
+    status: "unfulfillable",
+    reason: "insufficient_single_location_inventory",
+  });
+});
+
 test("routing never combines stock across locations", () => {
   const result = routeOrderToLocation({
     requested_items: requested,

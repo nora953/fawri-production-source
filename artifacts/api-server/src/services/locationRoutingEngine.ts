@@ -61,21 +61,35 @@ function canOperate(candidate: RoutingCandidate): boolean {
   return candidate.accept_online_orders_while_closed;
 }
 
+function requestedTotals(
+  requestedItems: readonly RoutingRequestedItem[],
+): Map<string, number> | null {
+  const totals = new Map<string, number>();
+  for (const item of requestedItems) {
+    if (!item.product_id || !validQuantity(item.quantity)) return null;
+    const key = itemKey(item.product_id, item.variant_id);
+    const next = (totals.get(key) || 0) + item.quantity;
+    if (!Number.isSafeInteger(next) || next <= 0) return null;
+    totals.set(key, next);
+  }
+  return totals;
+}
+
 function canFulfillEntireOrder(
   candidate: RoutingCandidate,
   requestedItems: readonly RoutingRequestedItem[],
 ): boolean {
+  const required = requestedTotals(requestedItems);
+  if (!required) return false;
+
   const available = new Map<string, number>();
   for (const item of candidate.inventory) {
     if (!Number.isSafeInteger(item.quantity) || item.quantity < 0) return false;
     const key = itemKey(item.product_id, item.variant_id);
     available.set(key, item.quantity);
   }
-  return requestedItems.every(
-    (item) =>
-      validQuantity(item.quantity) &&
-      (available.get(itemKey(item.product_id, item.variant_id)) || 0) >=
-        item.quantity,
+  return [...required.entries()].every(
+    ([key, quantity]) => (available.get(key) || 0) >= quantity,
   );
 }
 
@@ -117,9 +131,7 @@ export function routeOrderToLocation(input: {
 }): LocationRoutingDecision {
   if (
     input.requested_items.length === 0 ||
-    input.requested_items.some(
-      (item) => !item.product_id || !validQuantity(item.quantity),
-    )
+    requestedTotals(input.requested_items) === null
   ) {
     throw new Error("routing request items are invalid");
   }
