@@ -380,11 +380,13 @@ export default function ServerTrainingPage() {
               }
               placeholder={copy.search}
               className="ps-10"
+              disabled={savingId !== null || loadingMore}
             />
           </div>
           <select
             className="h-10 rounded-md border bg-background px-3 text-sm"
             value={filter}
+            disabled={savingId !== null || loadingMore}
             onChange={(event: ChangeEvent<HTMLSelectElement>) =>
               setFilter(event.target.value as TrainingStatus | "all")
             }
