@@ -1086,6 +1086,33 @@ export async function deleteCatalogProductAuthoritative(params: {
         },
       );
     }
+    const locationInventory = await operationalQueryRows<{
+      location_id: string;
+      variant_id: string | null;
+      quantity: number;
+    }>(
+      client,
+      `SELECT location_id, variant_id, quantity
+         FROM location_inventory_levels
+        WHERE merchant_id = $1 AND product_id = $2
+        ORDER BY location_id, variant_id NULLS FIRST
+        FOR UPDATE`,
+      [merchantId, productId],
+    );
+    if (locationInventory.length > 0) {
+      throw new CatalogRuntimeError(
+        "CATALOG_PRODUCT_LOCATION_INVENTORY_CONFLICT",
+        "product cannot be deleted while location inventory levels still exist",
+        409,
+        {
+          locations: locationInventory.map((level) => ({
+            location_id: level.location_id,
+            variant_id: level.variant_id,
+            quantity: Number(level.quantity),
+          })),
+        },
+      );
+    }
     await client.query(
       "DELETE FROM catalog_identifiers WHERE merchant_id = $1 AND product_id = $2",
       [merchantId, productId],
