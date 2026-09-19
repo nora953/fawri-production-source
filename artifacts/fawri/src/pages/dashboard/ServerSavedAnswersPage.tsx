@@ -10,11 +10,20 @@ import { COMMON_UI_LABELS } from "@/lib/translations/commonUi";
 import { SERVER_SAVED_ANSWERS_PAGE_COPY } from "@/lib/translations/features/pages/dashboard/ServerSavedAnswersPage";
 
 type Language = "ar" | "ku" | "en";
+const CATEGORY_VALUES = [
+  "delivery",
+  "payment",
+  "return_exchange",
+  "product",
+  "warranty",
+  "custom",
+] as const;
+type Category = (typeof CATEGORY_VALUES)[number];
 type LoadStatus = "loading" | "ready" | "unavailable";
 
 type SavedAnswer = {
   id: string;
-  category: string;
+  category: Category;
   questionPattern: string;
   answerText: string;
   language: Language;
@@ -36,7 +45,7 @@ type Copy = (typeof SERVER_SAVED_ANSWERS_PAGE_COPY)[Language];
 
 const COPY: Record<Language, Copy> = SERVER_SAVED_ANSWERS_PAGE_COPY;
 const EMPTY_FORM = {
-  category: "custom",
+  category: "custom" as Category,
   questionPattern: "",
   answerText: "",
   language: "ar" as Language,
@@ -50,6 +59,7 @@ function isSavedAnswer(value: unknown): value is SavedAnswer {
     typeof answer.id === "string" &&
     answer.id.length > 0 &&
     typeof answer.category === "string" &&
+    CATEGORY_VALUES.includes(answer.category as Category) &&
     typeof answer.questionPattern === "string" &&
     typeof answer.answerText === "string" &&
     (answer.language === "ar" || answer.language === "ku" || answer.language === "en") &&
@@ -77,6 +87,14 @@ export default function ServerSavedAnswersPage() {
   const { lang, dir } = useI18n();
   const language: Language = lang === "ku" || lang === "en" ? lang : "ar";
   const copy = COPY[language];
+  const categoryLabels: Record<Category, string> = {
+    delivery: copy.categoryDelivery,
+    payment: copy.categoryPayment,
+    return_exchange: copy.categoryReturnExchange,
+    product: copy.categoryProduct,
+    warranty: copy.categoryWarranty,
+    custom: copy.categoryCustom,
+  };
   const [answers, setAnswers] = useState<SavedAnswer[]>([]);
   const [query, setQuery] = useState("");
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
@@ -124,12 +142,17 @@ export default function ServerSavedAnswersPage() {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return answers;
     return answers.filter((item) =>
-      [item.questionPattern, item.answerText, item.category]
+      [
+        item.questionPattern,
+        item.answerText,
+        item.category,
+        categoryLabels[item.category],
+      ]
         .join(" ")
         .toLowerCase()
         .includes(normalized),
     );
-  }, [answers, query]);
+  }, [answers, categoryLabels, query]);
 
   const mutationsAllowed = loadStatus === "ready" && !saving;
 
@@ -291,6 +314,7 @@ export default function ServerSavedAnswersPage() {
               <article key={answer.id} className="rounded-3xl border bg-card p-5 shadow-sm">
                 <div className="mb-3 flex flex-wrap gap-2">
                   <KnowledgeStatusBadge tone="success">{copy.approved}</KnowledgeStatusBadge>
+                  <KnowledgeStatusBadge>{categoryLabels[answer.category]}</KnowledgeStatusBadge>
                   <KnowledgeStatusBadge tone={answer.active ? "info" : "neutral"}>
                     {answer.active ? copy.active : copy.inactive}
                   </KnowledgeStatusBadge>
@@ -325,7 +349,22 @@ export default function ServerSavedAnswersPage() {
             </div>
             <label className="block text-sm font-semibold">
               {copy.category}
-              <Input className="mt-1" value={form.category} onChange={(event: ChangeEvent<HTMLInputElement>) => setForm((current) => ({ ...current, category: event.target.value }))} maxLength={100} />
+              <select
+                className="mt-1 h-10 w-full rounded-md border bg-background px-3"
+                value={form.category}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                  setForm((current) => ({
+                    ...current,
+                    category: event.target.value as Category,
+                  }))
+                }
+              >
+                {CATEGORY_VALUES.map((value) => (
+                  <option key={value} value={value}>
+                    {categoryLabels[value]}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="block text-sm font-semibold">
               {copy.language}
