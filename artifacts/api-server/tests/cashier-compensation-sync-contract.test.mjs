@@ -50,7 +50,7 @@ test('cashier compensation replays before inventory and uses one PostgreSQL tran
   assert.ok(apply > originalInventory, 'compensation is applied after original evidence is loaded');
 });
 
-test('return reconciliation derives charged-value refund and restock from immutable original sale evidence', async () => {
+test('return reconciliation derives refund and restock from immutable original sale evidence', async () => {
   const source = await apiSource(
     'src/services/postgresCashierCompensationSyncAuthority.ts',
   );
@@ -58,12 +58,9 @@ test('return reconciliation derives charged-value refund and restock from immuta
   assert.match(source, /metadata\.sale_snapshot/);
   assert.match(source, /reason_code = 'cashier_sale_sync'/);
   assert.match(source, /validateOriginalInventoryEvidence/);
-  assert.match(source, /CASHIER_RETURN_REFUND_ALLOCATION_VERSION = 2/);
-  assert.match(source, /refund_allocation_version/);
   assert.match(source, /requested\.effective_unit_price_minor !== line\.effective_unit_price_minor/);
-  assert.match(source, /allocatedReturnRefundMinor/);
-  assert.match(source, /refundedAmount\(previousCompensations\)/);
-  assert.match(source, /Math\.min\(allocatedRefund, remainingSaleRefundMinor\)/);
+  assert.match(source, /snapshot\.refund_pricing_version === CASHIER_REFUND_PRICING_VERSION/);
+  assert.match(source, /cashierNetReturnRefundMinor\(/);
   assert.match(source, /safeMultiply\(\s*line\.effective_unit_price_minor,\s*requested\.quantity/);
   assert.match(source, /returnedQuantity\(previousCompensations, line\.line_id\)/);
   assert.match(source, /requested\.quantity > remaining/);
