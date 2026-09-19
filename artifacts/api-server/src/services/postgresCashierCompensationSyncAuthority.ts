@@ -468,21 +468,34 @@ function parseOriginalSale(value: unknown): OriginalSale {
   }
   const lines = raw.lines.map((value) => {
     const line = record(value);
+    const quantity = positiveInteger(line.quantity, "sale.line.quantity");
+    const effectiveUnitPriceMinor = nonNegativeInteger(
+      line.effective_unit_price_minor,
+      "sale.line.effective_unit_price_minor",
+    );
+    const lineTotalMinor = nonNegativeInteger(
+      line.line_total_minor,
+      "sale.line.line_total_minor",
+    );
+    if (
+      lineTotalMinor !==
+      safeMultiply(effectiveUnitPriceMinor, quantity, "sale.line.line_total_minor")
+    ) {
+      throw new CashierSyncError(
+        "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
+        "original cashier sale line total is inconsistent",
+        409,
+      );
+    }
     return {
       line_id: identifier(line.line_id, "sale.line.line_id"),
       product_id: identifier(line.product_id, "sale.line.product_id"),
       ...(line.variant_id
         ? { variant_id: identifier(line.variant_id, "sale.line.variant_id") }
         : {}),
-      quantity: positiveInteger(line.quantity, "sale.line.quantity"),
-      effective_unit_price_minor: nonNegativeInteger(
-        line.effective_unit_price_minor,
-        "sale.line.effective_unit_price_minor",
-      ),
-      line_total_minor: nonNegativeInteger(
-        line.line_total_minor,
-        "sale.line.line_total_minor",
-      ),
+      quantity,
+      effective_unit_price_minor: effectiveUnitPriceMinor,
+      line_total_minor: lineTotalMinor,
     } satisfies OriginalSaleLine;
   });
   const lineIds = new Set<string>();
