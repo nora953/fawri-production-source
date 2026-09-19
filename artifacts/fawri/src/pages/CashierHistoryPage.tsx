@@ -286,8 +286,11 @@ export default function CashierHistoryPage() {
 
   const returnTotal = useMemo(() => {
     if (!selectedSale) return 0;
-    return selectedSale.lines.reduce((total, line) => {
-      const quantity = Math.max(0, Math.trunc(returnDraft[line.line_id] || 0));
+    return returnableLines.reduce((total, { line, remaining }) => {
+      const quantity = Math.min(
+        remaining,
+        Math.max(0, Math.trunc(returnDraft[line.line_id] || 0)),
+      );
       if (quantity === 0) return total;
       return total + cashierNetReturnRefundMinor(
         selectedSale,
@@ -297,7 +300,7 @@ export default function CashierHistoryPage() {
         quantity,
       );
     }, 0);
-  }, [returnDraft, selectedSale]);
+  }, [returnDraft, returnableLines, selectedSale]);
 
   const requestedReturnLines = useMemo(
     () =>
