@@ -114,6 +114,7 @@ type OrderRow = {
   customer_phone: string | null;
   customer_address: string | null;
   customer_area: string | null;
+  fulfillment_location_id: string | null;
   status: ServerOrderStatus;
   payment_method: ServerPaymentMethod;
   payment_status: ServerPaymentStatus;
@@ -148,6 +149,18 @@ type ItemRow = {
   unit_price_iqd: number;
 };
 
+type InventoryCompensationItemRow = {
+  product_id: string | null;
+  product_variant_id: string | null;
+  quantity: number;
+};
+
+type CompensationProductRow = {
+  quantity: number;
+  status: string;
+  low_stock_threshold: number;
+};
+
 type DecisionRow = {
   id: string;
   merchant_id: string;
@@ -171,7 +184,7 @@ type DecisionRow = {
 
 const ORDER_SELECT = `
 SELECT id, merchant_id, conversation_id, customer_external_id, customer_name,
-       customer_phone, customer_address, customer_area,
+       customer_phone, customer_address, customer_area, fulfillment_location_id,
        status::text AS status, payment_method::text AS payment_method,
        payment_status::text AS payment_status,
        subtotal_iqd, delivery_fee_iqd, total_iqd, source_channel, version,
@@ -430,6 +443,308 @@ export async function getServerOrderAuthoritative(
   );
 }
 
+
+function onlineOrderCommitMetadata(
+  metadata: Record<string, unknown> | null,
+): Record<string, unknown> | null {
+  if (!metadata || typeof metadata !== "object") return null;
+  const value = metadata.online_order_commit;
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function inventoryProjectionStatus(
+  currentStatus: string,
+  quantity: number,
+  lowStockThreshold: number,
+): string {
+  if (currentStatus === "draft" || currentStatus === "hidden_from_fawri") {
+    return currentStatus;
+  }
+  if (quantity === 0) return "out_of_stock";
+  if (quantity <= lowStockThreshold) return "low_stock";
+  return "available";
+}
+
+function inventoryCompensationHash(value: string): string {
+  return crypto.createHash("sha256").update(value).digest("hex");
+}
+
+export type OnlineOrderCancellationCompensationInput = {
+  id: string;
+  merchant_id: string;
+  fulfillment_location_id: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+export async function compensateCancelledOnlineOrderInventoryWithTarget(
+  client: OperationalSqlClient,
+  current: OnlineOrderCancellationCompensationInput,
+): Promise<Record<string, unknown> | null> {
+  const commit = onlineOrderCommitMetadata(current.metadata);
+  if (!commit || commit.inventory_committed !== true) return null;
+  if (text(commit.inventory_released_at)) return null;
+
+  const locationId = text(current.fulfillment_location_id);
+  if (!locationId) {
+    throw new OrderOperationError(
+      "ORDER_INVENTORY_COMPENSATION_LOCATION_REQUIRED",
+      "committed online order has no fulfillment location",
+      409,
+    );
+  }
+
+  const itemResult = await client.query<InventoryCompensationItemRow>(
+    `SELECT product_id, product_variant_id, quantity
+       FROM order_items
+      WHERE merchant_id = $1 AND order_id = $2
+      ORDER BY product_id, product_variant_id NULLS FIRST, id
+      FOR KEY SHARE`,
+    [current.merchant_id, current.id],
+  );
+  if (itemResult.rows.length === 0) {
+    throw new OrderOperationError(
+      "ORDER_INVENTORY_COMPENSATION_ITEMS_REQUIRED",
+      "committed online order has no restockable items",
+      409,
+    );
+  }
+
+  const aggregated = new Map<
+    string,
+    { productId: string; variantId?: string; quantity: number }
+  >();
+  for (const row of itemResult.rows) {
+    const productId = text(row.product_id);
+    const variantId = text(row.product_variant_id) || undefined;
+    const quantity = Number(row.quantity);
+    if (!productId || !Number.isSafeInteger(quantity) || quantity <= 0) {
+      throw new OrderOperationError(
+        "ORDER_INVENTORY_COMPENSATION_ITEM_INVALID",
+        "committed online order contains an invalid inventory item",
+        409,
+      );
+    }
+    const key = `${productId}\u0000${variantId || ""}`;
+    const existing = aggregated.get(key);
+    const next = (existing?.quantity || 0) + quantity;
+    if (!Number.isSafeInteger(next) || next <= 0) {
+      throw new OrderOperationError(
+        "ORDER_INVENTORY_COMPENSATION_ITEM_INVALID",
+        "committed online order item quantity exceeds safe range",
+        409,
+      );
+    }
+    aggregated.set(key, { productId, ...(variantId ? { variantId } : {}), quantity: next });
+  }
+
+  const releaseVersions: Record<
+    string,
+    { expected_version: number; resulting_version: number }
+  > = {};
+
+  for (const item of [...aggregated.values()].sort((left, right) => {
+    const product = left.productId.localeCompare(right.productId);
+    return product || (left.variantId || "").localeCompare(right.variantId || "");
+  })) {
+    const levelResult = await client.query<{
+      id: string;
+      quantity: number;
+      version: number;
+    }>(
+      `SELECT id, quantity, version
+         FROM location_inventory_levels
+        WHERE merchant_id = $1
+          AND location_id = $2
+          AND product_id = $3
+          AND variant_id IS NOT DISTINCT FROM $4::text
+        LIMIT 1
+        FOR UPDATE`,
+      [
+        current.merchant_id,
+        locationId,
+        item.productId,
+        item.variantId || null,
+      ],
+    );
+    const level = levelResult.rows[0];
+    const before = Number(level?.quantity);
+    const expectedVersion = Number(level?.version);
+    if (
+      !level ||
+      !Number.isSafeInteger(before) ||
+      before < 0 ||
+      !Number.isSafeInteger(expectedVersion) ||
+      expectedVersion <= 0
+    ) {
+      throw new OrderOperationError(
+        "ORDER_INVENTORY_COMPENSATION_LEVEL_INVALID",
+        "fulfillment inventory cannot be restored safely",
+        409,
+      );
+    }
+    const after = before + item.quantity;
+    if (!Number.isSafeInteger(after)) {
+      throw new OrderOperationError(
+        "ORDER_INVENTORY_COMPENSATION_LEVEL_INVALID",
+        "restored inventory would exceed safe integer range",
+        409,
+      );
+    }
+    const resultingVersion = expectedVersion + 1;
+    const updatedLevel = await client.query<{ id: string }>(
+      `UPDATE location_inventory_levels
+          SET quantity = $5,
+              version = version + 1,
+              updated_at = now()
+        WHERE merchant_id = $1
+          AND location_id = $2
+          AND product_id = $3
+          AND variant_id IS NOT DISTINCT FROM $4::text
+          AND version = $6
+        RETURNING id`,
+      [
+        current.merchant_id,
+        locationId,
+        item.productId,
+        item.variantId || null,
+        after,
+        expectedVersion,
+      ],
+    );
+    if (updatedLevel.rows.length !== 1) {
+      throw new OrderOperationError(
+        "ORDER_INVENTORY_COMPENSATION_VERSION_CONFLICT",
+        "fulfillment inventory changed during cancellation",
+        409,
+      );
+    }
+
+    if (item.variantId) {
+      await client.query(
+        `UPDATE product_variants
+            SET quantity = quantity + $4,
+                updated_at = now()
+          WHERE merchant_id = $1 AND product_id = $2 AND id = $3`,
+        [current.merchant_id, item.productId, item.variantId, item.quantity],
+      );
+    }
+
+    const productResult = await client.query<CompensationProductRow>(
+      `SELECT quantity, status, low_stock_threshold
+         FROM products
+        WHERE merchant_id = $1 AND id = $2
+        LIMIT 1
+        FOR UPDATE`,
+      [current.merchant_id, item.productId],
+    );
+    const product = productResult.rows[0];
+    const legacyBefore = Number(product?.quantity);
+    const lowStockThreshold = Number(product?.low_stock_threshold);
+    if (
+      !product ||
+      !Number.isSafeInteger(legacyBefore) ||
+      legacyBefore < 0 ||
+      !Number.isSafeInteger(lowStockThreshold) ||
+      lowStockThreshold < 0
+    ) {
+      throw new OrderOperationError(
+        "ORDER_INVENTORY_COMPENSATION_PRODUCT_INVALID",
+        "catalog inventory projection cannot be restored safely",
+        409,
+      );
+    }
+    const legacyAfter = legacyBefore + item.quantity;
+    if (!Number.isSafeInteger(legacyAfter)) {
+      throw new OrderOperationError(
+        "ORDER_INVENTORY_COMPENSATION_PRODUCT_INVALID",
+        "catalog inventory projection exceeds safe integer range",
+        409,
+      );
+    }
+    const nextStatus = inventoryProjectionStatus(
+      String(product.status),
+      legacyAfter,
+      lowStockThreshold,
+    );
+    await client.query(
+      `UPDATE products
+          SET quantity = $3,
+              status = $4,
+              updated_at = now()
+        WHERE merchant_id = $1 AND id = $2`,
+      [current.merchant_id, item.productId, legacyAfter, nextStatus],
+    );
+
+    const idempotencyKeyHash = inventoryCompensationHash(
+      `online-order-cancel:${current.merchant_id}:${current.id}:${item.productId}:${item.variantId || ""}`,
+    );
+    const requestHash = inventoryCompensationHash(
+      JSON.stringify({
+        order_id: current.id,
+        location_id: locationId,
+        product_id: item.productId,
+        variant_id: item.variantId || null,
+        quantity: item.quantity,
+        before,
+        after,
+        expected_version: expectedVersion,
+        resulting_version: resultingVersion,
+      }),
+    );
+    await client.query(
+      `INSERT INTO inventory_mutations (
+         id, merchant_id, location_id, product_id, variant_id, mutation_type,
+         before_quantity, after_quantity, expected_version, resulting_version,
+         actor_type, actor_account_id, reason_code, idempotency_key_hash,
+         request_hash, created_at
+       ) VALUES (
+         $1,$2,$3,$4,$5,'adjust',$6,$7,$8,$9,
+         'merchant',NULL,'online_order_cancel_compensation',$10,$11,now()
+       )`,
+      [
+        `online_order_cancel_mut_${idempotencyKeyHash.slice(0, 40)}`,
+        current.merchant_id,
+        locationId,
+        item.productId,
+        item.variantId || null,
+        before,
+        after,
+        expectedVersion,
+        resultingVersion,
+        idempotencyKeyHash,
+        requestHash,
+      ],
+    );
+
+    releaseVersions[
+      `${item.productId}:${item.variantId || ""}`
+    ] = {
+      expected_version: expectedVersion,
+      resulting_version: resultingVersion,
+    };
+  }
+
+  await client.query(
+    `UPDATE merchant_locations
+        SET inventory_fresh_at = now(),
+            updated_at = GREATEST(updated_at, now())
+      WHERE merchant_id = $1 AND id = $2`,
+    [current.merchant_id, locationId],
+  );
+
+  return {
+    ...(current.metadata || {}),
+    online_order_commit: {
+      ...commit,
+      inventory_released_at: new Date().toISOString(),
+      inventory_release_reason: "order_cancelled",
+      inventory_release_versions: releaseVersions,
+    },
+  };
+}
+
 export async function updateServerOrderStatusAuthoritative(input: {
   merchantId: string;
   orderId: string;
@@ -449,6 +764,10 @@ export async function updateServerOrderStatusAuthoritative(input: {
     assertVersion(current, version);
     assertOrderTransition(current.status, next);
     if (current.status === next) return mapOrder(client, current);
+    const compensatedMetadata =
+      next === "cancelled"
+        ? await compensateCancelledOnlineOrderInventoryWithTarget(client, current)
+        : null;
     await client.query(
       `UPDATE orders
           SET status = $3::order_status,
@@ -456,9 +775,13 @@ export async function updateServerOrderStatusAuthoritative(input: {
               confirmed_at = CASE WHEN $3 = 'confirmed' THEN COALESCE(confirmed_at, now()) ELSE confirmed_at END,
               cancelled_at = CASE WHEN $3 = 'cancelled' THEN COALESCE(cancelled_at, now()) ELSE cancelled_at END,
               delivered_at = CASE WHEN $3 = 'delivered' THEN COALESCE(delivered_at, now()) ELSE delivered_at END,
+              metadata = CASE
+                WHEN $4::jsonb IS NULL THEN metadata
+                ELSE $4::jsonb
+              END,
               updated_at = now()
         WHERE merchant_id = $1 AND id = $2`,
-      [merchantId, orderId, next],
+      [merchantId, orderId, next, compensatedMetadata ? JSON.stringify(compensatedMetadata) : null],
     );
     return mapOrder(client, await loadOrderRow(client, merchantId, orderId));
   });
