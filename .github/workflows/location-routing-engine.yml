@@ -5,8 +5,10 @@ on:
     paths:
       - "artifacts/api-server/src/services/locationRoutingEngine.ts"
       - "artifacts/api-server/src/services/postgresLocationRoutingAuthority.ts"
+      - "artifacts/api-server/src/services/postgresServiceAreaResolver.ts"
       - "artifacts/api-server/tests/location-routing-engine.test.ts"
       - "artifacts/api-server/tests/postgres-location-routing-authority.test.ts"
+      - "artifacts/api-server/tests/postgres-service-area-resolver.test.ts"
       - ".github/workflows/location-routing-engine.yml"
   workflow_dispatch:
 
@@ -49,3 +51,4 @@ jobs:
           pnpm --filter @workspace/api-server exec tsx --test
           ./tests/location-routing-engine.test.ts
           ./tests/postgres-location-routing-authority.test.ts
+          ./tests/postgres-service-area-resolver.test.ts
