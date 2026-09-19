@@ -4,10 +4,10 @@ import {
   withMerchantOperationalTransaction,
 } from "./operationalPostgresAuthority";
 import { CashierStaffAuthorityError } from "./postgresCashierStaffAuthority";
+import { cashierNetReturnRefundMinor } from "./cashierRefundPricing";
 
 const MAX_REPORT_SALES = 50_000;
 const DEFAULT_TOP_PRODUCTS = 10;
-const CASHIER_RETURN_REFUND_ALLOCATION_VERSION = 2 as const;
 
 export type CashierCentralReportEvidenceRow = {
   id: string;
@@ -250,52 +250,6 @@ function adjustedLineRevenueById(sale: ParsedSale): Map<string, number> {
   return adjusted;
 }
 
-function allocatedReturnRefundMinor(input: {
-  sale: ParsedSale;
-  line: SaleLine;
-  alreadyReturned: number;
-  returnQuantity: number;
-}): number {
-  const returnedAfter = input.alreadyReturned + input.returnQuantity;
-  if (
-    !Number.isSafeInteger(returnedAfter) ||
-    input.alreadyReturned < 0 ||
-    input.returnQuantity <= 0 ||
-    returnedAfter > input.line.quantity
-  ) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier return quantity exceeds original sale evidence",
-      409,
-    );
-  }
-  const chargedLineRevenue = adjustedLineRevenueById(input.sale).get(
-    input.line.line_id,
-  );
-  if (chargedLineRevenue === undefined) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_EVIDENCE_INVALID",
-      "cashier return allocation line is missing",
-      409,
-    );
-  }
-  const quantityBig = BigInt(input.line.quantity);
-  const revenueBig = BigInt(chargedLineRevenue);
-  const before =
-    (revenueBig * BigInt(input.alreadyReturned)) / quantityBig;
-  const after =
-    (revenueBig * BigInt(returnedAfter)) / quantityBig;
-  const refund = Number(after - before);
-  if (!Number.isSafeInteger(refund) || refund < 0) {
-    throw new CashierStaffAuthorityError(
-      "CASHIER_REPORT_OVERFLOW",
-      "cashier return allocation overflowed safe integer range",
-      409,
-    );
-  }
-  return refund;
-}
-
 function text(value: unknown, field: string, maxLength = 300): string {
   const normalized = String(value ?? "").normalize("NFKC").trim();
   if (!normalized || normalized.length > maxLength) {
@@ -485,9 +439,9 @@ function validateSaleEvidence(sale: ParsedSale): void {
 
   const compensationIds = new Set<string>();
   const returnedByLine = new Map<string, number>();
+  const refundedByLine = new Map<string, number>();
   let voidCount = 0;
   let returnCount = 0;
-  let refundedBefore = 0;
   for (const compensation of sale.compensations) {
     if (
       compensation.operation_id === sale.operation_id ||
@@ -543,28 +497,9 @@ function validateSaleEvidence(sale: ParsedSale): void {
     }
 
     returnCount += 1;
-    const allocationVersionRaw = compensation.snapshot.refund_allocation_version;
-    const allocationVersion =
-      allocationVersionRaw === undefined || allocationVersionRaw === null
-        ? undefined
-        : Number(allocationVersionRaw);
-    if (
-      allocationVersion !== undefined &&
-      allocationVersion !== CASHIER_RETURN_REFUND_ALLOCATION_VERSION
-    ) {
-      throw new CashierStaffAuthorityError(
-        "CASHIER_REPORT_EVIDENCE_INVALID",
-        "cashier return refund allocation version is unsupported",
-        409,
-      );
-    }
     const returnLines = parseReturnLines(compensation);
     const returnLineIds = new Set<string>();
     let refundTotal = 0;
-    let remainingSaleRefundMinor = Math.max(
-      0,
-      sale.total_minor - refundedBefore,
-    );
     for (const returned of returnLines) {
       if (returnLineIds.has(returned.original_line_id)) {
         throw new CashierStaffAuthorityError(
@@ -576,38 +511,20 @@ function validateSaleEvidence(sale: ParsedSale): void {
       returnLineIds.add(returned.original_line_id);
       const original = originalLineById(sale, returned.original_line_id);
       const returnedBefore = returnedByLine.get(original.line_id) || 0;
-      const returnedAfter = safeAdd(
-        returnedBefore,
-        returned.quantity,
-        "cumulative return quantity",
-      );
-      if (returnedAfter > original.quantity) {
-        throw new CashierStaffAuthorityError(
-          "CASHIER_REPORT_EVIDENCE_INVALID",
-          "cashier cumulative return exceeds original sold quantity",
-          409,
-        );
-      }
-      const allocatedRefund =
-        allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION
-          ? allocatedReturnRefundMinor({
+      const expectedRefund =
+        Number(compensation.snapshot.refund_pricing_version || 0) === 2
+          ? cashierNetReturnRefundMinor(
               sale,
-              line: original,
-              alreadyReturned: returnedBefore,
-              returnQuantity: returned.quantity,
-            })
+              original.line_id,
+              returnedBefore,
+              refundedByLine.get(original.line_id) || 0,
+              returned.quantity,
+            )
           : safeMultiply(
               original.effective_unit_price_minor,
               returned.quantity,
               "return refund",
             );
-      const expectedRefund =
-        allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION
-          ? Math.min(allocatedRefund, remainingSaleRefundMinor)
-          : allocatedRefund;
-      if (allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION) {
-        remainingSaleRefundMinor -= expectedRefund;
-      }
       if (
         returned.product_id !== original.product_id ||
         returned.variant_id !== original.variant_id ||
@@ -620,7 +537,27 @@ function validateSaleEvidence(sale: ParsedSale): void {
           409,
         );
       }
+      const returnedAfter = safeAdd(
+        returnedBefore,
+        returned.quantity,
+        "cumulative return quantity",
+      );
+      if (returnedAfter > original.quantity) {
+        throw new CashierStaffAuthorityError(
+          "CASHIER_REPORT_EVIDENCE_INVALID",
+          "cashier cumulative return exceeds original sold quantity",
+          409,
+        );
+      }
       returnedByLine.set(original.line_id, returnedAfter);
+      refundedByLine.set(
+        original.line_id,
+        safeAdd(
+          refundedByLine.get(original.line_id) || 0,
+          returned.refund_minor,
+          "cumulative return refund",
+        ),
+      );
       refundTotal = safeAdd(refundTotal, returned.refund_minor, "return refund total");
     }
     if (
@@ -636,11 +573,6 @@ function validateSaleEvidence(sale: ParsedSale): void {
         409,
       );
     }
-    refundedBefore = safeAdd(
-      refundedBefore,
-      refundTotal,
-      "cumulative return refund",
-    );
   }
 
   if (voidCount > 1 || (voidCount > 0 && returnCount > 0)) {
