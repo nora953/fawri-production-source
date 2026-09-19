@@ -49,7 +49,10 @@ function readSavedAnswerPage(req: Request): {
     return null;
   }
 
-  if (Array.isArray(req.query.q) || Array.isArray(req.query.categories)) {
+  if (
+    (req.query.q !== undefined && typeof req.query.q !== "string") ||
+    (req.query.categories !== undefined && typeof req.query.categories !== "string")
+  ) {
     return null;
   }
   const search = readString(req.query.q, 500);
