@@ -318,6 +318,17 @@ function returnedQuantityForLine(sale: CashierSaleSnapshot, lineId: string): num
   return total;
 }
 
+function returnedRefundForLine(sale: CashierSaleSnapshot, lineId: string): number {
+  let total = 0;
+  for (const returnSnapshot of sale.returns || []) {
+    for (const line of returnSnapshot.lines || []) {
+      if (line.original_line_id !== lineId) continue;
+      total = safeAdd(total, line.refund_minor, 'returned refund');
+    }
+  }
+  return total;
+}
+
 function originalSaleMovementId(sale: CashierSaleSnapshot, lineIndex: number): string {
   return `movement:${sale.operation_id}:${lineIndex + 1}`;
 }
@@ -551,6 +562,7 @@ export class IndexedDbCashierCompensationAuthority
           sale,
           line.line_id,
           alreadyReturned,
+          returnedRefundForLine(sale, line.line_id),
           requestLine.quantity,
         );
         refundTotalMinor = safeAdd(refundTotalMinor, refundMinor, 'return refund total');
