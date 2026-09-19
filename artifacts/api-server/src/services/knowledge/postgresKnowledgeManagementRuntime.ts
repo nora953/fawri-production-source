@@ -858,6 +858,101 @@ export class PostgresKnowledgeManagementRuntime {
     } catch (error) { rethrowWrite(error); }
   }
 
+  async revokeTrainingApproval(input: {
+    merchantId: string;
+    id: string;
+    expectedVersion: number;
+  }): Promise<TrainingRequestRecord> {
+    const merchant = merchantId(input.merchantId);
+    const id = boundedText(input.id, 160);
+    if (!id || !Number.isInteger(input.expectedVersion) || input.expectedVersion <= 0) {
+      throw new KnowledgeTransitionError(
+        "INVALID_TRAINING_REQUEST",
+        "training approval revocation is invalid",
+      );
+    }
+
+    try {
+      return await this.sql.transaction(async (tx) => {
+        const requestResult = await tx.query<Record<string, unknown>>(
+          `UPDATE training_requests
+              SET status='rejected',
+                  rejection_reason='merchant_revoked_approval',
+                  reviewed_at=NOW(),
+                  version=version+1,
+                  updated_at=NOW()
+            WHERE merchant_id=$1
+              AND id=$2
+              AND version=$3
+              AND status='approved'
+          RETURNING ${TRAINING_COLUMNS}`,
+          [merchant, id, input.expectedVersion],
+        );
+
+        if (!requestResult.rows[0]) {
+          const latest = await currentTraining(tx, merchant, id);
+          if (!latest) {
+            throw new KnowledgeNotFoundError(
+              "training request not found for this merchant",
+            );
+          }
+          if (latest.version !== input.expectedVersion) {
+            throw new KnowledgeConflictError(
+              "training request version conflict",
+              latest,
+            );
+          }
+          throw new KnowledgeTransitionError(
+            "INVALID_TRAINING_TRANSITION",
+            `cannot revoke training approval from ${latest.status}`,
+          );
+        }
+
+        const learnedResult = await tx.query<Record<string, unknown>>(
+          `UPDATE learned_answers
+              SET approval_status='rejected',
+                  safe_to_auto_reply=FALSE,
+                  version=version+1,
+                  updated_at=NOW()
+            WHERE merchant_id=$1
+              AND training_request_id=$2
+              AND approval_status='approved'
+              AND safe_to_auto_reply=TRUE
+          RETURNING ${LEARNED_COLUMNS}`,
+          [merchant, id],
+        );
+
+        if (learnedResult.rows.length !== 1) {
+          dbError(
+            "KNOWLEDGE_STATE_INVALID",
+            "approved training request learned answer state is invalid",
+          );
+        }
+
+        const learnedAnswer = learnedFromRow(learnedResult.rows[0], merchant);
+        await tx.query(
+          `DELETE FROM knowledge_embeddings
+            WHERE merchant_id=$1
+              AND knowledge_kind='learned_answer'
+              AND learned_answer_id=$2`,
+          [merchant, learnedAnswer.id],
+        );
+
+        const request = trainingFromRow(requestResult.rows[0], merchant);
+        await audit(tx, {
+          merchantId: merchant,
+          action: "training_approval_revoked",
+          entityType: "training_request",
+          entityId: id,
+          outcome: "success",
+        });
+        return request;
+      });
+    } catch (error) {
+      rethrowWrite(error);
+    }
+  }
+
   async rejectTrainingRequest(input: {
     merchantId: string; id: string; expectedVersion: number; reason?: string;
   }): Promise<TrainingRequestRecord> {
@@ -932,7 +1027,7 @@ export class PostgresKnowledgeManagementRuntime {
             ? entityRaw : "decision";
         const actor: KnowledgeAuditEvent["actor"] = action === "openai_candidate_recorded"
           ? "ai_provider"
-          : action.startsWith("saved_answer_") || action.startsWith("training_reply_") || action.startsWith("training_request_approve") || action.startsWith("training_request_reject")
+          : action.startsWith("saved_answer_") || action.startsWith("training_reply_") || action.startsWith("training_request_approve") || action.startsWith("training_request_reject") || action.startsWith("training_approval_")
             ? "merchant" : "system";
         return {
           id: boundedText(row.id, 160), merchantId: merchant, action, entityType,
