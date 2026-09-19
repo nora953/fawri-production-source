@@ -331,12 +331,18 @@ function validateSale(sale: CashierSaleSnapshot): void {
   }
   const operationIds = new Set<string>([sale.operation_id]);
   const returnedByLine = new Map<string, number>();
+  let refundedBefore = 0;
   for (const snapshot of returns) {
     if (operationIds.has(snapshot.operation_id)) {
       throw new Error('CASHIER_REPORT_DUPLICATE_OPERATION');
     }
     operationIds.add(snapshot.operation_id);
-    validateReturnSnapshot(sale, snapshot, returnedByLine);
+    refundedBefore = validateReturnSnapshot(
+      sale,
+      snapshot,
+      returnedByLine,
+      refundedBefore,
+    );
   }
   if (sale.void) {
     if (operationIds.has(sale.void.operation_id)) {
@@ -359,7 +365,8 @@ function validateReturnSnapshot(
   sale: CashierSaleSnapshot,
   snapshot: CashierReturnSnapshot,
   returnedByLine: Map<string, number>,
-): void {
+  refundedBefore: number,
+): number {
   if (
     snapshot.sale_id !== sale.sale_id ||
     snapshot.currency_code !== sale.currency_code ||
@@ -372,6 +379,10 @@ function validateReturnSnapshot(
   requiredInstant(snapshot.occurred_at, 'return_time');
   const lineIds = new Set<string>();
   let refundTotal = 0;
+  let remainingSaleRefundMinor = Math.max(
+    0,
+    safeNonNegativeInteger(sale.total_minor, 'sale_total') - refundedBefore,
+  );
   for (const returned of snapshot.lines) {
     if (lineIds.has(returned.original_line_id)) {
       throw new Error('CASHIER_REPORT_DUPLICATE_RETURN_LINE');
@@ -399,7 +410,7 @@ function validateReturnSnapshot(
     if (cumulative > original.quantity) {
       throw new Error('CASHIER_REPORT_RETURN_EXCEEDS_SALE');
     }
-    const expectedRefund =
+    const allocatedRefund =
       allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION
         ? cashierReturnRefundMinor({
             sale,
@@ -408,6 +419,13 @@ function validateReturnSnapshot(
             returnQuantity: quantity,
           })
         : safeMultiply(originalPrice, quantity, 'return_refund');
+    const expectedRefund =
+      allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION
+        ? Math.min(allocatedRefund, remainingSaleRefundMinor)
+        : allocatedRefund;
+    if (allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION) {
+      remainingSaleRefundMinor -= expectedRefund;
+    }
     if (
       returned.product_id !== original.product_id ||
       returned.variant_id !== original.variant_id ||
@@ -422,6 +440,7 @@ function validateReturnSnapshot(
   if (refundTotal !== safeNonNegativeInteger(snapshot.refund_total_minor, 'return_refund')) {
     throw new Error('CASHIER_REPORT_INVALID_RETURN_TOTAL');
   }
+  return safeAdd(refundedBefore, refundTotal, 'refund_total');
 }
 
 function applySale(
