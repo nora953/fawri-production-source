@@ -19,6 +19,20 @@ import {
 const router = Router();
 router.use(requireMerchantSession);
 
+const SAVED_ANSWER_CATEGORIES = new Set([
+  "delivery",
+  "payment",
+  "return_exchange",
+  "product",
+  "warranty",
+  "custom",
+]);
+
+function readSavedAnswerCategory(value: unknown): string | null {
+  const candidate = readString(value, 100);
+  return SAVED_ANSWER_CATEGORIES.has(candidate) ? candidate : null;
+}
+
 router.get("/", async (_req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
   try {
@@ -34,12 +48,16 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
   const questionPattern = readString(req.body?.questionPattern ?? req.body?.question_pattern, 500);
   const answerText = readString(req.body?.answerText ?? req.body?.answer_text, 2_000);
   const language = readLanguage(req.body?.language);
+  const category =
+    req.body?.category === undefined
+      ? "custom"
+      : readSavedAnswerCategory(req.body.category);
 
-  if (!questionPattern || !answerText || !language) {
+  if (!questionPattern || !answerText || !language || !category) {
     res.status(400).json({
       ok: false,
       code: "INVALID_SAVED_ANSWER",
-      error: "questionPattern, answerText, and language are required",
+      error: "questionPattern, answerText, language, and a valid category are required",
     });
     return;
   }
@@ -47,7 +65,7 @@ router.post("/", async (req: Request, res: Response): Promise<void> => {
   try {
     const answer = await createMerchantSavedAnswer({
       merchantId,
-      category: readString(req.body?.category, 100) || "custom",
+      category,
       questionPattern,
       answerText,
       language,
@@ -77,16 +95,25 @@ router.patch("/:id", async (req: Request, res: Response): Promise<void> => {
     res.status(400).json({ ok: false, code: "INVALID_LANGUAGE", error: "invalid language" });
     return;
   }
+  const category =
+    req.body?.category === undefined
+      ? undefined
+      : readSavedAnswerCategory(req.body.category);
+  if (req.body?.category !== undefined && !category) {
+    res.status(400).json({
+      ok: false,
+      code: "INVALID_SAVED_ANSWER_CATEGORY",
+      error: "invalid saved answer category",
+    });
+    return;
+  }
 
   try {
     const answer = await updateMerchantSavedAnswer({
       merchantId,
       id: readString(req.params.id, 160),
       expectedVersion,
-      category:
-        req.body?.category === undefined
-          ? undefined
-          : readString(req.body.category, 100),
+      category,
       questionPattern:
         req.body?.questionPattern === undefined && req.body?.question_pattern === undefined
           ? undefined
