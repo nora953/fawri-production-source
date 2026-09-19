@@ -46,3 +46,24 @@ test("merchant lifecycle deletion is wired directly to PostgreSQL Knowledge clea
   assert.doesNotMatch(compatibilityLifecycle, /registerMerchantSavedAnswersDeletion/);
   assert.doesNotMatch(compatibilityLifecycle, /registerMerchantBotTrainingDeletion/);
 });
+
+
+test("learned-answer management is paginated instead of silently truncating at 500", () => {
+  const route = read("routes/knowledge-operations.ts");
+  const runtime = read("services/knowledge/postgresKnowledgeManagementRuntime.ts");
+
+  assert.match(route, /readLearnedAnswerPage/);
+  assert.match(route, /listLearnedAnswersPage/);
+  assert.match(route, /nextCursor: page\.nextCursor/);
+  assert.match(route, /INVALID_LEARNED_ANSWER_PAGE/);
+
+  assert.match(runtime, /async listLearnedAnswersPage/);
+  assert.match(runtime, /LIMIT \$4/);
+  assert.match(runtime, /result\.rows\.length > limit/);
+  assert.match(runtime, /to_char\(/);
+  assert.match(runtime, /cursor_updated_at/);
+  assert.match(
+    runtime,
+    /return \(await this\.listLearnedAnswersPage\(value, \{ limit: 500 \}\)\)\.answers/,
+  );
+});
