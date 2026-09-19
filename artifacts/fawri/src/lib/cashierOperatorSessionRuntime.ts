@@ -191,7 +191,7 @@ function stationBinding(
     station_id: identity.station_id,
     station_name: identity.station_name,
     location_id: identity.location_id,
-    branch_key: identity.branch_key;
+    branch_key: identity.branch_key,
     ...(identity.branch_label ? { branch_label: identity.branch_label } : {}),
     offline_inventory_authority: identity.offline_inventory_authority === true,
     station_token: identity.station_token,
