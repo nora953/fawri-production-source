@@ -32,6 +32,8 @@ function readSavedAnswerPage(req: Request): {
   limit: number;
   beforeUpdatedAt?: string;
   beforeId?: string;
+  search?: string;
+  categories?: SavedAnswerCategory[];
 } | null {
   const rawLimit = readString(req.query.limit, 12);
   const limit = rawLimit ? Number(rawLimit) : 500;
@@ -47,10 +49,34 @@ function readSavedAnswerPage(req: Request): {
     return null;
   }
 
+  if (Array.isArray(req.query.q) || Array.isArray(req.query.categories)) {
+    return null;
+  }
+  const search = readString(req.query.q, 500);
+  const rawCategories = readString(req.query.categories, 500);
+  const categories = rawCategories
+    ? Array.from(
+        new Set(
+          rawCategories
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean),
+        ),
+      )
+    : [];
+  if (
+    categories.length > 6 ||
+    categories.some((category) => !isSavedAnswerCategory(category))
+  ) {
+    return null;
+  }
+
   return {
     limit,
     ...(beforeUpdatedAt ? { beforeUpdatedAt } : {}),
     ...(beforeId ? { beforeId } : {}),
+    ...(search ? { search } : {}),
+    ...(categories.length ? { categories: categories as SavedAnswerCategory[] } : {}),
   };
 }
 
