@@ -1,5 +1,8 @@
 import { getPostgresKnowledgeManagementRuntime } from "./knowledge/postgresKnowledgeManagementRuntime.js";
-import type { KnowledgeLanguage } from "./knowledge/types.js";
+import type {
+  KnowledgeLanguage,
+  SavedAnswerCategory,
+} from "./knowledge/types.js";
 
 export function listMerchantSavedAnswers(merchantId: string) {
   return getPostgresKnowledgeManagementRuntime().listSavedAnswers(merchantId);
@@ -7,7 +10,7 @@ export function listMerchantSavedAnswers(merchantId: string) {
 
 export function createMerchantSavedAnswer(input: {
   merchantId: string;
-  category: string;
+  category: SavedAnswerCategory;
   questionPattern: string;
   answerText: string;
   language: KnowledgeLanguage;
@@ -20,7 +23,7 @@ export function updateMerchantSavedAnswer(input: {
   merchantId: string;
   id: string;
   expectedVersion: number;
-  category?: string;
+  category?: SavedAnswerCategory;
   questionPattern?: string;
   answerText?: string;
   language?: KnowledgeLanguage;
