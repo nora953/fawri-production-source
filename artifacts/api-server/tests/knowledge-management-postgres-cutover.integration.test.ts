@@ -250,6 +250,43 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
     assert.equal(secondDecision.stage, "semantic_retrieval");
     assert.equal(secondDecision.matchedRecordId, approved.learnedAnswer.id);
     assert.equal(secondDecision.answerText, "نعم، يمكن إضافة بطاقة تهنئة للهدية.");
+
+    const revoked = await managementB.revokeTrainingApproval({
+      merchantId: merchantIds[1],
+      id: approved.request.id,
+      expectedVersion: approved.request.version,
+    });
+    assert.equal(revoked.status, "rejected");
+    assert.equal(revoked.rejectionReason, "merchant_revoked_approval");
+
+    const revokedLearned = await pool.query(
+      `SELECT approval_status, safe_to_auto_reply
+         FROM learned_answers
+        WHERE merchant_id = $1 AND training_request_id = $2`,
+      [merchantIds[1], approved.request.id],
+    );
+    assert.equal(revokedLearned.rowCount, 1);
+    assert.equal(revokedLearned.rows[0].approval_status, "rejected");
+    assert.equal(revokedLearned.rows[0].safe_to_auto_reply, false);
+
+    const revokedEmbedding = await pool.query(
+      `SELECT id
+         FROM knowledge_embeddings
+        WHERE merchant_id = $1
+          AND knowledge_kind = 'learned_answer'
+          AND knowledge_id = $2`,
+      [merchantIds[1], approved.learnedAnswer.id],
+    );
+    assert.equal(revokedEmbedding.rowCount, 0);
+
+    const afterRevocation = await engineB.decide({
+      merchantId: merchantIds[1],
+      customerText: "هل يمكن إضافة بطاقة تهنئة للهدية؟",
+      languageHint: "ar",
+    });
+    assert.equal(afterRevocation.action, "handoff");
+    assert.equal(afterRevocation.matchedRecordId, null);
+    assert.notEqual(afterRevocation.answerText, approved.learnedAnswer.answerText);
   });
 
   await t.test("Training Request management pagination and filters cover the full authority", async () => {
