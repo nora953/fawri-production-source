@@ -171,3 +171,19 @@ test("saved-answer search is server-authoritative across all paged records", () 
   );
   assert.match(page, /!searchPending/);
 });
+
+
+test("saved-answer conflicts keep active server-search results authoritative", () => {
+  assert.match(page, /setLoadStatus\("ready"\);\s*return true/);
+  assert.match(page, /setLoadStatus\("unavailable"\);\s*return false/);
+  assert.match(page, /const sameRecordConflict = Boolean\(editing && currentAnswer\.id === editing\.id\)/);
+  assert.match(page, /if \(serverQuery\) \{\s*const reloaded = await load\(\)/);
+  assert.match(
+    page,
+    /reloaded\s*\? sameRecordConflict\s*\? copy\.conflict\s*:\s*copy\.duplicate\s*:\s*copy\.loadFailed/,
+  );
+  assert.match(
+    page,
+    /if \(serverQuery\) \{\s*const reloaded = await load\(\);\s*setNotice\(reloaded \? copy\.conflict : copy\.loadFailed\)/,
+  );
+});
