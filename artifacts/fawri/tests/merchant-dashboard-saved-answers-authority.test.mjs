@@ -104,3 +104,23 @@ test("saved answer writes reject invalid categories instead of silently converti
     /SAVED_ANSWER_CATEGORIES\.has\(result\) \? result : "custom"/,
   );
 });
+
+
+test("saved answers load the complete authority through validated pagination instead of truncating at 500", () => {
+  assert.match(page, /const SAVED_ANSWER_PAGE_SIZE = 200/);
+  assert.match(page, /new URLSearchParams\(\{[\s\S]*limit: String\(SAVED_ANSWER_PAGE_SIZE\)[\s\S]*offset: String\(offset\)/);
+  assert.match(page, /isSavedAnswerPage\(result\.page, offset\)/);
+  assert.match(page, /seenIds\.has\(answer\.id\)/);
+  assert.match(page, /result\.page\.hasMore !== \(consumed < result\.page\.total\)/);
+  assert.match(page, /setAnswers\(collected\)/);
+
+  assert.match(serverRoute, /req\.query\.limit/);
+  assert.match(serverRoute, /req\.query\.offset/);
+  assert.match(serverRoute, /listMerchantSavedAnswersPage/);
+  assert.match(serverRoute, /total: page\.total/);
+  assert.match(serverRoute, /hasMore: page\.hasMore/);
+
+  assert.match(managementRuntime, /async listSavedAnswersPage/);
+  assert.match(managementRuntime, /COUNT\(\*\) OVER\(\)::int AS total_count/);
+  assert.match(managementRuntime, /LIMIT \$2 OFFSET \$3/);
+});
