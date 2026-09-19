@@ -356,3 +356,69 @@ test('central report keeps legacy pre-v2 discounted return evidence readable', (
   assert.equal(iq.refunds_minor, 20_000);
   assert.equal(iq.net_revenue_minor, 17_000);
 });
+
+
+test('central report handles legacy then v2 discounted partial returns without exceeding net sale value', () => {
+  const row = discountedRow({
+    id: 'sale-discounted-return-legacy-then-v2',
+    manualDiscount: 3_000,
+    lines: [
+      {
+        lineId: 'line-mixed',
+        productId: 'product-mixed',
+        productName: 'Product Mixed',
+        quantity: 2,
+        unitPrice: 20_000,
+        unitCost: 10_000,
+      },
+    ],
+    compensations: [
+      {
+        kind: 'return',
+        operation_id: 'return-legacy-first-op',
+        occurred_at: '2026-09-14T00:05:00.000Z',
+        snapshot: {
+          sale_id: 'sale-discounted-return-legacy-then-v2',
+          currency_code: 'IQD',
+          currency_fraction_digits: 0,
+          refund_total_minor: 20_000,
+          lines: [
+            {
+              original_line_id: 'line-mixed',
+              product_id: 'product-mixed',
+              quantity: 1,
+              effective_unit_price_minor: 20_000,
+              refund_minor: 20_000,
+            },
+          ],
+        },
+      },
+      {
+        kind: 'return',
+        operation_id: 'return-v2-second-op',
+        occurred_at: '2026-09-14T00:10:00.000Z',
+        snapshot: {
+          refund_pricing_version: 2,
+          sale_id: 'sale-discounted-return-legacy-then-v2',
+          currency_code: 'IQD',
+          currency_fraction_digits: 0,
+          refund_total_minor: 17_000,
+          lines: [
+            {
+              original_line_id: 'line-mixed',
+              product_id: 'product-mixed',
+              quantity: 1,
+              effective_unit_price_minor: 20_000,
+              refund_minor: 17_000,
+            },
+          ],
+        },
+      },
+    ],
+  });
+
+  const { iq } = currencyReport(row);
+  assert.equal(iq.refunds_minor, 37_000);
+  assert.equal(iq.net_revenue_minor, 0);
+  assert.equal(iq.net_units, 0);
+});
