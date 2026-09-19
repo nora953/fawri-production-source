@@ -645,59 +645,63 @@ async function mutateMerchantLocationInventory(input: {
       };
     }
 
-    const product = await productRow(
+    await productRow(
       client,
       input.merchantId,
       input.productId,
       true,
     );
-    if (product.version !== input.expectedVersion) {
+
+    const rows = await operationalQueryRows<LevelRow>(
+      client,
+      `SELECT
+         location_id,
+         product_id,
+         variant_id,
+         on_hand_quantity,
+         reserved_quantity,
+         low_stock_threshold,
+         version,
+         inventory_fresh_at
+       FROM location_inventory_levels
+      WHERE merchant_id = $1
+        AND location_id = $2
+        AND product_id = $3
+        AND variant_id IS NOT DISTINCT FROM $4::text
+      LIMIT 1
+      FOR UPDATE`,
+      [
+        input.merchantId,
+        input.locationId,
+        input.productId,
+        input.variantId || null,
+      ],
+    );
+    const level = rows[0];
+    if (!level) {
       throw new CatalogRuntimeError(
-        "CATALOG_VERSION_CONFLICT",
-        "product was changed by another request",
+        "CATALOG_LOCATION_INVENTORY_STATE_INVALID",
+        "location inventory row is missing",
+        503,
+      );
+    }
+    if (Number(level.version) !== input.expectedVersion) {
+      throw new CatalogRuntimeError(
+        "CATALOG_LOCATION_INVENTORY_VERSION_CONFLICT",
+        "location inventory was changed by another request",
         409,
         {
+          location_id: input.locationId,
+          product_id: input.productId,
+          ...(input.variantId ? { variant_id: input.variantId } : {}),
           expected_version: input.expectedVersion,
-          current_version: product.version,
+          current_version: Number(level.version),
         },
       );
     }
 
     let delta = input.delta;
     if (input.mode === "set") {
-      const rows = await operationalQueryRows<LevelRow>(
-        client,
-        `SELECT
-           location_id,
-           product_id,
-           variant_id,
-           on_hand_quantity,
-           reserved_quantity,
-           low_stock_threshold,
-           version,
-           inventory_fresh_at
-         FROM location_inventory_levels
-        WHERE merchant_id = $1
-          AND location_id = $2
-          AND product_id = $3
-          AND variant_id IS NOT DISTINCT FROM $4::text
-        LIMIT 1
-        FOR UPDATE`,
-        [
-          input.merchantId,
-          input.locationId,
-          input.productId,
-          input.variantId || null,
-        ],
-      );
-      const level = rows[0];
-      if (!level) {
-        throw new CatalogRuntimeError(
-          "CATALOG_LOCATION_INVENTORY_STATE_INVALID",
-          "location inventory row is missing",
-          503,
-        );
-      }
       delta = Number(input.quantity) - Number(level.on_hand_quantity);
       if (delta === 0) {
         return {
@@ -729,6 +733,7 @@ async function mutateMerchantLocationInventory(input: {
         productId: input.productId,
         ...(input.variantId ? { variantId: input.variantId } : {}),
         delta,
+        expectedLocationVersion: input.expectedVersion,
         allowInactiveLocation: true,
       });
     } catch (error) {
