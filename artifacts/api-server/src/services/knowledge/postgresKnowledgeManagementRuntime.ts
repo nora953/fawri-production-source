@@ -22,23 +22,16 @@ import {
   type KnowledgeSqlExecutor,
 } from "./postgresKnowledgeRuntime.js";
 import { customerTextPreview } from "./redaction.js";
-import type {
-  KnowledgeAuditEvent,
-  KnowledgeLanguage,
-  LearnedAnswerRecord,
-  SavedAnswerRecord,
-  SuggestedReplySource,
-  TrainingRequestRecord,
+import {
+  isSavedAnswerCategory,
+  type KnowledgeAuditEvent,
+  type KnowledgeLanguage,
+  type LearnedAnswerRecord,
+  type SavedAnswerCategory,
+  type SavedAnswerRecord,
+  type SuggestedReplySource,
+  type TrainingRequestRecord,
 } from "./types.js";
-
-const SAVED_ANSWER_CATEGORIES = new Set([
-  "delivery",
-  "payment",
-  "return_exchange",
-  "product",
-  "warranty",
-  "custom",
-]);
 
 function dbError(code: string, message: string): never {
   throw new KnowledgeRuntimeGateError(code, message);
@@ -109,17 +102,17 @@ function strings(value: unknown, max: number): string[] {
   return resolved.map((item) => boundedText(item, 500));
 }
 
-function storedCategory(value: unknown): string {
+function storedCategory(value: unknown): SavedAnswerCategory {
   const result = boundedText(value, 100);
-  if (!SAVED_ANSWER_CATEGORIES.has(result)) {
+  if (!isSavedAnswerCategory(result)) {
     dbError("KNOWLEDGE_STATE_INVALID", "knowledge state is invalid");
   }
   return result;
 }
 
-function inputCategory(value: unknown): string {
+function inputCategory(value: unknown): SavedAnswerCategory {
   const result = boundedText(value, 100);
-  if (!SAVED_ANSWER_CATEGORIES.has(result)) {
+  if (!isSavedAnswerCategory(result)) {
     throw new KnowledgeTransitionError(
       "INVALID_SAVED_ANSWER_CATEGORY",
       "saved answer category is invalid",
@@ -365,7 +358,7 @@ export class PostgresKnowledgeManagementRuntime {
   }
 
   async createSavedAnswer(input: {
-    merchantId: string; category: string; questionPattern: string; answerText: string;
+    merchantId: string; category: SavedAnswerCategory; questionPattern: string; answerText: string;
     language: KnowledgeLanguage; active?: boolean;
   }): Promise<SavedAnswerRecord> {
     const merchant = merchantId(input.merchantId);
@@ -402,7 +395,7 @@ export class PostgresKnowledgeManagementRuntime {
   }
 
   async updateSavedAnswer(input: {
-    merchantId: string; id: string; expectedVersion: number; category?: string;
+    merchantId: string; id: string; expectedVersion: number; category?: SavedAnswerCategory;
     questionPattern?: string; answerText?: string; language?: KnowledgeLanguage; active?: boolean;
   }): Promise<SavedAnswerRecord> {
     const merchant = merchantId(input.merchantId);
