@@ -466,7 +466,7 @@ export const inventoryMutations = pgTable(
     ),
     versionCheck: check(
       "inventory_mutations_version_check",
-      sql`${table.expectedVersion} > 0 AND ${table.resultingVersion} = ${table.expectedVersion} + 1`,
+      sql`((${table.locationId} IS NULL AND ${table.expectedVersion} > 0) OR (${table.locationId} IS NOT NULL AND ${table.expectedVersion} >= 0)) AND ${table.resultingVersion} = ${table.expectedVersion} + 1`,
     ),
     hashCheck: check(
       "inventory_mutations_hash_check",
