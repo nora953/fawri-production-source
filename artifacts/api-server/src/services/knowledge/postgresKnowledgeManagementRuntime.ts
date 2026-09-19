@@ -384,19 +384,27 @@ export class PostgresKnowledgeManagementRuntime {
 
     let beforeUpdatedAt: string | null = null;
     if (rawBeforeUpdatedAt) {
-      const parsed = new Date(rawBeforeUpdatedAt);
-      if (!Number.isFinite(parsed.getTime())) {
+      const cursorPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+      const millisIso = `${rawBeforeUpdatedAt.slice(0, 23)}Z`;
+      if (
+        !cursorPattern.test(rawBeforeUpdatedAt) ||
+        !Number.isFinite(new Date(millisIso).getTime())
+      ) {
         throw new KnowledgeTransitionError(
           "INVALID_SAVED_ANSWER_PAGE",
           "saved answer page cursor is invalid",
         );
       }
-      beforeUpdatedAt = parsed.toISOString();
+      beforeUpdatedAt = rawBeforeUpdatedAt;
     }
 
     try {
       const result = await this.sql.query<Record<string, unknown>>(
-        `SELECT ${SAVED_COLUMNS}, updated_at::text AS cursor_updated_at
+        `SELECT ${SAVED_COLUMNS},
+                to_char(
+                  updated_at AT TIME ZONE 'UTC',
+                  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+                ) AS cursor_updated_at
            FROM saved_answers
           WHERE merchant_id = $1
             AND (
@@ -417,7 +425,10 @@ export class PostgresKnowledgeManagementRuntime {
         : "";
       if (
         result.rows.length > limit &&
-        (!last || !cursorUpdatedAt || !Number.isFinite(new Date(cursorUpdatedAt).getTime()))
+        (
+          !last ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursorUpdatedAt)
+        )
       ) {
         dbError("KNOWLEDGE_STATE_INVALID", "knowledge pagination state is invalid");
       }
