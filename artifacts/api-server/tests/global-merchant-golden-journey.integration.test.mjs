@@ -536,7 +536,42 @@ test(
     );
     assert.ok(productAfterSale);
     assert.equal(productAfterSale.stock_quantity, 6);
-    assert.equal(productAfterSale.version, Number(cashierProduct.version) + 1);
+    assert.equal(productAfterSale.version, Number(cashierProduct.version));
+
+    const locationInventoryAfterSale = await pool.query(
+      `SELECT quantity, version
+         FROM location_inventory_levels
+        WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
+          AND variant_id IS NULL`,
+      [merchantId, locationId, productId],
+    );
+    assert.equal(locationInventoryAfterSale.rows.length, 1);
+    assert.equal(Number(locationInventoryAfterSale.rows[0].quantity), 6);
+    assert.equal(Number(locationInventoryAfterSale.rows[0].version), 2);
+
+    const locationMutation = await pool.query(
+      `SELECT location_id, before_quantity, after_quantity,
+              expected_version, resulting_version
+         FROM inventory_mutations
+        WHERE merchant_id = $1 AND reason_code = 'cashier_sale_sync'
+        ORDER BY created_at DESC
+        LIMIT 1`,
+      [merchantId],
+    );
+    assert.equal(locationMutation.rows.length, 1);
+    assert.equal(locationMutation.rows[0].location_id, locationId);
+    assert.equal(Number(locationMutation.rows[0].before_quantity), 7);
+    assert.equal(Number(locationMutation.rows[0].after_quantity), 6);
+    assert.equal(Number(locationMutation.rows[0].expected_version), 1);
+    assert.equal(Number(locationMutation.rows[0].resulting_version), 2);
+
+    const orderLocation = await pool.query(
+      `SELECT fulfillment_location_id
+         FROM orders
+        WHERE merchant_id = $1 AND id = $2`,
+      [merchantId, sale.saleId],
+    );
+    assert.equal(orderLocation.rows[0]?.fulfillment_location_id, locationId);
 
     const report = await jsonRequest(`${baseUrl}/api/cashier/management/report`, {
       headers: merchantHeaders(merchantCookie, merchantDeviceId),
