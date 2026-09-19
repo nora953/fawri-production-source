@@ -60,6 +60,114 @@ const channel = await channels.connectMetaChannelAuthoritative({
   webhookSubscribed: true,
 });
 
+const fulfillmentLocationId = "payment-proof-location";
+const fulfillmentAreaRateId = "payment-proof-area-mansour";
+const fulfillmentProductId = "payment-proof-product";
+
+async function seedOnlineFulfillmentFoundation() {
+  await raw(
+    `INSERT INTO merchant_settings
+      (merchant_id, delivery_enabled, delivery_pricing_mode, delivery_fee_iqd,
+       delivery_areas, delivery_estimated_days_min, delivery_estimated_days_max)
+     VALUES ($1, TRUE, 'per_area', 0, '[]'::jsonb, 1, 3)
+     ON CONFLICT (merchant_id) DO UPDATE
+       SET delivery_enabled = TRUE,
+           delivery_pricing_mode = 'per_area',
+           delivery_fee_iqd = 0,
+           delivery_areas = '[]'::jsonb,
+           delivery_estimated_days_min = 1,
+           delivery_estimated_days_max = 3,
+           updated_at = now()`,
+    [merchant.account.id],
+  );
+
+  await raw(
+    `INSERT INTO merchant_delivery_area_rates
+      (id, merchant_id, area_name, normalized_area_name, fee_iqd, enabled)
+     VALUES ($1, $2, 'المنصور', 'المنصور', 0, TRUE)
+     ON CONFLICT (merchant_id, normalized_area_name) DO UPDATE
+       SET area_name = EXCLUDED.area_name,
+           fee_iqd = EXCLUDED.fee_iqd,
+           enabled = TRUE,
+           updated_at = now()`,
+    [fulfillmentAreaRateId, merchant.account.id],
+  );
+
+  const canonicalArea = await raw(
+    `SELECT id
+       FROM merchant_delivery_area_rates
+      WHERE merchant_id = $1 AND normalized_area_name = 'المنصور'
+      LIMIT 1`,
+    [merchant.account.id],
+  );
+  assert.equal(canonicalArea.rows.length, 1);
+
+  await raw(
+    `INSERT INTO merchant_locations
+      (id, merchant_id, name, is_default, operational_status,
+       online_fulfillment_enabled, accept_online_orders_while_closed,
+       merchant_priority, inventory_fresh_at)
+     VALUES ($1, $2, 'Payment Proof Main', TRUE, 'open', TRUE, FALSE, 1, now())
+     ON CONFLICT (id) DO UPDATE
+       SET operational_status = 'open',
+           online_fulfillment_enabled = TRUE,
+           accept_online_orders_while_closed = FALSE,
+           inventory_fresh_at = now(),
+           updated_at = now()`,
+    [fulfillmentLocationId, merchant.account.id],
+  );
+
+  await raw(
+    `INSERT INTO merchant_location_delivery_areas
+      (id, merchant_id, location_id, delivery_area_rate_id)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (merchant_id, location_id, delivery_area_rate_id)
+     DO UPDATE SET updated_at = now()`,
+    [
+      "payment-proof-location-area",
+      merchant.account.id,
+      fulfillmentLocationId,
+      canonicalArea.rows[0].id,
+    ],
+  );
+
+  await raw(
+    `INSERT INTO products
+      (id, merchant_id, name, original_price_iqd, current_price_iqd,
+       quantity, low_stock_threshold, version, status, allow_fawri_reply, metadata)
+     VALUES ($1, $2, 'Payment Proof Product', 1000, 1000,
+             1000, 5, 1, 'available', TRUE, '{}'::jsonb)
+     ON CONFLICT (id) DO UPDATE
+       SET quantity = 1000,
+           low_stock_threshold = 5,
+           status = 'available',
+           deleted_at = NULL,
+           updated_at = now()`,
+    [fulfillmentProductId, merchant.account.id],
+  );
+
+  await raw(
+    `INSERT INTO location_inventory_levels
+      (id, merchant_id, location_id, product_id, variant_id,
+       quantity, low_stock_threshold, version)
+     VALUES ($1, $2, $3, $4, NULL, 1000, 5, 1)
+     ON CONFLICT (merchant_id, location_id, product_id)
+       WHERE variant_id IS NULL
+     DO UPDATE SET quantity = 1000,
+                   low_stock_threshold = 5,
+                   version = 1,
+                   updated_at = now()`,
+    [
+      "payment-proof-location-stock",
+      merchant.account.id,
+      fulfillmentLocationId,
+      fulfillmentProductId,
+    ],
+  );
+}
+
+await seedOnlineFulfillmentFoundation();
+
 async function seedElectronicOrder(input: {
   id: string;
   conversationId: string;
@@ -83,9 +191,10 @@ async function seedElectronicOrder(input: {
   await raw(
     `INSERT INTO orders
       (id, merchant_id, conversation_id, customer_external_id, customer_name,
-       customer_phone, customer_address, status, payment_method, payment_status,
+       customer_phone, customer_address, customer_area,
+       status, payment_method, payment_status,
        subtotal_iqd, delivery_fee_iqd, total_iqd, source_channel, version)
-     VALUES ($1, $2, $3, $4, $5, '07710000000', 'Baghdad',
+     VALUES ($1, $2, $3, $4, $5, '07710000000', 'Baghdad', 'المنصور',
              'pending_confirmation', $6::payment_method, 'electronic_pending',
              $7, 0, $7, 'messenger', 1)`,
     [
@@ -95,6 +204,21 @@ async function seedElectronicOrder(input: {
       input.customerId,
       `Customer ${input.id}`,
       input.paymentMethod || "superqi",
+      input.amount,
+    ],
+  );
+  await raw(
+    `INSERT INTO order_items
+      (id, order_id, merchant_id, product_id, product_variant_id,
+       product_name_snapshot, variant_snapshot, quantity,
+       unit_price_iqd, line_total_iqd)
+     VALUES ($1, $2, $3, $4, NULL,
+             'Payment Proof Product', '{}'::jsonb, 1, $5, $5)`,
+    [
+      `${input.id}-item`,
+      input.id,
+      merchant.account.id,
+      fulfillmentProductId,
       input.amount,
     ],
   );
