@@ -17,9 +17,9 @@ export function listMerchantSavedAnswersPage(input: {
   return getPostgresKnowledgeManagementRuntime().listSavedAnswersPage(
     input.merchantId,
     {
-      limit: input.limit,
-      beforeUpdatedAt: input.beforeUpdatedAt,
-      beforeId: input.beforeId,
+      ...(input.limit !== undefined ? { limit: input.limit } : {}),
+      ...(input.beforeUpdatedAt ? { beforeUpdatedAt: input.beforeUpdatedAt } : {}),
+      ...(input.beforeId ? { beforeId: input.beforeId } : {}),
     },
   );
 }
