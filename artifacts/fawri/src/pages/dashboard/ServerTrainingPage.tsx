@@ -275,9 +275,10 @@ export default function ServerTrainingPage() {
   const staleData = loadStatus === "unavailable" && requests.length > 0;
 
   function replaceCurrent(current: TrainingRequest) {
-    setRequests((items) =>
-      items.map((item) => (item.id === current.id ? current : item)),
-    );
+    setRequests((items) => [
+      current,
+      ...items.filter((item) => item.id !== current.id),
+    ]);
     setDrafts((items) => ({
       ...items,
       [current.id]: current.suggestedReply || "",
