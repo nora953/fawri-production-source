@@ -16,10 +16,9 @@ import {
 } from './cashierLocalContracts';
 import type { IndexedDbCashierConfig } from './cashierIndexedDbAuthority';
 import {
-  CASHIER_RETURN_REFUND_ALLOCATION_VERSION,
-  cashierRemainingRefundMinor,
-  cashierReturnRefundMinor,
-} from './cashierReturnRefundAllocation';
+  CASHIER_REFUND_PRICING_VERSION,
+  cashierNetReturnRefundMinor,
+} from './cashierRefundPricing';
 
 const DATABASE_VERSION = 2;
 const STORE_META = 'meta';
@@ -319,6 +318,17 @@ function returnedQuantityForLine(sale: CashierSaleSnapshot, lineId: string): num
   return total;
 }
 
+function returnedRefundForLine(sale: CashierSaleSnapshot, lineId: string): number {
+  let total = 0;
+  for (const returnSnapshot of sale.returns || []) {
+    for (const line of returnSnapshot.lines || []) {
+      if (line.original_line_id !== lineId) continue;
+      total = safeAdd(total, line.refund_minor, 'returned refund');
+    }
+  }
+  return total;
+}
+
 function originalSaleMovementId(sale: CashierSaleSnapshot, lineIndex: number): string {
   return `movement:${sale.operation_id}:${lineIndex + 1}`;
 }
@@ -536,7 +546,6 @@ export class IndexedDbCashierCompensationAuthority
       const returnLines: CashierReturnSnapshot['lines'] = [];
       const compensationMovements: CashierInventoryMovement[] = [];
       let refundTotalMinor = 0;
-      let remainingSaleRefundMinor = cashierRemainingRefundMinor(sale);
 
       for (const [returnIndex, requestLine] of normalizedLines.entries()) {
         const { line, index: saleLineIndex } = lineById(sale, requestLine.original_line_id);
@@ -549,17 +558,13 @@ export class IndexedDbCashierCompensationAuthority
           );
         }
 
-        const allocatedRefundMinor = cashierReturnRefundMinor({
+        const refundMinor = cashierNetReturnRefundMinor(
           sale,
-          lineId: line.line_id,
-          alreadyReturnedQuantity: alreadyReturned,
-          returnQuantity: requestLine.quantity,
-        });
-        const refundMinor = Math.min(
-          allocatedRefundMinor,
-          remainingSaleRefundMinor,
+          line.line_id,
+          alreadyReturned,
+          returnedRefundForLine(sale, line.line_id),
+          requestLine.quantity,
         );
-        remainingSaleRefundMinor -= refundMinor;
         refundTotalMinor = safeAdd(refundTotalMinor, refundMinor, 'return refund total');
         returnLines.push({
           original_line_id: line.line_id,
@@ -623,7 +628,7 @@ export class IndexedDbCashierCompensationAuthority
       }
 
       const snapshot: CashierReturnSnapshot = {
-        refund_allocation_version: CASHIER_RETURN_REFUND_ALLOCATION_VERSION,
+        refund_pricing_version: CASHIER_REFUND_PRICING_VERSION,
         return_id: returnId(operationId),
         operation_id: operationId,
         sale_id: sale.sale_id,
