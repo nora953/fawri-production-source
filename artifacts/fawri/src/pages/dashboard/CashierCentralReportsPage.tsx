@@ -77,6 +77,7 @@ type CentralReportResult = {
     by_station: StationActivity[];
     by_location: LocationActivity[];
     operations: OperationActivity[];
+    operation_matching_count: number;
     operation_detail_limit: number;
   };
 };
@@ -135,11 +136,20 @@ function startOfLocalDay(daysBack: number): Date {
   const date = new Date(); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - daysBack); return date;
 }
 
-function queryForRange(range: RangeKey): string {
+function queryForRange(range: RangeKey, filters: {
+  staff: string;
+  location: string;
+  station: string;
+  kind: 'all' | OperationKind;
+}): string {
   const params = new URLSearchParams();
   if (range === 'today') params.set('from', startOfLocalDay(0).toISOString());
   if (range === '7d') params.set('from', startOfLocalDay(6).toISOString());
   if (range === '30d') params.set('from', startOfLocalDay(29).toISOString());
+  if (filters.staff !== 'all') params.set('detail_staff_id', filters.staff);
+  if (filters.location !== 'all') params.set('detail_location_id', filters.location);
+  if (filters.station !== 'all') params.set('detail_station_id', filters.station);
+  if (filters.kind !== 'all') params.set('detail_operation_kind', filters.kind);
   const query = params.toString(); return query ? `?${query}` : '';
 }
 
@@ -153,6 +163,7 @@ function parseResult(value: unknown): CentralReportResult {
       by_station: Array.isArray(activity.by_station) ? activity.by_station as StationActivity[] : [],
       by_location: Array.isArray(activity.by_location) ? activity.by_location as LocationActivity[] : [],
       operations: Array.isArray(activity.operations) ? activity.operations as OperationActivity[] : [],
+      operation_matching_count: Number(activity.operation_matching_count || 0),
       operation_detail_limit: Number(activity.operation_detail_limit || 0),
     },
   };
@@ -208,16 +219,23 @@ export default function CashierCentralReportsPage() {
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
-      const response = await fetch(`/api/cashier/management/report${queryForRange(range)}`, { credentials: 'same-origin', cache: 'no-store' });
+      const response = await fetch(`/api/cashier/management/report${queryForRange(range, { staff: staffFilter, location: locationFilter, station: stationFilter, kind: kindFilter })}`, { credentials: 'same-origin', cache: 'no-store' });
       const payload = record(await response.json().catch(() => null));
       if (!response.ok || payload.ok !== true) throw new Error(labels.failed);
       setResult(parseResult(payload));
     } catch { setResult(null); setError(labels.failed); }
     finally { setLoading(false); }
-  }, [labels.failed, range]);
+  }, [kindFilter, labels.failed, locationFilter, range, staffFilter, stationFilter]);
 
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => { setStaffFilter('all'); setLocationFilter('all'); setStationFilter('all'); setKindFilter('all'); }, [range]);
+
+  const selectRange = (nextRange: RangeKey) => {
+    setStaffFilter('all');
+    setLocationFilter('all');
+    setStationFilter('all');
+    setKindFilter('all');
+    setRange(nextRange);
+  };
 
   const ranges = useMemo<Array<[RangeKey, string]>>(() => [['today', labels.today], ['7d', labels.seven], ['30d', labels.thirty], ['all', labels.all]], [labels]);
   const currencies = result?.report.by_currency || [];
@@ -225,20 +243,17 @@ export default function CashierCentralReportsPage() {
   const totalNet = result ? moneyValues(result.report, 'net_revenue_minor') : []; const totalRefunds = result ? moneyValues(result.report, 'refunds_minor') : []; const totalProfit = result ? profitValues(result.report) : [];
   const netUnits = currencies.reduce((sum, currency) => sum + currency.net_units, 0); const voidedSales = currencies.reduce((sum, currency) => sum + currency.voided_sale_count, 0); const returnCount = currencies.reduce((sum, currency) => sum + currency.return_count, 0);
 
-  const operationStaff = useMemo(() => Array.from(new Map((result?.activity.operations || []).map(item => [item.staff_id, item.staff_name || labels.formerEmployee])).entries()), [labels.formerEmployee, result]);
-  const operationLocations = useMemo(() => Array.from(new Map((result?.activity.operations || []).map(item => [item.location_id || '__legacy_location__', item.location_name || labels.formerLocation])).entries()), [labels.formerLocation, result]);
-  const operationStations = useMemo(() => Array.from(new Map((result?.activity.operations || []).map(item => [item.station_id, item.station_name || labels.formerStation])).entries()), [labels.formerStation, result]);
-  const filteredOperations = useMemo(() => (result?.activity.operations || []).filter(item =>
-    (staffFilter === 'all' || item.staff_id === staffFilter) && (locationFilter === 'all' || (item.location_id || '__legacy_location__') === locationFilter) && (stationFilter === 'all' || item.station_id === stationFilter) && (kindFilter === 'all' || item.operation_kind === kindFilter)
-  ), [kindFilter, locationFilter, result, staffFilter, stationFilter]);
-  const totalActivityOperations = result ? activityTotal(result) : 0;
-  const detailsAreLimited = Boolean(result && result.activity.operations.length < totalActivityOperations && result.activity.operation_detail_limit > 0);
+  const operationStaff = useMemo(() => (result?.activity.by_staff || []).map(item => [item.staff_id, item.staff_name || labels.formerEmployee] as const), [labels.formerEmployee, result]);
+  const operationLocations = useMemo(() => (result?.activity.by_location || []).map(item => [item.location_id || '__legacy_location__', item.location_name || labels.formerLocation] as const), [labels.formerLocation, result]);
+  const operationStations = useMemo(() => (result?.activity.by_station || []).map(item => [item.station_id, item.station_name || labels.formerStation] as const), [labels.formerStation, result]);
+  const filteredOperations = result?.activity.operations || [];
+  const detailsAreLimited = Boolean(result && result.activity.operations.length < result.activity.operation_matching_count && result.activity.operation_detail_limit > 0);
   const dateLocale = lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en';
 
   return (
     <div className="space-y-5 pb-8" dir={dir}>
       <header className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-bold text-foreground">{labels.title}</h1><p className="mt-1 max-w-3xl text-sm text-muted-foreground">{labels.subtitle}</p></div><Link href="/dashboard/cashiers" className="rounded-xl border bg-card px-4 py-2 text-sm font-bold hover:bg-accent">{labels.back}</Link></header>
-      <div className="flex flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-sm">{ranges.map(([key, label]) => <button key={key} type="button" onClick={() => setRange(key)} className={`rounded-xl px-4 py-2 text-sm font-bold transition ${range === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}>{label}</button>)}</div>
+      <div className="flex flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-sm">{ranges.map(([key, label]) => <button key={key} type="button" onClick={() => selectRange(key)} className={`rounded-xl px-4 py-2 text-sm font-bold transition ${range === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}>{label}</button>)}</div>
       {error ? <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm font-semibold text-destructive">{error}</div> : null}
       {loading ? <div className="rounded-2xl border bg-card p-10 text-center text-sm text-muted-foreground">{labels.loading}</div> : null}
       {!loading && !error && result && !hasData ? <div className="rounded-2xl border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">{labels.empty}</div> : null}
