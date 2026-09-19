@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Brain, CheckCircle2, RefreshCw, Search, ShieldAlert, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
