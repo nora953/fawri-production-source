@@ -6,6 +6,11 @@ import {
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import { CashierSyncError } from "./postgresCashierSyncAuthority";
+import {
+  CASHIER_REFUND_PRICING_VERSION,
+  cashierAdjustedLineRevenueById,
+  cashierNetReturnRefundMinor,
+} from "./cashierRefundPricing";
 
 const CASHIER_SCHEMA_VERSION = 1;
 const MAX_ENVELOPES = 128;
@@ -30,6 +35,7 @@ type OriginalSaleLine = {
   variant_id?: string;
   quantity: number;
   effective_unit_price_minor: number;
+  line_total_minor: number;
 };
 
 type OriginalSale = {
@@ -44,6 +50,7 @@ type OriginalSale = {
   currency_code: "IQD";
   currency_fraction_digits: 0;
   total_minor: number;
+  manual_discount_minor: number;
   lines: OriginalSaleLine[];
 };
 
@@ -57,6 +64,7 @@ type ReturnLine = {
 };
 
 type ReturnSnapshot = {
+  refund_pricing_version?: 2;
   return_id: string;
   operation_id: string;
   sale_id: string;
@@ -293,13 +301,6 @@ function parseReturnLine(value: unknown): ReturnLine {
     "return.line.effective_unit_price_minor",
   );
   const refund = nonNegativeInteger(raw.refund_minor, "return.line.refund_minor");
-  if (refund !== safeMultiply(effective, quantity, "return.line.refund_minor")) {
-    throw new CashierSyncError(
-      "CASHIER_SYNC_INVALID",
-      "return line refund is inconsistent",
-      400,
-    );
-  }
   return {
     original_line_id: identifier(raw.original_line_id, "return.line.original_line_id"),
     product_id: identifier(raw.product_id, "return.line.product_id"),
@@ -344,7 +345,24 @@ function parseReturnSnapshot(value: unknown): ReturnSnapshot {
       400,
     );
   }
+  const refundPricingVersion =
+    raw.refund_pricing_version === undefined
+      ? undefined
+      : Number(raw.refund_pricing_version);
+  if (
+    refundPricingVersion !== undefined &&
+    refundPricingVersion !== CASHIER_REFUND_PRICING_VERSION
+  ) {
+    throw new CashierSyncError(
+      "CASHIER_SYNC_INVALID",
+      "return refund pricing version is unsupported",
+      400,
+    );
+  }
   return {
+    ...(refundPricingVersion === CASHIER_REFUND_PRICING_VERSION
+      ? { refund_pricing_version: CASHIER_REFUND_PRICING_VERSION }
+      : {}),
     return_id: identifier(raw.return_id, "return.return_id"),
     operation_id: identifier(raw.operation_id, "return.operation_id"),
     sale_id: identifier(raw.sale_id, "return.sale_id"),
@@ -461,6 +479,10 @@ function parseOriginalSale(value: unknown): OriginalSale {
         line.effective_unit_price_minor,
         "sale.line.effective_unit_price_minor",
       ),
+      line_total_minor: nonNegativeInteger(
+        line.line_total_minor,
+        "sale.line.line_total_minor",
+      ),
     } satisfies OriginalSaleLine;
   });
   const lineIds = new Set<string>();
@@ -476,7 +498,7 @@ function parseOriginalSale(value: unknown): OriginalSale {
     lineIds.add(line.line_id);
     itemKeys.add(itemKey(line.product_id, line.variant_id));
   }
-  return {
+  const sale: OriginalSale = {
     sale_id: identifier(raw.sale_id, "sale.sale_id"),
     operation_id: identifier(raw.operation_id, "sale.operation_id"),
     local_merchant_id: identifier(raw.local_merchant_id, "sale.local_merchant_id"),
@@ -490,8 +512,22 @@ function parseOriginalSale(value: unknown): OriginalSale {
     currency_code: "IQD",
     currency_fraction_digits: 0,
     total_minor: nonNegativeInteger(raw.total_minor, "sale.total_minor"),
+    manual_discount_minor: nonNegativeInteger(
+      raw.manual_discount_minor ?? 0,
+      "sale.manual_discount_minor",
+    ),
     lines,
   };
+  try {
+    cashierAdjustedLineRevenueById(sale);
+  } catch {
+    throw new CashierSyncError(
+      "CASHIER_COMPENSATION_ORIGINAL_SALE_CORRUPT",
+      "original cashier sale discount evidence is inconsistent",
+      409,
+    );
+  }
+  return sale;
 }
 
 export function validateCashierCompensationSyncBundle(
@@ -1570,11 +1606,19 @@ async function applyReturn(
         { original_line_id: line.line_id, remaining_quantity: Math.max(0, remaining) },
       );
     }
-    const expectedRefund = safeMultiply(
-      line.effective_unit_price_minor,
-      requested.quantity,
-      "return refund",
-    );
+    const expectedRefund =
+      snapshot.refund_pricing_version === CASHIER_REFUND_PRICING_VERSION
+        ? cashierNetReturnRefundMinor(
+            originalSale,
+            line.line_id,
+            alreadyReturned,
+            requested.quantity,
+          )
+        : safeMultiply(
+            line.effective_unit_price_minor,
+            requested.quantity,
+            "return refund",
+          );
     if (requested.refund_minor !== expectedRefund) {
       throw new CashierSyncError(
         "CASHIER_COMPENSATION_ORIGINAL_SALE_MISMATCH",
