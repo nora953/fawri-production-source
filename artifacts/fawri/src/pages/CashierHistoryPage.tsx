@@ -106,6 +106,17 @@ function returnedQuantity(sale: CashierSaleSnapshot, lineId: string): number {
   );
 }
 
+function returnedRefundMinor(sale: CashierSaleSnapshot, lineId: string): number {
+  return (sale.returns || []).reduce(
+    (total, snapshot) =>
+      total +
+      snapshot.lines
+        .filter(line => line.original_line_id === lineId)
+        .reduce((sum, line) => sum + line.refund_minor, 0),
+    0,
+  );
+}
+
 function remainingQuantity(sale: CashierSaleSnapshot, line: CashierSaleLineSnapshot): number {
   if (sale.status === 'voided' || sale.void) return 0;
   return Math.max(0, line.quantity - returnedQuantity(sale, line.line_id));
@@ -282,6 +293,7 @@ export default function CashierHistoryPage() {
         selectedSale,
         line.line_id,
         returnedQuantity(selectedSale, line.line_id),
+        returnedRefundMinor(selectedSale, line.line_id),
         quantity,
       );
     }, 0);
