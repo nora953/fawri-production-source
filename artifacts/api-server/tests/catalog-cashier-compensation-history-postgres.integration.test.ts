@@ -133,8 +133,12 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
       },
     ],
     subtotal_minor: 20_000,
-    discount_minor: 0,
-    total_minor: 20_000,
+    promotion_discount_minor: 0,
+    manual_discount_kind: "amount",
+    manual_discount_minor: 2_000,
+    manual_discount_reason: "partial return pricing regression",
+    discount_minor: 2_000,
+    total_minor: 18_000,
     currency_code: "IQD",
     currency_fraction_digits: 0,
     payment_method: "cash",
@@ -248,6 +252,7 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
   const returnMovementId = `return-move-${suffix}`;
   const returnedAt = new Date(Date.now() + 1_000).toISOString();
   const returnSnapshot = {
+    refund_pricing_version: 2,
     return_id: returnId,
     operation_id: returnOperationId,
     sale_id: saleId,
@@ -262,10 +267,10 @@ test("cashier variant return remains compensatable after an ordinary catalog reb
         variant_id: variantId,
         quantity: 1,
         effective_unit_price_minor: 10_000,
-        refund_minor: 10_000,
+        refund_minor: 9_000,
       },
     ],
-    refund_total_minor: 10_000,
+    refund_total_minor: 9_000,
     currency_code: "IQD",
     currency_fraction_digits: 0,
     occurred_at: returnedAt,
@@ -660,261 +665,6 @@ test("cashier full void restores stock to the original sale location even after 
   );
   assert.equal(order.rows[0]?.fulfillment_location_id, originalLocationId);
   assert.equal(order.rows[0]?.cashier_status, "voided");
-});
-
-
-test("discounted cashier return v2 rejects pre-discount refund and accepts charged-value refund", async () => {
-  const suffix = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
-  const merchantId = await createMerchant(`discount-return-${suffix}`);
-  const productId = `prd-discount-return-${suffix}`;
-  const localMerchantId = `local-discount-return-${suffix}`;
-  const deviceId = `device-discount-return-${suffix}`;
-  const locationId = `location-discount-return-${suffix}`;
-  const stationId = `station-discount-return-${suffix}`;
-
-  const created = await catalog.createCatalogProductAuthoritative({
-    merchantId,
-    idempotencyKey: `discount-return-create-${suffix}`,
-    input: {
-      id: productId,
-      name: "Discounted return proof",
-      price_iqd: 20_000,
-      stock_quantity: 5,
-      low_stock_threshold: 1,
-      status: "available",
-      allow_fawri_reply: true,
-    },
-  });
-
-  await pool.query(
-    `INSERT INTO merchant_locations (
-       id, merchant_id, name, legacy_branch_key, is_default,
-       operational_status, online_fulfillment_enabled,
-       accept_online_orders_while_closed, merchant_priority,
-       created_at, updated_at
-     ) VALUES ($1,$2,'Discount Return Location','discount-return',TRUE,'open',FALSE,FALSE,0,now(),now())`,
-    [locationId, merchantId],
-  );
-  await pool.query(
-    `INSERT INTO merchant_cashier_stations (
-       id, merchant_id, name, branch_key, location_id, status,
-       paired_device_id, offline_inventory_authority, credential_version,
-       paired_at, created_at, updated_at
-     ) VALUES ($1,$2,'Discount Return Station','discount-return',$3,'active',$4,FALSE,1,now(),now(),now())`,
-    [stationId, merchantId, locationId, deviceId],
-  );
-  await pool.query(
-    `INSERT INTO location_inventory_levels (
-       id, merchant_id, location_id, product_id, variant_id,
-       quantity, low_stock_threshold, version, created_at, updated_at
-     ) VALUES ($1,$2,$3,$4,NULL,5,1,1,now(),now())`,
-    [`location-inventory-discount-return-${suffix}`, merchantId, locationId, productId],
-  );
-
-  const saleOperationId = `discount-sale-op-${suffix}`;
-  const saleId = `discount-sale-${suffix}`;
-  const lineId = `discount-line-${suffix}`;
-  const saleMovementId = `discount-sale-move-${suffix}`;
-  const soldAt = new Date().toISOString();
-  const saleSnapshot = {
-    sale_id: saleId,
-    operation_id: saleOperationId,
-    local_merchant_id: localMerchantId,
-    cloud_merchant_id: merchantId,
-    device_id: deviceId,
-    device_sequence: 1,
-    source: "cashier",
-    status: "completed",
-    lines: [
-      {
-        line_id: lineId,
-        product_id: productId,
-        product_name_snapshot: created.product.name,
-        catalog_version: created.product.version,
-        quantity: 2,
-        base_unit_price_minor: 20_000,
-        effective_unit_price_minor: 20_000,
-        discount_minor: 0,
-        line_total_minor: 40_000,
-      },
-    ],
-    subtotal_minor: 40_000,
-    promotion_discount_minor: 0,
-    manual_discount_kind: "amount",
-    manual_discount_minor: 3_000,
-    manual_discount_reason: "integration proof",
-    discount_minor: 3_000,
-    total_minor: 37_000,
-    currency_code: "IQD",
-    currency_fraction_digits: 0,
-    payment_method: "cash",
-    payment_status: "paid",
-    occurred_at: soldAt,
-  };
-  const saleBody = {
-    cloud_merchant_id: merchantId,
-    local_merchant_id: localMerchantId,
-    device_id: deviceId,
-    device_sequence: 1,
-    operation_id: saleOperationId,
-    envelopes: [
-      {
-        schema_version: 1,
-        operation_id: saleOperationId,
-        device_id: deviceId,
-        device_sequence: 1,
-        entity_type: "sale",
-        entity_id: saleId,
-        operation: "append",
-        occurred_at: soldAt,
-        payload: saleSnapshot,
-      },
-      {
-        schema_version: 1,
-        operation_id: saleOperationId,
-        device_id: deviceId,
-        device_sequence: 1,
-        entity_type: "inventory_movement",
-        entity_id: saleMovementId,
-        operation: "append",
-        occurred_at: soldAt,
-        payload: {
-          movement_id: saleMovementId,
-          operation_id: saleOperationId,
-          local_merchant_id: localMerchantId,
-          cloud_merchant_id: merchantId,
-          device_id: deviceId,
-          device_sequence: 1,
-          product_id: productId,
-          delta: -2,
-          reason: "sale",
-          related_sale_id: saleId,
-          occurred_at: soldAt,
-        },
-      },
-    ],
-  };
-
-  const syncedSale = await cashier.syncCashierSaleAuthoritative({
-    merchantId,
-    body: saleBody,
-  });
-  assert.equal(syncedSale.replayed, false);
-
-  const returnedAt = new Date(Date.now() + 1_000).toISOString();
-  const makeReturnBody = (operationId: string, refundMinor: number) => ({
-    cloud_merchant_id: merchantId,
-    local_merchant_id: localMerchantId,
-    device_id: deviceId,
-    device_sequence: 2,
-    operation_id: operationId,
-    envelopes: [
-      {
-        schema_version: 1,
-        operation_id: operationId,
-        device_id: deviceId,
-        device_sequence: 2,
-        entity_type: "return",
-        entity_id: `return:${operationId}`,
-        operation: "append",
-        occurred_at: returnedAt,
-        payload: {
-          refund_allocation_version: 2,
-          return_id: `return:${operationId}`,
-          operation_id: operationId,
-          sale_id: saleId,
-          local_merchant_id: localMerchantId,
-          cloud_merchant_id: merchantId,
-          device_id: deviceId,
-          device_sequence: 2,
-          lines: [
-            {
-              original_line_id: lineId,
-              product_id: productId,
-              quantity: 1,
-              effective_unit_price_minor: 20_000,
-              refund_minor: refundMinor,
-            },
-          ],
-          refund_total_minor: refundMinor,
-          currency_code: "IQD",
-          currency_fraction_digits: 0,
-          occurred_at: returnedAt,
-        },
-      },
-      {
-        schema_version: 1,
-        operation_id: operationId,
-        device_id: deviceId,
-        device_sequence: 2,
-        entity_type: "inventory_movement",
-        entity_id: `movement:${operationId}`,
-        operation: "append",
-        occurred_at: returnedAt,
-        payload: {
-          movement_id: `movement:${operationId}`,
-          operation_id: operationId,
-          local_merchant_id: localMerchantId,
-          cloud_merchant_id: merchantId,
-          device_id: deviceId,
-          device_sequence: 2,
-          product_id: productId,
-          delta: 1,
-          reason: "return",
-          related_sale_id: saleId,
-          occurred_at: returnedAt,
-        },
-      },
-    ],
-  });
-
-  await assert.rejects(
-    () =>
-      compensation.syncCashierCompensationAuthoritative({
-        merchantId,
-        body: makeReturnBody(`discount-return-bad-${suffix}`, 20_000),
-      }),
-    (error: unknown) =>
-      (error as { code?: string }).code ===
-      "CASHIER_COMPENSATION_ORIGINAL_SALE_MISMATCH",
-  );
-
-  const locationAfterRejected = await pool.query(
-    `SELECT quantity FROM location_inventory_levels
-      WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
-        AND variant_id IS NULL`,
-    [merchantId, locationId, productId],
-  );
-  assert.equal(Number(locationAfterRejected.rows[0]?.quantity), 3);
-
-  const accepted = await compensation.syncCashierCompensationAuthoritative({
-    merchantId,
-    body: makeReturnBody(`discount-return-good-${suffix}`, 18_500),
-  });
-  assert.equal(accepted.compensation_kind, "return");
-  assert.equal(accepted.replayed, false);
-  assert.equal(accepted.inventory_mutation_count, 1);
-
-  const locationAfterAccepted = await pool.query(
-    `SELECT quantity FROM location_inventory_levels
-      WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3
-        AND variant_id IS NULL`,
-    [merchantId, locationId, productId],
-  );
-  assert.equal(Number(locationAfterAccepted.rows[0]?.quantity), 4);
-
-  const stored = await pool.query(
-    `SELECT metadata->'cashier_sync'->'compensations' AS compensations
-       FROM orders
-      WHERE merchant_id = $1 AND id = $2`,
-    [merchantId, saleId],
-  );
-  const storedCompensations = stored.rows[0]?.compensations as Array<{
-    snapshot?: { refund_allocation_version?: number; refund_total_minor?: number };
-  }>;
-  assert.equal(storedCompensations.length, 1);
-  assert.equal(storedCompensations[0]?.snapshot?.refund_allocation_version, 2);
-  assert.equal(storedCompensations[0]?.snapshot?.refund_total_minor, 18_500);
 });
 
 test.after(async () => {
