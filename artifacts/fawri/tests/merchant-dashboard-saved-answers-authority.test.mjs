@@ -60,7 +60,7 @@ test("saved answers never represent authority failure as an empty list", () => {
   );
   assert.match(
     page,
-    /const mutationsAllowed = loadStatus === "ready" && !saving/,
+    /const mutationsAllowed =\s*loadStatus === "ready" && !saving && !loadingMore && !searchPending/,
   );
   assert.match(page, /disabled={!mutationsAllowed}/);
 });
