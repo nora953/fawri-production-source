@@ -76,7 +76,11 @@ test('manual discount type is durable from checkout through local and cloud sale
   assert.match(sync, /manual_discount_kind\?: "amount" \| "percentage"/);
   assert.match(sync, /manual_discount_kind: manualDiscountKind/);
   assert.match(sync, /manual_discount_kind: bundle\.sale\.manual_discount_kind/);
-  assert.match(authority, /const kind = discountKind\(payload\.manual_discount_kind\)/);
+  assert.match(authority, /const requestedKind = discountKind\(payload\.manual_discount_kind\)/);
+  assert.match(authority, /loadMerchantCashierDiscountSetting/);
+  assert.match(authority, /requestedKind !== discountSetting\.discount_kind/);
+  assert.match(authority, /CASHIER_DISCOUNT_KIND_MISMATCH/);
+  assert.match(authority, /const kind = discountSetting\.discount_kind/);
   assert.match(authority, /discountKind: kind/);
 });
 

@@ -8,7 +8,6 @@ import {
   timestamp,
   unique,
 } from "drizzle-orm/pg-core";
-import { merchantLocations } from "./merchant-locations";
 import { merchants } from "./merchants";
 import { cashierShifts } from "./cashier-staff";
 
@@ -23,7 +22,6 @@ export const cashierOperationAttribution = pgTable(
     saleId: text("sale_id").notNull(),
     operationKind: text("operation_kind").notNull(),
     stationId: text("station_id").notNull(),
-    locationId: text("location_id"),
     staffId: text("staff_id").notNull(),
     shiftId: text("shift_id").notNull(),
     deviceId: text("device_id").notNull(),
@@ -38,11 +36,6 @@ export const cashierOperationAttribution = pgTable(
     merchantOperationUnique: unique(
       "cashier_operation_attribution_merchant_operation_unique",
     ).on(table.merchantId, table.operationId),
-    locationTenantForeignKey: foreignKey({
-      name: "cashier_operation_attribution_location_merchant_fk",
-      columns: [table.locationId, table.merchantId],
-      foreignColumns: [merchantLocations.id, merchantLocations.merchantId],
-    }),
     shiftIdentityForeignKey: foreignKey({
       name: "cashier_operation_attribution_shift_identity_fk",
       columns: [
@@ -64,9 +57,6 @@ export const cashierOperationAttribution = pgTable(
     stationOccurredIndex: index(
       "cashier_operation_attribution_station_occurred_idx",
     ).on(table.merchantId, table.stationId, table.occurredAt),
-    locationOccurredIndex: index(
-      "cashier_operation_attribution_location_occurred_idx",
-    ).on(table.merchantId, table.locationId, table.occurredAt),
     saleIndex: index("cashier_operation_attribution_sale_idx").on(
       table.merchantId,
       table.saleId,

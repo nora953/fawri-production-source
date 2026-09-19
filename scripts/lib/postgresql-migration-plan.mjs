@@ -55,14 +55,21 @@ export function loadLatestSnapshot() {
     throw new Error("Drizzle migration journal has no valid entries");
   }
 
-  const snapshotName = `${String(latest.idx).padStart(4, "0")}_snapshot.json`;
-  const snapshotPath = path.join(metaDirectory, snapshotName);
-  const rawSnapshot = fs.readFileSync(snapshotPath, "utf8");
-  return {
-    name: snapshotName,
-    sha256: sha256Text(rawSnapshot),
-    value: JSON.parse(rawSnapshot),
-  };
+  for (let index = entries.length - 1; index >= 0; index -= 1) {
+    const entry = entries[index];
+    if (!entry || !Number.isInteger(entry.idx)) continue;
+    const snapshotName = `${String(entry.idx).padStart(4, "0")}_snapshot.json`;
+    const snapshotPath = path.join(metaDirectory, snapshotName);
+    if (!fs.existsSync(snapshotPath)) continue;
+    const rawSnapshot = fs.readFileSync(snapshotPath, "utf8");
+    return {
+      name: snapshotName,
+      sha256: sha256Text(rawSnapshot),
+      value: JSON.parse(rawSnapshot),
+    };
+  }
+
+  throw new Error("Drizzle migration journal has no committed snapshot");
 }
 
 function runInstrumentedPlanner(dataDirectory) {

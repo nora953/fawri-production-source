@@ -13,7 +13,6 @@ import {
   unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { merchantLocations } from "./merchant-locations";
 import { merchants } from "./merchants";
 
 export const merchantCashierStaff = pgTable(
@@ -133,7 +132,6 @@ export const merchantCashierStations = pgTable(
     name: text("name").notNull(),
     branchKey: text("branch_key").notNull().default("main"),
     branchLabel: text("branch_label"),
-    locationId: text("location_id"),
     status: text("status").notNull().default("active"),
     pairedDeviceId: text("paired_device_id"),
     offlineInventoryAuthority: boolean("offline_inventory_authority")
@@ -151,11 +149,6 @@ export const merchantCashierStations = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    locationTenantForeignKey: foreignKey({
-      name: "merchant_cashier_stations_location_merchant_fk",
-      columns: [table.locationId, table.merchantId],
-      foreignColumns: [merchantLocations.id, merchantLocations.merchantId],
-    }),
     idMerchantUnique: unique("merchant_cashier_stations_id_merchant_unique").on(
       table.id,
       table.merchantId,
@@ -164,9 +157,6 @@ export const merchantCashierStations = pgTable(
       table.merchantId,
       table.status,
     ),
-    merchantLocationIndex: index(
-      "merchant_cashier_stations_merchant_location_idx",
-    ).on(table.merchantId, table.locationId, table.status),
     pairedDeviceUnique: uniqueIndex("merchant_cashier_stations_device_unique")
       .on(table.merchantId, table.pairedDeviceId)
       .where(sql`${table.pairedDeviceId} IS NOT NULL`),

@@ -9,6 +9,7 @@ type ApprovalFixture = {
   manualDiscountMinor?: number;
   managerMaxPercentageBps?: number;
   managerMaxAmountMinor?: number;
+  discountKind?: 'amount' | 'percentage';
 };
 
 function authorityTarget(fixture: ApprovalFixture = {}): {
@@ -22,6 +23,14 @@ function authorityTarget(fixture: ApprovalFixture = {}): {
       _values: unknown[] = [],
     ) {
       const compact = sql.replace(/\s+/g, ' ').trim();
+      if (compact.includes('FROM merchant_cashier_discount_settings')) {
+        return {
+          rows: [{
+            discount_kind: fixture.discountKind ?? 'amount',
+            version: 1,
+          }] as unknown as T[],
+        };
+      }
       if (compact.includes('FROM merchant_cashier_discount_override_approvals')) {
         return {
           rows: [{
@@ -93,7 +102,10 @@ const baseInput = {
 };
 
 test('approved percentage discount at the exact manager percentage limit remains syncable after approval expiry', async () => {
-  const { target, updates } = authorityTarget({ managerMaxAmountMinor: 100 });
+  const { target, updates } = authorityTarget({
+    managerMaxAmountMinor: 100,
+    discountKind: 'percentage',
+  });
   await consumeCashierDiscountOverrideApproval(target, {
     ...baseInput,
     discountKind: 'percentage',
@@ -108,6 +120,7 @@ test('manager percentage ceiling ignores the manager fixed amount limit and reje
     manualDiscountMinor: 251,
     managerMaxPercentageBps: 5_000,
     managerMaxAmountMinor: 999,
+    discountKind: 'percentage',
   });
   await assert.rejects(
     consumeCashierDiscountOverrideApproval(target, {
@@ -131,6 +144,7 @@ test('manager fixed amount ceiling ignores the manager percentage limit and reje
     manualDiscountMinor: 201,
     managerMaxPercentageBps: 100,
     managerMaxAmountMinor: 200,
+    discountKind: 'amount',
   });
   await assert.rejects(
     consumeCashierDiscountOverrideApproval(target, {
@@ -150,7 +164,7 @@ test('manager fixed amount ceiling ignores the manager percentage limit and reje
 });
 
 test('sale created after the manager approval window fails closed', async () => {
-  const { target, updates } = authorityTarget();
+  const { target, updates } = authorityTarget({ discountKind: 'percentage' });
   await assert.rejects(
     consumeCashierDiscountOverrideApproval(target, {
       ...baseInput,
@@ -170,6 +184,7 @@ test('sale created after the manager approval window fails closed', async () => 
 test('consumed exact-operation retry still validates the original sale window and type', async () => {
   const { target, updates } = authorityTarget({
     consumedAt: '2026-09-09T10:03:10.000Z',
+    discountKind: 'percentage',
   });
   await consumeCashierDiscountOverrideApproval(target, {
     ...baseInput,
