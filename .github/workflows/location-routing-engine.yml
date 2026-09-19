@@ -1,0 +1,48 @@
+name: Location routing engine
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/services/locationRoutingEngine.ts"
+      - "artifacts/api-server/tests/location-routing-engine.test.ts"
+      - ".github/workflows/location-routing-engine.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: location-routing-engine-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  prove-routing-engine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label location-routing-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Type-check API server
+        run: pnpm --filter @workspace/api-server run typecheck
+
+      - name: Prove deterministic routing contract
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/location-routing-engine.test.ts
