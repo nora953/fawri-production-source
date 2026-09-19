@@ -55,11 +55,15 @@ async function seedMerchant() {
     status: "approved",
     actorAdminId: created.account.id,
   });
+  const managed = await merchantManagement.getManagedMerchantPostgres(
+    created.account.id,
+  );
+  assert.equal(managed?.status, "approved");
+  assert.equal(managed?.account_status, "approved");
   const approved = await accounts.findMerchantByIdAuthoritative(
     created.account.id,
   );
   assert.ok(approved?.merchantProfile);
-  assert.equal(approved?.merchantProfile?.status, "approved");
   return approved!;
 }
 
