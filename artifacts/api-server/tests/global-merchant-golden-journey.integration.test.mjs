@@ -423,6 +423,23 @@ test(
     });
     assert.equal(createdStation.response.status, 201, JSON.stringify(createdStation.body));
     const stationId = createdStation.body.station.id;
+    const locationId = createdStation.body.station.location_id;
+    assert.ok(locationId, "created cashier station must expose canonical location_id");
+
+    await pool.query(
+      `INSERT INTO location_inventory_levels (
+         id, merchant_id, location_id, product_id, variant_id,
+         quantity, low_stock_threshold, version, created_at, updated_at
+       ) VALUES ($1,$2,$3,$4,NULL,$5,$6,1,now(),now())`,
+      [
+        `golden-location-inventory-${id}`,
+        merchantId,
+        locationId,
+        productId,
+        7,
+        2,
+      ],
+    );
 
     const pairing = await jsonRequest(
       `${baseUrl}/api/cashier/management/stations/${encodeURIComponent(stationId)}/pairing`,
