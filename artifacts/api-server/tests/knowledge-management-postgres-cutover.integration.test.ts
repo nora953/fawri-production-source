@@ -393,6 +393,38 @@ test("merchant Knowledge management and decision runtime share one PostgreSQL au
     );
   });
 
+  await t.test("Knowledge audit pagination exposes complete history without overlap", async () => {
+    const compatibilityEvents = await managementA.listAuditEvents(merchantIds[0], 500);
+    assert.ok(compatibilityEvents.length > 2);
+
+    const pagedEvents = [];
+    let cursor = null;
+    for (let pageIndex = 0; pageIndex < 50; pageIndex += 1) {
+      const page = await managementA.listAuditEventsPage(merchantIds[0], {
+        limit: 2,
+        ...(cursor
+          ? {
+              beforeCreatedAt: cursor.createdAt,
+              beforeId: cursor.id,
+            }
+          : {}),
+      });
+      pagedEvents.push(...page.events);
+      cursor = page.nextCursor;
+      if (!cursor) break;
+    }
+
+    assert.equal(cursor, null);
+    assert.equal(
+      new Set(pagedEvents.map((event) => event.id)).size,
+      pagedEvents.length,
+    );
+    assert.deepEqual(
+      pagedEvents.map((event) => event.id),
+      compatibilityEvents.map((event) => event.id),
+    );
+  });
+
   await t.test("tenant isolation prevents Knowledge records crossing merchants", async () => {
     const managementAList = await managementA.listSavedAnswers(merchantIds[0]);
     const managementBList = await new PostgresKnowledgeManagementRuntime({
