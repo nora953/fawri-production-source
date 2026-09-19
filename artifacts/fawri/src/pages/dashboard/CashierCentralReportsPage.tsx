@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'wouter';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
@@ -215,16 +215,23 @@ export default function CashierCentralReportsPage() {
   const { lang, dir } = useI18n(); const labels = COPY[lang] || COPY.en;
   const [range, setRange] = useState<RangeKey>('today'); const [result, setResult] = useState<CentralReportResult | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const [staffFilter, setStaffFilter] = useState('all'); const [locationFilter, setLocationFilter] = useState('all'); const [stationFilter, setStationFilter] = useState('all'); const [kindFilter, setKindFilter] = useState<'all' | OperationKind>('all');
+  const requestSequence = useRef(0);
 
   const load = useCallback(async () => {
+    const requestId = ++requestSequence.current;
     setLoading(true); setError('');
     try {
       const response = await fetch(`/api/cashier/management/report${queryForRange(range, { staff: staffFilter, location: locationFilter, station: stationFilter, kind: kindFilter })}`, { credentials: 'same-origin', cache: 'no-store' });
       const payload = record(await response.json().catch(() => null));
       if (!response.ok || payload.ok !== true) throw new Error(labels.failed);
+      if (requestId !== requestSequence.current) return;
       setResult(parseResult(payload));
-    } catch { setResult(null); setError(labels.failed); }
-    finally { setLoading(false); }
+    } catch {
+      if (requestId !== requestSequence.current) return;
+      setResult(null); setError(labels.failed);
+    } finally {
+      if (requestId === requestSequence.current) setLoading(false);
+    }
   }, [kindFilter, labels.failed, locationFilter, range, staffFilter, stationFilter]);
 
   useEffect(() => { void load(); }, [load]);
