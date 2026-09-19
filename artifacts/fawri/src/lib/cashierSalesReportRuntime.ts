@@ -3,6 +3,10 @@ import type {
   CashierSaleLineSnapshot,
   CashierSaleSnapshot,
 } from './cashierLocalContracts';
+import {
+  CASHIER_RETURN_REFUND_ALLOCATION_VERSION,
+  cashierReturnRefundMinor,
+} from './cashierReturnRefundAllocation';
 
 type CostAwareSaleLine = CashierSaleLineSnapshot & {
   /** Optional owner-only sale-time cost snapshot. Staff devices normally omit it. */
@@ -383,18 +387,34 @@ function validateReturnSnapshot(
       original.effective_unit_price_minor,
       'effective_price',
     );
+    const allocationVersion = snapshot.refund_allocation_version;
     if (
-      returned.product_id !== original.product_id ||
-      returned.variant_id !== original.variant_id ||
-      returned.effective_unit_price_minor !== originalPrice ||
-      refund !== safeMultiply(originalPrice, quantity, 'return_refund')
+      allocationVersion !== undefined &&
+      allocationVersion !== CASHIER_RETURN_REFUND_ALLOCATION_VERSION
     ) {
-      throw new Error('CASHIER_REPORT_RETURN_MISMATCH');
+      throw new Error('CASHIER_REPORT_RETURN_ALLOCATION_VERSION_UNSUPPORTED');
     }
     const alreadyReturned = returnedByLine.get(original.line_id) || 0;
     const cumulative = safeAdd(alreadyReturned, quantity, 'returned_quantity');
     if (cumulative > original.quantity) {
       throw new Error('CASHIER_REPORT_RETURN_EXCEEDS_SALE');
+    }
+    const expectedRefund =
+      allocationVersion === CASHIER_RETURN_REFUND_ALLOCATION_VERSION
+        ? cashierReturnRefundMinor({
+            sale,
+            lineId: original.line_id,
+            alreadyReturnedQuantity: alreadyReturned,
+            returnQuantity: quantity,
+          })
+        : safeMultiply(originalPrice, quantity, 'return_refund');
+    if (
+      returned.product_id !== original.product_id ||
+      returned.variant_id !== original.variant_id ||
+      returned.effective_unit_price_minor !== originalPrice ||
+      refund !== expectedRefund
+    ) {
+      throw new Error('CASHIER_REPORT_RETURN_MISMATCH');
     }
     returnedByLine.set(original.line_id, cumulative);
     refundTotal = safeAdd(refundTotal, refund, 'return_refund');
