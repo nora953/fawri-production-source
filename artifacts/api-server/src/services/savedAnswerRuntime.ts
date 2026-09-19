@@ -8,6 +8,22 @@ export function listMerchantSavedAnswers(merchantId: string) {
   return getPostgresKnowledgeManagementRuntime().listSavedAnswers(merchantId);
 }
 
+export function listMerchantSavedAnswersPage(input: {
+  merchantId: string;
+  limit?: number;
+  beforeUpdatedAt?: string;
+  beforeId?: string;
+}) {
+  return getPostgresKnowledgeManagementRuntime().listSavedAnswersPage(
+    input.merchantId,
+    {
+      limit: input.limit,
+      beforeUpdatedAt: input.beforeUpdatedAt,
+      beforeId: input.beforeId,
+    },
+  );
+}
+
 export function createMerchantSavedAnswer(input: {
   merchantId: string;
   category: SavedAnswerCategory;
