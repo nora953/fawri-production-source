@@ -2,6 +2,8 @@
   "index": 19,
   "name": "location_delivery_area_routing",
   "when": 1789948800000,
+  "mode": "reviewed_sql",
+  "sql_sha256": "8743ac7ea771dca34f9927c739137f2a671a7007aaaf912f4fd1c552039cedab",
   "preimage_files": [
     "merchant-locations.ts",
     "merchant-settings.ts",
