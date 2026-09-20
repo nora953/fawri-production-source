@@ -8,11 +8,11 @@ This document separates **code/runtime readiness** from **real production launch
 
 The validated release-candidate tree `92290d3f97e3ece81525a0b92d668d129e9df5ed` completed 38/38 final integration checks with 0 failures and was merged to `main` through PR #256.
 
-Current integrated `main` SHA:
+Code integration merge SHA:
 
 `515dc33404e517d11060fa60cb6ef20d986b09ef`
 
-The merge commit tree is identical to the validated release-candidate tree. Repository-owned build, typecheck, migration/schema, security, routing, online-order, cashier, merchant/admin/subscription journey, settings, Meta cutover, Knowledge readiness, and related integration gates are therefore considered code-ready at this checkpoint.
+The code-integration merge commit tree is identical to the validated release-candidate tree. Documentation-only commits may advance `main` after that SHA without changing the validated runtime tree. Repository-owned build, typecheck, migration/schema, security, routing, online-order, cashier, merchant/admin/subscription journey, settings, Meta cutover, Knowledge readiness, and related integration gates are therefore considered code-ready at this checkpoint.
 
 This does **not** mean the live production environment is ready. The remaining work is dominated by deployment-time infrastructure, provider credentials/approvals, production backup/restore proof, supported SaaS billing onboarding, and final manual staging/UI validation.
 
@@ -45,6 +45,8 @@ Required runtime selections include:
 - strong `FAWRI_OBSERVABILITY_BEARER_TOKEN`
 
 The release gate reports only safe error codes. Secret values must never be returned in readiness responses or startup logs.
+
+A non-secret deployment template is provided at `.env.production.example`. It is documentation only: real values must be populated through the deployment secret store/workload identity and must never be committed.
 
 ## Meta production activation
 
@@ -91,6 +93,15 @@ Before launch, the owner/infrastructure environment must provide and prove:
 
 A disposable local drill is useful regression evidence but does not satisfy this production requirement.
 
+## Durable support-image storage blocker
+
+The runtime release gate also reports:
+
+`SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED`
+
+Support images are currently stored through a filesystem-backed storage path. Production must prove that the selected hosting environment provides durable persistent storage with restart/redeploy survival, private access, retention/deletion behavior, multi-instance consistency where applicable, and backup/restore coverage. If the production host is ephemeral, a durable storage-provider implementation must be completed before launch.
+
+
 ## Release sequence
 
 1. Merge only code that passes repository typecheck/build, migrations, PostgreSQL runtime integration, Meta live-transport regressions, and release-gate tests.
@@ -100,9 +111,10 @@ A disposable local drill is useful regression evidence but does not satisfy this
 5. Configure the Meta production application/callback/webhook and verify OAuth against a controlled test merchant/page.
 6. Configure OpenAI credentials and confirm Knowledge readiness.
 7. Establish and prove production backup/restore.
-8. Complete a production SaaS billing-provider integration only from official provider documentation/credentials.
-9. Set `FAWRI_PRODUCTION_RELEASE_GATE=required` and require `/ops/readiness` to be ready before routing traffic.
-10. Run controlled end-to-end smoke tests and observe queues/DLQ/alerts before general launch.
+8. Prove durable support-image storage for the selected production hosting model.
+9. Complete a production SaaS billing-provider integration only from official provider documentation/credentials.
+10. Set `FAWRI_PRODUCTION_RELEASE_GATE=required` and require `/ops/readiness` to be ready before routing traffic.
+11. Run controlled end-to-end smoke tests and observe queues/DLQ/alerts before general launch.
 
 ## Current readiness interpretation
 
@@ -112,6 +124,7 @@ It must not claim **production launch readiness** while any of the following rem
 
 - `SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE`
 - `PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED`
+- `SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED`
 - production PostgreSQL deployment/migration proof,
 - production AWS KMS/IAM/wrapped-DEK readiness,
 - production Meta application/OAuth/webhook/live-send readiness,
