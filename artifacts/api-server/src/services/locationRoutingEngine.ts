@@ -187,3 +187,4 @@ export function routeOrderToLocation(input: {
     reason: distance === null ? "merchant_priority" : "nearest_eligible",
   };
 }
+// QA architecture regression trigger only; temporary branch, do not merge.
