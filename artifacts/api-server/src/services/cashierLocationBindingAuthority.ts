@@ -40,6 +40,24 @@ function toBinding(row: LocationRow): CashierLocationBinding {
   };
 }
 
+async function findById(
+  target: OperationalQueryTarget,
+  merchantId: string,
+  locationId: string,
+): Promise<LocationRow | null> {
+  const rows = await operationalQueryRows<LocationRow>(
+    target,
+    `SELECT id, merchant_id, name, legacy_branch_key, is_default
+       FROM merchant_locations
+      WHERE merchant_id = $1
+        AND id = $2
+      LIMIT 1
+      FOR UPDATE`,
+    [merchantId, locationId],
+  );
+  return rows[0] || null;
+}
+
 async function findByLegacyBranch(
   target: OperationalQueryTarget,
   merchantId: string,
@@ -114,6 +132,17 @@ async function createLocation(
       input.isDefault,
     ],
   );
+}
+
+export async function resolveCashierLocationById(
+  target: OperationalQueryTarget,
+  input: {
+    merchantId: string;
+    locationId: string;
+  },
+): Promise<CashierLocationBinding | null> {
+  const location = await findById(target, input.merchantId, input.locationId);
+  return location ? toBinding(location) : null;
 }
 
 export async function resolveCashierLocationForBranch(
