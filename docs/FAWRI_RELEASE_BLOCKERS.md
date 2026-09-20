@@ -13,12 +13,13 @@ This file separates repository-owned blockers from external launch blockers. A b
 
 ## Current repository checkpoint
 
-- Integrated `main`: `515dc33404e517d11060fa60cb6ef20d986b09ef`
+- Code integration merge SHA: `515dc33404e517d11060fa60cb6ef20d986b09ef`
 - Validated release-candidate tree: `92290d3f97e3ece81525a0b92d668d129e9df5ed`
 - Safety checkpoint: `checkpoint/main-integrated-green-2026-09-20`
+- Documentation-sync checkpoint: `checkpoint/main-release-docs-synced-2026-09-20`
 - Final integration PR: #256
 - Release-candidate CI result: 38/38 PASS, 0 FAIL
-- Merged `main` tree is identical to the validated release-candidate tree.
+- The code-integration merge tree is identical to the validated release-candidate tree. Later documentation-only commits may advance `main` without changing that runtime tree.
 
 ## Open code/release blockers
 
@@ -136,6 +137,29 @@ Before launch, production must prove:
 - successful integrity-checked restore drill,
 - RPO/RTO ownership and alerting.
 
+### Durable support-image storage
+
+Severity: EXTERNAL / CRITICAL
+
+Status: OPEN
+
+The production release gate reports `SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED`.
+
+Current support-image storage is filesystem-backed under the Fawri data directory. Production launch therefore requires one of the following to be proven before traffic:
+
+- the selected hosting runtime provides a durable persistent filesystem/volume with the required backup and restore guarantees, or
+- a separately reviewed durable object-storage/provider integration is implemented and validated.
+
+The proof must also cover:
+
+- survival across application restarts/redeployments,
+- tenant-private access behavior,
+- multi-instance/runtime consistency where more than one application instance can serve requests,
+- retention/deletion behavior,
+- backup/restore coverage for stored support images.
+
+An ephemeral container filesystem is not acceptable production evidence.
+
 ### Production secrets and release gate
 
 Severity: EXTERNAL / CRITICAL
@@ -146,6 +170,7 @@ The production deployment environment still must provide all required secrets an
 
 Required launch-time evidence includes:
 
+- production values derived from the safe `.env.production.example` contract,
 - strong Auth security secret,
 - strong observability bearer token,
 - required PostgreSQL authority selections,
@@ -256,6 +281,7 @@ It must not be described as **production launch ready** until:
 3. production PostgreSQL migration/verification completes,
 4. production provider/secrets readiness is proven,
 5. production backup/restore proof exists,
-6. `FAWRI_PRODUCTION_RELEASE_GATE=required` starts successfully,
-7. `/ops/readiness` is ready before traffic,
-8. controlled production smoke tests and queue/DLQ/alert observation pass.
+6. durable support-image storage proof exists,
+7. `FAWRI_PRODUCTION_RELEASE_GATE=required` starts successfully,
+8. `/ops/readiness` is ready before traffic,
+9. controlled production smoke tests and queue/DLQ/alert observation pass.
