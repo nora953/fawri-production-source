@@ -122,6 +122,23 @@ test("delivery and payment mappings match the canonical server model", () => {
   assert.match(page, /value="fresh_only"/);
 });
 
+test("inventory freshness visibility follows tracked catalog products, not cashier presence", () => {
+  const page = read(
+    "artifacts/fawri/src/pages/dashboard/ServerSettingsPage.tsx",
+  );
+
+  assert.match(page, /listCatalogProducts/);
+  assert.match(page, /product\.item_type === 'product'/);
+  assert.match(page, /product\.track_inventory/);
+  assert.match(page, /inventorySettingsApplicable !== false/);
+  assert.match(page, /listCatalogProducts\(\)\.catch\(\(\) => null\)/);
+  assert.doesNotMatch(
+    page,
+    /cashier[^\n]{0,120}inventorySettingsApplicable|inventorySettingsApplicable[^\n]{0,120}cashier/i,
+  );
+});
+
+
 test("settings API derives tenant identity from the authenticated session and returns effects", () => {
   const router = read(
     "artifacts/api-server/src/routes/merchant-settings.ts",
