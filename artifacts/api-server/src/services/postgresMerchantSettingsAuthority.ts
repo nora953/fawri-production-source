@@ -4,6 +4,7 @@ import {
   getMerchantOperationalSettings,
   MerchantSettingsError,
   updateMerchantOperationalSettingsWithEffects,
+  type InventoryStalePolicy,
   type MerchantOperationalSettings,
   type MerchantPaymentMethod,
   type MerchantReplyLanguage,
@@ -36,11 +37,17 @@ const PAYMENT_METHODS = new Set<MerchantPaymentMethod>([
   "zaincash",
   "other",
 ]);
+const INVENTORY_STALE_POLICIES = new Set<InventoryStalePolicy>([
+  "reroute_then_pending",
+  "allow_stale",
+  "fresh_only",
+]);
 const ROOT_PATCH_KEYS = new Set([
   "auto_reply_enabled",
   "reply_language",
   "delivery",
   "payment",
+  "inventory",
 ]);
 const DELIVERY_PATCH_KEYS = new Set([
   "enabled",
@@ -58,6 +65,10 @@ const PAYMENT_PATCH_KEYS = new Set([
   "electronic_payment_enabled",
   "methods",
   "instructions",
+]);
+const INVENTORY_PATCH_KEYS = new Set([
+  "freshness_max_age_minutes",
+  "stale_policy",
 ]);
 
 type SettingsRow = {
@@ -77,6 +88,8 @@ type SettingsRow = {
   electronic_payment_enabled: boolean;
   payment_methods: unknown;
   payment_instructions: string;
+  inventory_freshness_max_age_minutes: number;
+  inventory_stale_policy: InventoryStalePolicy;
   created_at: Date;
   updated_at: Date;
 };
