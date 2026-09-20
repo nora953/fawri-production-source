@@ -48,6 +48,14 @@ function isActiveRoute(
     return location === "/dashboard" || location === "/dashboard/overview";
   }
 
+  if (href === "/dashboard/reports") {
+    return (
+      location === "/dashboard/reports" ||
+      location.startsWith("/dashboard/reports/") ||
+      location === "/dashboard/cashiers/reports"
+    );
+  }
+
   if (exact) {
     return location === href;
   }
