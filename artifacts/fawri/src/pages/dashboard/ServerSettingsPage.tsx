@@ -14,6 +14,10 @@ import {
   catalogMinorAmountToMajor,
 } from '@/lib/catalogPromotionUiApi';
 import {
+  listCatalogProducts,
+  type CatalogProduct,
+} from '@/lib/catalogUiApi';
+import {
   getMerchantRegionalContext,
   type MerchantRegionalContext,
 } from '@/lib/merchantRegionalUiApi';
@@ -159,6 +163,14 @@ function isPaymentMethod(value: unknown): value is PaymentMethod {
   );
 }
 
+function merchantUsesTrackedInventory(
+  products: readonly CatalogProduct[],
+): boolean {
+  return products.some(
+    product => product.item_type === 'product' && product.track_inventory,
+  );
+}
+
 function isMerchantSettings(value: unknown): value is MerchantSettings {
   if (
     !isRecord(value) ||
@@ -229,6 +241,8 @@ export default function ServerSettingsPage() {
   const [settings, setSettings] = useState<MerchantSettings | null>(null);
   const [draft, setDraft] = useState<MerchantSettings | null>(null);
   const [regional, setRegional] = useState<MerchantRegionalContext | null>(null);
+  const [inventorySettingsApplicable, setInventorySettingsApplicable] =
+    useState<boolean | null>(null);
   const [areasText, setAreasText] = useState('');
   const [loading, setLoading] = useState(true);
   const [authorityStatus, setAuthorityStatus] = useState<AuthorityStatus>('loading');
@@ -262,13 +276,14 @@ export default function ServerSettingsPage() {
     }
 
     try {
-      const [response, regionalContext] = await Promise.all([
+      const [response, regionalContext, catalogProducts] = await Promise.all([
         fetch('/api/settings', {
           credentials: 'same-origin',
           headers: { Accept: 'application/json' },
           cache: 'no-store',
         }),
         getMerchantRegionalContext(),
+        listCatalogProducts().catch(() => null),
       ]);
       const data = await response.json().catch(() => null);
       if (!response.ok || data?.ok !== true || !isMerchantSettings(data.settings)) {
@@ -277,6 +292,11 @@ export default function ServerSettingsPage() {
       if (requestId !== loadRequestIdRef.current) return;
 
       setRegional(regionalContext);
+      setInventorySettingsApplicable(
+        catalogProducts === null
+          ? null
+          : merchantUsesTrackedInventory(catalogProducts),
+      );
       applyServerState(data.settings);
       setAuthorityStatus('ready');
       setError('');
@@ -790,56 +810,58 @@ export default function ServerSettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{copy.inventoryFreshness}</CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 rounded-xl border p-4 text-sm font-semibold">
-              <span>{copy.freshnessMinutes}</span>
-              <Input
-                type="number"
-                min={1}
-                max={1440}
-                value={draft.inventory.freshness_max_age_minutes}
-                onChange={event =>
-                  updateDraft(current => ({
-                    ...current,
-                    inventory: {
-                      ...current.inventory,
-                      freshness_max_age_minutes: Math.min(
-                        1440,
-                        Math.max(1, Number(event.target.value || 1)),
-                      ),
-                    },
-                  }))
-                }
-              />
-            </label>
-            <label className="space-y-2 rounded-xl border p-4 text-sm font-semibold">
-              <span>{copy.stalePolicy}</span>
-              <select
-                value={draft.inventory.stale_policy}
-                onChange={event =>
-                  updateDraft(current => ({
-                    ...current,
-                    inventory: {
-                      ...current.inventory,
-                      stale_policy: event.target.value as InventoryStalePolicy,
-                    },
-                  }))
-                }
-                className="h-11 w-full rounded-md border bg-background px-3"
-              >
-                <option value="reroute_then_pending">
-                  {copy.staleReroutePending}
-                </option>
-                <option value="allow_stale">{copy.staleAllow}</option>
-                <option value="fresh_only">{copy.staleFreshOnly}</option>
-              </select>
-            </label>
-          </CardContent>
-        </Card>
+        {inventorySettingsApplicable !== false ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>{copy.inventoryFreshness}</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 rounded-xl border p-4 text-sm font-semibold">
+                <span>{copy.freshnessMinutes}</span>
+                <Input
+                  type="number"
+                  min={1}
+                  max={1440}
+                  value={draft.inventory.freshness_max_age_minutes}
+                  onChange={event =>
+                    updateDraft(current => ({
+                      ...current,
+                      inventory: {
+                        ...current.inventory,
+                        freshness_max_age_minutes: Math.min(
+                          1440,
+                          Math.max(1, Number(event.target.value || 1)),
+                        ),
+                      },
+                    }))
+                  }
+                />
+              </label>
+              <label className="space-y-2 rounded-xl border p-4 text-sm font-semibold">
+                <span>{copy.stalePolicy}</span>
+                <select
+                  value={draft.inventory.stale_policy}
+                  onChange={event =>
+                    updateDraft(current => ({
+                      ...current,
+                      inventory: {
+                        ...current.inventory,
+                        stale_policy: event.target.value as InventoryStalePolicy,
+                      },
+                    }))
+                  }
+                  className="h-11 w-full rounded-md border bg-background px-3"
+                >
+                  <option value="reroute_then_pending">
+                    {copy.staleReroutePending}
+                  </option>
+                  <option value="allow_stale">{copy.staleAllow}</option>
+                  <option value="fresh_only">{copy.staleFreshOnly}</option>
+                </select>
+              </label>
+            </CardContent>
+          </Card>
+        ) : null}
 
         <Card>
           <CardHeader>
