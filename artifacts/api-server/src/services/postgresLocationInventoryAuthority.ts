@@ -796,3 +796,4 @@ export async function markLocationInventoryFreshAuthoritative(params: {
     };
   });
 }
+// QA architecture regression trigger only; temporary branch, do not merge.
