@@ -6,6 +6,7 @@ import {
   disabledStoredCashierDiscountPolicy,
   loadCashierDiscountPolicies,
 } from './cashierDiscountPolicyAuthority';
+import { loadMerchantCashierDiscountSetting } from './cashierMerchantDiscountSettingsAuthority';
 import { consumeCashierDiscountOverrideApproval } from './cashierDiscountOverrideAuthority';
 import type { CashierOperatorContext } from './postgresCashierStaffAuthority';
 import { CashierSyncError } from './postgresCashierSyncAuthority';
@@ -151,11 +152,26 @@ export async function assertCashierOperatorManualDiscountAuthority(input: {
     );
   }
 
-  const kind = discountKind(payload.manual_discount_kind);
+  const requestedKind = discountKind(payload.manual_discount_kind);
   const postPromotion = postPromotionTotal(payload);
   await withMerchantOperationalTransaction(
     input.context.merchant_id,
     async (client) => {
+      const discountSetting = await loadMerchantCashierDiscountSetting(
+        client,
+        input.context.merchant_id,
+      );
+      if (!requestedKind || requestedKind !== discountSetting.discount_kind) {
+        throw new CashierSyncError(
+          'CASHIER_DISCOUNT_KIND_MISMATCH',
+          'sale discount kind does not match the merchant discount setting',
+          409,
+          {
+            configured_discount_kind: discountSetting.discount_kind,
+          },
+        );
+      }
+      const kind = discountSetting.discount_kind;
       const policies = await loadCashierDiscountPolicies(
         client,
         input.context.merchant_id,

@@ -101,6 +101,7 @@ jobs:
           node --check ./scripts/tests/plan-postgresql-contract.test.mjs
           node --check ./scripts/tests/transitional-secret-redaction.test.mjs
           node --check ./scripts/tests/validated-migration-transitional-gate.test.mjs
+          node --check ./scripts/tests/multi-location-inventory-foundation.test.mjs
           node --check ./scripts/tests/fixtures/create-postgresql-migration-fixture.mjs
           node --check ./scripts/tests/fixtures/create-transitional-migration-fixture.mjs
           node --check ./lib/db/scripts/generate-migration.mjs
@@ -110,7 +111,9 @@ jobs:
           node --check ./lib/db/scripts/commit-migration.mjs
 
       - name: Test migration dry-run safety
-        run: pnpm run migration:test
+        run: |
+          pnpm run migration:test
+          node --test ./scripts/tests/multi-location-inventory-foundation.test.mjs
 
       - name: Type-check database package
         run: pnpm --filter @workspace/db run typecheck

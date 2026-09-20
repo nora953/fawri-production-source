@@ -2,6 +2,10 @@ import crypto from "node:crypto";
 
 import { CatalogRuntimeError } from "./catalogInventoryRuntime";
 import {
+  catalogCommerceFieldsOf,
+  normalizeCatalogCommerceInput,
+} from "./catalogCommerceMetadata";
+import {
   normalizeCatalogMerchantId,
   normalizeCatalogProductId,
 } from "./catalogProductNormalization";
@@ -277,6 +281,13 @@ export async function updateCatalogProductAuthoritative(
     `${merchantId}\0${productId}`,
   );
   assertItemTypeImmutable(current, input);
+  const currentCommerce = catalogCommerceFieldsOf(current);
+  const requestedCommerce = normalizeCatalogCommerceInput(
+    input,
+    currentCommerce,
+  );
+  const disableInventoryTracking =
+    currentCommerce.track_inventory && !requestedCommerce.track_inventory;
 
   if (!operationalPostgresAuthorityRequired()) {
     return core.updateCatalogProductAuthoritative({
@@ -331,6 +342,10 @@ export async function updateCatalogProductAuthoritative(
     merchantId,
     productId,
     input,
+    locationInventoryGuard: {
+      forbidProductInventory: disableInventoryTracking,
+      forbidVariantIds: newlyRemovedIds,
+    },
   } as Parameters<typeof core.updateCatalogProductAuthoritative>[0];
 
   const updated = await core.updateCatalogProductAuthoritative(internalParams);

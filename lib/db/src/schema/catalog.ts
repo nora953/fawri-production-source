@@ -14,6 +14,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { accounts } from "./accounts";
+import { merchantLocations } from "./merchant-locations";
 import { merchants } from "./merchants";
 
 export const catalogIdentifierKindEnum = pgEnum("catalog_identifier_kind", [
@@ -411,6 +412,7 @@ export const inventoryMutations = pgTable(
       .references(() => merchants.id, { onDelete: "cascade" }),
     productId: text("product_id").notNull(),
     variantId: text("variant_id"),
+    locationId: text("location_id"),
     mutationType: inventoryMutationTypeEnum("mutation_type").notNull(),
     beforeQuantity: integer("before_quantity").notNull(),
     afterQuantity: integer("after_quantity").notNull(),
@@ -428,6 +430,11 @@ export const inventoryMutations = pgTable(
       .defaultNow(),
   },
   (table) => ({
+    locationTenantForeignKey: foreignKey({
+      name: "inventory_mutations_location_merchant_fk",
+      columns: [table.locationId, table.merchantId],
+      foreignColumns: [merchantLocations.id, merchantLocations.merchantId],
+    }),
     productTenantForeignKey: foreignKey({
       name: "inventory_mutations_product_tenant_fk",
       columns: [table.productId, table.merchantId],
@@ -450,13 +457,16 @@ export const inventoryMutations = pgTable(
       table.productId,
       table.createdAt,
     ),
+    locationProductCreatedIndex: index(
+      "inventory_mutations_location_product_created_idx",
+    ).on(table.merchantId, table.locationId, table.productId, table.createdAt),
     quantityCheck: check(
       "inventory_mutations_quantity_check",
       sql`${table.beforeQuantity} >= 0 AND ${table.afterQuantity} >= 0`,
     ),
     versionCheck: check(
       "inventory_mutations_version_check",
-      sql`${table.expectedVersion} > 0 AND ${table.resultingVersion} = ${table.expectedVersion} + 1`,
+      sql`((${table.locationId} IS NULL AND ${table.expectedVersion} > 0) OR (${table.locationId} IS NOT NULL AND ${table.expectedVersion} >= 0)) AND ${table.resultingVersion} = ${table.expectedVersion} + 1`,
     ),
     hashCheck: check(
       "inventory_mutations_hash_check",

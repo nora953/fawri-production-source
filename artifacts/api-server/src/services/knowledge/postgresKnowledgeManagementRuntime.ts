@@ -22,23 +22,16 @@ import {
   type KnowledgeSqlExecutor,
 } from "./postgresKnowledgeRuntime.js";
 import { customerTextPreview } from "./redaction.js";
-import type {
-  KnowledgeAuditEvent,
-  KnowledgeLanguage,
-  LearnedAnswerRecord,
-  SavedAnswerRecord,
-  SuggestedReplySource,
-  TrainingRequestRecord,
+import {
+  isSavedAnswerCategory,
+  type KnowledgeAuditEvent,
+  type KnowledgeLanguage,
+  type LearnedAnswerRecord,
+  type SavedAnswerCategory,
+  type SavedAnswerRecord,
+  type SuggestedReplySource,
+  type TrainingRequestRecord,
 } from "./types.js";
-
-const SAVED_ANSWER_CATEGORIES = new Set([
-  "delivery",
-  "payment",
-  "return_exchange",
-  "product",
-  "warranty",
-  "custom",
-]);
 
 function dbError(code: string, message: string): never {
   throw new KnowledgeRuntimeGateError(code, message);
@@ -109,9 +102,23 @@ function strings(value: unknown, max: number): string[] {
   return resolved.map((item) => boundedText(item, 500));
 }
 
-function category(value: unknown): string {
+function storedCategory(value: unknown): SavedAnswerCategory {
   const result = boundedText(value, 100);
-  return SAVED_ANSWER_CATEGORIES.has(result) ? result : "custom";
+  if (!isSavedAnswerCategory(result)) {
+    dbError("KNOWLEDGE_STATE_INVALID", "knowledge state is invalid");
+  }
+  return result;
+}
+
+function inputCategory(value: unknown): SavedAnswerCategory {
+  const result = boundedText(value, 100);
+  if (!isSavedAnswerCategory(result)) {
+    throw new KnowledgeTransitionError(
+      "INVALID_SAVED_ANSWER_CATEGORY",
+      "saved answer category is invalid",
+    );
+  }
+  return result;
 }
 
 function replySource(value: unknown): SuggestedReplySource | null {
@@ -137,7 +144,7 @@ function savedFromRow(row: Record<string, unknown>, requestedMerchantId: string)
   return {
     id,
     merchantId: requestedMerchantId,
-    category: category(row.category),
+    category: storedCategory(row.category),
     questionPattern,
     answerText,
     language: lang(row.language),
@@ -323,6 +330,46 @@ async function currentTraining(tx: KnowledgeSqlExecutor, merchant: string, id: s
   return result.rows[0] ? trainingFromRow(result.rows[0], merchant) : null;
 }
 
+export type SavedAnswerPageCursor = {
+  updatedAt: string;
+  id: string;
+};
+
+export type SavedAnswerPage = {
+  answers: SavedAnswerRecord[];
+  nextCursor: SavedAnswerPageCursor | null;
+};
+
+export type TrainingRequestPageCursor = {
+  updatedAt: string;
+  id: string;
+};
+
+export type TrainingRequestPage = {
+  requests: TrainingRequestRecord[];
+  nextCursor: TrainingRequestPageCursor | null;
+};
+
+export type LearnedAnswerPageCursor = {
+  updatedAt: string;
+  id: string;
+};
+
+export type LearnedAnswerPage = {
+  answers: LearnedAnswerRecord[];
+  nextCursor: LearnedAnswerPageCursor | null;
+};
+
+export type KnowledgeAuditPageCursor = {
+  createdAt: string;
+  id: string;
+};
+
+export type KnowledgeAuditPage = {
+  events: KnowledgeAuditEvent[];
+  nextCursor: KnowledgeAuditPageCursor | null;
+};
+
 export class PostgresKnowledgeManagementRuntime {
   readonly authorityId = "postgresql_knowledge_management_authority_v1";
   readonly legacyFallbackEnabled = false;
@@ -339,19 +386,137 @@ export class PostgresKnowledgeManagementRuntime {
     });
   }
 
-  async listSavedAnswers(value: string): Promise<SavedAnswerRecord[]> {
+  async listSavedAnswersPage(
+    value: string,
+    options: {
+      limit?: number;
+      beforeUpdatedAt?: string;
+      beforeId?: string;
+      search?: string;
+      categories?: readonly SavedAnswerCategory[];
+    } = {},
+  ): Promise<SavedAnswerPage> {
     const merchant = merchantId(value);
+    const limit = options.limit ?? 500;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+      throw new KnowledgeTransitionError(
+        "INVALID_SAVED_ANSWER_PAGE",
+        "saved answer page limit must be between 1 and 500",
+      );
+    }
+
+    const rawBeforeUpdatedAt = boundedText(options.beforeUpdatedAt, 80);
+    const beforeId = boundedText(options.beforeId, 160);
+    if (Boolean(rawBeforeUpdatedAt) !== Boolean(beforeId)) {
+      throw new KnowledgeTransitionError(
+        "INVALID_SAVED_ANSWER_PAGE",
+        "saved answer page cursor is incomplete",
+      );
+    }
+
+    let beforeUpdatedAt: string | null = null;
+    if (rawBeforeUpdatedAt) {
+      const cursorPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+      const millisIso = `${rawBeforeUpdatedAt.slice(0, 23)}Z`;
+      if (
+        !cursorPattern.test(rawBeforeUpdatedAt) ||
+        !Number.isFinite(new Date(millisIso).getTime())
+      ) {
+        throw new KnowledgeTransitionError(
+          "INVALID_SAVED_ANSWER_PAGE",
+          "saved answer page cursor is invalid",
+        );
+      }
+      beforeUpdatedAt = rawBeforeUpdatedAt;
+    }
+
+    const search = boundedText(options.search, 500);
+    const searchPattern = search
+      ? `%${search
+          .replace(/!/g, "!!")
+          .replace(/%/g, "!%")
+          .replace(/_/g, "!_")}%`
+      : null;
+    const searchCategories = Array.from(new Set(options.categories || []));
+    if (
+      searchCategories.length > 6 ||
+      searchCategories.some((category) => !isSavedAnswerCategory(category))
+    ) {
+      throw new KnowledgeTransitionError(
+        "INVALID_SAVED_ANSWER_PAGE",
+        "saved answer search categories are invalid",
+      );
+    }
+
     try {
       const result = await this.sql.query<Record<string, unknown>>(
-        `SELECT ${SAVED_COLUMNS} FROM saved_answers WHERE merchant_id = $1 ORDER BY updated_at DESC, id DESC LIMIT 500`,
-        [merchant],
+        `SELECT ${SAVED_COLUMNS},
+                to_char(
+                  updated_at AT TIME ZONE 'UTC',
+                  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+                ) AS cursor_updated_at
+           FROM saved_answers
+          WHERE merchant_id = $1
+            AND (
+              $2::timestamptz IS NULL
+              OR updated_at < $2::timestamptz
+              OR (updated_at = $2::timestamptz AND id < $3::text)
+            )
+            AND (
+              ($4::text IS NULL AND cardinality($5::text[]) = 0)
+              OR (
+                $4::text IS NOT NULL
+                AND (
+                  question_pattern ILIKE $4 ESCAPE '!'
+                  OR answer_text ILIKE $4 ESCAPE '!'
+                  OR category::text ILIKE $4 ESCAPE '!'
+                )
+              )
+              OR category::text = ANY($5::text[])
+            )
+          ORDER BY updated_at DESC, id DESC
+          LIMIT $6`,
+        [
+          merchant,
+          beforeUpdatedAt,
+          beforeId || null,
+          searchPattern,
+          searchCategories,
+          limit + 1,
+        ],
       );
-      return result.rows.map((row) => savedFromRow(row, merchant));
+      const pageRows = result.rows.slice(0, limit);
+      const answers = pageRows.map((row) => savedFromRow(row, merchant));
+      const lastRow = pageRows[pageRows.length - 1];
+      const last = answers[answers.length - 1];
+      const cursorUpdatedAt = lastRow
+        ? boundedText(lastRow.cursor_updated_at, 80)
+        : "";
+      if (
+        result.rows.length > limit &&
+        (
+          !last ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursorUpdatedAt)
+        )
+      ) {
+        dbError("KNOWLEDGE_STATE_INVALID", "knowledge pagination state is invalid");
+      }
+      return {
+        answers,
+        nextCursor:
+          result.rows.length > limit && last
+            ? { updatedAt: cursorUpdatedAt, id: last.id }
+            : null,
+      };
     } catch (error) { rethrowRead(error); }
   }
 
+  async listSavedAnswers(value: string): Promise<SavedAnswerRecord[]> {
+    return (await this.listSavedAnswersPage(value, { limit: 500 })).answers;
+  }
+
   async createSavedAnswer(input: {
-    merchantId: string; category: string; questionPattern: string; answerText: string;
+    merchantId: string; category: SavedAnswerCategory; questionPattern: string; answerText: string;
     language: KnowledgeLanguage; active?: boolean;
   }): Promise<SavedAnswerRecord> {
     const merchant = merchantId(input.merchantId);
@@ -377,7 +542,7 @@ export class PostgresKnowledgeManagementRuntime {
             language, source, active, version, created_at, updated_at)
            VALUES ($1,$2,$3,$4,$5,$6,$7,'merchant_approved',$8,1,NOW(),NOW())
            RETURNING ${SAVED_COLUMNS}`,
-          [id, merchant, category(input.category), question, normalized, answer, language, active],
+          [id, merchant, inputCategory(input.category), question, normalized, answer, language, active],
         );
         const record = savedFromRow(result.rows[0], merchant);
         await syncEmbedding(tx, { merchantId: merchant, kind: "saved_answer", knowledgeId: id, language, embedding });
@@ -388,7 +553,7 @@ export class PostgresKnowledgeManagementRuntime {
   }
 
   async updateSavedAnswer(input: {
-    merchantId: string; id: string; expectedVersion: number; category?: string;
+    merchantId: string; id: string; expectedVersion: number; category?: SavedAnswerCategory;
     questionPattern?: string; answerText?: string; language?: KnowledgeLanguage; active?: boolean;
   }): Promise<SavedAnswerRecord> {
     const merchant = merchantId(input.merchantId);
@@ -402,7 +567,7 @@ export class PostgresKnowledgeManagementRuntime {
     if (current.version !== input.expectedVersion) throw new KnowledgeConflictError("saved answer version conflict", current);
 
     const next = {
-      category: input.category === undefined ? current.category : category(input.category),
+      category: input.category === undefined ? current.category : inputCategory(input.category),
       question: input.questionPattern === undefined ? current.questionPattern : boundedText(input.questionPattern, 500),
       answer: input.answerText === undefined ? current.answerText : boundedText(input.answerText, 2_000),
       language: input.language === undefined ? current.language : lang(input.language),
@@ -464,15 +629,132 @@ export class PostgresKnowledgeManagementRuntime {
     } catch (error) { rethrowWrite(error); }
   }
 
-  async listTrainingRequests(value: string): Promise<TrainingRequestRecord[]> {
+  async listTrainingRequestsPage(
+    value: string,
+    options: {
+      limit?: number;
+      beforeUpdatedAt?: string;
+      beforeId?: string;
+      search?: string;
+      status?: TrainingRequestRecord["status"];
+    } = {},
+  ): Promise<TrainingRequestPage> {
     const merchant = merchantId(value);
+    const limit = options.limit ?? 500;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+      throw new KnowledgeTransitionError(
+        "INVALID_TRAINING_REQUEST_PAGE",
+        "training request page limit must be between 1 and 500",
+      );
+    }
+
+    const rawBeforeUpdatedAt = boundedText(options.beforeUpdatedAt, 80);
+    const beforeId = boundedText(options.beforeId, 160);
+    if (Boolean(rawBeforeUpdatedAt) !== Boolean(beforeId)) {
+      throw new KnowledgeTransitionError(
+        "INVALID_TRAINING_REQUEST_PAGE",
+        "training request page cursor is incomplete",
+      );
+    }
+
+    let beforeUpdatedAt: string | null = null;
+    if (rawBeforeUpdatedAt) {
+      const cursorPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+      const millisIso = `${rawBeforeUpdatedAt.slice(0, 23)}Z`;
+      if (
+        !cursorPattern.test(rawBeforeUpdatedAt) ||
+        !Number.isFinite(new Date(millisIso).getTime())
+      ) {
+        throw new KnowledgeTransitionError(
+          "INVALID_TRAINING_REQUEST_PAGE",
+          "training request page cursor is invalid",
+        );
+      }
+      beforeUpdatedAt = rawBeforeUpdatedAt;
+    }
+
+    const search = boundedText(options.search, 500);
+    const searchPattern = search
+      ? `%${search
+          .replace(/!/g, "!!")
+          .replace(/%/g, "!%")
+          .replace(/_/g, "!_")}%`
+      : null;
+    const requestedStatus = options.status;
+    if (
+      requestedStatus !== undefined &&
+      requestedStatus !== "pending_merchant_reply" &&
+      requestedStatus !== "pending_review" &&
+      requestedStatus !== "approved" &&
+      requestedStatus !== "rejected"
+    ) {
+      throw new KnowledgeTransitionError(
+        "INVALID_TRAINING_REQUEST_PAGE",
+        "training request status filter is invalid",
+      );
+    }
+
     try {
       const result = await this.sql.query<Record<string, unknown>>(
-        `SELECT ${TRAINING_COLUMNS} FROM training_requests WHERE merchant_id=$1 ORDER BY updated_at DESC, id DESC LIMIT 500`,
-        [merchant],
+        `SELECT ${TRAINING_COLUMNS},
+                to_char(
+                  updated_at AT TIME ZONE 'UTC',
+                  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+                ) AS cursor_updated_at
+           FROM training_requests
+          WHERE merchant_id = $1
+            AND (
+              $2::timestamptz IS NULL
+              OR updated_at < $2::timestamptz
+              OR (updated_at = $2::timestamptz AND id < $3::text)
+            )
+            AND (
+              $4::text IS NULL
+              OR customer_text_preview ILIKE $4 ESCAPE '!'
+              OR detected_intent ILIKE $4 ESCAPE '!'
+              OR reason ILIKE $4 ESCAPE '!'
+              OR COALESCE(suggested_reply, '') ILIKE $4 ESCAPE '!'
+            )
+            AND ($5::text IS NULL OR status::text = $5::text)
+          ORDER BY updated_at DESC, id DESC
+          LIMIT $6`,
+        [
+          merchant,
+          beforeUpdatedAt,
+          beforeId || null,
+          searchPattern,
+          requestedStatus || null,
+          limit + 1,
+        ],
       );
-      return result.rows.map((row) => trainingFromRow(row, merchant));
+      const pageRows = result.rows.slice(0, limit);
+      const requests = pageRows.map((row) => trainingFromRow(row, merchant));
+      const lastRow = pageRows[pageRows.length - 1];
+      const last = requests[requests.length - 1];
+      const cursorUpdatedAt = lastRow
+        ? boundedText(lastRow.cursor_updated_at, 80)
+        : "";
+      if (
+        result.rows.length > limit &&
+        (
+          !last ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursorUpdatedAt)
+        )
+      ) {
+        dbError("KNOWLEDGE_STATE_INVALID", "knowledge pagination state is invalid");
+      }
+      return {
+        requests,
+        nextCursor:
+          result.rows.length > limit && last
+            ? { updatedAt: cursorUpdatedAt, id: last.id }
+            : null,
+      };
     } catch (error) { rethrowRead(error); }
+  }
+
+  async listTrainingRequests(value: string): Promise<TrainingRequestRecord[]> {
+    return (await this.listTrainingRequestsPage(value, { limit: 500 })).requests;
   }
 
   async createTrainingRequest(input: {
@@ -596,6 +878,101 @@ export class PostgresKnowledgeManagementRuntime {
     } catch (error) { rethrowWrite(error); }
   }
 
+  async revokeTrainingApproval(input: {
+    merchantId: string;
+    id: string;
+    expectedVersion: number;
+  }): Promise<TrainingRequestRecord> {
+    const merchant = merchantId(input.merchantId);
+    const id = boundedText(input.id, 160);
+    if (!id || !Number.isInteger(input.expectedVersion) || input.expectedVersion <= 0) {
+      throw new KnowledgeTransitionError(
+        "INVALID_TRAINING_REQUEST",
+        "training approval revocation is invalid",
+      );
+    }
+
+    try {
+      return await this.sql.transaction(async (tx) => {
+        const requestResult = await tx.query<Record<string, unknown>>(
+          `UPDATE training_requests
+              SET status='rejected',
+                  rejection_reason='merchant_revoked_approval',
+                  reviewed_at=NOW(),
+                  version=version+1,
+                  updated_at=NOW()
+            WHERE merchant_id=$1
+              AND id=$2
+              AND version=$3
+              AND status='approved'
+          RETURNING ${TRAINING_COLUMNS}`,
+          [merchant, id, input.expectedVersion],
+        );
+
+        if (!requestResult.rows[0]) {
+          const latest = await currentTraining(tx, merchant, id);
+          if (!latest) {
+            throw new KnowledgeNotFoundError(
+              "training request not found for this merchant",
+            );
+          }
+          if (latest.version !== input.expectedVersion) {
+            throw new KnowledgeConflictError(
+              "training request version conflict",
+              latest,
+            );
+          }
+          throw new KnowledgeTransitionError(
+            "INVALID_TRAINING_TRANSITION",
+            `cannot revoke training approval from ${latest.status}`,
+          );
+        }
+
+        const learnedResult = await tx.query<Record<string, unknown>>(
+          `UPDATE learned_answers
+              SET approval_status='rejected',
+                  safe_to_auto_reply=FALSE,
+                  version=version+1,
+                  updated_at=NOW()
+            WHERE merchant_id=$1
+              AND training_request_id=$2
+              AND approval_status='approved'
+              AND safe_to_auto_reply=TRUE
+          RETURNING ${LEARNED_COLUMNS}`,
+          [merchant, id],
+        );
+
+        if (learnedResult.rows.length !== 1) {
+          dbError(
+            "KNOWLEDGE_STATE_INVALID",
+            "approved training request learned answer state is invalid",
+          );
+        }
+
+        const learnedAnswer = learnedFromRow(learnedResult.rows[0], merchant);
+        await tx.query(
+          `DELETE FROM knowledge_embeddings
+            WHERE merchant_id=$1
+              AND knowledge_kind='learned_answer'
+              AND learned_answer_id=$2`,
+          [merchant, learnedAnswer.id],
+        );
+
+        const request = trainingFromRow(requestResult.rows[0], merchant);
+        await audit(tx, {
+          merchantId: merchant,
+          action: "training_approval_revoked",
+          entityType: "training_request",
+          entityId: id,
+          outcome: "success",
+        });
+        return request;
+      });
+    } catch (error) {
+      rethrowWrite(error);
+    }
+  }
+
   async rejectTrainingRequest(input: {
     merchantId: string; id: string; expectedVersion: number; reason?: string;
   }): Promise<TrainingRequestRecord> {
@@ -636,28 +1013,160 @@ export class PostgresKnowledgeManagementRuntime {
     } catch (error) { rethrowWrite(error); }
   }
 
-  async listLearnedAnswers(value: string): Promise<LearnedAnswerRecord[]> {
+  async listLearnedAnswersPage(
+    value: string,
+    options: {
+      limit?: number;
+      beforeUpdatedAt?: string;
+      beforeId?: string;
+    } = {},
+  ): Promise<LearnedAnswerPage> {
     const merchant = merchantId(value);
+    const limit = options.limit ?? 500;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+      throw new KnowledgeTransitionError(
+        "INVALID_LEARNED_ANSWER_PAGE",
+        "learned answer page limit must be between 1 and 500",
+      );
+    }
+
+    const rawBeforeUpdatedAt = boundedText(options.beforeUpdatedAt, 80);
+    const beforeId = boundedText(options.beforeId, 160);
+    if (Boolean(rawBeforeUpdatedAt) !== Boolean(beforeId)) {
+      throw new KnowledgeTransitionError(
+        "INVALID_LEARNED_ANSWER_PAGE",
+        "learned answer page cursor is incomplete",
+      );
+    }
+
+    let beforeUpdatedAt: string | null = null;
+    if (rawBeforeUpdatedAt) {
+      const cursorPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+      const millisIso = `${rawBeforeUpdatedAt.slice(0, 23)}Z`;
+      if (
+        !cursorPattern.test(rawBeforeUpdatedAt) ||
+        !Number.isFinite(new Date(millisIso).getTime())
+      ) {
+        throw new KnowledgeTransitionError(
+          "INVALID_LEARNED_ANSWER_PAGE",
+          "learned answer page cursor is invalid",
+        );
+      }
+      beforeUpdatedAt = rawBeforeUpdatedAt;
+    }
+
     try {
       const result = await this.sql.query<Record<string, unknown>>(
-        `SELECT ${LEARNED_COLUMNS} FROM learned_answers WHERE merchant_id=$1 ORDER BY updated_at DESC, id DESC LIMIT 500`,
-        [merchant],
+        `SELECT ${LEARNED_COLUMNS},
+                to_char(
+                  updated_at AT TIME ZONE 'UTC',
+                  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+                ) AS cursor_updated_at
+           FROM learned_answers
+          WHERE merchant_id = $1
+            AND (
+              $2::timestamptz IS NULL
+              OR updated_at < $2::timestamptz
+              OR (updated_at = $2::timestamptz AND id < $3::text)
+            )
+          ORDER BY updated_at DESC, id DESC
+          LIMIT $4`,
+        [merchant, beforeUpdatedAt, beforeId || null, limit + 1],
       );
-      return result.rows.map((row) => learnedFromRow(row, merchant));
+      const pageRows = result.rows.slice(0, limit);
+      const answers = pageRows.map((row) => learnedFromRow(row, merchant));
+      const lastRow = pageRows[pageRows.length - 1];
+      const last = answers[answers.length - 1];
+      const cursorUpdatedAt = lastRow
+        ? boundedText(lastRow.cursor_updated_at, 80)
+        : "";
+      if (
+        result.rows.length > limit &&
+        (
+          !last ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursorUpdatedAt)
+        )
+      ) {
+        dbError("KNOWLEDGE_STATE_INVALID", "knowledge pagination state is invalid");
+      }
+      return {
+        answers,
+        nextCursor:
+          result.rows.length > limit && last
+            ? { updatedAt: cursorUpdatedAt, id: last.id }
+            : null,
+      };
     } catch (error) { rethrowRead(error); }
   }
 
-  async listAuditEvents(value: string, requestedLimit = 100): Promise<KnowledgeAuditEvent[]> {
+  async listLearnedAnswers(value: string): Promise<LearnedAnswerRecord[]> {
+    return (await this.listLearnedAnswersPage(value, { limit: 500 })).answers;
+  }
+
+  async listAuditEventsPage(
+    value: string,
+    options: {
+      limit?: number;
+      beforeCreatedAt?: string;
+      beforeId?: string;
+    } = {},
+  ): Promise<KnowledgeAuditPage> {
     const merchant = merchantId(value);
-    const limit = Number.isInteger(requestedLimit) ? Math.min(Math.max(requestedLimit, 1), 500) : 100;
+    const limit = options.limit ?? 100;
+    if (!Number.isInteger(limit) || limit < 1 || limit > 500) {
+      throw new KnowledgeTransitionError(
+        "INVALID_KNOWLEDGE_AUDIT_PAGE",
+        "knowledge audit page limit must be between 1 and 500",
+      );
+    }
+
+    const rawBeforeCreatedAt = boundedText(options.beforeCreatedAt, 80);
+    const beforeId = boundedText(options.beforeId, 160);
+    if (Boolean(rawBeforeCreatedAt) !== Boolean(beforeId)) {
+      throw new KnowledgeTransitionError(
+        "INVALID_KNOWLEDGE_AUDIT_PAGE",
+        "knowledge audit page cursor is incomplete",
+      );
+    }
+
+    let beforeCreatedAt: string | null = null;
+    if (rawBeforeCreatedAt) {
+      const cursorPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+      const millisIso = `${rawBeforeCreatedAt.slice(0, 23)}Z`;
+      if (
+        !cursorPattern.test(rawBeforeCreatedAt) ||
+        !Number.isFinite(new Date(millisIso).getTime())
+      ) {
+        throw new KnowledgeTransitionError(
+          "INVALID_KNOWLEDGE_AUDIT_PAGE",
+          "knowledge audit page cursor is invalid",
+        );
+      }
+      beforeCreatedAt = rawBeforeCreatedAt;
+    }
+
     try {
       const result = await this.sql.query<Record<string, unknown>>(
         `SELECT id, merchant_id, action, entity_type, entity_id, customer_text_hash,
-                customer_text_length, signal_codes, decision_code, outcome_code, created_at
-         FROM knowledge_audit_events WHERE merchant_id=$1 ORDER BY created_at DESC, id DESC LIMIT $2`,
-        [merchant, limit],
+                customer_text_length, signal_codes, decision_code, outcome_code, created_at,
+                to_char(
+                  created_at AT TIME ZONE 'UTC',
+                  'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+                ) AS cursor_created_at
+           FROM knowledge_audit_events
+          WHERE merchant_id=$1
+            AND (
+              $2::timestamptz IS NULL
+              OR created_at < $2::timestamptz
+              OR (created_at = $2::timestamptz AND id < $3::text)
+            )
+          ORDER BY created_at DESC, id DESC
+          LIMIT $4`,
+        [merchant, beforeCreatedAt, beforeId || null, limit + 1],
       );
-      return result.rows.map((row) => {
+
+      const pageRows = result.rows.slice(0, limit);
+      const events = pageRows.map((row) => {
         assertTenant(row, merchant);
         const action = boundedText(row.action, 100);
         const outcomeRaw = boundedText(row.outcome_code, 40);
@@ -670,7 +1179,7 @@ export class PostgresKnowledgeManagementRuntime {
             ? entityRaw : "decision";
         const actor: KnowledgeAuditEvent["actor"] = action === "openai_candidate_recorded"
           ? "ai_provider"
-          : action.startsWith("saved_answer_") || action.startsWith("training_reply_") || action.startsWith("training_request_approve") || action.startsWith("training_request_reject")
+          : action.startsWith("saved_answer_") || action.startsWith("training_reply_") || action.startsWith("training_request_approve") || action.startsWith("training_request_reject") || action.startsWith("training_approval_")
             ? "merchant" : "system";
         return {
           id: boundedText(row.id, 160), merchantId: merchant, action, entityType,
@@ -682,7 +1191,37 @@ export class PostgresKnowledgeManagementRuntime {
           createdAt: iso(row.created_at),
         };
       });
+
+      const lastRow = pageRows[pageRows.length - 1];
+      const last = events[events.length - 1];
+      const cursorCreatedAt = lastRow
+        ? boundedText(lastRow.cursor_created_at, 80)
+        : "";
+      if (
+        result.rows.length > limit &&
+        (
+          !last ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursorCreatedAt)
+        )
+      ) {
+        dbError("KNOWLEDGE_STATE_INVALID", "knowledge pagination state is invalid");
+      }
+
+      return {
+        events,
+        nextCursor:
+          result.rows.length > limit && last
+            ? { createdAt: cursorCreatedAt, id: last.id }
+            : null,
+      };
     } catch (error) { rethrowRead(error); }
+  }
+
+  async listAuditEvents(value: string, requestedLimit = 100): Promise<KnowledgeAuditEvent[]> {
+    const limit = Number.isInteger(requestedLimit)
+      ? Math.min(Math.max(requestedLimit, 1), 500)
+      : 100;
+    return (await this.listAuditEventsPage(value, { limit })).events;
   }
 }
 

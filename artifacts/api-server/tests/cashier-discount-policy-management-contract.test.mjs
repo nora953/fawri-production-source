@@ -46,27 +46,151 @@ test('operator can read only policy bound to authenticated merchant and staff', 
   assert.match(body, /context\.merchant_id/);
   assert.match(body, /context\.staff_id/);
   assert.match(body, /context\.permissions\.includes\('sale\.discount'\)/);
+  assert.match(body, /discount_setting: discountSetting/);
 });
 
-test('merchant discount policy UI exposes percent amount and override controls', async () => {
+test('merchant-wide discount kind is versioned and invalidates pending approvals when it changes', async () => {
+  const route = await api('src/routes/cashier-discount-policy-operations.ts');
+  const authority = await api('src/services/cashierMerchantDiscountSettingsAuthority.ts');
+
+  assert.match(route, /'\/cashier\/management\/discount-kind'/);
+  assert.match(route, /expectedVersion: req\.body\?\.expected_version/);
+  assert.match(route, /discountKind: req\.body\?\.discount_kind/);
+  assert.match(route, /discount_setting: discountSetting/);
+
+  assert.match(authority, /DEFAULT_MERCHANT_CASHIER_DISCOUNT_KIND[^\n]*'amount'/);
+  assert.match(authority, /CASHIER_DISCOUNT_KIND_VERSION_CONFLICT/);
+  assert.match(authority, /pg_advisory_xact_lock/);
+  assert.match(authority, /DELETE FROM merchant_cashier_discount_override_approvals/);
+  assert.match(authority, /current\.discount_kind !== discountKind/);
+});
+
+test('normal cashier sale rejects a discount kind that differs from the merchant setting', async () => {
+  const authority = await api('src/services/cashierOperatorDiscountAuthority.ts');
+  assert.match(authority, /requestedKind !== discountSetting\.discount_kind/);
+  assert.match(authority, /CASHIER_DISCOUNT_KIND_MISMATCH/);
+  assert.match(authority, /configured_discount_kind: discountSetting\.discount_kind/);
+  assert.match(authority, /kind = discountSetting\.discount_kind/);
+});
+
+test('manager override issuance and consumption both enforce the current merchant discount kind', async () => {
+  const authority = await api('src/services/cashierDiscountOverrideAuthority.ts');
+  const matches = authority.match(/assertMerchantCashierDiscountKind/g) || [];
+
+  assert.ok(matches.length >= 2);
+  assert.match(authority, /lockMerchantCashierDiscountKindMutation/);
+  assert.match(authority, /loadMerchantCashierDiscountSetting\([\s\S]*?true/);
+  assert.match(authority, /managerLimitMinor/);
+  assert.match(authority, /CASHIER_DISCOUNT_OVERRIDE_MANAGER_LIMIT_EXCEEDED/);
+});
+
+test('merchant discount policy UI exposes one merchant-wide type and preserves both stored staff limits', async () => {
   const page = await web('src/pages/dashboard/CashierDiscountPoliciesPage.tsx');
   assert.match(page, /max_percentage_bps/);
   assert.match(page, /max_amount_minor/);
   assert.match(page, /can_approve_override/);
   assert.match(page, /expected_version/);
   assert.match(page, /\/api\/cashier\/management\/discount-policies/);
-  assert.match(page, /\/discount-policy/);
-  assert.match(page, /صلاحيات خصم موظفي الكاشير/);
-  assert.match(page, /Cashier employee discount authority/);
-  assert.match(page, /دەسەڵاتی داشکاندنی کارمەندانی کاشێر/);
+  assert.match(page, /\/api\/cashier\/management\/discount-kind/);
+  assert.match(page, /discountKindDraft/);
+  assert.match(page, /discountSetting\.discount_kind === 'percentage'/);
+  assert.match(page, /discountSetting\.discount_kind === 'amount'/);
+  assert.match(page, /let percentageBps = row\.discount_policy\.max_percentage_bps/);
+  assert.match(page, /let amountMinor = row\.discount_policy\.max_amount_minor/);
+  assert.match(page, /صلاحيات خصم الكاشير/);
+  assert.match(page, /Cashier discount permissions/);
+  assert.match(page, /دەسەڵاتی داشکاندنی کاشێر/);
 });
 
-test('merchant discount policy UI rejects a blank percentage and explains permission sync truthfully', async () => {
+test('merchant discount policy UI previews the selected type before saving it and blocks staff saves until the type is committed', async () => {
+  const page = await web('src/pages/dashboard/CashierDiscountPoliciesPage.tsx');
+  assert.match(page, /discountKindDraft === 'percentage' \? \(/);
+  assert.match(page, /discountKindDraft === 'amount'/);
+  assert.match(page, /discountKindDraft !== discountSetting\.discount_kind/);
+  assert.match(page, /value=\{draft\.maxPercent\}/);
+  assert.match(page, /value=\{draft\.maxAmount\}/);
+});
+
+test('cashier checkout cannot switch the merchant-selected discount kind', async () => {
+  const editor = await web('src/components/cashier/CashierManualDiscountEditor.tsx');
+  const checkout = await web('src/lib/useCashierManualDiscountCheckout.ts');
+
+  assert.doesNotMatch(editor, /onKindChange\('amount'\)/);
+  assert.doesNotMatch(editor, /onKindChange\('percentage'\)/);
+  assert.match(editor, /kind === 'amount' \? copy\.discountAmount : copy\.discountPercent/);
+  assert.match(checkout, /setKindState\(next\.discount_kind\)/);
+  assert.match(checkout, /setKind: \(\) => undefined/);
+});
+
+test('merchant discount policy UI validates the active limit and explains permission sync truthfully', async () => {
   const page = await web('src/pages/dashboard/CashierDiscountPoliciesPage.tsx');
   assert.match(page, /draft\.maxPercent\.trim\(\)/);
   assert.match(page, /copy\.percentRequired/);
+  assert.match(page, /copy\.amountRequired/);
   assert.doesNotMatch(page, /هذه السياسة لا تمنح الصلاحية وحدها/);
   assert.doesNotMatch(page, /Policy alone does not grant authority/);
-  assert.match(page, /يحدّث فوري صلاحيات الخصم المرتبطة للموظف تلقائيًا/);
-  assert.match(page, /automatically syncs the staff member’s related discount permissions/);
+  assert.match(page, /الحفظ يحدّث الصلاحيات تلقائيًا/);
+  assert.match(page, /Saving updates permissions automatically/);
+  assert.match(page, /تبقى حدود النوع الآخر محفوظة/);
+  assert.match(page, /other type’s limits stay saved/);
+});
+
+test('English cashier management copy matches the Arabic reference meaning', async () => {
+  const page = await web('src/pages/dashboard/CashierManagementPage.tsx');
+  assert.match(page, /Manage cashier devices, staff, permissions and secure pairing\./);
+  assert.match(page, /Discount permission is not granted automatically\./);
+  assert.match(page, /Any discount over the limit requires approval from an authorized manager\./);
+  assert.match(page, /branchKey: 'Branch code'/);
+  assert.match(page, /Only one station per branch can have this authority\./);
+  assert.match(page, /While offline, other stations cannot sell tracked inventory, preventing stock conflicts\./);
+  assert.doesNotMatch(page, /Discount authority is sensitive and is never granted automatically by role/);
+});
+
+test('cashier edit actions follow page direction instead of a language-name special case', async () => {
+  const page = await web('src/pages/dashboard/CashierManagementPage.tsx');
+  const saveOrders = page.match(/className="order-1 flex-1 rounded-lg bg-primary/g) || [];
+  const cancelOrders = page.match(/className="order-2 flex-1 rounded-lg border/g) || [];
+
+  assert.equal(saveOrders.length, 2);
+  assert.equal(cancelOrders.length, 2);
+  assert.doesNotMatch(page, /lang === 'ar' \? 'order-1' : 'order-2'/);
+  assert.doesNotMatch(page, /lang === 'ar' \? 'order-2' : 'order-1'/);
+});
+
+test('pairing code stays ASCII Latin and LTR in every interface language', async () => {
+  const page = await web('src/pages/dashboard/CashierManagementPage.tsx');
+  const gate = await web('src/components/cashier/CashierOperatorGate.tsx');
+  const normalizer = await web('src/lib/cashierPairingCode.ts');
+  const authority = await api('src/services/postgresCashierStaffAuthority.ts');
+
+  assert.match(authority, /\^\[A-Za-z0-9_-\]\+\$/);
+  assert.match(normalizer, /\[٠-٩\]/);
+  assert.match(normalizer, /\[۰-۹\]/);
+  assert.match(normalizer, /\[\^A-Za-z0-9_-\]/);
+  assert.match(page, /normalizeCashierPairingCode\(payload\.pairing_code\)/);
+  assert.match(page, /value=\{pairing\.code\}[\s\S]*readOnly[\s\S]*dir="ltr"[\s\S]*lang="en-US"/);
+  assert.match(page, /fontLanguageOverride: '"ENG"'/);
+  assert.doesNotMatch(page, /<bdo[^>]*>\{pairing\.code\}<\/bdo>/);
+  assert.match(gate, /setPairingCode\(normalizeCashierPairingCode\(event\.target\.value\)\)/);
+  assert.match(gate, /lang="en-US"[\s\S]*dir="ltr"[\s\S]*fontLanguageOverride: '"ENG"'/);
+  assert.match(page, /navigator\.clipboard\?\.writeText/);
+  assert.match(page, /writeText\(pairing\.code\)/);
+});
+
+test('Sorani cashier copy follows the frozen Arabic reference without UI fallback', async () => {
+  const management = await web('src/pages/dashboard/CashierManagementPage.tsx');
+  const discounts = await web('src/pages/dashboard/CashierDiscountPoliciesPage.tsx');
+
+  assert.match(management, /discountWarning: 'دەسەڵاتی داشکاندن خۆکارانە نادرێت\.[\s\S]*تێپەڕاندنی سنوور پێویستی بە پەسەندی بەڕێوەبەری مۆڵەتپێدراو هەیە\.'/);
+  assert.match(management, /offlineAuthority: 'ڕێگەدان بە ئەم وێستگەیە بۆ فرۆشتنی کۆگای بەدواداچووکراو بەبێ ئینتەرنێت'/);
+  assert.match(management, /offlineHint: 'تەنها یەک وێستگە لە هەر لقێک ئەم دەسەڵاتە هەیە\. وێستگەکانی تر لە کاتی پچڕانی ئینتەرنێت/);
+  assert.match(management, /lang === 'ku' \? 'ckb-IQ'/);
+  assert.match(management, /lang === 'ku' \? \{ hour12: false \} : undefined/);
+  assert.doesNotMatch(management, /دەسەڵاتی داشکاندن هەستیارە و بە ڕۆڵ خۆکارانە نادرێت/);
+
+  assert.match(discounts, /title: 'دەسەڵاتی داشکاندنی کاشێر'/);
+  assert.match(discounts, /subtitle: 'جۆری داشکاندن هەڵبژێرە و سنووری هەر کارمەند دیاری بکە\.'/);
+  assert.match(discounts, /managerLimitHint: 'ئەمە زۆرترین سنوورە کە ئەم بەڕێوەبەرە دەتوانێت پەسەندی بکات\.'/);
+  assert.match(discounts, /hint: 'داشکاندنی دەستی نرخی سەرەکی بەرهەم ناگۆڕێت\.'/);
+  assert.doesNotMatch(discounts, /یەک جۆری داشکاندن بۆ بازرگان هەڵبژێرە/);
 });

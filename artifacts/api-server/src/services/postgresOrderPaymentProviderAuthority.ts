@@ -8,6 +8,10 @@ import {
   getServerOrderAuthoritative,
 } from "./postgresOrderOperationsAuthority";
 import {
+  ensureOnlineOrderFulfillmentCommittedWithTarget,
+  OnlineOrderFulfillmentCommitError,
+} from "./postgresOnlineOrderFulfillmentCommit";
+import {
   notifyMerchantPaymentConflictPostgres,
 } from "./postgresOperationalNotificationAuthority";
 import {
@@ -48,6 +52,11 @@ type OrderPaymentRow = {
   id: string;
   merchant_id: string;
   conversation_id: string | null;
+  customer_address: string | null;
+  customer_area: string | null;
+  fulfillment_location_id: string | null;
+  source_channel: string;
+  metadata: Record<string, unknown> | null;
   status: ServerOrderStatus;
   payment_method: string;
   payment_status: ServerPaymentStatus;
@@ -235,6 +244,8 @@ async function lockOrder(
 ): Promise<OrderPaymentRow> {
   const result = await client.query<OrderPaymentRow>(
     `SELECT id, merchant_id, conversation_id,
+            customer_address, customer_area, fulfillment_location_id,
+            source_channel, metadata,
             status::text AS status,
             payment_method::text AS payment_method,
             payment_status::text AS payment_status,
@@ -411,11 +422,37 @@ async function applyProviderPaid(input: {
     return "payment_conflict";
   }
 
-  const resultingStatus: ServerOrderStatus =
-    order.status === "pending_confirmation" || order.status === "waiting_customer_approval"
-      ? "confirmed"
-      : order.status;
+  let resultingStatus: ServerOrderStatus = order.status;
+  let fulfillmentConflict: OnlineOrderFulfillmentCommitError | null = null;
 
+  if (
+    order.status === "pending_confirmation" ||
+    order.status === "waiting_customer_approval"
+  ) {
+    await input.client.query("SAVEPOINT provider_fulfillment");
+    try {
+      await ensureOnlineOrderFulfillmentCommittedWithTarget(input.client, {
+        merchantId: order.merchant_id,
+        orderId: order.id,
+        customerArea: order.customer_area || order.customer_address || "",
+        sourceChannel: order.source_channel,
+        fulfillmentLocationId: order.fulfillment_location_id,
+        metadata: order.metadata,
+      });
+      resultingStatus = "confirmed";
+      await input.client.query("RELEASE SAVEPOINT provider_fulfillment");
+    } catch (error) {
+      await input.client.query("ROLLBACK TO SAVEPOINT provider_fulfillment");
+      await input.client.query("RELEASE SAVEPOINT provider_fulfillment");
+      if (error instanceof OnlineOrderFulfillmentCommitError) {
+        fulfillmentConflict = error;
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  const fulfillmentConflictCode = fulfillmentConflict?.code || null;
   await input.client.query(
     `UPDATE orders
         SET status = $3::order_status,
@@ -427,9 +464,9 @@ async function applyProviderPaid(input: {
             payment_provider = $4,
             payment_provider_transaction_ref = $5,
             payment_provider_last_event_id = $6,
-            payment_reconciliation_status = 'clear',
-            payment_conflict_code = NULL,
-            payment_conflict_at = NULL,
+            payment_reconciliation_status = (CASE WHEN $7::boolean THEN 'reconciliation_required' ELSE 'clear' END)::payment_reconciliation_status,
+            payment_conflict_code = CASE WHEN $7::boolean THEN $8 ELSE NULL END,
+            payment_conflict_at = CASE WHEN $7::boolean THEN COALESCE(payment_conflict_at, now()) ELSE NULL END,
             payment_conflict_resolved_at = NULL,
             payment_conflict_resolved_by_account_id = NULL,
             payment_conflict_resolution_note = NULL,
@@ -444,8 +481,19 @@ async function applyProviderPaid(input: {
       input.provider,
       input.transactionRef,
       input.eventId,
+      Boolean(fulfillmentConflict),
+      fulfillmentConflictCode,
     ],
   );
+
+  if (fulfillmentConflict) {
+    await forceConversationManual(
+      input.client,
+      order.merchant_id,
+      order.conversation_id,
+    );
+    return "payment_conflict";
+  }
   return "provider_paid_confirmed";
 }
 

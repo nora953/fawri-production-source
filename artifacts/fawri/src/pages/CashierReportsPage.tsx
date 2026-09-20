@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import { subscribeCashierDashboardRefresh } from '@/lib/cashierDashboardRefresh';
 import {
   isCashierOperatorSessionEnded,
   publishCashierOperatorSessionInvalidated,
@@ -165,6 +166,7 @@ export default function CashierReportsPage() {
   const [online, setOnline] = useState(() => navigator.onLine);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const requestSequence = useRef(0);
 
   useEffect(() => {
     let stopped = false;
@@ -189,23 +191,17 @@ export default function CashierReportsPage() {
     };
   }, [labels.loadFailed]);
 
-  useEffect(() => {
-    const updateOnline = () => setOnline(navigator.onLine);
-    window.addEventListener('online', updateOnline);
-    window.addEventListener('offline', updateOnline);
-    return () => {
-      window.removeEventListener('online', updateOnline);
-      window.removeEventListener('offline', updateOnline);
-    };
-  }, []);
-
   const refresh = useCallback(async () => {
     if (!runtime) return;
+    const requestId = ++requestSequence.current;
     setLoading(true);
     setError('');
     try {
-      setResult(await runtime.buildReport(rangeOptions(range)));
+      const next = await runtime.buildReport(rangeOptions(range));
+      if (requestId !== requestSequence.current) return;
+      setResult(next);
     } catch (cause) {
+      if (requestId !== requestSequence.current) return;
       setResult(null);
       if (isCashierOperatorSessionEnded(cause)) {
         publishCashierOperatorSessionInvalidated();
@@ -213,12 +209,30 @@ export default function CashierReportsPage() {
       }
       setError(labels.loadFailed);
     } finally {
-      setLoading(false);
+      if (requestId === requestSequence.current) setLoading(false);
     }
   }, [labels.loadFailed, range, runtime]);
 
   useEffect(() => {
     if (runtime) void refresh();
+  }, [refresh, runtime]);
+
+  useEffect(() => {
+    const handleConnectivityChange = () => {
+      setOnline(navigator.onLine);
+      if (runtime) void refresh();
+    };
+    window.addEventListener('online', handleConnectivityChange);
+    window.addEventListener('offline', handleConnectivityChange);
+    const unsubscribeRefresh = subscribeCashierDashboardRefresh(() => {
+      if (runtime) void refresh();
+    });
+    return () => {
+      window.removeEventListener('online', handleConnectivityChange);
+      window.removeEventListener('offline', handleConnectivityChange);
+      unsubscribeRefresh();
+      requestSequence.current += 1;
+    };
   }, [refresh, runtime]);
 
   const ranges: Array<[RangeKey, string]> = useMemo(() => [

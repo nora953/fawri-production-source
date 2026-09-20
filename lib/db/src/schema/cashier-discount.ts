@@ -15,6 +15,40 @@ import {
 import { merchantCashierStaff, merchantCashierStations } from "./cashier-staff";
 import { merchants } from "./merchants";
 
+export const merchantCashierDiscountSettings = pgTable(
+  "merchant_cashier_discount_settings",
+  {
+    merchantId: text("merchant_id").primaryKey(),
+    discountKind: text("discount_kind").notNull().default("amount"),
+    version: bigint("version", { mode: "number" }).notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => ({
+    merchantForeignKey: foreignKey({
+      name: "cashier_merchant_discount_settings_merchant_fk",
+      columns: [table.merchantId],
+      foreignColumns: [merchants.id],
+    }).onDelete("cascade"),
+    kindCheck: check(
+      "cashier_merchant_discount_kind_check",
+      sql`${table.discountKind} IN ('amount','percentage')`,
+    ),
+    versionPositiveCheck: check(
+      "cashier_merchant_discount_settings_version_positive",
+      sql`${table.version} > 0`,
+    ),
+    timestampCheck: check(
+      "cashier_merchant_discount_settings_timestamp_check",
+      sql`${table.updatedAt} >= ${table.createdAt}`,
+    ),
+  }),
+);
+
 export const merchantCashierStaffDiscountPolicies = pgTable(
   "merchant_cashier_staff_discount_policies",
   {
@@ -144,6 +178,10 @@ export const merchantCashierDiscountOverrideApprovals = pgTable(
   }),
 );
 
+export type MerchantCashierDiscountSetting =
+  typeof merchantCashierDiscountSettings.$inferSelect;
+export type NewMerchantCashierDiscountSetting =
+  typeof merchantCashierDiscountSettings.$inferInsert;
 export type MerchantCashierStaffDiscountPolicy =
   typeof merchantCashierStaffDiscountPolicies.$inferSelect;
 export type NewMerchantCashierStaffDiscountPolicy =

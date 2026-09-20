@@ -42,7 +42,6 @@ export default function CashierManualDiscountEditor({
   invalid,
   onOpen,
   onRemove,
-  onKindChange,
   onValueChange,
   onReasonChange,
 }: Props) {
@@ -123,7 +122,12 @@ export default function CashierManualDiscountEditor({
   return (
     <div className="rounded-2xl border border-orange-200 bg-orange-50/40 p-4">
       <div className="mb-3 min-w-0">
-        <p className="text-base font-black leading-6 text-slate-900">{copy.manualDiscount}</p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-base font-black leading-6 text-slate-900">{copy.manualDiscount}</p>
+          <span className="rounded-full border border-orange-200 bg-white px-3 py-1 text-xs font-black text-orange-700">
+            {kind === 'amount' ? copy.discountAmount : copy.discountPercent}
+          </span>
+        </div>
         <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg border border-orange-100 bg-white/80 px-2.5 py-2 text-sm font-semibold text-slate-600">
           <span className="leading-5">{copy.discountEmployeeLimit}</span>
           {kind === 'amount' && amountLimitParts ? (
@@ -137,31 +141,6 @@ export default function CashierManualDiscountEditor({
             </strong>
           )}
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => onKindChange('amount')}
-          className={`h-11 rounded-xl border px-3 text-sm font-bold transition ${
-            kind === 'amount'
-              ? 'border-orange-500 bg-white text-orange-700 ring-2 ring-orange-100'
-              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          {copy.discountAmount}
-        </button>
-        <button
-          type="button"
-          onClick={() => onKindChange('percentage')}
-          className={`h-11 rounded-xl border px-3 text-sm font-bold transition ${
-            kind === 'percentage'
-              ? 'border-orange-500 bg-white text-orange-700 ring-2 ring-orange-100'
-              : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-          }`}
-        >
-          {copy.discountPercent}
-        </button>
       </div>
 
       <div className="mt-3 grid grid-cols-[9rem_minmax(0,1fr)] items-end gap-2" dir="ltr">

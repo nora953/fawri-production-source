@@ -144,14 +144,20 @@ router.get(
   requireMerchantAuthority,
   async (req: Request, res: Response) => {
     try {
-      const input = {
+      const rangeInput = {
         merchantId: merchantId(res),
         from: req.query.from,
         to: req.query.to,
       };
       const [report, activity] = await Promise.all([
-        buildCashierCentralReportAuthoritative(input),
-        buildCashierCentralActivityAuthoritative(input),
+        buildCashierCentralReportAuthoritative(rangeInput),
+        buildCashierCentralActivityAuthoritative({
+          ...rangeInput,
+          detailStaffId: req.query.detail_staff_id,
+          detailLocationId: req.query.detail_location_id,
+          detailStationId: req.query.detail_station_id,
+          detailOperationKind: req.query.detail_operation_kind,
+        }),
       ]);
       res.setHeader("Cache-Control", "no-store");
       res.json({ ok: true, ...report, activity });

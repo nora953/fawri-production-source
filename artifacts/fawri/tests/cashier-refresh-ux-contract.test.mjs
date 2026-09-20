@@ -130,6 +130,18 @@ test('cashier dashboard refresh refetches catalog and orders in place without di
   assert.match(orders, /if \(!pendingOrderId\) void loadOrders\(true\)/);
 });
 
+test('cashier reports refresh on connectivity and cashier sync signals without stale response overwrite', () => {
+  assert.match(reports, /subscribeCashierDashboardRefresh/);
+  assert.match(reports, /window\.addEventListener\('online', handleConnectivityChange\)/);
+  assert.match(reports, /window\.addEventListener\('offline', handleConnectivityChange\)/);
+  assert.match(reports, /if \(runtime\) void refresh\(\)/);
+  assert.match(reports, /const requestSequence = useRef\(0\)/);
+  assert.match(reports, /const requestId = \+\+requestSequence\.current/);
+  assert.match(reports, /if \(requestId !== requestSequence\.current\) return/);
+  assert.match(reports, /requestSequence\.current \+= 1/);
+});
+
+
 test('shipping measurement hint belongs to the active simplified workspace and fields stay on one responsive grid', () => {
   assert.match(productsRoute, /ProductsWorkspacePage/);
   assert.match(productsWorkspace, /CommerceCatalogPage/);

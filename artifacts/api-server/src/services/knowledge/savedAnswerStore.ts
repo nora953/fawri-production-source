@@ -5,18 +5,32 @@ import {
   KnowledgeTransitionError,
 } from "./knowledgeStateStore.js";
 import { boundedText, makeKnowledgeId, normalizeKnowledgeText } from "./normalization.js";
-import type { KnowledgeLanguage, SavedAnswerRecord } from "./types.js";
+import {
+  isSavedAnswerCategory,
+  type KnowledgeLanguage,
+  type SavedAnswerCategory,
+  type SavedAnswerRecord,
+} from "./types.js";
 
 export class SavedAnswerStore extends KnowledgeStateStore {
   listSavedAnswers(merchantId: string): SavedAnswerRecord[] {
     return this.readState().savedAnswers
       .filter((answer) => answer.merchantId === merchantId)
+      .map((answer) => {
+        if (!isSavedAnswerCategory(answer.category)) {
+          throw new KnowledgeTransitionError(
+            "INVALID_SAVED_ANSWER_CATEGORY",
+            "saved answer category is invalid",
+          );
+        }
+        return answer;
+      })
       .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
   }
 
   createSavedAnswer(input: {
     merchantId: string;
-    category: string;
+    category: SavedAnswerCategory;
     questionPattern: string;
     answerText: string;
     language: KnowledgeLanguage;
@@ -27,7 +41,7 @@ export class SavedAnswerStore extends KnowledgeStateStore {
       const record: SavedAnswerRecord = {
         id: makeKnowledgeId("saved"),
         merchantId: boundedText(input.merchantId, 120),
-        category: boundedText(input.category, 100) || "custom",
+        category: input.category,
         questionPattern: boundedText(input.questionPattern, 500),
         answerText: boundedText(input.answerText, 2_000),
         language: input.language,
@@ -70,7 +84,7 @@ export class SavedAnswerStore extends KnowledgeStateStore {
     merchantId: string;
     id: string;
     expectedVersion: number;
-    category?: string;
+    category?: SavedAnswerCategory;
     questionPattern?: string;
     answerText?: string;
     language?: KnowledgeLanguage;
@@ -88,7 +102,7 @@ export class SavedAnswerStore extends KnowledgeStateStore {
 
       const updated: SavedAnswerRecord = {
         ...current,
-        category: input.category === undefined ? current.category : boundedText(input.category, 100) || "custom",
+        category: input.category === undefined ? current.category : input.category,
         questionPattern:
           input.questionPattern === undefined
             ? current.questionPattern

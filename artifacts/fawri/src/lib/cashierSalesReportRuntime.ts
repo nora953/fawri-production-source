@@ -3,6 +3,7 @@ import type {
   CashierSaleLineSnapshot,
   CashierSaleSnapshot,
 } from './cashierLocalContracts';
+import { cashierNetReturnRefundMinor } from './cashierRefundPricing';
 
 type CostAwareSaleLine = CashierSaleLineSnapshot & {
   /** Optional owner-only sale-time cost snapshot. Staff devices normally omit it. */
@@ -327,12 +328,13 @@ function validateSale(sale: CashierSaleSnapshot): void {
   }
   const operationIds = new Set<string>([sale.operation_id]);
   const returnedByLine = new Map<string, number>();
+  const refundedByLine = new Map<string, number>();
   for (const snapshot of returns) {
     if (operationIds.has(snapshot.operation_id)) {
       throw new Error('CASHIER_REPORT_DUPLICATE_OPERATION');
     }
     operationIds.add(snapshot.operation_id);
-    validateReturnSnapshot(sale, snapshot, returnedByLine);
+    validateReturnSnapshot(sale, snapshot, returnedByLine, refundedByLine);
   }
   if (sale.void) {
     if (operationIds.has(sale.void.operation_id)) {
@@ -355,6 +357,7 @@ function validateReturnSnapshot(
   sale: CashierSaleSnapshot,
   snapshot: CashierReturnSnapshot,
   returnedByLine: Map<string, number>,
+  refundedByLine: Map<string, number>,
 ): void {
   if (
     snapshot.sale_id !== sale.sale_id ||
@@ -383,20 +386,38 @@ function validateReturnSnapshot(
       original.effective_unit_price_minor,
       'effective_price',
     );
+    const alreadyReturned = returnedByLine.get(original.line_id) || 0;
+    const expectedRefund =
+      snapshot.refund_pricing_version === 2
+        ? cashierNetReturnRefundMinor(
+            sale,
+            original.line_id,
+            alreadyReturned,
+            refundedByLine.get(original.line_id) || 0,
+            quantity,
+          )
+        : safeMultiply(originalPrice, quantity, 'return_refund');
     if (
       returned.product_id !== original.product_id ||
       returned.variant_id !== original.variant_id ||
       returned.effective_unit_price_minor !== originalPrice ||
-      refund !== safeMultiply(originalPrice, quantity, 'return_refund')
+      refund !== expectedRefund
     ) {
       throw new Error('CASHIER_REPORT_RETURN_MISMATCH');
     }
-    const alreadyReturned = returnedByLine.get(original.line_id) || 0;
     const cumulative = safeAdd(alreadyReturned, quantity, 'returned_quantity');
     if (cumulative > original.quantity) {
       throw new Error('CASHIER_REPORT_RETURN_EXCEEDS_SALE');
     }
     returnedByLine.set(original.line_id, cumulative);
+    refundedByLine.set(
+      original.line_id,
+      safeAdd(
+        refundedByLine.get(original.line_id) || 0,
+        refund,
+        'returned_refund',
+      ),
+    );
     refundTotal = safeAdd(refundTotal, refund, 'return_refund');
   }
   if (refundTotal !== safeNonNegativeInteger(snapshot.refund_total_minor, 'return_refund')) {

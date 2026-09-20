@@ -2,6 +2,8 @@ export * from "./enums";
 export * from "./accounts";
 export * from "./merchants";
 export * from "./merchant-management";
+export * from "./merchant-locations";
+export * from "./location-inventory";
 export * from "./sessions";
 export * from "./subscriptions";
 export * from "./saas-billing";

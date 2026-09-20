@@ -113,6 +113,34 @@
       "when": 1787715600000,
       "tag": "0015_cashier_discount_override_authority",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1789646400000,
+      "tag": "0016_cashier_merchant_discount_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789776000000,
+      "tag": "0017_multi_location_inventory_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789862400000,
+      "tag": "0018_location_inventory_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789948800000,
+      "tag": "0019_location_delivery_area_routing",
+      "breakpoints": true
     }
   ]
 }

@@ -21,6 +21,10 @@ import {
   type CatalogCommerceFields,
 } from "../catalogCommerceMetadata.js";
 import {
+  planOnlineOrderFulfillmentWithTarget,
+} from "../postgresOnlineOrderFulfillmentPlanner.js";
+import type { OperationalQueryTarget } from "../operationalPostgresAuthority.js";
+import {
   catalogAvailabilityAnswer,
   catalogPriceAnswer,
   requestedCatalogQuantity,
@@ -468,6 +472,133 @@ function uniqueBest(rows: Array<{ row: Record<string, unknown>; score: number }>
   return matched[0].row;
 }
 
+async function knowledgeStockAvailability(params: {
+  sql: KnowledgeSqlExecutor;
+  merchantId: string;
+  productId: string;
+  variantId?: string;
+  customer: string;
+  requestedQuantity: number | null;
+}): Promise<{ recordSuffix: string; quantity: number }> {
+  let rows: Record<string, unknown>[];
+  try {
+    rows = (
+      await params.sql.query(
+        `SELECT ml.id AS location_id, lil.quantity
+           FROM merchant_locations ml
+           LEFT JOIN location_inventory_levels lil
+             ON lil.merchant_id = ml.merchant_id
+            AND lil.location_id = ml.id
+            AND lil.product_id = $2
+            AND lil.variant_id IS NOT DISTINCT FROM $3::text
+          WHERE ml.merchant_id = $1
+          ORDER BY ml.id
+          LIMIT 2`,
+        [params.merchantId, params.productId, params.variantId || null],
+      )
+    ).rows;
+  } catch {
+    fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+  }
+
+  if (rows.length === 0) {
+    fail(
+      "KNOWLEDGE_LOCATION_INVENTORY_UNAVAILABLE",
+      "location inventory is unavailable",
+      409,
+    );
+  }
+
+  if (rows.length === 1) {
+    const row = rows[0];
+    const locationId = text(row.location_id, 160);
+    if (!locationId || row.quantity === null || row.quantity === undefined) {
+      fail(
+        "KNOWLEDGE_LOCATION_INVENTORY_UNAVAILABLE",
+        "location inventory is unavailable",
+        409,
+      );
+    }
+    return {
+      recordSuffix: `location:${locationId}`,
+      quantity: integer(row.quantity),
+    };
+  }
+
+  const requestedQuantity = params.requestedQuantity || 1;
+  const target: OperationalQueryTarget = {
+    query: (sql, values = []) => params.sql.query(sql, values),
+  };
+
+  let plan;
+  try {
+    plan = await planOnlineOrderFulfillmentWithTarget(target, {
+      merchantId: params.merchantId,
+      area: params.customer,
+      requestedItems: [
+        {
+          product_id: params.productId,
+          ...(params.variantId ? { variant_id: params.variantId } : {}),
+          quantity: requestedQuantity,
+        },
+      ],
+    });
+  } catch (error) {
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String((error as { code?: unknown }).code || "")
+        : "";
+    if (
+      code.startsWith("LOCATION_SERVICE_AREA_") ||
+      code.startsWith("LOCATION_ROUTING_") ||
+      code.startsWith("ONLINE_ORDER_ROUTING_")
+    ) {
+      fail(
+        "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
+        "multi-location stock availability requires an unambiguous customer area",
+        409,
+      );
+    }
+    fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+  }
+
+  if (plan.status !== "routing_ready") {
+    fail(
+      "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
+      "multi-location stock availability requires an unambiguous customer area",
+      409,
+    );
+  }
+
+  if (plan.routing.status === "pending_fulfillment_confirmation") {
+    fail(
+      "KNOWLEDGE_LOCATION_INVENTORY_STALE",
+      "location inventory is not fresh enough for an automatic stock reply",
+      409,
+    );
+  }
+
+  if (plan.routing.status === "routed") {
+    return {
+      recordSuffix: `location:${plan.routing.location_id}`,
+      quantity: requestedQuantity,
+    };
+  }
+
+  if (plan.routing.reason === "insufficient_single_location_inventory") {
+    return {
+      recordSuffix: `area:${plan.service_area.area_rate_id || "single"}:unavailable`,
+      quantity: 0,
+    };
+  }
+
+  fail(
+    "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
+    "multi-location stock availability cannot be routed automatically",
+    409,
+  );
+}
+
 async function loadVariants(
   sql: KnowledgeSqlExecutor,
   merchantId: string,
@@ -637,7 +768,7 @@ async function resolveProductFact(params: {
 
   const commerce = commerceFacts(product);
   let unitPrice = integer(product.current_price_iqd);
-  let quantity = commerce.track_inventory ? integer(product.quantity) : 0;
+  let quantity = 0;
   const variantMode = commerce.track_inventory && bool(product.variant_stock_mode);
   let recordId = productId;
   let variantId: string | undefined;
@@ -656,10 +787,23 @@ async function resolveProductFact(params: {
     if (!Number.isSafeInteger(adjustment)) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
     unitPrice = override === null || override === undefined ? unitPrice + adjustment : integer(override);
     if (!Number.isSafeInteger(unitPrice) || unitPrice < 0) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
-    quantity = integer(variant.quantity);
     recordId = text(variant.id, 160);
     variantId = recordId;
     if (!recordId) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+  }
+
+  if (params.kind === "stock" && commerce.track_inventory) {
+    const requestedQuantity = requestedCatalogQuantity(params.customer);
+    const locationInventory = await knowledgeStockAvailability({
+      sql: params.sql,
+      merchantId: params.merchantId,
+      productId,
+      ...(variantId ? { variantId } : {}),
+      customer: params.customer,
+      requestedQuantity,
+    });
+    quantity = locationInventory.quantity;
+    recordId = `${recordId}:${locationInventory.recordSuffix}`;
   }
 
   if (params.kind === "price") {
@@ -703,7 +847,12 @@ async function resolveProductFact(params: {
     answerText: catalogAvailabilityAnswer({
       language: params.language,
       itemName: productName,
-      status: text(product.status, 40),
+      status:
+        commerce.track_inventory
+          ? quantity > 0
+            ? "available"
+            : "out_of_stock"
+          : text(product.status, 40),
       authoritativeQuantity: quantity,
       commerce,
       requestedQuantity: commerce.track_inventory

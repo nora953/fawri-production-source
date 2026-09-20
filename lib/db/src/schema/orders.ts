@@ -21,6 +21,7 @@ import {
   paymentMethodEnum,
   paymentStatusEnum,
 } from "./enums";
+import { merchantLocations } from "./merchant-locations";
 import { merchants } from "./merchants";
 
 export const paymentDecisionOperationEnum = pgEnum("payment_decision_operation", [
@@ -67,6 +68,7 @@ export const orders = pgTable(
     customerPhone: text("customer_phone"),
     customerAddress: text("customer_address"),
     customerArea: text("customer_area"),
+    fulfillmentLocationId: text("fulfillment_location_id"),
     status: orderStatusEnum("status").notNull().default("pending_confirmation"),
     paymentMethod: paymentMethodEnum("payment_method").notNull().default("cash_on_delivery"),
     paymentStatus: paymentStatusEnum("payment_status").notNull().default("cash_on_delivery"),
@@ -110,6 +112,11 @@ export const orders = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
+    fulfillmentLocationTenantForeignKey: foreignKey({
+      name: "orders_fulfillment_location_merchant_fk",
+      columns: [table.fulfillmentLocationId, table.merchantId],
+      foreignColumns: [merchantLocations.id, merchantLocations.merchantId],
+    }),
     conversationTenantForeignKey: foreignKey({
       name: "orders_conversation_merchant_fk",
       columns: [table.conversationId, table.merchantId],
@@ -118,6 +125,11 @@ export const orders = pgTable(
     idMerchantUnique: unique("orders_id_merchant_unique").on(table.id, table.merchantId),
     merchantCreatedIndex: index("orders_merchant_created_idx").on(table.merchantId, table.createdAt),
     merchantStatusIndex: index("orders_merchant_status_idx").on(table.merchantId, table.status),
+    fulfillmentLocationIndex: index("orders_fulfillment_location_idx").on(
+      table.merchantId,
+      table.fulfillmentLocationId,
+      table.createdAt,
+    ),
     conversationIndex: index("orders_conversation_idx").on(table.conversationId),
     versionCheck: check("orders_version_check", sql`${table.version} > 0`),
     totalsCheck: check(

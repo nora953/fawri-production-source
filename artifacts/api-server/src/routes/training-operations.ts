@@ -6,9 +6,10 @@ import {
 import {
   approveMerchantTrainingRequest,
   createMerchantTrainingRequest,
-  listMerchantTrainingRequests,
+  listMerchantTrainingRequestsPage,
   proposeMerchantTrainingReply,
   rejectMerchantTrainingRequest,
+  revokeMerchantTrainingApproval,
 } from "../services/trainingRuntime.js";
 import {
   readExpectedVersion,
@@ -20,11 +21,71 @@ import {
 const router = Router();
 router.use(requireMerchantSession);
 
-router.get("/", async (_req: Request, res: Response): Promise<void> => {
+function readTrainingPage(req: Request): {
+  limit: number;
+  beforeUpdatedAt?: string;
+  beforeId?: string;
+  search?: string;
+  status?: "pending_merchant_reply" | "pending_review" | "approved" | "rejected";
+} | null {
+  const rawLimit = readString(req.query.limit, 12);
+  const limit = rawLimit ? Number(rawLimit) : 500;
+  if (!Number.isInteger(limit) || limit < 1 || limit > 500) return null;
+
+  const beforeUpdatedAt = readString(req.query.beforeUpdatedAt, 80);
+  const beforeId = readString(req.query.beforeId, 160);
+  if (Boolean(beforeUpdatedAt) !== Boolean(beforeId)) return null;
+  if (
+    beforeUpdatedAt &&
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(beforeUpdatedAt)
+  ) return null;
+
+  if (
+    (req.query.q !== undefined && typeof req.query.q !== "string") ||
+    (req.query.status !== undefined && typeof req.query.status !== "string")
+  ) return null;
+
+  const search = readString(req.query.q, 500);
+  const rawStatus = readString(req.query.status, 40);
+  const status =
+    rawStatus === "pending_merchant_reply" ||
+    rawStatus === "pending_review" ||
+    rawStatus === "approved" ||
+    rawStatus === "rejected"
+      ? rawStatus
+      : undefined;
+  if (rawStatus && !status) return null;
+
+  return {
+    limit,
+    ...(beforeUpdatedAt ? { beforeUpdatedAt } : {}),
+    ...(beforeId ? { beforeId } : {}),
+    ...(search ? { search } : {}),
+    ...(status ? { status } : {}),
+  };
+}
+
+router.get("/", async (req: Request, res: Response): Promise<void> => {
   const merchantId = getMerchantIdFromSession(res);
+  const pageInput = readTrainingPage(req);
+  if (!pageInput) {
+    res.status(400).json({
+      ok: false,
+      code: "INVALID_TRAINING_REQUEST_PAGE",
+      error: "invalid training request page",
+    });
+    return;
+  }
   try {
-    const requests = await listMerchantTrainingRequests(merchantId);
-    res.json({ ok: true, requests });
+    const page = await listMerchantTrainingRequestsPage({
+      merchantId,
+      ...pageInput,
+    });
+    res.json({
+      ok: true,
+      requests: page.requests,
+      nextCursor: page.nextCursor,
+    });
   } catch (error) {
     sendKnowledgeError(res, error);
   }
@@ -115,6 +176,30 @@ router.post("/:id/approve", async (req: Request, res: Response): Promise<void> =
         : [],
     });
     res.json({ ok: true, ...result });
+  } catch (error) {
+    sendKnowledgeError(res, error);
+  }
+});
+
+router.post("/:id/revoke", async (req: Request, res: Response): Promise<void> => {
+  const merchantId = getMerchantIdFromSession(res);
+  const expectedVersion = readExpectedVersion(req);
+  if (!expectedVersion) {
+    res.status(428).json({
+      ok: false,
+      code: "EXPECTED_VERSION_REQUIRED",
+      error: "expectedVersion or If-Match is required",
+    });
+    return;
+  }
+
+  try {
+    const request = await revokeMerchantTrainingApproval({
+      merchantId,
+      id: readString(req.params.id, 160),
+      expectedVersion,
+    });
+    res.json({ ok: true, request });
   } catch (error) {
     sendKnowledgeError(res, error);
   }

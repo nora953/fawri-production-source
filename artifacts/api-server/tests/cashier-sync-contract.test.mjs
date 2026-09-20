@@ -38,13 +38,16 @@ test('cashier sale reconciliation is one PostgreSQL transaction with durable rep
   assert.match(source, /CASHIER_SYNC_IDEMPOTENCY_CONFLICT/);
   assert.match(source, /movement\.delta !== -line\.quantity/);
   assert.match(source, /INSERT INTO inventory_mutations/);
+  assert.match(source, /location_inventory_levels/);
+  assert.match(source, /location_id/);
+  assert.match(source, /fulfillment_location_id/);
   assert.match(source, /INSERT INTO orders/);
   assert.match(source, /INSERT INTO order_items/);
 
   const replayRead = source.indexOf('const existing = await loadExistingOrder');
   const replayReturn = source.indexOf('replayed: true', replayRead);
   const inventoryLoop = source.indexOf('for (const line of bundle.sale.lines)', replayRead);
-  const orderInsert = source.indexOf('await insertCanonicalOrder(client, bundle)', inventoryLoop);
+  const orderInsert = source.indexOf('await insertCanonicalOrder(client, bundle, locationId)', inventoryLoop);
 
   assert.ok(replayRead >= 0, 'existing cashier sale must be checked');
   assert.ok(replayReturn > replayRead, 'matching existing sale must return an idempotent replay');
@@ -56,6 +59,8 @@ test('server derives stock decrement from sale lines and rejects extra or missin
   const source = await apiSource('src/services/postgresCashierSyncAuthority.ts');
 
   assert.match(source, /after = before - line\.quantity/);
+  assert.match(source, /CASHIER_LOCATION_INVENTORY_UNALLOCATED/);
+  assert.match(source, /CASHIER_LOCATION_INVENTORY_VERSION_CONFLICT/);
   assert.match(source, /movement\.delta !== -line\.quantity/);
   assert.match(source, /bundle\.movements\.delete\(itemKey\(line\.product_id, line\.variant_id\)\)/);
   assert.match(source, /bundle\.movements\.size !== 0/);
@@ -76,7 +81,11 @@ test('manual discount type is durable from checkout through local and cloud sale
   assert.match(sync, /manual_discount_kind\?: "amount" \| "percentage"/);
   assert.match(sync, /manual_discount_kind: manualDiscountKind/);
   assert.match(sync, /manual_discount_kind: bundle\.sale\.manual_discount_kind/);
-  assert.match(authority, /const kind = discountKind\(payload\.manual_discount_kind\)/);
+  assert.match(authority, /const requestedKind = discountKind\(payload\.manual_discount_kind\)/);
+  assert.match(authority, /loadMerchantCashierDiscountSetting/);
+  assert.match(authority, /requestedKind !== discountSetting\.discount_kind/);
+  assert.match(authority, /CASHIER_DISCOUNT_KIND_MISMATCH/);
+  assert.match(authority, /const kind = discountSetting\.discount_kind/);
   assert.match(authority, /discountKind: kind/);
 });
 

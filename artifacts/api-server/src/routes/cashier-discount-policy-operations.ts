@@ -14,6 +14,10 @@ import {
   upsertCashierDiscountPolicy,
 } from '../services/cashierDiscountPolicyAuthority';
 import {
+  loadMerchantCashierDiscountSetting,
+  updateMerchantCashierDiscountSetting,
+} from '../services/cashierMerchantDiscountSettingsAuthority';
+import {
   CashierDiscountPolicyError,
   normalizeCashierManualDiscountPolicy,
   restrictCashierManualDiscountPolicyForRole,
@@ -87,15 +91,43 @@ router.get(
             ORDER BY created_at, id`,
           [id],
         );
-        const policies = await loadCashierDiscountPolicies(client, id);
-        return staff.map((row) => ({
-          staff_id: row.id,
-          staff_version: Number(row.version),
-          discount_policy: policies.get(row.id) || disabledStoredCashierDiscountPolicy(),
-        }));
+        const [policies, discountSetting] = await Promise.all([
+          loadCashierDiscountPolicies(client, id),
+          loadMerchantCashierDiscountSetting(client, id),
+        ]);
+        return {
+          discount_setting: discountSetting,
+          policies: staff.map((row) => ({
+            staff_id: row.id,
+            staff_version: Number(row.version),
+            discount_policy: policies.get(row.id) || disabledStoredCashierDiscountPolicy(),
+          })),
+        };
       });
       res.setHeader('Cache-Control', 'no-store');
-      res.json({ ok: true, policies: result });
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.put(
+  '/cashier/management/discount-kind',
+  requireMerchant,
+  async (req, res) => {
+    try {
+      const id = merchantId(res);
+      const discountSetting = await withMerchantOperationalTransaction(
+        id,
+        (client) => updateMerchantCashierDiscountSetting(client, {
+          merchantId: id,
+          expectedVersion: req.body?.expected_version,
+          discountKind: req.body?.discount_kind,
+        }),
+      );
+      res.setHeader('Cache-Control', 'no-store');
+      res.json({ ok: true, discount_setting: discountSetting });
     } catch (error) {
       sendError(res, error);
     }
@@ -238,11 +270,18 @@ router.get(
           401,
         );
       }
-      const policy = await withMerchantOperationalTransaction(
+      const result = await withMerchantOperationalTransaction(
         context.merchant_id,
         async (client) => {
+          const discountSetting = await loadMerchantCashierDiscountSetting(
+            client,
+            context.merchant_id,
+          );
           if (!context.permissions.includes('sale.discount')) {
-            return disabledStoredCashierDiscountPolicy();
+            return {
+              discount_setting: discountSetting,
+              discount_policy: disabledStoredCashierDiscountPolicy(),
+            };
           }
           const policies = await loadCashierDiscountPolicies(
             client,
@@ -251,14 +290,17 @@ router.get(
           );
           const stored = policies.get(context.staff_id) || disabledStoredCashierDiscountPolicy();
           return {
-            ...stored,
-            can_approve_override:
-              stored.can_approve_override && context.permissions.includes('sale.discount_override'),
+            discount_setting: discountSetting,
+            discount_policy: {
+              ...stored,
+              can_approve_override:
+                stored.can_approve_override && context.permissions.includes('sale.discount_override'),
+            },
           };
         },
       );
       res.setHeader('Cache-Control', 'no-store');
-      res.json({ ok: true, discount_policy: policy });
+      res.json({ ok: true, ...result });
     } catch (error) {
       sendError(res, error);
     }

@@ -8,6 +8,26 @@ export function listMerchantTrainingRequests(merchantId: string) {
   return getPostgresKnowledgeManagementRuntime().listTrainingRequests(merchantId);
 }
 
+export function listMerchantTrainingRequestsPage(input: {
+  merchantId: string;
+  limit?: number;
+  beforeUpdatedAt?: string;
+  beforeId?: string;
+  search?: string;
+  status?: "pending_merchant_reply" | "pending_review" | "approved" | "rejected";
+}) {
+  return getPostgresKnowledgeManagementRuntime().listTrainingRequestsPage(
+    input.merchantId,
+    {
+      ...(input.limit !== undefined ? { limit: input.limit } : {}),
+      ...(input.beforeUpdatedAt ? { beforeUpdatedAt: input.beforeUpdatedAt } : {}),
+      ...(input.beforeId ? { beforeId: input.beforeId } : {}),
+      ...(input.search ? { search: input.search } : {}),
+      ...(input.status ? { status: input.status } : {}),
+    },
+  );
+}
+
 export function createMerchantTrainingRequest(input: {
   merchantId: string;
   customerText: string;
@@ -38,6 +58,14 @@ export function approveMerchantTrainingRequest(input: {
   keywords?: string[];
 }) {
   return getPostgresKnowledgeManagementRuntime().approveTrainingRequest(input);
+}
+
+export function revokeMerchantTrainingApproval(input: {
+  merchantId: string;
+  id: string;
+  expectedVersion: number;
+}) {
+  return getPostgresKnowledgeManagementRuntime().revokeTrainingApproval(input);
 }
 
 export function rejectMerchantTrainingRequest(input: {

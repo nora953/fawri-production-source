@@ -4,10 +4,7 @@ import {
   type CashierSalesReport,
   type CashierSalesReportOptions,
 } from './cashierSalesReportRuntime';
-import {
-  getCashierOperationBindings,
-  type CashierOperationBinding,
-} from './cashierOperatorLocalSecurity';
+import { getCashierSaleOperationBindingsForReport } from './cashierOperatorLocalSecurity';
 import {
   cashierOperatorCan,
   cashierOperatorHeaders,
@@ -18,6 +15,7 @@ import {
 
 const SALES_STORE = 'sales';
 const MAX_REPORT_SALES = 50_000;
+const OPERATOR_REPORT_TOP_PRODUCTS = 10;
 
 export type CashierOperatorReportRuntimeResult = {
   report: CashierSalesReport;
@@ -81,10 +79,12 @@ function instant(value: string | Date | undefined, field: string): string | unde
   return date.toISOString();
 }
 
-function normalizedRange(options: CashierSalesReportOptions): {
+type NormalizedReportRange = {
   from?: string;
   to?: string;
-} {
+};
+
+function normalizedRange(options: CashierSalesReportOptions): NormalizedReportRange {
   const from = instant(options.from, 'from');
   const to = instant(options.to, 'to');
   if (from && to && from >= to) {
@@ -96,57 +96,85 @@ function normalizedRange(options: CashierSalesReportOptions): {
   return { ...(from ? { from } : {}), ...(to ? { to } : {}) };
 }
 
-async function readSales(database: IDBDatabase): Promise<CashierSaleSnapshot[]> {
-  if (!database.objectStoreNames.contains(SALES_STORE)) {
+function timestampInReportRange(
+  value: unknown,
+  range: NormalizedReportRange,
+  field: string,
+): boolean {
+  const parsed = new Date(String(value || ''));
+  if (!Number.isFinite(parsed.getTime())) {
+    throw new CashierOperatorReportsError(
+      'CASHIER_REPORT_LOCAL_EVIDENCE_INVALID',
+      `Local cashier ${field} timestamp is invalid`,
+    );
+  }
+  const instant = parsed.toISOString();
+  return (!range.from || instant >= range.from) && (!range.to || instant < range.to);
+}
+
+export function cashierSaleTouchesReportRange(
+  sale: CashierSaleSnapshot,
+  range: NormalizedReportRange,
+): boolean {
+  if (!range.from && !range.to) return true;
+  if (timestampInReportRange(sale.occurred_at, range, 'sale')) return true;
+  for (const snapshot of sale.returns || []) {
+    if (timestampInReportRange(snapshot.occurred_at, range, 'return')) return true;
+  }
+  return Boolean(
+    sale.void &&
+      timestampInReportRange(sale.void.occurred_at, range, 'void'),
+  );
+}
+
+async function readSalesByOperationIds(
+  database: IDBDatabase,
+  operationIds: readonly string[],
+): Promise<Array<CashierSaleSnapshot | undefined>> {
+  if (operationIds.length === 0) return [];
+  const transaction = database.transaction(SALES_STORE, 'readonly');
+  const index = transaction.objectStore(SALES_STORE).index('operation_id');
+  return Promise.all(
+    operationIds.map(
+      (operationId) =>
+        requestResult(index.get(operationId)) as Promise<
+          CashierSaleSnapshot | undefined
+        >,
+    ),
+  );
+}
+
+async function readScopedSalesForRange(input: {
+  database: IDBDatabase;
+  operationIds: readonly string[];
+  range: NormalizedReportRange;
+}): Promise<CashierSaleSnapshot[]> {
+  if (!input.database.objectStoreNames.contains(SALES_STORE)) {
     throw new CashierOperatorReportsError(
       'CASHIER_REPORT_SALES_STORE_MISSING',
       'Cashier sales store is unavailable',
     );
   }
-  const transaction = database.transaction(SALES_STORE, 'readonly');
-  const index = transaction.objectStore(SALES_STORE).index('occurred_at');
-  return new Promise<CashierSaleSnapshot[]>((resolve, reject) => {
-    const sales: CashierSaleSnapshot[] = [];
-    const request = index.openCursor(null, 'prev');
-    request.onerror = () => reject(request.error || new Error('CASHIER_REPORT_READ_FAILED'));
-    request.onsuccess = () => {
-      const cursor = request.result;
-      if (!cursor) {
-        resolve(sales);
-        return;
-      }
-      if (sales.length >= MAX_REPORT_SALES) {
-        reject(
-          new CashierOperatorReportsError(
-            'CASHIER_REPORT_LOCAL_LIMIT_EXCEEDED',
-            'Local cashier report contains too many sales',
-          ),
-        );
-        return;
-      }
-      sales.push(cursor.value as CashierSaleSnapshot);
-      cursor.continue();
-    };
-  });
-}
 
-function bindingVisible(
-  session: CashierOperatorSession,
-  binding: CashierOperationBinding | undefined,
-): boolean {
-  if (!binding) return false;
-  if (
-    binding.merchant_id !== session.context.merchant_id ||
-    binding.station_id !== session.context.station_id ||
-    binding.device_id !== session.context.device_id
-  ) {
-    return false;
+  const sales: CashierSaleSnapshot[] = [];
+  const batchSize = 500;
+  for (let offset = 0; offset < input.operationIds.length; offset += batchSize) {
+    const batch = await readSalesByOperationIds(
+      input.database,
+      input.operationIds.slice(offset, offset + batchSize),
+    );
+    for (const sale of batch) {
+      if (!sale || !cashierSaleTouchesReportRange(sale, input.range)) continue;
+      sales.push(sale);
+      if (sales.length > MAX_REPORT_SALES) {
+        throw new CashierOperatorReportsError(
+          'CASHIER_REPORT_LOCAL_LIMIT_EXCEEDED',
+          'Local cashier report range contains too many affected sales; choose a smaller period',
+        );
+      }
+    }
   }
-  if (cashierOperatorCan(session, 'sale.view_all')) return true;
-  return (
-    cashierOperatorCan(session, 'sale.view_own') &&
-    binding.staff_id === session.context.staff_id
-  );
+  return sales;
 }
 
 function redactProfit(report: CashierSalesReport): CashierSalesReport {
@@ -310,19 +338,27 @@ export async function createCashierOperatorReportsRuntime(): Promise<CashierOper
       const online = await serverReport(currentSession, options);
       if (online) return online;
 
-      normalizedRange(options);
-      const allSales = await readSales(database);
-      const bindings = await getCashierOperationBindings(
-        allSales.map((sale) => sale.operation_id),
-      );
-      const visibleSales = allSales.filter((sale) =>
-        bindingVisible(currentSession, bindings.get(sale.operation_id)),
-      );
-      const report = buildCashierSalesReport(visibleSales, options);
+      const range = normalizedRange(options);
+      const canViewAll = cashierOperatorCan(currentSession, 'sale.view_all');
+      const saleBindings = await getCashierSaleOperationBindingsForReport({
+        merchantId: currentSession.context.merchant_id,
+        stationId: currentSession.context.station_id,
+        deviceId: currentSession.context.device_id,
+        ...(!canViewAll ? { staffId: currentSession.context.staff_id } : {}),
+      });
+      const visibleSales = await readScopedSalesForRange({
+        database,
+        operationIds: saleBindings.map((binding) => binding.operation_id),
+        range,
+      });
+      const report = buildCashierSalesReport(visibleSales, {
+        ...options,
+        topProductsLimit: OPERATOR_REPORT_TOP_PRODUCTS,
+      });
       return {
         report: canViewProfit ? report : redactProfit(report),
         source: 'local_cashier',
-        scope: cashierOperatorCan(currentSession, 'sale.view_all') ? 'station' : 'own_staff',
+        scope: canViewAll ? 'station' : 'own_staff',
         sales_scanned: visibleSales.length,
         generated_at: new Date().toISOString(),
         can_view_profit: canViewProfit,

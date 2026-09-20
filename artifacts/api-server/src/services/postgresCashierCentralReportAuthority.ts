@@ -4,6 +4,7 @@ import {
   withMerchantOperationalTransaction,
 } from "./operationalPostgresAuthority";
 import { CashierStaffAuthorityError } from "./postgresCashierStaffAuthority";
+import { cashierNetReturnRefundMinor } from "./cashierRefundPricing";
 
 const MAX_REPORT_SALES = 50_000;
 const DEFAULT_TOP_PRODUCTS = 10;
@@ -15,6 +16,8 @@ export type CashierCentralReportEvidenceRow = {
   staff_name: string | null;
   station_id: string | null;
   station_name: string | null;
+  location_id: string | null;
+  location_name: string | null;
   branch_key: string | null;
   branch_label: string | null;
 };
@@ -110,6 +113,11 @@ export type CashierCentralReportResult = {
     station_name: string;
     branch_key?: string;
     branch_label?: string;
+    report: CashierCentralReport;
+  }>;
+  by_location: Array<{
+    location_id: string | null;
+    location_name: string;
     report: CashierCentralReport;
   }>;
 };
@@ -431,6 +439,7 @@ function validateSaleEvidence(sale: ParsedSale): void {
 
   const compensationIds = new Set<string>();
   const returnedByLine = new Map<string, number>();
+  const refundedByLine = new Map<string, number>();
   let voidCount = 0;
   let returnCount = 0;
   for (const compensation of sale.compensations) {
@@ -501,16 +510,26 @@ function validateSaleEvidence(sale: ParsedSale): void {
       }
       returnLineIds.add(returned.original_line_id);
       const original = originalLineById(sale, returned.original_line_id);
+      const returnedBefore = returnedByLine.get(original.line_id) || 0;
+      const expectedRefund =
+        Number(compensation.snapshot.refund_pricing_version || 0) === 2
+          ? cashierNetReturnRefundMinor(
+              sale,
+              original.line_id,
+              returnedBefore,
+              refundedByLine.get(original.line_id) || 0,
+              returned.quantity,
+            )
+          : safeMultiply(
+              original.effective_unit_price_minor,
+              returned.quantity,
+              "return refund",
+            );
       if (
         returned.product_id !== original.product_id ||
         returned.variant_id !== original.variant_id ||
         returned.effective_unit_price_minor !== original.effective_unit_price_minor ||
-        returned.refund_minor !==
-          safeMultiply(
-            original.effective_unit_price_minor,
-            returned.quantity,
-            "return refund",
-          )
+        returned.refund_minor !== expectedRefund
       ) {
         throw new CashierStaffAuthorityError(
           "CASHIER_REPORT_EVIDENCE_INVALID",
@@ -518,7 +537,6 @@ function validateSaleEvidence(sale: ParsedSale): void {
           409,
         );
       }
-      const returnedBefore = returnedByLine.get(original.line_id) || 0;
       const returnedAfter = safeAdd(
         returnedBefore,
         returned.quantity,
@@ -532,6 +550,14 @@ function validateSaleEvidence(sale: ParsedSale): void {
         );
       }
       returnedByLine.set(original.line_id, returnedAfter);
+      refundedByLine.set(
+        original.line_id,
+        safeAdd(
+          refundedByLine.get(original.line_id) || 0,
+          returned.refund_minor,
+          "cumulative return refund",
+        ),
+      );
       refundTotal = safeAdd(refundTotal, returned.refund_minor, "return refund total");
     }
     if (
@@ -929,6 +955,10 @@ function stationGroupKey(row: CashierCentralReportEvidenceRow): string {
   return row.station_id || "__legacy_unattributed__";
 }
 
+function locationGroupKey(row: CashierCentralReportEvidenceRow): string {
+  return row.location_id || "__legacy_unattributed__";
+}
+
 function buildResultFromRows(
   rows: CashierCentralReportEvidenceRow[],
   range: ReportRange,
@@ -946,6 +976,14 @@ function buildResultFromRows(
       station_name: string;
       branch_key?: string;
       branch_label?: string;
+      report: ReportAccumulator;
+    }
+  >();
+  const locationGroups = new Map<
+    string,
+    {
+      location_id: string | null;
+      location_name: string;
       report: ReportAccumulator;
     }
   >();
@@ -982,6 +1020,15 @@ function buildResultFromRows(
     };
     applyPeriodEvidence(stationGroup.report, sale, range);
     stationGroups.set(stationKey, stationGroup);
+
+    const locationKey = locationGroupKey(row);
+    const locationGroup = locationGroups.get(locationKey) || {
+      location_id: row.location_id,
+      location_name: row.location_name || "Unattributed legacy location",
+      report: newReport(),
+    };
+    applyPeriodEvidence(locationGroup.report, sale, range);
+    locationGroups.set(locationKey, locationGroup);
   }
 
   return {
@@ -1007,6 +1054,14 @@ function buildResultFromRows(
       }))
       .filter((group) => group.report.by_currency.length > 0)
       .sort((left, right) => left.station_name.localeCompare(right.station_name)),
+    by_location: [...locationGroups.values()]
+      .map((group) => ({
+        location_id: group.location_id,
+        location_name: group.location_name,
+        report: finalizeReport(group.report),
+      }))
+      .filter((group) => group.report.by_currency.length > 0)
+      .sort((left, right) => left.location_name.localeCompare(right.location_name)),
   };
 }
 
@@ -1049,6 +1104,8 @@ export async function buildCashierCentralReportAuthoritative(input: {
               staff.display_name AS staff_name,
               sale_attribution.station_id,
               station.name AS station_name,
+              sale_attribution.location_id,
+              location.name AS location_name,
               station.branch_key,
               station.branch_label
          FROM orders o
@@ -1062,6 +1119,9 @@ export async function buildCashierCentralReportAuthoritative(input: {
          LEFT JOIN merchant_cashier_stations station
            ON station.merchant_id = o.merchant_id
           AND station.id = sale_attribution.station_id
+         LEFT JOIN merchant_locations location
+           ON location.merchant_id = o.merchant_id
+          AND location.id = sale_attribution.location_id
         WHERE o.merchant_id = $1
           AND o.source_channel = 'cashier'
           AND (

@@ -15,6 +15,10 @@ import {
   isPositiveSafeInteger,
 } from './cashierLocalContracts';
 import type { IndexedDbCashierConfig } from './cashierIndexedDbAuthority';
+import {
+  CASHIER_REFUND_PRICING_VERSION,
+  cashierNetReturnRefundMinor,
+} from './cashierRefundPricing';
 
 const DATABASE_VERSION = 2;
 const STORE_META = 'meta';
@@ -314,6 +318,17 @@ function returnedQuantityForLine(sale: CashierSaleSnapshot, lineId: string): num
   return total;
 }
 
+function returnedRefundForLine(sale: CashierSaleSnapshot, lineId: string): number {
+  let total = 0;
+  for (const returnSnapshot of sale.returns || []) {
+    for (const line of returnSnapshot.lines || []) {
+      if (line.original_line_id !== lineId) continue;
+      total = safeAdd(total, line.refund_minor, 'returned refund');
+    }
+  }
+  return total;
+}
+
 function originalSaleMovementId(sale: CashierSaleSnapshot, lineIndex: number): string {
   return `movement:${sale.operation_id}:${lineIndex + 1}`;
 }
@@ -543,10 +558,12 @@ export class IndexedDbCashierCompensationAuthority
           );
         }
 
-        const refundMinor = safeMultiply(
-          line.effective_unit_price_minor,
+        const refundMinor = cashierNetReturnRefundMinor(
+          sale,
+          line.line_id,
+          alreadyReturned,
+          returnedRefundForLine(sale, line.line_id),
           requestLine.quantity,
-          'return line refund',
         );
         refundTotalMinor = safeAdd(refundTotalMinor, refundMinor, 'return refund total');
         returnLines.push({
@@ -611,6 +628,7 @@ export class IndexedDbCashierCompensationAuthority
       }
 
       const snapshot: CashierReturnSnapshot = {
+        refund_pricing_version: CASHIER_REFUND_PRICING_VERSION,
         return_id: returnId(operationId),
         operation_id: operationId,
         sale_id: sale.sale_id,

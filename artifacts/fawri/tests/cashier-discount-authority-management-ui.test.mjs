@@ -21,7 +21,7 @@ test('merchant staff UI exposes explicit manual discount authority without role 
   assert.match(managementSource, /\['sale\.discount', l\.manualDiscount\]/);
   assert.match(managementSource, /\['sale\.discount_override', l\.discountOverride\]/);
   assert.match(managementSource, /href="\/dashboard\/cashiers\/discounts"/);
-  assert.match(managementSource, /Discount authority is sensitive and is never granted automatically by role/);
+  assert.match(managementSource, /Discount permission is not granted automatically\. After enabling it, set the employee limit in Discount policies\. Any discount over the limit requires approval from an authorized manager\./);
 });
 
 test('override permission control is manager-only in merchant staff UI', () => {
@@ -40,20 +40,26 @@ test('discount policy UI cannot persist override approval for a cashier', () => 
   );
   assert.match(
     policySource,
-    /member\.role === 'manager' \? <label[^>]*>.*checked=\{draft\.canApproveOverride\}/,
+    /member\.role === 'manager' \? \([\s\S]*?<label[\s\S]*?checked=\{draft\.canApproveOverride\}[\s\S]*?<\/label>[\s\S]*?\) : null/,
   );
 });
 
-test('discount policy UI presents fixed amount and percentage as independent limits', () => {
+test('discount policy UI keeps one merchant-wide discount kind while preserving type-specific employee limits', () => {
   assert.match(
     policySource,
-    /يُطبَّق حد النوع الذي يختاره الموظف فقط\. تجاوز هذا الحد يتطلب موافقة مدير\./,
+    /يُطبّق على جميع الكاشير والمديرين ولا يمكن تغييره من شاشة البيع\./,
   );
   assert.match(
     policySource,
-    /Only the limit for the discount type selected by the employee applies\. Exceeding that limit requires manager approval\./,
+    /Applies to all cashiers and managers and cannot be changed at checkout\./,
   );
-  assert.match(policySource, /المبلغ: حتى \{amount\} · النسبة: حتى \{percent\}%\./);
+  assert.match(policySource, /discountKindDraft === 'percentage'/);
+  assert.match(policySource, /discountSetting\.discount_kind === 'percentage'/);
+  assert.match(policySource, /discountSetting\.discount_kind === 'amount'/);
+  assert.match(
+    policySource,
+    /Saving updates permissions automatically, and the other type’s limits stay saved\./,
+  );
   assert.doesNotMatch(policySource, /الحد الأقل بين النسبة والحد المالي/);
   assert.doesNotMatch(policySource, /The lower of the percentage and amount limits/);
 });

@@ -58,7 +58,7 @@ test("training reads are race-safe and never represent authority failure as empt
 });
 
 test("training mutations fail closed and retain optimistic version protection", () => {
-  assert.match(pageSource, /mutationsAllowed = loadStatus === "ready" && savingId === null/);
+  assert.match(pageSource, /loadStatus === "ready"[^]*savingId === null[^]*!loadingMore[^]*!searchPending/);
   assert.match(pageSource, /if \(!mutationsAllowed\) return/);
   assert.match(pageSource, /expectedVersion: request\.version/);
   assert.match(pageSource, /result\.request[^]*isTrainingRequest/);
@@ -75,4 +75,73 @@ test("training authority failure copy exists in Arabic, Sorani Kurdish, and Engl
   assert.match(copySource, /unavailableBody/);
   assert.match(copySource, /staleBody/);
   assert.match(copySource, /retry/);
+});
+
+
+test("training management search and pagination are server-authoritative", () => {
+  assert.match(pageSource, /const \[serverQuery, setServerQuery\]/);
+  assert.match(pageSource, /const \[nextCursor, setNextCursor\]/);
+  assert.match(pageSource, /const \[loadingMore, setLoadingMore\]/);
+  assert.match(pageSource, /params\.set\("q", serverQuery\)/);
+  assert.match(pageSource, /params\.set\("status", filter\)/);
+  assert.match(pageSource, /beforeUpdatedAt: nextCursor\.updatedAt/);
+  assert.match(pageSource, /beforeId: nextCursor\.id/);
+  assert.match(pageSource, /copy\.loadMore/);
+  assert.match(pageSource, /copy\.loadingMore/);
+  assert.doesNotMatch(pageSource, /requests\.filter\(/);
+
+  assert.match(trainingRouteSource, /listMerchantTrainingRequestsPage/);
+  assert.match(trainingRouteSource, /INVALID_TRAINING_REQUEST_PAGE/);
+  assert.match(trainingRouteSource, /nextCursor: page\.nextCursor/);
+  assert.match(trainingRouteSource, /req\.query\.q/);
+  assert.match(trainingRouteSource, /req\.query\.status/);
+});
+
+
+test("filtered training mutations reload the authoritative result set", () => {
+  assert.match(pageSource, /if \(serverQuery \|\| filter !== "all"\) \{/);
+  assert.match(pageSource, /const reloaded = await load\(\)/);
+  assert.match(pageSource, /if \(!reloaded\) setNotice\(copy\.loadFailed\)/);
+  assert.match(pageSource, /setNotice\(reloaded \? copy\.conflict : copy\.loadFailed\)/);
+  assert.match(pageSource, /else \{\s*replaceCurrent\(current\);/);
+});
+
+
+test("training search and status controls are locked while a mutation is active", () => {
+  assert.match(pageSource, /disabled={savingId !== null || loadingMore}/);
+  assert.match(pageSource, /value={filter}[^]*disabled={savingId !== null || loadingMore}/);
+});
+
+
+test("unfiltered training mutations keep latest-updated ordering coherent", () => {
+  assert.match(
+    pageSource,
+    /setRequests\(\(items\) => \[\s*current,\s*\.\.\.items\.filter\(\(item\) => item\.id !== current\.id\),\s*\]\)/,
+  );
+});
+
+
+test("training version conflicts preserve the merchant draft while loading current request state", () => {
+  assert.match(pageSource, /options: \{ preserveDraft\?: boolean \} = \{\}/);
+  assert.match(pageSource, /if \(!options\.preserveDraft\) \{/);
+  assert.match(pageSource, /replaceCurrent\(current, \{ preserveDraft: true \}\)/);
+  assert.match(
+    pageSource,
+    /else \{\s*replaceCurrent\(current\);\s*\}/,
+    "successful unfiltered mutations must still adopt the confirmed server reply",
+  );
+  assert.match(copySource, /current state was loaded and your draft was kept/);
+});
+
+
+test("approved training answers can be explicitly revoked with optimistic version protection", () => {
+  assert.match(pageSource, /action: "propose" \| "approve" \| "reject" \| "revoke"/);
+  assert.match(pageSource, /action === "revoke" && !window\.confirm\(copy\.confirmRevoke\)/);
+  assert.match(pageSource, /act\(request, "revoke"\)/);
+  assert.match(pageSource, /copy\.revokeApproval/);
+  assert.match(trainingRouteSource, /router\.post\("\/:id\/revoke"/);
+  assert.match(trainingRouteSource, /revokeMerchantTrainingApproval/);
+  assert.match(trainingRouteSource, /readExpectedVersion\(req\)/);
+  assert.match(copySource, /revokeApproval/);
+  assert.match(copySource, /confirmRevoke/);
 });

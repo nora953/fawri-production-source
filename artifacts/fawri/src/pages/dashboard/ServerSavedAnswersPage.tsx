@@ -10,11 +10,24 @@ import { COMMON_UI_LABELS } from "@/lib/translations/commonUi";
 import { SERVER_SAVED_ANSWERS_PAGE_COPY } from "@/lib/translations/features/pages/dashboard/ServerSavedAnswersPage";
 
 type Language = "ar" | "ku" | "en";
+const CATEGORY_VALUES = [
+  "delivery",
+  "payment",
+  "return_exchange",
+  "product",
+  "warranty",
+  "custom",
+] as const;
+type Category = (typeof CATEGORY_VALUES)[number];
 type LoadStatus = "loading" | "ready" | "unavailable";
+type SavedAnswerCursor = {
+  updatedAt: string;
+  id: string;
+};
 
 type SavedAnswer = {
   id: string;
-  category: string;
+  category: Category;
   questionPattern: string;
   answerText: string;
   language: Language;
@@ -36,7 +49,7 @@ type Copy = (typeof SERVER_SAVED_ANSWERS_PAGE_COPY)[Language];
 
 const COPY: Record<Language, Copy> = SERVER_SAVED_ANSWERS_PAGE_COPY;
 const EMPTY_FORM = {
-  category: "custom",
+  category: "custom" as Category,
   questionPattern: "",
   answerText: "",
   language: "ar" as Language,
@@ -50,6 +63,7 @@ function isSavedAnswer(value: unknown): value is SavedAnswer {
     typeof answer.id === "string" &&
     answer.id.length > 0 &&
     typeof answer.category === "string" &&
+    CATEGORY_VALUES.includes(answer.category as Category) &&
     typeof answer.questionPattern === "string" &&
     typeof answer.answerText === "string" &&
     (answer.language === "ar" || answer.language === "ku" || answer.language === "en") &&
@@ -60,6 +74,17 @@ function isSavedAnswer(value: unknown): value is SavedAnswer {
     answer.version > 0 &&
     typeof answer.createdAt === "string" &&
     typeof answer.updatedAt === "string"
+  );
+}
+
+function isSavedAnswerCursor(value: unknown): value is SavedAnswerCursor {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const cursor = value as Record<string, unknown>;
+  return (
+    typeof cursor.id === "string" &&
+    cursor.id.length > 0 &&
+    typeof cursor.updatedAt === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(cursor.updatedAt)
   );
 }
 
@@ -77,41 +102,156 @@ export default function ServerSavedAnswersPage() {
   const { lang, dir } = useI18n();
   const language: Language = lang === "ku" || lang === "en" ? lang : "ar";
   const copy = COPY[language];
+  const categoryLabels = useMemo<Record<Category, string>>(
+    () => ({
+      delivery: copy.categoryDelivery,
+      payment: copy.categoryPayment,
+      return_exchange: copy.categoryReturnExchange,
+      product: copy.categoryProduct,
+      warranty: copy.categoryWarranty,
+      custom: copy.categoryCustom,
+    }),
+    [copy],
+  );
   const [answers, setAnswers] = useState<SavedAnswer[]>([]);
   const [query, setQuery] = useState("");
+  const [serverQuery, setServerQuery] = useState("");
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
+  const [nextCursor, setNextCursor] = useState<SavedAnswerCursor | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<SavedAnswer | null>(null);
   const [form, setForm] = useState({ ...EMPTY_FORM, language });
   const loadRequestIdRef = useRef(0);
+  const searchCategories = useMemo(() => {
+    const normalized = serverQuery.toLowerCase();
+    if (!normalized) return [] as Category[];
+    return CATEGORY_VALUES.filter(
+      (value) =>
+        value.toLowerCase().includes(normalized) ||
+        categoryLabels[value].toLowerCase().includes(normalized),
+    );
+  }, [categoryLabels, serverQuery]);
+  const searchPending = query.trim() !== serverQuery;
+
+  useEffect(() => {
+    const normalized = query.trim();
+    const timeoutId = window.setTimeout(() => {
+      setServerQuery(normalized);
+    }, 250);
+    return () => window.clearTimeout(timeoutId);
+  }, [query]);
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestIdRef.current;
     setLoadStatus("loading");
+    setLoadingMore(false);
     setNotice("");
     try {
-      const result = await readJson<{ ok: true; answers: unknown }>(
-        await fetch("/api/knowledge/saved-answers", {
+      const params = new URLSearchParams({ limit: "500" });
+      if (serverQuery) params.set("q", serverQuery);
+      if (searchCategories.length > 0) {
+        params.set("categories", searchCategories.join(","));
+      }
+      const result = await readJson<{
+        ok: true;
+        answers: unknown;
+        nextCursor?: unknown;
+      }>(
+        await fetch(`/api/knowledge/saved-answers?${params.toString()}`, {
           credentials: "same-origin",
           cache: "no-store",
           headers: { Accept: "application/json" },
         }),
       );
-      if (!Array.isArray(result.answers) || !result.answers.every(isSavedAnswer)) {
+      if (
+        !Array.isArray(result.answers) ||
+        !result.answers.every(isSavedAnswer) ||
+        !(
+          result.nextCursor === undefined ||
+          result.nextCursor === null ||
+          isSavedAnswerCursor(result.nextCursor)
+        )
+      ) {
         throw new Error("Saved answers authority returned an invalid response");
       }
       if (requestId !== loadRequestIdRef.current) return;
       setAnswers(result.answers);
+      setNextCursor(isSavedAnswerCursor(result.nextCursor) ? result.nextCursor : null);
       setLoadStatus("ready");
+      return true;
     } catch (error) {
       if (requestId !== loadRequestIdRef.current) return;
       console.error("Load saved answers failed:", error);
       setNotice(copy.loadFailed);
+      setNextCursor(null);
       setLoadStatus("unavailable");
+      return false;
     }
-  }, [copy.loadFailed]);
+  }, [copy.loadFailed, searchCategories, serverQuery]);
+
+  const loadMore = useCallback(async () => {
+    if (!nextCursor || loadStatus !== "ready" || saving || loadingMore) return;
+    const requestId = ++loadRequestIdRef.current;
+    setLoadingMore(true);
+    setNotice("");
+    try {
+      const params = new URLSearchParams({
+        limit: "500",
+        beforeUpdatedAt: nextCursor.updatedAt,
+        beforeId: nextCursor.id,
+      });
+      if (serverQuery) params.set("q", serverQuery);
+      if (searchCategories.length > 0) {
+        params.set("categories", searchCategories.join(","));
+      }
+      const result = await readJson<{
+        ok: true;
+        answers: unknown;
+        nextCursor?: unknown;
+      }>(
+        await fetch(`/api/knowledge/saved-answers?${params.toString()}`, {
+          credentials: "same-origin",
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        }),
+      );
+      if (
+        !Array.isArray(result.answers) ||
+        !result.answers.every(isSavedAnswer) ||
+        !(
+          result.nextCursor === undefined ||
+          result.nextCursor === null ||
+          isSavedAnswerCursor(result.nextCursor)
+        )
+      ) {
+        throw new Error("Saved answers authority returned an invalid response");
+      }
+      if (requestId !== loadRequestIdRef.current) return;
+      const pageAnswers = result.answers;
+      setAnswers((current) => {
+        const knownIds = new Set(current.map((item) => item.id));
+        return [...current, ...pageAnswers.filter((item) => !knownIds.has(item.id))];
+      });
+      setNextCursor(isSavedAnswerCursor(result.nextCursor) ? result.nextCursor : null);
+    } catch (error) {
+      if (requestId !== loadRequestIdRef.current) return;
+      console.error("Load more saved answers failed:", error);
+      setNotice(copy.loadFailed);
+    } finally {
+      if (requestId === loadRequestIdRef.current) setLoadingMore(false);
+    }
+  }, [
+    copy.loadFailed,
+    loadStatus,
+    loadingMore,
+    nextCursor,
+    saving,
+    searchCategories,
+    serverQuery,
+  ]);
 
   useEffect(() => {
     void load();
@@ -120,18 +260,10 @@ export default function ServerSavedAnswersPage() {
     };
   }, [load]);
 
-  const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
-    if (!normalized) return answers;
-    return answers.filter((item) =>
-      [item.questionPattern, item.answerText, item.category]
-        .join(" ")
-        .toLowerCase()
-        .includes(normalized),
-    );
-  }, [answers, query]);
+  const filtered = answers;
 
-  const mutationsAllowed = loadStatus === "ready" && !saving;
+  const mutationsAllowed =
+    loadStatus === "ready" && !saving && !loadingMore && !searchPending;
 
   function startCreate() {
     if (!mutationsAllowed) return;
@@ -181,28 +313,49 @@ export default function ServerSavedAnswersPage() {
       const result = await readJson<{ ok: true; answer: unknown }>(response);
       if (!isSavedAnswer(result.answer)) throw new Error("Invalid saved answer response");
       const savedAnswer = result.answer;
-      setAnswers((current) =>
-        editing
-          ? current.map((item) => (item.id === savedAnswer.id ? savedAnswer : item))
-          : [savedAnswer, ...current],
-      );
       setOpen(false);
       setEditing(null);
+      if (serverQuery) {
+        await load();
+      } else {
+        setAnswers((current) =>
+          editing
+            ? current.map((item) => (item.id === savedAnswer.id ? savedAnswer : item))
+            : [savedAnswer, ...current],
+        );
+      }
     } catch (error) {
       const apiError = error as ApiError;
       if (apiError.code === "VERSION_CONFLICT" && isSavedAnswer(apiError.current)) {
-        setAnswers((current) =>
-          current.map((item) => (item.id === apiError.current?.id ? apiError.current : item)),
-        );
-        setEditing(apiError.current);
-        setForm({
-          category: apiError.current.category,
-          questionPattern: apiError.current.questionPattern,
-          answerText: apiError.current.answerText,
-          language: apiError.current.language,
-          active: apiError.current.active,
-        });
-        setNotice(copy.conflict);
+        const currentAnswer = apiError.current;
+        const sameRecordConflict = Boolean(editing && currentAnswer.id === editing.id);
+        if (sameRecordConflict) {
+          setEditing(currentAnswer);
+          setForm({
+            category: currentAnswer.category,
+            questionPattern: currentAnswer.questionPattern,
+            answerText: currentAnswer.answerText,
+            language: currentAnswer.language,
+            active: currentAnswer.active,
+          });
+        }
+        if (serverQuery) {
+          const reloaded = await load();
+          setNotice(
+            reloaded
+              ? sameRecordConflict
+                ? copy.conflict
+                : copy.duplicate
+              : copy.loadFailed,
+          );
+        } else {
+          setAnswers((current) =>
+            current.some((item) => item.id === currentAnswer.id)
+              ? current.map((item) => (item.id === currentAnswer.id ? currentAnswer : item))
+              : [currentAnswer, ...current],
+          );
+          setNotice(sameRecordConflict ? copy.conflict : copy.duplicate);
+        }
       } else {
         setNotice(copy.saveFailed);
       }
@@ -229,10 +382,15 @@ export default function ServerSavedAnswersPage() {
     } catch (error) {
       const apiError = error as ApiError;
       if (apiError.code === "VERSION_CONFLICT" && isSavedAnswer(apiError.current)) {
-        setAnswers((current) =>
-          current.map((item) => (item.id === apiError.current?.id ? apiError.current : item)),
-        );
-        setNotice(copy.conflict);
+        if (serverQuery) {
+          const reloaded = await load();
+          setNotice(reloaded ? copy.conflict : copy.loadFailed);
+        } else {
+          setAnswers((current) =>
+            current.map((item) => (item.id === apiError.current?.id ? apiError.current : item)),
+          );
+          setNotice(copy.conflict);
+        }
       } else {
         setNotice(copy.saveFailed);
       }
@@ -253,7 +411,11 @@ export default function ServerSavedAnswersPage() {
             <p className="mt-1 max-w-2xl text-sm leading-6 text-muted-foreground">{copy.subtitle}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => void load()} disabled={loadStatus === "loading" || saving}>
+            <Button
+              variant="outline"
+              onClick={() => void load()}
+              disabled={loadStatus === "loading" || saving || loadingMore || searchPending}
+            >
               <RefreshCw className="me-2 h-4 w-4" />{copy.refresh}
             </Button>
             <Button onClick={startCreate} disabled={!mutationsAllowed} className="bg-orange-500 text-white hover:bg-orange-600">
@@ -270,7 +432,7 @@ export default function ServerSavedAnswersPage() {
         {notice ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{notice}</div> : null}
         {staleData ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{copy.loadFailed}</div> : null}
 
-        {loadStatus === "loading" ? (
+        {loadStatus === "loading" || searchPending ? (
           <div className="rounded-3xl border bg-card p-12 text-center text-muted-foreground">{copy.loading}</div>
         ) : unavailableWithoutData ? (
           <div className="rounded-3xl border border-amber-200 bg-card p-12 text-center">
@@ -291,6 +453,7 @@ export default function ServerSavedAnswersPage() {
               <article key={answer.id} className="rounded-3xl border bg-card p-5 shadow-sm">
                 <div className="mb-3 flex flex-wrap gap-2">
                   <KnowledgeStatusBadge tone="success">{copy.approved}</KnowledgeStatusBadge>
+                  <KnowledgeStatusBadge>{categoryLabels[answer.category]}</KnowledgeStatusBadge>
                   <KnowledgeStatusBadge tone={answer.active ? "info" : "neutral"}>
                     {answer.active ? copy.active : copy.inactive}
                   </KnowledgeStatusBadge>
@@ -312,6 +475,19 @@ export default function ServerSavedAnswersPage() {
             ))}
           </div>
         )}
+
+        {nextCursor && loadStatus === "ready" && !searchPending ? (
+          <div className="flex justify-center">
+            <Button
+              variant="outline"
+              onClick={() => void loadMore()}
+              disabled={loadingMore || saving}
+            >
+              <RefreshCw className={`me-2 h-4 w-4 ${loadingMore ? "animate-spin" : ""}`} />
+              {loadingMore ? copy.loadingMore : copy.loadMore}
+            </Button>
+          </div>
+        ) : null}
       </section>
 
       {open ? (
@@ -325,7 +501,22 @@ export default function ServerSavedAnswersPage() {
             </div>
             <label className="block text-sm font-semibold">
               {copy.category}
-              <Input className="mt-1" value={form.category} onChange={(event: ChangeEvent<HTMLInputElement>) => setForm((current) => ({ ...current, category: event.target.value }))} maxLength={100} />
+              <select
+                className="mt-1 h-10 w-full rounded-md border bg-background px-3"
+                value={form.category}
+                onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                  setForm((current) => ({
+                    ...current,
+                    category: event.target.value as Category,
+                  }))
+                }
+              >
+                {CATEGORY_VALUES.map((value) => (
+                  <option key={value} value={value}>
+                    {categoryLabels[value]}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className="block text-sm font-semibold">
               {copy.language}
@@ -347,7 +538,7 @@ export default function ServerSavedAnswersPage() {
             </label>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>{copy.cancel}</Button>
-              <Button type="submit" disabled={saving || loadStatus !== "ready"} className="bg-orange-500 text-white hover:bg-orange-600">
+              <Button type="submit" disabled={saving || loadingMore || searchPending || loadStatus !== "ready"} className="bg-orange-500 text-white hover:bg-orange-600">
                 {saving ? copy.saving : copy.save}
               </Button>
             </div>

@@ -86,6 +86,7 @@ function refreshedContext(
     merchant_id: text(operator.merchant_id),
     station_id: text(operator.station_id),
     station_name: text(operator.station_name),
+    location_id: text(operator.location_id),
     branch_key: text(operator.branch_key),
     ...(text(operator.branch_label)
       ? { branch_label: text(operator.branch_label) }
@@ -108,6 +109,7 @@ function refreshedContext(
   const sameImmutableContext =
     context.merchant_id === session.context.merchant_id &&
     context.station_id === session.context.station_id &&
+    context.location_id === session.context.location_id &&
     context.device_id === session.context.device_id &&
     context.credential_id === session.context.credential_id &&
     context.credential_version === session.context.credential_version &&
@@ -118,6 +120,7 @@ function refreshedContext(
   if (
     !sameImmutableContext ||
     !context.station_name ||
+    !context.location_id ||
     !context.branch_key ||
     !Number.isSafeInteger(context.credential_version) ||
     context.credential_version <= 0 ||
@@ -140,7 +143,8 @@ async function updateLocalStationPolicy(
   if (
     identity.cloud_merchant_id !== context.merchant_id ||
     identity.device_id !== context.device_id ||
-    identity.station_id !== context.station_id
+    identity.station_id !== context.station_id ||
+    identity.location_id !== context.location_id
   ) {
     throw new CashierOperatorPolicyRefreshError(
       'CASHIER_OPERATOR_VALIDATE_RESPONSE_INVALID',
@@ -152,6 +156,7 @@ async function updateLocalStationPolicy(
   const nextIdentity: CashierDeviceIdentity = {
     ...identity,
     station_name: context.station_name,
+    location_id: context.location_id,
     branch_key: context.branch_key,
     offline_inventory_authority: context.offline_inventory_authority,
     station_credential_expires_at: context.credential_expires_at,

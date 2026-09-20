@@ -9,6 +9,8 @@ on:
       - "artifacts/api-server/src/routes/merchant-realtime-pg.ts"
       - "artifacts/api-server/src/routes/merchant-settings.ts"
       - "artifacts/api-server/src/routes/saved-answer-operations.ts"
+      - "artifacts/api-server/src/services/knowledge/postgresKnowledgeManagementRuntime.ts"
+      - "artifacts/api-server/tests/knowledge-management-postgres-cutover.integration.test.ts"
       - "artifacts/api-server/src/routes/training-operations.ts"
       - "artifacts/api-server/src/middleware/authSession.ts"
       - "artifacts/api-server/src/services/authPostgresSessionAuthority.ts"
@@ -183,3 +185,6 @@ jobs:
 
       - name: Run secure channel PostgreSQL HTTP authority proof
         run: pnpm --filter @workspace/api-server exec tsx --test ./tests/merchant-channels-postgres-http.integration.test.ts
+
+      - name: Run saved answers PostgreSQL management proof
+        run: pnpm --filter @workspace/api-server exec tsx --test ./tests/knowledge-management-postgres-cutover.integration.test.ts

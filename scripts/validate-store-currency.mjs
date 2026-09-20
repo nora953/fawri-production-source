@@ -16,6 +16,7 @@ const steps = [
       'artifacts/api-server/tests/delivery-fee-per-area.test.ts',
       'artifacts/api-server/tests/knowledge-delivery-area-rates.test.ts',
       'artifacts/api-server/tests/knowledge-postgres-operational-facts.test.ts',
+      'artifacts/api-server/tests/knowledge-multilocation-stock-routing.test.ts',
       'artifacts/api-server/tests/merchant-regional-runtime.test.ts',
       'artifacts/fawri/tests/merchant-currency-options.test.ts',
     ],

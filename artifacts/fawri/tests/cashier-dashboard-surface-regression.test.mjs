@@ -61,3 +61,35 @@ test('cashier staff PostgreSQL schema and operator gate remain part of the canon
   assert.match(schemaIndex, /export \* from "\.\/cashier-operation-attribution"/);
   assert.match(cashierMain, /CashierOperatorGate/);
 });
+
+
+test('central cashier operation details use server-side filters with truthful truncation counts', async () => {
+  const [reports, route, activity] = await Promise.all([
+    source('artifacts/fawri/src/pages/dashboard/CashierCentralReportsPage.tsx'),
+    source('artifacts/api-server/src/routes/cashier-staff-operations.ts'),
+    source('artifacts/api-server/src/services/postgresCashierCentralActivityAuthority.ts'),
+  ]);
+
+  assert.match(reports, /const \[locationFilter, setLocationFilter\] = useState\('all'\)/);
+  assert.match(reports, /params\.set\('detail_staff_id'/);
+  assert.match(reports, /params\.set\('detail_location_id'/);
+  assert.match(reports, /params\.set\('detail_station_id'/);
+  assert.match(reports, /params\.set\('detail_operation_kind'/);
+  assert.match(reports, /result\?\.activity\.by_location/);
+  assert.doesNotMatch(reports, /activity\.operations \|\| \[\]\)\.filter/);
+  assert.match(reports, /operation_matching_count/);
+  assert.match(reports, /detailsAreLimited/);
+  assert.match(reports, /detailsLimited\.replace\('\{limit\}'/);
+
+  assert.match(route, /detailStaffId: req\.query\.detail_staff_id/);
+  assert.match(route, /detailLocationId: req\.query\.detail_location_id/);
+  assert.match(route, /detailStationId: req\.query\.detail_station_id/);
+  assert.match(route, /detailOperationKind: req\.query\.detail_operation_kind/);
+
+  assert.match(activity, /COUNT\(\*\) OVER\(\)::int AS matching_count/);
+  assert.match(activity, /attribution\.staff_id = \$4::text/);
+  assert.match(activity, /__legacy_location__/);
+  assert.match(activity, /attribution\.station_id = \$6::text/);
+  assert.match(activity, /attribution\.operation_kind = \$7::text/);
+  assert.match(activity, /operation_matching_count:/);
+});

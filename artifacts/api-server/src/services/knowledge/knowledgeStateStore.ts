@@ -10,13 +10,14 @@ import {
   uniqueNormalizedList,
 } from "./normalization.js";
 import { customerTextPreview } from "./redaction.js";
-import type {
-  KnowledgeAuditEvent,
-  KnowledgeLanguage,
-  KnowledgeRuntimeState,
-  LearnedAnswerRecord,
-  SuggestedReplySource,
-  TrainingRequestRecord,
+import {
+  isSavedAnswerCategory,
+  type KnowledgeAuditEvent,
+  type KnowledgeLanguage,
+  type KnowledgeRuntimeState,
+  type LearnedAnswerRecord,
+  type SuggestedReplySource,
+  type TrainingRequestRecord,
 } from "./types.js";
 
 const MAX_AUDIT_EVENTS = 2_000;
@@ -518,10 +519,11 @@ export class KnowledgeStateStore {
         continue;
       }
 
+      const legacyCategory = boundedText(raw.category, 100);
       state.savedAnswers.push({
         id: boundedText(raw.id, 160) || makeKnowledgeId("saved"),
         merchantId,
-        category: boundedText(raw.category, 100) || "custom",
+        category: isSavedAnswerCategory(legacyCategory) ? legacyCategory : "custom",
         questionPattern,
         answerText,
         language: safeLanguage(raw.language, questionPattern),
