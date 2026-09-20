@@ -37,7 +37,10 @@ function product(overrides = {}) {
   };
 }
 
-function routingRows({ stale = false } = {}) {
+function routingRows({
+  stale = false,
+  stalePolicy = "reroute_then_pending",
+} = {}) {
   const freshAt = stale
     ? "2026-01-01T00:00:00.000Z"
     : new Date(Date.now() + 60_000).toISOString();
@@ -65,6 +68,8 @@ function routingRows({ stale = false } = {}) {
         delivery_areas: ["Zayouna"],
         delivery_estimated_days_min: 1,
         delivery_estimated_days_max: 2,
+        inventory_freshness_max_age_minutes: 5,
+        inventory_stale_policy: stalePolicy,
       }];
     }
 
@@ -171,6 +176,43 @@ test("multi-location stock availability routes through the customer service area
 
 test("multi-location stock availability fails closed when routed inventory is stale", async () => {
   const sql = new FakeSql(routingRows({ stale: true }));
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  await assert.rejects(
+    () =>
+      resolver.resolve({
+        merchantId: "merchant-a",
+        customerText: "Is Phone Alpha available in Zayouna?",
+        language: "en",
+      }),
+    (error) =>
+      error instanceof KnowledgeRuntimeGateError &&
+      error.code === "KNOWLEDGE_LOCATION_INVENTORY_STALE",
+  );
+});
+
+
+test("multi-location stock may use stale inventory only when merchant explicitly allows it", async () => {
+  const sql = new FakeSql(
+    routingRows({ stale: true, stalePolicy: "allow_stale" }),
+  );
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "Is Phone Alpha available in Zayouna?",
+    language: "en",
+  });
+
+  assert.equal(result?.factType, "product_stock");
+  assert.equal(result?.recordId, "product-a:location:loc-b");
+  assert.match(result?.answerText || "", /available/i);
+});
+
+test("fresh-only policy keeps stale bot stock replies fail-closed", async () => {
+  const sql = new FakeSql(
+    routingRows({ stale: true, stalePolicy: "fresh_only" }),
+  );
   const resolver = new PostgresOperationalFactResolver(sql);
 
   await assert.rejects(
