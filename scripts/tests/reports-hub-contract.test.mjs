@@ -19,9 +19,11 @@ test("merchant navigation exposes one reports hub", () => {
   assert.match(sidebar, /href: "\/dashboard\/reports"/);
   assert.match(sidebar, /"Reports"/);
   assert.match(sidebar, /"التقارير"/);
+  assert.match(sidebar, /location === "\/dashboard\/cashiers\/reports"/);
   assert.doesNotMatch(sidebar, /href: "\/dashboard\/cashiers\/reports"/);
 
   assert.match(bottomNav, /href: "\/dashboard\/reports"/);
+  assert.match(bottomNav, /location === "\/dashboard\/cashiers\/reports"/);
   assert.doesNotMatch(bottomNav, /href: "\/dashboard\/cashiers\/reports"/);
 
   assert.match(app, /path="\/dashboard\/reports\/cashier"/);
