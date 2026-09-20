@@ -1,245 +1,195 @@
 # Fawri Current Checkpoint
 
-Status: Known-good finishing-phase checkpoint after completed POS Global Hardening.
+Status: Main integration complete; repository release candidate is green.
 
 ## Repository state
 
-- Active development branch: `parallel/catalog-editor-ux-simplification`
-- POS Global Hardening operational close SHA: `596333f3aad459f8e4fdc96a5837bfd7c9c9395d`
-- Previous pre-POS baseline: `4cb6e262517841cea0174f31dd2693791e03d4e0`
-- Checkpoint role: completed Phase 2 / POS Global Hardening; next phase is Merchant Dashboard Global Hardening.
+- Default branch: `main`
+- Integrated main SHA: `515dc33404e517d11060fa60cb6ef20d986b09ef`
+- Final validated release-candidate SHA before merge: `92290d3f97e3ece81525a0b92d668d129e9df5ed`
+- Immutable release-candidate checkpoint: `checkpoint/final-release-candidate-green-2026-09-20`
+- Immutable post-merge checkpoint: `checkpoint/main-integrated-green-2026-09-20`
+- Integration PR: #256
+- Integration result: merged through a normal merge commit; no force push and no direct write to `main`.
 
-Future finishing work must begin from this integrated branch state or from a later checkpoint that explicitly supersedes this document.
+The merged main tree is byte-for-byte identical to the validated release-candidate tree. The merge commit adds history only and changes no files relative to the validated release candidate.
 
-## Completed phase: POS Global Hardening
+## Final repository validation
 
-Status: CLOSED.
+PR #256 validated the full accumulated checkpoint chain against `main`.
 
-The cashier/POS lifecycle has been audited, hardened, regression-tested, integrated by fast-forward-only updates, and browser-validated against the real preview.
+Result:
 
-### Station / staff / operator authority
+- 38/38 current release-candidate checks passed.
+- 0 failed checks.
+- full repository build passed.
+- full repository typecheck passed.
+- repository security and dependency gates passed.
+- lockfile integrity passed.
+- canonical Drizzle history and migration reproducibility passed.
+- committed migrations applied successfully to disposable PostgreSQL.
+- migration rollback/reconciliation checks passed.
+- Catalog UI cutover validation passed.
+- online-order PostgreSQL authority validation passed.
+- location routing engine validation passed.
+- cashier lifecycle and operational cutoff validation passed.
+- merchant, global merchant, admin, and subscription journeys passed.
+- settings PostgreSQL authority validation passed.
+- Meta webhook ingress and OAuth operational cutoff gates passed.
+- dashboard/channel coherence passed.
+- Knowledge embedding readiness passed.
+- regional authority and physical-media lifecycle gates passed.
+- storage audit and release-safety gates passed.
 
-Validated and hardened:
+This establishes repository-level production-release code readiness for the integrated main tree. It does not establish that external production providers, credentials, infrastructure, or live traffic are ready.
 
-- merchant cashier management surface `/dashboard/cashiers`,
-- cashier central reports surface `/dashboard/cashiers/reports`,
-- cashier application `/cashier.html`,
-- station pairing and stable device binding,
-- staff PIN login and operator session gate,
-- one-open-shift/station and one-open-shift/staff concurrency enforcement,
-- one-live-operator-session/station enforcement,
-- stable 409 conflict mapping for concurrent login races,
-- server-side permission enforcement for sale/return/void/report/profit/cost access,
-- local session re-read before mutations and read-side visibility decisions,
-- session invalidation without deleting pending local commerce operations.
+## Completed integrated architecture
 
-### Offline inventory authority
+The current integrated tree includes the following completed code-owned areas:
 
-The previous gap where existing stations could not safely manage offline tracked-inventory authority is closed.
+### Cashier and employees
 
-Validated behavior:
+- cashier and employee management behavior completed,
+- Arabic reference and English/Kurdish parity work integrated,
+- pairing code uses ASCII/English letters and digits with LTR behavior where required,
+- cashier lifecycle, shifts, sessions, permissions, reports, returns, voids, offline operations, and reconciliation preserved.
 
-- existing stations can be edited from merchant cashier management,
-- `offline_inventory_authority` is version-protected through a heartbeat-independent `configuration_etag`,
-- configuration updates use transaction locking and reject stale writes,
-- the legacy station lifecycle endpoint cannot bypass the versioned configuration contract,
-- enabling offline authority does not require station re-pairing or credential rotation,
-- only one active station per branch may own offline tracked-inventory authority,
-- current operator policy refresh updates local station/session policy while preserving immutable merchant/station/device/credential/operator/shift identity,
-- rejected server sessions fail closed into the operator authorization flow,
-- tracked inventory sale rejection has a specific localized error when offline authority is absent.
+### Merchant locations and inventory
 
-### Outbox / ACK / reconciliation
+- canonical merchant locations,
+- location-scoped inventory authority,
+- cashier-to-location binding,
+- bot location inventory cutover,
+- default location behavior,
+- PostgreSQL authority for location inventory.
 
-Validated and hardened:
+### Routing and online fulfillment
 
-- operator outbox uploads are bound to the active merchant, station, staff, shift, and device,
-- operation upload preserves full operation boundaries,
-- local durable operations are deleted only after a complete ACK,
-- ACK validation requires exact `operation_id`, exact safe `device_sequence`, non-empty `order_id`, exact accepted entity set/cardinality, and matching compensation kind for return/void,
-- malformed ACK remains pending and fails closed,
-- reconnect retries do not duplicate accepted sales,
-- return/void compensation remains exactly-once under the validated lifecycle,
-- catalog/inventory reconciliation follows successful outbox completion.
+- service-area resolution,
+- location routing engine,
+- PostgreSQL routing adapter,
+- online-order fulfillment planner,
+- atomic inventory commit,
+- cancellation inventory compensation,
+- single-location fulfillment behavior,
+- fail-closed routing when context or inventory freshness is insufficient.
 
-### Connectivity authority
+### Bot stock availability
 
-A single cashier connectivity authority now owns the runtime connectivity truth used by existing cashier pages/runtimes.
+Multi-location stock availability now uses the same canonical fulfillment/routing path as online orders instead of aggregating stock across locations.
 
-Validated behavior:
+Validated behavior includes:
 
-- native browser connectivity remains the initial network-attempt signal,
-- actual same-origin `/api/cashier/*` HTTP responses establish online transport evidence,
-- cashier API `TypeError`/network failure establishes offline transport evidence,
-- compatibility `online` / `offline` events propagate authoritative transport changes to existing consumers,
-- POS and History no longer disagree about the current connection state,
-- HTTP rejection semantics remain intact; a server 401 is not converted into an offline fallback.
+- customer-area-aware routing,
+- requested quantity checked against a single eligible location,
+- stale inventory fails closed,
+- no internal total stock disclosure,
+- single-location behavior remains supported.
 
-## Golden browser evidence
+### Cashier reports
 
-The real `.replit.dev` preview was validated through the following journey.
+Integrated work includes:
 
-### Normal online lifecycle
+- location authority,
+- language parity,
+- detail transparency,
+- server-side detail filters,
+- live refresh,
+- online/offline parity,
+- manual-discount return allocation and pricing corrections.
 
-Validated:
+### Knowledge, Saved Answers, and Training
 
-- merchant cashier management renders,
-- station remains active and paired,
-- staff PIN login succeeds,
-- POS opens with current products/variants,
-- cart and pricing work,
-- online sale succeeds and auto-syncs,
-- History shows completed/synced state,
-- full return succeeds and cannot be repeated beyond the remaining returnable quantity,
-- separate sale succeeds and full void succeeds,
-- voided sale cannot be returned afterward.
+Integrated work includes:
 
-### Offline tracked-inventory golden journey
+- server-authoritative Saved Answers and Training management,
+- pagination and server-side search,
+- conflict and mutation coherence,
+- learned-answer management pagination,
+- knowledge audit pagination,
+- fail-closed bounded retrieval behavior,
+- approved-answer revocation and draft/conflict preservation,
+- merchant-facing Knowledge cutover to `/api/knowledge`.
 
-Validated against `Main Cashier` with offline inventory authority enabled:
+### Production credential provider hardening
 
-1. Start online with a valid `Cashier Test` operator session.
-2. Refresh policy without re-pairing the station.
-3. Switch the cashier transport to Offline.
-4. Select `منتج متغير B`, price `12,000 IQD`, tracked stock initially `2`.
-5. Complete exactly one cash sale while offline.
-6. Sale succeeds locally and cart clears.
-7. Reconnect.
-8. Auto-sync uploads the pending operation.
-9. History shows the `12,000 IQD` sale exactly once as completed and synced.
-10. Product stock reconciles from `2` to `1`.
-11. No duplicate sale is present.
-12. Switch Offline again and open Sales History.
-13. History opens from local-first authority without the previous generic failure screen.
-14. History correctly shows `غير متصل` and the offline continuation/sync-later notice.
+AWS KMS is the selected production Meta credential provider architecture.
 
-This closes the browser evidence for:
+Repository safeguards now include:
 
-`Offline Sale -> Local durable operation -> Reconnect -> Auto-sync -> ACK -> Inventory reconciliation -> No duplicate -> Offline History navigation`.
+- production requires explicit `FAWRI_META_CREDENTIAL_PROVIDER=aws-kms`,
+- no implicit production fallback to the environment provider,
+- KMS region must match the selected key ARN,
+- AWS/network errors are sanitized into Fawri-owned error codes,
+- production activation preflight coverage is part of CI,
+- plaintext DEKs remain process-memory only and are zeroized on disposal.
 
-## Validation evidence
+## Important checkpoint chain
 
-### POS global hardening validation
+Historical safety checkpoints remain available and must not be rewritten.
 
-Previously validated in the phase:
+Key checkpoints include:
 
-- POS regression suite: pass,
-- API typecheck: pass,
-- Fawri typecheck: pass,
-- API production build: pass,
-- Fawri production build: pass,
-- static consistency: `critical=0 warning=0 review=0`,
-- clean diff/status at validation checkpoints.
+- `checkpoint/cashier-employees-complete-2026-09-18`
+- `checkpoint/multi-location-foundation-complete-2026-09-19`
+- `checkpoint/location-inventory-authority-complete-2026-09-19`
+- `checkpoint/cashier-location-inventory-cutover-complete-2026-09-19`
+- `checkpoint/bot-location-inventory-cutover-complete-2026-09-19`
+- `checkpoint/location-routing-engine-core-complete-2026-09-19`
+- `checkpoint/online-order-atomic-commit-complete-2026-09-19`
+- `checkpoint/cashier-reports-online-offline-parity-complete-2026-09-19`
+- `checkpoint/knowledge-audit-pagination-complete-2026-09-20`
+- `checkpoint/bot-multilocation-stock-routing-complete-2026-09-20`
+- `checkpoint/aws-kms-production-activation-complete-2026-09-20`
+- `checkpoint/final-release-candidate-green-2026-09-20`
+- `checkpoint/main-integrated-green-2026-09-20`
 
-### Offline policy hardening
+## Remaining work
 
-Final policy validation passed:
+The remaining work is no longer a repository architecture rebuild. The main remaining items are production-environment and release-operations work plus final manual UX validation.
 
-- focused regression tests: `21/21` pass,
-- API/Fawri typechecks: pass where applicable,
-- API/Fawri production builds: pass where applicable,
-- `git diff --check`: pass.
+### Manual UI/UX validation
 
-### Offline navigation hardening
+Still required before general launch:
 
-Validated:
+- desktop/tablet/mobile responsive review,
+- Arabic/Kurdish/English visual parity,
+- RTL/LTR behavior,
+- loading/empty/error states,
+- accessibility and keyboard behavior,
+- final performance/chunk-warning review,
+- full-stack staging browser smoke validation.
 
-- focused regression tests: `12/12` pass,
-- Fawri typecheck: pass,
-- Fawri production build: pass,
-- `git diff --check`: pass,
-- browser Offline History navigation: pass.
+### External production activation
 
-### Connectivity authority hardening
+Still requires real infrastructure/provider evidence:
 
-Validated at the final connectivity tree:
+- production PostgreSQL preparation and deployment migration execution,
+- production secret-store configuration,
+- AWS account/region, KMS key, workload IAM role and key policy,
+- wrapped production DEK manifest and rotation policy,
+- Meta production app credentials/callback/webhook approval and configuration,
+- OpenAI production API credential and Knowledge readiness,
+- real production backup/restore mechanism and recovery proof,
+- supported production SaaS subscription billing provider/onboarding,
+- production readiness gate and controlled smoke rollout.
 
-- focused POS regression tests: `26/26` pass,
-- Fawri typecheck: pass,
-- Fawri production build: pass,
-- `git diff --check`: pass,
-- browser Online -> Offline History connectivity truth: pass.
+These items must not be simulated by committing credentials or inventing provider behavior.
 
-Known non-blocking build output remains limited to existing sourcemap reporting warnings and large-chunk advisory warnings; they did not fail production builds and remain candidates for later UI/performance polish.
+## Source-of-truth rule
 
-## Preserved earlier checkpoint state
+From this checkpoint forward:
 
-### Auth / Admin
-
-- PostgreSQL operational authority is required by the unified preview.
-- PostgreSQL auth session authority is required by the unified preview.
-- Owner Admin login has been restored and validated in runtime.
-- Assistant Admin login has been restored and validated in runtime.
-- Preview no longer requires manual shell exports for the Auth PostgreSQL authority.
-
-### Subscription
-
-- PostgreSQL subscription authority is required by the unified preview.
-- Subscription authority no longer depends on a missing manual preview environment export.
-
-### Catalog / Variants / Inventory
-
-- Current Catalog/Variants work on `parallel/catalog-editor-ux-simplification` remains preserved.
-- POS hardening was integrated without replacing or importing an older Catalog tree.
-- Catalog PostgreSQL readiness remains part of preview startup safety.
-
-### Global consistency baseline
-
-The finishing baseline previously achieved:
-
-- Static global consistency: `critical=0 warning=0 review=0`
-- PostgreSQL runtime consistency after reconciliation: `critical=0 warning=0 review=0`
-- API typecheck: pass
-- Fawri typecheck: pass
-- API production build: pass
-- Fawri production build: pass
-
-These remain repeatable gates and must be rerun when later phases materially touch their authorities.
-
-## Important implementation checkpoints
-
-- Cashier surface restoration: `746a5d08fb9f41c9085a6cc7244cc41c658449be`
-- Global consistency/pre-POS hardening: `4cb6e262517841cea0174f31dd2693791e03d4e0`
-- Finishing charter/checkpoint establishment: `d818aa5cdd6c161e7e1468c5430adb6cc5688612`
-- Core POS Global Hardening integration: `c078a311f51797301a271295a645e7636348455c`
-- Offline policy/station configuration hardening: `45167df223fd21cd6673021994085c4fb422f427`
-- Offline History navigation hardening: `a639f1180ef7afd0e2df3adbd0c02b89988ec57b`
-- Final clean cashier connectivity authority: `596333f3aad459f8e4fdc96a5837bfd7c9c9395d`
-
-## Preview contract
-
-The supported preview command remains:
-
-```bash
-cd /home/runner/workspace && pnpm run preview:replit
-```
-
-The preview script is responsible for supported PostgreSQL authority modes and database readiness. Do not reintroduce a workflow that relies on manually exporting required Auth or Subscription authority variables for normal preview startup.
+1. `main` at or after `515dc33404e517d11060fa60cb6ef20d986b09ef` is the integrated code source of truth.
+2. `checkpoint/main-integrated-green-2026-09-20` is the immutable safety reference for this integration.
+3. New work must branch from the current verified `main` or an explicitly later checkpoint.
+4. No force push.
+5. No direct feature writes to `main`; use reviewed branches/PRs.
+6. Production credentials and external-provider configuration stay outside source control.
+7. Database changes must continue to use the canonical migration -> validate -> apply -> verify process.
 
 ## Immediate next phase
 
-`Merchant Dashboard Global Hardening`
+The immediate next phase is **staging and production-environment readiness**, not another large code-authority rewrite.
 
-The next conversation/phase must start with read-only audit and exact-SHA verification before implementation. It must validate the merchant dashboard as one coherent server-authoritative system, including overview, products, orders, conversations, cashier surfaces, settings, channels, subscription, support, navigation, loading/error/unavailable states, cross-page authority consistency, and prevention of local/stale operational truth.
-
-## Remaining finishing phases
-
-After Merchant Dashboard Global Hardening:
-
-1. Catalog / Variants / Inventory finalization
-2. Auth / Admin / Subscription final hardening
-3. Orders / Settings / Channels / Conversations / Knowledge authority hardening
-4. Database / Security / Operational validation
-5. Golden end-to-end journeys
-6. UI/UX final polish
-7. Release Candidate / Production readiness
-
-## Checkpoint update rule
-
-After every completed material phase:
-
-1. record the new clean integrated operational SHA,
-2. list exactly what was validated,
-3. list unresolved blockers,
-4. state the next phase,
-5. preserve traceability to earlier checkpoints rather than overwriting history.
+The release sequence is documented in `docs/production-release-readiness.md` and the remaining blocker register is `docs/FAWRI_RELEASE_BLOCKERS.md`.
