@@ -373,9 +373,25 @@ function hydrateStoredSettings(
   settings: MerchantOperationalSettings,
 ): MerchantOperationalSettings {
   const delivery = objectRecord(settings.delivery);
+  const inventory = objectRecord(settings.inventory);
   const pricingMode = delivery.pricing_mode === "per_area" ? "per_area" : "flat";
+  const freshnessMinutes = Number(inventory.freshness_max_age_minutes);
+  const stalePolicy = text(inventory.stale_policy);
   return {
     ...settings,
+    inventory: {
+      freshness_max_age_minutes:
+        Number.isInteger(freshnessMinutes) &&
+        freshnessMinutes >= 1 &&
+        freshnessMinutes <= 1440
+          ? freshnessMinutes
+          : 5,
+      stale_policy: INVENTORY_STALE_POLICIES.has(
+        stalePolicy as InventoryStalePolicy,
+      )
+        ? (stalePolicy as InventoryStalePolicy)
+        : "reroute_then_pending",
+    },
     delivery: {
       ...settings.delivery,
       pricing_mode: pricingMode,
@@ -607,6 +623,10 @@ function defaultSettings(merchantId: string): MerchantOperationalSettings {
       methods: ["cash_on_delivery"],
       instructions: "",
     },
+    inventory: {
+      freshness_max_age_minutes: 5,
+      stale_policy: "reroute_then_pending",
+    },
     created_at: timestamp,
     updated_at: timestamp,
   };
@@ -667,8 +687,21 @@ function normalizePatch(
       400,
     );
   }
+  if (
+    Object.prototype.hasOwnProperty.call(patch, "inventory") &&
+    (!patch.inventory ||
+      typeof patch.inventory !== "object" ||
+      Array.isArray(patch.inventory))
+  ) {
+    throw new MerchantSettingsError(
+      "MERCHANT_INVENTORY_PATCH_INVALID",
+      "inventory settings patch must be an object",
+      400,
+    );
+  }
   const deliveryPatch = objectRecord(patch.delivery);
   const paymentPatch = objectRecord(patch.payment);
+  const inventoryPatch = objectRecord(patch.inventory);
   assertAllowedKeys(
     deliveryPatch,
     DELIVERY_PATCH_KEYS,
@@ -678,6 +711,11 @@ function normalizePatch(
     paymentPatch,
     PAYMENT_PATCH_KEYS,
     "MERCHANT_PAYMENT_FIELD_UNSUPPORTED",
+  );
+  assertAllowedKeys(
+    inventoryPatch,
+    INVENTORY_PATCH_KEYS,
+    "MERCHANT_INVENTORY_FIELD_UNSUPPORTED",
   );
 
   const replyLanguage = text(patch.reply_language);
@@ -837,6 +875,25 @@ function normalizePatch(
     );
   }
 
+  const freshnessMaxAgeMinutes = positiveInteger(
+    inventoryPatch.freshness_max_age_minutes,
+    current.inventory.freshness_max_age_minutes,
+    1440,
+  );
+  const stalePolicy = Object.prototype.hasOwnProperty.call(
+    inventoryPatch,
+    "stale_policy",
+  )
+    ? text(inventoryPatch.stale_policy)
+    : current.inventory.stale_policy;
+  if (!INVENTORY_STALE_POLICIES.has(stalePolicy as InventoryStalePolicy)) {
+    throw new MerchantSettingsError(
+      "MERCHANT_INVENTORY_STALE_POLICY_INVALID",
+      "inventory stale policy is invalid",
+      400,
+    );
+  }
+
   const timestamp = new Date().toISOString();
   return {
     merchant_id: current.merchant_id,
@@ -876,6 +933,10 @@ function normalizePatch(
       )
         ? text(paymentPatch.instructions).slice(0, 2000)
         : current.payment.instructions,
+    },
+    inventory: {
+      freshness_max_age_minutes: freshnessMaxAgeMinutes,
+      stale_policy: stalePolicy as InventoryStalePolicy,
     },
     created_at: current.created_at,
     updated_at: timestamp,
