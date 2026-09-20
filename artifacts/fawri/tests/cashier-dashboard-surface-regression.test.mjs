@@ -8,22 +8,26 @@ async function source(relativePath) {
   return readFile(new URL(relativePath, root), 'utf8');
 }
 
-test('merchant dashboard permanently exposes cashier staff management and central reports', async () => {
-  const [app, sidebar, bottomNav] = await Promise.all([
+test('merchant dashboard permanently exposes cashier staff management and cashier reporting through the reports hub', async () => {
+  const [app, sidebar, bottomNav, reportsHub] = await Promise.all([
     source('artifacts/fawri/src/App.tsx'),
     source('artifacts/fawri/src/components/layout/Sidebar.tsx'),
     source('artifacts/fawri/src/components/layout/BottomNav.tsx'),
+    source('artifacts/fawri/src/pages/dashboard/ReportsPage.tsx'),
   ]);
 
-  for (const file of [app, sidebar, bottomNav]) {
-    assert.match(file, /\/dashboard\/cashiers/);
-    assert.match(file, /\/dashboard\/cashiers\/reports/);
-  }
+  assert.match(app, /\/dashboard\/cashiers/);
+  assert.match(app, /\/dashboard\/reports\/cashier/);
+  assert.match(app, /\/dashboard\/cashiers\/reports/);
+  assert.match(sidebar, /\/dashboard\/reports/);
+  assert.match(bottomNav, /\/dashboard\/reports/);
 
   assert.match(app, /CashierManagementPage/);
-  assert.match(app, /CashierCentralReportsPage/);
+  assert.match(app, /ReportsPage/);
+  assert.match(reportsHub, /CashierCentralReportsPage/);
+  assert.match(reportsHub, /Cashier Reports/);
   assert.match(sidebar, /Cashiers & Staff/);
-  assert.match(sidebar, /Cashier Reports/);
+  assert.match(sidebar, /Reports/);
 });
 
 test('cashier dashboard surfaces remain backed by real staff and report pages', async () => {

@@ -41,6 +41,14 @@ function isActiveRoute(
     return location === "/dashboard" || location === "/dashboard/overview";
   }
 
+  if (href === "/dashboard/reports") {
+    return (
+      location === "/dashboard/reports" ||
+      location.startsWith("/dashboard/reports/") ||
+      location === "/dashboard/cashiers/reports"
+    );
+  }
+
   if (exact) {
     return location === href;
   }
@@ -92,12 +100,12 @@ export function Sidebar() {
       : lang === "ku"
         ? "کاشێر و کارمەندان"
         : "الكاشيرات والموظفون";
-  const cashierReportsLabel =
+  const reportsLabel =
     lang === "en"
-      ? "Cashier Reports"
+      ? "Reports"
       : lang === "ku"
-        ? "ڕاپۆرتی کاشێر"
-        : "تقارير الكاشير";
+        ? "ڕاپۆرتەکان"
+        : "التقارير";
 
   const navItems: SidebarItem[] = [
     {
@@ -120,8 +128,8 @@ export function Sidebar() {
       exact: true,
     },
     {
-      href: "/dashboard/cashiers/reports",
-      label: cashierReportsLabel,
+      href: "/dashboard/reports",
+      label: reportsLabel,
       icon: BarChart3,
     },
     {

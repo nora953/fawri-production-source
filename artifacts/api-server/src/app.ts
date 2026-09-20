@@ -17,6 +17,7 @@ import catalogOperationsRouter from "./routes/catalog-operations";
 import knowledgeOperationsRouter from "./routes/knowledge-operations";
 import conversationOperationsRouter from "./routes/conversation-operations";
 import orderOperationsRouter from "./routes/order-operations";
+import reportsOperationsRouter from "./routes/reports-operations";
 import cashierStaffOperationsRouter from "./routes/cashier-staff-operations";
 import cashierDiscountPolicyOperationsRouter from "./routes/cashier-discount-policy-operations";
 import cashierOperatorCommerceRouter from "./routes/cashier-operator-commerce";
@@ -328,6 +329,7 @@ app.use(
 );
 app.use("/api", conversationOperationsRouter);
 app.use("/api", orderOperationsRouter);
+app.use("/api", reportsOperationsRouter);
 app.use("/api", cashierStaffOperationsRouter);
 app.use("/api", cashierDiscountPolicyOperationsRouter);
 app.use("/api", cashierOperatorCommerceRouter);
