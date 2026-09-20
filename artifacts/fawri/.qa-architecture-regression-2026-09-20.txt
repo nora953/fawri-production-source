@@ -1,0 +1,2 @@
+QA trigger only. No runtime or production behavior changes.
+Purpose: re-run current architecture regression workflows against main-equivalent code on 2026-09-20.
