@@ -102,7 +102,7 @@ test("cashier report ranks only products with complete historical cost evidence 
   );
 });
 
-test("return-only range reverses known historical profit and never invents a profitable ranking", () => {
+test("return-only range reverses historical profit and never invents selling or profitable rankings", () => {
   const result = buildCashierCentralReportFromEvidenceRows({
     rows: [row()],
     from: "2026-09-21T00:00:00.000Z",
@@ -110,11 +110,13 @@ test("return-only range reverses known historical profit and never invents a pro
     generatedAt: "2026-09-21T12:00:00.000Z",
   });
   const currency = result.report.by_currency[0];
-  const known = currency.top_products.find(product => product.product_id === "product-known");
 
   assert.equal(currency.net_revenue_minor, -10000);
   assert.equal(currency.gross_profit_minor, -4000);
-  assert.ok(known);
-  assert.equal(known.gross_profit_minor, -4000);
+
+  // A return-only period has no positive-selling product, so it must not
+  // appear in the "top selling" list. The negative profit also must never
+  // be promoted into the "most profitable" ranking.
+  assert.equal(currency.top_products.length, 0);
   assert.equal(currency.top_profitable_products.length, 0);
 });
