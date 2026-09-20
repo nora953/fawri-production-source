@@ -82,9 +82,10 @@ test('legacy paired devices hydrate canonical location from the existing station
 });
 
 test('legacy binding recovery runs before the cashier gate and does not generate a new pairing credential', () => {
-  const recoveryCall = recovery.indexOf('recoverLegacyCashierStationBinding()');
-  const refreshExport = recovery.indexOf('export async function refreshDurableCashierStationBindingMetadata');
-  assert.ok(refreshExport >= 0 && recoveryCall > refreshExport);
+  assert.match(
+    recovery,
+    /export async function refreshDurableCashierStationBindingMetadata[\s\S]*if \(!identity\.location_id\)[\s\S]*recoverLegacyCashierStationBinding\(\)/,
+  );
   assert.doesNotMatch(recovery, /\/api\/cashier\/station\/pair/);
   assert.doesNotMatch(recovery, /pairing_code/);
 
