@@ -1,10 +1,21 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'wouter';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { ReportToolbar, type AppliedDateRange, type ReportRangeKey } from '@/components/reports/ReportToolbar';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import { downloadWorkbook } from '@/lib/reportWorkbook';
 
-type RangeKey = 'today' | '7d' | '30d' | 'all';
+type RangeKey = ReportRangeKey;
 type OperationKind = 'sale' | 'return' | 'void';
 
 type ProductRow = {
@@ -14,6 +25,10 @@ type ProductRow = {
   variant_name?: string;
   net_units: number;
   net_revenue_minor: number;
+  profit_status: 'available' | 'partial' | 'unavailable';
+  gross_profit_minor?: number;
+  cost_known_affected_units: number;
+  cost_unknown_affected_units: number;
 };
 
 type CurrencyReport = {
@@ -35,6 +50,7 @@ type CurrencyReport = {
   cost_known_net_units: number;
   cost_unknown_net_units: number;
   top_products: ProductRow[];
+  top_profitable_products: ProductRow[];
 };
 
 type Report = { sale_count: number; by_currency: CurrencyReport[] };
@@ -88,7 +104,7 @@ type Copy = {
   title: string; subtitle: string; back: string; today: string; seven: string; thirty: string; all: string;
   loading: string; failed: string; empty: string; netSales: string; profit: string; operations: string; units: string;
   refunds: string; average: string; voided: string; returns: string; partialProfit: string; unavailableProfit: string;
-  topProducts: string; noTop: string; salesByStaff: string; salesByStation: string; salesByLocation: string; activityByStaff: string; activityByStation: string; activityByLocation: string;
+  topProducts: string; topProfitable: string; noTop: string; noProfitable: string; revenueChart: string; profitChart: string; salesByStaff: string; salesByStation: string; salesByLocation: string; activityByStaff: string; activityByStation: string; activityByLocation: string;
   noGroupSales: string; sales: string; saleOps: string; returnOps: string; voidOps: string; totalOps: string; location: string;
   generated: string; source: string; operationDetails: string; operationDetailsHint: string; detailsLimited: string; employeeFilter: string; locationFilter: string; stationFilter: string;
   typeFilter: string; allEmployees: string; allLocations: string; allStations: string; allTypes: string; employee: string; station: string; shift: string;
@@ -100,7 +116,7 @@ const COPY: Record<Lang, Copy> = {
     title: 'تقرير الكاشير المركزي', subtitle: 'المبيعات والإرجاعات والإلغاءات حسب المواقع والموظفين والمحطات من السجل المركزي الموثوق.', back: 'إدارة الكاشيرات',
     today: 'اليوم', seven: '7 أيام', thirty: '30 يوم', all: 'الكل', loading: 'جارٍ إعداد التقرير المركزي...', failed: 'تعذر تحميل تقرير الكاشير المركزي.', empty: 'لا توجد عمليات كاشير ضمن هذه الفترة.',
     netSales: 'صافي المبيعات', profit: 'الربح الإجمالي', operations: 'عمليات البيع', units: 'صافي القطع المباعة', refunds: 'قيمة الإرجاعات والإلغاءات', average: 'متوسط قيمة عملية البيع', voided: 'عمليات الإلغاء', returns: 'عمليات الإرجاع',
-    partialProfit: 'الربح الظاهر جزئي لأن تكلفة بعض القطع غير مسجلة.', unavailableProfit: 'بيانات الربح غير متاحة لهذا النطاق. لا يفترض فوري أن التكلفة صفر.', topProducts: 'الأكثر مبيعًا', noTop: 'لا توجد منتجات بصافي بيع موجب في هذه الفترة.',
+    partialProfit: 'الربح الظاهر جزئي لأن تكلفة بعض القطع غير مسجلة.', unavailableProfit: 'بيانات الربح غير متاحة لهذا النطاق. لا يفترض فوري أن التكلفة صفر.', topProducts: 'الأكثر مبيعًا', topProfitable: 'الأكثر ربحية', noTop: 'لا توجد منتجات بصافي بيع موجب في هذه الفترة.', noProfitable: 'لا توجد منتجات يمكن ترتيب ربحيتها بدقة ضمن هذه الفترة؛ لا يتم افتراض تكلفة مفقودة.', revenueChart: 'رسم المبيعات حسب المنتج', profitChart: 'رسم الربح حسب المنتج',
     salesByStaff: 'الأثر المالي حسب موظف البيع', salesByStation: 'الأثر المالي حسب محطة البيع', salesByLocation: 'الأثر المالي حسب الموقع', activityByStaff: 'العمليات المنفذة حسب الموظف', activityByStation: 'العمليات المنفذة حسب المحطة', activityByLocation: 'العمليات المنفذة حسب الموقع', noGroupSales: 'لا يوجد أثر مالي ضمن هذه الفترة.',
     sales: 'عمليات بيع', saleOps: 'بيع', returnOps: 'إرجاع', voidOps: 'إلغاء', totalOps: 'الإجمالي', location: 'الموقع', generated: 'آخر تحديث', source: 'المصدر: سجل الكاشير المركزي الموثوق على السيرفر',
     operationDetails: 'تفاصيل العمليات', operationDetailsHint: 'يعرض من نفّذ كل بيع أو إرجاع أو إلغاء، مع الوقت والموقع والمحطة والمناوبة.', detailsLimited: 'يعرض جدول التفاصيل أحدث {limit} عملية كحد أقصى؛ الملخصات أعلاه تشمل كامل الفترة.', employeeFilter: 'الموظف', locationFilter: 'الموقع', stationFilter: 'المحطة', typeFilter: 'نوع العملية', allEmployees: 'كل الموظفين', allLocations: 'كل المواقع', allStations: 'كل المحطات', allTypes: 'كل العمليات',
@@ -110,7 +126,7 @@ const COPY: Record<Lang, Copy> = {
     title: 'ڕاپۆرتی ناوەندی کاشێر', subtitle: 'فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوە بەپێی شوێن و کارمەند و وێستگە لە تۆماری ناوەندی متمانەپێکراو.', back: 'بەڕێوەبردنی کاشێر',
     today: 'ئەمڕۆ', seven: '7 ڕۆژ', thirty: '30 ڕۆژ', all: 'هەموو', loading: 'ڕاپۆرتی ناوەندی ئامادە دەکرێت...', failed: 'بارکردنی ڕاپۆرتی ناوەندی کاشێر سەرکەوتوو نەبوو.', empty: 'لەو ماوەیەدا هیچ کرداری کاشێر نییە.',
     netSales: 'فرۆشتنی خاوێن', profit: 'قازانجی گشتی', operations: 'مامەڵەکانی فرۆشتن', units: 'دانەی فرۆشراوی خاوێن', refunds: 'بەهای گەڕاندنەوە و هەڵوەشاندنەوە', average: 'تێکڕای بەهای مامەڵەی فرۆشتن', voided: 'کرداری هەڵوەشاندنەوە', returns: 'کرداری گەڕاندنەوە',
-    partialProfit: 'قازانجی پیشاندراو بەشێکییە چونکە تێچووی هەندێک دانە تۆمار نەکراوە.', unavailableProfit: 'زانیاری قازانج بۆ ئەم مەودایە بەردەست نییە. فەوری تێچوو بە سفر دانانێت.', topProducts: 'زۆرترین فرۆشراو', noTop: 'لەو ماوەیەدا هیچ بەرهەمێک بە فرۆشتنی خاوێنی پۆزەتیڤ نییە.',
+    partialProfit: 'قازانجی پیشاندراو بەشێکییە چونکە تێچووی هەندێک دانە تۆمار نەکراوە.', unavailableProfit: 'زانیاری قازانج بۆ ئەم مەودایە بەردەست نییە. فەوری تێچوو بە سفر دانانێت.', topProducts: 'زۆرترین فرۆشراو', topProfitable: 'زۆرترین قازانج', noTop: 'لەو ماوەیەدا هیچ بەرهەمێک بە فرۆشتنی خاوێنی پۆزەتیڤ نییە.', noProfitable: 'هیچ بەرهەمێک نییە کە بتوانرێت قازانجەکەی بە دڵنیایی ڕیزبەندی بکرێت؛ تێچووی ونبوو بە سفر دانانرێت.', revenueChart: 'هێڵکاری فرۆشتن بەپێی بەرهەم', profitChart: 'هێڵکاری قازانج بەپێی بەرهەم',
     salesByStaff: 'کاریگەری دارایی بەپێی کارمەندی فرۆشیار', salesByStation: 'کاریگەری دارایی بەپێی وێستگەی فرۆشتن', salesByLocation: 'کاریگەری دارایی بەپێی شوێن', activityByStaff: 'کردارە جێبەجێکراوەکان بەپێی کارمەند', activityByStation: 'کردارە جێبەجێکراوەکان بەپێی وێستگە', activityByLocation: 'کردارە جێبەجێکراوەکان بەپێی شوێن', noGroupSales: 'لەو ماوەیەدا کاریگەری دارایی نییە.',
     sales: 'فرۆشتن', saleOps: 'فرۆشتن', returnOps: 'گەڕاندنەوە', voidOps: 'هەڵوەشاندنەوە', totalOps: 'کۆی گشتی', location: 'شوێن', generated: 'دوایین نوێکردنەوە', source: 'سەرچاوە: تۆماری ناوەندی متمانەپێکراوی کاشێر لە سێرڤەر',
     operationDetails: 'وردەکاری کردارەکان', operationDetailsHint: 'کارمەند و کات و شوێن و وێستگە و مناوبەی هەر فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوە پیشان دەدات.', detailsLimited: 'خشتەی وردەکاری تەنها نوێترین {limit} کردار پیشان دەدات؛ کورتەکانی سەرەوە هەموو ماوەکە دەگرنەوە.', employeeFilter: 'کارمەند', locationFilter: 'شوێن', stationFilter: 'وێستگە', typeFilter: 'جۆری کردار', allEmployees: 'هەموو کارمەندان', allLocations: 'هەموو شوێنەکان', allStations: 'هەموو وێستگەکان', allTypes: 'هەموو کردارەکان',
@@ -120,7 +136,7 @@ const COPY: Record<Lang, Copy> = {
     title: 'Central Cashier Report', subtitle: 'Sales, returns and voids by location, employee and station from the trusted central record.', back: 'Cashier management',
     today: 'Today', seven: '7 days', thirty: '30 days', all: 'All', loading: 'Building central cashier report...', failed: 'Could not load the central cashier report.', empty: 'No cashier operations in this period.',
     netSales: 'Net sales', profit: 'Gross profit', operations: 'Sales operations', units: 'Net units sold', refunds: 'Returns & voids value', average: 'Average sale ticket', voided: 'Void operations', returns: 'Return operations',
-    partialProfit: 'Shown profit is partial because cost is missing for some units.', unavailableProfit: 'Profit data is unavailable for this scope. Fawri does not assume missing cost is zero.', topProducts: 'Top products', noTop: 'No products have positive net sales in this period.',
+    partialProfit: 'Shown profit is partial because cost is missing for some units.', unavailableProfit: 'Profit data is unavailable for this scope. Fawri does not assume missing cost is zero.', topProducts: 'Top products', topProfitable: 'Most profitable products', noTop: 'No products have positive net sales in this period.', noProfitable: 'No products can be ranked by profit truthfully in this period; missing cost is never treated as zero.', revenueChart: 'Product sales chart', profitChart: 'Product profit chart',
     salesByStaff: 'Financial impact by selling employee', salesByStation: 'Financial impact by selling station', salesByLocation: 'Financial impact by location', activityByStaff: 'Executed operations by employee', activityByStation: 'Executed operations by station', activityByLocation: 'Executed operations by location', noGroupSales: 'No financial impact in this period.',
     sales: 'sales', saleOps: 'Sales', returnOps: 'Returns', voidOps: 'Voids', totalOps: 'Total', location: 'Location', generated: 'Last updated', source: 'Source: trusted central cashier record on the server',
     operationDetails: 'Operation details', operationDetailsHint: 'Shows who executed each sale, return or void together with its time, location, station and shift.', detailsLimited: 'The detail table shows at most the latest {limit} operations; the summaries above cover the full period.', employeeFilter: 'Employee', locationFilter: 'Location', stationFilter: 'Station', typeFilter: 'Operation type', allEmployees: 'All employees', allLocations: 'All locations', allStations: 'All stations', allTypes: 'All operations',
@@ -136,7 +152,18 @@ function startOfLocalDay(daysBack: number): Date {
   const date = new Date(); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - daysBack); return date;
 }
 
-function queryForRange(range: RangeKey, filters: {
+function localDateStart(value: string): Date {
+  const [year, month, day] = value.split('-').map(Number);
+  return new Date(year, month - 1, day, 0, 0, 0, 0);
+}
+
+function localDateEndExclusive(value: string): Date {
+  const date = localDateStart(value);
+  date.setDate(date.getDate() + 1);
+  return date;
+}
+
+function queryForRange(range: RangeKey, custom: AppliedDateRange | null, filters: {
   staff: string;
   location: string;
   station: string;
@@ -146,6 +173,10 @@ function queryForRange(range: RangeKey, filters: {
   if (range === 'today') params.set('from', startOfLocalDay(0).toISOString());
   if (range === '7d') params.set('from', startOfLocalDay(6).toISOString());
   if (range === '30d') params.set('from', startOfLocalDay(29).toISOString());
+  if (range === 'custom' && custom) {
+    params.set('from', localDateStart(custom.from).toISOString());
+    params.set('to', localDateEndExclusive(custom.to).toISOString());
+  }
   if (filters.staff !== 'all') params.set('detail_staff_id', filters.staff);
   if (filters.location !== 'all') params.set('detail_location_id', filters.location);
   if (filters.station !== 'all') params.set('detail_station_id', filters.station);
@@ -211,9 +242,22 @@ function operationMoney(item: OperationActivity, lang: Lang): string {
   return formatMerchantMoneyMinor(item.amount_minor, item.currency_code, item.currency_fraction_digits, lang);
 }
 
+function productDisplayName(product: ProductRow): string {
+  return product.variant_name
+    ? `${product.product_name} — ${product.variant_name}`
+    : product.product_name;
+}
+
+function chartRows(products: ProductRow[], field: 'net_revenue_minor' | 'gross_profit_minor') {
+  return products.slice(0, 8).map(product => ({
+    name: productDisplayName(product),
+    value: field === 'gross_profit_minor' ? product.gross_profit_minor ?? 0 : product.net_revenue_minor,
+  }));
+}
+
 export default function CashierCentralReportsPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { lang, dir } = useI18n(); const labels = COPY[lang] || COPY.en;
-  const [range, setRange] = useState<RangeKey>('today'); const [result, setResult] = useState<CentralReportResult | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
+  const [range, setRange] = useState<RangeKey>('today'); const [customRange, setCustomRange] = useState<AppliedDateRange | null>(null); const [result, setResult] = useState<CentralReportResult | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const [staffFilter, setStaffFilter] = useState('all'); const [locationFilter, setLocationFilter] = useState('all'); const [stationFilter, setStationFilter] = useState('all'); const [kindFilter, setKindFilter] = useState<'all' | OperationKind>('all');
   const requestSequence = useRef(0);
 
@@ -221,7 +265,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
     const requestId = ++requestSequence.current;
     setLoading(true); setError('');
     try {
-      const response = await fetch(`/api/cashier/management/report${queryForRange(range, { staff: staffFilter, location: locationFilter, station: stationFilter, kind: kindFilter })}`, { credentials: 'same-origin', cache: 'no-store' });
+      const response = await fetch(`/api/cashier/management/report${queryForRange(range, customRange, { staff: staffFilter, location: locationFilter, station: stationFilter, kind: kindFilter })}`, { credentials: 'same-origin', cache: 'no-store' });
       const payload = record(await response.json().catch(() => null));
       if (!response.ok || payload.ok !== true) throw new Error(labels.failed);
       if (requestId !== requestSequence.current) return;
@@ -232,19 +276,113 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
     } finally {
       if (requestId === requestSequence.current) setLoading(false);
     }
-  }, [kindFilter, labels.failed, locationFilter, range, staffFilter, stationFilter]);
+  }, [customRange, kindFilter, labels.failed, locationFilter, range, staffFilter, stationFilter]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const selectRange = (nextRange: RangeKey) => {
+  const resetDetailFilters = () => {
     setStaffFilter('all');
     setLocationFilter('all');
     setStationFilter('all');
     setKindFilter('all');
+  };
+
+  const selectRange = (nextRange: Exclude<RangeKey, 'custom'>) => {
+    resetDetailFilters();
+    setCustomRange(null);
     setRange(nextRange);
   };
 
-  const ranges = useMemo<Array<[RangeKey, string]>>(() => [['today', labels.today], ['7d', labels.seven], ['30d', labels.thirty], ['all', labels.all]], [labels]);
+  const applyCustomRange = (nextRange: AppliedDateRange) => {
+    resetDetailFilters();
+    setCustomRange(nextRange);
+    setRange('custom');
+  };
+
+  const downloadReport = async () => {
+    if (!result) return;
+    const summaryRows: Array<Array<string | number>> = [[
+      labels.location,
+      labels.netSales,
+      labels.profit,
+      labels.operations,
+      labels.units,
+      labels.refunds,
+      labels.average,
+    ]];
+    for (const currency of result.report.by_currency) {
+      summaryRows.push([
+        currency.currency_code,
+        currency.net_revenue_minor,
+        currency.gross_profit_minor ?? 0,
+        currency.sale_count,
+        currency.net_units,
+        currency.refunds_minor,
+        currency.average_ticket_minor,
+      ]);
+    }
+
+    const topSellingRows: Array<Array<string | number>> = [[
+      labels.location,
+      labels.topProducts,
+      labels.units,
+      labels.netSales,
+    ]];
+    const profitableRows: Array<Array<string | number>> = [[
+      labels.location,
+      labels.topProfitable,
+      labels.netSales,
+      labels.profit,
+    ]];
+    result.report.by_currency.forEach(currency => {
+      currency.top_products.forEach(product => {
+        topSellingRows.push([
+          currency.currency_code,
+          productDisplayName(product),
+          product.net_units,
+          product.net_revenue_minor,
+        ]);
+      });
+      currency.top_profitable_products.forEach(product => {
+        profitableRows.push([
+          currency.currency_code,
+          productDisplayName(product),
+          product.net_revenue_minor,
+          product.gross_profit_minor ?? 0,
+        ]);
+      });
+    });
+
+    const operationRows: Array<Array<string | number>> = [[
+      labels.dateTime,
+      labels.employee,
+      labels.operationType,
+      labels.saleReference,
+      labels.location,
+      labels.station,
+      labels.shift,
+      labels.amount,
+    ]];
+    filteredOperations.forEach(item => {
+      operationRows.push([
+        new Date(item.occurred_at).toISOString(),
+        item.staff_name || labels.formerEmployee,
+        operationLabel(item.operation_kind, labels),
+        shortReference(item.sale_id, '#'),
+        item.location_name || labels.formerLocation,
+        item.station_name || labels.formerStation,
+        shortReference(item.shift_id, ''),
+        item.amount_minor ?? '',
+      ]);
+    });
+
+    await downloadWorkbook(`fawri-cashier-report-${new Date().toISOString().slice(0, 10)}`, [
+      { name: 'Summary', rows: summaryRows },
+      { name: 'Top selling', rows: topSellingRows },
+      { name: 'Top profitable', rows: profitableRows },
+      { name: 'Latest operations', rows: operationRows },
+    ]);
+  };
   const currencies = result?.report.by_currency || [];
   const hasData = Boolean(result && (currencies.length > 0 || activityTotal(result) > 0));
   const totalNet = result ? moneyValues(result.report, 'net_revenue_minor') : []; const totalRefunds = result ? moneyValues(result.report, 'refunds_minor') : []; const totalProfit = result ? profitValues(result.report) : [];
@@ -258,9 +396,16 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
   const dateLocale = lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en';
 
   return (
-    <div className="space-y-5 pb-8" dir={dir}>
+    <div className="report-print-content space-y-5 pb-8" dir={dir}>
       {!embedded ? <header className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-bold text-foreground">{labels.title}</h1><p className="mt-1 max-w-3xl text-sm text-muted-foreground">{labels.subtitle}</p></div><Link href="/dashboard/cashiers" className="rounded-xl border bg-card px-4 py-2 text-sm font-bold hover:bg-accent">{labels.back}</Link></header> : null}
-      <div className="flex flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-sm">{ranges.map(([key, label]) => <button key={key} type="button" onClick={() => selectRange(key)} className={`rounded-xl px-4 py-2 text-sm font-bold transition ${range === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}>{label}</button>)}</div>
+      <ReportToolbar
+        range={range}
+        onRangeChange={selectRange}
+        onCustomApply={applyCustomRange}
+        onDownload={downloadReport}
+        onPrint={() => window.print()}
+        exportDisabled={loading || Boolean(error) || !result}
+      />
       {error ? <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm font-semibold text-destructive">{error}</div> : null}
       {loading ? <div className="rounded-2xl border bg-card p-10 text-center text-sm text-muted-foreground">{labels.loading}</div> : null}
       {!loading && !error && result && !hasData ? <div className="rounded-2xl border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">{labels.empty}</div> : null}
@@ -269,7 +414,68 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"><Metric title={labels.netSales}><MoneyStack values={totalNet} lang={lang} /></Metric><Metric title={labels.profit}><MoneyStack values={totalProfit} lang={lang} /></Metric><Metric title={labels.operations}><span dir="ltr">{result.report.sale_count}</span></Metric><Metric title={labels.units}><span dir="ltr">{netUnits}</span></Metric><Metric title={labels.refunds}><MoneyStack values={totalRefunds} lang={lang} /></Metric><Metric title={labels.average}><MoneyStack values={moneyValues(result.report, 'average_ticket_minor')} lang={lang} /></Metric></div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground"><span className="rounded-full border bg-card px-3 py-1.5">{labels.voided}: <b dir="ltr">{voidedSales}</b></span><span className="rounded-full border bg-card px-3 py-1.5">{labels.returns}: <b dir="ltr">{returnCount}</b></span></div>
 
-        {currencies.map(currency => <section key={`${currency.currency_code}:${currency.currency_fraction_digits}`} className="space-y-3 rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-bold" dir="ltr">{currency.currency_code}</h2><span className="text-xs text-muted-foreground">{currency.sale_count} {labels.sales}</span></div>{currency.profit_status === 'partial' ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">{labels.partialProfit}</div> : null}{currency.profit_status === 'unavailable' ? <div className="rounded-xl border bg-background px-3 py-2 text-sm text-muted-foreground">{labels.unavailableProfit}</div> : null}<div><h3 className="font-bold">{labels.topProducts}</h3>{currency.top_products.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">{labels.noTop}</p> : <div className="mt-2 divide-y rounded-xl border bg-background">{currency.top_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="font-semibold"><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="font-bold" dir="ltr">{product.net_units}</p><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}</div>}</div></section>)}
+        {currencies.map(currency => {
+          const sellingChart = chartRows(currency.top_products, 'net_revenue_minor');
+          const profitChart = chartRows(currency.top_profitable_products, 'gross_profit_minor');
+          return (
+            <section key={`${currency.currency_code}:${currency.currency_fraction_digits}`} className="report-print-break-avoid space-y-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h2 className="text-lg font-bold" dir="ltr">{currency.currency_code}</h2>
+                <span className="text-xs text-muted-foreground">{currency.sale_count} {labels.sales}</span>
+              </div>
+              {currency.profit_status === 'partial' ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">{labels.partialProfit}</div> : null}
+              {currency.profit_status === 'unavailable' ? <div className="rounded-xl border bg-background px-3 py-2 text-sm text-muted-foreground">{labels.unavailableProfit}</div> : null}
+
+              <div className="grid gap-5 xl:grid-cols-2">
+                <div>
+                  <h3 className="font-bold">{labels.topProducts}</h3>
+                  {currency.top_products.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">{labels.noTop}</p> : (
+                    <>
+                      <div className="mt-2 h-64 rounded-xl border bg-background p-3">
+                        <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.revenueChart}</p>
+                        <ResponsiveContainer width="100%" height="90%">
+                          <BarChart data={sellingChart} layout="vertical" margin={{ left: 8, right: 8 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" hide />
+                            <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
+                            <Tooltip formatter={(value) => formatMerchantMoneyMinor(Number(value), currency.currency_code, currency.currency_fraction_digits, lang)} />
+                            <Bar dataKey="value" fill="currentColor" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="mt-2 divide-y rounded-xl border bg-background">
+                        {currency.top_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="font-semibold"><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="font-bold" dir="ltr">{product.net_units}</p><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="font-bold">{labels.topProfitable}</h3>
+                  {currency.top_profitable_products.length === 0 ? <p className="mt-2 rounded-xl border bg-background p-4 text-sm text-muted-foreground">{labels.noProfitable}</p> : (
+                    <>
+                      <div className="mt-2 h-64 rounded-xl border bg-background p-3">
+                        <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.profitChart}</p>
+                        <ResponsiveContainer width="100%" height="90%">
+                          <BarChart data={profitChart} layout="vertical" margin={{ left: 8, right: 8 }}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis type="number" hide />
+                            <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
+                            <Tooltip formatter={(value) => formatMerchantMoneyMinor(Number(value), currency.currency_code, currency.currency_fraction_digits, lang)} />
+                            <Bar dataKey="value" fill="currentColor" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="mt-2 divide-y rounded-xl border bg-background">
+                        {currency.top_profitable_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="font-semibold"><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p><p className="font-bold" dir="ltr">{formatMerchantMoneyMinor(product.gross_profit_minor ?? 0, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </section>
+          );
+        })}
 
         <div className="grid gap-5 xl:grid-cols-3">
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByLocation}</h2><span className="text-sm text-muted-foreground">{result.by_location.length}</span></div><div className="space-y-2">{result.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_location.map(group => <GroupCard key={group.location_id || '__legacy_location__'} name={group.location_name || labels.formerLocation} report={group.report} lang={lang} labels={labels} />)}</div></section>
@@ -285,7 +491,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
 
         <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5" data-testid="cashier-operation-details">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">{labels.operationDetails}</h2><p className="mt-1 text-sm text-muted-foreground">{labels.operationDetailsHint}</p></div><span className="rounded-full border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground">{filteredOperations.length}</span></div>
-          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <div className="report-no-print mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <label className="text-sm font-semibold">{labels.employeeFilter}<select value={staffFilter} onChange={event => setStaffFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allEmployees}</option>{operationStaff.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
             <label className="text-sm font-semibold">{labels.locationFilter}<select value={locationFilter} onChange={event => setLocationFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allLocations}</option>{operationLocations.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
             <label className="text-sm font-semibold">{labels.stationFilter}<select value={stationFilter} onChange={event => setStationFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allStations}</option>{operationStations.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
@@ -293,7 +499,41 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           </div>
           {detailsAreLimited ? <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">{labels.detailsLimited.replace('{limit}', String(result.activity.operation_detail_limit))}</p> : null}
           {filteredOperations.length === 0 ? <p className="mt-4 rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">{labels.noDetails}</p> : (
-            <div className="mt-4 overflow-x-auto rounded-xl border"><table className="w-full min-w-[980px] text-sm"><thead className="bg-muted/60 text-xs text-muted-foreground"><tr><th className="px-3 py-2 text-start">{labels.dateTime}</th><th className="px-3 py-2 text-start">{labels.employee}</th><th className="px-3 py-2 text-start">{labels.operationType}</th><th className="px-3 py-2 text-start">{labels.saleReference}</th><th className="px-3 py-2 text-start">{labels.location}</th><th className="px-3 py-2 text-start">{labels.station}</th><th className="px-3 py-2 text-start">{labels.shift}</th><th className="px-3 py-2 text-end">{labels.amount}</th></tr></thead><tbody className="divide-y">{filteredOperations.map(item => <tr key={item.operation_id}><td className="whitespace-nowrap px-3 py-3">{new Date(item.occurred_at).toLocaleString(dateLocale)}</td><td className="px-3 py-3 font-semibold">{item.staff_name || labels.formerEmployee}</td><td className="px-3 py-3"><span className={`rounded-full px-2 py-1 text-xs font-bold ${item.operation_kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : item.operation_kind === 'return' ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>{operationLabel(item.operation_kind, labels)}</span></td><td className="px-3 py-3 font-mono text-xs" dir="ltr">{shortReference(item.sale_id, '#')}</td><td className="px-3 py-3">{item.location_name || labels.formerLocation}</td><td className="px-3 py-3">{item.station_name || labels.formerStation}</td><td className="px-3 py-3 font-mono text-xs" dir="ltr">{shortReference(item.shift_id, '')}</td><td className="whitespace-nowrap px-3 py-3 text-end font-bold" dir="ltr">{operationMoney(item, lang)}</td></tr>)}</tbody></table></div>
+            <div className="mt-4 overflow-x-auto rounded-xl border xl:overflow-x-visible">
+              <table className="w-full min-w-[860px] table-fixed text-[13px] xl:min-w-0">
+                <colgroup>
+                  <col className="w-[15%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[13%]" />
+                </colgroup>
+                <thead className="bg-muted/60 text-[11px] text-muted-foreground">
+                  <tr><th className="px-2 py-2 text-start">{labels.dateTime}</th><th className="px-2 py-2 text-start">{labels.employee}</th><th className="px-2 py-2 text-start">{labels.operationType}</th><th className="px-2 py-2 text-start">{labels.saleReference}</th><th className="px-2 py-2 text-start">{labels.location}</th><th className="px-2 py-2 text-start">{labels.station}</th><th className="px-2 py-2 text-start">{labels.shift}</th><th className="px-2 py-2 text-end">{labels.amount}</th></tr>
+                </thead>
+                <tbody className="divide-y">{filteredOperations.map(item => {
+                  const instant = new Date(item.occurred_at);
+                  const datePart = instant.toLocaleDateString(dateLocale);
+                  const timePart = instant.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' });
+                  const employeeName = item.staff_name || labels.formerEmployee;
+                  const locationName = item.location_name || labels.formerLocation;
+                  const stationName = item.station_name || labels.formerStation;
+                  return <tr key={item.operation_id}>
+                    <td className="px-2 py-2.5"><span className="block whitespace-nowrap">{datePart}</span><span className="block whitespace-nowrap text-[11px] text-muted-foreground">{timePart}</span></td>
+                    <td className="truncate px-2 py-2.5 font-semibold" title={employeeName}>{employeeName}</td>
+                    <td className="px-2 py-2.5"><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${item.operation_kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : item.operation_kind === 'return' ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>{operationLabel(item.operation_kind, labels)}</span></td>
+                    <td className="px-2 py-2.5 font-mono text-[11px]" dir="ltr">{shortReference(item.sale_id, '#')}</td>
+                    <td className="truncate px-2 py-2.5" title={locationName}>{locationName}</td>
+                    <td className="truncate px-2 py-2.5" title={stationName}>{stationName}</td>
+                    <td className="truncate px-2 py-2.5 font-mono text-[11px]" dir="ltr" title={item.shift_id}>{shortReference(item.shift_id, '')}</td>
+                    <td className="whitespace-nowrap px-2 py-2.5 text-end font-bold" dir="ltr">{operationMoney(item, lang)}</td>
+                  </tr>;
+                })}</tbody>
+              </table>
+            </div>
           )}
         </section>
 
