@@ -993,8 +993,8 @@ function finalizeCurrency(
       .filter((product) => product.net_units > 0 || product.net_revenue_minor > 0)
       .sort(
         (left, right) =>
-          right.net_revenue_minor - left.net_revenue_minor ||
           right.net_units - left.net_units ||
+          right.net_revenue_minor - left.net_revenue_minor ||
           left.product_name.localeCompare(right.product_name),
       )
       .slice(0, topProductsLimit),
