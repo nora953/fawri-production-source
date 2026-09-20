@@ -592,6 +592,14 @@ async function knowledgeStockAvailability(params: {
     };
   }
 
+  if (plan.routing.reason === "inventory_stale") {
+    fail(
+      "KNOWLEDGE_LOCATION_INVENTORY_STALE",
+      "location inventory is not fresh enough for an automatic stock reply",
+      409,
+    );
+  }
+
   fail(
     "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
     "multi-location stock availability cannot be routed automatically",
