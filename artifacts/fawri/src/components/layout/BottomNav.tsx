@@ -95,12 +95,12 @@ export function BottomNav() {
       : lang === "ku"
         ? "کاشێر و کارمەندان"
         : "الكاشيرات والموظفون";
-  const cashierReportsLabel =
+  const reportsLabel =
     lang === "en"
-      ? "Cashier Reports"
+      ? "Reports"
       : lang === "ku"
-        ? "ڕاپۆرتی کاشێر"
-        : "تقارير الكاشير";
+        ? "ڕاپۆرتەکان"
+        : "التقارير";
 
   const mainItems: NavItem[] = [
     {
@@ -134,8 +134,8 @@ export function BottomNav() {
       exact: true,
     },
     {
-      href: "/dashboard/cashiers/reports",
-      label: cashierReportsLabel,
+      href: "/dashboard/reports",
+      label: reportsLabel,
       icon: BarChart3,
     },
     {
