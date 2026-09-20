@@ -75,6 +75,9 @@ jobs:
           node --test artifacts/api-server/tests/catalog-variant-signature-apply-guard-static.test.mjs
           node --test lib/db/scripts/apply-catalog-variant-signature-guard.integration.test.mjs
 
+      - name: Prove cashier operation location backfill safety
+        run: node --test scripts/tests/cashier-operation-location-backfill-migration-history.test.mjs
+
       - name: Advance disposable history through all committed migrations
         working-directory: lib/db
         run: |
