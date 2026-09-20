@@ -120,3 +120,47 @@ test("return-only range reverses historical profit and never invents selling or 
   assert.equal(currency.top_products.length, 0);
   assert.equal(currency.top_profitable_products.length, 0);
 });
+
+
+test("top-selling products are ranked by net units before revenue", () => {
+  const evidence = row();
+  evidence.metadata.cashier_sync.sale_snapshot.total_minor = 218800;
+  evidence.metadata.cashier_sync.sale_snapshot.lines = [
+    {
+      line_id: "line-more-units",
+      product_id: "product-more-units",
+      product_name_snapshot: "More units",
+      quantity: 6,
+      effective_unit_price_minor: 10000,
+      line_total_minor: 60000,
+      unit_cost_minor: 5000,
+    },
+    {
+      line_id: "line-more-revenue",
+      product_id: "product-more-revenue",
+      product_name_snapshot: "More revenue",
+      quantity: 4,
+      effective_unit_price_minor: 39700,
+      line_total_minor: 158800,
+      unit_cost_minor: 10000,
+    },
+  ];
+  evidence.metadata.cashier_sync.compensations = [];
+
+  const result = buildCashierCentralReportFromEvidenceRows({
+    rows: [evidence],
+    generatedAt: "2026-09-21T12:00:00.000Z",
+  });
+  const currency = result.report.by_currency[0];
+
+  assert.deepEqual(
+    currency.top_products.map(product => product.product_id),
+    ["product-more-units", "product-more-revenue"],
+  );
+  assert.equal(currency.top_products[0].net_units, 6);
+  assert.equal(currency.top_products[1].net_units, 4);
+  assert.ok(
+    currency.top_products[0].net_revenue_minor <
+      currency.top_products[1].net_revenue_minor,
+  );
+});
