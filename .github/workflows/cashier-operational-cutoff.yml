@@ -27,8 +27,10 @@ on:
       - "artifacts/api-server/tests/cashier-operator-own-history-scope-postgres.integration.test.ts"
       - "artifacts/fawri/src/components/cashier/CashierEndShiftButton.tsx"
       - "artifacts/fawri/src/components/cashier/CashierOperatorGate.tsx"
+      - "artifacts/fawri/tests/cashier-station-binding-recovery.test.mjs"
       - "artifacts/fawri/src/lib/cashierEndShiftRuntime.ts"
       - "artifacts/fawri/src/lib/cashierOperatorSessionRuntime.ts"
+      - "artifacts/fawri/src/lib/cashierStationBindingRecovery.ts"
       - "artifacts/fawri/src/lib/cashierOperatorPolicyRefresh.ts"
       - "artifacts/fawri/src/lib/cashierOperatorCloudSync.ts"
       - "artifacts/fawri/src/lib/cashierOperatorHistoryRuntime.ts"
@@ -97,6 +99,11 @@ jobs:
 
       - name: Validate cashier UX regression contract
         run: pnpm run cashier:validate
+
+      - name: Prove durable one-time cashier pairing recovery
+        run: >-
+          pnpm --filter @workspace/fawri exec node --test
+          ./tests/cashier-station-binding-recovery.test.mjs
 
       - name: Prove cashier canonical location binding
         run: >-
