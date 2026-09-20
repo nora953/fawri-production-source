@@ -156,6 +156,8 @@ test("planner composes canonical service area with nearest fresh location routin
     result.inventory_fresh_after,
     "2026-09-19T11:55:00.000Z",
   );
+  assert.equal(result.inventory_freshness_max_age_minutes, 5);
+  assert.equal(result.inventory_stale_policy, "reroute_then_pending");
 });
 
 test("planner returns routing unavailable before inventory lookup when area has no location mapping", async () => {
@@ -265,4 +267,138 @@ test("service-only order routes without inventory rows or freshness", async () =
     location_id: "location-b",
     reason: "merchant_priority",
   });
+});
+
+
+test("planner uses merchant-configured freshness duration", async () => {
+  const f = fixture({
+    settings: {
+      inventory_freshness_max_age_minutes: 15,
+      inventory_stale_policy: "reroute_then_pending",
+    },
+    locations: [
+      {
+        id: "location-a",
+        merchant_id: "merchant-a",
+        online_fulfillment_enabled: true,
+        operational_status: "open",
+        accept_online_orders_while_closed: false,
+        merchant_priority: 1,
+        latitude: null,
+        longitude: null,
+        inventory_fresh_at: "2026-09-19T11:50:01.000Z",
+      },
+    ],
+    mappings: [
+      {
+        merchant_id: "merchant-a",
+        location_id: "location-a",
+        delivery_area_rate_id: "rate-mansour",
+      },
+    ],
+    inventory: [
+      {
+        merchant_id: "merchant-a",
+        location_id: "location-a",
+        product_id: "product-a",
+        variant_id: null,
+        quantity: 5,
+      },
+    ],
+  });
+
+  const result = await planOnlineOrderFulfillmentWithTarget(f.target, {
+    merchantId: "merchant-a",
+    area: "المنصور",
+    requestedItems: [{ product_id: "product-a", quantity: 1 }],
+    now: "2026-09-19T12:00:00.000Z",
+  });
+
+  assert.equal(result.status, "routing_ready");
+  if (result.status !== "routing_ready") return;
+  assert.equal(result.inventory_fresh_after, "2026-09-19T11:45:00.000Z");
+  assert.equal(result.inventory_freshness_max_age_minutes, 15);
+  assert.deepEqual(result.routing, {
+    status: "routed",
+    location_id: "location-a",
+    reason: "merchant_priority",
+  });
+});
+
+test("planner applies merchant stale inventory policy", async () => {
+  const staleLocation = {
+    id: "location-a",
+    merchant_id: "merchant-a",
+    online_fulfillment_enabled: true,
+    operational_status: "open",
+    accept_online_orders_while_closed: false,
+    merchant_priority: 5,
+    latitude: null,
+    longitude: null,
+    inventory_fresh_at: "2026-09-19T11:00:00.000Z",
+  };
+  const shared = {
+    locations: [staleLocation],
+    mappings: [
+      {
+        merchant_id: "merchant-a",
+        location_id: "location-a",
+        delivery_area_rate_id: "rate-mansour",
+      },
+    ],
+    inventory: [
+      {
+        merchant_id: "merchant-a",
+        location_id: "location-a",
+        product_id: "product-a",
+        variant_id: null,
+        quantity: 5,
+      },
+    ],
+  };
+
+  const allowStale = fixture({
+    ...shared,
+    settings: {
+      inventory_freshness_max_age_minutes: 5,
+      inventory_stale_policy: "allow_stale",
+    },
+  });
+  const routed = await planOnlineOrderFulfillmentWithTarget(allowStale.target, {
+    merchantId: "merchant-a",
+    area: "المنصور",
+    requestedItems: [{ product_id: "product-a", quantity: 1 }],
+    now: "2026-09-19T12:00:00.000Z",
+  });
+  assert.equal(routed.status, "routing_ready");
+  if (routed.status === "routing_ready") {
+    assert.equal(routed.inventory_stale_policy, "allow_stale");
+    assert.deepEqual(routed.routing, {
+      status: "routed",
+      location_id: "location-a",
+      reason: "merchant_priority",
+    });
+  }
+
+  const freshOnly = fixture({
+    ...shared,
+    settings: {
+      inventory_freshness_max_age_minutes: 5,
+      inventory_stale_policy: "fresh_only",
+    },
+  });
+  const blocked = await planOnlineOrderFulfillmentWithTarget(freshOnly.target, {
+    merchantId: "merchant-a",
+    area: "المنصور",
+    requestedItems: [{ product_id: "product-a", quantity: 1 }],
+    now: "2026-09-19T12:00:00.000Z",
+  });
+  assert.equal(blocked.status, "routing_ready");
+  if (blocked.status === "routing_ready") {
+    assert.equal(blocked.inventory_stale_policy, "fresh_only");
+    assert.deepEqual(blocked.routing, {
+      status: "unfulfillable",
+      reason: "inventory_stale",
+    });
+  }
 });
