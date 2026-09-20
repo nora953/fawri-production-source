@@ -441,6 +441,7 @@ function normalizePatch(
   );
   const deliveryPatch = objectRecord(patch.delivery);
   const paymentPatch = objectRecord(patch.payment);
+  const inventoryPatch = objectRecord(patch.inventory);
   if (
     Object.prototype.hasOwnProperty.call(patch, "delivery") &&
     (!patch.delivery || typeof patch.delivery !== "object" || Array.isArray(patch.delivery))
@@ -461,6 +462,18 @@ function normalizePatch(
       400,
     );
   }
+  if (
+    Object.prototype.hasOwnProperty.call(patch, "inventory") &&
+    (!patch.inventory ||
+      typeof patch.inventory !== "object" ||
+      Array.isArray(patch.inventory))
+  ) {
+    throw new MerchantSettingsError(
+      "MERCHANT_INVENTORY_PATCH_INVALID",
+      "inventory settings patch must be an object",
+      400,
+    );
+  }
   assertAllowedKeys(
     deliveryPatch,
     DELIVERY_PATCH_KEYS,
@@ -470,6 +483,11 @@ function normalizePatch(
     paymentPatch,
     PAYMENT_PATCH_KEYS,
     "MERCHANT_PAYMENT_FIELD_UNSUPPORTED",
+  );
+  assertAllowedKeys(
+    inventoryPatch,
+    INVENTORY_PATCH_KEYS,
+    "MERCHANT_INVENTORY_FIELD_UNSUPPORTED",
   );
 
   const replyLanguage = Object.prototype.hasOwnProperty.call(patch, "reply_language")
@@ -602,6 +620,25 @@ function normalizePatch(
     );
   }
 
+  const freshnessMaxAgeMinutes = positiveInteger(
+    inventoryPatch.freshness_max_age_minutes,
+    current.inventory.freshness_max_age_minutes,
+    1440,
+  );
+  const stalePolicy = Object.prototype.hasOwnProperty.call(
+    inventoryPatch,
+    "stale_policy",
+  )
+    ? text(inventoryPatch.stale_policy)
+    : current.inventory.stale_policy;
+  if (!INVENTORY_STALE_POLICIES.has(stalePolicy as InventoryStalePolicy)) {
+    throw new MerchantSettingsError(
+      "MERCHANT_INVENTORY_STALE_POLICY_INVALID",
+      "inventory stale policy is invalid",
+      400,
+    );
+  }
+
   return {
     merchant_id: current.merchant_id,
     version: current.version + 1,
@@ -635,6 +672,10 @@ function normalizePatch(
       instructions: Object.prototype.hasOwnProperty.call(paymentPatch, "instructions")
         ? text(paymentPatch.instructions).slice(0, 2000)
         : current.payment.instructions,
+    },
+    inventory: {
+      freshness_max_age_minutes: freshnessMaxAgeMinutes,
+      stale_policy: stalePolicy as InventoryStalePolicy,
     },
     created_at: current.created_at,
     updated_at: new Date().toISOString(),
