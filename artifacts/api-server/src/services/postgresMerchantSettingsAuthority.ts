@@ -328,6 +328,10 @@ function defaultSettings(merchantId: string): MerchantOperationalSettings {
       methods: ["cash_on_delivery"],
       instructions: "",
     },
+    inventory: {
+      freshness_max_age_minutes: 5,
+      stale_policy: "reroute_then_pending",
+    },
     created_at: timestamp,
     updated_at: timestamp,
   };
@@ -375,6 +379,12 @@ function rowToSettings(
       methods,
       instructions: row.payment_instructions,
     },
+    inventory: {
+      freshness_max_age_minutes: Number(
+        row.inventory_freshness_max_age_minutes,
+      ),
+      stale_policy: row.inventory_stale_policy,
+    },
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
   };
@@ -392,7 +402,9 @@ async function loadSettings(
             free_delivery_threshold_iqd, delivery_estimated_days_min,
             delivery_estimated_days_max, delivery_areas, delivery_notes,
             cash_on_delivery_enabled, electronic_payment_enabled,
-            payment_methods, payment_instructions, created_at, updated_at
+            payment_methods, payment_instructions,
+            inventory_freshness_max_age_minutes, inventory_stale_policy,
+            created_at, updated_at
        FROM merchant_settings
       WHERE merchant_id = $1${lock ? " FOR UPDATE" : ""}`,
     [merchantId],
