@@ -11,11 +11,11 @@ CREATE TABLE "merchant_location_delivery_areas" (
 ALTER TABLE "merchant_location_delivery_areas" ENABLE ROW LEVEL SECURITY;--> statement-breakpoint
 ALTER TABLE "merchant_location_delivery_areas" ADD CONSTRAINT "merchant_location_delivery_areas_merchant_fk" FOREIGN KEY ("merchant_id") REFERENCES "public"."merchants"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "merchant_location_delivery_areas" ADD CONSTRAINT "merchant_location_delivery_areas_location_merchant_fk" FOREIGN KEY ("location_id","merchant_id") REFERENCES "public"."merchant_locations"("id","merchant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "merchant_delivery_area_rates" ADD CONSTRAINT "merchant_delivery_area_rates_id_merchant_unique" UNIQUE("id","merchant_id");--> statement-breakpoint
 ALTER TABLE "merchant_location_delivery_areas" ADD CONSTRAINT "merchant_location_delivery_areas_area_merchant_fk" FOREIGN KEY ("delivery_area_rate_id","merchant_id") REFERENCES "public"."merchant_delivery_area_rates"("id","merchant_id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 CREATE UNIQUE INDEX "merchant_location_delivery_areas_merchant_location_area_unique" ON "merchant_location_delivery_areas" USING btree ("merchant_id","location_id","delivery_area_rate_id");--> statement-breakpoint
 CREATE INDEX "merchant_location_delivery_areas_merchant_area_idx" ON "merchant_location_delivery_areas" USING btree ("merchant_id","delivery_area_rate_id");--> statement-breakpoint
 CREATE INDEX "merchant_location_delivery_areas_merchant_location_idx" ON "merchant_location_delivery_areas" USING btree ("merchant_id","location_id");--> statement-breakpoint
-ALTER TABLE "merchant_delivery_area_rates" ADD CONSTRAINT "merchant_delivery_area_rates_id_merchant_unique" UNIQUE("id","merchant_id");--> statement-breakpoint
 CREATE POLICY "merchant_location_delivery_areas_tenant_boundary" ON "merchant_location_delivery_areas" AS PERMISSIVE FOR ALL TO public USING ((
     "merchant_location_delivery_areas"."merchant_id" = nullif(current_setting('fawri.tenant_id', true), '')
     OR EXISTS (
