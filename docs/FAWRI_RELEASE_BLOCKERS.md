@@ -1,187 +1,261 @@
 # Fawri Release Blockers
 
-Status: Living release-blocker register for the finishing phase.
+Status: Post-main-integration release blocker register.
 
-This file separates confirmed blockers from completed readiness work. A blocker is not considered closed until the repository contains evidence and the current checkpoint records validation.
+This file separates repository-owned blockers from external launch blockers. A blocker is not closed by intention; it is closed only when the current repository/checkpoint contains evidence.
 
 ## Blocker severity model
 
 - `CRITICAL`: prevents a production release.
 - `HIGH`: prevents declaring the affected subsystem production-ready.
-- `MEDIUM`: must be resolved or explicitly accepted before release candidate sign-off.
-- `EXTERNAL`: depends on a provider, credential, permission, approval, or deployment action that cannot be invented in code.
+- `MEDIUM`: must be resolved or explicitly accepted before general launch.
+- `EXTERNAL`: depends on provider credentials, permissions, infrastructure, approval, or deployment action outside source control.
 
-## Open blockers
+## Current repository checkpoint
 
-### Merchant Dashboard Global Hardening
+- Integrated `main`: `515dc33404e517d11060fa60cb6ef20d986b09ef`
+- Validated release-candidate tree: `92290d3f97e3ece81525a0b92d668d129e9df5ed`
+- Safety checkpoint: `checkpoint/main-integrated-green-2026-09-20`
+- Final integration PR: #256
+- Release-candidate CI result: 38/38 PASS, 0 FAIL
+- Merged `main` tree is identical to the validated release-candidate tree.
 
-Severity: HIGH
+## Open code/release blockers
 
-Status: OPEN
-
-All major merchant surfaces must be validated together against server/PostgreSQL authority, including dashboard overview, products, orders, conversations, cashier management, cashier reports, settings, channels, subscription, support, navigation, and related loading/error/unavailable states.
-
-Closure must also prove that no operational surface silently falls back to stale/local authority when a canonical server authority exists.
-
-### Catalog / Variants / Inventory Finalization
-
-Severity: HIGH
-
-Status: OPEN
-
-The current Catalog/Variants implementation is preserved, but final product-editor and authority hardening remains part of the finishing plan.
-
-Closure requires validation of product media, variant/options UX, SKU/barcode uniqueness, variant pricing, inventory set/adjust flows, error states, and Catalog-to-POS continuity.
-
-### Auth / Admin / Subscription Final Hardening
-
-Severity: HIGH
-
-Status: OPEN
-
-Known preview authority-cutover defects have been fixed, but release sign-off still requires golden runtime coverage for merchant, Owner Admin, Assistant Admin, session rotation/revocation, password/security operations, lifecycle/access state, and subscription status transitions.
-
-### Remaining Operational Authority Hardening
-
-Severity: HIGH
-
-Status: OPEN
-
-Orders, Settings, Channels, Conversations, Knowledge, and related runtime authorities still require final integrated hardening and golden-path validation before release candidate sign-off.
-
-### Final Database / Security / Operations Validation
-
-Severity: HIGH
-
-Status: OPEN
-
-Final release validation must include migration/schema continuity, tenant isolation, idempotency/concurrency, observability, backup/restore rehearsal, security/supply-chain gates, and log/secret hygiene.
-
-### Global Merchant Journey / End-to-End Gate
-
-Severity: HIGH
-
-Status: OPEN
-
-The project has static/runtime consistency gates and the POS subsystem now has a completed golden lifecycle, but the final cross-subsystem golden journey suite has not yet been completed.
-
-The target merchant journey must prove, at minimum:
-
-merchant authentication -> product/variant -> inventory -> cashier staff/station -> cashier login -> sale -> inventory effect -> reporting/order visibility -> safe session/shift completion.
-
-Equivalent golden journeys are also required for Admin and Subscription lifecycle behavior.
-
-### UI/UX Final Polish
+### UI/UX final polish and manual browser QA
 
 Severity: MEDIUM
 
 Status: OPEN
 
-Final responsive and interaction polish remains after authority/runtime hardening. It must cover desktop/tablet/mobile, RTL/LTR, Arabic/Kurdish/English, overflow, forms, loading/empty/error states, accessibility, and performance-sensitive large bundles.
+Repository CI proves the integrated code and authority contracts, but final manual release QA still must cover:
 
-Known non-blocking candidates include existing production-build sourcemap reporting warnings and large-chunk advisory warnings; these are not current POS correctness blockers but should be assessed during final polish/performance work.
+- desktop/tablet/mobile responsive behavior,
+- Arabic/Kurdish/English visual parity,
+- RTL/LTR presentation,
+- forms, overflow, loading, empty and error states,
+- accessibility/keyboard behavior,
+- final performance and large-bundle review,
+- full-stack staging browser smoke validation.
 
-## External blockers
+Existing build sourcemap/chunk advisories remain non-fatal unless final performance review shows a user-facing issue.
 
-### Production KMS/HSM provider activation
+## External production blockers
 
-Severity: EXTERNAL / CRITICAL for production credential-vault activation
+### Production PostgreSQL deployment
+
+Severity: EXTERNAL / CRITICAL
 
 Status: OPEN
 
-Provider-neutral envelope encryption and provider abstraction exist, but a real production KMS/HSM provider, credentials, permissions, operational ownership, and rotation configuration are not established in the repository checkpoint. Do not assume AWS, GCP, Azure, or another provider until explicitly selected and provisioned.
+Repository migration generation, reproducibility, disposable PostgreSQL application, rollback, and reconciliation gates pass. Production still requires:
 
-### Meta production OAuth / credential / live-send activation
+- actual production PostgreSQL target,
+- controlled application of the committed migration chain,
+- schema verification after deployment,
+- deployment ownership and rollback procedure.
+
+Do not reinterpret disposable CI migration success as proof that a production database has been migrated.
+
+### AWS KMS production activation
+
+Severity: EXTERNAL / CRITICAL for Meta credential-vault activation
+
+Status: OPEN
+
+AWS KMS is the selected production architecture and repository wiring is complete. Production still requires real external resources:
+
+- production AWS account and region,
+- one symmetric customer-managed KMS key,
+- runtime workload IAM role/identity,
+- KMS key policy permitting the documented decrypt operation,
+- rotation/operator permissions,
+- initial wrapped production DEK manifest,
+- deployment secret-store configuration,
+- rotation and historical-DEK retirement policy.
+
+Production startup is fail-closed unless `FAWRI_META_CREDENTIAL_PROVIDER=aws-kms` and the required KMS configuration is present.
+
+### Meta production OAuth / webhook / live-send activation
 
 Severity: EXTERNAL / CRITICAL for live Meta channel release
 
 Status: OPEN
 
-Meta connection/live-send behavior remains activation-gated. Production-safe OAuth configuration, credential storage/provider readiness, permissions, and live transport activation must be explicitly supplied and validated. Do not enable real Meta sends as part of tests.
+The repository cutover and operational gates pass, but live production use still requires:
 
-## Closed blockers at current checkpoint
+- approved/configured Meta application,
+- real `META_APP_ID`, `META_APP_SECRET`, `META_CONFIG_ID`, and `META_VERIFY_TOKEN`,
+- exact production HTTPS `META_REDIRECT_URI`,
+- production webhook/page subscription configuration,
+- controlled OAuth validation against a test merchant/page,
+- KMS credential-provider readiness,
+- explicit live reply transport activation.
+
+Do not commit credentials or enable uncontrolled live sends from CI.
+
+### Knowledge embedding production activation
+
+Severity: EXTERNAL
+
+Status: OPEN
+
+The OpenAI embedding provider is wired and repository readiness gates pass. Production still requires:
+
+- `FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER=openai`,
+- deployment-secret `OPENAI_API_KEY`,
+- production readiness verification from the deployed workload.
+
+### SaaS subscription billing provider
+
+Severity: EXTERNAL / CRITICAL for automated paid subscription purchase/renewal
+
+Status: OPEN
+
+Current implemented checkout providers do not provide a supported automated production SaaS billing path:
+
+- `superqi_sandbox` is test-only and production-forbidden,
+- `fastpay` remains `merchant_setup_required` until official onboarding, credentials, and supported integration documentation are available.
+
+Do not invent provider endpoints, signatures, callbacks, or settlement behavior.
+
+### Production backup / restore
+
+Severity: EXTERNAL / CRITICAL
+
+Status: OPEN
+
+Disposable backup/restore drills pass in repository CI, but production backup infrastructure is not established by source control.
+
+Before launch, production must prove:
+
+- PostgreSQL backup mechanism,
+- encryption/access control and retention,
+- object/media backup where applicable,
+- isolated restore target,
+- successful integrity-checked restore drill,
+- RPO/RTO ownership and alerting.
+
+### Production secrets and release gate
+
+Severity: EXTERNAL / CRITICAL
+
+Status: OPEN
+
+The production deployment environment still must provide all required secrets and explicitly enable the release gate only after provider readiness is proven.
+
+Required launch-time evidence includes:
+
+- strong Auth security secret,
+- strong observability bearer token,
+- required PostgreSQL authority selections,
+- Meta/KMS/OpenAI configuration,
+- job worker policy,
+- `FAWRI_SERVICE_VERSION`,
+- `FAWRI_PRODUCTION_RELEASE_GATE=required`,
+- successful `/ops/readiness` before routing customer traffic.
+
+## Closed repository-owned blockers
+
+The following previously open HIGH blockers are closed by the integrated release-candidate evidence on PR #256.
+
+### Merchant Dashboard Global Hardening
+
+Severity: HIGH
+
+Status: CLOSED
+
+Closure evidence includes the global merchant journey, merchant journey, settings authority, dashboard/channel coherence, PostgreSQL authority, build/typecheck, and final integration gates.
+
+### Catalog / Variants / Inventory Finalization
+
+Severity: HIGH
+
+Status: CLOSED for repository release-candidate scope
+
+Closure evidence includes Catalog UI cutover, physical-media lifecycle, Catalog validation, location inventory authority, product/variant continuity, and full repository build/typecheck.
+
+### Auth / Admin / Subscription Final Hardening
+
+Severity: HIGH
+
+Status: CLOSED
+
+Closure evidence includes merchant, admin, subscription and global merchant journey gates plus session/authority cutover validation.
+
+### Remaining Operational Authority Hardening
+
+Severity: HIGH
+
+Status: CLOSED
+
+Orders, Settings, Channels, Conversations, Knowledge, Cashier, routing, and related PostgreSQL authority paths are included in the integrated checkpoint and final validation suite.
+
+### Final Database / Security / Operations Validation
+
+Severity: HIGH
+
+Status: CLOSED for repository-owned validation
+
+Closure evidence includes:
+
+- canonical Drizzle generation,
+- committed migration reproducibility,
+- disposable PostgreSQL migration application,
+- rollback/reconciliation,
+- storage audit,
+- repository security,
+- dependency audit/review,
+- lockfile integrity,
+- readiness/observability gates.
+
+Production backup infrastructure and production database deployment remain external blockers above.
+
+### Global Merchant Journey / End-to-End Gate
+
+Severity: HIGH
+
+Status: CLOSED
+
+Final integration validated merchant/global merchant/admin/subscription journeys along with cashier, online-order, routing, settings, and authority cutoffs.
+
+### Multi-location routing and online fulfillment
+
+Severity: HIGH
+
+Status: CLOSED
+
+Validated repository behavior includes service-area resolution, canonical location routing, online-order PostgreSQL authority, atomic commit, cancellation compensation, multi-location bot stock routing, and stale-inventory fail-closed behavior.
+
+### AWS KMS repository activation hardening
+
+Severity: HIGH
+
+Status: CLOSED for code-owned wiring
+
+Validated repository behavior includes explicit production provider selection, KMS ARN/region validation, sanitized AWS/network failures, KMS preflight tests, and readiness/build validation.
+
+Real KMS resources and IAM remain external blockers.
 
 ### POS Global Hardening
 
 Severity: HIGH
 
-Status: CLOSED at operational close SHA `596333f3aad459f8e4fdc96a5837bfd7c9c9395d`
+Status: CLOSED
 
-Closure evidence recorded in `docs/FAWRI_CURRENT_CHECKPOINT.md` includes:
+Historical POS closure remains preserved, including pairing, staff permissions, PIN/session behavior, offline inventory authority, outbox/ACK/reconciliation, sale/return/void lifecycle, report permissions, and connectivity authority.
 
-- station pairing and stable binding behavior,
-- staff/manager permission enforcement,
-- PIN login and operator-session authorization,
-- one-open-shift and one-live-session concurrency protection,
-- server-mapped concurrent login conflicts,
-- session expiry/invalidation behavior without deleting pending local operations,
-- existing-station offline inventory authority management,
-- heartbeat-independent optimistic configuration ETag and stale-write rejection,
-- prevention of legacy endpoint bypass around versioned station configuration,
-- offline tracked-inventory sale authority,
-- local-first sale commit while disconnected,
-- full operation outbox boundaries,
-- strict ACK validation before durable local deletion,
-- reconnect and automatic outbox upload,
-- inventory reconciliation after ACK,
-- no duplicate sale in the browser golden journey,
-- online sale, return, and void lifecycle,
-- returnability/void mutual consistency,
-- report/profit/cost permission boundaries,
-- History read-side operator visibility checks,
-- Offline History navigation without generic failure,
-- one cashier connectivity authority shared by POS/History/runtime,
-- truthful Online/Offline browser state after actual cashier transport evidence.
+## Release rule
 
-Final browser golden evidence includes the tracked-inventory journey:
+Fawri may be described as **repository production-release code ready** at the integrated checkpoint.
 
-`stock 2 -> Offline sale 12,000 IQD -> reconnect -> auto-sync -> one completed/synced sale -> stock 1 -> Offline History opens and shows غير متصل`.
+It must not be described as **production launch ready** until:
 
-Focused validations in the closing sequence included `21/21`, `12/12`, and final connectivity `26/26` regression passes, successful Fawri typecheck/build, applicable API typecheck/build passes earlier in the phase, and clean `git diff --check` results.
-
-### Preview PostgreSQL authority mismatch
-
-Status: CLOSED at `4cb6e262517841cea0174f31dd2693791e03d4e0`
-
-The unified preview requires operational, Auth session, and Subscription PostgreSQL authority rather than depending on manual exports that could leave the runtime in a partial cutover state.
-
-### Cashier dashboard surfaces missing from active tree
-
-Status: CLOSED at `746a5d08fb9f41c9085a6cc7244cc41c658449be`
-
-Cashier staff management, cashier central reports, cashier operator routes, and related database/runtime authority were restored without replacing recent Catalog work.
-
-### Stale cashier runtime expiry state
-
-Status: CLOSED at `4cb6e262517841cea0174f31dd2693791e03d4e0`
-
-Expired pairing challenges, station credentials, and operator sessions have deterministic reconciliation. Open shifts are not closed merely because an authentication session expires.
-
-### Invalid local cashier station binding produced generic failure
-
-Status: CLOSED at `4cb6e262517841cea0174f31dd2693791e03d4e0`
-
-The cashier client can recover from an invalid station credential by clearing only station-binding fields and returning to pairing while preserving stable device identity and local commerce stores.
-
-### Static and runtime global consistency findings
-
-Status: CLOSED for the recorded checkpoint baseline
-
-Validated baseline result:
-
-- Static: `critical=0 warning=0 review=0`
-- PostgreSQL runtime: `critical=0 warning=0 review=0`
-
-These audits remain repeatable gates; a future non-zero result reopens the relevant blocker.
-
-## Release candidate rule
-
-A release candidate may be declared only when:
-
-1. all code-owned CRITICAL/HIGH blockers are closed,
-2. remaining EXTERNAL blockers are either completed or explicitly documented as intentionally disabled release surfaces,
-3. static and runtime consistency gates pass,
-4. golden end-to-end journeys pass,
-5. database/security/backup/observability gates pass,
-6. final browser and responsive validation passes,
-7. the current checkpoint is updated to the release-candidate SHA.
+1. all EXTERNAL / CRITICAL blockers above are completed,
+2. final manual UI/UX and full-stack staging QA pass,
+3. production PostgreSQL migration/verification completes,
+4. production provider/secrets readiness is proven,
+5. production backup/restore proof exists,
+6. `FAWRI_PRODUCTION_RELEASE_GATE=required` starts successfully,
+7. `/ops/readiness` is ready before traffic,
+8. controlled production smoke tests and queue/DLQ/alert observation pass.
