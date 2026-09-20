@@ -55,9 +55,6 @@ const CashierManagementPage = lazy(
 const CashierDiscountPoliciesPage = lazy(
   () => import("@/pages/dashboard/CashierDiscountPoliciesPage"),
 );
-const CashierCentralReportsPage = lazy(
-  () => import("@/pages/dashboard/CashierCentralReportsPage"),
-);
 const ReportsPage = lazy(() => import("@/pages/dashboard/ReportsPage"));
 const SavedAnswersPage = lazy(
   () => import("@/pages/dashboard/SavedAnswersPage.ts"),
