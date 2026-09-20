@@ -26,3 +26,15 @@ test('disabling a station warns that pairing is revoked and offline authority ca
   assert.match(page, /editingStation\.status !== 'active'/);
   assert.match(page, /disabled=\{editingStation\.status !== 'active'\}/);
 });
+
+
+test('station management uses canonical merchant locations instead of legacy branch inputs', () => {
+  assert.match(page, /api\('\/api\/cashier\/management\/locations'\)/);
+  assert.match(page, /location_id:\s*stationLocationId/);
+  assert.match(page, /locationLabel\(station\.location_id\)/);
+  assert.match(page, /locationFixedHint:/);
+  assert.match(page, /location\.is_default/);
+  assert.doesNotMatch(page, /branchKey:\s*'رمز الفرع'/);
+  assert.doesNotMatch(page, /\{l\.branchKey\}/);
+  assert.doesNotMatch(page, /\{l\.branchLabel\}/);
+});
