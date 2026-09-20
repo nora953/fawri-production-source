@@ -69,6 +69,10 @@ export type CashierCentralProductRow = {
   variant_name?: string;
   net_units: number;
   net_revenue_minor: number;
+  profit_status: "available" | "partial" | "unavailable";
+  gross_profit_minor?: number;
+  cost_known_affected_units: number;
+  cost_unknown_affected_units: number;
 };
 
 export type CashierCentralCurrencyReport = {
@@ -90,6 +94,7 @@ export type CashierCentralCurrencyReport = {
   cost_known_net_units: number;
   cost_unknown_net_units: number;
   top_products: CashierCentralProductRow[];
+  top_profitable_products: CashierCentralProductRow[];
 };
 
 export type CashierCentralReport = {
@@ -122,12 +127,23 @@ export type CashierCentralReportResult = {
   }>;
 };
 
-type CurrencyAccumulator = Omit<
-  CashierCentralCurrencyReport,
-  "average_ticket_minor" | "profit_status" | "gross_profit_minor" | "top_products"
+type ProductAccumulator = Omit<
+  CashierCentralProductRow,
+  "profit_status" | "gross_profit_minor"
 > & {
   profit_minor: number;
-  products: Map<string, CashierCentralProductRow>;
+};
+
+type CurrencyAccumulator = Omit<
+  CashierCentralCurrencyReport,
+  | "average_ticket_minor"
+  | "profit_status"
+  | "gross_profit_minor"
+  | "top_products"
+  | "top_profitable_products"
+> & {
+  profit_minor: number;
+  products: Map<string, ProductAccumulator>;
 };
 
 type ReportAccumulator = {
@@ -679,6 +695,26 @@ function productKey(line: SaleLine): string {
   return `${line.product_id}\u0000${line.variant_id || ""}`;
 }
 
+function productAccumulator(
+  currency: CurrencyAccumulator,
+  line: SaleLine,
+): ProductAccumulator {
+  const key = productKey(line);
+  const current = currency.products.get(key) || {
+    product_id: line.product_id,
+    ...(line.variant_id ? { variant_id: line.variant_id } : {}),
+    product_name: line.product_name,
+    ...(line.variant_name ? { variant_name: line.variant_name } : {}),
+    net_units: 0,
+    net_revenue_minor: 0,
+    cost_known_affected_units: 0,
+    cost_unknown_affected_units: 0,
+    profit_minor: 0,
+  };
+  currency.products.set(key, current);
+  return current;
+}
+
 function addProductDelta(
   currency: CurrencyAccumulator,
   line: SaleLine,
@@ -686,22 +722,13 @@ function addProductDelta(
   revenue: number,
 ): void {
   if (units === 0 && revenue === 0) return;
-  const key = productKey(line);
-  const row = currency.products.get(key) || {
-    product_id: line.product_id,
-    ...(line.variant_id ? { variant_id: line.variant_id } : {}),
-    product_name: line.product_name,
-    ...(line.variant_name ? { variant_name: line.variant_name } : {}),
-    net_units: 0,
-    net_revenue_minor: 0,
-  };
+  const row = productAccumulator(currency, line);
   row.net_units = safeAdd(row.net_units, units, "product units");
   row.net_revenue_minor = safeAdd(
     row.net_revenue_minor,
     revenue,
     "product revenue",
   );
-  currency.products.set(key, row);
 }
 
 function addCostContribution(
@@ -711,14 +738,20 @@ function addCostContribution(
   revenueContribution: number,
   direction: 1 | -1,
 ): void {
-  // These counters intentionally track all units whose cost affects the period,
-  // not algebraic net units. That keeps profit completeness truthful for a
-  // return-only period where the monetary contribution itself is negative.
+  // These counters intentionally track every unit whose cost affects the
+  // selected period, not algebraic net units. This preserves completeness for
+  // return-only periods and for product-level profitability.
+  const product = productAccumulator(currency, line);
   if (line.unit_cost_minor === undefined) {
     currency.cost_unknown_net_units = safeAdd(
       currency.cost_unknown_net_units,
       quantity,
       "unknown cost affected units",
+    );
+    product.cost_unknown_affected_units = safeAdd(
+      product.cost_unknown_affected_units,
+      quantity,
+      "product unknown cost affected units",
     );
     return;
   }
@@ -727,12 +760,22 @@ function addCostContribution(
     quantity,
     "known cost affected units",
   );
+  product.cost_known_affected_units = safeAdd(
+    product.cost_known_affected_units,
+    quantity,
+    "product known cost affected units",
+  );
   const cost = safeMultiply(line.unit_cost_minor, quantity, "cost");
   const profitContribution = revenueContribution - cost;
   currency.profit_minor = safeAdd(
     currency.profit_minor,
     direction * profitContribution,
     "profit",
+  );
+  product.profit_minor = safeAdd(
+    product.profit_minor,
+    direction * profitContribution,
+    "product profit",
   );
 }
 
@@ -889,6 +932,29 @@ function applyPeriodEvidence(
   }
 }
 
+function finalizeProduct(value: ProductAccumulator): CashierCentralProductRow {
+  const profitStatus: CashierCentralProductRow["profit_status"] =
+    value.cost_unknown_affected_units === 0
+      ? "available"
+      : value.cost_known_affected_units > 0
+        ? "partial"
+        : "unavailable";
+  return {
+    product_id: value.product_id,
+    ...(value.variant_id ? { variant_id: value.variant_id } : {}),
+    product_name: value.product_name,
+    ...(value.variant_name ? { variant_name: value.variant_name } : {}),
+    net_units: value.net_units,
+    net_revenue_minor: value.net_revenue_minor,
+    profit_status: profitStatus,
+    ...(profitStatus !== "unavailable"
+      ? { gross_profit_minor: value.profit_minor }
+      : {}),
+    cost_known_affected_units: value.cost_known_affected_units,
+    cost_unknown_affected_units: value.cost_unknown_affected_units,
+  };
+}
+
 function finalizeCurrency(
   value: CurrencyAccumulator,
   topProductsLimit = DEFAULT_TOP_PRODUCTS,
@@ -899,6 +965,7 @@ function finalizeCurrency(
       : value.cost_known_net_units > 0
         ? "partial"
         : "unavailable";
+  const products = [...value.products.values()].map(finalizeProduct);
   return {
     currency_code: value.currency_code,
     currency_fraction_digits: value.currency_fraction_digits,
@@ -922,12 +989,25 @@ function finalizeCurrency(
       : {}),
     cost_known_net_units: value.cost_known_net_units,
     cost_unknown_net_units: value.cost_unknown_net_units,
-    top_products: [...value.products.values()]
+    top_products: products
       .filter((product) => product.net_units > 0 || product.net_revenue_minor > 0)
       .sort(
         (left, right) =>
           right.net_revenue_minor - left.net_revenue_minor ||
           right.net_units - left.net_units ||
+          left.product_name.localeCompare(right.product_name),
+      )
+      .slice(0, topProductsLimit),
+    top_profitable_products: products
+      .filter(
+        (product) =>
+          product.profit_status === "available" &&
+          (product.gross_profit_minor ?? 0) > 0,
+      )
+      .sort(
+        (left, right) =>
+          (right.gross_profit_minor ?? 0) - (left.gross_profit_minor ?? 0) ||
+          right.net_revenue_minor - left.net_revenue_minor ||
           left.product_name.localeCompare(right.product_name),
       )
       .slice(0, topProductsLimit),
