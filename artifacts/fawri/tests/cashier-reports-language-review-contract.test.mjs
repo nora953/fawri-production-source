@@ -57,21 +57,42 @@ test('Sorani sales reports match the reviewed Arabic meaning without English off
 test('central Arabic cashier report follows the reviewed Arabic sales terminology', () => {
   assert.match(
     centralArabic,
-    /subtitle: 'المبيعات والإرجاعات والإلغاءات حسب الفروع والموظفين والمحطات من السجل المركزي الموثوق\.'/,
+    /subtitle: 'المبيعات والإرجاعات والإلغاءات حسب المواقع والموظفين والمحطات من السجل المركزي الموثوق\.'/,
   );
   assert.match(centralArabic, /refunds: 'قيمة الإرجاعات والإلغاءات'/);
   assert.match(centralArabic, /average: 'متوسط قيمة عملية البيع'/);
   assert.match(centralArabic, /returns: 'عمليات الإرجاع'/);
   assert.match(centralArabic, /returnOps: 'إرجاع'/);
+  assert.match(centralArabic, /salesByLocation: 'الأثر المالي حسب الموقع'/);
+  assert.match(centralArabic, /activityByLocation: 'العمليات المنفذة حسب الموقع'/);
+  assert.match(centralArabic, /locationFilter: 'الموقع'/);
+  assert.match(centralArabic, /allLocations: 'كل المواقع'/);
+  assert.match(centralArabic, /location: 'الموقع'/);
+  assert.doesNotMatch(centralArabic, /فرع|الفروع/);
   assert.doesNotMatch(centralArabic, /المرتجع|المرتجعات/);
 });
 
 test('central Sorani and English reports preserve the same reviewed metric meaning', () => {
   assert.match(centralSorani, /refunds: 'بەهای گەڕاندنەوە و هەڵوەشاندنەوە'/);
   assert.match(centralSorani, /average: 'تێکڕای بەهای مامەڵەی فرۆشتن'/);
+  assert.match(centralSorani, /salesByLocation: 'کاریگەری دارایی بەپێی شوێن'/);
+  assert.match(centralSorani, /locationFilter: 'شوێن'/);
+  assert.match(centralSorani, /allLocations: 'هەموو شوێنەکان'/);
+  assert.doesNotMatch(centralSorani, /\bلق\b|لقەکان/);
   assert.doesNotMatch(centralSorani, /average: 'ناوەندی مامەڵەی فرۆشتن'/);
 
   assert.match(centralEnglish, /units: 'Net units sold'/);
   assert.match(centralEnglish, /refunds: 'Returns & voids value'/);
   assert.match(centralEnglish, /average: 'Average sale ticket'/);
+});
+
+
+test('central cashier report never renders legacy branch metadata as merchant-facing station context', () => {
+  assert.doesNotMatch(
+    centralSource,
+    /secondary=\{group\.branch_label \|\| \(group\.branch_key/,
+  );
+  assert.match(centralSource, /detail_location_id/);
+  assert.match(centralSource, /result\.by_location/);
+  assert.match(centralSource, /result\.activity\.by_location/);
 });
