@@ -130,13 +130,18 @@ function translateConfigurationDatabaseError(error: unknown): never {
   const candidate = error as { code?: unknown; constraint?: unknown };
   if (
     String(candidate?.code || "") === "23505" &&
-    String(candidate?.constraint || "").includes(
-      "merchant_cashier_stations_offline_branch_unique",
+    (
+      String(candidate?.constraint || "").includes(
+        "merchant_cashier_stations_offline_branch_unique",
+      ) ||
+      String(candidate?.constraint || "").includes(
+        "merchant_cashier_stations_offline_location_unique",
+      )
     )
   ) {
     throw new CashierStaffAuthorityError(
       "CASHIER_OFFLINE_BRANCH_AUTHORITY_EXISTS",
-      "another active cashier station already owns offline inventory authority for this branch",
+      "another active cashier station already owns offline inventory authority for this location",
       409,
     );
   }
@@ -237,6 +242,16 @@ export async function updateCashierStationConfigurationAuthoritative(input: {
       );
     }
     if (
+      (branchKey !== undefined && branchKey !== current.branch_key) ||
+      (branchLabel !== undefined && (branchLabel ?? null) !== current.branch_label)
+    ) {
+      throw new CashierStaffAuthorityError(
+        "CASHIER_STATION_LOCATION_IMMUTABLE",
+        "cashier station location cannot be changed after creation",
+        409,
+      );
+    }
+    if (
       current.status !== "active" &&
       offlineInventoryAuthority === true
     ) {
@@ -254,8 +269,6 @@ export async function updateCashierStationConfigurationAuthoritative(input: {
       sets.push(`${field} = $${values.length}`);
     };
     if (name !== undefined) add("name", name);
-    if (branchKey !== undefined) add("branch_key", branchKey);
-    if (branchLabel !== undefined) add("branch_label", branchLabel);
     if (offlineInventoryAuthority !== undefined) {
       add("offline_inventory_authority", offlineInventoryAuthority);
     }

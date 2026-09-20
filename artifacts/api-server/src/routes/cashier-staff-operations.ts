@@ -15,6 +15,7 @@ import {
   beginCashierStationPairingAuthoritative,
   createCashierStaffAuthoritative,
   createCashierStationAuthoritative,
+  listCashierLocationsAuthoritative,
   listCashierStaffAuthoritative,
   listCashierStationsAuthoritative,
   loginCashierOperatorAuthoritative,
@@ -229,6 +230,20 @@ router.patch(
 );
 
 router.get(
+  "/cashier/management/locations",
+  requireMerchantAuthority,
+  async (_req: Request, res: Response) => {
+    try {
+      const locations = await listCashierLocationsAuthoritative(merchantId(res));
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ ok: true, locations });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+router.get(
   "/cashier/management/stations",
   requireMerchantAuthority,
   async (_req: Request, res: Response) => {
@@ -252,6 +267,7 @@ router.post(
       const station = await createCashierStationAuthoritative({
         merchantId: merchantId(res),
         name: req.body?.name,
+        locationId: req.body?.location_id,
         branchKey: req.body?.branch_key,
         branchLabel: req.body?.branch_label,
         offlineInventoryAuthority: optionalBoolean(

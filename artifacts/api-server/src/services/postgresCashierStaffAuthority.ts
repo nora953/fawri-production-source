@@ -1,7 +1,10 @@
 import crypto from "node:crypto";
 import { hashPassword, verifyPassword } from "./authPasswordService";
 import { evaluateMerchantOperationalAccess } from "./merchantOperationalAccess";
-import { resolveCashierLocationForBranch } from "./cashierLocationBindingAuthority";
+import {
+  resolveCashierLocationById,
+  resolveCashierLocationForBranch,
+} from "./cashierLocationBindingAuthority";
 import {
   isCashierStaffRole,
   normalizeCashierStaffPermissions,
@@ -62,6 +65,14 @@ type StationRow = {
   updated_at: DbInstant;
 };
 
+type CashierLocationRow = {
+  id: string;
+  name: string;
+  legacy_branch_key: string | null;
+  is_default: boolean;
+  operational_status: string;
+};
+
 type PairingRow = {
   id: string;
   merchant_id: string;
@@ -112,6 +123,14 @@ export type CashierStaffView = {
   locked_until?: string;
   created_at: string;
   updated_at: string;
+};
+
+export type CashierLocationView = {
+  id: string;
+  name: string;
+  legacy_branch_key?: string;
+  is_default: boolean;
+  operational_status: "open" | "temporarily_unavailable" | "closed";
 };
 
 export type CashierStationView = {
@@ -347,6 +366,19 @@ function hashSecret(value: string): string {
 
 function randomId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID()}`;
+}
+
+function legacyBranchKeyForLocation(location: {
+  id: string;
+  legacy_branch_key?: string;
+}): string {
+  const legacy = String(location.legacy_branch_key || "").trim();
+  if (legacy && legacy.length <= 120) return legacy;
+  return `location_${crypto
+    .createHash("sha256")
+    .update(location.id, "utf8")
+    .digest("hex")
+    .slice(0, 40)}`;
 }
 
 function toIso(value: DbInstant): string {
@@ -808,6 +840,40 @@ export async function updateCashierStaffAuthoritative(input: {
   }).catch(translateDatabaseError);
 }
 
+export async function listCashierLocationsAuthoritative(
+  merchantIdValue: unknown,
+): Promise<CashierLocationView[]> {
+  assertPostgresAuthority();
+  const merchantId = identifier(merchantIdValue, "merchant_id");
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    const rows = await operationalQueryRows<CashierLocationRow>(
+      client,
+      `SELECT id, name, legacy_branch_key, is_default, operational_status
+         FROM merchant_locations
+        WHERE merchant_id = $1
+        ORDER BY is_default DESC, created_at, id`,
+      [merchantId],
+    );
+    return rows.map((row) => {
+      const status = String(row.operational_status);
+      if (!(["open", "temporarily_unavailable", "closed"] as const).includes(status as never)) {
+        throw new CashierStaffAuthorityError(
+          "CASHIER_LOCATION_STATE_INVALID",
+          "merchant location status is invalid",
+          500,
+        );
+      }
+      return {
+        id: row.id,
+        name: row.name,
+        ...(row.legacy_branch_key ? { legacy_branch_key: row.legacy_branch_key } : {}),
+        is_default: Boolean(row.is_default),
+        operational_status: status as CashierLocationView["operational_status"],
+      };
+    });
+  });
+}
+
 export async function listCashierStationsAuthoritative(
   merchantIdValue: unknown,
 ): Promise<CashierStationView[]> {
@@ -831,6 +897,7 @@ export async function listCashierStationsAuthoritative(
 export async function createCashierStationAuthoritative(input: {
   merchantId: unknown;
   name: unknown;
+  locationId?: unknown;
   branchKey?: unknown;
   branchLabel?: unknown;
   offlineInventoryAuthority?: unknown;
@@ -838,16 +905,41 @@ export async function createCashierStationAuthoritative(input: {
   assertPostgresAuthority();
   const merchantId = identifier(input.merchantId, "merchant_id");
   const name = identifier(input.name, "name", 120);
-  const branchKey =
-    input.branchKey === undefined
+  const locationId =
+    input.locationId === undefined
+      ? undefined
+      : identifier(input.locationId, "location_id", 200);
+  const requestedBranchKey =
+    locationId !== undefined
       ? "main"
-      : identifier(input.branchKey, "branch_key", 120);
-  const branchLabel = optionalLabel(input.branchLabel, "branch_label", 120);
+      : input.branchKey === undefined
+        ? "main"
+        : identifier(input.branchKey, "branch_key", 120);
+  const requestedBranchLabel =
+    locationId !== undefined
+      ? null
+      : optionalLabel(input.branchLabel, "branch_label", 120);
   const offlineInventoryAuthority = Boolean(input.offlineInventoryAuthority);
   const stationId = randomId("cashier_station");
 
   return withMerchantOperationalTransaction(merchantId, async (client) => {
     await assertMerchantOperationalAccessForCashier(client, merchantId, true);
+    const location = locationId
+      ? await resolveCashierLocationById(client, { merchantId, locationId })
+      : await resolveCashierLocationForBranch(client, {
+          merchantId,
+          branchKey: requestedBranchKey,
+          branchLabel: requestedBranchLabel,
+        });
+    if (!location) {
+      throw new CashierStaffAuthorityError(
+        "CASHIER_LOCATION_NOT_FOUND",
+        "cashier station location was not found",
+        404,
+      );
+    }
+    const branchKey = legacyBranchKeyForLocation(location);
+    const branchLabel = location.name;
     await client.query(
       `INSERT INTO merchant_cashier_stations (
          id, merchant_id, name, location_id, branch_key, branch_label, status,
@@ -857,13 +949,7 @@ export async function createCashierStationAuthoritative(input: {
         stationId,
         merchantId,
         name,
-        (
-          await resolveCashierLocationForBranch(client, {
-            merchantId,
-            branchKey,
-            branchLabel,
-          })
-        ).id,
+        location.id,
         branchKey,
         branchLabel,
         offlineInventoryAuthority,

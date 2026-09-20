@@ -34,6 +34,7 @@ type StaffView = {
 type StationView = {
   id: string;
   name: string;
+  location_id: string;
   branch_key: string;
   branch_label?: string;
   status: 'active' | 'disabled' | 'revoked';
@@ -42,6 +43,14 @@ type StationView = {
   offline_inventory_authority: boolean;
   configuration_etag: string;
   credential_version: number;
+};
+
+type LocationView = {
+  id: string;
+  name: string;
+  legacy_branch_key?: string;
+  is_default: boolean;
+  operational_status: 'open' | 'temporarily_unavailable' | 'closed';
 };
 
 type PairingState = {
@@ -59,27 +68,27 @@ const COPY: Record<Lang, Copy> = {
     addStaff: 'إضافة موظف', name: 'اسم الموظف', role: 'الدور', cashier: 'كاشير', manager: 'مدير', pin: 'رمز الدخول من 4 إلى 8 أرقام', saveStaff: 'إضافة الموظف', permissions: 'الصلاحيات', discountPolicies: 'سياسات الخصم',
     createSales: 'إنشاء المبيعات', ownSales: 'عرض مبيعاته', allSales: 'رؤية مبيعات الموظفين الآخرين', returns: 'تنفيذ المرتجعات', voids: 'إلغاء عملية بيع كاملة', manualDiscount: 'تنفيذ خصم يدوي', discountOverride: 'اعتماد تجاوز حد الخصم', salesReports: 'عرض تقارير المبيعات', profitReports: 'عرض الأرباح',
     discountWarning: 'صلاحية الخصم لا تُمنح تلقائيًا. بعد تفعيلها، حدّد حد الموظف من صفحة سياسات الخصم. أي خصم يتجاوز الحد يحتاج موافقة مدير مخوّل.', profitWarning: 'صلاحية الأرباح حساسة. لا تمنحها إلا لموظف موثوق.', active: 'نشط', disabled: 'معطل', revoked: 'ملغى نهائيًا', disable: 'تعطيل', enable: 'تفعيل', edit: 'تعديل', cancel: 'إلغاء', saveChanges: 'حفظ التعديلات', editStaff: 'تعديل الموظف', newPin: 'رمز دخول جديد (اختياري)',
-    addStation: 'إضافة محطة كاشير', stationName: 'اسم المحطة', branchKey: 'رمز الفرع', branchLabel: 'اسم الفرع (اختياري)', offlineAuthority: 'السماح لهذه المحطة ببيع المنتجات ذات المخزون المتابع أثناء انقطاع الإنترنت', offlineHint: 'يمكن تفعيل هذا الخيار لمحطة واحدة فقط في كل فرع. عند انقطاع الإنترنت، تُمنع المحطات الأخرى من بيع المنتجات ذات المخزون المتابع لتجنب تعارض الكميات.', offlineBadge: 'مخزون متاح دون اتصال', saveStation: 'إضافة المحطة', editStation: 'تعديل المحطة', paired: 'مربوطة', notPaired: 'غير مربوطة', pair: 'إنشاء رمز ربط', stationStatus: 'حالة المحطة', disableStation: 'تعطيل المحطة', enableStation: 'تفعيل المحطة', activeStationHint: 'تعطيل المحطة يسحب صلاحية الجهاز الحالي فورًا وينهي أي مناوبة نشطة ويمنع أي بيع جديد.', disabledStationHint: 'المحطة معطلة وغير قابلة للاستخدام. فعّلها ثم أنشئ رمز ربط جديدًا للجهاز.', disableStationWarning: 'تعطيل هذه المحطة سيفك ربط الجهاز فورًا وينهي أي مناوبة نشطة. عند إعادة التفعيل يجب إنشاء رمز ربط جديد. هل تريد المتابعة؟',
+    addStation: 'إضافة محطة كاشير', stationName: 'اسم المحطة', location: 'الموقع', mainLocation: 'الموقع الرئيسي', locationFixedHint: 'موقع المحطة ثابت بعد إنشائها لحماية الربط والمخزون. لإنشاء محطة في موقع آخر، أضف محطة جديدة لذلك الموقع.', noLocations: 'لا توجد مواقع متاحة لإضافة محطة كاشير.', locationUnavailable: 'موقع غير متاح', offlineAuthority: 'السماح لهذه المحطة ببيع المنتجات ذات المخزون المتابع أثناء انقطاع الإنترنت', offlineHint: 'يمكن تفعيل هذا الخيار لمحطة واحدة فقط في كل موقع. عند انقطاع الإنترنت، تُمنع المحطات الأخرى في الموقع نفسه من بيع المنتجات ذات المخزون المتابع لتجنب تعارض الكميات.', offlineBadge: 'مخزون متاح دون اتصال', saveStation: 'إضافة المحطة', editStation: 'تعديل المحطة', paired: 'مربوطة', notPaired: 'غير مربوطة', pair: 'إنشاء رمز ربط', stationStatus: 'حالة المحطة', disableStation: 'تعطيل المحطة', enableStation: 'تفعيل المحطة', activeStationHint: 'تعطيل المحطة يسحب صلاحية الجهاز الحالي فورًا وينهي أي مناوبة نشطة ويمنع أي بيع جديد.', disabledStationHint: 'المحطة معطلة وغير قابلة للاستخدام. فعّلها ثم أنشئ رمز ربط جديدًا للجهاز.', disableStationWarning: 'تعطيل هذه المحطة سيفك ربط الجهاز فورًا وينهي أي مناوبة نشطة. عند إعادة التفعيل يجب إنشاء رمز ربط جديد. هل تريد المتابعة؟',
     pairingTitle: 'رمز ربط الجهاز', pairingHint: 'افتح الكاشير على الجهاز الجديد وأدخل هذا الرمز. صالح لمدة 10 دقائق ويستخدم مرة واحدة.', expires: 'ينتهي', copyCode: 'نسخ الرمز', copied: 'تم النسخ', close: 'إغلاق',
-    loading: 'جارٍ تحميل بيانات الكاشير...', failed: 'تعذر تنفيذ العملية. حاول مرة أخرى.', emptyStaff: 'لا يوجد موظفون حتى الآن.', emptyStations: 'لا توجد محطات كاشير حتى الآن.', saving: 'جارٍ الحفظ...', sessionExpired: 'انتهت جلسة التاجر. سجّل الدخول من جديد ثم أعد المحاولة.', versionConflict: 'تم تعديل بيانات الموظف في مكان آخر. حدّث الصفحة ثم أعد المحاولة.', stationVersionConflict: 'تم تعديل إعدادات المحطة في مكان آخر. حدّث الصفحة ثم أعد المحاولة.', offlineConflict: 'هناك محطة أخرى في هذا الفرع تملك صلاحية بيع المخزون أثناء انقطاع الإنترنت.',
+    loading: 'جارٍ تحميل بيانات الكاشير...', failed: 'تعذر تنفيذ العملية. حاول مرة أخرى.', emptyStaff: 'لا يوجد موظفون حتى الآن.', emptyStations: 'لا توجد محطات كاشير حتى الآن.', saving: 'جارٍ الحفظ...', sessionExpired: 'انتهت جلسة التاجر. سجّل الدخول من جديد ثم أعد المحاولة.', versionConflict: 'تم تعديل بيانات الموظف في مكان آخر. حدّث الصفحة ثم أعد المحاولة.', stationVersionConflict: 'تم تعديل إعدادات المحطة في مكان آخر. حدّث الصفحة ثم أعد المحاولة.', offlineConflict: 'هناك محطة أخرى في هذا الموقع تملك صلاحية بيع المخزون أثناء انقطاع الإنترنت.',
   },
   ku: {
     title: 'کاشێر و کارمەندان', subtitle: 'بەڕێوەبردنی ئامێرەکانی کاشێر، کارمەندان، دەسەڵاتەکان و بەستنەوەی پارێزراو.', staff: 'کارمەندان', stations: 'وێستگەکانی کاشێر',
     addStaff: 'زیادکردنی کارمەند', name: 'ناوی کارمەند', role: 'ڕۆڵ', cashier: 'کاشێر', manager: 'بەڕێوەبەر', pin: 'کۆدی چوونەژوورەوە لە 4 تا 8 ژمارە', saveStaff: 'زیادکردنی کارمەند', permissions: 'دەسەڵاتەکان', discountPolicies: 'سیاسەتەکانی داشکاندن',
     createSales: 'دروستکردنی فرۆشتن', ownSales: 'بینینی فرۆشتنی خۆی', allSales: 'بینینی فرۆشتنی کارمەندانی تر', returns: 'گەڕاندنەوە', voids: 'هەڵوەشاندنەوەی فرۆشتن', manualDiscount: 'داشکاندنی دەستی', discountOverride: 'پەسەندی تێپەڕاندنی سنووری داشکاندن', salesReports: 'بینینی ڕاپۆرتی فرۆشتن', profitReports: 'بینینی قازانج',
     discountWarning: 'دەسەڵاتی داشکاندن خۆکارانە نادرێت. دوای چالاککردن، سنووری کارمەند لە سیاسەتی داشکاندن دیاری بکە. تێپەڕاندنی سنوور پێویستی بە پەسەندی بەڕێوەبەری مۆڵەتپێدراو هەیە.', profitWarning: 'دەسەڵاتی قازانج هەستیارە. تەنها بە کارمەندی متمانەپێکراو بدرێت.', active: 'چالاک', disabled: 'ناچالاک', revoked: 'هەڵوەشاوە', disable: 'ناچالاککردن', enable: 'چالاککردن', edit: 'دەستکاری', cancel: 'پاشگەزبوونەوە', saveChanges: 'پاشەکەوتکردن', editStaff: 'دەستکاری کارمەند', newPin: 'کۆدی چوونەژوورەوەی نوێ (ئارەزوومەندانە)',
-    addStation: 'زیادکردنی وێستگەی کاشێر', stationName: 'ناوی وێستگە', branchKey: 'کۆدی لق', branchLabel: 'ناوی لق (ئارەزوومەندانە)', offlineAuthority: 'ڕێگەدان بە ئەم وێستگەیە بۆ فرۆشتنی کۆگای بەدواداچووکراو بەبێ ئینتەرنێت', offlineHint: 'تەنها یەک وێستگە لە هەر لقێک ئەم دەسەڵاتە هەیە. وێستگەکانی تر لە کاتی پچڕانی ئینتەرنێت ناتوانن ئەم کۆگایە بفرۆشن، بۆ ڕێگرتن لە ناکۆکی کۆگا.', offlineBadge: 'فرۆشتنی کۆگا بەبێ ئینتەرنێت', saveStation: 'زیادکردنی وێستگە', editStation: 'دەستکاری وێستگە', paired: 'بەستراوە', notPaired: 'نەبەستراوە', pair: 'دروستکردنی کۆدی بەستنەوە', stationStatus: 'دۆخی وێستگە', disableStation: 'ناچالاککردنی وێستگە', enableStation: 'چالاککردنی وێستگە', activeStationHint: 'ناچالاککردن دەسەڵاتی ئامێری ئێستا دەسڕێتەوە، مناوبەی چالاک کۆتایی پێدێنێت و فرۆشتنی نوێ ڕادەگرێت.', disabledStationHint: 'وێستگەکە ناچالاکە. چالاکی بکە و پاشان کۆدی بەستنەوەی نوێ دروست بکە.', disableStationWarning: 'ناچالاککردنی ئەم وێستگەیە بەستنی ئامێر دەکاتەوە و هەر مناوبەیەکی چالاک کۆتایی پێدێنێت. دوای چالاککردنەوە پێویستە کۆدی بەستنەوەی نوێ دروست بکەیت. بەردەوام بیت؟',
+    addStation: 'زیادکردنی وێستگەی کاشێر', stationName: 'ناوی وێستگە', location: 'شوێن', mainLocation: 'شوێنی سەرەکی', locationFixedHint: 'شوێنی وێستگە دوای دروستکردن جێگیرە بۆ پاراستنی بەستنەوە و کۆگا. بۆ شوێنێکی تر وێستگەیەکی نوێ زیاد بکە.', noLocations: 'هیچ شوێنێک بۆ زیادکردنی وێستگەی کاشێر بەردەست نییە.', locationUnavailable: 'شوێن بەردەست نییە', offlineAuthority: 'ڕێگەدان بە ئەم وێستگەیە بۆ فرۆشتنی کۆگای بەدواداچووکراو بەبێ ئینتەرنێت', offlineHint: 'تەنها یەک وێستگە لە هەر شوێنێک ئەم دەسەڵاتە هەیە. لە کاتی پچڕانی ئینتەرنێت، وێستگەکانی تری هەمان شوێن ناتوانن ئەم کۆگایە بفرۆشن، بۆ ڕێگرتن لە ناکۆکی کۆگا.', offlineBadge: 'فرۆشتنی کۆگا بەبێ ئینتەرنێت', saveStation: 'زیادکردنی وێستگە', editStation: 'دەستکاری وێستگە', paired: 'بەستراوە', notPaired: 'نەبەستراوە', pair: 'دروستکردنی کۆدی بەستنەوە', stationStatus: 'دۆخی وێستگە', disableStation: 'ناچالاککردنی وێستگە', enableStation: 'چالاککردنی وێستگە', activeStationHint: 'ناچالاککردن دەسەڵاتی ئامێری ئێستا دەسڕێتەوە، مناوبەی چالاک کۆتایی پێدێنێت و فرۆشتنی نوێ ڕادەگرێت.', disabledStationHint: 'وێستگەکە ناچالاکە. چالاکی بکە و پاشان کۆدی بەستنەوەی نوێ دروست بکە.', disableStationWarning: 'ناچالاککردنی ئەم وێستگەیە بەستنی ئامێر دەکاتەوە و هەر مناوبەیەکی چالاک کۆتایی پێدێنێت. دوای چالاککردنەوە پێویستە کۆدی بەستنەوەی نوێ دروست بکەیت. بەردەوام بیت؟',
     pairingTitle: 'کۆدی بەستنی ئامێر', pairingHint: 'کاشێر لە ئامێری نوێ بکەرەوە و ئەم کۆدە بنووسە. 10 خولەک بەردەوامە و جارێک بەکاردێت.', expires: 'کۆتایی', copyCode: 'کۆپی کۆد', copied: 'کۆپی کرا', close: 'داخستن',
-    loading: 'زانیاری کاشێر بار دەکرێن...', failed: 'کردارەکە سەرکەوتوو نەبوو. دووبارە هەوڵ بدە.', emptyStaff: 'هێشتا هیچ کارمەندێک نییە.', emptyStations: 'هێشتا هیچ وێستگەیەکی کاشێر نییە.', saving: 'پاشەکەوت دەکرێت...', sessionExpired: 'دانیشتنی بازرگان کۆتایی هاتووە. دووبارە بچۆ ژوورەوە.', versionConflict: 'زانیاری کارمەند لە شوێنێکی تر گۆڕدراوە. پەڕەکە نوێ بکەرەوە.', stationVersionConflict: 'ڕێکخستنەکانی وێستگە لە شوێنێکی تر گۆڕدراون. پەڕەکە نوێ بکەرەوە.', offlineConflict: 'وێستگەیەکی تر لەم لقە ئەم دەسەڵاتەی هەیە.',
+    loading: 'زانیاری کاشێر بار دەکرێن...', failed: 'کردارەکە سەرکەوتوو نەبوو. دووبارە هەوڵ بدە.', emptyStaff: 'هێشتا هیچ کارمەندێک نییە.', emptyStations: 'هێشتا هیچ وێستگەیەکی کاشێر نییە.', saving: 'پاشەکەوت دەکرێت...', sessionExpired: 'دانیشتنی بازرگان کۆتایی هاتووە. دووبارە بچۆ ژوورەوە.', versionConflict: 'زانیاری کارمەند لە شوێنێکی تر گۆڕدراوە. پەڕەکە نوێ بکەرەوە.', stationVersionConflict: 'ڕێکخستنەکانی وێستگە لە شوێنێکی تر گۆڕدراون. پەڕەکە نوێ بکەرەوە.', offlineConflict: 'وێستگەیەکی تر لەم شوێنە ئەم دەسەڵاتەی هەیە.',
   },
   en: {
     title: 'Cashiers & Staff', subtitle: 'Manage cashier devices, staff, permissions and secure pairing.', staff: 'Staff', stations: 'Cashier stations',
     addStaff: 'Add staff member', name: 'Employee name', role: 'Role', cashier: 'Cashier', manager: 'Manager', pin: '4–8 digit PIN', saveStaff: 'Add employee', permissions: 'Permissions', discountPolicies: 'Discount policies',
     createSales: 'Create sales', ownSales: 'View own sales', allSales: 'View other employees’ sales', returns: 'Process returns', voids: 'Void complete sales', manualDiscount: 'Apply manual discount', discountOverride: 'Approve discount limit override', salesReports: 'View sales reports', profitReports: 'View profit',
     discountWarning: 'Discount permission is not granted automatically. After enabling it, set the employee limit in Discount policies. Any discount over the limit requires approval from an authorized manager.', profitWarning: 'Profit access is sensitive. Grant it only to trusted staff.', active: 'Active', disabled: 'Disabled', revoked: 'Revoked', disable: 'Disable', enable: 'Enable', edit: 'Edit', cancel: 'Cancel', saveChanges: 'Save changes', editStaff: 'Edit employee', newPin: 'New PIN (optional)',
-    addStation: 'Add cashier station', stationName: 'Station name', branchKey: 'Branch code', branchLabel: 'Branch name (optional)', offlineAuthority: 'Allow this station to sell tracked inventory while offline', offlineHint: 'Only one station per branch can have this authority. While offline, other stations cannot sell tracked inventory, preventing stock conflicts.', offlineBadge: 'Offline inventory enabled', saveStation: 'Add station', editStation: 'Edit station', paired: 'Paired', notPaired: 'Not paired', pair: 'Create pairing code', stationStatus: 'Station status', disableStation: 'Disable station', enableStation: 'Enable station', activeStationHint: 'Disabling the station immediately revokes the current device, ends any active shift, and blocks new sales.', disabledStationHint: 'This station is disabled. Enable it, then create a new pairing code for the device.', disableStationWarning: 'Disabling this station will immediately unpair the current device and end any active shift. A new pairing code will be required after re-enabling. Continue?',
+    addStation: 'Add cashier station', stationName: 'Station name', location: 'Location', mainLocation: 'Main location', locationFixedHint: 'A station location is fixed after creation to protect pairing and inventory. Create a new station for another location.', noLocations: 'No locations are available for a cashier station.', locationUnavailable: 'Location unavailable', offlineAuthority: 'Allow this station to sell tracked inventory while offline', offlineHint: 'Only one station per location can have this authority. While offline, other stations at the same location cannot sell tracked inventory, preventing stock conflicts.', offlineBadge: 'Offline inventory enabled', saveStation: 'Add station', editStation: 'Edit station', paired: 'Paired', notPaired: 'Not paired', pair: 'Create pairing code', stationStatus: 'Station status', disableStation: 'Disable station', enableStation: 'Enable station', activeStationHint: 'Disabling the station immediately revokes the current device, ends any active shift, and blocks new sales.', disabledStationHint: 'This station is disabled. Enable it, then create a new pairing code for the device.', disableStationWarning: 'Disabling this station will immediately unpair the current device and end any active shift. A new pairing code will be required after re-enabling. Continue?',
     pairingTitle: 'Device pairing code', pairingHint: 'Open Cashier on the new device and enter this code. It expires in 10 minutes and can be used once.', expires: 'Expires', copyCode: 'Copy code', copied: 'Copied', close: 'Close',
-    loading: 'Loading cashier data...', failed: 'The operation could not be completed. Please try again.', emptyStaff: 'No staff members yet.', emptyStations: 'No cashier stations yet.', saving: 'Saving...', sessionExpired: 'The merchant session has expired. Sign in again and retry.', versionConflict: 'This employee changed elsewhere. Refresh the page and retry.', stationVersionConflict: 'This station changed elsewhere. Refresh the page and retry.', offlineConflict: 'Another station in this branch already owns offline inventory authority.',
+    loading: 'Loading cashier data...', failed: 'The operation could not be completed. Please try again.', emptyStaff: 'No staff members yet.', emptyStations: 'No cashier stations yet.', saving: 'Saving...', sessionExpired: 'The merchant session has expired. Sign in again and retry.', versionConflict: 'This employee changed elsewhere. Refresh the page and retry.', stationVersionConflict: 'This station changed elsewhere. Refresh the page and retry.', offlineConflict: 'Another station at this location already owns offline inventory authority.',
   },
 };
 
@@ -158,6 +167,7 @@ export default function CashierManagementPage() {
   const l = COPY[lang] || COPY.en;
   const [staff, setStaff] = useState<StaffView[]>([]);
   const [stations, setStations] = useState<StationView[]>([]);
+  const [locations, setLocations] = useState<LocationView[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -178,26 +188,25 @@ export default function CashierManagementPage() {
   const [editPermissions, setEditPermissions] = useState<Set<StaffPermission>>(() => recommended('cashier'));
 
   const [stationName, setStationName] = useState('');
-  const [branchKey, setBranchKey] = useState('main');
-  const [branchLabel, setBranchLabel] = useState('');
+  const [stationLocationId, setStationLocationId] = useState('');
   const [offlineAuthority, setOfflineAuthority] = useState(false);
 
   const [editingStationId, setEditingStationId] = useState<string | null>(null);
   const [editStationName, setEditStationName] = useState('');
-  const [editBranchKey, setEditBranchKey] = useState('');
-  const [editBranchLabel, setEditBranchLabel] = useState('');
   const [editOfflineAuthority, setEditOfflineAuthority] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [staffPayload, stationPayload] = await Promise.all([
+      const [staffPayload, stationPayload, locationPayload] = await Promise.all([
         api('/api/cashier/management/staff'),
         api('/api/cashier/management/stations'),
+        api('/api/cashier/management/locations'),
       ]);
       setStaff(Array.isArray(staffPayload.staff) ? staffPayload.staff as StaffView[] : []);
       setStations(Array.isArray(stationPayload.stations) ? stationPayload.stations as StationView[] : []);
+      setLocations(Array.isArray(locationPayload.locations) ? locationPayload.locations as LocationView[] : []);
     } catch (cause) {
       setError(localizedError(cause, l));
     } finally {
@@ -348,8 +357,7 @@ export default function CashierManagementPage() {
 
   const resetAddStation = () => {
     setStationName('');
-    setBranchKey('main');
-    setBranchLabel('');
+    setStationLocationId(locations.find(location => location.is_default)?.id || locations[0]?.id || '');
     setOfflineAuthority(false);
   };
 
@@ -366,7 +374,7 @@ export default function CashierManagementPage() {
   };
 
   const addStation = async () => {
-    if (!stationName.trim() || !branchKey.trim()) return;
+    if (!stationName.trim() || !stationLocationId) return;
     setBusy(true);
     setError('');
     try {
@@ -374,8 +382,7 @@ export default function CashierManagementPage() {
         method: 'POST',
         body: JSON.stringify({
           name: stationName.trim(),
-          branch_key: branchKey.trim(),
-          branch_label: branchLabel.trim() || undefined,
+          location_id: stationLocationId,
           offline_inventory_authority: offlineAuthority,
         }),
       });
@@ -392,8 +399,6 @@ export default function CashierManagementPage() {
   const startStationEdit = (station: StationView) => {
     setEditingStationId(station.id);
     setEditStationName(station.name);
-    setEditBranchKey(station.branch_key);
-    setEditBranchLabel(station.branch_label || '');
     setEditOfflineAuthority(station.offline_inventory_authority);
     setError('');
   };
@@ -404,7 +409,7 @@ export default function CashierManagementPage() {
   };
 
   const saveStationEdit = async (station: StationView) => {
-    if (!editStationName.trim() || !editBranchKey.trim()) return;
+    if (!editStationName.trim()) return;
     setBusy(true);
     setError('');
     try {
@@ -413,8 +418,6 @@ export default function CashierManagementPage() {
         body: JSON.stringify({
           expected_configuration_etag: station.configuration_etag,
           name: editStationName.trim(),
-          branch_key: editBranchKey.trim(),
-          branch_label: editBranchLabel.trim(),
           offline_inventory_authority: editOfflineAuthority,
         }),
       });
@@ -497,6 +500,16 @@ export default function CashierManagementPage() {
 
   const statusLabel = (value: StaffView['status'] | StationView['status']) =>
     value === 'active' ? l.active : value === 'disabled' ? l.disabled : l.revoked;
+
+  const locationLabel = (locationId: string): string => {
+    const location = locations.find(item => item.id === locationId);
+    if (!location) return l.locationUnavailable;
+    const normalizedName = location.name.trim().toLowerCase();
+    if (location.is_default && (normalizedName === 'main' || normalizedName === 'main location')) {
+      return l.mainLocation;
+    }
+    return location.name;
+  };
 
   const PermissionGrid = ({
     value,
@@ -625,7 +638,7 @@ export default function CashierManagementPage() {
                 <h2 className="text-lg font-bold">{l.stations}</h2>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-bold text-muted-foreground">{stations.length}</span>
               </div>
-              <button type="button" onClick={openAddStation} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground">
+              <button type="button" onClick={openAddStation} disabled={locations.length === 0} className="rounded-lg bg-primary px-3 py-2 text-sm font-bold text-primary-foreground disabled:opacity-50">
                 {l.addStation}
               </button>
             </div>
@@ -639,7 +652,7 @@ export default function CashierManagementPage() {
                     <div>
                       <p className="font-bold">{station.name}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {station.branch_label ? `${station.branch_label} · ` : ''}{station.branch_key} · {statusLabel(station.status)} · {station.paired ? l.paired : l.notPaired}
+                        {locationLabel(station.location_id)} · {statusLabel(station.status)} · {station.paired ? l.paired : l.notPaired}
                       </p>
                     </div>
                     <div className="flex shrink-0 gap-2">
@@ -786,14 +799,24 @@ export default function CashierManagementPage() {
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-semibold">{l.stationName}<input value={stationName} onChange={event => setStationName(event.target.value)} autoComplete="off" className="mt-1.5 h-11 w-full rounded-lg border bg-background px-3 font-normal outline-none focus:border-primary" /></label>
-            <label className="text-sm font-semibold">{l.branchKey}<input value={branchKey} onChange={event => setBranchKey(event.target.value)} autoComplete="off" className="mt-1.5 h-11 w-full rounded-lg border bg-background px-3 font-normal outline-none focus:border-primary" dir="ltr" /></label>
-            <label className="text-sm font-semibold sm:col-span-2">{l.branchLabel}<input value={branchLabel} onChange={event => setBranchLabel(event.target.value)} autoComplete="off" className="mt-1.5 h-11 w-full rounded-lg border bg-background px-3 font-normal outline-none focus:border-primary" /></label>
+            <div className="text-sm font-semibold">
+              <span>{l.location}</span>
+              <Select value={stationLocationId} onValueChange={setStationLocationId}>
+                <SelectTrigger className="mt-1.5 h-11 w-full rounded-lg bg-background"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {locations.map(location => (
+                    <SelectItem key={location.id} value={location.id}>{locationLabel(location.id)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+          {locations.length === 0 ? <p className="mt-3 text-sm font-semibold text-destructive">{l.noLocations}</p> : null}
           <label className="mt-4 flex items-start gap-3 rounded-xl border p-3">
             <input type="checkbox" checked={offlineAuthority} onChange={event => setOfflineAuthority(event.target.checked)} className="mt-1 h-4 w-4" />
             <span><strong className="block text-sm">{l.offlineAuthority}</strong><span className="mt-1 block text-xs text-muted-foreground">{l.offlineHint}</span></span>
           </label>
-          <button type="button" disabled={busy || !stationName.trim() || !branchKey.trim()} onClick={() => void addStation()} className="mt-4 h-11 w-full rounded-lg bg-primary font-bold text-primary-foreground disabled:opacity-50">
+          <button type="button" disabled={busy || !stationName.trim() || !stationLocationId} onClick={() => void addStation()} className="mt-4 h-11 w-full rounded-lg bg-primary font-bold text-primary-foreground disabled:opacity-50">
             {busy ? l.saving : l.saveStation}
           </button>
         </Modal>
@@ -807,8 +830,11 @@ export default function CashierManagementPage() {
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-semibold">{l.stationName}<input value={editStationName} onChange={event => setEditStationName(event.target.value)} autoComplete="off" className="mt-1.5 h-11 w-full rounded-lg border bg-background px-3 font-normal outline-none focus:border-primary" /></label>
-            <label className="text-sm font-semibold">{l.branchKey}<input value={editBranchKey} onChange={event => setEditBranchKey(event.target.value)} autoComplete="off" className="mt-1.5 h-11 w-full rounded-lg border bg-background px-3 font-normal outline-none focus:border-primary" dir="ltr" /></label>
-            <label className="text-sm font-semibold sm:col-span-2">{l.branchLabel}<input value={editBranchLabel} onChange={event => setEditBranchLabel(event.target.value)} autoComplete="off" className="mt-1.5 h-11 w-full rounded-lg border bg-background px-3 font-normal outline-none focus:border-primary" /></label>
+            <div className="text-sm font-semibold">
+              <span>{l.location}</span>
+              <div className="mt-1.5 flex h-11 items-center rounded-lg border bg-muted/40 px-3 font-normal">{locationLabel(editingStation.location_id)}</div>
+              <p className="mt-1.5 text-xs font-normal leading-5 text-muted-foreground">{l.locationFixedHint}</p>
+            </div>
           </div>
 
           <section className={`mt-4 rounded-xl border p-3 ${editingStation.status === 'active' ? 'border-emerald-200 bg-emerald-50/50' : 'border-amber-200 bg-amber-50/60'}`}>
@@ -838,7 +864,7 @@ export default function CashierManagementPage() {
             <span><strong className="block text-sm">{l.offlineAuthority}</strong><span className="mt-1 block text-xs text-muted-foreground">{l.offlineHint}</span></span>
           </label>
           <div className="mt-4 flex gap-2">
-            <button type="button" onClick={() => void saveStationEdit(editingStation)} disabled={busy || !editStationName.trim() || !editBranchKey.trim()} className="order-1 flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50">
+            <button type="button" onClick={() => void saveStationEdit(editingStation)} disabled={busy || !editStationName.trim()} className="order-1 flex-1 rounded-lg bg-primary px-4 py-2.5 text-sm font-bold text-primary-foreground disabled:opacity-50">
               {busy ? l.saving : l.saveChanges}
             </button>
             <button type="button" onClick={cancelStationEdit} disabled={busy} className="order-2 flex-1 rounded-lg border px-4 py-2.5 text-sm font-bold">{l.cancel}</button>
