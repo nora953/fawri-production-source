@@ -807,7 +807,9 @@ export async function updateMerchantOperationalSettingsAuthoritative(input: {
               electronic_payment_enabled = $15,
               payment_methods = $16::jsonb,
               payment_instructions = $17,
-              updated_at = $18
+              inventory_freshness_max_age_minutes = $18,
+              inventory_stale_policy = $19,
+              updated_at = $20
         WHERE merchant_id = $1 AND version = $2
         RETURNING *`,
       [
@@ -828,6 +830,8 @@ export async function updateMerchantOperationalSettingsAuthoritative(input: {
         updated.payment.electronic_payment_enabled,
         JSON.stringify(updated.payment.methods),
         updated.payment.instructions,
+        updated.inventory.freshness_max_age_minutes,
+        updated.inventory.stale_policy,
         new Date(updated.updated_at),
       ],
     );
