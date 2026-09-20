@@ -70,6 +70,7 @@ export type OnlineOrderReportLocation = {
   location_name: string;
   delivered_order_count: number;
   delivered_sales_iqd: number;
+  delivered_order_value_iqd: number;
 };
 
 export type OnlineOrderReportProduct = {
