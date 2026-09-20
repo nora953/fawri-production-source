@@ -25,6 +25,7 @@ test('invalid station credentials clear only station binding fields', () => {
   for (const field of [
     'station_id',
     'station_name',
+    'location_id',
     'branch_key',
     'branch_label',
     'offline_inventory_authority',
@@ -64,4 +65,32 @@ test('paired-device metadata is made non-expiring before the cashier gate render
   const render = entry.indexOf("createRoot(document.getElementById('cashier-root')!)");
   assert.ok(refresh >= 0, 'durable station metadata refresh must run at startup');
   assert.ok(render > refresh, 'station metadata must refresh before the gate renders');
+});
+
+
+test('legacy paired devices hydrate canonical location from the existing station credential', () => {
+  assert.match(recovery, /recoverLegacyCashierStationBinding/);
+  assert.match(recovery, /!identity\.location_id/);
+  assert.match(recovery, /fetch\('\/api\/cashier\/station\/me'/);
+  assert.match(recovery, /'X-Fawri-Cashier-Station-Token': identity\.station_token/);
+  assert.match(recovery, /'X-Fawri-Cashier-Device-Id': identity\.device_id/);
+  assert.match(recovery, /merchantId !== identity\.cloud_merchant_id/);
+  assert.match(recovery, /stationId !== identity\.station_id/);
+  assert.match(recovery, /deviceId !== identity\.device_id/);
+  assert.match(recovery, /location_id: locationId/);
+  assert.match(recovery, /station_credential_expires_at: DURABLE_STATION_METADATA_EXPIRES_AT/);
+});
+
+test('legacy binding recovery runs before the cashier gate and does not generate a new pairing credential', () => {
+  const recoveryCall = recovery.indexOf('recoverLegacyCashierStationBinding()');
+  const refreshExport = recovery.indexOf('export async function refreshDurableCashierStationBindingMetadata');
+  assert.ok(refreshExport >= 0 && recoveryCall > refreshExport);
+  assert.doesNotMatch(recovery, /\/api\/cashier\/station\/pair/);
+  assert.doesNotMatch(recovery, /pairing_code/);
+
+  const refresh = entry.indexOf(
+    'await refreshDurableCashierStationBindingMetadata()',
+  );
+  const render = entry.indexOf("createRoot(document.getElementById('cashier-root')!)");
+  assert.ok(refresh >= 0 && render > refresh);
 });
