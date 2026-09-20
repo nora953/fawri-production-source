@@ -368,6 +368,19 @@ function randomId(prefix: string): string {
   return `${prefix}_${crypto.randomUUID()}`;
 }
 
+function legacyBranchKeyForLocation(location: {
+  id: string;
+  legacy_branch_key?: string;
+}): string {
+  const legacy = String(location.legacy_branch_key || "").trim();
+  if (legacy && legacy.length <= 120) return legacy;
+  return `location_${crypto
+    .createHash("sha256")
+    .update(location.id, "utf8")
+    .digest("hex")
+    .slice(0, 40)}`;
+}
+
 function toIso(value: DbInstant): string {
   const date = value instanceof Date ? value : new Date(value);
   if (!Number.isFinite(date.getTime())) {
@@ -897,10 +910,15 @@ export async function createCashierStationAuthoritative(input: {
       ? undefined
       : identifier(input.locationId, "location_id", 200);
   const requestedBranchKey =
-    input.branchKey === undefined
+    locationId !== undefined
       ? "main"
-      : identifier(input.branchKey, "branch_key", 120);
-  const requestedBranchLabel = optionalLabel(input.branchLabel, "branch_label", 120);
+      : input.branchKey === undefined
+        ? "main"
+        : identifier(input.branchKey, "branch_key", 120);
+  const requestedBranchLabel =
+    locationId !== undefined
+      ? null
+      : optionalLabel(input.branchLabel, "branch_label", 120);
   const offlineInventoryAuthority = Boolean(input.offlineInventoryAuthority);
   const stationId = randomId("cashier_station");
 
@@ -920,7 +938,7 @@ export async function createCashierStationAuthoritative(input: {
         404,
       );
     }
-    const branchKey = location.legacy_branch_key || location.id;
+    const branchKey = legacyBranchKeyForLocation(location);
     const branchLabel = location.name;
     await client.query(
       `INSERT INTO merchant_cashier_stations (
