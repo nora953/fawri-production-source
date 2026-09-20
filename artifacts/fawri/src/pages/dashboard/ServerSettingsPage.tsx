@@ -20,6 +20,10 @@ import {
 
 type ReplyLanguage = 'auto' | 'ar' | 'ku' | 'en';
 type DeliveryPricingMode = 'flat' | 'per_area';
+type InventoryStalePolicy =
+  | 'reroute_then_pending'
+  | 'allow_stale'
+  | 'fresh_only';
 type DeliveryAreaRate = {
   id: string;
   area_name: string;
@@ -55,6 +59,10 @@ type MerchantSettings = {
     electronic_payment_enabled: boolean;
     methods: PaymentMethod[];
     instructions: string;
+  };
+  inventory: {
+    freshness_max_age_minutes: number;
+    stale_policy: InventoryStalePolicy;
   };
   created_at: string;
   updated_at: string;
@@ -92,6 +100,12 @@ type Copy = {
   maxDays: string;
   areas: string;
   notes: string;
+  inventoryFreshness: string;
+  freshnessMinutes: string;
+  stalePolicy: string;
+  staleReroutePending: string;
+  staleAllow: string;
+  staleFreshOnly: string;
   payment: string;
   cash: string;
   electronic: string;
@@ -146,12 +160,18 @@ function isPaymentMethod(value: unknown): value is PaymentMethod {
 }
 
 function isMerchantSettings(value: unknown): value is MerchantSettings {
-  if (!isRecord(value) || !isRecord(value.delivery) || !isRecord(value.payment)) {
+  if (
+    !isRecord(value) ||
+    !isRecord(value.delivery) ||
+    !isRecord(value.payment) ||
+    !isRecord(value.inventory)
+  ) {
     return false;
   }
 
   const delivery = value.delivery;
   const payment = value.payment;
+  const inventory = value.inventory;
   const areaRates = delivery.area_rates;
   const areas = delivery.areas;
   const methods = payment.methods;
@@ -189,6 +209,13 @@ function isMerchantSettings(value: unknown): value is MerchantSettings {
     Array.isArray(methods) &&
     methods.every(isPaymentMethod) &&
     typeof payment.instructions === 'string' &&
+    typeof inventory.freshness_max_age_minutes === 'number' &&
+    Number.isInteger(inventory.freshness_max_age_minutes) &&
+    inventory.freshness_max_age_minutes >= 1 &&
+    inventory.freshness_max_age_minutes <= 1440 &&
+    (inventory.stale_policy === 'reroute_then_pending' ||
+      inventory.stale_policy === 'allow_stale' ||
+      inventory.stale_policy === 'fresh_only') &&
     typeof value.created_at === 'string' &&
     typeof value.updated_at === 'string'
   );
@@ -405,6 +432,7 @@ export default function ServerSettingsPage() {
             reply_language: normalized.reply_language,
             delivery: normalized.delivery,
             payment: normalized.payment,
+            inventory: normalized.inventory,
           },
         }),
       });
@@ -758,6 +786,57 @@ export default function ServerSettingsPage() {
                 maxLength={1000}
                 className="w-full rounded-md border bg-background p-3 text-sm"
               />
+            </label>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{copy.inventoryFreshness}</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            <label className="space-y-2 rounded-xl border p-4 text-sm font-semibold">
+              <span>{copy.freshnessMinutes}</span>
+              <Input
+                type="number"
+                min={1}
+                max={1440}
+                value={draft.inventory.freshness_max_age_minutes}
+                onChange={event =>
+                  updateDraft(current => ({
+                    ...current,
+                    inventory: {
+                      ...current.inventory,
+                      freshness_max_age_minutes: Math.min(
+                        1440,
+                        Math.max(1, Number(event.target.value || 1)),
+                      ),
+                    },
+                  }))
+                }
+              />
+            </label>
+            <label className="space-y-2 rounded-xl border p-4 text-sm font-semibold">
+              <span>{copy.stalePolicy}</span>
+              <select
+                value={draft.inventory.stale_policy}
+                onChange={event =>
+                  updateDraft(current => ({
+                    ...current,
+                    inventory: {
+                      ...current.inventory,
+                      stale_policy: event.target.value as InventoryStalePolicy,
+                    },
+                  }))
+                }
+                className="h-11 w-full rounded-md border bg-background px-3"
+              >
+                <option value="reroute_then_pending">
+                  {copy.staleReroutePending}
+                </option>
+                <option value="allow_stale">{copy.staleAllow}</option>
+                <option value="fresh_only">{copy.staleFreshOnly}</option>
+              </select>
             </label>
           </CardContent>
         </Card>
