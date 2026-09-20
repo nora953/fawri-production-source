@@ -1022,3 +1022,4 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
     };
   }
 }
+// QA architecture regression trigger only; temporary branch, do not merge.
