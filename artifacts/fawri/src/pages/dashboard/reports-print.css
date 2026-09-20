@@ -1,0 +1,48 @@
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .report-print-root,
+  .report-print-root * {
+    visibility: visible !important;
+  }
+
+  .report-print-root {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    background: white !important;
+    color: #111827 !important;
+    padding: 0 !important;
+  }
+
+  .report-no-print {
+    display: none !important;
+  }
+
+  .report-print-break-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .report-print-root .shadow-sm,
+  .report-print-root [class*="shadow"] {
+    box-shadow: none !important;
+  }
+
+  .report-print-root table {
+    font-size: 9pt !important;
+  }
+
+  .report-print-root a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}
