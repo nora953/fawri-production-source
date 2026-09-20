@@ -211,7 +211,7 @@ function operationMoney(item: OperationActivity, lang: Lang): string {
   return formatMerchantMoneyMinor(item.amount_minor, item.currency_code, item.currency_fraction_digits, lang);
 }
 
-export default function CashierCentralReportsPage() {
+export default function CashierCentralReportsPage({ embedded = false }: { embedded?: boolean } = {}) {
   const { lang, dir } = useI18n(); const labels = COPY[lang] || COPY.en;
   const [range, setRange] = useState<RangeKey>('today'); const [result, setResult] = useState<CentralReportResult | null>(null); const [loading, setLoading] = useState(true); const [error, setError] = useState('');
   const [staffFilter, setStaffFilter] = useState('all'); const [locationFilter, setLocationFilter] = useState('all'); const [stationFilter, setStationFilter] = useState('all'); const [kindFilter, setKindFilter] = useState<'all' | OperationKind>('all');
@@ -259,7 +259,7 @@ export default function CashierCentralReportsPage() {
 
   return (
     <div className="space-y-5 pb-8" dir={dir}>
-      <header className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-bold text-foreground">{labels.title}</h1><p className="mt-1 max-w-3xl text-sm text-muted-foreground">{labels.subtitle}</p></div><Link href="/dashboard/cashiers" className="rounded-xl border bg-card px-4 py-2 text-sm font-bold hover:bg-accent">{labels.back}</Link></header>
+      {!embedded ? <header className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-bold text-foreground">{labels.title}</h1><p className="mt-1 max-w-3xl text-sm text-muted-foreground">{labels.subtitle}</p></div><Link href="/dashboard/cashiers" className="rounded-xl border bg-card px-4 py-2 text-sm font-bold hover:bg-accent">{labels.back}</Link></header> : null}
       <div className="flex flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-sm">{ranges.map(([key, label]) => <button key={key} type="button" onClick={() => selectRange(key)} className={`rounded-xl px-4 py-2 text-sm font-bold transition ${range === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-accent'}`}>{label}</button>)}</div>
       {error ? <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm font-semibold text-destructive">{error}</div> : null}
       {loading ? <div className="rounded-2xl border bg-card p-10 text-center text-sm text-muted-foreground">{labels.loading}</div> : null}
