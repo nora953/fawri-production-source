@@ -4,7 +4,7 @@
 export const SERVER_SETTINGS_PAGE_COPY = {
   ar: {
     title: 'الإعدادات',
-    subtitle: 'إعدادات الرد والتوصيل والدفع محفوظة على السيرفر',
+    subtitle: 'إعدادات الرد والتوصيل والدفع وحداثة المخزون محفوظة على السيرفر',
     refresh: 'تحديث',
     persist: 'حفظ الإعدادات',
     persisted: 'تم حفظ الإعدادات',
@@ -47,7 +47,7 @@ export const SERVER_SETTINGS_PAGE_COPY = {
   },
   ku: {
     title: 'ڕێکخستنەکان',
-    subtitle: 'ڕێکخستنەکانی وەڵام و گەیاندن و پارەدان لە ڕاژەکار هەڵدەگیرێن',
+    subtitle: 'ڕێکخستنەکانی وەڵام و گەیاندن و پارەدان و نوێیی کۆگا لە ڕاژەکار هەڵدەگیرێن',
     refresh: 'نوێکردنەوە',
     persist: 'پاشەکەوتکردن',
     persisted: 'ڕێکخستنەکان پاشەکەوت کران',
@@ -90,7 +90,7 @@ export const SERVER_SETTINGS_PAGE_COPY = {
   },
   en: {
     title: 'Settings',
-    subtitle: 'Reply, delivery, and payment settings are stored on the server',
+    subtitle: 'Reply, delivery, payment, and inventory freshness settings are stored on the server',
     refresh: 'Refresh',
     persist: 'Save settings',
     persisted: 'Settings saved',
