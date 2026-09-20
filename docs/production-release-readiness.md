@@ -4,6 +4,18 @@
 
 This document separates **code/runtime readiness** from **real production launch readiness**. A green repository validation does not by itself prove that external production providers, credentials, backups, or cloud permissions exist.
 
+## Current integrated code status
+
+The validated release-candidate tree `92290d3f97e3ece81525a0b92d668d129e9df5ed` completed 38/38 final integration checks with 0 failures and was merged to `main` through PR #256.
+
+Current integrated `main` SHA:
+
+`515dc33404e517d11060fa60cb6ef20d986b09ef`
+
+The merge commit tree is identical to the validated release-candidate tree. Repository-owned build, typecheck, migration/schema, security, routing, online-order, cashier, merchant/admin/subscription journey, settings, Meta cutover, Knowledge readiness, and related integration gates are therefore considered code-ready at this checkpoint.
+
+This does **not** mean the live production environment is ready. The remaining work is dominated by deployment-time infrastructure, provider credentials/approvals, production backup/restore proof, supported SaaS billing onboarding, and final manual staging/UI validation.
+
 ## Explicit production release gate
 
 Production should set:
@@ -94,9 +106,17 @@ A disposable local drill is useful regression evidence but does not satisfy this
 
 ## Current readiness interpretation
 
-Repository validation can establish **production-release code readiness**. It must not claim **production launch readiness** while either of these remains unresolved:
+At `main` SHA `515dc33404e517d11060fa60cb6ef20d986b09ef`, repository validation establishes **production-release code readiness** for the integrated tree.
+
+It must not claim **production launch readiness** while any of the following remain unresolved:
 
 - `SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE`
 - `PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED`
+- production PostgreSQL deployment/migration proof,
+- production AWS KMS/IAM/wrapped-DEK readiness,
+- production Meta application/OAuth/webhook/live-send readiness,
+- production OpenAI credential/readiness,
+- final full-stack staging and manual UI/UX validation,
+- production release-gate and controlled smoke-test evidence.
 
-Actual AWS/Meta/OpenAI credentials and provider approvals are also deployment-time evidence, not repository-owned secrets.
+Actual credentials, cloud permissions, provider approvals, production backups, and live-provider behavior are deployment-time evidence and must never be represented by repository test fixtures.
