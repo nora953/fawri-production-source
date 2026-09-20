@@ -145,3 +145,78 @@ test("legacy Meta router contains no Replit redirect fallback", () => {
     /export const META_REDIRECT_URI = String\(process\.env\.META_REDIRECT_URI \|\| ""\)\.trim\(\);/,
   );
 });
+
+test("production env example stays aligned with the runtime release gate", () => {
+  const current = path.dirname(fileURLToPath(import.meta.url));
+  const repoRoot = path.resolve(current, "../../..");
+  const readinessSource = fs.readFileSync(
+    path.join(
+      repoRoot,
+      "artifacts/api-server/src/services/productionReleaseReadiness.ts",
+    ),
+    "utf8",
+  );
+  const example = fs.readFileSync(
+    path.join(repoRoot, ".env.production.example"),
+    "utf8",
+  );
+
+  const referencedEnvNames = new Set(
+    [...readinessSource.matchAll(/env\.([A-Z][A-Z0-9_]*)/g)].map(
+      (match) => match[1],
+    ),
+  );
+  referencedEnvNames.add("FAWRI_PRODUCTION_RELEASE_GATE");
+
+  const exampleValues = new Map<string, string>();
+  for (const rawLine of example.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith("#")) continue;
+    const match = line.match(/^([A-Z][A-Z0-9_]*)=(.*)$/);
+    assert.ok(match, `invalid production env example line: ${line}`);
+    exampleValues.set(match[1], match[2]);
+  }
+
+  for (const name of referencedEnvNames) {
+    assert.equal(
+      exampleValues.has(name),
+      true,
+      `.env.production.example is missing ${name}`,
+    );
+  }
+
+  const expectedFixedValues: Record<string, string> = {
+    NODE_ENV: "production",
+    FAWRI_PRODUCTION_RELEASE_GATE: "required",
+    FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
+    FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY: "required",
+    FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
+    FAWRI_META_CUTOVER_READY: "1",
+    FAWRI_META_REPLY_TRANSPORT: "live",
+    FAWRI_DISABLE_JOB_WORKERS: "0",
+    FAWRI_META_CREDENTIAL_PROVIDER: "aws-kms",
+    FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER: "openai",
+  };
+
+  for (const [name, expected] of Object.entries(expectedFixedValues)) {
+    assert.equal(exampleValues.get(name), expected, `${name} drifted`);
+  }
+
+  for (const secretName of [
+    "DATABASE_URL",
+    "FAWRI_AUTH_SECURITY_SECRET",
+    "FAWRI_META_AWS_KMS_KEY_ARN",
+    "FAWRI_META_AWS_KMS_WRAPPED_DEKS_JSON",
+    "META_APP_SECRET",
+    "META_VERIFY_TOKEN",
+    "OPENAI_API_KEY",
+    "FAWRI_OBSERVABILITY_BEARER_TOKEN",
+  ]) {
+    assert.match(
+      exampleValues.get(secretName) || "",
+      /<[^>]+>/,
+      `${secretName} must remain a non-secret placeholder in source control`,
+    );
+  }
+});
+
