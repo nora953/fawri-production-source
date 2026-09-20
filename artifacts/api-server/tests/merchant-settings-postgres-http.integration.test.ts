@@ -192,6 +192,8 @@ test("merchant settings routes use secure v2 PostgreSQL sessions with tenant iso
   assert.equal(initialABody.settings.version, 1);
   assert.equal(initialABody.settings.reply_language, "auto");
   assert.equal(initialABody.settings.delivery.fee_iqd, 0);
+  assert.equal(initialABody.settings.inventory.freshness_max_age_minutes, 5);
+  assert.equal(initialABody.settings.inventory.stale_policy, "reroute_then_pending");
 
   const initialB = await fetch(`${baseUrl}/api/settings`, {
     headers: { Cookie: merchantBCookie },
@@ -212,6 +214,10 @@ test("merchant settings routes use secure v2 PostgreSQL sessions with tenant iso
           fee_iqd: 2500,
           notes: "Settings PostgreSQL proof A",
         },
+        inventory: {
+          freshness_max_age_minutes: 15,
+          stale_policy: "fresh_only",
+        },
       },
     }),
   });
@@ -225,6 +231,8 @@ test("merchant settings routes use secure v2 PostgreSQL sessions with tenant iso
   assert.equal(updateABody.settings.version, 2);
   assert.equal(updateABody.settings.reply_language, "en");
   assert.equal(updateABody.settings.delivery.fee_iqd, 2500);
+  assert.equal(updateABody.settings.inventory.freshness_max_age_minutes, 15);
+  assert.equal(updateABody.settings.inventory.stale_policy, "fresh_only");
   assert.deepEqual(updateABody.effects, {
     queued_auto_reply_jobs_suppressed: 0,
     processing_auto_reply_jobs_observed: 0,
@@ -279,12 +287,15 @@ test("merchant settings routes use secure v2 PostgreSQL sessions with tenant iso
   assert.equal(finalABody.settings.merchant_id, merchantAId);
   assert.equal(finalABody.settings.reply_language, "en");
   assert.equal(finalABody.settings.delivery.fee_iqd, 2500);
+  assert.equal(finalABody.settings.inventory.freshness_max_age_minutes, 15);
+  assert.equal(finalABody.settings.inventory.stale_policy, "fresh_only");
   assert.equal(finalBBody.settings.merchant_id, merchantBId);
   assert.equal(finalBBody.settings.reply_language, "ku");
   assert.equal(finalBBody.settings.delivery.fee_iqd, 9000);
 
   const stored = await pool.query(
-    `SELECT merchant_id, version, reply_language, delivery_fee_iqd
+    `SELECT merchant_id, version, reply_language, delivery_fee_iqd,
+            inventory_freshness_max_age_minutes, inventory_stale_policy
        FROM merchant_settings
       WHERE merchant_id = ANY($1::text[])
       ORDER BY merchant_id`,
@@ -296,6 +307,8 @@ test("merchant settings routes use secure v2 PostgreSQL sessions with tenant iso
   assert.equal(storedA?.version, 2);
   assert.equal(storedA?.reply_language, "en");
   assert.equal(Number(storedA?.delivery_fee_iqd), 2500);
+  assert.equal(Number(storedA?.inventory_freshness_max_age_minutes), 15);
+  assert.equal(storedA?.inventory_stale_policy, "fresh_only");
   assert.equal(storedB?.version, 2);
   assert.equal(storedB?.reply_language, "ku");
   assert.equal(Number(storedB?.delivery_fee_iqd), 9000);
