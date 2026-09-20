@@ -48,6 +48,8 @@ test("defaults are deterministic and do not write on read", () => {
     assert.equal(settings.auto_reply_enabled, true);
     assert.equal(settings.reply_language, "auto");
     assert.equal(settings.delivery.enabled, true);
+    assert.equal(settings.inventory.freshness_max_age_minutes, 5);
+    assert.equal(settings.inventory.stale_policy, "reroute_then_pending");
     assert.equal(settings.payment.cash_on_delivery_enabled, true);
     assert.deepEqual(settings.payment.methods, ["cash_on_delivery"]);
     assert.equal(
@@ -85,6 +87,10 @@ test("valid nested update is normalized and persisted", () => {
           methods: ["cash_on_delivery", "zaincash", "zaincash"],
           instructions: "Send the receipt after payment",
         },
+        inventory: {
+          freshness_max_age_minutes: 15,
+          stale_policy: "allow_stale",
+        },
       },
     });
 
@@ -94,6 +100,8 @@ test("valid nested update is normalized and persisted", () => {
     assert.equal(updated.delivery.fee_iqd, 5000);
     assert.deepEqual(updated.delivery.areas, ["Baghdad", "Erbil"]);
     assert.deepEqual(updated.payment.methods, ["cash_on_delivery", "zaincash"]);
+    assert.equal(updated.inventory.freshness_max_age_minutes, 15);
+    assert.equal(updated.inventory.stale_policy, "allow_stale");
     assert.equal(merchantAllowsAutoReply("merchant-1"), false);
 
     const stored = getMerchantOperationalSettings("merchant-1");
@@ -202,6 +210,34 @@ test("invalid delivery and payment configurations fail closed", () => {
           patch: { reply_language: "unsupported" },
         }),
       "MERCHANT_REPLY_LANGUAGE_INVALID",
+    );
+
+    assertSettingsError(
+      () =>
+        updateMerchantOperationalSettings({
+          merchantId: "merchant-1",
+          expectedVersion: 1,
+          patch: {
+            inventory: {
+              freshness_max_age_minutes: 0,
+            },
+          },
+        }),
+      "MERCHANT_SETTINGS_NUMBER_INVALID",
+    );
+
+    assertSettingsError(
+      () =>
+        updateMerchantOperationalSettings({
+          merchantId: "merchant-1",
+          expectedVersion: 1,
+          patch: {
+            inventory: {
+              stale_policy: "unsafe_unknown",
+            },
+          },
+        }),
+      "MERCHANT_INVENTORY_STALE_POLICY_INVALID",
     );
     assert.equal(getMerchantOperationalSettings("merchant-1").version, 1);
   } finally {
