@@ -65,6 +65,9 @@ jobs:
       - name: Build API server
         run: pnpm --filter @workspace/api-server run build
 
+      - name: Validate production release readiness contract
+        run: pnpm exec tsx --test artifacts/api-server/tests/production-release-readiness.test.ts
+
       - name: Prove guarded 0012 migration continuity
         run: |
           node --check lib/db/scripts/apply-catalog-variant-signature-guard.mjs
