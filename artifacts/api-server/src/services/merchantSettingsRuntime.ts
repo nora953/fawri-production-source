@@ -19,6 +19,11 @@ export type MerchantPaymentMethod =
   | "zaincash"
   | "other";
 
+export type InventoryStalePolicy =
+  | "reroute_then_pending"
+  | "allow_stale"
+  | "fresh_only";
+
 export type MerchantOperationalSettings = {
   merchant_id: string;
   version: number;
@@ -40,6 +45,10 @@ export type MerchantOperationalSettings = {
     electronic_payment_enabled: boolean;
     methods: MerchantPaymentMethod[];
     instructions: string;
+  };
+  inventory: {
+    freshness_max_age_minutes: number;
+    stale_policy: InventoryStalePolicy;
   };
   created_at: string;
   updated_at: string;
@@ -112,11 +121,17 @@ const PAYMENT_METHODS = new Set<MerchantPaymentMethod>([
   "zaincash",
   "other",
 ]);
+const INVENTORY_STALE_POLICIES = new Set<InventoryStalePolicy>([
+  "reroute_then_pending",
+  "allow_stale",
+  "fresh_only",
+]);
 const ROOT_PATCH_KEYS = new Set([
   "auto_reply_enabled",
   "reply_language",
   "delivery",
   "payment",
+  "inventory",
 ]);
 const DELIVERY_PATCH_KEYS = new Set([
   "enabled",
@@ -134,6 +149,10 @@ const PAYMENT_PATCH_KEYS = new Set([
   "electronic_payment_enabled",
   "methods",
   "instructions",
+]);
+const INVENTORY_PATCH_KEYS = new Set([
+  "freshness_max_age_minutes",
+  "stale_policy",
 ]);
 
 function settingsPath(): string {
