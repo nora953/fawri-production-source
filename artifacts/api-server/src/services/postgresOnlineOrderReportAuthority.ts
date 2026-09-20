@@ -33,6 +33,8 @@ type ChannelDeliveredRow = {
   source_channel: string;
   delivered_order_count: number | string;
   delivered_sales_iqd: number | string;
+  delivered_delivery_fees_iqd: number | string;
+  delivered_order_value_iqd: number | string;
 };
 
 type LocationDeliveredRow = {
@@ -40,6 +42,7 @@ type LocationDeliveredRow = {
   location_name: string | null;
   delivered_order_count: number | string;
   delivered_sales_iqd: number | string;
+  delivered_order_value_iqd: number | string;
 };
 
 type CountRow = {
@@ -59,6 +62,7 @@ export type OnlineOrderReportChannel = {
   active_order_count: number;
   delivered_order_count: number;
   delivered_sales_iqd: number;
+  delivered_order_value_iqd: number;
 };
 
 export type OnlineOrderReportLocation = {
@@ -84,6 +88,8 @@ export type OnlineOrderReportResult = {
   delivered_order_count: number;
   cancelled_order_count: number;
   delivered_sales_iqd: number;
+  delivered_delivery_fees_iqd: number;
+  delivered_order_value_iqd: number;
   average_delivered_order_iqd: number;
   paid_electronic_count: number;
   by_channel: OnlineOrderReportChannel[];
@@ -207,7 +213,9 @@ export async function buildOnlineOrderReportAuthoritative(input: {
         client,
         `SELECT source_channel,
                 count(*)::bigint AS delivered_order_count,
-                COALESCE(sum(total_iqd), 0)::bigint AS delivered_sales_iqd
+                COALESCE(sum(subtotal_iqd), 0)::bigint AS delivered_sales_iqd,
+                COALESCE(sum(delivery_fee_iqd), 0)::bigint AS delivered_delivery_fees_iqd,
+                COALESCE(sum(total_iqd), 0)::bigint AS delivered_order_value_iqd
            FROM orders
           WHERE merchant_id = $1
             AND lower(source_channel) <> 'cashier'
@@ -249,7 +257,8 @@ export async function buildOnlineOrderReportAuthoritative(input: {
         `SELECT o.fulfillment_location_id AS location_id,
                 l.name AS location_name,
                 count(*)::bigint AS delivered_order_count,
-                COALESCE(sum(o.total_iqd), 0)::bigint AS delivered_sales_iqd
+                COALESCE(sum(o.subtotal_iqd), 0)::bigint AS delivered_sales_iqd,
+                COALESCE(sum(o.total_iqd), 0)::bigint AS delivered_order_value_iqd
            FROM orders o
            LEFT JOIN merchant_locations l
              ON l.merchant_id = o.merchant_id
@@ -303,7 +312,12 @@ export async function buildOnlineOrderReportAuthoritative(input: {
 
     const deliveredByChannel = new Map<
       string,
-      { delivered_order_count: number; delivered_sales_iqd: number }
+      {
+        delivered_order_count: number;
+        delivered_sales_iqd: number;
+        delivered_delivery_fees_iqd: number;
+        delivered_order_value_iqd: number;
+      }
     >();
     for (const row of deliveredRows) {
       deliveredByChannel.set(channelName(row.source_channel), {
@@ -314,6 +328,14 @@ export async function buildOnlineOrderReportAuthoritative(input: {
         delivered_sales_iqd: safeInteger(
           row.delivered_sales_iqd,
           "channel delivered sales",
+        ),
+        delivered_delivery_fees_iqd: safeInteger(
+          row.delivered_delivery_fees_iqd,
+          "channel delivered delivery fees",
+        ),
+        delivered_order_value_iqd: safeInteger(
+          row.delivered_order_value_iqd,
+          "channel delivered order value",
         ),
       });
     }
@@ -332,6 +354,7 @@ export async function buildOnlineOrderReportAuthoritative(input: {
         active_order_count: received?.active_order_count ?? 0,
         delivered_order_count: delivered?.delivered_order_count ?? 0,
         delivered_sales_iqd: delivered?.delivered_sales_iqd ?? 0,
+        delivered_order_value_iqd: delivered?.delivered_order_value_iqd ?? 0,
       };
     });
 
@@ -351,6 +374,14 @@ export async function buildOnlineOrderReportAuthoritative(input: {
       (sum, row) => sum + row.delivered_sales_iqd,
       0,
     );
+    const deliveredDeliveryFeesIqd = [...deliveredByChannel.values()].reduce(
+      (sum, row) => sum + row.delivered_delivery_fees_iqd,
+      0,
+    );
+    const deliveredOrderValueIqd = byChannel.reduce(
+      (sum, row) => sum + row.delivered_order_value_iqd,
+      0,
+    );
 
     return {
       ...range,
@@ -360,9 +391,11 @@ export async function buildOnlineOrderReportAuthoritative(input: {
       delivered_order_count: deliveredOrderCount,
       cancelled_order_count: countOf(cancelledRows),
       delivered_sales_iqd: deliveredSalesIqd,
+      delivered_delivery_fees_iqd: deliveredDeliveryFeesIqd,
+      delivered_order_value_iqd: deliveredOrderValueIqd,
       average_delivered_order_iqd:
         deliveredOrderCount > 0
-          ? Math.round(deliveredSalesIqd / deliveredOrderCount)
+          ? Math.round(deliveredOrderValueIqd / deliveredOrderCount)
           : 0,
       paid_electronic_count: countOf(paidElectronicRows),
       by_channel: byChannel,
@@ -376,6 +409,10 @@ export async function buildOnlineOrderReportAuthoritative(input: {
         delivered_sales_iqd: safeInteger(
           row.delivered_sales_iqd,
           "location delivered sales",
+        ),
+        delivered_order_value_iqd: safeInteger(
+          row.delivered_order_value_iqd,
+          "location delivered order value",
         ),
       })),
       top_products: topProductRows.map((row) => ({
