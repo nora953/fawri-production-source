@@ -1,11 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation } from 'wouter';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { ReportToolbar, reportRangeQuery, type AppliedDateRange, type ReportRangeKey } from '@/components/reports/ReportToolbar';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 import { formatMerchantMoneyMinor } from '@/lib/moneyUi';
+import { downloadWorkbook } from '@/lib/reportWorkbook';
 import CashierCentralReportsPage from './CashierCentralReportsPage';
+import './reports-print.css';
 
-type RangeKey = 'today' | '7d' | '30d' | 'all';
+type RangeKey = ReportRangeKey;
 
 type OnlineChannel = {
   source_channel: string;
@@ -36,6 +48,8 @@ type OnlineReport = {
   delivered_order_count: number;
   cancelled_order_count: number;
   delivered_sales_iqd: number;
+  delivered_delivery_fees_iqd: number;
+  delivered_order_value_iqd: number;
   average_delivered_order_iqd: number;
   paid_electronic_count: number;
   by_channel: OnlineChannel[];
@@ -89,6 +103,10 @@ type Copy = {
   currency: string;
   combinedNote: string;
   generated: string;
+  deliveryFees: string;
+  deliveredOrderValue: string;
+  salesChart: string;
+  profitabilityUnavailable: string;
 };
 
 const COPY: Record<Lang, Copy> = {
@@ -125,6 +143,10 @@ const COPY: Record<Lang, Copy> = {
     currency: 'العملة',
     combinedNote: 'يجمع هذا العرض صافي مبيعات الكاشير بعد الإرجاعات والإلغاءات مع قيمة الطلبات الإلكترونية المسلّمة. لا يتم تحويل العملات أو دمج عملتين مختلفتين.',
     generated: 'آخر تحديث',
+    deliveryFees: 'رسوم التوصيل للطلبات المسلّمة',
+    deliveredOrderValue: 'إجمالي قيمة الطلبات المسلّمة',
+    salesChart: 'رسم المبيعات الإلكترونية حسب المنتج',
+    profitabilityUnavailable: 'ترتيب الربحية للطلبات الإلكترونية غير متاح حاليًا لأن تكلفة المنتج التاريخية وقت البيع غير محفوظة لكل طلب. لا يستخدم فوري التكلفة الحالية كبديل.',
   },
   ku: {
     reports: 'ڕاپۆرتەکان',
@@ -159,6 +181,10 @@ const COPY: Record<Lang, Copy> = {
     currency: 'دراو',
     combinedNote: 'ئەم پیشاندانە فرۆشتنی خاوێنی کاشێر دوای گەڕاندنەوە و هەڵوەشاندنەوە لەگەڵ بەهای داواکاری ئۆنلاینە گەیەنراوەکان کۆدەکاتەوە. دراوە جیاوازەکان ناگۆڕدرێن و تێکەڵ ناکرێن.',
     generated: 'دوایین نوێکردنەوە',
+    deliveryFees: 'کرێی گەیاندنی داواکاری گەیەنراو',
+    deliveredOrderValue: 'کۆی بەهای داواکاری گەیەنراو',
+    salesChart: 'هێڵکاری فرۆشتنی ئۆنلاین بەپێی بەرهەم',
+    profitabilityUnavailable: 'ڕیزبەندی قازانجی داواکاری ئۆنلاین ئێستا بەردەست نییە چونکە تێچووی مێژوویی بەرهەم لە کاتی فرۆشتن بۆ هەر داواکارییەک تۆمار نەکراوە. فەوری تێچووی ئێستا وەک جێگرەوە بەکارناهێنێت.',
   },
   en: {
     reports: 'Reports',
@@ -193,59 +219,12 @@ const COPY: Record<Lang, Copy> = {
     currency: 'Currency',
     combinedNote: 'This view combines cashier net sales after returns and voids with delivered online-order value. Different currencies are never converted or merged.',
     generated: 'Last updated',
+    deliveryFees: 'Delivered-order delivery fees',
+    deliveredOrderValue: 'Delivered order value',
+    salesChart: 'Online product sales chart',
+    profitabilityUnavailable: 'Online-order profitability ranking is currently unavailable because historical product cost at the time of sale is not stored for every order. Fawri does not substitute the current cost.',
   },
 };
-
-function startOfLocalDay(daysBack: number): Date {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() - daysBack);
-  return date;
-}
-
-function rangeQuery(range: RangeKey): string {
-  const params = new URLSearchParams();
-  if (range === 'today') params.set('from', startOfLocalDay(0).toISOString());
-  if (range === '7d') params.set('from', startOfLocalDay(6).toISOString());
-  if (range === '30d') params.set('from', startOfLocalDay(29).toISOString());
-  const query = params.toString();
-  return query ? `?${query}` : '';
-}
-
-function RangeSelector({
-  value,
-  onChange,
-  copy,
-}: {
-  value: RangeKey;
-  onChange: (value: RangeKey) => void;
-  copy: Copy;
-}) {
-  const ranges: Array<[RangeKey, string]> = [
-    ['today', copy.today],
-    ['7d', copy.seven],
-    ['30d', copy.thirty],
-    ['all', copy.all],
-  ];
-  return (
-    <div className="flex flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-sm">
-      {ranges.map(([key, label]) => (
-        <button
-          key={key}
-          type="button"
-          onClick={() => onChange(key)}
-          className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
-            value === key
-              ? 'bg-primary text-primary-foreground'
-              : 'text-muted-foreground hover:bg-accent'
-          }`}
-        >
-          {label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function Metric({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -260,7 +239,7 @@ function iqMoney(value: number, lang: Lang): string {
   return formatMerchantMoneyMinor(value, 'IQD', 0, lang);
 }
 
-function useOnlineReport(range: RangeKey) {
+function useOnlineReport(range: RangeKey, customRange: AppliedDateRange | null) {
   const [report, setReport] = useState<OnlineReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -271,7 +250,7 @@ function useOnlineReport(range: RangeKey) {
     setLoading(true);
     setFailed(false);
     try {
-      const response = await fetch(`/api/reports/online${rangeQuery(range)}`, {
+      const response = await fetch(`/api/reports/online${reportRangeQuery(range, customRange)}`, {
         credentials: 'same-origin',
         cache: 'no-store',
       });
@@ -288,7 +267,7 @@ function useOnlineReport(range: RangeKey) {
     } finally {
       if (requestId === sequence.current) setLoading(false);
     }
-  }, [range]);
+  }, [customRange, range]);
 
   useEffect(() => {
     void load();
@@ -301,11 +280,79 @@ function OnlineReports() {
   const { lang } = useI18n();
   const copy = COPY[lang] || COPY.en;
   const [range, setRange] = useState<RangeKey>('today');
-  const { report, loading, failed } = useOnlineReport(range);
+  const [customRange, setCustomRange] = useState<AppliedDateRange | null>(null);
+  const { report, loading, failed } = useOnlineReport(range, customRange);
+
+  const downloadReport = async () => {
+    if (!report) return;
+    await downloadWorkbook(`fawri-online-report-${new Date().toISOString().slice(0, 10)}`, [
+      {
+        name: 'Summary',
+        rows: [
+          [copy.receivedOrders, report.received_order_count],
+          [copy.activeOrders, report.active_order_count],
+          [copy.deliveredOrders, report.delivered_order_count],
+          [copy.cancelledOrders, report.cancelled_order_count],
+          [copy.deliveredSales, report.delivered_sales_iqd],
+          [copy.deliveryFees, report.delivered_delivery_fees_iqd],
+          [copy.deliveredOrderValue, report.delivered_order_value_iqd],
+          [copy.averageDelivered, report.average_delivered_order_iqd],
+          [copy.paidElectronic, report.paid_electronic_count],
+        ],
+      },
+      {
+        name: 'Channels',
+        rows: [
+          [copy.byChannel, copy.orders, copy.delivered, copy.deliveredSales],
+          ...report.by_channel.map(row => [
+            row.source_channel,
+            row.order_count,
+            row.delivered_order_count,
+            row.delivered_sales_iqd,
+          ]),
+        ],
+      },
+      {
+        name: 'Locations',
+        rows: [
+          [copy.byLocation, copy.delivered, copy.deliveredSales],
+          ...report.by_location.map(row => [
+            row.location_name,
+            row.delivered_order_count,
+            row.delivered_sales_iqd,
+          ]),
+        ],
+      },
+      {
+        name: 'Top selling',
+        rows: [
+          [copy.topProducts, copy.units, copy.deliveredSales],
+          ...report.top_products.map(row => [row.product_name, row.units, row.revenue_iqd]),
+        ],
+      },
+      {
+        name: 'Profitability',
+        rows: [[copy.profitabilityUnavailable]],
+      },
+    ]);
+  };
 
   return (
     <div className="space-y-5">
-      <RangeSelector value={range} onChange={setRange} copy={copy} />
+      <ReportToolbar
+        range={range}
+        onRangeChange={value => {
+          setCustomRange(null);
+          setRange(value);
+        }}
+        onCustomApply={value => {
+          setCustomRange(value);
+          setRange('custom');
+        }}
+        onDownload={downloadReport}
+        onPrint={() => window.print()}
+        exportDisabled={loading || failed || !report}
+      />
       {failed ? (
         <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm font-semibold text-destructive">
           {copy.failed}
@@ -324,6 +371,8 @@ function OnlineReports() {
             <Metric title={copy.deliveredOrders}><span dir="ltr">{report.delivered_order_count}</span></Metric>
             <Metric title={copy.cancelledOrders}><span dir="ltr">{report.cancelled_order_count}</span></Metric>
             <Metric title={copy.deliveredSales}><span dir="ltr">{iqMoney(report.delivered_sales_iqd, lang)}</span></Metric>
+            <Metric title={copy.deliveryFees}><span dir="ltr">{iqMoney(report.delivered_delivery_fees_iqd, lang)}</span></Metric>
+            <Metric title={copy.deliveredOrderValue}><span dir="ltr">{iqMoney(report.delivered_order_value_iqd, lang)}</span></Metric>
             <Metric title={copy.averageDelivered}><span dir="ltr">{iqMoney(report.average_delivered_order_iqd, lang)}</span></Metric>
             <Metric title={copy.paidElectronic}><span dir="ltr">{report.paid_electronic_count}</span></Metric>
           </div>
@@ -367,8 +416,26 @@ function OnlineReports() {
             </section>
           </div>
 
-          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+          <section className="report-print-break-avoid rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
             <h2 className="text-lg font-bold">{copy.topProducts}</h2>
+            {report.top_products.length > 0 ? (
+              <div className="mt-3 h-64 rounded-xl border bg-background p-3">
+                <p className="mb-2 text-xs font-semibold text-muted-foreground">{copy.salesChart}</p>
+                <ResponsiveContainer width="100%" height="90%">
+                  <BarChart
+                    data={report.top_products.slice(0, 8).map(product => ({ name: product.product_name, value: product.revenue_iqd }))}
+                    layout="vertical"
+                    margin={{ left: 8, right: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
+                    <Tooltip formatter={(value) => iqMoney(Number(value), lang)} />
+                    <Bar dataKey="value" fill="currentColor" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            ) : null}
             <div className="mt-3 divide-y rounded-xl border bg-background">
               {report.top_products.length === 0 ? <p className="p-4 text-sm text-muted-foreground">{copy.noData}</p> : report.top_products.map((product, index) => (
                 <div key={product.product_id || product.product_name} className="flex items-center justify-between gap-4 p-3">
@@ -380,6 +447,7 @@ function OnlineReports() {
                 </div>
               ))}
             </div>
+            <p className="mt-3 rounded-xl border bg-muted/30 px-4 py-3 text-xs leading-6 text-muted-foreground">{copy.profitabilityUnavailable}</p>
           </section>
 
           <p className="text-center text-xs text-muted-foreground">
@@ -402,6 +470,7 @@ function CombinedReports() {
   const { lang } = useI18n();
   const copy = COPY[lang] || COPY.en;
   const [range, setRange] = useState<RangeKey>('today');
+  const [customRange, setCustomRange] = useState<AppliedDateRange | null>(null);
   const [cashier, setCashier] = useState<CashierReport | null>(null);
   const [online, setOnline] = useState<OnlineReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -413,7 +482,7 @@ function CombinedReports() {
     setLoading(true);
     setFailed(false);
     try {
-      const query = rangeQuery(range);
+      const query = reportRangeQuery(range, customRange);
       const [cashierResponse, onlineResponse] = await Promise.all([
         fetch(`/api/cashier/management/report${query}`, {
           credentials: 'same-origin',
@@ -445,7 +514,7 @@ function CombinedReports() {
     } finally {
       if (requestId === sequence.current) setLoading(false);
     }
-  }, [range]);
+  }, [customRange, range]);
 
   useEffect(() => {
     void load();
@@ -470,9 +539,48 @@ function CombinedReports() {
     return [...map.values()].sort((left, right) => left.code.localeCompare(right.code));
   }, [cashier, online]);
 
+  const downloadReport = async () => {
+    if (!cashier || !online) return;
+    await downloadWorkbook(`fawri-combined-report-${new Date().toISOString().slice(0, 10)}`, [
+      {
+        name: 'Combined sales',
+        rows: [
+          [copy.currency, copy.cashierNetSales, copy.onlineDeliveredSales, copy.combinedSales],
+          ...currencies.map(row => [
+            row.code,
+            row.cashier,
+            row.online,
+            row.cashier + row.online,
+          ]),
+        ],
+      },
+      {
+        name: 'Online summary',
+        rows: [
+          [copy.receivedOrders, online.received_order_count],
+          [copy.deliveredOrders, online.delivered_order_count],
+          [copy.onlineDeliveredSales, online.delivered_sales_iqd],
+        ],
+      },
+    ]);
+  };
+
   return (
     <div className="space-y-5">
-      <RangeSelector value={range} onChange={setRange} copy={copy} />
+      <ReportToolbar
+        range={range}
+        onRangeChange={value => {
+          setCustomRange(null);
+          setRange(value);
+        }}
+        onCustomApply={value => {
+          setCustomRange(value);
+          setRange('custom');
+        }}
+        onDownload={downloadReport}
+        onPrint={() => window.print()}
+        exportDisabled={loading || failed || !cashier || !online}
+      />
       {failed ? (
         <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm font-semibold text-destructive">
           {copy.failed}
@@ -494,8 +602,26 @@ function CombinedReports() {
             <Metric title={copy.receivedOrders}><span dir="ltr">{online.received_order_count}</span></Metric>
           </div>
 
-          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+          <section className="report-print-break-avoid rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
             <h2 className="text-lg font-bold">{copy.combinedSales}</h2>
+            <div className="mt-3 h-56 rounded-xl border bg-background p-3">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={currencies.flatMap(row => [
+                    { name: `${row.code} · ${copy.cashier}`, value: row.cashier },
+                    { name: `${row.code} · ${copy.online}`, value: row.online },
+                  ])}
+                  layout="vertical"
+                  margin={{ left: 8, right: 8 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis type="number" hide />
+                  <YAxis type="category" dataKey="name" width={150} tick={{ fontSize: 10 }} />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="currentColor" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
             <div className="mt-3 overflow-x-auto rounded-xl border">
               <table className="w-full min-w-[640px] text-sm">
                 <thead className="bg-muted/60 text-xs text-muted-foreground">
@@ -546,13 +672,13 @@ export default function ReportsPage() {
   ] as const;
 
   return (
-    <div className="space-y-5 pb-8" dir={dir}>
-      <header>
+    <div className="report-print-root space-y-5 pb-8" dir={dir}>
+      <header className="report-no-print">
         <h1 className="text-2xl font-bold text-foreground">{copy.reports}</h1>
         <p className="mt-1 max-w-3xl text-sm text-muted-foreground">{copy.subtitle}</p>
       </header>
 
-      <nav className="flex flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-sm" aria-label={copy.reports}>
+      <nav className="report-no-print flex flex-wrap gap-2 rounded-2xl border bg-card p-2 shadow-sm" aria-label={copy.reports}>
         {tabs.map(tab => (
           <Link
             key={tab.key}
