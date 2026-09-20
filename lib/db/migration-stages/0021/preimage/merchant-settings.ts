@@ -65,14 +65,6 @@ export const merchantSettings = pgTable(
       .notNull()
       .default(["cash_on_delivery"]),
     paymentInstructions: text("payment_instructions").notNull().default(""),
-    inventoryFreshnessMaxAgeMinutes: integer(
-      "inventory_freshness_max_age_minutes",
-    )
-      .notNull()
-      .default(5),
-    inventoryStalePolicy: text("inventory_stale_policy")
-      .notNull()
-      .default("reroute_then_pending"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -120,14 +112,6 @@ export const merchantSettings = pgTable(
     paymentInstructionsCheck: check(
       "merchant_settings_payment_instructions_check",
       sql`char_length(${table.paymentInstructions}) <= 2000`,
-    ),
-    inventoryFreshnessAgeCheck: check(
-      "merchant_settings_inventory_freshness_age_check",
-      sql`${table.inventoryFreshnessMaxAgeMinutes} BETWEEN 1 AND 1440`,
-    ),
-    inventoryStalePolicyCheck: check(
-      "merchant_settings_inventory_stale_policy_check",
-      sql`${table.inventoryStalePolicy} IN ('reroute_then_pending','allow_stale','fresh_only')`,
     ),
     timestampOrderCheck: check(
       "merchant_settings_timestamp_order_check",

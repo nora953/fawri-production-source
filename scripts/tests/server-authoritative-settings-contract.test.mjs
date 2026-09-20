@@ -114,6 +114,12 @@ test("delivery and payment mappings match the canonical server model", () => {
   assert.match(page, /'cash_on_delivery'/);
   assert.match(page, /'superqi'/);
   assert.match(page, /disabled=\{!draft\.payment\.electronic_payment_enabled\}/);
+
+  assert.match(page, /freshness_max_age_minutes/);
+  assert.match(page, /stale_policy/);
+  assert.match(page, /value="reroute_then_pending"/);
+  assert.match(page, /value="allow_stale"/);
+  assert.match(page, /value="fresh_only"/);
 });
 
 test("settings API derives tenant identity from the authenticated session and returns effects", () => {

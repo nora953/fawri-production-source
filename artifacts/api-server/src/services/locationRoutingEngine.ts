@@ -3,6 +3,11 @@ export type RoutingOperationalStatus =
   | "temporarily_unavailable"
   | "closed";
 
+export type RoutingStaleInventoryPolicy =
+  | "reroute_then_pending"
+  | "allow_stale"
+  | "fresh_only";
+
 export type RoutingRequestedItem = {
   product_id: string;
   variant_id?: string;
@@ -44,7 +49,8 @@ export type LocationRoutingDecision =
         | "outside_service_area"
         | "online_fulfillment_disabled"
         | "location_unavailable"
-        | "insufficient_single_location_inventory";
+        | "insufficient_single_location_inventory"
+        | "inventory_stale";
     };
 
 function itemKey(productId: string, variantId?: string): string {
@@ -128,6 +134,7 @@ function sortEligible(
 export function routeOrderToLocation(input: {
   requested_items: readonly RoutingRequestedItem[];
   candidates: readonly RoutingCandidate[];
+  stale_inventory_policy?: RoutingStaleInventoryPolicy;
 }): LocationRoutingDecision {
   if (requestedTotals(input.requested_items) === null) {
     throw new Error("routing request items are invalid");
@@ -169,6 +176,24 @@ export function routeOrderToLocation(input: {
     ? stockEligible.filter((candidate) => candidate.inventory_fresh)
     : stockEligible;
   if (fresh.length === 0) {
+    const stalePolicy = input.stale_inventory_policy || "reroute_then_pending";
+    if (stalePolicy === "fresh_only") {
+      return {
+        status: "unfulfillable",
+        reason: "inventory_stale",
+      };
+    }
+    if (stalePolicy === "allow_stale") {
+      const rankedStale = [...stockEligible].sort(sortEligible);
+      const selectedStale = rankedStale[0];
+      const staleDistance = normalizedDistance(selectedStale);
+      return {
+        status: "routed",
+        location_id: selectedStale.location_id,
+        reason:
+          staleDistance === null ? "merchant_priority" : "nearest_eligible",
+      };
+    }
     return {
       status: "pending_fulfillment_confirmation",
       candidate_location_ids: stockEligible

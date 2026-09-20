@@ -27,6 +27,7 @@ function serviceMetadata() {
 }
 
 function fixture(params?: {
+  settings?: Record<string, unknown>;
   orderItems?: Record<string, unknown>[];
   locations?: Record<string, unknown>[];
   inventory?: Record<string, unknown>[];
@@ -97,6 +98,7 @@ function fixture(params?: {
               delivery_areas: [],
               delivery_estimated_days_min: 1,
               delivery_estimated_days_max: 3,
+              ...(params?.settings || {}),
             },
           ] as T[],
         };
@@ -296,6 +298,8 @@ test("atomic fulfillment selects one location, rechecks stock and records one mu
   const snapshot = JSON.parse(String(f.state.orderUpdates[0].values[3]));
   assert.equal(snapshot.location_id, "location-b");
   assert.equal(snapshot.inventory_committed, true);
+  assert.equal(snapshot.inventory_freshness_max_age_minutes, 5);
+  assert.equal(snapshot.inventory_stale_policy, "reroute_then_pending");
   assert.equal(snapshot.inventory_mutation_count, 1);
   assert.deepEqual(snapshot.inventory_items, [
     {
@@ -555,4 +559,104 @@ test("service-only order freezes a location without inventory mutation", async (
   assert.equal(f.state.orderUpdates.length, 1);
   const snapshot = JSON.parse(String(f.state.orderUpdates[0].values[3]));
   assert.deepEqual(snapshot.inventory_items, []);
+});
+
+
+test("allow-stale merchant policy permits atomic fulfillment with stale stock", async () => {
+  const f = fixture({
+    settings: {
+      inventory_freshness_max_age_minutes: 5,
+      inventory_stale_policy: "allow_stale",
+    },
+    locations: [
+      {
+        id: "location-a",
+        merchant_id: "merchant-a",
+        online_fulfillment_enabled: true,
+        operational_status: "open",
+        accept_online_orders_while_closed: false,
+        merchant_priority: 1,
+        latitude: null,
+        longitude: null,
+        inventory_fresh_at: "2020-01-01T00:00:00.000Z",
+      },
+    ],
+    inventory: [
+      {
+        id: "level-a",
+        merchant_id: "merchant-a",
+        location_id: "location-a",
+        product_id: "product-a",
+        variant_id: null,
+        quantity: 5,
+        version: 1,
+      },
+    ],
+  });
+
+  const result = await ensureOnlineOrderFulfillmentCommittedWithTarget(f.target, {
+    merchantId: "merchant-a",
+    orderId: "order-allow-stale",
+    customerArea: "المنصور",
+    sourceChannel: "instagram",
+    metadata: {},
+  });
+
+  assert.equal(result.location_id, "location-a");
+  assert.equal(result.inventory_mutation_count, 1);
+  assert.equal(f.state.mutations.length, 1);
+  assert.equal(f.state.orderUpdates.length, 1);
+  const snapshot = JSON.parse(String(f.state.orderUpdates[0].values[3]));
+  assert.equal(snapshot.inventory_stale_policy, "allow_stale");
+});
+
+test("fresh-only merchant policy blocks stale inventory without mutation", async () => {
+  const f = fixture({
+    settings: {
+      inventory_freshness_max_age_minutes: 5,
+      inventory_stale_policy: "fresh_only",
+    },
+    locations: [
+      {
+        id: "location-a",
+        merchant_id: "merchant-a",
+        online_fulfillment_enabled: true,
+        operational_status: "open",
+        accept_online_orders_while_closed: false,
+        merchant_priority: 1,
+        latitude: null,
+        longitude: null,
+        inventory_fresh_at: "2020-01-01T00:00:00.000Z",
+      },
+    ],
+    inventory: [
+      {
+        id: "level-a",
+        merchant_id: "merchant-a",
+        location_id: "location-a",
+        product_id: "product-a",
+        variant_id: null,
+        quantity: 5,
+        version: 1,
+      },
+    ],
+  });
+
+  await assert.rejects(
+    () =>
+      ensureOnlineOrderFulfillmentCommittedWithTarget(f.target, {
+        merchantId: "merchant-a",
+        orderId: "order-fresh-only",
+        customerArea: "المنصور",
+        sourceChannel: "messenger",
+        metadata: {},
+      }),
+    (error: unknown) => {
+      assert.ok(error instanceof OnlineOrderFulfillmentCommitError);
+      assert.equal(error.code, "ORDER_FULFILLMENT_STALE_INVENTORY_DISABLED");
+      return true;
+    },
+  );
+  assert.equal(f.state.mutations.length, 0);
+  assert.equal(f.state.orderUpdates.length, 0);
 });

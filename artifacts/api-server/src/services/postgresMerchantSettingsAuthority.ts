@@ -4,6 +4,7 @@ import {
   getMerchantOperationalSettings,
   MerchantSettingsError,
   updateMerchantOperationalSettingsWithEffects,
+  type InventoryStalePolicy,
   type MerchantOperationalSettings,
   type MerchantPaymentMethod,
   type MerchantReplyLanguage,
@@ -36,11 +37,17 @@ const PAYMENT_METHODS = new Set<MerchantPaymentMethod>([
   "zaincash",
   "other",
 ]);
+const INVENTORY_STALE_POLICIES = new Set<InventoryStalePolicy>([
+  "reroute_then_pending",
+  "allow_stale",
+  "fresh_only",
+]);
 const ROOT_PATCH_KEYS = new Set([
   "auto_reply_enabled",
   "reply_language",
   "delivery",
   "payment",
+  "inventory",
 ]);
 const DELIVERY_PATCH_KEYS = new Set([
   "enabled",
@@ -58,6 +65,10 @@ const PAYMENT_PATCH_KEYS = new Set([
   "electronic_payment_enabled",
   "methods",
   "instructions",
+]);
+const INVENTORY_PATCH_KEYS = new Set([
+  "freshness_max_age_minutes",
+  "stale_policy",
 ]);
 
 type SettingsRow = {
@@ -77,6 +88,8 @@ type SettingsRow = {
   electronic_payment_enabled: boolean;
   payment_methods: unknown;
   payment_instructions: string;
+  inventory_freshness_max_age_minutes: number;
+  inventory_stale_policy: InventoryStalePolicy;
   created_at: Date;
   updated_at: Date;
 };
@@ -315,6 +328,10 @@ function defaultSettings(merchantId: string): MerchantOperationalSettings {
       methods: ["cash_on_delivery"],
       instructions: "",
     },
+    inventory: {
+      freshness_max_age_minutes: 5,
+      stale_policy: "reroute_then_pending",
+    },
     created_at: timestamp,
     updated_at: timestamp,
   };
@@ -362,6 +379,12 @@ function rowToSettings(
       methods,
       instructions: row.payment_instructions,
     },
+    inventory: {
+      freshness_max_age_minutes: Number(
+        row.inventory_freshness_max_age_minutes,
+      ),
+      stale_policy: row.inventory_stale_policy,
+    },
     created_at: row.created_at.toISOString(),
     updated_at: row.updated_at.toISOString(),
   };
@@ -379,7 +402,9 @@ async function loadSettings(
             free_delivery_threshold_iqd, delivery_estimated_days_min,
             delivery_estimated_days_max, delivery_areas, delivery_notes,
             cash_on_delivery_enabled, electronic_payment_enabled,
-            payment_methods, payment_instructions, created_at, updated_at
+            payment_methods, payment_instructions,
+            inventory_freshness_max_age_minutes, inventory_stale_policy,
+            created_at, updated_at
        FROM merchant_settings
       WHERE merchant_id = $1${lock ? " FOR UPDATE" : ""}`,
     [merchantId],
@@ -416,6 +441,7 @@ function normalizePatch(
   );
   const deliveryPatch = objectRecord(patch.delivery);
   const paymentPatch = objectRecord(patch.payment);
+  const inventoryPatch = objectRecord(patch.inventory);
   if (
     Object.prototype.hasOwnProperty.call(patch, "delivery") &&
     (!patch.delivery || typeof patch.delivery !== "object" || Array.isArray(patch.delivery))
@@ -436,6 +462,18 @@ function normalizePatch(
       400,
     );
   }
+  if (
+    Object.prototype.hasOwnProperty.call(patch, "inventory") &&
+    (!patch.inventory ||
+      typeof patch.inventory !== "object" ||
+      Array.isArray(patch.inventory))
+  ) {
+    throw new MerchantSettingsError(
+      "MERCHANT_INVENTORY_PATCH_INVALID",
+      "inventory settings patch must be an object",
+      400,
+    );
+  }
   assertAllowedKeys(
     deliveryPatch,
     DELIVERY_PATCH_KEYS,
@@ -445,6 +483,11 @@ function normalizePatch(
     paymentPatch,
     PAYMENT_PATCH_KEYS,
     "MERCHANT_PAYMENT_FIELD_UNSUPPORTED",
+  );
+  assertAllowedKeys(
+    inventoryPatch,
+    INVENTORY_PATCH_KEYS,
+    "MERCHANT_INVENTORY_FIELD_UNSUPPORTED",
   );
 
   const replyLanguage = Object.prototype.hasOwnProperty.call(patch, "reply_language")
@@ -577,6 +620,25 @@ function normalizePatch(
     );
   }
 
+  const freshnessMaxAgeMinutes = positiveInteger(
+    inventoryPatch.freshness_max_age_minutes,
+    current.inventory.freshness_max_age_minutes,
+    1440,
+  );
+  const stalePolicy = Object.prototype.hasOwnProperty.call(
+    inventoryPatch,
+    "stale_policy",
+  )
+    ? text(inventoryPatch.stale_policy)
+    : current.inventory.stale_policy;
+  if (!INVENTORY_STALE_POLICIES.has(stalePolicy as InventoryStalePolicy)) {
+    throw new MerchantSettingsError(
+      "MERCHANT_INVENTORY_STALE_POLICY_INVALID",
+      "inventory stale policy is invalid",
+      400,
+    );
+  }
+
   return {
     merchant_id: current.merchant_id,
     version: current.version + 1,
@@ -610,6 +672,10 @@ function normalizePatch(
       instructions: Object.prototype.hasOwnProperty.call(paymentPatch, "instructions")
         ? text(paymentPatch.instructions).slice(0, 2000)
         : current.payment.instructions,
+    },
+    inventory: {
+      freshness_max_age_minutes: freshnessMaxAgeMinutes,
+      stale_policy: stalePolicy as InventoryStalePolicy,
     },
     created_at: current.created_at,
     updated_at: new Date().toISOString(),
@@ -741,7 +807,9 @@ export async function updateMerchantOperationalSettingsAuthoritative(input: {
               electronic_payment_enabled = $15,
               payment_methods = $16::jsonb,
               payment_instructions = $17,
-              updated_at = $18
+              inventory_freshness_max_age_minutes = $18,
+              inventory_stale_policy = $19,
+              updated_at = $20
         WHERE merchant_id = $1 AND version = $2
         RETURNING *`,
       [
@@ -762,6 +830,8 @@ export async function updateMerchantOperationalSettingsAuthoritative(input: {
         updated.payment.electronic_payment_enabled,
         JSON.stringify(updated.payment.methods),
         updated.payment.instructions,
+        updated.inventory.freshness_max_age_minutes,
+        updated.inventory.stale_policy,
         new Date(updated.updated_at),
       ],
     );

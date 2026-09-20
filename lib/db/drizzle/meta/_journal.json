@@ -148,6 +148,13 @@
       "when": 1790035200000,
       "tag": "0020_cashier_operation_location_backfill",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790121600000,
+      "tag": "0021_merchant_inventory_freshness_policy",
+      "breakpoints": true
     }
   ]
 }

@@ -183,6 +183,8 @@ test("merchant settings API is server-authoritative, isolated, and versioned", a
   assert.equal(initialA.body.settings.merchant_id, "merchant-a");
   assert.equal(initialA.body.settings.version, 1);
   assert.equal(initialA.body.settings.auto_reply_enabled, true);
+  assert.equal(initialA.body.settings.inventory.freshness_max_age_minutes, 5);
+  assert.equal(initialA.body.settings.inventory.stale_policy, "reroute_then_pending");
   await assert.rejects(
     readFile(path.join(dataDirectory, "merchant-settings.json"), "utf8"),
     error => error.code === "ENOENT",
@@ -210,6 +212,10 @@ test("merchant settings API is server-authoritative, isolated, and versioned", a
             methods: ["cash_on_delivery", "zaincash"],
             instructions: "Send the receipt",
           },
+          inventory: {
+            freshness_max_age_minutes: 30,
+            stale_policy: "allow_stale",
+          },
         },
       }),
     }),
@@ -222,6 +228,8 @@ test("merchant settings API is server-authoritative, isolated, and versioned", a
     "cash_on_delivery",
     "zaincash",
   ]);
+  assert.equal(updatedA.body.settings.inventory.freshness_max_age_minutes, 30);
+  assert.equal(updatedA.body.settings.inventory.stale_policy, "allow_stale");
 
   const stale = await jsonResponse(
     await apiFetch("/api/settings", {
@@ -255,6 +263,14 @@ test("merchant settings API is server-authoritative, isolated, and versioned", a
   );
   assert.deepEqual(Object.keys(persisted.settings), ["merchant-a"]);
   assert.equal(persisted.settings["merchant-a"].version, 2);
+  assert.equal(
+    persisted.settings["merchant-a"].inventory.freshness_max_age_minutes,
+    30,
+  );
+  assert.equal(
+    persisted.settings["merchant-a"].inventory.stale_policy,
+    "allow_stale",
+  );
   assert.equal(
     JSON.stringify(persisted).includes("merchant-b"),
     false,

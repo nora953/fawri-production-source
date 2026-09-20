@@ -236,3 +236,74 @@ test("merchant priority breaks ties and is deterministic when distance is unavai
     reason: "merchant_priority",
   });
 });
+
+
+test("merchant may explicitly accept stale inventory risk", () => {
+  const result = routeOrderToLocation({
+    requested_items: requested,
+    stale_inventory_policy: "allow_stale",
+    candidates: [
+      candidate("location-a", {
+        inventory_fresh: false,
+        merchant_priority: 1,
+      }),
+      candidate("location-b", {
+        inventory_fresh: false,
+        merchant_priority: 9,
+      }),
+    ],
+  });
+
+  assert.deepEqual(result, {
+    status: "routed",
+    location_id: "location-b",
+    reason: "merchant_priority",
+  });
+});
+
+test("fresh-only policy excludes stale locations instead of auto-routing", () => {
+  const result = routeOrderToLocation({
+    requested_items: requested,
+    stale_inventory_policy: "fresh_only",
+    candidates: [
+      candidate("location-a", {
+        inventory_fresh: false,
+        merchant_priority: 100,
+      }),
+    ],
+  });
+
+  assert.deepEqual(result, {
+    status: "unfulfillable",
+    reason: "inventory_stale",
+  });
+});
+
+test("all stale policies still prefer a fresh eligible location when one exists", () => {
+  for (const stalePolicy of [
+    "reroute_then_pending",
+    "allow_stale",
+    "fresh_only",
+  ] as const) {
+    const result = routeOrderToLocation({
+      requested_items: requested,
+      stale_inventory_policy: stalePolicy,
+      candidates: [
+        candidate("location-stale", {
+          inventory_fresh: false,
+          merchant_priority: 100,
+        }),
+        candidate("location-fresh", {
+          inventory_fresh: true,
+          merchant_priority: 1,
+        }),
+      ],
+    });
+
+    assert.deepEqual(result, {
+      status: "routed",
+      location_id: "location-fresh",
+      reason: "merchant_priority",
+    });
+  }
+});

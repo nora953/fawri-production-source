@@ -1,0 +1,10 @@
+{
+  "index": 21,
+  "name": "merchant_inventory_freshness_policy",
+  "when": 1790121600000,
+  "mode": "reviewed_sql",
+  "sql_sha256": "e918e8408d8558af1a83e62dc98f4e28c9005c312df42ef9f2a28f7610020b6f",
+  "preimage_files": [
+    "merchant-settings.ts"
+  ]
+}
