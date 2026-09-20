@@ -103,7 +103,12 @@ test('central report accepts a synced sale with manual discount and reports char
     product_name: 'Product 1',
     net_units: 1,
     net_revenue_minor: 37_000,
+    profit_status: 'available',
+    gross_profit_minor: 17_000,
+    cost_known_affected_units: 1,
+    cost_unknown_affected_units: 0,
   });
+  assert.deepEqual(iq.top_profitable_products[0], iq.top_products[0]);
   assert.equal(result.by_staff[0].report.by_currency[0].net_revenue_minor, 37_000);
   assert.equal(result.by_station[0].report.by_currency[0].net_revenue_minor, 37_000);
   assert.equal(result.by_location[0].location_id, 'location-1');
