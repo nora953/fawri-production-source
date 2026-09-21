@@ -51,7 +51,13 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /item\.shift_id/);
   assert.match(cashier, /labels\.location,\s*labels\.station,\s*labels\.amount,\s*labels\.currency,\s*labels\.saleReference,\s*labels\.shift/);
   assert.match(cashier, /columnWidths: \[10, 14, 14, 14, 14, 12, 18, 18, 14, 14\]/);
-  assert.match(cashier, /columnWidths: \[20, 18, 12, 16, 18, 14, 10, 28, 30\]/);
+  assert.match(cashier, /cashierExportSheetNames/);
+  assert.match(cashier, /summary: 'الملخص'/);
+  assert.match(cashier, /topSelling: 'الأكثر مبيعًا'/);
+  assert.match(cashier, /topProfitable: 'الأكثر ربحية'/);
+  assert.match(cashier, /operations: 'العمليات'/);
+  assert.match(cashier, /mergeRows: \[0, 3\]/);
+  assert.match(cashier, /columnWidths: \[22, 18, 12, 16, 18, 14, 10, 28, 30\]/);
   assert.match(cashier, /currency\.profit_status === 'unavailable' \? ''/);
   assert.match(cashier, /window\.print\(\)/);
   assert.match(cashier, /report-print-only/);
@@ -77,6 +83,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /report-print-footer-note/);
   assert.match(workbook, /!cols/);
   assert.match(workbook, /!autofilter/);
+  assert.match(workbook, /!merges/);
+  assert.match(workbook, /mergeRows/);
   assert.match(workbook, /#,##0/);
 });
 
