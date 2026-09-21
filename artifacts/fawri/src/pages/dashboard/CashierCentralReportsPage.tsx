@@ -283,11 +283,21 @@ function exportPeriodText(
 
 function profitStatusLabel(
   status: CurrencyReport['profit_status'],
-  labels: Copy,
+  lang: Lang,
 ): string {
-  if (status === 'available') return labels.profit;
-  if (status === 'partial') return labels.partialProfit;
-  return labels.unavailableProfit;
+  if (lang === 'ar') {
+    if (status === 'available') return 'متاح';
+    if (status === 'partial') return 'جزئي';
+    return 'غير متاح';
+  }
+  if (lang === 'ku') {
+    if (status === 'available') return 'بەردەستە';
+    if (status === 'partial') return 'بەشێکی';
+    return 'بەردەست نییە';
+  }
+  if (status === 'available') return 'Available';
+  if (status === 'partial') return 'Partial';
+  return 'Unavailable';
 }
 
 function productDisplayName(product: ProductRow): string {
@@ -380,7 +390,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         currency.currency_code,
         currency.net_revenue_minor,
         currency.profit_status === 'unavailable' ? '' : currency.gross_profit_minor ?? '',
-        profitStatusLabel(currency.profit_status, labels),
+        profitStatusLabel(currency.profit_status, lang),
         currency.sale_count,
         currency.net_units,
         currency.refunds_minor,
