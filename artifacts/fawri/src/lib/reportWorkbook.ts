@@ -280,7 +280,9 @@ function addUtf8File(
 }
 
 function downloadBytes(fileName: string, bytes: Uint8Array): void {
-  const blob = new Blob([bytes], {
+  const arrayBuffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(arrayBuffer).set(bytes);
+  const blob = new Blob([arrayBuffer], {
     type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
   });
   const url = URL.createObjectURL(blob);
