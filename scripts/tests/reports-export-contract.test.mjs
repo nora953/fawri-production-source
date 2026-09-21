@@ -18,6 +18,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   const printCss = read("artifacts/fawri/src/pages/dashboard/reports-print.css");
 
   assert.match(toolbar, /type="date"/);
+  assert.match(toolbar, /displayDateDayFirst/);
+  assert.match(toolbar, /\$\{day\}\/\$\{month\}\/\$\{year\}/);
   assert.match(toolbar, /Download Excel/);
   assert.match(toolbar, /Print \/ Save PDF/);
   assert.match(toolbar, /localDateEndExclusive/);
