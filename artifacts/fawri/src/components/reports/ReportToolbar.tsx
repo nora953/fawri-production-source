@@ -2,7 +2,14 @@ import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, ChevronDown, Download, Printer } from 'lucide-react';
 import type { DateRange } from 'react-day-picker';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 
@@ -36,7 +43,7 @@ const COPY: Record<Lang, ToolbarCopy> = {
     rangePickerHint: 'اختر تاريخ البداية ثم تاريخ النهاية من التقويم.',
     apply: 'تطبيق',
     cancel: 'إلغاء',
-    invalid: 'اختر تاريخ البداية والنهاية أولًا.',
+    invalid: 'اختر تاريخًا من التقويم أولًا.',
     download: 'تحميل Excel',
     print: 'طباعة / حفظ PDF',
     presets: 'فترات سريعة',
@@ -51,7 +58,7 @@ const COPY: Record<Lang, ToolbarCopy> = {
     rangePickerHint: 'لە ڕۆژژمێرەکە سەرەتا بەرواری دەستپێک و پاشان کۆتایی هەڵبژێرە.',
     apply: 'جێبەجێکردن',
     cancel: 'هەڵوەشاندنەوە',
-    invalid: 'سەرەتا بەرواری دەستپێک و کۆتایی هەڵبژێرە.',
+    invalid: 'سەرەتا بەروارێک لە ڕۆژژمێرەکە هەڵبژێرە.',
     download: 'داگرتنی Excel',
     print: 'چاپ / پاشەکەوتی PDF',
     presets: 'ماوە خێراکان',
@@ -66,7 +73,7 @@ const COPY: Record<Lang, ToolbarCopy> = {
     rangePickerHint: 'Choose the start date, then the end date on the calendar.',
     apply: 'Apply',
     cancel: 'Cancel',
-    invalid: 'Choose both a start and end date first.',
+    invalid: 'Choose a date on the calendar first.',
     download: 'Download Excel',
     print: 'Print / Save PDF',
     presets: 'Quick ranges',
@@ -252,13 +259,13 @@ export function ReportToolbar({
       setOpen(false);
       return;
     }
-    if (!draftRange?.from || !draftRange.to) {
+    if (!draftRange?.from) {
       setError(copy.invalid);
       return;
     }
     onCustomApply({
       from: dateToValue(draftRange.from),
-      to: dateToValue(draftRange.to),
+      to: dateToValue(draftRange.to ?? draftRange.from),
     });
     setOpen(false);
   };
@@ -268,14 +275,14 @@ export function ReportToolbar({
       className="report-no-print flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-3 shadow-sm"
       dir={dir}
     >
-      <Popover
+      <Dialog
         open={open}
         onOpenChange={nextOpen => {
           if (nextOpen) syncDraftFromApplied();
           setOpen(nextOpen);
         }}
       >
-        <PopoverTrigger asChild>
+        <DialogTrigger asChild>
           <button
             type="button"
             className="flex min-w-[250px] max-w-full items-center gap-3 rounded-xl border bg-background px-4 py-2.5 text-start transition hover:bg-accent sm:min-w-[320px]"
@@ -292,62 +299,71 @@ export function ReportToolbar({
             </span>
             <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
-        </PopoverTrigger>
+        </DialogTrigger>
 
-        <PopoverContent
-          align={dir === 'rtl' ? 'end' : 'start'}
-          sideOffset={8}
-          className="w-auto max-w-[calc(100vw-1.5rem)] overflow-hidden p-0"
+        <DialogContent
+          className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0"
+          closeButtonClassName="right-3 top-3"
           dir={dir}
         >
-          <div className="grid md:grid-cols-[150px_auto]">
-            <aside className="border-b bg-muted/20 p-3 md:border-b-0 md:border-e">
-              <p className="mb-2 px-2 text-xs font-bold text-muted-foreground">{copy.presets}</p>
-              <div className="grid grid-cols-2 gap-1 md:grid-cols-1">
-                {presets.map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => choosePreset(key)}
-                    className={`rounded-lg px-3 py-2 text-start text-sm font-semibold transition ${
-                      draftKind === key
-                        ? 'bg-primary text-primary-foreground'
-                        : 'hover:bg-accent'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </aside>
+          <DialogHeader className="border-b px-5 py-4 pe-16 text-start">
+            <DialogTitle>{copy.chooseRange}</DialogTitle>
+            <DialogDescription>{copy.rangePickerHint}</DialogDescription>
+          </DialogHeader>
 
-            <div className="min-w-0 p-3">
-              <div className="mb-2">
-                <p className="text-sm font-bold">{copy.customRange}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">{copy.rangePickerHint}</p>
+          <div className="min-h-0 overflow-y-auto">
+            <div className="grid md:grid-cols-[150px_minmax(0,1fr)]">
+              <aside className="border-b bg-muted/20 p-3 md:border-b-0 md:border-e">
+                <p className="mb-2 px-2 text-xs font-bold text-muted-foreground">{copy.presets}</p>
+                <div className="grid grid-cols-2 gap-1 md:grid-cols-1">
+                  {presets.map(([key, label]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => choosePreset(key)}
+                      className={`rounded-lg px-3 py-2 text-start text-sm font-semibold transition ${
+                        draftKind === key
+                          ? 'bg-primary text-primary-foreground'
+                          : 'hover:bg-accent'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </aside>
+
+              <div className="min-w-0 p-3 sm:p-4">
+                <div className="mb-3">
+                  <p className="text-sm font-bold">{copy.customRange}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{copy.rangePickerHint}</p>
+                </div>
+                <div className="flex justify-center overflow-x-auto">
+                  <Calendar
+                    mode="range"
+                    selected={draftRange}
+                    onSelect={chooseCalendarRange}
+                    numberOfMonths={desktopCalendar ? 2 : 1}
+                    defaultMonth={draftRange?.from || new Date()}
+                    disabled={{ after: new Date() }}
+                    showOutsideDays={false}
+                    min={1}
+                    className="max-w-full"
+                  />
+                </div>
+                {draftKind === 'custom' && draftRange?.from ? (
+                  <p dir="ltr" className="mt-3 text-center text-xs tabular-nums text-muted-foreground">
+                    {displayDateDayFirst(dateToValue(draftRange.from))}
+                    {' – '}
+                    {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
+                  </p>
+                ) : null}
+                {error ? <p className="mt-2 text-xs font-semibold text-destructive">{error}</p> : null}
               </div>
-              <Calendar
-                mode="range"
-                selected={draftRange}
-                onSelect={chooseCalendarRange}
-                numberOfMonths={desktopCalendar ? 2 : 1}
-                defaultMonth={draftRange?.from || new Date()}
-                disabled={{ after: new Date() }}
-                showOutsideDays={false}
-                className="max-w-full"
-              />
-              {draftKind === 'custom' && draftRange?.from ? (
-                <p dir="ltr" className="mt-2 text-center text-xs tabular-nums text-muted-foreground">
-                  {displayDateDayFirst(dateToValue(draftRange.from))}
-                  {' – '}
-                  {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
-                </p>
-              ) : null}
-              {error ? <p className="mt-2 text-xs font-semibold text-destructive">{error}</p> : null}
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t bg-muted/10 p-3">
+          <div className="flex shrink-0 items-center justify-end gap-2 border-t bg-background p-3 sm:px-5">
             <button
               type="button"
               onClick={() => setOpen(false)}
@@ -363,8 +379,8 @@ export function ReportToolbar({
               {copy.apply}
             </button>
           </div>
-        </PopoverContent>
-      </Popover>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex flex-wrap gap-2">
         <button
