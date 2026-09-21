@@ -63,7 +63,10 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /startRow: 1, startColumn: 1, endRow: 1, endColumn: 3/);
   assert.match(cashier, /startRow: 3, startColumn: 0, endRow: 3, endColumn: 3/);
   assert.match(cashier, /rowHeights: \[24, 22, 22, 22, 10, 24\]/);
-  assert.match(cashier, /columnWidths: \[22, 18, 12, 16, 18, 14, 10, 28, 30\]/);
+  assert.match(cashier, /columnWidths: \[24, 18, 12, 16, 18, 14, 10, 42, 44\]/);
+  assert.match(cashier, /ltrDataColumns: \[0, 7, 8\]/);
+  assert.match(cashier, /\{ row: 1, column: 1 \}/);
+  assert.match(cashier, /\{ row: 2, column: 1 \}/);
   assert.match(cashier, /currency\.profit_status === 'unavailable' \? ''/);
   assert.match(cashier, /window\.print\(\)/);
   assert.match(cashier, /report-print-only/);
@@ -89,6 +92,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /report-print-footer-note/);
   assert.match(cashier, /rtlText: lang !== 'en'/);
   assert.match(workbook, /stylesXml/);
+  assert.match(workbook, /ltrCells/);
+  assert.match(workbook, /ltrDataColumns/);
+  assert.match(workbook, /readingOrder="1"/);
   assert.match(workbook, /<borders count="2">/);
   assert.match(workbook, /style="thin"/);
   assert.match(workbook, /numFmtId="3"/);
