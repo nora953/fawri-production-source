@@ -15,6 +15,8 @@ export type WorkbookSheet = {
   mergeRows?: number[];
   mergeRanges?: WorkbookMergeRange[];
   rtlText?: boolean;
+  ltrCells?: Array<{ row: number; column: number }>;
+  ltrDataColumns?: number[];
 };
 
 type ZipContainer = unknown;
@@ -96,11 +98,15 @@ function styleIdForCell(
   column: number,
   value: string | number | null | undefined,
 ): number {
+  const explicitLtr = sheet.ltrCells?.some(cell => cell.row === row && cell.column === column);
+  if (explicitLtr) return 9;
+
   if (row === 0) return 1;
   if (row === 1 || row === 2) return column === 0 ? 2 : 3;
   if (row === 3) return 4;
   if (row === sheet.headerRow) return 5;
   if (sheet.headerRow !== undefined && row > sheet.headerRow) {
+    if (sheet.ltrDataColumns?.includes(column)) return 10;
     return typeof value === 'number' ? 7 : 6;
   }
   if (sheet.headerRow !== undefined && row > 4 && row < sheet.headerRow) {
@@ -153,7 +159,7 @@ function stylesXml(rtlText: boolean): string {
     </border>
   </borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="9">
+  <cellXfs count="11">
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
     <xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1">${centered}</xf>
     <xf numFmtId="0" fontId="1" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1">${labelAlignment}</xf>
@@ -163,6 +169,8 @@ function stylesXml(rtlText: boolean): string {
     <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1">${centered}</xf>
     <xf numFmtId="3" fontId="0" fillId="0" borderId="1" xfId="0" applyNumberFormat="1" applyBorder="1" applyAlignment="1">${centered}</xf>
     <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" readingOrder="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center" readingOrder="1"/></xf>
   </cellXfs>
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
