@@ -527,14 +527,19 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       {!loading && !error && result && !hasData ? <div className="rounded-2xl border border-dashed bg-card p-10 text-center text-sm text-muted-foreground">{labels.empty}</div> : null}
 
       {!loading && !error && result && hasData ? <>
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"><Metric title={labels.netSales}><MoneyStack values={totalNet} lang={lang} /></Metric><Metric title={labels.profit}><MoneyStack values={totalProfit} lang={lang} /></Metric><Metric title={labels.operations}><span dir="ltr">{result.report.sale_count}</span></Metric><Metric title={labels.units}><span dir="ltr">{netUnits}</span></Metric><Metric title={labels.refunds}><MoneyStack values={totalRefunds} lang={lang} /></Metric><Metric title={labels.average}><MoneyStack values={moneyValues(result.report, 'average_ticket_minor')} lang={lang} /></Metric></div>
+        <div className="report-print-only border-b pb-3">
+          <h1 className="text-xl font-extrabold">{labels.title}</h1>
+          <p className="mt-1 text-sm"><span className="font-semibold">{labels.period}:</span> <span dir="ltr">{exportPeriodText(range, customRange, labels)}</span></p>
+          <p className="mt-1 text-xs text-muted-foreground">{labels.source}</p>
+        </div>
+        <div className="report-print-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-6"><Metric title={labels.netSales}><MoneyStack values={totalNet} lang={lang} /></Metric><Metric title={labels.profit}><MoneyStack values={totalProfit} lang={lang} /></Metric><Metric title={labels.operations}><span dir="ltr">{result.report.sale_count}</span></Metric><Metric title={labels.units}><span dir="ltr">{netUnits}</span></Metric><Metric title={labels.refunds}><MoneyStack values={totalRefunds} lang={lang} /></Metric><Metric title={labels.average}><MoneyStack values={moneyValues(result.report, 'average_ticket_minor')} lang={lang} /></Metric></div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground"><span className="rounded-full border bg-card px-3 py-1.5">{labels.voided}: <b dir="ltr">{voidedSales}</b></span><span className="rounded-full border bg-card px-3 py-1.5">{labels.returns}: <b dir="ltr">{returnCount}</b></span></div>
 
         {currencies.map(currency => {
           const sellingChart = chartRows(currency.top_products, 'net_units');
           const profitChart = chartRows(currency.top_profitable_products, 'gross_profit_minor');
           return (
-            <section key={`${currency.currency_code}:${currency.currency_fraction_digits}`} className="report-print-break-avoid space-y-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+            <section key={`${currency.currency_code}:${currency.currency_fraction_digits}`} className="report-print-break-avoid report-print-currency-section space-y-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-bold" dir="ltr">{currency.currency_code}</h2>
                 <span className="text-xs text-muted-foreground">{currency.sale_count} {labels.sales}</span>
@@ -542,12 +547,12 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
               {currency.profit_status === 'partial' ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">{labels.partialProfit}</div> : null}
               {currency.profit_status === 'unavailable' ? <div className="rounded-xl border bg-background px-3 py-2 text-sm text-muted-foreground">{labels.unavailableProfit}</div> : null}
 
-              <div className="grid gap-5 xl:grid-cols-2">
+              <div className="report-print-two-column grid gap-5 xl:grid-cols-2">
                 <div>
                   <h3 className="font-bold">{labels.topProducts}</h3>
                   {currency.top_products.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">{labels.noTop}</p> : (
                     <>
-                      <div className="mt-2 h-64 rounded-xl border bg-background p-3">
+                      <div className="report-print-chart mt-2 h-64 rounded-xl border bg-background p-3">
                         <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.unitsChart}</p>
                         <ResponsiveContainer width="100%" height="90%">
                           <BarChart data={sellingChart} layout="vertical" margin={{ left: 8, right: 8 }}>
@@ -559,7 +564,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
-                      <div className="mt-2 divide-y rounded-xl border bg-background">
+                      <div className="report-print-product-list mt-2 divide-y rounded-xl border bg-background">
                         {currency.top_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="font-semibold"><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="font-bold" dir="ltr">{product.net_units}</p><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
                       </div>
                     </>
@@ -570,7 +575,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                   <h3 className="font-bold">{labels.topProfitable}</h3>
                   {currency.top_profitable_products.length === 0 ? <p className="mt-2 rounded-xl border bg-background p-4 text-sm text-muted-foreground">{labels.noProfitable}</p> : (
                     <>
-                      <div className="mt-2 h-64 rounded-xl border bg-background p-3">
+                      <div className="report-print-chart mt-2 h-64 rounded-xl border bg-background p-3">
                         <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.profitChart}</p>
                         <ResponsiveContainer width="100%" height="90%">
                           <BarChart data={profitChart} layout="vertical" margin={{ left: 8, right: 8 }}>
@@ -582,7 +587,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
-                      <div className="mt-2 divide-y rounded-xl border bg-background">
+                      <div className="report-print-product-list mt-2 divide-y rounded-xl border bg-background">
                         {currency.top_profitable_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="font-semibold"><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p><p className="font-bold" dir="ltr">{formatMerchantMoneyMinor(product.gross_profit_minor ?? 0, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
                       </div>
                     </>
@@ -593,19 +598,19 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           );
         })}
 
-        <div className="grid gap-5 xl:grid-cols-3">
+        <div className="report-print-three-column grid gap-5 xl:grid-cols-3">
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByLocation}</h2><span className="text-sm text-muted-foreground">{result.by_location.length}</span></div><div className="space-y-2">{result.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_location.map(group => <GroupCard key={group.location_id || '__legacy_location__'} name={group.location_name || labels.formerLocation} report={group.report} lang={lang} labels={labels} />)}</div></section>
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByStaff}</h2><span className="text-sm text-muted-foreground">{result.by_staff.length}</span></div><div className="space-y-2">{result.by_staff.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_staff.map(group => <GroupCard key={group.staff_id || '__legacy_staff__'} name={group.staff_name || labels.formerEmployee} report={group.report} lang={lang} labels={labels} />)}</div></section>
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByStation}</h2><span className="text-sm text-muted-foreground">{result.by_station.length}</span></div><div className="space-y-2">{result.by_station.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_station.map(group => <GroupCard key={group.station_id || '__legacy_station__'} name={group.station_name || labels.formerStation} report={group.report} lang={lang} labels={labels} />)}</div></section>
         </div>
 
-        <div className="grid gap-5 xl:grid-cols-3">
+        <div className="report-print-three-column grid gap-5 xl:grid-cols-3">
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByLocation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_location.length}</span></div><div className="space-y-2">{result.activity.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_location.map(group => <ActivityCard key={group.location_id || '__legacy_location_activity__'} name={group.location_name || labels.formerLocation} activity={group} labels={labels} />)}</div></section>
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStaff}</h2><span className="text-sm text-muted-foreground">{result.activity.by_staff.length}</span></div><div className="space-y-2">{result.activity.by_staff.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_staff.map(group => <ActivityCard key={group.staff_id} name={group.staff_name || labels.formerEmployee} activity={group} labels={labels} />)}</div></section>
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_station.length}</span></div><div className="space-y-2">{result.activity.by_station.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_station.map(group => <ActivityCard key={group.station_id} name={group.station_name || labels.formerStation} activity={group} labels={labels} />)}</div></section>
         </div>
 
-        <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5" data-testid="cashier-operation-details">
+        <section className="report-print-operation-details rounded-2xl border bg-card p-4 shadow-sm sm:p-5" data-testid="cashier-operation-details">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">{labels.operationDetails}</h2><p className="mt-1 text-sm text-muted-foreground">{labels.operationDetailsHint}</p></div><span className="rounded-full border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground">{filteredOperations.length}</span></div>
           <div className="report-no-print mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <label className="text-sm font-semibold">{labels.employeeFilter}<select value={staffFilter} onChange={event => setStaffFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allEmployees}</option>{operationStaff.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
@@ -653,7 +658,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           )}
         </section>
 
-        <p className="text-center text-xs text-muted-foreground">{labels.source} · {labels.generated}: <span dir="ltr">{new Date(result.generated_at).toLocaleString(dateLocale)}</span></p>
+        <p className="report-print-footer-note text-center text-xs text-muted-foreground">{labels.source} · {labels.generated}: <span dir="ltr">{new Date(result.generated_at).toLocaleString(dateLocale)}</span></p>
       </> : null}
     </div>
   );
