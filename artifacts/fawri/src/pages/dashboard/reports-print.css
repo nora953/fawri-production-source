@@ -68,6 +68,25 @@
     padding: 3mm !important;
   }
 
+  .report-print-metric-value {
+    min-height: 10mm !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .report-print-metric-value > * {
+    align-items: center !important;
+  }
+
+  .report-print-period-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 1.5mm !important;
+  }
+
   .report-print-two-column {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -98,10 +117,44 @@
   }
 
   .report-print-chart {
-    height: 28mm !important;
-    padding: 1mm !important;
+    height: 34mm !important;
+    padding: 1.5mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    justify-content: center !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .report-print-chart > p {
+    margin-bottom: 0.5mm !important;
+    text-align: center !important;
+  }
+
+  .report-print-chart-canvas {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+
+  .report-print-chart-canvas .recharts-responsive-container,
+  .report-print-chart-canvas svg {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+  }
+
+  .report-print-chart-dot {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .report-print-product-list {
@@ -191,10 +244,7 @@
     margin-top: 2mm !important;
   }
 
-  .report-print-chart .recharts-yAxis,
-  .report-print-chart .recharts-tooltip-wrapper,
-  .report-print-chart .recharts-cartesian-axis-ticks,
-  .report-print-chart .recharts-cartesian-axis-line {
+  .report-print-chart .recharts-tooltip-wrapper {
     display: none !important;
   }
 
