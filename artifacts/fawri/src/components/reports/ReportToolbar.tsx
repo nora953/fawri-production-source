@@ -68,6 +68,12 @@ function localDateValue(daysBack: number): string {
   return `${year}-${month}-${day}`;
 }
 
+function displayDateDayFirst(value: string): string {
+  const [year, month, day] = value.split('-');
+  if (!year || !month || !day) return '';
+  return `${day}/${month}/${year}`;
+}
+
 function startOfLocalDay(daysBack: number): Date {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
@@ -167,23 +173,35 @@ export function ReportToolbar({
       <div className="flex flex-wrap items-end gap-2">
         <label className="min-w-[150px] flex-1 text-xs font-semibold text-muted-foreground sm:flex-none">
           {copy.from}
-          <input
-            type="date"
-            value={from}
-            max={to || undefined}
-            onChange={event => setFrom(event.target.value)}
-            className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm font-normal text-foreground"
-          />
+          <span className="relative mt-1 flex h-10 w-full items-center rounded-lg border bg-background px-3 text-sm font-normal text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+            <span dir="ltr" className="pointer-events-none tabular-nums">
+              {displayDateDayFirst(from)}
+            </span>
+            <input
+              type="date"
+              value={from}
+              max={to || undefined}
+              onChange={event => setFrom(event.target.value)}
+              aria-label={copy.from}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
+          </span>
         </label>
         <label className="min-w-[150px] flex-1 text-xs font-semibold text-muted-foreground sm:flex-none">
           {copy.to}
-          <input
-            type="date"
-            value={to}
-            min={from || undefined}
-            onChange={event => setTo(event.target.value)}
-            className="mt-1 h-10 w-full rounded-lg border bg-background px-3 text-sm font-normal text-foreground"
-          />
+          <span className="relative mt-1 flex h-10 w-full items-center rounded-lg border bg-background px-3 text-sm font-normal text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+            <span dir="ltr" className="pointer-events-none tabular-nums">
+              {displayDateDayFirst(to)}
+            </span>
+            <input
+              type="date"
+              value={to}
+              min={from || undefined}
+              onChange={event => setTo(event.target.value)}
+              aria-label={copy.to}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+            />
+          </span>
         </label>
         <button
           type="button"
