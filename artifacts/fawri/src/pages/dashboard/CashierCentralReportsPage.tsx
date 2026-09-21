@@ -242,6 +242,19 @@ function operationMoney(item: OperationActivity, lang: Lang): string {
   return formatMerchantMoneyMinor(item.amount_minor, item.currency_code, item.currency_fraction_digits, lang);
 }
 
+function localizedLegacyName(
+  value: string | null | undefined,
+  kind: 'employee' | 'station' | 'location',
+  labels: Copy,
+): string {
+  const normalized = (value || '').trim().toLowerCase();
+  if (kind === 'location' && normalized === 'unattributed legacy location') return labels.formerLocation;
+  if (kind === 'employee' && normalized === 'unattributed legacy cashier') return labels.formerEmployee;
+  if (kind === 'station' && normalized === 'unattributed legacy station') return labels.formerStation;
+  if (value?.trim()) return value.trim();
+  return kind === 'location' ? labels.formerLocation : kind === 'employee' ? labels.formerEmployee : labels.formerStation;
+}
+
 function formatDayFirst(value: Date): string {
   return value.toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -667,15 +680,15 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         })}
 
         <div className="report-print-three-column grid gap-5 xl:grid-cols-3">
-          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByLocation}</h2><span className="text-sm text-muted-foreground">{result.by_location.length}</span></div><div className="space-y-2">{result.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_location.map(group => <GroupCard key={group.location_id || '__legacy_location__'} name={group.location_name || labels.formerLocation} report={group.report} lang={lang} labels={labels} />)}</div></section>
-          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByStaff}</h2><span className="text-sm text-muted-foreground">{result.by_staff.length}</span></div><div className="space-y-2">{result.by_staff.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_staff.map(group => <GroupCard key={group.staff_id || '__legacy_staff__'} name={group.staff_name || labels.formerEmployee} report={group.report} lang={lang} labels={labels} />)}</div></section>
-          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByStation}</h2><span className="text-sm text-muted-foreground">{result.by_station.length}</span></div><div className="space-y-2">{result.by_station.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_station.map(group => <GroupCard key={group.station_id || '__legacy_station__'} name={group.station_name || labels.formerStation} report={group.report} lang={lang} labels={labels} />)}</div></section>
+          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByLocation}</h2><span className="text-sm text-muted-foreground">{result.by_location.length}</span></div><div className="space-y-2">{result.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_location.map(group => <GroupCard key={group.location_id || '__legacy_location__'} name={localizedLegacyName(group.location_name, 'location', labels)} report={group.report} lang={lang} labels={labels} />)}</div></section>
+          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByStaff}</h2><span className="text-sm text-muted-foreground">{result.by_staff.length}</span></div><div className="space-y-2">{result.by_staff.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_staff.map(group => <GroupCard key={group.staff_id || '__legacy_staff__'} name={localizedLegacyName(group.staff_name, 'employee', labels)} report={group.report} lang={lang} labels={labels} />)}</div></section>
+          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByStation}</h2><span className="text-sm text-muted-foreground">{result.by_station.length}</span></div><div className="space-y-2">{result.by_station.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_station.map(group => <GroupCard key={group.station_id || '__legacy_station__'} name={localizedLegacyName(group.station_name, 'station', labels)} report={group.report} lang={lang} labels={labels} />)}</div></section>
         </div>
 
         <div className="report-print-three-column grid gap-5 xl:grid-cols-3">
-          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByLocation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_location.length}</span></div><div className="space-y-2">{result.activity.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_location.map(group => <ActivityCard key={group.location_id || '__legacy_location_activity__'} name={group.location_name || labels.formerLocation} activity={group} labels={labels} />)}</div></section>
-          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStaff}</h2><span className="text-sm text-muted-foreground">{result.activity.by_staff.length}</span></div><div className="space-y-2">{result.activity.by_staff.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_staff.map(group => <ActivityCard key={group.staff_id} name={group.staff_name || labels.formerEmployee} activity={group} labels={labels} />)}</div></section>
-          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_station.length}</span></div><div className="space-y-2">{result.activity.by_station.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_station.map(group => <ActivityCard key={group.station_id} name={group.station_name || labels.formerStation} activity={group} labels={labels} />)}</div></section>
+          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByLocation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_location.length}</span></div><div className="space-y-2">{result.activity.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_location.map(group => <ActivityCard key={group.location_id || '__legacy_location_activity__'} name={localizedLegacyName(group.location_name, 'location', labels)} activity={group} labels={labels} />)}</div></section>
+          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStaff}</h2><span className="text-sm text-muted-foreground">{result.activity.by_staff.length}</span></div><div className="space-y-2">{result.activity.by_staff.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_staff.map(group => <ActivityCard key={group.staff_id} name={localizedLegacyName(group.staff_name, 'employee', labels)} activity={group} labels={labels} />)}</div></section>
+          <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.activityByStation}</h2><span className="text-sm text-muted-foreground">{result.activity.by_station.length}</span></div><div className="space-y-2">{result.activity.by_station.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.activity.by_station.map(group => <ActivityCard key={group.station_id} name={localizedLegacyName(group.station_name, 'station', labels)} activity={group} labels={labels} />)}</div></section>
         </div>
 
         <section className="report-print-operation-details rounded-2xl border bg-card p-4 shadow-sm sm:p-5" data-testid="cashier-operation-details">
@@ -707,9 +720,9 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                   const instant = new Date(item.occurred_at);
                   const datePart = instant.toLocaleDateString(dateLocale);
                   const timePart = instant.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' });
-                  const employeeName = item.staff_name || labels.formerEmployee;
-                  const locationName = item.location_name || labels.formerLocation;
-                  const stationName = item.station_name || labels.formerStation;
+                  const employeeName = localizedLegacyName(item.staff_name, 'employee', labels);
+                  const locationName = localizedLegacyName(item.location_name, 'location', labels);
+                  const stationName = localizedLegacyName(item.station_name, 'station', labels);
                   return <tr key={item.operation_id}>
                     <td className="px-2 py-2.5"><span className="block whitespace-nowrap">{datePart}</span><span className="block whitespace-nowrap text-[11px] text-muted-foreground">{timePart}</span></td>
                     <td className="truncate px-2 py-2.5 font-semibold" title={employeeName}>{employeeName}</td>
