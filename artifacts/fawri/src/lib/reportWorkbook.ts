@@ -1,10 +1,19 @@
+export type WorkbookMergeRange = {
+  startRow: number;
+  startColumn: number;
+  endRow: number;
+  endColumn: number;
+};
+
 export type WorkbookSheet = {
   name: string;
   rows: Array<Array<string | number | null | undefined>>;
   columnWidths?: number[];
+  rowHeights?: number[];
   headerRow?: number;
   autoFilter?: boolean;
   mergeRows?: number[];
+  mergeRanges?: WorkbookMergeRange[];
 };
 
 function safeFilePart(value: string): string {
@@ -48,16 +57,28 @@ export async function downloadWorkbook(
       worksheet['!cols'] = sheet.columnWidths.map(width => ({ wch: width }));
     }
 
+    if (sheet.rowHeights?.length) {
+      worksheet['!rows'] = sheet.rowHeights.map(height => ({ hpt: height }));
+    }
+
+    const merges: Array<{ s: { r: number; c: number }; e: { r: number; c: number } }> = [];
     if (sheet.mergeRows?.length) {
       const lastColumn = Math.max(
         0,
         sheet.rows.reduce((max, row) => Math.max(max, row.length), 0) - 1,
       );
-      worksheet['!merges'] = sheet.mergeRows.map(row => ({
+      merges.push(...sheet.mergeRows.map(row => ({
         s: { r: row, c: 0 },
         e: { r: row, c: lastColumn },
-      }));
+      })));
     }
+    if (sheet.mergeRanges?.length) {
+      merges.push(...sheet.mergeRanges.map(range => ({
+        s: { r: range.startRow, c: range.startColumn },
+        e: { r: range.endRow, c: range.endColumn },
+      })));
+    }
+    if (merges.length) worksheet['!merges'] = merges;
 
     if (sheet.autoFilter && sheet.headerRow !== undefined && sheet.rows[sheet.headerRow]) {
       const lastColumn = Math.max(0, sheet.rows[sheet.headerRow].length - 1);
@@ -74,5 +95,6 @@ export async function downloadWorkbook(
 
   XLSX.writeFile(workbook, `${safeFilePart(fileBase)}.xlsx`, {
     compression: true,
+    cellStyles: true,
   });
 }
