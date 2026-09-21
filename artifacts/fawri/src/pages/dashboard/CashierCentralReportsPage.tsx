@@ -400,6 +400,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       {!embedded ? <header className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-bold text-foreground">{labels.title}</h1><p className="mt-1 max-w-3xl text-sm text-muted-foreground">{labels.subtitle}</p></div><Link href="/dashboard/cashiers" className="rounded-xl border bg-card px-4 py-2 text-sm font-bold hover:bg-accent">{labels.back}</Link></header> : null}
       <ReportToolbar
         range={range}
+        customRange={customRange}
         onRangeChange={selectRange}
         onCustomApply={applyCustomRange}
         onDownload={downloadReport}
