@@ -11,6 +11,8 @@ type ToolbarCopy = {
   seven: string;
   thirty: string;
   all: string;
+  customRange: string;
+  customHint: string;
   from: string;
   to: string;
   apply: string;
@@ -25,6 +27,8 @@ const COPY: Record<Lang, ToolbarCopy> = {
     seven: '7 أيام',
     thirty: '30 يوم',
     all: 'الكل',
+    customRange: 'فترة مخصصة',
+    customHint: 'اختر تاريخ البداية والنهاية ثم اضغط تطبيق الفترة.',
     from: 'من',
     to: 'إلى',
     apply: 'تطبيق الفترة',
@@ -37,6 +41,8 @@ const COPY: Record<Lang, ToolbarCopy> = {
     seven: '7 ڕۆژ',
     thirty: '30 ڕۆژ',
     all: 'هەموو',
+    customRange: 'ماوەی تایبەت',
+    customHint: 'بەرواری دەستپێک و کۆتایی هەڵبژێرە، پاشان ماوەکە جێبەجێ بکە.',
     from: 'لە',
     to: 'بۆ',
     apply: 'جێبەجێکردنی ماوە',
@@ -49,6 +55,8 @@ const COPY: Record<Lang, ToolbarCopy> = {
     seven: '7 days',
     thirty: '30 days',
     all: 'All',
+    customRange: 'Custom range',
+    customHint: 'Choose the start and end dates, then apply the range.',
     from: 'From',
     to: 'To',
     apply: 'Apply range',
@@ -170,52 +178,65 @@ export function ReportToolbar({
         ))}
       </div>
 
-      <div className="flex flex-wrap items-end gap-2">
-        <label className="min-w-[150px] flex-1 text-xs font-semibold text-muted-foreground sm:flex-none">
-          {copy.from}
-          <span className="relative mt-1 flex h-10 w-full items-center rounded-lg border bg-background px-3 text-sm font-normal text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-            <span dir="ltr" className="pointer-events-none tabular-nums">
-              {displayDateDayFirst(from)}
-            </span>
-            <input
-              type="date"
-              value={from}
-              max={to || undefined}
-              onChange={event => setFrom(event.target.value)}
-              aria-label={copy.from}
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-            />
-          </span>
-        </label>
-        <label className="min-w-[150px] flex-1 text-xs font-semibold text-muted-foreground sm:flex-none">
-          {copy.to}
-          <span className="relative mt-1 flex h-10 w-full items-center rounded-lg border bg-background px-3 text-sm font-normal text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-            <span dir="ltr" className="pointer-events-none tabular-nums">
-              {displayDateDayFirst(to)}
-            </span>
-            <input
-              type="date"
-              value={to}
-              min={from || undefined}
-              onChange={event => setTo(event.target.value)}
-              aria-label={copy.to}
-              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-            />
-          </span>
-        </label>
-        <button
-          type="button"
-          onClick={applyCustom}
-          className={`h-10 rounded-xl px-4 text-sm font-bold transition ${
+      <div className="flex flex-wrap items-end gap-3">
+        <div
+          className={`flex min-w-0 flex-1 flex-wrap items-end gap-2 rounded-xl border p-2.5 transition ${
             range === 'custom'
-              ? 'bg-primary text-primary-foreground'
-              : 'border bg-background hover:bg-accent'
+              ? 'border-primary/40 bg-primary/5'
+              : 'bg-muted/20'
           }`}
         >
-          {copy.apply}
-        </button>
+          <div className="w-full">
+            <p className="text-xs font-bold text-foreground">{copy.customRange}</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">{copy.customHint}</p>
+          </div>
 
-        <div className="ms-auto flex flex-wrap gap-2">
+          <label className="min-w-[150px] flex-1 text-xs font-semibold text-muted-foreground sm:flex-none">
+            {copy.from}
+            <span className="relative mt-1 flex h-10 w-full items-center rounded-lg border bg-background px-3 text-sm font-normal text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+              <span dir="ltr" className="pointer-events-none tabular-nums">
+                {displayDateDayFirst(from)}
+              </span>
+              <input
+                type="date"
+                value={from}
+                max={to || undefined}
+                onChange={event => setFrom(event.target.value)}
+                aria-label={copy.from}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </span>
+          </label>
+          <label className="min-w-[150px] flex-1 text-xs font-semibold text-muted-foreground sm:flex-none">
+            {copy.to}
+            <span className="relative mt-1 flex h-10 w-full items-center rounded-lg border bg-background px-3 text-sm font-normal text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
+              <span dir="ltr" className="pointer-events-none tabular-nums">
+                {displayDateDayFirst(to)}
+              </span>
+              <input
+                type="date"
+                value={to}
+                min={from || undefined}
+                onChange={event => setTo(event.target.value)}
+                aria-label={copy.to}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              />
+            </span>
+          </label>
+          <button
+            type="button"
+            onClick={applyCustom}
+            className={`h-10 rounded-xl px-4 text-sm font-bold transition ${
+              range === 'custom'
+                ? 'bg-primary text-primary-foreground'
+                : 'border bg-background hover:bg-accent'
+            }`}
+          >
+            {copy.apply}
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
           <button
             type="button"
             disabled={exportDisabled}
