@@ -341,6 +341,7 @@ function OnlineReports() {
     <div className="space-y-5">
       <ReportToolbar
         range={range}
+        customRange={customRange}
         onRangeChange={value => {
           setCustomRange(null);
           setRange(value);
@@ -569,6 +570,7 @@ function CombinedReports() {
     <div className="space-y-5">
       <ReportToolbar
         range={range}
+        customRange={customRange}
         onRangeChange={value => {
           setCustomRange(null);
           setRange(value);
