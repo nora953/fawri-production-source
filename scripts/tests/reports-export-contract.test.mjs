@@ -41,6 +41,16 @@ test("report surfaces expose custom date range, Excel export, print and charts",
 
   assert.match(cashier, /top_profitable_products/);
   assert.match(cashier, /ResponsiveContainer/);
+  assert.match(cashier, /PieChart/);
+  assert.match(cashier, /<Pie/);
+  assert.match(cashier, /<Cell/);
+  assert.match(cashier, /REPORT_CHART_COLORS/);
+  assert.doesNotMatch(cashier, /<BarChart/);
+  assert.match(cashier, /arabicVisualDateFromIso/);
+  assert.match(cashier, /report-print-period-row/);
+  assert.match(cashier, /report-print-metric-value/);
+  assert.match(cashier, /report-print-chart-canvas/);
+  assert.match(cashier, /report-print-chart-dot/);
   assert.match(cashier, /downloadWorkbook/);
   assert.match(cashier, /labels\.currency/);
   assert.match(cashier, /labels\.period/);
@@ -104,13 +114,16 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /::-webkit-scrollbar/);
   assert.match(printCss, /display: none/);
   assert.match(printCss, /report-print-operation-details tbody tr/);
-  assert.match(printCss, /height: 28mm/);
+  assert.match(printCss, /height: 34mm/);
+  assert.match(printCss, /report-print-metric-value/);
+  assert.match(printCss, /report-print-period-row/);
+  assert.match(printCss, /report-print-chart-canvas/);
+  assert.match(printCss, /print-color-adjust: exact/);
   assert.match(printCss, /font-size: 10\.5pt/);
   assert.match(printCss, /font-size: 6\.7pt/);
   assert.match(printCss, /report-print-group-card/);
   assert.match(printCss, /report-print-activity-card/);
   assert.match(printCss, /recharts-tooltip-wrapper/);
-  assert.match(printCss, /report-print-chart \.recharts-yAxis/);
   assert.match(printCss, /report-print-footer-note/);
   assert.match(cashier, /rtlText: lang !== 'en'/);
   assert.match(workbook, /stylesXml/);
