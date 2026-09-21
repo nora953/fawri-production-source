@@ -438,12 +438,12 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         labels.dateTime,
         labels.employee,
         labels.operationType,
-        labels.saleReference,
         labels.location,
         labels.station,
-        labels.shift,
         labels.amount,
         labels.currency,
+        labels.saleReference,
+        labels.shift,
       ],
     ];
     const operationHeaderRow = operationRows.length - 1;
@@ -453,12 +453,12 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         formatDayFirstDateTime(new Date(item.occurred_at)),
         item.staff_name || labels.formerEmployee,
         operationLabel(item.operation_kind, labels),
-        item.sale_id,
         item.location_name || labels.formerLocation,
         item.station_name || labels.formerStation,
-        item.shift_id,
         item.amount_minor ?? '',
         item.currency_code ?? '',
+        item.sale_id,
+        item.shift_id,
       ]);
     });
 
@@ -471,7 +471,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       {
         name: 'Summary',
         rows: summaryRows,
-        columnWidths: [12, 18, 18, 42, 16, 16, 22, 20, 16, 16],
+        columnWidths: [10, 14, 14, 14, 14, 12, 18, 18, 14, 14],
         headerRow: metadataRows.length,
         autoFilter: true,
       },
@@ -492,7 +492,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       {
         name: 'Operations',
         rows: operationRows,
-        columnWidths: [22, 22, 14, 26, 20, 20, 30, 18, 12],
+        columnWidths: [20, 18, 12, 16, 18, 14, 10, 28, 30],
         headerRow: operationHeaderRow,
         autoFilter: true,
       },
