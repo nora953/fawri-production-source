@@ -87,14 +87,16 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.match(printCss, /break-before: page/);
   assert.match(printCss, /report-print-footer-note/);
-  assert.match(workbook, /!cols/);
-  assert.match(workbook, /!autofilter/);
-  assert.match(workbook, /!merges/);
-  assert.match(workbook, /mergeRows/);
+  assert.match(cashier, /rtlText: lang !== 'en'/);
+  assert.match(workbook, /stylesXml/);
+  assert.match(workbook, /<borders count="2">/);
+  assert.match(workbook, /style="thin"/);
+  assert.match(workbook, /numFmtId="3"/);
   assert.match(workbook, /mergeRanges/);
-  assert.match(workbook, /!rows/);
-  assert.match(workbook, /cellStyles: true/);
-  assert.match(workbook, /#,##0/);
+  assert.match(workbook, /rowHeights/);
+  assert.match(workbook, /<autoFilter ref=/);
+  assert.match(workbook, /fileType: 'zip'/);
+  assert.match(workbook, /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/);
 });
 
 test("cashier profitability requires complete historical cost evidence", () => {
