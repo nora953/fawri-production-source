@@ -54,6 +54,13 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /columnWidths: \[20, 18, 12, 16, 18, 14, 10, 28, 30\]/);
   assert.match(cashier, /currency\.profit_status === 'unavailable' \? ''/);
   assert.match(cashier, /window\.print\(\)/);
+  assert.match(cashier, /report-print-only/);
+  assert.match(cashier, /report-print-metrics/);
+  assert.match(cashier, /report-print-currency-section/);
+  assert.match(cashier, /report-print-two-column/);
+  assert.match(cashier, /report-print-three-column/);
+  assert.match(cashier, /report-print-operation-details/);
+  assert.match(cashier, /report-print-footer-note/);
   assert.match(cashier, /xl:overflow-x-visible/);
   assert.match(cashier, /xl:min-w-0/);
 
@@ -63,6 +70,11 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(reports, /reports-print\.css/);
   assert.match(printCss, /@media print/);
   assert.match(printCss, /report-no-print/);
+  assert.match(printCss, /report-print-only/);
+  assert.match(printCss, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
+  assert.match(printCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(printCss, /break-before: page/);
+  assert.match(printCss, /report-print-footer-note/);
   assert.match(workbook, /!cols/);
   assert.match(workbook, /!autofilter/);
   assert.match(workbook, /#,##0/);
