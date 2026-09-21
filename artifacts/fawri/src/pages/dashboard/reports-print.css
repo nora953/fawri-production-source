@@ -150,6 +150,10 @@
     page-break-inside: avoid !important;
   }
 
+  .report-print-operation-details .overflow-x-auto {
+    overflow: visible !important;
+  }
+
   .report-print-operation-details table {
     min-width: 0 !important;
     width: 100% !important;
