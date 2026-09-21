@@ -384,7 +384,6 @@ function arabicVisualDate(value: Date): string {
 function arabicPrintPeriod(
   range: RangeKey,
   customRange: AppliedDateRange | null,
-  labels: Copy,
 ): { start: string; end?: string } | null {
   if (range === 'all') return null;
   if (range === 'custom' && customRange) {
@@ -659,7 +658,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         <div className="report-print-only border-b pb-3">
           <h1 className="text-xl font-extrabold">{labels.title}</h1>
           {lang === 'ar' ? (() => {
-            const period = arabicPrintPeriod(range, customRange, labels);
+            const period = arabicPrintPeriod(range, customRange);
             return (
               <p className="report-print-period-row mt-1 text-sm" dir="rtl">
                 <span className="font-semibold">{labels.period}:</span>
@@ -694,9 +693,9 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                   <h3 className="font-bold">{labels.topProducts}</h3>
                   {currency.top_products.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">{labels.noTop}</p> : (
                     <>
-                      <div className="report-print-chart mt-2 h-64 rounded-xl border bg-background p-3">
+                      <div className="report-print-chart mt-2 flex h-64 flex-col rounded-xl border bg-background p-3">
                         <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.unitsChart}</p>
-                        <div className="report-print-chart-canvas">
+                        <div className="report-print-chart-canvas flex min-h-0 flex-1 items-center justify-center">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
@@ -730,9 +729,9 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                   <h3 className="font-bold">{labels.topProfitable}</h3>
                   {currency.top_profitable_products.length === 0 ? <p className="mt-2 rounded-xl border bg-background p-4 text-sm text-muted-foreground">{labels.noProfitable}</p> : (
                     <>
-                      <div className="report-print-chart mt-2 h-64 rounded-xl border bg-background p-3">
+                      <div className="report-print-chart mt-2 flex h-64 flex-col rounded-xl border bg-background p-3">
                         <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.profitChart}</p>
-                        <div className="report-print-chart-canvas">
+                        <div className="report-print-chart-canvas flex min-h-0 flex-1 items-center justify-center">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
@@ -756,7 +755,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                         </div>
                       </div>
                       <div className="report-print-product-list mt-2 divide-y rounded-xl border bg-background">
-                        {currency.top_profitable_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="font-semibold"><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p><p className="font-bold" dir="ltr">{formatMerchantMoneyMinor(product.gross_profit_minor ?? 0, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
+                        {currency.top_profitable_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="flex items-center gap-2 font-semibold"><span className="report-print-chart-dot inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length] }} /><span><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</span></p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p><p className="font-bold" dir="ltr">{formatMerchantMoneyMinor(product.gross_profit_minor ?? 0, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
                       </div>
                     </>
                   )}
