@@ -40,7 +40,7 @@
   }
 
   .report-print-content > * + * {
-    margin-top: 4mm !important;
+    margin-top: 2.5mm !important;
   }
 
   .report-print-break-avoid {
@@ -83,14 +83,23 @@
   }
 
   .report-print-three-column > section {
-    padding: 3mm !important;
+    padding: 1.5mm !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 
+  .report-print-three-column > section > div:first-child {
+    margin-bottom: 1mm !important;
+  }
+
+  .report-print-three-column h2 {
+    font-size: 10.5pt !important;
+    line-height: 1.2 !important;
+  }
+
   .report-print-chart {
-    height: 32mm !important;
-    padding: 1.5mm !important;
+    height: 28mm !important;
+    padding: 1mm !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
@@ -100,13 +109,13 @@
   }
 
   .report-print-product-list > div {
-    padding-top: 0.8mm !important;
-    padding-bottom: 0.8mm !important;
+    padding-top: 0.5mm !important;
+    padding-bottom: 0.5mm !important;
   }
 
   .report-print-group-card,
   .report-print-activity-card {
-    padding: 2mm !important;
+    padding: 1.5mm !important;
   }
 
   .report-print-group-card > div:first-child,
@@ -159,9 +168,9 @@
 
   .report-print-operation-details th,
   .report-print-operation-details td {
-    padding: 0.9mm 1mm !important;
-    font-size: 7pt !important;
-    line-height: 1.15 !important;
+    padding: 0.65mm 0.8mm !important;
+    font-size: 6.7pt !important;
+    line-height: 1.1 !important;
   }
 
   .report-print-operation-details .mt-4 {
