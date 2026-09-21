@@ -59,7 +59,10 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /topSelling: 'الأكثر مبيعًا'/);
   assert.match(cashier, /topProfitable: 'الأكثر ربحية'/);
   assert.match(cashier, /operations: 'العمليات'/);
-  assert.match(cashier, /mergeRows: \[0, 3\]/);
+  assert.match(cashier, /mergeRanges:/);
+  assert.match(cashier, /startRow: 1, startColumn: 1, endRow: 1, endColumn: 3/);
+  assert.match(cashier, /startRow: 3, startColumn: 0, endRow: 3, endColumn: 3/);
+  assert.match(cashier, /rowHeights: \[24, 22, 22, 22, 10, 24\]/);
   assert.match(cashier, /columnWidths: \[22, 18, 12, 16, 18, 14, 10, 28, 30\]/);
   assert.match(cashier, /currency\.profit_status === 'unavailable' \? ''/);
   assert.match(cashier, /window\.print\(\)/);
@@ -88,6 +91,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(workbook, /!autofilter/);
   assert.match(workbook, /!merges/);
   assert.match(workbook, /mergeRows/);
+  assert.match(workbook, /mergeRanges/);
+  assert.match(workbook, /!rows/);
+  assert.match(workbook, /cellStyles: true/);
   assert.match(workbook, /#,##0/);
 });
 
