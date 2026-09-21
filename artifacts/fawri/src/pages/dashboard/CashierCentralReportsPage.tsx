@@ -701,7 +701,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           </div>
           {detailsAreLimited ? <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">{labels.detailsLimited.replace('{limit}', String(result.activity.operation_detail_limit))}</p> : null}
           {filteredOperations.length === 0 ? <p className="mt-4 rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">{labels.noDetails}</p> : (
-            <div className="mt-4 overflow-x-auto rounded-xl border xl:overflow-x-visible">
+            <div className="report-print-operation-table mt-4 overflow-x-auto rounded-xl border xl:overflow-x-visible">
               <table className="w-full min-w-[860px] table-fixed text-[13px] xl:min-w-0">
                 <colgroup>
                   <col className="w-[15%]" />
