@@ -75,6 +75,10 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /report-print-two-column/);
   assert.match(cashier, /report-print-three-column/);
   assert.match(cashier, /report-print-operation-details/);
+  assert.match(cashier, /report-print-group-card/);
+  assert.match(cashier, /report-print-group-stats/);
+  assert.match(cashier, /report-print-activity-card/);
+  assert.match(cashier, /report-print-activity-stats/);
   assert.match(cashier, /report-print-footer-note/);
   assert.match(cashier, /xl:overflow-x-visible/);
   assert.match(cashier, /xl:min-w-0/);
@@ -91,6 +95,10 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.doesNotMatch(printCss, /break-before: page/);
   assert.match(printCss, /display: table-header-group/);
   assert.match(printCss, /report-print-operation-details tbody tr/);
+  assert.match(printCss, /height: 32mm/);
+  assert.match(printCss, /report-print-group-card/);
+  assert.match(printCss, /report-print-activity-card/);
+  assert.match(printCss, /recharts-tooltip-wrapper/);
   assert.match(printCss, /report-print-chart \.recharts-yAxis/);
   assert.match(printCss, /report-print-footer-note/);
   assert.match(cashier, /rtlText: lang !== 'en'/);
