@@ -98,6 +98,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
   assert.doesNotMatch(printCss, /break-before: page/);
   assert.match(printCss, /display: table-header-group/);
+  assert.match(printCss, /report-print-operation-details \.overflow-x-auto/);
+  assert.match(printCss, /overflow: visible/);
   assert.match(printCss, /report-print-operation-details tbody tr/);
   assert.match(printCss, /height: 28mm/);
   assert.match(printCss, /font-size: 10\.5pt/);
