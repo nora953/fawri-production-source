@@ -495,6 +495,10 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         headerRow: metadataRows.length,
         autoFilter: true,
         rtlText: lang !== 'en',
+        ltrCells: [
+          { row: 1, column: 1 },
+          { row: 2, column: 1 },
+        ],
         mergeRanges: [
           { startRow: 0, startColumn: 0, endRow: 0, endColumn: 3 },
           { startRow: 1, startColumn: 1, endRow: 1, endColumn: 3 },
@@ -510,6 +514,10 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         headerRow: metadataRows.length,
         autoFilter: true,
         rtlText: lang !== 'en',
+        ltrCells: [
+          { row: 1, column: 1 },
+          { row: 2, column: 1 },
+        ],
         mergeRanges: [
           { startRow: 0, startColumn: 0, endRow: 0, endColumn: 3 },
           { startRow: 1, startColumn: 1, endRow: 1, endColumn: 3 },
@@ -525,6 +533,10 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         headerRow: metadataRows.length,
         autoFilter: true,
         rtlText: lang !== 'en',
+        ltrCells: [
+          { row: 1, column: 1 },
+          { row: 2, column: 1 },
+        ],
         mergeRanges: [
           { startRow: 0, startColumn: 0, endRow: 0, endColumn: 3 },
           { startRow: 1, startColumn: 1, endRow: 1, endColumn: 3 },
@@ -535,11 +547,16 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       {
         name: sheetNames.operations,
         rows: operationRows,
-        columnWidths: [22, 18, 12, 16, 18, 14, 10, 28, 30],
+        columnWidths: [24, 18, 12, 16, 18, 14, 10, 42, 44],
         rowHeights: [24, 22, 22, 22, 10],
         headerRow: operationHeaderRow,
         autoFilter: true,
         rtlText: lang !== 'en',
+        ltrCells: [
+          { row: 1, column: 1 },
+          { row: 2, column: 1 },
+        ],
+        ltrDataColumns: [0, 7, 8],
         mergeRanges: [
           { startRow: 0, startColumn: 0, endRow: 0, endColumn: 8 },
           { startRow: 1, startColumn: 1, endRow: 1, endColumn: 8 },
