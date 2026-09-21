@@ -49,6 +49,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /autoFilter: true/);
   assert.match(cashier, /item\.sale_id/);
   assert.match(cashier, /item\.shift_id/);
+  assert.match(cashier, /labels\.location,\s*labels\.station,\s*labels\.amount,\s*labels\.currency,\s*labels\.saleReference,\s*labels\.shift/);
+  assert.match(cashier, /columnWidths: \[10, 14, 14, 14, 14, 12, 18, 18, 14, 14\]/);
+  assert.match(cashier, /columnWidths: \[20, 18, 12, 16, 18, 14, 10, 28, 30\]/);
   assert.match(cashier, /currency\.profit_status === 'unavailable' \? ''/);
   assert.match(cashier, /window\.print\(\)/);
   assert.match(cashier, /xl:overflow-x-visible/);
