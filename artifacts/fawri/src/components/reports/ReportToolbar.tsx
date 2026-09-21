@@ -1,5 +1,8 @@
-import { useMemo, useState } from 'react';
-import { Download, Printer } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CalendarDays, ChevronDown, Download, Printer } from 'lucide-react';
+import type { DateRange } from 'react-day-picker';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useI18n } from '@/lib/i18n';
 import type { Lang } from '@/lib/types';
 
@@ -12,13 +15,14 @@ type ToolbarCopy = {
   thirty: string;
   all: string;
   customRange: string;
-  customHint: string;
-  from: string;
-  to: string;
+  chooseRange: string;
+  rangePickerHint: string;
   apply: string;
+  cancel: string;
   invalid: string;
   download: string;
   print: string;
+  presets: string;
 };
 
 const COPY: Record<Lang, ToolbarCopy> = {
@@ -28,13 +32,14 @@ const COPY: Record<Lang, ToolbarCopy> = {
     thirty: '30 يوم',
     all: 'الكل',
     customRange: 'فترة مخصصة',
-    customHint: 'اختر تاريخ البداية والنهاية ثم اضغط تطبيق الفترة.',
-    from: 'من',
-    to: 'إلى',
-    apply: 'تطبيق الفترة',
-    invalid: 'اختر تاريخ البداية والنهاية، ويجب ألا يكون تاريخ البداية بعد النهاية.',
+    chooseRange: 'اختيار الفترة',
+    rangePickerHint: 'اختر تاريخ البداية ثم تاريخ النهاية من التقويم.',
+    apply: 'تطبيق',
+    cancel: 'إلغاء',
+    invalid: 'اختر تاريخ البداية والنهاية أولًا.',
     download: 'تحميل Excel',
     print: 'طباعة / حفظ PDF',
+    presets: 'فترات سريعة',
   },
   ku: {
     today: 'ئەمڕۆ',
@@ -42,13 +47,14 @@ const COPY: Record<Lang, ToolbarCopy> = {
     thirty: '30 ڕۆژ',
     all: 'هەموو',
     customRange: 'ماوەی تایبەت',
-    customHint: 'بەرواری دەستپێک و کۆتایی هەڵبژێرە، پاشان ماوەکە جێبەجێ بکە.',
-    from: 'لە',
-    to: 'بۆ',
-    apply: 'جێبەجێکردنی ماوە',
-    invalid: 'بەرواری دەستپێک و کۆتایی هەڵبژێرە و دەستپێک نابێت دوای کۆتایی بێت.',
+    chooseRange: 'هەڵبژاردنی ماوە',
+    rangePickerHint: 'لە ڕۆژژمێرەکە سەرەتا بەرواری دەستپێک و پاشان کۆتایی هەڵبژێرە.',
+    apply: 'جێبەجێکردن',
+    cancel: 'هەڵوەشاندنەوە',
+    invalid: 'سەرەتا بەرواری دەستپێک و کۆتایی هەڵبژێرە.',
     download: 'داگرتنی Excel',
     print: 'چاپ / پاشەکەوتی PDF',
+    presets: 'ماوە خێراکان',
   },
   en: {
     today: 'Today',
@@ -56,13 +62,14 @@ const COPY: Record<Lang, ToolbarCopy> = {
     thirty: '30 days',
     all: 'All',
     customRange: 'Custom range',
-    customHint: 'Choose the start and end dates, then apply the range.',
-    from: 'From',
-    to: 'To',
-    apply: 'Apply range',
-    invalid: 'Choose both start and end dates, and keep the start date on or before the end date.',
+    chooseRange: 'Choose date range',
+    rangePickerHint: 'Choose the start date, then the end date on the calendar.',
+    apply: 'Apply',
+    cancel: 'Cancel',
+    invalid: 'Choose both a start and end date first.',
     download: 'Download Excel',
     print: 'Print / Save PDF',
+    presets: 'Quick ranges',
   },
 };
 
@@ -70,6 +77,10 @@ function localDateValue(daysBack: number): string {
   const date = new Date();
   date.setHours(12, 0, 0, 0);
   date.setDate(date.getDate() - daysBack);
+  return dateToValue(date);
+}
+
+function dateToValue(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -100,6 +111,58 @@ function localDateEndExclusive(value: string): Date {
   return date;
 }
 
+function presetDateRange(range: Exclude<ReportRangeKey, 'custom'>): DateRange | undefined {
+  if (range === 'all') return undefined;
+  const to = localDateStart(localDateValue(0));
+  if (range === 'today') return { from: to, to };
+  if (range === '7d') return { from: localDateStart(localDateValue(6)), to };
+  return { from: localDateStart(localDateValue(29)), to };
+}
+
+function customDateRange(value?: AppliedDateRange | null): DateRange | undefined {
+  if (!value) return undefined;
+  return {
+    from: localDateStart(value.from),
+    to: localDateStart(value.to),
+  };
+}
+
+function activeRangeSummary(
+  range: ReportRangeKey,
+  custom: AppliedDateRange | null | undefined,
+  copy: ToolbarCopy,
+): { title: string; detail: string } {
+  if (range === 'all') return { title: copy.all, detail: '' };
+  if (range === 'custom' && custom) {
+    return {
+      title: copy.customRange,
+      detail: `${displayDateDayFirst(custom.from)} – ${displayDateDayFirst(custom.to)}`,
+    };
+  }
+
+  const label =
+    range === 'today'
+      ? copy.today
+      : range === '7d'
+        ? copy.seven
+        : range === '30d'
+          ? copy.thirty
+          : copy.customRange;
+  const dates =
+    range === 'today'
+      ? [localDateValue(0), localDateValue(0)]
+      : range === '7d'
+        ? [localDateValue(6), localDateValue(0)]
+        : [localDateValue(29), localDateValue(0)];
+  return {
+    title: label,
+    detail:
+      dates[0] === dates[1]
+        ? displayDateDayFirst(dates[0])
+        : `${displayDateDayFirst(dates[0])} – ${displayDateDayFirst(dates[1])}`,
+  };
+}
+
 export function reportRangeQuery(
   range: ReportRangeKey,
   custom?: AppliedDateRange | null,
@@ -118,6 +181,7 @@ export function reportRangeQuery(
 
 export function ReportToolbar({
   range,
+  customRange,
   onRangeChange,
   onCustomApply,
   onDownload,
@@ -125,6 +189,7 @@ export function ReportToolbar({
   exportDisabled = false,
 }: {
   range: ReportRangeKey;
+  customRange?: AppliedDateRange | null;
   onRangeChange: (value: Exclude<ReportRangeKey, 'custom'>) => void;
   onCustomApply: (value: AppliedDateRange) => void;
   onDownload: () => void | Promise<void>;
@@ -133,9 +198,23 @@ export function ReportToolbar({
 }) {
   const { lang, dir } = useI18n();
   const copy = COPY[lang] || COPY.en;
-  const [from, setFrom] = useState(() => localDateValue(6));
-  const [to, setTo] = useState(() => localDateValue(0));
+  const [open, setOpen] = useState(false);
+  const [draftKind, setDraftKind] = useState<ReportRangeKey>(range);
+  const [draftRange, setDraftRange] = useState<DateRange | undefined>(
+    range === 'custom' ? customDateRange(customRange) : presetDateRange(range),
+  );
   const [error, setError] = useState('');
+  const [desktopCalendar, setDesktopCalendar] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true,
+  );
+
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 768px)');
+    const update = () => setDesktopCalendar(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
 
   const presets = useMemo<Array<[Exclude<ReportRangeKey, 'custom'>, string]>>(
     () => [
@@ -147,118 +226,166 @@ export function ReportToolbar({
     [copy],
   );
 
-  const applyCustom = () => {
-    if (!from || !to || from > to) {
+  const activeSummary = activeRangeSummary(range, customRange, copy);
+
+  const syncDraftFromApplied = () => {
+    setDraftKind(range);
+    setDraftRange(range === 'custom' ? customDateRange(customRange) : presetDateRange(range));
+    setError('');
+  };
+
+  const choosePreset = (next: Exclude<ReportRangeKey, 'custom'>) => {
+    setDraftKind(next);
+    setDraftRange(presetDateRange(next));
+    setError('');
+  };
+
+  const chooseCalendarRange = (next: DateRange | undefined) => {
+    setDraftKind('custom');
+    setDraftRange(next);
+    setError('');
+  };
+
+  const applyDraft = () => {
+    if (draftKind !== 'custom') {
+      onRangeChange(draftKind);
+      setOpen(false);
+      return;
+    }
+    if (!draftRange?.from || !draftRange.to) {
       setError(copy.invalid);
       return;
     }
-    setError('');
-    onCustomApply({ from, to });
+    onCustomApply({
+      from: dateToValue(draftRange.from),
+      to: dateToValue(draftRange.to),
+    });
+    setOpen(false);
   };
 
   return (
-    <div className="report-no-print space-y-3 rounded-2xl border bg-card p-3 shadow-sm" dir={dir}>
-      <div className="flex flex-wrap items-center gap-2">
-        {presets.map(([key, label]) => (
+    <div
+      className="report-no-print flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-card p-3 shadow-sm"
+      dir={dir}
+    >
+      <Popover
+        open={open}
+        onOpenChange={nextOpen => {
+          if (nextOpen) syncDraftFromApplied();
+          setOpen(nextOpen);
+        }}
+      >
+        <PopoverTrigger asChild>
           <button
-            key={key}
             type="button"
-            onClick={() => {
-              setError('');
-              onRangeChange(key);
-            }}
-            className={`rounded-xl px-4 py-2 text-sm font-bold transition ${
-              range === key
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-accent'
-            }`}
+            className="flex min-w-[250px] max-w-full items-center gap-3 rounded-xl border bg-background px-4 py-2.5 text-start transition hover:bg-accent sm:min-w-[320px]"
+            aria-label={copy.chooseRange}
           >
-            {label}
+            <CalendarDays className="h-5 w-5 shrink-0 text-muted-foreground" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-bold text-foreground">{activeSummary.title}</span>
+              {activeSummary.detail ? (
+                <span dir="ltr" className="mt-0.5 block truncate text-xs tabular-nums text-muted-foreground">
+                  {activeSummary.detail}
+                </span>
+              ) : null}
+            </span>
+            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
           </button>
-        ))}
-      </div>
+        </PopoverTrigger>
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div
-          className={`flex min-w-0 flex-1 flex-wrap items-end gap-2 rounded-xl border p-2.5 transition ${
-            range === 'custom'
-              ? 'border-primary/40 bg-primary/5'
-              : 'bg-muted/20'
-          }`}
+        <PopoverContent
+          align={dir === 'rtl' ? 'end' : 'start'}
+          sideOffset={8}
+          className="w-auto max-w-[calc(100vw-1.5rem)] overflow-hidden p-0"
+          dir={dir}
         >
-          <div className="w-full">
-            <p className="text-xs font-bold text-foreground">{copy.customRange}</p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">{copy.customHint}</p>
+          <div className="grid md:grid-cols-[150px_auto]">
+            <aside className="border-b bg-muted/20 p-3 md:border-b-0 md:border-e">
+              <p className="mb-2 px-2 text-xs font-bold text-muted-foreground">{copy.presets}</p>
+              <div className="grid grid-cols-2 gap-1 md:grid-cols-1">
+                {presets.map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => choosePreset(key)}
+                    className={`rounded-lg px-3 py-2 text-start text-sm font-semibold transition ${
+                      draftKind === key
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-accent'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </aside>
+
+            <div className="min-w-0 p-3">
+              <div className="mb-2">
+                <p className="text-sm font-bold">{copy.customRange}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{copy.rangePickerHint}</p>
+              </div>
+              <Calendar
+                mode="range"
+                selected={draftRange}
+                onSelect={chooseCalendarRange}
+                numberOfMonths={desktopCalendar ? 2 : 1}
+                defaultMonth={draftRange?.from || new Date()}
+                disabled={{ after: new Date() }}
+                showOutsideDays={false}
+                className="max-w-full"
+              />
+              {draftKind === 'custom' && draftRange?.from ? (
+                <p dir="ltr" className="mt-2 text-center text-xs tabular-nums text-muted-foreground">
+                  {displayDateDayFirst(dateToValue(draftRange.from))}
+                  {' – '}
+                  {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
+                </p>
+              ) : null}
+              {error ? <p className="mt-2 text-xs font-semibold text-destructive">{error}</p> : null}
+            </div>
           </div>
 
-          <label className="min-w-[150px] flex-1 text-xs font-semibold text-muted-foreground sm:flex-none">
-            {copy.from}
-            <span className="relative mt-1 flex h-10 w-full items-center rounded-lg border bg-background px-3 text-sm font-normal text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-              <span dir="ltr" className="pointer-events-none tabular-nums">
-                {displayDateDayFirst(from)}
-              </span>
-              <input
-                type="date"
-                value={from}
-                max={to || undefined}
-                onChange={event => setFrom(event.target.value)}
-                aria-label={copy.from}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              />
-            </span>
-          </label>
-          <label className="min-w-[150px] flex-1 text-xs font-semibold text-muted-foreground sm:flex-none">
-            {copy.to}
-            <span className="relative mt-1 flex h-10 w-full items-center rounded-lg border bg-background px-3 text-sm font-normal text-foreground focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
-              <span dir="ltr" className="pointer-events-none tabular-nums">
-                {displayDateDayFirst(to)}
-              </span>
-              <input
-                type="date"
-                value={to}
-                min={from || undefined}
-                onChange={event => setTo(event.target.value)}
-                aria-label={copy.to}
-                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              />
-            </span>
-          </label>
-          <button
-            type="button"
-            onClick={applyCustom}
-            className={`h-10 rounded-xl px-4 text-sm font-bold transition ${
-              range === 'custom'
-                ? 'bg-primary text-primary-foreground'
-                : 'border bg-background hover:bg-accent'
-            }`}
-          >
-            {copy.apply}
-          </button>
-        </div>
+          <div className="flex items-center justify-end gap-2 border-t bg-muted/10 p-3">
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-lg border bg-background px-4 py-2 text-sm font-bold hover:bg-accent"
+            >
+              {copy.cancel}
+            </button>
+            <button
+              type="button"
+              onClick={applyDraft}
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+            >
+              {copy.apply}
+            </button>
+          </div>
+        </PopoverContent>
+      </Popover>
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={exportDisabled}
-            onClick={() => void onDownload()}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border bg-background px-4 text-sm font-bold hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Download className="h-4 w-4" />
-            {copy.download}
-          </button>
-          <button
-            type="button"
-            disabled={exportDisabled}
-            onClick={onPrint}
-            className="inline-flex h-10 items-center gap-2 rounded-xl border bg-background px-4 text-sm font-bold hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Printer className="h-4 w-4" />
-            {copy.print}
-          </button>
-        </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={exportDisabled}
+          onClick={() => void onDownload()}
+          className="inline-flex h-10 items-center gap-2 rounded-xl border bg-background px-4 text-sm font-bold hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" />
+          {copy.download}
+        </button>
+        <button
+          type="button"
+          disabled={exportDisabled}
+          onClick={onPrint}
+          className="inline-flex h-10 items-center gap-2 rounded-xl border bg-background px-4 text-sm font-bold hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Printer className="h-4 w-4" />
+          {copy.print}
+        </button>
       </div>
-
-      {error ? <p className="text-xs font-semibold text-destructive">{error}</p> : null}
     </div>
   );
 }
