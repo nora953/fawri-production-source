@@ -281,6 +281,36 @@ function exportPeriodText(
     : `${formatDayFirst(from)} – ${formatDayFirst(to)}`;
 }
 
+function cashierExportSheetNames(lang: Lang): {
+  summary: string;
+  topSelling: string;
+  topProfitable: string;
+  operations: string;
+} {
+  if (lang === 'ar') {
+    return {
+      summary: 'الملخص',
+      topSelling: 'الأكثر مبيعًا',
+      topProfitable: 'الأكثر ربحية',
+      operations: 'العمليات',
+    };
+  }
+  if (lang === 'ku') {
+    return {
+      summary: 'پوختە',
+      topSelling: 'زۆرترین فرۆشراو',
+      topProfitable: 'زۆرترین قازانج',
+      operations: 'کردارەکان',
+    };
+  }
+  return {
+    summary: 'Summary',
+    topSelling: 'Top selling',
+    topProfitable: 'Top profitable',
+    operations: 'Operations',
+  };
+}
+
 function profitStatusLabel(
   status: CurrencyReport['profit_status'],
   lang: Lang,
@@ -362,6 +392,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
 
     const periodText = exportPeriodText(range, customRange, labels);
     const generatedText = formatDayFirstDateTime(new Date(result.generated_at));
+    const sheetNames = cashierExportSheetNames(lang);
     const metadataRows: Array<Array<string | number>> = [
       [labels.title],
       [labels.period, periodText],
@@ -469,32 +500,36 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
 
     await downloadWorkbook(`fawri-cashier-report-${fileRange}`, [
       {
-        name: 'Summary',
+        name: sheetNames.summary,
         rows: summaryRows,
-        columnWidths: [10, 14, 14, 14, 14, 12, 18, 18, 14, 14],
+        columnWidths: [14, 18, 18, 16, 16, 16, 22, 20, 16, 16],
         headerRow: metadataRows.length,
         autoFilter: true,
+        mergeRows: [0, 3],
       },
       {
-        name: 'Top selling',
+        name: sheetNames.topSelling,
         rows: topSellingRows,
-        columnWidths: [12, 42, 16, 18],
+        columnWidths: [14, 42, 16, 18],
         headerRow: metadataRows.length,
         autoFilter: true,
+        mergeRows: [0, 3],
       },
       {
-        name: 'Top profitable',
+        name: sheetNames.topProfitable,
         rows: profitableRows,
-        columnWidths: [12, 42, 18, 18],
+        columnWidths: [14, 42, 18, 18],
         headerRow: metadataRows.length,
         autoFilter: true,
+        mergeRows: [0, 3],
       },
       {
-        name: 'Operations',
+        name: sheetNames.operations,
         rows: operationRows,
-        columnWidths: [20, 18, 12, 16, 18, 14, 10, 28, 30],
+        columnWidths: [22, 18, 12, 16, 18, 14, 10, 28, 30],
         headerRow: operationHeaderRow,
         autoFilter: true,
+        mergeRows: [0, 3],
       },
     ]);
   };
