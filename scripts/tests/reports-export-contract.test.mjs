@@ -16,6 +16,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   const reports = read("artifacts/fawri/src/pages/dashboard/ReportsPage.tsx");
   const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
   const printCss = read("artifacts/fawri/src/pages/dashboard/reports-print.css");
+  const workbook = read("artifacts/fawri/src/lib/reportWorkbook.ts");
 
   assert.match(toolbar, /Dialog/);
   assert.match(toolbar, /DialogContent/);
@@ -41,6 +42,14 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /top_profitable_products/);
   assert.match(cashier, /ResponsiveContainer/);
   assert.match(cashier, /downloadWorkbook/);
+  assert.match(cashier, /labels\.currency/);
+  assert.match(cashier, /labels\.period/);
+  assert.match(cashier, /formatDayFirstDateTime/);
+  assert.match(cashier, /columnWidths/);
+  assert.match(cashier, /autoFilter: true/);
+  assert.match(cashier, /item\.sale_id/);
+  assert.match(cashier, /item\.shift_id/);
+  assert.match(cashier, /currency\.profit_status === 'unavailable' \? ''/);
   assert.match(cashier, /window\.print\(\)/);
   assert.match(cashier, /xl:overflow-x-visible/);
   assert.match(cashier, /xl:min-w-0/);
@@ -51,6 +60,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(reports, /reports-print\.css/);
   assert.match(printCss, /@media print/);
   assert.match(printCss, /report-no-print/);
+  assert.match(workbook, /!cols/);
+  assert.match(workbook, /!autofilter/);
+  assert.match(workbook, /#,##0/);
 });
 
 test("cashier profitability requires complete historical cost evidence", () => {
