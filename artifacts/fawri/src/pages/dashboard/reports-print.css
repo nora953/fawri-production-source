@@ -150,8 +150,18 @@
     page-break-inside: avoid !important;
   }
 
-  .report-print-operation-details .overflow-x-auto {
+  .report-print-operation-table {
     overflow: visible !important;
+    max-height: none !important;
+    height: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  .report-print-operation-table::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
   }
 
   .report-print-operation-details table {
