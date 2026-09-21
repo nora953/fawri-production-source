@@ -75,6 +75,10 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /report-print-two-column/);
   assert.match(cashier, /report-print-three-column/);
   assert.match(cashier, /report-print-operation-details/);
+  assert.match(cashier, /localizedLegacyName/);
+  assert.match(cashier, /unattributed legacy location/);
+  assert.match(cashier, /unattributed legacy cashier/);
+  assert.match(cashier, /unattributed legacy station/);
   assert.match(cashier, /report-print-group-card/);
   assert.match(cashier, /report-print-group-stats/);
   assert.match(cashier, /report-print-activity-card/);
@@ -95,7 +99,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.doesNotMatch(printCss, /break-before: page/);
   assert.match(printCss, /display: table-header-group/);
   assert.match(printCss, /report-print-operation-details tbody tr/);
-  assert.match(printCss, /height: 32mm/);
+  assert.match(printCss, /height: 28mm/);
+  assert.match(printCss, /font-size: 10\.5pt/);
+  assert.match(printCss, /font-size: 6\.7pt/);
   assert.match(printCss, /report-print-group-card/);
   assert.match(printCss, /report-print-activity-card/);
   assert.match(printCss, /recharts-tooltip-wrapper/);
