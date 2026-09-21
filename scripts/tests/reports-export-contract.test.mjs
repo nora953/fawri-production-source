@@ -20,6 +20,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(toolbar, /type="date"/);
   assert.match(toolbar, /displayDateDayFirst/);
   assert.match(toolbar, /\$\{day\}\/\$\{month\}\/\$\{year\}/);
+  assert.match(toolbar, /Custom range/);
+  assert.match(toolbar, /Choose the start and end dates, then apply the range\./);
   assert.match(toolbar, /Download Excel/);
   assert.match(toolbar, /Print \/ Save PDF/);
   assert.match(toolbar, /localDateEndExclusive/);
