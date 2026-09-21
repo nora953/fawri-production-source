@@ -26,7 +26,7 @@ type SheetJsZip = {
   };
   write(
     container: ZipContainer,
-    options: { type: 'array'; fileType: 'zip'; compression: boolean },
+    options: { fileType: 'zip'; compression: boolean },
   ): Uint8Array | number[];
 };
 
@@ -311,7 +311,6 @@ export async function downloadWorkbook(
   });
 
   const output = CFB.write(container, {
-    type: 'array',
     fileType: 'zip',
     compression: true,
   });
