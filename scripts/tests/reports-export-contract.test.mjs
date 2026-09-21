@@ -102,6 +102,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(workbook, /rowHeights/);
   assert.match(workbook, /<autoFilter ref=/);
   assert.match(workbook, /fileType: 'zip'/);
+  assert.match(workbook, /new ArrayBuffer\(bytes\.byteLength\)/);
+  assert.match(workbook, /new Uint8Array\(arrayBuffer\)\.set\(bytes\)/);
   assert.match(workbook, /application\/vnd\.openxmlformats-officedocument\.spreadsheetml\.sheet/);
 });
 
