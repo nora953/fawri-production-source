@@ -105,7 +105,7 @@ type Copy = {
   loading: string; failed: string; empty: string; netSales: string; profit: string; operations: string; units: string;
   refunds: string; average: string; voided: string; returns: string; partialProfit: string; unavailableProfit: string;
   topProducts: string; topProfitable: string; noTop: string; noProfitable: string; revenueChart: string; unitsChart: string; profitChart: string; salesByStaff: string; salesByStation: string; salesByLocation: string; activityByStaff: string; activityByStation: string; activityByLocation: string;
-  noGroupSales: string; sales: string; saleOps: string; returnOps: string; voidOps: string; totalOps: string; location: string;
+  noGroupSales: string; sales: string; saleOps: string; returnOps: string; voidOps: string; totalOps: string; location: string; currency: string; period: string; profitStatus: string;
   generated: string; source: string; operationDetails: string; operationDetailsHint: string; detailsLimited: string; employeeFilter: string; locationFilter: string; stationFilter: string;
   typeFilter: string; allEmployees: string; allLocations: string; allStations: string; allTypes: string; employee: string; station: string; shift: string;
   operationType: string; saleReference: string; dateTime: string; amount: string; noDetails: string; formerEmployee: string; formerStation: string; formerLocation: string;
@@ -118,7 +118,7 @@ const COPY: Record<Lang, Copy> = {
     netSales: 'صافي المبيعات', profit: 'الربح الإجمالي', operations: 'عمليات البيع', units: 'صافي القطع المباعة', refunds: 'قيمة الإرجاعات والإلغاءات', average: 'متوسط قيمة عملية البيع', voided: 'عمليات الإلغاء', returns: 'عمليات الإرجاع',
     partialProfit: 'الربح الظاهر جزئي لأن تكلفة بعض القطع غير مسجلة.', unavailableProfit: 'بيانات الربح غير متاحة لهذا النطاق. لا يفترض فوري أن التكلفة صفر.', topProducts: 'الأكثر مبيعًا', topProfitable: 'الأكثر ربحية', noTop: 'لا توجد منتجات بصافي بيع موجب في هذه الفترة.', noProfitable: 'لا توجد منتجات يمكن ترتيب ربحيتها بدقة ضمن هذه الفترة؛ لا يتم افتراض تكلفة مفقودة.', revenueChart: 'رسم المبيعات حسب المنتج', unitsChart: 'القطع المباعة حسب المنتج', profitChart: 'رسم الربح حسب المنتج',
     salesByStaff: 'الأثر المالي حسب موظف البيع', salesByStation: 'الأثر المالي حسب محطة البيع', salesByLocation: 'الأثر المالي حسب الموقع', activityByStaff: 'العمليات المنفذة حسب الموظف', activityByStation: 'العمليات المنفذة حسب المحطة', activityByLocation: 'العمليات المنفذة حسب الموقع', noGroupSales: 'لا يوجد أثر مالي ضمن هذه الفترة.',
-    sales: 'عمليات بيع', saleOps: 'بيع', returnOps: 'إرجاع', voidOps: 'إلغاء', totalOps: 'الإجمالي', location: 'الموقع', generated: 'آخر تحديث', source: 'المصدر: سجل الكاشير المركزي الموثوق على السيرفر',
+    sales: 'عمليات بيع', saleOps: 'بيع', returnOps: 'إرجاع', voidOps: 'إلغاء', totalOps: 'الإجمالي', location: 'الموقع', currency: 'العملة', period: 'الفترة', profitStatus: 'حالة الربح', generated: 'آخر تحديث', source: 'المصدر: سجل الكاشير المركزي الموثوق على السيرفر',
     operationDetails: 'تفاصيل العمليات', operationDetailsHint: 'يعرض من نفّذ كل بيع أو إرجاع أو إلغاء، مع الوقت والموقع والمحطة والمناوبة.', detailsLimited: 'يعرض جدول التفاصيل أحدث {limit} عملية كحد أقصى؛ الملخصات أعلاه تشمل كامل الفترة.', employeeFilter: 'الموظف', locationFilter: 'الموقع', stationFilter: 'المحطة', typeFilter: 'نوع العملية', allEmployees: 'كل الموظفين', allLocations: 'كل المواقع', allStations: 'كل المحطات', allTypes: 'كل العمليات',
     employee: 'الموظف', station: 'المحطة', shift: 'المناوبة', operationType: 'العملية', saleReference: 'مرجع البيع', dateTime: 'التاريخ والوقت', amount: 'المبلغ', noDetails: 'لا توجد عمليات تطابق عوامل التصفية.', formerEmployee: 'موظف سابق', formerStation: 'محطة سابقة', formerLocation: 'موقع غير منسوب',
   },
@@ -128,7 +128,7 @@ const COPY: Record<Lang, Copy> = {
     netSales: 'فرۆشتنی خاوێن', profit: 'قازانجی گشتی', operations: 'مامەڵەکانی فرۆشتن', units: 'دانەی فرۆشراوی خاوێن', refunds: 'بەهای گەڕاندنەوە و هەڵوەشاندنەوە', average: 'تێکڕای بەهای مامەڵەی فرۆشتن', voided: 'کرداری هەڵوەشاندنەوە', returns: 'کرداری گەڕاندنەوە',
     partialProfit: 'قازانجی پیشاندراو بەشێکییە چونکە تێچووی هەندێک دانە تۆمار نەکراوە.', unavailableProfit: 'زانیاری قازانج بۆ ئەم مەودایە بەردەست نییە. فەوری تێچوو بە سفر دانانێت.', topProducts: 'زۆرترین فرۆشراو', topProfitable: 'زۆرترین قازانج', noTop: 'لەو ماوەیەدا هیچ بەرهەمێک بە فرۆشتنی خاوێنی پۆزەتیڤ نییە.', noProfitable: 'هیچ بەرهەمێک نییە کە بتوانرێت قازانجەکەی بە دڵنیایی ڕیزبەندی بکرێت؛ تێچووی ونبوو بە سفر دانانرێت.', revenueChart: 'هێڵکاری فرۆشتن بەپێی بەرهەم', unitsChart: 'دانە فرۆشراوەکان بەپێی بەرهەم', profitChart: 'هێڵکاری قازانج بەپێی بەرهەم',
     salesByStaff: 'کاریگەری دارایی بەپێی کارمەندی فرۆشیار', salesByStation: 'کاریگەری دارایی بەپێی وێستگەی فرۆشتن', salesByLocation: 'کاریگەری دارایی بەپێی شوێن', activityByStaff: 'کردارە جێبەجێکراوەکان بەپێی کارمەند', activityByStation: 'کردارە جێبەجێکراوەکان بەپێی وێستگە', activityByLocation: 'کردارە جێبەجێکراوەکان بەپێی شوێن', noGroupSales: 'لەو ماوەیەدا کاریگەری دارایی نییە.',
-    sales: 'فرۆشتن', saleOps: 'فرۆشتن', returnOps: 'گەڕاندنەوە', voidOps: 'هەڵوەشاندنەوە', totalOps: 'کۆی گشتی', location: 'شوێن', generated: 'دوایین نوێکردنەوە', source: 'سەرچاوە: تۆماری ناوەندی متمانەپێکراوی کاشێر لە سێرڤەر',
+    sales: 'فرۆشتن', saleOps: 'فرۆشتن', returnOps: 'گەڕاندنەوە', voidOps: 'هەڵوەشاندنەوە', totalOps: 'کۆی گشتی', location: 'شوێن', currency: 'دراو', period: 'ماوە', profitStatus: 'دۆخی قازانج', generated: 'دوایین نوێکردنەوە', source: 'سەرچاوە: تۆماری ناوەندی متمانەپێکراوی کاشێر لە سێرڤەر',
     operationDetails: 'وردەکاری کردارەکان', operationDetailsHint: 'کارمەند و کات و شوێن و وێستگە و مناوبەی هەر فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوە پیشان دەدات.', detailsLimited: 'خشتەی وردەکاری تەنها نوێترین {limit} کردار پیشان دەدات؛ کورتەکانی سەرەوە هەموو ماوەکە دەگرنەوە.', employeeFilter: 'کارمەند', locationFilter: 'شوێن', stationFilter: 'وێستگە', typeFilter: 'جۆری کردار', allEmployees: 'هەموو کارمەندان', allLocations: 'هەموو شوێنەکان', allStations: 'هەموو وێستگەکان', allTypes: 'هەموو کردارەکان',
     employee: 'کارمەند', station: 'وێستگە', shift: 'مناوبە', operationType: 'کردار', saleReference: 'ژمارەی فرۆشتن', dateTime: 'بەروار و کات', amount: 'بڕ', noDetails: 'هیچ کردارێک لەگەڵ پاڵێوەرەکان ناگونجێت.', formerEmployee: 'کارمەندی پێشوو', formerStation: 'وێستگەی پێشوو', formerLocation: 'شوێنی دیارینەکراو',
   },
@@ -138,7 +138,7 @@ const COPY: Record<Lang, Copy> = {
     netSales: 'Net sales', profit: 'Gross profit', operations: 'Sales operations', units: 'Net units sold', refunds: 'Returns & voids value', average: 'Average sale ticket', voided: 'Void operations', returns: 'Return operations',
     partialProfit: 'Shown profit is partial because cost is missing for some units.', unavailableProfit: 'Profit data is unavailable for this scope. Fawri does not assume missing cost is zero.', topProducts: 'Top-selling products', topProfitable: 'Most profitable products', noTop: 'No products have positive net sales in this period.', noProfitable: 'No products can be ranked by profit truthfully in this period; missing cost is never treated as zero.', revenueChart: 'Product sales chart', unitsChart: 'Units sold by product', profitChart: 'Product profit chart',
     salesByStaff: 'Financial impact by selling employee', salesByStation: 'Financial impact by selling station', salesByLocation: 'Financial impact by location', activityByStaff: 'Executed operations by employee', activityByStation: 'Executed operations by station', activityByLocation: 'Executed operations by location', noGroupSales: 'No financial impact in this period.',
-    sales: 'sales', saleOps: 'Sales', returnOps: 'Returns', voidOps: 'Voids', totalOps: 'Total', location: 'Location', generated: 'Last updated', source: 'Source: trusted central cashier record on the server',
+    sales: 'sales', saleOps: 'Sales', returnOps: 'Returns', voidOps: 'Voids', totalOps: 'Total', location: 'Location', currency: 'Currency', period: 'Period', profitStatus: 'Profit status', generated: 'Last updated', source: 'Source: trusted central cashier record on the server',
     operationDetails: 'Operation details', operationDetailsHint: 'Shows who executed each sale, return or void together with its time, location, station and shift.', detailsLimited: 'The detail table shows at most the latest {limit} operations; the summaries above cover the full period.', employeeFilter: 'Employee', locationFilter: 'Location', stationFilter: 'Station', typeFilter: 'Operation type', allEmployees: 'All employees', allLocations: 'All locations', allStations: 'All stations', allTypes: 'All operations',
     employee: 'Employee', station: 'Station', shift: 'Shift', operationType: 'Operation', saleReference: 'Sale reference', dateTime: 'Date & time', amount: 'Amount', noDetails: 'No operations match these filters.', formerEmployee: 'Former employee', formerStation: 'Former station', formerLocation: 'Unattributed location',
   },
@@ -242,6 +242,54 @@ function operationMoney(item: OperationActivity, lang: Lang): string {
   return formatMerchantMoneyMinor(item.amount_minor, item.currency_code, item.currency_fraction_digits, lang);
 }
 
+function formatDayFirst(value: Date): string {
+  return value.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
+
+function formatDayFirstDateTime(value: Date): string {
+  return value.toLocaleString('en-GB', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  });
+}
+
+function exportPeriodText(
+  range: RangeKey,
+  customRange: AppliedDateRange | null,
+  labels: Copy,
+): string {
+  if (range === 'all') return labels.all;
+  if (range === 'custom' && customRange) {
+    return `${customRange.from.split('-').reverse().join('/')} – ${customRange.to.split('-').reverse().join('/')}`;
+  }
+  const to = new Date();
+  to.setHours(0, 0, 0, 0);
+  const from = new Date(to);
+  if (range === '7d') from.setDate(from.getDate() - 6);
+  if (range === '30d') from.setDate(from.getDate() - 29);
+  return range === 'today'
+    ? formatDayFirst(to)
+    : `${formatDayFirst(from)} – ${formatDayFirst(to)}`;
+}
+
+function profitStatusLabel(
+  status: CurrencyReport['profit_status'],
+  labels: Copy,
+): string {
+  if (status === 'available') return labels.profit;
+  if (status === 'partial') return labels.partialProfit;
+  return labels.unavailableProfit;
+}
+
 function productDisplayName(product: ProductRow): string {
   return product.variant_name
     ? `${product.product_name} — ${product.variant_name}`
@@ -301,39 +349,56 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
 
   const downloadReport = async () => {
     if (!result) return;
-    const summaryRows: Array<Array<string | number>> = [[
-      labels.location,
-      labels.netSales,
-      labels.profit,
-      labels.operations,
-      labels.units,
-      labels.refunds,
-      labels.average,
-    ]];
+
+    const periodText = exportPeriodText(range, customRange, labels);
+    const generatedText = formatDayFirstDateTime(new Date(result.generated_at));
+    const metadataRows: Array<Array<string | number>> = [
+      [labels.title],
+      [labels.period, periodText],
+      [labels.generated, generatedText],
+      [labels.source],
+      [],
+    ];
+
+    const summaryRows: Array<Array<string | number>> = [
+      ...metadataRows,
+      [
+        labels.currency,
+        labels.netSales,
+        labels.profit,
+        labels.profitStatus,
+        labels.operations,
+        labels.units,
+        labels.refunds,
+        labels.average,
+        labels.voided,
+        labels.returns,
+      ],
+    ];
     for (const currency of result.report.by_currency) {
       summaryRows.push([
         currency.currency_code,
         currency.net_revenue_minor,
-        currency.gross_profit_minor ?? 0,
+        currency.profit_status === 'unavailable' ? '' : currency.gross_profit_minor ?? '',
+        profitStatusLabel(currency.profit_status, labels),
         currency.sale_count,
         currency.net_units,
         currency.refunds_minor,
         currency.average_ticket_minor,
+        currency.voided_sale_count,
+        currency.return_count,
       ]);
     }
 
-    const topSellingRows: Array<Array<string | number>> = [[
-      labels.location,
-      labels.topProducts,
-      labels.units,
-      labels.netSales,
-    ]];
-    const profitableRows: Array<Array<string | number>> = [[
-      labels.location,
-      labels.topProfitable,
-      labels.netSales,
-      labels.profit,
-    ]];
+    const topSellingRows: Array<Array<string | number>> = [
+      ...metadataRows,
+      [labels.currency, labels.topProducts, labels.units, labels.netSales],
+    ];
+    const profitableRows: Array<Array<string | number>> = [
+      ...metadataRows,
+      [labels.currency, labels.topProfitable, labels.netSales, labels.profit],
+    ];
+
     result.report.by_currency.forEach(currency => {
       currency.top_products.forEach(product => {
         topSellingRows.push([
@@ -348,39 +413,79 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           currency.currency_code,
           productDisplayName(product),
           product.net_revenue_minor,
-          product.gross_profit_minor ?? 0,
+          product.gross_profit_minor ?? '',
         ]);
       });
     });
 
-    const operationRows: Array<Array<string | number>> = [[
-      labels.dateTime,
-      labels.employee,
-      labels.operationType,
-      labels.saleReference,
-      labels.location,
-      labels.station,
-      labels.shift,
-      labels.amount,
-    ]];
+    const operationRows: Array<Array<string | number>> = [
+      ...metadataRows,
+      ...(detailsAreLimited
+        ? [[labels.detailsLimited.replace('{limit}', String(result.activity.operation_detail_limit))]]
+        : []),
+      detailsAreLimited ? [] : [],
+      [
+        labels.dateTime,
+        labels.employee,
+        labels.operationType,
+        labels.saleReference,
+        labels.location,
+        labels.station,
+        labels.shift,
+        labels.amount,
+        labels.currency,
+      ],
+    ];
+    const operationHeaderRow = operationRows.length - 1;
+
     filteredOperations.forEach(item => {
       operationRows.push([
-        new Date(item.occurred_at).toISOString(),
+        formatDayFirstDateTime(new Date(item.occurred_at)),
         item.staff_name || labels.formerEmployee,
         operationLabel(item.operation_kind, labels),
-        shortReference(item.sale_id, '#'),
+        item.sale_id,
         item.location_name || labels.formerLocation,
         item.station_name || labels.formerStation,
-        shortReference(item.shift_id, ''),
+        item.shift_id,
         item.amount_minor ?? '',
+        item.currency_code ?? '',
       ]);
     });
 
-    await downloadWorkbook(`fawri-cashier-report-${new Date().toISOString().slice(0, 10)}`, [
-      { name: 'Summary', rows: summaryRows },
-      { name: 'Top selling', rows: topSellingRows },
-      { name: 'Top profitable', rows: profitableRows },
-      { name: 'Latest operations', rows: operationRows },
+    const fileRange =
+      range === 'custom' && customRange
+        ? `${customRange.from}-to-${customRange.to}`
+        : `${range}-${new Date().toISOString().slice(0, 10)}`;
+
+    await downloadWorkbook(`fawri-cashier-report-${fileRange}`, [
+      {
+        name: 'Summary',
+        rows: summaryRows,
+        columnWidths: [12, 18, 18, 42, 16, 16, 22, 20, 16, 16],
+        headerRow: metadataRows.length,
+        autoFilter: true,
+      },
+      {
+        name: 'Top selling',
+        rows: topSellingRows,
+        columnWidths: [12, 42, 16, 18],
+        headerRow: metadataRows.length,
+        autoFilter: true,
+      },
+      {
+        name: 'Top profitable',
+        rows: profitableRows,
+        columnWidths: [12, 42, 18, 18],
+        headerRow: metadataRows.length,
+        autoFilter: true,
+      },
+      {
+        name: 'Operations',
+        rows: operationRows,
+        columnWidths: [22, 22, 14, 26, 20, 20, 30, 18, 12],
+        headerRow: operationHeaderRow,
+        autoFilter: true,
+      },
     ]);
   };
   const currencies = result?.report.by_currency || [];
