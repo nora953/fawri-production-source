@@ -88,7 +88,10 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /report-print-only/);
   assert.match(printCss, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.match(printCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
-  assert.match(printCss, /break-before: page/);
+  assert.doesNotMatch(printCss, /break-before: page/);
+  assert.match(printCss, /display: table-header-group/);
+  assert.match(printCss, /report-print-operation-details tbody tr/);
+  assert.match(printCss, /report-print-chart \.recharts-yAxis/);
   assert.match(printCss, /report-print-footer-note/);
   assert.match(cashier, /rtlText: lang !== 'en'/);
   assert.match(workbook, /stylesXml/);
