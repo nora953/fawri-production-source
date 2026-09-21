@@ -494,6 +494,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         rowHeights: [24, 22, 22, 22, 10, 24],
         headerRow: metadataRows.length,
         autoFilter: true,
+        rtlText: lang !== 'en',
         mergeRanges: [
           { startRow: 0, startColumn: 0, endRow: 0, endColumn: 3 },
           { startRow: 1, startColumn: 1, endRow: 1, endColumn: 3 },
@@ -508,6 +509,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         rowHeights: [24, 22, 22, 22, 10, 24],
         headerRow: metadataRows.length,
         autoFilter: true,
+        rtlText: lang !== 'en',
         mergeRanges: [
           { startRow: 0, startColumn: 0, endRow: 0, endColumn: 3 },
           { startRow: 1, startColumn: 1, endRow: 1, endColumn: 3 },
@@ -522,6 +524,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         rowHeights: [24, 22, 22, 22, 10, 24],
         headerRow: metadataRows.length,
         autoFilter: true,
+        rtlText: lang !== 'en',
         mergeRanges: [
           { startRow: 0, startColumn: 0, endRow: 0, endColumn: 3 },
           { startRow: 1, startColumn: 1, endRow: 1, endColumn: 3 },
@@ -536,6 +539,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         rowHeights: [24, 22, 22, 22, 10],
         headerRow: operationHeaderRow,
         autoFilter: true,
+        rtlText: lang !== 'en',
         mergeRanges: [
           { startRow: 0, startColumn: 0, endRow: 0, endColumn: 8 },
           { startRow: 1, startColumn: 1, endRow: 1, endColumn: 8 },
