@@ -1,7 +1,11 @@
+.report-print-only {
+  display: none;
+}
+
 @media print {
   @page {
     size: A4 landscape;
-    margin: 10mm;
+    margin: 8mm;
   }
 
   body * {
@@ -27,9 +31,95 @@
     display: none !important;
   }
 
+  .report-print-only {
+    display: block !important;
+  }
+
+  .report-print-content {
+    padding-bottom: 0 !important;
+  }
+
+  .report-print-content > * + * {
+    margin-top: 4mm !important;
+  }
+
   .report-print-break-avoid {
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+  }
+
+  .report-print-currency-section {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    padding: 3mm !important;
+  }
+
+  .report-print-metrics {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 3mm !important;
+  }
+
+  .report-print-metrics > * {
+    padding: 3mm !important;
+  }
+
+  .report-print-two-column {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 4mm !important;
+  }
+
+  .report-print-three-column {
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 3mm !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .report-print-three-column > section {
+    padding: 3mm !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .report-print-chart {
+    height: 42mm !important;
+    padding: 2mm !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .report-print-product-list {
+    font-size: 8pt !important;
+  }
+
+  .report-print-product-list > div {
+    padding-top: 1.5mm !important;
+    padding-bottom: 1.5mm !important;
+  }
+
+  .report-print-operation-details {
+    break-before: page !important;
+    page-break-before: always !important;
+    padding: 3mm !important;
+  }
+
+  .report-print-operation-details table {
+    min-width: 0 !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .report-print-operation-details th,
+  .report-print-operation-details td {
+    padding: 1.5mm !important;
+    font-size: 7.5pt !important;
+  }
+
+  .report-print-footer-note {
+    display: none !important;
   }
 
   .report-print-root .shadow-sm,
@@ -38,7 +128,7 @@
   }
 
   .report-print-root table {
-    font-size: 9pt !important;
+    font-size: 8pt !important;
   }
 
   .report-print-root a {
