@@ -4,6 +4,7 @@ export type WorkbookSheet = {
   columnWidths?: number[];
   headerRow?: number;
   autoFilter?: boolean;
+  mergeRows?: number[];
 };
 
 function safeFilePart(value: string): string {
@@ -45,6 +46,17 @@ export async function downloadWorkbook(
 
     if (sheet.columnWidths?.length) {
       worksheet['!cols'] = sheet.columnWidths.map(width => ({ wch: width }));
+    }
+
+    if (sheet.mergeRows?.length) {
+      const lastColumn = Math.max(
+        0,
+        sheet.rows.reduce((max, row) => Math.max(max, row.length), 0) - 1,
+      );
+      worksheet['!merges'] = sheet.mergeRows.map(row => ({
+        s: { r: row, c: 0 },
+        e: { r: row, c: lastColumn },
+      }));
     }
 
     if (sheet.autoFilter && sheet.headerRow !== undefined && sheet.rows[sheet.headerRow]) {
