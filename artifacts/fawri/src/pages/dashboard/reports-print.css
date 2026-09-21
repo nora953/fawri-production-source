@@ -101,21 +101,45 @@
   }
 
   .report-print-operation-details {
-    break-before: page !important;
-    page-break-before: always !important;
-    padding: 3mm !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+    padding: 2.5mm !important;
+  }
+
+  .report-print-operation-details > div:first-child {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   .report-print-operation-details table {
     min-width: 0 !important;
     width: 100% !important;
     table-layout: fixed !important;
+    font-size: 7pt !important;
+  }
+
+  .report-print-operation-details thead {
+    display: table-header-group !important;
+  }
+
+  .report-print-operation-details tbody tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   .report-print-operation-details th,
   .report-print-operation-details td {
-    padding: 1.5mm !important;
-    font-size: 7.5pt !important;
+    padding: 0.9mm 1mm !important;
+    font-size: 7pt !important;
+    line-height: 1.15 !important;
+  }
+
+  .report-print-operation-details .mt-4 {
+    margin-top: 2mm !important;
+  }
+
+  .report-print-chart .recharts-yAxis {
+    display: none !important;
   }
 
   .report-print-footer-note {
