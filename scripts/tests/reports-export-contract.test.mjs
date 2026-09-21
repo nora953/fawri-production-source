@@ -50,7 +50,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /item\.sale_id/);
   assert.match(cashier, /item\.shift_id/);
   assert.match(cashier, /labels\.location,\s*labels\.station,\s*labels\.amount,\s*labels\.currency,\s*labels\.saleReference,\s*labels\.shift/);
-  assert.match(cashier, /columnWidths: \[10, 14, 14, 14, 14, 12, 18, 18, 14, 14\]/);
+  assert.match(cashier, /columnWidths: \[14, 18, 18, 16, 16, 16, 22, 20, 16, 16\]/);
   assert.match(cashier, /cashierExportSheetNames/);
   assert.match(cashier, /summary: 'الملخص'/);
   assert.match(cashier, /topSelling: 'الأكثر مبيعًا'/);
