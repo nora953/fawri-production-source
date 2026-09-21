@@ -17,11 +17,17 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
   const printCss = read("artifacts/fawri/src/pages/dashboard/reports-print.css");
 
-  assert.match(toolbar, /type="date"/);
+  assert.match(toolbar, /Popover/);
+  assert.match(toolbar, /Calendar/);
+  assert.match(toolbar, /mode="range"/);
+  assert.match(toolbar, /numberOfMonths=\{desktopCalendar \? 2 : 1\}/);
   assert.match(toolbar, /displayDateDayFirst/);
   assert.match(toolbar, /\$\{day\}\/\$\{month\}\/\$\{year\}/);
-  assert.match(toolbar, /Custom range/);
-  assert.match(toolbar, /Choose the start and end dates, then apply the range\./);
+  assert.match(toolbar, /Quick ranges/);
+  assert.match(toolbar, /Choose the start date, then the end date on the calendar\./);
+  assert.match(toolbar, /Cancel/);
+  assert.match(toolbar, /Apply/);
+  assert.doesNotMatch(toolbar, /type="date"/);
   assert.match(toolbar, /Download Excel/);
   assert.match(toolbar, /Print \/ Save PDF/);
   assert.match(toolbar, /localDateEndExclusive/);
