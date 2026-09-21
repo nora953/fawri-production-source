@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'wouter';
 import {
-  Bar,
-  BarChart,
-  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
-  YAxis,
 } from 'recharts';
 import { ReportToolbar, type AppliedDateRange, type ReportRangeKey } from '@/components/reports/ReportToolbar';
 import { useI18n } from '@/lib/i18n';
@@ -214,7 +212,7 @@ function MoneyStack({ values, lang }: { values: MoneyValue[]; lang: Lang }) {
 }
 
 function Metric({ title, children }: { title: string; children: ReactNode }) {
-  return <div className="rounded-2xl border bg-card p-4 shadow-sm"><p className="text-xs font-semibold text-muted-foreground">{title}</p><div className="mt-2 text-xl font-extrabold">{children}</div></div>;
+  return <div className="rounded-2xl border bg-card p-4 shadow-sm"><p className="text-xs font-semibold text-muted-foreground">{title}</p><div className="report-print-metric-value mt-2 text-xl font-extrabold">{children}</div></div>;
 }
 
 function GroupCard({ name, secondary, report, lang, labels }: { name: string; secondary?: string; report: Report; lang: Lang; labels: Copy }) {
@@ -349,11 +347,61 @@ function productDisplayName(product: ProductRow): string {
     : product.product_name;
 }
 
+const REPORT_CHART_COLORS = [
+  '#2563eb',
+  '#16a34a',
+  '#f59e0b',
+  '#dc2626',
+  '#7c3aed',
+  '#0891b2',
+  '#ea580c',
+  '#4f46e5',
+];
+
 function chartRows(products: ProductRow[], field: 'net_units' | 'gross_profit_minor') {
   return products.slice(0, 8).map(product => ({
     name: productDisplayName(product),
     value: field === 'gross_profit_minor' ? product.gross_profit_minor ?? 0 : product.net_units,
   }));
+}
+
+function arabicDigitText(value: string): string {
+  return value.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
+}
+
+function arabicVisualDateFromIso(value: string): string {
+  const [year, month, day] = value.split('-');
+  return arabicDigitText(`${year}/${month}/${day}`);
+}
+
+function arabicVisualDate(value: Date): string {
+  const year = String(value.getFullYear()).padStart(4, '0');
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return arabicDigitText(`${year}/${month}/${day}`);
+}
+
+function arabicPrintPeriod(
+  range: RangeKey,
+  customRange: AppliedDateRange | null,
+  labels: Copy,
+): { start: string; end?: string } | null {
+  if (range === 'all') return null;
+  if (range === 'custom' && customRange) {
+    return {
+      start: arabicVisualDateFromIso(customRange.from),
+      end: arabicVisualDateFromIso(customRange.to),
+    };
+  }
+
+  const to = new Date();
+  to.setHours(0, 0, 0, 0);
+  const from = new Date(to);
+  if (range === '7d') from.setDate(from.getDate() - 6);
+  if (range === '30d') from.setDate(from.getDate() - 29);
+
+  if (range === 'today') return { start: arabicVisualDate(to) };
+  return { start: arabicVisualDate(from), end: arabicVisualDate(to) };
 }
 
 export default function CashierCentralReportsPage({ embedded = false }: { embedded?: boolean } = {}) {
@@ -610,7 +658,20 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       {!loading && !error && result && hasData ? <>
         <div className="report-print-only border-b pb-3">
           <h1 className="text-xl font-extrabold">{labels.title}</h1>
-          <p className="mt-1 text-sm"><span className="font-semibold">{labels.period}:</span> <span dir="ltr">{exportPeriodText(range, customRange, labels)}</span></p>
+          {lang === 'ar' ? (() => {
+            const period = arabicPrintPeriod(range, customRange, labels);
+            return (
+              <p className="report-print-period-row mt-1 text-sm" dir="rtl">
+                <span className="font-semibold">{labels.period}:</span>
+                {period ? (
+                  <>
+                    <span dir="ltr">{period.start}</span>
+                    {period.end ? <><span>–</span><span dir="ltr">{period.end}</span></> : null}
+                  </>
+                ) : <span>{labels.all}</span>}
+              </p>
+            );
+          })() : <p className="mt-1 text-sm"><span className="font-semibold">{labels.period}:</span> <span dir="ltr">{exportPeriodText(range, customRange, labels)}</span></p>}
           <p className="mt-1 text-xs text-muted-foreground">{labels.source}</p>
         </div>
         <div className="report-print-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-6"><Metric title={labels.netSales}><MoneyStack values={totalNet} lang={lang} /></Metric><Metric title={labels.profit}><MoneyStack values={totalProfit} lang={lang} /></Metric><Metric title={labels.operations}><span dir="ltr">{result.report.sale_count}</span></Metric><Metric title={labels.units}><span dir="ltr">{netUnits}</span></Metric><Metric title={labels.refunds}><MoneyStack values={totalRefunds} lang={lang} /></Metric><Metric title={labels.average}><MoneyStack values={moneyValues(result.report, 'average_ticket_minor')} lang={lang} /></Metric></div>
@@ -635,18 +696,31 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                     <>
                       <div className="report-print-chart mt-2 h-64 rounded-xl border bg-background p-3">
                         <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.unitsChart}</p>
-                        <ResponsiveContainer width="100%" height="90%">
-                          <BarChart data={sellingChart} layout="vertical" margin={{ left: 8, right: 8 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" hide />
-                            <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
-                            <Tooltip formatter={(value) => [Number(value), labels.units]} />
-                            <Bar dataKey="value" fill="currentColor" radius={[0, 4, 4, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
+                        <div className="report-print-chart-canvas">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={sellingChart}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius="42%"
+                                outerRadius="78%"
+                                paddingAngle={2}
+                                strokeWidth={1}
+                              >
+                                {sellingChart.map((entry, index) => (
+                                  <Cell key={entry.name} fill={REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip formatter={(value) => [Number(value), labels.units]} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
                       </div>
                       <div className="report-print-product-list mt-2 divide-y rounded-xl border bg-background">
-                        {currency.top_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="font-semibold"><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="font-bold" dir="ltr">{product.net_units}</p><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
+                        {currency.top_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="flex items-center gap-2 font-semibold"><span className="report-print-chart-dot inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length] }} /><span><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</span></p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="font-bold" dir="ltr">{product.net_units}</p><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
                       </div>
                     </>
                   )}
@@ -658,15 +732,28 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                     <>
                       <div className="report-print-chart mt-2 h-64 rounded-xl border bg-background p-3">
                         <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.profitChart}</p>
-                        <ResponsiveContainer width="100%" height="90%">
-                          <BarChart data={profitChart} layout="vertical" margin={{ left: 8, right: 8 }}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis type="number" hide />
-                            <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10 }} />
-                            <Tooltip formatter={(value) => formatMerchantMoneyMinor(Number(value), currency.currency_code, currency.currency_fraction_digits, lang)} />
-                            <Bar dataKey="value" fill="currentColor" radius={[0, 4, 4, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
+                        <div className="report-print-chart-canvas">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={profitChart}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius="42%"
+                                outerRadius="78%"
+                                paddingAngle={2}
+                                strokeWidth={1}
+                              >
+                                {profitChart.map((entry, index) => (
+                                  <Cell key={entry.name} fill={REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <Tooltip formatter={(value) => formatMerchantMoneyMinor(Number(value), currency.currency_code, currency.currency_fraction_digits, lang)} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
                       </div>
                       <div className="report-print-product-list mt-2 divide-y rounded-xl border bg-background">
                         {currency.top_profitable_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="font-semibold"><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p><p className="font-bold" dir="ltr">{formatMerchantMoneyMinor(product.gross_profit_minor ?? 0, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
