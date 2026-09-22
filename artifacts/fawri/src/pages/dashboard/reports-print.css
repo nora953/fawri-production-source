@@ -90,7 +90,23 @@
   .report-print-two-column {
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: start !important;
     gap: 4mm !important;
+  }
+
+  .report-print-chart-panel,
+  .report-print-chart-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .report-print-chart-section-title,
+  .report-print-chart-title {
+    text-align: center !important;
+  }
+
+  .report-print-chart-section-title {
+    margin-bottom: 1mm !important;
   }
 
   .report-print-three-column {
@@ -116,32 +132,26 @@
     line-height: 1.2 !important;
   }
 
-  .report-print-chart {
-    height: 34mm !important;
+  .report-print-chart-card {
     padding: 1.5mm !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    justify-content: center !important;
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  .report-print-chart > p {
+  .report-print-chart-title {
     margin-bottom: 0.5mm !important;
-    text-align: center !important;
   }
 
   .report-print-chart-canvas {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
     width: 100% !important;
+    max-width: 58mm !important;
+    height: 27mm !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   .report-print-chart-canvas .recharts-responsive-container,
@@ -152,18 +162,28 @@
     max-height: 100% !important;
   }
 
+  .report-print-chart-legend {
+    margin-top: 1mm !important;
+    font-size: 7pt !important;
+  }
+
+  .report-print-chart-legend-row {
+    min-height: 5mm !important;
+    padding-top: 0.45mm !important;
+    padding-bottom: 0.45mm !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .report-print-chart-percent {
+    min-width: 12mm !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+  }
+
   .report-print-chart-dot {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-  }
-
-  .report-print-product-list {
-    font-size: 7.5pt !important;
-  }
-
-  .report-print-product-list > div {
-    padding-top: 0.5mm !important;
-    padding-bottom: 0.5mm !important;
   }
 
   .report-print-group-card,
@@ -242,10 +262,6 @@
 
   .report-print-operation-details .mt-4 {
     margin-top: 2mm !important;
-  }
-
-  .report-print-chart .recharts-tooltip-wrapper {
-    display: none !important;
   }
 
   .report-print-footer-note {
