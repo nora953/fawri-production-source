@@ -365,6 +365,120 @@ function chartRows(products: ProductRow[], field: 'net_units' | 'gross_profit_mi
   }));
 }
 
+function chartPercentText(value: number, total: number, lang: Lang): string {
+  if (total <= 0) return '0%';
+  const locale = lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en';
+  return new Intl.NumberFormat(locale, {
+    style: 'percent',
+    maximumFractionDigits: 1,
+  }).format(value / total);
+}
+
+function chartRankLabel(index: number, lang: Lang): string {
+  const locale = lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en';
+  return `#${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(index + 1)}`;
+}
+
+function DonutProductChart({
+  title,
+  rows,
+  products,
+  lang,
+  renderMetrics,
+}: {
+  title: string;
+  rows: Array<{ name: string; value: number }>;
+  products: ProductRow[];
+  lang: Lang;
+  renderMetrics: (product: ProductRow) => ReactNode;
+}) {
+  const visibleProducts = products.slice(0, 8);
+  const total = rows.reduce((sum, row) => sum + Math.max(0, row.value), 0);
+
+  return (
+    <div className="report-print-chart-card mt-2 rounded-xl border bg-background p-3">
+      <p className="report-print-chart-title text-center text-xs font-semibold text-muted-foreground">{title}</p>
+      <div className="report-print-chart-canvas mx-auto mt-1 flex h-40 w-full items-center justify-center">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={rows}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius="42%"
+              outerRadius="76%"
+              paddingAngle={2}
+              strokeWidth={1}
+              labelLine={false}
+              label={(props) => {
+                const cx = Number(props.cx ?? 0);
+                const cy = Number(props.cy ?? 0);
+                const innerRadius = Number(props.innerRadius ?? 0);
+                const outerRadius = Number(props.outerRadius ?? 0);
+                const midAngle = Number(props.midAngle ?? 0);
+                const percent = Number(props.percent ?? 0);
+                if (percent <= 0) return null;
+                const radius = innerRadius + (outerRadius - innerRadius) * 0.58;
+                const radians = -midAngle * Math.PI / 180;
+                const x = cx + radius * Math.cos(radians);
+                const y = cy + radius * Math.sin(radians);
+                return (
+                  <text
+                    x={x}
+                    y={y}
+                    fill="#ffffff"
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fontSize={9}
+                    fontWeight={800}
+                  >
+                    {chartPercentText(percent, 1, lang)}
+                  </text>
+                );
+              }}
+            >
+              {rows.map((entry, index) => (
+                <Cell key={entry.name} fill={REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length]} />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="report-print-chart-legend mt-2 divide-y">
+        {visibleProducts.map((product, index) => {
+          const value = rows[index]?.value ?? 0;
+          return (
+            <div
+              key={`${product.product_id}:${product.variant_id || ''}`}
+              className="report-print-chart-legend-row flex items-center justify-between gap-3 py-2"
+            >
+              <div className="min-w-0 flex items-center gap-2">
+                <span
+                  className="report-print-chart-dot inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length] }}
+                />
+                <span className="min-w-0 font-semibold">
+                  <span className="me-1.5 whitespace-nowrap" dir="ltr">{chartRankLabel(index, lang)}</span>
+                  <span>{productDisplayName(product)}</span>
+                </span>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 text-end">
+                <span className="report-print-chart-percent rounded-full border px-2 py-0.5 text-xs font-bold" dir="ltr">
+                  {chartPercentText(value, total, lang)}
+                </span>
+                <span className="text-xs">{renderMetrics(product)}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function arabicDigitText(value: string): string {
   return value.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
 }
