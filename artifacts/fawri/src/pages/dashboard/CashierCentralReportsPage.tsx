@@ -419,22 +419,28 @@ function DonutProductChart({
                 const midAngle = Number(props.midAngle ?? 0);
                 const percent = Number(props.percent ?? 0);
                 if (percent <= 0) return null;
-                const radius = innerRadius + (outerRadius - innerRadius) * 0.58;
+
+                const radius = innerRadius + (outerRadius - innerRadius) * 0.56;
                 const radians = -midAngle * Math.PI / 180;
                 const x = cx + radius * Math.cos(radians);
                 const y = cy + radius * Math.sin(radians);
+                const label = chartPercentText(percent, 1, lang);
+
                 return (
-                  <text
-                    x={x}
-                    y={y}
-                    fill="#ffffff"
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fontSize={9}
-                    fontWeight={800}
-                  >
-                    {chartPercentText(percent, 1, lang)}
-                  </text>
+                  <g className="report-print-donut-label">
+                    <circle cx={x} cy={y} r={11} fill="rgba(17,24,39,0.78)" />
+                    <text
+                      x={x}
+                      y={y}
+                      fill="#ffffff"
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fontSize={8}
+                      fontWeight={800}
+                    >
+                      {label}
+                    </text>
+                  </g>
                 );
               }}
             >
