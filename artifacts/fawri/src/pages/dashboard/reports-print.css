@@ -136,8 +136,8 @@
   }
 
   .report-print-currency-section {
-    break-inside: avoid !important;
-    page-break-inside: avoid !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
@@ -169,6 +169,29 @@
 
   .report-print-metric-value > * {
     align-items: center !important;
+  }
+
+  .report-print-profit-summary {
+    gap: 1.5mm !important;
+  }
+
+  .report-print-profit-status {
+    padding: 0.45mm 1.5mm !important;
+    font-size: 7.4pt !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .report-print-activity-coverage {
+    padding: 1.5mm 2.5mm !important;
+    font-size: 7.6pt !important;
+    line-height: 1.45 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   .report-print-online-metrics,
