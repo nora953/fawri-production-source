@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, ChevronDown, Download, Printer } from 'lucide-react';
-import type { DateRange } from 'react-day-picker';
+import { DayPicker, type DateRange } from 'react-day-picker';
+import { ar } from 'react-day-picker/locale';
+import './report-calendar.css';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
@@ -221,6 +223,7 @@ export function ReportToolbar({
 }) {
   const { lang, dir } = useI18n();
   const copy = COPY[lang] || COPY.en;
+  const RangeCalendar = lang === 'ar' ? DayPicker : Calendar;
   const [open, setOpen] = useState(false);
   const [draftKind, setDraftKind] = useState<ReportRangeKey>(range);
   const [draftRange, setDraftRange] = useState<DateRange | undefined>(
@@ -318,11 +321,11 @@ export function ReportToolbar({
         </DialogTrigger>
 
         <DialogContent
-          className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0"
-          closeButtonClassName="right-3 top-3"
+          className={`max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0 ${lang === 'ar' ? 'report-ar-date-dialog' : ''}`}
+          closeButtonClassName={lang === 'ar' ? 'left-3 right-auto top-3' : 'right-3 top-3'}
           dir={dir}
         >
-          <DialogHeader className="border-b px-5 py-4 pe-16 text-start">
+          <DialogHeader className="report-date-header border-b px-5 py-4 pe-16 text-start">
             <DialogTitle>{copy.chooseRange}</DialogTitle>
             <DialogDescription>{copy.rangePickerHint}</DialogDescription>
           </DialogHeader>
@@ -350,12 +353,19 @@ export function ReportToolbar({
               </aside>
 
               <div className="min-w-0 p-3 sm:p-4">
-                <div className="mb-3">
+                {lang !== 'ar' ? <div className="mb-3">
                   <p className="text-sm font-bold">{copy.customRange}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{copy.rangePickerHint}</p>
-                </div>
+                </div> : null}
                 <div className="flex justify-center overflow-x-auto">
-                  <Calendar
+                  <RangeCalendar
+                    locale={lang === 'ar' ? ar : undefined}
+                    dir={lang === 'ar' ? 'rtl' : undefined}
+                    numerals={lang === 'ar' ? 'arab' : undefined}
+                    labels={lang === 'ar' ? {
+                      labelNext: () => 'الشهر التالي',
+                      labelPrevious: () => 'الشهر السابق',
+                    } : undefined}
                     mode="range"
                     selected={draftRange}
                     onSelect={chooseCalendarRange}
@@ -364,11 +374,11 @@ export function ReportToolbar({
                     disabled={{ after: new Date() }}
                     showOutsideDays={false}
                     min={1}
-                    className="max-w-full"
+                    className={lang === 'ar' ? 'report-ar-calendar' : 'max-w-full'}
                   />
                 </div>
                 {draftKind === 'custom' && draftRange?.from ? (
-                  <p dir={lang === 'ar' ? 'rtl' : 'ltr'} className="mt-3 text-center text-xs tabular-nums text-muted-foreground">
+                  <p dir={lang === 'ar' ? 'rtl' : 'ltr'} className={lang === 'ar' ? 'mt-4 rounded-lg bg-muted/40 px-3 py-2 text-center text-sm font-semibold tabular-nums text-foreground' : 'mt-3 text-center text-xs tabular-nums text-muted-foreground'}>
                     {lang === 'ar' ? <ArabicRangeDetail detail={`${displayDateDayFirst(dateToValue(draftRange.from))} – ${draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}`} /> : <>
                       {displayDateDayFirst(dateToValue(draftRange.from))}
                       {' – '}

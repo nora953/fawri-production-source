@@ -229,3 +229,21 @@ test("cashier profitability requires complete historical cost evidence", () => {
   assert.match(service, /gross_profit_minor/);
   assert.doesNotMatch(service, /unit_cost_minor \?\? 0/);
 });
+
+
+test("Arabic report calendar has localized, spaced range controls without changing date boundaries", () => {
+  const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
+  const css = read("artifacts/fawri/src/components/reports/report-calendar.css");
+  assert.match(toolbar, /lang === 'ar' \? DayPicker : Calendar/);
+  assert.match(toolbar, /locale=\{lang === 'ar' \? ar : undefined\}/);
+  assert.match(toolbar, /numerals=\{lang === 'ar' \? 'arab' : undefined\}/);
+  assert.match(toolbar, /labelNext: \(\) => 'الشهر التالي'/);
+  assert.match(toolbar, /labelPrevious: \(\) => 'الشهر السابق'/);
+  assert.match(css, /\.report-ar-calendar \.rdp-month_grid/);
+  assert.match(css, /table-layout: fixed/);
+  assert.match(css, /min-height: 2\.5rem/);
+  assert.match(css, /\.rdp-range_start \.rdp-day_button/);
+  assert.match(css, /\.rdp-range_end \.rdp-day_button/);
+  assert.match(toolbar, /params\.set\('from', localDateStart\(custom\.from\)\.toISOString\(\)\)/);
+  assert.match(toolbar, /params\.set\('to', localDateEndExclusive\(custom\.to\)\.toISOString\(\)\)/);
+});

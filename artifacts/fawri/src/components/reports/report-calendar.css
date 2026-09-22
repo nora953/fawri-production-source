@@ -1,0 +1,134 @@
+/* Scoped to the Arabic report picker; other calendars retain their styles. */
+.report-ar-date-dialog .report-date-header {
+  text-align: right;
+}
+
+.report-ar-calendar {
+  width: 100%;
+  direction: rtl;
+  padding: 0.25rem;
+}
+
+.report-ar-calendar .rdp-months {
+  position: relative;
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.report-ar-calendar .rdp-month {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.report-ar-calendar .rdp-month_caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  padding-inline: 2.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.report-ar-calendar .rdp-nav {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.report-ar-calendar .rdp-button_previous,
+.report-ar-calendar .rdp-button_next {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.625rem;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.report-ar-calendar .rdp-chevron {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: currentColor;
+}
+
+.report-ar-calendar .rdp-month_grid {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 0.25rem;
+}
+
+.report-ar-calendar .rdp-weekday {
+  height: 2rem;
+  padding: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+}
+
+.report-ar-calendar .rdp-day {
+  height: 2.5rem;
+  padding: 0;
+  text-align: center;
+}
+
+.report-ar-calendar .rdp-day_button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.report-ar-calendar .rdp-day_button:hover:not(:disabled) {
+  background: hsl(var(--accent));
+}
+
+.report-ar-calendar .rdp-range_middle {
+  background: color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background)));
+}
+
+.report-ar-calendar .rdp-range_start .rdp-day_button,
+.report-ar-calendar .rdp-range_end .rdp-day_button {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-weight: 800;
+}
+
+.report-ar-calendar .rdp-today:not(.rdp-selected) .rdp-day_button {
+  box-shadow: inset 0 0 0 1px hsl(var(--primary));
+  font-weight: 700;
+}
+
+.report-ar-calendar .rdp-disabled {
+  opacity: 0.4;
+}
+
+.report-ar-calendar .rdp-hidden {
+  visibility: hidden;
+}
+
+.report-ar-calendar button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* DayPicker navigation emits physical chevrons; mirror for RTL reading order. */
+.report-ar-calendar .rdp-nav .rdp-chevron {
+  transform: rotate(180deg);
+}
