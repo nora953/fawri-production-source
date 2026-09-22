@@ -4,6 +4,9 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -239,6 +242,264 @@ function iqMoney(value: number, lang: Lang): string {
   return formatMerchantMoneyMinor(value, 'IQD', 0, lang);
 }
 
+const ONLINE_REPORT_CHART_COLORS = [
+  '#2563eb',
+  '#16a34a',
+  '#f59e0b',
+  '#dc2626',
+  '#7c3aed',
+  '#0891b2',
+  '#ea580c',
+  '#4f46e5',
+];
+
+function arabicDigitText(value: string): string {
+  return value.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
+}
+
+function formatArabicGroupedInteger(value: number): string {
+  return arabicDigitText(new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value));
+}
+
+function formatArabicIqd(value: number): string {
+  const formatted = formatMerchantMoneyMinor(value, 'IQD', 0, 'ar');
+  const [numberPart, ...currencyParts] = formatted.split('\u00a0');
+  const ascii = numberPart.replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+  const sign = ascii.startsWith('-') ? '-' : '';
+  const unsigned = sign ? ascii.slice(1) : ascii;
+  const groupedWhole = unsigned.replace(/\D/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return `${arabicDigitText(`${sign}${groupedWhole}`)}\u00a0${currencyParts.join('\u00a0')}`;
+}
+
+function arabicVisualDateFromIso(value: string): string {
+  const [year, month, day] = value.split('-');
+  return arabicDigitText(`${year}/${month}/${day}`);
+}
+
+function arabicVisualDate(value: Date): string {
+  const year = String(value.getFullYear()).padStart(4, '0');
+  const month = String(value.getMonth() + 1).padStart(2, '0');
+  const day = String(value.getDate()).padStart(2, '0');
+  return arabicDigitText(`${year}/${month}/${day}`);
+}
+
+function arabicOnlinePrintPeriod(
+  range: RangeKey,
+  customRange: AppliedDateRange | null,
+): { start: string; end?: string } | null {
+  if (range === 'all') return null;
+  if (range === 'custom' && customRange) {
+    return {
+      start: arabicVisualDateFromIso(customRange.from),
+      end: arabicVisualDateFromIso(customRange.to),
+    };
+  }
+
+  const to = new Date();
+  to.setHours(0, 0, 0, 0);
+  const from = new Date(to);
+  if (range === '7d') from.setDate(from.getDate() - 6);
+  if (range === '30d') from.setDate(from.getDate() - 29);
+  return range === 'today'
+    ? { start: arabicVisualDate(to) }
+    : { start: arabicVisualDate(from), end: arabicVisualDate(to) };
+}
+
+function arabicOnlinePercent(value: number, total: number): string {
+  if (total <= 0) return '٠٪';
+  return new Intl.NumberFormat('ar-IQ', {
+    style: 'percent',
+    maximumFractionDigits: 1,
+  }).format(value / total);
+}
+
+function ArabicOnlineMetric({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="report-print-online-metric rounded-2xl border bg-card p-4 shadow-sm">
+      <p className="text-center text-xs font-semibold text-muted-foreground">{title}</p>
+      <div className="report-print-metric-value mt-2 text-xl font-extrabold">{children}</div>
+    </div>
+  );
+}
+
+function ArabicOnlineProductChart({ products, copy }: { products: OnlineProduct[]; copy: Copy }) {
+  const visibleProducts = products.slice(0, 8);
+  const totalRevenue = visibleProducts.reduce((sum, product) => sum + Math.max(0, product.revenue_iqd), 0);
+
+  return (
+    <div className="report-print-chart-card mt-3 rounded-xl border bg-background p-3">
+      <p className="report-print-chart-title text-center text-xs font-semibold text-muted-foreground">{copy.salesChart}</p>
+      <div className="report-print-chart-canvas mx-auto mt-1 flex h-48 w-full items-center justify-center">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={visibleProducts}
+              dataKey="revenue_iqd"
+              nameKey="product_name"
+              cx="50%"
+              cy="50%"
+              innerRadius="48%"
+              outerRadius="88%"
+              paddingAngle={2}
+              strokeWidth={1}
+            >
+              {visibleProducts.map((product, index) => (
+                <Cell
+                  key={product.product_id || product.product_name}
+                  fill={ONLINE_REPORT_CHART_COLORS[index % ONLINE_REPORT_CHART_COLORS.length]}
+                />
+              ))}
+            </Pie>
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="report-print-chart-legend mt-2 divide-y">
+        {visibleProducts.map((product, index) => (
+          <div
+            key={product.product_id || product.product_name}
+            className="report-print-chart-legend-row flex items-center justify-between gap-3 py-2"
+          >
+            <div className="min-w-0 flex items-center gap-2">
+              <span
+                className="report-print-chart-dot inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: ONLINE_REPORT_CHART_COLORS[index % ONLINE_REPORT_CHART_COLORS.length] }}
+              />
+              <span className="min-w-0 font-semibold">
+                <span className="me-1.5 whitespace-nowrap" dir="ltr">#{formatArabicGroupedInteger(index + 1)}</span>
+                <span>{product.product_name}</span>
+              </span>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 text-end">
+              <span className="report-print-chart-percent rounded-full border px-2 py-0.5 text-xs font-bold" dir="ltr">
+                {arabicOnlinePercent(product.revenue_iqd, totalRevenue)}
+              </span>
+              <span className="flex flex-col items-end text-xs leading-tight" dir="ltr">
+                <b>{formatArabicGroupedInteger(product.units)} {copy.units}</b>
+                <span className="text-muted-foreground">{formatArabicIqd(product.revenue_iqd)}</span>
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ArabicOnlineReportsContent({
+  report,
+  copy,
+  range,
+  customRange,
+}: {
+  report: OnlineReport;
+  copy: Copy;
+  range: RangeKey;
+  customRange: AppliedDateRange | null;
+}) {
+  const period = arabicOnlinePrintPeriod(range, customRange);
+  const generated = new Date(report.generated_at).toLocaleString('ar-IQ');
+
+  return (
+    <div className="report-print-content space-y-5">
+      <div className="report-print-only border-b pb-3">
+        <h1 className="text-xl font-extrabold">{copy.online}</h1>
+        <p className="report-print-period-row mt-1 text-sm" dir="rtl">
+          <span className="font-semibold">الفترة:</span>
+          {period ? (
+            <>
+              <span dir="ltr">{period.start}</span>
+              {period.end ? <><span>–</span><span dir="ltr">{period.end}</span></> : null}
+            </>
+          ) : <span>{copy.all}</span>}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">المصدر: سجل الطلبات الإلكترونية الموثوق على السيرفر</p>
+      </div>
+
+      <div className="report-print-online-metrics report-print-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <ArabicOnlineMetric title={copy.receivedOrders}><span dir="ltr">{formatArabicGroupedInteger(report.received_order_count)}</span></ArabicOnlineMetric>
+        <ArabicOnlineMetric title={copy.activeOrders}><span dir="ltr">{formatArabicGroupedInteger(report.active_order_count)}</span></ArabicOnlineMetric>
+        <ArabicOnlineMetric title={copy.deliveredOrders}><span dir="ltr">{formatArabicGroupedInteger(report.delivered_order_count)}</span></ArabicOnlineMetric>
+        <ArabicOnlineMetric title={copy.cancelledOrders}><span dir="ltr">{formatArabicGroupedInteger(report.cancelled_order_count)}</span></ArabicOnlineMetric>
+        <ArabicOnlineMetric title={copy.deliveredSales}><span dir="ltr">{formatArabicIqd(report.delivered_sales_iqd)}</span></ArabicOnlineMetric>
+        <ArabicOnlineMetric title={copy.deliveryFees}><span dir="ltr">{formatArabicIqd(report.delivered_delivery_fees_iqd)}</span></ArabicOnlineMetric>
+        <ArabicOnlineMetric title={copy.deliveredOrderValue}><span dir="ltr">{formatArabicIqd(report.delivered_order_value_iqd)}</span></ArabicOnlineMetric>
+        <ArabicOnlineMetric title={copy.averageDelivered}><span dir="ltr">{formatArabicIqd(report.average_delivered_order_iqd)}</span></ArabicOnlineMetric>
+        <ArabicOnlineMetric title={copy.paidElectronic}><span dir="ltr">{formatArabicGroupedInteger(report.paid_electronic_count)}</span></ArabicOnlineMetric>
+      </div>
+
+      <p className="report-print-online-note rounded-xl border bg-muted/30 px-4 py-3 text-xs leading-6 text-muted-foreground">
+        {copy.sourceNote}
+      </p>
+
+      <div className="report-print-online-groups report-print-two-column grid gap-5 xl:grid-cols-2">
+        <section className="report-print-online-group-section rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-lg font-bold">{copy.byChannel}</h2>
+            <span className="text-sm text-muted-foreground">{formatArabicGroupedInteger(report.by_channel.length)}</span>
+          </div>
+          <div className="space-y-2">
+            {report.by_channel.length === 0 ? <p className="text-sm text-muted-foreground">{copy.noData}</p> : report.by_channel.map(channel => (
+              <div key={channel.source_channel} className="report-print-online-group-card rounded-xl border bg-background p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="font-bold" dir="ltr">{channel.source_channel}</p>
+                  <span className="text-xs text-muted-foreground">{formatArabicGroupedInteger(channel.order_count)} {copy.orders}</span>
+                </div>
+                <div className="report-print-online-group-stats mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="rounded-lg border bg-card px-2 py-2">
+                    <p className="text-muted-foreground">{copy.activeOrders}</p>
+                    <p className="mt-1 font-bold" dir="ltr">{formatArabicGroupedInteger(channel.active_order_count)}</p>
+                  </div>
+                  <div className="rounded-lg border bg-card px-2 py-2">
+                    <p className="text-muted-foreground">{copy.delivered}</p>
+                    <p className="mt-1 font-bold" dir="ltr">{formatArabicGroupedInteger(channel.delivered_order_count)}</p>
+                  </div>
+                  <div className="rounded-lg border bg-card px-2 py-2">
+                    <p className="text-muted-foreground">{copy.deliveredSales}</p>
+                    <p className="mt-1 font-bold" dir="ltr">{formatArabicIqd(channel.delivered_sales_iqd)}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="report-print-online-group-section rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h2 className="text-lg font-bold">{copy.byLocation}</h2>
+            <span className="text-sm text-muted-foreground">{formatArabicGroupedInteger(report.by_location.length)}</span>
+          </div>
+          <div className="space-y-2">
+            {report.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{copy.noData}</p> : report.by_location.map(location => (
+              <div key={location.location_id || location.location_name} className="report-print-online-group-card flex items-center justify-between gap-4 rounded-xl border bg-background p-3">
+                <div>
+                  <p className="font-bold">{location.location_name}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{formatArabicGroupedInteger(location.delivered_order_count)} {copy.delivered}</p>
+                </div>
+                <p className="font-bold" dir="ltr">{formatArabicIqd(location.delivered_sales_iqd)}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <section className="report-print-online-products rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+        <h2 className="report-print-chart-section-title text-center text-lg font-bold">{copy.topProducts}</h2>
+        {report.top_products.length === 0
+          ? <p className="mt-3 text-center text-sm text-muted-foreground">{copy.noData}</p>
+          : <ArabicOnlineProductChart products={report.top_products} copy={copy} />}
+        <p className="report-print-online-profit-note mt-3 rounded-xl border bg-muted/30 px-4 py-3 text-xs leading-6 text-muted-foreground">
+          {copy.profitabilityUnavailable}
+        </p>
+      </section>
+
+      <p className="report-print-footer-note text-center text-xs text-muted-foreground">
+        المصدر: سجل الطلبات الإلكترونية الموثوق على السيرفر · {copy.generated}: <span dir="ltr">{generated}</span>
+      </p>
+    </div>
+  );
+}
+
 function useOnlineReport(range: RangeKey, customRange: AppliedDateRange | null) {
   const [report, setReport] = useState<OnlineReport | null>(null);
   const [loading, setLoading] = useState(true);
@@ -365,7 +626,14 @@ function OnlineReports() {
         </div>
       ) : null}
       {!loading && !failed && report ? (
-        <>
+        lang === 'ar' ? (
+          <ArabicOnlineReportsContent
+            report={report}
+            copy={copy}
+            range={range}
+            customRange={customRange}
+          />
+        ) : <>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Metric title={copy.receivedOrders}><span dir="ltr">{report.received_order_count}</span></Metric>
             <Metric title={copy.activeOrders}><span dir="ltr">{report.active_order_count}</span></Metric>
@@ -452,7 +720,7 @@ function OnlineReports() {
           </section>
 
           <p className="text-center text-xs text-muted-foreground">
-            {copy.generated}: <span dir="ltr">{new Date(report.generated_at).toLocaleString(lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en')}</span>
+            {copy.generated}: <span dir="ltr">{new Date(report.generated_at).toLocaleString(lang === 'ku' ? 'ku' : 'en')}</span>
           </p>
         </>
       ) : null}

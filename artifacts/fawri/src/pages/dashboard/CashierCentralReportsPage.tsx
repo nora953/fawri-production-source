@@ -231,7 +231,7 @@ function MoneyStack({ values, lang }: { values: MoneyValue[]; lang: Lang }) {
 }
 
 function Metric({ title, children }: { title: string; children: ReactNode }) {
-  return <div className="rounded-2xl border bg-card p-4 shadow-sm"><p className="text-xs font-semibold text-muted-foreground">{title}</p><div className="report-print-metric-value mt-2 text-xl font-extrabold">{children}</div></div>;
+  return <div className="report-summary-metric rounded-2xl border bg-card p-4 shadow-sm"><p className="text-xs font-semibold text-muted-foreground">{title}</p><div className="report-print-metric-value mt-2 text-xl font-extrabold">{children}</div></div>;
 }
 
 function GroupCard({ name, secondary, report, lang, labels }: { name: string; secondary?: string; report: Report; lang: Lang; labels: Copy }) {
@@ -785,7 +785,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           })() : <p className="mt-1 text-sm"><span className="font-semibold">{labels.period}:</span> <span dir="ltr">{exportPeriodText(range, customRange, labels)}</span></p>}
           <p className="mt-1 text-xs text-muted-foreground">{labels.source}</p>
         </div>
-        <div className="report-print-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-6"><Metric title={labels.netSales}><MoneyStack values={totalNet} lang={lang} /></Metric><Metric title={labels.profit}><MoneyStack values={totalProfit} lang={lang} /></Metric><Metric title={labels.operations}><span dir="ltr">{result.report.sale_count}</span></Metric><Metric title={labels.units}><span dir="ltr">{netUnits}</span></Metric><Metric title={labels.refunds}><MoneyStack values={totalRefunds} lang={lang} /></Metric><Metric title={labels.average}><MoneyStack values={moneyValues(result.report, 'average_ticket_minor')} lang={lang} /></Metric></div>
+        <div className="report-summary-metrics report-print-metrics grid gap-3"><Metric title={labels.netSales}><MoneyStack values={totalNet} lang={lang} /></Metric><Metric title={labels.profit}><MoneyStack values={totalProfit} lang={lang} /></Metric><Metric title={labels.operations}><span dir="ltr">{result.report.sale_count}</span></Metric><Metric title={labels.units}><span dir="ltr">{netUnits}</span></Metric><Metric title={labels.refunds}><MoneyStack values={totalRefunds} lang={lang} /></Metric><Metric title={labels.average}><MoneyStack values={moneyValues(result.report, 'average_ticket_minor')} lang={lang} /></Metric></div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground"><span className="rounded-full border bg-card px-3 py-1.5">{labels.voided}: <b dir="ltr">{voidedSales}</b></span><span className="rounded-full border bg-card px-3 py-1.5">{labels.returns}: <b dir="ltr">{returnCount}</b></span></div>
 
         {currencies.map(currency => {
