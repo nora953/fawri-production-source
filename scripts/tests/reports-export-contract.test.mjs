@@ -99,10 +99,15 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /unattributed legacy location/);
   assert.match(cashier, /unattributed legacy cashier/);
   assert.match(cashier, /unattributed legacy station/);
+  assert.match(cashier, /report-print-group-summary-block/);
   assert.match(cashier, /report-print-group-card/);
   assert.match(cashier, /report-print-group-stats/);
+  assert.match(cashier, /report-print-group-stat-card/);
+  assert.match(cashier, /report-print-group-stat-value/);
   assert.match(cashier, /report-print-activity-card/);
   assert.match(cashier, /report-print-activity-stats/);
+  assert.match(cashier, /report-print-activity-stat-card/);
+  assert.match(cashier, /report-print-activity-stat-value/);
   assert.match(cashier, /report-print-footer-note/);
   assert.match(cashier, /xl:overflow-x-visible/);
   assert.match(cashier, /xl:min-w-0/);
@@ -136,6 +141,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /print-color-adjust: exact/);
   assert.match(printCss, /font-size: 10\.5pt/);
   assert.match(printCss, /font-size: 6\.7pt/);
+  assert.match(printCss, /report-print-group-summary-block/);
+  assert.match(printCss, /report-print-group-stat-value/);
+  assert.match(printCss, /report-print-activity-stat-value/);
   assert.match(printCss, /report-print-group-card/);
   assert.match(printCss, /report-print-activity-card/);
   assert.match(printCss, /report-print-footer-note/);
