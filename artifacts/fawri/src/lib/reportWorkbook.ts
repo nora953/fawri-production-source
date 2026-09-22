@@ -217,7 +217,7 @@ function worksheetXml(sheet: WorkbookSheet): string {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
   <dimension ref="A1:${cellRef(rowCount - 1, lastColumn)}"/>
-  <sheetViews><sheetView workbookViewId="0" showGridLines="1"/></sheetViews>
+  <sheetViews><sheetView workbookViewId="0" showGridLines="1"${sheet.rtlText ? ' rightToLeft="1"' : ''}/></sheetViews>
   <sheetFormatPr defaultRowHeight="15"/>
   ${cols ? `<cols>${cols}</cols>` : ''}
   <sheetData>${rowXml.join('')}</sheetData>
