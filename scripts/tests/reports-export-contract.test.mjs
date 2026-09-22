@@ -55,6 +55,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.doesNotMatch(printCss, /repeat\(auto-fit/);
   assert.match(toolbar, /function ArabicRangeDetail/);
+  assert.match(toolbar, /dir=\{lang === 'ar' \? 'ltr' : undefined\} className="report-date-actions flex shrink-0 items-center justify-end/);
   assert.match(toolbar, /<bdi dir="ltr">/);
   assert.match(toolbar, /index === 0 \? 'من' : 'إلى'/);
   assert.match(cashier, /report-print-chart-canvas/);

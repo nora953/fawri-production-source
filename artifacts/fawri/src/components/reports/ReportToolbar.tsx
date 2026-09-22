@@ -391,7 +391,7 @@ export function ReportToolbar({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center justify-end gap-2 border-t bg-background p-3 sm:px-5">
+          <div dir={lang === 'ar' ? 'ltr' : undefined} className="report-date-actions flex shrink-0 items-center justify-end gap-2 border-t bg-background p-3 sm:px-5">
             <button
               type="button"
               onClick={() => setOpen(false)}
