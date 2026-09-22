@@ -58,6 +58,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /report-print-chart-panel/);
   assert.match(cashier, /report-print-chart-legend/);
   assert.match(cashier, /report-print-chart-percent/);
+  assert.match(cashier, /report-print-donut-label/);
+  assert.match(cashier, /fill="rgba\(17,24,39,0\.78\)"/);
   assert.match(cashier, /downloadWorkbook/);
   assert.match(cashier, /labels\.currency/);
   assert.match(cashier, /labels\.period/);
@@ -126,6 +128,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /report-print-chart-panel/);
   assert.match(printCss, /report-print-chart-card/);
   assert.match(printCss, /report-print-chart-legend-row/);
+  assert.match(printCss, /report-print-donut-label/);
   assert.match(printCss, /page-break-inside: avoid/);
   assert.match(printCss, /report-print-metric-value/);
   assert.match(printCss, /report-print-period-row/);
