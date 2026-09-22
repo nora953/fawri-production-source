@@ -1,3 +1,9 @@
+.report-combined-chart {
+  break-inside: avoid;
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+
 /* Six summary cards use complete rows: one, two or three columns. */
 .report-summary-metrics {
   grid-template-columns: minmax(0, 1fr);
