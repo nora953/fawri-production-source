@@ -82,7 +82,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /metric: 'المؤشر'/);
   assert.match(cashier, /value: 'القيمة'/);
   assert.match(cashier, /\[labels\.currency, labels\.metric, labels\.value, labels\.profitStatus\]/);
-  assert.match(cashier, /columnWidths: \[14, 28, 20, 18\]/);
+  assert.match(cashier, /columnWidths: \[16, 34, 22, 22\]/);
   assert.match(cashier, /cashierExportSheetNames/);
   assert.match(cashier, /summary: 'الملخص'/);
   assert.match(cashier, /topSelling: 'الأكثر مبيعًا'/);
@@ -92,7 +92,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /startRow: 1, startColumn: 1, endRow: 1, endColumn: 3/);
   assert.match(cashier, /startRow: 3, startColumn: 0, endRow: 3, endColumn: 3/);
   assert.match(cashier, /rowHeights: \[24, 22, 22, 22, 10, 24\]/);
-  assert.match(cashier, /columnWidths: \[24, 18, 12, 16, 18, 14, 10, 42, 44\]/);
+  assert.match(cashier, /columnWidths: \[26, 20, 14, 18, 20, 16, 12, 44, 46\]/);
   assert.match(cashier, /ltrDataColumns: \[0, 7, 8\]/);
   assert.match(cashier, /\{ row: 1, column: 1 \}/);
   assert.match(cashier, /\{ row: 2, column: 1 \}/);
@@ -110,7 +110,12 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /report-print-operation-head/);
   assert.match(cashier, /report-print-operation-cell/);
   assert.match(cashier, /report-print-operation-date/);
+  assert.match(cashier, /const datePart = formatDayFirst\(instant\)/);
   assert.match(cashier, /report-print-operation-tech/);
+  assert.match(cashier, /partialProfitShort/);
+  assert.match(cashier, /historicalActivityNote/);
+  assert.match(cashier, /hasHistoricalActivityGap/);
+  assert.match(cashier, /report-print-activity-coverage/);
   assert.match(cashier, /shortShiftReference/);
   assert.match(cashier, /localizedLegacyName/);
   assert.match(cashier, /unattributed legacy location/);
@@ -169,6 +174,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /report-print-chart-panel/);
   assert.match(printCss, /report-print-chart-card/);
   assert.match(printCss, /report-print-currency-section/);
+  assert.match(printCss, /\.report-print-currency-section\s*\{[^}]*break-inside: auto !important;[^}]*page-break-inside: auto !important;/);
+  assert.match(printCss, /report-print-profit-status/);
+  assert.match(printCss, /report-print-activity-coverage/);
   assert.match(printCss, /box-sizing: border-box/);
   assert.match(printCss, /report-print-chart-legend-row/);
   assert.doesNotMatch(printCss, /report-print-donut-label/);
@@ -210,6 +218,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(workbook, /ltrCells/);
   assert.match(workbook, /ltrDataColumns/);
   assert.match(workbook, /readingOrder="1"/);
+  assert.match(workbook, /rightToLeft="1"/);
   assert.match(workbook, /<borders count="2">/);
   assert.match(workbook, /style="thin"/);
   assert.match(workbook, /numFmtId="3"/);
