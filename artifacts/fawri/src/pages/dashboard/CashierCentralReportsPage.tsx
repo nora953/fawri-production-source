@@ -105,7 +105,7 @@ type Copy = {
   noGroupSales: string; sales: string; saleOps: string; returnOps: string; voidOps: string; totalOps: string; location: string; currency: string; period: string; profitStatus: string; metric: string; value: string;
   generated: string; source: string; operationDetails: string; operationDetailsHint: string; detailsLimited: string; employeeFilter: string; locationFilter: string; stationFilter: string;
   typeFilter: string; allEmployees: string; allLocations: string; allStations: string; allTypes: string; employee: string; station: string; shift: string;
-  operationType: string; saleReference: string; dateTime: string; amount: string; noDetails: string; formerEmployee: string; formerStation: string; formerLocation: string;
+  operationType: string; saleReference: string; dateTime: string; amount: string; noDetails: string; operationCountUnit: string; formerEmployee: string; formerStation: string; formerLocation: string;
 };
 
 const COPY: Record<Lang, Copy> = {
@@ -117,7 +117,7 @@ const COPY: Record<Lang, Copy> = {
     salesByStaff: 'الأثر المالي حسب موظف البيع', salesByStation: 'الأثر المالي حسب محطة البيع', salesByLocation: 'الأثر المالي حسب الموقع', activityByStaff: 'العمليات المنفذة حسب الموظف', activityByStation: 'العمليات المنفذة حسب المحطة', activityByLocation: 'العمليات المنفذة حسب الموقع', noGroupSales: 'لا يوجد أثر مالي ضمن هذه الفترة.',
     sales: 'عمليات بيع', saleOps: 'بيع', returnOps: 'إرجاع', voidOps: 'إلغاء', totalOps: 'الإجمالي', location: 'الموقع', currency: 'العملة', period: 'الفترة', profitStatus: 'حالة الربح', metric: 'المؤشر', value: 'القيمة', generated: 'آخر تحديث', source: 'المصدر: سجل الكاشير المركزي الموثوق على السيرفر',
     operationDetails: 'تفاصيل العمليات', operationDetailsHint: 'يعرض من نفّذ كل بيع أو إرجاع أو إلغاء، مع الوقت والموقع والمحطة والمناوبة.', detailsLimited: 'يعرض جدول التفاصيل أحدث {limit} عملية كحد أقصى؛ الملخصات أعلاه تشمل كامل الفترة.', employeeFilter: 'الموظف', locationFilter: 'الموقع', stationFilter: 'المحطة', typeFilter: 'نوع العملية', allEmployees: 'كل الموظفين', allLocations: 'كل المواقع', allStations: 'كل المحطات', allTypes: 'كل العمليات',
-    employee: 'الموظف', station: 'المحطة', shift: 'المناوبة', operationType: 'العملية', saleReference: 'مرجع البيع', dateTime: 'التاريخ والوقت', amount: 'المبلغ', noDetails: 'لا توجد عمليات تطابق عوامل التصفية.', formerEmployee: 'موظف سابق', formerStation: 'محطة سابقة', formerLocation: 'موقع غير منسوب',
+    employee: 'الموظف', station: 'المحطة', shift: 'المناوبة', operationType: 'العملية', saleReference: 'مرجع البيع', dateTime: 'التاريخ والوقت', amount: 'المبلغ', noDetails: 'لا توجد عمليات تطابق عوامل التصفية.', operationCountUnit: 'عملية', formerEmployee: 'موظف سابق', formerStation: 'محطة سابقة', formerLocation: 'موقع غير منسوب',
   },
   ku: {
     title: 'ڕاپۆرتی ناوەندی کاشێر', subtitle: 'فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوە بەپێی شوێن و کارمەند و وێستگە لە تۆماری ناوەندی متمانەپێکراو.', back: 'بەڕێوەبردنی کاشێر',
@@ -127,7 +127,7 @@ const COPY: Record<Lang, Copy> = {
     salesByStaff: 'کاریگەری دارایی بەپێی کارمەندی فرۆشیار', salesByStation: 'کاریگەری دارایی بەپێی وێستگەی فرۆشتن', salesByLocation: 'کاریگەری دارایی بەپێی شوێن', activityByStaff: 'کردارە جێبەجێکراوەکان بەپێی کارمەند', activityByStation: 'کردارە جێبەجێکراوەکان بەپێی وێستگە', activityByLocation: 'کردارە جێبەجێکراوەکان بەپێی شوێن', noGroupSales: 'لەو ماوەیەدا کاریگەری دارایی نییە.',
     sales: 'فرۆشتن', saleOps: 'فرۆشتن', returnOps: 'گەڕاندنەوە', voidOps: 'هەڵوەشاندنەوە', totalOps: 'کۆی گشتی', location: 'شوێن', currency: 'دراو', period: 'ماوە', profitStatus: 'دۆخی قازانج', metric: 'پێوەر', value: 'بەها', generated: 'دوایین نوێکردنەوە', source: 'سەرچاوە: تۆماری ناوەندی متمانەپێکراوی کاشێر لە سێرڤەر',
     operationDetails: 'وردەکاری کردارەکان', operationDetailsHint: 'کارمەند و کات و شوێن و وێستگە و مناوبەی هەر فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوە پیشان دەدات.', detailsLimited: 'خشتەی وردەکاری تەنها نوێترین {limit} کردار پیشان دەدات؛ کورتەکانی سەرەوە هەموو ماوەکە دەگرنەوە.', employeeFilter: 'کارمەند', locationFilter: 'شوێن', stationFilter: 'وێستگە', typeFilter: 'جۆری کردار', allEmployees: 'هەموو کارمەندان', allLocations: 'هەموو شوێنەکان', allStations: 'هەموو وێستگەکان', allTypes: 'هەموو کردارەکان',
-    employee: 'کارمەند', station: 'وێستگە', shift: 'مناوبە', operationType: 'کردار', saleReference: 'ژمارەی فرۆشتن', dateTime: 'بەروار و کات', amount: 'بڕ', noDetails: 'هیچ کردارێک لەگەڵ پاڵێوەرەکان ناگونجێت.', formerEmployee: 'کارمەندی پێشوو', formerStation: 'وێستگەی پێشوو', formerLocation: 'شوێنی دیارینەکراو',
+    employee: 'کارمەند', station: 'وێستگە', shift: 'مناوبە', operationType: 'کردار', saleReference: 'ژمارەی فرۆشتن', dateTime: 'بەروار و کات', amount: 'بڕ', noDetails: 'هیچ کردارێک لەگەڵ پاڵێوەرەکان ناگونجێت.', operationCountUnit: 'کردار', formerEmployee: 'کارمەندی پێشوو', formerStation: 'وێستگەی پێشوو', formerLocation: 'شوێنی دیارینەکراو',
   },
   en: {
     title: 'Central Cashier Report', subtitle: 'Sales, returns and voids by location, employee and station from the trusted central record.', back: 'Cashier management',
@@ -205,9 +205,29 @@ function profitValues(report: Report): MoneyValue[] {
   return report.by_currency.map(currency => ({ code: currency.currency_code, digits: currency.currency_fraction_digits, value: currency.profit_status === 'unavailable' ? null : currency.gross_profit_minor ?? null }));
 }
 
+function formatReportMoneyMinor(
+  amountMinor: number,
+  currencyCode: string,
+  fractionDigits: number,
+  lang: Lang,
+): string {
+  const formatted = formatMerchantMoneyMinor(amountMinor, currencyCode, fractionDigits, lang);
+  if (String(currencyCode || '').trim().toUpperCase() !== 'IQD' || lang === 'en') return formatted;
+
+  const [numberPart, ...currencyParts] = formatted.split('\u00a0');
+  const ascii = numberPart.replace(/[٠-٩]/g, digit => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)));
+  const sign = ascii.startsWith('-') ? '-' : '';
+  const unsigned = sign ? ascii.slice(1) : ascii;
+  const [whole, fraction] = unsigned.split('.');
+  const groupedWhole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const grouped = `${sign}${groupedWhole}${fraction ? `.${fraction}` : ''}`
+    .replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
+  return `${grouped}\u00a0${currencyParts.join('\u00a0')}`;
+}
+
 function MoneyStack({ values, lang }: { values: MoneyValue[]; lang: Lang }) {
   if (values.length === 0) return <span>—</span>;
-  return <span className="flex flex-col gap-0.5" dir="ltr">{values.map(value => <span key={`${value.code}:${value.digits}`}>{value.value === null ? `— ${value.code}` : formatMerchantMoneyMinor(value.value, value.code, value.digits, lang)}</span>)}</span>;
+  return <span className="flex flex-col gap-0.5" dir="ltr">{values.map(value => <span key={`${value.code}:${value.digits}`}>{value.value === null ? `— ${value.code}` : formatReportMoneyMinor(value.value, value.code, value.digits, lang)}</span>)}</span>;
 }
 
 function Metric({ title, children }: { title: string; children: ReactNode }) {
@@ -242,7 +262,7 @@ function shortShiftReference(value: string): string {
 
 function operationMoney(item: OperationActivity, lang: Lang): string {
   if (item.amount_minor === undefined || !item.currency_code || item.currency_fraction_digits === undefined) return '—';
-  return formatMerchantMoneyMinor(item.amount_minor, item.currency_code, item.currency_fraction_digits, lang);
+  return formatReportMoneyMinor(item.amount_minor, item.currency_code, item.currency_fraction_digits, lang);
 }
 
 function localizedLegacyName(
@@ -412,43 +432,10 @@ function DonutProductChart({
               nameKey="name"
               cx="50%"
               cy="50%"
-              innerRadius="42%"
-              outerRadius="76%"
+              innerRadius="48%"
+              outerRadius="88%"
               paddingAngle={2}
               strokeWidth={1}
-              labelLine={false}
-              label={(props) => {
-                const cx = Number(props.cx ?? 0);
-                const cy = Number(props.cy ?? 0);
-                const innerRadius = Number(props.innerRadius ?? 0);
-                const outerRadius = Number(props.outerRadius ?? 0);
-                const midAngle = Number(props.midAngle ?? 0);
-                const percent = Number(props.percent ?? 0);
-                if (percent <= 0) return null;
-
-                const radius = innerRadius + (outerRadius - innerRadius) * 0.56;
-                const radians = -midAngle * Math.PI / 180;
-                const x = cx + radius * Math.cos(radians);
-                const y = cy + radius * Math.sin(radians);
-                const label = chartPercentText(percent, 1, lang);
-
-                return (
-                  <g className="report-print-donut-label">
-                    <circle cx={x} cy={y} r={11} fill="rgba(17,24,39,0.78)" />
-                    <text
-                      x={x}
-                      y={y}
-                      fill="#ffffff"
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                      fontSize={8}
-                      fontWeight={800}
-                    >
-                      {label}
-                    </text>
-                  </g>
-                );
-              }}
             >
               {rows.map((entry, index) => (
                 <Cell key={entry.name} fill={REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length]} />
@@ -825,7 +812,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                       renderMetrics={(product) => (
                         <span className="flex flex-col items-end leading-tight" dir="ltr">
                           <b>{product.net_units}</b>
-                          <span className="text-muted-foreground">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</span>
+                          <span className="text-muted-foreground">{formatReportMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</span>
                         </span>
                       )}
                     />
@@ -842,8 +829,8 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                       lang={lang}
                       renderMetrics={(product) => (
                         <span className="flex flex-col items-end leading-tight" dir="ltr">
-                          <span className="text-muted-foreground">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</span>
-                          <b>{formatMerchantMoneyMinor(product.gross_profit_minor ?? 0, currency.currency_code, currency.currency_fraction_digits, lang)}</b>
+                          <span className="text-muted-foreground">{formatReportMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</span>
+                          <b>{formatReportMoneyMinor(product.gross_profit_minor ?? 0, currency.currency_code, currency.currency_fraction_digits, lang)}</b>
                         </span>
                       )}
                     />
@@ -869,7 +856,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         </div>
 
         <section className="report-print-operation-page report-print-operation-details rounded-2xl border bg-card p-4 shadow-sm sm:p-5" data-testid="cashier-operation-details">
-          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">{labels.operationDetails}</h2><p className="mt-1 text-sm text-muted-foreground">{labels.operationDetailsHint}</p></div><span className="rounded-full border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground">{filteredOperations.length}</span></div>
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">{labels.operationDetails}</h2><p className="mt-1 text-sm text-muted-foreground">{labels.operationDetailsHint}</p></div><span className="rounded-full border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground"><span dir="ltr">{filteredOperations.length}</span> {labels.operationCountUnit}</span></div>
           <div className="report-no-print mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <label className="text-sm font-semibold">{labels.employeeFilter}<select value={staffFilter} onChange={event => setStaffFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allEmployees}</option>{operationStaff.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
             <label className="text-sm font-semibold">{labels.locationFilter}<select value={locationFilter} onChange={event => setLocationFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allLocations}</option>{operationLocations.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
@@ -912,7 +899,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                   return <tr key={item.operation_id}>
                     <td className="report-print-operation-cell report-print-operation-date px-2 py-2.5 text-center align-middle"><span className="block whitespace-nowrap">{datePart}</span><span className="block whitespace-nowrap text-[11px] text-muted-foreground">{timePart}</span></td>
                     <td className="report-print-operation-cell break-words px-2 py-2.5 text-center align-middle font-semibold" title={employeeName}>{employeeName}</td>
-                    <td className="report-print-operation-cell px-2 py-2.5 text-center align-middle"><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${item.operation_kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : item.operation_kind === 'return' ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>{operationLabel(item.operation_kind, labels)}</span></td>
+                    <td className="report-print-operation-cell px-2 py-2.5 text-center align-middle"><span className={`report-print-operation-kind rounded-full px-2 py-1 text-[11px] font-bold ${item.operation_kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : item.operation_kind === 'return' ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>{operationLabel(item.operation_kind, labels)}</span></td>
                     <td className="report-print-operation-cell report-print-operation-tech whitespace-nowrap px-2 py-2.5 text-center align-middle font-mono text-[11px]" dir="ltr" title={item.sale_id}>{shortReference(item.sale_id, '#')}</td>
                     <td className="report-print-operation-cell break-words px-2 py-2.5 text-center align-middle" title={locationName}>{locationName}</td>
                     <td className="report-print-operation-cell break-words px-2 py-2.5 text-center align-middle" title={stationName}>{stationName}</td>
