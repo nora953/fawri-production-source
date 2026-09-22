@@ -100,6 +100,22 @@ function displayDateDayFirst(value: string): string {
   return `${day}/${month}/${year}`;
 }
 
+// Isolate each numeric part so Arabic reads day, month, year from the right.
+function ArabicRangeDetail({ detail }: { detail: string }) {
+  const dates = detail.split(' – ');
+  return <span dir="rtl" className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1">
+    {dates.map((date, index) => <span key={index} className="inline-flex items-center gap-1 whitespace-nowrap">
+      {dates.length > 1 ? <span>{index === 0 ? 'من' : 'إلى'}</span> : null}
+      <span dir="rtl" className="inline-flex items-center gap-0.5">
+        {date.split('/').map((part, partIndex) => <span key={partIndex} className="inline-flex items-center gap-0.5">
+          {partIndex > 0 ? <span>/</span> : null}
+          <bdi dir="ltr">{part.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])}</bdi>
+        </span>)}
+      </span>
+    </span>)}
+  </span>;
+}
+
 function startOfLocalDay(daysBack: number): Date {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
@@ -292,8 +308,8 @@ export function ReportToolbar({
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-bold text-foreground">{activeSummary.title}</span>
               {activeSummary.detail ? (
-                <span dir="ltr" className="mt-0.5 block truncate text-xs tabular-nums text-muted-foreground">
-                  {activeSummary.detail}
+                <span dir={lang === 'ar' ? 'rtl' : 'ltr'} className="mt-0.5 block text-xs tabular-nums text-muted-foreground">
+                  {lang === 'ar' ? <ArabicRangeDetail detail={activeSummary.detail} /> : activeSummary.detail}
                 </span>
               ) : null}
             </span>
@@ -352,10 +368,12 @@ export function ReportToolbar({
                   />
                 </div>
                 {draftKind === 'custom' && draftRange?.from ? (
-                  <p dir="ltr" className="mt-3 text-center text-xs tabular-nums text-muted-foreground">
-                    {displayDateDayFirst(dateToValue(draftRange.from))}
-                    {' – '}
-                    {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
+                  <p dir={lang === 'ar' ? 'rtl' : 'ltr'} className="mt-3 text-center text-xs tabular-nums text-muted-foreground">
+                    {lang === 'ar' ? <ArabicRangeDetail detail={`${displayDateDayFirst(dateToValue(draftRange.from))} – ${draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}`} /> : <>
+                      {displayDateDayFirst(dateToValue(draftRange.from))}
+                      {' – '}
+                      {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
+                    </>}
                   </p>
                 ) : null}
                 {error ? <p className="mt-2 text-xs font-semibold text-destructive">{error}</p> : null}
