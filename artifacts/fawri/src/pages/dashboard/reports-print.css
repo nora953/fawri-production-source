@@ -49,6 +49,36 @@
   align-items: center;
 }
 
+/* Center financial labels and currency stacks on screen as well as in print. */
+.report-print-group-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  text-align: center;
+}
+
+.report-print-group-stat-card > p {
+  width: 100%;
+  text-align: center;
+}
+
+.report-print-group-stat-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  text-align: center;
+}
+
+.report-print-group-stat-value > * {
+  align-items: center;
+  text-align: center;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
 .report-print-only {
   display: none;
 }

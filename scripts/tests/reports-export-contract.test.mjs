@@ -188,6 +188,10 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /tbody tr:nth-child\(even\)/);
   assert.match(printCss, /report-print-group-summary-block/);
   assert.match(printCss, /report-print-group-stat-value/);
+  const screenCss = printCss.split('@media print')[0];
+  assert.match(screenCss, /\.report-print-group-stat-card\s*\{[^}]*align-items: center;[^}]*text-align: center;/);
+  assert.match(screenCss, /\.report-print-group-stat-value\s*\{[^}]*justify-content: center;/);
+  assert.match(screenCss, /\.report-print-group-stat-value > \*\s*\{[^}]*align-items: center;/);
   assert.match(printCss, /report-print-activity-stat-value/);
   assert.match(printCss, /report-print-group-card/);
   assert.match(printCss, /report-print-activity-card/);
