@@ -100,7 +100,7 @@ type MoneyValue = { code: string; digits: number; value: number | null };
 type Copy = {
   title: string; subtitle: string; back: string; today: string; seven: string; thirty: string; all: string;
   loading: string; failed: string; empty: string; netSales: string; profit: string; operations: string; units: string;
-  refunds: string; average: string; voided: string; returns: string; partialProfit: string; unavailableProfit: string;
+  refunds: string; average: string; voided: string; returns: string; partialProfit: string; partialProfitShort: string; unavailableProfit: string; historicalActivityNote: string;
   topProducts: string; topProfitable: string; noTop: string; noProfitable: string; revenueChart: string; unitsChart: string; profitChart: string; salesByStaff: string; salesByStation: string; salesByLocation: string; activityByStaff: string; activityByStation: string; activityByLocation: string;
   noGroupSales: string; sales: string; saleOps: string; returnOps: string; voidOps: string; totalOps: string; location: string; currency: string; period: string; profitStatus: string; metric: string; value: string;
   generated: string; source: string; operationDetails: string; operationDetailsHint: string; detailsLimited: string; employeeFilter: string; locationFilter: string; stationFilter: string;
@@ -113,7 +113,7 @@ const COPY: Record<Lang, Copy> = {
     title: 'تقرير الكاشير المركزي', subtitle: 'المبيعات والإرجاعات والإلغاءات حسب المواقع والموظفين والمحطات من السجل المركزي الموثوق.', back: 'إدارة الكاشيرات',
     today: 'اليوم', seven: '7 أيام', thirty: '30 يوم', all: 'الكل', loading: 'جارٍ إعداد التقرير المركزي...', failed: 'تعذر تحميل تقرير الكاشير المركزي.', empty: 'لا توجد عمليات كاشير ضمن هذه الفترة.',
     netSales: 'صافي المبيعات', profit: 'الربح الإجمالي', operations: 'عمليات البيع', units: 'صافي القطع المباعة', refunds: 'قيمة الإرجاعات والإلغاءات', average: 'متوسط قيمة عملية البيع', voided: 'عمليات الإلغاء', returns: 'عمليات الإرجاع',
-    partialProfit: 'الربح الظاهر جزئي لأن تكلفة بعض القطع غير مسجلة.', unavailableProfit: 'بيانات الربح غير متاحة لهذا النطاق. لا يفترض فوري أن التكلفة صفر.', topProducts: 'الأكثر مبيعًا', topProfitable: 'الأكثر ربحية', noTop: 'لا توجد منتجات بصافي بيع موجب في هذه الفترة.', noProfitable: 'لا توجد منتجات يمكن ترتيب ربحيتها بدقة ضمن هذه الفترة؛ لا يتم افتراض تكلفة مفقودة.', revenueChart: 'رسم المبيعات حسب المنتج', unitsChart: 'القطع المباعة حسب المنتج', profitChart: 'رسم الربح حسب المنتج',
+    partialProfit: 'الربح الظاهر جزئي لأن تكلفة بعض القطع غير مسجلة.', partialProfitShort: 'ربح جزئي', unavailableProfit: 'بيانات الربح غير متاحة لهذا النطاق. لا يفترض فوري أن التكلفة صفر.', historicalActivityNote: 'تفاصيل التنفيذ متاحة لـ {available} من أصل {total} عملية. بعض العمليات التاريخية سبقت سجل ربط الموظف والموقع والمحطة، لذلك تبقى ضمن الأرقام المالية دون اختلاق بيانات إسناد غير موجودة.', topProducts: 'الأكثر مبيعًا', topProfitable: 'الأكثر ربحية', noTop: 'لا توجد منتجات بصافي بيع موجب في هذه الفترة.', noProfitable: 'لا توجد منتجات يمكن ترتيب ربحيتها بدقة ضمن هذه الفترة؛ لا يتم افتراض تكلفة مفقودة.', revenueChart: 'رسم المبيعات حسب المنتج', unitsChart: 'القطع المباعة حسب المنتج', profitChart: 'رسم الربح حسب المنتج',
     salesByStaff: 'الأثر المالي حسب موظف البيع', salesByStation: 'الأثر المالي حسب محطة البيع', salesByLocation: 'الأثر المالي حسب الموقع', activityByStaff: 'العمليات المنفذة حسب الموظف', activityByStation: 'العمليات المنفذة حسب المحطة', activityByLocation: 'العمليات المنفذة حسب الموقع', noGroupSales: 'لا يوجد أثر مالي ضمن هذه الفترة.',
     sales: 'عمليات بيع', saleOps: 'بيع', returnOps: 'إرجاع', voidOps: 'إلغاء', totalOps: 'الإجمالي', location: 'الموقع', currency: 'العملة', period: 'الفترة', profitStatus: 'حالة الربح', metric: 'المؤشر', value: 'القيمة', generated: 'آخر تحديث', source: 'المصدر: سجل الكاشير المركزي الموثوق على السيرفر',
     operationDetails: 'تفاصيل العمليات', operationDetailsHint: 'يعرض من نفّذ كل بيع أو إرجاع أو إلغاء، مع الوقت والموقع والمحطة والمناوبة.', detailsLimited: 'يعرض جدول التفاصيل أحدث {limit} عملية كحد أقصى؛ الملخصات أعلاه تشمل كامل الفترة.', employeeFilter: 'الموظف', locationFilter: 'الموقع', stationFilter: 'المحطة', typeFilter: 'نوع العملية', allEmployees: 'كل الموظفين', allLocations: 'كل المواقع', allStations: 'كل المحطات', allTypes: 'كل العمليات',
@@ -123,7 +123,7 @@ const COPY: Record<Lang, Copy> = {
     title: 'ڕاپۆرتی ناوەندی کاشێر', subtitle: 'فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوە بەپێی شوێن و کارمەند و وێستگە لە تۆماری ناوەندی متمانەپێکراو.', back: 'بەڕێوەبردنی کاشێر',
     today: 'ئەمڕۆ', seven: '7 ڕۆژ', thirty: '30 ڕۆژ', all: 'هەموو', loading: 'ڕاپۆرتی ناوەندی ئامادە دەکرێت...', failed: 'بارکردنی ڕاپۆرتی ناوەندی کاشێر سەرکەوتوو نەبوو.', empty: 'لەو ماوەیەدا هیچ کرداری کاشێر نییە.',
     netSales: 'فرۆشتنی خاوێن', profit: 'قازانجی گشتی', operations: 'مامەڵەکانی فرۆشتن', units: 'دانەی فرۆشراوی خاوێن', refunds: 'بەهای گەڕاندنەوە و هەڵوەشاندنەوە', average: 'تێکڕای بەهای مامەڵەی فرۆشتن', voided: 'کرداری هەڵوەشاندنەوە', returns: 'کرداری گەڕاندنەوە',
-    partialProfit: 'قازانجی پیشاندراو بەشێکییە چونکە تێچووی هەندێک دانە تۆمار نەکراوە.', unavailableProfit: 'زانیاری قازانج بۆ ئەم مەودایە بەردەست نییە. فەوری تێچوو بە سفر دانانێت.', topProducts: 'زۆرترین فرۆشراو', topProfitable: 'زۆرترین قازانج', noTop: 'لەو ماوەیەدا هیچ بەرهەمێک بە فرۆشتنی خاوێنی پۆزەتیڤ نییە.', noProfitable: 'هیچ بەرهەمێک نییە کە بتوانرێت قازانجەکەی بە دڵنیایی ڕیزبەندی بکرێت؛ تێچووی ونبوو بە سفر دانانرێت.', revenueChart: 'هێڵکاری فرۆشتن بەپێی بەرهەم', unitsChart: 'دانە فرۆشراوەکان بەپێی بەرهەم', profitChart: 'هێڵکاری قازانج بەپێی بەرهەم',
+    partialProfit: 'قازانجی پیشاندراو بەشێکییە چونکە تێچووی هەندێک دانە تۆمار نەکراوە.', partialProfitShort: 'قازانجی بەشەکی', unavailableProfit: 'زانیاری قازانج بۆ ئەم مەودایە بەردەست نییە. فەوری تێچوو بە سفر دانانێت.', historicalActivityNote: 'وردەکاری جێبەجێکردن بۆ {available} لە کۆی {total} کردار بەردەستە. هەندێک کرداری مێژوویی پێش تۆماری بەستنەوەی کارمەند و شوێن و وێستگە بوون، بۆیە لە ژمارە داراییەکاندا دەمێننەوە بەبێ دروستکردنی زانیاری نەبوو.', topProducts: 'زۆرترین فرۆشراو', topProfitable: 'زۆرترین قازانج', noTop: 'لەو ماوەیەدا هیچ بەرهەمێک بە فرۆشتنی خاوێنی پۆزەتیڤ نییە.', noProfitable: 'هیچ بەرهەمێک نییە کە بتوانرێت قازانجەکەی بە دڵنیایی ڕیزبەندی بکرێت؛ تێچووی ونبوو بە سفر دانانرێت.', revenueChart: 'هێڵکاری فرۆشتن بەپێی بەرهەم', unitsChart: 'دانە فرۆشراوەکان بەپێی بەرهەم', profitChart: 'هێڵکاری قازانج بەپێی بەرهەم',
     salesByStaff: 'کاریگەری دارایی بەپێی کارمەندی فرۆشیار', salesByStation: 'کاریگەری دارایی بەپێی وێستگەی فرۆشتن', salesByLocation: 'کاریگەری دارایی بەپێی شوێن', activityByStaff: 'کردارە جێبەجێکراوەکان بەپێی کارمەند', activityByStation: 'کردارە جێبەجێکراوەکان بەپێی وێستگە', activityByLocation: 'کردارە جێبەجێکراوەکان بەپێی شوێن', noGroupSales: 'لەو ماوەیەدا کاریگەری دارایی نییە.',
     sales: 'فرۆشتن', saleOps: 'فرۆشتن', returnOps: 'گەڕاندنەوە', voidOps: 'هەڵوەشاندنەوە', totalOps: 'کۆی گشتی', location: 'شوێن', currency: 'دراو', period: 'ماوە', profitStatus: 'دۆخی قازانج', metric: 'پێوەر', value: 'بەها', generated: 'دوایین نوێکردنەوە', source: 'سەرچاوە: تۆماری ناوەندی متمانەپێکراوی کاشێر لە سێرڤەر',
     operationDetails: 'وردەکاری کردارەکان', operationDetailsHint: 'کارمەند و کات و شوێن و وێستگە و مناوبەی هەر فرۆشتن و گەڕاندنەوە و هەڵوەشاندنەوە پیشان دەدات.', detailsLimited: 'خشتەی وردەکاری تەنها نوێترین {limit} کردار پیشان دەدات؛ کورتەکانی سەرەوە هەموو ماوەکە دەگرنەوە.', employeeFilter: 'کارمەند', locationFilter: 'شوێن', stationFilter: 'وێستگە', typeFilter: 'جۆری کردار', allEmployees: 'هەموو کارمەندان', allLocations: 'هەموو شوێنەکان', allStations: 'هەموو وێستگەکان', allTypes: 'هەموو کردارەکان',
@@ -133,7 +133,7 @@ const COPY: Record<Lang, Copy> = {
     title: 'Central Cashier Report', subtitle: 'Sales, returns and voids by location, employee and station from the trusted central record.', back: 'Cashier management',
     today: 'Today', seven: '7 days', thirty: '30 days', all: 'All', loading: 'Building central cashier report...', failed: 'Could not load the central cashier report.', empty: 'No cashier operations in this period.',
     netSales: 'Net sales', profit: 'Gross profit', operations: 'Sales operations', units: 'Net units sold', refunds: 'Returns & voids value', average: 'Average sale ticket', voided: 'Void operations', returns: 'Return operations',
-    partialProfit: 'Shown profit is partial because cost is missing for some units.', unavailableProfit: 'Profit data is unavailable for this scope. Fawri does not assume missing cost is zero.', topProducts: 'Top-selling products', topProfitable: 'Most profitable products', noTop: 'No products have positive net sales in this period.', noProfitable: 'No products can be ranked by profit truthfully in this period; missing cost is never treated as zero.', revenueChart: 'Product sales chart', unitsChart: 'Units sold by product', profitChart: 'Product profit chart',
+    partialProfit: 'Shown profit is partial because cost is missing for some units.', partialProfitShort: 'Partial profit', unavailableProfit: 'Profit data is unavailable for this scope. Fawri does not assume missing cost is zero.', historicalActivityNote: 'Execution details are available for {available} of {total} operations. Some historical operations predate employee, location and station attribution, so they remain in the financial totals without inventing missing attribution.', topProducts: 'Top-selling products', topProfitable: 'Most profitable products', noTop: 'No products have positive net sales in this period.', noProfitable: 'No products can be ranked by profit truthfully in this period; missing cost is never treated as zero.', revenueChart: 'Product sales chart', unitsChart: 'Units sold by product', profitChart: 'Product profit chart',
     salesByStaff: 'Financial impact by selling employee', salesByStation: 'Financial impact by selling station', salesByLocation: 'Financial impact by location', activityByStaff: 'Executed operations by employee', activityByStation: 'Executed operations by station', activityByLocation: 'Executed operations by location', noGroupSales: 'No financial impact in this period.',
     sales: 'sales', saleOps: 'Sales', returnOps: 'Returns', voidOps: 'Voids', totalOps: 'Total', location: 'Location', currency: 'Currency', period: 'Period', profitStatus: 'Profit status', metric: 'Metric', value: 'Value', generated: 'Last updated', source: 'Source: trusted central cashier record on the server',
     operationDetails: 'Operation details', operationDetailsHint: 'Shows who executed each sale, return or void together with its time, location, station and shift.', detailsLimited: 'The detail table shows at most the latest {limit} operations; the summaries above cover the full period.', employeeFilter: 'Employee', locationFilter: 'Location', stationFilter: 'Station', typeFilter: 'Operation type', allEmployees: 'All employees', allLocations: 'All locations', allStations: 'All stations', allTypes: 'All operations',
@@ -624,6 +624,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       ...(detailsAreLimited
         ? [[labels.detailsLimited.replace('{limit}', String(result.activity.operation_detail_limit))]]
         : []),
+      ...(hasHistoricalActivityGap ? [[historicalActivityText], []] : []),
       detailsAreLimited ? [] : [],
       [
         labels.dateTime,
@@ -662,7 +663,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       {
         name: sheetNames.summary,
         rows: summaryRows,
-        columnWidths: [14, 28, 20, 18],
+        columnWidths: [16, 34, 22, 22],
         rowHeights: [24, 22, 22, 22, 10, 24],
         headerRow: metadataRows.length,
         autoFilter: true,
@@ -681,7 +682,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       {
         name: sheetNames.topSelling,
         rows: topSellingRows,
-        columnWidths: [14, 42, 16, 18],
+        columnWidths: [16, 44, 18, 22],
         rowHeights: [24, 22, 22, 22, 10, 24],
         headerRow: metadataRows.length,
         autoFilter: true,
@@ -700,7 +701,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       {
         name: sheetNames.topProfitable,
         rows: profitableRows,
-        columnWidths: [14, 42, 18, 18],
+        columnWidths: [16, 44, 22, 22],
         rowHeights: [24, 22, 22, 22, 10, 24],
         headerRow: metadataRows.length,
         autoFilter: true,
@@ -719,7 +720,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       {
         name: sheetNames.operations,
         rows: operationRows,
-        columnWidths: [24, 18, 12, 16, 18, 14, 10, 42, 44],
+        columnWidths: [26, 20, 14, 18, 20, 16, 12, 44, 46],
         rowHeights: [24, 22, 22, 22, 10],
         headerRow: operationHeaderRow,
         autoFilter: true,
@@ -742,13 +743,21 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
   const hasData = Boolean(result && (currencies.length > 0 || activityTotal(result) > 0));
   const totalNet = result ? moneyValues(result.report, 'net_revenue_minor') : []; const totalRefunds = result ? moneyValues(result.report, 'refunds_minor') : []; const totalProfit = result ? profitValues(result.report) : [];
   const netUnits = currencies.reduce((sum, currency) => sum + currency.net_units, 0); const voidedSales = currencies.reduce((sum, currency) => sum + currency.voided_sale_count, 0); const returnCount = currencies.reduce((sum, currency) => sum + currency.return_count, 0);
+  const hasPartialProfit = currencies.some(currency => currency.profit_status === 'partial');
+  const financialOperationTotal = result ? result.report.sale_count + voidedSales + returnCount : 0;
+  const attributedOperationTotal = result ? activityTotal(result) : 0;
+  const hasHistoricalActivityGap = attributedOperationTotal < financialOperationTotal;
+  const historicalActivityText = hasHistoricalActivityGap
+    ? labels.historicalActivityNote
+      .replace('{available}', String(attributedOperationTotal))
+      .replace('{total}', String(financialOperationTotal))
+    : '';
 
   const operationStaff = useMemo(() => (result?.activity.by_staff || []).map(item => [item.staff_id, item.staff_name || labels.formerEmployee] as const), [labels.formerEmployee, result]);
   const operationLocations = useMemo(() => (result?.activity.by_location || []).map(item => [item.location_id || '__legacy_location__', item.location_name || labels.formerLocation] as const), [labels.formerLocation, result]);
   const operationStations = useMemo(() => (result?.activity.by_station || []).map(item => [item.station_id, item.station_name || labels.formerStation] as const), [labels.formerStation, result]);
   const filteredOperations = result?.activity.operations || [];
   const detailsAreLimited = Boolean(result && result.activity.operations.length < result.activity.operation_matching_count && result.activity.operation_detail_limit > 0);
-  const dateLocale = lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en';
 
   return (
     <div className="report-print-content space-y-5 pb-8" dir={dir}>
@@ -785,7 +794,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           })() : <p className="mt-1 text-sm"><span className="font-semibold">{labels.period}:</span> <span dir="ltr">{exportPeriodText(range, customRange, labels)}</span></p>}
           <p className="mt-1 text-xs text-muted-foreground">{labels.source}</p>
         </div>
-        <div className="report-summary-metrics report-print-metrics grid gap-3"><Metric title={labels.netSales}><MoneyStack values={totalNet} lang={lang} /></Metric><Metric title={labels.profit}><MoneyStack values={totalProfit} lang={lang} /></Metric><Metric title={labels.operations}><span dir="ltr">{result.report.sale_count}</span></Metric><Metric title={labels.units}><span dir="ltr">{netUnits}</span></Metric><Metric title={labels.refunds}><MoneyStack values={totalRefunds} lang={lang} /></Metric><Metric title={labels.average}><MoneyStack values={moneyValues(result.report, 'average_ticket_minor')} lang={lang} /></Metric></div>
+        <div className="report-summary-metrics report-print-metrics grid gap-3"><Metric title={labels.netSales}><MoneyStack values={totalNet} lang={lang} /></Metric><Metric title={labels.profit}><div className="report-print-profit-summary flex flex-wrap items-center justify-center gap-2"><MoneyStack values={totalProfit} lang={lang} />{hasPartialProfit ? <span className="report-print-profit-status rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-900">{labels.partialProfitShort}</span> : null}</div></Metric><Metric title={labels.operations}><span dir="ltr">{result.report.sale_count}</span></Metric><Metric title={labels.units}><span dir="ltr">{netUnits}</span></Metric><Metric title={labels.refunds}><MoneyStack values={totalRefunds} lang={lang} /></Metric><Metric title={labels.average}><MoneyStack values={moneyValues(result.report, 'average_ticket_minor')} lang={lang} /></Metric></div>
         <div className="flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground"><span className="rounded-full border bg-card px-3 py-1.5">{labels.voided}: <b dir="ltr">{voidedSales}</b></span><span className="rounded-full border bg-card px-3 py-1.5">{labels.returns}: <b dir="ltr">{returnCount}</b></span></div>
 
         {currencies.map(currency => {
@@ -842,6 +851,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         })}
 
         <div className="report-print-group-summary-block space-y-5">
+        {hasHistoricalActivityGap ? <p className="report-print-activity-coverage rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700">{historicalActivityText}</p> : null}
         <div className="report-print-three-column grid gap-5 xl:grid-cols-3">
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByLocation}</h2><span className="text-sm text-muted-foreground">{result.by_location.length}</span></div><div className="space-y-2">{result.by_location.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_location.map(group => <GroupCard key={group.location_id || '__legacy_location__'} name={localizedLegacyName(group.location_name, 'location', labels)} report={group.report} lang={lang} labels={labels} />)}</div></section>
           <section className="rounded-2xl border bg-card p-4 shadow-sm sm:p-5"><div className="mb-3 flex items-center justify-between gap-2"><h2 className="text-lg font-bold">{labels.salesByStaff}</h2><span className="text-sm text-muted-foreground">{result.by_staff.length}</span></div><div className="space-y-2">{result.by_staff.length === 0 ? <p className="text-sm text-muted-foreground">{labels.noGroupSales}</p> : result.by_staff.map(group => <GroupCard key={group.staff_id || '__legacy_staff__'} name={localizedLegacyName(group.staff_name, 'employee', labels)} report={group.report} lang={lang} labels={labels} />)}</div></section>
@@ -891,13 +901,13 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                 </thead>
                 <tbody className="divide-y">{filteredOperations.map(item => {
                   const instant = new Date(item.occurred_at);
-                  const datePart = instant.toLocaleDateString(dateLocale);
-                  const timePart = instant.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit' });
+                  const datePart = formatDayFirst(instant);
+                  const timePart = instant.toLocaleTimeString(lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
                   const employeeName = localizedLegacyName(item.staff_name, 'employee', labels);
                   const locationName = localizedLegacyName(item.location_name, 'location', labels);
                   const stationName = localizedLegacyName(item.station_name, 'station', labels);
                   return <tr key={item.operation_id}>
-                    <td className="report-print-operation-cell report-print-operation-date px-2 py-2.5 text-center align-middle"><span className="block whitespace-nowrap">{datePart}</span><span className="block whitespace-nowrap text-[11px] text-muted-foreground">{timePart}</span></td>
+                    <td className="report-print-operation-cell report-print-operation-date px-2 py-2.5 text-center align-middle"><span dir="ltr" className="block whitespace-nowrap">{datePart}</span><span dir="ltr" className="block whitespace-nowrap text-[11px] text-muted-foreground">{timePart}</span></td>
                     <td className="report-print-operation-cell break-words px-2 py-2.5 text-center align-middle font-semibold" title={employeeName}>{employeeName}</td>
                     <td className="report-print-operation-cell px-2 py-2.5 text-center align-middle"><span className={`report-print-operation-kind rounded-full px-2 py-1 text-[11px] font-bold ${item.operation_kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : item.operation_kind === 'return' ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>{operationLabel(item.operation_kind, labels)}</span></td>
                     <td className="report-print-operation-cell report-print-operation-tech whitespace-nowrap px-2 py-2.5 text-center align-middle font-mono text-[11px]" dir="ltr" title={item.sale_id}>{shortReference(item.sale_id, '#')}</td>
