@@ -5,7 +5,6 @@ import {
   Pie,
   PieChart,
   ResponsiveContainer,
-  Tooltip,
 } from 'recharts';
 import { ReportToolbar, type AppliedDateRange, type ReportRangeKey } from '@/components/reports/ReportToolbar';
 import { useI18n } from '@/lib/i18n';
@@ -803,75 +802,39 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
               {currency.profit_status === 'unavailable' ? <div className="rounded-xl border bg-background px-3 py-2 text-sm text-muted-foreground">{labels.unavailableProfit}</div> : null}
 
               <div className="report-print-two-column grid gap-5 xl:grid-cols-2">
-                <div>
-                  <h3 className="font-bold">{labels.topProducts}</h3>
-                  {currency.top_products.length === 0 ? <p className="mt-2 text-sm text-muted-foreground">{labels.noTop}</p> : (
-                    <>
-                      <div className="report-print-chart mt-2 flex h-64 flex-col rounded-xl border bg-background p-3">
-                        <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.unitsChart}</p>
-                        <div className="report-print-chart-canvas flex min-h-0 flex-1 items-center justify-center">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={sellingChart}
-                                dataKey="value"
-                                nameKey="name"
-                                cx="50%"
-                                cy="50%"
-                                innerRadius="42%"
-                                outerRadius="78%"
-                                paddingAngle={2}
-                                strokeWidth={1}
-                              >
-                                {sellingChart.map((entry, index) => (
-                                  <Cell key={entry.name} fill={REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length]} />
-                                ))}
-                              </Pie>
-                              <Tooltip formatter={(value) => [Number(value), labels.units]} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-                      <div className="report-print-product-list mt-2 divide-y rounded-xl border bg-background">
-                        {currency.top_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="flex items-center gap-2 font-semibold"><span className="report-print-chart-dot inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length] }} /><span><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</span></p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="font-bold" dir="ltr">{product.net_units}</p><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
-                      </div>
-                    </>
+                <div className="report-print-chart-panel">
+                  <h3 className="report-print-chart-section-title text-center font-bold">{labels.topProducts}</h3>
+                  {currency.top_products.length === 0 ? <p className="mt-2 text-center text-sm text-muted-foreground">{labels.noTop}</p> : (
+                    <DonutProductChart
+                      title={labels.unitsChart}
+                      rows={sellingChart}
+                      products={currency.top_products}
+                      lang={lang}
+                      renderMetrics={(product) => (
+                        <span className="flex flex-col items-end leading-tight" dir="ltr">
+                          <b>{product.net_units}</b>
+                          <span className="text-muted-foreground">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</span>
+                        </span>
+                      )}
+                    />
                   )}
                 </div>
 
-                <div>
-                  <h3 className="font-bold">{labels.topProfitable}</h3>
-                  {currency.top_profitable_products.length === 0 ? <p className="mt-2 rounded-xl border bg-background p-4 text-sm text-muted-foreground">{labels.noProfitable}</p> : (
-                    <>
-                      <div className="report-print-chart mt-2 flex h-64 flex-col rounded-xl border bg-background p-3">
-                        <p className="mb-2 text-xs font-semibold text-muted-foreground">{labels.profitChart}</p>
-                        <div className="report-print-chart-canvas flex min-h-0 flex-1 items-center justify-center">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={profitChart}
-                                dataKey="value"
-                                nameKey="name"
-                                cx="50%"
-                                cy="50%"
-                                innerRadius="42%"
-                                outerRadius="78%"
-                                paddingAngle={2}
-                                strokeWidth={1}
-                              >
-                                {profitChart.map((entry, index) => (
-                                  <Cell key={entry.name} fill={REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length]} />
-                                ))}
-                              </Pie>
-                              <Tooltip formatter={(value) => formatMerchantMoneyMinor(Number(value), currency.currency_code, currency.currency_fraction_digits, lang)} />
-                            </PieChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-                      <div className="report-print-product-list mt-2 divide-y rounded-xl border bg-background">
-                        {currency.top_profitable_products.map((product, index) => <div key={`${product.product_id}:${product.variant_id || ''}`} className="flex items-center justify-between gap-4 px-3 py-3"><div className="min-w-0"><p className="flex items-center gap-2 font-semibold"><span className="report-print-chart-dot inline-block h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length] }} /><span><span className="me-2 text-muted-foreground">#{index + 1}</span>{product.product_name}</span></p>{product.variant_name ? <p className="text-xs text-muted-foreground">{product.variant_name}</p> : null}</div><div className="shrink-0 text-end text-sm"><p className="text-xs text-muted-foreground" dir="ltr">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</p><p className="font-bold" dir="ltr">{formatMerchantMoneyMinor(product.gross_profit_minor ?? 0, currency.currency_code, currency.currency_fraction_digits, lang)}</p></div></div>)}
-                      </div>
-                    </>
+                <div className="report-print-chart-panel">
+                  <h3 className="report-print-chart-section-title text-center font-bold">{labels.topProfitable}</h3>
+                  {currency.top_profitable_products.length === 0 ? <p className="mt-2 rounded-xl border bg-background p-4 text-center text-sm text-muted-foreground">{labels.noProfitable}</p> : (
+                    <DonutProductChart
+                      title={labels.profitChart}
+                      rows={profitChart}
+                      products={currency.top_profitable_products}
+                      lang={lang}
+                      renderMetrics={(product) => (
+                        <span className="flex flex-col items-end leading-tight" dir="ltr">
+                          <span className="text-muted-foreground">{formatMerchantMoneyMinor(product.net_revenue_minor, currency.currency_code, currency.currency_fraction_digits, lang)}</span>
+                          <b>{formatMerchantMoneyMinor(product.gross_profit_minor ?? 0, currency.currency_code, currency.currency_fraction_digits, lang)}</b>
+                        </span>
+                      )}
+                    />
                   )}
                 </div>
               </div>
