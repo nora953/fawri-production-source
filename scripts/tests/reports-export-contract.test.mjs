@@ -64,6 +64,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /chartPercentText/);
   assert.match(cashier, /chartRankLabel/);
   assert.match(cashier, /report-print-chart-panel/);
+  assert.match(cashier, /report-print-cashier-chart-card/);
+  assert.match(cashier, /inline-flex items-center gap-1\.5 font-semibold/);
   assert.match(cashier, /report-print-chart-legend/);
   assert.match(cashier, /report-print-chart-percent/);
   assert.doesNotMatch(cashier, /report-print-donut-label/);
@@ -89,6 +91,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /topProfitable: 'الأكثر ربحية'/);
   assert.match(cashier, /operations: 'العمليات'/);
   assert.match(cashier, /mergeRanges:/);
+  assert.match(cashier, /operationNoticeRows/);
+  assert.match(cashier, /operationNoticeRows\.map\(row => \(\{ startRow: row, startColumn: 0, endRow: row, endColumn: 8 \}\)\)/);
   assert.match(cashier, /startRow: 1, startColumn: 1, endRow: 1, endColumn: 3/);
   assert.match(cashier, /startRow: 3, startColumn: 0, endRow: 3, endColumn: 3/);
   assert.match(cashier, /rowHeights: \[24, 22, 22, 22, 10, 24\]/);
@@ -173,6 +177,10 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /max-width: 72mm/);
   assert.match(printCss, /report-print-chart-panel/);
   assert.match(printCss, /report-print-chart-card/);
+  assert.match(printCss, /report-print-cashier-chart-card/);
+  assert.match(printCss, /grid-template-columns: 50mm minmax\(0, 1fr\)/);
+  assert.match(printCss, /grid-template-areas:/);
+  assert.match(printCss, /height: 50mm/);
   assert.match(printCss, /report-print-currency-section/);
   assert.match(printCss, /\.report-print-currency-section\s*\{[^}]*break-inside: auto !important;[^}]*page-break-inside: auto !important;/);
   assert.match(printCss, /report-print-profit-status/);
