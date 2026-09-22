@@ -1,15 +1,17 @@
 # Fawri Current Checkpoint
 
-Status: Main integration complete; repository release candidate is green.
+Status: Main integration complete; cashier reports/export polish is merged and manually validated; repository release candidate remains green.
 
 ## Repository state
 
 - Default branch: `main`
-- Integrated main SHA: `515dc33404e517d11060fa60cb6ef20d986b09ef`
-- Final validated release-candidate SHA before merge: `92290d3f97e3ece81525a0b92d668d129e9df5ed`
+- Integrated main SHA: `c0a8d41b774f48c89d9343db817e980d96b759c1`
+- Final validated cashier reports/export SHA before merge: `f4cdf348655ba0c9370eb5e275b4c212683ffab2`
 - Immutable release-candidate checkpoint: `checkpoint/final-release-candidate-green-2026-09-20`
 - Immutable post-merge checkpoint: `checkpoint/main-integrated-green-2026-09-20`
-- Integration PR: #256
+- Immutable cashier reports/export checkpoint: `checkpoint/cashier-reports-exports-complete-2026-09-23`
+- Latest reports/export integration PR: #271
+- Earlier full integration PR: #256
 - Integration result: merged through a normal merge commit; no force push and no direct write to `main`.
 
 The merged main tree is byte-for-byte identical to the validated release-candidate tree. The merge commit adds history only and changes no files relative to the validated release candidate.
@@ -88,7 +90,7 @@ Validated behavior includes:
 
 ### Cashier reports
 
-Integrated work includes:
+Integrated and manually validated work includes:
 
 - location authority,
 - language parity,
@@ -96,7 +98,14 @@ Integrated work includes:
 - server-side detail filters,
 - live refresh,
 - online/offline parity,
-- manual-discount return allocation and pricing corrections.
+- manual-discount return allocation and pricing corrections,
+- custom date ranges,
+- Excel export with RTL worksheet presentation for Arabic/Kurdish,
+- PDF print/export layout hardening,
+- day-first operation dates,
+- partial-profit disclosure beside the profit summary,
+- explicit historical operation-attribution coverage without inventing missing staff/location/station data,
+- final manual Excel/PDF review completed before PR #271 merge.
 
 ### Knowledge, Saved Answers, and Training
 
@@ -143,6 +152,7 @@ Key checkpoints include:
 - `checkpoint/aws-kms-production-activation-complete-2026-09-20`
 - `checkpoint/final-release-candidate-green-2026-09-20`
 - `checkpoint/main-integrated-green-2026-09-20`
+- `checkpoint/cashier-reports-exports-complete-2026-09-23`
 
 ## Remaining work
 
@@ -180,8 +190,8 @@ These items must not be simulated by committing credentials or inventing provide
 
 From this checkpoint forward:
 
-1. `main` at or after `515dc33404e517d11060fa60cb6ef20d986b09ef` is the integrated code source of truth.
-2. `checkpoint/main-integrated-green-2026-09-20` is the immutable safety reference for this integration.
+1. `main` at or after `c0a8d41b774f48c89d9343db817e980d96b759c1` is the current integrated code source of truth.
+2. `checkpoint/cashier-reports-exports-complete-2026-09-23` is the latest immutable safety reference; `checkpoint/main-integrated-green-2026-09-20` remains the earlier full-integration safety reference.
 3. New work must branch from the current verified `main` or an explicitly later checkpoint.
 4. No force push.
 5. No direct feature writes to `main`; use reviewed branches/PRs.
