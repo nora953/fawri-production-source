@@ -421,7 +421,7 @@ function DonutProductChart({
   const total = rows.reduce((sum, row) => sum + Math.max(0, row.value), 0);
 
   return (
-    <div className="report-print-chart-card mt-2 rounded-xl border bg-background p-3">
+    <div className="report-print-chart-card report-print-cashier-chart-card mt-2 rounded-xl border bg-background p-3">
       <p className="report-print-chart-title text-center text-xs font-semibold text-muted-foreground">{title}</p>
       <div className="report-print-chart-canvas mx-auto mt-1 flex h-40 w-full items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
@@ -458,8 +458,8 @@ function DonutProductChart({
                   className="report-print-chart-dot inline-block h-2.5 w-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length] }}
                 />
-                <span className="min-w-0 font-semibold">
-                  <span className="me-1.5 whitespace-nowrap" dir="ltr">{chartRankLabel(index, lang)}</span>
+                <span className="min-w-0 inline-flex items-center gap-1.5 font-semibold">
+                  <span className="whitespace-nowrap" dir="ltr">{chartRankLabel(index, lang)}</span>
                   <span>{productDisplayName(product)}</span>
                 </span>
               </div>
@@ -619,25 +619,28 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       });
     });
 
-    const operationRows: Array<Array<string | number>> = [
-      ...metadataRows,
-      ...(detailsAreLimited
-        ? [[labels.detailsLimited.replace('{limit}', String(result.activity.operation_detail_limit))]]
-        : []),
-      ...(hasHistoricalActivityGap ? [[historicalActivityText], []] : []),
-      detailsAreLimited ? [] : [],
-      [
-        labels.dateTime,
-        labels.employee,
-        labels.operationType,
-        labels.location,
-        labels.station,
-        labels.amount,
-        labels.currency,
-        labels.saleReference,
-        labels.shift,
-      ],
-    ];
+    const operationRows: Array<Array<string | number>> = [...metadataRows];
+    const operationNoticeRows: number[] = [];
+    if (detailsAreLimited) {
+      operationNoticeRows.push(operationRows.length);
+      operationRows.push([labels.detailsLimited.replace('{limit}', String(result.activity.operation_detail_limit))]);
+    }
+    if (hasHistoricalActivityGap) {
+      operationNoticeRows.push(operationRows.length);
+      operationRows.push([historicalActivityText]);
+    }
+    if (operationNoticeRows.length > 0) operationRows.push([]);
+    operationRows.push([
+      labels.dateTime,
+      labels.employee,
+      labels.operationType,
+      labels.location,
+      labels.station,
+      labels.amount,
+      labels.currency,
+      labels.saleReference,
+      labels.shift,
+    ]);
     const operationHeaderRow = operationRows.length - 1;
 
     filteredOperations.forEach(item => {
@@ -735,6 +738,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           { startRow: 1, startColumn: 1, endRow: 1, endColumn: 8 },
           { startRow: 2, startColumn: 1, endRow: 2, endColumn: 8 },
           { startRow: 3, startColumn: 0, endRow: 3, endColumn: 8 },
+          ...operationNoticeRows.map(row => ({ startRow: row, startColumn: 0, endRow: row, endColumn: 8 })),
         ],
       },
     ]);
