@@ -152,16 +152,24 @@
 
   .report-print-metrics {
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    gap: 3mm !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 2mm !important;
   }
 
   .report-print-metrics > * {
-    padding: 3mm !important;
+    padding: 2mm 1.5mm !important;
+  }
+
+  .report-print-metrics > * > p:first-child {
+    font-size: 7.4pt !important;
+    line-height: 1.25 !important;
+    text-align: center !important;
   }
 
   .report-print-metric-value {
-    min-height: 10mm !important;
+    min-height: 8mm !important;
+    margin-top: 1mm !important;
+    font-size: 12pt !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -348,7 +356,7 @@
 
   .report-print-cashier-chart-card {
     display: grid !important;
-    grid-template-columns: 50mm minmax(0, 1fr) !important;
+    grid-template-columns: 58mm minmax(0, 1fr) !important;
     grid-template-areas:
       "title title"
       "canvas legend" !important;
@@ -365,9 +373,9 @@
 
   .report-print-cashier-chart-card .report-print-chart-canvas {
     grid-area: canvas !important;
-    width: 50mm !important;
-    max-width: 50mm !important;
-    height: 50mm !important;
+    width: 58mm !important;
+    max-width: 58mm !important;
+    height: 58mm !important;
     margin: 0 !important;
   }
 
