@@ -178,9 +178,10 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /report-print-chart-panel/);
   assert.match(printCss, /report-print-chart-card/);
   assert.match(printCss, /report-print-cashier-chart-card/);
-  assert.match(printCss, /grid-template-columns: 50mm minmax\(0, 1fr\)/);
+  assert.match(printCss, /grid-template-columns: 58mm minmax\(0, 1fr\)/);
   assert.match(printCss, /grid-template-areas:/);
-  assert.match(printCss, /height: 50mm/);
+  assert.match(printCss, /height: 58mm/);
+  assert.match(printCss, /\.report-print-metrics\s*\{[^}]*grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/);
   assert.match(printCss, /report-print-currency-section/);
   assert.match(printCss, /\.report-print-currency-section\s*\{[^}]*break-inside: auto !important;[^}]*page-break-inside: auto !important;/);
   assert.match(printCss, /report-print-profit-status/);
