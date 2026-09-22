@@ -181,9 +181,15 @@
     white-space: nowrap !important;
   }
 
-  .report-print-chart-dot {
+  .report-print-chart-dot,
+  .report-print-donut-label circle,
+  .report-print-donut-label text {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .report-print-donut-label {
+    pointer-events: none !important;
   }
 
   .report-print-group-card,
