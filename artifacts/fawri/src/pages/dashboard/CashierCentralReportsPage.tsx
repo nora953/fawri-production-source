@@ -234,6 +234,12 @@ function shortReference(value: string, prefix: string): string {
   const clean = value.replace(/^sale:/, ''); return `${prefix}${clean.slice(0, 8).toUpperCase()}`;
 }
 
+function shortShiftReference(value: string): string {
+  const clean = value.replace(/^cashier_shift_/i, '').replace(/[^a-zA-Z0-9]/g, '');
+  if (!clean) return '—';
+  return `…${clean.slice(-8).toUpperCase()}`;
+}
+
 function operationMoney(item: OperationActivity, lang: Lang): string {
   if (item.amount_minor === undefined || !item.currency_code || item.currency_fraction_digits === undefined) return '—';
   return formatMerchantMoneyMinor(item.amount_minor, item.currency_code, item.currency_fraction_digits, lang);
@@ -862,7 +868,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         </div>
         </div>
 
-        <section className="report-print-operation-details rounded-2xl border bg-card p-4 shadow-sm sm:p-5" data-testid="cashier-operation-details">
+        <section className="report-print-operation-page report-print-operation-details rounded-2xl border bg-card p-4 shadow-sm sm:p-5" data-testid="cashier-operation-details">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">{labels.operationDetails}</h2><p className="mt-1 text-sm text-muted-foreground">{labels.operationDetailsHint}</p></div><span className="rounded-full border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground">{filteredOperations.length}</span></div>
           <div className="report-no-print mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <label className="text-sm font-semibold">{labels.employeeFilter}<select value={staffFilter} onChange={event => setStaffFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allEmployees}</option>{operationStaff.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
@@ -873,19 +879,28 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           {detailsAreLimited ? <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">{labels.detailsLimited.replace('{limit}', String(result.activity.operation_detail_limit))}</p> : null}
           {filteredOperations.length === 0 ? <p className="mt-4 rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">{labels.noDetails}</p> : (
             <div className="report-print-operation-table mt-4 overflow-x-auto rounded-xl border xl:overflow-x-visible">
-              <table className="w-full min-w-[860px] table-fixed text-[13px] xl:min-w-0">
+              <table className="report-print-operation-grid w-full min-w-[860px] table-fixed text-[13px] xl:min-w-0">
                 <colgroup>
                   <col className="w-[15%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[11%]" />
                   <col className="w-[13%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[9%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[15%]" />
                 </colgroup>
-                <thead className="bg-muted/60 text-[11px] text-muted-foreground">
-                  <tr><th className="px-2 py-2 text-start">{labels.dateTime}</th><th className="px-2 py-2 text-start">{labels.employee}</th><th className="px-2 py-2 text-start">{labels.operationType}</th><th className="px-2 py-2 text-start">{labels.saleReference}</th><th className="px-2 py-2 text-start">{labels.location}</th><th className="px-2 py-2 text-start">{labels.station}</th><th className="px-2 py-2 text-start">{labels.shift}</th><th className="px-2 py-2 text-end">{labels.amount}</th></tr>
+                <thead className="report-print-operation-head bg-muted/60 text-[11px] text-muted-foreground">
+                  <tr>
+                    <th className="px-2 py-2 text-center align-middle">{labels.dateTime}</th>
+                    <th className="px-2 py-2 text-center align-middle">{labels.employee}</th>
+                    <th className="px-2 py-2 text-center align-middle">{labels.operationType}</th>
+                    <th className="px-2 py-2 text-center align-middle">{labels.saleReference}</th>
+                    <th className="px-2 py-2 text-center align-middle">{labels.location}</th>
+                    <th className="px-2 py-2 text-center align-middle">{labels.station}</th>
+                    <th className="px-2 py-2 text-center align-middle">{labels.shift}</th>
+                    <th className="px-2 py-2 text-center align-middle">{labels.amount}</th>
+                  </tr>
                 </thead>
                 <tbody className="divide-y">{filteredOperations.map(item => {
                   const instant = new Date(item.occurred_at);
@@ -895,14 +910,14 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                   const locationName = localizedLegacyName(item.location_name, 'location', labels);
                   const stationName = localizedLegacyName(item.station_name, 'station', labels);
                   return <tr key={item.operation_id}>
-                    <td className="px-2 py-2.5"><span className="block whitespace-nowrap">{datePart}</span><span className="block whitespace-nowrap text-[11px] text-muted-foreground">{timePart}</span></td>
-                    <td className="truncate px-2 py-2.5 font-semibold" title={employeeName}>{employeeName}</td>
-                    <td className="px-2 py-2.5"><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${item.operation_kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : item.operation_kind === 'return' ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>{operationLabel(item.operation_kind, labels)}</span></td>
-                    <td className="px-2 py-2.5 font-mono text-[11px]" dir="ltr">{shortReference(item.sale_id, '#')}</td>
-                    <td className="truncate px-2 py-2.5" title={locationName}>{locationName}</td>
-                    <td className="truncate px-2 py-2.5" title={stationName}>{stationName}</td>
-                    <td className="truncate px-2 py-2.5 font-mono text-[11px]" dir="ltr" title={item.shift_id}>{shortReference(item.shift_id, '')}</td>
-                    <td className="whitespace-nowrap px-2 py-2.5 text-end font-bold" dir="ltr">{operationMoney(item, lang)}</td>
+                    <td className="report-print-operation-cell report-print-operation-date px-2 py-2.5 text-center align-middle"><span className="block whitespace-nowrap">{datePart}</span><span className="block whitespace-nowrap text-[11px] text-muted-foreground">{timePart}</span></td>
+                    <td className="report-print-operation-cell break-words px-2 py-2.5 text-center align-middle font-semibold" title={employeeName}>{employeeName}</td>
+                    <td className="report-print-operation-cell px-2 py-2.5 text-center align-middle"><span className={`rounded-full px-2 py-1 text-[11px] font-bold ${item.operation_kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : item.operation_kind === 'return' ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>{operationLabel(item.operation_kind, labels)}</span></td>
+                    <td className="report-print-operation-cell report-print-operation-tech whitespace-nowrap px-2 py-2.5 text-center align-middle font-mono text-[11px]" dir="ltr" title={item.sale_id}>{shortReference(item.sale_id, '#')}</td>
+                    <td className="report-print-operation-cell break-words px-2 py-2.5 text-center align-middle" title={locationName}>{locationName}</td>
+                    <td className="report-print-operation-cell break-words px-2 py-2.5 text-center align-middle" title={stationName}>{stationName}</td>
+                    <td className="report-print-operation-cell report-print-operation-tech whitespace-nowrap px-2 py-2.5 text-center align-middle font-mono text-[11px]" dir="ltr" title={item.shift_id}>{shortShiftReference(item.shift_id)}</td>
+                    <td className="report-print-operation-cell whitespace-nowrap px-2 py-2.5 text-center align-middle font-bold" dir="ltr">{operationMoney(item, lang)}</td>
                   </tr>;
                 })}</tbody>
               </table>
