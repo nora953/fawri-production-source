@@ -922,7 +922,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           )}
         </section>
 
-        <p className="report-print-footer-note text-center text-xs text-muted-foreground">{labels.source} · {labels.generated}: <span dir="ltr">{new Date(result.generated_at).toLocaleString(dateLocale)}</span></p>
+        <p className="report-print-footer-note text-center text-xs text-muted-foreground">{labels.source} · {labels.generated}: <span dir="ltr">{formatDayFirstDateTime(new Date(result.generated_at))}</span></p>
       </> : null}
     </div>
   );
