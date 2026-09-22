@@ -109,12 +109,21 @@
     margin-bottom: 1mm !important;
   }
 
+  .report-print-group-summary-block {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .report-print-group-summary-block > .report-print-three-column + .report-print-three-column {
+    margin-top: 2mm !important;
+  }
+
   .report-print-three-column {
     display: grid !important;
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 2mm !important;
-    break-inside: auto !important;
-    page-break-inside: auto !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   .report-print-three-column > section {
@@ -211,6 +220,31 @@
   .report-print-group-stats > div,
   .report-print-activity-stats > div {
     padding: 1mm 1.5mm !important;
+  }
+
+  .report-print-group-stat-card,
+  .report-print-activity-stat-card {
+    text-align: center !important;
+  }
+
+  .report-print-group-stat-card > p,
+  .report-print-activity-stat-card > p:first-child {
+    text-align: center !important;
+  }
+
+  .report-print-group-stat-value,
+  .report-print-activity-stat-value {
+    min-height: 5mm !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+
+  .report-print-group-stat-value > *,
+  .report-print-group-stat-value > * > * {
+    width: 100% !important;
+    text-align: center !important;
   }
 
   .report-print-activity-stats p + p {
