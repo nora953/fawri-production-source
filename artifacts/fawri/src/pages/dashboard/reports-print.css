@@ -141,8 +141,9 @@
     box-sizing: border-box !important;
     width: 100% !important;
     max-width: 100% !important;
-    padding: 2.5mm !important;
-    border-color: #dbe4ee !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
   }
 
   .report-print-currency-section > * + * {
@@ -345,6 +346,36 @@
     margin-bottom: 0.5mm !important;
   }
 
+  .report-print-cashier-chart-card {
+    display: grid !important;
+    grid-template-columns: 50mm minmax(0, 1fr) !important;
+    grid-template-areas:
+      "title title"
+      "canvas legend" !important;
+    align-items: center !important;
+    column-gap: 3mm !important;
+    row-gap: 1mm !important;
+    padding: 2mm !important;
+  }
+
+  .report-print-cashier-chart-card .report-print-chart-title {
+    grid-area: title !important;
+    margin: 0 !important;
+  }
+
+  .report-print-cashier-chart-card .report-print-chart-canvas {
+    grid-area: canvas !important;
+    width: 50mm !important;
+    max-width: 50mm !important;
+    height: 50mm !important;
+    margin: 0 !important;
+  }
+
+  .report-print-cashier-chart-card .report-print-chart-legend {
+    grid-area: legend !important;
+    margin-top: 0 !important;
+  }
+
   .report-print-chart-canvas {
     width: 100% !important;
     max-width: 72mm !important;
@@ -376,6 +407,17 @@
     padding-bottom: 0.45mm !important;
     break-inside: avoid !important;
     page-break-inside: avoid !important;
+  }
+
+  .report-print-cashier-chart-card .report-print-chart-legend-row {
+    min-height: 5.5mm !important;
+    padding-top: 0.35mm !important;
+    padding-bottom: 0.35mm !important;
+    gap: 1.5mm !important;
+  }
+
+  .report-print-cashier-chart-card .report-print-chart-legend-row > div:first-child {
+    gap: 1mm !important;
   }
 
   .report-print-chart-percent {
