@@ -17,8 +17,8 @@ const receipt = read('../src/lib/cashierReceiptPrinting.ts');
 const receiptProfile = read('../src/lib/cashierReceiptProfileClient.ts');
 const history = read('../src/pages/CashierHistoryPage.tsx');
 const main = read('../src/cashierMain.tsx');
-const copy = read('../src/lib/cashierUiCopy.ts');
-const enhancementCopy = read('../src/lib/cashierPosEnhancementCopy.ts');
+const copy = read('../src/lib/translations/features/lib/cashierUiCopy.ts');
+const enhancementCopy = read('../src/lib/translations/features/lib/cashierPosEnhancementCopy.ts');
 
 test('functional freeze keeps the scanner and keyboard-first sale path intact', () => {
   assert.match(scanner, /MAX_INTER_KEY_GAP_MS = 90/);
