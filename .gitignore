@@ -70,6 +70,7 @@ rescue-current-*/
 translation-audit-*/
 *-debug.txt
 build-error.txt
+scripts/.tmp-*
 
 # Generated files in workspace packages
 **/node_modules/
