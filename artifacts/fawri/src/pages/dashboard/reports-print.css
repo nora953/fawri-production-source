@@ -429,6 +429,34 @@
     gap: 1mm !important;
   }
 
+
+  /* Sorani labels are slightly taller; compact only the print layout enough
+     to keep the approved cashier charts on page 1 without shrinking them back
+     to the old unreadable size. */
+  .report-print-lang-ku.report-print-content > * + * {
+    margin-top: 2mm !important;
+  }
+
+  .report-print-lang-ku .report-print-cashier-chart-card {
+    grid-template-columns: 46mm minmax(0, 1fr) !important;
+    padding: 1.5mm !important;
+  }
+
+  .report-print-lang-ku .report-print-cashier-chart-card .report-print-chart-canvas {
+    width: 46mm !important;
+    max-width: 46mm !important;
+    height: 46mm !important;
+  }
+
+  .report-print-lang-ku .report-print-chart-section-title {
+    margin-bottom: 0.5mm !important;
+    line-height: 1.15 !important;
+  }
+
+  .report-print-lang-ku .report-print-cashier-chart-card .report-print-chart-legend-row {
+    min-height: 5mm !important;
+  }
+
   .report-print-chart-percent {
     min-width: 12mm !important;
     text-align: center !important;
