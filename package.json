@@ -13,8 +13,6 @@
     "audit:jobs": "node ./scripts/audit-fawri-background-jobs.mjs",
     "audit:manual-conversations": "node ./scripts/audit-manual-conversation-operations.mjs",
     "audit:admin-architecture": "node ./scripts/audit-admin-architecture.mjs",
-    "audit:translations": "PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/audit-translation-structure.py",
-    "audit:translation-inventory": "PYTHONDONTWRITEBYTECODE=1 python3 ./scripts/audit-translation-inventory.py",
     "migration:preflight": "node ./scripts/audit-transitional-migration-readiness.mjs",
     "migration:plan": "node ./scripts/run-postgresql-migration-plan.mjs",
     "migration:test": "node --test --test-concurrency=1 ./scripts/tests/*.test.mjs",
