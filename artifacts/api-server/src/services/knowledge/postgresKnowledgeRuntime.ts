@@ -1033,11 +1033,17 @@ export function isAuthoritativeFactQuestion(customerText: string): boolean {
   const normalized = normalizeKnowledgeText(customerText);
   if (!normalized) return false;
 
-  // Keep the two warranty authorities distinct. The service-guarantee domain is
-  // platform SaaS policy; the product-warranty domain is merchant product policy.
-  // Both are fail-closed authoritative domains, so neither may fall through to
-  // Saved Answers, embeddings, legacy knowledge, or generated AI.
-  if (classifyWarrantyAuthorityDomain(customerText)) return true;
+  // Keep platform SaaS guarantee separate from merchant product warranty.
+  // The platform guarantee is a structured server-owned policy and must never
+  // fall through to merchant knowledge. Merchant product warranty, however,
+  // has no operational warranty authority yet and may be answered only from
+  // explicitly merchant-approved Saved Answers / learned knowledge.
+  if (
+    classifyWarrantyAuthorityDomain(customerText) ===
+    "fawri_subscription_service_guarantee"
+  ) {
+    return true;
+  }
 
   return containsAny(normalized, [
     ...DELIVERY_TERMS,
