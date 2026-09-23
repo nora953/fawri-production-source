@@ -91,6 +91,8 @@ test('central Sorani and English reports preserve the same reviewed metric meani
   assert.match(centralSource, /topSelling: 'Top-selling'/);
   assert.match(centralSource, /topProfitable: 'Most profitable'/);
   assert.match(centralSource, /kind === 'sale' \? 'Sale' : kind === 'return' \? 'Return' : 'Void'/);
+  assert.match(centralSource, /lang === 'ku' \? 'ckb-IQ' : 'en-GB'/);
+  assert.match(centralSource, /hour12: false/);
 });
 
 
