@@ -233,7 +233,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /report-print-online-products/);
   assert.match(printCss, /report-print-online-profit-note/);
   assert.match(printCss, /report-print-online-products \.report-print-chart-canvas/);
-  assert.match(printCss, /height: 46mm/);
+  assert.match(printCss, /height: 48mm/);
   assert.match(printCss, /break-after: avoid/);
   assert.match(cashier, /rtlText: lang !== 'en'/);
   assert.match(workbook, /stylesXml/);
