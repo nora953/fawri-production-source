@@ -3,7 +3,6 @@ import { CalendarDays, ChevronDown, Download, Printer } from 'lucide-react';
 import { DayPicker, type DateRange } from 'react-day-picker';
 import { ar } from 'react-day-picker/locale';
 import './report-calendar.css';
-import { Calendar } from '@/components/ui/calendar';
 import {
   Dialog,
   DialogContent,
