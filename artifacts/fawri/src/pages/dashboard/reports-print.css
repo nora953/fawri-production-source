@@ -434,18 +434,38 @@
      to keep the approved cashier charts on page 1 without shrinking them back
      to the old unreadable size. */
   .report-print-lang-ku.report-print-content > * + * {
-    margin-top: 2mm !important;
+    margin-top: 1.5mm !important;
+  }
+
+  .report-print-lang-ku .report-print-metrics > * {
+    padding-top: 1mm !important;
+    padding-bottom: 1mm !important;
+  }
+
+  .report-print-lang-ku .report-print-metric-value {
+    min-height: 6mm !important;
+    margin-top: 0.5mm !important;
+  }
+
+  .report-print-lang-ku .report-print-profit-status {
+    padding-top: 0.2mm !important;
+    padding-bottom: 0.2mm !important;
+  }
+
+  .report-print-lang-ku .report-print-currency-section > * + * {
+    margin-top: 1.2mm !important;
   }
 
   .report-print-lang-ku .report-print-cashier-chart-card {
-    grid-template-columns: 46mm minmax(0, 1fr) !important;
-    padding: 1.5mm !important;
+    grid-template-columns: 44mm minmax(0, 1fr) !important;
+    padding: 1.2mm !important;
+    row-gap: 0.5mm !important;
   }
 
   .report-print-lang-ku .report-print-cashier-chart-card .report-print-chart-canvas {
-    width: 46mm !important;
-    max-width: 46mm !important;
-    height: 46mm !important;
+    width: 44mm !important;
+    max-width: 44mm !important;
+    height: 44mm !important;
   }
 
   .report-print-lang-ku .report-print-chart-section-title {
@@ -454,9 +474,10 @@
   }
 
   .report-print-lang-ku .report-print-cashier-chart-card .report-print-chart-legend-row {
-    min-height: 4.2mm !important;
-    padding-top: 0.2mm !important;
-    padding-bottom: 0.2mm !important;
+    min-height: 3.7mm !important;
+    padding-top: 0.1mm !important;
+    padding-bottom: 0.1mm !important;
+    line-height: 1.05 !important;
   }
 
   /* Chrome print fragmentation can push the whole two-chart CSS grid to the
