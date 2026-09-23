@@ -134,6 +134,143 @@
 }
 
 
+/* Sorani reports mirror the approved Arabic picker geometry in RTL order. */
+.report-ku-date-dialog .report-date-header {
+  text-align: right;
+}
+
+.report-ku-calendar {
+  width: 100%;
+  direction: rtl;
+  padding: 0.25rem;
+}
+
+.report-ku-calendar .rdp-months {
+  position: relative;
+  display: flex;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.report-ku-calendar .rdp-month {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.report-ku-calendar .rdp-month_caption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.75rem;
+  padding-inline: 2.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.report-ku-calendar .rdp-nav {
+  position: absolute;
+  inset: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  pointer-events: none;
+}
+
+.report-ku-calendar .rdp-button_previous,
+.report-ku-calendar .rdp-button_next {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.75rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.625rem;
+  background: hsl(var(--card));
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.report-ku-calendar .rdp-chevron {
+  width: 1.1rem;
+  height: 1.1rem;
+  fill: currentColor;
+}
+
+.report-ku-calendar .rdp-month_grid {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0 0.25rem;
+}
+
+.report-ku-calendar .rdp-weekday {
+  height: 2rem;
+  padding: 0;
+  text-align: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: hsl(var(--muted-foreground));
+}
+
+.report-ku-calendar .rdp-day {
+  height: 2.5rem;
+  padding: 0;
+  text-align: center;
+}
+
+.report-ku-calendar .rdp-day_button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 2.5rem;
+  border-radius: 0.5rem;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.report-ku-calendar .rdp-day_button:hover:not(:disabled) {
+  background: hsl(var(--accent));
+}
+
+.report-ku-calendar .rdp-range_middle {
+  background: color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background)));
+}
+
+.report-ku-calendar .rdp-range_start .rdp-day_button,
+.report-ku-calendar .rdp-range_end .rdp-day_button {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-weight: 800;
+}
+
+.report-ku-calendar .rdp-today:not(.rdp-selected) .rdp-day_button {
+  box-shadow: inset 0 0 0 1px hsl(var(--primary));
+  font-weight: 700;
+}
+
+.report-ku-calendar .rdp-disabled {
+  opacity: 0.4;
+}
+
+.report-ku-calendar .rdp-hidden {
+  visibility: hidden;
+}
+
+.report-ku-calendar button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* DayPicker navigation emits physical chevrons; mirror for RTL reading order. */
+.report-ku-calendar .rdp-nav .rdp-chevron {
+  transform: rotate(180deg);
+}
+
+
+
 /* English reports mirror the approved Arabic picker geometry in LTR order. */
 .report-en-date-dialog .report-date-header {
   text-align: left;
@@ -268,30 +405,35 @@
 /* Keep the two-month dialog height stable across 5/6-week months and range selection. */
 @media (min-width: 768px) {
   .report-ar-calendar .rdp-day,
+  .report-ku-calendar .rdp-day,
   .report-en-calendar .rdp-day {
     height: 1.875rem;
   }
 
   .report-ar-calendar .rdp-day_button,
+  .report-ku-calendar .rdp-day_button,
   .report-en-calendar .rdp-day_button {
     min-height: 1.875rem;
   }
 }
 
-/* Show the selected interval continuously in both Arabic and English calendars. */
+/* Show the selected interval continuously in Arabic, Sorani and English calendars. */
 .report-ar-calendar .rdp-range_middle,
+.report-ku-calendar .rdp-range_middle,
 .report-en-calendar .rdp-range_middle {
   background: color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background)));
   border-radius: 0;
 }
 
 .report-ar-calendar .rdp-range_middle .rdp-day_button,
+.report-ku-calendar .rdp-range_middle .rdp-day_button,
 .report-en-calendar .rdp-range_middle .rdp-day_button {
   background: transparent;
   border-radius: 0;
 }
 
 .report-ar-calendar .rdp-range_start,
+.report-ku-calendar .rdp-range_start,
 .report-en-calendar .rdp-range_start {
   background: linear-gradient(
     to right,
@@ -301,6 +443,7 @@
 }
 
 .report-ar-calendar .rdp-range_end,
+.report-ku-calendar .rdp-range_end,
 .report-en-calendar .rdp-range_end {
   background: linear-gradient(
     to right,
@@ -309,7 +452,8 @@
   );
 }
 
-.report-ar-calendar[dir="rtl"] .rdp-range_start {
+.report-ar-calendar[dir="rtl"] .rdp-range_start,
+.report-ku-calendar[dir="rtl"] .rdp-range_start {
   background: linear-gradient(
     to left,
     transparent 0 50%,
@@ -317,7 +461,8 @@
   );
 }
 
-.report-ar-calendar[dir="rtl"] .rdp-range_end {
+.report-ar-calendar[dir="rtl"] .rdp-range_end,
+.report-ku-calendar[dir="rtl"] .rdp-range_end {
   background: linear-gradient(
     to left,
     color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0 50%,
@@ -326,12 +471,15 @@
 }
 
 .report-ar-calendar .rdp-range_start.rdp-range_end,
+.report-ku-calendar .rdp-range_start.rdp-range_end,
 .report-en-calendar .rdp-range_start.rdp-range_end {
   background: transparent;
 }
 
 .report-ar-calendar .rdp-range_start .rdp-day_button,
 .report-ar-calendar .rdp-range_end .rdp-day_button,
+.report-ku-calendar .rdp-range_start .rdp-day_button,
+.report-ku-calendar .rdp-range_end .rdp-day_button,
 .report-en-calendar .rdp-range_start .rdp-day_button,
 .report-en-calendar .rdp-range_end .rdp-day_button {
   position: relative;
