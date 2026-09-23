@@ -223,7 +223,7 @@ export function ReportToolbar({
 }) {
   const { lang, dir } = useI18n();
   const copy = COPY[lang] || COPY.en;
-  const RangeCalendar = lang === 'ar' ? DayPicker : Calendar;
+  const RangeCalendar = lang === 'ar' || lang === 'en' ? DayPicker : Calendar;
   const [open, setOpen] = useState(false);
   const [draftKind, setDraftKind] = useState<ReportRangeKey>(range);
   const [draftRange, setDraftRange] = useState<DateRange | undefined>(
