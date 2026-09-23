@@ -134,7 +134,7 @@ const COPY: Record<Lang, Copy> = {
     today: 'Today', seven: '7 days', thirty: '30 days', all: 'All', loading: 'Building central cashier report...', failed: 'Could not load the central cashier report.', empty: 'No cashier operations in this period.',
     netSales: 'Net sales', profit: 'Gross profit', operations: 'Sales operations', units: 'Net units sold', refunds: 'Returns & voids value', average: 'Average sale ticket', voided: 'Void operations', returns: 'Return operations',
     partialProfit: 'Shown profit is partial because cost is missing for some units.', partialProfitShort: 'Partial profit', unavailableProfit: 'Profit data is unavailable for this scope. Fawri does not assume missing cost is zero.', historicalActivityNote: 'Execution details are available for {available} of {total} operations. Some historical operations predate employee, location and station attribution, so they remain in the financial totals without inventing missing attribution.', topProducts: 'Top-selling products', topProfitable: 'Most profitable products', noTop: 'No products have positive net sales in this period.', noProfitable: 'No products can be ranked by profit truthfully in this period; missing cost is never treated as zero.', revenueChart: 'Product sales chart', unitsChart: 'Units sold by product', profitChart: 'Product profit chart',
-    salesByStaff: 'Financial impact by selling employee', salesByStation: 'Financial impact by selling station', salesByLocation: 'Financial impact by location', activityByStaff: 'Executed operations by employee', activityByStation: 'Executed operations by station', activityByLocation: 'Executed operations by location', noGroupSales: 'No financial impact in this period.',
+    salesByStaff: 'Financial impact by employee', salesByStation: 'Financial impact by station', salesByLocation: 'Financial impact by location', activityByStaff: 'Executed operations by employee', activityByStation: 'Executed operations by station', activityByLocation: 'Executed operations by location', noGroupSales: 'No financial impact in this period.',
     sales: 'sales', saleOps: 'Sales', returnOps: 'Returns', voidOps: 'Voids', totalOps: 'Total', location: 'Location', currency: 'Currency', period: 'Period', profitStatus: 'Profit status', metric: 'Metric', value: 'Value', generated: 'Last updated', source: 'Source: trusted central cashier record on the server',
     operationDetails: 'Operation details', operationDetailsHint: 'Shows who executed each sale, return or void together with its time, location, station and shift.', detailsLimited: 'The detail table shows at most the latest {limit} operations; the summaries above cover the full period.', employeeFilter: 'Employee', locationFilter: 'Location', stationFilter: 'Station', typeFilter: 'Operation type', allEmployees: 'All employees', allLocations: 'All locations', allStations: 'All stations', allTypes: 'All operations',
     employee: 'Employee', station: 'Station', shift: 'Shift', operationType: 'Operation', saleReference: 'Sale reference', dateTime: 'Date & time', amount: 'Amount', noDetails: 'No operations match these filters.', operationCountUnit: 'operations', formerEmployee: 'Former employee', formerStation: 'Former station', formerLocation: 'Unattributed location',
@@ -234,8 +234,13 @@ function Metric({ title, children }: { title: string; children: ReactNode }) {
   return <div className="report-summary-metric rounded-2xl border bg-card p-4 shadow-sm"><p className="text-xs font-semibold text-muted-foreground">{title}</p><div className="report-print-metric-value mt-2 text-xl font-extrabold">{children}</div></div>;
 }
 
+function saleCountText(count: number, lang: Lang, labels: Copy): string {
+  if (lang === 'en') return `${count} ${count === 1 ? 'sale' : 'sales'}`;
+  return `${count} ${labels.sales}`;
+}
+
 function GroupCard({ name, secondary, report, lang, labels }: { name: string; secondary?: string; report: Report; lang: Lang; labels: Copy }) {
-  return <div className="report-print-group-card rounded-xl border bg-background p-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-bold">{name}</p>{secondary ? <p className="mt-0.5 text-xs text-muted-foreground">{secondary}</p> : null}</div><span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">{report.sale_count} {labels.sales}</span></div><div className="report-print-group-stats mt-3 grid gap-2 sm:grid-cols-2"><div className="report-print-group-stat-card rounded-lg border bg-card px-3 py-2"><p className="text-[11px] font-semibold text-muted-foreground">{labels.netSales}</p><div className="report-print-group-stat-value mt-1 text-sm font-bold"><MoneyStack values={moneyValues(report, 'net_revenue_minor')} lang={lang} /></div></div><div className="report-print-group-stat-card rounded-lg border bg-card px-3 py-2"><p className="text-[11px] font-semibold text-muted-foreground">{labels.profit}</p><div className="report-print-group-stat-value mt-1 text-sm font-bold"><MoneyStack values={profitValues(report)} lang={lang} /></div></div></div></div>;
+  return <div className="report-print-group-card rounded-xl border bg-background p-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-bold">{name}</p>{secondary ? <p className="mt-0.5 text-xs text-muted-foreground">{secondary}</p> : null}</div><span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">{saleCountText(report.sale_count, lang, labels)}</span></div><div className="report-print-group-stats mt-3 grid gap-2 sm:grid-cols-2"><div className="report-print-group-stat-card rounded-lg border bg-card px-3 py-2"><p className="text-[11px] font-semibold text-muted-foreground">{labels.netSales}</p><div className="report-print-group-stat-value mt-1 text-sm font-bold"><MoneyStack values={moneyValues(report, 'net_revenue_minor')} lang={lang} /></div></div><div className="report-print-group-stat-card rounded-lg border bg-card px-3 py-2"><p className="text-[11px] font-semibold text-muted-foreground">{labels.profit}</p><div className="report-print-group-stat-value mt-1 text-sm font-bold"><MoneyStack values={profitValues(report)} lang={lang} /></div></div></div></div>;
 }
 
 function ActivityCard({ name, secondary, activity, labels }: { name: string; secondary?: string; activity: ActivityCounts; labels: Copy }) {
@@ -246,7 +251,8 @@ function activityTotal(result: CentralReportResult): number {
   return result.activity.by_staff.reduce((sum, item) => sum + item.operation_count, 0);
 }
 
-function operationLabel(kind: OperationKind, labels: Copy): string {
+function operationLabel(kind: OperationKind, labels: Copy, lang: Lang): string {
+  if (lang === 'en') return kind === 'sale' ? 'Sale' : kind === 'return' ? 'Return' : 'Void';
   return kind === 'sale' ? labels.saleOps : kind === 'return' ? labels.returnOps : labels.voidOps;
 }
 
@@ -647,7 +653,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
       operationRows.push([
         formatDayFirstDateTime(new Date(item.occurred_at)),
         item.staff_name || labels.formerEmployee,
-        operationLabel(item.operation_kind, labels),
+        operationLabel(item.operation_kind, labels, lang),
         item.location_name || labels.formerLocation,
         item.station_name || labels.formerStation,
         item.amount_minor ?? '',
@@ -808,7 +814,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
             <section key={`${currency.currency_code}:${currency.currency_fraction_digits}`} className="report-print-break-avoid report-print-currency-section space-y-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-bold" dir="ltr">{currency.currency_code}</h2>
-                <span className="text-xs text-muted-foreground">{currency.sale_count} {labels.sales}</span>
+                <span className="text-xs text-muted-foreground">{saleCountText(currency.sale_count, lang, labels)}</span>
               </div>
               {currency.profit_status === 'partial' ? <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">{labels.partialProfit}</div> : null}
               {currency.profit_status === 'unavailable' ? <div className="rounded-xl border bg-background px-3 py-2 text-sm text-muted-foreground">{labels.unavailableProfit}</div> : null}
@@ -913,7 +919,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                   return <tr key={item.operation_id}>
                     <td className="report-print-operation-cell report-print-operation-date px-2 py-2.5 text-center align-middle"><span dir="ltr" className="block whitespace-nowrap">{datePart}</span><span dir="ltr" className="block whitespace-nowrap text-[11px] text-muted-foreground">{timePart}</span></td>
                     <td className="report-print-operation-cell break-words px-2 py-2.5 text-center align-middle font-semibold" title={employeeName}>{employeeName}</td>
-                    <td className="report-print-operation-cell px-2 py-2.5 text-center align-middle"><span className={`report-print-operation-kind rounded-full px-2 py-1 text-[11px] font-bold ${item.operation_kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : item.operation_kind === 'return' ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>{operationLabel(item.operation_kind, labels)}</span></td>
+                    <td className="report-print-operation-cell px-2 py-2.5 text-center align-middle"><span className={`report-print-operation-kind rounded-full px-2 py-1 text-[11px] font-bold ${item.operation_kind === 'sale' ? 'bg-emerald-50 text-emerald-700' : item.operation_kind === 'return' ? 'bg-amber-50 text-amber-800' : 'bg-red-50 text-red-700'}`}>{operationLabel(item.operation_kind, labels, lang)}</span></td>
                     <td className="report-print-operation-cell report-print-operation-tech whitespace-nowrap px-2 py-2.5 text-center align-middle font-mono text-[11px]" dir="ltr" title={item.sale_id}>{shortReference(item.sale_id, '#')}</td>
                     <td className="report-print-operation-cell break-words px-2 py-2.5 text-center align-middle" title={locationName}>{locationName}</td>
                     <td className="report-print-operation-cell break-words px-2 py-2.5 text-center align-middle" title={stationName}>{stationName}</td>
