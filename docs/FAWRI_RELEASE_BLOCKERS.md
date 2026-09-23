@@ -13,13 +13,16 @@ This file separates repository-owned blockers from external launch blockers. A b
 
 ## Current repository checkpoint
 
-- Code integration merge SHA: `515dc33404e517d11060fa60cb6ef20d986b09ef`
-- Validated release-candidate tree: `92290d3f97e3ece81525a0b92d668d129e9df5ed`
-- Safety checkpoint: `checkpoint/main-integrated-green-2026-09-20`
+- Current integrated main SHA: `5f402a332ef6b9d145aeec326f7800a4e8147ffb`
+- Repository-hardening final branch head: `01dac67d58f46051910da6b9114bfc70d384f193`
+- Original validated release-candidate tree: `92290d3f97e3ece81525a0b92d668d129e9df5ed`
+- Latest repository-hardening checkpoint: `checkpoint/repository-hardening-complete-2026-09-24`
+- Earlier full-integration safety checkpoint: `checkpoint/main-integrated-green-2026-09-20`
 - Documentation-sync checkpoint: `checkpoint/main-release-docs-synced-2026-09-20`
-- Final integration PR: #256
-- Release-candidate CI result: 38/38 PASS, 0 FAIL
-- The code-integration merge tree is identical to the validated release-candidate tree. Later documentation-only commits may advance `main` without changing that runtime tree.
+- Final repository-hardening PR: #281
+- Earlier full integration PR: #256
+- Original release-candidate CI result: 38/38 PASS, 0 FAIL
+- PR #281 subsequently reorganized translation authority and split the critical cashier-compensation validation module without intentional behavior changes; its final head passed the repository audits, focused typechecks/contracts, and all 13 GitHub Actions workflows.
 
 ## Open code/release blockers
 
