@@ -45,6 +45,17 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /ResponsiveContainer/);
   assert.match(cashier, /PieChart/);
   assert.match(cashier, /<Pie/);
+  assert.match(cashier, /isAnimationActive=\{false\}/);
+  assert.match(reports, /isAnimationActive=\{false\}/);
+  assert.match(cashier, /report-print-lang-\$\{lang\}/);
+  assert.match(cashier, /lang === 'ku' \? '' : 'report-print-break-avoid '/);
+  assert.match(printCss, /report-print-lang-ku\.report-print-content/);
+  assert.match(printCss, /grid-template-columns: 44mm minmax\(0, 1fr\)/);
+  assert.match(printCss, /width: 44mm !important/);
+  assert.match(printCss, /height: 44mm !important/);
+  assert.match(printCss, /report-print-lang-ku \.report-print-two-column/);
+  assert.match(printCss, /display: flex !important/);
+  assert.match(printCss, /min-height: 3\.7mm !important/);
   assert.match(cashier, /<Cell/);
   assert.match(cashier, /REPORT_CHART_COLORS/);
   assert.doesNotMatch(cashier, /<BarChart/);
@@ -60,10 +71,15 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(toolbar, /lang === 'en' \? 'justify-start' : 'justify-end'/);
   assert.match(toolbar, /lang === 'en' \? \(/);
   assert.match(toolbar, /onClick=\{applyDraft\}[\s\S]*\{copy\.apply\}[\s\S]*onClick=\{\(\) => setOpen\(false\)\}[\s\S]*\{copy\.cancel\}/);
-  assert.match(toolbar, /closeButtonClassName=\{lang === 'ar' \? 'left-3 right-auto top-3' : 'right-3 top-3'\}/);
+  assert.match(toolbar, /closeButtonClassName=\{lang === 'en' \? 'right-3 top-3' : 'left-3 right-auto top-3'\}/);
   assert.match(toolbar, /<bdi dir="ltr">/);
   assert.match(toolbar, /index === 0 \? 'من' : 'إلى'/);
   assert.match(cashier, /report-print-chart-canvas/);
+  assert.match(cashier, /h-48 w-48 max-w-full/);
+  assert.match(printCss, /grid-template-columns: 48mm minmax\(0, 1fr\)/);
+  assert.match(printCss, /width: 48mm !important/);
+  assert.match(printCss, /height: 48mm !important/);
+  assert.match(reports, /report-print-chart-canvas mx-auto mt-1 flex h-48 w-48 max-w-full/);
   assert.match(cashier, /report-print-chart-dot/);
   assert.match(cashier, /DonutProductChart/);
   assert.match(cashier, /chartPercentText/);
@@ -186,9 +202,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /report-print-chart-panel/);
   assert.match(printCss, /report-print-chart-card/);
   assert.match(printCss, /report-print-cashier-chart-card/);
-  assert.match(printCss, /grid-template-columns: 58mm minmax\(0, 1fr\)/);
+  assert.match(printCss, /grid-template-columns: 48mm minmax\(0, 1fr\)/);
   assert.match(printCss, /grid-template-areas:/);
-  assert.match(printCss, /height: 58mm/);
+  assert.match(printCss, /height: 48mm/);
   assert.match(printCss, /\.report-print-metrics\s*\{[^}]*grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/);
   assert.match(printCss, /report-print-currency-section/);
   assert.match(printCss, /\.report-print-currency-section\s*\{[^}]*break-inside: auto !important;[^}]*page-break-inside: auto !important;/);
@@ -228,7 +244,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /report-print-online-products/);
   assert.match(printCss, /report-print-online-profit-note/);
   assert.match(printCss, /report-print-online-products \.report-print-chart-canvas/);
-  assert.match(printCss, /height: 46mm/);
+  assert.match(printCss, /height: 48mm/);
   assert.match(printCss, /break-after: avoid/);
   assert.match(cashier, /rtlText: lang !== 'en'/);
   assert.match(workbook, /stylesXml/);
@@ -262,15 +278,16 @@ test("cashier profitability requires complete historical cost evidence", () => {
 });
 
 
-test("Arabic and English report calendars preserve the approved reference geometry without changing date boundaries", () => {
+test("Arabic, Sorani and English report calendars preserve the approved reference geometry without changing date boundaries", () => {
   const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
   const css = read("artifacts/fawri/src/components/reports/report-calendar.css");
-  assert.match(toolbar, /lang === 'ar' \|\| lang === 'en' \? DayPicker : Calendar/);
+  assert.match(toolbar, /const RangeCalendar = DayPicker/);
   assert.match(toolbar, /locale=\{lang === 'ar' \? ar : undefined\}/);
   assert.match(toolbar, /numerals=\{lang === 'ar' \? 'arab' : undefined\}/);
   assert.match(toolbar, /labelNext: \(\) => 'الشهر التالي'/);
   assert.match(toolbar, /labelPrevious: \(\) => 'الشهر السابق'/);
   assert.match(css, /\.report-ar-calendar \.rdp-month_grid/);
+  assert.match(css, /\.report-ku-calendar \.rdp-month_grid/);
   assert.match(css, /\.report-en-calendar \.rdp-month_grid/);
   assert.match(css, /\.report-en-calendar \.rdp-button_previous/);
   assert.match(css, /\.report-en-calendar \.rdp-button_next/);
@@ -279,9 +296,21 @@ test("Arabic and English report calendars preserve the approved reference geomet
   assert.match(css, /\.report-ar-calendar \.rdp-range_middle/);
   assert.match(css, /\.report-ar-calendar\[dir="rtl"\] \.rdp-range_start/);
   assert.match(css, /\.report-ar-calendar\[dir="rtl"\] \.rdp-range_end/);
-  assert.match(toolbar, /lang === 'en' \? 'report-en-date-dialog'/);
-  assert.match(toolbar, /lang === 'en' \? 'report-en-calendar'/);
-  assert.match(toolbar, /lang === 'ku' \? <div className="mb-3">/);
+  assert.match(css, /\.report-ku-calendar\[dir="rtl"\] \.rdp-range_start/);
+  assert.match(css, /\.report-ku-calendar\[dir="rtl"\] \.rdp-range_end/);
+  assert.match(toolbar, /lang === 'ku' \? 'report-ku-date-dialog'/);
+  assert.match(toolbar, /lang === 'ku' \? 'report-ku-calendar'/);
+  assert.match(toolbar, /formatCaption: soraniCaption/);
+  assert.match(toolbar, /formatWeekdayName: soraniWeekday/);
+  assert.match(toolbar, /کانوونی دووەم/);
+  assert.match(toolbar, /ئەیلوول/);
+  assert.match(toolbar, /تشرینی یەکەم/);
+  assert.match(toolbar, /SORANI_WEEKDAYS/);
+  assert.match(toolbar, /SoraniRangeDetail/);
+  assert.match(toolbar, /index === 0 \? 'لە' : 'تا'/);
+  assert.match(toolbar, /weekStartsOn=\{lang === 'ku' \? 6 : undefined\}/);
+  assert.match(toolbar, /dir=\{lang === 'en' \? 'ltr' : 'rtl'\}/);
+  assert.doesNotMatch(toolbar, /lang === 'ku' \? <div className="mb-3">/);
   assert.match(css, /table-layout: fixed/);
   assert.match(css, /min-height: 2\.5rem/);
   assert.match(css, /\.rdp-range_start \.rdp-day_button/);

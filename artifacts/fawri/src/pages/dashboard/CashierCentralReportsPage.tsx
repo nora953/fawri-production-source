@@ -434,7 +434,7 @@ function DonutProductChart({
   return (
     <div className="report-print-chart-card report-print-cashier-chart-card mt-2 rounded-xl border bg-background p-3">
       <p className="report-print-chart-title text-center text-xs font-semibold text-muted-foreground">{title}</p>
-      <div className="report-print-chart-canvas mx-auto mt-1 flex h-40 w-full items-center justify-center">
+      <div className="report-print-chart-canvas mx-auto mt-1 flex h-48 w-48 max-w-full items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -447,6 +447,7 @@ function DonutProductChart({
               outerRadius="88%"
               paddingAngle={2}
               strokeWidth={1}
+              isAnimationActive={false}
             >
               {rows.map((entry, index) => (
                 <Cell key={entry.name} fill={REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length]} />
@@ -775,7 +776,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
   const detailsAreLimited = Boolean(result && result.activity.operations.length < result.activity.operation_matching_count && result.activity.operation_detail_limit > 0);
 
   return (
-    <div className="report-print-content space-y-5 pb-8" dir={dir}>
+    <div className={`report-print-content report-print-lang-${lang} space-y-5 pb-8`} dir={dir}>
       {!embedded ? <header className="flex flex-wrap items-start justify-between gap-3"><div><h1 className="text-2xl font-bold text-foreground">{labels.title}</h1><p className="mt-1 max-w-3xl text-sm text-muted-foreground">{labels.subtitle}</p></div><Link href="/dashboard/cashiers" className="rounded-xl border bg-card px-4 py-2 text-sm font-bold hover:bg-accent">{labels.back}</Link></header> : null}
       <ReportToolbar
         range={range}
@@ -816,7 +817,10 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           const sellingChart = chartRows(currency.top_products, 'net_units');
           const profitChart = chartRows(currency.top_profitable_products, 'gross_profit_minor');
           return (
-            <section key={`${currency.currency_code}:${currency.currency_fraction_digits}`} className="report-print-break-avoid report-print-currency-section space-y-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+            <section
+              key={`${currency.currency_code}:${currency.currency_fraction_digits}`}
+              className={`${lang === 'ku' ? '' : 'report-print-break-avoid '}report-print-currency-section space-y-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-5`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-bold" dir="ltr">{currency.currency_code}</h2>
                 <span className="text-xs text-muted-foreground">{saleCountText(currency.sale_count, lang, labels)}</span>
@@ -917,7 +921,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
                 <tbody className="divide-y">{filteredOperations.map(item => {
                   const instant = new Date(item.occurred_at);
                   const datePart = formatDayFirst(instant);
-                  const timePart = instant.toLocaleTimeString(lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en-GB', { hour: '2-digit', minute: '2-digit' });
+                  const timePart = instant.toLocaleTimeString(lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ckb-IQ' : 'en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
                   const employeeName = localizedLegacyName(item.staff_name, 'employee', labels);
                   const locationName = localizedLegacyName(item.location_name, 'location', labels);
                   const stationName = localizedLegacyName(item.station_name, 'station', labels);
