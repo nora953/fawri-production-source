@@ -39,6 +39,7 @@ import {
   type KnowledgeSqlExecutor,
 } from "./postgresKnowledgeRuntime.js";
 import type {
+  DatabaseFactResult,
   KnowledgeFactResolver,
   KnowledgeFactResolverInput,
   KnowledgeLanguage,
@@ -57,6 +58,17 @@ const MAX_WEIGHT_G = 100_000_000;
 const MAX_DIMENSION_MM = 100_000;
 
 type MeasurementKind = "weight" | "dimensions";
+type OperationalFactKind =
+  | "delivery"
+  | "payment"
+  | "business"
+  | "price"
+  | "stock"
+  | "weight"
+  | "dimensions"
+  | "order"
+  | "warranty";
+
 type PhysicalFacts = {
   weight_g: number | null;
   dimensions: { length_mm: number; width_mm: number; height_mm: number } | null;
@@ -962,6 +974,34 @@ async function resolveOrderFact(
   return { answerText: answer, language, confidence: 1, factType: "order_status", recordId: orderId };
 }
 
+function combineFactResults(
+  facts: DatabaseFactResult[],
+  language: KnowledgeLanguage,
+): DatabaseFactResult | null {
+  if (!facts.length) return null;
+  if (facts.length === 1) return facts[0];
+
+  const answerText = boundedText(
+    facts.map((fact) => fact.answerText.trim()).filter(Boolean).join("\n"),
+    2_000,
+  );
+  if (!answerText) return null;
+
+  const ids = facts
+    .map((fact) => boundedText(fact.recordId, 200))
+    .filter(Boolean);
+  const sharedRecordId =
+    ids.length === facts.length && new Set(ids).size === 1 ? ids[0] : undefined;
+
+  return {
+    answerText,
+    language,
+    confidence: Math.min(...facts.map((fact) => fact.confidence)),
+    factType: `combined_${facts.map((fact) => fact.factType).join("_")}`,
+    ...(sharedRecordId ? { recordId: sharedRecordId } : {}),
+  };
+}
+
 export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
   constructor(private readonly sql: KnowledgeSqlExecutor = getPostgresKnowledgeSqlClient()) {}
 
@@ -988,77 +1028,99 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
       order: containsAny(normalized, ORDER_TERMS),
       warranty: containsAny(normalized, WARRANTY_TERMS),
     };
-    const requested = Object.entries(kinds).filter(([, matched]) => matched).map(([kind]) => kind);
+    const requested = Object.entries(kinds)
+      .filter(([, matched]) => matched)
+      .map(([kind]) => kind as OperationalFactKind);
     if (!requested.length) return null;
-    if (requested.length > 1) {
-      fail("KNOWLEDGE_FACT_AMBIGUOUS", "authoritative fact request is ambiguous", 409);
-    }
 
-    if (kinds.warranty) {
-      // The current PostgreSQL authority has no structured warranty-policy column.
-      // Treat unstructured text/metadata as ambiguous provenance instead of guessing.
-      return null;
-    }
+    let settingsRow: Record<string, unknown> | null = null;
+    const merchantSettings = async () => {
+      if (!settingsRow) settingsRow = await settings(this.sql, merchantId);
+      return settingsRow;
+    };
 
-    if (kinds.weight || kinds.dimensions) {
-      return resolveMeasurementFact({
-        sql: this.sql,
-        merchantId,
-        customer: normalized,
-        language: input.language,
-        kind: kinds.weight ? "weight" : "dimensions",
-      });
-    }
+    const resolveKind = async (
+      kind: OperationalFactKind,
+    ): Promise<DatabaseFactResult | null> => {
+      if (kind === "warranty") {
+        // Merchant product warranty has no structured authority yet.
+        // Do not mix an untrusted warranty answer into an otherwise valid multi-intent reply.
+        return null;
+      }
 
-    if (kinds.price || kinds.stock) {
-      return resolveProductFact({
-        sql: this.sql,
-        merchantId,
-        customer: normalized,
-        language: input.language,
-        kind: kinds.price ? "price" : "stock",
-      });
-    }
+      if (kind === "weight" || kind === "dimensions") {
+        return resolveMeasurementFact({
+          sql: this.sql,
+          merchantId,
+          customer: normalized,
+          language: input.language,
+          kind,
+        });
+      }
 
-    if (kinds.order) {
-      return resolveOrderFact(
-        this.sql,
-        merchantId,
-        input.customerText,
-        input.language,
-        input.conversationId,
-        input.customerExternalId,
-      );
-    }
+      if (kind === "price" || kind === "stock") {
+        return resolveProductFact({
+          sql: this.sql,
+          merchantId,
+          customer: normalized,
+          language: input.language,
+          kind,
+        });
+      }
 
-    const row = await settings(this.sql, merchantId);
-    if (!bool(row.auto_reply_enabled)) return null;
-    if (kinds.delivery) {
-      return resolveDeliveryFact({
-        sql: this.sql,
-        merchantId,
-        customerText: input.customerText,
-        language: input.language,
-        row,
-      });
-    }
-    if (kinds.payment) {
+      if (kind === "order") {
+        return resolveOrderFact(
+          this.sql,
+          merchantId,
+          input.customerText,
+          input.language,
+          input.conversationId,
+          input.customerExternalId,
+        );
+      }
+
+      const row = await merchantSettings();
+      if (!bool(row.auto_reply_enabled)) return null;
+
+      if (kind === "delivery") {
+        return resolveDeliveryFact({
+          sql: this.sql,
+          merchantId,
+          customerText: input.customerText,
+          language: input.language,
+          row,
+        });
+      }
+
+      if (kind === "payment") {
+        return {
+          answerText: localizedPayment(row, input.language),
+          language: input.language,
+          confidence: 1,
+          factType: "payment_policy",
+          recordId: `${merchantId}:settings:${version(row.settings_version)}`,
+        };
+      }
+
+      const storeName = text(row.store_name, 300);
+      if (!storeName) {
+        fail("KNOWLEDGE_FACT_UNAVAILABLE", "authoritative fact is unavailable");
+      }
       return {
-        answerText: localizedPayment(row, input.language),
+        answerText: storeName,
         language: input.language,
         confidence: 1,
-        factType: "payment_policy",
-        recordId: `${merchantId}:settings:${version(row.settings_version)}`,
+        factType: "business_name",
+        recordId: merchantId,
       };
-    }
-    const storeName = text(row.store_name, 300);
-    if (!storeName) fail("KNOWLEDGE_FACT_UNAVAILABLE", "authoritative fact is unavailable");
-    return {
-      answerText: storeName,
-      language: input.language,
-      confidence: 1,
-      factType: "business_name",
-      recordId: merchantId,
     };
+
+    const resolvedFacts: DatabaseFactResult[] = [];
+    for (const kind of requested) {
+      const resolved = await resolveKind(kind);
+      if (!resolved) return null;
+      resolvedFacts.push(resolved);
+    }
+    return combineFactResults(resolvedFacts, input.language);
   }
 }

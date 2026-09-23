@@ -98,6 +98,8 @@ The messaging pipeline may also supply a bounded recent conversation context. It
 
 A Fawri clarification reply stores its stable reason code in message metadata. When the next customer turn is not itself a new authoritative question, the decision engine may combine that follow-up with the immediately preceding customer question for deterministic fact resolution. This is intentionally limited to safe clarification codes for missing/ambiguous product, variant, or location context. Database outages, stale inventory, provenance failures, and other authority errors are never converted into clarification prompts.
 
+A single customer message may request multiple authoritative facts. The operational fact resolver composes all requested trusted facts into one reply instead of rejecting the message merely because it contains more than one intent. Examples include price + availability, delivery + payment, or weight + dimensions. Composition is all-or-nothing: if any requested fact lacks trusted structured authority, the resolver returns no combined answer rather than silently omitting that part. Existing clarification and fail-closed rules still apply to each component fact.
+
 The production database and vector adapter must preserve this rule at the query and schema level; see the handoff requests.
 
 ## Language handling

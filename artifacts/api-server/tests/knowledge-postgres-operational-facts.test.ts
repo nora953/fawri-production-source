@@ -228,3 +228,90 @@ test("order fact without explicit id and warranty without structured authority f
   assert.equal(await resolver.resolve({ merchantId: "merchant-a", customerText: "شنو الضمان؟", language: "ar" }), null);
   assert.equal(sql.queries.length, 0);
 });
+
+test("product price and stock can be answered together from authoritative catalog and location inventory", async () => {
+  const sql = new FakeSql(async (query) => {
+    if (query.includes("FROM products")) return [product()];
+    if (query.includes("FROM commerce_promotions")) return [];
+    if (query.includes("FROM merchant_locations")) {
+      return [{ location_id: "location-a", quantity: 4 }];
+    }
+    return [];
+  });
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "شكد سعر هاتف ألف وهل متوفر؟",
+    language: "ar",
+  });
+
+  assert.equal(result?.factType, "combined_product_price_product_stock");
+  assert.match(result?.answerText || "", /250,000/);
+  assert.match(result?.answerText || "", /متوفر/);
+  assert.equal(
+    sql.queries.filter((query) => query.sql.includes("FROM products")).length,
+    2,
+  );
+});
+
+test("delivery and payment questions are answered together from the same merchant settings authority", async () => {
+  const settingsRow = {
+    merchant_id: "merchant-a",
+    store_name: "متجر ألف",
+    merchant_status: "approved",
+    account_status: "approved",
+    merchant_currency_code: "IQD",
+    settings_version: 3,
+    auto_reply_enabled: true,
+    delivery_enabled: true,
+    delivery_pricing_mode: "flat",
+    delivery_fee_iqd: 5000,
+    free_delivery_threshold_iqd: null,
+    delivery_areas: ["Baghdad"],
+    delivery_estimated_days_min: 1,
+    delivery_estimated_days_max: 2,
+    cash_on_delivery_enabled: true,
+    electronic_payment_enabled: false,
+    payment_methods: ["cash_on_delivery"],
+  };
+  const sql = new FakeSql(async (query) => {
+    if (query.includes("JOIN merchant_settings")) return [settingsRow];
+    if (query.includes("FROM commerce_promotions")) return [];
+    return [];
+  });
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "شنو طرق الدفع وكم التوصيل؟",
+    language: "ar",
+  });
+
+  assert.equal(result?.factType, "combined_delivery_policy_payment_policy");
+  assert.match(result?.answerText || "", /5,000/);
+  assert.match(result?.answerText || "", /الدفع عند الاستلام/);
+  assert.equal(
+    sql.queries.filter((query) => query.sql.includes("JOIN merchant_settings")).length,
+    1,
+  );
+});
+
+test("multi-intent reply fails closed when any requested fact lacks structured authority", async () => {
+  const sql = new FakeSql(async (query) => {
+    if (query.includes("FROM products")) return [product()];
+    if (query.includes("FROM commerce_promotions")) return [];
+    return [];
+  });
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  assert.equal(
+    await resolver.resolve({
+      merchantId: "merchant-a",
+      customerText: "شكد سعر هاتف ألف وشنو الضمان؟",
+      language: "ar",
+    }),
+    null,
+  );
+});
+
