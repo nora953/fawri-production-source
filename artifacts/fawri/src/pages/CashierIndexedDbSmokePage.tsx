@@ -5,6 +5,7 @@ import { runCashierPromotionSmoke } from '@/lib/cashierPromotionSmoke';
 import { runCashierSalePricingSmoke } from '@/lib/cashierSalePricingSmoke';
 import { runCashierCompensationSmoke } from '@/lib/cashierCompensationSmoke';
 import { runCashierBackupSmoke } from '@/lib/cashierBackupSmoke';
+import { CASHIER_INDEXEDDB_SMOKE_COPY as copy } from '@/lib/translations/features/pages/CashierIndexedDbSmokePage';
 
 type SmokeState =
   | { status: 'idle' }
@@ -49,9 +50,9 @@ export default function CashierIndexedDbSmokePage() {
     <main className="min-h-screen bg-background p-6 text-foreground">
       <div className="mx-auto max-w-3xl space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold">Fawri Cashier Local Commerce Smoke</h1>
+          <h1 className="text-2xl font-bold">{copy.title}</h1>
           <p className="text-sm text-muted-foreground">
-            Disposable P1B/P1C/P1D/P1E diagnostic only. It uses temporary IndexedDB databases, validates offline commerce, compensation, history, backup integrity, and atomic restore behavior, and does not touch merchant data.
+            {copy.description}
           </p>
         </div>
 
@@ -61,21 +62,21 @@ export default function CashierIndexedDbSmokePage() {
           disabled={state.status === 'running'}
           className="h-12 rounded-xl bg-orange-500 px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {state.status === 'running' ? 'Running smoke test…' : 'Run local commerce smoke test'}
+          {state.status === 'running' ? copy.runningButton : copy.runButton}
         </button>
 
         {state.status === 'idle' && (
-          <p className="text-sm text-muted-foreground">Press the button once and send the result shown below.</p>
+          <p className="text-sm text-muted-foreground">{copy.idleHint}</p>
         )}
 
         {state.status === 'running' && (
-          <p className="text-sm font-medium">Running persistence, sale, inventory, pricing, return, void, history, backup, restore, restart, and outbox checks…</p>
+          <p className="text-sm font-medium">{copy.runningHint}</p>
         )}
 
         {state.status === 'passed' && (
           <section className="space-y-3">
             <div className="rounded-xl border border-green-300 bg-green-50 p-4 font-semibold text-green-800">
-              PASS — local cashier storage, commerce, compensation, history, and backup/restore checks completed.
+              {copy.passed}
             </div>
             <pre className="max-h-[60vh] overflow-auto rounded-xl border bg-muted p-4 text-xs leading-5" dir="ltr">
               {JSON.stringify(state.payload, null, 2)}
@@ -86,7 +87,7 @@ export default function CashierIndexedDbSmokePage() {
         {state.status === 'failed' && (
           <section className="space-y-3">
             <div className="rounded-xl border border-red-300 bg-red-50 p-4 font-semibold text-red-800">
-              FAIL — local cashier smoke test did not complete.
+              {copy.failed}
             </div>
             <pre className="max-h-[60vh] overflow-auto rounded-xl border bg-muted p-4 text-xs leading-5" dir="ltr">
               {state.error}

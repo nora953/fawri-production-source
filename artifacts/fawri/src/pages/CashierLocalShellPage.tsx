@@ -4,6 +4,7 @@ import {
   getCashierOfflineShellDiagnostics,
   type CashierOfflineShellDiagnostics,
 } from '@/lib/cashierOfflineAppShell';
+import { CASHIER_LOCAL_SHELL_COPY as copy } from '@/lib/translations/features/pages/CashierLocalShellPage';
 
 type LocalStorageState = Awaited<ReturnType<typeof probeIndexedDbCashierDurability>>;
 
@@ -46,10 +47,10 @@ export default function CashierLocalShellPage() {
       <section className="mx-auto max-w-3xl space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm lg:max-h-[calc(100dvh-1.5rem)] lg:p-6">
         <header className="flex items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div>
-            <p className="text-sm font-semibold text-orange-600">فوري</p>
-            <h1 className="mt-1 text-2xl font-bold">الكاشير المحلي</h1>
+            <p className="text-sm font-semibold text-orange-600">{copy.brand}</p>
+            <h1 className="mt-1 text-2xl font-bold">{copy.title}</h1>
             <p className="mt-1 text-sm leading-5 text-slate-500">
-              هذه الواجهة مستقلة عن خدمات السحابة، ومصممة لتبقى قابلة للفتح والعمل محليًا عند انقطاع الشبكة.
+              {copy.description}
             </p>
           </div>
           <img src="/fawri-logo.svg" alt="Fawri" className="h-11 w-11 object-contain" />
@@ -57,24 +58,24 @@ export default function CashierLocalShellPage() {
 
         <div className={`rounded-2xl border p-4 ${coldReady ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50'}`}>
           <p className="font-bold">
-            {coldReady ? 'جاهز للإقلاع المحلي بعد انقطاع الشبكة' : 'جارٍ تجهيز التخزين المحلي ونسخة التطبيق'}
+            {coldReady ? copy.ready : copy.preparing}
           </p>
           <p className="mt-1 text-sm leading-5 text-slate-600">
-            لا تعتبر هذه الشاشة اعتمادًا إنتاجيًا نهائيًا قبل اجتياز اختبار الإقلاع البارد والمتصفحات المدعومة.
+            {copy.readinessNote}
           </p>
         </div>
 
         <div className="grid gap-2.5 sm:grid-cols-2">
-          <StatusCard label="اتصال الجهاز بالإنترنت" value={online ? 'متصل' : 'غير متصل'} ok={online} neutral={!online} />
-          <StatusCard label="IndexedDB" value={storage?.available ? 'متاح' : 'غير متاح'} ok={Boolean(storage?.available)} />
-          <StatusCard label="التخزين الدائم" value={storage?.persisted ? 'ممنوح' : 'غير مؤكد'} ok={Boolean(storage?.persisted)} />
-          <StatusCard label="Service Worker" value={shell?.registration_active ? 'نشط' : 'جارٍ التفعيل'} ok={Boolean(shell?.registration_active)} />
-          <StatusCard label="الصفحة مخزنة محليًا" value={shell?.cashier_shell_cached ? 'نعم' : 'ليس بعد'} ok={Boolean(shell?.cashier_shell_cached)} />
-          <StatusCard label="ملفات التطبيق المخزنة" value={String(shell?.loaded_assets_cached ?? 0)} ok={Boolean(shell && shell.loaded_assets_cached > 0)} />
+          <StatusCard label={copy.internetLabel} value={online ? copy.online : copy.offline} ok={online} neutral={!online} />
+          <StatusCard label={copy.indexedDbLabel} value={storage?.available ? copy.available : copy.unavailable} ok={Boolean(storage?.available)} />
+          <StatusCard label={copy.persistentStorageLabel} value={storage?.persisted ? copy.granted : copy.notConfirmed} ok={Boolean(storage?.persisted)} />
+          <StatusCard label={copy.serviceWorkerLabel} value={shell?.registration_active ? copy.active : copy.activating} ok={Boolean(shell?.registration_active)} />
+          <StatusCard label={copy.cachedPageLabel} value={shell?.cashier_shell_cached ? copy.yes : copy.notYet} ok={Boolean(shell?.cashier_shell_cached)} />
+          <StatusCard label={copy.cachedAssetsLabel} value={String(shell?.loaded_assets_cached ?? 0)} ok={Boolean(shell && shell.loaded_assets_cached > 0)} />
         </div>
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 text-sm leading-5 text-slate-600">
-          <strong className="text-slate-800">حدود هذه المرحلة:</strong> لا توجد هنا بعد واجهة بيع نهائية أو ربط طابعة أو مزامنة سحابية. هذه صفحة اعتماد للبنية المحلية فقط، وتتعمد عدم استدعاء API أو التحقق من الاشتراك حتى لا يصبح تشغيل الكاشير رهين السيرفر.
+          <strong className="text-slate-800">{copy.limitsTitle}</strong> {copy.limitsBody}
         </div>
       </section>
     </main>
