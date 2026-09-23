@@ -1,1 +1,1 @@
-export * from "@/lib/translations/features/lib/earlyWarningCoverageCopy";
+export * from "./translations/features/lib/earlyWarningCoverageCopy";
