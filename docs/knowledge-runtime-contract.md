@@ -19,6 +19,7 @@ type KnowledgeDecisionInput = {
   requestId?: string;
   conversationId?: string; // trusted messaging-pipeline context only
   customerExternalId?: string; // trusted channel identity only
+  recentMessages?: KnowledgeConversationMessage[]; // trusted server-loaded history only
 };
 ```
 
@@ -90,6 +91,8 @@ Every mutating operation requires `expectedVersion` (or `If-Match`) after creati
 All repository reads, updates, deletes, exact matches, semantic documents, training transitions, learned-answer lookups, and audit queries include the authenticated `merchantId`. Cross-tenant IDs return not found rather than exposing the other tenant's current record. Semantic retrieval filters documents by tenant before scoring.
 
 Customer-private operational facts add a second boundary. Order-status lookup is eligible only when the trusted messaging pipeline supplies the active `conversationId` and/or channel `customerExternalId`; the query then requires the order to belong to that conversation/customer identity. Browser-supplied identity is not trusted for this purpose, and an order ID by itself is insufficient to disclose status, payment state, or totals.
+
+The messaging pipeline may also supply a bounded recent conversation context. It is loaded server-side from the same tenant/conversation and excludes the current inbound message, failed messages, queued replies, and system messages. At most eight prior delivered/received customer/Fawri/merchant messages are exposed to the decision engine. Their text is never written into decision audit metadata; only the bounded context count is recorded. If AI fallback is used, the whole conversation history remains in the untrusted user-data trust zone and sensitive values are redacted before provider transport.
 
 The production database and vector adapter must preserve this rule at the query and schema level; see the handoff requests.
 

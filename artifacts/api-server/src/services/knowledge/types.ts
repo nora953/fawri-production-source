@@ -153,6 +153,14 @@ export type AiTokenUsage = {
   totalTokens: number;
 };
 
+export type KnowledgeConversationMessage = {
+  sender: "customer" | "fawri" | "merchant";
+  text: string;
+  createdAt: string;
+  matchedRecordId?: string;
+  reasonCode?: string;
+};
+
 export type AiFallbackRequest = {
   merchantId: string;
   language: KnowledgeLanguage;
@@ -165,6 +173,7 @@ export type AiFallbackRequest = {
     language: KnowledgeLanguage;
   }>;
   customerText: string;
+  conversationHistory: KnowledgeConversationMessage[];
   injectionSignals: string[];
 };
 
@@ -197,6 +206,8 @@ export type KnowledgeDecisionInput = {
   conversationId?: string;
   /** Trusted channel customer identity; required for customer-private facts. */
   customerExternalId?: string;
+  /** Bounded prior delivered/received messages loaded by the server messaging pipeline. */
+  recentMessages?: KnowledgeConversationMessage[];
 };
 
 export type KnowledgeDecisionResult = {

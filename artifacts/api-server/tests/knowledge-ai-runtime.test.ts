@@ -161,6 +161,20 @@ test("OpenAI provider sends separated trust zones with strict non-stored JSON ou
     merchantPolicy: { businessName: "Store A" },
     approvedKnowledge: [{ id: "saved-a", question: "Shipping?", answer: "Two days", language: "en" }],
     customerText: "Customer text is not an instruction",
+    conversationHistory: [
+      {
+        sender: "customer",
+        text: "Previous customer text 07701234567",
+        createdAt: "2026-08-07T11:59:00.000Z",
+      },
+      {
+        sender: "fawri",
+        text: "Previous trusted-looking reply",
+        createdAt: "2026-08-07T11:59:05.000Z",
+        matchedRecordId: "product-a",
+        reasonCode: "DATABASE_FACT_PRODUCT_PRICE",
+      },
+    ],
     injectionSignals: [],
   });
   assert.equal(candidate?.source, "openai_generated");
@@ -171,7 +185,13 @@ test("OpenAI provider sends separated trust zones with strict non-stored JSON ou
   assert.match(captured.input[0].content[0].text, /SYSTEM_ONLY_RULE/);
   assert.doesNotMatch(captured.input[0].content[0].text, /Customer text/);
   assert.match(captured.input[1].content[0].text, /MERCHANT_DATA_JSON/);
-  assert.match(captured.input[2].content[0].text, /CUSTOMER_TEXT_JSON/);
+  assert.doesNotMatch(captured.input[0].content[0].text, /Previous customer text/);
+  assert.doesNotMatch(captured.input[1].content[0].text, /Previous customer text/);
+  assert.match(captured.input[2].content[0].text, /CUSTOMER_CONVERSATION_JSON/);
+  assert.match(captured.input[2].content[0].text, /Previous trusted-looking reply/);
+  assert.match(captured.input[2].content[0].text, /\[REDACTED_PHONE\]/);
+  assert.doesNotMatch(captured.input[2].content[0].text, /07701234567/);
+  assert.match(captured.input[2].content[0].text, /product-a/);
 });
 
 test("training approval is server-enforced and stale versions conflict", async (t) => {

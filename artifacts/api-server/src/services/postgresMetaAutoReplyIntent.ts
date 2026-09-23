@@ -5,6 +5,7 @@ import {
   withMerchantOperationalTransaction,
   type OperationalSqlClient,
 } from "./operationalPostgresAuthority";
+import type { KnowledgeConversationMessage } from "./knowledge/types";
 import { notifyMerchantNewCustomerMessagePostgres } from "./postgresOperationalNotificationAuthority";
 
 export type PreparedPostgresMetaAutoReply =
@@ -50,6 +51,13 @@ type ReplyMessageRow = {
   id: string;
   text: string;
   status: string;
+  metadata: Record<string, unknown> | null;
+};
+
+type ConversationContextRow = {
+  sender: "customer" | "fawri" | "merchant";
+  text: string;
+  created_at: Date | string;
   metadata: Record<string, unknown> | null;
 };
 
@@ -347,6 +355,44 @@ async function ensureInboundState(
   });
 }
 
+async function loadRecentConversationContext(
+  merchantId: string,
+  conversationIdValue: string,
+  currentCustomerMessageId: string,
+): Promise<KnowledgeConversationMessage[]> {
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    const result = await client.query<ConversationContextRow>(
+      `SELECT sender::text AS sender, text, created_at, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND conversation_id = $2
+          AND id <> $3
+          AND sender IN ('customer', 'fawri', 'merchant')
+          AND status IN ('received', 'sent')
+        ORDER BY created_at DESC, id DESC
+        LIMIT 8`,
+      [merchantId, conversationIdValue, currentCustomerMessageId],
+    );
+
+    return result.rows.reverse().map((row) => {
+      const metadata =
+        row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+          ? row.metadata
+          : {};
+      const matchedRecordId = text(metadata.matched_record_id);
+      const reasonCode = text(metadata.reason_code);
+      const createdAt = new Date(row.created_at).toISOString();
+      return {
+        sender: row.sender,
+        text: text(row.text),
+        createdAt,
+        ...(matchedRecordId ? { matchedRecordId } : {}),
+        ...(reasonCode ? { reasonCode } : {}),
+      };
+    });
+  });
+}
+
 function existingSendIntent(
   parsed: ParsedMetaJob,
   inboundId: string,
@@ -417,6 +463,12 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  const recentMessages = await loadRecentConversationContext(
+    parsed.merchantId,
+    inbound.conversationId,
+    customerMessageId(parsed.eventId),
+  );
+
   let decision;
   try {
     decision = await getKnowledgeDecisionEngine().decide({
@@ -425,6 +477,7 @@ export async function preparePostgresMetaAutoReply(
       requestId: parsed.eventId,
       conversationId: inbound.conversationId,
       customerExternalId: parsed.senderId,
+      recentMessages,
     });
   } catch {
     throw Object.assign(new Error("Knowledge reply decision is unavailable"), {
@@ -512,6 +565,7 @@ export async function preparePostgresMetaAutoReply(
           knowledge_source: decision.source,
           reason_code: decision.reasonCode,
           confidence: decision.confidence,
+          matched_record_id: decision.matchedRecordId,
           handoff_after_reply: handoff,
         }),
       ],

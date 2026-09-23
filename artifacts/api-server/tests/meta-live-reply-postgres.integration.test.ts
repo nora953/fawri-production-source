@@ -218,7 +218,7 @@ await test("live PostgreSQL transport sends once and deduplicates provider succe
 
   const stored = await raw(
     `SELECT od.outcome, od.provider_message_id, m.status AS message_status,
-            m.counted_as_auto_reply
+            m.counted_as_auto_reply, m.metadata
        FROM outbound_deliveries od
        JOIN messages m ON m.id = $2 AND m.merchant_id = od.merchant_id
       WHERE od.merchant_id = $1 AND od.reply_intent_id = $3`,
@@ -228,6 +228,8 @@ await test("live PostgreSQL transport sends once and deduplicates provider succe
   assert.equal(stored.rows[0].provider_message_id, "provider-message-live-1");
   assert.equal(stored.rows[0].message_status, "sent");
   assert.equal(stored.rows[0].counted_as_auto_reply, true);
+  assert.equal(stored.rows[0].metadata.reason_code, "DATABASE_FACT_DELIVERY_POLICY");
+  assert.ok(Object.hasOwn(stored.rows[0].metadata, "matched_record_id"));
 
   const ledger = await raw(
     `SELECT count(*)::int AS count
