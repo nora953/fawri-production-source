@@ -9,11 +9,12 @@ async function source(relativePath) {
 }
 
 test('merchant dashboard permanently exposes cashier staff management and cashier reporting through the reports hub', async () => {
-  const [app, sidebar, bottomNav, reportsHub] = await Promise.all([
+  const [app, sidebar, bottomNav, reportsHub, reportsCopy] = await Promise.all([
     source('artifacts/fawri/src/App.tsx'),
     source('artifacts/fawri/src/components/layout/Sidebar.tsx'),
     source('artifacts/fawri/src/components/layout/BottomNav.tsx'),
     source('artifacts/fawri/src/pages/dashboard/ReportsPage.tsx'),
+    source('artifacts/fawri/src/lib/translations/features/pages/dashboard/ReportsPage.ts'),
   ]);
 
   assert.match(app, /\/dashboard\/cashiers/);
@@ -25,7 +26,7 @@ test('merchant dashboard permanently exposes cashier staff management and cashie
   assert.match(app, /CashierManagementPage/);
   assert.match(app, /ReportsPage/);
   assert.match(reportsHub, /CashierCentralReportsPage/);
-  assert.match(reportsHub, /Cashier Reports/);
+  assert.match(reportsCopy, /Cashier Reports/);
   assert.match(sidebar, /Cashiers & Staff/);
   assert.match(sidebar, /Reports/);
 });

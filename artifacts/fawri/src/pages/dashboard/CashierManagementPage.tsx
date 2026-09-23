@@ -122,12 +122,12 @@ function localizedError(cause: unknown, l: Copy): string {
   return l.failed;
 }
 
-function Modal({ children, dir, onClose }: { children: ReactNode; dir: 'rtl' | 'ltr'; onClose: () => void }) {
+function Modal({ children, dir, onClose, closeLabel }: { children: ReactNode; dir: 'rtl' | 'ltr'; onClose: () => void; closeLabel: string }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4" dir={dir} role="dialog" aria-modal="true">
       <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl border bg-background p-5 shadow-2xl">
         {children}
-        <button type="button" aria-label={l.close} onClick={onClose} className="sr-only">×</button>
+        <button type="button" aria-label={closeLabel} onClick={onClose} className="sr-only">×</button>
       </div>
     </div>
   );
@@ -648,7 +648,7 @@ export default function CashierManagementPage() {
       )}
 
       {addStaffOpen ? (
-        <Modal dir={dir} onClose={closeAddStaff}>
+        <Modal dir={dir} onClose={closeAddStaff} closeLabel={l.close}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-bold">{l.addStaff}</h3>
             <button type="button" onClick={closeAddStaff} disabled={busy} className="rounded-lg border px-3 py-1.5 text-sm font-bold">{l.close}</button>
@@ -704,7 +704,7 @@ export default function CashierManagementPage() {
       ) : null}
 
       {editingMember ? (
-        <Modal dir={dir} onClose={cancelEdit}>
+        <Modal dir={dir} onClose={cancelEdit} closeLabel={l.close}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-bold">{l.editStaff}</h3>
             <button type="button" onClick={cancelEdit} disabled={busy} className="rounded-lg border px-3 py-1.5 text-sm font-bold">{l.close}</button>
@@ -763,7 +763,7 @@ export default function CashierManagementPage() {
       ) : null}
 
       {addStationOpen ? (
-        <Modal dir={dir} onClose={closeAddStation}>
+        <Modal dir={dir} onClose={closeAddStation} closeLabel={l.close}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-bold">{l.addStation}</h3>
             <button type="button" onClick={closeAddStation} disabled={busy} className="rounded-lg border px-3 py-1.5 text-sm font-bold">{l.close}</button>
@@ -794,7 +794,7 @@ export default function CashierManagementPage() {
       ) : null}
 
       {editingStation ? (
-        <Modal dir={dir} onClose={cancelStationEdit}>
+        <Modal dir={dir} onClose={cancelStationEdit} closeLabel={l.close}>
           <div className="flex items-center justify-between gap-3">
             <h3 className="text-lg font-bold">{l.editStation}</h3>
             <button type="button" onClick={cancelStationEdit} disabled={busy} className="rounded-lg border px-3 py-1.5 text-sm font-bold">{l.close}</button>
@@ -844,7 +844,7 @@ export default function CashierManagementPage() {
       ) : null}
 
       {pairing ? (
-        <Modal dir={dir} onClose={() => { if (!busy) setPairing(null); }}>
+        <Modal dir={dir} onClose={() => { if (!busy) setPairing(null); }} closeLabel={l.close}>
           <div className="flex items-start justify-between gap-3">
             <div><h3 className="text-lg font-bold">{l.pairingTitle}</h3><p className="mt-1 text-sm font-semibold text-muted-foreground">{pairing.stationName}</p></div>
             <button type="button" onClick={() => setPairing(null)} className="rounded-lg border px-3 py-1.5 text-sm font-bold">{l.close}</button>

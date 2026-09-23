@@ -14,6 +14,14 @@ const operatorSessionSource = await readFile(
   new URL('../src/lib/cashierOperatorSessionRuntime.ts', import.meta.url),
   'utf8',
 );
+const managementCopySource = await readFile(
+  new URL('../src/lib/translations/features/pages/dashboard/CashierManagementPage.ts', import.meta.url),
+  'utf8',
+);
+const policyCopySource = await readFile(
+  new URL('../src/lib/translations/features/pages/dashboard/CashierDiscountPoliciesPage.ts', import.meta.url),
+  'utf8',
+);
 
 test('merchant staff UI exposes explicit manual discount authority without role auto-grants', () => {
   assert.match(managementSource, /\| 'sale\.discount'/);
@@ -21,7 +29,7 @@ test('merchant staff UI exposes explicit manual discount authority without role 
   assert.match(managementSource, /\['sale\.discount', l\.manualDiscount\]/);
   assert.match(managementSource, /\['sale\.discount_override', l\.discountOverride\]/);
   assert.match(managementSource, /href="\/dashboard\/cashiers\/discounts"/);
-  assert.match(managementSource, /Discount permission is not granted automatically\. After enabling it, set the employee limit in Discount policies\. Any discount over the limit requires approval from an authorized manager\./);
+  assert.match(managementCopySource, /Discount permission is not granted automatically\. After enabling it, set the employee limit in Discount policies\. Any discount over the limit requires approval from an authorized manager\./);
 });
 
 test('override permission control is manager-only in merchant staff UI', () => {
@@ -46,22 +54,22 @@ test('discount policy UI cannot persist override approval for a cashier', () => 
 
 test('discount policy UI keeps one merchant-wide discount kind while preserving type-specific employee limits', () => {
   assert.match(
-    policySource,
+    policyCopySource,
     /يُطبّق على جميع الكاشير والمديرين ولا يمكن تغييره من شاشة البيع\./,
   );
   assert.match(
-    policySource,
+    policyCopySource,
     /Applies to all cashiers and managers and cannot be changed at checkout\./,
   );
   assert.match(policySource, /discountKindDraft === 'percentage'/);
   assert.match(policySource, /discountSetting\.discount_kind === 'percentage'/);
   assert.match(policySource, /discountSetting\.discount_kind === 'amount'/);
   assert.match(
-    policySource,
+    policyCopySource,
     /Saving updates permissions automatically, and the other type’s limits stay saved\./,
   );
-  assert.doesNotMatch(policySource, /الحد الأقل بين النسبة والحد المالي/);
-  assert.doesNotMatch(policySource, /The lower of the percentage and amount limits/);
+  assert.doesNotMatch(policyCopySource, /الحد الأقل بين النسبة والحد المالي/);
+  assert.doesNotMatch(policyCopySource, /The lower of the percentage and amount limits/);
 });
 
 test('cashier client permission type matches discount server authority', () => {
