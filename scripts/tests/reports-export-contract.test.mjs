@@ -60,7 +60,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(toolbar, /lang === 'en' \? 'justify-start' : 'justify-end'/);
   assert.match(toolbar, /lang === 'en' \? \(/);
   assert.match(toolbar, /onClick=\{applyDraft\}[\s\S]*\{copy\.apply\}[\s\S]*onClick=\{\(\) => setOpen\(false\)\}[\s\S]*\{copy\.cancel\}/);
-  assert.match(toolbar, /closeButtonClassName=\{lang === 'ar' \? 'left-3 right-auto top-3' : 'right-3 top-3'\}/);
+  assert.match(toolbar, /closeButtonClassName=\{lang === 'en' \? 'right-3 top-3' : 'left-3 right-auto top-3'\}/);
   assert.match(toolbar, /<bdi dir="ltr">/);
   assert.match(toolbar, /index === 0 \? 'من' : 'إلى'/);
   assert.match(cashier, /report-print-chart-canvas/);
