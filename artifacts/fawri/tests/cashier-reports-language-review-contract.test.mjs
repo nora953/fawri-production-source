@@ -87,6 +87,9 @@ test('central Sorani and English reports preserve the same reviewed metric meani
   assert.match(centralEnglish, /salesByStaff: 'Financial impact by employee'/);
   assert.match(centralEnglish, /salesByStation: 'Financial impact by station'/);
   assert.match(centralSource, /count === 1 \? 'sale' : 'sales'/);
+  assert.match(centralSource, /count === 1 \? 'operation' : 'operations'/);
+  assert.match(centralSource, /topSelling: 'Top-selling'/);
+  assert.match(centralSource, /topProfitable: 'Most profitable'/);
   assert.match(centralSource, /kind === 'sale' \? 'Sale' : kind === 'return' \? 'Return' : 'Void'/);
 });
 
