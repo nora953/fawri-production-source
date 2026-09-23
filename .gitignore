@@ -71,6 +71,7 @@ translation-audit-*/
 *-debug.txt
 build-error.txt
 /pre_*.dump
+/branch-archives/
 scripts/.tmp-*
 
 # Generated files in workspace packages
