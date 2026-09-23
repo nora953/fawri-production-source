@@ -817,7 +817,10 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
           const sellingChart = chartRows(currency.top_products, 'net_units');
           const profitChart = chartRows(currency.top_profitable_products, 'gross_profit_minor');
           return (
-            <section key={`${currency.currency_code}:${currency.currency_fraction_digits}`} className="report-print-break-avoid report-print-currency-section space-y-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
+            <section
+              key={`${currency.currency_code}:${currency.currency_fraction_digits}`}
+              className={`${lang === 'ku' ? '' : 'report-print-break-avoid '}report-print-currency-section space-y-4 rounded-2xl border bg-card p-4 shadow-sm sm:p-5`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="text-lg font-bold" dir="ltr">{currency.currency_code}</h2>
                 <span className="text-xs text-muted-foreground">{saleCountText(currency.sale_count, lang, labels)}</span>
