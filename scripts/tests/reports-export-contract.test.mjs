@@ -64,6 +64,11 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(toolbar, /<bdi dir="ltr">/);
   assert.match(toolbar, /index === 0 \? 'من' : 'إلى'/);
   assert.match(cashier, /report-print-chart-canvas/);
+  assert.match(cashier, /h-48 w-48 max-w-full/);
+  assert.match(printCss, /grid-template-columns: 48mm minmax\(0, 1fr\)/);
+  assert.match(printCss, /width: 48mm !important/);
+  assert.match(printCss, /height: 48mm !important/);
+  assert.match(reports, /report-print-chart-canvas mx-auto mt-1 flex h-48 w-48 max-w-full/);
   assert.match(cashier, /report-print-chart-dot/);
   assert.match(cashier, /DonutProductChart/);
   assert.match(cashier, /chartPercentText/);
