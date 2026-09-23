@@ -143,6 +143,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(reports, /profitabilityUnavailable/);
   assert.match(reports, /reports-print\.css/);
   assert.match(reports, /ArabicOnlineReportsContent/);
+  assert.match(reports, /EnglishOnlineReportsContent/);
+  assert.match(reports, /EnglishOnlineProductChart/);
+  assert.match(reports, /EnglishCombinedChart/);
   assert.match(reports, /lang === 'ar' \? \(/);
   assert.match(reports, /ONLINE_REPORT_CHART_COLORS/);
   assert.match(reports, /<PieChart>/);
@@ -254,15 +257,21 @@ test("cashier profitability requires complete historical cost evidence", () => {
 });
 
 
-test("Arabic report calendar has localized, spaced range controls without changing date boundaries", () => {
+test("Arabic and English report calendars preserve the approved reference geometry without changing date boundaries", () => {
   const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
   const css = read("artifacts/fawri/src/components/reports/report-calendar.css");
-  assert.match(toolbar, /lang === 'ar' \? DayPicker : Calendar/);
+  assert.match(toolbar, /lang === 'ar' \|\| lang === 'en' \? DayPicker : Calendar/);
   assert.match(toolbar, /locale=\{lang === 'ar' \? ar : undefined\}/);
   assert.match(toolbar, /numerals=\{lang === 'ar' \? 'arab' : undefined\}/);
   assert.match(toolbar, /labelNext: \(\) => 'الشهر التالي'/);
   assert.match(toolbar, /labelPrevious: \(\) => 'الشهر السابق'/);
   assert.match(css, /\.report-ar-calendar \.rdp-month_grid/);
+  assert.match(css, /\.report-en-calendar \.rdp-month_grid/);
+  assert.match(css, /\.report-en-calendar \.rdp-button_previous/);
+  assert.match(css, /\.report-en-calendar \.rdp-button_next/);
+  assert.match(toolbar, /lang === 'en' \? 'report-en-date-dialog'/);
+  assert.match(toolbar, /lang === 'en' \? 'report-en-calendar'/);
+  assert.match(toolbar, /lang === 'ku' \? <div className="mb-3">/);
   assert.match(css, /table-layout: fixed/);
   assert.match(css, /min-height: 2\.5rem/);
   assert.match(css, /\.rdp-range_start \.rdp-day_button/);
