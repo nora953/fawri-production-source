@@ -251,7 +251,7 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
                     autoComplete="tel"
                     value={oldPhone}
                     onChange={(event) => setOldPhone(event.target.value)}
-                    placeholder="07XXXXXXXXX"
+                    placeholder={copy.phonePlaceholder}
                     disabled={otpRequested}
                     className={fieldInputClass}
                   />
@@ -266,7 +266,7 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
                     inputMode="tel"
                     value={newPhone}
                     onChange={(event) => setNewPhone(event.target.value)}
-                    placeholder="07XXXXXXXXX"
+                    placeholder={copy.phonePlaceholder}
                     disabled={otpRequested}
                     className={fieldInputClass}
                   />
@@ -281,7 +281,7 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
                     inputMode="tel"
                     value={confirmNewPhone}
                     onChange={(event) => setConfirmNewPhone(event.target.value)}
-                    placeholder="07XXXXXXXXX"
+                    placeholder={copy.phonePlaceholder}
                     disabled={otpRequested}
                     className={fieldInputClass}
                   />
@@ -313,7 +313,7 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
                       />
                       {devCode && (
                         <p dir="ltr" className="text-[11px] text-muted-foreground">
-                          Local preview OTP: {devCode}
+                          {copy.localPreviewOtpLabel} {devCode}
                         </p>
                       )}
                     </div>
