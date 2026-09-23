@@ -342,6 +342,7 @@ function ArabicOnlineProductChart({ products, copy }: { products: OnlineProduct[
               outerRadius="88%"
               paddingAngle={2}
               strokeWidth={1}
+              isAnimationActive={false}
             >
               {visibleProducts.map((product, index) => (
                 <Cell
@@ -567,6 +568,7 @@ function EnglishOnlineProductChart({ products, copy, lang = 'en' }: { products: 
               outerRadius="88%"
               paddingAngle={2}
               strokeWidth={1}
+              isAnimationActive={false}
             >
               {visibleProducts.map((product, index) => (
                 <Cell
