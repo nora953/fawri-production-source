@@ -321,7 +321,7 @@ export function ReportToolbar({
         </DialogTrigger>
 
         <DialogContent
-          className={`max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0 ${lang === 'ar' ? 'report-ar-date-dialog' : ''}`}
+          className={`max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0 ${lang === 'ar' ? 'report-ar-date-dialog' : lang === 'en' ? 'report-en-date-dialog' : ''}`}
           closeButtonClassName={lang === 'ar' ? 'left-3 right-auto top-3' : 'right-3 top-3'}
           dir={dir}
         >
@@ -353,7 +353,7 @@ export function ReportToolbar({
               </aside>
 
               <div className="min-w-0 p-3 sm:p-4">
-                {lang !== 'ar' ? <div className="mb-3">
+                {lang === 'ku' ? <div className="mb-3">
                   <p className="text-sm font-bold">{copy.customRange}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{copy.rangePickerHint}</p>
                 </div> : null}
@@ -374,7 +374,7 @@ export function ReportToolbar({
                     disabled={{ after: new Date() }}
                     showOutsideDays={false}
                     min={1}
-                    className={lang === 'ar' ? 'report-ar-calendar' : 'max-w-full'}
+                    className={lang === 'ar' ? 'report-ar-calendar' : lang === 'en' ? 'report-en-calendar' : 'max-w-full'}
                   />
                 </div>
                 {draftKind === 'custom' && draftRange?.from ? (
