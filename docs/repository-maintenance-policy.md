@@ -37,8 +37,7 @@ Do not introduce new hardcoded `ar/ku/en` dictionaries inside pages, components,
 Before merging translation-related work run:
 
 ```sh
-pnpm run audit:translations
-pnpm run audit:translation-inventory
+bash scripts/run-repository-translation-audits.sh
 ```
 
 The three language dictionaries must keep key parity.
