@@ -81,12 +81,41 @@ const COPY: Record<Lang, ToolbarCopy> = {
   },
 };
 
+const SORANI_MONTHS = [
+  'کانوونی دووەم',
+  'شوبات',
+  'ئازار',
+  'نیسان',
+  'ئایار',
+  'حوزەیران',
+  'تەممووز',
+  'ئاب',
+  'ئەیلوول',
+  'تشرینی یەکەم',
+  'تشرینی دووەم',
+  'کانوونی یەکەم',
+] as const;
+
+const SORANI_WEEKDAYS = [
+  'یەک',
+  'دوو',
+  'سێ',
+  'چوار',
+  'پێنج',
+  'هەینی',
+  'شەممە',
+] as const;
+
+function soraniDigits(value: string): string {
+  return value.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
+}
+
 function soraniCaption(date: Date): string {
-  return new Intl.DateTimeFormat('ckb-IQ', { month: 'long', year: 'numeric' }).format(date);
+  return `${SORANI_MONTHS[date.getMonth()]} ${soraniDigits(String(date.getFullYear()))}`;
 }
 
 function soraniWeekday(date: Date): string {
-  return new Intl.DateTimeFormat('ckb-IQ', { weekday: 'short' }).format(date);
+  return SORANI_WEEKDAYS[date.getDay()];
 }
 
 function localDateValue(daysBack: number): string {
@@ -119,6 +148,22 @@ function ArabicRangeDetail({ detail }: { detail: string }) {
         {date.split('/').map((part, partIndex) => <span key={partIndex} className="inline-flex items-center gap-0.5">
           {partIndex > 0 ? <span>/</span> : null}
           <bdi dir="ltr">{part.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)])}</bdi>
+        </span>)}
+      </span>
+    </span>)}
+  </span>;
+}
+
+
+function SoraniRangeDetail({ detail }: { detail: string }) {
+  const dates = detail.split(' – ');
+  return <span dir="rtl" className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1">
+    {dates.map((date, index) => <span key={index} className="inline-flex items-center gap-1 whitespace-nowrap">
+      {dates.length > 1 ? <span>{index === 0 ? 'لە' : 'تا'}</span> : null}
+      <span dir="rtl" className="inline-flex items-center gap-0.5">
+        {date.split('/').map((part, partIndex) => <span key={partIndex} className="inline-flex items-center gap-0.5">
+          {partIndex > 0 ? <span>/</span> : null}
+          <bdi dir="ltr">{soraniDigits(part)}</bdi>
         </span>)}
       </span>
     </span>)}
@@ -318,8 +363,12 @@ export function ReportToolbar({
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-bold text-foreground">{activeSummary.title}</span>
               {activeSummary.detail ? (
-                <span dir={lang === 'ar' ? 'rtl' : 'ltr'} className="mt-0.5 block text-xs tabular-nums text-muted-foreground">
-                  {lang === 'ar' ? <ArabicRangeDetail detail={activeSummary.detail} /> : activeSummary.detail}
+                <span dir={lang === 'en' ? 'ltr' : 'rtl'} className="mt-0.5 block text-xs tabular-nums text-muted-foreground">
+                  {lang === 'ar'
+                    ? <ArabicRangeDetail detail={activeSummary.detail} />
+                    : lang === 'ku'
+                      ? <SoraniRangeDetail detail={activeSummary.detail} />
+                      : activeSummary.detail}
                 </span>
               ) : null}
             </span>
@@ -370,7 +419,7 @@ export function ReportToolbar({
                     formatters={lang === 'ku' ? {
                       formatCaption: soraniCaption,
                       formatWeekdayName: soraniWeekday,
-                      formatDay: date => String(date.getDate()),
+                      formatDay: date => soraniDigits(String(date.getDate())),
                     } : undefined}
                     labels={lang === 'ar' ? {
                       labelNext: () => 'الشهر التالي',
@@ -393,12 +442,16 @@ export function ReportToolbar({
                 </div>
                 <div className="report-date-selection-slot mt-1 flex min-h-5 items-center justify-center">
                   {draftKind === 'custom' && draftRange?.from ? (
-                    <p dir={lang === 'ar' ? 'rtl' : 'ltr'} className={lang === 'ar' ? 'rounded-lg bg-muted/40 px-3 py-1 text-center text-xs font-semibold tabular-nums text-foreground' : 'text-center text-xs tabular-nums text-muted-foreground'}>
-                      {lang === 'ar' ? <ArabicRangeDetail detail={`${displayDateDayFirst(dateToValue(draftRange.from))} – ${draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}`} /> : <>
-                        {displayDateDayFirst(dateToValue(draftRange.from))}
-                        {' – '}
-                        {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
-                      </>}
+                    <p dir={lang === 'en' ? 'ltr' : 'rtl'} className={lang === 'ar' || lang === 'ku' ? 'rounded-lg bg-muted/40 px-3 py-1 text-center text-xs font-semibold tabular-nums text-foreground' : 'text-center text-xs tabular-nums text-muted-foreground'}>
+                      {lang === 'ar'
+                        ? <ArabicRangeDetail detail={`${displayDateDayFirst(dateToValue(draftRange.from))} – ${draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}`} />
+                        : lang === 'ku'
+                          ? <SoraniRangeDetail detail={`${displayDateDayFirst(dateToValue(draftRange.from))} – ${draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}`} />
+                          : <>
+                            {displayDateDayFirst(dateToValue(draftRange.from))}
+                            {' – '}
+                            {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
+                          </>}
                     </p>
                   ) : <span aria-hidden="true" className="invisible text-xs">00/00/0000 – 00/00/0000</span>}
                 </div>
