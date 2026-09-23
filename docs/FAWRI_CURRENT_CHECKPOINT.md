@@ -1,24 +1,37 @@
 # Fawri Current Checkpoint
 
-Status: Main integration complete; cashier reports/export polish is merged and manually validated; repository release candidate remains green.
+Status: Main integration complete; cashier reports/export polish and repository hardening are merged and validated; repository release candidate remains green.
 
 ## Repository state
 
 - Default branch: `main`
-- Integrated main SHA: `c0a8d41b774f48c89d9343db817e980d96b759c1`
+- Integrated main SHA: `5f402a332ef6b9d145aeec326f7800a4e8147ffb`
 - Final validated cashier reports/export SHA before merge: `f4cdf348655ba0c9370eb5e275b4c212683ffab2`
 - Immutable release-candidate checkpoint: `checkpoint/final-release-candidate-green-2026-09-20`
 - Immutable post-merge checkpoint: `checkpoint/main-integrated-green-2026-09-20`
 - Immutable cashier reports/export checkpoint: `checkpoint/cashier-reports-exports-complete-2026-09-23`
+- Immutable repository-hardening checkpoint: `checkpoint/repository-hardening-complete-2026-09-24`
+- Latest repository-hardening PR: #281
 - Latest reports/export integration PR: #271
 - Earlier full integration PR: #256
 - Integration result: merged through a normal merge commit; no force push and no direct write to `main`.
 
-The merged main tree is byte-for-byte identical to the validated release-candidate tree. The merge commit adds history only and changes no files relative to the validated release candidate.
+The original release-candidate checkpoint remains the immutable runtime safety reference. Later repository-hardening work was intentionally behavior-preserving but changed source organization, so the current `main` tree is no longer byte-for-byte identical to that earlier checkpoint. PR #281 revalidated the changed tree through repository typechecks, focused source contracts, translation-structure audits, and the full GitHub Actions suite.
 
 ## Final repository validation
 
 PR #256 validated the full accumulated checkpoint chain against `main`.
+
+Repository hardening on PR #281 subsequently closed the repository-maintenance blockers without intentional runtime behavior changes:
+
+- localized copy outside translation authority: 0 files / 0 objects,
+- high-confidence visible hardcoded UI copy: 0,
+- general i18n parity remains 768/768/768 with 0 missing / 0 extra,
+- admin i18n parity remains 299/299/299 with 0 missing / 0 extra,
+- executable files at or above the 1,800-line critical threshold: 0,
+- final Fawri typecheck passed,
+- focused cashier source-contract tests passed 18/18,
+- all 13 GitHub Actions workflows on the final PR head passed.
 
 Result:
 
@@ -190,8 +203,8 @@ These items must not be simulated by committing credentials or inventing provide
 
 From this checkpoint forward:
 
-1. `main` at or after `c0a8d41b774f48c89d9343db817e980d96b759c1` is the current integrated code source of truth.
-2. `checkpoint/cashier-reports-exports-complete-2026-09-23` is the latest immutable safety reference; `checkpoint/main-integrated-green-2026-09-20` remains the earlier full-integration safety reference.
+1. `main` at or after `5f402a332ef6b9d145aeec326f7800a4e8147ffb` is the current integrated code source of truth.
+2. `checkpoint/repository-hardening-complete-2026-09-24` is the latest immutable repository-maintenance milestone; `checkpoint/cashier-reports-exports-complete-2026-09-23` remains the latest feature-complete safety reference and `checkpoint/main-integrated-green-2026-09-20` remains the earlier full-integration safety reference.
 3. New work must branch from the current verified `main` or an explicitly later checkpoint.
 4. No force push.
 5. No direct feature writes to `main`; use reviewed branches/PRs.
