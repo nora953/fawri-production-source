@@ -254,7 +254,7 @@ function ArabicOnlineReportsContent({
       <div className="report-print-only border-b pb-3">
         <h1 className="text-xl font-extrabold">{copy.online}</h1>
         <p className="report-print-period-row mt-1 text-sm" dir="rtl">
-          <span className="font-semibold">الفترة:</span>
+          <span className="font-semibold">{copy.period}:</span>
           {period ? (
             <>
               <span dir="ltr">{period.start}</span>
@@ -262,7 +262,7 @@ function ArabicOnlineReportsContent({
             </>
           ) : <span>{copy.all}</span>}
         </p>
-        <p className="mt-1 text-xs text-muted-foreground">المصدر: سجل الطلبات الإلكترونية الموثوق على السيرفر</p>
+        <p className="mt-1 text-xs text-muted-foreground">{copy.trustedOnlineSource}</p>
       </div>
 
       <div className="report-print-online-metrics report-print-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -343,7 +343,7 @@ function ArabicOnlineReportsContent({
       </section>
 
       <p className="report-print-footer-note text-center text-xs text-muted-foreground">
-        المصدر: سجل الطلبات الإلكترونية الموثوق على السيرفر · {copy.generated}: <span dir="ltr">{generated}</span>
+        {copy.trustedOnlineSource} · {copy.generated}: <span dir="ltr">{generated}</span>
       </p>
     </div>
   );
@@ -857,7 +857,7 @@ function ArabicCombinedChart({ currencies, copy }: { currencies: CombinedCurrenc
             </div>;
           })}
         </div>
-        {sources.every(source => source.value === 0) ? <p className="mt-3 text-center text-xs text-muted-foreground">لا توجد قيمة مبيعات خلال الفترة المحددة.</p> : null}
+        {sources.every(source => source.value === 0) ? <p className="mt-3 text-center text-xs text-muted-foreground">{copy.noSalesValue}</p> : null}
       </div>;
     })}
   </div>;
@@ -891,7 +891,7 @@ function EnglishCombinedChart({ currencies, copy, lang = 'en' }: { currencies: C
             </div>;
           })}
         </div>
-        {sources.every(source => source.value === 0) ? <p className="mt-3 text-center text-xs text-muted-foreground">{lang === 'ku' ? 'لە ماوەی هەڵبژێردراودا بەهای فرۆشتن نییە.' : 'No sales value in the selected period.'}</p> : null}
+        {sources.every(source => source.value === 0) ? <p className="mt-3 text-center text-xs text-muted-foreground">{copy.noSalesValue}</p> : null}
       </div>;
     })}
   </div>;
@@ -1031,8 +1031,8 @@ function CombinedReports() {
           </p>
           <div className="grid gap-3 md:grid-cols-3">
             <SummaryMetric title={copy.onlineDeliveredSales}><bdi dir="ltr">{lang === 'ar' ? formatArabicIqd(online.delivered_sales_iqd) : iqMoney(online.delivered_sales_iqd, lang)}</bdi></SummaryMetric>
-            <SummaryMetric title={lang === 'ar' ? 'الطلبات الإلكترونية المسلّمة' : lang === 'en' ? 'Delivered online orders' : copy.deliveredOrders}><bdi dir="ltr">{lang === 'ar' ? formatArabicGroupedInteger(online.delivered_order_count) : online.delivered_order_count}</bdi></SummaryMetric>
-            <SummaryMetric title={lang === 'ar' ? 'الطلبات الإلكترونية المستلمة' : lang === 'en' ? 'Online orders received' : copy.receivedOrders}><bdi dir="ltr">{lang === 'ar' ? formatArabicGroupedInteger(online.received_order_count) : online.received_order_count}</bdi></SummaryMetric>
+            <SummaryMetric title={copy.deliveredOnlineOrders}><bdi dir="ltr">{lang === 'ar' ? formatArabicGroupedInteger(online.delivered_order_count) : online.delivered_order_count}</bdi></SummaryMetric>
+            <SummaryMetric title={copy.receivedOnlineOrders}><bdi dir="ltr">{lang === 'ar' ? formatArabicGroupedInteger(online.received_order_count) : online.received_order_count}</bdi></SummaryMetric>
           </div>
 
           <section className="report-print-break-avoid rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
@@ -1071,7 +1071,7 @@ function CombinedReports() {
                       <td className="px-3 py-3 font-bold" dir="ltr">{row.code}</td>
                       <td className="px-3 py-3 text-end font-semibold" dir="ltr">{combinedDisplayMoney(row.cashier, row, lang)}</td>
                       <td className="px-3 py-3 text-end font-semibold" dir="ltr">{lang === 'ar'
-  ? (row.code === 'IQD' && row.digits === 0 ? combinedDisplayMoney(row.online, row, lang) : 'غير منطبق')
+  ? (row.code === 'IQD' && row.digits === 0 ? combinedDisplayMoney(row.online, row, lang) : copy.notApplicable)
   : (lang === 'en' || lang === 'ku')
     ? (row.code === 'IQD' && row.digits === 0 ? formatMerchantMoneyMinor(row.online, row.code, row.digits, lang) : '—')
     : (row.online ? formatMerchantMoneyMinor(row.online, row.code, row.digits, lang) : '—')}</td>

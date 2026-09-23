@@ -37,6 +37,12 @@ export type ReportsPageCopy = {
   deliveredOrderValue: string;
   salesChart: string;
   profitabilityUnavailable: string;
+  period: string;
+  trustedOnlineSource: string;
+  noSalesValue: string;
+  deliveredOnlineOrders: string;
+  receivedOnlineOrders: string;
+  notApplicable: string;
 };
 
 export const REPORTS_PAGE_COPY: Record<Lang, ReportsPageCopy> = {
@@ -77,6 +83,12 @@ export const REPORTS_PAGE_COPY: Record<Lang, ReportsPageCopy> = {
     deliveredOrderValue: 'إجمالي قيمة الطلبات المسلّمة',
     salesChart: 'رسم المبيعات الإلكترونية حسب المنتج',
     profitabilityUnavailable: 'ترتيب الربحية للطلبات الإلكترونية غير متاح حاليًا لأن تكلفة المنتج التاريخية وقت البيع غير محفوظة لكل طلب. لا يستخدم فوري التكلفة الحالية كبديل.',
+    period: 'الفترة',
+    trustedOnlineSource: 'المصدر: سجل الطلبات الإلكترونية الموثوق على السيرفر',
+    noSalesValue: 'لا توجد قيمة مبيعات خلال الفترة المحددة.',
+    deliveredOnlineOrders: 'الطلبات الإلكترونية المسلّمة',
+    receivedOnlineOrders: 'الطلبات الإلكترونية المستلمة',
+    notApplicable: 'غير منطبق',
   },
   ku: {
     reports: 'ڕاپۆرتەکان',
@@ -115,6 +127,12 @@ export const REPORTS_PAGE_COPY: Record<Lang, ReportsPageCopy> = {
     deliveredOrderValue: 'کۆی بەهای داواکاری گەیەنراو',
     salesChart: 'هێڵکاری فرۆشتنی ئۆنلاین بەپێی بەرهەم',
     profitabilityUnavailable: 'ڕیزبەندی قازانجی داواکاری ئۆنلاین ئێستا بەردەست نییە چونکە تێچووی مێژوویی بەرهەم لە کاتی فرۆشتن بۆ هەر داواکارییەک تۆمار نەکراوە. فەوری تێچووی ئێستا وەک جێگرەوە بەکارناهێنێت.',
+    period: 'ماوە',
+    trustedOnlineSource: 'سەرچاوە: تۆماری متمانەپێکراوی داواکاری ئۆنلاین لە سێرڤەر',
+    noSalesValue: 'لە ماوەی هەڵبژێردراودا بەهای فرۆشتن نییە.',
+    deliveredOnlineOrders: 'داواکاری گەیەنراو',
+    receivedOnlineOrders: 'داواکاری وەرگیراو',
+    notApplicable: 'ناگونجێت',
   },
   en: {
     reports: 'Reports',
@@ -153,5 +171,11 @@ export const REPORTS_PAGE_COPY: Record<Lang, ReportsPageCopy> = {
     deliveredOrderValue: 'Total delivered order value',
     salesChart: 'Online product sales chart',
     profitabilityUnavailable: 'Online-order profitability ranking is currently unavailable because historical product cost at the time of sale is not stored for every order. Fawri does not substitute the current cost.',
+    period: 'Period',
+    trustedOnlineSource: 'Source: trusted online-order record on the server',
+    noSalesValue: 'No sales value in the selected period.',
+    deliveredOnlineOrders: 'Delivered online orders',
+    receivedOnlineOrders: 'Online orders received',
+    notApplicable: 'Not applicable',
   },
 };
