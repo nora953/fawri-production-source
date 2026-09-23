@@ -301,7 +301,9 @@ test("Arabic, Sorani and English report calendars preserve the approved referenc
   assert.match(toolbar, /کانوونی دووەم/);
   assert.match(toolbar, /ئەیلوول/);
   assert.match(toolbar, /تشرینی یەکەم/);
-  assert.match(toolbar, /S ORANI_WEEKDAYS/.source.replace(' ', '')/);
+  assert.match(toolbar, /SORANI_WEEKDAYS/);
+  assert.match(toolbar, /SoraniRangeDetail/);
+  assert.match(toolbar, /index === 0 \? 'لە' : 'تا'/);
   assert.match(toolbar, /weekStartsOn=\{lang === 'ku' \? 6 : undefined\}/);
   assert.match(toolbar, /dir=\{lang === 'en' \? 'ltr' : 'rtl'\}/);
   assert.doesNotMatch(toolbar, /lang === 'ku' \? <div className="mb-3">/);
