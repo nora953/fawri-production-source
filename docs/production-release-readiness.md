@@ -6,13 +6,15 @@ This document separates **code/runtime readiness** from **real production launch
 
 ## Current integrated code status
 
-The validated release-candidate tree `92290d3f97e3ece81525a0b92d668d129e9df5ed` completed 38/38 final integration checks with 0 failures and was merged to `main` through PR #256.
+The original validated release-candidate tree `92290d3f97e3ece81525a0b92d668d129e9df5ed` completed 38/38 final integration checks with 0 failures and was merged to `main` through PR #256.
 
-Code integration merge SHA:
+Repository hardening was later merged through PR #281 at:
 
-`515dc33404e517d11060fa60cb6ef20d986b09ef`
+`5f402a332ef6b9d145aeec326f7800a4e8147ffb`
 
-The code-integration merge commit tree is identical to the validated release-candidate tree. Documentation-only commits may advance `main` after that SHA without changing the validated runtime tree. Repository-owned build, typecheck, migration/schema, security, routing, online-order, cashier, merchant/admin/subscription journey, settings, Meta cutover, Knowledge readiness, and related integration gates are therefore considered code-ready at this checkpoint.
+That maintenance work intentionally preserved runtime behavior while reorganizing translation authority and extracting cashier-compensation validation from the only executable file above the repository's 1,800-line critical threshold. Because source organization changed, current `main` is no longer byte-for-byte identical to the older release-candidate tree. The final PR #281 head passed the repository audits, focused typechecks/contracts, and all 13 GitHub Actions workflows. PR #282 then advanced documentation only.
+
+Repository-owned build, typecheck, migration/schema, security, routing, online-order, cashier, merchant/admin/subscription journey, settings, Meta cutover, Knowledge readiness, and related integration gates therefore remain code-ready at the current checkpoint.
 
 This does **not** mean the live production environment is ready. The remaining work is dominated by deployment-time infrastructure, provider credentials/approvals, production backup/restore proof, supported SaaS billing onboarding, and final manual staging/UI validation.
 
@@ -118,7 +120,7 @@ Support images are currently stored through a filesystem-backed storage path. Pr
 
 ## Current readiness interpretation
 
-At `main` SHA `515dc33404e517d11060fa60cb6ef20d986b09ef`, repository validation establishes **production-release code readiness** for the integrated tree.
+At current `main` (documentation sync after runtime merge `5f402a332ef6b9d145aeec326f7800a4e8147ffb`), repository validation establishes **production-release code readiness** for the integrated tree.
 
 It must not claim **production launch readiness** while any of the following remain unresolved:
 

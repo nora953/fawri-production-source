@@ -2,6 +2,8 @@
 
 Canonical baseline: `main@1b84636a24e8486bfe40a5ddb1ea3a5937538f75`.
 
+Closure: repository hardening completed through PR #281 and is recorded in `docs/repository-hardening-closure-2026-09-24.md`. This file remains the historical audit baseline.
+
 ## Branch inventory
 
 At audit start the repository had 160 branches:
