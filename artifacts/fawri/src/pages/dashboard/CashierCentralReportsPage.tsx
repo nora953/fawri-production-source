@@ -243,6 +243,11 @@ function GroupCard({ name, secondary, report, lang, labels }: { name: string; se
   return <div className="report-print-group-card rounded-xl border bg-background p-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-bold">{name}</p>{secondary ? <p className="mt-0.5 text-xs text-muted-foreground">{secondary}</p> : null}</div><span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">{saleCountText(report.sale_count, lang, labels)}</span></div><div className="report-print-group-stats mt-3 grid gap-2 sm:grid-cols-2"><div className="report-print-group-stat-card rounded-lg border bg-card px-3 py-2"><p className="text-[11px] font-semibold text-muted-foreground">{labels.netSales}</p><div className="report-print-group-stat-value mt-1 text-sm font-bold"><MoneyStack values={moneyValues(report, 'net_revenue_minor')} lang={lang} /></div></div><div className="report-print-group-stat-card rounded-lg border bg-card px-3 py-2"><p className="text-[11px] font-semibold text-muted-foreground">{labels.profit}</p><div className="report-print-group-stat-value mt-1 text-sm font-bold"><MoneyStack values={profitValues(report)} lang={lang} /></div></div></div></div>;
 }
 
+function operationCountText(count: number, lang: Lang, labels: Copy): string {
+  if (lang === 'en') return `${count} ${count === 1 ? 'operation' : 'operations'}`;
+  return `${count} ${labels.operationCountUnit}`;
+}
+
 function ActivityCard({ name, secondary, activity, labels }: { name: string; secondary?: string; activity: ActivityCounts; labels: Copy }) {
   return <div className="report-print-activity-card rounded-xl border bg-background p-3"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="font-bold">{name}</p>{secondary ? <p className="mt-0.5 text-xs text-muted-foreground">{secondary}</p> : null}</div><span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground">{labels.totalOps}: <b dir="ltr">{activity.operation_count}</b></span></div><div className="report-print-activity-stats mt-3 grid grid-cols-3 gap-2 text-center text-xs"><div className="report-print-activity-stat-card rounded-lg border bg-card px-2 py-2"><p className="text-muted-foreground">{labels.saleOps}</p><p className="report-print-activity-stat-value mt-1 text-base font-bold" dir="ltr">{activity.sale_count}</p></div><div className="report-print-activity-stat-card rounded-lg border bg-card px-2 py-2"><p className="text-muted-foreground">{labels.returnOps}</p><p className="report-print-activity-stat-value mt-1 text-base font-bold" dir="ltr">{activity.return_count}</p></div><div className="report-print-activity-stat-card rounded-lg border bg-card px-2 py-2"><p className="text-muted-foreground">{labels.voidOps}</p><p className="report-print-activity-stat-value mt-1 text-base font-bold" dir="ltr">{activity.void_count}</p></div></div></div>;
 }
@@ -347,8 +352,8 @@ function cashierExportSheetNames(lang: Lang): {
   }
   return {
     summary: 'Summary',
-    topSelling: 'Top selling',
-    topProfitable: 'Top profitable',
+    topSelling: 'Top-selling',
+    topProfitable: 'Most profitable',
     operations: 'Operations',
   };
 }
@@ -876,7 +881,7 @@ export default function CashierCentralReportsPage({ embedded = false }: { embedd
         </div>
 
         <section className="report-print-operation-page report-print-operation-details rounded-2xl border bg-card p-4 shadow-sm sm:p-5" data-testid="cashier-operation-details">
-          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">{labels.operationDetails}</h2><p className="mt-1 text-sm text-muted-foreground">{labels.operationDetailsHint}</p></div><span className="rounded-full border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground"><span dir="ltr">{filteredOperations.length}</span> {labels.operationCountUnit}</span></div>
+          <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-bold">{labels.operationDetails}</h2><p className="mt-1 text-sm text-muted-foreground">{labels.operationDetailsHint}</p></div><span className="rounded-full border bg-background px-3 py-1 text-xs font-semibold text-muted-foreground" dir={lang === 'en' ? 'ltr' : undefined}>{operationCountText(filteredOperations.length, lang, labels)}</span></div>
           <div className="report-no-print mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             <label className="text-sm font-semibold">{labels.employeeFilter}<select value={staffFilter} onChange={event => setStaffFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allEmployees}</option>{operationStaff.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
             <label className="text-sm font-semibold">{labels.locationFilter}<select value={locationFilter} onChange={event => setLocationFilter(event.target.value)} className="mt-1.5 h-10 w-full rounded-lg border bg-background px-3 font-normal"><option value="all">{labels.allLocations}</option>{operationLocations.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
