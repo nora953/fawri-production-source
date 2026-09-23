@@ -325,6 +325,11 @@
   );
 }
 
+.report-ar-calendar .rdp-range_start.rdp-range_end,
+.report-en-calendar .rdp-range_start.rdp-range_end {
+  background: transparent;
+}
+
 .report-ar-calendar .rdp-range_start .rdp-day_button,
 .report-ar-calendar .rdp-range_end .rdp-day_button,
 .report-en-calendar .rdp-range_start .rdp-day_button,
