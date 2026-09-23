@@ -1,0 +1,63 @@
+name: Staging container contract
+
+on:
+  pull_request:
+    paths:
+      - "Dockerfile.staging"
+      - ".env.staging.example"
+      - "docs/staging-deployment-contract.md"
+      - "scripts/staging-deployment-contract.test.mjs"
+      - "artifacts/api-server/**"
+      - "artifacts/fawri/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/staging-container-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-container-contract-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-staging-container:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+
+      - name: Validate staging source contract
+        run: node --test scripts/staging-deployment-contract.test.mjs
+
+      - name: Build staging image
+        run: docker build --file Dockerfile.staging --tag fawri-staging-contract:${{ github.sha }} .
+
+      - name: Validate staging image contents and safe defaults
+        run: >-
+          docker run --rm
+          --entrypoint sh
+          fawri-staging-contract:${{ github.sha }}
+          -lc
+          'test -f /app/artifacts/api-server/dist/index.mjs &&
+          test -d /app/artifacts/fawri/dist/public &&
+          test "$PORT" = "8080" &&
+          test "$FAWRI_WEB_DIST_DIR" = "/app/artifacts/fawri/dist/public" &&
+          test "$FAWRI_DISABLE_JOB_WORKERS" = "1" &&
+          test "$FAWRI_META_CUTOVER_READY" = "0" &&
+          test "$FAWRI_META_REPLY_TRANSPORT" = "disabled" &&
+          test "$FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER" = "disabled" &&
+          test -z "${FAWRI_PRODUCTION_RELEASE_GATE:-}" &&
+          test -z "${META_APP_SECRET:-}" &&
+          test -z "${OPENAI_API_KEY:-}"'
