@@ -5,12 +5,13 @@ import test from 'node:test';
 const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'utf8');
 
 const switcher = read('../src/components/cashier/CashierLanguageSwitcher.tsx');
+const switcherCopy = read('../src/lib/translations/features/components/cashierLanguageSwitcherCopy.ts');
 const main = read('../src/cashierMain.tsx');
 
 test('cashier quick language switcher exposes Arabic Sorani Kurdish and English', () => {
-  assert.match(switcher, /\{ id: 'ar', label: 'AR', title: 'العربية' \}/);
-  assert.match(switcher, /\{ id: 'ku', label: 'KU', title: 'کوردی' \}/);
-  assert.match(switcher, /\{ id: 'en', label: 'EN', title: 'English' \}/);
+  assert.match(switcherCopy, /\{ id: 'ar', label: 'AR', title: 'العربية' \}/);
+  assert.match(switcherCopy, /\{ id: 'ku', label: 'KU', title: 'کوردی' \}/);
+  assert.match(switcherCopy, /\{ id: 'en', label: 'EN', title: 'English' \}/);
   assert.match(switcher, /onClick=\{\(\) => setLang\(language\.id\)\}/);
   assert.match(switcher, /aria-pressed=\{lang === language\.id\}/);
   assert.match(switcher, /aria-label=\{language\.title\}/);

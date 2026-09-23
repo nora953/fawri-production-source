@@ -16,8 +16,10 @@ const sidebar = fs.readFileSync(new URL('../src/components/layout/Sidebar.tsx', 
 const bottomNav = fs.readFileSync(new URL('../src/components/layout/BottomNav.tsx', import.meta.url), 'utf8');
 const app = fs.readFileSync(new URL('../src/App.tsx', import.meta.url), 'utf8');
 const cashierMain = fs.readFileSync(new URL('../src/cashierMain.tsx', import.meta.url), 'utf8');
-const cashierCopy = fs.readFileSync(new URL('../src/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
-const posEnhancementCopy = fs.readFileSync(new URL('../src/lib/cashierPosEnhancementCopy.ts', import.meta.url), 'utf8');
+const cashierCopy = fs.readFileSync(new URL('../src/lib/translations/features/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
+const cashierCopyAlias = fs.readFileSync(new URL('../src/lib/cashierUiCopy.ts', import.meta.url), 'utf8');
+const posEnhancementCopy = fs.readFileSync(new URL('../src/lib/translations/features/lib/cashierPosEnhancementCopy.ts', import.meta.url), 'utf8');
+const posEnhancementCopyAlias = fs.readFileSync(new URL('../src/lib/cashierPosEnhancementCopy.ts', import.meta.url), 'utf8');
 const operatorSessionUi = fs.readFileSync(new URL('../src/lib/cashierOperatorSessionUi.ts', import.meta.url), 'utf8');
 const i18n = fs.readFileSync(new URL('../src/lib/i18n.tsx', import.meta.url), 'utf8');
 const merchantCommerceUx = fs.readFileSync(new URL('../src/styles/merchantCommerceUxFixes.css', import.meta.url), 'utf8');
@@ -67,6 +69,7 @@ test('cashier catalog opening and manual search failures are localized and acces
   assert.ok(pos.includes('role="alert"'));
   assert.equal((posEnhancementCopy.match(/catalogOpenFailed:/g) || []).length, 3);
   assert.equal((posEnhancementCopy.match(/searchFailed:/g) || []).length, 3);
+  assert.match(posEnhancementCopyAlias, /translations\/features\/lib\/cashierPosEnhancementCopy/);
 });
 
 test('cashier operational pages fail closed into operator authorization when the session ends', () => {
@@ -202,6 +205,7 @@ test('cashier language follows merchant language changes across tabs and merchan
   assert.match(cashierCopy, /ku:\s*\{/);
   assert.match(cashierCopy, /en:\s*\{/);
   assert.match(cashierCopy, /if \(lang === 'ku'\) return 'ckb-IQ'/);
+  assert.match(cashierCopyAlias, /translations\/features\/lib\/cashierUiCopy/);
   assert.match(history, /cashierLocale\(lang\)/);
   assert.match(syncPage, /cashierLocale\(lang\)/);
   assert.match(pos, /dir=\{dir\}/);

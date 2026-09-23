@@ -448,7 +448,7 @@ export default function ProviderCostSettings({ root }: { root: HTMLElement | nul
                                         </select>
                                       </label>
                                       <label className="grid gap-1 text-[10px] font-bold">
-                                        <span>{t.effective} · YYYY-MM</span>
+                                        <span>{t.effective} · {t.effectiveMonthFormat}</span>
                                         <input
                                           type="text"
                                           inputMode="numeric"

@@ -105,10 +105,26 @@ function scanFile(file) {
   );
   const findings = [];
 
+  function insideRawTextElement(node) {
+    let current = node.parent;
+    while (current) {
+      if (ts.isJsxElement(current)) {
+        const tag = current.openingElement.tagName.getText(sourceFile).toLowerCase();
+        if (tag === 'style' || tag === 'script') return true;
+      }
+      current = current.parent;
+    }
+    return false;
+  }
+
   function visit(node) {
     if (ts.isJsxText(node)) {
-      add(findings, sourceFile, node, 'jsx-text', node.getText(sourceFile));
+      if (!insideRawTextElement(node)) add(findings, sourceFile, node, 'jsx-text', node.getText(sourceFile));
     } else if (ts.isJsxExpression(node) && isRenderedChildExpression(node)) {
+      if (insideRawTextElement(node)) {
+        ts.forEachChild(node, visit);
+        return;
+      }
       // Only inspect expressions that are actual rendered children. Attribute
       // expressions such as className={condition ? 'foo' : 'bar'} are styling
       // implementation details, not visible copy, and are audited separately

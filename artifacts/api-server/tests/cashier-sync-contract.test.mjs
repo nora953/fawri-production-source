@@ -114,7 +114,7 @@ test('operator browser deletes a local outbox operation only after complete serv
 
 test('cashier keeps one operator-aware manual sync action and auto-syncs real POS operations while online', async () => {
   const page = await webSource('src/pages/CashierCatalogSyncPage.tsx');
-  const copy = await webSource('src/lib/cashierUiCopy.ts');
+  const copy = await webSource('src/lib/translations/features/lib/cashierUiCopy.ts');
   const entry = await webSource('src/cashierMain.tsx');
 
   assert.match(page, /syncCashierOperatorOutboxToCloud/);

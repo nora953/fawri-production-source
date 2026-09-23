@@ -12,99 +12,19 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useI18n } from '@/lib/i18n';
-import type { Lang } from '@/lib/types';
+import {
+  REPORT_TOOLBAR_CALENDAR_NAV_COPY,
+  REPORT_TOOLBAR_COPY as COPY,
+  REPORT_TOOLBAR_RANGE_JOINERS,
+  REPORT_TOOLBAR_SORANI_MONTHS as SORANI_MONTHS,
+  REPORT_TOOLBAR_SORANI_WEEKDAYS as SORANI_WEEKDAYS,
+  type ReportToolbarCopy,
+} from '@/lib/translations/features/components/reportToolbarCopy';
 
 export type ReportRangeKey = 'today' | '7d' | '30d' | 'all' | 'custom';
 export type AppliedDateRange = { from: string; to: string };
 
-type ToolbarCopy = {
-  today: string;
-  seven: string;
-  thirty: string;
-  all: string;
-  customRange: string;
-  chooseRange: string;
-  rangePickerHint: string;
-  apply: string;
-  cancel: string;
-  invalid: string;
-  download: string;
-  print: string;
-  presets: string;
-};
 
-const COPY: Record<Lang, ToolbarCopy> = {
-  ar: {
-    today: 'اليوم',
-    seven: '7 أيام',
-    thirty: '30 يوم',
-    all: 'الكل',
-    customRange: 'فترة مخصصة',
-    chooseRange: 'اختيار الفترة',
-    rangePickerHint: 'اختر تاريخ البداية ثم تاريخ النهاية من التقويم.',
-    apply: 'تطبيق',
-    cancel: 'إلغاء',
-    invalid: 'اختر تاريخًا من التقويم أولًا.',
-    download: 'تحميل Excel',
-    print: 'طباعة / حفظ PDF',
-    presets: 'فترات سريعة',
-  },
-  ku: {
-    today: 'ئەمڕۆ',
-    seven: '7 ڕۆژ',
-    thirty: '30 ڕۆژ',
-    all: 'هەموو',
-    customRange: 'ماوەی تایبەت',
-    chooseRange: 'هەڵبژاردنی ماوە',
-    rangePickerHint: 'لە ڕۆژژمێرەکە سەرەتا بەرواری دەستپێک و پاشان کۆتایی هەڵبژێرە.',
-    apply: 'جێبەجێکردن',
-    cancel: 'هەڵوەشاندنەوە',
-    invalid: 'سەرەتا بەروارێک لە ڕۆژژمێرەکە هەڵبژێرە.',
-    download: 'داگرتنی Excel',
-    print: 'چاپ / پاشەکەوتی PDF',
-    presets: 'ماوە خێراکان',
-  },
-  en: {
-    today: 'Today',
-    seven: '7 days',
-    thirty: '30 days',
-    all: 'All',
-    customRange: 'Custom range',
-    chooseRange: 'Choose date range',
-    rangePickerHint: 'Choose the start date, then the end date on the calendar.',
-    apply: 'Apply',
-    cancel: 'Cancel',
-    invalid: 'Choose a date on the calendar first.',
-    download: 'Download Excel',
-    print: 'Print / Save PDF',
-    presets: 'Quick ranges',
-  },
-};
-
-const SORANI_MONTHS = [
-  'کانوونی دووەم',
-  'شوبات',
-  'ئازار',
-  'نیسان',
-  'ئایار',
-  'حوزەیران',
-  'تەممووز',
-  'ئاب',
-  'ئەیلوول',
-  'تشرینی یەکەم',
-  'تشرینی دووەم',
-  'کانوونی یەکەم',
-] as const;
-
-const SORANI_WEEKDAYS = [
-  'یەک',
-  'دوو',
-  'سێ',
-  'چوار',
-  'پێنج',
-  'هەینی',
-  'شەممە',
-] as const;
 
 function soraniDigits(value: string): string {
   return value.replace(/\d/g, digit => '٠١٢٣٤٥٦٧٨٩'[Number(digit)]);
@@ -143,7 +63,7 @@ function ArabicRangeDetail({ detail }: { detail: string }) {
   const dates = detail.split(' – ');
   return <span dir="rtl" className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1">
     {dates.map((date, index) => <span key={index} className="inline-flex items-center gap-1 whitespace-nowrap">
-      {dates.length > 1 ? <span>{index === 0 ? 'من' : 'إلى'}</span> : null}
+      {dates.length > 1 ? <span>{index === 0 ? REPORT_TOOLBAR_RANGE_JOINERS.ar.from : REPORT_TOOLBAR_RANGE_JOINERS.ar.to}</span> : null}
       <span dir="rtl" className="inline-flex items-center gap-0.5">
         {date.split('/').map((part, partIndex) => <span key={partIndex} className="inline-flex items-center gap-0.5">
           {partIndex > 0 ? <span>/</span> : null}
@@ -159,7 +79,7 @@ function SoraniRangeDetail({ detail }: { detail: string }) {
   const dates = detail.split(' – ');
   return <span dir="rtl" className="inline-flex max-w-full flex-wrap items-center gap-x-2 gap-y-1">
     {dates.map((date, index) => <span key={index} className="inline-flex items-center gap-1 whitespace-nowrap">
-      {dates.length > 1 ? <span>{index === 0 ? 'لە' : 'تا'}</span> : null}
+      {dates.length > 1 ? <span>{index === 0 ? REPORT_TOOLBAR_RANGE_JOINERS.ku.from : REPORT_TOOLBAR_RANGE_JOINERS.ku.to}</span> : null}
       <span dir="rtl" className="inline-flex items-center gap-0.5">
         {date.split('/').map((part, partIndex) => <span key={partIndex} className="inline-flex items-center gap-0.5">
           {partIndex > 0 ? <span>/</span> : null}
@@ -207,7 +127,7 @@ function customDateRange(value?: AppliedDateRange | null): DateRange | undefined
 function activeRangeSummary(
   range: ReportRangeKey,
   custom: AppliedDateRange | null | undefined,
-  copy: ToolbarCopy,
+  copy: ReportToolbarCopy,
 ): { title: string; detail: string } {
   if (range === 'all') return { title: copy.all, detail: '' };
   if (range === 'custom' && custom) {
@@ -422,11 +342,11 @@ export function ReportToolbar({
                       formatDay: date => soraniDigits(String(date.getDate())),
                     } : undefined}
                     labels={lang === 'ar' ? {
-                      labelNext: () => 'الشهر التالي',
-                      labelPrevious: () => 'الشهر السابق',
+                      labelNext: () => REPORT_TOOLBAR_CALENDAR_NAV_COPY.ar.next,
+                      labelPrevious: () => REPORT_TOOLBAR_CALENDAR_NAV_COPY.ar.previous,
                     } : lang === 'ku' ? {
-                      labelNext: () => 'مانگی داهاتوو',
-                      labelPrevious: () => 'مانگی پێشوو',
+                      labelNext: () => REPORT_TOOLBAR_CALENDAR_NAV_COPY.ku.next,
+                      labelPrevious: () => REPORT_TOOLBAR_CALENDAR_NAV_COPY.ku.previous,
                     } : undefined}
                     mode="range"
                     selected={draftRange}

@@ -4,12 +4,13 @@ import test from 'node:test';
 
 const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'utf8');
 
-const uiCopy = read('../src/lib/cashierUiCopy.ts');
-const enhancementCopy = read('../src/lib/cashierPosEnhancementCopy.ts');
-const receiptCopy = read('../src/lib/cashierReceiptPrinting.ts');
+const uiCopy = read('../src/lib/translations/features/lib/cashierUiCopy.ts');
+const enhancementCopy = read('../src/lib/translations/features/lib/cashierPosEnhancementCopy.ts');
+const receiptCopy = read('../src/lib/translations/features/lib/cashierReceiptPrintingCopy.ts');
 const operatorGate = read('../src/components/cashier/CashierOperatorGate.tsx');
 const endShift = read('../src/components/cashier/CashierEndShiftButton.tsx');
 const reports = read('../src/pages/CashierReportsPage.tsx');
+const reportsCopy = read('../src/lib/translations/features/pages/CashierReportsPage.ts');
 const pos = read('../src/pages/CashierPosPage.tsx');
 const history = read('../src/pages/CashierHistoryPage.tsx');
 const syncPage = read('../src/pages/CashierCatalogSyncPage.tsx');
@@ -108,7 +109,7 @@ test('Arabic is the canonical cashier copy authority for Kurdish Sorani and Engl
   assertFlatLanguageParity(receiptCopy, 'CASHIER_RECEIPT_COPY');
   assertFlatLanguageParity(operatorGate, 'CashierOperatorGate COPY');
   assertFlatLanguageParity(endShift, 'CashierEndShiftButton COPY');
-  assertFlatLanguageParity(reports, 'CashierReportsPage COPY');
+  assertFlatLanguageParity(reportsCopy, 'CashierReportsPage COPY');
 });
 
 test('reviewed Sorani cashier terminology stays local and consistent', () => {

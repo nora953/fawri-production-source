@@ -20,12 +20,7 @@ import './catalogEditModeCompact.css';
 import './catalogImageUploadPolish.css';
 import './catalogVariantPriceClarity.css';
 import { useI18n } from '@/lib/i18n';
-
-const copy = {
-  ar: { catalog: 'المنتجات والخدمات', promotions: 'العروض' },
-  ku: { catalog: 'بەرهەم و خزمەتگوزارییەکان', promotions: 'ئۆفەرەکان' },
-  en: { catalog: 'Products & Services', promotions: 'Promotions' },
-} as const;
+import { PRODUCTS_WORKSPACE_COPY as copy } from '@/lib/translations/features/pages/dashboard/ProductsWorkspacePage';
 
 export default function ProductsWorkspacePage() {
   const { lang, dir } = useI18n();
