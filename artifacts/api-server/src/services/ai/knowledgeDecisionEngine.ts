@@ -25,6 +25,7 @@ import type {
   KnowledgeDecisionResult,
   KnowledgeFactResolver,
   KnowledgeLanguage,
+  KnowledgeConversationMessage,
   LearnedAnswerRecord,
   MerchantPolicyContext,
   SavedAnswerRecord,
@@ -38,6 +39,37 @@ const DEFAULT_HANDOFF: Record<KnowledgeLanguage, string> = {
   ku: "پێویستە پرسیارەکەت بۆ کارمەندێک بنێرم بۆ وەڵامێکی ورد.",
   en: "I need to hand this question to a team member so you receive an accurate answer.",
 };
+
+const MAX_CONVERSATION_CONTEXT_MESSAGES = 8;
+
+function boundedConversationHistory(
+  value: KnowledgeConversationMessage[] | undefined,
+): KnowledgeConversationMessage[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .slice(-MAX_CONVERSATION_CONTEXT_MESSAGES)
+    .map((message) => {
+      const sender =
+        message?.sender === "customer" ||
+        message?.sender === "fawri" ||
+        message?.sender === "merchant"
+          ? message.sender
+          : null;
+      const text = boundedText(message?.text, 2_000);
+      const createdAt = boundedText(message?.createdAt, 80);
+      if (!sender || !text || !createdAt) return null;
+      const matchedRecordId = boundedText(message?.matchedRecordId, 200);
+      const reasonCode = boundedText(message?.reasonCode, 100);
+      return {
+        sender,
+        text,
+        createdAt,
+        ...(matchedRecordId ? { matchedRecordId } : {}),
+        ...(reasonCode ? { reasonCode } : {}),
+      };
+    })
+    .filter((message): message is KnowledgeConversationMessage => Boolean(message));
+}
 
 class NoopFactResolver implements KnowledgeFactResolver {
   async resolve(): Promise<null> {
@@ -193,6 +225,10 @@ export class KnowledgeDecisionEngine {
         confidence: params.result.confidence,
         reasonCode: params.result.reasonCode,
         requiresMerchantApproval: params.result.requiresMerchantApproval,
+        conversationContextMessages: Math.min(
+          Array.isArray(params.input.recentMessages) ? params.input.recentMessages.length : 0,
+          MAX_CONVERSATION_CONTEXT_MESSAGES,
+        ),
       },
     });
   }
@@ -224,6 +260,7 @@ export class KnowledgeDecisionEngine {
     const merchantId = boundedText(input.merchantId, 120);
     const customerText = boundedText(input.customerText, 2_000);
     const language = input.languageHint || detectKnowledgeLanguage(customerText);
+    const conversationHistory = boundedConversationHistory(input.recentMessages);
     let merchantPolicy = input.merchantPolicy || {};
 
     if (!merchantId || !customerText) {
@@ -445,6 +482,7 @@ export class KnowledgeDecisionEngine {
       merchantPolicy,
       approvedKnowledge: uniqueApprovedKnowledge,
       customerText,
+      conversationHistory,
       injectionSignals: [],
     });
 
