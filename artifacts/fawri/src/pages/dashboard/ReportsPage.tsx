@@ -210,7 +210,7 @@ const COPY: Record<Lang, Copy> = {
     paidElectronic: 'Confirmed electronic payments',
     byChannel: 'By channel',
     byLocation: 'Delivered sales by location',
-    topProducts: 'Top online products',
+    topProducts: 'Top-selling online products',
     noData: 'No data in this period.',
     orders: 'orders',
     delivered: 'delivered',
@@ -222,8 +222,8 @@ const COPY: Record<Lang, Copy> = {
     currency: 'Currency',
     combinedNote: 'This view combines cashier net sales after returns and voids with delivered online-order value. Different currencies are never converted or merged.',
     generated: 'Last updated',
-    deliveryFees: 'Delivered-order delivery fees',
-    deliveredOrderValue: 'Delivered order value',
+    deliveryFees: 'Delivery fees on delivered orders',
+    deliveredOrderValue: 'Total delivered order value',
     salesChart: 'Online product sales chart',
     profitabilityUnavailable: 'Online-order profitability ranking is currently unavailable because historical product cost at the time of sale is not stored for every order. Fawri does not substitute the current cost.',
   },
@@ -720,7 +720,7 @@ function OnlineReports() {
           </section>
 
           <p className="text-center text-xs text-muted-foreground">
-            {copy.generated}: <span dir="ltr">{new Date(report.generated_at).toLocaleString(lang === 'ku' ? 'ku' : 'en')}</span>
+            {copy.generated}: <span dir="ltr">{new Date(report.generated_at).toLocaleString(lang === 'ku' ? 'ku' : 'en-GB')}</span>
           </p>
         </>
       ) : null}
@@ -958,7 +958,7 @@ function CombinedReports() {
           </section>
 
           <p className="text-center text-xs text-muted-foreground">
-            {copy.generated}: <span dir="ltr">{new Date(Math.max(new Date(cashier.generated_at).getTime(), new Date(online.generated_at).getTime())).toLocaleString(lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en')}</span>
+            {copy.generated}: <span dir="ltr">{new Date(Math.max(new Date(cashier.generated_at).getTime(), new Date(online.generated_at).getTime())).toLocaleString(lang === 'ar' ? 'ar-IQ' : lang === 'ku' ? 'ku' : 'en-GB')}</span>
           </p>
         </>
       ) : null}

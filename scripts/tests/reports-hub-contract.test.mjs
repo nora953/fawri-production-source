@@ -48,6 +48,10 @@ test("reports hub keeps cashier online and combined views source-separated", () 
   assert.match(page, /cashierNetSales/);
   assert.match(page, /onlineDeliveredSales/);
   assert.match(page, /Different currencies are never converted or merged/);
+  assert.match(page, /Top-selling online products/);
+  assert.match(page, /Delivery fees on delivered orders/);
+  assert.match(page, /Total delivered order value/);
+  assert.match(page, /toLocaleString\(lang === 'ku' \? 'ku' : 'en-GB'\)/);
   assert.match(page, /const iqKey = 'IQD:0'/);
 });
 
