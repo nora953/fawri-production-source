@@ -82,6 +82,14 @@ const COPY: Record<Lang, ToolbarCopy> = {
   },
 };
 
+function soraniCaption(date: Date): string {
+  return new Intl.DateTimeFormat('ckb-IQ', { month: 'long', year: 'numeric' }).format(date);
+}
+
+function soraniWeekday(date: Date): string {
+  return new Intl.DateTimeFormat('ckb-IQ', { weekday: 'short' }).format(date);
+}
+
 function localDateValue(daysBack: number): string {
   const date = new Date();
   date.setHours(12, 0, 0, 0);
@@ -223,7 +231,7 @@ export function ReportToolbar({
 }) {
   const { lang, dir } = useI18n();
   const copy = COPY[lang] || COPY.en;
-  const RangeCalendar = lang === 'ar' || lang === 'en' ? DayPicker : Calendar;
+  const RangeCalendar = DayPicker;
   const [open, setOpen] = useState(false);
   const [draftKind, setDraftKind] = useState<ReportRangeKey>(range);
   const [draftRange, setDraftRange] = useState<DateRange | undefined>(
@@ -321,8 +329,8 @@ export function ReportToolbar({
         </DialogTrigger>
 
         <DialogContent
-          className={`max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0 ${lang === 'ar' ? 'report-ar-date-dialog' : lang === 'en' ? 'report-en-date-dialog' : ''}`}
-          closeButtonClassName={lang === 'ar' ? 'left-3 right-auto top-3' : 'right-3 top-3'}
+          className={`max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0 ${lang === 'ar' ? 'report-ar-date-dialog' : lang === 'ku' ? 'report-ku-date-dialog' : 'report-en-date-dialog'}`}
+          closeButtonClassName={lang === 'en' ? 'right-3 top-3' : 'left-3 right-auto top-3'}
           dir={dir}
         >
           <DialogHeader className="report-date-header border-b px-5 py-4 pe-16 text-start">
@@ -353,18 +361,24 @@ export function ReportToolbar({
               </aside>
 
               <div className="min-w-0 p-3 sm:p-4">
-                {lang === 'ku' ? <div className="mb-3">
-                  <p className="text-sm font-bold">{copy.customRange}</p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{copy.rangePickerHint}</p>
-                </div> : null}
                 <div className="flex justify-center overflow-x-auto">
                   <RangeCalendar
                     locale={lang === 'ar' ? ar : undefined}
-                    dir={lang === 'ar' ? 'rtl' : undefined}
+                    lang={lang === 'ku' ? 'ckb-IQ' : undefined}
+                    dir={lang === 'en' ? 'ltr' : 'rtl'}
                     numerals={lang === 'ar' ? 'arab' : undefined}
+                    weekStartsOn={lang === 'ku' ? 6 : undefined}
+                    formatters={lang === 'ku' ? {
+                      formatCaption: soraniCaption,
+                      formatWeekdayName: soraniWeekday,
+                      formatDay: date => String(date.getDate()),
+                    } : undefined}
                     labels={lang === 'ar' ? {
                       labelNext: () => 'الشهر التالي',
                       labelPrevious: () => 'الشهر السابق',
+                    } : lang === 'ku' ? {
+                      labelNext: () => 'مانگی داهاتوو',
+                      labelPrevious: () => 'مانگی پێشوو',
                     } : undefined}
                     mode="range"
                     selected={draftRange}
@@ -375,7 +389,7 @@ export function ReportToolbar({
                     disabled={{ after: new Date() }}
                     showOutsideDays={false}
                     min={1}
-                    className={lang === 'ar' ? 'report-ar-calendar' : lang === 'en' ? 'report-en-calendar' : 'max-w-full'}
+                    className={lang === 'ar' ? 'report-ar-calendar' : lang === 'ku' ? 'report-ku-calendar' : 'report-en-calendar'}
                   />
                 </div>
                 <div className="report-date-selection-slot mt-1 flex min-h-5 items-center justify-center">
@@ -395,7 +409,7 @@ export function ReportToolbar({
           </div>
 
           <div
-            dir={lang === 'ar' ? 'ltr' : undefined}
+            dir={lang === 'en' ? undefined : 'ltr'}
             className={`report-date-actions flex shrink-0 items-center gap-2 border-t bg-background p-3 sm:px-5 ${lang === 'en' ? 'justify-start' : 'justify-end'}`}
           >
             {lang === 'en' ? (
