@@ -47,6 +47,11 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /<Pie/);
   assert.match(cashier, /isAnimationActive=\{false\}/);
   assert.match(reports, /isAnimationActive=\{false\}/);
+  assert.match(cashier, /report-print-lang-\$\{lang\}/);
+  assert.match(printCss, /report-print-lang-ku\.report-print-content/);
+  assert.match(printCss, /grid-template-columns: 46mm minmax\(0, 1fr\)/);
+  assert.match(printCss, /width: 46mm !important/);
+  assert.match(printCss, /height: 46mm !important/);
   assert.match(cashier, /<Cell/);
   assert.match(cashier, /REPORT_CHART_COLORS/);
   assert.doesNotMatch(cashier, /<BarChart/);
@@ -293,6 +298,10 @@ test("Arabic, Sorani and English report calendars preserve the approved referenc
   assert.match(toolbar, /lang === 'ku' \? 'report-ku-calendar'/);
   assert.match(toolbar, /formatCaption: soraniCaption/);
   assert.match(toolbar, /formatWeekdayName: soraniWeekday/);
+  assert.match(toolbar, /کانوونی دووەم/);
+  assert.match(toolbar, /ئەیلوول/);
+  assert.match(toolbar, /تشرینی یەکەم/);
+  assert.match(toolbar, /S ORANI_WEEKDAYS/.source.replace(' ', '')/);
   assert.match(toolbar, /weekStartsOn=\{lang === 'ku' \? 6 : undefined\}/);
   assert.match(toolbar, /dir=\{lang === 'en' \? 'ltr' : 'rtl'\}/);
   assert.doesNotMatch(toolbar, /lang === 'ku' \? <div className="mb-3">/);
