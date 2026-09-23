@@ -454,7 +454,32 @@
   }
 
   .report-print-lang-ku .report-print-cashier-chart-card .report-print-chart-legend-row {
-    min-height: 5mm !important;
+    min-height: 4.2mm !important;
+    padding-top: 0.2mm !important;
+    padding-bottom: 0.2mm !important;
+  }
+
+  /* Chrome print fragmentation can push the whole two-chart CSS grid to the
+     next page even when it fits. Use a single flex row for Sorani print so
+     both charts stay beside each other in the remaining page-one space. */
+  .report-print-lang-ku .report-print-two-column {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 3mm !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .report-print-lang-ku .report-print-two-column > .report-print-chart-panel {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .report-print-lang-ku .report-print-currency-section {
+    break-inside: auto !important;
+    page-break-inside: auto !important;
   }
 
   .report-print-chart-percent {
