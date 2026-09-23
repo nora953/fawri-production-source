@@ -48,13 +48,14 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /isAnimationActive=\{false\}/);
   assert.match(reports, /isAnimationActive=\{false\}/);
   assert.match(cashier, /report-print-lang-\$\{lang\}/);
+  assert.match(cashier, /lang === 'ku' \? '' : 'report-print-break-avoid '/);
   assert.match(printCss, /report-print-lang-ku\.report-print-content/);
-  assert.match(printCss, /grid-template-columns: 46mm minmax\(0, 1fr\)/);
-  assert.match(printCss, /width: 46mm !important/);
-  assert.match(printCss, /height: 46mm !important/);
+  assert.match(printCss, /grid-template-columns: 44mm minmax\(0, 1fr\)/);
+  assert.match(printCss, /width: 44mm !important/);
+  assert.match(printCss, /height: 44mm !important/);
   assert.match(printCss, /report-print-lang-ku \.report-print-two-column/);
   assert.match(printCss, /display: flex !important/);
-  assert.match(printCss, /min-height: 4\.2mm !important/);
+  assert.match(printCss, /min-height: 3\.7mm !important/);
   assert.match(cashier, /<Cell/);
   assert.match(cashier, /REPORT_CHART_COLORS/);
   assert.doesNotMatch(cashier, /<BarChart/);
