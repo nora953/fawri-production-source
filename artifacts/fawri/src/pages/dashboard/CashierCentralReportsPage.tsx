@@ -447,6 +447,7 @@ function DonutProductChart({
               outerRadius="88%"
               paddingAngle={2}
               strokeWidth={1}
+              isAnimationActive={false}
             >
               {rows.map((entry, index) => (
                 <Cell key={entry.name} fill={REPORT_CHART_COLORS[index % REPORT_CHART_COLORS.length]} />
