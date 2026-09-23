@@ -1003,10 +1003,45 @@ function ArabicCombinedChart({ currencies, copy }: { currencies: CombinedCurrenc
   </div>;
 }
 
+
+function EnglishCombinedChart({ currencies, copy }: { currencies: CombinedCurrency[]; copy: Copy }) {
+  return <div className="mt-3 space-y-3">
+    {currencies.map(row => {
+      const sources = [
+        { label: copy.cashierNetSales, value: row.cashier, color: '#2563eb' },
+        ...(row.code === 'IQD' && row.digits === 0
+          ? [{ label: copy.onlineDeliveredSales, value: row.online, color: '#ea580c' }]
+          : []),
+      ];
+      const maximum = Math.max(...sources.map(source => Math.abs(source.value)), 1);
+      const signed = sources.some(source => source.value < 0);
+      return <div key={`${row.code}:${row.digits}`} className="report-combined-chart rounded-xl border bg-background p-4">
+        <h3 className="mb-4 text-center text-sm font-bold"><bdi>{row.code}</bdi></h3>
+        <div className="space-y-4">
+          {sources.map(source => {
+            const width = Math.abs(source.value) / maximum * (signed ? 50 : 100);
+            return <div key={source.label}>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+                <span className="inline-flex items-center gap-2"><span aria-hidden="true" className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: source.color }} />{source.label}</span>
+                <bdi dir="ltr" className="font-bold tabular-nums">{combinedDisplayMoney(source.value, row, 'en')}</bdi>
+              </div>
+              <div aria-hidden="true" dir="ltr" className="relative h-5 overflow-hidden rounded bg-muted">
+                {signed ? <span className="absolute inset-y-0 left-1/2 border-l border-foreground/40" /> : null}
+                <span className="absolute inset-y-0 rounded" style={{ backgroundColor: source.color, width: `${width}%`, left: `${signed ? (source.value < 0 ? 50 - width : 50) : 0}%` }} />
+              </div>
+            </div>;
+          })}
+        </div>
+        {sources.every(source => source.value === 0) ? <p className="mt-3 text-center text-xs text-muted-foreground">No sales value in the selected period.</p> : null}
+      </div>;
+    })}
+  </div>;
+}
+
 function CombinedReports() {
   const { lang } = useI18n();
   const copy = COPY[lang] || COPY.en;
-  const SummaryMetric = lang === 'ar' ? ArabicOnlineMetric : Metric;
+  const SummaryMetric = lang === 'ar' || lang === 'en' ? ArabicOnlineMetric : Metric;
   const [range, setRange] = useState<RangeKey>('today');
   const [customRange, setCustomRange] = useState<AppliedDateRange | null>(null);
   const [cashier, setCashier] = useState<CashierReport | null>(null);
@@ -1143,7 +1178,7 @@ function CombinedReports() {
 
           <section className="report-print-break-avoid rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
             <h2 className="text-lg font-bold">{copy.combinedSales}</h2>
-            {lang === 'ar' ? <ArabicCombinedChart currencies={currencies} copy={copy} /> : <div className="mt-3 h-56 rounded-xl border bg-background p-3">
+            {lang === 'ar' ? <ArabicCombinedChart currencies={currencies} copy={copy} /> : lang === 'en' ? <EnglishCombinedChart currencies={currencies} copy={copy} /> : <div className="mt-3 h-56 rounded-xl border bg-background p-3">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={currencies.flatMap(row => [
