@@ -114,7 +114,7 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
       })),
     };
 
-    const conversationEnvelope = request.conversationHistory.slice(-8).map((message) => ({
+    const conversationEnvelope = (request.conversationHistory || []).slice(-8).map((message) => ({
       sender: message.sender,
       text: redactSensitiveText(message.text, 1_500),
       created_at: boundedText(message.createdAt, 80),

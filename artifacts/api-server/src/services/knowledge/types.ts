@@ -173,7 +173,7 @@ export type AiFallbackRequest = {
     language: KnowledgeLanguage;
   }>;
   customerText: string;
-  conversationHistory: KnowledgeConversationMessage[];
+  conversationHistory?: KnowledgeConversationMessage[];
   injectionSignals: string[];
 };
 

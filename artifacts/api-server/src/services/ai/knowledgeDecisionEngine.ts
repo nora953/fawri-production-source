@@ -25,7 +25,7 @@ import type {
   KnowledgeDecisionResult,
   KnowledgeFactResolver,
   KnowledgeLanguage,
-  type KnowledgeConversationMessage,
+  KnowledgeConversationMessage,
   LearnedAnswerRecord,
   MerchantPolicyContext,
   SavedAnswerRecord,
