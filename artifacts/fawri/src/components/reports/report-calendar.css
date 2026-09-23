@@ -263,3 +263,72 @@
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
 }
+
+
+/* Keep the two-month dialog height stable across 5/6-week months and range selection. */
+@media (min-width: 768px) {
+  .report-ar-calendar .rdp-day,
+  .report-en-calendar .rdp-day {
+    height: 1.875rem;
+  }
+
+  .report-ar-calendar .rdp-day_button,
+  .report-en-calendar .rdp-day_button {
+    min-height: 1.875rem;
+  }
+}
+
+/* Show the selected interval continuously in both Arabic and English calendars. */
+.report-ar-calendar .rdp-range_middle,
+.report-en-calendar .rdp-range_middle {
+  background: color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background)));
+  border-radius: 0;
+}
+
+.report-ar-calendar .rdp-range_middle .rdp-day_button,
+.report-en-calendar .rdp-range_middle .rdp-day_button {
+  background: transparent;
+  border-radius: 0;
+}
+
+.report-ar-calendar .rdp-range_start,
+.report-en-calendar .rdp-range_start {
+  background: linear-gradient(
+    to right,
+    transparent 0 50%,
+    color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 50% 100%
+  );
+}
+
+.report-ar-calendar .rdp-range_end,
+.report-en-calendar .rdp-range_end {
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0 50%,
+    transparent 50% 100%
+  );
+}
+
+.report-ar-calendar[dir="rtl"] .rdp-range_start {
+  background: linear-gradient(
+    to left,
+    transparent 0 50%,
+    color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 50% 100%
+  );
+}
+
+.report-ar-calendar[dir="rtl"] .rdp-range_end {
+  background: linear-gradient(
+    to left,
+    color-mix(in srgb, hsl(var(--primary)) 16%, hsl(var(--background))) 0 50%,
+    transparent 50% 100%
+  );
+}
+
+.report-ar-calendar .rdp-range_start .rdp-day_button,
+.report-ar-calendar .rdp-range_end .rdp-day_button,
+.report-en-calendar .rdp-range_start .rdp-day_button,
+.report-en-calendar .rdp-range_end .rdp-day_button {
+  position: relative;
+  z-index: 1;
+}
