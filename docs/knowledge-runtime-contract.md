@@ -32,6 +32,7 @@ type KnowledgeDecisionResult = {
     | "database_fact"
     | "approved_saved_answer"
     | "semantic_retrieval"
+    | "clarification"
     | "ai_fallback"
     | "handoff";
   answerText: string | null;
@@ -53,10 +54,11 @@ Prompt-injection inspection is a security gate before content resolution. Suspic
 For non-malicious text, the engine evaluates exactly this order:
 
 1. Direct database facts through `KnowledgeFactResolver`.
-2. Exact or contained active saved answers whose source is `merchant_approved`.
-3. Tenant-filtered semantic retrieval over active `merchant_approved` saved/learned answers only.
-4. Constrained AI fallback using system rules plus approved merchant context.
-5. Human handoff or no answer.
+2. If a safe authoritative fact is missing only customer-selectable context (product, variant, or area), ask a deterministic clarification and keep the conversation in automatic mode.
+3. Exact or contained active saved answers whose source is `merchant_approved`.
+4. Tenant-filtered semantic retrieval over active `merchant_approved` saved/learned answers only.
+5. Constrained AI fallback using system rules plus approved merchant context.
+6. Human handoff or no answer.
 
 The default runtime never auto-sends generated text. A generated candidate is recorded as `openai_generated`, `pending_review`, and `safeToAutoReply=false`. Even when an internal deployment explicitly enables low-risk generated replies, the decision declares `requiresMerchantApproval=true`, and the candidate cannot enter approved retrieval until a merchant approval transition converts its provenance to `merchant_approved`.
 
@@ -93,6 +95,8 @@ All repository reads, updates, deletes, exact matches, semantic documents, train
 Customer-private operational facts add a second boundary. Order-status lookup is eligible only when the trusted messaging pipeline supplies the active `conversationId` and/or channel `customerExternalId`; the query then requires the order to belong to that conversation/customer identity. Browser-supplied identity is not trusted for this purpose, and an order ID by itself is insufficient to disclose status, payment state, or totals.
 
 The messaging pipeline may also supply a bounded recent conversation context. It is loaded server-side from the same tenant/conversation and excludes the current inbound message, failed messages, queued replies, and system messages. At most eight prior delivered/received customer/Fawri/merchant messages are exposed to the decision engine. Their text is never written into decision audit metadata; only the bounded context count is recorded. If AI fallback is used, the whole conversation history remains in the untrusted user-data trust zone and sensitive values are redacted before provider transport.
+
+A Fawri clarification reply stores its stable reason code in message metadata. When the next customer turn is not itself a new authoritative question, the decision engine may combine that follow-up with the immediately preceding customer question for deterministic fact resolution. This is intentionally limited to safe clarification codes for missing/ambiguous product, variant, or location context. Database outages, stale inventory, provenance failures, and other authority errors are never converted into clarification prompts.
 
 The production database and vector adapter must preserve this rule at the query and schema level; see the handoff requests.
 

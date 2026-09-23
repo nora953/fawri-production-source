@@ -508,7 +508,7 @@ export async function preparePostgresMetaAutoReply(
   const handoff = decision.action === "handoff";
   const replyType = decision.stage === "ai_fallback"
     ? "ai"
-    : handoff
+    : handoff || decision.stage === "clarification"
       ? "fallback"
       : "database";
 

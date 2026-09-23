@@ -37,6 +37,7 @@ export type KnowledgeDecisionStage =
   | "database_fact"
   | "approved_saved_answer"
   | "semantic_retrieval"
+  | "clarification"
   | "ai_fallback"
   | "handoff";
 

@@ -42,6 +42,78 @@ const DEFAULT_HANDOFF: Record<KnowledgeLanguage, string> = {
 
 const MAX_CONVERSATION_CONTEXT_MESSAGES = 8;
 
+const CLARIFICATION_REASON_CODES = [
+  "KNOWLEDGE_VARIANT_REQUIRED",
+  "KNOWLEDGE_VARIANT_AMBIGUOUS",
+  "KNOWLEDGE_PRODUCT_AMBIGUOUS",
+  "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
+] as const;
+
+type ClarificationReasonCode = (typeof CLARIFICATION_REASON_CODES)[number];
+
+const CLARIFICATION_COPY: Record<
+  ClarificationReasonCode,
+  Record<KnowledgeLanguage, string>
+> = {
+  KNOWLEDGE_VARIANT_REQUIRED: {
+    ar: "أي لون أو حجم أو خيار تقصد بالضبط؟",
+    ku: "کام ڕەنگ، قەبارە یان هەڵبژاردە مەبەستتە؟",
+    en: "Which color, size, or variant do you mean? Please specify the option.",
+  },
+  KNOWLEDGE_VARIANT_AMBIGUOUS: {
+    ar: "أي لون أو حجم أو خيار تقصد بالضبط؟",
+    ku: "کام ڕەنگ، قەبارە یان هەڵبژاردە مەبەستتە؟",
+    en: "Which color, size, or variant do you mean? Please specify the option.",
+  },
+  KNOWLEDGE_PRODUCT_AMBIGUOUS: {
+    ar: "أي منتج تقصد؟ اكتب اسم المنتج كاملًا أو الكود أو SKU.",
+    ku: "کام بەرهەم مەبەستتە؟ تکایە ناوی تەواوی بەرهەم یان کۆد یان SKU بنووسە.",
+    en: "Which product do you mean? Please provide the full product name, code, or SKU.",
+  },
+  KNOWLEDGE_LOCATION_CONTEXT_REQUIRED: {
+    ar: "بأي منطقة أنت حتى أتحقق من توفره في الفرع المناسب؟",
+    ku: "لە کام ناوچەیت تا بەردەستبوونی لە لقە گونجاوەکە بپشکنم؟",
+    en: "Which area are you in so I can check availability at the appropriate location?",
+  },
+};
+
+function clarificationReasonCode(value: unknown): ClarificationReasonCode | null {
+  return (CLARIFICATION_REASON_CODES as readonly string[]).includes(String(value ?? ""))
+    ? (String(value) as ClarificationReasonCode)
+    : null;
+}
+
+function activeClarificationContext(
+  history: KnowledgeConversationMessage[],
+): { reasonCode: ClarificationReasonCode; previousCustomerText: string } | null {
+  const latest = history.at(-1);
+  const reasonCode =
+    latest?.sender === "fawri"
+      ? clarificationReasonCode(latest.reasonCode)
+      : null;
+  if (!reasonCode) return null;
+
+  for (let index = history.length - 2; index >= 0; index -= 1) {
+    const candidate = history[index];
+    if (candidate.sender === "customer" && candidate.text) {
+      return { reasonCode, previousCustomerText: candidate.text };
+    }
+  }
+  return null;
+}
+
+function clarificationFactText(
+  currentCustomerText: string,
+  context: { reasonCode: ClarificationReasonCode; previousCustomerText: string } | null,
+): string {
+  if (!context || isAuthoritativeFactQuestion(currentCustomerText)) {
+    return currentCustomerText;
+  }
+  const previous = boundedText(context.previousCustomerText, 900);
+  const followUp = boundedText(currentCustomerText, 1_000);
+  return boundedText(`${previous}\n${followUp}`, 2_000);
+}
+
 function boundedConversationHistory(
   value: KnowledgeConversationMessage[] | undefined,
 ): KnowledgeConversationMessage[] {
@@ -199,6 +271,25 @@ export class KnowledgeDecisionEngine {
     return boundedText(policy.handoffMessage?.[language], 500) || DEFAULT_HANDOFF[language];
   }
 
+  private clarificationResult(
+    language: KnowledgeLanguage,
+    reasonCode: ClarificationReasonCode,
+  ): KnowledgeDecisionResult {
+    return {
+      action: "reply",
+      stage: "clarification",
+      answerText: CLARIFICATION_COPY[reasonCode][language],
+      language,
+      source: null,
+      confidence: 1,
+      requiresMerchantApproval: false,
+      trainingRequestId: null,
+      matchedRecordId: null,
+      reasonCode,
+      injectionSignals: [],
+    };
+  }
+
   private async recordDecisionAudit(params: {
     input: KnowledgeDecisionInput;
     result: KnowledgeDecisionResult;
@@ -261,6 +352,10 @@ export class KnowledgeDecisionEngine {
     const customerText = boundedText(input.customerText, 2_000);
     const language = input.languageHint || detectKnowledgeLanguage(customerText);
     const conversationHistory = boundedConversationHistory(input.recentMessages);
+    const clarificationContext = activeClarificationContext(conversationHistory);
+    const factCustomerText = clarificationFactText(customerText, clarificationContext);
+    const usingClarificationContext =
+      Boolean(clarificationContext) && factCustomerText !== customerText;
     let merchantPolicy = input.merchantPolicy || {};
 
     if (!merchantId || !customerText) {
@@ -337,13 +432,29 @@ export class KnowledgeDecisionEngine {
       return result;
     }
 
-    const fact = await this.factResolver.resolve({
-      merchantId,
-      customerText,
-      language,
-      conversationId: boundedText(input.conversationId, 160) || undefined,
-      customerExternalId: boundedText(input.customerExternalId, 200) || undefined,
-    });
+    let fact;
+    try {
+      fact = await this.factResolver.resolve({
+        merchantId,
+        customerText: factCustomerText,
+        language,
+        conversationId: boundedText(input.conversationId, 160) || undefined,
+        customerExternalId: boundedText(input.customerExternalId, 200) || undefined,
+      });
+    } catch (error) {
+      const reasonCode =
+        error instanceof KnowledgeRuntimeGateError
+          ? clarificationReasonCode(error.code)
+          : null;
+      if (!reasonCode) throw error;
+
+      const result = this.clarificationResult(language, reasonCode);
+      await this.recordDecisionAudit({
+        input: { ...input, merchantId, customerText },
+        result,
+      });
+      return result;
+    }
     if (fact && fact.confidence >= this.minimumFactConfidence && fact.answerText.trim()) {
       const result: KnowledgeDecisionResult = {
         action: "reply",
@@ -358,6 +469,15 @@ export class KnowledgeDecisionEngine {
         reasonCode: `DATABASE_FACT_${fact.factType.toUpperCase()}`,
         injectionSignals: [],
       };
+      await this.recordDecisionAudit({
+        input: { ...input, merchantId, customerText },
+        result,
+      });
+      return result;
+    }
+
+    if (usingClarificationContext && clarificationContext) {
+      const result = this.clarificationResult(language, clarificationContext.reasonCode);
       await this.recordDecisionAudit({
         input: { ...input, merchantId, customerText },
         result,
