@@ -26,6 +26,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(toolbar, /mode="range"/);
   assert.match(toolbar, /min=\{1\}/);
   assert.match(toolbar, /numberOfMonths=\{desktopCalendar \? 2 : 1\}/);
+  assert.match(toolbar, /fixedWeeks/);
+  assert.match(toolbar, /report-date-selection-slot/);
   assert.match(toolbar, /displayDateDayFirst/);
   assert.match(toolbar, /\$\{day\}\/\$\{month\}\/\$\{year\}/);
   assert.match(toolbar, /Quick ranges/);
@@ -55,7 +57,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.doesNotMatch(printCss, /repeat\(auto-fit/);
   assert.match(toolbar, /function ArabicRangeDetail/);
-  assert.match(toolbar, /dir=\{lang === 'ar' \? 'ltr' : undefined\} className="report-date-actions flex shrink-0 items-center justify-end/);
+  assert.match(toolbar, /lang === 'en' \? 'justify-start' : 'justify-end'/);
+  assert.match(toolbar, /closeButtonClassName=\{lang === 'ar' \? 'left-3 right-auto top-3' : 'right-3 top-3'\}/);
   assert.match(toolbar, /<bdi dir="ltr">/);
   assert.match(toolbar, /index === 0 \? 'من' : 'إلى'/);
   assert.match(cashier, /report-print-chart-canvas/);
@@ -269,6 +272,11 @@ test("Arabic and English report calendars preserve the approved reference geomet
   assert.match(css, /\.report-en-calendar \.rdp-month_grid/);
   assert.match(css, /\.report-en-calendar \.rdp-button_previous/);
   assert.match(css, /\.report-en-calendar \.rdp-button_next/);
+  assert.match(css, /Keep the two-month dialog height stable/);
+  assert.match(css, /height: 1\.875rem/);
+  assert.match(css, /\.report-ar-calendar \.rdp-range_middle/);
+  assert.match(css, /\.report-ar-calendar\[dir="rtl"\] \.rdp-range_start/);
+  assert.match(css, /\.report-ar-calendar\[dir="rtl"\] \.rdp-range_end/);
   assert.match(toolbar, /lang === 'en' \? 'report-en-date-dialog'/);
   assert.match(toolbar, /lang === 'en' \? 'report-en-calendar'/);
   assert.match(toolbar, /lang === 'ku' \? <div className="mb-3">/);
