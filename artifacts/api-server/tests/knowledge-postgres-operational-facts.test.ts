@@ -134,6 +134,8 @@ test("explicit order id is tenant filtered and returns no customer PII", async (
     merchantId: "merchant-a",
     customerText: "حالة الطلب ord-123",
     language: "ar",
+    conversationId: "conversation-a",
+    customerExternalId: "customer-a",
   });
 
   assert.equal(result?.factType, "order_status");
@@ -141,8 +143,16 @@ test("explicit order id is tenant filtered and returns no customer PII", async (
   assert.match(result?.answerText || "", /confirmed/);
   assert.match(result?.answerText || "", /72,000 دينار/);
   assert.match(sql.queries[0].sql, /JOIN merchants m ON m\.id = o\.merchant_id/);
-  assert.match(sql.queries[0].sql, /WHERE o\.merchant_id = \$1 AND o\.id = \$2/);
-  assert.deepEqual(sql.queries[0].values, ["merchant-a", "ord-123"]);
+  assert.match(sql.queries[0].sql, /o\.merchant_id = \$1/);
+  assert.match(sql.queries[0].sql, /o\.id = \$2/);
+  assert.match(sql.queries[0].sql, /o\.conversation_id = \$3/);
+  assert.match(sql.queries[0].sql, /o\.customer_external_id = \$4/);
+  assert.deepEqual(sql.queries[0].values, [
+    "merchant-a",
+    "ord-123",
+    "conversation-a",
+    "customer-a",
+  ]);
 });
 
 test("order fact formats total using merchant currency minor-unit scale", async () => {
@@ -162,12 +172,53 @@ test("order fact formats total using merchant currency minor-unit scale", async 
     merchantId: "merchant-a",
     customerText: "order status ord-usd",
     language: "en",
+    conversationId: "conversation-usd",
+    customerExternalId: "customer-usd",
   });
 
   assert.equal(result?.factType, "order_status");
   assert.equal(result?.recordId, "ord-usd");
   assert.match(result?.answerText || "", /72\.99 USD/);
   assert.equal((result?.answerText || "").includes("IQD"), false);
+});
+
+test("order fact requires trusted customer conversation identity before querying", async () => {
+  const sql = new FakeSql(async () => {
+    throw new Error("database should not be queried without trusted customer identity");
+  });
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  assert.equal(
+    await resolver.resolve({
+      merchantId: "merchant-a",
+      customerText: "حالة الطلب ord-123",
+      language: "ar",
+    }),
+    null,
+  );
+  assert.equal(sql.queries.length, 0);
+});
+
+test("order fact remains hidden when the identity-bound query finds no matching customer order", async () => {
+  const sql = new FakeSql(async (query) => query.includes("FROM orders") ? [] : []);
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  assert.equal(
+    await resolver.resolve({
+      merchantId: "merchant-a",
+      customerText: "حالة الطلب ord-private",
+      language: "ar",
+      conversationId: "conversation-other",
+      customerExternalId: "customer-other",
+    }),
+    null,
+  );
+  assert.deepEqual(sql.queries[0].values, [
+    "merchant-a",
+    "ord-private",
+    "conversation-other",
+    "customer-other",
+  ]);
 });
 
 test("order fact without explicit id and warranty without structured authority fail closed", async () => {

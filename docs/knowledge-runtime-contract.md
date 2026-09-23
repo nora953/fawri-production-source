@@ -17,6 +17,8 @@ type KnowledgeDecisionInput = {
   languageHint?: "ar" | "ku" | "en";
   merchantPolicy?: MerchantPolicyContext; // trusted server resolver only
   requestId?: string;
+  conversationId?: string; // trusted messaging-pipeline context only
+  customerExternalId?: string; // trusted channel identity only
 };
 ```
 
@@ -86,6 +88,8 @@ Every mutating operation requires `expectedVersion` (or `If-Match`) after creati
 ## Tenant isolation
 
 All repository reads, updates, deletes, exact matches, semantic documents, training transitions, learned-answer lookups, and audit queries include the authenticated `merchantId`. Cross-tenant IDs return not found rather than exposing the other tenant's current record. Semantic retrieval filters documents by tenant before scoring.
+
+Customer-private operational facts add a second boundary. Order-status lookup is eligible only when the trusted messaging pipeline supplies the active `conversationId` and/or channel `customerExternalId`; the query then requires the order to belong to that conversation/customer identity. Browser-supplied identity is not trusted for this purpose, and an order ID by itself is insufficient to disclose status, payment state, or totals.
 
 The production database and vector adapter must preserve this rule at the query and schema level; see the handoff requests.
 

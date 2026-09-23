@@ -901,7 +901,16 @@ SELECT o.id, o.merchant_id, o.status, o.payment_method, o.payment_status, o.tota
        o.version, o.updated_at, m.currency_code AS merchant_currency_code
 FROM orders o
 JOIN merchants m ON m.id = o.merchant_id
-WHERE o.merchant_id = $1 AND o.id = $2
+WHERE o.merchant_id = $1
+  AND o.id = $2
+  AND (
+    (o.conversation_id IS NOT NULL AND o.conversation_id = $3)
+    OR (
+      o.conversation_id IS NULL
+      AND o.customer_external_id IS NOT NULL
+      AND o.customer_external_id = $4
+    )
+  )
 LIMIT 2`;
 
 async function resolveOrderFact(
@@ -909,12 +918,28 @@ async function resolveOrderFact(
   merchantId: string,
   customerText: string,
   language: KnowledgeLanguage,
+  conversationId?: string,
+  customerExternalId?: string,
 ) {
   const orderId = extractOrderId(customerText);
   if (!orderId) return null;
+
+  const trustedConversationId = boundedText(conversationId, 160);
+  const trustedCustomerExternalId = boundedText(customerExternalId, 200);
+  if (!trustedConversationId && !trustedCustomerExternalId) {
+    return null;
+  }
+
   let rows: Record<string, unknown>[];
   try {
-    rows = (await sql.query(ORDER_SQL, [merchantId, orderId])).rows;
+    rows = (
+      await sql.query(ORDER_SQL, [
+        merchantId,
+        orderId,
+        trustedConversationId || null,
+        trustedCustomerExternalId || null,
+      ])
+    ).rows;
   } catch {
     fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
   }
@@ -996,7 +1021,14 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
     }
 
     if (kinds.order) {
-      return resolveOrderFact(this.sql, merchantId, input.customerText, input.language);
+      return resolveOrderFact(
+        this.sql,
+        merchantId,
+        input.customerText,
+        input.language,
+        input.conversationId,
+        input.customerExternalId,
+      );
     }
 
     const row = await settings(this.sql, merchantId);
