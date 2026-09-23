@@ -262,15 +262,16 @@ test("cashier profitability requires complete historical cost evidence", () => {
 });
 
 
-test("Arabic and English report calendars preserve the approved reference geometry without changing date boundaries", () => {
+test("Arabic, Sorani and English report calendars preserve the approved reference geometry without changing date boundaries", () => {
   const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
   const css = read("artifacts/fawri/src/components/reports/report-calendar.css");
-  assert.match(toolbar, /lang === 'ar' \|\| lang === 'en' \? DayPicker : Calendar/);
+  assert.match(toolbar, /const RangeCalendar = DayPicker/);
   assert.match(toolbar, /locale=\{lang === 'ar' \? ar : undefined\}/);
   assert.match(toolbar, /numerals=\{lang === 'ar' \? 'arab' : undefined\}/);
   assert.match(toolbar, /labelNext: \(\) => 'الشهر التالي'/);
   assert.match(toolbar, /labelPrevious: \(\) => 'الشهر السابق'/);
   assert.match(css, /\.report-ar-calendar \.rdp-month_grid/);
+  assert.match(css, /\.report-ku-calendar \.rdp-month_grid/);
   assert.match(css, /\.report-en-calendar \.rdp-month_grid/);
   assert.match(css, /\.report-en-calendar \.rdp-button_previous/);
   assert.match(css, /\.report-en-calendar \.rdp-button_next/);
@@ -279,9 +280,15 @@ test("Arabic and English report calendars preserve the approved reference geomet
   assert.match(css, /\.report-ar-calendar \.rdp-range_middle/);
   assert.match(css, /\.report-ar-calendar\[dir="rtl"\] \.rdp-range_start/);
   assert.match(css, /\.report-ar-calendar\[dir="rtl"\] \.rdp-range_end/);
-  assert.match(toolbar, /lang === 'en' \? 'report-en-date-dialog'/);
-  assert.match(toolbar, /lang === 'en' \? 'report-en-calendar'/);
-  assert.match(toolbar, /lang === 'ku' \? <div className="mb-3">/);
+  assert.match(css, /\.report-ku-calendar\[dir="rtl"\] \.rdp-range_start/);
+  assert.match(css, /\.report-ku-calendar\[dir="rtl"\] \.rdp-range_end/);
+  assert.match(toolbar, /lang === 'ku' \? 'report-ku-date-dialog'/);
+  assert.match(toolbar, /lang === 'ku' \? 'report-ku-calendar'/);
+  assert.match(toolbar, /formatCaption: soraniCaption/);
+  assert.match(toolbar, /formatWeekdayName: soraniWeekday/);
+  assert.match(toolbar, /weekStartsOn=\{lang === 'ku' \? 6 : undefined\}/);
+  assert.match(toolbar, /dir=\{lang === 'en' \? 'ltr' : 'rtl'\}/);
+  assert.doesNotMatch(toolbar, /lang === 'ku' \? <div className="mb-3">/);
   assert.match(css, /table-layout: fixed/);
   assert.match(css, /min-height: 2\.5rem/);
   assert.match(css, /\.rdp-range_start \.rdp-day_button/);
