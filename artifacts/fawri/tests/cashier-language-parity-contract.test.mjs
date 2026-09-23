@@ -4,8 +4,8 @@ import test from 'node:test';
 
 const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'utf8');
 
-const uiCopy = read('../src/lib/cashierUiCopy.ts');
-const enhancementCopy = read('../src/lib/cashierPosEnhancementCopy.ts');
+const uiCopy = read('../src/lib/translations/features/lib/cashierUiCopy.ts');
+const enhancementCopy = read('../src/lib/translations/features/lib/cashierPosEnhancementCopy.ts');
 const receiptCopy = read('../src/lib/cashierReceiptPrinting.ts');
 const operatorGate = read('../src/components/cashier/CashierOperatorGate.tsx');
 const endShift = read('../src/components/cashier/CashierEndShiftButton.tsx');
