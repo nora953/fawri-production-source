@@ -223,7 +223,7 @@ export function ReportToolbar({
 }) {
   const { lang, dir } = useI18n();
   const copy = COPY[lang] || COPY.en;
-  const RangeCalendar = lang === 'ar' ? DayPicker : Calendar;
+  const RangeCalendar = lang === 'ar' || lang === 'en' ? DayPicker : Calendar;
   const [open, setOpen] = useState(false);
   const [draftKind, setDraftKind] = useState<ReportRangeKey>(range);
   const [draftRange, setDraftRange] = useState<DateRange | undefined>(
@@ -321,7 +321,7 @@ export function ReportToolbar({
         </DialogTrigger>
 
         <DialogContent
-          className={`max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0 ${lang === 'ar' ? 'report-ar-date-dialog' : ''}`}
+          className={`max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[860px] gap-0 overflow-hidden p-0 ${lang === 'ar' ? 'report-ar-date-dialog' : lang === 'en' ? 'report-en-date-dialog' : ''}`}
           closeButtonClassName={lang === 'ar' ? 'left-3 right-auto top-3' : 'right-3 top-3'}
           dir={dir}
         >
@@ -353,7 +353,7 @@ export function ReportToolbar({
               </aside>
 
               <div className="min-w-0 p-3 sm:p-4">
-                {lang !== 'ar' ? <div className="mb-3">
+                {lang === 'ku' ? <div className="mb-3">
                   <p className="text-sm font-bold">{copy.customRange}</p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{copy.rangePickerHint}</p>
                 </div> : null}
@@ -370,42 +370,69 @@ export function ReportToolbar({
                     selected={draftRange}
                     onSelect={chooseCalendarRange}
                     numberOfMonths={desktopCalendar ? 2 : 1}
+                    fixedWeeks
                     defaultMonth={draftRange?.from || new Date()}
                     disabled={{ after: new Date() }}
                     showOutsideDays={false}
                     min={1}
-                    className={lang === 'ar' ? 'report-ar-calendar' : 'max-w-full'}
+                    className={lang === 'ar' ? 'report-ar-calendar' : lang === 'en' ? 'report-en-calendar' : 'max-w-full'}
                   />
                 </div>
-                {draftKind === 'custom' && draftRange?.from ? (
-                  <p dir={lang === 'ar' ? 'rtl' : 'ltr'} className={lang === 'ar' ? 'mt-4 rounded-lg bg-muted/40 px-3 py-2 text-center text-sm font-semibold tabular-nums text-foreground' : 'mt-3 text-center text-xs tabular-nums text-muted-foreground'}>
-                    {lang === 'ar' ? <ArabicRangeDetail detail={`${displayDateDayFirst(dateToValue(draftRange.from))} – ${draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}`} /> : <>
-                      {displayDateDayFirst(dateToValue(draftRange.from))}
-                      {' – '}
-                      {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
-                    </>}
-                  </p>
-                ) : null}
-                {error ? <p className="mt-2 text-xs font-semibold text-destructive">{error}</p> : null}
+                <div className="report-date-selection-slot mt-1 flex min-h-5 items-center justify-center">
+                  {draftKind === 'custom' && draftRange?.from ? (
+                    <p dir={lang === 'ar' ? 'rtl' : 'ltr'} className={lang === 'ar' ? 'rounded-lg bg-muted/40 px-3 py-1 text-center text-xs font-semibold tabular-nums text-foreground' : 'text-center text-xs tabular-nums text-muted-foreground'}>
+                      {lang === 'ar' ? <ArabicRangeDetail detail={`${displayDateDayFirst(dateToValue(draftRange.from))} – ${draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}`} /> : <>
+                        {displayDateDayFirst(dateToValue(draftRange.from))}
+                        {' – '}
+                        {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
+                      </>}
+                    </p>
+                  ) : <span aria-hidden="true" className="invisible text-xs">00/00/0000 – 00/00/0000</span>}
+                </div>
+                {error ? <p className="mt-1 text-xs font-semibold text-destructive">{error}</p> : null}
               </div>
             </div>
           </div>
 
-          <div dir={lang === 'ar' ? 'ltr' : undefined} className="report-date-actions flex shrink-0 items-center justify-end gap-2 border-t bg-background p-3 sm:px-5">
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-lg border bg-background px-4 py-2 text-sm font-bold hover:bg-accent"
-            >
-              {copy.cancel}
-            </button>
-            <button
-              type="button"
-              onClick={applyDraft}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
-            >
-              {copy.apply}
-            </button>
+          <div
+            dir={lang === 'ar' ? 'ltr' : undefined}
+            className={`report-date-actions flex shrink-0 items-center gap-2 border-t bg-background p-3 sm:px-5 ${lang === 'en' ? 'justify-start' : 'justify-end'}`}
+          >
+            {lang === 'en' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={applyDraft}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+                >
+                  {copy.apply}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg border bg-background px-4 py-2 text-sm font-bold hover:bg-accent"
+                >
+                  {copy.cancel}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg border bg-background px-4 py-2 text-sm font-bold hover:bg-accent"
+                >
+                  {copy.cancel}
+                </button>
+                <button
+                  type="button"
+                  onClick={applyDraft}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+                >
+                  {copy.apply}
+                </button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>

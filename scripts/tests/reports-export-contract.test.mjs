@@ -26,6 +26,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(toolbar, /mode="range"/);
   assert.match(toolbar, /min=\{1\}/);
   assert.match(toolbar, /numberOfMonths=\{desktopCalendar \? 2 : 1\}/);
+  assert.match(toolbar, /fixedWeeks/);
+  assert.match(toolbar, /report-date-selection-slot/);
   assert.match(toolbar, /displayDateDayFirst/);
   assert.match(toolbar, /\$\{day\}\/\$\{month\}\/\$\{year\}/);
   assert.match(toolbar, /Quick ranges/);
@@ -55,7 +57,10 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(printCss, /grid-template-columns: repeat\(3, minmax\(0, 1fr\)\)/);
   assert.doesNotMatch(printCss, /repeat\(auto-fit/);
   assert.match(toolbar, /function ArabicRangeDetail/);
-  assert.match(toolbar, /dir=\{lang === 'ar' \? 'ltr' : undefined\} className="report-date-actions flex shrink-0 items-center justify-end/);
+  assert.match(toolbar, /lang === 'en' \? 'justify-start' : 'justify-end'/);
+  assert.match(toolbar, /lang === 'en' \? \(/);
+  assert.match(toolbar, /onClick=\{applyDraft\}[\s\S]*\{copy\.apply\}[\s\S]*onClick=\{\(\) => setOpen\(false\)\}[\s\S]*\{copy\.cancel\}/);
+  assert.match(toolbar, /closeButtonClassName=\{lang === 'ar' \? 'left-3 right-auto top-3' : 'right-3 top-3'\}/);
   assert.match(toolbar, /<bdi dir="ltr">/);
   assert.match(toolbar, /index === 0 \? 'من' : 'إلى'/);
   assert.match(cashier, /report-print-chart-canvas/);
@@ -143,6 +148,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(reports, /profitabilityUnavailable/);
   assert.match(reports, /reports-print\.css/);
   assert.match(reports, /ArabicOnlineReportsContent/);
+  assert.match(reports, /EnglishOnlineReportsContent/);
+  assert.match(reports, /EnglishOnlineProductChart/);
+  assert.match(reports, /EnglishCombinedChart/);
   assert.match(reports, /lang === 'ar' \? \(/);
   assert.match(reports, /ONLINE_REPORT_CHART_COLORS/);
   assert.match(reports, /<PieChart>/);
@@ -254,15 +262,26 @@ test("cashier profitability requires complete historical cost evidence", () => {
 });
 
 
-test("Arabic report calendar has localized, spaced range controls without changing date boundaries", () => {
+test("Arabic and English report calendars preserve the approved reference geometry without changing date boundaries", () => {
   const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
   const css = read("artifacts/fawri/src/components/reports/report-calendar.css");
-  assert.match(toolbar, /lang === 'ar' \? DayPicker : Calendar/);
+  assert.match(toolbar, /lang === 'ar' \|\| lang === 'en' \? DayPicker : Calendar/);
   assert.match(toolbar, /locale=\{lang === 'ar' \? ar : undefined\}/);
   assert.match(toolbar, /numerals=\{lang === 'ar' \? 'arab' : undefined\}/);
   assert.match(toolbar, /labelNext: \(\) => 'الشهر التالي'/);
   assert.match(toolbar, /labelPrevious: \(\) => 'الشهر السابق'/);
   assert.match(css, /\.report-ar-calendar \.rdp-month_grid/);
+  assert.match(css, /\.report-en-calendar \.rdp-month_grid/);
+  assert.match(css, /\.report-en-calendar \.rdp-button_previous/);
+  assert.match(css, /\.report-en-calendar \.rdp-button_next/);
+  assert.match(css, /Keep the two-month dialog height stable/);
+  assert.match(css, /height: 1\.875rem/);
+  assert.match(css, /\.report-ar-calendar \.rdp-range_middle/);
+  assert.match(css, /\.report-ar-calendar\[dir="rtl"\] \.rdp-range_start/);
+  assert.match(css, /\.report-ar-calendar\[dir="rtl"\] \.rdp-range_end/);
+  assert.match(toolbar, /lang === 'en' \? 'report-en-date-dialog'/);
+  assert.match(toolbar, /lang === 'en' \? 'report-en-calendar'/);
+  assert.match(toolbar, /lang === 'ku' \? <div className="mb-3">/);
   assert.match(css, /table-layout: fixed/);
   assert.match(css, /min-height: 2\.5rem/);
   assert.match(css, /\.rdp-range_start \.rdp-day_button/);

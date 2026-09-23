@@ -51,6 +51,15 @@ test("reports hub keeps cashier online and combined views source-separated", () 
   assert.match(page, /Top-selling online products/);
   assert.match(page, /Delivery fees on delivered orders/);
   assert.match(page, /Total delivered order value/);
+  assert.match(page, /EnglishOnlineReportsContent/);
+  assert.match(page, /EnglishOnlineProductChart/);
+  assert.match(page, /EnglishCombinedChart/);
+  assert.match(page, /report-print-online-metrics report-print-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-3/);
+  assert.match(page, /report-print-online-group-stats mt-3 grid grid-cols-3/);
+  assert.match(page, /count === 1 \? singular : plural/);
+  assert.match(page, /Delivered online orders/);
+  assert.match(page, /Online orders received/);
+  assert.match(page, /row\.code === 'IQD' && row\.digits === 0 \? formatMerchantMoneyMinor\(row\.online/);
   assert.match(page, /toLocaleString\(lang === 'ku' \? 'ku' : 'en-GB'\)/);
   assert.match(page, /const iqKey = 'IQD:0'/);
 });
