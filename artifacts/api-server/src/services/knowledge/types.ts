@@ -137,6 +137,10 @@ export type KnowledgeFactResolverInput = {
   merchantId: string;
   customerText: string;
   language: KnowledgeLanguage;
+  /** Trusted server-side conversation identity; never take from browser input. */
+  conversationId?: string;
+  /** Trusted channel customer identity; never take from browser input. */
+  customerExternalId?: string;
 };
 
 export interface KnowledgeFactResolver {
@@ -189,6 +193,10 @@ export type KnowledgeDecisionInput = {
   languageHint?: KnowledgeLanguage;
   merchantPolicy?: MerchantPolicyContext;
   requestId?: string;
+  /** Trusted server-side conversation identity; required for customer-private facts. */
+  conversationId?: string;
+  /** Trusted channel customer identity; required for customer-private facts. */
+  customerExternalId?: string;
 };
 
 export type KnowledgeDecisionResult = {

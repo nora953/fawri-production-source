@@ -423,6 +423,8 @@ export async function preparePostgresMetaAutoReply(
       merchantId: parsed.merchantId,
       customerText: parsed.customerText,
       requestId: parsed.eventId,
+      conversationId: inbound.conversationId,
+      customerExternalId: parsed.senderId,
     });
   } catch {
     throw Object.assign(new Error("Knowledge reply decision is unavailable"), {

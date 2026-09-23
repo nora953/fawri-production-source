@@ -300,7 +300,13 @@ export class KnowledgeDecisionEngine {
       return result;
     }
 
-    const fact = await this.factResolver.resolve({ merchantId, customerText, language });
+    const fact = await this.factResolver.resolve({
+      merchantId,
+      customerText,
+      language,
+      conversationId: boundedText(input.conversationId, 160) || undefined,
+      customerExternalId: boundedText(input.customerExternalId, 200) || undefined,
+    });
     if (fact && fact.confidence >= this.minimumFactConfidence && fact.answerText.trim()) {
       const result: KnowledgeDecisionResult = {
         action: "reply",
