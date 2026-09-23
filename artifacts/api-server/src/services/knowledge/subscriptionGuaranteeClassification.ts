@@ -44,8 +44,10 @@ function containsAny(text: string, terms: readonly string[]): boolean {
  * This classifier does not itself authorize an answer. It only identifies
  * which structured authority is allowed to answer the question. The Fawri
  * subscription guarantee must be resolved from its server-side policy,
- * subscription, incident, and billing evidence. Merchant product warranty
- * remains fail-closed until a separate product-warranty authority is approved.
+ * subscription, incident, and billing evidence. Merchant product warranty is
+ * intentionally not treated as a platform operational fact; it may be answered
+ * only from explicit merchant-approved warranty knowledge until a dedicated
+ * structured product-warranty authority exists.
  */
 export function classifyWarrantyAuthorityDomain(
   customerText: string,

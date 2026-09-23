@@ -100,6 +100,8 @@ A Fawri clarification reply stores its stable reason code in message metadata. W
 
 A single customer message may request multiple authoritative facts. The operational fact resolver composes all requested trusted facts into one reply instead of rejecting the message merely because it contains more than one intent. Examples include price + availability, delivery + payment, or weight + dimensions. Composition is all-or-nothing: if any requested fact lacks trusted structured authority, the resolver returns no combined answer rather than silently omitting that part. Existing clarification and fail-closed rules still apply to each component fact.
 
+Warranty has two separate trust domains. Fawri subscription/service-guarantee questions remain server-authoritative and cannot fall through to merchant Saved Answers, embeddings, or AI. Merchant product-warranty questions are not treated as platform operational facts until a dedicated structured warranty authority exists; they may be answered only from explicit `merchant_approved` Saved Answers or approved learned knowledge. Generated/unapproved warranty text remains ineligible for automatic retrieval.
+
 The production database and vector adapter must preserve this rule at the query and schema level; see the handoff requests.
 
 ## Language handling
