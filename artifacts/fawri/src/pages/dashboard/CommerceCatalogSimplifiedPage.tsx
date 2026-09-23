@@ -694,7 +694,7 @@ export default function CommerceCatalogSimplifiedPage() {
                   <div className="min-w-0">
                     <h2 className="line-clamp-2 min-h-12 text-lg font-extrabold leading-6">{product.name}</h2>
                     {product.category && <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{product.category}</p>}
-                    {product.sku && <p className="mt-1 truncate text-xs font-medium text-muted-foreground" dir="ltr">SKU: {product.sku}</p>}
+                    {product.sku && <p className="mt-1 truncate text-xs font-medium text-muted-foreground" dir="ltr">{copy.sku}: {product.sku}</p>}
                   </div>
 
                   <div className="mt-3 flex min-h-7 flex-wrap content-start gap-1.5">
@@ -793,7 +793,7 @@ export default function CommerceCatalogSimplifiedPage() {
                 </div>
                 <h3 className="mt-3 text-2xl font-extrabold leading-8">{detailsProduct.name}</h3>
                 {detailsProduct.category && <p className="mt-1 text-sm text-muted-foreground">{detailsProduct.category}</p>}
-                {detailsProduct.sku && <p className="mt-2 text-xs font-medium text-muted-foreground" dir="ltr">SKU: {detailsProduct.sku}</p>}
+                {detailsProduct.sku && <p className="mt-2 text-xs font-medium text-muted-foreground" dir="ltr">{copy.sku}: {detailsProduct.sku}</p>}
 
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl bg-muted/35 p-3">

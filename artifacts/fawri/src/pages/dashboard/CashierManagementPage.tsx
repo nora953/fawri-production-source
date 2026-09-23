@@ -127,7 +127,7 @@ function Modal({ children, dir, onClose }: { children: ReactNode; dir: 'rtl' | '
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4" dir={dir} role="dialog" aria-modal="true">
       <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl border bg-background p-5 shadow-2xl">
         {children}
-        <button type="button" aria-label="close" onClick={onClose} className="sr-only">×</button>
+        <button type="button" aria-label={l.close} onClick={onClose} className="sr-only">×</button>
       </div>
     </div>
   );
