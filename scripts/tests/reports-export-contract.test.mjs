@@ -58,6 +58,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.doesNotMatch(printCss, /repeat\(auto-fit/);
   assert.match(toolbar, /function ArabicRangeDetail/);
   assert.match(toolbar, /lang === 'en' \? 'justify-start' : 'justify-end'/);
+  assert.match(toolbar, /lang === 'en' \? \(/);
+  assert.match(toolbar, /onClick=\{applyDraft\}[\s\S]*\{copy\.apply\}[\s\S]*onClick=\{\(\) => setOpen\(false\)\}[\s\S]*\{copy\.cancel\}/);
   assert.match(toolbar, /closeButtonClassName=\{lang === 'ar' \? 'left-3 right-auto top-3' : 'right-3 top-3'\}/);
   assert.match(toolbar, /<bdi dir="ltr">/);
   assert.match(toolbar, /index === 0 \? 'من' : 'إلى'/);
