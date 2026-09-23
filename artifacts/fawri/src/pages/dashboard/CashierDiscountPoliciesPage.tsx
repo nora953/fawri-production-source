@@ -7,7 +7,7 @@ import {
   merchantMoneyMinorToMajorInput,
   merchantSafeFractionDigits,
 } from '@/lib/moneyUi';
-import type { Lang } from '@/lib/types';
+import { CASHIER_DISCOUNT_POLICIES_COPY as TEXT } from '@/lib/translations/features/pages/dashboard/CashierDiscountPoliciesPage';
 
 type DiscountKind = 'amount' | 'percentage';
 
@@ -43,74 +43,6 @@ type Draft = {
   maxPercent: string;
   maxAmount: string;
   canApproveOverride: boolean;
-};
-
-const TEXT: Record<Lang, Record<string, string>> = {
-  ar: {
-    title: 'صلاحيات خصم الكاشير',
-    subtitle: 'اختر نوع الخصم وحدد حد كل موظف.',
-    back: 'العودة للكاشيرات والموظفين',
-    discountType: 'نوع الخصم المعتمد',
-    discountTypeHint: 'يُطبّق على جميع الكاشير والمديرين ولا يمكن تغييره من شاشة البيع.',
-    amountType: 'مبلغ ثابت',
-    percentageType: 'نسبة مئوية',
-    saveType: 'حفظ نوع الخصم',
-    typeSaved: 'تم حفظ نوع الخصم.',
-    enabled: 'السماح بالخصم اليدوي',
-    maxPercent: 'الحد الأقصى لنسبة الخصم (%)',
-    maxAmount: 'الحد الأقصى للخصم بالمبلغ',
-    independentLimitHint: 'تجاوز هذا الحد يتطلب موافقة مدير مخوّل.',
-    managerLimitHint: 'هذا الحد هو أقصى ما يمكن لهذا المدير اعتماده.',
-    override: 'السماح باعتماد تجاوزات الموظفين ضمن هذا الحد.',
-    save: 'حفظ', saving: 'جارٍ الحفظ...', loading: 'جارٍ تحميل الموظفين...',
-    failed: 'تعذر تحميل أو حفظ سياسة الخصم.', saved: 'تم حفظ سياسة الخصم.',
-    percentRequired: 'أدخل الحد الأقصى للنسبة من 0 إلى 100.',
-    amountRequired: 'أدخل حد الخصم بالمبلغ أكبر من صفر.',
-    disabledPolicy: 'الخصم اليدوي غير مسموح لهذا الموظف.',
-    active: 'نشط', disabledStatus: 'معطل', cashier: 'كاشير', manager: 'مدير',
-    hint: 'الخصم اليدوي لا يغيّر سعر المنتج الأصلي.',
-    permissionHint: 'الحفظ يحدّث الصلاحيات تلقائيًا، وتبقى حدود النوع الآخر محفوظة.',
-  },
-  ku: {
-    title: 'دەسەڵاتی داشکاندنی کاشێر',
-    subtitle: 'جۆری داشکاندن هەڵبژێرە و سنووری هەر کارمەند دیاری بکە.',
-    back: 'گەڕانەوە بۆ کاشێر و کارمەندان',
-    discountType: 'جۆری داشکاندنی پەسەندکراو',
-    discountTypeHint: 'بۆ هەموو کاشێر و بەڕێوەبەران جێبەجێ دەبێت و لە شاشەی فرۆشتن ناگۆڕدرێت.',
-    amountType: 'بڕی جێگیر', percentageType: 'ڕێژەی سەدی', saveType: 'پاشەکەوتکردنی جۆری داشکاندن', typeSaved: 'جۆری داشکاندن پاشەکەوت کرا.',
-    enabled: 'ڕێگەدان بە داشکاندنی دەستی',
-    maxPercent: 'زۆرترین ڕێژەی داشکاندن (%)', maxAmount: 'زۆرترین بڕی داشکاندن',
-    independentLimitHint: 'تێپەڕاندنی ئەم سنوورە پێویستی بە پەسەندی بەڕێوەبەری مۆڵەتپێدراو هەیە.',
-    managerLimitHint: 'ئەمە زۆرترین سنوورە کە ئەم بەڕێوەبەرە دەتوانێت پەسەندی بکات.',
-    override: 'ڕێگەدان بە پەسەندکردنی تێپەڕاندنی کارمەندان لەناو ئەم سنوورە.',
-    save: 'پاشەکەوت', saving: 'پاشەکەوت دەکرێت...', loading: 'کارمەندان بار دەکرێن...',
-    failed: 'بارکردن یان پاشەکەوتکردن سەرکەوتوو نەبوو.', saved: 'سیاسەتی داشکاندن پاشەکەوت کرا.',
-    percentRequired: 'زۆرترین ڕێژە لە 0 تا 100 بنووسە.', amountRequired: 'بڕی داشکاندنێک بنووسە کە لە 0 زیاتر بێت.',
-    disabledPolicy: 'داشکاندنی دەستی بۆ ئەم کارمەندە ڕێگەپێدراو نییە.',
-    active: 'چالاک', disabledStatus: 'ناچالاک', cashier: 'کاشێر', manager: 'بەڕێوەبەر',
-    hint: 'داشکاندنی دەستی نرخی سەرەکی بەرهەم ناگۆڕێت.',
-    permissionHint: 'پاشەکەوتکردن دەسەڵاتەکان خۆکارانە نوێ دەکاتەوە و سنووری جۆری تر دەپارێزرێت.',
-  },
-  en: {
-    title: 'Cashier discount permissions',
-    subtitle: 'Choose the discount type and set each employee’s limit.',
-    back: 'Back to cashiers & staff',
-    discountType: 'Active discount type',
-    discountTypeHint: 'Applies to all cashiers and managers and cannot be changed at checkout.',
-    amountType: 'Fixed amount', percentageType: 'Percentage', saveType: 'Save discount type', typeSaved: 'Discount type saved.',
-    enabled: 'Allow manual discount',
-    maxPercent: 'Maximum discount (%)', maxAmount: 'Maximum discount amount',
-    independentLimitHint: 'Exceeding this limit requires approval from an authorized manager.',
-    managerLimitHint: 'This is the maximum this manager can approve.',
-    override: 'Allow this manager to approve employee limit overrides within this limit.',
-    save: 'Save', saving: 'Saving...', loading: 'Loading staff...',
-    failed: 'Could not load or save the discount policy.', saved: 'Discount policy saved.',
-    percentRequired: 'Enter a percentage from 0 to 100.', amountRequired: 'Enter a discount amount greater than zero.',
-    disabledPolicy: 'Manual discount is not allowed for this employee.',
-    active: 'Active', disabledStatus: 'Disabled', cashier: 'Cashier', manager: 'Manager',
-    hint: 'Manual discounts do not change the product’s original price.',
-    permissionHint: 'Saving updates permissions automatically, and the other type’s limits stay saved.',
-  },
 };
 
 function draftFromPolicy(policy: Policy, fractionDigits: number): Draft {
