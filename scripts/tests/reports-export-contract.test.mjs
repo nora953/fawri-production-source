@@ -45,6 +45,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /ResponsiveContainer/);
   assert.match(cashier, /PieChart/);
   assert.match(cashier, /<Pie/);
+  assert.match(cashier, /isAnimationActive=\{false\}/);
+  assert.match(reports, /isAnimationActive=\{false\}/);
   assert.match(cashier, /<Cell/);
   assert.match(cashier, /REPORT_CHART_COLORS/);
   assert.doesNotMatch(cashier, /<BarChart/);
