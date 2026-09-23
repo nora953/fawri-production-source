@@ -1,1 +1,1 @@
-export * from "@/lib/translations/features/lib/cashierPosEnhancementCopy";
+export * from "./translations/features/lib/cashierPosEnhancementCopy";
