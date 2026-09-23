@@ -370,6 +370,7 @@ export function ReportToolbar({
                     selected={draftRange}
                     onSelect={chooseCalendarRange}
                     numberOfMonths={desktopCalendar ? 2 : 1}
+                    fixedWeeks
                     defaultMonth={draftRange?.from || new Date()}
                     disabled={{ after: new Date() }}
                     showOutsideDays={false}
@@ -377,21 +378,26 @@ export function ReportToolbar({
                     className={lang === 'ar' ? 'report-ar-calendar' : lang === 'en' ? 'report-en-calendar' : 'max-w-full'}
                   />
                 </div>
-                {draftKind === 'custom' && draftRange?.from ? (
-                  <p dir={lang === 'ar' ? 'rtl' : 'ltr'} className={lang === 'ar' ? 'mt-4 rounded-lg bg-muted/40 px-3 py-2 text-center text-sm font-semibold tabular-nums text-foreground' : 'mt-3 text-center text-xs tabular-nums text-muted-foreground'}>
-                    {lang === 'ar' ? <ArabicRangeDetail detail={`${displayDateDayFirst(dateToValue(draftRange.from))} – ${draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}`} /> : <>
-                      {displayDateDayFirst(dateToValue(draftRange.from))}
-                      {' – '}
-                      {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
-                    </>}
-                  </p>
-                ) : null}
-                {error ? <p className="mt-2 text-xs font-semibold text-destructive">{error}</p> : null}
+                <div className="report-date-selection-slot mt-1 flex min-h-5 items-center justify-center">
+                  {draftKind === 'custom' && draftRange?.from ? (
+                    <p dir={lang === 'ar' ? 'rtl' : 'ltr'} className={lang === 'ar' ? 'rounded-lg bg-muted/40 px-3 py-1 text-center text-xs font-semibold tabular-nums text-foreground' : 'text-center text-xs tabular-nums text-muted-foreground'}>
+                      {lang === 'ar' ? <ArabicRangeDetail detail={`${displayDateDayFirst(dateToValue(draftRange.from))} – ${draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}`} /> : <>
+                        {displayDateDayFirst(dateToValue(draftRange.from))}
+                        {' – '}
+                        {draftRange.to ? displayDateDayFirst(dateToValue(draftRange.to)) : '…'}
+                      </>}
+                    </p>
+                  ) : <span aria-hidden="true" className="invisible text-xs">00/00/0000 – 00/00/0000</span>}
+                </div>
+                {error ? <p className="mt-1 text-xs font-semibold text-destructive">{error}</p> : null}
               </div>
             </div>
           </div>
 
-          <div dir={lang === 'ar' ? 'ltr' : undefined} className="report-date-actions flex shrink-0 items-center justify-end gap-2 border-t bg-background p-3 sm:px-5">
+          <div
+            dir={lang === 'ar' ? 'ltr' : undefined}
+            className={`report-date-actions flex shrink-0 items-center gap-2 border-t bg-background p-3 sm:px-5 ${lang === 'en' ? 'justify-start' : 'justify-end'}`}
+          >
             <button
               type="button"
               onClick={() => setOpen(false)}
