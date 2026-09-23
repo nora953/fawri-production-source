@@ -1,1 +1,1 @@
-export * from "@/lib/translations/features/lib/cashierUiCopy";
+export * from "./translations/features/lib/cashierUiCopy";
