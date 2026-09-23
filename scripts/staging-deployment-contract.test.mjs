@@ -20,7 +20,7 @@ function activeEnvAssignments(source) {
 }
 
 test('staging environment template keeps PostgreSQL authority required and external providers disabled', async () => {
-  const env = await read('../.env.staging.example');
+  const env = await read('.env.staging.example');
   const values = activeEnvAssignments(env);
 
   assert.equal(values.get('NODE_ENV'), 'production');
@@ -48,7 +48,7 @@ test('staging environment template keeps PostgreSQL authority required and exter
 });
 
 test('staging Dockerfile packages one same-origin web/API runtime with fail-closed external defaults', async () => {
-  const dockerfile = await read('../Dockerfile.staging');
+  const dockerfile = await read('Dockerfile.staging');
 
   assert.match(dockerfile, /FROM node:22-bookworm-slim AS build/);
   assert.match(dockerfile, /FROM node:22-bookworm-slim AS runtime/);
@@ -69,7 +69,7 @@ test('staging Dockerfile packages one same-origin web/API runtime with fail-clos
 });
 
 test('staging documentation preserves same-origin manual-QA boundary', async () => {
-  const contract = await read('../docs/staging-deployment-contract.md');
+  const contract = await read('docs/staging-deployment-contract.md');
 
   assert.match(contract, /same HTTPS origin/);
   assert.match(contract, /FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required/);
