@@ -434,7 +434,7 @@ function DonutProductChart({
   return (
     <div className="report-print-chart-card report-print-cashier-chart-card mt-2 rounded-xl border bg-background p-3">
       <p className="report-print-chart-title text-center text-xs font-semibold text-muted-foreground">{title}</p>
-      <div className="report-print-chart-canvas mx-auto mt-1 flex h-40 w-full items-center justify-center">
+      <div className="report-print-chart-canvas mx-auto mt-1 flex h-48 w-48 max-w-full items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
