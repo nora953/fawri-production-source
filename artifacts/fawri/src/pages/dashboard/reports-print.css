@@ -273,8 +273,9 @@
   }
 
   .report-print-online-products .report-print-chart-canvas {
-    max-width: 80mm !important;
-    height: 46mm !important;
+    width: 48mm !important;
+    max-width: 48mm !important;
+    height: 48mm !important;
   }
 
   .report-print-online-products .report-print-chart-legend {
@@ -356,7 +357,7 @@
 
   .report-print-cashier-chart-card {
     display: grid !important;
-    grid-template-columns: 58mm minmax(0, 1fr) !important;
+    grid-template-columns: 48mm minmax(0, 1fr) !important;
     grid-template-areas:
       "title title"
       "canvas legend" !important;
@@ -373,9 +374,9 @@
 
   .report-print-cashier-chart-card .report-print-chart-canvas {
     grid-area: canvas !important;
-    width: 58mm !important;
-    max-width: 58mm !important;
-    height: 58mm !important;
+    width: 48mm !important;
+    max-width: 48mm !important;
+    height: 48mm !important;
     margin: 0 !important;
   }
 
