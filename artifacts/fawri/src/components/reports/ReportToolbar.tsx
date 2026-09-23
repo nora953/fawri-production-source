@@ -398,20 +398,41 @@ export function ReportToolbar({
             dir={lang === 'ar' ? 'ltr' : undefined}
             className={`report-date-actions flex shrink-0 items-center gap-2 border-t bg-background p-3 sm:px-5 ${lang === 'en' ? 'justify-start' : 'justify-end'}`}
           >
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-lg border bg-background px-4 py-2 text-sm font-bold hover:bg-accent"
-            >
-              {copy.cancel}
-            </button>
-            <button
-              type="button"
-              onClick={applyDraft}
-              className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
-            >
-              {copy.apply}
-            </button>
+            {lang === 'en' ? (
+              <>
+                <button
+                  type="button"
+                  onClick={applyDraft}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+                >
+                  {copy.apply}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg border bg-background px-4 py-2 text-sm font-bold hover:bg-accent"
+                >
+                  {copy.cancel}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg border bg-background px-4 py-2 text-sm font-bold hover:bg-accent"
+                >
+                  {copy.cancel}
+                </button>
+                <button
+                  type="button"
+                  onClick={applyDraft}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90"
+                >
+                  {copy.apply}
+                </button>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
