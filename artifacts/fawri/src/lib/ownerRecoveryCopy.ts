@@ -1,1 +1,1 @@
-export * from "@/lib/translations/features/lib/ownerRecoveryCopy";
+export * from "./translations/features/lib/ownerRecoveryCopy";
