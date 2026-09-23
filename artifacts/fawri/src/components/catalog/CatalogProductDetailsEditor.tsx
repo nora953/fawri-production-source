@@ -20,6 +20,7 @@ import {
 } from '@/lib/catalogVariantMatrix';
 import type { Lang } from '@/lib/types';
 import { CATALOG_PRODUCT_DETAILS_COPY, type CatalogProductDetailsCopy } from '@/lib/translations/features/catalog/catalogEditorCopy';
+import { CATALOG_PRODUCT_GROUP_BY_LABEL as GROUP_BY_LABEL } from '@/lib/translations/features/catalog/catalogProductDetailsEditorCopy';
 
 const MAX_VARIANTS = 100;
 let bulkRowSequence = 0;
@@ -65,12 +66,6 @@ const EMPTY_GROUP_DRAFT: GroupDraft = {
   cost: '',
   stock: '',
   copyTarget: '',
-};
-
-const GROUP_BY_LABEL: Record<Lang, string> = {
-  ar: 'تجميع الأنواع حسب',
-  ku: 'گرووپکردنی جۆرەکان بەپێی',
-  en: 'Group types by',
 };
 
 function splitValues(raw: string): string[] {

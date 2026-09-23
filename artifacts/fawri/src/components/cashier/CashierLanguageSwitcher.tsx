@@ -1,19 +1,10 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n } from '@/lib/i18n';
-import type { Lang } from '@/lib/types';
-
-const LANGUAGE_OPTIONS: Array<{ id: Lang; label: string; title: string }> = [
-  { id: 'ar', label: 'AR', title: 'العربية' },
-  { id: 'ku', label: 'KU', title: 'کوردی' },
-  { id: 'en', label: 'EN', title: 'English' },
-];
-
-const SWITCHER_LABEL: Record<Lang, string> = {
-  ar: 'تغيير لغة الكاشير',
-  ku: 'گۆڕینی زمانی کاشێر',
-  en: 'Change cashier language',
-};
+import {
+  CASHIER_LANGUAGE_OPTIONS as LANGUAGE_OPTIONS,
+  CASHIER_LANGUAGE_SWITCHER_LABEL as SWITCHER_LABEL,
+} from '@/lib/translations/features/components/cashierLanguageSwitcherCopy';
 
 function languageSlotSelector(): string | null {
   const view = document.documentElement.dataset.cashierView;
