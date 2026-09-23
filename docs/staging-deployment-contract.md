@@ -109,6 +109,20 @@ Keep all of the following inactive during this staging phase:
 
 The purpose of this phase is web/manual QA of Fawri's server-authoritative application behavior, not external-provider launch certification.
 
+## Repository staging-image contract
+
+The repository validates the staging container definition separately from any real hosted staging environment.
+
+The `Staging container contract` GitHub Actions workflow:
+
+- checks that `.env.staging.example`, `Dockerfile.staging`, and this document keep the same fail-closed staging authority contract;
+- builds `Dockerfile.staging` from the current repository tree;
+- verifies the image contains the built API entry point and frontend static output;
+- verifies the image defaults keep job workers, Meta live send, and Knowledge embeddings disabled;
+- verifies the production release gate and provider credentials are not baked into the image.
+
+This workflow proves repository/container packaging only. It does **not** prove a real staging PostgreSQL instance, hosted HTTPS origin, owner-admin bootstrap, external persistence, or production provider readiness.
+
 ## Staging health gates
 
 Before opening the staging URL for manual QA, verify:
