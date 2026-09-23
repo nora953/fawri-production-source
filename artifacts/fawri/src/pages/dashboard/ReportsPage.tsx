@@ -535,6 +535,10 @@ function englishOnlinePrintPeriod(
     : { start: englishVisualDate(from), end: englishVisualDate(to) };
 }
 
+function englishCountText(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
 function englishOnlinePercent(value: number, total: number): string {
   if (total <= 0) return '0%';
   return new Intl.NumberFormat('en-GB', {
@@ -596,7 +600,7 @@ function EnglishOnlineProductChart({ products, copy }: { products: OnlineProduct
                 {englishOnlinePercent(product.revenue_iqd, totalRevenue)}
               </span>
               <span className="flex flex-col items-end text-xs leading-tight" dir="ltr">
-                <b>{product.units} {copy.units}</b>
+                <b>{englishCountText(product.units, 'unit', 'units')}</b>
                 <span className="text-muted-foreground">{iqMoney(product.revenue_iqd, 'en')}</span>
               </span>
             </div>
@@ -664,7 +668,7 @@ function EnglishOnlineReportsContent({
               <div key={channel.source_channel} className="report-print-online-group-card rounded-xl border bg-background p-3">
                 <div className="flex items-center justify-between gap-3">
                   <p className="font-bold" dir="ltr">{channel.source_channel}</p>
-                  <span className="text-xs text-muted-foreground">{channel.order_count} {copy.orders}</span>
+                  <span className="text-xs text-muted-foreground">{englishCountText(channel.order_count, 'order', 'orders')}</span>
                 </div>
                 <div className="report-print-online-group-stats mt-3 grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="rounded-lg border bg-card px-2 py-2">
@@ -1172,8 +1176,8 @@ function CombinedReports() {
           </p>
           <div className="grid gap-3 md:grid-cols-3">
             <SummaryMetric title={copy.onlineDeliveredSales}><bdi dir="ltr">{lang === 'ar' ? formatArabicIqd(online.delivered_sales_iqd) : iqMoney(online.delivered_sales_iqd, lang)}</bdi></SummaryMetric>
-            <SummaryMetric title={lang === 'ar' ? 'الطلبات الإلكترونية المسلّمة' : copy.deliveredOrders}><bdi dir="ltr">{lang === 'ar' ? formatArabicGroupedInteger(online.delivered_order_count) : online.delivered_order_count}</bdi></SummaryMetric>
-            <SummaryMetric title={lang === 'ar' ? 'الطلبات الإلكترونية المستلمة' : copy.receivedOrders}><bdi dir="ltr">{lang === 'ar' ? formatArabicGroupedInteger(online.received_order_count) : online.received_order_count}</bdi></SummaryMetric>
+            <SummaryMetric title={lang === 'ar' ? 'الطلبات الإلكترونية المسلّمة' : lang === 'en' ? 'Delivered online orders' : copy.deliveredOrders}><bdi dir="ltr">{lang === 'ar' ? formatArabicGroupedInteger(online.delivered_order_count) : online.delivered_order_count}</bdi></SummaryMetric>
+            <SummaryMetric title={lang === 'ar' ? 'الطلبات الإلكترونية المستلمة' : lang === 'en' ? 'Online orders received' : copy.receivedOrders}><bdi dir="ltr">{lang === 'ar' ? formatArabicGroupedInteger(online.received_order_count) : online.received_order_count}</bdi></SummaryMetric>
           </div>
 
           <section className="report-print-break-avoid rounded-2xl border bg-card p-4 shadow-sm sm:p-5">
@@ -1211,7 +1215,11 @@ function CombinedReports() {
                     <tr key={`${row.code}:${row.digits}`}>
                       <td className="px-3 py-3 font-bold" dir="ltr">{row.code}</td>
                       <td className="px-3 py-3 text-end font-semibold" dir="ltr">{combinedDisplayMoney(row.cashier, row, lang)}</td>
-                      <td className="px-3 py-3 text-end font-semibold" dir="ltr">{lang === 'ar' ? (row.code === 'IQD' && row.digits === 0 ? combinedDisplayMoney(row.online, row, lang) : 'غير منطبق') : (row.online ? formatMerchantMoneyMinor(row.online, row.code, row.digits, lang) : '—')}</td>
+                      <td className="px-3 py-3 text-end font-semibold" dir="ltr">{lang === 'ar'
+  ? (row.code === 'IQD' && row.digits === 0 ? combinedDisplayMoney(row.online, row, lang) : 'غير منطبق')
+  : lang === 'en'
+    ? (row.code === 'IQD' && row.digits === 0 ? formatMerchantMoneyMinor(row.online, row.code, row.digits, lang) : '—')
+    : (row.online ? formatMerchantMoneyMinor(row.online, row.code, row.digits, lang) : '—')}</td>
                       <td className="px-3 py-3 text-end font-extrabold" dir="ltr">{combinedDisplayMoney(row.cashier + row.online, row, lang)}</td>
                     </tr>
                   ))}
