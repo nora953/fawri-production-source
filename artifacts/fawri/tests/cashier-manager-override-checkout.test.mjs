@@ -68,7 +68,7 @@ test('override approval proof is part of the durable sale and outbox payload', a
 });
 
 test('manager approval copy exists for Arabic Kurdish and English checkout UX', async () => {
-  const copy = await source('src/lib/cashierPosEnhancementCopy.ts');
+  const copy = await source('src/lib/translations/features/lib/cashierPosEnhancementCopy.ts');
   assert.equal((copy.match(/managerApprovalTitle:/g) || []).length, 3);
   assert.equal((copy.match(/managerApprovalInvalidPin:/g) || []).length, 3);
   assert.equal((copy.match(/managerApprovalNoApprovers:/g) || []).length, 3);
