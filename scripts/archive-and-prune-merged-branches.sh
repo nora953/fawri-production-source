@@ -6,7 +6,7 @@ cd "$ROOT"
 
 git fetch origin --prune
 
-MAIN_REF="origin/main"
+MAIN_REF="refs/remotes/origin/main"
 STAMP="$(date +%Y%m%d-%H%M%S)"
 ARCHIVE_DIR="${BRANCH_ARCHIVE_DIR:-branch-archives}"
 mkdir -p "$ARCHIVE_DIR"
@@ -19,15 +19,20 @@ DELETE_SCRIPT="$ARCHIVE_DIR/delete-merged-working-branches-$STAMP.sh"
 
 while IFS= read -r ref; do
   case "$ref" in
-    origin/HEAD|origin/main|origin/checkpoint/*)
+    refs/remotes/origin/HEAD|refs/remotes/origin/main|refs/remotes/origin/checkpoint/*)
       continue
       ;;
   esac
 
-  if git merge-base --is-ancestor "$ref" "$MAIN_REF"; then
-    printf '%s\n' "${ref#origin/}" >> "$SAFE_LIST"
+  # Never treat symbolic remote refs (for example origin/HEAD) as branches.
+  if [ -n "$(git for-each-ref --format='%(symref)' "$ref")" ]; then
+    continue
   fi
-done < <(git for-each-ref --format='%(refname:short)' refs/remotes/origin | sort)
+
+  if git merge-base --is-ancestor "$ref" "$MAIN_REF"; then
+    printf '%s\n' "${ref#refs/remotes/origin/}" >> "$SAFE_LIST"
+  fi
+done < <(git for-each-ref --format='%(refname)' refs/remotes/origin | sort)
 
 COUNT="$(wc -l < "$SAFE_LIST" | tr -d ' ')"
 echo "SAFE_MERGED_WORKING_BRANCHES=$COUNT"
