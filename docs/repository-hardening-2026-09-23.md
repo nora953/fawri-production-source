@@ -56,9 +56,9 @@ Large files are refactor targets, not deletion targets. Refactors must preserve 
 This maintenance branch begins only with non-runtime cleanup:
 
 - recover the valid staging environment example onto a current-main branch
-- expose current translation audits through root package scripts
+- add a current-main translation audit wrapper without changing the dependency manifest
 - remove an accidentally committed temporary translation helper
-- ignore future `scripts/.tmp-*` files
+- ignore future `scripts/.tmp-*` files and root pre-migration `pre_*.dump` backups
 - establish a repository maintenance policy
 
 Runtime refactors and translation centralization are separate reviewed slices after this baseline passes.
