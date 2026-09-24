@@ -192,6 +192,14 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
         answer: redactSensitiveText(item.answer, 1_500),
         language: item.language,
       })),
+      fawri_curated_knowledge: (request.curatedKnowledge || []).slice(0, 6).map((item) => ({
+        id: item.id,
+        scope: item.scope,
+        activity_key: item.activityKey,
+        question: redactSensitiveText(item.question, 500),
+        answer: redactSensitiveText(item.answer, 1_500),
+        language: item.language,
+      })),
     };
 
     const conversationEnvelope = (request.conversationHistory || []).slice(-8).map((message) => ({
