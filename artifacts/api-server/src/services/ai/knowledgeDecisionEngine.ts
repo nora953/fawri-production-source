@@ -20,6 +20,8 @@ import {
 } from "../knowledge/postgresKnowledgeRuntime.js";
 import type {
   AiFallbackProvider,
+  ApprovedKnowledgeTranslationProvider,
+  ApprovedKnowledgeTranslationResult,
   KnowledgeAuditEvent,
   KnowledgeDecisionInput,
   KnowledgeDecisionResult,
@@ -157,6 +159,17 @@ class DisabledAiFallbackProvider implements AiFallbackProvider {
   }
 }
 
+class DisabledApprovedKnowledgeTranslationProvider
+  implements ApprovedKnowledgeTranslationProvider
+{
+  readonly providerId = "disabled_approved_translation_provider";
+  readonly model = "disabled";
+
+  async translate(): Promise<null> {
+    return null;
+  }
+}
+
 type Awaitable<T> = T | Promise<T>;
 
 type TrainingRequestInput = {
@@ -211,6 +224,7 @@ export type KnowledgeDecisionEngineOptions = {
   factResolver?: KnowledgeFactResolver;
   policyResolver?: MerchantKnowledgePolicyResolver | null;
   aiProvider?: AiFallbackProvider;
+  translationProvider?: ApprovedKnowledgeTranslationProvider;
   semanticThreshold?: number;
   minimumFactConfidence?: number;
   minimumAiConfidence?: number;
@@ -226,6 +240,7 @@ export class KnowledgeDecisionEngine {
   private readonly factResolver: KnowledgeFactResolver;
   private readonly policyResolver: MerchantKnowledgePolicyResolver | null;
   private readonly aiProvider: AiFallbackProvider;
+  private readonly translationProvider: ApprovedKnowledgeTranslationProvider;
   private readonly semanticThreshold: number;
   private readonly minimumFactConfidence: number;
   private readonly minimumAiConfidence: number;
@@ -250,6 +265,8 @@ export class KnowledgeDecisionEngine {
           : new PostgresMerchantKnowledgePolicyResolver()
         : options.policyResolver;
     this.aiProvider = options.aiProvider || new DisabledAiFallbackProvider();
+    this.translationProvider =
+      options.translationProvider || new DisabledApprovedKnowledgeTranslationProvider();
     this.semanticThreshold = options.semanticThreshold ?? 0.58;
     this.minimumFactConfidence = options.minimumFactConfidence ?? 0.9;
     this.minimumAiConfidence = options.minimumAiConfidence ?? 0.82;
@@ -261,7 +278,40 @@ export class KnowledgeDecisionEngine {
       (explicitLegacyRepository ? "isolated_test_repository" : "unknown_runtime");
     this.legacyFallbackEnabled =
       this.runtime.legacyFallbackEnabled === true || explicitLegacyRepository;
-    this.liveAiTransportEnabled = false;
+    this.liveAiTransportEnabled =
+      this.translationProvider.providerId !== "disabled_approved_translation_provider";
+  }
+
+  private async translatedApprovedAnswer(params: {
+    merchantId: string;
+    recordId: string;
+    sourceLanguage: KnowledgeLanguage;
+    targetLanguage: KnowledgeLanguage;
+    sourceText: string;
+  }): Promise<ApprovedKnowledgeTranslationResult | null> {
+    const sourceText = boundedText(params.sourceText, 2_000);
+    if (!sourceText) return null;
+    if (params.sourceLanguage === params.targetLanguage) {
+      return {
+        answerText: sourceText,
+        language: params.targetLanguage,
+        faithful: true,
+      };
+    }
+    const translated = await this.translationProvider.translate({
+      merchantId: params.merchantId,
+      recordId: boundedText(params.recordId, 200),
+      sourceLanguage: params.sourceLanguage,
+      targetLanguage: params.targetLanguage,
+      sourceText,
+    });
+    if (
+      !translated ||
+      translated.faithful !== true ||
+      translated.language !== params.targetLanguage ||
+      !boundedText(translated.answerText, 2_000)
+    ) return null;
+    return { ...translated, answerText: boundedText(translated.answerText, 2_000) };
   }
 
   private handoffText(
@@ -515,23 +565,45 @@ export class KnowledgeDecisionEngine {
       language,
     });
     if (savedAnswer) {
+      const translated = await this.translatedApprovedAnswer({
+        merchantId,
+        recordId: savedAnswer.id,
+        sourceLanguage: savedAnswer.language,
+        targetLanguage: language,
+        sourceText: savedAnswer.answerText,
+      });
+      if (!translated) {
+        const result = this.handoffResult({
+          language,
+          policy: merchantPolicy,
+          reasonCode: "APPROVED_TRANSLATION_UNAVAILABLE",
+          confidence: 1,
+        });
+        await this.recordDecisionAudit({ input: { ...input, merchantId, customerText }, result });
+        return result;
+      }
+      const translatedAcrossLanguages = savedAnswer.language !== language;
       const result: KnowledgeDecisionResult = {
         action: "reply",
         stage: "approved_saved_answer",
-        answerText: savedAnswer.answerText,
-        language: savedAnswer.language,
+        answerText: translated.answerText,
+        language,
         source: "merchant_approved",
         confidence: 1,
         requiresMerchantApproval: false,
         trainingRequestId: null,
         matchedRecordId: savedAnswer.id,
-        reasonCode: "MERCHANT_APPROVED_SAVED_ANSWER",
+        reasonCode: translatedAcrossLanguages
+          ? "MERCHANT_APPROVED_TRANSLATED_SAVED_ANSWER"
+          : "MERCHANT_APPROVED_SAVED_ANSWER",
         injectionSignals: [],
+        ...(translated.usage ? { aiUsage: translated.usage } : {}),
+        ...(translated.latencyMs !== undefined ? { aiLatencyMs: translated.latencyMs } : {}),
+        ...(translatedAcrossLanguages
+          ? { aiProviderId: this.translationProvider.providerId, aiModel: this.translationProvider.model }
+          : {}),
       };
-      await this.recordDecisionAudit({
-        input: { ...input, merchantId, customerText },
-        result,
-      });
+      await this.recordDecisionAudit({ input: { ...input, merchantId, customerText }, result });
       return result;
     }
 
@@ -558,23 +630,45 @@ export class KnowledgeDecisionEngine {
     }
 
     if (semantic) {
+      const translated = await this.translatedApprovedAnswer({
+        merchantId,
+        recordId: semantic.document.id,
+        sourceLanguage: semantic.document.language,
+        targetLanguage: language,
+        sourceText: semantic.document.answer,
+      });
+      if (!translated) {
+        const result = this.handoffResult({
+          language,
+          policy: merchantPolicy,
+          reasonCode: "APPROVED_TRANSLATION_UNAVAILABLE",
+          confidence: semantic.score,
+        });
+        await this.recordDecisionAudit({ input: { ...input, merchantId, customerText }, result });
+        return result;
+      }
+      const translatedAcrossLanguages = semantic.document.language !== language;
       const result: KnowledgeDecisionResult = {
         action: "reply",
         stage: "semantic_retrieval",
-        answerText: semantic.document.answer,
-        language: semantic.document.language,
+        answerText: translated.answerText,
+        language,
         source: "merchant_approved",
         confidence: semantic.score,
         requiresMerchantApproval: false,
         trainingRequestId: null,
         matchedRecordId: semantic.document.id,
-        reasonCode: "MERCHANT_APPROVED_SEMANTIC_MATCH",
+        reasonCode: translatedAcrossLanguages
+          ? "MERCHANT_APPROVED_TRANSLATED_SEMANTIC_MATCH"
+          : "MERCHANT_APPROVED_SEMANTIC_MATCH",
         injectionSignals: [],
+        ...(translated.usage ? { aiUsage: translated.usage } : {}),
+        ...(translated.latencyMs !== undefined ? { aiLatencyMs: translated.latencyMs } : {}),
+        ...(translatedAcrossLanguages
+          ? { aiProviderId: this.translationProvider.providerId, aiModel: this.translationProvider.model }
+          : {}),
       };
-      await this.recordDecisionAudit({
-        input: { ...input, merchantId, customerText },
-        result,
-      });
+      await this.recordDecisionAudit({ input: { ...input, merchantId, customerText }, result });
       return result;
     }
 
@@ -689,6 +783,7 @@ export type KnowledgeEmbeddingActivationReadiness = {
 
 let singleton: KnowledgeDecisionEngine | null = null;
 let configuredEmbeddingProvider: KnowledgeEmbeddingProvider | null = null;
+let configuredTranslationProvider: ApprovedKnowledgeTranslationProvider | null = null;
 
 function inspectEmbeddingProvider(
   provider: KnowledgeEmbeddingProvider | null,
@@ -726,8 +821,42 @@ function inspectEmbeddingProvider(
   };
 }
 
+export type KnowledgeTranslationActivationReadiness = {
+  ready: boolean;
+  providerId: string | null;
+  model: string | null;
+  reasonCode:
+    | "KNOWLEDGE_TRANSLATION_UNAVAILABLE"
+    | "KNOWLEDGE_TRANSLATION_CONFIG_INVALID"
+    | null;
+};
+
+function inspectTranslationProvider(
+  provider: ApprovedKnowledgeTranslationProvider | null,
+): KnowledgeTranslationActivationReadiness {
+  if (!provider) {
+    return { ready: false, providerId: null, model: null, reasonCode: "KNOWLEDGE_TRANSLATION_UNAVAILABLE" };
+  }
+  const providerId = String(provider.providerId ?? "").trim();
+  const model = String(provider.model ?? "").trim();
+  const valid =
+    providerId.length > 0 && providerId.length <= 160 &&
+    model.length > 0 && model.length <= 160 && model !== "disabled" &&
+    typeof provider.translate === "function";
+  return {
+    ready: valid,
+    providerId: providerId || null,
+    model: model || null,
+    reasonCode: valid ? null : "KNOWLEDGE_TRANSLATION_CONFIG_INVALID",
+  };
+}
+
 export function getKnowledgeEmbeddingActivationReadiness(): KnowledgeEmbeddingActivationReadiness {
   return inspectEmbeddingProvider(configuredEmbeddingProvider);
+}
+
+export function getKnowledgeTranslationActivationReadiness(): KnowledgeTranslationActivationReadiness {
+  return inspectTranslationProvider(configuredTranslationProvider);
 }
 
 export function configureKnowledgeEmbeddingProvider(
@@ -751,10 +880,31 @@ export function configureKnowledgeEmbeddingProvider(
   configuredEmbeddingProvider = provider;
 }
 
+export function configureKnowledgeTranslationProvider(
+  provider: ApprovedKnowledgeTranslationProvider,
+): void {
+  if (singleton || configuredTranslationProvider) {
+    throw new KnowledgeRuntimeGateError(
+      "KNOWLEDGE_TRANSLATION_ACTIVATION_LOCKED",
+      "knowledge translation provider activation is locked for this process",
+      409,
+    );
+  }
+  const readiness = inspectTranslationProvider(provider);
+  if (!readiness.ready) {
+    throw new KnowledgeRuntimeGateError(
+      readiness.reasonCode || "KNOWLEDGE_TRANSLATION_CONFIG_INVALID",
+      "knowledge translation provider configuration is invalid",
+    );
+  }
+  configuredTranslationProvider = provider;
+}
+
 export function getKnowledgeDecisionEngine(): KnowledgeDecisionEngine {
   if (!singleton) {
     singleton = new KnowledgeDecisionEngine({
       embeddingProvider: configuredEmbeddingProvider || undefined,
+      translationProvider: configuredTranslationProvider || undefined,
     });
   }
   return singleton;
@@ -763,4 +913,5 @@ export function getKnowledgeDecisionEngine(): KnowledgeDecisionEngine {
 export function resetKnowledgeDecisionEngineForTests(): void {
   singleton = null;
   configuredEmbeddingProvider = null;
+  configuredTranslationProvider = null;
 }

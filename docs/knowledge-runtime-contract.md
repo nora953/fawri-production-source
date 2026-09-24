@@ -112,7 +112,7 @@ The runtime supports:
 - Sorani Kurdish: `ku`
 - English: `en`
 
-Normalization handles Arabic letter variants, Arabic/Persian digits, diacritics, tatweel, and Kurdish characters. Language detection is explicit and every knowledge record stores its language. Same-language matches receive a retrieval boost; a language mismatch is penalized rather than silently translated.
+Normalization handles Arabic letter variants, Arabic/Persian digits, diacritics, tatweel, and Kurdish characters. Language detection is explicit and every knowledge record stores its source language. Exact Saved Answer matching remains same-language first. Approved semantic retrieval may match an approved record written in another supported language. When that happens, Fawri may translate only the already-approved answer into the customer's language through the configured approved-knowledge translation provider. The translation must preserve meaning, numbers, prices, dates, conditions, identifiers, URLs, and other factual tokens; it may improve professionalism and natural phrasing but may not add or remove facts. The original approved record remains the authority and the translated wording is not promoted into new knowledge. If faithful translation is unavailable, Fawri hands off instead of answering with a guessed translation.
 
 ## HTTP surface
 

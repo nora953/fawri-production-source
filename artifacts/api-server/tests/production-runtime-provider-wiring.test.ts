@@ -6,8 +6,10 @@ import test from "node:test";
 import type { AwsKmsMetaCredentialKeyProvider } from "../src/services/awsKmsMetaCredentialKeyProvider";
 import {
   configureKnowledgeEmbeddingProvider,
+  configureKnowledgeTranslationProvider,
   getKnowledgeDecisionEngine,
   getKnowledgeEmbeddingActivationReadiness,
+  getKnowledgeTranslationActivationReadiness,
   resetKnowledgeDecisionEngineForTests,
 } from "../src/services/ai/knowledgeDecisionEngine";
 import {
@@ -21,6 +23,9 @@ import {
   OPENAI_KNOWLEDGE_EMBEDDING_DIMENSIONS,
   OPENAI_KNOWLEDGE_EMBEDDING_MODEL,
 } from "../src/services/knowledge/openAiKnowledgeEmbeddingProvider";
+import {
+  createOpenAiApprovedKnowledgeTranslationProvider,
+} from "../src/services/knowledge/openAiApprovedKnowledgeTranslationProvider";
 import {
   bootstrapRuntimeAndLoadApplication,
   type RuntimeProviderBootstrapDependencies,
@@ -241,6 +246,8 @@ test("no explicit production provider preserves the current non-production behav
       assertAwsKmsReady: never,
       createOpenAi: never,
       configureKnowledge: never,
+      createOpenAiTranslation: never,
+      configureKnowledgeTranslation: never,
       configureMetaCredentialProvider: never,
     },
     loadApplication: async () => "app",
@@ -248,6 +255,7 @@ test("no explicit production provider preserves the current non-production behav
   assert.deepEqual(result.runtime.selections, {
     metaCredentialProvider: "environment",
     knowledgeEmbeddingProvider: "disabled",
+    knowledgeTranslationProvider: "disabled",
   });
   assert.equal(
     createEnvironmentMetaCredentialKeyProvider().readiness?.().production_eligible,
@@ -271,6 +279,43 @@ test("openai selection configures the fixed embedding provider before the Knowle
         assert.equal(readiness.model, OPENAI_KNOWLEDGE_EMBEDDING_MODEL);
         assert.equal(readiness.dimensions, OPENAI_KNOWLEDGE_EMBEDDING_DIMENSIONS);
         getKnowledgeDecisionEngine();
+        return "app";
+      },
+    });
+    assert.equal(result.application, "app");
+    result.runtime.dispose();
+  } finally {
+    resetKnowledgeDecisionEngineForTests();
+  }
+});
+
+test("openai translation selection configures approved translation before Knowledge singleton creation", async () => {
+  resetKnowledgeDecisionEngineForTests();
+  try {
+    const result = await bootstrapRuntimeAndLoadApplication({
+      env: {
+        FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER: "openai",
+        OPENAI_API_KEY: "test-openai-key-not-real",
+        FAWRI_OPENAI_MODEL: "test-translation-model",
+      } as NodeJS.ProcessEnv,
+      dependencies: {
+        createOpenAiTranslation: (apiKey, model) =>
+          createOpenAiApprovedKnowledgeTranslationProvider({
+            apiKey,
+            model,
+            fetchImpl: async () => {
+              throw new Error("transport must not run during provider bootstrap");
+            },
+          }),
+      },
+      loadApplication: async () => {
+        assert.deepEqual(getKnowledgeTranslationActivationReadiness(), {
+          ready: true,
+          providerId: "openai_approved_translation_v1",
+          model: "test-translation-model",
+          reasonCode: null,
+        });
+        assert.equal(getKnowledgeDecisionEngine().liveAiTransportEnabled, true);
         return "app";
       },
     });
@@ -357,7 +402,9 @@ test("AWS KMS and OpenAI initialize in deterministic order in the same process",
       env: {
         FAWRI_META_CREDENTIAL_PROVIDER: "aws-kms",
         FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER: "openai",
+        FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER: "openai",
         OPENAI_API_KEY: "test-openai-key-not-real",
+        FAWRI_OPENAI_MODEL: "test-translation-model",
       } as NodeJS.ProcessEnv,
       dependencies: {
         bootstrapAwsKms: async () => {
@@ -376,6 +423,21 @@ test("AWS KMS and OpenAI initialize in deterministic order in the same process",
           assert.equal(getKnowledgeEmbeddingActivationReadiness().ready, false);
           configureKnowledgeEmbeddingProvider(provider);
         },
+        createOpenAiTranslation: (apiKey, model) => {
+          events.push("translation-create");
+          return createOpenAiApprovedKnowledgeTranslationProvider({
+            apiKey,
+            model,
+            fetchImpl: async () => {
+              throw new Error("transport must not run during provider bootstrap");
+            },
+          });
+        },
+        configureKnowledgeTranslation: (provider) => {
+          events.push("translation-configure");
+          assert.equal(getKnowledgeTranslationActivationReadiness().ready, false);
+          configureKnowledgeTranslationProvider(provider);
+        },
         configureMetaCredentialProvider: (provider) => {
           events.push(provider ? "meta-configure" : "meta-clear");
           configureMetaChannelCredentialKeyProvider(provider);
@@ -384,15 +446,18 @@ test("AWS KMS and OpenAI initialize in deterministic order in the same process",
       loadApplication: async () => {
         events.push("app-load");
         assert.equal(getKnowledgeEmbeddingActivationReadiness().ready, true);
+        assert.equal(getKnowledgeTranslationActivationReadiness().ready, true);
         return "app";
       },
     });
 
-    assert.deepEqual(events.slice(0, 6), [
+    assert.deepEqual(events.slice(0, 8), [
       "aws-bootstrap",
       "aws-ready",
       "openai-create",
       "openai-configure",
+      "translation-create",
+      "translation-configure",
       "meta-configure",
       "app-load",
     ]);

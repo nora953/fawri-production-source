@@ -197,6 +197,30 @@ export interface AiFallbackProvider {
   generate(request: AiFallbackRequest): Promise<AiFallbackCandidate | null>;
 }
 
+export type ApprovedKnowledgeTranslationRequest = {
+  merchantId: string;
+  recordId: string;
+  sourceLanguage: KnowledgeLanguage;
+  targetLanguage: KnowledgeLanguage;
+  sourceText: string;
+};
+
+export type ApprovedKnowledgeTranslationResult = {
+  answerText: string;
+  language: KnowledgeLanguage;
+  faithful: boolean;
+  usage?: AiTokenUsage;
+  latencyMs?: number;
+};
+
+export interface ApprovedKnowledgeTranslationProvider {
+  readonly providerId: string;
+  readonly model: string;
+  translate(
+    request: ApprovedKnowledgeTranslationRequest,
+  ): Promise<ApprovedKnowledgeTranslationResult | null>;
+}
+
 export type KnowledgeDecisionInput = {
   merchantId: string;
   customerText: string;
