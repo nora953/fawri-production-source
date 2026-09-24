@@ -64,7 +64,7 @@ test("bootstrap encyclopedia contains a broad multilingual corpus across all fiv
     "fawri-jewelry-carat-karat",
     "fawri-global-universal-compatibility",
     "fawri-fashion-water-resistant",
-    "fawri-electronics-usbc-protocol",
+    "fawri-electronics-usbc-video-altmode",
     "fawri-food-after-opening",
     "fawri-perfume-nose-blindness",
     "fawri-jewelry-hypoallergenic",
@@ -115,6 +115,21 @@ test("expanded electronics pack resolves fast-charging guidance without inventin
   assert.equal(result?.articleId, "fawri-electronics-fast-charging");
   assert.equal(result?.activityKey, "electronics");
   assert.match(result?.answerText || "", /الجهاز والشاحن والكابل/);
+});
+
+test("second expansion resolves USB-C video guidance without colliding with generic USB-C knowledge", async () => {
+  const sql = new FakeSql("إلكترونيات");
+  const resolver = new PostgresFawriEncyclopediaResolver(sql);
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-electronics",
+    customerText: "هل usb c يطلع صورة للشاشة",
+    language: "ar",
+  });
+
+  assert.equal(result?.articleId, "fawri-electronics-usbc-video-altmode");
+  assert.equal(result?.activityKey, "electronics");
+  assert.match(result?.answerText || "", /DisplayPort Alt Mode/);
 });
 
 test("expanded jewelry pack resolves English ring-size guidance in the customer language", async () => {
