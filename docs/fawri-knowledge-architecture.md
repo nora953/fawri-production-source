@@ -23,7 +23,7 @@ The decision order is:
 
 3. **Merchant catalog product facts**
    - the matched product's server-owned name, category, description, SKU, and variant-option values
-   - never current price, promotion, stock, order, delivery, payment, return/refund policy, or warranty through this grounding path
+   - never current price, promotion, stock, physical weight/dimensions, order, delivery, payment, return/refund policy, or warranty through this grounding path
 
 4. **Fawri activity encyclopedia**
    - curated knowledge selected from the merchant's registered activity type
@@ -44,7 +44,7 @@ A lower layer is never allowed to contradict or replace a higher layer.
 
 Fawri may use a uniquely matched product from the authenticated merchant's server catalog as trusted product-specific grounding. This layer exists so a first-activation answer can combine real product facts with general Fawri knowledge instead of guessing a product specification from the encyclopedia.
 
-The catalog grounding payload is deliberately narrow: product name, category, description, SKU, and bounded variant-option values. It excludes current price, promotion state, stock quantity, order state, delivery, payment, and other operational facts. Warranty and return/refund policy are also excluded from catalog grounding authority; they continue to require their dedicated authority or explicit merchant-approved knowledge where the runtime permits it.
+The catalog grounding payload is deliberately narrow: product name, category, description, SKU, and bounded variant-option values. It excludes current price, promotion state, stock quantity, structured physical weight/dimensions, order state, delivery, payment, and other operational facts. Warranty and return/refund policy are also excluded from catalog grounding authority; they continue to require their dedicated authority or explicit merchant-approved knowledge where the runtime permits it.
 
 A catalog product is eligible only when it belongs to the authenticated merchant, is not deleted, allows Fawri replies, has an allowed customer-visible status, and has a positive server version. Matching is bounded to the customer's referenced product name or identifiers. Ambiguous catalog matches produce no catalog grounding rather than exposing several products to the model.
 
