@@ -187,12 +187,28 @@ export type FawriEncyclopediaMatch = {
   confidence: number;
 };
 
+export type FawriCuratedKnowledge = {
+  id: string;
+  scope: FawriEncyclopediaScope;
+  activityKey: string | null;
+  question: string;
+  answer: string;
+  language: KnowledgeLanguage;
+  confidence: number;
+};
+
 export interface FawriEncyclopediaResolver {
   resolve(input: {
     merchantId: string;
     customerText: string;
     language: KnowledgeLanguage;
   }): Promise<FawriEncyclopediaMatch | null>;
+  listRelevantContext?(input: {
+    merchantId: string;
+    customerText: string;
+    language: KnowledgeLanguage;
+    limit?: number;
+  }): Promise<FawriCuratedKnowledge[]>;
 }
 
 export type AiTokenUsage = {
@@ -220,6 +236,7 @@ export type AiFallbackRequest = {
     answer: string;
     language: KnowledgeLanguage;
   }>;
+  curatedKnowledge?: FawriCuratedKnowledge[];
   customerText: string;
   conversationHistory?: KnowledgeConversationMessage[];
   injectionSignals: string[];

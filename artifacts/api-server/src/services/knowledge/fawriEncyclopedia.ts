@@ -10,6 +10,7 @@ import {
   boundedText,
 } from "./normalization.js";
 import type {
+  FawriCuratedKnowledge,
   FawriEncyclopediaMatch,
   FawriEncyclopediaResolver,
   KnowledgeLanguage,
@@ -421,6 +422,71 @@ function articleScore(
   return best;
 }
 
+function articleBestQuestion(
+  article: CuratedArticle,
+  customerText: string,
+  language: KnowledgeLanguage,
+): { question: string; score: number } {
+  let bestQuestion = article.questions[language][0] || "";
+  let bestScore = 0;
+  for (const question of article.questions[language]) {
+    const document: SemanticDocument = {
+      id: article.id,
+      merchantId: "fawri-curated",
+      question,
+      answer: article.answers[language],
+      language,
+      source: "merchant_approved",
+      kind: "saved_answer",
+    };
+    const score = scoreSemanticDocument(customerText, language, document);
+    if (score > bestScore) {
+      bestQuestion = question;
+      bestScore = score;
+    }
+  }
+  if (article.scope === "activity") bestScore = Math.min(1, bestScore + 0.04);
+  return { question: bestQuestion, score: bestScore };
+}
+
+function retrieveContext(params: {
+  customerText: string;
+  language: KnowledgeLanguage;
+  activityKey: ActivityKey | null;
+  limit: number;
+  threshold: number;
+}): FawriCuratedKnowledge[] {
+  return ALL_ARTICLES
+    .filter(
+      (article) =>
+        article.scope === "global" ||
+        (article.scope === "activity" &&
+          params.activityKey &&
+          article.activityKey === params.activityKey),
+    )
+    .map((article) => {
+      const best = articleBestQuestion(
+        article,
+        params.customerText,
+        params.language,
+      );
+      return { article, question: best.question, score: best.score };
+    })
+    .filter((candidate) => candidate.score >= params.threshold)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, params.limit)
+    .map(({ article, question, score }) => ({
+      id: article.id,
+      scope: article.scope,
+      activityKey:
+        article.scope === "activity" ? article.activityKey || null : null,
+      question: boundedText(question, 500),
+      answer: boundedText(article.answers[params.language], 2_000),
+      language: params.language,
+      confidence: score,
+    }));
+}
+
 function retrieveArticle(params: {
   customerText: string;
   language: KnowledgeLanguage;
@@ -501,6 +567,46 @@ export class PostgresFawriEncyclopediaResolver
       language: input.language,
       activityKey: normalizeActivityKey(rows[0]?.activity_type),
       threshold: this.threshold,
+    });
+  }
+
+  async listRelevantContext(input: {
+    merchantId: string;
+    customerText: string;
+    language: KnowledgeLanguage;
+    limit?: number;
+  }): Promise<FawriCuratedKnowledge[]> {
+    const merchantId = boundedText(input.merchantId, 160);
+    const customerText = boundedText(input.customerText, 2_000);
+    const limit = Math.max(1, Math.min(6, Math.trunc(input.limit ?? 4)));
+    if (!merchantId || !customerText) return [];
+    if (isAuthoritativeFactQuestion(customerText)) return [];
+
+    let rows: Array<{ activity_type?: unknown }>;
+    try {
+      rows = (
+        await this.sql.query<{ activity_type?: unknown }>(
+          `SELECT activity_type
+             FROM merchants
+            WHERE id = $1
+            LIMIT 2`,
+          [merchantId],
+        )
+      ).rows;
+    } catch {
+      throw new KnowledgeRuntimeGateError(
+        "FAWRI_ENCYCLOPEDIA_ACTIVITY_UNAVAILABLE",
+        "merchant activity is unavailable for encyclopedia context",
+      );
+    }
+    if (rows.length !== 1) return [];
+
+    return retrieveContext({
+      customerText,
+      language: input.language,
+      activityKey: normalizeActivityKey(rows[0]?.activity_type),
+      limit,
+      threshold: 0.28,
     });
   }
 }

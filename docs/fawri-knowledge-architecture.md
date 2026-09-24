@@ -104,3 +104,11 @@ The current version-controlled launch corpus contains **82 curated articles**: g
 This is a broad first-activation corpus, not a claim that every retail domain is complete. Custom activities receive global knowledge until a dedicated reviewed pack is introduced. The resolver contract is intentionally separate from the decision engine so the corpus can keep expanding or later move to a managed/vector-backed encyclopedia without changing authority order or reply contracts.
 
 Expansion remains incremental and reviewed. Every new article must have a stable ID, a clear global/activity scope, multiple question phrasings, curated Arabic/Sorani/English answers, and content that does not depend on merchant-specific or live operational state.
+
+## Curated grounding for broader questions
+
+A direct encyclopedia answer remains the preferred path when one article clearly matches the customer's question. If no single article is confident enough, the resolver may return a small bounded set of relevant curated articles from the merchant's global/activity corpus for constrained AI composition.
+
+This context is separate from merchant-approved knowledge. The provider receives `approved_knowledge` and `fawri_curated_knowledge` in separate trusted server fields so provenance is never blurred. Curated grounding can support general explanations that combine several stable concepts, but it cannot establish merchant policy, current price or stock, order/customer state, current delivery/payment facts, or product-specific claims absent from the catalog.
+
+Automatic synthesis is allowed only when every cited grounding ID was actually supplied by the server, factual tokens in the generated answer are supported by the cited records, language/risk/confidence checks pass, and the merchant auto-reply policy permits it. Unknown or unsupported grounding fails closed to the existing review/handoff path.
