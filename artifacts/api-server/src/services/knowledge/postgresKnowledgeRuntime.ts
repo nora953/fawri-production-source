@@ -22,6 +22,7 @@ import {
 } from "./normalization.js";
 import { customerTextPreview } from "./redaction.js";
 import { classifyWarrantyAuthorityDomain } from "./subscriptionGuaranteeClassification.js";
+import { responseStyleFromMerchantMetadata } from "../merchantResponseStyle.js";
 
 export class KnowledgeRuntimeGateError extends Error {
   readonly code: string;
@@ -184,6 +185,7 @@ SELECT
   m.store_name,
   m.status AS merchant_status,
   m.account_status,
+  m.metadata AS merchant_metadata,
   ms.version AS settings_version,
   ms.auto_reply_enabled,
   ms.reply_language,
@@ -208,6 +210,7 @@ type MerchantSettingsSnapshot = {
   storeName: string;
   merchantStatus: string;
   accountStatus: string;
+  metadata: Record<string, unknown>;
   version: number;
   autoReplyEnabled: boolean;
   replyLanguage: "auto" | KnowledgeLanguage;
@@ -273,6 +276,12 @@ async function loadMerchantSettings(
     storeName: rowText(row.store_name, 300),
     merchantStatus,
     accountStatus,
+    metadata:
+      row.merchant_metadata &&
+      typeof row.merchant_metadata === "object" &&
+      !Array.isArray(row.merchant_metadata)
+        ? row.merchant_metadata as Record<string, unknown>
+        : {},
     version: positiveVersion(row.settings_version),
     autoReplyEnabled: booleanValue(row.auto_reply_enabled),
     replyLanguage: replyLanguage as "auto" | KnowledgeLanguage,
@@ -314,6 +323,7 @@ export class PostgresMerchantKnowledgePolicyResolver
       allowKnowledgeUse: settings.autoReplyEnabled,
       policy: {
         businessName: settings.storeName || undefined,
+        responseStyle: responseStyleFromMerchantMetadata(settings.metadata),
         // Browser input cannot authorize generated replies. The decision engine
         // still requires low-risk synthesis grounded only in this tenant's
         // merchant-approved knowledge before an automatic reply is allowed.

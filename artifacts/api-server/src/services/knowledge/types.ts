@@ -120,12 +120,38 @@ export type KnowledgeRuntimeState = {
   auditEvents: KnowledgeAuditEvent[];
 };
 
+export type MerchantResponseTone =
+  | "professional"
+  | "friendly"
+  | "warm"
+  | "direct";
+
+export type MerchantResponseBrevity =
+  | "concise"
+  | "balanced"
+  | "detailed";
+
+export type MerchantResponseEmojiStyle =
+  | "none"
+  | "minimal"
+  | "expressive";
+
+export type MerchantResponseStyle = {
+  version: number;
+  tone: MerchantResponseTone;
+  brevity: MerchantResponseBrevity;
+  emojiStyle: MerchantResponseEmojiStyle;
+  customInstructions: string;
+  updatedAt: string | null;
+};
+
 export type MerchantPolicyContext = {
   businessName?: string;
   allowedTopics?: string[];
   prohibitedTopics?: string[];
   allowGeneratedAutoReply?: boolean;
   handoffMessage?: Partial<Record<KnowledgeLanguage, string>>;
+  responseStyle?: MerchantResponseStyle;
 };
 
 export type DatabaseFactResult = {

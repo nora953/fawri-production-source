@@ -7,6 +7,11 @@ import {
 } from "../middleware/authSession.js";
 import { getKnowledgeDecisionEngine } from "../services/ai/knowledgeDecisionEngine.js";
 import { getPostgresKnowledgeManagementRuntime } from "../services/knowledge/postgresKnowledgeManagementRuntime.js";
+import {
+  getMerchantResponseStyleAuthoritative,
+  MerchantResponseStyleError,
+  updateMerchantResponseStyleAuthoritative,
+} from "../services/merchantResponseStyle.js";
 import { readLanguage, readString, sendKnowledgeError } from "./knowledge-route-utils.js";
 import "../services/knowledge/knowledgeLifecycle.js";
 
@@ -80,6 +85,7 @@ router.get("/runtime", (_req: Request, res: Response): void => {
         "database_fact",
         "approved_saved_answer",
         "semantic_retrieval",
+        "fawri_encyclopedia",
         "constrained_ai_fallback",
         "handoff_or_no_answer",
       ],
@@ -90,6 +96,49 @@ router.get("/runtime", (_req: Request, res: Response): void => {
       customerContentLogging: "digest_and_length_only",
     },
   });
+});
+
+function sendResponseStyleError(
+  res: Response,
+  error: unknown,
+): void {
+  res.setHeader("Cache-Control", "no-store");
+  if (error instanceof MerchantResponseStyleError) {
+    res.status(error.status).json({
+      ok: false,
+      code: error.code,
+      error: error.message,
+      ...(error.current ? { current: error.current } : {}),
+    });
+    return;
+  }
+  sendKnowledgeError(res, error);
+}
+
+router.get("/response-style", async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const merchantId = getMerchantIdFromSession(res);
+    const style = await getMerchantResponseStyleAuthoritative(merchantId);
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, style });
+  } catch (error) {
+    sendResponseStyleError(res, error);
+  }
+});
+
+router.patch("/response-style", async (req: Request, res: Response): Promise<void> => {
+  try {
+    const merchantId = getMerchantIdFromSession(res);
+    const style = await updateMerchantResponseStyleAuthoritative({
+      merchantId,
+      expectedVersion: req.body?.expectedVersion,
+      patch: req.body?.style,
+    });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, style });
+  } catch (error) {
+    sendResponseStyleError(res, error);
+  }
 });
 
 router.post("/decision", async (req: Request, res: Response): Promise<void> => {

@@ -4,6 +4,7 @@ import { BookOpen, Pencil, Plus, RefreshCw, Search, Trash2, X } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { KnowledgeStatusBadge } from "@/components/knowledge/KnowledgeStatusBadge";
+import { MerchantResponseStyleCard } from "@/components/knowledge/MerchantResponseStyleCard";
 import { Textarea } from "@/components/ui/textarea";
 import { useI18n } from "@/lib/i18n";
 import { COMMON_UI_LABELS } from "@/lib/translations/commonUi";
@@ -423,6 +424,8 @@ export default function ServerSavedAnswersPage() {
             </Button>
           </div>
         </header>
+
+        <MerchantResponseStyleCard />
 
         <div className="relative">
           <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
