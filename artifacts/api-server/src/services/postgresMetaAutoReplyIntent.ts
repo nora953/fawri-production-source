@@ -567,6 +567,7 @@ export async function preparePostgresMetaAutoReply(
           confidence: decision.confidence,
           matched_record_id: decision.matchedRecordId,
           grounding_record_ids: decision.groundingRecordIds || [],
+          training_request_id: decision.trainingRequestId,
           handoff_after_reply: handoff,
         }),
       ],

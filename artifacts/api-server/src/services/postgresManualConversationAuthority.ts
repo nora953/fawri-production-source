@@ -14,6 +14,7 @@ import {
   type RuntimeMessage,
 } from "./manualConversationRuntime";
 import { readMetaChannelCredentialAuthoritative } from "./postgresMetaChannelAuthority";
+import { learnFromMerchantManualReply } from "./merchantManualKnowledgeLearning";
 
 function text(value: unknown): string {
   return String(value || "").trim();
@@ -520,52 +521,158 @@ export async function completeManualReplyAuthoritative(input: {
   const conversationId = text(input.conversationId);
   const idempotencyKey = text(input.idempotencyKey);
   const messageText = text(input.messageText);
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const request = await client.query<{
-      id: string;
-      status: string;
-      text_sha256: string;
-    }>(
-      `SELECT id, status::text AS status, text_sha256
-         FROM manual_reply_requests
-        WHERE merchant_id = $1 AND conversation_id = $2 AND idempotency_key = $3
-        FOR UPDATE`,
-      [merchantId, conversationId, idempotencyKey],
-    );
-    const row = request.rows[0];
-    if (!row || row.status !== "pending" || row.text_sha256 !== sha256(messageText)) {
-      throw new ManualConversationError(
-        "MANUAL_REPLY_STATE_INVALID",
-        "manual reply completion state is invalid",
-        500,
+
+  const completed = await withMerchantOperationalTransaction(
+    merchantId,
+    async (client) => {
+      const request = await client.query<{
+        id: string;
+        status: string;
+        text_sha256: string;
+      }>(
+        `SELECT id, status::text AS status, text_sha256
+           FROM manual_reply_requests
+          WHERE merchant_id = $1 AND conversation_id = $2 AND idempotency_key = $3
+          FOR UPDATE`,
+        [merchantId, conversationId, idempotencyKey],
       );
+      const row = request.rows[0];
+      if (!row || row.status !== "pending" || row.text_sha256 !== sha256(messageText)) {
+        throw new ManualConversationError(
+          "MANUAL_REPLY_STATE_INVALID",
+          "manual reply completion state is invalid",
+          500,
+        );
+      }
+
+      const handoffResult = await client.query<{
+        id: string;
+        created_at: Date | string;
+        metadata: Record<string, unknown> | null;
+      }>(
+        `SELECT id, created_at, metadata
+           FROM messages
+          WHERE merchant_id = $1
+            AND conversation_id = $2
+            AND sender = 'fawri'
+            AND status = 'sent'
+            AND metadata->>'handoff_after_reply' = 'true'
+          ORDER BY created_at DESC, id DESC
+          LIMIT 1`,
+        [merchantId, conversationId],
+      );
+
+      let trainingRequestId = "";
+      const handoff = handoffResult.rows[0];
+      if (handoff) {
+        const metadata =
+          handoff.metadata &&
+          typeof handoff.metadata === "object" &&
+          !Array.isArray(handoff.metadata)
+            ? handoff.metadata
+            : {};
+        const candidateTrainingRequestId = text(metadata.training_request_id);
+        if (candidateTrainingRequestId) {
+          const laterCustomer = await client.query<{ id: string }>(
+            `SELECT id
+               FROM messages
+              WHERE merchant_id = $1
+                AND conversation_id = $2
+                AND sender = 'customer'
+                AND status = 'received'
+                AND (
+                  created_at > $3::timestamptz
+                  OR (created_at = $3::timestamptz AND id > $4)
+                )
+              LIMIT 1`,
+            [merchantId, conversationId, handoff.created_at, handoff.id],
+          );
+          if (laterCustomer.rows.length === 0) {
+            trainingRequestId = candidateTrainingRequestId;
+          }
+        }
+      }
+
+      const id = messageId("msg-merchant");
+      const externalMessageId = text(input.externalMessageId) || null;
+      const message = await client.query<MessageRow>(
+        `INSERT INTO messages
+          (id, merchant_id, conversation_id, external_message_id, sender, text,
+           status, reply_type, counted_as_auto_reply, sent_at)
+         VALUES ($1, $2, $3, $4, 'merchant', $5, 'sent', 'manual', FALSE, now())
+         RETURNING id, external_message_id, conversation_id, sender::text AS sender,
+                   text, created_at, counted_as_auto_reply,
+                   reply_type::text AS reply_type, status::text AS status`,
+        [id, merchantId, conversationId, externalMessageId, messageText],
+      );
+      await client.query(
+        `UPDATE manual_reply_requests
+            SET status = 'sent', message_id = $4, external_message_id = $5, updated_at = now()
+          WHERE id = $1 AND merchant_id = $2 AND conversation_id = $3`,
+        [row.id, merchantId, conversationId, id, externalMessageId],
+      );
+      await client.query(
+        `UPDATE conversations
+            SET last_message_at = now(), updated_at = now()
+          WHERE merchant_id = $1 AND id = $2`,
+        [merchantId, conversationId],
+      );
+      return {
+        message: mapMessage(message.rows[0]!),
+        messageId: id,
+        trainingRequestId,
+      };
+    },
+  );
+
+  if (completed.trainingRequestId) {
+    try {
+      const learning = await learnFromMerchantManualReply({
+        merchantId,
+        trainingRequestId: completed.trainingRequestId,
+        merchantReply: messageText,
+      });
+
+      await withMerchantOperationalTransaction(merchantId, async (client) => {
+        await client.query(
+          `UPDATE messages
+              SET metadata = metadata || $4::jsonb
+            WHERE merchant_id = $1
+              AND conversation_id = $2
+              AND id = $3
+              AND sender = 'merchant'`,
+          [
+            merchantId,
+            conversationId,
+            completed.messageId,
+            JSON.stringify({
+              manual_reply_learning: learning.reasonCode,
+              learned_training_request_id: learning.learned
+                ? learning.trainingRequestId
+                : null,
+              learned_answer_id: learning.learnedAnswerId || null,
+            }),
+          ],
+        );
+        if (learning.learned) {
+          await client.query(
+            `UPDATE conversations
+                SET needs_training = FALSE, updated_at = now()
+              WHERE merchant_id = $1 AND id = $2`,
+            [merchantId, conversationId],
+          );
+        }
+      });
+    } catch {
+      console.error("Merchant manual reply learning failed", {
+        code: "MANUAL_REPLY_LEARNING_FAILED",
+        merchant_id: merchantId,
+        conversation_id: conversationId,
+      });
     }
-    const id = messageId("msg-merchant");
-    const externalMessageId = text(input.externalMessageId) || null;
-    const message = await client.query<MessageRow>(
-      `INSERT INTO messages
-        (id, merchant_id, conversation_id, external_message_id, sender, text,
-         status, reply_type, counted_as_auto_reply, sent_at)
-       VALUES ($1, $2, $3, $4, 'merchant', $5, 'sent', 'manual', FALSE, now())
-       RETURNING id, external_message_id, conversation_id, sender::text AS sender,
-                 text, created_at, counted_as_auto_reply,
-                 reply_type::text AS reply_type, status::text AS status`,
-      [id, merchantId, conversationId, externalMessageId, messageText],
-    );
-    await client.query(
-      `UPDATE manual_reply_requests
-          SET status = 'sent', message_id = $4, external_message_id = $5, updated_at = now()
-        WHERE id = $1 AND merchant_id = $2 AND conversation_id = $3`,
-      [row.id, merchantId, conversationId, id, externalMessageId],
-    );
-    await client.query(
-      `UPDATE conversations
-          SET last_message_at = now(), updated_at = now()
-        WHERE merchant_id = $1 AND id = $2`,
-      [merchantId, conversationId],
-    );
-    return mapMessage(message.rows[0]!);
-  });
+  }
+
+  return completed.message;
 }
 
 export async function failManualReplyAuthoritative(input: {
