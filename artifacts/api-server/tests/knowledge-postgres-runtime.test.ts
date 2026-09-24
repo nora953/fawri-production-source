@@ -156,7 +156,7 @@ test("configured embedding provider is wired into the production singleton", asy
       sql.queries.some((item) =>
         item.values[0] === "merchant-a" &&
         item.values[1] === "fake-embedding-v1" &&
-        item.values[2] === "ar"),
+        item.values.length === 2),
       true,
     );
   } finally {
@@ -283,8 +283,38 @@ test("vector retrieval applies tenant/model/language filters before scoring and 
   assert.equal(match?.score, 1);
   assert.match(sql.queries[0].sql, /WHERE e\.merchant_id = \$1/);
   assert.match(sql.queries[0].sql, /e\.embedding_model = \$2/);
-  assert.match(sql.queries[0].sql, /e\.language = \$3/);
-  assert.deepEqual(sql.queries[0].values, ["merchant-a", "fake-embedding-v1", "ar"]);
+  assert.doesNotMatch(sql.queries[0].sql, /e\.language = \$3/);
+  assert.deepEqual(sql.queries[0].values, ["merchant-a", "fake-embedding-v1"]);
+});
+
+test("vector retrieval can match merchant-approved knowledge written in another supported language", async () => {
+  const sql = new FakeSqlClient(async (query) => {
+    if (query.includes("knowledge_embeddings")) {
+      return [
+        vectorRow({
+          language: "ar",
+          source_language: "ar",
+          question: "شنو ضمان هذا المنتج؟",
+          answer: "ضمان هذا المنتج سنة واحدة.",
+        }),
+      ];
+    }
+    return [];
+  });
+  const runtime = new PostgresKnowledgeRuntime({
+    sqlClient: sql,
+    embeddingProvider: fakeEmbedding,
+  });
+
+  const match = await runtime.retrieveSemanticMatch({
+    merchantId: "merchant-a",
+    query: "Does this product have a warranty?",
+    language: "en",
+  });
+
+  assert.equal(match?.document.language, "ar");
+  assert.equal(match?.document.answer, "ضمان هذا المنتج سنة واحدة.");
+  assert.deepEqual(sql.queries[0].values, ["merchant-a", "fake-embedding-v1"]);
 });
 
 test("approved AI context fails closed instead of using an arbitrary truncated subset", async () => {
@@ -442,7 +472,7 @@ test("model migration cannot mix incompatible vector spaces", async () => {
       error instanceof KnowledgeRuntimeGateError &&
       error.code === "KNOWLEDGE_PROVENANCE_INVALID",
   );
-  assert.deepEqual(sql.queries[0].values, ["merchant-a", "fake-embedding-v1", "ar"]);
+  assert.deepEqual(sql.queries[0].values, ["merchant-a", "fake-embedding-v1"]);
 });
 
 test("ambiguous vector matches fail closed instead of choosing a guess", async () => {
