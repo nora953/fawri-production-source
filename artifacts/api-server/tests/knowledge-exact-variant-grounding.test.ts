@@ -167,6 +167,24 @@ test("custom option value resolves the exact variant price even without variant-
   );
 });
 
+
+test("generic price preserves product-level behavior when variant inventory is not enabled", async () => {
+  const sql = new FakeSql(baseHandler({ variantStockMode: false }));
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "price هاتف ألف",
+    language: "en",
+  });
+
+  assert.equal(result?.recordId, "product-a");
+  assert.equal(result?.contextRecordId, "catalog-product:product-a");
+  assert.match(result?.answerText || "", /250,000/);
+  assert.equal((result?.answerText || "").includes("128GB"), false);
+  assert.equal((result?.answerText || "").includes("256GB"), false);
+});
+
 test("partial option that matches multiple variants asks for clarification instead of guessing", async () => {
   const sql = new FakeSql(baseHandler());
   const resolver = new PostgresOperationalFactResolver(sql);
