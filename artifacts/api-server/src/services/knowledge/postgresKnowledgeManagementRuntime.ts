@@ -757,6 +757,25 @@ export class PostgresKnowledgeManagementRuntime {
     return (await this.listTrainingRequestsPage(value, { limit: 500 })).requests;
   }
 
+  async getTrainingRequest(
+    value: string,
+    idValue: string,
+  ): Promise<TrainingRequestRecord | null> {
+    const merchant = merchantId(value);
+    const id = boundedText(idValue, 160);
+    if (!id) {
+      throw new KnowledgeTransitionError(
+        "INVALID_TRAINING_REQUEST",
+        "training request is invalid",
+      );
+    }
+    try {
+      return await currentTraining(this.sql, merchant, id);
+    } catch (error) {
+      rethrowRead(error);
+    }
+  }
+
   async createTrainingRequest(input: {
     merchantId: string; customerText: string; detectedIntent?: string; detectedLanguage?: KnowledgeLanguage;
     reason: string; suggestedReply?: string | null; suggestedReplySource?: SuggestedReplySource | null;
