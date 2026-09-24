@@ -106,6 +106,8 @@ function sqlWithProducts(
   return {
     async query(sql) {
       if (sql.includes("FROM products")) return { rows };
+      if (sql.includes("FROM product_variants")) return { rows: [] };
+      if (sql.includes("FROM catalog_variant_options")) return { rows: [] };
       if (sql.includes("FROM commerce_promotions")) return { rows: promotions };
       if (sql.includes("FROM merchant_locations")) return { rows: locations };
       throw new Error(`unexpected SQL in test: ${sql}`);
@@ -165,6 +167,8 @@ test("multi-location stock question fails closed without routing context", async
       if (sql.includes("FROM products")) {
         return { rows: [productRow(999)] };
       }
+      if (sql.includes("FROM product_variants")) return { rows: [] };
+      if (sql.includes("FROM catalog_variant_options")) return { rows: [] };
       if (sql.includes("SELECT ml.id AS location_id")) {
         return {
           rows: [
