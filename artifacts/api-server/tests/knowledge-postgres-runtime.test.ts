@@ -15,6 +15,7 @@ import {
   PostgresMerchantKnowledgePolicyResolver,
   setPostgresKnowledgeSqlClientForTests,
 } from "../src/services/knowledge/postgresKnowledgeRuntime.js";
+import { PostgresKnowledgeManagementRuntime } from "../src/services/knowledge/postgresKnowledgeManagementRuntime.js";
 
 function policyRow(overrides = {}) {
   return {
@@ -101,6 +102,185 @@ const fakeEmbedding = {
     return [1, 0];
   },
 };
+
+test("approved merchant correction creates exact approved knowledge", async () => {
+  const sql = new FakeSqlClient(async (query, values) => {
+    if (query.includes("FROM learned_answers")) return [];
+    if (
+      query.includes("FROM saved_answers") &&
+      query.includes("normalized_question")
+    ) return [];
+    if (query.includes("INSERT INTO saved_answers")) {
+      return [{
+        id: values[0],
+        merchant_id: values[1],
+        category: "custom",
+        question_pattern: values[2],
+        answer_text: values[4],
+        language: values[5],
+        source: "merchant_approved",
+        active: true,
+        version: 1,
+        created_at: "2026-09-24T00:00:00.000Z",
+        updated_at: "2026-09-24T00:00:00.000Z",
+      }];
+    }
+    return [];
+  });
+  const runtime = new PostgresKnowledgeManagementRuntime({
+    sqlClient: sql,
+    embeddingProvider: fakeEmbedding,
+  });
+
+  const result = await runtime.applyMerchantCorrection({
+    merchantId: "merchant-a",
+    customerQuestion: "Do you provide gift wrapping?",
+    correctedAnswer: "Yes, gift wrapping is available on request.",
+    language: "en",
+    sourceStage: "ai_fallback",
+    matchedRecordId: "grounding-a",
+  });
+
+  assert.equal(result.mode, "created");
+  assert.equal(result.savedAnswer.source, "merchant_approved");
+  assert.equal(result.savedAnswer.active, true);
+  assert.equal(result.savedAnswer.answerText, "Yes, gift wrapping is available on request.");
+  assert.equal(
+    sql.queries.some((item) =>
+      item.sql.includes("INSERT INTO saved_answers") &&
+      item.values.includes("merchant_approved") === false
+    ),
+    true,
+  );
+});
+
+test("approved merchant correction updates an existing exact answer instead of duplicating it", async () => {
+  const current = {
+    id: "saved-existing",
+    merchant_id: "merchant-a",
+    category: "custom",
+    question_pattern: "Do you provide gift wrapping?",
+    answer_text: "No.",
+    language: "en",
+    source: "merchant_approved",
+    active: true,
+    version: 3,
+    created_at: "2026-09-23T00:00:00.000Z",
+    updated_at: "2026-09-23T00:00:00.000Z",
+  };
+  const sql = new FakeSqlClient(async (query, values) => {
+    if (query.includes("FROM learned_answers")) return [];
+    if (
+      query.includes("FROM saved_answers") &&
+      query.includes("normalized_question")
+    ) return [current];
+    if (query.includes("UPDATE saved_answers")) {
+      return [{
+        ...current,
+        answer_text: values[3],
+        version: 4,
+        updated_at: "2026-09-24T00:00:00.000Z",
+      }];
+    }
+    return [];
+  });
+  const runtime = new PostgresKnowledgeManagementRuntime({
+    sqlClient: sql,
+    embeddingProvider: fakeEmbedding,
+  });
+
+  const result = await runtime.applyMerchantCorrection({
+    merchantId: "merchant-a",
+    customerQuestion: "Do you provide gift wrapping?",
+    correctedAnswer: "Yes, gift wrapping is available on request.",
+    language: "en",
+    sourceStage: "approved_saved_answer",
+    matchedRecordId: "saved-existing",
+  });
+
+  assert.equal(result.mode, "updated");
+  assert.equal(result.savedAnswer.id, "saved-existing");
+  assert.equal(result.savedAnswer.version, 4);
+  assert.equal(
+    sql.queries.some((item) => item.sql.includes("INSERT INTO saved_answers")),
+    false,
+  );
+});
+
+test("semantic learned answer corrected by the merchant is retired before the replacement is approved", async () => {
+  const learned = {
+    id: "learned-wrong",
+    merchant_id: "merchant-a",
+    training_request_id: "training-wrong",
+    intent: "gift_wrap",
+    language: "en",
+    examples: ["Do you provide gift wrapping?"],
+    keywords: ["gift", "wrapping"],
+    answer_text: "No.",
+    source: "merchant_approved",
+    approval_status: "approved",
+    confidence: "1",
+    safe_to_auto_reply: true,
+    version: 2,
+    created_at: "2026-09-23T00:00:00.000Z",
+    updated_at: "2026-09-23T00:00:00.000Z",
+  };
+  const sql = new FakeSqlClient(async (query, values) => {
+    if (
+      query.includes("FROM learned_answers") &&
+      query.includes("FOR UPDATE")
+    ) return [learned];
+    if (
+      query.includes("FROM saved_answers") &&
+      query.includes("normalized_question")
+    ) return [];
+    if (query.includes("INSERT INTO saved_answers")) {
+      return [{
+        id: values[0],
+        merchant_id: values[1],
+        category: "custom",
+        question_pattern: values[2],
+        answer_text: values[4],
+        language: values[5],
+        source: "merchant_approved",
+        active: true,
+        version: 1,
+        created_at: "2026-09-24T00:00:00.000Z",
+        updated_at: "2026-09-24T00:00:00.000Z",
+      }];
+    }
+    return [];
+  });
+  const runtime = new PostgresKnowledgeManagementRuntime({
+    sqlClient: sql,
+    embeddingProvider: fakeEmbedding,
+  });
+
+  const result = await runtime.applyMerchantCorrection({
+    merchantId: "merchant-a",
+    customerQuestion: "Do you provide gift wrapping?",
+    correctedAnswer: "Yes, gift wrapping is available on request.",
+    language: "en",
+    sourceStage: "semantic_retrieval",
+    matchedRecordId: "learned-wrong",
+  });
+
+  assert.equal(result.retiredLearnedAnswerId, "learned-wrong");
+  assert.equal(
+    sql.queries.some((item) =>
+      item.sql.includes("UPDATE learned_answers") &&
+      item.sql.includes("safe_to_auto_reply=FALSE")
+    ),
+    true,
+  );
+  assert.equal(
+    sql.queries.some((item) =>
+      item.sql.includes("DELETE FROM knowledge_embeddings") &&
+      item.values.includes("learned-wrong")
+    ),
+    true,
+  );
+});
 
 test("production embedding activation is provider-neutral, explicit, and process-locked", () => {
   resetKnowledgeDecisionEngineForTests();
