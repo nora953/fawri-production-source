@@ -825,6 +825,15 @@ export class KnowledgeDecisionEngine {
       return result;
     }
 
+    const curatedKnowledge = this.encyclopediaResolver.listRelevantContext
+      ? await this.encyclopediaResolver.listRelevantContext({
+          merchantId,
+          customerText,
+          language,
+          limit: 4,
+        })
+      : [];
+
     if (!approvedDocuments) {
       approvedDocuments = await this.runtime.listApprovedSemanticDocuments(merchantId);
     }
@@ -848,6 +857,7 @@ export class KnowledgeDecisionEngine {
       systemRules: KNOWLEDGE_SYSTEM_RULES,
       merchantPolicy,
       approvedKnowledge: uniqueApprovedKnowledge,
+      curatedKnowledge,
       customerText,
       conversationHistory,
       injectionSignals: [],
@@ -855,6 +865,8 @@ export class KnowledgeDecisionEngine {
 
     if (aiCandidate?.canAnswer && aiCandidate.answerText) {
       const approvedIds = new Set(uniqueApprovedKnowledge.map((item) => item.id));
+      const curatedIds = new Set(curatedKnowledge.map((item) => item.id));
+      const trustedIds = new Set([...approvedIds, ...curatedIds]);
       const groundingRecordIds = Array.from(
         new Set(
           (aiCandidate.groundingRecordIds || [])
@@ -862,22 +874,38 @@ export class KnowledgeDecisionEngine {
             .filter(Boolean),
         ),
       ).slice(0, 12);
-      const groundingDocuments = uniqueApprovedKnowledge.filter((item) =>
-        groundingRecordIds.includes(item.id),
-      );
-      const groundedOnlyInApprovedKnowledge =
+      const groundingDocuments = [
+        ...uniqueApprovedKnowledge.filter((item) =>
+          groundingRecordIds.includes(item.id),
+        ),
+        ...curatedKnowledge
+          .filter((item) => groundingRecordIds.includes(item.id))
+          .map((item) => ({
+            id: item.id,
+            question: item.question,
+            answer: item.answer,
+            language: item.language,
+          })),
+      ];
+      const groundedOnlyInTrustedKnowledge =
         groundingRecordIds.length > 0 &&
-        groundingRecordIds.every((id) => approvedIds.has(id)) &&
+        groundingRecordIds.every((id) => trustedIds.has(id)) &&
         groundingDocuments.length === groundingRecordIds.length &&
         groundedAnswerFactualTokensAreSupported(
           aiCandidate.answerText,
           groundingDocuments,
         );
+      const usesCuratedGrounding = groundingRecordIds.some((id) =>
+        curatedIds.has(id),
+      );
+      const usesMerchantGrounding = groundingRecordIds.some((id) =>
+        approvedIds.has(id),
+      );
       const policyAllowsGenerated =
         merchantPolicy.allowGeneratedAutoReply === true && this.allowGeneratedAutoReply;
       const eligibleForGroundedReply =
         policyAllowsGenerated &&
-        groundedOnlyInApprovedKnowledge &&
+        groundedOnlyInTrustedKnowledge &&
         aiCandidate.language === language &&
         aiCandidate.risk === "low" &&
         aiCandidate.confidence >= this.minimumAiConfidence;
@@ -894,7 +922,12 @@ export class KnowledgeDecisionEngine {
           trainingRequestId: null,
           matchedRecordId: groundingRecordIds[0] || null,
           groundingRecordIds,
-          reasonCode: "CONSTRAINED_AI_GROUNDED_APPROVED_REPLY",
+          reasonCode:
+            usesCuratedGrounding && usesMerchantGrounding
+              ? "CONSTRAINED_AI_GROUNDED_MIXED_TRUSTED_REPLY"
+              : usesCuratedGrounding
+                ? "CONSTRAINED_AI_GROUNDED_CURATED_REPLY"
+                : "CONSTRAINED_AI_GROUNDED_APPROVED_REPLY",
           injectionSignals: [],
           ...(aiCandidate.usage ? { aiUsage: aiCandidate.usage } : {}),
           ...(aiCandidate.providerId ? { aiProviderId: aiCandidate.providerId } : {}),
