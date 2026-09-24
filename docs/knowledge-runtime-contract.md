@@ -79,7 +79,7 @@ Merchant response style is server-owned presentation metadata. The default is pr
 
 Fawri ships with a curated bootstrap encyclopedia so a newly activated merchant is not starting from an empty bot. Curated entries use the provenance `fawri_curated` and are lower priority than merchant-specific knowledge.
 
-The launch corpus includes global product terminology plus activity packs for fashion, electronics, food, perfumes, and jewelry. Activity selection comes from the server-side merchant profile, never from browser input. Custom activities receive the global pack until a dedicated pack exists.
+The launch corpus currently contains 51 curated multilingual articles: global product/commerce terminology plus expanded activity packs for fashion, electronics, food, perfumes, and jewelry. Activity selection comes from the server-side merchant profile, never from browser input. Custom activities receive the global pack until a dedicated reviewed pack exists.
 
 The encyclopedia is intentionally excluded from current operational authority. It cannot supply current price, stock, order status, merchant delivery/payment settings, or another structured fact that belongs to the merchant database. Merchant-approved corrections can override an encyclopedia answer on future questions because merchant knowledge is evaluated first.
 

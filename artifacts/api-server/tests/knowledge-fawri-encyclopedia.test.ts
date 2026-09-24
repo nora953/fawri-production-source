@@ -6,6 +6,9 @@ import {
   FAWRI_ENCYCLOPEDIA_ARTICLE_IDS,
   PostgresFawriEncyclopediaResolver,
 } from "../src/services/knowledge/fawriEncyclopedia.js";
+import {
+  FAWRI_ENCYCLOPEDIA_EXPANSION_ARTICLES,
+} from "../src/services/knowledge/fawriEncyclopediaExpansion.js";
 
 class FakeSql {
   constructor(activityType = "ملابس") {
@@ -38,17 +41,35 @@ function emptyRuntime(savedAnswer = null) {
   };
 }
 
-test("bootstrap encyclopedia contains general plus all five launch activity packs", () => {
+test("bootstrap encyclopedia contains a broad multilingual corpus across all five launch activities", () => {
   const ids = new Set(FAWRI_ENCYCLOPEDIA_ARTICLE_IDS);
+  assert.equal(ids.size, FAWRI_ENCYCLOPEDIA_ARTICLE_IDS.length, "article IDs must be unique");
+  assert.ok(ids.size >= 50, `expected at least 50 curated articles, got ${ids.size}`);
+
   for (const id of [
     "fawri-global-sku",
+    "fawri-global-model-vs-serial",
     "fawri-fashion-sizing",
+    "fawri-fashion-shoe-sizing",
     "fawri-electronics-ram-storage",
+    "fawri-electronics-fast-charging",
     "fawri-food-date-labels",
+    "fawri-food-nutrition-serving",
     "fawri-perfume-edt-edp",
+    "fawri-perfume-sillage-projection",
     "fawri-jewelry-925",
+    "fawri-jewelry-carat-karat",
   ]) {
     assert.equal(ids.has(id), true, id);
+  }
+
+  for (const article of FAWRI_ENCYCLOPEDIA_EXPANSION_ARTICLES) {
+    assert.ok(article.questions.ar.length >= 2, article.id);
+    assert.ok(article.questions.ku.length >= 2, article.id);
+    assert.ok(article.questions.en.length >= 2, article.id);
+    assert.ok(article.answers.ar.length >= 40, article.id);
+    assert.ok(article.answers.ku.length >= 40, article.id);
+    assert.ok(article.answers.en.length >= 40, article.id);
   }
 });
 
@@ -67,6 +88,36 @@ test("fashion merchant gets a professional Arabic sizing answer from the activit
   assert.equal(result?.activityKey, "fashion");
   assert.match(result?.answerText || "", /جدول مقاسات المنتج/);
   assert.deepEqual(sql.queries[0].values, ["merchant-fashion"]);
+});
+
+test("expanded electronics pack resolves fast-charging guidance without inventing device facts", async () => {
+  const sql = new FakeSql("إلكترونيات");
+  const resolver = new PostgresFawriEncyclopediaResolver(sql);
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-electronics",
+    customerText: "هل اي شاحن سريع يشحن بسرعة",
+    language: "ar",
+  });
+
+  assert.equal(result?.articleId, "fawri-electronics-fast-charging");
+  assert.equal(result?.activityKey, "electronics");
+  assert.match(result?.answerText || "", /الجهاز والشاحن والكابل/);
+});
+
+test("expanded jewelry pack resolves English ring-size guidance in the customer language", async () => {
+  const sql = new FakeSql("مجوهرات");
+  const resolver = new PostgresFawriEncyclopediaResolver(sql);
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-jewelry",
+    customerText: "how do i find my ring size",
+    language: "en",
+  });
+
+  assert.equal(result?.articleId, "fawri-jewelry-ring-size");
+  assert.equal(result?.language, "en");
+  assert.match(result?.answerText || "", /seller's sizing chart/);
 });
 
 test("electronics merchant does not receive perfume-pack answers", async () => {

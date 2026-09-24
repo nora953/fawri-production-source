@@ -15,15 +15,16 @@ import type {
   KnowledgeLanguage,
   SemanticDocument,
 } from "./types.js";
+import { FAWRI_ENCYCLOPEDIA_EXPANSION_ARTICLES } from "./fawriEncyclopediaExpansion.js";
 
-type ActivityKey =
+export type ActivityKey =
   | "fashion"
   | "electronics"
   | "food"
   | "perfumes"
   | "jewelry";
 
-type CuratedArticle = {
+export type CuratedArticle = {
   id: string;
   scope: "global" | "activity";
   activityKey?: ActivityKey;
@@ -370,6 +371,11 @@ const ARTICLES: CuratedArticle[] = [
   },
 ];
 
+const ALL_ARTICLES: CuratedArticle[] = [
+  ...ARTICLES,
+  ...FAWRI_ENCYCLOPEDIA_EXPANSION_ARTICLES,
+];
+
 function normalizeActivityKey(value: unknown): ActivityKey | null {
   const normalized = normalizeKnowledgeText(value);
   if (!normalized) return null;
@@ -419,7 +425,7 @@ function retrieveArticle(params: {
   activityKey: ActivityKey | null;
   threshold: number;
 }): FawriEncyclopediaMatch | null {
-  const candidates = ARTICLES
+  const candidates = ALL_ARTICLES
     .filter(
       (article) =>
         article.scope === "global" ||
@@ -498,5 +504,5 @@ export class PostgresFawriEncyclopediaResolver
 }
 
 export const FAWRI_ENCYCLOPEDIA_ARTICLE_IDS = Object.freeze(
-  ARTICLES.map((article) => article.id),
+  ALL_ARTICLES.map((article) => article.id),
 );
