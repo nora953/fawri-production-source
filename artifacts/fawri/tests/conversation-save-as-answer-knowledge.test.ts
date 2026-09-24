@@ -89,6 +89,59 @@ test('conversation page exposes save-as-answer only for merchant messages and re
   assert.doesNotMatch(source, /merchant_id\s*:/);
 });
 
+test('conversation page asks before adopting a merchant correction and exposes both choices', async () => {
+  const pageSource = await readFile(
+    new URL('../src/pages/dashboard/ConversationsPage.tsx', import.meta.url),
+    'utf8',
+  );
+  const copySource = await readFile(
+    new URL('../src/lib/translations/features/pages/dashboard/ConversationsPage.ts', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(pageSource, /CONVERSATIONS_PAGE_CORRECTION_COPY/);
+  assert.match(pageSource, /handleCorrectionReview/);
+  assert.match(pageSource, /correction-review/);
+  assert.match(pageSource, /'approve'/);
+  assert.match(pageSource, /'dismiss'/);
+  assert.match(copySource, /CONVERSATIONS_PAGE_CORRECTION_COPY/);
+  assert.match(copySource, /Adopt this correction in Fawri/);
+});
+
+test('backend correction review is explicit, tenant-scoped, and excludes operational facts', async () => {
+  const authoritySource = await readFile(
+    new URL('../../api-server/src/services/postgresManualConversationAuthority.ts', import.meta.url),
+    'utf8',
+  );
+  const routeSource = await readFile(
+    new URL('../../api-server/src/routes/conversation-operations.ts', import.meta.url),
+    'utf8',
+  );
+  const reviewSource = await readFile(
+    new URL('../../api-server/src/services/merchantCorrectionReview.ts', import.meta.url),
+    'utf8',
+  );
+  const knowledgeSource = await readFile(
+    new URL('../../api-server/src/services/knowledge/postgresKnowledgeManagementRuntime.ts', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(authoritySource, /correction_review/);
+  assert.match(authoritySource, /approved_saved_answer/);
+  assert.match(authoritySource, /semantic_retrieval/);
+  assert.match(authoritySource, /ai_fallback/);
+  assert.match(authoritySource, /isAuthoritativeFactQuestion/);
+  assert.match(routeSource, /correction-review/);
+  assert.match(routeSource, /reviewMerchantCorrectionAuthoritative/);
+  assert.match(reviewSource, /merchant_id=\$1/);
+  assert.match(reviewSource, /conversation_id=\$2/);
+  assert.match(reviewSource, /applyMerchantCorrection/);
+  assert.match(reviewSource, /CORRECTION_REVIEW_REQUIRES_SOURCE_UPDATE/);
+  assert.match(knowledgeSource, /merchant_correction_created/);
+  assert.match(knowledgeSource, /merchant_correction_updated/);
+  assert.match(knowledgeSource, /safe_to_auto_reply=FALSE/);
+});
+
 test('canonical create uses only approved knowledge fields and returns the server answer', async () => {
   let capturedUrl = '';
   let capturedInit: RequestInit | undefined;
