@@ -997,14 +997,20 @@ async function resolveProductFact(params: {
   const variantInventoryMode =
     commerce.track_inventory && bool(product.variant_stock_mode);
 
-  if (params.kind === "price" && variants.length > 0) {
-    if (!selectedVariant) {
-      fail(
-        "KNOWLEDGE_VARIANT_REQUIRED",
-        "an unambiguous product variant is required for price",
-        409,
-      );
-    }
+  if (
+    params.kind === "price" &&
+    variantInventoryMode &&
+    variants.length > 0 &&
+    !selectedVariant
+  ) {
+    fail(
+      "KNOWLEDGE_VARIANT_REQUIRED",
+      "an unambiguous product variant is required for price",
+      409,
+    );
+  }
+
+  if (params.kind === "price" && selectedVariant) {
     const override = selectedVariant.price_override_iqd;
     const adjustment = Number(selectedVariant.price_adjustment_iqd);
     if (!Number.isSafeInteger(adjustment)) {
