@@ -60,6 +60,20 @@ The current customer message still wins. If it explicitly identifies another pro
 
 The same trusted reference is passed to both catalog grounding and structured operational fact resolution. This allows follow-ups such as "والسعر؟", "متوفر؟", or "والأسود منه؟" to stay attached to the correct product/variant while price, stock, measurements, and other operational facts continue to come only from their live authorities.
 
+## Exact variant grounding
+
+Fawri resolves a product variant from the merchant's canonical `product_variants` rows plus `catalog_variant_options`. Variant matching is not limited to the legacy color/size columns: customer-visible option values such as storage capacity, plug type, finish, or another configured option may identify the exact variant.
+
+The same exact variant identity is shared across catalog grounding and live operational fact resolution. When a variant is resolved, price/promotions, variant-level inventory (when enabled), physical measurements, conversation memory, SKU, and selected option values all stay attached to that variant ID.
+
+A partial option that matches more than one variant is ambiguous. Fawri must ask for the missing option instead of choosing one arbitrarily. Explicit current-turn option values outrank a remembered variant from the prior conversation.
+
+Physical measurements use variant facts whenever the selected variant provides them, regardless of whether inventory is tracked per variant. This keeps measurement authority separate from inventory-mode configuration.
+
+Generic product-price behavior remains unchanged for products that do not use variant-level inventory: if the customer does not identify a variant, Fawri may return the product-level price as before. When the customer explicitly identifies a variant, its price override/adjustment and variant-scoped promotions become authoritative for that answer.
+
+For stock, a product configured for variant-level inventory requires an unambiguous variant and routes the exact variant ID through location inventory. Product-level inventory remains product authority, while an explicitly selected variant may still be retained as conversation context.
+
 ## Mixed authority composition
 
 A single customer message may combine a live product fact with a product-specific or general knowledge question, for example asking whether a charger supports a feature while also asking its current price and availability. Fawri must not answer only the operational part and silently drop the rest.
