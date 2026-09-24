@@ -145,7 +145,7 @@ await test("seed merchant for generation-race integration", async () => {
 
 await test("A cannot persist after B supersedes its decision, including identical provider timestamps", async () => {
   const senderId = "customer-race-persist";
-  const timestamp = Date.UTC(2026, 8, 25, 0, 0, 0);
+  const timestamp = Date.now() - 60_000;
   const a = await enqueue({
     merchantId, pageId, senderId,
     eventId: "event-race-persist-a",
@@ -202,7 +202,7 @@ await test("A cannot persist after B supersedes its decision, including identica
 
 await test("A prepared before B is stopped at provider boundary and reservation is released exactly once", async () => {
   const senderId = "customer-race-send";
-  const timestamp = Date.UTC(2026, 8, 25, 0, 1, 0);
+  const timestamp = Date.now() - 60_000;
   const a = await enqueue({
     merchantId, pageId, senderId,
     eventId: "event-race-send-a",
@@ -284,7 +284,7 @@ await test("A prepared before B is stopped at provider boundary and reservation 
 
 await test("duplicate webhook does not increment conversation generation", async () => {
   const senderId = "customer-race-duplicate";
-  const timestamp = Date.UTC(2026, 8, 25, 0, 2, 0);
+  const timestamp = Date.now() - 60_000;
   const event = await enqueue({
     merchantId, pageId, senderId,
     eventId: "event-race-duplicate",
@@ -312,7 +312,7 @@ await test("merchant takeover during decision suppresses the automatic reply", a
     eventId: "event-race-takeover",
     mid: "mid-race-takeover",
     message: "كم سعر التوصيل؟",
-    timestamp: Date.UTC(2026, 8, 25, 0, 3, 0),
+    timestamp: Date.now() - 60_000,
   });
   const prepared = await intents.preparePostgresMetaAutoReply(event.job, {
     hooks: {
