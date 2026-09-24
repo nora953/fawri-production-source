@@ -160,8 +160,14 @@ export function getProductionRuntimeConfigurationIssues(
   if (text(env.FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER).toLowerCase() !== "openai") {
     issues.push(issue("knowledge", "KNOWLEDGE_OPENAI_PROVIDER_REQUIRED"));
   }
+  if (text(env.FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER).toLowerCase() !== "openai") {
+    issues.push(issue("knowledge", "KNOWLEDGE_TRANSLATION_OPENAI_PROVIDER_REQUIRED"));
+  }
   if (text(env.OPENAI_API_KEY).length < 20) {
     issues.push(issue("knowledge", "OPENAI_API_KEY_REQUIRED"));
+  }
+  if (!text(env.FAWRI_OPENAI_MODEL)) {
+    issues.push(issue("knowledge", "FAWRI_OPENAI_MODEL_REQUIRED"));
   }
 
   const serviceVersion = text(env.FAWRI_SERVICE_VERSION);

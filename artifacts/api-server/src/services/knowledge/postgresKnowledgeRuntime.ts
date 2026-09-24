@@ -522,7 +522,6 @@ JOIN saved_answers s
   ON s.id = e.saved_answer_id AND s.merchant_id = e.merchant_id
 WHERE e.merchant_id = $1
   AND e.embedding_model = $2
-  AND e.language = $3
   AND e.knowledge_kind = 'saved_answer'
   AND s.active = TRUE
   AND s.source = 'merchant_approved'
@@ -541,7 +540,6 @@ JOIN learned_answers l
   ON l.id = e.learned_answer_id AND l.merchant_id = e.merchant_id
 WHERE e.merchant_id = $1
   AND e.embedding_model = $2
-  AND e.language = $3
   AND e.knowledge_kind = 'learned_answer'
   AND l.source = 'merchant_approved'
   AND l.approval_status = 'approved'
@@ -701,7 +699,6 @@ export class PostgresKnowledgeRuntime {
       result = await this.sqlClient.query(VECTOR_CANDIDATES_SQL, [
         params.merchantId,
         this.embeddingProvider.model,
-        params.language,
       ]);
     } catch {
       safeError("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
