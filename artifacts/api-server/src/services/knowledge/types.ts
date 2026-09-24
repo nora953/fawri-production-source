@@ -186,6 +186,7 @@ export type AiFallbackCandidate = {
   canAnswer: boolean;
   reason: string;
   source: "openai_generated";
+  groundingRecordIds?: string[];
   usage?: AiTokenUsage;
   providerId?: string;
   model?: string;
@@ -247,6 +248,7 @@ export type KnowledgeDecisionResult = {
   matchedRecordId: string | null;
   reasonCode: string;
   injectionSignals: string[];
+  groundingRecordIds?: string[];
   aiUsage?: AiTokenUsage;
   aiProviderId?: string;
   aiModel?: string;
