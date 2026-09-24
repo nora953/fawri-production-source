@@ -484,6 +484,46 @@ function uniqueBest(rows: Array<{ row: Record<string, unknown>; score: number }>
   return matched[0].row;
 }
 
+function selectProduct(
+  products: Record<string, unknown>[],
+  customer: string,
+  trustedProductIdHint?: string,
+): Record<string, unknown> | null {
+  const explicit = uniqueBest(
+    products.map((row) => ({ row, score: productMatchScore(customer, row) })),
+    "KNOWLEDGE_PRODUCT_AMBIGUOUS",
+  );
+  if (explicit) return explicit;
+  const hint = text(trustedProductIdHint, 160);
+  return hint
+    ? products.find((row) => text(row.id, 160) === hint) || null
+    : null;
+}
+
+function selectVariant(
+  variants: Record<string, unknown>[],
+  customer: string,
+  productId: string,
+  trustedProductIdHint?: string,
+  trustedVariantIdHint?: string,
+): Record<string, unknown> | null {
+  const explicit = uniqueBest(
+    variants.map((row) => ({ row, score: variantMatchScore(customer, row) })),
+    "KNOWLEDGE_VARIANT_AMBIGUOUS",
+  );
+  if (explicit) return explicit;
+  const productHint = text(trustedProductIdHint, 160);
+  const variantHint = text(trustedVariantIdHint, 160);
+  if (!variantHint || !productHint || productHint !== productId) return null;
+  return variants.find((row) => text(row.id, 160) === variantHint) || null;
+}
+
+function catalogContextRecordId(productId: string, variantId?: string): string {
+  return variantId
+    ? `catalog-variant:${productId}:${variantId}`
+    : `catalog-product:${productId}`;
+}
+
 async function knowledgeStockAvailability(params: {
   sql: KnowledgeSqlExecutor;
   merchantId: string;
@@ -692,6 +732,8 @@ async function resolveMeasurementFact(params: {
   customer: string;
   language: KnowledgeLanguage;
   kind: MeasurementKind;
+  trustedProductIdHint?: string;
+  trustedVariantIdHint?: string;
 }) {
   let products: Record<string, unknown>[];
   try {
@@ -708,9 +750,10 @@ async function resolveMeasurementFact(params: {
       fail("KNOWLEDGE_PROVENANCE_INVALID", "catalog fact provenance is invalid");
     }
   }
-  const product = uniqueBest(
-    products.map((row) => ({ row, score: productMatchScore(params.customer, row) })),
-    "KNOWLEDGE_PRODUCT_AMBIGUOUS",
+  const product = selectProduct(
+    products,
+    params.customer,
+    params.trustedProductIdHint,
   );
   if (!product) return null;
 
@@ -726,9 +769,12 @@ async function resolveMeasurementFact(params: {
   if (variantMode) {
     const variants = await loadVariants(params.sql, params.merchantId, productId);
     if (!variants.length) fail("KNOWLEDGE_STATE_INVALID", "variant-managed product has no variants");
-    const matchedVariant = uniqueBest(
-      variants.map((row) => ({ row, score: variantMatchScore(params.customer, row) })),
-      "KNOWLEDGE_VARIANT_AMBIGUOUS",
+    const matchedVariant = selectVariant(
+      variants,
+      params.customer,
+      productId,
+      params.trustedProductIdHint,
+      params.trustedVariantIdHint,
     );
     if (matchedVariant) {
       resolved = inheritedPhysicalFacts(productFacts, physicalFacts(matchedVariant));
@@ -745,12 +791,17 @@ async function resolveMeasurementFact(params: {
     }
   }
 
+  const resolvedVariantId =
+    recordId !== productId && !recordId.endsWith(":common-measurement")
+      ? recordId
+      : undefined;
   return {
     answerText: localizedMeasurementAnswer(params.language, productName, params.kind, resolved),
     language: params.language,
     confidence: 1,
     factType: params.kind === "weight" ? "product_weight" : "product_dimensions",
     recordId,
+    contextRecordId: catalogContextRecordId(productId, resolvedVariantId),
   };
 }
 
@@ -760,6 +811,8 @@ async function resolveProductFact(params: {
   customer: string;
   language: KnowledgeLanguage;
   kind: "price" | "stock";
+  trustedProductIdHint?: string;
+  trustedVariantIdHint?: string;
 }) {
   let products: Record<string, unknown>[];
   try {
@@ -776,9 +829,10 @@ async function resolveProductFact(params: {
       fail("KNOWLEDGE_PROVENANCE_INVALID", "catalog fact provenance is invalid");
     }
   }
-  const product = uniqueBest(
-    products.map((row) => ({ row, score: productMatchScore(params.customer, row) })),
-    "KNOWLEDGE_PRODUCT_AMBIGUOUS",
+  const product = selectProduct(
+    products,
+    params.customer,
+    params.trustedProductIdHint,
   );
   if (!product) return null;
 
@@ -795,9 +849,12 @@ async function resolveProductFact(params: {
 
   if (variantMode) {
     const variants = await loadVariants(params.sql, params.merchantId, productId);
-    const variant = uniqueBest(
-      variants.map((row) => ({ row, score: variantMatchScore(params.customer, row) })),
-      "KNOWLEDGE_VARIANT_AMBIGUOUS",
+    const variant = selectVariant(
+      variants,
+      params.customer,
+      productId,
+      params.trustedProductIdHint,
+      params.trustedVariantIdHint,
     );
     if (!variant) {
       fail("KNOWLEDGE_VARIANT_REQUIRED", "an unambiguous product variant is required", 409);
@@ -860,6 +917,7 @@ async function resolveProductFact(params: {
       recordId: resolved.promotion_id
         ? `${recordId}:promotion:${resolved.promotion_id}`
         : recordId,
+      contextRecordId: catalogContextRecordId(productId, variantId),
     };
   }
 
@@ -883,6 +941,7 @@ async function resolveProductFact(params: {
     confidence: 1,
     factType: commerce.item_type === "service" ? "service_availability" : "product_stock",
     recordId,
+    contextRecordId: catalogContextRecordId(productId, variantId),
   };
 }
 
@@ -992,6 +1051,13 @@ function combineFactResults(
     .filter(Boolean);
   const sharedRecordId =
     ids.length === facts.length && new Set(ids).size === 1 ? ids[0] : undefined;
+  const contextIds = facts
+    .map((fact) => boundedText(fact.contextRecordId, 240))
+    .filter(Boolean);
+  const sharedContextRecordId =
+    contextIds.length === facts.length && new Set(contextIds).size === 1
+      ? contextIds[0]
+      : undefined;
 
   return {
     answerText,
@@ -999,6 +1065,7 @@ function combineFactResults(
     confidence: Math.min(...facts.map((fact) => fact.confidence)),
     factType: `combined_${facts.map((fact) => fact.factType).join("_")}`,
     ...(sharedRecordId ? { recordId: sharedRecordId } : {}),
+    ...(sharedContextRecordId ? { contextRecordId: sharedContextRecordId } : {}),
   };
 }
 
@@ -1055,6 +1122,8 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
           customer: normalized,
           language: input.language,
           kind,
+          trustedProductIdHint: input.trustedProductIdHint,
+          trustedVariantIdHint: input.trustedVariantIdHint,
         });
       }
 
@@ -1065,6 +1134,8 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
           customer: normalized,
           language: input.language,
           kind,
+          trustedProductIdHint: input.trustedProductIdHint,
+          trustedVariantIdHint: input.trustedVariantIdHint,
         });
       }
 
