@@ -1,5 +1,4 @@
 import {
-  operationalDatabasePool,
   withMerchantOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority.js";
@@ -259,16 +258,17 @@ export async function getMerchantResponseStyleAuthoritative(
   merchantIdValue: unknown,
 ): Promise<MerchantResponseStyle> {
   const id = merchantId(merchantIdValue);
-  const pool = await operationalDatabasePool();
-  const row = await loadRow(pool, id);
-  if (!row) {
-    throw new MerchantResponseStyleError(
-      "MERCHANT_RESPONSE_STYLE_NOT_FOUND",
-      "merchant response style is unavailable",
-      404,
-    );
-  }
-  return responseStyleFromMerchantMetadata(row.metadata);
+  return withMerchantOperationalTransaction(id, async (client) => {
+    const row = await loadRow(client, id);
+    if (!row) {
+      throw new MerchantResponseStyleError(
+        "MERCHANT_RESPONSE_STYLE_NOT_FOUND",
+        "merchant response style is unavailable",
+        404,
+      );
+    }
+    return responseStyleFromMerchantMetadata(row.metadata);
+  });
 }
 
 export async function updateMerchantResponseStyleAuthoritative(input: {
