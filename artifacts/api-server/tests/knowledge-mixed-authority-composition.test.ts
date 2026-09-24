@@ -161,7 +161,7 @@ test("mixed product question combines live price/stock, catalog specification, a
         const operationalId = receivedOperational[0].id;
         return {
           answerText:
-            "The PowerMax 65W Charger supports Power Delivery and is 25,000 IQD. It is currently available. Fast charging still depends on device and cable compatibility.",
+            "PowerMax 65W Charger is 25,000 IQD.\nPowerMax 65W Charger is currently available.\nIt supports Power Delivery. Fast charging still depends on device and cable compatibility.",
           language: "en",
           confidence: 0.97,
           risk: "low",
@@ -381,6 +381,123 @@ test("mixed composition cannot silently omit the live operational grounding", as
   assert.equal(testRuntime.generatedCandidateCount, 0);
 });
 
+
+test("mixed question with an unresolved extra policy part never falls back to a price-only reply", async () => {
+  const testRuntime = runtime();
+  let aiCalls = 0;
+  const engine = new KnowledgeDecisionEngine({
+    runtime: testRuntime,
+    factResolver: {
+      async resolve() {
+        return {
+          ...liveFact(),
+          answerText: "PowerMax 65W Charger is 25,000 IQD.",
+          factType: "product_price",
+        };
+      },
+    },
+    policyResolver: policy(true),
+    catalogContextResolver: {
+      async listRelevantContext() {
+        return [];
+      },
+    },
+    encyclopediaResolver: {
+      async resolve() {
+        return null;
+      },
+      async listRelevantContext() {
+        return [];
+      },
+    },
+    allowGeneratedAutoReply: true,
+    aiProvider: {
+      providerId: "test-mixed-ai",
+      async generate(request) {
+        aiCalls += 1;
+        assert.equal(request.operationalFacts.length, 1);
+        return null;
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText:
+      "What is the price of PowerMax 65W Charger and can I return it?",
+    languageHint: "en",
+  });
+
+  assert.equal(aiCalls, 1);
+  assert.equal(result.action, "handoff");
+  assert.equal(
+    result.reasonCode,
+    "MIXED_AUTHORITY_COMPOSITION_REQUIRES_HANDOFF",
+  );
+  assert.equal(testRuntime.trainingCount, 1);
+  assert.equal(testRuntime.generatedCandidateCount, 0);
+});
+
+test("mixed reply that rewrites rather than preserves the live fact fails closed", async () => {
+  const testRuntime = runtime();
+  const engine = new KnowledgeDecisionEngine({
+    runtime: testRuntime,
+    factResolver: {
+      async resolve() {
+        return liveFact();
+      },
+    },
+    policyResolver: policy(true),
+    catalogContextResolver: {
+      async listRelevantContext() {
+        return catalogContext();
+      },
+    },
+    encyclopediaResolver: {
+      async resolve() {
+        return null;
+      },
+      async listRelevantContext() {
+        return curatedContext();
+      },
+    },
+    allowGeneratedAutoReply: true,
+    aiProvider: {
+      providerId: "test-mixed-ai",
+      async generate(request) {
+        return {
+          answerText:
+            "The charger costs 25,000 IQD, is available, and supports Power Delivery.",
+          language: "en",
+          confidence: 0.98,
+          risk: "low",
+          canAnswer: true,
+          reason: "rewrote the live wording",
+          source: "openai_generated",
+          groundingRecordIds: [
+            request.operationalFacts[0].id,
+            "catalog-product:product-65w",
+          ],
+        };
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText:
+      "Does the PowerMax 65W Charger support Power Delivery, what is the price, and is it available?",
+    languageHint: "en",
+  });
+
+  assert.equal(result.action, "handoff");
+  assert.equal(
+    result.reasonCode,
+    "MIXED_AUTHORITY_COMPOSITION_REQUIRES_HANDOFF",
+  );
+  assert.equal(testRuntime.generatedCandidateCount, 0);
+});
+
 test("OpenAI envelope keeps live operational facts separate from catalog and curated context", async () => {
   let body;
   const provider = new ConstrainedOpenAiProvider({
@@ -440,6 +557,6 @@ test("OpenAI envelope keeps live operational facts separate from catalog and cur
   assert.match(developerText, /"fawri_curated_knowledge":\[/);
   assert.match(
     body.input[0].content[0].text,
-    /Live operational facts are the highest factual authority/,
+    /copy each supplied live operational answer verbatim/,
   );
 });
