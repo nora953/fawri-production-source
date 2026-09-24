@@ -596,21 +596,42 @@ export async function preparePostgresMetaAutoReply(
 
   const answerText = text(decision.answerText);
   if (decision.action === "no_answer" || !answerText) {
-    await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
-      await client.query(
-        `UPDATE conversations
-            SET status = 'needs_reply', assigned_to_human = FALSE,
-                needs_training = TRUE, updated_at = now()
-          WHERE merchant_id = $1 AND id = $2 AND status = 'auto_replying'`,
-        [parsed.merchantId, inbound.conversationId],
-      );
-    });
+    const stillCurrent = await withMerchantOperationalTransaction(
+      parsed.merchantId,
+      async (client) => {
+        const currentConversation = await client.query<ConversationRow>(
+          `SELECT id, status::text AS status, assigned_to_human, metadata
+             FROM conversations
+            WHERE merchant_id = $1 AND id = $2
+            FOR UPDATE`,
+          [parsed.merchantId, inbound.conversationId],
+        );
+        const current = currentConversation.rows[0];
+        if (
+          !current ||
+          inbound.sourceConversationGeneration === null ||
+          conversationGeneration(current) !== inbound.sourceConversationGeneration
+        ) {
+          return false;
+        }
+        await client.query(
+          `UPDATE conversations
+              SET status = 'needs_reply', assigned_to_human = FALSE,
+                  needs_training = TRUE, updated_at = now()
+            WHERE merchant_id = $1 AND id = $2 AND status = 'auto_replying'`,
+          [parsed.merchantId, inbound.conversationId],
+        );
+        return true;
+      },
+    );
     return {
       action: "suppress",
       eventId: parsed.eventId,
       merchantId: parsed.merchantId,
       conversationId: inbound.conversationId,
-      code: text(decision.reasonCode) || "KNOWLEDGE_NO_ANSWER",
+      code: stillCurrent
+        ? text(decision.reasonCode) || "KNOWLEDGE_NO_ANSWER"
+        : "CONVERSATION_SUPERSEDED",
     };
   }
 
