@@ -21,20 +21,34 @@ The decision order is:
    - approved learned answers
    - merchant-confirmed corrections
 
-3. **Fawri activity encyclopedia**
+3. **Merchant catalog product facts**
+   - the matched product's server-owned name, category, description, SKU, and variant-option values
+   - never current price, promotion, stock, order, delivery, payment, return/refund policy, or warranty through this grounding path
+
+4. **Fawri activity encyclopedia**
    - curated knowledge selected from the merchant's registered activity type
    - launch packs: fashion, electronics, food, perfumes, and jewelry
 
-4. **Fawri global encyclopedia**
+5. **Fawri global encyclopedia**
    - curated general commerce/product terminology useful across activities
 
-5. **Constrained AI composition**
+6. **Constrained AI composition**
    - wording/composition only when grounded in trusted records supplied by the server
 
-6. **Clarification or human handoff**
+7. **Clarification or human handoff**
    - used when a safe answer cannot be established
 
 A lower layer is never allowed to contradict or replace a higher layer.
+
+## Merchant catalog product grounding
+
+Fawri may use a uniquely matched product from the authenticated merchant's server catalog as trusted product-specific grounding. This layer exists so a first-activation answer can combine real product facts with general Fawri knowledge instead of guessing a product specification from the encyclopedia.
+
+The catalog grounding payload is deliberately narrow: product name, category, description, SKU, and bounded variant-option values. It excludes current price, promotion state, stock quantity, order state, delivery, payment, and other operational facts. Warranty and return/refund policy are also excluded from catalog grounding authority; they continue to require their dedicated authority or explicit merchant-approved knowledge where the runtime permits it.
+
+A catalog product is eligible only when it belongs to the authenticated merchant, is not deleted, allows Fawri replies, has an allowed customer-visible status, and has a positive server version. Matching is bounded to the customer's referenced product name or identifiers. Ambiguous catalog matches produce no catalog grounding rather than exposing several products to the model.
+
+When a product match exists, Fawri does not allow a general encyclopedia article to answer directly first. Instead, the product facts and any relevant curated encyclopedia records are passed to constrained AI in separate trusted fields. The generated reply must cite only server-supplied grounding IDs and pass the same factual-token, language, risk, confidence, and auto-reply-policy checks used by the knowledge engine.
 
 ## Fawri encyclopedia trust model
 
