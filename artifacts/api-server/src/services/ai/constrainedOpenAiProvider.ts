@@ -200,6 +200,24 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
         answer: redactSensitiveText(item.answer, 1_500),
         language: item.language,
       })),
+      merchant_catalog_knowledge: (request.catalogKnowledge || []).slice(0, 4).map((item) => ({
+        id: item.id,
+        product_id: item.productId,
+        name: redactSensitiveText(item.name, 300),
+        category: item.category
+          ? redactSensitiveText(item.category, 300)
+          : undefined,
+        description: item.description
+          ? redactSensitiveText(item.description, 1_500)
+          : undefined,
+        sku: item.sku ? redactSensitiveText(item.sku, 200) : undefined,
+        options: item.options.slice(0, 12).map((option) => ({
+          name: redactSensitiveText(option.name, 120),
+          values: option.values
+            .slice(0, 20)
+            .map((value) => redactSensitiveText(value, 160)),
+        })),
+      })),
     };
 
     const conversationEnvelope = (request.conversationHistory || []).slice(-8).map((message) => ({
