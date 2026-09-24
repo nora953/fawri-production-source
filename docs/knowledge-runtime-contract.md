@@ -77,9 +77,9 @@ Merchant response style is server-owned presentation metadata. The default is pr
 
 ## Merchant catalog grounding
 
-A uniquely matched product may contribute trusted product-specific context from the authenticated merchant's server catalog. The current payload is intentionally limited to the product's name, category, description, SKU, and bounded variant-option values. It does not transport current price, promotion state, stock quantity, order state, delivery, or payment data.
+A uniquely matched product may contribute trusted product-specific context from the authenticated merchant's server catalog. The current payload is intentionally limited to the product's name, category, description, SKU, and bounded variant-option values. It does not transport current price, promotion state, stock quantity, structured physical weight/dimensions, order state, delivery, or payment data.
 
-Current price/stock/order/delivery/payment questions are intercepted by the authoritative fact path before catalog grounding. Product warranty and return/refund-policy questions are also excluded from catalog grounding so free-form product descriptions cannot silently become policy authority.
+Current price/stock/physical-measurement/order/delivery/payment questions remain reserved for the authoritative fact path rather than catalog grounding. Product warranty and return/refund-policy questions are also excluded from catalog grounding so free-form product descriptions cannot silently become policy authority.
 
 When catalog context exists, the engine skips a direct general encyclopedia reply and instead lets constrained AI combine the exact product facts with relevant curated guidance. Catalog-only automatic synthesis uses reason code `CONSTRAINED_AI_GROUNDED_CATALOG_REPLY`; catalog plus another trusted source uses `CONSTRAINED_AI_GROUNDED_CATALOG_MIXED_TRUSTED_REPLY`.
 
