@@ -15,6 +15,7 @@ import {
 } from "./manualConversationRuntime";
 import { readMetaChannelCredentialAuthoritative } from "./postgresMetaChannelAuthority";
 import { learnFromMerchantManualReply } from "./merchantManualKnowledgeLearning";
+import { isAuthoritativeFactQuestion } from "./knowledge/postgresKnowledgeRuntime";
 
 function text(value: unknown): string {
   return String(value || "").trim();
@@ -60,6 +61,7 @@ type MessageRow = {
   counted_as_auto_reply: boolean;
   reply_type: "ai" | "database" | "fallback" | "manual" | "system" | null;
   status: "received" | "queued" | "sent" | "failed";
+  metadata?: Record<string, unknown> | null;
 };
 
 function mapMessage(row: MessageRow): RuntimeMessage {
@@ -78,6 +80,9 @@ function mapMessage(row: MessageRow): RuntimeMessage {
       : {}),
     ...(row.status === "received" || row.status === "sent" || row.status === "failed"
       ? { status: row.status }
+      : {}),
+    ...(row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+      ? { metadata: row.metadata }
       : {}),
   };
 }
@@ -120,7 +125,7 @@ async function loadConversationRows(
     const messageResult = await client.query<MessageRow>(
       `SELECT id, external_message_id, conversation_id, sender::text AS sender,
               text, created_at, counted_as_auto_reply,
-              reply_type::text AS reply_type, status::text AS status
+              reply_type::text AS reply_type, status::text AS status, metadata
          FROM messages
         WHERE merchant_id = $1 AND conversation_id = $2
         ORDER BY created_at, id`,
