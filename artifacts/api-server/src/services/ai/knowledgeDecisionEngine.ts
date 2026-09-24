@@ -38,6 +38,7 @@ import type {
   SemanticDocument,
   SemanticMatch,
   TrainingRequestRecord,
+  TrustedOperationalKnowledge,
 } from "../knowledge/types.js";
 
 const DEFAULT_HANDOFF: Record<KnowledgeLanguage, string> = {
@@ -47,6 +48,47 @@ const DEFAULT_HANDOFF: Record<KnowledgeLanguage, string> = {
 };
 
 const MAX_CONVERSATION_CONTEXT_MESSAGES = 8;
+const MIXED_AUTHORITY_CURATED_THRESHOLD = 0.52;
+
+const PRODUCT_DETAIL_CUES = [
+  "يدعم",
+  "تدعم",
+  "متوافق",
+  "توافق",
+  "مواصفات",
+  "مواصفة",
+  "ميزة",
+  "ميزات",
+  "خامة",
+  "مادة",
+  "لون",
+  "حجم",
+  "قياس",
+  "سعة",
+  "منفذ",
+  "محتويات",
+  "يجي ويا",
+  "support",
+  "supports",
+  "compatible",
+  "compatibility",
+  "spec",
+  "specification",
+  "feature",
+  "material",
+  "color",
+  "size",
+  "capacity",
+  "port",
+  "included",
+  "comes with",
+  "پشتگیری",
+  "گونجاو",
+  "تایبەتمەندی",
+  "ماددە",
+  "ڕەنگ",
+  "قەبارە",
+] as const;
 
 const CLARIFICATION_REASON_CODES = [
   "KNOWLEDGE_VARIANT_REQUIRED",
@@ -159,6 +201,32 @@ function groundedAnswerFactualTokensAreSupported(
     groundingDocuments.flatMap((document) => factualTokens(document.answer)),
   );
   return factualTokens(answerText).every((token) => supported.has(token));
+}
+
+function isProductOperationalFactType(value: unknown): boolean {
+  const factType = boundedText(value, 240);
+  return (
+    factType.includes("product_price") ||
+    factType.includes("product_stock") ||
+    factType.includes("product_weight") ||
+    factType.includes("product_dimensions")
+  );
+}
+
+function hasProductDetailCue(customerText: string): boolean {
+  const normalized = customerText.toLocaleLowerCase();
+  return PRODUCT_DETAIL_CUES.some((term) =>
+    normalized.includes(term.toLocaleLowerCase()),
+  );
+}
+
+function operationalFactGroundingId(
+  factType: string,
+  answerText: string,
+): string {
+  const type = boundedText(factType, 80).replace(/[^a-z0-9_-]/gi, "_");
+  const digest = digestCustomerText(`${factType}\n${answerText}`).slice(0, 24);
+  return `live-fact:${type || "product"}:${digest}`;
 }
 
 function responseStyleNeedsRewrite(
@@ -650,6 +718,214 @@ export class KnowledgeDecisionEngine {
       return result;
     }
     if (fact && fact.confidence >= this.minimumFactConfidence && fact.answerText.trim()) {
+      const productOperationalFact = isProductOperationalFactType(fact.factType);
+
+      if (productOperationalFact) {
+        const candidateCurated = this.encyclopediaResolver.listRelevantContext
+          ? await this.encyclopediaResolver.listRelevantContext({
+              merchantId,
+              customerText,
+              language,
+              limit: 4,
+              allowOperationalContext: true,
+            })
+          : [];
+        const curatedKnowledge = candidateCurated.filter(
+          (item) => item.confidence >= MIXED_AUTHORITY_CURATED_THRESHOLD,
+        );
+
+        let catalogKnowledge = [];
+        try {
+          catalogKnowledge = await this.catalogContextResolver.listRelevantContext({
+            merchantId,
+            customerText,
+            language,
+            limit: 1,
+            trustedProductIdHint: catalogConversationRef?.productId,
+            trustedVariantIdHint: catalogConversationRef?.variantId,
+            allowOperationalContext: true,
+          });
+        } catch (error) {
+          const reasonCode =
+            error instanceof KnowledgeRuntimeGateError
+              ? clarificationReasonCode(error.code)
+              : null;
+          if (!reasonCode) throw error;
+
+          const result = this.clarificationResult(language, reasonCode);
+          await this.recordDecisionAudit({
+            input: { ...input, merchantId, customerText },
+            result,
+          });
+          return result;
+        }
+
+        const mixedAuthorityNeeded =
+          curatedKnowledge.length > 0 ||
+          (catalogKnowledge.length > 0 && hasProductDetailCue(customerText));
+
+        if (mixedAuthorityNeeded) {
+          const operationalId = operationalFactGroundingId(
+            fact.factType,
+            fact.answerText,
+          );
+          const operationalFacts: TrustedOperationalKnowledge[] = [
+            {
+              id: operationalId,
+              factType: fact.factType,
+              answer: boundedText(fact.answerText, 2_000),
+              language: fact.language,
+            },
+          ];
+
+          const aiCandidate = await this.aiProvider.generate({
+            merchantId,
+            language,
+            systemRules: KNOWLEDGE_SYSTEM_RULES,
+            merchantPolicy,
+            approvedKnowledge: [],
+            curatedKnowledge,
+            catalogKnowledge,
+            operationalFacts,
+            customerText,
+            conversationHistory,
+            injectionSignals: [],
+          });
+
+          const operationalIds = new Set(operationalFacts.map((item) => item.id));
+          const curatedIds = new Set(curatedKnowledge.map((item) => item.id));
+          const catalogIds = new Set(catalogKnowledge.map((item) => item.id));
+          const trustedIds = new Set([
+            ...operationalIds,
+            ...curatedIds,
+            ...catalogIds,
+          ]);
+          const groundingRecordIds = Array.from(
+            new Set(
+              (aiCandidate?.groundingRecordIds || [])
+                .map((id) => boundedText(id, 200))
+                .filter(Boolean),
+            ),
+          ).slice(0, 12);
+          const groundingDocuments = [
+            ...operationalFacts
+              .filter((item) => groundingRecordIds.includes(item.id))
+              .map((item) => ({
+                id: item.id,
+                question: item.factType,
+                answer: item.answer,
+                language: item.language,
+              })),
+            ...curatedKnowledge
+              .filter((item) => groundingRecordIds.includes(item.id))
+              .map((item) => ({
+                id: item.id,
+                question: item.question,
+                answer: item.answer,
+                language: item.language,
+              })),
+            ...catalogKnowledge
+              .filter((item) => groundingRecordIds.includes(item.id))
+              .map((item) => ({
+                id: item.id,
+                question: item.name,
+                answer: item.factualText,
+                language,
+              })),
+          ];
+          const groundedOnlyInTrustedKnowledge =
+            groundingRecordIds.length > 0 &&
+            groundingRecordIds.every((id) => trustedIds.has(id)) &&
+            groundingDocuments.length === groundingRecordIds.length &&
+            groundedAnswerFactualTokensAreSupported(
+              aiCandidate?.answerText || "",
+              groundingDocuments,
+            );
+          const usesOperationalGrounding = groundingRecordIds.some((id) =>
+            operationalIds.has(id),
+          );
+          const usesCatalogGrounding = groundingRecordIds.some((id) =>
+            catalogIds.has(id),
+          );
+          const usesCuratedGrounding = groundingRecordIds.some((id) =>
+            curatedIds.has(id),
+          );
+          const usesNonOperationalGrounding =
+            usesCatalogGrounding || usesCuratedGrounding;
+          const policyAllowsGenerated =
+            merchantPolicy.allowGeneratedAutoReply === true &&
+            this.allowGeneratedAutoReply;
+          const eligibleForGroundedReply =
+            aiCandidate?.canAnswer === true &&
+            Boolean(aiCandidate.answerText) &&
+            policyAllowsGenerated &&
+            groundedOnlyInTrustedKnowledge &&
+            usesOperationalGrounding &&
+            usesNonOperationalGrounding &&
+            aiCandidate.language === language &&
+            aiCandidate.risk === "low" &&
+            aiCandidate.confidence >= this.minimumAiConfidence;
+
+          if (eligibleForGroundedReply && aiCandidate) {
+            const catalogMatchedRecordId =
+              groundingRecordIds.find((id) => catalogIds.has(id)) || null;
+            const result: KnowledgeDecisionResult = {
+              action: "reply",
+              stage: "ai_fallback",
+              answerText: boundedText(aiCandidate.answerText, 2_000),
+              language,
+              source: "openai_generated",
+              confidence: aiCandidate.confidence,
+              requiresMerchantApproval: false,
+              trainingRequestId: null,
+              matchedRecordId:
+                catalogMatchedRecordId ||
+                fact.contextRecordId ||
+                fact.recordId ||
+                null,
+              groundingRecordIds,
+              reasonCode: "CONSTRAINED_AI_GROUNDED_OPERATIONAL_MIXED_REPLY",
+              injectionSignals: [],
+              ...(aiCandidate.usage ? { aiUsage: aiCandidate.usage } : {}),
+              ...(aiCandidate.providerId
+                ? { aiProviderId: aiCandidate.providerId }
+                : {}),
+              ...(aiCandidate.model ? { aiModel: aiCandidate.model } : {}),
+              ...(aiCandidate.latencyMs !== undefined
+                ? { aiLatencyMs: aiCandidate.latencyMs }
+                : {}),
+            };
+            await this.recordDecisionAudit({
+              input: { ...input, merchantId, customerText },
+              result,
+            });
+            return result;
+          }
+
+          // Never persist a generated mixed-authority candidate as reusable
+          // knowledge: it may contain live price, stock, or measurements.
+          const training = await this.runtime.createTrainingRequest({
+            merchantId,
+            customerText,
+            detectedLanguage: language,
+            detectedIntent: "mixed_authority",
+            reason: "mixed_authority_composition_unavailable",
+          });
+          const result = this.handoffResult({
+            language,
+            policy: merchantPolicy,
+            reasonCode: "MIXED_AUTHORITY_COMPOSITION_REQUIRES_HANDOFF",
+            trainingRequestId: training.id,
+            confidence: aiCandidate?.confidence ?? fact.confidence,
+          });
+          await this.recordDecisionAudit({
+            input: { ...input, merchantId, customerText },
+            result,
+          });
+          return result;
+        }
+      }
+
       const result: KnowledgeDecisionResult = {
         action: "reply",
         stage: "database_fact",
