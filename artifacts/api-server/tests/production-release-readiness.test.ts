@@ -37,6 +37,7 @@ function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     META_VERIFY_TOKEN: "meta-verify-token-at-least-thirty-two-characters",
     FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER: "openai",
     FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER: "openai",
+    FAWRI_KNOWLEDGE_AI_PROVIDER: "openai",
     OPENAI_API_KEY: "test-openai-api-key-not-real-production-secret",
     FAWRI_OPENAI_MODEL: "approved-response-model",
     FAWRI_SERVICE_VERSION: "2026.08.12-rc1",
@@ -199,6 +200,7 @@ test("production env example stays aligned with the runtime release gate", () =>
     FAWRI_META_CREDENTIAL_PROVIDER: "aws-kms",
     FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER: "openai",
     FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER: "openai",
+    FAWRI_KNOWLEDGE_AI_PROVIDER: "openai",
   };
 
   for (const [name, expected] of Object.entries(expectedFixedValues)) {
