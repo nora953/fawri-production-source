@@ -109,9 +109,12 @@ function identifierMatches(
   customer: string,
   value: unknown,
   minimumLength = 2,
+  allowSingleToken = false,
 ): boolean {
   const candidate = normalizeKnowledgeText(value);
-  return candidate.length >= minimumLength && customer.includes(candidate);
+  if (candidate.length >= minimumLength) return customer.includes(candidate);
+  if (!allowSingleToken || candidate.length !== 1) return false;
+  return customer.split(" ").includes(candidate);
 }
 
 function productMatchScore(
@@ -136,12 +139,12 @@ function variantMatchScore(
     if (identifierMatches(customer, row[key])) score += 180;
   }
   for (const key of ["name", "color", "size"] as const) {
-    if (identifierMatches(customer, row[key])) score += 70;
+    if (identifierMatches(customer, row[key], 2, true)) score += 70;
   }
   const variantId = text(row.id, 160);
   for (const option of optionRows) {
     if (text(option.variant_id, 160) !== variantId) continue;
-    if (identifierMatches(customer, option.option_value)) score += 70;
+    if (identifierMatches(customer, option.option_value, 2, true)) score += 70;
     if (
       identifierMatches(
         customer,
