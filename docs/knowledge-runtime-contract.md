@@ -44,6 +44,7 @@ type KnowledgeDecisionResult = {
   matchedRecordId: string | null;
   reasonCode: string;
   injectionSignals: string[];
+  groundingRecordIds?: string[];
 };
 ```
 
@@ -60,9 +61,9 @@ For non-malicious text, the engine evaluates exactly this order:
 5. Constrained AI fallback using system rules plus approved merchant context.
 6. Human handoff or no answer.
 
-The constrained OpenAI provider may be wired in production for **draft generation only**. When no trusted database/approved answer is available, it may create a proposed response using only approved merchant context and the bounded conversation history. The customer does not receive that generated proposal under the current server policy.
+The constrained OpenAI provider may synthesize a customer-facing answer automatically when—and only when—it can cite one or more merchant-approved knowledge records supplied by the server, every cited ID belongs to the current tenant's bounded approved context, the response language matches the customer, risk is low, confidence clears the server threshold, and factual tokens such as numbers, currencies, SKUs, IDs, and URLs are supported by the cited approved answers. This path exists to combine and phrase already-trusted information in a clear, natural, concise, professional way; it does not grant AI authority to invent facts.
 
-The default runtime never auto-sends generated text. A generated candidate is recorded as `openai_generated`, `pending_review`, and `safeToAutoReply=false`. Server-side merchant policy currently fixes `allowGeneratedAutoReply=false`, and the production singleton has no environment/browser switch that can override that rule. The generated proposal therefore exists only to help the merchant review/train the bot; it cannot enter approved retrieval until a merchant approval transition converts its provenance to `merchant_approved`.
+A grounded automatic synthesis does not create a pending training request and does not ask the merchant to approve the same trusted information again. If any grounding condition fails, the generated candidate is recorded as `openai_generated`, `pending_review`, and `safeToAutoReply=false`, and the conversation is handed off. Browser/environment input cannot relax the grounding rule. A future merchant-specific tone/style setting may customize wording, but it must not change factual authority, grounding, or safety rules.
 
 ## Provenance invariants
 
