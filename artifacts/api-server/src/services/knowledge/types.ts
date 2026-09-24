@@ -160,6 +160,8 @@ export type DatabaseFactResult = {
   confidence: number;
   factType: string;
   recordId?: string;
+  /** Stable internal catalog conversation reference, separate from operational audit IDs. */
+  contextRecordId?: string;
 };
 
 export type KnowledgeFactResolverInput = {
