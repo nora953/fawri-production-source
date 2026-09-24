@@ -206,6 +206,26 @@ test("catalog grounding never handles current price, stock, warranty, or return-
   }
 });
 
+
+test("catalog context can accompany already-resolved live facts without gaining operational authority", async () => {
+  const sql = new CatalogSql();
+  const resolver = new PostgresMerchantCatalogContextResolver(sql);
+
+  const context = await resolver.listRelevantContext({
+    merchantId: "merchant-a",
+    customerText:
+      "Does the PowerMax 65W Charger support Power Delivery, what is its price, and is it in stock?",
+    language: "en",
+    allowOperationalContext: true,
+  });
+
+  assert.equal(context.length, 1);
+  assert.equal(context[0].id, "catalog-product:product-65w");
+  assert.match(context[0].description || "", /Power Delivery/);
+  assert.equal(context[0].factualText.includes("25,000"), false);
+  assert.equal(context[0].factualText.toLowerCase().includes("in stock"), false);
+});
+
 test("constrained AI can combine exact merchant product facts with curated general knowledge", async () => {
   let receivedCatalog = [];
   let receivedCurated = [];
