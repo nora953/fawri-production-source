@@ -21,6 +21,7 @@ export function isSavedAnswerCategory(value: unknown): value is SavedAnswerCateg
 export type KnowledgeSource =
   | "database_fact"
   | "merchant_approved"
+  | "fawri_curated"
   | "openai_generated";
 
 export type TrainingStatus =
@@ -37,6 +38,7 @@ export type KnowledgeDecisionStage =
   | "database_fact"
   | "approved_saved_answer"
   | "semantic_retrieval"
+  | "fawri_encyclopedia"
   | "clarification"
   | "ai_fallback"
   | "handoff";
@@ -146,6 +148,25 @@ export type KnowledgeFactResolverInput = {
 
 export interface KnowledgeFactResolver {
   resolve(input: KnowledgeFactResolverInput): Promise<DatabaseFactResult | null>;
+}
+
+export type FawriEncyclopediaScope = "global" | "activity";
+
+export type FawriEncyclopediaMatch = {
+  articleId: string;
+  scope: FawriEncyclopediaScope;
+  activityKey: string | null;
+  answerText: string;
+  language: KnowledgeLanguage;
+  confidence: number;
+};
+
+export interface FawriEncyclopediaResolver {
+  resolve(input: {
+    merchantId: string;
+    customerText: string;
+    language: KnowledgeLanguage;
+  }): Promise<FawriEncyclopediaMatch | null>;
 }
 
 export type AiTokenUsage = {
