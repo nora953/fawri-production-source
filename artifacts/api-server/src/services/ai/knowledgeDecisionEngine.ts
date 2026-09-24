@@ -367,6 +367,12 @@ export class KnowledgeDecisionEngine {
         confidence: params.result.confidence,
         reasonCode: params.result.reasonCode,
         requiresMerchantApproval: params.result.requiresMerchantApproval,
+        groundingRecordCount: Math.min(
+          Array.isArray(params.result.groundingRecordIds)
+            ? params.result.groundingRecordIds.length
+            : 0,
+          12,
+        ),
         conversationContextMessages: Math.min(
           Array.isArray(params.input.recentMessages) ? params.input.recentMessages.length : 0,
           MAX_CONVERSATION_CONTEXT_MESSAGES,
@@ -688,7 +694,7 @@ export class KnowledgeDecisionEngine {
           },
         ]),
       ).values(),
-    );
+    ).slice(0, 12);
 
     const aiCandidate = await this.aiProvider.generate({
       merchantId,
@@ -702,6 +708,54 @@ export class KnowledgeDecisionEngine {
     });
 
     if (aiCandidate?.canAnswer && aiCandidate.answerText) {
+      const approvedIds = new Set(uniqueApprovedKnowledge.map((item) => item.id));
+      const groundingRecordIds = Array.from(
+        new Set(
+          (aiCandidate.groundingRecordIds || [])
+            .map((id) => boundedText(id, 200))
+            .filter(Boolean),
+        ),
+      ).slice(0, 12);
+      const groundedOnlyInApprovedKnowledge =
+        groundingRecordIds.length > 0 &&
+        groundingRecordIds.every((id) => approvedIds.has(id));
+      const policyAllowsGenerated =
+        merchantPolicy.allowGeneratedAutoReply === true && this.allowGeneratedAutoReply;
+      const eligibleForGroundedReply =
+        policyAllowsGenerated &&
+        groundedOnlyInApprovedKnowledge &&
+        aiCandidate.language === language &&
+        aiCandidate.risk === "low" &&
+        aiCandidate.confidence >= this.minimumAiConfidence;
+
+      if (eligibleForGroundedReply) {
+        const result: KnowledgeDecisionResult = {
+          action: "reply",
+          stage: "ai_fallback",
+          answerText: boundedText(aiCandidate.answerText, 2_000),
+          language,
+          source: "openai_generated",
+          confidence: aiCandidate.confidence,
+          requiresMerchantApproval: false,
+          trainingRequestId: null,
+          matchedRecordId: groundingRecordIds[0] || null,
+          groundingRecordIds,
+          reasonCode: "CONSTRAINED_AI_GROUNDED_APPROVED_REPLY",
+          injectionSignals: [],
+          ...(aiCandidate.usage ? { aiUsage: aiCandidate.usage } : {}),
+          ...(aiCandidate.providerId ? { aiProviderId: aiCandidate.providerId } : {}),
+          ...(aiCandidate.model ? { aiModel: aiCandidate.model } : {}),
+          ...(aiCandidate.latencyMs !== undefined
+            ? { aiLatencyMs: aiCandidate.latencyMs }
+            : {}),
+        };
+        await this.recordDecisionAudit({
+          input: { ...input, merchantId, customerText },
+          result,
+        });
+        return result;
+      }
+
       const recorded = await this.runtime.recordGeneratedCandidate({
         merchantId,
         customerText,
@@ -711,41 +765,26 @@ export class KnowledgeDecisionEngine {
         confidence: aiCandidate.confidence,
         reason: aiCandidate.reason,
       });
-
-      const policyAllowsGenerated =
-        merchantPolicy.allowGeneratedAutoReply === true && this.allowGeneratedAutoReply;
-      const eligibleForReply =
-        policyAllowsGenerated &&
-        aiCandidate.risk === "low" &&
-        aiCandidate.confidence >= this.minimumAiConfidence;
-
-      const result: KnowledgeDecisionResult = eligibleForReply
-        ? {
-            action: "reply",
-            stage: "ai_fallback",
-            answerText: aiCandidate.answerText,
-            language: aiCandidate.language,
-            source: "openai_generated",
-            confidence: aiCandidate.confidence,
-            requiresMerchantApproval: true,
-            trainingRequestId: recorded.trainingRequest.id,
-            matchedRecordId: recorded.learnedAnswer.id,
-            reasonCode: "CONSTRAINED_AI_LOW_RISK_REPLY_PENDING_APPROVAL",
-            injectionSignals: [],
-          }
-        : {
-            action: "handoff",
-            stage: "ai_fallback",
-            answerText: this.handoffText(language, merchantPolicy),
-            language,
-            source: "openai_generated",
-            confidence: aiCandidate.confidence,
-            requiresMerchantApproval: true,
-            trainingRequestId: recorded.trainingRequest.id,
-            matchedRecordId: recorded.learnedAnswer.id,
-            reasonCode: "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",
-            injectionSignals: [],
-          };
+      const result: KnowledgeDecisionResult = {
+        action: "handoff",
+        stage: "ai_fallback",
+        answerText: this.handoffText(language, merchantPolicy),
+        language,
+        source: "openai_generated",
+        confidence: aiCandidate.confidence,
+        requiresMerchantApproval: true,
+        trainingRequestId: recorded.trainingRequest.id,
+        matchedRecordId: recorded.learnedAnswer.id,
+        groundingRecordIds,
+        reasonCode: "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",
+        injectionSignals: [],
+        ...(aiCandidate.usage ? { aiUsage: aiCandidate.usage } : {}),
+        ...(aiCandidate.providerId ? { aiProviderId: aiCandidate.providerId } : {}),
+        ...(aiCandidate.model ? { aiModel: aiCandidate.model } : {}),
+        ...(aiCandidate.latencyMs !== undefined
+          ? { aiLatencyMs: aiCandidate.latencyMs }
+          : {}),
+      };
       await this.recordDecisionAudit({
         input: { ...input, merchantId, customerText },
         result,
@@ -967,6 +1006,9 @@ export function getKnowledgeDecisionEngine(): KnowledgeDecisionEngine {
       embeddingProvider: configuredEmbeddingProvider || undefined,
       translationProvider: configuredTranslationProvider || undefined,
       aiProvider: configuredAiProvider || undefined,
+      // Server-owned authorization. AI wording can auto-send only when the
+      // candidate is low-risk and grounded exclusively in approved records.
+      allowGeneratedAutoReply: true,
     });
   }
   return singleton;
