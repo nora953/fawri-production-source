@@ -857,6 +857,11 @@ export class KnowledgeDecisionEngine {
           const usesOperationalGrounding = groundingRecordIds.some((id) =>
             operationalIds.has(id),
           );
+          const preservesOperationalAnswers =
+            Boolean(aiCandidate?.answerText) &&
+            operationalFacts.every((item) =>
+              boundedText(aiCandidate?.answerText, 2_000).includes(item.answer),
+            );
           const usesCatalogGrounding = groundingRecordIds.some((id) =>
             catalogIds.has(id),
           );
@@ -874,6 +879,7 @@ export class KnowledgeDecisionEngine {
             policyAllowsGenerated &&
             groundedOnlyInTrustedKnowledge &&
             usesOperationalGrounding &&
+            preservesOperationalAnswers &&
             usesNonOperationalGrounding &&
             aiCandidate.language === language &&
             aiCandidate.risk === "low" &&
