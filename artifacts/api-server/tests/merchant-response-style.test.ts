@@ -6,6 +6,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { ConstrainedOpenAiProvider } from "../src/services/ai/constrainedOpenAiProvider.js";
+import { KnowledgeDecisionEngine } from "../src/services/ai/knowledgeDecisionEngine.js";
 import {
   DEFAULT_MERCHANT_RESPONSE_STYLE,
   responseStyleFromMerchantMetadata,
@@ -198,3 +199,231 @@ test("style API and knowledge UI are versioned, tenant-bound, and separate from 
   assert.match(route, /getMerchantIdFromSession/);
   assert.match(route, /expectedVersion/);
 });
+
+function encyclopediaRuntime() {
+  return {
+    authorityId: "style-encyclopedia-test-runtime",
+    legacyFallbackEnabled: false,
+    async findApprovedSavedAnswer() { return null; },
+    async retrieveSemanticMatch() { return null; },
+    async listApprovedSemanticDocuments() { return []; },
+    async createTrainingRequest() {
+      throw new Error("styled encyclopedia answer must not create training");
+    },
+    async recordGeneratedCandidate() {
+      throw new Error("styled encyclopedia answer must not create generated knowledge");
+    },
+    async appendAudit() {},
+  };
+}
+
+test("merchant style can rewrite a curated encyclopedia answer without changing its authority", async () => {
+  let rewriteCalls = 0;
+  const engine = new KnowledgeDecisionEngine({
+    runtime: encyclopediaRuntime(),
+    factResolver: { async resolve() { return null; } },
+    policyResolver: null,
+    encyclopediaResolver: {
+      async resolve() {
+        return {
+          articleId: "fawri-electronics-ip-rating",
+          scope: "activity",
+          activityKey: "electronics",
+          answerText: "IP68 is a tested protection rating. Check the exact model conditions.",
+          language: "en",
+          confidence: 0.95,
+        };
+      },
+    },
+    aiProvider: {
+      providerId: "style-test-provider",
+      model: "style-test-model",
+      async generate() { return null; },
+      async rewritePresentation(request) {
+        rewriteCalls += 1;
+        assert.equal(request.sourceKind, "fawri_curated");
+        assert.equal(request.sourceId, "fawri-electronics-ip-rating");
+        assert.equal(request.responseStyle.tone, "friendly");
+        return {
+          answerText: "Sure — IP68 is a tested protection rating. Please check the exact model conditions.",
+          language: "en",
+          faithful: true,
+        };
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "What does IP68 mean?",
+    languageHint: "en",
+    merchantPolicy: {
+      responseStyle: {
+        version: 2,
+        tone: "friendly",
+        brevity: "balanced",
+        emojiStyle: "minimal",
+        customInstructions: "",
+        updatedAt: "2026-09-24T20:00:00.000Z",
+      },
+    },
+  });
+
+  assert.equal(rewriteCalls, 1);
+  assert.equal(result.action, "reply");
+  assert.equal(result.stage, "fawri_encyclopedia");
+  assert.equal(result.source, "fawri_curated");
+  assert.equal(result.matchedRecordId, "fawri-electronics-ip-rating");
+  assert.equal(result.reasonCode, "FAWRI_ACTIVITY_ENCYCLOPEDIA_STYLED_MATCH");
+  assert.match(result.answerText || "", /^Sure/);
+  assert.equal(result.aiProviderId, "style-test-provider");
+  assert.equal(result.aiModel, "style-test-model");
+});
+
+test("default response style keeps curated encyclopedia wording without an AI rewrite", async () => {
+  let rewriteCalls = 0;
+  const sourceText = "IP68 is a tested protection rating.";
+  const engine = new KnowledgeDecisionEngine({
+    runtime: encyclopediaRuntime(),
+    factResolver: { async resolve() { return null; } },
+    policyResolver: null,
+    encyclopediaResolver: {
+      async resolve() {
+        return {
+          articleId: "fawri-electronics-ip-rating",
+          scope: "activity",
+          activityKey: "electronics",
+          answerText: sourceText,
+          language: "en",
+          confidence: 0.95,
+        };
+      },
+    },
+    aiProvider: {
+      providerId: "style-test-provider",
+      async generate() { return null; },
+      async rewritePresentation() {
+        rewriteCalls += 1;
+        return null;
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "What does IP68 mean?",
+    languageHint: "en",
+    merchantPolicy: {
+      responseStyle: {
+        version: 1,
+        tone: "professional",
+        brevity: "balanced",
+        emojiStyle: "minimal",
+        customInstructions: "",
+        updatedAt: null,
+      },
+    },
+  });
+
+  assert.equal(rewriteCalls, 0);
+  assert.equal(result.answerText, sourceText);
+  assert.equal(result.reasonCode, "FAWRI_ACTIVITY_ENCYCLOPEDIA_MATCH");
+});
+
+test("unsafe style rewrite falls back to the original curated answer", async () => {
+  const sourceText = "IP68 is a tested protection rating.";
+  const engine = new KnowledgeDecisionEngine({
+    runtime: encyclopediaRuntime(),
+    factResolver: { async resolve() { return null; } },
+    policyResolver: null,
+    encyclopediaResolver: {
+      async resolve() {
+        return {
+          articleId: "fawri-electronics-ip-rating",
+          scope: "activity",
+          activityKey: "electronics",
+          answerText: sourceText,
+          language: "en",
+          confidence: 0.95,
+        };
+      },
+    },
+    aiProvider: {
+      providerId: "style-test-provider",
+      async generate() { return null; },
+      async rewritePresentation() {
+        return {
+          answerText: "IP68 guarantees protection for 30 days.",
+          language: "en",
+          faithful: true,
+        };
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "What does IP68 mean?",
+    languageHint: "en",
+    merchantPolicy: {
+      responseStyle: {
+        version: 3,
+        tone: "warm",
+        brevity: "concise",
+        emojiStyle: "none",
+        customInstructions: "Keep it very short.",
+        updatedAt: "2026-09-24T20:00:00.000Z",
+      },
+    },
+  });
+
+  assert.equal(result.answerText, sourceText);
+  assert.equal(result.reasonCode, "FAWRI_ACTIVITY_ENCYCLOPEDIA_MATCH");
+  assert.equal(result.aiProviderId, undefined);
+});
+
+test("presentation rewrite provider receives redacted style instructions and fails closed on new factual tokens", async () => {
+  let body;
+  const provider = new ConstrainedOpenAiProvider({
+    apiKey: "test-key",
+    model: "test-model",
+    fetchImpl: async (_url, init) => {
+      body = JSON.parse(String(init?.body || "{}"));
+      return {
+        ok: true,
+        async json() {
+          return {
+            output_text: JSON.stringify({
+              answer: "IP68 guarantees protection for 30 days.",
+              language: "en",
+              faithful: true,
+            }),
+          };
+        },
+      };
+    },
+  });
+
+  const result = await provider.rewritePresentation({
+    merchantId: "merchant-a",
+    sourceId: "fawri-electronics-ip-rating",
+    sourceKind: "fawri_curated",
+    sourceText: "IP68 is a tested protection rating.",
+    language: "en",
+    responseStyle: {
+      version: 2,
+      tone: "friendly",
+      brevity: "concise",
+      emojiStyle: "none",
+      customInstructions: "Use help@example.com as my signature.",
+      updatedAt: "2026-09-24T20:00:00.000Z",
+    },
+  });
+
+  assert.equal(result, null);
+  assert.equal(body.store, false);
+  assert.match(body.input[0].content[0].text, /Do not turn general curated guidance/);
+  assert.match(body.input[1].content[0].text, /\[REDACTED_EMAIL\]/);
+  assert.doesNotMatch(body.input[1].content[0].text, /help@example\.com/);
+});
+
