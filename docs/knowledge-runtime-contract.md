@@ -71,7 +71,9 @@ For non-malicious text, the engine evaluates exactly this order:
 
 The constrained OpenAI provider may synthesize a customer-facing answer automatically when—and only when—it can cite one or more merchant-approved knowledge records supplied by the server, every cited ID belongs to the current tenant's bounded approved context, the response language matches the customer, risk is low, confidence clears the server threshold, and factual tokens such as numbers, currencies, SKUs, IDs, and URLs are supported by the cited approved answers. This path exists to combine and phrase already-trusted information in a clear, natural, concise, professional way; it does not grant AI authority to invent facts.
 
-A grounded automatic synthesis does not create a pending training request and does not ask the merchant to approve the same trusted information again. If any grounding condition fails, the generated candidate is recorded as `openai_generated`, `pending_review`, and `safeToAutoReply=false`, and the conversation is handed off. Browser/environment input cannot relax the grounding rule. A future merchant-specific tone/style setting may customize wording, but it must not change factual authority, grounding, or safety rules.
+A grounded automatic synthesis does not create a pending training request and does not ask the merchant to approve the same trusted information again. If any grounding condition fails, the generated candidate is recorded as `openai_generated`, `pending_review`, and `safeToAutoReply=false`, and the conversation is handed off. Browser/environment input cannot relax the grounding rule.
+
+Merchant response style is server-owned presentation metadata. The default is professional, balanced, and minimal. A merchant may choose tone, reply length, emoji preference, and bounded custom style instructions from the knowledge workspace. The knowledge policy resolver supplies this profile to constrained AI, but system rules explicitly keep presentation subordinate to factual authority, grounding, and safety.
 
 ## Fawri encyclopedia
 
@@ -160,6 +162,8 @@ The isolated router is designed to be mounted at `/api/knowledge`:
 - `POST /training-requests/:id/reject`
 - `GET /learned-answers`
 - `GET /audit`
+- `GET /response-style`
+- `PATCH /response-style`
 
 The `/decision` route intentionally ignores browser-supplied merchant policy. A trusted server-side settings resolver must populate merchant policy when the messaging pipeline invokes the engine.
 
