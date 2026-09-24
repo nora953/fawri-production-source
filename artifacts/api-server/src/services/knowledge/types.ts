@@ -214,6 +214,8 @@ export interface FawriEncyclopediaResolver {
     customerText: string;
     language: KnowledgeLanguage;
     limit?: number;
+    /** Internal-only: live facts already resolved; curated context remains general guidance. */
+    allowOperationalContext?: boolean;
   }): Promise<FawriCuratedKnowledge[]>;
 }
 
@@ -246,8 +248,17 @@ export interface MerchantCatalogContextResolver {
     trustedProductIdHint?: string;
     /** Trusted conversation-derived variant identity; never take from browser input. */
     trustedVariantIdHint?: string;
+    /** Internal-only: live operational facts were already resolved separately. */
+    allowOperationalContext?: boolean;
   }): Promise<MerchantCatalogKnowledge[]>;
 }
+
+export type TrustedOperationalKnowledge = {
+  id: string;
+  factType: string;
+  answer: string;
+  language: KnowledgeLanguage;
+};
 
 export type AiTokenUsage = {
   inputTokens: number;
@@ -276,6 +287,7 @@ export type AiFallbackRequest = {
   }>;
   curatedKnowledge?: FawriCuratedKnowledge[];
   catalogKnowledge?: MerchantCatalogKnowledge[];
+  operationalFacts?: TrustedOperationalKnowledge[];
   customerText: string;
   conversationHistory?: KnowledgeConversationMessage[];
   injectionSignals: string[];
