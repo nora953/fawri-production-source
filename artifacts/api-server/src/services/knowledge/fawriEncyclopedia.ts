@@ -16,6 +16,7 @@ import type {
   SemanticDocument,
 } from "./types.js";
 import { FAWRI_ENCYCLOPEDIA_EXPANSION_ARTICLES } from "./fawriEncyclopediaExpansion.js";
+import { FAWRI_ENCYCLOPEDIA_EXPANSION_V2_ARTICLES } from "./fawriEncyclopediaExpansion2.js";
 
 export type ActivityKey =
   | "fashion"
@@ -374,6 +375,7 @@ const ARTICLES: CuratedArticle[] = [
 const ALL_ARTICLES: CuratedArticle[] = [
   ...ARTICLES,
   ...FAWRI_ENCYCLOPEDIA_EXPANSION_ARTICLES,
+  ...FAWRI_ENCYCLOPEDIA_EXPANSION_V2_ARTICLES,
 ];
 
 function normalizeActivityKey(value: unknown): ActivityKey | null {
