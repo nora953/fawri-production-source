@@ -16,6 +16,7 @@ on:
       - "artifacts/api-server/src/services/manualConversation*.ts"
       - "artifacts/api-server/src/services/merchantRuntime.ts"
       - "artifacts/api-server/tests/meta-webhook-*.test.*"
+      - "artifacts/api-server/tests/meta-conversation-*.test.*"
       - "artifacts/api-server/tests/manual-conversation-*.test.*"
       - "artifacts/api-server/tests/merchant-reply-entitlement.test.ts"
       - "artifacts/api-server/tests/durable-job-*.test.ts"
@@ -115,6 +116,7 @@ jobs:
           artifacts/api-server/tests/meta-webhook-outcome-refund.test.ts
           artifacts/api-server/tests/meta-webhook-worker-core.test.ts
           artifacts/api-server/tests/meta-webhook-operational-cutoff.test.ts
+          artifacts/api-server/tests/meta-conversation-generation-race.integration.test.ts
           artifacts/api-server/tests/manual-conversation-runtime.test.ts
 
       - name: Build API server
