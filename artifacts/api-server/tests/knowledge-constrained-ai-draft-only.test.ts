@@ -72,7 +72,6 @@ test("constrained AI can create a merchant-review draft without becoming an auto
     },
     aiProvider: {
       providerId: "test-constrained-ai",
-      model: "test-model",
       async generate() {
         return {
           answerText: "Suggested professional answer for merchant review.",
