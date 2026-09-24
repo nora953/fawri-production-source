@@ -543,7 +543,7 @@ function selectVariant(
     if (hinted) return hinted;
   }
 
-  return variants.length === 1 ? variants[0] : null;
+  return null;
 }
 
 function variantDisplayLabel(
