@@ -203,6 +203,7 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
       merchant_catalog_knowledge: (request.catalogKnowledge || []).slice(0, 4).map((item) => ({
         id: item.id,
         product_id: item.productId,
+        variant_id: item.variantId,
         name: redactSensitiveText(item.name, 300),
         category: item.category
           ? redactSensitiveText(item.category, 300)
@@ -211,6 +212,22 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
           ? redactSensitiveText(item.description, 1_500)
           : undefined,
         sku: item.sku ? redactSensitiveText(item.sku, 200) : undefined,
+        variant_name: item.variantName
+          ? redactSensitiveText(item.variantName, 300)
+          : undefined,
+        variant_sku: item.variantSku
+          ? redactSensitiveText(item.variantSku, 200)
+          : undefined,
+        selected_options: item.selectedOptions
+          ? Object.fromEntries(
+              Object.entries(item.selectedOptions)
+                .slice(0, 12)
+                .map(([name, value]) => [
+                  redactSensitiveText(name, 120),
+                  redactSensitiveText(value, 160),
+                ]),
+            )
+          : undefined,
         options: item.options.slice(0, 12).map((option) => ({
           name: redactSensitiveText(option.name, 120),
           values: option.values

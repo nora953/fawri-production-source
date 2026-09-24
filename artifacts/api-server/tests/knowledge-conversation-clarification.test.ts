@@ -215,6 +215,160 @@ test("a new authoritative question ignores the previous clarification context", 
   assert.equal(result.stage, "database_fact");
 });
 
+
+test("a trusted Fawri catalog variant reference is reused for the next authoritative follow-up", async () => {
+  let capturedProductHint;
+  let capturedVariantHint;
+  const engine = new KnowledgeDecisionEngine({
+    runtime: {
+      ...runtime(),
+      async findApprovedSavedAnswer() { return null; },
+      async listApprovedSemanticDocuments() { return []; },
+    },
+    policyResolver: null,
+    factResolver: {
+      async resolve(input) {
+        capturedProductHint = input.trustedProductIdHint;
+        capturedVariantHint = input.trustedVariantIdHint;
+        return {
+          answerText: "سعر الخيار الأحمر هو 260,000 دينار.",
+          language: "ar" as const,
+          confidence: 1,
+          factType: "product_price",
+          recordId: "variant-red",
+          contextRecordId: "catalog-variant:product-a:variant-red",
+        };
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "والسعر؟",
+    languageHint: "ar",
+    recentMessages: [
+      {
+        sender: "fawri",
+        text: "الخيار الأحمر يدعم المواصفة المطلوبة.",
+        createdAt: "2026-09-24T00:00:01.000Z",
+        matchedRecordId: "catalog-variant:product-a:variant-red",
+      },
+    ],
+  });
+
+  assert.equal(capturedProductHint, "product-a");
+  assert.equal(capturedVariantHint, "variant-red");
+  assert.equal(
+    result.matchedRecordId,
+    "catalog-variant:product-a:variant-red",
+  );
+});
+
+test("catalog memory survives one safe clarification chain", async () => {
+  let capturedProductHint;
+  let capturedText = "";
+  const engine = new KnowledgeDecisionEngine({
+    runtime: {
+      ...runtime(),
+      async findApprovedSavedAnswer() { return null; },
+      async listApprovedSemanticDocuments() { return []; },
+    },
+    policyResolver: null,
+    factResolver: {
+      async resolve(input) {
+        capturedProductHint = input.trustedProductIdHint;
+        capturedText = input.customerText;
+        return {
+          answerText: "المنتج متوفر في المنطقة المناسبة.",
+          language: "ar" as const,
+          confidence: 1,
+          factType: "product_stock",
+          recordId: "product-a:location:baghdad",
+          contextRecordId: "catalog-product:product-a",
+        };
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "المنصور",
+    languageHint: "ar",
+    recentMessages: [
+      {
+        sender: "fawri",
+        text: "هذا المنتج يدعم الميزة المطلوبة.",
+        createdAt: "2026-09-24T00:00:00.000Z",
+        matchedRecordId: "catalog-product:product-a",
+      },
+      {
+        sender: "customer",
+        text: "متوفر؟",
+        createdAt: "2026-09-24T00:00:01.000Z",
+      },
+      {
+        sender: "fawri",
+        text: "بأي منطقة أنت؟",
+        createdAt: "2026-09-24T00:00:02.000Z",
+        reasonCode: "KNOWLEDGE_LOCATION_CONTEXT_REQUIRED",
+      },
+    ],
+  });
+
+  assert.equal(capturedProductHint, "product-a");
+  assert.match(capturedText, /متوفر/);
+  assert.match(capturedText, /المنصور/);
+  assert.equal(result.matchedRecordId, "catalog-product:product-a");
+});
+
+test("a merchant intervention clears automatic catalog conversation memory", async () => {
+  let capturedProductHint = "not-called";
+  let capturedVariantHint = "not-called";
+  const engine = new KnowledgeDecisionEngine({
+    runtime: {
+      ...runtime(),
+      async findApprovedSavedAnswer() { return null; },
+      async listApprovedSemanticDocuments() { return []; },
+    },
+    policyResolver: null,
+    factResolver: {
+      async resolve(input) {
+        capturedProductHint = input.trustedProductIdHint;
+        capturedVariantHint = input.trustedVariantIdHint;
+        return {
+          answerText: "سأتحقق من السعر.",
+          language: "ar" as const,
+          confidence: 1,
+          factType: "product_price",
+          recordId: "manual-reset-test",
+        };
+      },
+    },
+  });
+
+  await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "والسعر؟",
+    languageHint: "ar",
+    recentMessages: [
+      {
+        sender: "fawri",
+        text: "الخيار الأحمر.",
+        createdAt: "2026-09-24T00:00:00.000Z",
+        matchedRecordId: "catalog-variant:product-a:variant-red",
+      },
+      {
+        sender: "merchant",
+        text: "دعني أوضح لك.",
+        createdAt: "2026-09-24T00:00:01.000Z",
+      },
+    ],
+  });
+
+  assert.equal(capturedProductHint, undefined);
+  assert.equal(capturedVariantHint, undefined);
+});
+
 test("non-clarification authority failures stay fail-closed", async () => {
   const engine = new KnowledgeDecisionEngine({
     runtime: runtime(),

@@ -160,6 +160,8 @@ export type DatabaseFactResult = {
   confidence: number;
   factType: string;
   recordId?: string;
+  /** Stable internal catalog conversation reference, separate from operational audit IDs. */
+  contextRecordId?: string;
 };
 
 export type KnowledgeFactResolverInput = {
@@ -170,6 +172,10 @@ export type KnowledgeFactResolverInput = {
   conversationId?: string;
   /** Trusted channel customer identity; never take from browser input. */
   customerExternalId?: string;
+  /** Trusted conversation-derived catalog identity; never take from browser input. */
+  trustedProductIdHint?: string;
+  /** Trusted conversation-derived variant identity; never take from browser input. */
+  trustedVariantIdHint?: string;
 };
 
 export interface KnowledgeFactResolver {
@@ -214,10 +220,14 @@ export interface FawriEncyclopediaResolver {
 export type MerchantCatalogKnowledge = {
   id: string;
   productId: string;
+  variantId?: string;
   name: string;
   category?: string;
   description?: string;
   sku?: string;
+  variantName?: string;
+  variantSku?: string;
+  selectedOptions?: Record<string, string>;
   options: Array<{
     name: string;
     values: string[];
@@ -232,6 +242,10 @@ export interface MerchantCatalogContextResolver {
     customerText: string;
     language: KnowledgeLanguage;
     limit?: number;
+    /** Trusted conversation-derived catalog identity; never take from browser input. */
+    trustedProductIdHint?: string;
+    /** Trusted conversation-derived variant identity; never take from browser input. */
+    trustedVariantIdHint?: string;
   }): Promise<MerchantCatalogKnowledge[]>;
 }
 

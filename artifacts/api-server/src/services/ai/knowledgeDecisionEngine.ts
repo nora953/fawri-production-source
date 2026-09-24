@@ -189,7 +189,7 @@ function boundedConversationHistory(
       const text = boundedText(message?.text, 2_000);
       const createdAt = boundedText(message?.createdAt, 80);
       if (!sender || !text || !createdAt) return null;
-      const matchedRecordId = boundedText(message?.matchedRecordId, 200);
+      const matchedRecordId = boundedText(message?.matchedRecordId, 240);
       const reasonCode = boundedText(message?.reasonCode, 100);
       return {
         sender,
@@ -200,6 +200,54 @@ function boundedConversationHistory(
       };
     })
     .filter((message): message is KnowledgeConversationMessage => Boolean(message));
+}
+
+type TrustedCatalogConversationRef = {
+  productId: string;
+  variantId?: string;
+};
+
+function parseCatalogConversationRef(
+  value: unknown,
+): TrustedCatalogConversationRef | null {
+  const recordId = boundedText(value, 240);
+  if (recordId.startsWith("catalog-product:")) {
+    const productId = boundedText(recordId.slice("catalog-product:".length), 160);
+    return productId ? { productId } : null;
+  }
+  if (recordId.startsWith("catalog-variant:")) {
+    const remainder = recordId.slice("catalog-variant:".length);
+    const separator = remainder.indexOf(":");
+    if (separator <= 0) return null;
+    const productId = boundedText(remainder.slice(0, separator), 160);
+    const variantId = boundedText(remainder.slice(separator + 1), 160);
+    return productId && variantId ? { productId, variantId } : null;
+  }
+  return null;
+}
+
+function activeCatalogConversationRef(
+  history: KnowledgeConversationMessage[],
+): TrustedCatalogConversationRef | null {
+  let clarificationChain = false;
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    const message = history[index];
+    if (message.sender === "merchant") return null;
+
+    if (message.sender === "fawri") {
+      const directRef = parseCatalogConversationRef(message.matchedRecordId);
+      if (directRef) return directRef;
+
+      if (clarificationReasonCode(message.reasonCode)) {
+        clarificationChain = true;
+        continue;
+      }
+      return null;
+    }
+
+    if (!clarificationChain) return null;
+  }
+  return null;
 }
 
 class NoopFactResolver implements KnowledgeFactResolver {
@@ -495,6 +543,7 @@ export class KnowledgeDecisionEngine {
     const customerText = boundedText(input.customerText, 2_000);
     const language = input.languageHint || detectKnowledgeLanguage(customerText);
     const conversationHistory = boundedConversationHistory(input.recentMessages);
+    const catalogConversationRef = activeCatalogConversationRef(conversationHistory);
     const clarificationContext = activeClarificationContext(conversationHistory);
     const factCustomerText = clarificationFactText(customerText, clarificationContext);
     const usingClarificationContext =
@@ -583,6 +632,8 @@ export class KnowledgeDecisionEngine {
         language,
         conversationId: boundedText(input.conversationId, 160) || undefined,
         customerExternalId: boundedText(input.customerExternalId, 200) || undefined,
+        trustedProductIdHint: catalogConversationRef?.productId,
+        trustedVariantIdHint: catalogConversationRef?.variantId,
       });
     } catch (error) {
       const reasonCode =
@@ -608,7 +659,7 @@ export class KnowledgeDecisionEngine {
         confidence: fact.confidence,
         requiresMerchantApproval: false,
         trainingRequestId: null,
-        matchedRecordId: fact.recordId || null,
+        matchedRecordId: fact.contextRecordId || fact.recordId || null,
         reasonCode: `DATABASE_FACT_${fact.factType.toUpperCase()}`,
         injectionSignals: [],
       };
@@ -765,12 +816,30 @@ export class KnowledgeDecisionEngine {
       return result;
     }
 
-    const catalogKnowledge = await this.catalogContextResolver.listRelevantContext({
-      merchantId,
-      customerText,
-      language,
-      limit: 1,
-    });
+    let catalogKnowledge;
+    try {
+      catalogKnowledge = await this.catalogContextResolver.listRelevantContext({
+        merchantId,
+        customerText,
+        language,
+        limit: 1,
+        trustedProductIdHint: catalogConversationRef?.productId,
+        trustedVariantIdHint: catalogConversationRef?.variantId,
+      });
+    } catch (error) {
+      const reasonCode =
+        error instanceof KnowledgeRuntimeGateError
+          ? clarificationReasonCode(error.code)
+          : null;
+      if (!reasonCode) throw error;
+
+      const result = this.clarificationResult(language, reasonCode);
+      await this.recordDecisionAudit({
+        input: { ...input, merchantId, customerText },
+        result,
+      });
+      return result;
+    }
 
     // A matched merchant catalog product is higher-authority product evidence than
     // general encyclopedia guidance. Skip a direct curated reply so constrained AI
@@ -944,6 +1013,8 @@ export class KnowledgeDecisionEngine {
       const usesCatalogGrounding = groundingRecordIds.some((id) =>
         catalogIds.has(id),
       );
+      const catalogMatchedRecordId =
+        groundingRecordIds.find((id) => catalogIds.has(id)) || null;
       const policyAllowsGenerated =
         merchantPolicy.allowGeneratedAutoReply === true && this.allowGeneratedAutoReply;
       const eligibleForGroundedReply =
@@ -963,7 +1034,7 @@ export class KnowledgeDecisionEngine {
           confidence: aiCandidate.confidence,
           requiresMerchantApproval: false,
           trainingRequestId: null,
-          matchedRecordId: groundingRecordIds[0] || null,
+          matchedRecordId: catalogMatchedRecordId || groundingRecordIds[0] || null,
           groundingRecordIds,
           reasonCode:
             usesCatalogGrounding
