@@ -7,6 +7,7 @@ import { ManualConversationError } from "../services/manualConversationRuntime";
 import {
   getMerchantOperationalDecisionAuthoritative,
 } from "../services/merchantOperationalAccess";
+import { reviewMerchantCorrectionAuthoritative } from "../services/merchantCorrectionReview";
 import {
   completeManualReplyAuthoritative,
   failManualReplyAuthoritative,
@@ -292,6 +293,46 @@ router.post(
         ok: true,
         deduplicated: false,
         message,
+        conversation: await getServerConversationAuthoritative(
+          merchantId,
+          conversationId,
+        ),
+      });
+    } catch (error) {
+      sendError(res, error);
+    }
+  },
+);
+
+
+router.post(
+  "/conversations/:conversationId/messages/:messageId/correction-review",
+  requireMerchantSession,
+  async (req: Request, res: Response) => {
+    const decision = req.body?.decision;
+    if (decision !== "approve" && decision !== "dismiss") {
+      res.status(400).json({
+        ok: false,
+        code: "CORRECTION_REVIEW_DECISION_INVALID",
+        error: "correction review decision must be approve or dismiss",
+      });
+      return;
+    }
+
+    try {
+      const merchantId = getMerchantIdFromSession(res);
+      const conversationId = param(req.params.conversationId);
+      const messageId = param(req.params.messageId);
+      const result = await reviewMerchantCorrectionAuthoritative({
+        merchantId,
+        conversationId,
+        messageId,
+        decision,
+      });
+      res.setHeader("Cache-Control", "no-store");
+      res.json({
+        ok: true,
+        result,
         conversation: await getServerConversationAuthoritative(
           merchantId,
           conversationId,

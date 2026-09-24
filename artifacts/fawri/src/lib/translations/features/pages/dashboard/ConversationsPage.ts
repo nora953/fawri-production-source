@@ -84,3 +84,37 @@ export const CONVERSATIONS_PAGE_SAVE_ANSWER_COPY = {
     noSource: 'No suitable earlier customer question was found; enter the question pattern before saving.',
   },
 };
+
+export const CONVERSATIONS_PAGE_CORRECTION_COPY = {
+  ar: {
+    title: "هل تريد اعتماد هذا التصحيح في فوري؟",
+    body: "إذا اعتمدته، سيستخدم فوري هذا التصحيح مستقبلا عندما ينطبق على أسئلة مشابهة.",
+    approve: "نعم، اعتمده",
+    dismiss: "لا، لهذه المحادثة فقط",
+    approving: "جارٍ الاعتماد…",
+    approved: "تم اعتماد التصحيح في فوري.",
+    dismissed: "لم يتم حفظ هذا التصحيح كمعرفة دائمة.",
+    failure: "تعذر تحديث حالة التصحيح.",
+  },
+  ku: {
+    title: "دەتەوێت ئەم ڕاستکردنەوەیە لە فۆریدا پەسەند بکرێت؟",
+    body: "ئەگەر پەسەندی بکەیت، فۆری لە داهاتوودا بۆ پرسیاری هاوشێوە بەکاری دەهێنێت.",
+    approve: "بەڵێ، پەسەندی بکە",
+    dismiss: "نەخێر، تەنها بۆ ئەم گفتوگۆیە",
+    approving: "پەسەند دەکرێت…",
+    approved: "ڕاستکردنەوەکە لە فۆریدا پەسەند کرا.",
+    dismissed: "ئەم ڕاستکردنەوەیە وەک زانیاریی هەمیشەیی پاشەکەوت نەکرا.",
+    failure: "نوێکردنەوەی دۆخی ڕاستکردنەوە سەرکەوتوو نەبوو.",
+  },
+  en: {
+    title: "Adopt this correction in Fawri?",
+    body: "If you approve it, Fawri will use this correction in the future when it applies to similar questions.",
+    approve: "Yes, adopt it",
+    dismiss: "No, this conversation only",
+    approving: "Saving…",
+    approved: "This correction is now approved in Fawri.",
+    dismissed: "This correction was not saved as permanent knowledge.",
+    failure: "Could not update the correction review.",
+  },
+} as const;
+

@@ -757,6 +757,192 @@ export class PostgresKnowledgeManagementRuntime {
     return (await this.listTrainingRequestsPage(value, { limit: 500 })).requests;
   }
 
+  async applyMerchantCorrection(input: {
+    merchantId: string;
+    customerQuestion: string;
+    correctedAnswer: string;
+    language: KnowledgeLanguage;
+    sourceStage: "approved_saved_answer" | "semantic_retrieval" | "ai_fallback";
+    matchedRecordId?: string | null;
+  }): Promise<{
+    savedAnswer: SavedAnswerRecord;
+    retiredLearnedAnswerId: string | null;
+    mode: "created" | "updated" | "unchanged";
+  }> {
+    const merchant = merchantId(input.merchantId);
+    const question = boundedText(input.customerQuestion, 500);
+    const answer = boundedText(input.correctedAnswer, 2_000);
+    const language = lang(input.language);
+    const normalized = normalizeKnowledgeText(question);
+    const matchedRecordId = boundedText(input.matchedRecordId, 160);
+    if (
+      !question ||
+      !answer ||
+      !normalized ||
+      (
+        input.sourceStage !== "approved_saved_answer" &&
+        input.sourceStage !== "semantic_retrieval" &&
+        input.sourceStage !== "ai_fallback"
+      )
+    ) {
+      throw new KnowledgeTransitionError(
+        "INVALID_MERCHANT_CORRECTION",
+        "merchant correction is invalid",
+      );
+    }
+
+    const embedding = await prepareEmbedding(this.embeddings, {
+      kind: "saved_answer",
+      language,
+      question,
+      answer,
+    });
+
+    try {
+      return await this.sql.transaction(async (tx) => {
+        let retiredLearnedAnswerId: string | null = null;
+
+        if (input.sourceStage === "semantic_retrieval" && matchedRecordId) {
+          const matchedLearned = await tx.query<Record<string, unknown>>(
+            `SELECT ${LEARNED_COLUMNS}
+               FROM learned_answers
+              WHERE merchant_id = $1 AND id = $2
+              LIMIT 1
+              FOR UPDATE`,
+            [merchant, matchedRecordId],
+          );
+          if (matchedLearned.rows[0]) {
+            const learned = learnedFromRow(matchedLearned.rows[0], merchant);
+            if (
+              learned.language === language &&
+              learned.approvalStatus === "approved" &&
+              learned.safeToAutoReply
+            ) {
+              await tx.query(
+                `UPDATE learned_answers
+                    SET approval_status='rejected',
+                        safe_to_auto_reply=FALSE,
+                        version=version+1,
+                        updated_at=NOW()
+                  WHERE merchant_id=$1 AND id=$2`,
+                [merchant, learned.id],
+              );
+              await tx.query(
+                `DELETE FROM knowledge_embeddings
+                  WHERE merchant_id=$1
+                    AND knowledge_kind='learned_answer'
+                    AND learned_answer_id=$2`,
+                [merchant, learned.id],
+              );
+              retiredLearnedAnswerId = learned.id;
+            }
+          }
+        }
+
+        const exact = await tx.query<Record<string, unknown>>(
+          `SELECT ${SAVED_COLUMNS}
+             FROM saved_answers
+            WHERE merchant_id=$1
+              AND language=$2
+              AND normalized_question=$3
+            LIMIT 1
+            FOR UPDATE`,
+          [merchant, language, normalized],
+        );
+
+        if (exact.rows[0]) {
+          const current = savedFromRow(exact.rows[0], merchant);
+          if (current.answerText === answer && current.active) {
+            await audit(tx, {
+              merchantId: merchant,
+              action: "merchant_correction_confirmed_existing",
+              entityType: "saved_answer",
+              entityId: current.id,
+              outcome: "success",
+            });
+            return {
+              savedAnswer: current,
+              retiredLearnedAnswerId,
+              mode: "unchanged" as const,
+            };
+          }
+
+          const updatedResult = await tx.query<Record<string, unknown>>(
+            `UPDATE saved_answers
+                SET answer_text=$4,
+                    active=TRUE,
+                    version=version+1,
+                    updated_at=NOW()
+              WHERE merchant_id=$1
+                AND id=$2
+                AND version=$3
+            RETURNING ${SAVED_COLUMNS}`,
+            [merchant, current.id, current.version, answer],
+          );
+          if (!updatedResult.rows[0]) {
+            const latest = await currentSaved(tx, merchant, current.id);
+            throw new KnowledgeConflictError(
+              "saved answer version conflict",
+              latest || current,
+            );
+          }
+          const updated = savedFromRow(updatedResult.rows[0], merchant);
+          await syncEmbedding(tx, {
+            merchantId: merchant,
+            kind: "saved_answer",
+            knowledgeId: updated.id,
+            language,
+            embedding,
+          });
+          await audit(tx, {
+            merchantId: merchant,
+            action: "merchant_correction_updated",
+            entityType: "saved_answer",
+            entityId: updated.id,
+            outcome: "success",
+          });
+          return {
+            savedAnswer: updated,
+            retiredLearnedAnswerId,
+            mode: "updated" as const,
+          };
+        }
+
+        const id = makeKnowledgeId("saved");
+        const inserted = await tx.query<Record<string, unknown>>(
+          `INSERT INTO saved_answers
+           (id, merchant_id, category, question_pattern, normalized_question,
+            answer_text, language, source, active, version, created_at, updated_at)
+           VALUES ($1,$2,'custom',$3,$4,$5,$6,'merchant_approved',TRUE,1,NOW(),NOW())
+           RETURNING ${SAVED_COLUMNS}`,
+          [id, merchant, question, normalized, answer, language],
+        );
+        const savedAnswer = savedFromRow(inserted.rows[0], merchant);
+        await syncEmbedding(tx, {
+          merchantId: merchant,
+          kind: "saved_answer",
+          knowledgeId: id,
+          language,
+          embedding,
+        });
+        await audit(tx, {
+          merchantId: merchant,
+          action: "merchant_correction_created",
+          entityType: "saved_answer",
+          entityId: id,
+          outcome: "success",
+        });
+        return {
+          savedAnswer,
+          retiredLearnedAnswerId,
+          mode: "created" as const,
+        };
+      });
+    } catch (error) {
+      rethrowWrite(error);
+    }
+  }
+
   async getTrainingRequest(
     value: string,
     idValue: string,
@@ -1198,7 +1384,7 @@ export class PostgresKnowledgeManagementRuntime {
             ? entityRaw : "decision";
         const actor: KnowledgeAuditEvent["actor"] = action === "openai_candidate_recorded"
           ? "ai_provider"
-          : action.startsWith("saved_answer_") || action.startsWith("training_reply_") || action.startsWith("training_request_approve") || action.startsWith("training_request_reject") || action.startsWith("training_approval_")
+          : action.startsWith("saved_answer_") || action.startsWith("training_reply_") || action.startsWith("training_request_approve") || action.startsWith("training_request_reject") || action.startsWith("training_approval_") || action.startsWith("merchant_correction_")
             ? "merchant" : "system";
         return {
           id: boundedText(row.id, 160), merchantId: merchant, action, entityType,

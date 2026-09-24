@@ -14,6 +14,7 @@ export type RuntimeMessage = {
   counted_as_auto_reply: boolean;
   reply_type?: "ai" | "database" | "fallback" | "manual";
   status?: "received" | "sent" | "failed";
+  metadata?: Record<string, unknown>;
 };
 
 export type RuntimeConversation = {

@@ -1,6 +1,7 @@
 import { COMMON_UI_LABELS } from '@/lib/translations/commonUi';
 import {
   CONVERSATIONS_PAGE_AUTHORITY_COPY,
+  CONVERSATIONS_PAGE_CORRECTION_COPY,
   CONVERSATIONS_PAGE_SAVE_ANSWER_COPY,
 } from '@/lib/translations/features/pages/dashboard/ConversationsPage';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
@@ -46,6 +47,19 @@ type SaveAnswerCopy = {
 
 type ConversationLoadStatus = 'loading' | 'ready' | 'unavailable';
 
+type CorrectionReviewStatus = 'pending' | 'approved' | 'dismissed';
+
+function correctionReviewStatus(
+  message: Conversation['messages'][number],
+): CorrectionReviewStatus | null {
+  const review = message.metadata?.correction_review;
+  if (!review || typeof review !== 'object' || Array.isArray(review)) return null;
+  const status = (review as Record<string, unknown>).status;
+  return status === 'pending' || status === 'approved' || status === 'dismissed'
+    ? status
+    : null;
+}
+
 const SAVE_ANSWER_COPY: Record<KnowledgeLanguage, SaveAnswerCopy> = CONVERSATIONS_PAGE_SAVE_ANSWER_COPY;
 
 function requestedConversationId(): string {
@@ -65,6 +79,7 @@ export default function ConversationsPage() {
   const knowledgeLanguage: KnowledgeLanguage = lang === 'ku' || lang === 'en' ? lang : 'ar';
   const saveAnswerCopy = SAVE_ANSWER_COPY[knowledgeLanguage];
   const authorityCopy = CONVERSATIONS_PAGE_AUTHORITY_COPY[knowledgeLanguage];
+  const correctionCopy = CONVERSATIONS_PAGE_CORRECTION_COPY[knowledgeLanguage];
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loadStatus, setLoadStatus] = useState<ConversationLoadStatus>('loading');
@@ -221,6 +236,47 @@ export default function ConversationsPage() {
       toast.error(
         error instanceof Error ? error.message : 'Manual reply delivery failed'
       );
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleCorrectionReview = async (
+    merchantMessageId: string,
+    decision: 'approve' | 'dismiss',
+  ) => {
+    if (!activeConv || pendingAction) return;
+
+    const actionKey = `correction:${merchantMessageId}:${decision}`;
+    setPendingAction(actionKey);
+    try {
+      const response = await fetch(
+        `/api/conversations/${encodeURIComponent(activeConv.id)}/messages/${encodeURIComponent(merchantMessageId)}/correction-review`,
+        {
+          method: 'POST',
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ decision }),
+        },
+      );
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.ok || !data.conversation) {
+        throw new Error(data?.error || correctionCopy.failure);
+      }
+
+      replaceConversation(data.conversation as Conversation);
+      toast.success(
+        decision === 'approve'
+          ? correctionCopy.approved
+          : correctionCopy.dismissed,
+      );
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '';
+      toast.error(detail || correctionCopy.failure);
     } finally {
       setPendingAction(null);
     }
@@ -457,6 +513,7 @@ export default function ConversationsPage() {
                 {activeConv.messages.map(message => {
                   const isCustomer = message.sender === 'customer';
                   const isFawri = message.sender === 'fawri';
+                  const correctionReview = correctionReviewStatus(message);
 
                   return (
                     <div
@@ -493,7 +550,49 @@ export default function ConversationsPage() {
                         )}
                       </div>
 
-                      {message.sender === 'merchant' && (
+                      {message.sender === 'merchant' && correctionReview ? (
+                        <div className="mt-2 max-w-[85%] rounded-2xl border bg-card p-3 text-sm shadow-sm">
+                          {correctionReview === 'pending' ? (
+                            <>
+                              <p className="font-bold">{correctionCopy.title}</p>
+                              <p className="mt-1 leading-6 text-muted-foreground">
+                                {correctionCopy.body}
+                              </p>
+                              <div className="mt-3 flex flex-wrap gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() =>
+                                    void handleCorrectionReview(message.id, 'approve')
+                                  }
+                                  disabled={actionPending}
+                                >
+                                  {pendingAction === `correction:${message.id}:approve`
+                                    ? correctionCopy.approving
+                                    : correctionCopy.approve}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    void handleCorrectionReview(message.id, 'dismiss')
+                                  }
+                                  disabled={actionPending}
+                                >
+                                  {correctionCopy.dismiss}
+                                </Button>
+                              </div>
+                            </>
+                          ) : (
+                            <p className="font-medium text-muted-foreground">
+                              {correctionReview === 'approved'
+                                ? correctionCopy.approved
+                                : correctionCopy.dismissed}
+                            </p>
+                          )}
+                        </div>
+                      ) : message.sender === 'merchant' ? (
                         <button
                           type="button"
                           onClick={() => handleSaveAsAnswer(message.id)}
@@ -502,7 +601,7 @@ export default function ConversationsPage() {
                         >
                           {t.save_as_answer}
                         </button>
-                      )}
+                      ) : null}
                     </div>
                   );
                 })}

@@ -91,6 +91,17 @@ approved --> immutable; corrections require a new training request
 
 Every mutating operation requires `expectedVersion` (or `If-Match`) after creation. A stale version returns HTTP 409 with the current server record. Invalid state transitions return HTTP 422.
 
+## Merchant correction review
+
+When Fawri has already answered and the merchant takes over to send a correction, that manual message is **not** silently promoted into permanent knowledge. For non-operational knowledge replies, the conversation UI asks the merchant whether this correction should be adopted by Fawri.
+
+- **Approve:** the correction becomes merchant-approved knowledge for the customer question. An existing exact saved answer is updated instead of duplicated. If the corrected Fawri reply came directly from an approved learned semantic answer in the same language, that learned answer is retired so it cannot continue auto-replying with the superseded text.
+- **Dismiss:** the correction applies only to the current conversation and is not stored as reusable knowledge.
+- Database-authoritative operational facts are excluded from this flow. Price, stock, order, delivery, payment, and other structured facts must be corrected in their source authority rather than overridden by conversational knowledge.
+- The review record stores message IDs and status in message metadata; it does not copy the customer question into review metadata. All reads and writes remain tenant- and conversation-scoped.
+
+This confirmation is intentionally different from the handoff-learning path. If Fawri had no trusted answer and handed the conversation to the merchant, an eligible merchant reply can teach the unresolved knowledge gap directly. If Fawri already answered and the merchant corrects it, explicit merchant confirmation is required before the correction becomes permanent.
+
 ## Tenant isolation
 
 All repository reads, updates, deletes, exact matches, semantic documents, training transitions, learned-answer lookups, and audit queries include the authenticated `merchantId`. Cross-tenant IDs return not found rather than exposing the other tenant's current record. Semantic retrieval filters documents by tenant before scoring.

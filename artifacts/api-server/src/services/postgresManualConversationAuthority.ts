@@ -15,6 +15,7 @@ import {
 } from "./manualConversationRuntime";
 import { readMetaChannelCredentialAuthoritative } from "./postgresMetaChannelAuthority";
 import { learnFromMerchantManualReply } from "./merchantManualKnowledgeLearning";
+import { isAuthoritativeFactQuestion } from "./knowledge/postgresKnowledgeRuntime";
 
 function text(value: unknown): string {
   return String(value || "").trim();
@@ -60,6 +61,7 @@ type MessageRow = {
   counted_as_auto_reply: boolean;
   reply_type: "ai" | "database" | "fallback" | "manual" | "system" | null;
   status: "received" | "queued" | "sent" | "failed";
+  metadata?: Record<string, unknown> | null;
 };
 
 function mapMessage(row: MessageRow): RuntimeMessage {
@@ -78,6 +80,9 @@ function mapMessage(row: MessageRow): RuntimeMessage {
       : {}),
     ...(row.status === "received" || row.status === "sent" || row.status === "failed"
       ? { status: row.status }
+      : {}),
+    ...(row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
+      ? { metadata: row.metadata }
       : {}),
   };
 }
@@ -120,7 +125,7 @@ async function loadConversationRows(
     const messageResult = await client.query<MessageRow>(
       `SELECT id, external_message_id, conversation_id, sender::text AS sender,
               text, created_at, counted_as_auto_reply,
-              reply_type::text AS reply_type, status::text AS status
+              reply_type::text AS reply_type, status::text AS status, metadata
          FROM messages
         WHERE merchant_id = $1 AND conversation_id = $2
         ORDER BY created_at, id`,
@@ -593,17 +598,118 @@ export async function completeManualReplyAuthoritative(input: {
         }
       }
 
+      let correctionReview: Record<string, unknown> | null = null;
+      if (!trainingRequestId) {
+        const latestFawriResult = await client.query<{
+          id: string;
+          created_at: Date | string;
+          metadata: Record<string, unknown> | null;
+        }>(
+          `SELECT id, created_at, metadata
+             FROM messages
+            WHERE merchant_id = $1
+              AND conversation_id = $2
+              AND sender = 'fawri'
+              AND status = 'sent'
+            ORDER BY created_at DESC, id DESC
+            LIMIT 1`,
+          [merchantId, conversationId],
+        );
+        const latestFawri = latestFawriResult.rows[0];
+        if (latestFawri) {
+          const metadata =
+            latestFawri.metadata &&
+            typeof latestFawri.metadata === "object" &&
+            !Array.isArray(latestFawri.metadata)
+              ? latestFawri.metadata
+              : {};
+          const stage = text(metadata.knowledge_stage);
+          const eligibleStage =
+            stage === "approved_saved_answer" ||
+            stage === "semantic_retrieval" ||
+            stage === "ai_fallback";
+
+          if (eligibleStage && metadata.handoff_after_reply !== true) {
+            const laterCustomer = await client.query<{ id: string }>(
+              `SELECT id
+                 FROM messages
+                WHERE merchant_id = $1
+                  AND conversation_id = $2
+                  AND sender = 'customer'
+                  AND status = 'received'
+                  AND (
+                    created_at > $3::timestamptz
+                    OR (created_at = $3::timestamptz AND id > $4)
+                  )
+                LIMIT 1`,
+              [
+                merchantId,
+                conversationId,
+                latestFawri.created_at,
+                latestFawri.id,
+              ],
+            );
+            if (laterCustomer.rows.length === 0) {
+              const customerResult = await client.query<{
+                id: string;
+                text: string;
+              }>(
+                `SELECT id, text
+                   FROM messages
+                  WHERE merchant_id = $1
+                    AND conversation_id = $2
+                    AND sender = 'customer'
+                    AND status = 'received'
+                    AND (
+                      created_at < $3::timestamptz
+                      OR (created_at = $3::timestamptz AND id < $4)
+                    )
+                  ORDER BY created_at DESC, id DESC
+                  LIMIT 1`,
+                [
+                  merchantId,
+                  conversationId,
+                  latestFawri.created_at,
+                  latestFawri.id,
+                ],
+              );
+              const customer = customerResult.rows[0];
+              if (customer && !isAuthoritativeFactQuestion(customer.text)) {
+                correctionReview = {
+                  status: "pending",
+                  customer_message_id: customer.id,
+                  fawri_message_id: latestFawri.id,
+                  source_stage: stage,
+                  matched_record_id: text(metadata.matched_record_id) || null,
+                  created_at: new Date().toISOString(),
+                };
+              }
+            }
+          }
+        }
+      }
+
       const id = messageId("msg-merchant");
       const externalMessageId = text(input.externalMessageId) || null;
+      const messageMetadata = correctionReview
+        ? { correction_review: correctionReview }
+        : {};
       const message = await client.query<MessageRow>(
         `INSERT INTO messages
           (id, merchant_id, conversation_id, external_message_id, sender, text,
-           status, reply_type, counted_as_auto_reply, sent_at)
-         VALUES ($1, $2, $3, $4, 'merchant', $5, 'sent', 'manual', FALSE, now())
+           status, reply_type, counted_as_auto_reply, sent_at, metadata)
+         VALUES ($1, $2, $3, $4, 'merchant', $5, 'sent', 'manual', FALSE, now(), $6::jsonb)
          RETURNING id, external_message_id, conversation_id, sender::text AS sender,
                    text, created_at, counted_as_auto_reply,
-                   reply_type::text AS reply_type, status::text AS status`,
-        [id, merchantId, conversationId, externalMessageId, messageText],
+                   reply_type::text AS reply_type, status::text AS status, metadata`,
+        [
+          id,
+          merchantId,
+          conversationId,
+          externalMessageId,
+          messageText,
+          JSON.stringify(messageMetadata),
+        ],
       );
       await client.query(
         `UPDATE manual_reply_requests
