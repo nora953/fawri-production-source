@@ -7,6 +7,7 @@ import {
 } from "../middleware/authSession.js";
 import { getKnowledgeDecisionEngine } from "../services/ai/knowledgeDecisionEngine.js";
 import { getPostgresKnowledgeManagementRuntime } from "../services/knowledge/postgresKnowledgeManagementRuntime.js";
+import { PostgresFawriEncyclopediaResolver } from "../services/knowledge/fawriEncyclopedia.js";
 import {
   getMerchantResponseStyleAuthoritative,
   MerchantResponseStyleError,
@@ -166,6 +167,30 @@ router.post("/decision", async (req: Request, res: Response): Promise<void> => {
     });
     res.setHeader("Cache-Control", "no-store");
     res.json({ ok: true, decision });
+  } catch (error) {
+    sendKnowledgeError(res, error);
+  }
+});
+
+router.get("/encyclopedia", async (req: Request, res: Response): Promise<void> => {
+  const merchantId = getMerchantIdFromSession(res);
+  const language = readLanguage(req.query.language);
+  if (!language) {
+    res.status(400).json({
+      ok: false,
+      code: "INVALID_ENCYCLOPEDIA_LANGUAGE",
+      error: "language must be ar, ku, or en",
+    });
+    return;
+  }
+
+  try {
+    const articles = await new PostgresFawriEncyclopediaResolver().listForMerchant({
+      merchantId,
+      language,
+    });
+    res.setHeader("Cache-Control", "no-store");
+    res.json({ ok: true, articles });
   } catch (error) {
     sendKnowledgeError(res, error);
   }
