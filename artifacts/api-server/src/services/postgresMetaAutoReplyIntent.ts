@@ -28,6 +28,7 @@ export type PreparedPostgresMetaAutoReply =
       recipientId: string;
       messageText: string;
       handoffAfterReply: boolean;
+      sourceConversationGeneration: number | null;
     };
 
 type ParsedMetaJob = {
@@ -45,12 +46,20 @@ type ConversationRow = {
   id: string;
   status: "auto_replying" | "needs_reply" | "manual" | "closed";
   assigned_to_human: boolean;
+  metadata: Record<string, unknown> | null;
 };
 
 type ReplyMessageRow = {
   id: string;
   text: string;
   status: string;
+  metadata: Record<string, unknown> | null;
+};
+
+type CustomerMessageRow = {
+  id: string;
+  conversation_id: string;
+  text: string;
   metadata: Record<string, unknown> | null;
 };
 
@@ -170,6 +179,28 @@ function customerMessageId(eventId: string): string {
   return `msg-customer-${digest(eventId).slice(0, 40)}`;
 }
 
+const CONVERSATION_GENERATION_METADATA_KEY = "customer_message_generation";
+const MESSAGE_GENERATION_METADATA_KEY = "conversation_generation";
+
+function generationFromMetadata(
+  metadata: Record<string, unknown> | null | undefined,
+  key: string,
+): number | null {
+  const value = Number(metadata?.[key]);
+  return Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+
+function conversationGeneration(conversation: ConversationRow): number {
+  return generationFromMetadata(
+    conversation.metadata,
+    CONVERSATION_GENERATION_METADATA_KEY,
+  ) ?? 0;
+}
+
+function customerMessageGeneration(message: CustomerMessageRow | undefined): number | null {
+  return generationFromMetadata(message?.metadata, MESSAGE_GENERATION_METADATA_KEY);
+}
+
 async function findReplyMessage(
   client: OperationalSqlClient,
   merchantId: string,
@@ -194,6 +225,7 @@ async function ensureInboundState(
   inboundEventId: string;
   customerInserted: boolean;
   existingReply: ReplyMessageRow | null;
+  sourceConversationGeneration: number | null;
 }> {
   return withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
     const channelResult = await client.query<{ id: string }>(
@@ -256,10 +288,11 @@ async function ensureInboundState(
     }
 
     const existingConversation = await client.query<ConversationRow>(
-      `SELECT id, status::text AS status, assigned_to_human
+      `SELECT id, status::text AS status, assigned_to_human, metadata
          FROM conversations
         WHERE merchant_id = $1 AND channel_id = $2 AND customer_external_id = $3
-        LIMIT 1`,
+        LIMIT 1
+        FOR UPDATE`,
       [parsed.merchantId, channelId, parsed.senderId],
     );
     let conversation = existingConversation.rows[0];
@@ -293,30 +326,34 @@ async function ensureInboundState(
             SET status = 'auto_replying', assigned_to_human = FALSE,
                 closed_at = NULL, updated_at = now()
           WHERE merchant_id = $1 AND id = $2
-          RETURNING id, status::text AS status, assigned_to_human`,
+          RETURNING id, status::text AS status, assigned_to_human, metadata`,
         [parsed.merchantId, conversation.id],
       );
       conversation = reopened.rows[0] || conversation;
     }
 
-    const existingCustomer = await client.query<{ id: string; conversation_id: string; text: string }>(
-      `SELECT id, conversation_id, text
+    const existingCustomer = await client.query<CustomerMessageRow>(
+      `SELECT id, conversation_id, text, metadata
          FROM messages
         WHERE merchant_id = $1 AND external_message_id = $2
         LIMIT 1`,
       [parsed.merchantId, parsed.externalMessageId],
     );
     let customerInserted = false;
+    let sourceConversationGeneration = customerMessageGeneration(
+      existingCustomer.rows[0],
+    );
     if (!existingCustomer.rows[0]) {
-      const inserted = await client.query<{ id: string }>(
+      const nextGeneration = conversationGeneration(conversation) + 1;
+      const inserted = await client.query<CustomerMessageRow>(
         `INSERT INTO messages
           (id, merchant_id, conversation_id, external_message_id,
            external_event_id, sender, text, status, counted_as_auto_reply,
-           created_at)
+           metadata, created_at)
          VALUES ($1, $2, $3, $4, $5, 'customer', $6, 'received', FALSE,
-                 $7::timestamptz)
+                 $7::jsonb, $8::timestamptz)
          ON CONFLICT DO NOTHING
-         RETURNING id`,
+         RETURNING id, conversation_id, text, metadata`,
         [
           customerMessageId(parsed.eventId),
           parsed.merchantId,
@@ -324,10 +361,56 @@ async function ensureInboundState(
           parsed.externalMessageId,
           parsed.eventId,
           parsed.customerText,
+          JSON.stringify({ [MESSAGE_GENERATION_METADATA_KEY]: nextGeneration }),
           parsed.createdAt,
         ],
       );
       customerInserted = inserted.rows.length === 1;
+      if (customerInserted) {
+        sourceConversationGeneration = nextGeneration;
+        const updatedConversation = await client.query<ConversationRow>(
+          `UPDATE conversations
+              SET metadata = jsonb_set(
+                    COALESCE(metadata, '{}'::jsonb),
+                    '{customer_message_generation}',
+                    to_jsonb($3::bigint),
+                    TRUE
+                  ),
+                  last_message_at = GREATEST(
+                    COALESCE(last_message_at, $4::timestamptz),
+                    $4::timestamptz
+                  ),
+                  updated_at = GREATEST(updated_at, now())
+            WHERE merchant_id = $1 AND id = $2
+            RETURNING id, status::text AS status, assigned_to_human, metadata`,
+          [
+            parsed.merchantId,
+            conversation.id,
+            nextGeneration,
+            parsed.createdAt,
+          ],
+        );
+        conversation = updatedConversation.rows[0] || conversation;
+      } else {
+        const collided = await client.query<CustomerMessageRow>(
+          `SELECT id, conversation_id, text, metadata
+             FROM messages
+            WHERE merchant_id = $1 AND external_message_id = $2
+            LIMIT 1`,
+          [parsed.merchantId, parsed.externalMessageId],
+        );
+        const row = collided.rows[0];
+        if (
+          !row ||
+          row.conversation_id !== conversation.id ||
+          row.text !== parsed.customerText
+        ) {
+          throw Object.assign(new Error("Meta message identity collision detected"), {
+            code: "META_MESSAGE_IDENTITY_COLLISION",
+          });
+        }
+        sourceConversationGeneration = customerMessageGeneration(row);
+      }
     } else if (
       existingCustomer.rows[0].conversation_id !== conversation.id ||
       existingCustomer.rows[0].text !== parsed.customerText
@@ -335,15 +418,18 @@ async function ensureInboundState(
       throw Object.assign(new Error("Meta message identity collision detected"), {
         code: "META_MESSAGE_IDENTITY_COLLISION",
       });
+    } else {
+      await client.query(
+        `UPDATE conversations
+            SET last_message_at = GREATEST(
+                  COALESCE(last_message_at, $3::timestamptz),
+                  $3::timestamptz
+                ),
+                updated_at = GREATEST(updated_at, $3::timestamptz)
+          WHERE merchant_id = $1 AND id = $2`,
+        [parsed.merchantId, conversation.id, parsed.createdAt],
+      );
     }
-
-    await client.query(
-      `UPDATE conversations
-          SET last_message_at = GREATEST(COALESCE(last_message_at, $3::timestamptz), $3::timestamptz),
-              updated_at = GREATEST(updated_at, $3::timestamptz)
-        WHERE merchant_id = $1 AND id = $2`,
-      [parsed.merchantId, conversation.id, parsed.createdAt],
-    );
 
     return {
       conversation,
@@ -351,6 +437,7 @@ async function ensureInboundState(
       inboundEventId: inboundRow.id,
       customerInserted,
       existingReply: await findReplyMessage(client, parsed.merchantId, parsed.eventId),
+      sourceConversationGeneration,
     };
   });
 }
@@ -398,6 +485,7 @@ function existingSendIntent(
   inboundId: string,
   conversationIdValue: string,
   existing: ReplyMessageRow,
+  sourceConversationGeneration: number | null,
 ): PreparedPostgresMetaAutoReply {
   return {
     action: "send",
@@ -411,11 +499,24 @@ function existingSendIntent(
     recipientId: parsed.senderId,
     messageText: existing.text,
     handoffAfterReply: existing.metadata?.handoff_after_reply === true,
+    sourceConversationGeneration:
+      generationFromMetadata(existing.metadata, "source_conversation_generation") ??
+      sourceConversationGeneration,
   };
 }
 
 export async function preparePostgresMetaAutoReply(
   job: DurableJob,
+  options: {
+    hooks?: {
+      afterDecision?: (input: {
+        merchantId: string;
+        conversationId: string;
+        eventId: string;
+        sourceConversationGeneration: number | null;
+      }) => void | Promise<void>;
+    };
+  } = {},
 ): Promise<PreparedPostgresMetaAutoReply> {
   const parsed = parseJob(job);
   const inbound = await ensureInboundState(parsed, job);
@@ -443,6 +544,7 @@ export async function preparePostgresMetaAutoReply(
       inbound.inboundEventId,
       inbound.conversationId,
       inbound.existingReply,
+      inbound.sourceConversationGeneration,
     );
   }
 
@@ -485,6 +587,13 @@ export async function preparePostgresMetaAutoReply(
     });
   }
 
+  await options.hooks?.afterDecision?.({
+    merchantId: parsed.merchantId,
+    conversationId: inbound.conversationId,
+    eventId: parsed.eventId,
+    sourceConversationGeneration: inbound.sourceConversationGeneration,
+  });
+
   const answerText = text(decision.answerText);
   if (decision.action === "no_answer" || !answerText) {
     await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
@@ -514,7 +623,7 @@ export async function preparePostgresMetaAutoReply(
 
   return withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
     const currentConversation = await client.query<ConversationRow>(
-      `SELECT id, status::text AS status, assigned_to_human
+      `SELECT id, status::text AS status, assigned_to_human, metadata
          FROM conversations
         WHERE merchant_id = $1 AND id = $2
         FOR UPDATE`,
@@ -528,6 +637,7 @@ export async function preparePostgresMetaAutoReply(
         inbound.inboundEventId,
         inbound.conversationId,
         existing,
+        inbound.sourceConversationGeneration,
       );
     }
     if (
@@ -542,6 +652,18 @@ export async function preparePostgresMetaAutoReply(
         merchantId: parsed.merchantId,
         conversationId: inbound.conversationId,
         code: "CONVERSATION_MANUAL_TAKEOVER",
+      };
+    }
+    if (
+      inbound.sourceConversationGeneration === null ||
+      conversationGeneration(current) !== inbound.sourceConversationGeneration
+    ) {
+      return {
+        action: "suppress" as const,
+        eventId: parsed.eventId,
+        merchantId: parsed.merchantId,
+        conversationId: inbound.conversationId,
+        code: "CONVERSATION_SUPERSEDED",
       };
     }
 
@@ -569,6 +691,7 @@ export async function preparePostgresMetaAutoReply(
           grounding_record_ids: decision.groundingRecordIds || [],
           training_request_id: decision.trainingRequestId,
           handoff_after_reply: handoff,
+          source_conversation_generation: inbound.sourceConversationGeneration,
         }),
       ],
     );
