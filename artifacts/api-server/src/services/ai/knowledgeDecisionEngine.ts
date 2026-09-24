@@ -159,6 +159,18 @@ function groundedAnswerFactualTokensAreSupported(
   return factualTokens(answerText).every((token) => supported.has(token));
 }
 
+function responseStyleNeedsRewrite(
+  style: MerchantPolicyContext["responseStyle"],
+): boolean {
+  if (!style) return false;
+  return (
+    style.tone !== "professional" ||
+    style.brevity !== "balanced" ||
+    style.emojiStyle !== "minimal" ||
+    Boolean(boundedText(style.customInstructions, 800))
+  );
+}
+
 function boundedConversationHistory(
   value: KnowledgeConversationMessage[] | undefined,
 ): KnowledgeConversationMessage[] {
@@ -742,10 +754,43 @@ export class KnowledgeDecisionEngine {
       language,
     });
     if (encyclopedia) {
+      let answerText = boundedText(encyclopedia.answerText, 2_000);
+      let styled = false;
+      let styleUsage;
+      let styleLatencyMs: number | undefined;
+
+      if (
+        answerText &&
+        responseStyleNeedsRewrite(merchantPolicy.responseStyle) &&
+        this.aiProvider.rewritePresentation
+      ) {
+        const rewritten = await this.aiProvider.rewritePresentation({
+          merchantId,
+          sourceId: encyclopedia.articleId,
+          sourceKind: "fawri_curated",
+          sourceText: answerText,
+          language,
+          responseStyle: merchantPolicy.responseStyle!,
+        });
+        if (
+          rewritten?.faithful === true &&
+          rewritten.language === language &&
+          boundedText(rewritten.answerText, 2_000) &&
+          groundedAnswerFactualTokensAreSupported(rewritten.answerText, [
+            { answer: answerText },
+          ])
+        ) {
+          answerText = boundedText(rewritten.answerText, 2_000);
+          styled = true;
+          styleUsage = rewritten.usage;
+          styleLatencyMs = rewritten.latencyMs;
+        }
+      }
+
       const result: KnowledgeDecisionResult = {
         action: "reply",
         stage: "fawri_encyclopedia",
-        answerText: encyclopedia.answerText,
+        answerText,
         language,
         source: "fawri_curated",
         confidence: encyclopedia.confidence,
@@ -754,9 +799,24 @@ export class KnowledgeDecisionEngine {
         matchedRecordId: encyclopedia.articleId,
         reasonCode:
           encyclopedia.scope === "activity"
-            ? "FAWRI_ACTIVITY_ENCYCLOPEDIA_MATCH"
-            : "FAWRI_GLOBAL_ENCYCLOPEDIA_MATCH",
+            ? styled
+              ? "FAWRI_ACTIVITY_ENCYCLOPEDIA_STYLED_MATCH"
+              : "FAWRI_ACTIVITY_ENCYCLOPEDIA_MATCH"
+            : styled
+              ? "FAWRI_GLOBAL_ENCYCLOPEDIA_STYLED_MATCH"
+              : "FAWRI_GLOBAL_ENCYCLOPEDIA_MATCH",
         injectionSignals: [],
+        ...(styleUsage ? { aiUsage: styleUsage } : {}),
+        ...(styled ? { aiProviderId: this.aiProvider.providerId } : {}),
+        ...(styled && "model" in this.aiProvider
+          ? {
+              aiModel: boundedText(
+                (this.aiProvider as { model?: unknown }).model,
+                160,
+              ),
+            }
+          : {}),
+        ...(styleLatencyMs !== undefined ? { aiLatencyMs: styleLatencyMs } : {}),
       };
       await this.recordDecisionAudit({
         input: { ...input, merchantId, customerText },

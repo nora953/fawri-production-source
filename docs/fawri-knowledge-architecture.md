@@ -89,7 +89,9 @@ The default profile is professional, balanced, and minimal, so a merchant can ac
 
 The profile is presentation-only. It is loaded by the server knowledge-policy resolver and passed to constrained AI as trusted merchant presentation data, while a higher-priority system rule states that style can never add, remove, weaken, strengthen, or contradict facts or safety constraints. Sensitive values in free-text style instructions are redacted before provider transport.
 
-Merchant Saved Answers remain exact merchant-approved wording. Fawri encyclopedia answers remain curated wording unless the merchant adopts a correction, which creates higher-priority merchant knowledge. A later strictly grounded presentation rewriter may apply the global style to deterministic fact/encyclopedia wording, but only if it can preserve factual tokens and source authority.
+Merchant Saved Answers remain exact merchant-approved wording. Curated Fawri encyclopedia answers may now pass through a strictly grounded presentation rewrite when the merchant has chosen a non-default response style. The rewrite can change tone, length, emoji usage, and safe phrasing only; the factual source remains `fawri_curated`. If the provider fails, changes language, reports an unfaithful rewrite, or introduces unsupported factual tokens, Fawri returns the original curated answer instead.
+
+Live operational facts remain in their canonical server wording for now, and merchant Saved Answers remain exact approved wording. This keeps price, stock, orders, delivery, payment, and explicit merchant-approved statements out of an unnecessary presentation rewrite path.
 
 Style may never alter a number, price, date, quantity, SKU, URL, or policy condition; turn general encyclopedia guidance into a merchant promise; override live operational authority; or weaken safety or grounding rules.
 
