@@ -11,6 +11,7 @@ import type { KnowledgeRepository } from "../knowledge/knowledgeRepository.js";
 import { retrieveSemanticMatch } from "../knowledge/semanticRetriever.js";
 import { PostgresOperationalFactResolver } from "../knowledge/postgresOperationalFactResolver.js";
 import { PostgresFawriEncyclopediaResolver } from "../knowledge/fawriEncyclopedia.js";
+import { PostgresMerchantCatalogContextResolver } from "../knowledge/productCatalogContext.js";
 import {
   isAuthoritativeFactQuestion,
   KnowledgeRuntimeGateError,
@@ -32,6 +33,7 @@ import type {
   KnowledgeConversationMessage,
   LearnedAnswerRecord,
   MerchantPolicyContext,
+  MerchantCatalogContextResolver,
   SavedAnswerRecord,
   SemanticDocument,
   SemanticMatch,
@@ -212,6 +214,14 @@ class DisabledFawriEncyclopediaResolver implements FawriEncyclopediaResolver {
   }
 }
 
+class DisabledMerchantCatalogContextResolver
+  implements MerchantCatalogContextResolver
+{
+  async listRelevantContext(): Promise<[]> {
+    return [];
+  }
+}
+
 class DisabledAiFallbackProvider implements AiFallbackProvider {
   readonly providerId = "disabled_ai_fallback_provider";
 
@@ -284,6 +294,7 @@ export type KnowledgeDecisionEngineOptions = {
   embeddingProvider?: KnowledgeEmbeddingProvider;
   factResolver?: KnowledgeFactResolver;
   encyclopediaResolver?: FawriEncyclopediaResolver;
+  catalogContextResolver?: MerchantCatalogContextResolver;
   policyResolver?: MerchantKnowledgePolicyResolver | null;
   aiProvider?: AiFallbackProvider;
   translationProvider?: ApprovedKnowledgeTranslationProvider;
@@ -301,6 +312,7 @@ export class KnowledgeDecisionEngine {
   private readonly runtime: KnowledgeDecisionRuntime;
   private readonly factResolver: KnowledgeFactResolver;
   private readonly encyclopediaResolver: FawriEncyclopediaResolver;
+  private readonly catalogContextResolver: MerchantCatalogContextResolver;
   private readonly policyResolver: MerchantKnowledgePolicyResolver | null;
   private readonly aiProvider: AiFallbackProvider;
   private readonly translationProvider: ApprovedKnowledgeTranslationProvider;
@@ -327,6 +339,11 @@ export class KnowledgeDecisionEngine {
       (explicitDecisionRuntime
         ? new DisabledFawriEncyclopediaResolver()
         : new PostgresFawriEncyclopediaResolver());
+    this.catalogContextResolver =
+      options.catalogContextResolver ||
+      (explicitDecisionRuntime
+        ? new DisabledMerchantCatalogContextResolver()
+        : new PostgresMerchantCatalogContextResolver());
     this.policyResolver =
       options.policyResolver === undefined
         ? explicitLegacyRepository
@@ -748,11 +765,24 @@ export class KnowledgeDecisionEngine {
       return result;
     }
 
-    const encyclopedia = await this.encyclopediaResolver.resolve({
+    const catalogKnowledge = await this.catalogContextResolver.listRelevantContext({
       merchantId,
       customerText,
       language,
+      limit: 1,
     });
+
+    // A matched merchant catalog product is higher-authority product evidence than
+    // general encyclopedia guidance. Skip a direct curated reply so constrained AI
+    // can combine the exact product facts with any relevant general explanation.
+    const encyclopedia =
+      catalogKnowledge.length === 0
+        ? await this.encyclopediaResolver.resolve({
+            merchantId,
+            customerText,
+            language,
+          })
+        : null;
     if (encyclopedia) {
       let answerText = boundedText(encyclopedia.answerText, 2_000);
       let styled = false;
@@ -858,6 +888,7 @@ export class KnowledgeDecisionEngine {
       merchantPolicy,
       approvedKnowledge: uniqueApprovedKnowledge,
       curatedKnowledge,
+      catalogKnowledge,
       customerText,
       conversationHistory,
       injectionSignals: [],
@@ -866,7 +897,8 @@ export class KnowledgeDecisionEngine {
     if (aiCandidate?.canAnswer && aiCandidate.answerText) {
       const approvedIds = new Set(uniqueApprovedKnowledge.map((item) => item.id));
       const curatedIds = new Set(curatedKnowledge.map((item) => item.id));
-      const trustedIds = new Set([...approvedIds, ...curatedIds]);
+      const catalogIds = new Set(catalogKnowledge.map((item) => item.id));
+      const trustedIds = new Set([...approvedIds, ...curatedIds, ...catalogIds]);
       const groundingRecordIds = Array.from(
         new Set(
           (aiCandidate.groundingRecordIds || [])
@@ -886,6 +918,14 @@ export class KnowledgeDecisionEngine {
             answer: item.answer,
             language: item.language,
           })),
+        ...catalogKnowledge
+          .filter((item) => groundingRecordIds.includes(item.id))
+          .map((item) => ({
+            id: item.id,
+            question: item.name,
+            answer: item.factualText,
+            language,
+          })),
       ];
       const groundedOnlyInTrustedKnowledge =
         groundingRecordIds.length > 0 &&
@@ -900,6 +940,9 @@ export class KnowledgeDecisionEngine {
       );
       const usesMerchantGrounding = groundingRecordIds.some((id) =>
         approvedIds.has(id),
+      );
+      const usesCatalogGrounding = groundingRecordIds.some((id) =>
+        catalogIds.has(id),
       );
       const policyAllowsGenerated =
         merchantPolicy.allowGeneratedAutoReply === true && this.allowGeneratedAutoReply;
@@ -923,11 +966,15 @@ export class KnowledgeDecisionEngine {
           matchedRecordId: groundingRecordIds[0] || null,
           groundingRecordIds,
           reasonCode:
-            usesCuratedGrounding && usesMerchantGrounding
-              ? "CONSTRAINED_AI_GROUNDED_MIXED_TRUSTED_REPLY"
-              : usesCuratedGrounding
-                ? "CONSTRAINED_AI_GROUNDED_CURATED_REPLY"
-                : "CONSTRAINED_AI_GROUNDED_APPROVED_REPLY",
+            usesCatalogGrounding
+              ? usesCuratedGrounding || usesMerchantGrounding
+                ? "CONSTRAINED_AI_GROUNDED_CATALOG_MIXED_TRUSTED_REPLY"
+                : "CONSTRAINED_AI_GROUNDED_CATALOG_REPLY"
+              : usesCuratedGrounding && usesMerchantGrounding
+                ? "CONSTRAINED_AI_GROUNDED_MIXED_TRUSTED_REPLY"
+                : usesCuratedGrounding
+                  ? "CONSTRAINED_AI_GROUNDED_CURATED_REPLY"
+                  : "CONSTRAINED_AI_GROUNDED_APPROVED_REPLY",
           injectionSignals: [],
           ...(aiCandidate.usage ? { aiUsage: aiCandidate.usage } : {}),
           ...(aiCandidate.providerId ? { aiProviderId: aiCandidate.providerId } : {}),
