@@ -75,6 +75,16 @@ A grounded automatic synthesis does not create a pending training request and do
 
 Merchant response style is server-owned presentation metadata. The default is professional, balanced, and minimal. A merchant may choose tone, reply length, emoji preference, and bounded custom style instructions from the knowledge workspace. The knowledge policy resolver supplies this profile to constrained AI, but system rules explicitly keep presentation subordinate to factual authority, grounding, and safety. A non-default style may also rewrite a curated encyclopedia answer through the same constrained provider; the source remains `fawri_curated`, unsupported factual tokens reject the rewrite, and any rewrite failure falls back to the original curated wording. Live operational facts and exact merchant Saved Answers are not rewritten by this presentation layer.
 
+## Product and variant conversation memory
+
+The messaging pipeline persists each Fawri decision's `matched_record_id` in message metadata and reloads it from the authenticated PostgreSQL conversation history. The decision engine recognizes only stable catalog references produced by trusted replies: `catalog-product:<productId>` and `catalog-variant:<productId>:<variantId>`.
+
+These references become internal `trustedProductIdHint` / `trustedVariantIdHint` values for the next related turn. They are never accepted from browser/customer input. An explicit product or variant in the new customer message outranks the hint. Ambiguity produces clarification rather than silently reusing stale memory. Merchant intervention resets this automatic memory boundary.
+
+Structured product facts expose a separate `contextRecordId` so operational audit/provenance IDs can keep their existing exact values while the conversation receives a stable catalog reference. Combined facts preserve the context reference only when all component facts resolve to the same product/variant.
+
+A safe clarification chain may preserve the most recent trusted catalog reference across the clarification itself. This supports flows such as product -> availability -> area clarification -> area answer without requiring the customer to repeat the product.
+
 ## Merchant catalog grounding
 
 A uniquely matched product may contribute trusted product-specific context from the authenticated merchant's server catalog. The current payload is intentionally limited to the product's name, category, description, SKU, and bounded variant-option values. It does not transport current price, promotion state, stock quantity, structured physical weight/dimensions, order state, delivery, or payment data.
