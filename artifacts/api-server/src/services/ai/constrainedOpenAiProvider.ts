@@ -55,6 +55,16 @@ function parseLanguage(value: unknown, fallback: KnowledgeLanguage): KnowledgeLa
   return value === "ar" || value === "ku" || value === "en" ? value : fallback;
 }
 
+function supportingIds(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return [...new Set(
+    value
+      .map((item) => boundedText(item, 200))
+      .filter(Boolean)
+      .slice(0, 12),
+  )];
+}
+
 export type ConstrainedOpenAiProviderOptions = {
   apiKey?: string;
   model?: string;
@@ -199,8 +209,22 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
               confidence: { type: "number", minimum: 0, maximum: 1 },
               risk: { type: "string", enum: ["low", "medium", "high"] },
               reason: { type: "string", maxLength: 240 },
+              supporting_ids: {
+                type: "array",
+                minItems: 0,
+                maxItems: 12,
+                items: { type: "string", maxLength: 200 },
+              },
             },
-            required: ["can_answer", "answer", "language", "confidence", "risk", "reason"],
+            required: [
+              "can_answer",
+              "answer",
+              "language",
+              "confidence",
+              "risk",
+              "reason",
+              "supporting_ids",
+            ],
           },
         },
       },
@@ -237,6 +261,7 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
       }
 
       const answerText = boundedText(parsed.answer, 2_000);
+      const groundingRecordIds = supportingIds(parsed.supporting_ids);
       const latencyMs = Math.max(0, Date.now() - started);
       const candidate: AiFallbackCandidate = {
         answerText,
@@ -246,9 +271,13 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
           parsed.risk === "low" || parsed.risk === "medium" || parsed.risk === "high"
             ? parsed.risk
             : "high",
-        canAnswer: parsed.can_answer === true && Boolean(answerText),
+        canAnswer:
+          parsed.can_answer === true &&
+          Boolean(answerText) &&
+          groundingRecordIds.length > 0,
         reason: boundedText(parsed.reason, 240) || "provider_unspecified",
         source: "openai_generated",
+        groundingRecordIds,
         usage,
         providerId: this.providerId,
         model: this.model,
