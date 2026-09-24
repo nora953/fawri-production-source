@@ -186,6 +186,12 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
             }
           : undefined,
       },
+      operational_facts: (request.operationalFacts || []).slice(0, 6).map((item) => ({
+        id: item.id,
+        fact_type: item.factType,
+        answer: redactSensitiveText(item.answer, 1_500),
+        language: item.language,
+      })),
       approved_knowledge: request.approvedKnowledge.slice(0, 12).map((item) => ({
         id: item.id,
         question: redactSensitiveText(item.question, 500),

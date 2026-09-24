@@ -60,6 +60,20 @@ The current customer message still wins. If it explicitly identifies another pro
 
 The same trusted reference is passed to both catalog grounding and structured operational fact resolution. This allows follow-ups such as "والسعر؟", "متوفر؟", or "والأسود منه؟" to stay attached to the correct product/variant while price, stock, measurements, and other operational facts continue to come only from their live authorities.
 
+## Mixed authority composition
+
+A single customer message may combine a live product fact with a product-specific or general knowledge question, for example asking whether a charger supports a feature while also asking its current price and availability. Fawri must not answer only the operational part and silently drop the rest.
+
+For product price, stock, weight, and dimensions, the structured live fact resolver runs first. If the same message also shows a meaningful non-operational product question, the server may compose one reply from separately labeled trusted sources: live operational facts, merchant catalog product facts, and relevant Fawri-curated guidance.
+
+The authority boundaries remain unchanged. Live operational facts are highest authority and their canonical server answer must appear verbatim in the mixed reply. Catalog grounding may add only the explicit product/variant facts supplied by the server. Curated knowledge remains general guidance only.
+
+Automatic mixed composition is accepted only when every grounding ID was supplied by the server, the generated answer cites the live operational fact and at least one non-operational trusted source, factual tokens are supported, the complete live fact wording is preserved verbatim, language/risk/confidence gates pass, and generated auto-reply policy permits it.
+
+If Fawri detects an extra requested product/policy part but cannot safely ground it, it does not fall back to a partial price/stock reply. The conversation is handed to a human with reason code `MIXED_AUTHORITY_COMPOSITION_REQUIRES_HANDOFF`.
+
+A generated candidate containing live facts is never stored as reusable learned knowledge. This prevents current prices, availability, or measurements from becoming stale conversational memory. Successful mixed replies use `CONSTRAINED_AI_GROUNDED_OPERATIONAL_MIXED_REPLY`.
+
 ## Fawri encyclopedia trust model
 
 Encyclopedia entries use the fawri_curated provenance. They are not merchant_approved and are not openai_generated.

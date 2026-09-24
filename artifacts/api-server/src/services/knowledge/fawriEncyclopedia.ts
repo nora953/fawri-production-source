@@ -575,12 +575,16 @@ export class PostgresFawriEncyclopediaResolver
     customerText: string;
     language: KnowledgeLanguage;
     limit?: number;
+    allowOperationalContext?: boolean;
   }): Promise<FawriCuratedKnowledge[]> {
     const merchantId = boundedText(input.merchantId, 160);
     const customerText = boundedText(input.customerText, 2_000);
     const limit = Math.max(1, Math.min(6, Math.trunc(input.limit ?? 4)));
     if (!merchantId || !customerText) return [];
-    if (isAuthoritativeFactQuestion(customerText)) return [];
+    if (
+      input.allowOperationalContext !== true &&
+      isAuthoritativeFactQuestion(customerText)
+    ) return [];
 
     let rows: Array<{ activity_type?: unknown }>;
     try {

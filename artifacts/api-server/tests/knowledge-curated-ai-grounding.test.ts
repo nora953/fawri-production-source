@@ -108,6 +108,30 @@ test("operational questions never expose curated context to AI", async () => {
   assert.equal(sql.queries.length, 0);
 });
 
+
+test("curated context can accompany an already-resolved live fact without becoming operational authority", async () => {
+  const sql = new FakeSql("إلكترونيات");
+  const resolver = new PostgresFawriEncyclopediaResolver(sql);
+
+  const context = await resolver.listRelevantContext({
+    merchantId: "merchant-a",
+    customerText:
+      "هل هذا الشاحن يدعم الشحن السريع وكم سعره وهل متوفر؟",
+    language: "ar",
+    allowOperationalContext: true,
+  });
+
+  assert.ok(context.length >= 1);
+  assert.equal(
+    context.some((item) => item.id === "fawri-electronics-fast-charging"),
+    true,
+  );
+  assert.equal(
+    context.every((item) => !item.answer.includes("سعر") && !item.answer.includes("متوفر حاليًا")),
+    true,
+  );
+});
+
 test("constrained AI can synthesize a first-activation answer grounded only in Fawri-curated knowledge", async () => {
   let receivedCurated = [];
   const engine = new KnowledgeDecisionEngine({

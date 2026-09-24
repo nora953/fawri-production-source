@@ -28,6 +28,11 @@ const PRODUCT_POLICY_TERMS = [
   "refund",
   "exchange",
   "policy",
+  "گەڕاندنەوە",
+  "گۆڕینەوە",
+] as const;
+
+const STRUCTURED_MEASUREMENT_TERMS = [
   "وزن",
   "الوزن",
   "أبعاد",
@@ -46,8 +51,6 @@ const PRODUCT_POLICY_TERMS = [
   "درێژی",
   "پانی",
   "بەرزی",
-  "گەڕاندنەوە",
-  "گۆڕینەوە",
 ] as const;
 
 const PRODUCTS_SQL = `
@@ -85,10 +88,19 @@ function text(value: unknown, max = 2_000): string {
   return boundedText(value, max);
 }
 
-function blocksCatalogGrounding(customerText: string): boolean {
-  if (isAuthoritativeFactQuestion(customerText)) return true;
+function blocksCatalogGrounding(
+  customerText: string,
+  allowOperationalContext = false,
+): boolean {
   const normalized = normalizeKnowledgeText(customerText);
-  return PRODUCT_POLICY_TERMS.some((term) =>
+  if (
+    PRODUCT_POLICY_TERMS.some((term) =>
+      normalized.includes(normalizeKnowledgeText(term)),
+    )
+  ) return true;
+  if (allowOperationalContext) return false;
+  if (isAuthoritativeFactQuestion(customerText)) return true;
+  return STRUCTURED_MEASUREMENT_TERMS.some((term) =>
     normalized.includes(normalizeKnowledgeText(term)),
   );
 }
@@ -297,6 +309,7 @@ export class PostgresMerchantCatalogContextResolver
     limit?: number;
     trustedProductIdHint?: string;
     trustedVariantIdHint?: string;
+    allowOperationalContext?: boolean;
   }): Promise<MerchantCatalogKnowledge[]> {
     const merchantId = text(input.merchantId, 160);
     const customerText = text(input.customerText, 2_000);
@@ -306,7 +319,12 @@ export class PostgresMerchantCatalogContextResolver
     const limit = Math.max(1, Math.min(4, Math.trunc(input.limit ?? 1)));
 
     if (!merchantId || !customerText || !normalizedCustomer) return [];
-    if (blocksCatalogGrounding(customerText)) return [];
+    if (
+      blocksCatalogGrounding(
+        customerText,
+        input.allowOperationalContext === true,
+      )
+    ) return [];
 
     let products: Record<string, unknown>[];
     try {

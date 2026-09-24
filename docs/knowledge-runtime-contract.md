@@ -75,6 +75,20 @@ A grounded automatic synthesis does not create a pending training request and do
 
 Merchant response style is server-owned presentation metadata. The default is professional, balanced, and minimal. A merchant may choose tone, reply length, emoji preference, and bounded custom style instructions from the knowledge workspace. The knowledge policy resolver supplies this profile to constrained AI, but system rules explicitly keep presentation subordinate to factual authority, grounding, and safety. A non-default style may also rewrite a curated encyclopedia answer through the same constrained provider; the source remains `fawri_curated`, unsupported factual tokens reject the rewrite, and any rewrite failure falls back to the original curated wording. Live operational facts and exact merchant Saved Answers are not rewritten by this presentation layer.
 
+## Mixed authority composition
+
+When a trusted product operational fact has already been resolved, the engine may request bounded catalog and curated context with `allowOperationalContext=true`. This flag does not grant those sources operational authority; it only permits them to accompany a live fact that was resolved separately.
+
+The constrained provider receives `operational_facts`, `merchant_catalog_knowledge`, and `fawri_curated_knowledge` as separate trusted fields. A valid automatic mixed reply must cite the supplied live-fact ID plus at least one catalog or curated ID. Every cited ID must belong to the exact server-supplied set and factual-token validation still applies.
+
+For mixed replies, each supplied live operational answer must be copied verbatim into the generated answer. This preserves current price, availability wording, requested quantity results, weight, dimensions, and other live conditions exactly while still allowing a natural explanatory supplement.
+
+Pure operational questions remain deterministic and do not invoke mixed composition merely because a product exists in the catalog. Mixed composition is activated only when the message also contains sufficiently relevant curated context or a clear additional product-detail/policy cue.
+
+If the extra requested part cannot be grounded, if the provider omits the live grounding, rewrites the canonical live answer, introduces unsupported factual tokens, fails language/risk/confidence gates, or generated auto-reply is disabled, the engine hands off instead of sending a partial reply. Such a failure creates a training request only for workflow visibility; the generated candidate is never promoted into learned knowledge because it may contain time-sensitive operational facts.
+
+Successful replies use `CONSTRAINED_AI_GROUNDED_OPERATIONAL_MIXED_REPLY`; failed mixed composition uses `MIXED_AUTHORITY_COMPOSITION_REQUIRES_HANDOFF`.
+
 ## Product and variant conversation memory
 
 The messaging pipeline persists each Fawri decision's `matched_record_id` in message metadata and reloads it from the authenticated PostgreSQL conversation history. The decision engine recognizes only stable catalog references produced by trusted replies: `catalog-product:<productId>` and `catalog-variant:<productId>:<variantId>`.
