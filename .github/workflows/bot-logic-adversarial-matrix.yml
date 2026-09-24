@@ -1,0 +1,52 @@
+name: Bot logic adversarial matrix
+
+on:
+  pull_request:
+    paths:
+      - "artifacts/api-server/src/services/ai/**"
+      - "artifacts/api-server/src/services/knowledge/**"
+      - "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts"
+      - "artifacts/api-server/tests/knowledge-*.test.ts"
+      - "artifacts/api-server/tests/knowledge-*.test.mjs"
+      - ".github/workflows/bot-logic-adversarial-matrix.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bot-logic-adversarial-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  adversarial-matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Run strict cross-layer bot adversarial matrix
+        run: >-
+          node scripts/ci-run-redacted.mjs
+          --label bot-logic-adversarial-matrix
+          -- pnpm exec tsx --test
+          artifacts/api-server/tests/knowledge-bot-adversarial-matrix.test.ts
+
+      - name: Final marker
+        run: echo "BOT_LOGIC_ADVERSARIAL_MATRIX_PASS"
