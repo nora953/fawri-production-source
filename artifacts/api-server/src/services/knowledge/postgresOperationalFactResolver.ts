@@ -450,6 +450,13 @@ FROM product_variants
 WHERE merchant_id = $1 AND product_id = $2 AND version > 0
 LIMIT 150`;
 
+const VARIANT_OPTIONS_SQL = `
+SELECT merchant_id, product_id, variant_id, option_name, option_value, ordinal
+FROM catalog_variant_options
+WHERE merchant_id = $1 AND product_id = $2
+ORDER BY ordinal ASC, option_name ASC, option_value ASC
+LIMIT 500`;
+
 function identifierMatches(customer: string, value: unknown): boolean {
   const candidate = normalizeKnowledgeText(value);
   return candidate.length >= 2 && customer.includes(candidate);
@@ -464,13 +471,25 @@ function productMatchScore(customer: string, row: Record<string, unknown>): numb
   return score;
 }
 
-function variantMatchScore(customer: string, row: Record<string, unknown>): number {
+function variantMatchScore(
+  customer: string,
+  row: Record<string, unknown>,
+  optionRows: Record<string, unknown>[],
+): number {
   let score = 0;
   for (const key of ["sku", "barcode", "external_ref"] as const) {
     if (identifierMatches(customer, row[key])) score += 180;
   }
   for (const key of ["name", "color", "size"] as const) {
     if (identifierMatches(customer, row[key])) score += 60;
+  }
+
+  const variantId = text(row.id, 160);
+  for (const option of optionRows) {
+    if (text(option.variant_id, 160) !== variantId) continue;
+    if (identifierMatches(customer, option.option_value)) score += 70;
+    const pair = `${text(option.option_name, 120)} ${text(option.option_value, 240)}`;
+    if (identifierMatches(customer, pair)) score += 20;
   }
   return score;
 }
@@ -502,20 +521,60 @@ function selectProduct(
 
 function selectVariant(
   variants: Record<string, unknown>[],
+  optionRows: Record<string, unknown>[],
   customer: string,
   productId: string,
   trustedProductIdHint?: string,
   trustedVariantIdHint?: string,
 ): Record<string, unknown> | null {
   const explicit = uniqueBest(
-    variants.map((row) => ({ row, score: variantMatchScore(customer, row) })),
+    variants.map((row) => ({
+      row,
+      score: variantMatchScore(customer, row, optionRows),
+    })),
     "KNOWLEDGE_VARIANT_AMBIGUOUS",
   );
   if (explicit) return explicit;
+
   const productHint = text(trustedProductIdHint, 160);
   const variantHint = text(trustedVariantIdHint, 160);
-  if (!variantHint || !productHint || productHint !== productId) return null;
-  return variants.find((row) => text(row.id, 160) === variantHint) || null;
+  if (variantHint && productHint === productId) {
+    const hinted = variants.find((row) => text(row.id, 160) === variantHint);
+    if (hinted) return hinted;
+  }
+
+  return null;
+}
+
+function variantDisplayLabel(
+  variant: Record<string, unknown> | null,
+  optionRows: Record<string, unknown>[],
+): string {
+  if (!variant) return "";
+  const directName = text(variant.name, 300);
+  if (directName) return directName;
+
+  const values = new Set<string>();
+  for (const key of ["color", "size"] as const) {
+    const value = text(variant[key], 240);
+    if (value) values.add(value);
+  }
+  const variantId = text(variant.id, 160);
+  for (const option of optionRows) {
+    if (text(option.variant_id, 160) !== variantId) continue;
+    const value = text(option.option_value, 240);
+    if (value) values.add(value);
+  }
+  return [...values].slice(0, 6).join(" / ");
+}
+
+function productVariantDisplayName(
+  productName: string,
+  variant: Record<string, unknown> | null,
+  optionRows: Record<string, unknown>[],
+): string {
+  const label = variantDisplayLabel(variant, optionRows);
+  return label ? `${productName} (${label})` : productName;
 }
 
 function catalogContextRecordId(productId: string, variantId?: string): string {
@@ -681,6 +740,35 @@ async function loadVariants(
   return variants;
 }
 
+async function loadVariantOptions(
+  sql: KnowledgeSqlExecutor,
+  merchantId: string,
+  productId: string,
+  variants: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  let rows: Record<string, unknown>[];
+  try {
+    rows = (await sql.query(VARIANT_OPTIONS_SQL, [merchantId, productId])).rows;
+  } catch {
+    fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+  }
+
+  const variantIds = new Set(variants.map((row) => text(row.id, 160)).filter(Boolean));
+  for (const row of rows) {
+    tenant(row, merchantId);
+    if (
+      text(row.product_id, 160) !== productId ||
+      !variantIds.has(text(row.variant_id, 160))
+    ) {
+      fail("KNOWLEDGE_TENANT_VIOLATION", "catalog variant option boundary violation");
+    }
+    if (!text(row.option_name, 120) || !text(row.option_value, 240)) {
+      fail("KNOWLEDGE_STATE_INVALID", "catalog variant option state is invalid");
+    }
+  }
+  return rows;
+}
+
 function formatScaled(value: number, scale: number): string {
   const decimals = String(scale).length - 1;
   const whole = Math.floor(value / scale);
@@ -746,7 +834,10 @@ async function resolveMeasurementFact(params: {
     version(row.version);
     physicalFacts(row);
     commerceFacts(row);
-    if (bool(row.allow_fawri_reply) !== true || !["available", "low_stock", "out_of_stock"].includes(text(row.status, 40))) {
+    if (
+      bool(row.allow_fawri_reply) !== true ||
+      !["available", "low_stock", "out_of_stock"].includes(text(row.status, 40))
+    ) {
       fail("KNOWLEDGE_PROVENANCE_INVALID", "catalog fact provenance is invalid");
     }
   }
@@ -759,49 +850,82 @@ async function resolveMeasurementFact(params: {
 
   const productId = text(product.id, 160);
   const productName = text(product.name, 300);
-  if (!productId || !productName) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+  if (!productId || !productName) {
+    fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+  }
+
   const productFacts = physicalFacts(product);
   let resolved = productFacts;
   let recordId = productId;
-  const commerce = commerceFacts(product);
-  const variantMode = commerce.track_inventory && bool(product.variant_stock_mode);
+  let selectedVariant: Record<string, unknown> | null = null;
+  let optionRows: Record<string, unknown>[] = [];
 
-  if (variantMode) {
-    const variants = await loadVariants(params.sql, params.merchantId, productId);
-    if (!variants.length) fail("KNOWLEDGE_STATE_INVALID", "variant-managed product has no variants");
-    const matchedVariant = selectVariant(
+  const variants = await loadVariants(params.sql, params.merchantId, productId);
+  if (variants.length > 0) {
+    optionRows = await loadVariantOptions(
+      params.sql,
+      params.merchantId,
+      productId,
       variants,
+    );
+    selectedVariant = selectVariant(
+      variants,
+      optionRows,
       params.customer,
       productId,
       params.trustedProductIdHint,
       params.trustedVariantIdHint,
     );
-    if (matchedVariant) {
-      resolved = inheritedPhysicalFacts(productFacts, physicalFacts(matchedVariant));
-      recordId = text(matchedVariant.id, 160);
-      if (!recordId) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+
+    if (selectedVariant) {
+      resolved = inheritedPhysicalFacts(
+        productFacts,
+        physicalFacts(selectedVariant),
+      );
+      recordId = text(selectedVariant.id, 160);
+      if (!recordId) {
+        fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+      }
     } else {
-      const effective = variants.map((row) => inheritedPhysicalFacts(productFacts, physicalFacts(row)));
-      const signatures = new Set(effective.map((facts) => measurementSignature(facts, params.kind)));
+      const effective = variants.map((row) =>
+        inheritedPhysicalFacts(productFacts, physicalFacts(row)),
+      );
+      const signatures = new Set(
+        effective.map((facts) => measurementSignature(facts, params.kind)),
+      );
       if (signatures.size !== 1) {
-        fail("KNOWLEDGE_VARIANT_REQUIRED", "an unambiguous product variant is required for this measurement", 409);
+        fail(
+          "KNOWLEDGE_VARIANT_REQUIRED",
+          "an unambiguous product variant is required for this measurement",
+          409,
+        );
       }
       resolved = effective[0];
       recordId = `${productId}:common-measurement`;
     }
   }
 
-  const resolvedVariantId =
-    recordId !== productId && !recordId.endsWith(":common-measurement")
-      ? recordId
-      : undefined;
+  const variantId = selectedVariant
+    ? text(selectedVariant.id, 160)
+    : undefined;
+  const itemName = productVariantDisplayName(
+    productName,
+    selectedVariant,
+    optionRows,
+  );
   return {
-    answerText: localizedMeasurementAnswer(params.language, productName, params.kind, resolved),
+    answerText: localizedMeasurementAnswer(
+      params.language,
+      itemName,
+      params.kind,
+      resolved,
+    ),
     language: params.language,
     confidence: 1,
-    factType: params.kind === "weight" ? "product_weight" : "product_dimensions",
+    factType:
+      params.kind === "weight" ? "product_weight" : "product_dimensions",
     recordId,
-    contextRecordId: catalogContextRecordId(productId, resolvedVariantId),
+    contextRecordId: catalogContextRecordId(productId, variantId),
   };
 }
 
@@ -825,7 +949,10 @@ async function resolveProductFact(params: {
     version(row.version);
     physicalFacts(row);
     commerceFacts(row);
-    if (bool(row.allow_fawri_reply) !== true || !["available", "low_stock", "out_of_stock"].includes(text(row.status, 40))) {
+    if (
+      bool(row.allow_fawri_reply) !== true ||
+      !["available", "low_stock", "out_of_stock"].includes(text(row.status, 40))
+    ) {
       fail("KNOWLEDGE_PROVENANCE_INVALID", "catalog fact provenance is invalid");
     }
   }
@@ -838,36 +965,91 @@ async function resolveProductFact(params: {
 
   const productId = text(product.id, 160);
   const productName = text(product.name, 300);
-  if (!productId || !productName) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+  if (!productId || !productName) {
+    fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+  }
 
   const commerce = commerceFacts(product);
   let unitPrice = integer(product.current_price_iqd);
   let quantity = 0;
-  const variantMode = commerce.track_inventory && bool(product.variant_stock_mode);
   let recordId = productId;
-  let variantId: string | undefined;
+  let selectedVariant: Record<string, unknown> | null = null;
+  let optionRows: Record<string, unknown>[] = [];
 
-  if (variantMode) {
-    const variants = await loadVariants(params.sql, params.merchantId, productId);
-    const variant = selectVariant(
+  const variants = await loadVariants(params.sql, params.merchantId, productId);
+  if (variants.length > 0) {
+    optionRows = await loadVariantOptions(
+      params.sql,
+      params.merchantId,
+      productId,
       variants,
+    );
+    selectedVariant = selectVariant(
+      variants,
+      optionRows,
       params.customer,
       productId,
       params.trustedProductIdHint,
       params.trustedVariantIdHint,
     );
-    if (!variant) {
-      fail("KNOWLEDGE_VARIANT_REQUIRED", "an unambiguous product variant is required", 409);
-    }
-    const override = variant.price_override_iqd;
-    const adjustment = Number(variant.price_adjustment_iqd);
-    if (!Number.isSafeInteger(adjustment)) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
-    unitPrice = override === null || override === undefined ? unitPrice + adjustment : integer(override);
-    if (!Number.isSafeInteger(unitPrice) || unitPrice < 0) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
-    recordId = text(variant.id, 160);
-    variantId = recordId;
-    if (!recordId) fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
   }
+
+  const variantInventoryMode =
+    commerce.track_inventory && bool(product.variant_stock_mode);
+
+  if (
+    params.kind === "price" &&
+    variantInventoryMode &&
+    variants.length > 0 &&
+    !selectedVariant
+  ) {
+    fail(
+      "KNOWLEDGE_VARIANT_REQUIRED",
+      "an unambiguous product variant is required for price",
+      409,
+    );
+  }
+
+  if (params.kind === "price" && selectedVariant) {
+    const override = selectedVariant.price_override_iqd;
+    const adjustment = Number(selectedVariant.price_adjustment_iqd);
+    if (!Number.isSafeInteger(adjustment)) {
+      fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+    }
+    unitPrice =
+      override === null || override === undefined
+        ? unitPrice + adjustment
+        : integer(override);
+    if (!Number.isSafeInteger(unitPrice) || unitPrice < 0) {
+      fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+    }
+    recordId = text(selectedVariant.id, 160);
+    if (!recordId) {
+      fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+    }
+  }
+
+  if (params.kind === "stock" && variantInventoryMode) {
+    if (!selectedVariant) {
+      fail(
+        "KNOWLEDGE_VARIANT_REQUIRED",
+        "an unambiguous product variant is required for stock",
+        409,
+      );
+    }
+    recordId = text(selectedVariant.id, 160);
+    if (!recordId) {
+      fail("KNOWLEDGE_STATE_INVALID", "catalog fact state is invalid");
+    }
+  }
+
+  const selectedVariantId = selectedVariant
+    ? text(selectedVariant.id, 160)
+    : undefined;
+  const inventoryVariantId =
+    params.kind === "stock" && variantInventoryMode
+      ? selectedVariantId
+      : undefined;
 
   if (params.kind === "stock" && commerce.track_inventory) {
     const requestedQuantity = requestedCatalogQuantity(params.customer);
@@ -875,13 +1057,19 @@ async function resolveProductFact(params: {
       sql: params.sql,
       merchantId: params.merchantId,
       productId,
-      ...(variantId ? { variantId } : {}),
+      ...(inventoryVariantId ? { variantId: inventoryVariantId } : {}),
       customer: params.customer,
       requestedQuantity,
     });
     quantity = locationInventory.quantity;
     recordId = `${recordId}:${locationInventory.recordSuffix}`;
   }
+
+  const itemName = productVariantDisplayName(
+    productName,
+    selectedVariant,
+    optionRows,
+  );
 
   if (params.kind === "price") {
     const currencyCode = merchantCurrency(product.merchant_currency_code);
@@ -890,21 +1078,24 @@ async function resolveProductFact(params: {
       resolved = resolveEffectiveCatalogPrice({
         merchantId: params.merchantId,
         productId,
-        ...(variantId ? { variantId } : {}),
+        ...(selectedVariantId ? { variantId: selectedVariantId } : {}),
         baseAmountMinor: unitPrice,
         currencyCode,
         promotions: await activePromotions(params.sql, params.merchantId),
       });
     } catch (error) {
       if (error instanceof CommercePromotionError) {
-        fail("KNOWLEDGE_PROMOTION_STATE_INVALID", "promotion pricing state is invalid");
+        fail(
+          "KNOWLEDGE_PROMOTION_STATE_INVALID",
+          "promotion pricing state is invalid",
+        );
       }
       throw error;
     }
     return {
       answerText: catalogPriceAnswer({
         language: params.language,
-        itemName: productName,
+        itemName,
         unitPriceIqd: resolved.effective_amount_minor,
         baseUnitPriceIqd: resolved.base_amount_minor,
         currencyCode,
@@ -913,18 +1104,22 @@ async function resolveProductFact(params: {
       }),
       language: params.language,
       confidence: 1,
-      factType: commerce.item_type === "service" ? "service_price" : "product_price",
+      factType:
+        commerce.item_type === "service" ? "service_price" : "product_price",
       recordId: resolved.promotion_id
         ? `${recordId}:promotion:${resolved.promotion_id}`
         : recordId,
-      contextRecordId: catalogContextRecordId(productId, variantId),
+      contextRecordId: catalogContextRecordId(
+        productId,
+        selectedVariantId,
+      ),
     };
   }
 
   return {
     answerText: catalogAvailabilityAnswer({
       language: params.language,
-      itemName: productName,
+      itemName,
       status:
         commerce.track_inventory
           ? quantity > 0
@@ -939,9 +1134,15 @@ async function resolveProductFact(params: {
     }),
     language: params.language,
     confidence: 1,
-    factType: commerce.item_type === "service" ? "service_availability" : "product_stock",
+    factType:
+      commerce.item_type === "service"
+        ? "service_availability"
+        : "product_stock",
     recordId,
-    contextRecordId: catalogContextRecordId(productId, variantId),
+    contextRecordId: catalogContextRecordId(
+      productId,
+      selectedVariantId,
+    ),
   };
 }
 
