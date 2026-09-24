@@ -50,6 +50,7 @@ test("product price fact reads only visible tenant PostgreSQL catalog rows", asy
 
   assert.equal(result?.factType, "product_price");
   assert.equal(result?.recordId, "product-a");
+  assert.equal(result?.contextRecordId, "catalog-product:product-a");
   assert.match(result?.answerText || "", /250,000/);
   assert.match(sql.queries[0].sql, /merchant_id = \$1/);
   assert.match(sql.queries[0].sql, /deleted_at IS NULL/);
@@ -115,6 +116,84 @@ test("variant-stock product requires one explicit tenant-safe variant", async ()
   });
   assert.equal(resolved?.recordId, "variant-red");
   assert.match(resolved?.answerText || "", /260,000/);
+});
+
+
+test("trusted conversation product and variant hints resolve a price follow-up without repeating the product name", async () => {
+  const sql = new FakeSql(async (query) => {
+    if (query.includes("FROM products")) {
+      return [product({ variant_stock_mode: true, quantity: 999 })];
+    }
+    if (query.includes("FROM product_variants")) {
+      return [
+        {
+          id: "variant-red",
+          product_id: "product-a",
+          merchant_id: "merchant-a",
+          external_ref: null,
+          name: "أحمر",
+          color: "أحمر",
+          size: null,
+          sku: "SKU-RED",
+          barcode: null,
+          quantity: 2,
+          price_adjustment_iqd: 10000,
+          price_override_iqd: null,
+          option_signature: "0123456789abcdef",
+          version: 2,
+          updated_at: "2026-08-07T20:00:00.000Z",
+        },
+      ];
+    }
+    if (query.includes("FROM commerce_promotions")) return [];
+    return [];
+  });
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "والسعر؟",
+    language: "ar",
+    trustedProductIdHint: "product-a",
+    trustedVariantIdHint: "variant-red",
+  });
+
+  assert.equal(result?.factType, "product_price");
+  assert.equal(result?.recordId, "variant-red");
+  assert.equal(
+    result?.contextRecordId,
+    "catalog-variant:product-a:variant-red",
+  );
+  assert.match(result?.answerText || "", /260,000/);
+});
+
+test("an explicit new product reference outranks stale conversation product memory", async () => {
+  const secondProduct = product({
+    id: "product-b",
+    external_ref: "EXT-B",
+    code: "P200",
+    name: "هاتف باء",
+    sku: "SKU-B",
+    barcode: "987654321",
+    current_price_iqd: 300000,
+  });
+  const sql = new FakeSql(async (query) => {
+    if (query.includes("FROM products")) return [product(), secondProduct];
+    if (query.includes("FROM commerce_promotions")) return [];
+    return [];
+  });
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "شكد سعر هاتف باء؟",
+    language: "ar",
+    trustedProductIdHint: "product-a",
+  });
+
+  assert.equal(result?.recordId, "product-b");
+  assert.equal(result?.contextRecordId, "catalog-product:product-b");
+  assert.match(result?.answerText || "", /300,000/);
 });
 
 test("explicit order id is tenant filtered and returns no customer PII", async () => {
