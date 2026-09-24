@@ -7,6 +7,7 @@ import {
   normalizeKnowledgeText,
 } from "./knowledge/normalization.js";
 import { isAuthoritativeFactQuestion } from "./knowledge/postgresKnowledgeRuntime.js";
+import { redactSensitiveText } from "./knowledge/redaction.js";
 
 const AUTO_LEARNABLE_INTENTS = new Set(["knowledge_gap", "ai_fallback"]);
 
@@ -49,6 +50,7 @@ export type ManualReplyLearningResult = {
     | "TRAINING_INTENT_NOT_REUSABLE"
     | "AUTHORITATIVE_FACT_NOT_REUSABLE"
     | "CASE_SPECIFIC_REPLY_NOT_REUSABLE"
+    | "SENSITIVE_REPLY_NOT_REUSABLE"
     | "MANUAL_REPLY_EMPTY";
   trainingRequestId: string;
   learnedAnswerId?: string;
@@ -129,6 +131,14 @@ export async function learnFromMerchantManualReply(input: {
     return {
       learned: false,
       reasonCode: "CASE_SPECIFIC_REPLY_NOT_REUSABLE",
+      trainingRequestId,
+    };
+  }
+
+  if (redactSensitiveText(merchantReply, 2_000) !== merchantReply) {
+    return {
+      learned: false,
+      reasonCode: "SENSITIVE_REPLY_NOT_REUSABLE",
       trainingRequestId,
     };
   }
