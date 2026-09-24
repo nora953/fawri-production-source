@@ -50,6 +50,16 @@ A catalog product is eligible only when it belongs to the authenticated merchant
 
 When a product match exists, Fawri does not allow a general encyclopedia article to answer directly first. Instead, the product facts and any relevant curated encyclopedia records are passed to constrained AI in separate trusted fields. The generated reply must cite only server-supplied grounding IDs and pass the same factual-token, language, risk, confidence, and auto-reply-policy checks used by the knowledge engine.
 
+## Product and variant conversation memory
+
+Fawri may carry a previously resolved catalog product or variant into the immediately related customer follow-up without asking for the same identity again. The memory source is not the customer's pronoun or an AI guess: it is the server-persisted `matched_record_id` from Fawri's own prior trusted reply.
+
+Stable conversation references use `catalog-product:<productId>` or `catalog-variant:<productId>:<variantId>`. They are loaded only from the authenticated conversation's bounded server history. Browser input cannot set these hints.
+
+The current customer message still wins. If it explicitly identifies another product or variant, that direct match replaces the prior memory. Ambiguous explicit references fail closed to clarification rather than falling back to an older product. Merchant intervention clears automatic catalog memory. A safe Fawri clarification may temporarily preserve the preceding catalog reference so a follow-up such as an area or variant choice can finish the same request.
+
+The same trusted reference is passed to both catalog grounding and structured operational fact resolution. This allows follow-ups such as "والسعر؟", "متوفر؟", or "والأسود منه؟" to stay attached to the correct product/variant while price, stock, measurements, and other operational facts continue to come only from their live authorities.
+
 ## Fawri encyclopedia trust model
 
 Encyclopedia entries use the fawri_curated provenance. They are not merchant_approved and are not openai_generated.
