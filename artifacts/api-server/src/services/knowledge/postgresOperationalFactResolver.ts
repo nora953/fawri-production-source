@@ -457,9 +457,16 @@ WHERE merchant_id = $1 AND product_id = $2
 ORDER BY ordinal ASC, option_name ASC, option_value ASC
 LIMIT 500`;
 
-function identifierMatches(customer: string, value: unknown): boolean {
+function identifierMatches(
+  customer: string,
+  value: unknown,
+  minimumLength = 2,
+  allowSingleToken = false,
+): boolean {
   const candidate = normalizeKnowledgeText(value);
-  return candidate.length >= 2 && customer.includes(candidate);
+  if (candidate.length >= minimumLength) return customer.includes(candidate);
+  if (!allowSingleToken || candidate.length !== 1) return false;
+  return customer.split(" ").includes(candidate);
 }
 
 function productMatchScore(customer: string, row: Record<string, unknown>): number {
@@ -481,13 +488,13 @@ function variantMatchScore(
     if (identifierMatches(customer, row[key])) score += 180;
   }
   for (const key of ["name", "color", "size"] as const) {
-    if (identifierMatches(customer, row[key])) score += 60;
+    if (identifierMatches(customer, row[key], 2, true)) score += 60;
   }
 
   const variantId = text(row.id, 160);
   for (const option of optionRows) {
     if (text(option.variant_id, 160) !== variantId) continue;
-    if (identifierMatches(customer, option.option_value)) score += 70;
+    if (identifierMatches(customer, option.option_value, 2, true)) score += 70;
     const pair = `${text(option.option_name, 120)} ${text(option.option_value, 240)}`;
     if (identifierMatches(customer, pair)) score += 20;
   }
