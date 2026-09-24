@@ -403,6 +403,7 @@ export interface Message {
   created_at: string;
   reply_type?: 'database' | 'saved_answer' | 'semantic_search' | 'ai_generated' | 'manual';
   counted_as_auto_reply: boolean;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Conversation {
