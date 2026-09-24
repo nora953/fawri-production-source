@@ -97,6 +97,8 @@ This separation allows the merchant to make Fawri sound like their own experienc
 
 ## Bootstrap corpus and expansion
 
-The first implementation ships a version-controlled curated bootstrap corpus covering global product terminology plus the five launch activities. The resolver contract is intentionally separate from the decision engine so the corpus can later move to a larger managed/vector-backed encyclopedia without changing the authority order or reply contract.
+The current version-controlled launch corpus contains **51 curated articles**: global commerce/product terminology plus expanded packs for fashion, electronics, food, perfumes, and jewelry. Coverage includes product identifiers and condition terminology, sizing and fabrics, display/storage/charging concepts, food labels and storage concepts, fragrance terminology, and jewelry materials/sizing/care.
 
-Expansion should be incremental and reviewed. New articles should include all three supported languages, stable IDs, activity scope, multiple question phrasings, and a factual answer that does not depend on merchant-specific state.
+This is a broad first-activation corpus, not a claim that every retail domain is complete. Custom activities receive global knowledge until a dedicated reviewed pack is introduced. The resolver contract is intentionally separate from the decision engine so the corpus can keep expanding or later move to a managed/vector-backed encyclopedia without changing authority order or reply contracts.
+
+Expansion remains incremental and reviewed. Every new article must have a stable ID, a clear global/activity scope, multiple question phrasings, curated Arabic/Sorani/English answers, and content that does not depend on merchant-specific or live operational state.
