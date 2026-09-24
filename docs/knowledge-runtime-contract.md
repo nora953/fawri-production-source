@@ -32,12 +32,18 @@ type KnowledgeDecisionResult = {
     | "database_fact"
     | "approved_saved_answer"
     | "semantic_retrieval"
+    | "fawri_encyclopedia"
     | "clarification"
     | "ai_fallback"
     | "handoff";
   answerText: string | null;
   language: "ar" | "ku" | "en";
-  source: "database_fact" | "merchant_approved" | "openai_generated" | null;
+  source:
+    | "database_fact"
+    | "merchant_approved"
+    | "fawri_curated"
+    | "openai_generated"
+    | null;
   confidence: number;
   requiresMerchantApproval: boolean;
   trainingRequestId: string | null;
@@ -58,12 +64,24 @@ For non-malicious text, the engine evaluates exactly this order:
 2. If a safe authoritative fact is missing only customer-selectable context (product, variant, or area), ask a deterministic clarification and keep the conversation in automatic mode.
 3. Exact or contained active saved answers whose source is `merchant_approved`.
 4. Tenant-filtered semantic retrieval over active `merchant_approved` saved/learned answers only.
-5. Constrained AI fallback using system rules plus approved merchant context.
-6. Human handoff or no answer.
+5. Fawri activity encyclopedia selected from the merchant's server-side activity type.
+6. Fawri global encyclopedia.
+7. Constrained AI fallback using trusted context.
+8. Human handoff or no answer.
 
 The constrained OpenAI provider may synthesize a customer-facing answer automatically when—and only when—it can cite one or more merchant-approved knowledge records supplied by the server, every cited ID belongs to the current tenant's bounded approved context, the response language matches the customer, risk is low, confidence clears the server threshold, and factual tokens such as numbers, currencies, SKUs, IDs, and URLs are supported by the cited approved answers. This path exists to combine and phrase already-trusted information in a clear, natural, concise, professional way; it does not grant AI authority to invent facts.
 
 A grounded automatic synthesis does not create a pending training request and does not ask the merchant to approve the same trusted information again. If any grounding condition fails, the generated candidate is recorded as `openai_generated`, `pending_review`, and `safeToAutoReply=false`, and the conversation is handed off. Browser/environment input cannot relax the grounding rule. A future merchant-specific tone/style setting may customize wording, but it must not change factual authority, grounding, or safety rules.
+
+## Fawri encyclopedia
+
+Fawri ships with a curated bootstrap encyclopedia so a newly activated merchant is not starting from an empty bot. Curated entries use the provenance `fawri_curated` and are lower priority than merchant-specific knowledge.
+
+The launch corpus includes global product terminology plus activity packs for fashion, electronics, food, perfumes, and jewelry. Activity selection comes from the server-side merchant profile, never from browser input. Custom activities receive the global pack until a dedicated pack exists.
+
+The encyclopedia is intentionally excluded from current operational authority. It cannot supply current price, stock, order status, merchant delivery/payment settings, or another structured fact that belongs to the merchant database. Merchant-approved corrections can override an encyclopedia answer on future questions because merchant knowledge is evaluated first.
+
+The detailed architecture and expansion rules are documented in `docs/fawri-knowledge-architecture.md`.
 
 ## Provenance invariants
 
