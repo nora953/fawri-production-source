@@ -426,6 +426,7 @@ export async function processMetaReplyJob(
       code === "MERCHANT_AUTO_REPLY_DISABLED" ||
       code === "MERCHANT_SETTINGS_VERSION_CHANGED" ||
       code === "MERCHANT_SETTINGS_UNAVAILABLE" ||
+      code === "CONVERSATION_SUPERSEDED" ||
       isOperationalReleaseCode(code)
     ) {
       return await releaseAndSuppress({
