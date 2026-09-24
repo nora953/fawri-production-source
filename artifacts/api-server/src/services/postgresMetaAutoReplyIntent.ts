@@ -309,7 +309,7 @@ async function ensureInboundState(
          DO UPDATE SET
            last_message_at = GREATEST(COALESCE(conversations.last_message_at, EXCLUDED.last_message_at), EXCLUDED.last_message_at),
            updated_at = GREATEST(conversations.updated_at, EXCLUDED.updated_at)
-         RETURNING id, status::text AS status, assigned_to_human`,
+         RETURNING id, status::text AS status, assigned_to_human, metadata`,
         [id, parsed.merchantId, channelId, parsed.senderId, parsed.createdAt],
       );
       conversation = inserted.rows[0];
@@ -717,6 +717,7 @@ export async function preparePostgresMetaAutoReply(
       inbound.inboundEventId,
       inbound.conversationId,
       persisted,
+      inbound.sourceConversationGeneration,
     );
   });
 }
