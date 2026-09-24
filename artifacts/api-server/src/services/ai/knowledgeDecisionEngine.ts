@@ -82,6 +82,19 @@ const PRODUCT_DETAIL_CUES = [
   "port",
   "included",
   "comes with",
+  "warranty",
+  "guarantee",
+  "return",
+  "refund",
+  "exchange",
+  "ضمان",
+  "كفالة",
+  "ارجاع",
+  "إرجاع",
+  "استرجاع",
+  "استبدال",
+  "گەڕاندنەوە",
+  "گۆڕینەوە",
   "پشتگیری",
   "گونجاو",
   "تایبەتمەندی",
@@ -762,7 +775,7 @@ export class KnowledgeDecisionEngine {
 
         const mixedAuthorityNeeded =
           curatedKnowledge.length > 0 ||
-          (catalogKnowledge.length > 0 && hasProductDetailCue(customerText));
+          hasProductDetailCue(customerText);
 
         if (mixedAuthorityNeeded) {
           const operationalId = operationalFactGroundingId(
