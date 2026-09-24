@@ -66,7 +66,7 @@ For non-malicious text, the engine evaluates exactly this order:
 4. Tenant-filtered semantic retrieval over active `merchant_approved` saved/learned answers only.
 5. Fawri activity encyclopedia selected from the merchant's server-side activity type.
 6. Fawri global encyclopedia.
-7. Constrained AI fallback using trusted context.
+7. Constrained AI fallback using separately labeled merchant-approved and Fawri-curated trusted context.
 8. Human handoff or no answer.
 
 The constrained OpenAI provider may synthesize a customer-facing answer automatically when—and only when—it can cite one or more merchant-approved knowledge records supplied by the server, every cited ID belongs to the current tenant's bounded approved context, the response language matches the customer, risk is low, confidence clears the server threshold, and factual tokens such as numbers, currencies, SKUs, IDs, and URLs are supported by the cited approved answers. This path exists to combine and phrase already-trusted information in a clear, natural, concise, professional way; it does not grant AI authority to invent facts.
@@ -82,6 +82,8 @@ Fawri ships with a curated bootstrap encyclopedia so a newly activated merchant 
 The launch corpus currently contains 82 curated multilingual articles: global product/commerce terminology plus expanded activity packs for fashion, electronics, food, perfumes, and jewelry. Activity selection comes from the server-side merchant profile, never from browser input. Custom activities receive the global pack until a dedicated reviewed pack exists.
 
 The encyclopedia is intentionally excluded from current operational authority. It cannot supply current price, stock, order status, merchant delivery/payment settings, or another structured fact that belongs to the merchant database. Merchant-approved corrections can override an encyclopedia answer on future questions because merchant knowledge is evaluated first.
+
+If one curated article does not produce a direct confident match, the encyclopedia resolver may expose up to six relevant curated records (the decision engine currently requests four) as bounded AI grounding context. This context is passed separately from merchant-approved knowledge and retains `fawri_curated` provenance. Operational questions return no curated grounding context. A generated automatic reply may cite merchant-approved records, curated records, or both, but every cited ID must be in the server-supplied trusted set and factual-token validation still applies. Curated-only synthesis uses reason code `CONSTRAINED_AI_GROUNDED_CURATED_REPLY`; mixed trusted synthesis uses `CONSTRAINED_AI_GROUNDED_MIXED_TRUSTED_REPLY`.
 
 The detailed architecture and expansion rules are documented in `docs/fawri-knowledge-architecture.md`.
 
