@@ -288,3 +288,96 @@ test("product-level inventory remains product authority while preserving explici
   assert.ok(inventoryQuery);
   assert.equal(inventoryQuery.values[2], null);
 });
+
+
+test("single-letter clothing size selects the exact variant only as a standalone token", async () => {
+  const sizeVariants = [
+    {
+      id: "variant-s",
+      product_id: "shirt-a",
+      merchant_id: "merchant-a",
+      external_ref: null,
+      name: "",
+      color: null,
+      size: "S",
+      sku: "SHIRT-S",
+      barcode: null,
+      quantity: 5,
+      price_adjustment_iqd: 0,
+      price_override_iqd: 30000,
+      option_signature: "3333333333333333",
+      weight_g: null,
+      length_mm: null,
+      width_mm: null,
+      height_mm: null,
+      version: 1,
+      updated_at: "2026-09-24T00:00:00.000Z",
+    },
+    {
+      id: "variant-m",
+      product_id: "shirt-a",
+      merchant_id: "merchant-a",
+      external_ref: null,
+      name: "",
+      color: null,
+      size: "M",
+      sku: "SHIRT-M",
+      barcode: null,
+      quantity: 5,
+      price_adjustment_iqd: 0,
+      price_override_iqd: 35000,
+      option_signature: "4444444444444444",
+      weight_g: null,
+      length_mm: null,
+      width_mm: null,
+      height_mm: null,
+      version: 1,
+      updated_at: "2026-09-24T00:00:00.000Z",
+    },
+  ];
+
+  const sql = new FakeSql(async (query) => {
+    if (query.includes("FROM products")) {
+      return [
+        product({
+          id: "shirt-a",
+          name: "Classic Shirt",
+          sku: "SHIRT",
+          barcode: "987654321",
+          current_price_iqd: 25000,
+          variant_stock_mode: false,
+          weight_g: null,
+          length_mm: null,
+          width_mm: null,
+          height_mm: null,
+        }),
+      ];
+    }
+    if (query.includes("FROM product_variants")) return sizeVariants;
+    if (query.includes("FROM catalog_variant_options")) return [];
+    if (query.includes("FROM commerce_promotions")) return [];
+    return [];
+  });
+  const resolver = new PostgresOperationalFactResolver(sql);
+
+  const exact = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "price Classic Shirt M",
+    language: "en",
+  });
+
+  assert.equal(exact?.recordId, "variant-m");
+  assert.equal(exact?.contextRecordId, "catalog-variant:shirt-a:variant-m");
+  assert.match(exact?.answerText || "", /35,000/);
+  assert.match(exact?.answerText || "", /\(M\)/);
+
+  const notStandalone = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "price Classic Shirt premium",
+    language: "en",
+  });
+
+  assert.equal(notStandalone?.recordId, "shirt-a");
+  assert.equal(notStandalone?.contextRecordId, "catalog-product:shirt-a");
+  assert.match(notStandalone?.answerText || "", /25,000/);
+});
