@@ -64,16 +64,24 @@ For non-malicious text, the engine evaluates exactly this order:
 2. If a safe authoritative fact is missing only customer-selectable context (product, variant, or area), ask a deterministic clarification and keep the conversation in automatic mode.
 3. Exact or contained active saved answers whose source is `merchant_approved`.
 4. Tenant-filtered semantic retrieval over active `merchant_approved` saved/learned answers only.
-5. Fawri activity encyclopedia selected from the merchant's server-side activity type.
-6. Fawri global encyclopedia.
-7. Constrained AI fallback using separately labeled merchant-approved and Fawri-curated trusted context.
+5. Resolve a uniquely referenced merchant catalog product as bounded product-specific grounding. This is context, not a direct free-form answer.
+6. If no merchant catalog product matched, allow a direct Fawri activity/global encyclopedia answer.
+7. Constrained AI fallback using separately labeled merchant-approved, merchant-catalog, and Fawri-curated trusted context.
 8. Human handoff or no answer.
 
-The constrained OpenAI provider may synthesize a customer-facing answer automatically when—and only when—it can cite one or more merchant-approved knowledge records supplied by the server, every cited ID belongs to the current tenant's bounded approved context, the response language matches the customer, risk is low, confidence clears the server threshold, and factual tokens such as numbers, currencies, SKUs, IDs, and URLs are supported by the cited approved answers. This path exists to combine and phrase already-trusted information in a clear, natural, concise, professional way; it does not grant AI authority to invent facts.
+The constrained OpenAI provider may synthesize a customer-facing answer automatically when—and only when—it cites one or more trusted records actually supplied by the server. Trusted grounding may come from merchant-approved knowledge, a uniquely matched merchant catalog product, Fawri-curated knowledge, or a valid combination of those sources. Every cited ID must belong to the exact bounded server-supplied set, the response language must match the customer, risk must be low, confidence must clear the server threshold, and factual tokens such as numbers, currencies, SKUs, IDs, and URLs must be supported by the cited records. This path exists to combine and phrase already-trusted information in a clear, natural, concise, professional way; it does not grant AI authority to invent facts.
 
 A grounded automatic synthesis does not create a pending training request and does not ask the merchant to approve the same trusted information again. If any grounding condition fails, the generated candidate is recorded as `openai_generated`, `pending_review`, and `safeToAutoReply=false`, and the conversation is handed off. Browser/environment input cannot relax the grounding rule.
 
 Merchant response style is server-owned presentation metadata. The default is professional, balanced, and minimal. A merchant may choose tone, reply length, emoji preference, and bounded custom style instructions from the knowledge workspace. The knowledge policy resolver supplies this profile to constrained AI, but system rules explicitly keep presentation subordinate to factual authority, grounding, and safety. A non-default style may also rewrite a curated encyclopedia answer through the same constrained provider; the source remains `fawri_curated`, unsupported factual tokens reject the rewrite, and any rewrite failure falls back to the original curated wording. Live operational facts and exact merchant Saved Answers are not rewritten by this presentation layer.
+
+## Merchant catalog grounding
+
+A uniquely matched product may contribute trusted product-specific context from the authenticated merchant's server catalog. The current payload is intentionally limited to the product's name, category, description, SKU, and bounded variant-option values. It does not transport current price, promotion state, stock quantity, order state, delivery, or payment data.
+
+Current price/stock/order/delivery/payment questions are intercepted by the authoritative fact path before catalog grounding. Product warranty and return/refund-policy questions are also excluded from catalog grounding so free-form product descriptions cannot silently become policy authority.
+
+When catalog context exists, the engine skips a direct general encyclopedia reply and instead lets constrained AI combine the exact product facts with relevant curated guidance. Catalog-only automatic synthesis uses reason code `CONSTRAINED_AI_GROUNDED_CATALOG_REPLY`; catalog plus another trusted source uses `CONSTRAINED_AI_GROUNDED_CATALOG_MIXED_TRUSTED_REPLY`.
 
 ## Fawri encyclopedia
 
