@@ -309,9 +309,10 @@ export class KnowledgeDecisionEngine {
       (explicitLegacyRepository
         ? new NoopFactResolver()
         : new PostgresOperationalFactResolver());
+    const explicitDecisionRuntime = Boolean(options.runtime || options.repository);
     this.encyclopediaResolver =
       options.encyclopediaResolver ||
-      (explicitLegacyRepository
+      (explicitDecisionRuntime
         ? new DisabledFawriEncyclopediaResolver()
         : new PostgresFawriEncyclopediaResolver());
     this.policyResolver =
