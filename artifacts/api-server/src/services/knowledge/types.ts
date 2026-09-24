@@ -240,9 +240,29 @@ export type AiFallbackCandidate = {
   latencyMs?: number;
 };
 
+export type TrustedPresentationRewriteRequest = {
+  merchantId: string;
+  sourceId: string;
+  sourceKind: "fawri_curated";
+  sourceText: string;
+  language: KnowledgeLanguage;
+  responseStyle: MerchantResponseStyle;
+};
+
+export type TrustedPresentationRewriteResult = {
+  answerText: string;
+  language: KnowledgeLanguage;
+  faithful: boolean;
+  usage?: AiTokenUsage;
+  latencyMs?: number;
+};
+
 export interface AiFallbackProvider {
   readonly providerId: string;
   generate(request: AiFallbackRequest): Promise<AiFallbackCandidate | null>;
+  rewritePresentation?(
+    request: TrustedPresentationRewriteRequest,
+  ): Promise<TrustedPresentationRewriteResult | null>;
 }
 
 export type ApprovedKnowledgeTranslationRequest = {
