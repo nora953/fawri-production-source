@@ -80,7 +80,7 @@ test("encyclopedia exposes a bounded relevant context for broader activity quest
 
   const context = await resolver.listRelevantContext({
     merchantId: "merchant-a",
-    customerText: "شنو الواط بالشاحن وهل اي شاحن سريع يشتغل بسرعة؟",
+    customerText: "شنو الفرق بين watt volt amp وهل اي شاحن سريع يشحن بسرعة؟",
     language: "ar",
     limit: 4,
   });
