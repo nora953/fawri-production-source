@@ -116,6 +116,47 @@ function clarificationFactText(
   return boundedText(`${previous}\n${followUp}`, 2_000);
 }
 
+function canonicalFactualToken(value: string): string {
+  const asciiDigits = value.replace(/[٠-٩۰-۹]/g, (digit) => {
+    const arabic = "٠١٢٣٤٥٦٧٨٩".indexOf(digit);
+    if (arabic >= 0) return String(arabic);
+    const persian = "۰۱۲۳۴۵۶۷۸۹".indexOf(digit);
+    return persian >= 0 ? String(persian) : digit;
+  });
+  if (/^https?:\/\//i.test(asciiDigits)) return asciiDigits.toLowerCase();
+  if (/\d/.test(asciiDigits)) {
+    return asciiDigits.replace(/[^0-9.]/g, "");
+  }
+  return asciiDigits.toUpperCase();
+}
+
+function factualTokens(value: string): string[] {
+  const patterns = [
+    /https?:\/\/[^\s]+/gi,
+    /\b[A-Z]{3}\b/g,
+    /\b[A-Z0-9][A-Z0-9_-]*\d[A-Z0-9_-]*\b/g,
+    /[٠-٩۰-۹0-9][٠-٩۰-۹0-9.,٬:/-]*/g,
+  ];
+  const tokens = new Set<string>();
+  for (const pattern of patterns) {
+    for (const match of value.match(pattern) || []) {
+      const token = canonicalFactualToken(match.trim());
+      if (token) tokens.add(token);
+    }
+  }
+  return [...tokens];
+}
+
+function groundedAnswerFactualTokensAreSupported(
+  answerText: string,
+  groundingDocuments: Array<{ answer: string }>,
+): boolean {
+  const supported = new Set(
+    groundingDocuments.flatMap((document) => factualTokens(document.answer)),
+  );
+  return factualTokens(answerText).every((token) => supported.has(token));
+}
+
 function boundedConversationHistory(
   value: KnowledgeConversationMessage[] | undefined,
 ): KnowledgeConversationMessage[] {
@@ -716,9 +757,17 @@ export class KnowledgeDecisionEngine {
             .filter(Boolean),
         ),
       ).slice(0, 12);
+      const groundingDocuments = uniqueApprovedKnowledge.filter((item) =>
+        groundingRecordIds.includes(item.id),
+      );
       const groundedOnlyInApprovedKnowledge =
         groundingRecordIds.length > 0 &&
-        groundingRecordIds.every((id) => approvedIds.has(id));
+        groundingRecordIds.every((id) => approvedIds.has(id)) &&
+        groundingDocuments.length === groundingRecordIds.length &&
+        groundedAnswerFactualTokensAreSupported(
+          aiCandidate.answerText,
+          groundingDocuments,
+        );
       const policyAllowsGenerated =
         merchantPolicy.allowGeneratedAutoReply === true && this.allowGeneratedAutoReply;
       const eligibleForGroundedReply =
