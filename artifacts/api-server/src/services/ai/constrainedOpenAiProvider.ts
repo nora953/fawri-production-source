@@ -138,6 +138,17 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
         business_name: boundedText(request.merchantPolicy.businessName, 120),
         allowed_topics: (request.merchantPolicy.allowedTopics || []).slice(0, 24),
         prohibited_topics: (request.merchantPolicy.prohibitedTopics || []).slice(0, 24),
+        response_style: request.merchantPolicy.responseStyle
+          ? {
+              tone: request.merchantPolicy.responseStyle.tone,
+              brevity: request.merchantPolicy.responseStyle.brevity,
+              emoji_style: request.merchantPolicy.responseStyle.emojiStyle,
+              custom_instructions: redactSensitiveText(
+                request.merchantPolicy.responseStyle.customInstructions,
+                800,
+              ),
+            }
+          : undefined,
       },
       approved_knowledge: request.approvedKnowledge.slice(0, 12).map((item) => ({
         id: item.id,
