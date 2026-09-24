@@ -265,10 +265,14 @@ await test("A prepared before B is stopped at provider boundary and reservation 
       };
     },
   });
-  const replay = await workerCore.processMetaReplyJob(a.job, {
-    transport: replayTransport,
-  });
-  assert.equal(replay.delivery_status, "suppressed");
+  await assert.rejects(
+    () =>
+      workerCore.processMetaReplyJob(a.job, {
+        transport: replayTransport,
+      }),
+    (error: unknown) =>
+      (error as { code?: string }).code === "MERCHANT_REPLY_ENTITLEMENT_UNAVAILABLE",
+  );
   assert.equal(providerSends, 0);
 
   const ledgerAfterReplay = await raw(
