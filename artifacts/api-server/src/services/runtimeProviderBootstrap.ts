@@ -4,9 +4,13 @@ import {
   type AwsKmsMetaCredentialKeyProvider,
 } from "./awsKmsMetaCredentialKeyProvider";
 import {
+  configureKnowledgeAiProvider,
   configureKnowledgeEmbeddingProvider,
   configureKnowledgeTranslationProvider,
 } from "./ai/knowledgeDecisionEngine";
+import {
+  createConstrainedOpenAiProvider,
+} from "./ai/constrainedOpenAiProvider";
 import {
   createOpenAiKnowledgeEmbeddingProvider,
 } from "./knowledge/openAiKnowledgeEmbeddingProvider";
@@ -14,7 +18,10 @@ import {
   createOpenAiApprovedKnowledgeTranslationProvider,
 } from "./knowledge/openAiApprovedKnowledgeTranslationProvider";
 import type { KnowledgeEmbeddingProvider } from "./knowledge/postgresKnowledgeRuntime";
-import type { ApprovedKnowledgeTranslationProvider } from "./knowledge/types";
+import type {
+  AiFallbackProvider,
+  ApprovedKnowledgeTranslationProvider,
+} from "./knowledge/types";
 import {
   configureMetaChannelCredentialKeyProvider,
 } from "./metaChannelRuntime";
@@ -29,11 +36,13 @@ import type { MetaCredentialKeyProvider } from "./metaCredentialVault";
 export type MetaCredentialProviderSelection = "environment" | "aws-kms";
 export type KnowledgeEmbeddingProviderSelection = "disabled" | "openai";
 export type KnowledgeTranslationProviderSelection = "disabled" | "openai";
+export type KnowledgeAiProviderSelection = "disabled" | "openai";
 
 export type RuntimeProviderSelections = {
   metaCredentialProvider: MetaCredentialProviderSelection;
   knowledgeEmbeddingProvider: KnowledgeEmbeddingProviderSelection;
   knowledgeTranslationProvider: KnowledgeTranslationProviderSelection;
+  knowledgeAiProvider: KnowledgeAiProviderSelection;
 };
 
 export type RuntimeProviderHandle = {
@@ -51,6 +60,11 @@ export type RuntimeProviderBootstrapDependencies = {
     model: string | undefined,
   ): ApprovedKnowledgeTranslationProvider;
   configureKnowledgeTranslation(provider: ApprovedKnowledgeTranslationProvider): void;
+  createOpenAiAi(
+    apiKey: string | undefined,
+    model: string | undefined,
+  ): AiFallbackProvider;
+  configureKnowledgeAi(provider: AiFallbackProvider): void;
   configureMetaCredentialProvider(provider: MetaCredentialKeyProvider | null): void;
 };
 
@@ -110,6 +124,18 @@ function readKnowledgeEmbeddingProviderSelection(
   );
 }
 
+function readKnowledgeAiProviderSelection(
+  env: NodeJS.ProcessEnv,
+): KnowledgeAiProviderSelection {
+  const selected = text(env.FAWRI_KNOWLEDGE_AI_PROVIDER).toLowerCase();
+  if (!selected) return "disabled";
+  if (selected === "openai") return "openai";
+  throw fail(
+    "KNOWLEDGE_AI_PROVIDER_CONFIG_INVALID",
+    "Knowledge AI provider selection is invalid",
+  );
+}
+
 function readKnowledgeTranslationProviderSelection(
   env: NodeJS.ProcessEnv,
 ): KnowledgeTranslationProviderSelection {
@@ -141,6 +167,9 @@ function defaultDependencies(): RuntimeProviderBootstrapDependencies {
     createOpenAiTranslation: (apiKey, model) =>
       createOpenAiApprovedKnowledgeTranslationProvider({ apiKey, model }),
     configureKnowledgeTranslation: configureKnowledgeTranslationProvider,
+    createOpenAiAi: (apiKey, model) =>
+      createConstrainedOpenAiProvider({ apiKey, model }),
+    configureKnowledgeAi: configureKnowledgeAiProvider,
     configureMetaCredentialProvider,
   };
 }
@@ -158,6 +187,7 @@ export async function initializeRuntimeProviders(input: {
     metaCredentialProvider: readMetaCredentialProviderSelection(env),
     knowledgeEmbeddingProvider: readKnowledgeEmbeddingProviderSelection(env),
     knowledgeTranslationProvider: readKnowledgeTranslationProviderSelection(env),
+    knowledgeAiProvider: readKnowledgeAiProviderSelection(env),
   };
 
   let awsProvider: AwsKmsMetaCredentialKeyProvider | null = null;
@@ -180,6 +210,14 @@ export async function initializeRuntimeProviders(input: {
         env.FAWRI_OPENAI_MODEL,
       );
       dependencies.configureKnowledgeTranslation(provider);
+    }
+
+    if (selections.knowledgeAiProvider === "openai") {
+      const provider = dependencies.createOpenAiAi(
+        env.OPENAI_API_KEY,
+        env.FAWRI_OPENAI_MODEL,
+      );
+      dependencies.configureKnowledgeAi(provider);
     }
 
     if (awsProvider) {

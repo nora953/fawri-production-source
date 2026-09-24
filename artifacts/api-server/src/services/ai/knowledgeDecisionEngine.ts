@@ -279,7 +279,8 @@ export class KnowledgeDecisionEngine {
     this.legacyFallbackEnabled =
       this.runtime.legacyFallbackEnabled === true || explicitLegacyRepository;
     this.liveAiTransportEnabled =
-      this.translationProvider.providerId !== "disabled_approved_translation_provider";
+      this.translationProvider.providerId !== "disabled_approved_translation_provider" ||
+      this.aiProvider.providerId !== "disabled_ai_fallback_provider";
   }
 
   private async translatedApprovedAnswer(params: {
@@ -784,6 +785,7 @@ export type KnowledgeEmbeddingActivationReadiness = {
 let singleton: KnowledgeDecisionEngine | null = null;
 let configuredEmbeddingProvider: KnowledgeEmbeddingProvider | null = null;
 let configuredTranslationProvider: ApprovedKnowledgeTranslationProvider | null = null;
+let configuredAiProvider: AiFallbackProvider | null = null;
 
 function inspectEmbeddingProvider(
   provider: KnowledgeEmbeddingProvider | null,
@@ -821,6 +823,41 @@ function inspectEmbeddingProvider(
   };
 }
 
+export type KnowledgeAiActivationReadiness = {
+  ready: boolean;
+  providerId: string | null;
+  model: string | null;
+  reasonCode: "KNOWLEDGE_AI_UNAVAILABLE" | "KNOWLEDGE_AI_CONFIG_INVALID" | null;
+};
+
+function inspectAiProvider(
+  provider: AiFallbackProvider | null,
+): KnowledgeAiActivationReadiness {
+  if (!provider) {
+    return {
+      ready: false,
+      providerId: null,
+      model: null,
+      reasonCode: "KNOWLEDGE_AI_UNAVAILABLE",
+    };
+  }
+  const providerId = String(provider.providerId ?? "").trim();
+  const model = String((provider as { model?: unknown }).model ?? "").trim();
+  const valid =
+    providerId.length > 0 &&
+    providerId.length <= 160 &&
+    model.length > 0 &&
+    model.length <= 160 &&
+    model !== "disabled" &&
+    typeof provider.generate === "function";
+  return {
+    ready: valid,
+    providerId: providerId || null,
+    model: model || null,
+    reasonCode: valid ? null : "KNOWLEDGE_AI_CONFIG_INVALID",
+  };
+}
+
 export type KnowledgeTranslationActivationReadiness = {
   ready: boolean;
   providerId: string | null;
@@ -855,6 +892,10 @@ export function getKnowledgeEmbeddingActivationReadiness(): KnowledgeEmbeddingAc
   return inspectEmbeddingProvider(configuredEmbeddingProvider);
 }
 
+export function getKnowledgeAiActivationReadiness(): KnowledgeAiActivationReadiness {
+  return inspectAiProvider(configuredAiProvider);
+}
+
 export function getKnowledgeTranslationActivationReadiness(): KnowledgeTranslationActivationReadiness {
   return inspectTranslationProvider(configuredTranslationProvider);
 }
@@ -878,6 +919,26 @@ export function configureKnowledgeEmbeddingProvider(
     );
   }
   configuredEmbeddingProvider = provider;
+}
+
+export function configureKnowledgeAiProvider(
+  provider: AiFallbackProvider,
+): void {
+  if (singleton || configuredAiProvider) {
+    throw new KnowledgeRuntimeGateError(
+      "KNOWLEDGE_AI_ACTIVATION_LOCKED",
+      "knowledge AI provider activation is locked for this process",
+      409,
+    );
+  }
+  const readiness = inspectAiProvider(provider);
+  if (!readiness.ready) {
+    throw new KnowledgeRuntimeGateError(
+      readiness.reasonCode || "KNOWLEDGE_AI_CONFIG_INVALID",
+      "knowledge AI provider configuration is invalid",
+    );
+  }
+  configuredAiProvider = provider;
 }
 
 export function configureKnowledgeTranslationProvider(
@@ -905,6 +966,7 @@ export function getKnowledgeDecisionEngine(): KnowledgeDecisionEngine {
     singleton = new KnowledgeDecisionEngine({
       embeddingProvider: configuredEmbeddingProvider || undefined,
       translationProvider: configuredTranslationProvider || undefined,
+      aiProvider: configuredAiProvider || undefined,
     });
   }
   return singleton;
@@ -914,4 +976,5 @@ export function resetKnowledgeDecisionEngineForTests(): void {
   singleton = null;
   configuredEmbeddingProvider = null;
   configuredTranslationProvider = null;
+  configuredAiProvider = null;
 }
