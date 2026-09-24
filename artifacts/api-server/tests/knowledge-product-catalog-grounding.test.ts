@@ -356,3 +356,93 @@ test("OpenAI envelope keeps merchant catalog facts separate from curated and app
     "catalog-product:product-65w",
   ]);
 });
+
+
+test("catalog grounding recognizes one-letter sizes only as standalone tokens", async () => {
+  class SizeCatalogSql {
+    constructor() {
+      this.queries = [];
+    }
+    async query(sql, values = []) {
+      this.queries.push({ sql, values });
+      if (sql.includes("FROM products")) {
+        return {
+          rows: [
+            {
+              id: "shirt-a",
+              merchant_id: "merchant-a",
+              name: "Classic Shirt",
+              sku: "SHIRT",
+              code: null,
+              barcode: null,
+              external_ref: null,
+              category: "Shirts",
+              description: "Cotton shirt available in standard sizes.",
+              version: 1,
+              status: "available",
+              allow_fawri_reply: true,
+            },
+          ],
+        };
+      }
+      if (sql.includes("FROM product_variants")) {
+        return {
+          rows: [
+            {
+              id: "variant-s",
+              merchant_id: "merchant-a",
+              product_id: "shirt-a",
+              external_ref: null,
+              name: "",
+              color: null,
+              size: "S",
+              sku: "SHIRT-S",
+              barcode: null,
+              version: 1,
+            },
+            {
+              id: "variant-m",
+              merchant_id: "merchant-a",
+              product_id: "shirt-a",
+              external_ref: null,
+              name: "",
+              color: null,
+              size: "M",
+              sku: "SHIRT-M",
+              barcode: null,
+              version: 1,
+            },
+          ],
+        };
+      }
+      if (sql.includes("FROM catalog_variant_options")) {
+        return { rows: [] };
+      }
+      return { rows: [] };
+    }
+  }
+
+  const sql = new SizeCatalogSql();
+  const resolver = new PostgresMerchantCatalogContextResolver(sql);
+
+  const exact = await resolver.listRelevantContext({
+    merchantId: "merchant-a",
+    customerText: "Does the Classic Shirt M use cotton?",
+    language: "en",
+  });
+
+  assert.equal(exact.length, 1);
+  assert.equal(exact[0].id, "catalog-variant:shirt-a:variant-m");
+  assert.equal(exact[0].variantId, "variant-m");
+  assert.deepEqual(exact[0].selectedOptions, { size: "M" });
+
+  const notStandalone = await resolver.listRelevantContext({
+    merchantId: "merchant-a",
+    customerText: "Is the Classic Shirt premium cotton?",
+    language: "en",
+  });
+
+  assert.equal(notStandalone.length, 1);
+  assert.equal(notStandalone[0].id, "catalog-product:shirt-a");
+  assert.equal(notStandalone[0].variantId, undefined);
+});
