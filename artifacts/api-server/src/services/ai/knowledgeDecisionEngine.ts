@@ -10,6 +10,7 @@ import {
 import type { KnowledgeRepository } from "../knowledge/knowledgeRepository.js";
 import { retrieveSemanticMatch } from "../knowledge/semanticRetriever.js";
 import { PostgresOperationalFactResolver } from "../knowledge/postgresOperationalFactResolver.js";
+import { PostgresFawriEncyclopediaResolver } from "../knowledge/fawriEncyclopedia.js";
 import {
   isAuthoritativeFactQuestion,
   KnowledgeRuntimeGateError,
@@ -26,6 +27,7 @@ import type {
   KnowledgeDecisionInput,
   KnowledgeDecisionResult,
   KnowledgeFactResolver,
+  FawriEncyclopediaResolver,
   KnowledgeLanguage,
   KnowledgeConversationMessage,
   LearnedAnswerRecord,
@@ -192,6 +194,12 @@ class NoopFactResolver implements KnowledgeFactResolver {
   }
 }
 
+class DisabledFawriEncyclopediaResolver implements FawriEncyclopediaResolver {
+  async resolve(): Promise<null> {
+    return null;
+  }
+}
+
 class DisabledAiFallbackProvider implements AiFallbackProvider {
   readonly providerId = "disabled_ai_fallback_provider";
 
@@ -263,6 +271,7 @@ export type KnowledgeDecisionEngineOptions = {
   runtime?: KnowledgeDecisionRuntime;
   embeddingProvider?: KnowledgeEmbeddingProvider;
   factResolver?: KnowledgeFactResolver;
+  encyclopediaResolver?: FawriEncyclopediaResolver;
   policyResolver?: MerchantKnowledgePolicyResolver | null;
   aiProvider?: AiFallbackProvider;
   translationProvider?: ApprovedKnowledgeTranslationProvider;
@@ -279,6 +288,7 @@ export class KnowledgeDecisionEngine {
   readonly liveAiTransportEnabled: boolean;
   private readonly runtime: KnowledgeDecisionRuntime;
   private readonly factResolver: KnowledgeFactResolver;
+  private readonly encyclopediaResolver: FawriEncyclopediaResolver;
   private readonly policyResolver: MerchantKnowledgePolicyResolver | null;
   private readonly aiProvider: AiFallbackProvider;
   private readonly translationProvider: ApprovedKnowledgeTranslationProvider;
@@ -299,6 +309,12 @@ export class KnowledgeDecisionEngine {
       (explicitLegacyRepository
         ? new NoopFactResolver()
         : new PostgresOperationalFactResolver());
+    const explicitDecisionRuntime = Boolean(options.runtime || options.repository);
+    this.encyclopediaResolver =
+      options.encyclopediaResolver ||
+      (explicitDecisionRuntime
+        ? new DisabledFawriEncyclopediaResolver()
+        : new PostgresFawriEncyclopediaResolver());
     this.policyResolver =
       options.policyResolver === undefined
         ? explicitLegacyRepository
@@ -717,6 +733,35 @@ export class KnowledgeDecisionEngine {
           : {}),
       };
       await this.recordDecisionAudit({ input: { ...input, merchantId, customerText }, result });
+      return result;
+    }
+
+    const encyclopedia = await this.encyclopediaResolver.resolve({
+      merchantId,
+      customerText,
+      language,
+    });
+    if (encyclopedia) {
+      const result: KnowledgeDecisionResult = {
+        action: "reply",
+        stage: "fawri_encyclopedia",
+        answerText: encyclopedia.answerText,
+        language,
+        source: "fawri_curated",
+        confidence: encyclopedia.confidence,
+        requiresMerchantApproval: false,
+        trainingRequestId: null,
+        matchedRecordId: encyclopedia.articleId,
+        reasonCode:
+          encyclopedia.scope === "activity"
+            ? "FAWRI_ACTIVITY_ENCYCLOPEDIA_MATCH"
+            : "FAWRI_GLOBAL_ENCYCLOPEDIA_MATCH",
+        injectionSignals: [],
+      };
+      await this.recordDecisionAudit({
+        input: { ...input, merchantId, customerText },
+        result,
+      });
       return result;
     }
 

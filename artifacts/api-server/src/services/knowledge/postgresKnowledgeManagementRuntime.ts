@@ -762,7 +762,11 @@ export class PostgresKnowledgeManagementRuntime {
     customerQuestion: string;
     correctedAnswer: string;
     language: KnowledgeLanguage;
-    sourceStage: "approved_saved_answer" | "semantic_retrieval" | "ai_fallback";
+    sourceStage:
+      | "approved_saved_answer"
+      | "semantic_retrieval"
+      | "fawri_encyclopedia"
+      | "ai_fallback";
     matchedRecordId?: string | null;
   }): Promise<{
     savedAnswer: SavedAnswerRecord;
@@ -782,6 +786,7 @@ export class PostgresKnowledgeManagementRuntime {
       (
         input.sourceStage !== "approved_saved_answer" &&
         input.sourceStage !== "semantic_retrieval" &&
+        input.sourceStage !== "fawri_encyclopedia" &&
         input.sourceStage !== "ai_fallback"
       )
     ) {

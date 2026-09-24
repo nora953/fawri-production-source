@@ -627,6 +627,7 @@ export async function completeManualReplyAuthoritative(input: {
           const eligibleStage =
             stage === "approved_saved_answer" ||
             stage === "semantic_retrieval" ||
+            stage === "fawri_encyclopedia" ||
             stage === "ai_fallback";
 
           if (eligibleStage && metadata.handoff_after_reply !== true) {
