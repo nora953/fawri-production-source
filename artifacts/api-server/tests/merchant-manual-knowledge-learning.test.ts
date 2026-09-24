@@ -119,6 +119,20 @@ test("one-off discounts and exceptions are not generalized from a merchant reply
   assert.equal(result.reasonCode, "CASE_SPECIFIC_REPLY_NOT_REUSABLE");
 });
 
+test("manual replies containing sensitive contact data are not generalized", async () => {
+  const fake = runtimeFor(pendingRequest());
+  const result = await learnFromMerchantManualReply({
+    merchantId: "merchant-a",
+    trainingRequestId: "training-a",
+    merchantReply: "Contact us at help@example.com for this request.",
+    runtime: fake.runtime,
+  });
+
+  assert.equal(fake.approvals(), 0);
+  assert.equal(result.learned, false);
+  assert.equal(result.reasonCode, "SENSITIVE_REPLY_NOT_REUSABLE");
+});
+
 test("security and authoritative fallback training intents are fail-closed", async () => {
   for (const detectedIntent of ["prompt_injection", "authoritative_fact_unavailable"]) {
     const fake = runtimeFor(pendingRequest({ detectedIntent }));
