@@ -76,11 +76,22 @@ The broader cross-language merchant-knowledge translation rules remain unchanged
 
 ## Style is separate from facts
 
-The system must keep **what Fawri knows** separate from **how Fawri says it**.
+The system keeps **what Fawri knows** separate from **how Fawri says it**.
 
-The encyclopedia and merchant knowledge determine factual content. A later merchant response-style layer may control tone, greeting, brevity, formality, dialect preference, emoji preference, and closing style.
+A merchant response-style profile is stored in the merchant's server-owned metadata under a dedicated versioned namespace. The profile is managed from the knowledge workspace and currently controls:
 
-Style may rewrite phrasing only. It may not alter a number, price, date, quantity, SKU, URL, or policy condition; turn general encyclopedia guidance into a merchant promise; override live operational authority; or weaken safety or grounding rules.
+- tone: professional, friendly, warm, or direct;
+- reply length: concise, balanced, or detailed;
+- emoji preference: none, minimal, or expressive;
+- bounded free-text style instructions.
+
+The default profile is professional, balanced, and minimal, so a merchant can activate Fawri without configuring style first.
+
+The profile is presentation-only. It is loaded by the server knowledge-policy resolver and passed to constrained AI as trusted merchant presentation data, while a higher-priority system rule states that style can never add, remove, weaken, strengthen, or contradict facts or safety constraints. Sensitive values in free-text style instructions are redacted before provider transport.
+
+Merchant Saved Answers remain exact merchant-approved wording. Fawri encyclopedia answers remain curated wording unless the merchant adopts a correction, which creates higher-priority merchant knowledge. A later strictly grounded presentation rewriter may apply the global style to deterministic fact/encyclopedia wording, but only if it can preserve factual tokens and source authority.
+
+Style may never alter a number, price, date, quantity, SKU, URL, or policy condition; turn general encyclopedia guidance into a merchant promise; override live operational authority; or weaken safety or grounding rules.
 
 This separation allows the merchant to make Fawri sound like their own experienced employee without corrupting the factual knowledge base.
 
