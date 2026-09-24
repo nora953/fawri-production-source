@@ -63,10 +63,33 @@ export type ConstrainedOpenAiProviderOptions = {
   fetchImpl?: typeof fetch;
 };
 
+export type ConstrainedOpenAiProviderReadiness = {
+  ready: boolean;
+  providerId: "openai_responses_constrained_v1";
+  model: string | null;
+  credentialConfigured: boolean;
+  reasonCode: "KNOWLEDGE_AI_CONFIG_INVALID" | null;
+};
+
+export function getConstrainedOpenAiProviderReadiness(
+  options: Pick<ConstrainedOpenAiProviderOptions, "apiKey" | "model"> = {},
+): ConstrainedOpenAiProviderReadiness {
+  const apiKey = String(options.apiKey ?? process.env.OPENAI_API_KEY ?? "").trim();
+  const model = String(options.model ?? process.env.FAWRI_OPENAI_MODEL ?? "").trim();
+  const ready = Boolean(apiKey && model && model.length <= 160);
+  return {
+    ready,
+    providerId: "openai_responses_constrained_v1",
+    model: model || null,
+    credentialConfigured: Boolean(apiKey),
+    reasonCode: ready ? null : "KNOWLEDGE_AI_CONFIG_INVALID",
+  };
+}
+
 export class ConstrainedOpenAiProvider implements AiFallbackProvider {
   readonly providerId = "openai_responses_constrained_v1";
+  readonly model: string;
   private readonly apiKey: string;
-  private readonly model: string;
   private readonly endpoint: string;
   private readonly timeoutMs: number;
   private readonly fetchImpl: typeof fetch;
@@ -240,4 +263,17 @@ export class ConstrainedOpenAiProvider implements AiFallbackProvider {
       clearTimeout(timer);
     }
   }
+}
+
+export function createConstrainedOpenAiProvider(
+  options: ConstrainedOpenAiProviderOptions = {},
+): ConstrainedOpenAiProvider {
+  const readiness = getConstrainedOpenAiProviderReadiness(options);
+  if (!readiness.ready) {
+    throw Object.assign(
+      new Error("knowledge AI provider configuration is invalid"),
+      { code: "KNOWLEDGE_AI_CONFIG_INVALID" },
+    );
+  }
+  return new ConstrainedOpenAiProvider(options);
 }

@@ -5,8 +5,10 @@ import path from "node:path";
 import test from "node:test";
 import type { AwsKmsMetaCredentialKeyProvider } from "../src/services/awsKmsMetaCredentialKeyProvider";
 import {
+  configureKnowledgeAiProvider,
   configureKnowledgeEmbeddingProvider,
   configureKnowledgeTranslationProvider,
+  getKnowledgeAiActivationReadiness,
   getKnowledgeDecisionEngine,
   getKnowledgeEmbeddingActivationReadiness,
   getKnowledgeTranslationActivationReadiness,
@@ -26,6 +28,9 @@ import {
 import {
   createOpenAiApprovedKnowledgeTranslationProvider,
 } from "../src/services/knowledge/openAiApprovedKnowledgeTranslationProvider";
+import {
+  createConstrainedOpenAiProvider,
+} from "../src/services/ai/constrainedOpenAiProvider";
 import {
   bootstrapRuntimeAndLoadApplication,
   type RuntimeProviderBootstrapDependencies,
@@ -248,6 +253,8 @@ test("no explicit production provider preserves the current non-production behav
       configureKnowledge: never,
       createOpenAiTranslation: never,
       configureKnowledgeTranslation: never,
+      createOpenAiAi: never,
+      configureKnowledgeAi: never,
       configureMetaCredentialProvider: never,
     },
     loadApplication: async () => "app",
@@ -256,6 +263,7 @@ test("no explicit production provider preserves the current non-production behav
     metaCredentialProvider: "environment",
     knowledgeEmbeddingProvider: "disabled",
     knowledgeTranslationProvider: "disabled",
+    knowledgeAiProvider: "disabled",
   });
   assert.equal(
     createEnvironmentMetaCredentialKeyProvider().readiness?.().production_eligible,
@@ -313,6 +321,43 @@ test("openai translation selection configures approved translation before Knowle
           ready: true,
           providerId: "openai_approved_translation_v1",
           model: "test-translation-model",
+          reasonCode: null,
+        });
+        assert.equal(getKnowledgeDecisionEngine().liveAiTransportEnabled, true);
+        return "app";
+      },
+    });
+    assert.equal(result.application, "app");
+    result.runtime.dispose();
+  } finally {
+    resetKnowledgeDecisionEngineForTests();
+  }
+});
+
+test("openai constrained AI selection wires draft-generation transport before Knowledge singleton creation", async () => {
+  resetKnowledgeDecisionEngineForTests();
+  try {
+    const result = await bootstrapRuntimeAndLoadApplication({
+      env: {
+        FAWRI_KNOWLEDGE_AI_PROVIDER: "openai",
+        OPENAI_API_KEY: "test-openai-key-not-real",
+        FAWRI_OPENAI_MODEL: "test-ai-model",
+      } as NodeJS.ProcessEnv,
+      dependencies: {
+        createOpenAiAi: (apiKey, model) =>
+          createConstrainedOpenAiProvider({
+            apiKey,
+            model,
+            fetchImpl: async () => {
+              throw new Error("transport must not run during bootstrap");
+            },
+          }),
+      },
+      loadApplication: async () => {
+        assert.deepEqual(getKnowledgeAiActivationReadiness(), {
+          ready: true,
+          providerId: "openai_responses_constrained_v1",
+          model: "test-ai-model",
           reasonCode: null,
         });
         assert.equal(getKnowledgeDecisionEngine().liveAiTransportEnabled, true);

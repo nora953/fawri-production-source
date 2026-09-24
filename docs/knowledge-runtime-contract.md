@@ -60,7 +60,9 @@ For non-malicious text, the engine evaluates exactly this order:
 5. Constrained AI fallback using system rules plus approved merchant context.
 6. Human handoff or no answer.
 
-The default runtime never auto-sends generated text. A generated candidate is recorded as `openai_generated`, `pending_review`, and `safeToAutoReply=false`. Even when an internal deployment explicitly enables low-risk generated replies, the decision declares `requiresMerchantApproval=true`, and the candidate cannot enter approved retrieval until a merchant approval transition converts its provenance to `merchant_approved`.
+The constrained OpenAI provider may be wired in production for **draft generation only**. When no trusted database/approved answer is available, it may create a proposed response using only approved merchant context and the bounded conversation history. The customer does not receive that generated proposal under the current server policy.
+
+The default runtime never auto-sends generated text. A generated candidate is recorded as `openai_generated`, `pending_review`, and `safeToAutoReply=false`. Server-side merchant policy currently fixes `allowGeneratedAutoReply=false`, and the production singleton has no environment/browser switch that can override that rule. The generated proposal therefore exists only to help the merchant review/train the bot; it cannot enter approved retrieval until a merchant approval transition converts its provenance to `merchant_approved`.
 
 ## Provenance invariants
 
