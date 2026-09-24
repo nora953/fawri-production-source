@@ -59,6 +59,7 @@ class CatalogSql {
           {
             merchant_id: "merchant-a",
             product_id: "product-65w",
+            variant_id: "variant-black",
             option_name: "Plug",
             option_value: "EU",
             ordinal: 0,
@@ -158,6 +159,33 @@ test("catalog context exposes only the matched merchant product's non-operationa
   assert.deepEqual(sql.queries[0].values, ["merchant-a"]);
 });
 
+
+test("catalog context reuses a trusted product and variant reference on a natural follow-up", async () => {
+  const sql = new CatalogSql();
+  const resolver = new PostgresMerchantCatalogContextResolver(sql);
+
+  const context = await resolver.listRelevantContext({
+    merchantId: "merchant-a",
+    customerText: "Does it support Power Delivery?",
+    language: "en",
+    trustedProductIdHint: "product-65w",
+    trustedVariantIdHint: "variant-black",
+  });
+
+  assert.equal(context.length, 1);
+  assert.equal(context[0].id, "catalog-variant:product-65w:variant-black");
+  assert.equal(context[0].productId, "product-65w");
+  assert.equal(context[0].variantId, "variant-black");
+  assert.equal(context[0].variantName, "Black");
+  assert.equal(context[0].variantSku, "PM65-BLK");
+  assert.deepEqual(context[0].selectedOptions, {
+    color: "Black",
+    Plug: "EU",
+  });
+  assert.match(context[0].factualText, /Selected variant: Black/);
+  assert.match(context[0].factualText, /Selected option Plug: EU/);
+});
+
 test("catalog grounding never handles current price, stock, warranty, or return-policy questions", async () => {
   for (const customerText of [
     "How much is the PowerMax 65W Charger?",
@@ -224,8 +252,8 @@ test("constrained AI can combine exact merchant product facts with curated gener
           reason: "combined trusted product facts and curated guidance",
           source: "openai_generated",
           groundingRecordIds: [
-            "catalog-product:product-65w",
             "fawri-electronics-fast-charging",
+            "catalog-product:product-65w",
           ],
           providerId: "test-catalog-ai",
           model: "test-model",
@@ -252,9 +280,10 @@ test("constrained AI can combine exact merchant product facts with curated gener
     "CONSTRAINED_AI_GROUNDED_CATALOG_MIXED_TRUSTED_REPLY",
   );
   assert.deepEqual(result.groundingRecordIds, [
-    "catalog-product:product-65w",
     "fawri-electronics-fast-charging",
+    "catalog-product:product-65w",
   ]);
+  assert.equal(result.matchedRecordId, "catalog-product:product-65w");
 });
 
 test("OpenAI envelope keeps merchant catalog facts separate from curated and approved knowledge", async () => {
