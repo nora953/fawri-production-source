@@ -394,6 +394,56 @@ function normalizeActivityKey(value: unknown): ActivityKey | null {
   return null;
 }
 
+export type FawriEncyclopediaLibraryArticle = {
+  id: string;
+  scope: "global" | "activity";
+  activityKey: ActivityKey | null;
+  language: KnowledgeLanguage;
+  questionPattern: string;
+  answerText: string;
+};
+
+async function loadMerchantActivityKey(
+  sql: KnowledgeSqlExecutor,
+  merchantId: string,
+): Promise<ActivityKey | null | undefined> {
+  let rows: Array<{ merchant_id?: unknown; activity_type?: unknown }>;
+  try {
+    rows = (
+      await sql.query<{ merchant_id?: unknown; activity_type?: unknown }>(
+        `SELECT id AS merchant_id, activity_type
+           FROM merchants
+          WHERE id = $1
+          LIMIT 2`,
+        [merchantId],
+      )
+    ).rows;
+  } catch {
+    throw new KnowledgeRuntimeGateError(
+      "FAWRI_ENCYCLOPEDIA_ACTIVITY_UNAVAILABLE",
+      "merchant activity is unavailable for encyclopedia resolution",
+    );
+  }
+  if (rows.length !== 1) return undefined;
+  if (boundedText(rows[0]?.merchant_id, 160) !== merchantId) {
+    throw new KnowledgeRuntimeGateError(
+      "FAWRI_ENCYCLOPEDIA_TENANT_VIOLATION",
+      "encyclopedia tenant boundary is invalid",
+    );
+  }
+  return normalizeActivityKey(rows[0]?.activity_type);
+}
+
+function relevantArticles(activityKey: ActivityKey | null): CuratedArticle[] {
+  return ALL_ARTICLES.filter(
+    (article) =>
+      article.scope === "global" ||
+      (article.scope === "activity" &&
+        activityKey &&
+        article.activityKey === activityKey),
+  );
+}
+
 function articleScore(
   article: CuratedArticle,
   customerText: string,
@@ -425,14 +475,7 @@ function retrieveArticle(params: {
   activityKey: ActivityKey | null;
   threshold: number;
 }): FawriEncyclopediaMatch | null {
-  const candidates = ALL_ARTICLES
-    .filter(
-      (article) =>
-        article.scope === "global" ||
-        (article.scope === "activity" &&
-          params.activityKey &&
-          article.activityKey === params.activityKey),
-    )
+  const candidates = relevantArticles(params.activityKey)
     .map((article) => ({
       article,
       score: articleScore(article, params.customerText, params.language),
@@ -465,6 +508,26 @@ export class PostgresFawriEncyclopediaResolver
     private readonly threshold = 0.58,
   ) {}
 
+  async listForMerchant(input: {
+    merchantId: string;
+    language: KnowledgeLanguage;
+  }): Promise<FawriEncyclopediaLibraryArticle[]> {
+    const merchantId = boundedText(input.merchantId, 160);
+    if (!merchantId) return [];
+    const activityKey = await loadMerchantActivityKey(this.sql, merchantId);
+    if (activityKey === undefined) return [];
+
+    return relevantArticles(activityKey).map((article) => ({
+      id: article.id,
+      scope: article.scope,
+      activityKey:
+        article.scope === "activity" ? article.activityKey || null : null,
+      language: input.language,
+      questionPattern: boundedText(article.questions[input.language][0], 500),
+      answerText: boundedText(article.answers[input.language], 2_000),
+    }));
+  }
+
   async resolve(input: {
     merchantId: string;
     customerText: string;
@@ -475,29 +538,13 @@ export class PostgresFawriEncyclopediaResolver
     if (!merchantId || !customerText) return null;
     if (isAuthoritativeFactQuestion(customerText)) return null;
 
-    let rows: Array<{ activity_type?: unknown }>;
-    try {
-      rows = (
-        await this.sql.query<{ activity_type?: unknown }>(
-          `SELECT activity_type
-             FROM merchants
-            WHERE id = $1
-            LIMIT 2`,
-          [merchantId],
-        )
-      ).rows;
-    } catch {
-      throw new KnowledgeRuntimeGateError(
-        "FAWRI_ENCYCLOPEDIA_ACTIVITY_UNAVAILABLE",
-        "merchant activity is unavailable for encyclopedia resolution",
-      );
-    }
-    if (rows.length !== 1) return null;
+    const activityKey = await loadMerchantActivityKey(this.sql, merchantId);
+    if (activityKey === undefined) return null;
 
     return retrieveArticle({
       customerText,
       language: input.language,
-      activityKey: normalizeActivityKey(rows[0]?.activity_type),
+      activityKey,
       threshold: this.threshold,
     });
   }
