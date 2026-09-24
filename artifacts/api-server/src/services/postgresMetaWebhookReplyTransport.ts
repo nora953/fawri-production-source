@@ -40,6 +40,11 @@ function safeCode(value: unknown, fallback: string): string {
   return /^[A-Z][A-Z0-9_]{2,159}$/.test(raw) ? raw : fallback;
 }
 
+function conversationGeneration(metadata: Record<string, unknown> | null): number | null {
+  const value = Number(metadata?.customer_message_generation);
+  return Number.isSafeInteger(value) && value >= 0 ? value : null;
+}
+
 async function currentSettingsVersion(
   client: OperationalSqlClient,
   merchantId: string,
@@ -234,6 +239,27 @@ async function beginDelivery(input: {
 }): Promise<"send" | "sent" | "uncertain"> {
   const { prepared } = input;
   return withMerchantOperationalTransaction(prepared.merchantId, async (client) => {
+    const conversation = await client.query<{ metadata: Record<string, unknown> | null }>(
+      `SELECT metadata
+         FROM conversations
+        WHERE merchant_id = $1 AND id = $2
+        FOR UPDATE`,
+      [prepared.merchantId, prepared.conversationId],
+    );
+    const currentGeneration = conversationGeneration(
+      conversation.rows[0]?.metadata ?? null,
+    );
+    if (
+      prepared.sourceConversationGeneration === null ||
+      currentGeneration === null ||
+      currentGeneration !== prepared.sourceConversationGeneration
+    ) {
+      throw Object.assign(
+        new Error("conversation changed after reply preparation"),
+        { code: "CONVERSATION_SUPERSEDED" },
+      );
+    }
+
     const current = await client.query<DeliveryRow>(
       `SELECT outcome::text AS outcome, provider_message_id, failure_code,
               attempted_at, finalized_at
