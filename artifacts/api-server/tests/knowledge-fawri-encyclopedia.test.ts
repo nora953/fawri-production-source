@@ -9,6 +9,9 @@ import {
 import {
   FAWRI_ENCYCLOPEDIA_EXPANSION_ARTICLES,
 } from "../src/services/knowledge/fawriEncyclopediaExpansion.js";
+import {
+  FAWRI_ENCYCLOPEDIA_EXPANSION_V2_ARTICLES,
+} from "../src/services/knowledge/fawriEncyclopediaExpansion2.js";
 
 class FakeSql {
   constructor(activityType = "ملابس") {
@@ -44,7 +47,7 @@ function emptyRuntime(savedAnswer = null) {
 test("bootstrap encyclopedia contains a broad multilingual corpus across all five launch activities", () => {
   const ids = new Set(FAWRI_ENCYCLOPEDIA_ARTICLE_IDS);
   assert.equal(ids.size, FAWRI_ENCYCLOPEDIA_ARTICLE_IDS.length, "article IDs must be unique");
-  assert.ok(ids.size >= 50, `expected at least 50 curated articles, got ${ids.size}`);
+  assert.ok(ids.size >= 80, `expected at least 80 curated articles, got ${ids.size}`);
 
   for (const id of [
     "fawri-global-sku",
@@ -59,11 +62,20 @@ test("bootstrap encyclopedia contains a broad multilingual corpus across all fiv
     "fawri-perfume-sillage-projection",
     "fawri-jewelry-925",
     "fawri-jewelry-carat-karat",
+    "fawri-global-universal-compatibility",
+    "fawri-fashion-water-resistant",
+    "fawri-electronics-usbc-protocol",
+    "fawri-food-after-opening",
+    "fawri-perfume-nose-blindness",
+    "fawri-jewelry-hypoallergenic",
   ]) {
     assert.equal(ids.has(id), true, id);
   }
 
-  for (const article of FAWRI_ENCYCLOPEDIA_EXPANSION_ARTICLES) {
+  for (const article of [
+    ...FAWRI_ENCYCLOPEDIA_EXPANSION_ARTICLES,
+    ...FAWRI_ENCYCLOPEDIA_EXPANSION_V2_ARTICLES,
+  ]) {
     assert.ok(article.questions.ar.length >= 2, article.id);
     assert.ok(article.questions.ku.length >= 2, article.id);
     assert.ok(article.questions.en.length >= 2, article.id);
