@@ -75,6 +75,18 @@ A grounded automatic synthesis does not create a pending training request and do
 
 Merchant response style is server-owned presentation metadata. The default is professional, balanced, and minimal. A merchant may choose tone, reply length, emoji preference, and bounded custom style instructions from the knowledge workspace. The knowledge policy resolver supplies this profile to constrained AI, but system rules explicitly keep presentation subordinate to factual authority, grounding, and safety. A non-default style may also rewrite a curated encyclopedia answer through the same constrained provider; the source remains `fawri_curated`, unsupported factual tokens reject the rewrite, and any rewrite failure falls back to the original curated wording. Live operational facts and exact merchant Saved Answers are not rewritten by this presentation layer.
 
+## Exact variant grounding
+
+Operational product resolution loads canonical variant rows and their `catalog_variant_options` for the authenticated merchant/product. Matching considers variant SKU/barcode/external reference, variant name/color/size, and configured option values. Option-name/value pairs may strengthen a match; equal top matches fail with `KNOWLEDGE_VARIANT_AMBIGUOUS`.
+
+A resolved variant produces the stable context reference `catalog-variant:<productId>:<variantId>`. The reference is reused by the conversation-memory contract, but a new explicit variant in the customer message always has priority over the remembered hint.
+
+Variant price resolution applies the selected row's price override/adjustment and passes the variant ID into promotion resolution. Existing generic product-price behavior is retained when variant-level inventory is disabled and no variant was selected.
+
+Variant physical measurements are resolved independently of inventory mode. If no variant is selected and effective variant measurements differ, the resolver returns `KNOWLEDGE_VARIANT_REQUIRED` rather than falling back to a possibly incorrect product-level measurement. If all effective measurements are identical, the common measurement may be returned.
+
+Variant-level stock is used only when the product's structured inventory mode requires it. In that mode, the exact variant ID is passed to location-inventory authority. When stock is product-level, location inventory remains queried with a null variant ID even if a variant was selected for conversation context.
+
 ## Mixed authority composition
 
 When a trusted product operational fact has already been resolved, the engine may request bounded catalog and curated context with `allowOperationalContext=true`. This flag does not grant those sources operational authority; it only permits them to accompany a live fact that was resolved separately.
