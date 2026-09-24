@@ -208,18 +208,18 @@ export const FAWRI_ENCYCLOPEDIA_EXPANSION_V2_ARTICLES: CuratedArticle[] = [
     },
   },
   {
-    id: "fawri-electronics-usbc-protocol",
+    id: "fawri-electronics-usbc-video-altmode",
     scope: "activity",
     activityKey: "electronics",
     questions: {
-      ar: ["هل كل usb c نفس الشي", "usb c يعني نفس السرعة والشحن"],
-      ku: ["ئایا هەموو USB-C یەکسانن", "USB-C واتە هەمان خێرایی و شارج"],
-      en: ["are all usb c ports the same", "does usb c guarantee the same speed and charging"],
+      ar: ["هل usb c يطلع صورة للشاشة", "شلون اعرف usb c يدعم فيديو"],
+      ku: ["ئایا USB-C وێنە بۆ شاشە دەردەکات", "چۆن بزانم USB-C ڤیدیۆ پشتگیری دەکات"],
+      en: ["does usb c support video output", "how do i know if usb c can connect to a display"],
     },
     answers: {
-      ar: "USB-C يصف شكل الموصل أكثر من كونه ضمانا لكل الميزات. منافذ وكابلات USB-C قد تختلف في سرعة البيانات وقدرة الشحن ودعم الفيديو، لذلك يجب فحص المواصفات والرموز الخاصة بكل منفذ وكابل.",
-      ku: "USB-C زیاتر شێوەی پەیوەستکەر دەناسێنێت و مسۆگەرکردنی هەموو تایبەتمەندی نییە. پۆرت و کابڵەکان لە خێرایی داتا و توانای شارج و ڤیدیۆ جیاوازن و مواسفات دەبێت پشکنرێت.",
-      en: "USB-C mainly describes the connector shape and does not guarantee every feature. USB-C ports and cables can differ in data speed, charging power, and video support, so the specification for each port and cable should be checked.",
+      ar: "وجود منفذ USB-C لا يعني تلقائيا أنه يدعم إخراج الفيديو. يجب أن يدعم الجهاز والمنفذ وضع الفيديو المناسب مثل DisplayPort Alt Mode أو معيارا آخر مذكورا في المواصفات، كما يجب أن يكون الكابل أو المحول متوافقا.",
+      ku: "بوونی پۆرتی USB-C بە خۆی واتای پشتگیریی دەرکردنی ڤیدیۆ نییە. ئامێر و پۆرت دەبێت دۆخی ڤیدیۆی گونجاو وەک DisplayPort Alt Mode یان ستانداردێکی تری نووسراو پشتگیری بکەن و کابڵ یان adapter ـیش گونجاو بێت.",
+      en: "A USB-C port does not automatically support video output. The device and port must support an appropriate video mode such as DisplayPort Alt Mode or another stated standard, and the cable or adapter must also be compatible.",
     },
   },
   {
