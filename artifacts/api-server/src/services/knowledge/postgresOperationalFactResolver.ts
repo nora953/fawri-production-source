@@ -450,6 +450,13 @@ FROM product_variants
 WHERE merchant_id = $1 AND product_id = $2 AND version > 0
 LIMIT 150`;
 
+const VARIANT_OPTIONS_SQL = `
+SELECT merchant_id, product_id, variant_id, option_name, option_value, ordinal
+FROM catalog_variant_options
+WHERE merchant_id = $1 AND product_id = $2
+ORDER BY ordinal ASC, option_name ASC, option_value ASC
+LIMIT 500`;
+
 function identifierMatches(customer: string, value: unknown): boolean {
   const candidate = normalizeKnowledgeText(value);
   return candidate.length >= 2 && customer.includes(candidate);
@@ -464,13 +471,25 @@ function productMatchScore(customer: string, row: Record<string, unknown>): numb
   return score;
 }
 
-function variantMatchScore(customer: string, row: Record<string, unknown>): number {
+function variantMatchScore(
+  customer: string,
+  row: Record<string, unknown>,
+  optionRows: Record<string, unknown>[],
+): number {
   let score = 0;
   for (const key of ["sku", "barcode", "external_ref"] as const) {
     if (identifierMatches(customer, row[key])) score += 180;
   }
   for (const key of ["name", "color", "size"] as const) {
     if (identifierMatches(customer, row[key])) score += 60;
+  }
+
+  const variantId = text(row.id, 160);
+  for (const option of optionRows) {
+    if (text(option.variant_id, 160) !== variantId) continue;
+    if (identifierMatches(customer, option.option_value)) score += 70;
+    const pair = `${text(option.option_name, 120)} ${text(option.option_value, 240)}`;
+    if (identifierMatches(customer, pair)) score += 20;
   }
   return score;
 }
@@ -502,20 +521,60 @@ function selectProduct(
 
 function selectVariant(
   variants: Record<string, unknown>[],
+  optionRows: Record<string, unknown>[],
   customer: string,
   productId: string,
   trustedProductIdHint?: string,
   trustedVariantIdHint?: string,
 ): Record<string, unknown> | null {
   const explicit = uniqueBest(
-    variants.map((row) => ({ row, score: variantMatchScore(customer, row) })),
+    variants.map((row) => ({
+      row,
+      score: variantMatchScore(customer, row, optionRows),
+    })),
     "KNOWLEDGE_VARIANT_AMBIGUOUS",
   );
   if (explicit) return explicit;
+
   const productHint = text(trustedProductIdHint, 160);
   const variantHint = text(trustedVariantIdHint, 160);
-  if (!variantHint || !productHint || productHint !== productId) return null;
-  return variants.find((row) => text(row.id, 160) === variantHint) || null;
+  if (variantHint && productHint === productId) {
+    const hinted = variants.find((row) => text(row.id, 160) === variantHint);
+    if (hinted) return hinted;
+  }
+
+  return variants.length === 1 ? variants[0] : null;
+}
+
+function variantDisplayLabel(
+  variant: Record<string, unknown> | null,
+  optionRows: Record<string, unknown>[],
+): string {
+  if (!variant) return "";
+  const directName = text(variant.name, 300);
+  if (directName) return directName;
+
+  const values = new Set<string>();
+  for (const key of ["color", "size"] as const) {
+    const value = text(variant[key], 240);
+    if (value) values.add(value);
+  }
+  const variantId = text(variant.id, 160);
+  for (const option of optionRows) {
+    if (text(option.variant_id, 160) !== variantId) continue;
+    const value = text(option.option_value, 240);
+    if (value) values.add(value);
+  }
+  return [...values].slice(0, 6).join(" / ");
+}
+
+function productVariantDisplayName(
+  productName: string,
+  variant: Record<string, unknown> | null,
+  optionRows: Record<string, unknown>[],
+): string {
+  const label = variantDisplayLabel(variant, optionRows);
+  return label ? `${productName} (${label})` : productName;
 }
 
 function catalogContextRecordId(productId: string, variantId?: string): string {
@@ -679,6 +738,35 @@ async function loadVariants(
     physicalFacts(row);
   }
   return variants;
+}
+
+async function loadVariantOptions(
+  sql: KnowledgeSqlExecutor,
+  merchantId: string,
+  productId: string,
+  variants: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  let rows: Record<string, unknown>[];
+  try {
+    rows = (await sql.query(VARIANT_OPTIONS_SQL, [merchantId, productId])).rows;
+  } catch {
+    fail("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
+  }
+
+  const variantIds = new Set(variants.map((row) => text(row.id, 160)).filter(Boolean));
+  for (const row of rows) {
+    tenant(row, merchantId);
+    if (
+      text(row.product_id, 160) !== productId ||
+      !variantIds.has(text(row.variant_id, 160))
+    ) {
+      fail("KNOWLEDGE_TENANT_VIOLATION", "catalog variant option boundary violation");
+    }
+    if (!text(row.option_name, 120) || !text(row.option_value, 240)) {
+      fail("KNOWLEDGE_STATE_INVALID", "catalog variant option state is invalid");
+    }
+  }
+  return rows;
 }
 
 function formatScaled(value: number, scale: number): string {
