@@ -11,6 +11,7 @@ import {
 type CorrectionStage =
   | "approved_saved_answer"
   | "semantic_retrieval"
+  | "fawri_encyclopedia"
   | "ai_fallback";
 
 type CorrectionReview = {
@@ -53,6 +54,7 @@ function correctionReview(value: unknown): CorrectionReview | null {
     (
       stage !== "approved_saved_answer" &&
       stage !== "semantic_retrieval" &&
+      stage !== "fawri_encyclopedia" &&
       stage !== "ai_fallback"
     ) ||
     !customerMessageId ||
