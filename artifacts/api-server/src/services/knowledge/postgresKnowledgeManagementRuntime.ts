@@ -1384,7 +1384,7 @@ export class PostgresKnowledgeManagementRuntime {
             ? entityRaw : "decision";
         const actor: KnowledgeAuditEvent["actor"] = action === "openai_candidate_recorded"
           ? "ai_provider"
-          : action.startsWith("saved_answer_") || action.startsWith("training_reply_") || action.startsWith("training_request_approve") || action.startsWith("training_request_reject") || action.startsWith("training_approval_")
+          : action.startsWith("saved_answer_") || action.startsWith("training_reply_") || action.startsWith("training_request_approve") || action.startsWith("training_request_reject") || action.startsWith("training_approval_") || action.startsWith("merchant_correction_")
             ? "merchant" : "system";
         return {
           id: boundedText(row.id, 160), merchantId: merchant, action, entityType,
