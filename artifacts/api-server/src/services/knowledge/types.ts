@@ -211,6 +211,30 @@ export interface FawriEncyclopediaResolver {
   }): Promise<FawriCuratedKnowledge[]>;
 }
 
+export type MerchantCatalogKnowledge = {
+  id: string;
+  productId: string;
+  name: string;
+  category?: string;
+  description?: string;
+  sku?: string;
+  options: Array<{
+    name: string;
+    values: string[];
+  }>;
+  factualText: string;
+  confidence: number;
+};
+
+export interface MerchantCatalogContextResolver {
+  listRelevantContext(input: {
+    merchantId: string;
+    customerText: string;
+    language: KnowledgeLanguage;
+    limit?: number;
+  }): Promise<MerchantCatalogKnowledge[]>;
+}
+
 export type AiTokenUsage = {
   inputTokens: number;
   outputTokens: number;
@@ -237,6 +261,7 @@ export type AiFallbackRequest = {
     language: KnowledgeLanguage;
   }>;
   curatedKnowledge?: FawriCuratedKnowledge[];
+  catalogKnowledge?: MerchantCatalogKnowledge[];
   customerText: string;
   conversationHistory?: KnowledgeConversationMessage[];
   injectionSignals: string[];
