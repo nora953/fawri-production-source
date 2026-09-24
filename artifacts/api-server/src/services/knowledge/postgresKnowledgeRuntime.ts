@@ -314,8 +314,10 @@ export class PostgresMerchantKnowledgePolicyResolver
       allowKnowledgeUse: settings.autoReplyEnabled,
       policy: {
         businessName: settings.storeName || undefined,
-        // Generated content is never authorized by browser input or by this launch policy.
-        allowGeneratedAutoReply: false,
+        // Browser input cannot authorize generated replies. The decision engine
+        // still requires low-risk synthesis grounded only in this tenant's
+        // merchant-approved knowledge before an automatic reply is allowed.
+        allowGeneratedAutoReply: true,
       },
     };
   }

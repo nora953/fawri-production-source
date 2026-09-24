@@ -163,6 +163,9 @@ export function getProductionRuntimeConfigurationIssues(
   if (text(env.FAWRI_KNOWLEDGE_TRANSLATION_PROVIDER).toLowerCase() !== "openai") {
     issues.push(issue("knowledge", "KNOWLEDGE_TRANSLATION_OPENAI_PROVIDER_REQUIRED"));
   }
+  if (text(env.FAWRI_KNOWLEDGE_AI_PROVIDER).toLowerCase() !== "openai") {
+    issues.push(issue("knowledge", "KNOWLEDGE_AI_OPENAI_PROVIDER_REQUIRED"));
+  }
   if (text(env.OPENAI_API_KEY).length < 20) {
     issues.push(issue("knowledge", "OPENAI_API_KEY_REQUIRED"));
   }

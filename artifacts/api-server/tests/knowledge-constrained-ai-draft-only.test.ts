@@ -65,11 +65,12 @@ test("constrained AI can create a merchant-review draft without becoming an auto
           allowKnowledgeUse: true,
           policy: {
             businessName: "Store A",
-            allowGeneratedAutoReply: false,
+            allowGeneratedAutoReply: true,
           },
         };
       },
     },
+    allowGeneratedAutoReply: true,
     aiProvider: {
       providerId: "test-constrained-ai",
       async generate() {
@@ -81,6 +82,7 @@ test("constrained AI can create a merchant-review draft without becoming an auto
           canAnswer: true,
           reason: "approved-context-only",
           source: "openai_generated",
+          groundingRecordIds: [],
           providerId: "test-constrained-ai",
           model: "test-model",
         };

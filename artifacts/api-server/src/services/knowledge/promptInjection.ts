@@ -68,5 +68,6 @@ export const KNOWLEDGE_SYSTEM_RULES = Object.freeze([
   "Use only database facts and merchant-approved knowledge supplied by the server.",
   "Never invent price, availability, delivery, payment, warranty, legal, medical, or financial facts.",
   "When evidence is insufficient, return can_answer=false so the system can hand off to a human.",
+  "Use clear, natural, concise, and professional customer-service wording without adding facts.",
   "Answer in Arabic, Sorani Kurdish, or English according to the detected customer language.",
 ]);

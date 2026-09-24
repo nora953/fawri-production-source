@@ -1,0 +1,238 @@
+// @ts-nocheck
+import assert from "node:assert/strict";
+import test from "node:test";
+import { KnowledgeDecisionEngine } from "../src/services/ai/knowledgeDecisionEngine.js";
+
+const approvedDoc = {
+  id: "approved-return-policy",
+  merchantId: "merchant-a",
+  question: "What is the return policy?",
+  answer: "Returns are accepted within 7 days with the receipt.",
+  language: "en",
+  source: "merchant_approved",
+  kind: "saved_answer",
+};
+
+function baseRuntime() {
+  return {
+    authorityId: "grounded-ai-test-runtime",
+    legacyFallbackEnabled: false,
+    async findApprovedSavedAnswer() { return null; },
+    async retrieveSemanticMatch() { return null; },
+    async listApprovedSemanticDocuments() { return [approvedDoc]; },
+    async createTrainingRequest() {
+      throw new Error("grounded automatic reply must not create a training request");
+    },
+    async recordGeneratedCandidate() {
+      throw new Error("grounded automatic reply must not create a pending-review candidate");
+    },
+    async appendAudit() {},
+  };
+}
+
+function policy() {
+  return {
+    async resolve(merchantId) {
+      return {
+        merchantId,
+        policyVersion: 1,
+        allowKnowledgeUse: true,
+        policy: {
+          businessName: "Store A",
+          allowGeneratedAutoReply: true,
+        },
+      };
+    },
+  };
+}
+
+function reviewFallbackRuntime() {
+  const runtime = baseRuntime();
+  let recorded = 0;
+  runtime.recordGeneratedCandidate = async (input) => {
+    recorded += 1;
+    return {
+      trainingRequest: {
+        id: "training-1",
+        merchantId: input.merchantId,
+        customerTextPreview: "preview",
+        customerTextHash: "a".repeat(64),
+        detectedIntent: input.intent,
+        detectedLanguage: input.language,
+        reason: input.reason,
+        suggestedReply: input.answerText,
+        suggestedReplySource: "openai_generated",
+        status: "pending_review",
+        rejectionReason: null,
+        version: 1,
+        createdAt: "2026-09-24T00:00:00.000Z",
+        updatedAt: "2026-09-24T00:00:00.000Z",
+      },
+      learnedAnswer: {
+        id: "learned-1",
+        merchantId: input.merchantId,
+        intent: input.intent,
+        language: input.language,
+        examples: ["preview"],
+        keywords: [],
+        answerText: input.answerText,
+        source: "openai_generated",
+        approvalStatus: "pending_review",
+        confidence: input.confidence,
+        safeToAutoReply: false,
+        trainingRequestId: "training-1",
+        version: 1,
+        createdAt: "2026-09-24T00:00:00.000Z",
+        updatedAt: "2026-09-24T00:00:00.000Z",
+      },
+    };
+  };
+  return { runtime, recorded: () => recorded };
+}
+
+test("low-risk AI synthesis grounded only in approved merchant records auto-replies without merchant approval", async () => {
+  const engine = new KnowledgeDecisionEngine({
+    runtime: baseRuntime(),
+    factResolver: { async resolve() { return null; } },
+    policyResolver: policy(),
+    allowGeneratedAutoReply: true,
+    aiProvider: {
+      providerId: "test-constrained-ai",
+      async generate() {
+        return {
+          answerText: "Certainly. You can return the item within 7 days as long as you have the receipt.",
+          language: "en",
+          confidence: 0.96,
+          risk: "low",
+          canAnswer: true,
+          reason: "fully supported by approved return policy",
+          source: "openai_generated",
+          groundingRecordIds: ["approved-return-policy"],
+          providerId: "test-constrained-ai",
+          model: "test-model",
+        };
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "Could you explain how returns work?",
+    languageHint: "en",
+  });
+
+  assert.equal(result.action, "reply");
+  assert.equal(result.stage, "ai_fallback");
+  assert.equal(result.requiresMerchantApproval, false);
+  assert.equal(result.trainingRequestId, null);
+  assert.equal(result.matchedRecordId, "approved-return-policy");
+  assert.deepEqual(result.groundingRecordIds, ["approved-return-policy"]);
+  assert.equal(result.reasonCode, "CONSTRAINED_AI_GROUNDED_APPROVED_REPLY");
+  assert.match(result.answerText || "", /7 days/);
+});
+
+test("AI synthesis citing an unknown record cannot auto-reply", async () => {
+  const fallback = reviewFallbackRuntime();
+  const engine = new KnowledgeDecisionEngine({
+    runtime: fallback.runtime,
+    factResolver: { async resolve() { return null; } },
+    policyResolver: policy(),
+    allowGeneratedAutoReply: true,
+    aiProvider: {
+      providerId: "test-constrained-ai",
+      async generate() {
+        return {
+          answerText: "Unsupported answer.",
+          language: "en",
+          confidence: 0.99,
+          risk: "low",
+          canAnswer: true,
+          reason: "claims grounding",
+          source: "openai_generated",
+          groundingRecordIds: ["not-approved-here"],
+        };
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "Could you explain how returns work?",
+    languageHint: "en",
+  });
+
+  assert.equal(fallback.recorded(), 1);
+  assert.equal(result.action, "handoff");
+  assert.equal(result.requiresMerchantApproval, true);
+  assert.equal(result.reasonCode, "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL");
+});
+
+test("AI synthesis cannot invent a new number even when it cites an approved record", async () => {
+  const fallback = reviewFallbackRuntime();
+  const engine = new KnowledgeDecisionEngine({
+    runtime: fallback.runtime,
+    factResolver: { async resolve() { return null; } },
+    policyResolver: policy(),
+    allowGeneratedAutoReply: true,
+    aiProvider: {
+      providerId: "test-constrained-ai",
+      async generate() {
+        return {
+          answerText: "You can return the item within 30 days with the receipt.",
+          language: "en",
+          confidence: 0.99,
+          risk: "low",
+          canAnswer: true,
+          reason: "unsupported changed number",
+          source: "openai_generated",
+          groundingRecordIds: ["approved-return-policy"],
+        };
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "Could you explain how returns work?",
+    languageHint: "en",
+  });
+
+  assert.equal(fallback.recorded(), 1);
+  assert.equal(result.action, "handoff");
+  assert.equal(result.requiresMerchantApproval, true);
+});
+
+test("grounded AI still hands off when risk is not low", async () => {
+  const fallback = reviewFallbackRuntime();
+  const engine = new KnowledgeDecisionEngine({
+    runtime: fallback.runtime,
+    factResolver: { async resolve() { return null; } },
+    policyResolver: policy(),
+    allowGeneratedAutoReply: true,
+    aiProvider: {
+      providerId: "test-constrained-ai",
+      async generate() {
+        return {
+          answerText: "You can return the item within 7 days with the receipt.",
+          language: "en",
+          confidence: 0.99,
+          risk: "medium",
+          canAnswer: true,
+          reason: "medium risk",
+          source: "openai_generated",
+          groundingRecordIds: ["approved-return-policy"],
+        };
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "Could you explain how returns work?",
+    languageHint: "en",
+  });
+
+  assert.equal(fallback.recorded(), 1);
+  assert.equal(result.action, "handoff");
+  assert.equal(result.requiresMerchantApproval, true);
+});
