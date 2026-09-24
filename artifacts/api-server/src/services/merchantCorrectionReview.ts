@@ -263,8 +263,10 @@ export async function reviewMerchantCorrectionAuthoritative(input: {
         409,
       );
     }
+    const resolvedStatus =
+      context.review.status === "approved" ? "approved" : "dismissed";
     return {
-      status: context.review.status,
+      status: resolvedStatus,
       messageId,
       knowledgeId: context.review.knowledge_id || null,
       applyMode: context.review.apply_mode || null,
