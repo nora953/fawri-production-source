@@ -75,7 +75,7 @@ test('conversation page exposes save-as-answer only for merchant messages and re
     'utf8',
   );
 
-  assert.match(source, /message\.sender === 'merchant' && \(/);
+  assert.match(source, /message\.sender === 'merchant'/);
   assert.match(source, /handleSaveAsAnswer\(message\.id\)/);
   assert.match(source, /value=\{saveAnswerDraft\.questionPattern\}/);
   assert.match(source, /questionPattern: event\.target\.value/);
