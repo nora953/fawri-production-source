@@ -162,6 +162,7 @@ test("catalog grounding never handles current price, stock, warranty, or return-
   for (const customerText of [
     "How much is the PowerMax 65W Charger?",
     "Is the PowerMax 65W Charger in stock?",
+    "What is the weight of the PowerMax 65W Charger?",
     "What warranty does the PowerMax 65W Charger have?",
     "Can I return the PowerMax 65W Charger?",
   ]) {
