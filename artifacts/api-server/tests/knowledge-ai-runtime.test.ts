@@ -148,6 +148,7 @@ test("OpenAI provider sends separated trust zones with strict non-stored JSON ou
               confidence: 0.9,
               risk: "low",
               reason: "bounded approved context",
+              supporting_ids: ["saved-a"],
             }),
           };
         },
@@ -178,9 +179,19 @@ test("OpenAI provider sends separated trust zones with strict non-stored JSON ou
     injectionSignals: [],
   });
   assert.equal(candidate?.source, "openai_generated");
+  assert.deepEqual(candidate?.groundingRecordIds, ["saved-a"]);
   assert.equal(captured.store, false);
   assert.equal(captured.text.format.type, "json_schema");
   assert.equal(captured.text.format.strict, true);
+  assert.deepEqual(captured.text.format.schema.required, [
+    "can_answer",
+    "answer",
+    "language",
+    "confidence",
+    "risk",
+    "reason",
+    "supporting_ids",
+  ]);
   assert.deepEqual(captured.input.map((item) => item.role), ["system", "developer", "user"]);
   assert.match(captured.input[0].content[0].text, /SYSTEM_ONLY_RULE/);
   assert.doesNotMatch(captured.input[0].content[0].text, /Customer text/);
