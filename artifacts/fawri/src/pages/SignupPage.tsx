@@ -239,7 +239,7 @@ export default function SignupPage() {
           return '';
         }
       })();
-      const timezone = browserTimezone || selectedRegion?.timezone || '';
+      const timezone = browserTimezone || (formData.country_code === 'IQ' ? 'Asia/Baghdad' : '');
 
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
