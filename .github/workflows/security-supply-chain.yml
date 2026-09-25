@@ -42,6 +42,7 @@ jobs:
           node --test --test-concurrency=1
           scripts/security-final-audit.test.mjs
           scripts/ci-run-redacted.test.mjs
+          artifacts/api-server/tests/http-security-contract.test.mjs
 
       - name: Validate additive workflow and lockfile policy
         run: node scripts/security-final-audit.mjs policy

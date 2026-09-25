@@ -15,7 +15,8 @@ export type ProductionReleaseIssue = {
     | "billing"
     | "backup"
     | "storage"
-    | "deployment";
+    | "deployment"
+    | "http";
 };
 
 export type ProductionLaunchReadiness = {
@@ -49,6 +50,33 @@ function isPostgresUrl(value: unknown): boolean {
   } catch {
     return false;
   }
+}
+
+function isSafeAllowedOrigins(value: unknown): boolean {
+  const origins = text(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (origins.length === 0) return false;
+  return origins.every((origin) => {
+    try {
+      const parsed = new URL(origin);
+      if (parsed.protocol !== "https:") return false;
+      if (parsed.username || parsed.password) return false;
+      if (parsed.pathname !== "/" || parsed.search || parsed.hash) return false;
+      const host = parsed.hostname.toLowerCase();
+      return !(
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        host === "::1" ||
+        host.endsWith(".replit.dev") ||
+        host.endsWith(".repl.co") ||
+        host.includes("replit")
+      );
+    } catch {
+      return false;
+    }
+  });
 }
 
 function isSafeProductionRedirect(value: unknown): boolean {
@@ -143,6 +171,9 @@ export function getProductionRuntimeConfigurationIssues(
   }
   if (text(env.FAWRI_AUTH_SECURITY_SECRET).length < 32) {
     issues.push(issue("auth", "AUTH_SECURITY_SECRET_REQUIRED"));
+  }
+  if (!isSafeAllowedOrigins(env.FAWRI_ALLOWED_ORIGINS)) {
+    issues.push(issue("http", "HTTP_ALLOWED_ORIGINS_REQUIRED"));
   }
 
   if (text(env.FAWRI_META_CUTOVER_READY) !== "1") {

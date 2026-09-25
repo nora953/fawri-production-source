@@ -20,6 +20,7 @@ function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
     FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY: "required",
     FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY: "required",
     FAWRI_AUTH_SECURITY_SECRET: "auth-secret-at-least-thirty-two-characters-long",
+    FAWRI_ALLOWED_ORIGINS: "https://app.fawri.example",
     FAWRI_META_CUTOVER_READY: "1",
     FAWRI_META_REPLY_TRANSPORT: "live",
     FAWRI_DISABLE_JOB_WORKERS: "0",
@@ -90,6 +91,7 @@ test("required production release gate fails closed with safe issue codes", () =
   assert.ok(issues.some((item) => item.code === "PRODUCTION_DATABASE_URL_REQUIRED"));
   assert.ok(issues.some((item) => item.code === "META_AWS_KMS_PROVIDER_REQUIRED"));
   assert.ok(issues.some((item) => item.code === "META_REDIRECT_URI_REQUIRED"));
+  assert.ok(issues.some((item) => item.code === "HTTP_ALLOWED_ORIGINS_REQUIRED"));
 
   assert.throws(
     () => assertProductionRuntimeConfiguration(env),
