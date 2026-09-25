@@ -57,6 +57,7 @@ Required staging configuration:
 
 ```text
 NODE_ENV=production
+FAWRI_DEPLOYMENT_MODE=staging
 DATABASE_URL=<staging PostgreSQL connection string>
 FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required
 FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required
@@ -70,7 +71,7 @@ FAWRI_KNOWLEDGE_EMBEDDING_PROVIDER=disabled
 FAWRI_SERVICE_VERSION=<safe staging version>
 ```
 
-Do **not** set `FAWRI_PRODUCTION_RELEASE_GATE=required` in this QA staging environment. The production release gate intentionally requires real Meta live-send/KMS/OpenAI production configuration that is not part of this staging phase.
+Set `FAWRI_DEPLOYMENT_MODE=staging` explicitly. Do **not** rely on omitting a production safety variable: `NODE_ENV=production` is used for the built application, while the explicit staging deployment mode is what prevents production-only provider requirements from activating. Do **not** set `FAWRI_PRODUCTION_RELEASE_GATE=required` in this QA staging environment.
 
 Do not provide real Meta, OpenAI, billing, or production KMS credentials to this staging contract.
 
