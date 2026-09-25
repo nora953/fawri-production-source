@@ -73,21 +73,7 @@ export const accounts = pgTable(
     ),
     phoneShapeCheck: check(
       "accounts_phone_shape_check",
-      sql`${table.phone} IS NULL OR ${table.phone} ~ '^\\+[1-9][0-9]{7,14},
-    ),
-    activePhoneCheck: check(
-      "accounts_active_phone_required_check",
-      sql`${table.state} = 'closed' OR ${table.phone} IS NOT NULL`,
-    ),
-    timestampOrderCheck: check(
-      "accounts_timestamp_order_check",
-      sql`${table.updatedAt} >= ${table.createdAt}`,
-    ),
-  }),
-);
-
-export type Account = typeof accounts.$inferSelect;
-export type NewAccount = typeof accounts.$inferInsert;`,
+      sql`${table.phone} IS NULL OR ${table.phone} ~ '^\\+[1-9][0-9]{7,14}$'`,
     ),
     activePhoneCheck: check(
       "accounts_active_phone_required_check",
