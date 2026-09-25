@@ -99,7 +99,7 @@ export const saasBillingOrders = pgTable(
       sql`${table.requestExpiresAt} > ${table.createdAt} AND ${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export const saasBillingEvents = pgTable(
   "saas_billing_events",
@@ -144,7 +144,7 @@ export const saasBillingEvents = pgTable(
       sql`${table.status} IN ('received', 'applied', 'rejected')`,
     ),
   }),
-);
+).enableRLS();
 
 export const saasEntitlementApplications = pgTable(
   "saas_entitlement_applications",
@@ -198,7 +198,7 @@ export const saasEntitlementApplications = pgTable(
       sql`${table.amountIqd} > 0`,
     ),
   }),
-);
+).enableRLS();
 
 export const saasBillingRefunds = pgTable(
   "saas_billing_refunds",
@@ -241,7 +241,7 @@ export const saasBillingRefunds = pgTable(
       sql`${table.status} IN ('pending', 'settled', 'failed', 'cancelled')`,
     ),
   }),
-);
+).enableRLS();
 
 export type SaasBillingOrder = typeof saasBillingOrders.$inferSelect;
 export type SaasBillingEvent = typeof saasBillingEvents.$inferSelect;
