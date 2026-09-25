@@ -1,5 +1,5 @@
 {
-  "id": "7d558d86-4701-4b77-865b-cb921a5eeaf9",
+  "id": "dee34cb6-d913-4359-8c1e-500e0e21ad0c",
   "prevId": "527efc7f-cd2b-4093-85dc-ea6d3d3618f6",
   "version": "7",
   "dialect": "postgresql",
@@ -189,7 +189,7 @@
         },
         "accounts_phone_shape_check": {
           "name": "accounts_phone_shape_check",
-          "value": "\"accounts\".\"phone\" IS NULL OR \"accounts\".\"phone\" ~ '^\\\\+[1-9][0-9]{7,14}$'"
+          "value": "\"accounts\".\"phone\" IS NULL OR \"accounts\".\"phone\" ~ '^\\+[1-9][0-9]{7,14}$'"
         },
         "accounts_active_phone_required_check": {
           "name": "accounts_active_phone_required_check",
