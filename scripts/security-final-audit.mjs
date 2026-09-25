@@ -203,7 +203,7 @@ export function validateRepositoryPolicy(root, files) {
   };
 }
 
-function isKnownTestFixtureCredentialUrl(text, finding, objectPath) {
+export function isKnownTestFixtureCredentialUrl(text, finding, objectPath) {
   if (finding.rule !== "credential-url") return false;
   const normalizedPath = normalizeRepositoryPath(objectPath);
   if (!/(?:^|\/)(?:tests?|__tests__)(?:\/|$)|\.test\.[cm]?[jt]sx?$/.test(normalizedPath)) {
