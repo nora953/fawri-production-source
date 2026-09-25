@@ -149,6 +149,12 @@ export function validateRepositoryPolicy(root, files) {
       if (!/security-final-audit\.mjs dependency/.test(content)) {
         violations.push("security-supply-chain.yml: dependency-review must run the full dependency audit");
       }
+      if (!/security-final-audit\.mjs history/.test(content)) {
+        violations.push("security-supply-chain.yml: full-history secret scan is required");
+      }
+      if (!/fetch-depth:\s*0/.test(content)) {
+        violations.push("security-supply-chain.yml: repository security checkout must include full history");
+      }
     }
   }
 
@@ -197,6 +203,147 @@ export function validateRepositoryPolicy(root, files) {
   };
 }
 
+export function isKnownTestFixtureCredentialUrl(text, finding, objectPath) {
+  if (finding.rule !== "credential-url") return false;
+  const normalizedPath = normalizeRepositoryPath(objectPath);
+  if (!/(?:^|\/)(?:tests?|__tests__)(?:\/|$)|\.test\.[cm]?[jt]sx?$/.test(normalizedPath)) {
+    return false;
+  }
+  const matched = String(text).slice(finding.index, finding.index + finding.length);
+  const parsed = matched.match(
+    /^(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis):\/\/([^:/\s]+):([^@\s]+)@([^/\s]+)/i,
+  );
+  if (!parsed) return false;
+  const username = String(parsed[1] || "");
+  const password = String(parsed[2] || "");
+  const host = String(parsed[3] || "").split(":")[0].toLowerCase();
+  const obviousFixtureIdentity =
+    /(?:test|fixture|sample|dummy|fake|user|fawri_ci)/i.test(username) &&
+    /(?:test|fixture|sample|dummy|fake|password|secret|pass)/i.test(password);
+  const nonProductionHost =
+    host === "127.0.0.1" ||
+    host === "localhost" ||
+    host === "db" ||
+    host.endsWith(".example") ||
+    host.includes(".example.");
+  return obviousFixtureIdentity && nonProductionHost;
+}
+
+const KNOWN_HISTORICAL_SCANNER_SELF_TEST_CREDENTIAL = [
+  "postgresql://prod_owner:",
+  "highEntropyCredentialValue",
+  "@db.internal.company/fawri",
+].join("");
+
+export function isKnownHistoricalScannerSelfTestCredentialUrl(
+  text,
+  finding,
+  objectPath,
+) {
+  if (finding.rule !== "credential-url") return false;
+  if (normalizeRepositoryPath(objectPath) !== "scripts/security-final-audit.test.mjs") {
+    return false;
+  }
+  const matched = String(text).slice(finding.index, finding.index + finding.length);
+  return matched === KNOWN_HISTORICAL_SCANNER_SELF_TEST_CREDENTIAL;
+}
+
+function scanHistory(root) {
+  const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 128 * 1024 * 1024,
+  });
+  const objects = new Map();
+  for (const rawLine of output.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    const firstSpace = line.indexOf(" ");
+    const objectId = firstSpace >= 0 ? line.slice(0, firstSpace) : line;
+    const objectPath = firstSpace >= 0 ? line.slice(firstSpace + 1) : "";
+    if (/^[0-9a-f]{40}$/i.test(objectId) && !objects.has(objectId)) {
+      objects.set(objectId, normalizeRepositoryPath(objectPath));
+    }
+  }
+
+  const findings = [];
+  let scanned = 0;
+  let skipped = 0;
+  for (const [objectId, objectPath] of objects) {
+    let type;
+    try {
+      type = execFileSync("git", ["cat-file", "-t", objectId], {
+        cwd: root,
+        encoding: "utf8",
+        maxBuffer: 1024 * 1024,
+      }).trim();
+    } catch {
+      skipped += 1;
+      continue;
+    }
+    if (type !== "blob") continue;
+
+    let size;
+    try {
+      size = Number(execFileSync("git", ["cat-file", "-s", objectId], {
+        cwd: root,
+        encoding: "utf8",
+        maxBuffer: 1024 * 1024,
+      }).trim());
+    } catch {
+      skipped += 1;
+      continue;
+    }
+    if (!Number.isFinite(size) || size < 0 || size > MAX_REPOSITORY_FILE_BYTES) {
+      skipped += 1;
+      continue;
+    }
+
+    let objectText;
+    try {
+      const buffer = execFileSync("git", ["cat-file", "blob", objectId], {
+        cwd: root,
+        encoding: null,
+        maxBuffer: MAX_REPOSITORY_FILE_BYTES + 1024,
+      });
+      if (buffer.includes(0)) {
+        skipped += 1;
+        continue;
+      }
+      objectText = buffer.toString("utf8");
+    } catch {
+      skipped += 1;
+      continue;
+    }
+
+    scanned += 1;
+    for (const finding of findSensitiveText(objectText, {
+      includePrivateData: false,
+      includeAssignments: false,
+    })) {
+      if (
+        isKnownTestFixtureCredentialUrl(objectText, finding, objectPath) ||
+        isKnownHistoricalScannerSelfTestCredentialUrl(objectText, finding, objectPath)
+      ) continue;
+      findings.push({
+        blob: objectId,
+        file: objectPath || "(historical path unavailable)",
+        rule: finding.rule,
+      });
+    }
+  }
+
+  const report = {
+    status: findings.length === 0 ? "pass" : "fail",
+    scanned_historical_blobs: scanned,
+    skipped_objects: skipped,
+    findings: summarizeFindings(findings),
+    locations: findings,
+  };
+  process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  return findings.length === 0 ? 0 : 1;
+}
+
 function scanRepository(root) {
   const findings = [];
   let scanned = 0;
@@ -210,6 +357,7 @@ function scanRepository(root) {
     }
     scanned += 1;
     for (const finding of findSensitiveText(text, { includePrivateData: false, includeAssignments: false })) {
+      if (isKnownTestFixtureCredentialUrl(text, finding, file)) continue;
       const line = text.slice(0, finding.index).split("\n").length;
       findings.push({ file, line, rule: finding.rule });
     }
@@ -309,6 +457,7 @@ export function main(argv = process.argv.slice(2)) {
   const command = argv[0];
   const root = repositoryRoot();
   if (command === "repository") return scanRepository(root);
+  if (command === "history") return scanHistory(root);
   if (command === "output") return scanOutput(argv.slice(1));
   if (command === "dependency") return dependencyAudit();
   if (command === "dependency-review") return dependencyReview(argv[1], root);
@@ -318,7 +467,7 @@ export function main(argv = process.argv.slice(2)) {
     return report.status === "pass" ? 0 : 1;
   }
   throw new Error(
-    "Usage: node scripts/security-final-audit.mjs <repository|output|dependency|dependency-review|policy> [args...]",
+    "Usage: node scripts/security-final-audit.mjs <repository|history|output|dependency|dependency-review|policy> [args...]",
   );
 }
 
