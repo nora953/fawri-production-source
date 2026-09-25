@@ -34,7 +34,17 @@ export async function enforceMerchantWebhookOperationalAccess(
   }
 
   try {
-    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative();
+    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative(
+      (Array.isArray(body.entry) ? body.entry : [])
+        .map((entry) =>
+          String(
+            entry && typeof entry === "object"
+              ? (entry as Record<string, unknown>).id || ""
+              : "",
+          ).trim(),
+        )
+        .filter(Boolean),
+    );
     const permittedEntries: unknown[] = [];
     const terminalEventIds: string[] = [];
 
