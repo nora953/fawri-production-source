@@ -19,6 +19,10 @@ import {
 } from "../services/postgresMerchantAccountAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import {
+  MerchantRegionalError,
+  normalizeMerchantRegionalProfile,
+} from "../services/merchantRegionalRuntime";
+import {
   recordMerchantLoginAttemptAuthoritative,
   verifyMerchantOtpChallengeAuthoritative,
 } from "../services/postgresMerchantAuthSecurityAuthority";
@@ -106,6 +110,21 @@ router.post("/signup", async (req, res) => {
     req.body?.language === "en" || req.body?.language === "ku"
       ? req.body.language
       : "ar";
+  let regional;
+  try {
+    regional = normalizeMerchantRegionalProfile({
+      country_code: req.body?.country_code || "IQ",
+      timezone: req.body?.timezone,
+      currency_code: req.body?.currency_code,
+    });
+  } catch (error) {
+    if (error instanceof MerchantRegionalError) {
+      sendAuthError(res, error.status, error.code, error.message, error.details || {});
+      return;
+    }
+    throw error;
+  }
+
   const requestedPlanInput = req.body?.requested_plan;
   let requestedPlan: RequestedPlan | undefined;
   if (requestedPlanInput !== undefined && requestedPlanInput !== null) {
@@ -154,6 +173,9 @@ router.post("/signup", async (req, res) => {
       ownerName,
       storeName,
       activityType,
+      countryCode: regional.country_code,
+      timezone: regional.timezone,
+      currencyCode: regional.currency_code,
       language,
       requestedPlan,
     });
