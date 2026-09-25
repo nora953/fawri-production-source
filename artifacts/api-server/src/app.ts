@@ -76,6 +76,63 @@ import "./services/manualConversationDeletion";
 
 const app: Express = express();
 
+function allowedCorsOrigins(): string[] {
+  return String(process.env.FAWRI_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function corsOriginAllowed(
+  origin: string | undefined,
+  callback: (error: Error | null, allow?: boolean) => void,
+): void {
+  if (!origin) {
+    callback(null, true);
+    return;
+  }
+  const allowed = allowedCorsOrigins();
+  if (allowed.includes(origin)) {
+    callback(null, true);
+    return;
+  }
+  if (allowed.length === 0 && process.env.NODE_ENV !== "production") {
+    callback(null, true);
+    return;
+  }
+  callback(null, false);
+}
+
+function enforceHttpSecurityHeaders(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  );
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://graph.facebook.com https://www.facebook.com",
+  );
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000");
+  }
+  if (
+    req.path === "/api" ||
+    req.path.startsWith("/api/") ||
+    req.path === "/ops" ||
+    req.path.startsWith("/ops/")
+  ) {
+    res.setHeader("Cache-Control", "no-store");
+  }
+  next();
+}
+
 function authorizeChannelDurableJobAdmin(
   req: Request,
   res: Response,
@@ -217,7 +274,13 @@ app.use(
   }),
 );
 app.use(recordHttpTelemetry);
-app.use(cors());
+app.use(enforceHttpSecurityHeaders);
+app.use(
+  cors({
+    origin: corsOriginAllowed,
+    credentials: true,
+  }),
+);
 app.use(cookieParser());
 app.get("/healthz", (_req, res) => {
   res.status(200).json({ ok: true, service: "fawri" });
