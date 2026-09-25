@@ -154,3 +154,29 @@ test("repository policy requires protected workflows, immutable action pins, pnp
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+
+test("security workflow requires a full-history secret scan", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "fawri-history-policy-"));
+  try {
+    const workflowDir = path.join(root, ".github", "workflows");
+    mkdirSync(workflowDir, { recursive: true });
+    const checkoutSha = "11d5960a326750d5838078e36cf38b85af677262";
+    const content = `permissions:
+  contents: read
+jobs:
+  repository-security:
+    steps:
+      - uses: actions/checkout@${checkoutSha}
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - run: node scripts/security-final-audit.mjs history
+`;
+    writeFileSync(path.join(workflowDir, "security-supply-chain.yml"), content);
+    assert.match(content, /fetch-depth:\s*0/);
+    assert.match(content, /security-final-audit\.mjs history/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
