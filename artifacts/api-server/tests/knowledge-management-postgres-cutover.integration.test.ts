@@ -59,8 +59,8 @@ function decisionEngine(): KnowledgeDecisionEngine {
 test("merchant Knowledge management and decision runtime share one PostgreSQL authority", async (t) => {
   assert.ok(process.env.DATABASE_URL, "DATABASE_URL is required");
 
-  await seedMerchant(merchantIds[0], "07990000001");
-  await seedMerchant(merchantIds[1], "07990000002");
+  await seedMerchant(merchantIds[0], "+9647990000001");
+  await seedMerchant(merchantIds[1], "+9647990000002");
 
   t.after(async () => {
     await pool.query(`DELETE FROM accounts WHERE id = ANY($1::text[])`, [merchantIds]);
