@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import {
   authAccountRepository,
+  isE164Phone,
   normalizePhone,
   type AuthAccount,
 } from "../services/authAccountRepository";
@@ -96,7 +97,7 @@ router.post("/admins", requireSecureAdminSession, (req, res) => {
   const validation = getPasswordValidationError(password);
   if (
     !ownerName ||
-    !/^07\d{9}$/.test(phone) ||
+    !isE164Phone(phone) ||
     validation ||
     password !== confirm
   ) {
