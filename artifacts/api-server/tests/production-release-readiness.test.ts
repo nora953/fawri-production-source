@@ -192,6 +192,7 @@ test("production env example stays aligned with the runtime release gate", () =>
     ),
   );
   referencedEnvNames.add("FAWRI_PRODUCTION_RELEASE_GATE");
+  referencedEnvNames.add("FAWRI_DEPLOYMENT_MODE");
 
   const exampleValues = new Map<string, string>();
   for (const rawLine of example.split(/\r?\n/)) {
@@ -212,6 +213,7 @@ test("production env example stays aligned with the runtime release gate", () =>
 
   const expectedFixedValues: Record<string, string> = {
     NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "production",
     FAWRI_PRODUCTION_RELEASE_GATE: "required",
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
     FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY: "required",
