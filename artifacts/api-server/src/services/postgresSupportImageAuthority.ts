@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { getFawriDataDir } from "../lib/dataPaths";
 import {
+  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   withOperationalTransaction,
 } from "./operationalPostgresAuthority";
@@ -96,6 +97,178 @@ function safeStoragePath(storageKey: string): string {
   return path.join(SUPPORT_IMAGE_DIR, pieces[0], pieces[1]);
 }
 
+function ensureSupportImageDirectory(ticketIdValue: string): string {
+  const ticketId = text(ticketIdValue);
+  if (
+    !ticketId ||
+    ticketId === "." ||
+    ticketId === ".." ||
+    ticketId.includes("/") ||
+    ticketId.includes("\\") ||
+    path.basename(ticketId) !== ticketId
+  ) {
+    throw new SupportPostgresError(
+      "SUPPORT_IMAGE_STORAGE_INVALID",
+      "support image storage key is invalid",
+      500,
+    );
+  }
+
+  const root = path.resolve(SUPPORT_IMAGE_DIR);
+  fs.mkdirSync(root, { recursive: true, mode: 0o700 });
+  const directory = path.resolve(root, ticketId);
+  if (!directory.startsWith(`${root}${path.sep}`)) {
+    throw new SupportPostgresError(
+      "SUPPORT_IMAGE_STORAGE_INVALID",
+      "support image storage key is invalid",
+      500,
+    );
+  }
+
+  try {
+    const stat = fs.lstatSync(directory);
+    if (stat.isSymbolicLink() || !stat.isDirectory()) {
+      throw new SupportPostgresError(
+        "SUPPORT_IMAGE_STORAGE_INVALID",
+        "support image storage directory is invalid",
+        500,
+      );
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+    fs.mkdirSync(directory, { mode: 0o700 });
+  }
+
+  const realRoot = fs.realpathSync(root);
+  const realDirectory = fs.realpathSync(directory);
+  if (!realDirectory.startsWith(`${realRoot}${path.sep}`)) {
+    throw new SupportPostgresError(
+      "SUPPORT_IMAGE_STORAGE_INVALID",
+      "support image storage directory escaped its root",
+      500,
+    );
+  }
+  return directory;
+}
+
+function persistAuthorizedSupportImage(
+  filePath: string,
+  buffer: Buffer,
+): void {
+  if (fs.existsSync(filePath)) {
+    throw new SupportPostgresError(
+      "SUPPORT_IMAGE_STORAGE_COLLISION",
+      "support image storage collision",
+      500,
+    );
+  }
+  const temporaryPath = `${filePath}.${process.pid}.${crypto.randomUUID()}.tmp`;
+  const noFollow =
+    typeof fs.constants.O_NOFOLLOW === "number" ? fs.constants.O_NOFOLLOW : 0;
+  const descriptor = fs.openSync(
+    temporaryPath,
+    fs.constants.O_WRONLY |
+      fs.constants.O_CREAT |
+      fs.constants.O_EXCL |
+      noFollow,
+    0o600,
+  );
+  try {
+    fs.writeFileSync(descriptor, buffer);
+    fs.fsyncSync(descriptor);
+  } finally {
+    fs.closeSync(descriptor);
+  }
+  try {
+    // Hard-linking is atomic and refuses to overwrite an existing destination.
+    fs.linkSync(temporaryPath, filePath);
+  } finally {
+    fs.rmSync(temporaryPath, { force: true });
+  }
+}
+
+export async function reconcileOrphanSupportImagesPostgres(input: {
+  minimumAgeMs?: number;
+} = {}): Promise<{ inspected: number; removed: number }> {
+  if (!operationalPostgresAuthorityRequired()) {
+    return { inspected: 0, removed: 0 };
+  }
+  const minimumAgeMs = Math.max(0, Number(input.minimumAgeMs ?? 5 * 60_000));
+  const pool = await operationalDatabasePool();
+  const referenced = await pool.query<{ storage_key: string }>(
+    `SELECT storage_key
+       FROM support_attachments
+      WHERE storage_provider = 'filesystem'
+        AND deleted_at IS NULL`,
+  );
+  const liveKeys = new Set(
+    referenced.rows.map((row) => text(row.storage_key)).filter(Boolean),
+  );
+  const root = path.resolve(SUPPORT_IMAGE_DIR);
+  let ticketNames: string[];
+  try {
+    ticketNames = fs.readdirSync(root);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
+      return { inspected: 0, removed: 0 };
+    }
+    throw error;
+  }
+
+  let inspected = 0;
+  let removed = 0;
+  const cutoff = Date.now() - minimumAgeMs;
+  for (const ticketName of ticketNames) {
+    if (
+      !ticketName ||
+      ticketName === "." ||
+      ticketName === ".." ||
+      ticketName.includes("/") ||
+      ticketName.includes("\\")
+    ) continue;
+    const ticketPath = path.join(root, ticketName);
+    let ticketStat: fs.Stats;
+    try {
+      ticketStat = fs.lstatSync(ticketPath);
+    } catch {
+      continue;
+    }
+    if (ticketStat.isSymbolicLink()) {
+      if (ticketStat.mtimeMs <= cutoff) {
+        fs.rmSync(ticketPath, { force: true });
+        removed += 1;
+      }
+      continue;
+    }
+    if (!ticketStat.isDirectory()) continue;
+
+    for (const fileName of fs.readdirSync(ticketPath)) {
+      const filePath = path.join(ticketPath, fileName);
+      let stat: fs.Stats;
+      try {
+        stat = fs.lstatSync(filePath);
+      } catch {
+        continue;
+      }
+      if (stat.mtimeMs > cutoff) continue;
+      inspected += 1;
+      if (stat.isSymbolicLink()) {
+        fs.rmSync(filePath, { force: true });
+        removed += 1;
+        continue;
+      }
+      if (!stat.isFile()) continue;
+      const storageKey = `${ticketName}/${fileName}`;
+      const isTemporary = fileName.endsWith(".tmp");
+      if (isTemporary || !liveKeys.has(storageKey)) {
+        fs.rmSync(filePath, { force: true });
+        removed += 1;
+      }
+    }
+  }
+  return { inspected, removed };
+}
+
 export async function saveSupportImagePostgres(input: {
   ticketId: string;
   buffer: Buffer;
@@ -127,11 +300,7 @@ export async function saveSupportImagePostgres(input: {
   const originalFileName = cleanFileName(input.fileName, extension);
   const sha256 = crypto.createHash("sha256").update(input.buffer).digest("hex");
 
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  const temporaryPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
-  fs.writeFileSync(temporaryPath, input.buffer, { flag: "wx" });
-  fs.renameSync(temporaryPath, filePath);
-
+  let filePersisted = false;
   try {
     return await withOperationalTransaction(async (client) => {
       const ticketResult = await client.query<{
@@ -175,6 +344,12 @@ export async function saveSupportImagePostgres(input: {
           403,
         );
       }
+
+      // Filesystem mutation begins only after the canonical ticket row is locked
+      // and ownership/assignment/status authorization has succeeded.
+      ensureSupportImageDirectory(ticketId);
+      persistAuthorizedSupportImage(filePath, input.buffer);
+      filePersisted = true;
 
       await client.query(
         `INSERT INTO support_messages
@@ -236,7 +411,9 @@ export async function saveSupportImagePostgres(input: {
       };
     });
   } catch (error) {
-    fs.rmSync(filePath, { force: true });
+    if (filePersisted) {
+      fs.rmSync(filePath, { force: true });
+    }
     throw error;
   }
 }
