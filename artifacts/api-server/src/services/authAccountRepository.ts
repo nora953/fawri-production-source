@@ -28,6 +28,9 @@ export type MerchantProfile = {
   ownerName: string;
   storeName: string;
   activityType: string;
+  countryCode: string;
+  timezone: string;
+  currencyCode: string;
   language: "ar" | "ku" | "en";
   accountStatus: MerchantAccountStatus;
   onboardingStatus: string;
@@ -69,6 +72,9 @@ type LegacyRecord = {
   account_status?: string;
   onboarding_status?: string;
   requested_plan?: string | null;
+  country_code?: string;
+  timezone?: string;
+  currency_code?: string;
   [key: string]: unknown;
 };
 
@@ -108,6 +114,9 @@ export class AuthAccountRepository {
     ownerName: string;
     storeName: string;
     activityType: string;
+    countryCode?: string;
+    timezone?: string;
+    currencyCode?: string;
     language: "ar" | "ku" | "en";
     requestedPlan?: RequestedPlan | null;
   }): AuthAccount {
@@ -143,6 +152,9 @@ export class AuthAccountRepository {
       phone,
       password: input.passwordHash,
       activity_type: input.activityType.trim(),
+      country_code: String(input.countryCode || "IQ").trim().toUpperCase(),
+      timezone: String(input.timezone || "Asia/Baghdad").trim(),
+      currency_code: String(input.currencyCode || "IQD").trim().toUpperCase(),
       status: "pending_activation",
       language: input.language,
       theme_preference: record.theme_preference || "auto",
@@ -402,6 +414,9 @@ function toAuthAccount(record: LegacyRecord): AuthAccount {
       ownerName: String(record.owner_name || ""),
       storeName: String(record.store_name || ""),
       activityType: String(record.activity_type || ""),
+      countryCode: String(record.country_code || "IQ").toUpperCase(),
+      timezone: String(record.timezone || "Asia/Baghdad"),
+      currencyCode: String(record.currency_code || "IQD").toUpperCase(),
       language: normalizeLanguage(record.language),
       accountStatus: normalizeMerchantStatus(record),
       onboardingStatus: String(record.onboarding_status || "pending_review"),
