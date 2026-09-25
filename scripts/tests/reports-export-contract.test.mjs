@@ -17,6 +17,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
   const toolbarCopy = read("artifacts/fawri/src/lib/translations/features/components/reportToolbarCopy.ts");
   const reportsCopy = read("artifacts/fawri/src/lib/translations/features/pages/dashboard/ReportsPage.ts");
+  const cashierCopy = read("artifacts/fawri/src/lib/translations/features/pages/dashboard/CashierCentralReportsPage.ts");
   const printCss = read("artifacts/fawri/src/pages/dashboard/reports-print.css");
   const workbook = read("artifacts/fawri/src/lib/reportWorkbook.ts");
 
@@ -106,8 +107,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /item\.sale_id/);
   assert.match(cashier, /item\.shift_id/);
   assert.match(cashier, /labels\.location,\s*labels\.station,\s*labels\.amount,\s*labels\.currency,\s*labels\.saleReference,\s*labels\.shift/);
-  assert.match(cashier, /metric: 'المؤشر'/);
-  assert.match(cashier, /value: 'القيمة'/);
+  assert.match(cashierCopy, /metric: 'المؤشر'/);
+  assert.match(cashierCopy, /value: 'القيمة'/);
   assert.match(cashier, /\[labels\.currency, labels\.metric, labels\.value, labels\.profitStatus\]/);
   assert.match(cashier, /columnWidths: \[16, 34, 22, 22\]/);
   assert.match(cashier, /cashierExportSheetNames/);
@@ -284,6 +285,7 @@ test("cashier profitability requires complete historical cost evidence", () => {
 
 test("Arabic, Sorani and English report calendars preserve the approved reference geometry without changing date boundaries", () => {
   const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
+  const toolbarCopy = read("artifacts/fawri/src/lib/translations/features/components/reportToolbarCopy.ts");
   const css = read("artifacts/fawri/src/components/reports/report-calendar.css");
   assert.match(toolbar, /const RangeCalendar = DayPicker/);
   assert.match(toolbar, /locale=\{lang === 'ar' \? ar : undefined\}/);
