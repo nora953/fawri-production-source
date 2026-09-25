@@ -162,6 +162,13 @@
       "when": 1790294400000,
       "tag": "0022_location_rls_schema_alignment",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1790380800000,
+      "tag": "0023_canonical_tenant_rls_schema_alignment",
+      "breakpoints": true
     }
   ]
 }
