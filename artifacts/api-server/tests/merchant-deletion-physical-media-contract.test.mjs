@@ -56,8 +56,23 @@ test("irreversible merchant deletion owns durable post-commit physical media ret
   );
   assert.match(
     coordinator,
-    /reconcileMerchantPhysicalMediaCleanup\(input\.merchantId\)\.catch\(\(\) => null\)/,
-    "post-commit provider failure must not restore or roll back deleted merchant access",
+    /reconcileMerchantPhysicalMediaCleanup\(input\.merchantId\)\.catch\(\(error\) => \{[\s\S]*logCleanupFailure\(error,[\s\S]*phase: "post_commit"/,
+    "post-commit provider failure must remain retryable and become observable without restoring merchant access",
+  );
+  assert.equal(
+    coordinator.includes("void run().catch(() => null)"),
+    false,
+    "scheduled cleanup failures must never be swallowed silently",
+  );
+  assert.match(
+    coordinator,
+    /PHYSICAL_MEDIA_CLEANUP_PENDING/,
+    "pending cleanup work must emit an operational warning",
+  );
+  assert.match(
+    coordinator,
+    /merchantLogHash/,
+    "cleanup logs must use a hashed merchant identifier instead of raw merchant identity",
   );
 
   assert.match(
