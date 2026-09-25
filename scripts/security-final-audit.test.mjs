@@ -227,7 +227,10 @@ test("repository policy requires history scan and full checkout", () => {
       `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n      fetch-depth: 0\n  - run: node scripts/security-final-audit.mjs history\njobs:\n  dependency-review:\n    steps:\n      - run: node scripts/security-final-audit.mjs dependency-review "$BASE_SHA"\n      - run: pnpm install --frozen-lockfile --ignore-scripts\n      - run: node scripts/security-final-audit.mjs dependency\n`);
     writeFileSync(path.join(root, "pnpm-workspace.yaml"), "autoInstallPeers: false\nminimumReleaseAge: 1440\n");
     writeFileSync(path.join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
-    writeFileSync(path.join(root, "package.json"), "{}\n");
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({ scripts: { preinstall: "echo 'Use pnpm instead'" } }),
+    );
     assert.equal(
       validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]).status,
       "pass",
