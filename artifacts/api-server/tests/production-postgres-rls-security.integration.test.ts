@@ -22,6 +22,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
   t.after(async () => {
     try {
       await client.query("RESET ROLE");
+      await client.query(`DROP OWNED BY ${probeRole}`);
       await client.query(`DROP ROLE IF EXISTS ${probeRole}`);
     } finally {
       client.release();
