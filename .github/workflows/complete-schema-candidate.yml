@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "lib/db/src/schema/**"
+      - "lib/db/migration-stages/**"
       - "lib/db/drizzle.complete.config.ts"
       - ".github/workflows/complete-schema-candidate.yml"
       - "pnpm-lock.yaml"
@@ -13,6 +14,7 @@ on:
       - "hardening/**"
     paths:
       - "lib/db/src/schema/**"
+      - "lib/db/migration-stages/**"
       - "lib/db/drizzle.complete.config.ts"
       - ".github/workflows/complete-schema-candidate.yml"
       - "pnpm-lock.yaml"
@@ -77,9 +79,32 @@ jobs:
       - name: Apply complete candidate to disposable PostgreSQL
         working-directory: lib/db
         run: |
+          predicate_sql="migration-stages/0024/manual.sql"
+          test -f "$predicate_sql"
+          injected=0
           while IFS= read -r sql_file; do
-            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$sql_file"
+            apply_file="$(mktemp)"
+            awk -v predicate="$predicate_sql" '
+              BEGIN { injected = 0 }
+              injected == 0 && $0 ~ /^(CREATE|ALTER) POLICY / {
+                while ((getline line < predicate) > 0) print line
+                close(predicate)
+                injected = 1
+              }
+              { print }
+              END {
+                if (injected == 0) exit 42
+              }
+            ' "$sql_file" > "$apply_file"
+            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$apply_file"
+            rm -f "$apply_file"
+            injected=1
           done < <(find drizzle-complete-candidate -maxdepth 1 -type f -name '*.sql' | sort)
+          test "$injected" = "1"
+
+      - name: Verify tenant RLS bootstrap predicate
+        run: |
+          test "$(psql "$DATABASE_URL" -Atqc "select to_regprocedure('public.fawri_tenant_or_audited_admin(text)') is not null")" = "t"
 
       - name: Verify critical complete-schema tables
         run: |
