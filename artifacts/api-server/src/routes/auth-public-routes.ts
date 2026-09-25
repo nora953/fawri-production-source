@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import {
   authAccountRepository,
+  isE164Phone,
   normalizePhone,
   type RequestedPlan,
 } from "../services/authAccountRepository";
@@ -124,12 +125,12 @@ router.post("/signup", async (req, res) => {
     requestedPlan = requestedPlanInput;
   }
   const validation = getPasswordValidationError(password);
-  if (!/^07\d{9}$/.test(phone)) {
+  if (!isE164Phone(phone)) {
     sendAuthError(
       res,
       400,
       "INVALID_PHONE",
-      "phone must start with 07 and contain 11 digits",
+      "phone must use E.164 international format",
     );
     return;
   }
@@ -178,7 +179,7 @@ router.post("/otp/resend", async (req, res) => {
   const phone = normalizePhone(req.body?.phone);
   const purpose = String(req.body?.purpose || "") as OtpPurpose;
   if (
-    !/^07\d{9}$/.test(phone) ||
+    !isE164Phone(phone) ||
     !["signup", "password_reset"].includes(purpose)
   ) {
     sendAuthError(
@@ -432,7 +433,7 @@ router.post("/admin/device-otp/verify", async (req, res) => {
 
 router.post("/password-reset/request", async (req, res) => {
   const phone = normalizePhone(req.body?.phone);
-  const account = /^07\d{9}$/.test(phone)
+  const account = isE164Phone(phone)
     ? await findMerchantByPhoneAuthoritative(phone)
     : null;
   if (!account) {
