@@ -153,7 +153,7 @@ export const merchantLocationDeliveryAreas = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export type MerchantLocationDeliveryArea =
   typeof merchantLocationDeliveryAreas.$inferSelect;
