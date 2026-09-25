@@ -471,7 +471,9 @@ export async function processMetaReplyJob(
     code:
       result.code === "MERCHANT_SETTINGS_VERSION_CHANGED"
         ? "MERCHANT_SETTINGS_VERSION_CHANGED"
-        : "META_FAKE_TRANSPORT_ONLY",
+        : result.code === "CONVERSATION_CONTEXT_SUPERSEDED"
+          ? "CONVERSATION_CONTEXT_SUPERSEDED"
+          : "META_FAKE_TRANSPORT_ONLY",
     transport,
   });
 }
