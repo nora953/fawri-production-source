@@ -225,7 +225,7 @@ test(
     const { pool } = await import("@workspace/db");
     const id = suffix();
     const merchantId = `golden-merchant-${id}`;
-    const phone = `078${String(crypto.randomInt(0, 100_000_000)).padStart(8, "0")}`;
+    const phone = `+96478${String(crypto.randomInt(0, 100_000_000)).padStart(8, "0")}`;
     const password = "GoldenJourney1!";
     const merchantDeviceId = `golden-merchant-device-${id}`;
     const cashierDeviceId = `golden-cashier-device-${id}`;
