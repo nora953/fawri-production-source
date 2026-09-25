@@ -28,7 +28,7 @@ test("concurrent OTP issuance leaves exactly one live challenge and preserves si
   const startedAt = new Date();
   const triggerName = "fawri_test_delay_otp_insert";
   const functionName = "fawri_test_delay_otp_insert_fn";
-  const target = `0799${Date.now().toString().slice(-8)}`;
+  const target = `+964799${Date.now().toString().slice(-8)}`;
   const ip = "198.51.100.77";
 
   await pool.query(`DROP TRIGGER IF EXISTS ${triggerName} ON auth_otp_challenges`);
