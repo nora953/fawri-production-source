@@ -1,5 +1,6 @@
+import { execFileSync } from "node:child_process";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -7,6 +8,7 @@ import { findSensitiveText, parseAuditSeverityCounts, redactSensitiveText } from
 import {
   evaluateDependencyAudit,
   evaluateDependencyChange,
+  scanRepositoryHistory,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
 
@@ -150,6 +152,43 @@ test("repository policy requires protected workflows, immutable action pins, pnp
     const missingLocalGate = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
     assert.equal(missingLocalGate.status, "fail");
     assert.ok(missingLocalGate.violations.some((item) => item.includes("local dependency-review gate")));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+
+test("history scan finds a secret removed from HEAD without returning the secret value", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "fawri-history-secret-"));
+  const historicalSecret = `sk-proj-${"Z".repeat(40)}`;
+  try {
+    execFileSync("git", ["init"], { cwd: root, stdio: "ignore" });
+    execFileSync("git", ["config", "user.email", "security-test@example.com"], { cwd: root });
+    execFileSync("git", ["config", "user.name", "Security Test"], { cwd: root });
+
+    writeFileSync(path.join(root, "historical.env"), `OPENAI_API_KEY=${historicalSecret}\n`);
+    execFileSync("git", ["add", "historical.env"], { cwd: root });
+    execFileSync("git", ["commit", "-m", "historical secret fixture"], {
+      cwd: root,
+      stdio: "ignore",
+    });
+
+    writeFileSync(path.join(root, "historical.env"), "OPENAI_API_KEY=redacted\n");
+    execFileSync("git", ["add", "historical.env"], { cwd: root });
+    execFileSync("git", ["commit", "-m", "remove historical secret"], {
+      cwd: root,
+      stdio: "ignore",
+    });
+
+    assert.equal(
+      readFileSync(path.join(root, "historical.env"), "utf8").includes(historicalSecret),
+      false,
+    );
+    const report = scanRepositoryHistory(root, { emit: false });
+    assert.equal(report.status, "fail");
+    assert.ok(report.findings.some((item) => item.rule === "openai-secret"));
+    assert.ok(report.locations.some((item) => item.file === "historical.env"));
+    assert.equal(JSON.stringify(report).includes(historicalSecret), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
