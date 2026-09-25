@@ -24,6 +24,12 @@ import { toast } from 'sonner';
 import ForgotPasswordModal from '@/components/ForgotPasswordModal';
 import OtpResendSection from '@/components/OtpResendSection';
 import { PolicyModal, type PolicyTab, getPolicyReadLabel } from '@/components/PolicyModal';
+import InternationalPhoneField from '@/components/InternationalPhoneField';
+import {
+  normalizeInternationalPhoneInput,
+  validateInternationalPhone,
+} from '@/lib/internationalPhone';
+import { MERCHANT_REGION_BY_COUNTRY } from '@/lib/merchantRegions';
 
 type OwnerDeviceChallenge = {
   phone: string;
@@ -93,6 +99,7 @@ export default function LoginPage() {
   const { t, lang, isRTL } = useI18n();
   const [, setLocation] = useLocation();
 
+  const [countryCode, setCountryCode] = useState('IQ');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -105,6 +112,8 @@ export default function LoginPage() {
   const [ownerOtpLoading, setOwnerOtpLoading] = useState(false);
   const securityText = LOGIN_PAGE_SECURITY_TEXT[lang];
   const commonCopy = COMMON_UI_COPY[lang];
+  const selectedRegion = MERCHANT_REGION_BY_COUNTRY.get(countryCode)
+    || MERCHANT_REGION_BY_COUNTRY.get('IQ');
 
   const showAuthError = (result: any) => {
     if (result?.code === 'ADMIN_DEVICE_APPROVAL_REQUIRED') {
@@ -191,13 +200,22 @@ export default function LoginPage() {
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    const cleanPhone = phone.trim();
     const cleanPassword = password.trim();
 
-    if (!cleanPhone || !cleanPassword) {
+    if (!phone.trim() || !cleanPassword) {
       toast.error(t.login_error_required);
       return;
     }
+
+    if (!validateInternationalPhone(phone, selectedRegion?.callingCode)) {
+      toast.error(t.phone_error);
+      return;
+    }
+
+    const cleanPhone = normalizeInternationalPhoneInput(
+      phone,
+      selectedRegion?.callingCode,
+    );
 
     setLoading(true);
 
@@ -372,22 +390,19 @@ export default function LoginPage() {
             </form>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-              <div className="space-y-2">
-                <div className="flex min-h-5 items-center justify-between gap-3">
-                  <Label htmlFor="phone" className="leading-5">{t.phone}</Label>
-                </div>
-                <Input
-                  id="phone"
-                  type="tel"
-                  dir="ltr"
-                  value={phone}
-                  onChange={event => setPhone(event.target.value)}
-                  placeholder="07..."
-                  required
-                  className="h-12 rounded-xl"
-                  data-testid="input-phone"
-                />
-              </div>
+              <InternationalPhoneField
+                lang={lang}
+                countryCode={countryCode}
+                phoneInput={phone}
+                countryLabel={t.country}
+                phoneLabel={t.phone}
+                phonePlaceholder={t.phone_placeholder}
+                onCountryChange={(nextCountry) => {
+                  setCountryCode(nextCountry);
+                  setPhone('');
+                }}
+                onPhoneInputChange={setPhone}
+              />
 
               <div className="space-y-2">
                 <div className="flex min-h-5 items-center justify-between gap-3">
