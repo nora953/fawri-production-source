@@ -60,6 +60,9 @@ jobs:
       - name: Verify bot safety workflow cannot exclude critical send-path files
         run: node --test artifacts/api-server/tests/bot-safety-workflow-paths.test.mjs
 
+      - name: Type-check critical bot adversarial tests
+        run: pnpm exec tsc -p artifacts/api-server/tsconfig.bot-adversarial.json --noEmit
+
       - name: Run strict cross-layer bot adversarial matrix
         run: >-
           node scripts/ci-run-redacted.mjs
