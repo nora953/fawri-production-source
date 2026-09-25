@@ -24,6 +24,7 @@ test('staging environment template keeps PostgreSQL authority required and exter
   const values = activeEnvAssignments(env);
 
   assert.equal(values.get('NODE_ENV'), 'production');
+  assert.equal(values.get('FAWRI_DEPLOYMENT_MODE'), 'staging');
   assert.equal(values.get('FAWRI_OPERATIONAL_POSTGRES_AUTHORITY'), 'required');
   assert.equal(values.get('FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY'), 'required');
   assert.equal(values.get('FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY'), 'required');
@@ -54,6 +55,7 @@ test('staging Dockerfile packages one same-origin web/API runtime with fail-clos
   assert.match(dockerfile, /FROM node:22-bookworm-slim AS runtime/);
   assert.match(dockerfile, /pnpm --filter @workspace\/fawri build/);
   assert.match(dockerfile, /pnpm --filter @workspace\/api-server build/);
+  assert.match(dockerfile, /FAWRI_DEPLOYMENT_MODE=staging/);
   assert.match(dockerfile, /FAWRI_WEB_DIST_DIR=\/app\/artifacts\/fawri\/dist\/public/);
   assert.match(dockerfile, /FAWRI_DISABLE_JOB_WORKERS=1/);
   assert.match(dockerfile, /FAWRI_META_CUTOVER_READY=0/);
@@ -72,6 +74,7 @@ test('staging documentation preserves same-origin manual-QA boundary', async () 
   const contract = await read('docs/staging-deployment-contract.md');
 
   assert.match(contract, /same HTTPS origin/);
+  assert.match(contract, /FAWRI_DEPLOYMENT_MODE=staging/);
   assert.match(contract, /FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required/);
   assert.match(contract, /FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required/);
   assert.match(contract, /FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required/);
