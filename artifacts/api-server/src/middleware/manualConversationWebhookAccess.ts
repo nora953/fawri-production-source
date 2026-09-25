@@ -73,7 +73,11 @@ export async function enforceManualConversationWebhookAccess(
   }
 
   try {
-    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative();
+    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative(
+      (Array.isArray(body.entry) ? body.entry : [])
+        .map((entryValue) => String(eventRecord(entryValue).id || "").trim())
+        .filter(Boolean),
+    );
     const terminalEventIds = new Set(existingTerminalEventIds(res));
     const filteredEntries: Record<string, unknown>[] = [];
     const internalReplay = isTrustedMetaWebhookInternalReplay(req);
