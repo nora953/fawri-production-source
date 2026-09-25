@@ -206,6 +206,52 @@ function factualTokens(value: string): string[] {
   return [...tokens];
 }
 
+const HIGH_RISK_CLAIM_CUES = [
+  /\b(?:compatible|compatibility|works? with|supports? all|every laptop|every device)\b/i,
+  /\b(?:safe|safety|child-safe|safe for children|food-safe)\b/i,
+  /\b(?:certified|certification|approved by|compliant with)\b/i,
+  /\b(?:warranty|guarantee|guaranteed)\b/i,
+  /\b(?:return|returns|refund|exchange)\b/i,
+  /\b(?:durable|durability|scratch-resistant|shatter-resistant)\b/i,
+  /\b(?:waterproof|water-resistant|water resistant)\b/i,
+  /\b(?:authentic|genuine|original)\b/i,
+  /\b(?:hypoallergenic|sensitive skin|medical|health|therapeutic|clinically)\b/i,
+  /\b(?:made in|country of origin|origin:)\b/i,
+  /\b(?:included|includes|comes with|accessor(?:y|ies))\b/i,
+  /\b(?:recommend|recommended|better than|best|safer than|more durable than)\b/i,
+  /(?:آمن|سلامة|متوافق|توافق|معتمد|شهادة|ضمان|كفالة|إرجاع|استرجاع|استبدال|متين|مقاوم للماء|أصلي|أصيل|هيبوالرجينيك|حساسة|طبي|صحي|بلد المنشأ|صنع في|يتضمن|يأتي مع|أنصح|أفضل من)/i,
+  /(?:سەلامەت|گونجاو|بڕوانامە|گەرەنتی|گەڕاندنەوە|گۆڕینەوە|بەهێز|دژە ئاو|ڕەسەن|تەندروستی|وڵاتی دروستکردن|لەگەڵ دێت|پێشنیار|باشتر لە)/i,
+] as const;
+
+const NEGATION_WINDOW =
+  /(?:\b(?:no|not|never|without|isn't|is not|doesn't|does not|cannot|can't)\b|(?:غير|ليس|ليست|لا|بدون)|(?:نە|نییە|بێ))/i;
+
+function highRiskClaimPolarities(value: string): Set<string> {
+  const result = new Set<string>();
+  for (let index = 0; index < HIGH_RISK_CLAIM_CUES.length; index += 1) {
+    const source = HIGH_RISK_CLAIM_CUES[index].source;
+    const flags = HIGH_RISK_CLAIM_CUES[index].flags.replace("g", "");
+    const pattern = new RegExp(source, flags);
+    const match = pattern.exec(value);
+    if (!match) continue;
+    const before = value.slice(Math.max(0, match.index - 32), match.index);
+    result.add(`${index}:${NEGATION_WINDOW.test(before) ? "negative" : "positive"}`);
+  }
+  return result;
+}
+
+function groundedAnswerHighRiskClaimsAreSupported(
+  answerText: string,
+  groundingDocuments: Array<{ answer: string }>,
+): boolean {
+  const answerClaims = highRiskClaimPolarities(answerText);
+  if (answerClaims.size === 0) return true;
+  const evidenceClaims = highRiskClaimPolarities(
+    groundingDocuments.map((document) => document.answer).join("\n"),
+  );
+  return [...answerClaims].every((claim) => evidenceClaims.has(claim));
+}
+
 function groundedAnswerFactualTokensAreSupported(
   answerText: string,
   groundingDocuments: Array<{ answer: string }>,
@@ -213,7 +259,10 @@ function groundedAnswerFactualTokensAreSupported(
   const supported = new Set(
     groundingDocuments.flatMap((document) => factualTokens(document.answer)),
   );
-  return factualTokens(answerText).every((token) => supported.has(token));
+  return (
+    factualTokens(answerText).every((token) => supported.has(token)) &&
+    groundedAnswerHighRiskClaimsAreSupported(answerText, groundingDocuments)
+  );
 }
 
 function isProductOperationalFactType(value: unknown): boolean {
