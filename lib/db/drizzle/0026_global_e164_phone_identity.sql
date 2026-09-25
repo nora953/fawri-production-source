@@ -5,4 +5,4 @@ SET "phone" = '+964' || substring("phone" from 2),
 WHERE "phone" ~ '^07[0-9]{9}$';--> statement-breakpoint
 ALTER TABLE "accounts"
 ADD CONSTRAINT "accounts_phone_shape_check"
-CHECK ("accounts"."phone" IS NULL OR "accounts"."phone" ~ '^\\+[1-9][0-9]{7,14}$');
+CHECK ("accounts"."phone" IS NULL OR "accounts"."phone" ~ '^\+[1-9][0-9]{7,14}$');
