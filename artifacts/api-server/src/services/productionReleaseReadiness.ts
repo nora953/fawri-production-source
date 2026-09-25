@@ -1,4 +1,7 @@
 export const PRODUCTION_RELEASE_GATE_ENV = "FAWRI_PRODUCTION_RELEASE_GATE";
+export const DEPLOYMENT_MODE_ENV = "FAWRI_DEPLOYMENT_MODE";
+
+type DeploymentMode = "development" | "staging" | "production";
 
 export type ProductionReleaseIssue = {
   code: string;
@@ -11,7 +14,8 @@ export type ProductionReleaseIssue = {
     | "observability"
     | "billing"
     | "backup"
-    | "storage";
+    | "storage"
+    | "deployment";
 };
 
 export type ProductionLaunchReadiness = {
@@ -89,19 +93,41 @@ function wrappedDekManifestValid(env: NodeJS.ProcessEnv): boolean {
   }
 }
 
+function explicitDeploymentMode(
+  env: NodeJS.ProcessEnv,
+): DeploymentMode | null {
+  const raw = text(env[DEPLOYMENT_MODE_ENV]).toLowerCase();
+  return raw === "development" || raw === "staging" || raw === "production"
+    ? raw
+    : null;
+}
+
+function deploymentModeInvalid(env: NodeJS.ProcessEnv): boolean {
+  const raw = text(env[DEPLOYMENT_MODE_ENV]);
+  return Boolean(raw) && explicitDeploymentMode(env) === null;
+}
+
 export function productionReleaseGateRequired(
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  return env.NODE_ENV === "production" &&
-    text(env[PRODUCTION_RELEASE_GATE_ENV]).toLowerCase() === "required";
+  const explicit = explicitDeploymentMode(env);
+  if (explicit) return explicit === "production";
+  // Production is fail-closed by default. Staging/development must opt out
+  // explicitly with FAWRI_DEPLOYMENT_MODE rather than production opting in
+  // to safety checks.
+  return env.NODE_ENV === "production";
 }
 
 export function getProductionRuntimeConfigurationIssues(
   env: NodeJS.ProcessEnv = process.env,
 ): ProductionReleaseIssue[] {
-  if (!productionReleaseGateRequired(env)) return [];
+  const invalidDeploymentMode = deploymentModeInvalid(env);
+  if (!productionReleaseGateRequired(env) && !invalidDeploymentMode) return [];
 
   const issues: ProductionReleaseIssue[] = [];
+  if (invalidDeploymentMode) {
+    issues.push(issue("deployment", "DEPLOYMENT_MODE_INVALID"));
+  }
 
   if (!isPostgresUrl(env.DATABASE_URL)) {
     issues.push(issue("database", "PRODUCTION_DATABASE_URL_REQUIRED"));
