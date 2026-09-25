@@ -149,6 +149,12 @@ export function validateRepositoryPolicy(root, files) {
       if (!/security-final-audit\.mjs dependency/.test(content)) {
         violations.push("security-supply-chain.yml: dependency-review must run the full dependency audit");
       }
+      if (!/security-final-audit\.mjs history/.test(content)) {
+        violations.push("security-supply-chain.yml: full-history secret scan is required");
+      }
+      if (!/fetch-depth:\s*0/.test(content)) {
+        violations.push("security-supply-chain.yml: repository security checkout must include full history");
+      }
     }
   }
 
