@@ -88,7 +88,7 @@ export const conversations = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export const messages = pgTable(
   "messages",
@@ -146,7 +146,7 @@ export const messages = pgTable(
       sql`${table.status} <> 'failed' OR (${table.failedAt} IS NOT NULL AND ${table.failureCode} IS NOT NULL)`,
     ),
   }),
-);
+).enableRLS();
 
 export const processedChannelEvents = pgTable(
   "processed_channel_events",
