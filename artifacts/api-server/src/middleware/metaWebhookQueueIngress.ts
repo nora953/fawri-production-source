@@ -68,7 +68,11 @@ export async function enqueueMetaWebhookEvents(
   }
 
   try {
-    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative();
+    const pageMerchantMap = await readMetaPageMerchantMapAuthoritative(
+      (Array.isArray(body.entry) ? body.entry : [])
+        .map((entryValue) => String(record(entryValue).id || "").trim())
+        .filter(Boolean),
+    );
     const processed = new Set<string>();
     let enqueued = 0;
     let deduplicated = Number(res.locals.metaWebhookDuplicateEvents || 0);
