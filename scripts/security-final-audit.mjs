@@ -203,6 +203,35 @@ export function validateRepositoryPolicy(root, files) {
   };
 }
 
+function isKnownTestFixtureCredentialUrl(text, finding, objectPath) {
+  if (finding.rule !== "credential-url") return false;
+  const normalizedPath = normalizeRepositoryPath(objectPath);
+  if (!/(?:^|\/)(?:tests?|__tests__)(?:\/|$)|\.test\.[cm]?[jt]sx?$/.test(normalizedPath)) {
+    return false;
+  }
+  const matched = String(text).slice(
+    finding.index,
+    finding.index + finding.length,
+  );
+  const parsed = matched.match(
+    /^(?:postgres(?:ql)?|mysql|mongodb(?:\+srv)?|redis):\/\/([^:/\s]+):([^@\s]+)@([^/\s]+)/i,
+  );
+  if (!parsed) return false;
+  const username = String(parsed[1] || "");
+  const password = String(parsed[2] || "");
+  const host = String(parsed[3] || "").split(":")[0].toLowerCase();
+  const obviousFixtureIdentity =
+    /(?:test|fixture|sample|dummy|fake|user|fawri_ci)/i.test(username) &&
+    /(?:test|fixture|sample|dummy|fake|password|secret|pass)/i.test(password);
+  const nonProductionHost =
+    host === "127.0.0.1" ||
+    host === "localhost" ||
+    host === "db" ||
+    host.endsWith(".example") ||
+    host.includes(".example.");
+  return obviousFixtureIdentity && nonProductionHost;
+}
+
 function scanHistory(root) {
   const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
     cwd: root,
@@ -276,6 +305,7 @@ function scanHistory(root) {
       includePrivateData: false,
       includeAssignments: false,
     })) {
+      if (isKnownTestFixtureCredentialUrl(text, finding, objectPath)) continue;
       findings.push({
         blob: objectId,
         file: objectPath || "(historical path unavailable)",
