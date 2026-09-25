@@ -93,7 +93,7 @@ export const merchantChannels = pgTable(
       sql`${table.disconnectedAt} IS NULL OR ${table.connectedAt} IS NULL OR ${table.disconnectedAt} >= ${table.connectedAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export type MerchantChannel = typeof merchantChannels.$inferSelect;
 export type NewMerchantChannel = typeof merchantChannels.$inferInsert;
