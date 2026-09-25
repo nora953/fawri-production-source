@@ -38,19 +38,20 @@ test("merchant navigation exposes one reports hub", () => {
 
 test("reports hub keeps cashier online and combined views source-separated", () => {
   const page = read("artifacts/fawri/src/pages/dashboard/ReportsPage.tsx");
+  const copy = read("artifacts/fawri/src/lib/translations/features/pages/dashboard/ReportsPage.ts");
 
-  assert.match(page, /Cashier Reports/);
-  assert.match(page, /Online Order Reports/);
-  assert.match(page, /Combined Report/);
+  assert.match(copy, /cashier: 'Cashier Reports'/);
+  assert.match(copy, /online: 'Online Order Reports'/);
+  assert.match(copy, /combined: 'Combined Report'/);
   assert.match(page, /<CashierCentralReportsPage embedded/);
   assert.match(page, /\/api\/reports\/online/);
   assert.match(page, /\/api\/cashier\/management\/report/);
   assert.match(page, /cashierNetSales/);
   assert.match(page, /onlineDeliveredSales/);
-  assert.match(page, /Different currencies are never converted or merged/);
-  assert.match(page, /Top-selling online products/);
-  assert.match(page, /Delivery fees on delivered orders/);
-  assert.match(page, /Total delivered order value/);
+  assert.match(copy, /Different currencies are never converted or merged/);
+  assert.match(copy, /topProducts: 'Top-selling online products'/);
+  assert.match(copy, /deliveryFees: 'Delivery fees on delivered orders'/);
+  assert.match(copy, /deliveredOrderValue: 'Total delivered order value'/);
   assert.match(page, /EnglishOnlineReportsContent/);
   assert.match(page, /EnglishOnlineProductChart/);
   assert.match(page, /EnglishCombinedChart/);
@@ -61,8 +62,8 @@ test("reports hub keeps cashier online and combined views source-separated", () 
   assert.match(page, /report-print-online-metrics report-print-metrics grid gap-3 sm:grid-cols-2 xl:grid-cols-3/);
   assert.match(page, /report-print-online-group-stats mt-3 grid grid-cols-3/);
   assert.match(page, /count === 1 \? singular : plural/);
-  assert.match(page, /Delivered online orders/);
-  assert.match(page, /Online orders received/);
+  assert.match(copy, /deliveredOnlineOrders: 'Delivered online orders'/);
+  assert.match(copy, /receivedOnlineOrders: 'Online orders received'/);
   assert.match(page, /row\.code === 'IQD' && row\.digits === 0 \? formatMerchantMoneyMinor\(row\.online/);
   assert.match(page, /toLocaleString\(lang === 'ar' \? 'ar-IQ' : lang === 'ku' \? 'ckb-IQ' : 'en-GB'\)/);
   assert.match(page, /const iqKey = 'IQD:0'/);

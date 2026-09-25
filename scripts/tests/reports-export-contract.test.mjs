@@ -15,6 +15,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   const cashier = read("artifacts/fawri/src/pages/dashboard/CashierCentralReportsPage.tsx");
   const reports = read("artifacts/fawri/src/pages/dashboard/ReportsPage.tsx");
   const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
+  const toolbarCopy = read("artifacts/fawri/src/lib/translations/features/components/reportToolbarCopy.ts");
+  const reportsCopy = read("artifacts/fawri/src/lib/translations/features/pages/dashboard/ReportsPage.ts");
+  const cashierCopy = read("artifacts/fawri/src/lib/translations/features/pages/dashboard/CashierCentralReportsPage.ts");
   const printCss = read("artifacts/fawri/src/pages/dashboard/reports-print.css");
   const workbook = read("artifacts/fawri/src/lib/reportWorkbook.ts");
 
@@ -30,14 +33,14 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(toolbar, /report-date-selection-slot/);
   assert.match(toolbar, /displayDateDayFirst/);
   assert.match(toolbar, /\$\{day\}\/\$\{month\}\/\$\{year\}/);
-  assert.match(toolbar, /Quick ranges/);
-  assert.match(toolbar, /Choose the start date, then the end date on the calendar\./);
-  assert.match(toolbar, /Cancel/);
-  assert.match(toolbar, /Apply/);
+  assert.match(toolbarCopy, /presets: 'Quick ranges'/);
+  assert.match(toolbarCopy, /rangePickerHint: 'Choose the start date, then the end date on the calendar\.'/);
+  assert.match(toolbarCopy, /cancel: 'Cancel'/);
+  assert.match(toolbarCopy, /apply: 'Apply'/);
   assert.match(toolbar, /draftRange\.to \?\? draftRange\.from/);
   assert.doesNotMatch(toolbar, /type="date"/);
-  assert.match(toolbar, /Download Excel/);
-  assert.match(toolbar, /Print \/ Save PDF/);
+  assert.match(toolbarCopy, /download: 'Download Excel'/);
+  assert.match(toolbarCopy, /print: 'Print \/ Save PDF'/);
   assert.match(toolbar, /localDateEndExclusive/);
   assert.match(toolbar, /params\.set\('to'/);
 
@@ -73,7 +76,9 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(toolbar, /onClick=\{applyDraft\}[\s\S]*\{copy\.apply\}[\s\S]*onClick=\{\(\) => setOpen\(false\)\}[\s\S]*\{copy\.cancel\}/);
   assert.match(toolbar, /closeButtonClassName=\{lang === 'en' \? 'right-3 top-3' : 'left-3 right-auto top-3'\}/);
   assert.match(toolbar, /<bdi dir="ltr">/);
-  assert.match(toolbar, /index === 0 \? 'من' : 'إلى'/);
+  assert.match(toolbar, /REPORT_TOOLBAR_RANGE_JOINERS\.ar\.from/);
+  assert.match(toolbar, /REPORT_TOOLBAR_RANGE_JOINERS\.ar\.to/);
+  assert.match(toolbarCopy, /ar: \{ from: 'من', to: 'إلى' \}/);
   assert.match(cashier, /report-print-chart-canvas/);
   assert.match(cashier, /h-48 w-48 max-w-full/);
   assert.match(printCss, /grid-template-columns: 48mm minmax\(0, 1fr\)/);
@@ -102,8 +107,8 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(cashier, /item\.sale_id/);
   assert.match(cashier, /item\.shift_id/);
   assert.match(cashier, /labels\.location,\s*labels\.station,\s*labels\.amount,\s*labels\.currency,\s*labels\.saleReference,\s*labels\.shift/);
-  assert.match(cashier, /metric: 'المؤشر'/);
-  assert.match(cashier, /value: 'القيمة'/);
+  assert.match(cashierCopy, /metric: 'المؤشر'/);
+  assert.match(cashierCopy, /value: 'القيمة'/);
   assert.match(cashier, /\[labels\.currency, labels\.metric, labels\.value, labels\.profitStatus\]/);
   assert.match(cashier, /columnWidths: \[16, 34, 22, 22\]/);
   assert.match(cashier, /cashierExportSheetNames/);
@@ -182,7 +187,7 @@ test("report surfaces expose custom date range, Excel export, print and charts",
   assert.match(reports, /report-print-online-products/);
   assert.match(reports, /report-print-chart-legend/);
   assert.match(reports, /report-print-chart-percent/);
-  assert.match(reports, /المصدر: سجل الطلبات الإلكترونية الموثوق على السيرفر/);
+  assert.match(reportsCopy, /trustedOnlineSource: 'المصدر: سجل الطلبات الإلكترونية الموثوق على السيرفر'/);
   assert.match(printCss, /@media print/);
   assert.match(printCss, /report-no-print/);
   assert.match(printCss, /report-print-only/);
@@ -280,12 +285,14 @@ test("cashier profitability requires complete historical cost evidence", () => {
 
 test("Arabic, Sorani and English report calendars preserve the approved reference geometry without changing date boundaries", () => {
   const toolbar = read("artifacts/fawri/src/components/reports/ReportToolbar.tsx");
+  const toolbarCopy = read("artifacts/fawri/src/lib/translations/features/components/reportToolbarCopy.ts");
   const css = read("artifacts/fawri/src/components/reports/report-calendar.css");
   assert.match(toolbar, /const RangeCalendar = DayPicker/);
   assert.match(toolbar, /locale=\{lang === 'ar' \? ar : undefined\}/);
   assert.match(toolbar, /numerals=\{lang === 'ar' \? 'arab' : undefined\}/);
-  assert.match(toolbar, /labelNext: \(\) => 'الشهر التالي'/);
-  assert.match(toolbar, /labelPrevious: \(\) => 'الشهر السابق'/);
+  assert.match(toolbar, /REPORT_TOOLBAR_CALENDAR_NAV_COPY\.ar\.next/);
+  assert.match(toolbarCopy, /ar: \{ next: 'الشهر التالي', previous: 'الشهر السابق' \}/);
+  assert.match(toolbar, /REPORT_TOOLBAR_CALENDAR_NAV_COPY\.ar\.previous/);
   assert.match(css, /\.report-ar-calendar \.rdp-month_grid/);
   assert.match(css, /\.report-ku-calendar \.rdp-month_grid/);
   assert.match(css, /\.report-en-calendar \.rdp-month_grid/);
@@ -302,12 +309,15 @@ test("Arabic, Sorani and English report calendars preserve the approved referenc
   assert.match(toolbar, /lang === 'ku' \? 'report-ku-calendar'/);
   assert.match(toolbar, /formatCaption: soraniCaption/);
   assert.match(toolbar, /formatWeekdayName: soraniWeekday/);
-  assert.match(toolbar, /کانوونی دووەم/);
-  assert.match(toolbar, /ئەیلوول/);
-  assert.match(toolbar, /تشرینی یەکەم/);
+  assert.match(toolbarCopy, /'کانوونی دووەم'/);
+  assert.match(toolbarCopy, /'ئەیلوول'/);
+  assert.match(toolbarCopy, /'تشرینی یەکەم'/);
   assert.match(toolbar, /SORANI_WEEKDAYS/);
   assert.match(toolbar, /SoraniRangeDetail/);
-  assert.match(toolbar, /index === 0 \? 'لە' : 'تا'/);
+  assert.match(toolbar, /REPORT_TOOLBAR_RANGE_JOINERS\.ku\.from/);
+  assert.match(toolbar, /REPORT_TOOLBAR_RANGE_JOINERS\.ku\.to/);
+  assert.match(toolbarCopy, /ku: \{ next: 'مانگی داهاتوو', previous: 'مانگی پێشوو' \}/);
+  assert.match(toolbarCopy, /ku: \{ from: 'لە', to: 'تا' \}/);
   assert.match(toolbar, /weekStartsOn=\{lang === 'ku' \? 6 : undefined\}/);
   assert.match(toolbar, /dir=\{lang === 'en' \? 'ltr' : 'rtl'\}/);
   assert.doesNotMatch(toolbar, /lang === 'ku' \? <div className="mb-3">/);
