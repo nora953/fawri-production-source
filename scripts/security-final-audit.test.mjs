@@ -124,7 +124,7 @@ test("repository policy requires protected workflows, immutable action pins, pnp
     for (const name of protectedNames) writeFileSync(path.join(workflowDir, name), "name: existing\n");
     const checkoutSha = "11d5960a326750d5838078e36cf38b85af677262";
     const safeWorkflow = `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n`;
-    const safeSecurityWorkflow = `${safeWorkflow}jobs:\n  dependency-review:\n    steps:\n      - run: node scripts/security-final-audit.mjs dependency-review \"$BASE_SHA\"\n      - run: pnpm install --frozen-lockfile --ignore-scripts\n      - run: node scripts/security-final-audit.mjs dependency\n`;
+    const safeSecurityWorkflow = `permissions:\n  contents: read\njobs:\n  repository-security:\n    steps:\n      - uses: actions/checkout@${checkoutSha}\n        with:\n          persist-credentials: false\n          fetch-depth: 0\n      - run: node scripts/security-final-audit.mjs history\n  dependency-review:\n    steps:\n      - uses: actions/checkout@${checkoutSha}\n        with:\n          persist-credentials: false\n          fetch-depth: 0\n      - run: node scripts/security-final-audit.mjs dependency-review "$BASE_SHA"\n      - run: pnpm install --frozen-lockfile --ignore-scripts\n      - run: node scripts/security-final-audit.mjs dependency\n`;
     writeFileSync(path.join(workflowDir, "quality-gates.yml"), safeWorkflow);
     writeFileSync(path.join(workflowDir, "security-supply-chain.yml"), safeSecurityWorkflow);
     writeFileSync(path.join(root, "pnpm-workspace.yaml"), "autoInstallPeers: false\nminimumReleaseAge: 1440\n");
