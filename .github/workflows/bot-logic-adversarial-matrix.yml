@@ -23,7 +23,7 @@ on:
       - "artifacts/api-server/tests/knowledge-*.test.mjs"
       - "artifacts/api-server/tests/meta-*.test.ts"
       - "artifacts/api-server/tests/meta-*.test.mjs"
-      - "scripts/tests/bot-safety-workflow-paths.test.mjs"
+      - "artifacts/api-server/tests/bot-safety-workflow-paths.test.mjs"
       - ".github/workflows/bot-logic-adversarial-matrix.yml"
   workflow_dispatch:
 
@@ -58,7 +58,7 @@ jobs:
         run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Verify bot safety workflow cannot exclude critical send-path files
-        run: node --test scripts/tests/bot-safety-workflow-paths.test.mjs
+        run: node --test artifacts/api-server/tests/bot-safety-workflow-paths.test.mjs
 
       - name: Run strict cross-layer bot adversarial matrix
         run: >-
