@@ -38,7 +38,7 @@ async function raw(sql: string, values: unknown[] = []) {
 
 async function seedMerchant() {
   const created = await accounts.upsertPendingMerchantAuthoritative({
-    phone: "07770000001",
+    phone: "+9647770000001",
     passwordHash: "merchant-payment-proof-hash",
     ownerName: "Payment Proof Owner",
     storeName: "Payment Proof Store",
