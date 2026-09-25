@@ -174,7 +174,11 @@ test("history scanner fixture suppressions are narrowly scoped", () => {
     "highEntropyCredentialValue",
     "@db.internal.company/fawri",
   ].join("");
-  const finding = { rule: "credential-url", index: 0, length: productionLike.length };
+  const [finding] = findSensitiveText(productionLike, {
+    includePrivateData: false,
+    includeAssignments: false,
+  });
+  assert.ok(finding);
   assert.equal(
     isKnownTestFixtureCredentialUrl(
       productionLike,
