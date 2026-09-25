@@ -1,3 +1,4 @@
+import { MERCHANT_REGIONAL_DEFAULT_BY_COUNTRY } from "./merchantRegionDefaults";
 export type MerchantRegionalProfile = {
   country_code: string;
   timezone: string;
@@ -22,13 +23,6 @@ export class MerchantRegionalError extends Error {
     this.details = details;
   }
 }
-
-const COUNTRY_DEFAULTS: Record<
-  string,
-  { timezone?: string; currency_code?: string }
-> = {
-  IQ: { timezone: "Asia/Baghdad", currency_code: "IQD" },
-};
 
 const LOCAL_DATE_TIME =
   /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/;
@@ -84,12 +78,12 @@ export function defaultMerchantRegionalProfileForCountry(
   countryValue: unknown,
 ): Partial<MerchantRegionalProfile> & { country_code: string } {
   const countryCode = normalizeMerchantCountryCode(countryValue);
-  const defaults = COUNTRY_DEFAULTS[countryCode] || {};
+  const defaults = MERCHANT_REGIONAL_DEFAULT_BY_COUNTRY.get(countryCode);
   return {
     country_code: countryCode,
-    ...(defaults.timezone ? { timezone: defaults.timezone } : {}),
-    ...(defaults.currency_code
-      ? { currency_code: defaults.currency_code }
+    ...(defaults?.timezone ? { timezone: defaults.timezone } : {}),
+    ...(defaults?.currencyCode
+      ? { currency_code: defaults.currencyCode }
       : {}),
   };
 }
