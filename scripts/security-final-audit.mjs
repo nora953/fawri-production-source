@@ -143,6 +143,12 @@ export function validateRepositoryPolicy(root, files) {
       if (!/security-final-audit\.mjs dependency-review/.test(content)) {
         violations.push("security-supply-chain.yml: local dependency-review gate is required");
       }
+      if (!/fetch-depth:\s*0/.test(content)) {
+        violations.push("security-supply-chain.yml: repository security scan requires full history checkout");
+      }
+      if (!/security-final-audit\.mjs history/.test(content)) {
+        violations.push("security-supply-chain.yml: full Git history secret scan is required");
+      }
       if (!/pnpm install --frozen-lockfile --ignore-scripts/.test(content)) {
         violations.push("security-supply-chain.yml: dependency-review must use frozen install with scripts disabled");
       }
