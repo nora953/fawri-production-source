@@ -7,7 +7,8 @@ export type MerchantReplyReleaseCode =
   | "MERCHANT_AUTO_REPLY_DISABLED"
   | "MERCHANT_SETTINGS_VERSION_CHANGED"
   | "MERCHANT_SETTINGS_UNAVAILABLE"
-  | "META_FAKE_TRANSPORT_ONLY";
+  | "META_FAKE_TRANSPORT_ONLY"
+  | "CONVERSATION_CONTEXT_SUPERSEDED";
 
 type ReservationRecord = {
   merchant_id?: unknown;
