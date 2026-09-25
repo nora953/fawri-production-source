@@ -236,3 +236,160 @@ test("grounded AI still hands off when risk is not low", async () => {
   assert.equal(result.action, "handoff");
   assert.equal(result.requiresMerchantApproval, true);
 });
+
+
+test("valid grounding IDs cannot authorize unsupported high-risk textual claims", async () => {
+  const cases = [
+    ["Outer material: cotton.", "This is a waterproof cotton jacket."],
+    ["USB-C charger, 65W.", "This charger is safe for every laptop."],
+    ["Gold-plated jewelry.", "This jewelry is hypoallergenic."],
+    ["Fragrance contains vanilla notes.", "It is suitable for sensitive skin."],
+    ["Outer material: cotton.", "It is compatible with every device."],
+    ["Outer material: cotton.", "It is certified for professional use."],
+    ["Outer material: cotton.", "It includes a two-year warranty."],
+    ["Outer material: cotton.", "You have a right to return it at any time."],
+    ["Outer material: cotton.", "It is extremely durable."],
+    ["Outer material: cotton.", "It is 100% authentic."],
+    ["Outer material: cotton.", "It is made in Italy."],
+    ["Outer material: cotton.", "It comes with a protective case."],
+    ["Outer material: cotton.", "I recommend it as better than the alternatives."],
+  ];
+
+  for (const [evidence, unsupportedAnswer] of cases) {
+    const record = {
+      id: "approved-risk-evidence",
+      merchantId: "merchant-a",
+      question: "Tell me about this item",
+      answer: evidence,
+      language: "en",
+      source: "merchant_approved",
+      kind: "saved_answer",
+    };
+    const runtime = {
+      authorityId: "semantic-risk-test-runtime",
+      legacyFallbackEnabled: false,
+      async findApprovedSavedAnswer() { return null; },
+      async retrieveSemanticMatch() { return null; },
+      async listApprovedSemanticDocuments() { return [record]; },
+      async createTrainingRequest() {
+        return {
+          id: "training-risk",
+          merchantId: "merchant-a",
+          customerTextPreview: "preview",
+          customerTextHash: "a".repeat(64),
+          detectedIntent: "general",
+          detectedLanguage: "en",
+          reason: "ai_candidate_requires_review",
+          suggestedReply: unsupportedAnswer,
+          suggestedReplySource: "openai_generated",
+          status: "pending_review",
+          rejectionReason: null,
+          version: 1,
+          createdAt: "2026-09-25T00:00:00.000Z",
+          updatedAt: "2026-09-25T00:00:00.000Z",
+        };
+      },
+      async recordGeneratedCandidate(input) {
+        return {
+          trainingRequest: await this.createTrainingRequest(),
+          learnedAnswer: {
+            id: "learned-risk",
+            merchantId: input.merchantId,
+            intent: input.intent,
+            language: input.language,
+            examples: ["preview"],
+            keywords: [],
+            answerText: input.answerText,
+            source: "openai_generated",
+            approvalStatus: "pending_review",
+            confidence: input.confidence,
+            safeToAutoReply: false,
+            trainingRequestId: "training-risk",
+            version: 1,
+            createdAt: "2026-09-25T00:00:00.000Z",
+            updatedAt: "2026-09-25T00:00:00.000Z",
+          },
+        };
+      },
+      async appendAudit() {},
+    };
+    const engine = new KnowledgeDecisionEngine({
+      runtime,
+      factResolver: { async resolve() { return null; } },
+      policyResolver: policy(),
+      allowGeneratedAutoReply: true,
+      aiProvider: {
+        providerId: "test-constrained-ai",
+        async generate() {
+          return {
+            answerText: unsupportedAnswer,
+            language: "en",
+            confidence: 0.99,
+            risk: "low",
+            canAnswer: true,
+            reason: "claims grounding",
+            source: "openai_generated",
+            groundingRecordIds: [record.id],
+          };
+        },
+      },
+    });
+
+    const result = await engine.decide({
+      merchantId: "merchant-a",
+      customerText: "Tell me about this item",
+      languageHint: "en",
+    });
+
+    assert.equal(
+      result.action,
+      "handoff",
+      `unsupported claim escaped evidence boundary: ${unsupportedAnswer}`,
+    );
+    assert.equal(result.reasonCode, "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL");
+  }
+});
+
+test("high-risk claim polarity cannot be strengthened from negative evidence", async () => {
+  const record = {
+    id: "approved-negative-waterproof",
+    merchantId: "merchant-a",
+    question: "Is it waterproof?",
+    answer: "This jacket is not waterproof.",
+    language: "en",
+    source: "merchant_approved",
+    kind: "saved_answer",
+  };
+  const fallback = reviewFallbackRuntime();
+  fallback.runtime.listApprovedSemanticDocuments = async () => [record];
+
+  const engine = new KnowledgeDecisionEngine({
+    runtime: fallback.runtime,
+    factResolver: { async resolve() { return null; } },
+    policyResolver: policy(),
+    allowGeneratedAutoReply: true,
+    aiProvider: {
+      providerId: "test-constrained-ai",
+      async generate() {
+        return {
+          answerText: "This jacket is waterproof.",
+          language: "en",
+          confidence: 0.99,
+          risk: "low",
+          canAnswer: true,
+          reason: "claims grounding",
+          source: "openai_generated",
+          groundingRecordIds: [record.id],
+        };
+      },
+    },
+  });
+
+  const result = await engine.decide({
+    merchantId: "merchant-a",
+    customerText: "Is it waterproof?",
+    languageHint: "en",
+  });
+  assert.equal(result.action, "handoff");
+  assert.equal(result.reasonCode, "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL");
+});
