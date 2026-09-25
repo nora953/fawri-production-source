@@ -22,6 +22,7 @@ export type PreparedPostgresMetaAutoReply =
       merchantId: string;
       conversationId: string;
       inboundEventId: string;
+      sourceCustomerMessageId: string;
       replyIntentId: string;
       replyMessageId: string;
       pageId: string;
@@ -45,6 +46,7 @@ type ConversationRow = {
   id: string;
   status: "auto_replying" | "needs_reply" | "manual" | "closed";
   assigned_to_human: boolean;
+  metadata?: Record<string, unknown> | null;
 };
 
 type ReplyMessageRow = {
@@ -194,6 +196,7 @@ async function ensureInboundState(
   inboundEventId: string;
   customerInserted: boolean;
   existingReply: ReplyMessageRow | null;
+  sourceCustomerMessageId: string;
 }> {
   return withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
     const channelResult = await client.query<{ id: string }>(
@@ -256,10 +259,11 @@ async function ensureInboundState(
     }
 
     const existingConversation = await client.query<ConversationRow>(
-      `SELECT id, status::text AS status, assigned_to_human
+      `SELECT id, status::text AS status, assigned_to_human, metadata
          FROM conversations
         WHERE merchant_id = $1 AND channel_id = $2 AND customer_external_id = $3
-        LIMIT 1`,
+        LIMIT 1
+        FOR UPDATE`,
       [parsed.merchantId, channelId, parsed.senderId],
     );
     let conversation = existingConversation.rows[0];
@@ -293,7 +297,7 @@ async function ensureInboundState(
             SET status = 'auto_replying', assigned_to_human = FALSE,
                 closed_at = NULL, updated_at = now()
           WHERE merchant_id = $1 AND id = $2
-          RETURNING id, status::text AS status, assigned_to_human`,
+          RETURNING id, status::text AS status, assigned_to_human, metadata`,
         [parsed.merchantId, conversation.id],
       );
       conversation = reopened.rows[0] || conversation;
@@ -340,9 +344,24 @@ async function ensureInboundState(
     await client.query(
       `UPDATE conversations
           SET last_message_at = GREATEST(COALESCE(last_message_at, $3::timestamptz), $3::timestamptz),
-              updated_at = GREATEST(updated_at, $3::timestamptz)
+              updated_at = GREATEST(updated_at, $3::timestamptz),
+              metadata = CASE
+                WHEN $4::boolean THEN jsonb_set(
+                  COALESCE(metadata, '{}'::jsonb),
+                  '{latest_customer_message_id}',
+                  to_jsonb($5::text),
+                  true
+                )
+                ELSE metadata
+              END
         WHERE merchant_id = $1 AND id = $2`,
-      [parsed.merchantId, conversation.id, parsed.createdAt],
+      [
+        parsed.merchantId,
+        conversation.id,
+        parsed.createdAt,
+        customerInserted,
+        customerMessageId(parsed.eventId),
+      ],
     );
 
     return {
@@ -351,6 +370,7 @@ async function ensureInboundState(
       inboundEventId: inboundRow.id,
       customerInserted,
       existingReply: await findReplyMessage(client, parsed.merchantId, parsed.eventId),
+      sourceCustomerMessageId: customerMessageId(parsed.eventId),
     };
   });
 }
@@ -405,6 +425,9 @@ function existingSendIntent(
     merchantId: parsed.merchantId,
     conversationId: conversationIdValue,
     inboundEventId: inboundId,
+    sourceCustomerMessageId:
+      text(existing.metadata?.source_customer_message_id) ||
+      customerMessageId(parsed.eventId),
     replyIntentId: replyIntentId(parsed.eventId),
     replyMessageId: existing.id,
     pageId: parsed.pageId,
@@ -514,7 +537,7 @@ export async function preparePostgresMetaAutoReply(
 
   return withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
     const currentConversation = await client.query<ConversationRow>(
-      `SELECT id, status::text AS status, assigned_to_human
+      `SELECT id, status::text AS status, assigned_to_human, metadata
          FROM conversations
         WHERE merchant_id = $1 AND id = $2
         FOR UPDATE`,
@@ -530,8 +553,22 @@ export async function preparePostgresMetaAutoReply(
         existing,
       );
     }
+    const latestCustomerMessageId = text(
+      current?.metadata?.latest_customer_message_id,
+    );
     if (
       !current ||
+      latestCustomerMessageId !== inbound.sourceCustomerMessageId
+    ) {
+      return {
+        action: "suppress" as const,
+        eventId: parsed.eventId,
+        merchantId: parsed.merchantId,
+        conversationId: inbound.conversationId,
+        code: "CONVERSATION_CONTEXT_SUPERSEDED",
+      };
+    }
+    if (
       current.status === "manual" ||
       current.status === "needs_reply" ||
       current.assigned_to_human
@@ -567,6 +604,7 @@ export async function preparePostgresMetaAutoReply(
           confidence: decision.confidence,
           matched_record_id: decision.matchedRecordId,
           grounding_record_ids: decision.groundingRecordIds || [],
+          source_customer_message_id: inbound.sourceCustomerMessageId,
           training_request_id: decision.trainingRequestId,
           handoff_after_reply: handoff,
         }),
