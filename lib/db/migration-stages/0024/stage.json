@@ -1,0 +1,7 @@
+{
+  "index": 24,
+  "name": "tenant_rls_security_definer_predicate",
+  "when": 1790467200000,
+  "mode": "manual_sql",
+  "preimage_files": []
+}
