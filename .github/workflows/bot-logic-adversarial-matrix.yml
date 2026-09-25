@@ -6,8 +6,24 @@ on:
       - "artifacts/api-server/src/services/ai/**"
       - "artifacts/api-server/src/services/knowledge/**"
       - "artifacts/api-server/src/services/postgresMetaAutoReplyIntent.ts"
+      - "artifacts/api-server/src/services/postgresMetaWebhookReplyTransport.ts"
+      - "artifacts/api-server/src/services/metaWebhookWorker.ts"
+      - "artifacts/api-server/src/services/metaWebhookWorkerCore.ts"
+      - "artifacts/api-server/src/services/metaGraphSendClient.ts"
+      - "artifacts/api-server/src/services/durableJobQueue.ts"
+      - "artifacts/api-server/src/services/postgresDurableJobQueue.ts"
+      - "artifacts/api-server/src/services/merchantOperationalAccess.ts"
+      - "artifacts/api-server/src/services/merchantReply*.ts"
+      - "artifacts/api-server/src/services/postgresMerchantSettingsAuthority.ts"
+      - "artifacts/api-server/src/middleware/metaWebhook*.ts"
+      - "artifacts/api-server/src/middleware/merchantWebhook*.ts"
+      - "artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts"
+      - "lib/db/**"
       - "artifacts/api-server/tests/knowledge-*.test.ts"
       - "artifacts/api-server/tests/knowledge-*.test.mjs"
+      - "artifacts/api-server/tests/meta-*.test.ts"
+      - "artifacts/api-server/tests/meta-*.test.mjs"
+      - "scripts/tests/bot-safety-workflow-paths.test.mjs"
       - ".github/workflows/bot-logic-adversarial-matrix.yml"
   workflow_dispatch:
 
@@ -40,6 +56,9 @@ jobs:
 
       - name: Install frozen dependencies without lifecycle scripts
         run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Verify bot safety workflow cannot exclude critical send-path files
+        run: node --test scripts/tests/bot-safety-workflow-paths.test.mjs
 
       - name: Run strict cross-layer bot adversarial matrix
         run: >-
