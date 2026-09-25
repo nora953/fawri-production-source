@@ -47,11 +47,23 @@ function normalizeAccountState(record) {
   return "active";
 }
 
+function normalizeLegacyAccountPhone(value) {
+  const raw = text(value)
+    .normalize("NFKC")
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
+  if (!raw) return "";
+  if (raw.startsWith("+")) return `+${raw.slice(1).replace(/\D/g, "")}`;
+  const digits = raw.replace(/\D/g, "");
+  if (/^07\d{9}$/.test(digits)) return `+964${digits.slice(1)}`;
+  return digits ? `+${digits}` : "";
+}
+
 function mapAccount(record, index) {
   return {
     id: rowId("account", record?.id, index),
     kind: record?.is_admin === true ? "admin" : "merchant",
-    phone: text(record?.phone),
+    phone: normalizeLegacyAccountPhone(record?.phone),
     password_hash: text(record?.password_hash || record?.password),
     state: normalizeAccountState(record),
     language: normalizeLanguage(record?.language),
