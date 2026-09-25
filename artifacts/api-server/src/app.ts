@@ -117,7 +117,7 @@ function enforceHttpSecurityHeaders(
   );
   res.setHeader(
     "Content-Security-Policy",
-    "default-src 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https://graph.facebook.com https://www.facebook.com",
+    "frame-ancestors 'none'; base-uri 'self'; object-src 'none'",
   );
   if (process.env.NODE_ENV === "production") {
     res.setHeader("Strict-Transport-Security", "max-age=31536000");
