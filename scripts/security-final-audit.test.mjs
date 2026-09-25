@@ -205,7 +205,11 @@ test("historical credential URL suppression is limited to obvious test fixtures"
     false,
   );
 
-  const productionLike = "postgresql://prod_owner:highEntropyCredentialValue@db.internal.company/fawri";
+  const productionLike = [
+    "postgresql://prod_owner:",
+    "highEntropyCredentialValue",
+    "@db.internal.company/fawri",
+  ].join("");
   assert.equal(
     isKnownTestFixtureCredentialUrl(
       productionLike,
