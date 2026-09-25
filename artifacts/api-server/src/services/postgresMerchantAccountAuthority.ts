@@ -27,6 +27,9 @@ type MerchantAccountRow = {
   owner_name: string;
   store_name: string;
   activity_type: string;
+  country_code: string;
+  timezone: string;
+  currency_code: string;
   merchant_status: "pending_activation" | "approved" | "rejected" | "suspended";
   account_status: "pending_review" | "approved" | "rejected" | "suspended";
   onboarding_status: string;
@@ -64,6 +67,9 @@ function toAuthAccount(row: MerchantAccountRow): AuthAccount {
       ownerName: row.owner_name,
       storeName: row.store_name,
       activityType: row.activity_type,
+      countryCode: row.country_code,
+      timezone: row.timezone,
+      currencyCode: row.currency_code,
       language: row.language,
       accountStatus: row.account_status,
       onboardingStatus: row.onboarding_status,
@@ -84,6 +90,7 @@ async function selectMerchant(
     `SELECT a.id, a.kind, a.phone, a.password_hash, a.state, a.language,
             a.phone_verified, a.session_version, a.created_at,
             m.owner_name, m.store_name, m.activity_type,
+            m.country_code, m.timezone, m.currency_code,
             m.status AS merchant_status, m.account_status,
             m.onboarding_status, m.requested_plan
        FROM accounts AS a
@@ -125,6 +132,9 @@ export async function upsertPendingMerchantAuthoritative(input: {
   ownerName: string;
   storeName: string;
   activityType: string;
+  countryCode?: string;
+  timezone?: string;
+  currencyCode?: string;
   language: "ar" | "ku" | "en";
   requestedPlan?: RequestedPlan | null;
 }): Promise<AuthAccount> {
@@ -133,6 +143,9 @@ export async function upsertPendingMerchantAuthoritative(input: {
   }
   const phone = normalizePhone(input.phone);
   if (!isE164Phone(phone)) throw new Error("INVALID_PHONE");
+  const countryCode = String(input.countryCode || "IQ").trim().toUpperCase();
+  const timezone = String(input.timezone || "Asia/Baghdad").trim();
+  const currencyCode = String(input.currencyCode || "IQD").trim().toUpperCase();
 
   return withOperationalTransaction(async (client) => {
     const collision = await operationalQueryRows<{
@@ -163,18 +176,23 @@ export async function upsertPendingMerchantAuthoritative(input: {
       await client.query(
         `INSERT INTO merchants (
            id, account_id, profile_kind, owner_name, store_name, activity_type,
+           country_code, timezone, currency_code,
            status, account_status, onboarding_status, trial_status,
            signup_source, requested_plan
          ) VALUES (
            $1, $1, 'merchant', $2, $3, $4,
+           $5, $6, $7,
            'pending_activation', 'pending_review', 'pending_review', 'eligible',
-           'direct', $5
+           'direct', $8
          )`,
         [
           accountId,
           input.ownerName.trim(),
           input.storeName.trim(),
           input.activityType.trim(),
+          countryCode,
+          timezone,
+          currencyCode,
           input.requestedPlan ?? null,
         ],
       );
@@ -195,12 +213,15 @@ export async function upsertPendingMerchantAuthoritative(input: {
             SET owner_name = $2,
                 store_name = $3,
                 activity_type = $4,
+                country_code = $5,
+                timezone = $6,
+                currency_code = $7,
                 status = 'pending_activation',
                 account_status = 'pending_review',
                 onboarding_status = 'pending_review',
                 requested_plan = CASE
-                  WHEN $5::text IS NULL THEN requested_plan
-                  ELSE $5::subscription_plan
+                  WHEN $8::text IS NULL THEN requested_plan
+                  ELSE $8::subscription_plan
                 END,
                 updated_at = now()
           WHERE id = $1 AND account_id = $1`,
@@ -209,6 +230,9 @@ export async function upsertPendingMerchantAuthoritative(input: {
           input.ownerName.trim(),
           input.storeName.trim(),
           input.activityType.trim(),
+          countryCode,
+          timezone,
+          currencyCode,
           input.requestedPlan ?? null,
         ],
       );
