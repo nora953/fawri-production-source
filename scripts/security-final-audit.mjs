@@ -232,16 +232,6 @@ export function isKnownTestFixtureCredentialUrl(text, finding, objectPath) {
   return obviousFixtureIdentity && nonProductionHost;
 }
 
-const KNOWN_SYNTHETIC_HISTORY_FINDINGS = new Set([
-  "18ac9897dced6f5c150cd5dcfa872d0bd9b5d9ed|scripts/security-final-audit.test.mjs|credential-url",
-]);
-
-function isKnownSyntheticHistoryFinding(objectId, objectPath, rule) {
-  return KNOWN_SYNTHETIC_HISTORY_FINDINGS.has(
-    `${objectId}|${normalizeRepositoryPath(objectPath)}|${rule}`,
-  );
-}
-
 const KNOWN_HISTORICAL_SCANNER_SELF_TEST_CREDENTIAL = [
   "postgresql://prod_owner:",
   "highEntropyCredentialValue",
@@ -341,7 +331,6 @@ function scanHistory(root) {
         isKnownTestFixtureCredentialUrl(text, finding, objectPath) ||
         isKnownHistoricalScannerSelfTestCredentialUrl(text, finding, objectPath)
       ) continue;
-      if (isKnownSyntheticHistoryFinding(objectId, objectPath, finding.rule)) continue;
       findings.push({
         blob: objectId,
         file: objectPath || "(historical path unavailable)",
