@@ -1,9 +1,8 @@
-// @ts-nocheck
 import assert from "node:assert/strict";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { type TestContext } from "node:test";
 import {
   KnowledgeConflictError,
   KnowledgeRepository,
@@ -15,9 +14,10 @@ import {
 import { inspectPromptInjection } from "../src/services/knowledge/promptInjection.js";
 import { KnowledgeDecisionEngine } from "../src/services/ai/knowledgeDecisionEngine.js";
 import { ConstrainedOpenAiProvider } from "../src/services/ai/constrainedOpenAiProvider.js";
+import type { AiFallbackProvider } from "../src/services/knowledge/types.js";
 import { redactSensitiveText } from "../src/services/knowledge/redaction.js";
 
-async function withRepository(t) {
+async function withRepository(t: TestContext) {
   const directory = await mkdtemp(path.join(os.tmpdir(), "fawri-knowledge-ai-"));
   t.after(() => rm(directory, { recursive: true, force: true }));
   return new KnowledgeRepository({
@@ -122,7 +122,7 @@ test("retrieval is tenant-isolated even when another tenant has an exact answer"
   const repository = await withRepository(t);
   repository.createSavedAnswer({
     merchantId: "merchant-b",
-    category: "secret",
+    category: "custom",
     questionPattern: "ما هو الرمز السري",
     answerText: "سر التاجر ب",
     language: "ar",
@@ -180,7 +180,7 @@ test("malicious customer text cannot invoke AI or override system policy", async
 
 test("AI fallback is recorded for review and is not auto-sent by default", async (t) => {
   const repository = await withRepository(t);
-  const aiProvider = {
+  const aiProvider: AiFallbackProvider = {
     providerId: "fake-openai",
     async generate() {
       return {
