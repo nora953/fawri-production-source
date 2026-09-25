@@ -154,7 +154,7 @@ export const orders = pgTable(
     ),
     lifecycleTimestampCheck: check("orders_lifecycle_timestamp_check", sql`${table.updatedAt} >= ${table.createdAt}`),
   }),
-);
+).enableRLS();
 
 export const orderPaymentDecisions = pgTable(
   "order_payment_decisions",
@@ -205,7 +205,7 @@ export const orderPaymentDecisions = pgTable(
       sql`(${table.operation} <> 'legacy_import' AND ${table.sourceFile} IS NULL AND ${table.sourceSha256} IS NULL AND ${table.migrationBatchId} IS NULL) OR (${table.operation} = 'legacy_import' AND ${table.sourceFile} IS NOT NULL AND ${table.sourceSha256} IS NOT NULL AND ${table.migrationBatchId} IS NOT NULL AND char_length(${table.sourceSha256}) BETWEEN 32 AND 128)`,
     ),
   }),
-);
+).enableRLS();
 
 
 export const orderPaymentProviderEvents = pgTable(
@@ -285,7 +285,7 @@ export const orderPaymentProviderEvents = pgTable(
       sql`${table.processedAt} >= ${table.receivedAt}`,
     ),
   }),
-);
+).enableRLS();
 
 /** One terminal decision per order; the composite FK proves the decision belongs to the same tenant/order. */
 export const orderTerminalDecisionLinks = pgTable(
@@ -310,7 +310,7 @@ export const orderTerminalDecisionLinks = pgTable(
       foreignColumns: [orderPaymentDecisions.id, orderPaymentDecisions.orderId, orderPaymentDecisions.merchantId],
     }).onDelete("cascade"),
   }),
-);
+).enableRLS();
 
 export const orderItems = pgTable(
   "order_items",
