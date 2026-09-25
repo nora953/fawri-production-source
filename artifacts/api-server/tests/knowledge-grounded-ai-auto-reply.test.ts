@@ -303,7 +303,15 @@ test("valid grounding IDs cannot authorize unsupported high-risk textual claims"
       },
       async recordGeneratedCandidate(input) {
         return {
-          trainingRequest: await this.createTrainingRequest(),
+          trainingRequest: await this.createTrainingRequest({
+            merchantId: "merchant-a",
+            customerText: "Tell me about this item",
+            detectedIntent: "general",
+            detectedLanguage: "en",
+            reason: "ai_candidate_requires_review",
+            suggestedReply: unsupportedAnswer,
+            suggestedReplySource: "openai_generated",
+          }),
           learnedAnswer: {
             id: "learned-risk",
             merchantId: input.merchantId,
