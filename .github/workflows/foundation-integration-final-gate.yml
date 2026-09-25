@@ -131,6 +131,11 @@ jobs:
           }
           NODE
 
+      - name: Prove Support image authorization before filesystem persistence
+        run: >-
+          pnpm exec tsx --test
+          artifacts/api-server/tests/support-image-write-order-postgres.integration.test.ts
+
       - name: Prove read-only catalog and commerce readiness
         run: node lib/db/scripts/catalog-variant-signature-readiness.mjs
 

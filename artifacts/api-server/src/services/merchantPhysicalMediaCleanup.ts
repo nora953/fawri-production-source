@@ -21,6 +21,7 @@ import {
   removeSupportImageStorageObject,
   removeSupportTicketImageStoragePrefix,
 } from "./supportImageStorage";
+import { reconcileOrphanSupportImagesPostgres } from "./postgresSupportImageAuthority";
 
 type CleanupState = "prepared" | "pending" | "complete";
 
@@ -412,6 +413,7 @@ export function startMerchantPhysicalMediaCleanupReconciler(input: {
     running = true;
     try {
       await reconcilePendingMerchantPhysicalMediaCleanups();
+      await reconcileOrphanSupportImagesPostgres();
     } finally {
       running = false;
     }
