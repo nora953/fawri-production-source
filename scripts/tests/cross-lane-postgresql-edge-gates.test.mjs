@@ -154,9 +154,9 @@ test(
       await client.query(`
         INSERT INTO accounts(id,kind,phone,password_hash,state,language,phone_verified,password_version,security_version,session_version,created_at,updated_at)
         VALUES
-          ('m1','merchant','07111111111','hash-m1','active','ar',true,1,1,1,clock_timestamp(),clock_timestamp()),
-          ('m2','merchant','07222222222','hash-m2','active','ar',true,1,1,1,clock_timestamp(),clock_timestamp()),
-          ('a1','admin','07333333333','hash-a1','active','en',true,1,1,1,clock_timestamp(),clock_timestamp());
+          ('m1','merchant','+9647111111111','hash-m1','active','ar',true,1,1,1,clock_timestamp(),clock_timestamp()),
+          ('m2','merchant','+9647222222222','hash-m2','active','ar',true,1,1,1,clock_timestamp(),clock_timestamp()),
+          ('a1','admin','+9647333333333','hash-a1','active','en',true,1,1,1,clock_timestamp(),clock_timestamp());
         INSERT INTO merchants(id,account_id,profile_kind,owner_name,store_name,activity_type,created_at,updated_at)
         VALUES
           ('m1','m1','merchant','M1','Store 1','retail',clock_timestamp(),clock_timestamp()),
