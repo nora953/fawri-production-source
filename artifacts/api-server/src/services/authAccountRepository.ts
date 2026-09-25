@@ -112,7 +112,7 @@ export class AuthAccountRepository {
     requestedPlan?: RequestedPlan | null;
   }): AuthAccount {
     const phone = normalizePhone(input.phone);
-    if (!/^07\d{9}$/.test(phone)) throw new Error("INVALID_PHONE");
+    if (!isE164Phone(phone)) throw new Error("INVALID_PHONE");
     const db = this.readDb();
     const conflictingAdmin = db.merchants.some((record) =>
       normalizePhone(record.phone) === phone && accountKind(record) === "admin",
@@ -168,7 +168,7 @@ export class AuthAccountRepository {
     language: "ar" | "ku" | "en";
   }): AuthAccount {
     const phone = normalizePhone(input.phone);
-    if (!/^07\d{9}$/.test(phone)) throw new Error("INVALID_PHONE");
+    if (!isE164Phone(phone)) throw new Error("INVALID_PHONE");
     const db = this.readDb();
     if (db.merchants.some((record) => normalizePhone(record.phone) === phone)) {
       throw new Error("PHONE_ALREADY_EXISTS");
@@ -290,8 +290,37 @@ export class AuthAccountRepository {
   }
 }
 
+const EASTERN_ARABIC_DIGITS = "٠١٢٣٤٥٦٧٨٩";
+const PERSIAN_DIGITS = "۰۱۲۳۴۵۶۷۸۹";
+
+function asciiPhoneText(value: unknown): string {
+  return String(value ?? "")
+    .normalize("NFKC")
+    .trim()
+    .replace(/[٠-٩]/g, (digit) => String(EASTERN_ARABIC_DIGITS.indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String(PERSIAN_DIGITS.indexOf(digit)));
+}
+
+export function isE164Phone(value: unknown): boolean {
+  return /^\+[1-9]\d{7,14}$/.test(String(value ?? ""));
+}
+
 export function normalizePhone(value: unknown): string {
-  return String(value || "").replace(/\D/g, "");
+  const raw = asciiPhoneText(value);
+  if (!raw) return "";
+
+  if (raw.startsWith("+")) {
+    const canonical = `+${raw.slice(1).replace(/\D/g, "")}`;
+    return isE164Phone(canonical) ? canonical : canonical;
+  }
+
+  const digits = raw.replace(/\D/g, "");
+  // Backward compatibility for pre-global Fawri Iraqi account identifiers.
+  // The database migration converts the same legacy shape to E.164.
+  if (/^07\d{9}$/.test(digits)) {
+    return `+964${digits.slice(1)}`;
+  }
+  return digits ? `+${digits}` : "";
 }
 
 function accountKind(record: LegacyRecord): AccountKind {
