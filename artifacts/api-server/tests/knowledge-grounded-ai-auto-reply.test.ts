@@ -1,9 +1,16 @@
-// @ts-nocheck
 import assert from "node:assert/strict";
 import test from "node:test";
-import { KnowledgeDecisionEngine } from "../src/services/ai/knowledgeDecisionEngine.js";
+import {
+  KnowledgeDecisionEngine,
+  type KnowledgeDecisionRuntime,
+} from "../src/services/ai/knowledgeDecisionEngine.js";
+import type {
+  LearnedAnswerRecord,
+  SemanticDocument,
+  TrainingRequestRecord,
+} from "../src/services/knowledge/types.js";
 
-const approvedDoc = {
+const approvedDoc: SemanticDocument = {
   id: "approved-return-policy",
   merchantId: "merchant-a",
   question: "What is the return policy?",
@@ -13,17 +20,20 @@ const approvedDoc = {
   kind: "saved_answer",
 };
 
-function baseRuntime() {
+function baseRuntime(): KnowledgeDecisionRuntime {
   return {
     authorityId: "grounded-ai-test-runtime",
     legacyFallbackEnabled: false,
     async findApprovedSavedAnswer() { return null; },
     async retrieveSemanticMatch() { return null; },
     async listApprovedSemanticDocuments() { return [approvedDoc]; },
-    async createTrainingRequest() {
+    async createTrainingRequest(): Promise<TrainingRequestRecord> {
       throw new Error("grounded automatic reply must not create a training request");
     },
-    async recordGeneratedCandidate() {
+    async recordGeneratedCandidate(): Promise<{
+      trainingRequest: TrainingRequestRecord;
+      learnedAnswer: LearnedAnswerRecord;
+    }> {
       throw new Error("grounded automatic reply must not create a pending-review candidate");
     },
     async appendAudit() {},
@@ -32,7 +42,7 @@ function baseRuntime() {
 
 function policy() {
   return {
-    async resolve(merchantId) {
+    async resolve(merchantId: string) {
       return {
         merchantId,
         policyVersion: 1,
@@ -47,9 +57,10 @@ function policy() {
 }
 
 function reviewFallbackRuntime() {
-  const runtime = baseRuntime();
   let recorded = 0;
-  runtime.recordGeneratedCandidate = async (input) => {
+  const runtime: KnowledgeDecisionRuntime = {
+    ...baseRuntime(),
+    async recordGeneratedCandidate(input) {
     recorded += 1;
     return {
       trainingRequest: {
@@ -86,6 +97,7 @@ function reviewFallbackRuntime() {
         updatedAt: "2026-09-24T00:00:00.000Z",
       },
     };
+    },
   };
   return { runtime, recorded: () => recorded };
 }
@@ -256,7 +268,7 @@ test("valid grounding IDs cannot authorize unsupported high-risk textual claims"
   ];
 
   for (const [evidence, unsupportedAnswer] of cases) {
-    const record = {
+    const record: SemanticDocument = {
       id: "approved-risk-evidence",
       merchantId: "merchant-a",
       question: "Tell me about this item",
@@ -265,7 +277,7 @@ test("valid grounding IDs cannot authorize unsupported high-risk textual claims"
       source: "merchant_approved",
       kind: "saved_answer",
     };
-    const runtime = {
+    const runtime: KnowledgeDecisionRuntime = {
       authorityId: "semantic-risk-test-runtime",
       legacyFallbackEnabled: false,
       async findApprovedSavedAnswer() { return null; },
@@ -291,7 +303,15 @@ test("valid grounding IDs cannot authorize unsupported high-risk textual claims"
       },
       async recordGeneratedCandidate(input) {
         return {
-          trainingRequest: await this.createTrainingRequest(),
+          trainingRequest: await this.createTrainingRequest({
+            merchantId: "merchant-a",
+            customerText: "Tell me about this item",
+            detectedIntent: "general",
+            detectedLanguage: "en",
+            reason: "ai_candidate_requires_review",
+            suggestedReply: unsupportedAnswer,
+            suggestedReplySource: "openai_generated",
+          }),
           learnedAnswer: {
             id: "learned-risk",
             merchantId: input.merchantId,
@@ -351,7 +371,7 @@ test("valid grounding IDs cannot authorize unsupported high-risk textual claims"
 });
 
 test("high-risk claim polarity cannot be strengthened from negative evidence", async () => {
-  const record = {
+  const record: SemanticDocument = {
     id: "approved-negative-waterproof",
     merchantId: "merchant-a",
     question: "Is it waterproof?",
