@@ -66,7 +66,10 @@ jobs:
         run: pnpm --filter @workspace/api-server run build
 
       - name: Validate production release readiness contract
-        run: pnpm exec tsx --test artifacts/api-server/tests/production-release-readiness.test.ts
+        run: >-
+          pnpm exec tsx --test
+          artifacts/api-server/tests/production-release-readiness.test.ts
+          artifacts/api-server/tests/production-postgres-rls-security.test.ts
 
       - name: Validate online report query budget contract
         run: node --test artifacts/api-server/tests/online-report-query-budget.test.mjs
@@ -133,6 +136,11 @@ jobs:
             fs.rmSync(migrationsFolder, { recursive: true, force: true });
           }
           NODE
+
+      - name: Prove production PostgreSQL RLS runtime role contract
+        run: >-
+          pnpm exec tsx --test
+          artifacts/api-server/tests/production-postgres-rls-security.integration.test.ts
 
       - name: Prove Support image authorization before filesystem persistence
         run: >-
