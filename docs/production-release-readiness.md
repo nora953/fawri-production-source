@@ -24,14 +24,15 @@ Production should set:
 
 ```text
 NODE_ENV=production
-FAWRI_PRODUCTION_RELEASE_GATE=required
+FAWRI_DEPLOYMENT_MODE=production
 ```
 
-When the gate is required, API startup fails before application traffic if the required runtime configuration is incomplete. The gate is intentionally opt-in until the production environment is populated so development and isolated validation remain usable.
+Production is fail-closed by default: API startup stops before application traffic if required runtime configuration is incomplete. Staging and development must opt out explicitly with `FAWRI_DEPLOYMENT_MODE=staging` or `development`. `FAWRI_PRODUCTION_RELEASE_GATE=required` remains a legacy compatibility marker but production safety no longer depends on it.
 
 Required runtime selections include:
 
 - PostgreSQL operational authority: `FAWRI_OPERATIONAL_POSTGRES_AUTHORITY=required`
+- a dedicated PostgreSQL runtime role that is not `SUPERUSER`, does not have `BYPASSRLS`, and does not own tenant-protected tables; startup verifies these properties and verifies RLS is enabled on the production tenant-table contract
 - PostgreSQL subscription authority: `FAWRI_SUBSCRIPTION_POSTGRES_AUTHORITY=required`
 - PostgreSQL merchant Auth sessions: `FAWRI_AUTH_POSTGRES_SESSION_AUTHORITY=required`
 - strong `FAWRI_AUTH_SECURITY_SECRET`
@@ -107,7 +108,7 @@ Support images are currently stored through a filesystem-backed storage path. Pr
 ## Release sequence
 
 1. Merge only code that passes repository typecheck/build, migrations, PostgreSQL runtime integration, Meta live-transport regressions, and release-gate tests.
-2. Prepare production PostgreSQL and apply the committed migration chain through the latest version using the deployment process.
+2. Prepare production PostgreSQL and apply the committed migration chain through the latest version using a migration-owner role. Provision a separate restricted runtime role with the required grants; the runtime role must not be superuser, must not have BYPASSRLS, and must not own tenant-protected tables.
 3. Configure production secrets through the deployment secret store, never source control.
 4. Configure AWS KMS/IAM and validate bootstrap/readiness from the production workload.
 5. Configure the Meta production application/callback/webhook and verify OAuth against a controlled test merchant/page.
@@ -115,7 +116,7 @@ Support images are currently stored through a filesystem-backed storage path. Pr
 7. Establish and prove production backup/restore.
 8. Prove durable support-image storage for the selected production hosting model.
 9. Complete a production SaaS billing-provider integration only from official provider documentation/credentials.
-10. Set `FAWRI_PRODUCTION_RELEASE_GATE=required` and require `/ops/readiness` to be ready before routing traffic.
+10. Set `FAWRI_DEPLOYMENT_MODE=production` and require startup plus `/ops/readiness` to be ready before routing traffic.
 11. Run controlled end-to-end smoke tests and observe queues/DLQ/alerts before general launch.
 
 ## Current readiness interpretation
@@ -127,7 +128,7 @@ It must not claim **production launch readiness** while any of the following rem
 - `SAAS_BILLING_PRODUCTION_PROVIDER_UNAVAILABLE`
 - `PRODUCTION_BACKUP_RESTORE_EXTERNAL_PROOF_REQUIRED`
 - `SUPPORT_IMAGE_DURABLE_STORAGE_EXTERNAL_PROOF_REQUIRED`
-- production PostgreSQL deployment/migration proof,
+- production PostgreSQL deployment/migration proof and restricted runtime-role grants,
 - production AWS KMS/IAM/wrapped-DEK readiness,
 - production Meta application/OAuth/webhook/live-send readiness,
 - production OpenAI credential/readiness,

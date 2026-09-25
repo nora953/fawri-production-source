@@ -5,6 +5,7 @@ import type { EarlyWarningIncidentMonitor } from "./services/earlyWarningInciden
 import type { MerchantPhysicalMediaCleanupReconciler } from "./services/merchantPhysicalMediaCleanup";
 import { assertProductionRuntimeConfiguration } from "./services/productionReleaseReadiness";
 import { assertProductionOwnerAdminReady } from "./services/postgresOwnerAdminProvisioning";
+import { assertProductionDatabaseRlsReady } from "./services/postgresRuntimeRlsSecurity";
 import { bootstrapRuntimeAndLoadApplication } from "./services/runtimeProviderBootstrap";
 
 const rawPort = process.env["PORT"];
@@ -32,10 +33,10 @@ function safeStartupErrorCode(error: unknown): string {
 }
 
 async function main(): Promise<void> {
-  // The release gate is opt-in until the production environment is populated.
-  // Once FAWRI_PRODUCTION_RELEASE_GATE=required is set, startup fails closed
-  // before any provider bootstrap, listener, worker, or application traffic.
+  // Production fails closed before any provider bootstrap, listener, worker,
+  // or application traffic. Staging/development must opt out explicitly.
   assertProductionRuntimeConfiguration(process.env);
+  await assertProductionDatabaseRlsReady(process.env);
   await assertProductionOwnerAdminReady(process.env);
 
   const { application, runtime } = await bootstrapRuntimeAndLoadApplication({
