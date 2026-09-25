@@ -68,6 +68,9 @@ jobs:
       - name: Validate production release readiness contract
         run: pnpm exec tsx --test artifacts/api-server/tests/production-release-readiness.test.ts
 
+      - name: Validate online report query budget contract
+        run: node --test artifacts/api-server/tests/online-report-query-budget.test.mjs
+
       - name: Prove guarded 0012 migration continuity
         run: |
           node --check lib/db/scripts/apply-catalog-variant-signature-guard.mjs
