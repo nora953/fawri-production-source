@@ -134,7 +134,7 @@ export const merchantSettings = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export const merchantDeliveryAreaRates = pgTable(
   "merchant_delivery_area_rates",
@@ -177,7 +177,7 @@ export const merchantDeliveryAreaRates = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export type MerchantSettings = typeof merchantSettings.$inferSelect;
 export type NewMerchantSettings = typeof merchantSettings.$inferInsert;
