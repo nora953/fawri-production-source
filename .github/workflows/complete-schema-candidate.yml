@@ -81,26 +81,26 @@ jobs:
         run: |
           predicate_sql="migration-stages/0024/manual.sql"
           test -f "$predicate_sql"
-          injected=0
-          while IFS= read -r sql_file; do
-            apply_file="$(mktemp)"
-            awk -v predicate="$predicate_sql" '
-              BEGIN { injected = 0 }
-              injected == 0 && $0 ~ /^(CREATE|ALTER) POLICY / {
-                while ((getline line < predicate) > 0) print line
-                close(predicate)
-                injected = 1
-              }
-              { print }
-              END {
-                if (injected == 0) exit 42
-              }
-            ' "$sql_file" > "$apply_file"
-            psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$apply_file"
-            rm -f "$apply_file"
-            injected=1
-          done < <(find drizzle-complete-candidate -maxdepth 1 -type f -name '*.sql' | sort)
-          test "$injected" = "1"
+          combined_sql="$(mktemp)"
+          apply_file="$(mktemp)"
+          find drizzle-complete-candidate -maxdepth 1 -type f -name '*.sql' -print0 \
+            | sort -z \
+            | xargs -0 cat > "$combined_sql"
+          test -s "$combined_sql"
+          awk -v predicate="$predicate_sql" '
+            BEGIN { injected = 0 }
+            injected == 0 && $0 ~ /^(CREATE|ALTER) POLICY / {
+              while ((getline line < predicate) > 0) print line
+              close(predicate)
+              injected = 1
+            }
+            { print }
+            END {
+              if (injected == 0) exit 42
+            }
+          ' "$combined_sql" > "$apply_file"
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$apply_file"
+          rm -f "$combined_sql" "$apply_file"
 
       - name: Verify tenant RLS bootstrap predicate
         run: |
