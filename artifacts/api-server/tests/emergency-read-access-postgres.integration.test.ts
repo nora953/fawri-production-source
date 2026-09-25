@@ -162,10 +162,10 @@ test("Emergency read access is PostgreSQL authoritative with Auth v2 sessions", 
        (id, kind, phone, password_hash, state, language,
         phone_verified, phone_verified_at, created_at, updated_at)
      VALUES
-       ($1, 'admin', '07988112001', $2, 'active', 'en', true, now(), now(), now()),
-       ($3, 'admin', '07988112002', $4, 'active', 'en', true, now(), now(), now()),
-       ($5, 'admin', '07988112003', $6, 'active', 'en', true, now(), now(), now()),
-       ($7, 'merchant', '07988112004', $8, 'active', 'en', true, now(), now(), now())`,
+       ($1, 'admin', '+9647988112001', $2, 'active', 'en', true, now(), now(), now()),
+       ($3, 'admin', '+9647988112002', $4, 'active', 'en', true, now(), now(), now()),
+       ($5, 'admin', '+9647988112003', $6, 'active', 'en', true, now(), now(), now()),
+       ($7, 'merchant', '+9647988112004', $8, 'active', 'en', true, now(), now(), now())`,
     [
       ownerId,
       ownerPasswordHash,
