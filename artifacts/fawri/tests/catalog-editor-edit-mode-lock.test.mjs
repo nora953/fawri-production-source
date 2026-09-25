@@ -10,6 +10,7 @@ const editModeCss = read('../src/pages/dashboard/catalogEditModeCompact.css');
 const productsWorkspace = read('../src/pages/dashboard/ProductsWorkspacePage.tsx');
 const authority = read('../../api-server/src/services/postgresCatalogAuthority.ts');
 const detailsParity = read('../src/lib/catalogDetailsTypeParity.ts');
+const detailsCopy = read('../src/lib/translations/features/catalog/catalogDetailsTypeParityCopy.ts');
 const i18n = read('../src/lib/i18n.tsx');
 const main = read('../src/main.tsx');
 
@@ -54,18 +55,18 @@ test('server authority rejects product-service type changes after creation', () 
 });
 
 test('catalog details modal uses type-specific titles and edit labels in all supported languages', () => {
-  assert.match(detailsParity, /productDetails: 'تفاصيل المنتج'/);
-  assert.match(detailsParity, /serviceDetails: 'تفاصيل الخدمة'/);
-  assert.match(detailsParity, /editProduct: 'تعديل المنتج'/);
-  assert.match(detailsParity, /editService: 'تعديل الخدمة'/);
-  assert.match(detailsParity, /productDetails: 'وردەکاری بەرهەم'/);
-  assert.match(detailsParity, /serviceDetails: 'وردەکاری خزمەتگوزاری'/);
-  assert.match(detailsParity, /editProduct: 'دەستکاری بەرهەم'/);
-  assert.match(detailsParity, /editService: 'دەستکاری خزمەتگوزاری'/);
-  assert.match(detailsParity, /productDetails: 'Product details'/);
-  assert.match(detailsParity, /serviceDetails: 'Service details'/);
-  assert.match(detailsParity, /editProduct: 'Edit product'/);
-  assert.match(detailsParity, /editService: 'Edit service'/);
+  assert.match(detailsCopy, /productDetails: 'تفاصيل المنتج'/);
+  assert.match(detailsCopy, /serviceDetails: 'تفاصيل الخدمة'/);
+  assert.match(detailsCopy, /editProduct: 'تعديل المنتج'/);
+  assert.match(detailsCopy, /editService: 'تعديل الخدمة'/);
+  assert.match(detailsCopy, /productDetails: 'وردەکاری بەرهەم'/);
+  assert.match(detailsCopy, /serviceDetails: 'وردەکاری خزمەتگوزاری'/);
+  assert.match(detailsCopy, /editProduct: 'دەستکاری بەرهەم'/);
+  assert.match(detailsCopy, /editService: 'دەستکاری خزمەتگوزاری'/);
+  assert.match(detailsCopy, /productDetails: 'Product details'/);
+  assert.match(detailsCopy, /serviceDetails: 'Service details'/);
+  assert.match(detailsCopy, /editProduct: 'Edit product'/);
+  assert.match(detailsCopy, /editService: 'Edit service'/);
   assert.match(detailsParity, /dialog\.dataset\.catalogDetailsType = type/);
   assert.match(detailsParity, /stabilizeSkuDirection\(dialog\)/);
   assert.match(detailsParity, /stabilizePriceRangeDirection\(dialog, lang\)/);
