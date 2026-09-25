@@ -6,6 +6,7 @@ import test from "node:test";
 import { findSensitiveText, parseAuditSeverityCounts, redactSensitiveText } from "./security-ci-lib.mjs";
 import {
   evaluateDependencyAudit,
+  isKnownTestFixtureCredentialUrl,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -179,4 +180,38 @@ jobs:
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+
+test("historical credential URL suppression is limited to obvious test fixtures", () => {
+  const fixture = "postgresql://fixture_user:fixture-password@db.example/fawri_test";
+  const fixtureFinding = { rule: "credential-url", index: 0, length: fixture.length };
+  assert.equal(
+    isKnownTestFixtureCredentialUrl(
+      fixture,
+      fixtureFinding,
+      "scripts/tests/backup-postgresql.test.mjs",
+    ),
+    true,
+  );
+
+  const nonTestPath = "postgresql://fixture_user:fixture-password@db.example/fawri";
+  assert.equal(
+    isKnownTestFixtureCredentialUrl(
+      nonTestPath,
+      { rule: "credential-url", index: 0, length: nonTestPath.length },
+      "scripts/deploy-production.mjs",
+    ),
+    false,
+  );
+
+  const productionLike = "postgresql://prod_owner:highEntropyCredentialValue@db.internal.company/fawri";
+  assert.equal(
+    isKnownTestFixtureCredentialUrl(
+      productionLike,
+      { rule: "credential-url", index: 0, length: productionLike.length },
+      "scripts/tests/production-connectivity.test.mjs",
+    ),
+    false,
+  );
 });
