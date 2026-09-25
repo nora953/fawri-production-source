@@ -3,6 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import { getFawriDataDir } from "../lib/dataPaths";
+import { logger } from "../lib/logger";
 import {
   catalogMediaStorageProviderName,
   removeCatalogMediaStorageObject,
@@ -126,6 +127,24 @@ function safeErrorCode(error: unknown): string {
   return /^[A-Z][A-Z0-9_]{2,159}$/.test(candidate)
     ? candidate
     : "PHYSICAL_MEDIA_CLEANUP_FAILED";
+}
+
+function merchantLogHash(merchantId: string): string {
+  return crypto
+    .createHash("sha256")
+    .update(String(merchantId || "").trim(), "utf8")
+    .digest("hex")
+    .slice(0, 16);
+}
+
+function logCleanupFailure(
+  error: unknown,
+  context: Record<string, string | number> = {},
+): void {
+  logger.warn(
+    { code: safeErrorCode(error), ...context },
+    "Merchant physical media cleanup reconciliation failed",
+  );
 }
 
 function uniqueEntries(entries: CleanupEntry[]): CleanupEntry[] {
@@ -367,7 +386,13 @@ export async function completeMerchantDeletionWithPhysicalMediaCleanup(input: {
   // Physical deletion is intentionally post-commit and idempotent. A storage
   // failure never restores merchant access; the persisted manifest remains for
   // the startup/interval reconciler to retry.
-  await reconcileMerchantPhysicalMediaCleanup(input.merchantId).catch(() => null);
+  await reconcileMerchantPhysicalMediaCleanup(input.merchantId).catch((error) => {
+    logCleanupFailure(error, {
+      merchant_hash: merchantLogHash(input.merchantId),
+      phase: "post_commit",
+    });
+    return null;
+  });
   return result;
 }
 
@@ -395,7 +420,16 @@ export async function reconcilePendingMerchantPhysicalMediaCleanups(
     inspected += 1;
     const result = await reconcileMerchantPhysicalMediaCleanup(
       manifest.merchant_id,
-    ).catch(() => ({ status: "pending" as const, remaining: manifest.entries.length }));
+    ).catch((error) => {
+      logCleanupFailure(error, {
+        merchant_hash: merchantLogHash(manifest.merchant_id),
+        phase: "manifest_retry",
+      });
+      return {
+        status: "pending" as const,
+        remaining: manifest.entries.length,
+      };
+    });
     if (result.status !== "complete") pending += 1;
   }
   return { inspected, pending };
@@ -412,15 +446,32 @@ export function startMerchantPhysicalMediaCleanupReconciler(input: {
     if (stopped || running || !operationalPostgresAuthorityRequired()) return;
     running = true;
     try {
-      await reconcilePendingMerchantPhysicalMediaCleanups();
+      const cleanup = await reconcilePendingMerchantPhysicalMediaCleanups();
+      if (cleanup.pending > 0) {
+        logger.warn(
+          {
+            code: "PHYSICAL_MEDIA_CLEANUP_PENDING",
+            inspected: cleanup.inspected,
+            pending: cleanup.pending,
+          },
+          "Merchant physical media cleanup remains pending",
+        );
+      }
       await reconcileOrphanSupportImagesPostgres();
     } finally {
       running = false;
     }
   };
 
-  void run().catch(() => null);
-  const timer = setInterval(() => void run().catch(() => null), intervalMs);
+  const reportRunFailure = (error: unknown) => {
+    logCleanupFailure(error, { phase: "scheduled_reconciliation" });
+  };
+
+  void run().catch(reportRunFailure);
+  const timer = setInterval(
+    () => void run().catch(reportRunFailure),
+    intervalMs,
+  );
   timer.unref();
 
   return {
