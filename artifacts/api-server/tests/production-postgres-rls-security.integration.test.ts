@@ -34,7 +34,29 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     `CREATE ROLE ${probeRole} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`,
   );
 
+  await client.query(`GRANT USAGE ON SCHEMA public TO ${probeRole}`);
+  await client.query(`GRANT SELECT ON TABLE public.merchant_channels TO ${probeRole}`);
+
   await client.query(`SET ROLE ${probeRole}`);
+
+  const auditPrivilege = await client.query<{ allowed: boolean }>(
+    `SELECT has_table_privilege(current_user, 'public.database_admin_access_audits', 'SELECT') AS allowed`,
+  );
+  assert.equal(
+    auditPrivilege.rows[0]?.allowed,
+    false,
+    "runtime role must not need direct SELECT on admin audit records",
+  );
+
+  const rlsProbe = await client.query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM public.merchant_channels`,
+  );
+  assert.equal(
+    Number(rlsProbe.rows[0]?.count || 0),
+    0,
+    "tenant RLS predicate must evaluate safely without audit-table SELECT privilege",
+  );
+
   const readiness = await getProductionDatabaseRlsReadiness(client);
 
   assert.equal(readiness.roleName, probeRole);
