@@ -143,6 +143,12 @@ export function validateRepositoryPolicy(root, files) {
       if (!/security-final-audit\.mjs dependency-review/.test(content)) {
         violations.push("security-supply-chain.yml: local dependency-review gate is required");
       }
+      if (!/fetch-depth:\s*0/.test(content)) {
+        violations.push("security-supply-chain.yml: repository security scan requires full history checkout");
+      }
+      if (!/security-final-audit\.mjs history/.test(content)) {
+        violations.push("security-supply-chain.yml: full Git history secret scan is required");
+      }
       if (!/pnpm install --frozen-lockfile --ignore-scripts/.test(content)) {
         violations.push("security-supply-chain.yml: dependency-review must use frozen install with scripts disabled");
       }
@@ -223,6 +229,156 @@ function scanRepository(root) {
   };
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
   return findings.length === 0 ? 0 : 1;
+}
+
+
+function gitHistoryObjectEntries(root) {
+  const output = execFileSync("git", ["rev-list", "--objects", "--all"], {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 128 * 1024 * 1024,
+  });
+  const bySha = new Map();
+  for (const rawLine of output.split("\n")) {
+    const line = rawLine.trimEnd();
+    if (!line) continue;
+    const separator = line.indexOf(" ");
+    const sha = separator < 0 ? line : line.slice(0, separator);
+    const historicalPath = separator < 0 ? "" : line.slice(separator + 1);
+    if (/^[0-9a-f]{40}$/i.test(sha) && !bySha.has(sha)) {
+      bySha.set(sha, historicalPath);
+    }
+  }
+  return [...bySha.entries()].map(([sha, historicalPath]) => ({
+    sha,
+    historicalPath,
+  }));
+}
+
+function historicalBlobMetadata(root, entries) {
+  if (entries.length === 0) return [];
+  const result = spawnSync(
+    "git",
+    ["cat-file", "--batch-check=%(objectname) %(objecttype) %(objectsize)"],
+    {
+      cwd: root,
+      input: `${entries.map((entry) => entry.sha).join("\n")}\n`,
+      encoding: "utf8",
+      maxBuffer: 128 * 1024 * 1024,
+    },
+  );
+  if (result.error) throw result.error;
+  if (result.status !== 0) {
+    throw new Error("git cat-file metadata scan failed");
+  }
+  const pathBySha = new Map(entries.map((entry) => [entry.sha, entry.historicalPath]));
+  return String(result.stdout || "")
+    .split("\n")
+    .filter(Boolean)
+    .map((line) => {
+      const match = /^([0-9a-f]{40})\s+(\S+)\s+(\d+)$/i.exec(line.trim());
+      if (!match) throw new Error("git cat-file metadata output is invalid");
+      return {
+        sha: match[1],
+        type: match[2],
+        size: Number(match[3]),
+        historicalPath: pathBySha.get(match[1]) || "",
+      };
+    })
+    .filter((entry) => entry.type === "blob");
+}
+
+function readHistoricalBlobBatch(root, entries) {
+  if (entries.length === 0) return [];
+  const result = spawnSync("git", ["cat-file", "--batch"], {
+    cwd: root,
+    input: `${entries.map((entry) => entry.sha).join("\n")}\n`,
+    encoding: null,
+    maxBuffer: Math.max(
+      32 * 1024 * 1024,
+      entries.reduce((sum, entry) => sum + entry.size + 128, 0),
+    ),
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0) throw new Error("git cat-file history content scan failed");
+
+  const output = Buffer.isBuffer(result.stdout)
+    ? result.stdout
+    : Buffer.from(result.stdout || "");
+  const bySha = new Map(entries.map((entry) => [entry.sha, entry]));
+  const blobs = [];
+  let offset = 0;
+
+  while (offset < output.length) {
+    const newline = output.indexOf(0x0a, offset);
+    if (newline < 0) throw new Error("git cat-file history header is truncated");
+    const header = output.subarray(offset, newline).toString("utf8");
+    const match = /^([0-9a-f]{40})\s+blob\s+(\d+)$/i.exec(header);
+    if (!match) throw new Error("git cat-file history header is invalid");
+    const sha = match[1];
+    const size = Number(match[2]);
+    const start = newline + 1;
+    const end = start + size;
+    if (end > output.length) throw new Error("git cat-file history blob is truncated");
+    const metadata = bySha.get(sha);
+    if (!metadata || metadata.size !== size) {
+      throw new Error("git cat-file history blob metadata mismatch");
+    }
+    blobs.push({
+      ...metadata,
+      buffer: output.subarray(start, end),
+    });
+    offset = end;
+    if (offset < output.length && output[offset] === 0x0a) offset += 1;
+  }
+  if (blobs.length !== entries.length) {
+    throw new Error("git cat-file history blob count mismatch");
+  }
+  return blobs;
+}
+
+export function scanRepositoryHistory(root, { emit = true } = {}) {
+  const metadata = historicalBlobMetadata(root, gitHistoryObjectEntries(root));
+  const scannable = metadata.filter(
+    (entry) => Number.isSafeInteger(entry.size) && entry.size >= 0 && entry.size <= MAX_REPOSITORY_FILE_BYTES,
+  );
+  let skipped = metadata.length - scannable.length;
+  let scanned = 0;
+  const findings = [];
+
+  for (let index = 0; index < scannable.length; index += 128) {
+    const batch = scannable.slice(index, index + 128);
+    for (const blob of readHistoricalBlobBatch(root, batch)) {
+      if (blob.buffer.includes(0)) {
+        skipped += 1;
+        continue;
+      }
+      const text = blob.buffer.toString("utf8");
+      scanned += 1;
+      for (const finding of findSensitiveText(text, {
+        includePrivateData: false,
+        includeAssignments: false,
+      })) {
+        const line = text.slice(0, finding.index).split("\n").length;
+        findings.push({
+          object_sha: blob.sha,
+          file: blob.historicalPath || "(path unavailable)",
+          line,
+          rule: finding.rule,
+        });
+      }
+    }
+  }
+
+  const report = {
+    status: findings.length === 0 ? "pass" : "fail",
+    scanned_historical_blobs: scanned,
+    skipped_historical_blobs: skipped,
+    findings: summarizeFindings(findings),
+    locations: findings,
+  };
+  if (emit) process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
+  return report;
 }
 
 function scanOutput(inputs) {
@@ -309,6 +465,10 @@ export function main(argv = process.argv.slice(2)) {
   const command = argv[0];
   const root = repositoryRoot();
   if (command === "repository") return scanRepository(root);
+  if (command === "history") {
+    const report = scanRepositoryHistory(root);
+    return report.status === "pass" ? 0 : 1;
+  }
   if (command === "output") return scanOutput(argv.slice(1));
   if (command === "dependency") return dependencyAudit();
   if (command === "dependency-review") return dependencyReview(argv[1], root);
@@ -318,7 +478,7 @@ export function main(argv = process.argv.slice(2)) {
     return report.status === "pass" ? 0 : 1;
   }
   throw new Error(
-    "Usage: node scripts/security-final-audit.mjs <repository|output|dependency|dependency-review|policy> [args...]",
+    "Usage: node scripts/security-final-audit.mjs <repository|history|output|dependency|dependency-review|policy> [args...]",
   );
 }
 
