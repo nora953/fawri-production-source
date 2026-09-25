@@ -22,6 +22,7 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
   t.after(async () => {
     try {
       await client.query("RESET ROLE");
+      await client.query(`DROP OWNED BY ${probeRole}`);
       await client.query(`DROP ROLE IF EXISTS ${probeRole}`);
     } finally {
       client.release();
@@ -34,7 +35,44 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     `CREATE ROLE ${probeRole} NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`,
   );
 
+  await client.query(`GRANT USAGE ON SCHEMA public TO ${probeRole}`);
+  await client.query(`GRANT SELECT ON TABLE public.merchant_channels TO ${probeRole}`);
+
   await client.query(`SET ROLE ${probeRole}`);
+
+  const auditPrivilege = await client.query<{ allowed: boolean }>(
+    `SELECT has_table_privilege(current_user, 'public.database_admin_access_audits', 'SELECT') AS allowed`,
+  );
+  assert.equal(
+    auditPrivilege.rows[0]?.allowed,
+    false,
+    "runtime role must not need direct SELECT on admin audit records",
+  );
+
+  const rlsProbe = await client.query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM public.merchant_channels`,
+  );
+  assert.equal(
+    Number(rlsProbe.rows[0]?.count || 0),
+    0,
+    "tenant RLS predicate must evaluate safely without audit-table SELECT privilege",
+  );
+
+  await client.query(
+    `SELECT set_config('fawri.tenant_id', 'merchant-rls-probe', false)`,
+  );
+  const predicateProbe = await client.query<{
+    own_tenant: boolean;
+    other_tenant: boolean;
+  }>(
+    `SELECT
+       public.fawri_tenant_or_audited_admin('merchant-rls-probe') AS own_tenant,
+       public.fawri_tenant_or_audited_admin('merchant-other') AS other_tenant`,
+  );
+  assert.equal(predicateProbe.rows[0]?.own_tenant, true);
+  assert.equal(predicateProbe.rows[0]?.other_tenant, false);
+  await client.query(`SELECT set_config('fawri.tenant_id', '', false)`);
+
   const readiness = await getProductionDatabaseRlsReadiness(client);
 
   assert.equal(readiness.roleName, probeRole);

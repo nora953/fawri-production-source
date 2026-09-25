@@ -46,7 +46,17 @@ export const databaseAdminAccessAudits = pgTable(
 );
 
 function tenantOrAuditedAdmin(merchantColumn: any) {
-  return sql`public.fawri_tenant_or_audited_admin(${merchantColumn})`;
+  return sql`(
+    ${merchantColumn} = nullif(current_setting('fawri.tenant_id', true), '')
+    OR EXISTS (
+      SELECT 1 FROM database_admin_access_audits AS admin_audit
+      WHERE admin_audit.id = nullif(current_setting('fawri.admin_audit_id', true), '')
+        AND admin_audit.admin_account_id = nullif(current_setting('fawri.admin_account_id', true), '')
+        AND admin_audit.started_at <= clock_timestamp()
+        AND admin_audit.expires_at > clock_timestamp()
+        AND (admin_audit.merchant_id IS NULL OR admin_audit.merchant_id = ${merchantColumn})
+    )
+  )`;
 }
 
 function tenantPolicy(name: string, table: any) {

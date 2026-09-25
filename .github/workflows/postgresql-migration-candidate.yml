@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "lib/db/src/schema/**"
+      - "lib/db/migration-stages/**"
       - "lib/db/drizzle.config.ts"
       - "lib/db/package.json"
       - ".github/workflows/postgresql-migration-candidate.yml"
@@ -14,6 +15,7 @@ on:
       - "hardening/**"
     paths:
       - "lib/db/src/schema/**"
+      - "lib/db/migration-stages/**"
       - "lib/db/drizzle.config.ts"
       - "lib/db/package.json"
       - ".github/workflows/postgresql-migration-candidate.yml"

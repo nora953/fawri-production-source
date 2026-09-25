@@ -117,6 +117,7 @@ export async function getProductionDatabaseRlsReadiness(
          ON tenant_table.relname = expected.name
      )
      SELECT
+       public.fawri_tenant_or_audited_admin('__fawri_readiness_probe__') AS rls_predicate_probe,
        current_user AS role_name,
        COALESCE((SELECT rolsuper FROM role_state), TRUE) AS role_superuser,
        COALESCE((SELECT rolbypassrls FROM role_state), TRUE) AS role_bypass_rls,
