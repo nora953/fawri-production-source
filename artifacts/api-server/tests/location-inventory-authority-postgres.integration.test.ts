@@ -21,7 +21,7 @@ async function raw(sql: string, values: unknown[] = []) {
 }
 
 async function createMerchant(suffix: string): Promise<string> {
-  const phone = `077${crypto.randomInt(10_000_000, 99_999_999)}`;
+  const phone = `+96477${crypto.randomInt(10_000_000, 99_999_999)}`;
   const pending = await accounts.upsertPendingMerchantAuthoritative({
     phone,
     passwordHash: `hash-${suffix}`,
