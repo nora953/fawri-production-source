@@ -29,7 +29,8 @@ export const savedAnswers = pgTable("saved_answers", {
   versionCheck: check("saved_answers_version_check", sql`${table.version} > 0`),
   boundsCheck: check("saved_answers_bounds_check", sql`char_length(${table.questionPattern}) BETWEEN 1 AND 500 AND char_length(${table.normalizedQuestion}) BETWEEN 1 AND 500 AND char_length(${table.answerText}) BETWEEN 1 AND 2000`),
   timestampCheck: check("saved_answers_timestamp_check", sql`${table.updatedAt} >= ${table.createdAt}`),
-}));
+})).enableRLS();
+
 
 export const trainingRequests = pgTable("training_requests", {
   id: text("id").primaryKey(),
@@ -59,7 +60,8 @@ export const trainingRequests = pgTable("training_requests", {
   rejectionCheck: check("training_requests_rejection_check", sql`(${table.status} = 'rejected' AND ${table.rejectionReason} IS NOT NULL AND ${table.reviewedAt} IS NOT NULL) OR (${table.status} <> 'rejected' AND ${table.rejectionReason} IS NULL)`),
   boundsCheck: check("training_requests_bounds_check", sql`char_length(${table.detectedIntent}) BETWEEN 1 AND 100 AND char_length(${table.reason}) BETWEEN 1 AND 300 AND (${table.suggestedReply} IS NULL OR char_length(${table.suggestedReply}) <= 2000) AND (${table.rejectionReason} IS NULL OR char_length(${table.rejectionReason}) <= 500)`),
   timestampCheck: check("training_requests_timestamp_check", sql`${table.updatedAt} >= ${table.createdAt}`),
-}));
+})).enableRLS();
+
 
 export const learnedAnswers = pgTable("learned_answers", {
   id: text("id").primaryKey(),
@@ -89,7 +91,8 @@ export const learnedAnswers = pgTable("learned_answers", {
   openAiCannotApproveCheck: check("learned_answers_openai_cannot_approve_check", sql`${table.source} <> 'openai_generated' OR (${table.approvalStatus} <> 'approved' AND NOT ${table.safeToAutoReply})`),
   boundsCheck: check("learned_answers_bounds_check", sql`char_length(${table.intent}) BETWEEN 1 AND 100 AND char_length(${table.answerText}) BETWEEN 1 AND 2000`),
   timestampCheck: check("learned_answers_timestamp_check", sql`${table.updatedAt} >= ${table.createdAt}`),
-}));
+})).enableRLS();
+
 
 export const knowledgeAuditEvents = pgTable("knowledge_audit_events", {
   id: text("id").primaryKey(),
@@ -108,7 +111,8 @@ export const knowledgeAuditEvents = pgTable("knowledge_audit_events", {
   merchantCreatedIndex: index("knowledge_audit_events_merchant_created_idx").on(table.merchantId, table.createdAt),
   digestCheck: check("knowledge_audit_events_digest_check", sql`(${table.customerTextHash} IS NULL AND ${table.customerTextLength} IS NULL) OR (${table.customerTextHash} ~ '^[0-9a-f]{64}$' AND ${table.customerTextLength} BETWEEN 0 AND 10000)`),
   signalCheck: check("knowledge_audit_events_signal_check", sql`jsonb_typeof(${table.signalCodes}) = 'array' AND jsonb_array_length(${table.signalCodes}) <= 32`),
-}));
+})).enableRLS();
+
 
 /** PostgreSQL-native real[] vector equivalent. Customer queries are ephemeral parameters only. */
 export const knowledgeEmbeddings = pgTable("knowledge_embeddings", {
@@ -134,7 +138,8 @@ export const knowledgeEmbeddings = pgTable("knowledge_embeddings", {
   hashCheck: check("knowledge_embeddings_hash_check", sql`${table.contentHash} ~ '^[0-9a-f]{64}$'`),
   dimensionsCheck: check("knowledge_embeddings_dimensions_check", sql`${table.dimensions} BETWEEN 1 AND 4096 AND cardinality(${table.embedding}) = ${table.dimensions}`),
   timestampCheck: check("knowledge_embeddings_timestamp_check", sql`${table.updatedAt} >= ${table.createdAt}`),
-}));
+})).enableRLS();
+
 
 export type SavedAnswer = typeof savedAnswers.$inferSelect;
 export type TrainingRequest = typeof trainingRequests.$inferSelect;
