@@ -94,7 +94,7 @@ export const channelInboundEvents = pgTable(
       sql`${table.enqueueCommittedAt} >= ${table.receivedAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export const replyReservations = pgTable(
   "reply_reservations",
@@ -163,7 +163,7 @@ export const replyReservations = pgTable(
       sql`(${table.status} = 'reserved' AND ${table.consumedAt} IS NULL AND ${table.refundedAt} IS NULL) OR (${table.status} = 'consumed' AND ${table.consumedAt} IS NOT NULL AND ${table.refundedAt} IS NULL) OR (${table.status} = 'refunded' AND ${table.refundedAt} IS NOT NULL)`,
     ),
   }),
-);
+).enableRLS();
 
 export const replyRefunds = pgTable(
   "reply_refunds",
@@ -207,7 +207,7 @@ export const replyRefunds = pgTable(
       sql`${table.balanceAfterRefund} IS NULL OR ${table.balanceAfterRefund} >= 0`,
     ),
   }),
-);
+).enableRLS();
 
 export const outboundDeliveries = pgTable(
   "outbound_deliveries",
@@ -252,7 +252,7 @@ export const outboundDeliveries = pgTable(
       sql`(${table.outcome} = 'pending' AND ${table.finalizedAt} IS NULL AND ${table.failureCode} IS NULL) OR (${table.outcome} = 'sent' AND ${table.finalizedAt} IS NOT NULL AND ${table.failureCode} IS NULL) OR (${table.outcome} = 'confirmed_failed' AND ${table.finalizedAt} IS NOT NULL AND ${table.failureCode} IS NOT NULL) OR (${table.outcome} = 'uncertain' AND ${table.finalizedAt} IS NOT NULL)`,
     ),
   }),
-);
+).enableRLS();
 
 export type ChannelInboundEvent = typeof channelInboundEvents.$inferSelect;
 export type ReplyReservation = typeof replyReservations.$inferSelect;
