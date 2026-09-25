@@ -153,7 +153,7 @@ export const commercePromotions = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export type CommercePromotion = typeof commercePromotions.$inferSelect;
 export type NewCommercePromotion = typeof commercePromotions.$inferInsert;
