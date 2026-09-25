@@ -226,7 +226,7 @@ test("repository policy requires history scan and full checkout", () => {
       writeFileSync(path.join(workflowDir, name), "name: existing\n");
     }
     writeFileSync(path.join(workflowDir, "quality-gates.yml"),
-      `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n`);
+      `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n`);
     writeFileSync(path.join(workflowDir, "security-supply-chain.yml"),
       `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n      fetch-depth: 0\n  - run: node scripts/security-final-audit.mjs history\njobs:\n  dependency-review:\n    steps:\n      - run: node scripts/security-final-audit.mjs dependency-review "$BASE_SHA"\n      - run: pnpm install --frozen-lockfile --ignore-scripts\n      - run: node scripts/security-final-audit.mjs dependency\n`);
     writeFileSync(path.join(root, "pnpm-workspace.yaml"), "autoInstallPeers: false\nminimumReleaseAge: 1440\n");
