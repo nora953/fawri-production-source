@@ -5,6 +5,7 @@ import {
 } from "./operationalPostgresAuthority";
 
 const MAX_TOP_PRODUCTS = 10;
+const ONLINE_REPORT_STATEMENT_TIMEOUT_MS = 8_000;
 
 export class OnlineOrderReportError extends Error {
   readonly code: string;
@@ -185,9 +186,14 @@ export async function buildOnlineOrderReportAuthoritative(input: {
   const from = range.from || null;
   const to = range.to || null;
 
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const [
-      receivedRows,
+  try {
+    return await withMerchantOperationalTransaction(merchantId, async (client) => {
+      await client.query(
+        `SET LOCAL statement_timeout = '${ONLINE_REPORT_STATEMENT_TIMEOUT_MS}ms'`,
+      );
+
+      const [
+        receivedRows,
       deliveredRows,
       cancelledRows,
       paidElectronicRows,
@@ -423,5 +429,19 @@ export async function buildOnlineOrderReportAuthoritative(input: {
         revenue_iqd: safeInteger(row.revenue_iqd, "product revenue"),
       })),
     };
-  });
+    });
+  } catch (error) {
+    const code =
+      error && typeof error === "object"
+        ? String((error as { code?: unknown }).code || "")
+        : "";
+    if (code === "57014") {
+      throw new OnlineOrderReportError(
+        "ONLINE_REPORT_QUERY_TIMEOUT",
+        "online report query exceeded the interactive execution budget",
+        503,
+      );
+    }
+    throw error;
+  }
 }
