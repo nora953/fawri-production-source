@@ -11,6 +11,12 @@ import {
 } from '@/lib/passwordReset';
 import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
+import InternationalPhoneField from '@/components/InternationalPhoneField';
+import {
+  normalizeInternationalPhoneInput,
+  validateInternationalPhone,
+} from '@/lib/internationalPhone';
+import { MERCHANT_REGION_BY_COUNTRY } from '@/lib/merchantRegions';
 
 type ForgotPasswordModalProps = {
   open: boolean;
@@ -56,12 +62,15 @@ export default function ForgotPasswordModal({
   open,
   onClose,
 }: ForgotPasswordModalProps) {
-  const { t, isRTL } = useI18n();
+  const { t, isRTL, lang } = useI18n();
+  const [countryCode, setCountryCode] = useState('IQ');
   const [step, setStep] = useState<Step>('phone');
   const [form, setForm] = useState(initialState);
   const [isLoading, setIsLoading] = useState(false);
   const [retryAfterSeconds, setRetryAfterSeconds] = useState(0);
   const [recoveryChallenge, setRecoveryChallenge] = useState<RecoveryChallenge | null>(null);
+  const selectedRegion = MERCHANT_REGION_BY_COUNTRY.get(countryCode)
+    || MERCHANT_REGION_BY_COUNTRY.get('IQ');
 
   if (!open) return null;
 
@@ -79,6 +88,7 @@ export default function ForgotPasswordModal({
 
     setTimeout(() => {
       setStep('phone');
+      setCountryCode('IQ');
       setForm(initialState);
       setIsLoading(false);
       setRetryAfterSeconds(0);
@@ -116,12 +126,22 @@ export default function ForgotPasswordModal({
   const handleRequestCode = async () => {
     if (isLoading) return;
 
-    const cleanPhone = form.phone.trim();
+    const cleanPhoneInput = form.phone.trim();
 
-    if (!cleanPhone) {
+    if (!cleanPhoneInput) {
       toast.error(t.forgot_error_phone_required);
       return;
     }
+
+    if (!validateInternationalPhone(cleanPhoneInput, selectedRegion?.callingCode)) {
+      toast.error(t.phone_error);
+      return;
+    }
+
+    const cleanPhone = normalizeInternationalPhoneInput(
+      cleanPhoneInput,
+      selectedRegion?.callingCode,
+    );
 
     setIsLoading(true);
     setRecoveryChallenge(null);
@@ -141,6 +161,7 @@ export default function ForgotPasswordModal({
       }
 
       toast.success(t.forgot_code_sent);
+      setForm(current => ({ ...current, phone: cleanPhone }));
       setRecoveryChallenge(challenge);
       setRetryAfterSeconds(challenge.retryAfterSeconds);
       setStep('reset');
@@ -228,19 +249,20 @@ export default function ForgotPasswordModal({
           {step === 'phone' ? (
             <>
               <div className="space-y-2">
-                <label htmlFor="reset-phone" className="block text-sm font-bold">
-                  {t.phone}
-                </label>
-
-                <Input
-                  id="reset-phone"
-                  type="tel"
-                  dir="ltr"
-                  value={form.phone}
-                  onChange={event => updateField('phone', event.target.value)}
-                  placeholder="07..."
-                  className="h-12 rounded-2xl text-base"
-                  autoComplete="off"
+                <InternationalPhoneField
+                  lang={lang}
+                  countryCode={countryCode}
+                  phoneInput={form.phone}
+                  countryLabel={t.country}
+                  phoneLabel={t.phone}
+                  phonePlaceholder={t.phone_placeholder}
+                  onCountryChange={(nextCountry) => {
+                    setCountryCode(nextCountry);
+                    updateField('phone', '');
+                  }}
+                  onPhoneInputChange={value => updateField('phone', value)}
+                  countryTestId="reset-country"
+                  phoneTestId="reset-phone"
                 />
 
                 <p className="text-xs leading-5 text-muted-foreground">
