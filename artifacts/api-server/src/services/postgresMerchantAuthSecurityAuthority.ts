@@ -64,6 +64,19 @@ type OtpRow = {
   revoked_at: Date | null;
 };
 
+async function lockAuthSecurityKeys(
+  client: OperationalSqlClient,
+  keys: string[],
+): Promise<void> {
+  const uniqueKeys = [...new Set(keys)].sort();
+  for (const key of uniqueKeys) {
+    await client.query(
+      `SELECT pg_advisory_xact_lock(hashtextextended($1, 0))`,
+      [key],
+    );
+  }
+}
+
 async function accountIdForPhone(
   client: OperationalSqlClient,
   phone: string,
@@ -92,6 +105,13 @@ export async function issueMerchantOtpChallengeAuthoritative(input: {
   const targetHash = fingerprint("otp-target", input.target);
   const ipHash = fingerprint("ip", input.ip);
   return withOperationalTransaction(async (client) => {
+    // Serialize issuance for both the target/purpose and source IP before
+    // observing rate/cooldown state. Without this, concurrent transactions can
+    // all read the same pre-insert state and create multiple live challenges.
+    await lockAuthSecurityKeys(client, [
+      `otp-target:${targetHash}:${input.purpose}`,
+      `otp-ip:${ipHash}`,
+    ]);
     const now = new Date();
     const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
     const targetRecent = await client.query<{

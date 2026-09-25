@@ -98,3 +98,11 @@ jobs:
         run: >-
           pnpm --filter @workspace/api-server exec tsx --test
           ./tests/auth-postgres-concurrency.integration.test.mjs
+
+      - name: Prove OTP issuance serialization on PostgreSQL
+        env:
+          FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required"
+          FAWRI_AUTH_SECURITY_SECRET: "ci-auth-otp-concurrency-proof-secret-with-more-than-thirty-two-characters"
+        run: >-
+          pnpm --filter @workspace/api-server exec tsx --test
+          ./tests/auth-otp-postgres-concurrency.integration.test.ts
