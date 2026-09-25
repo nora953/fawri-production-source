@@ -173,6 +173,45 @@ test(
       webhookSubscribed: true,
     });
 
+    const probeRole = `fawri_meta_ingress_${proof}`;
+    const probe = await pool.connect();
+    try {
+      await probe.query(
+        `CREATE ROLE "${probeRole}" NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOINHERIT NOREPLICATION NOBYPASSRLS`,
+      );
+      await probe.query(`GRANT USAGE ON SCHEMA public TO "${probeRole}"`);
+      await probe.query(
+        `GRANT SELECT ON TABLE public.merchant_channels TO "${probeRole}"`,
+      );
+      await probe.query(`SET ROLE "${probeRole}"`);
+
+      const direct = await probe.query(
+        `SELECT merchant_id
+           FROM public.merchant_channels
+          WHERE page_id = $1`,
+        [pageId],
+      );
+      assert.equal(
+        direct.rows.length,
+        0,
+        "restricted runtime role must not bypass merchant_channels RLS",
+      );
+
+      const resolved = await probe.query<{ merchant_id: string | null }>(
+        `SELECT public.fawri_resolve_meta_page_merchant($1) AS merchant_id`,
+        [pageId],
+      );
+      assert.equal(
+        resolved.rows[0]?.merchant_id,
+        merchantId,
+        "narrow routing resolver must resolve the exact connected page under restricted runtime role",
+      );
+    } finally {
+      await probe.query("RESET ROLE").catch(() => undefined);
+      await probe.query(`DROP ROLE IF EXISTS "${probeRole}"`).catch(() => undefined);
+      probe.release();
+    }
+
     assert.equal(
       fs.existsSync(path.join(dataDir, "meta-channels.json")),
       false,
