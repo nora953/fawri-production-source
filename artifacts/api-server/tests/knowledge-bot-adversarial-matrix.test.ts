@@ -1,12 +1,70 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { KnowledgeDecisionEngine } from "../src/services/ai/knowledgeDecisionEngine.js";
+import {
+  KnowledgeDecisionEngine,
+  type KnowledgeDecisionEngineOptions,
+  type KnowledgeDecisionRuntime,
+} from "../src/services/ai/knowledgeDecisionEngine.js";
+import type {
+  AiFallbackCandidate,
+  AiFallbackRequest,
+  FawriCuratedKnowledge,
+  KnowledgeLanguage,
+  LearnedAnswerRecord,
+  SavedAnswerRecord,
+  SemanticDocument,
+  SemanticMatch,
+  TrainingRequestRecord,
+} from "../src/services/knowledge/types.js";
 import { PostgresOperationalFactResolver } from "../src/services/knowledge/postgresOperationalFactResolver.js";
 import { PostgresMerchantCatalogContextResolver } from "../src/services/knowledge/productCatalogContext.js";
-import { KnowledgeRuntimeGateError } from "../src/services/knowledge/postgresKnowledgeRuntime.js";
+import {
+  KnowledgeRuntimeGateError,
+  type KnowledgeSqlExecutor,
+  type KnowledgeSqlResult,
+} from "../src/services/knowledge/postgresKnowledgeRuntime.js";
 
-function makeRuntime(options = {}) {
+type RuntimeOptions = {
+  savedAnswer?: Pick<SavedAnswerRecord, "id" | "answerText" | "language">;
+  semanticMatch?: SemanticMatch | null;
+  approvedDocuments?: SemanticDocument[];
+};
+
+type ProbeCounters = {
+  resolve?: number;
+  context?: number;
+  generate?: number;
+};
+
+function fullSavedAnswer(
+  value: Pick<SavedAnswerRecord, "id" | "answerText" | "language">,
+): SavedAnswerRecord {
+  return {
+    id: value.id,
+    merchantId: "merchant-a",
+    category: "custom",
+    questionPattern: "test",
+    answerText: value.answerText,
+    language: value.language,
+    source: "merchant_approved",
+    active: true,
+    version: 1,
+    createdAt: "2026-09-24T00:00:00.000Z",
+    updatedAt: "2026-09-24T00:00:00.000Z",
+  };
+}
+
+function makeRuntime(options: RuntimeOptions = {}): KnowledgeDecisionRuntime & {
+  counters: {
+    saved: number;
+    semantic: number;
+    approvedList: number;
+    training: number;
+    generated: number;
+    audit: number;
+  };
+} {
   const counters = {
     saved: 0,
     semantic: 0,
@@ -23,12 +81,12 @@ function makeRuntime(options = {}) {
 
     async findApprovedSavedAnswer() {
       counters.saved += 1;
-      return options.savedAnswer || null;
+      return options.savedAnswer ? fullSavedAnswer(options.savedAnswer) : null;
     },
 
     async retrieveSemanticMatch() {
       counters.semantic += 1;
-      return options.semanticMatch || null;
+      return options.semanticMatch ?? null;
     },
 
     async listApprovedSemanticDocuments() {
@@ -36,28 +94,65 @@ function makeRuntime(options = {}) {
       return options.approvedDocuments || [];
     },
 
-    async createTrainingRequest(input) {
+    async createTrainingRequest(input): Promise<TrainingRequestRecord> {
       counters.training += 1;
       return {
         id: `training-adversarial-${counters.training}`,
         merchantId: input.merchantId,
+        customerTextPreview: "preview",
+        customerTextHash: "a".repeat(64),
+        detectedIntent: input.detectedIntent || "general",
+        detectedLanguage: input.detectedLanguage || "en",
+        reason: input.reason,
+        suggestedReply: input.suggestedReply ?? null,
+        suggestedReplySource: input.suggestedReplySource ?? null,
         status: "pending_merchant_reply",
+        rejectionReason: null,
+        version: 1,
+        createdAt: "2026-09-24T00:00:00.000Z",
+        updatedAt: "2026-09-24T00:00:00.000Z",
       };
     },
 
-    async recordGeneratedCandidate(input) {
+    async recordGeneratedCandidate(input): Promise<{
+      trainingRequest: TrainingRequestRecord;
+      learnedAnswer: LearnedAnswerRecord;
+    }> {
       counters.generated += 1;
+      const id = counters.generated;
       return {
         trainingRequest: {
-          id: `training-generated-${counters.generated}`,
+          id: `training-generated-${id}`,
           merchantId: input.merchantId,
+          customerTextPreview: "preview",
+          customerTextHash: "b".repeat(64),
+          detectedIntent: input.intent,
+          detectedLanguage: input.language,
+          reason: input.reason,
+          suggestedReply: input.answerText,
+          suggestedReplySource: "openai_generated",
           status: "pending_review",
+          rejectionReason: null,
+          version: 1,
+          createdAt: "2026-09-24T00:00:00.000Z",
+          updatedAt: "2026-09-24T00:00:00.000Z",
         },
         learnedAnswer: {
-          id: `learned-generated-${counters.generated}`,
+          id: `learned-generated-${id}`,
           merchantId: input.merchantId,
+          intent: input.intent,
+          language: input.language,
+          examples: ["preview"],
+          keywords: [],
+          answerText: input.answerText,
           source: "openai_generated",
+          approvalStatus: "pending_review",
+          confidence: input.confidence,
           safeToAutoReply: false,
+          trainingRequestId: `training-generated-${id}`,
+          version: 1,
+          createdAt: "2026-09-24T00:00:00.000Z",
+          updatedAt: "2026-09-24T00:00:00.000Z",
         },
       };
     },
@@ -74,9 +169,13 @@ function policyResolver({
   allowKnowledgeUse = true,
   allowGeneratedAutoReply = true,
   resolvedMerchantId,
+}: {
+  allowKnowledgeUse?: boolean;
+  allowGeneratedAutoReply?: boolean;
+  resolvedMerchantId?: string;
 } = {}) {
   return {
-    async resolve(merchantId) {
+    async resolve(merchantId: string) {
       return {
         merchantId: resolvedMerchantId || merchantId,
         policyVersion: 1,
@@ -90,7 +189,7 @@ function policyResolver({
   };
 }
 
-function disabledEncyclopedia(counters = {}) {
+function disabledEncyclopedia(counters: ProbeCounters = {}) {
   return {
     async resolve() {
       counters.resolve = (counters.resolve || 0) + 1;
@@ -103,7 +202,7 @@ function disabledEncyclopedia(counters = {}) {
   };
 }
 
-function disabledCatalog(counters = {}) {
+function disabledCatalog(counters: ProbeCounters = {}) {
   return {
     async listRelevantContext() {
       counters.context = (counters.context || 0) + 1;
@@ -112,7 +211,7 @@ function disabledCatalog(counters = {}) {
   };
 }
 
-function nullAi(counters = {}) {
+function nullAi(counters: ProbeCounters = {}) {
   return {
     providerId: "adversarial-null-ai",
     async generate() {
@@ -122,7 +221,7 @@ function nullAi(counters = {}) {
   };
 }
 
-function curatedRecord(language = "en") {
+function curatedRecord(language: KnowledgeLanguage = "en"): FawriCuratedKnowledge {
   const answers = {
     en: "Fast charging depends on compatibility among the device, charger, cable, and charging standard.",
     ar: "الشحن السريع يعتمد على توافق الجهاز والشاحن والكابل ومعيار الشحن.",
@@ -159,11 +258,17 @@ function catalogRecord() {
   };
 }
 
-function makeEngine(overrides = {}) {
+type EngineOverrides = KnowledgeDecisionEngineOptions & {
+  aiCounters?: ProbeCounters;
+  encyclopediaCounters?: ProbeCounters;
+  catalogCounters?: ProbeCounters;
+};
+
+function makeEngine(overrides: EngineOverrides = {}) {
   const runtime = overrides.runtime || makeRuntime();
-  const aiCounters = overrides.aiCounters || {};
-  const encyclopediaCounters = overrides.encyclopediaCounters || {};
-  const catalogCounters = overrides.catalogCounters || {};
+  const aiCounters: ProbeCounters = overrides.aiCounters || {};
+  const encyclopediaCounters: ProbeCounters = overrides.encyclopediaCounters || {};
+  const catalogCounters: ProbeCounters = overrides.catalogCounters || {};
 
   const engine = new KnowledgeDecisionEngine({
     runtime,
@@ -406,7 +511,7 @@ test("adversarial matrix: database outage is never disguised as clarification or
   assert.equal(runtime.counters.generated, 0);
 });
 
-for (const scenario of [
+for (const scenario of ([
   {
     name: "ambiguous product",
     code: "KNOWLEDGE_PRODUCT_AMBIGUOUS",
@@ -428,7 +533,13 @@ for (const scenario of [
     text: "نرخەکە چەندە؟",
     expected: /کام ڕەنگ|قەبارە|هەڵبژاردە/,
   },
-]) {
+] satisfies Array<{
+  name: string;
+  code: string;
+  lang: KnowledgeLanguage;
+  text: string;
+  expected: RegExp;
+}>)) {
   test(`adversarial matrix: ${scenario.name} returns localized clarification without invoking AI`, async () => {
     const runtime = makeRuntime();
     const aiCounters = {};
@@ -600,7 +711,7 @@ test("adversarial matrix: merchant product warranty cannot be invented from cata
     encyclopediaResolver: disabledEncyclopedia(),
     aiProvider: {
       providerId: "warranty-probe",
-      async generate(request) {
+      async generate(request: AiFallbackRequest) {
         providerCatalog = request.catalogKnowledge || [];
         return null;
       },
@@ -620,7 +731,7 @@ test("adversarial matrix: merchant product warranty cannot be invented from cata
   assert.equal(runtime.counters.training, 1);
 });
 
-function groundedCuratedEngine(candidateFactory) {
+function groundedCuratedEngine(candidateFactory: (curated: FawriCuratedKnowledge) => AiFallbackCandidate) {
   const runtime = makeRuntime();
   const curated = curatedRecord("en");
   const { engine } = makeEngine({
@@ -786,7 +897,7 @@ test("adversarial matrix: mixed answer with invented live number fails closed an
     },
     aiProvider: {
       providerId: "mixed-adversarial-ai",
-      async generate(request) {
+      async generate(request: AiFallbackRequest) {
         return {
           answerText:
             `${liveAnswer}\nIt supports Power Delivery and includes a 120W cable.`,
@@ -853,7 +964,7 @@ test("adversarial matrix: mixed answer cannot omit or rewrite the canonical live
     },
     aiProvider: {
       providerId: "mixed-adversarial-ai",
-      async generate(request) {
+      async generate(request: AiFallbackRequest) {
         return {
           answerText:
             "The charger costs 25,000 IQD and supports Power Delivery.",
@@ -887,11 +998,16 @@ test("adversarial matrix: mixed answer cannot omit or rewrite the canonical live
   assert.equal(runtime.counters.generated, 0);
 });
 
-function exactVariantSql() {
-  const queries = [];
+function exactVariantSql(): KnowledgeSqlExecutor & {
+  queries: Array<{ sql: string; values: unknown[] }>;
+} {
+  const queries: Array<{ sql: string; values: unknown[] }> = [];
   return {
     queries,
-    async query(sql, values = []) {
+    async query<Row extends Record<string, unknown> = Record<string, unknown>>(
+      sql: string,
+      values: readonly unknown[] = [],
+    ): Promise<KnowledgeSqlResult<Row>> {
       queries.push({ sql, values: [...values] });
 
       if (sql.includes("FROM products")) {
@@ -920,7 +1036,7 @@ function exactVariantSql() {
               updated_at: "2026-09-24T00:00:00.000Z",
               merchant_currency_code: "IQD",
             },
-          ],
+          ] as unknown as Row[],
         };
       }
 
@@ -969,7 +1085,7 @@ function exactVariantSql() {
               version: 1,
               updated_at: "2026-09-24T00:00:00.000Z",
             },
-          ],
+          ] as unknown as Row[],
         };
       }
 
@@ -992,12 +1108,14 @@ function exactVariantSql() {
               option_value: "256GB",
               ordinal: 0,
             },
-          ],
+          ] as unknown as Row[],
         };
       }
 
-      if (sql.includes("FROM commerce_promotions")) return { rows: [] };
-      return { rows: [] };
+      if (sql.includes("FROM commerce_promotions")) return {
+          rows: [] };
+      return {
+          rows: [] };
     },
   };
 }
