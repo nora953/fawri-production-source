@@ -82,7 +82,7 @@ export const locationInventoryLevels = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-);
+).enableRLS();
 
 export type LocationInventoryLevel = typeof locationInventoryLevels.$inferSelect;
 export type NewLocationInventoryLevel = typeof locationInventoryLevels.$inferInsert;
