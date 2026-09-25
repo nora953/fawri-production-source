@@ -1,0 +1,10 @@
+{
+  "index": 22,
+  "name": "location_rls_schema_alignment",
+  "when": 1790294400000,
+  "mode": "reviewed_sql",
+  "sql_sha256": "aa0f835d4964038c6a09a82915b6c4babc61df43f109b6319e7d415b77d0f092",
+  "preimage_files": [
+    "tenant-security.ts"
+  ]
+}
