@@ -57,6 +57,21 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
     "tenant RLS predicate must evaluate safely without audit-table SELECT privilege",
   );
 
+  await client.query(
+    `SELECT set_config('fawri.tenant_id', 'merchant-rls-probe', false)`,
+  );
+  const predicateProbe = await client.query<{
+    own_tenant: boolean;
+    other_tenant: boolean;
+  }>(
+    `SELECT
+       public.fawri_tenant_or_audited_admin('merchant-rls-probe') AS own_tenant,
+       public.fawri_tenant_or_audited_admin('merchant-other') AS other_tenant`,
+  );
+  assert.equal(predicateProbe.rows[0]?.own_tenant, true);
+  assert.equal(predicateProbe.rows[0]?.other_tenant, false);
+  await client.query(`SELECT set_config('fawri.tenant_id', '', false)`);
+
   const readiness = await getProductionDatabaseRlsReadiness(client);
 
   assert.equal(readiness.roleName, probeRole);
