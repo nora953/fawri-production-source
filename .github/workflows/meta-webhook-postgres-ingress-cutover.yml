@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "artifacts/api-server/src/middleware/merchantWebhookAccess.ts"
+      - "artifacts/api-server/src/middleware/manualConversationWebhookAccess.ts"
+      - "artifacts/api-server/src/middleware/metaWebhookQueueIngress.ts"
       - "artifacts/api-server/src/services/metaPageDirectory.ts"
       - "artifacts/api-server/src/services/merchantOperationalAccess.ts"
       - "artifacts/api-server/src/services/postgresMetaChannelAuthority.ts"
@@ -66,8 +68,10 @@ jobs:
       - name: Type-check API server
         run: pnpm --filter @workspace/api-server run typecheck
 
-      - name: Initialize disposable PostgreSQL runtime schema
-        run: pnpm --filter @workspace/db run push-force
+      - name: Apply committed migration history to disposable PostgreSQL
+        env:
+          FAWRI_ALLOW_MIGRATION_SMOKE: "1"
+        run: pnpm --filter @workspace/db run schema:smoke
 
       - name: Prove webhook ingress uses PostgreSQL page and merchant authority
         run: >-
