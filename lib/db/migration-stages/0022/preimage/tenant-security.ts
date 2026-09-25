@@ -1,11 +1,7 @@
 import { sql } from "drizzle-orm";
 import { check, index, pgPolicy, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 import { adminProfiles } from "./merchants";
-import {
-  merchantLocationDeliveryAreas,
-  merchantLocations,
-} from "./merchant-locations";
-import { locationInventoryLevels } from "./location-inventory";
+import { merchantLocationDeliveryAreas } from "./merchant-locations";
 import {
   merchantDeliveryAreaRates,
   merchantSettings,
@@ -68,14 +64,6 @@ export const merchantSettingsTenantPolicy = tenantPolicy("merchant_settings_tena
 export const merchantDeliveryAreaRatesTenantPolicy = tenantPolicy(
   "merchant_delivery_area_rates_tenant_boundary",
   merchantDeliveryAreaRates,
-);
-export const merchantLocationsTenantPolicy = tenantPolicy(
-  "merchant_locations_tenant_boundary",
-  merchantLocations,
-);
-export const locationInventoryLevelsTenantPolicy = tenantPolicy(
-  "location_inventory_levels_tenant_boundary",
-  locationInventoryLevels,
 );
 export const merchantLocationDeliveryAreasTenantPolicy = tenantPolicy(
   "merchant_location_delivery_areas_tenant_boundary",

@@ -101,7 +101,7 @@ export const merchantLocations = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt} AND (${table.inventoryFreshAt} IS NULL OR ${table.inventoryFreshAt} >= ${table.createdAt})`,
     ),
   }),
-).enableRLS();
+);
 
 export type MerchantLocation = typeof merchantLocations.$inferSelect;
 export type NewMerchantLocation = typeof merchantLocations.$inferInsert;
