@@ -208,23 +208,34 @@ export async function listMetaChannelsAuthoritative(
   });
 }
 
-export async function listActiveMetaPageMappingsAuthoritative(): Promise<
-  Array<{ pageId: string; merchantId: string }>
-> {
-  if (!operationalPostgresAuthorityRequired()) return listActiveMetaPageMappings();
-  return withOperationalTransaction(async (client) => {
-    const result = await client.query<{ page_id: string; merchant_id: string }>(
-      `SELECT page_id, merchant_id
-         FROM merchant_channels
-        WHERE platform = 'messenger'
-          AND status = 'connected'
-          AND page_id IS NOT NULL
-        ORDER BY page_id`,
+export async function resolveActiveMetaPageMappingsAuthoritative(
+  pageIdsValue: readonly unknown[],
+): Promise<Array<{ pageId: string; merchantId: string }>> {
+  const pageIds = [...new Set(pageIdsValue.map(text).filter(Boolean))].slice(0, 1000);
+  if (pageIds.length === 0) return [];
+
+  if (!operationalPostgresAuthorityRequired()) {
+    const requested = new Set(pageIds);
+    return listActiveMetaPageMappings().filter((mapping) =>
+      requested.has(mapping.pageId),
     );
-    return result.rows.map((row) => ({
-      pageId: row.page_id,
-      merchantId: row.merchant_id,
-    }));
+  }
+
+  return withOperationalTransaction(async (client) => {
+    const result = await client.query<{ page_id: string; merchant_id: string | null }>(
+      `SELECT requested.page_id,
+              public.fawri_resolve_meta_page_merchant(requested.page_id) AS merchant_id
+         FROM unnest($1::text[]) AS requested(page_id)`,
+      [pageIds],
+    );
+    return result.rows
+      .filter((row): row is { page_id: string; merchant_id: string } =>
+        Boolean(row.page_id && row.merchant_id),
+      )
+      .map((row) => ({
+        pageId: row.page_id,
+        merchantId: row.merchant_id,
+      }));
   });
 }
 
