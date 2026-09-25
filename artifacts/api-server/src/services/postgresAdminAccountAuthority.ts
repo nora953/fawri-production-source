@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import {
   authAccountRepository,
+  isE164Phone,
   normalizePhone,
   type AuthAccount,
 } from "./authAccountRepository";
@@ -134,7 +135,7 @@ export async function createAssistantAdminAuthoritative(input: {
     return authAccountRepository.createAssistantAdmin(input);
   }
   const phone = normalizePhone(input.phone);
-  if (!/^07\d{9}$/.test(phone)) throw new Error("INVALID_PHONE");
+  if (!isE164Phone(phone)) throw new Error("INVALID_PHONE");
 
   return withOperationalTransaction(async (client) => {
     const collisions = await operationalQueryRows<{ id: string }>(
