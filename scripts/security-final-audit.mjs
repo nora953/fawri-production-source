@@ -113,6 +113,18 @@ export function validateRepositoryPolicy(root, files) {
     if (!existsSync(path.join(workflowDir, workflow))) violations.push(`missing workflow: ${workflow}`);
   }
 
+  for (const workflow of [...PROTECTED_WORKFLOWS, ...FINAL_WORKFLOWS]) {
+    const workflowPath = path.join(workflowDir, workflow);
+    if (!existsSync(workflowPath)) continue;
+    const content = readFileSync(workflowPath, "utf8");
+    for (const match of content.matchAll(/^\s*(?:-\s*)?uses:\s*([^\s#]+)\s*$/gm)) {
+      const action = match[1];
+      if (!/@[0-9a-f]{40}$/i.test(action)) {
+        violations.push(`${workflow}: action must be pinned to an immutable SHA: ${action}`);
+      }
+    }
+  }
+
   for (const workflow of FINAL_WORKFLOWS) {
     const workflowPath = path.join(workflowDir, workflow);
     if (!existsSync(workflowPath)) continue;
@@ -129,13 +141,6 @@ export function validateRepositoryPolicy(root, files) {
     if (/(?:\|\|\s*true|--force\b|force:\s*true)/.test(content)) {
       violations.push(`${workflow}: bypass/force construct is forbidden`);
     }
-    for (const match of content.matchAll(/^\s*(?:-\s*)?uses:\s*([^\s#]+)\s*$/gm)) {
-      const action = match[1];
-      if (!/@[0-9a-f]{40}$/i.test(action)) {
-        violations.push(`${workflow}: action must be pinned to an immutable SHA: ${action}`);
-      }
-    }
-
     if (workflow === "security-supply-chain.yml") {
       if (!/^\s{2}dependency-review:\s*$/m.test(content)) {
         violations.push("security-supply-chain.yml: mandatory dependency-review job is required");
