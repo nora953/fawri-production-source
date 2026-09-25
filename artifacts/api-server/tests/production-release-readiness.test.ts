@@ -13,6 +13,7 @@ import {
 function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   return {
     NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "production",
     FAWRI_PRODUCTION_RELEASE_GATE: "required",
     DATABASE_URL: "postgresql://fawri:test@db.internal:5432/fawri",
     FAWRI_OPERATIONAL_POSTGRES_AUTHORITY: "required",
@@ -47,19 +48,40 @@ function productionEnv(overrides: NodeJS.ProcessEnv = {}): NodeJS.ProcessEnv {
   };
 }
 
-test("release gate is inert until production explicitly requires it", () => {
-  assert.deepEqual(
-    getProductionRuntimeConfigurationIssues({ NODE_ENV: "production" }),
-    [],
+test("NODE_ENV production fails closed even when the legacy release-gate variable is omitted", () => {
+  const env = { NODE_ENV: "production" } as NodeJS.ProcessEnv;
+  const issues = getProductionRuntimeConfigurationIssues(env);
+  assert.ok(issues.some((item) => item.code === "PRODUCTION_DATABASE_URL_REQUIRED"));
+  assert.throws(
+    () => assertProductionRuntimeConfiguration(env),
+    (error: unknown) =>
+      (error as { code?: string }).code === "PRODUCTION_RELEASE_CONFIGURATION_INVALID",
   );
-  assert.doesNotThrow(() =>
-    assertProductionRuntimeConfiguration({ NODE_ENV: "production" }),
-  );
+});
+
+test("staging must opt out explicitly from production-only provider requirements", () => {
+  const env = {
+    NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "staging",
+  } as NodeJS.ProcessEnv;
+  assert.deepEqual(getProductionRuntimeConfigurationIssues(env), []);
+  assert.doesNotThrow(() => assertProductionRuntimeConfiguration(env));
+});
+
+test("invalid explicit deployment mode fails closed", () => {
+  const env = {
+    NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "prod-ish",
+  } as NodeJS.ProcessEnv;
+  const issues = getProductionRuntimeConfigurationIssues(env);
+  assert.ok(issues.some((item) => item.code === "DEPLOYMENT_MODE_INVALID"));
+  assert.throws(() => assertProductionRuntimeConfiguration(env));
 });
 
 test("required production release gate fails closed with safe issue codes", () => {
   const env = {
     NODE_ENV: "production",
+    FAWRI_DEPLOYMENT_MODE: "production",
     FAWRI_PRODUCTION_RELEASE_GATE: "required",
     FAWRI_AUTH_SECURITY_SECRET: "do-not-leak-this-value",
   } as NodeJS.ProcessEnv;
