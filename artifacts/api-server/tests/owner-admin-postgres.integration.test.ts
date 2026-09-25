@@ -20,7 +20,7 @@ function productionGateEnv(): NodeJS.ProcessEnv {
 async function unusedPhone(): Promise<string> {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const suffix = String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0");
-    const phone = `07${suffix}`;
+    const phone = `+9647${suffix}`;
     const result = await pool.query(
       "SELECT 1 FROM accounts WHERE phone = $1 LIMIT 1",
       [phone],
@@ -124,7 +124,7 @@ test("owner administrator provisions once and gates production readiness on Post
     () =>
       provisionOwnerAdminPostgres({
         displayName: "Second Owner",
-        phone: "07888888888",
+        phone: "+9647888888888",
         password: "SecondOwner9!",
         language: "ar",
       }),
