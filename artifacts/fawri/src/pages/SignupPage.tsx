@@ -8,7 +8,17 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { normalizePhoneNumber, validatePhone, validatePassword } from '@/lib/validators';
+import { validatePassword } from '@/lib/validators';
+import InternationalPhoneField from '@/components/InternationalPhoneField';
+import {
+  normalizeInternationalPhoneInput,
+  validateInternationalPhone,
+} from '@/lib/internationalPhone';
+import {
+  MERCHANT_CURRENCY_CODES,
+  MERCHANT_REGION_BY_COUNTRY,
+  SAFE_MERCHANT_CURRENCY_BY_COUNTRY,
+} from '@/lib/merchantRegions';
 import {
   clearPendingSignupChallenge,
   createOtpChallengeContext,
@@ -56,6 +66,8 @@ export default function SignupPage() {
     owner_name: '',
     store_name: '',
     phone: '',
+    country_code: 'IQ',
+    currency_code: 'IQD',
     password: '',
     confirm_password: '',
     activity_type: '',
@@ -74,17 +86,6 @@ export default function SignupPage() {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    if (name === "phone") {
-      const normalizedPhone = normalizePhoneNumber(value);
-      if (!normalizedPhone) {
-        setPhoneInlineError("");
-      } else if (normalizedPhone.length >= 11) {
-        setPhoneInlineError(validatePhone(value) ? "" : t.phone_error);
-      } else {
-        setPhoneInlineError("");
-      }
-    }
-
     if (name === "password") {
       setPasswordInlineError(getPasswordError(value));
       setConfirmPasswordInlineError(formData.confirm_password ? getConfirmPasswordError(value, formData.confirm_password) : "");
@@ -95,8 +96,30 @@ export default function SignupPage() {
     }
   };
 
+  const selectedRegion = MERCHANT_REGION_BY_COUNTRY.get(formData.country_code)
+    || MERCHANT_REGION_BY_COUNTRY.get('IQ');
+
+  const handlePhoneChange = (value: string) => {
+    setFormData(prev => ({ ...prev, phone: value }));
+    setPhoneInlineError('');
+  };
+
+  const handleCountryChange = (countryCode: string) => {
+    const defaultCurrency = SAFE_MERCHANT_CURRENCY_BY_COUNTRY[countryCode] || '';
+    setFormData(prev => ({
+      ...prev,
+      country_code: countryCode,
+      currency_code: defaultCurrency,
+      phone: '',
+    }));
+    setPhoneInlineError('');
+  };
+
   const handlePhoneBlur = () => {
-    if (formData.phone.trim() && !validatePhone(formData.phone)) {
+    if (
+      formData.phone.trim() &&
+      !validateInternationalPhone(formData.phone, selectedRegion?.callingCode)
+    ) {
       setPhoneInlineError(t.phone_error);
       return;
     }
@@ -155,8 +178,19 @@ export default function SignupPage() {
       return;
     }
 
-    if (!validatePhone(formData.phone)) {
+    if (!formData.country_code) {
+      toast.error(t.signup_country_required);
+      return;
+    }
+
+    if (!validateInternationalPhone(formData.phone, selectedRegion?.callingCode)) {
+      setPhoneInlineError(t.phone_error);
       toast.error(t.phone_error);
+      return;
+    }
+
+    if (!formData.currency_code) {
+      toast.error(t.signup_currency_required);
       return;
     }
 
@@ -194,6 +228,18 @@ export default function SignupPage() {
 
     try {
       const finalActivity = isOther ? formData.custom_activity.trim() : formData.activity_type;
+      const phone = normalizeInternationalPhoneInput(
+        formData.phone,
+        selectedRegion?.callingCode,
+      );
+      const browserTimezone = (() => {
+        try {
+          return Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+        } catch {
+          return '';
+        }
+      })();
+      const timezone = browserTimezone || selectedRegion?.timezone || '';
 
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
@@ -201,9 +247,12 @@ export default function SignupPage() {
         body: JSON.stringify({
           owner_name: formData.owner_name.trim(),
           store_name: formData.store_name.trim(),
-          phone: normalizePhoneNumber(formData.phone),
+          phone,
           password: formData.password.trim(),
           activity_type: finalActivity,
+          country_code: formData.country_code,
+          currency_code: formData.currency_code,
+          timezone,
           language: lang,
           ...(requestedPlan ? { requested_plan: requestedPlan } : {}),
         }),
@@ -280,16 +329,19 @@ export default function SignupPage() {
               <Input id="store_name" name="store_name" required value={formData.store_name} onChange={handleChange} className={fieldInputClass} data-testid="input-store-name" />
             </div>
 
-            <div className="space-y-2">
-              <div className={fieldHeaderClass}>
-                <Label htmlFor="phone" className={fieldLabelClass}>{t.phone}</Label>
-              </div>
-              <Input id="phone" name="phone" type="tel" dir="ltr" placeholder="07..." required value={formData.phone} onChange={handleChange} onBlur={handlePhoneBlur} aria-invalid={!!phoneInlineError} className={`${fieldInputClass} ${phoneInlineError ? fieldInvalidInputClass : ''}`} data-testid="input-phone" />
-                {phoneInlineError && (
-                  <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm font-medium text-red-700" role="alert">
-                    {phoneInlineError}
-                  </p>
-                )}
+            <div className="md:col-span-2">
+              <InternationalPhoneField
+                lang={lang}
+                countryCode={formData.country_code}
+                phoneInput={formData.phone}
+                countryLabel={t.country}
+                phoneLabel={t.phone}
+                phonePlaceholder={t.phone_placeholder}
+                onCountryChange={handleCountryChange}
+                onPhoneInputChange={handlePhoneChange}
+                onPhoneBlur={handlePhoneBlur}
+                phoneError={phoneInlineError}
+              />
             </div>
 
             <div className="space-y-2">
@@ -324,6 +376,26 @@ export default function SignupPage() {
                   </SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <div className={fieldHeaderClass}>
+                <Label htmlFor="currency_code" className={fieldLabelClass}>{t.currency_code}</Label>
+              </div>
+              <select
+                id="currency_code"
+                value={formData.currency_code}
+                onChange={event => setFormData(prev => ({ ...prev, currency_code: event.target.value }))}
+                className={`${fieldInputClass} w-full border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring`}
+                data-testid="select-currency"
+              >
+                <option value="">-</option>
+                {MERCHANT_CURRENCY_CODES.map(currencyCode => (
+                  <option key={currencyCode} value={currencyCode}>
+                    {currencyCode}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Custom activity field — only shown when "Other" is selected */}
