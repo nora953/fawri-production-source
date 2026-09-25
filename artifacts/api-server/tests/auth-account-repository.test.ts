@@ -3,7 +3,11 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-import { AuthAccountRepository } from "../src/services/authAccountRepository";
+import {
+  AuthAccountRepository,
+  isE164Phone,
+  normalizePhone,
+} from "../src/services/authAccountRepository";
 
 test("account identity is separated from merchant/admin profiles and cross-login fails", () => {
   const directory = mkdtempSync(path.join(os.tmpdir(), "fawri-auth-accounts-"));
@@ -117,4 +121,14 @@ test("account identity is separated from merchant/admin profiles and cross-login
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+
+test("phone identity normalization preserves E.164 and upgrades legacy Iraqi numbers", () => {
+  assert.equal(normalizePhone("+966 50 123 4567"), "+966501234567");
+  assert.equal(normalizePhone("٠٧٧٠١٢٣٤٥٦٧"), "+9647701234567");
+  assert.equal(normalizePhone("07701234567"), "+9647701234567");
+  assert.equal(isE164Phone("+9647701234567"), true);
+  assert.equal(isE164Phone("07701234567"), false);
+  assert.equal(isE164Phone("+0123456789"), false);
 });
