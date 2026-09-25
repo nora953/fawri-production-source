@@ -94,7 +94,9 @@ function makeRuntime(options: RuntimeOptions = {}): KnowledgeDecisionRuntime & {
       return options.approvedDocuments || [];
     },
 
-    async createTrainingRequest(input): Promise<TrainingRequestRecord> {
+    async createTrainingRequest(
+      input: Parameters<KnowledgeDecisionRuntime["createTrainingRequest"]>[0],
+    ): Promise<TrainingRequestRecord> {
       counters.training += 1;
       return {
         id: `training-adversarial-${counters.training}`,
@@ -114,7 +116,9 @@ function makeRuntime(options: RuntimeOptions = {}): KnowledgeDecisionRuntime & {
       };
     },
 
-    async recordGeneratedCandidate(input): Promise<{
+    async recordGeneratedCandidate(
+      input: Parameters<KnowledgeDecisionRuntime["recordGeneratedCandidate"]>[0],
+    ): Promise<{
       trainingRequest: TrainingRequestRecord;
       learnedAnswer: LearnedAnswerRecord;
     }> {
@@ -479,7 +483,7 @@ test("adversarial matrix: missing live price authority never falls through to a 
 });
 
 test("adversarial matrix: database outage is never disguised as clarification or generated knowledge", async () => {
-  const aiCounters = {};
+  const aiCounters: ProbeCounters = {};
   const runtime = makeRuntime();
   const { engine } = makeEngine({
     runtime,
@@ -542,7 +546,7 @@ for (const scenario of ([
 }>)) {
   test(`adversarial matrix: ${scenario.name} returns localized clarification without invoking AI`, async () => {
     const runtime = makeRuntime();
-    const aiCounters = {};
+    const aiCounters: ProbeCounters = {};
     const { engine } = makeEngine({
       runtime,
       aiCounters,
@@ -802,7 +806,7 @@ test("adversarial matrix: correct grounding in the wrong response language is re
   assert.equal(runtime.counters.generated, 1);
 });
 
-for (const candidate of [
+for (const candidate of ([
   {
     name: "high risk",
     risk: "high",
@@ -813,7 +817,11 @@ for (const candidate of [
     risk: "low",
     confidence: 0.4,
   },
-]) {
+] satisfies Array<{
+  name: string;
+  risk: AiFallbackCandidate["risk"];
+  confidence: number;
+}>)) {
   test(`adversarial matrix: ${candidate.name} grounded AI candidate is not auto-sent`, async () => {
     const { engine, runtime } = groundedCuratedEngine((curated) => ({
       answerText: curated.answer,
@@ -908,7 +916,7 @@ test("adversarial matrix: mixed answer with invented live number fails closed an
           reason: "invented accessory wattage",
           source: "openai_generated",
           groundingRecordIds: [
-            request.operationalFacts[0].id,
+            request.operationalFacts![0].id,
             "catalog-product:charger-a",
           ],
         };
@@ -975,7 +983,7 @@ test("adversarial matrix: mixed answer cannot omit or rewrite the canonical live
           reason: "rewrote canonical fact",
           source: "openai_generated",
           groundingRecordIds: [
-            request.operationalFacts[0].id,
+            request.operationalFacts![0].id,
             "catalog-product:charger-a",
           ],
         };
