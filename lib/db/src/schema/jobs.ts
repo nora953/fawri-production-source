@@ -120,7 +120,7 @@ export const backgroundJobs = pgTable(
       sql`(${table.status} <> 'dead_letter') OR ${table.deadLetteredAt} IS NOT NULL`,
     ),
   }),
-);
+).enableRLS();
 
 /**
  * Encrypted/privileged job payload storage is separated from the administrative
@@ -149,7 +149,7 @@ export const backgroundJobPayloads = pgTable(
       sql`char_length(${table.payloadSha256}) BETWEEN 32 AND 128`,
     ),
   }),
-);
+).enableRLS();
 
 export const jobAttempts = pgTable(
   "job_attempts",
