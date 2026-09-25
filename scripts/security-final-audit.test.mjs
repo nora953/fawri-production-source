@@ -134,6 +134,27 @@ test("repository policy requires protected workflows, immutable action pins, pnp
     const report = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
     assert.equal(report.status, "pass");
 
+    writeFileSync(
+      path.join(workflowDir, "postgresql-schema.yml"),
+      "steps:\n  - uses: actions/checkout@v4\n",
+    );
+    const mutableProtectedAction = validateRepositoryPolicy(
+      root,
+      ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"],
+    );
+    assert.equal(mutableProtectedAction.status, "fail");
+    assert.ok(
+      mutableProtectedAction.violations.some(
+        (item) =>
+          item.includes("postgresql-schema.yml") &&
+          item.includes("immutable SHA"),
+      ),
+    );
+    writeFileSync(
+      path.join(workflowDir, "postgresql-schema.yml"),
+      `steps:\n  - uses: actions/checkout@${checkoutSha}\n`,
+    );
+
     writeFileSync(path.join(workflowDir, "quality-gates.yml"), `${safeWorkflow}continue-on-error: true\n`);
     const unsafe = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
     assert.equal(unsafe.status, "fail");
