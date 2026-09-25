@@ -232,7 +232,7 @@ export function isKnownTestFixtureCredentialUrl(text, finding, objectPath) {
 const KNOWN_HISTORICAL_SCANNER_SELF_TEST_CREDENTIAL = [
   "postgresql://prod_owner:",
   "highEntropyCredentialValue",
-  "@db.internal.company/fawri",
+  "@db.internal.company",
 ].join("");
 
 export function isKnownHistoricalScannerSelfTestCredentialUrl(
