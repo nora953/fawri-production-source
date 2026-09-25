@@ -7,6 +7,7 @@ import {
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 import { productionReleaseGateRequired } from "./productionReleaseReadiness";
+import { isE164Phone, normalizePhone } from "./authAccountRepository";
 
 export type OwnerAdminLanguage = "ar" | "ku" | "en";
 
@@ -30,10 +31,6 @@ export class OwnerAdminProvisioningError extends Error {
     this.name = "OwnerAdminProvisioningError";
     this.code = code;
   }
-}
-
-function normalizePhone(value: unknown): string {
-  return String(value ?? "").replace(/\D/g, "");
 }
 
 function normalizeLanguage(value: unknown): OwnerAdminLanguage {
@@ -132,8 +129,8 @@ export async function provisionOwnerAdminPostgres(input: {
   if (!displayName || displayName.length > 200) {
     fail("OWNER_DISPLAY_NAME_INVALID", "owner display name is invalid");
   }
-  if (!/^07\d{9}$/.test(phone)) {
-    fail("INVALID_PHONE", "owner phone is invalid");
+  if (!isE164Phone(phone)) {
+    fail("INVALID_PHONE", "owner phone must use E.164 international format");
   }
 
   // Keep startup readiness free of password-service module side effects. The
