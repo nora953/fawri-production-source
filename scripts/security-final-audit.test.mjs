@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { findSensitiveText, parseAuditSeverityCounts, redactSensitiveText } from "./security-ci-lib.mjs";
 import {
   evaluateDependencyAudit,
+  isKnownTestFixtureCredentialUrl,
+  isKnownHistoricalScannerSelfTestCredentialUrl,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -122,7 +124,7 @@ test("repository policy requires protected workflows, immutable action pins, pnp
     for (const name of protectedNames) writeFileSync(path.join(workflowDir, name), "name: existing\n");
     const checkoutSha = "11d5960a326750d5838078e36cf38b85af677262";
     const safeWorkflow = `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n`;
-    const safeSecurityWorkflow = `${safeWorkflow}jobs:\n  dependency-review:\n    steps:\n      - run: node scripts/security-final-audit.mjs dependency-review \"$BASE_SHA\"\n      - run: pnpm install --frozen-lockfile --ignore-scripts\n      - run: node scripts/security-final-audit.mjs dependency\n`;
+    const safeSecurityWorkflow = `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n      fetch-depth: 0\n  - run: node scripts/security-final-audit.mjs history\njobs:\n  dependency-review:\n    steps:\n      - run: node scripts/security-final-audit.mjs dependency-review \"$BASE_SHA\"\n      - run: pnpm install --frozen-lockfile --ignore-scripts\n      - run: node scripts/security-final-audit.mjs dependency\n`;
     writeFileSync(path.join(workflowDir, "quality-gates.yml"), safeWorkflow);
     writeFileSync(path.join(workflowDir, "security-supply-chain.yml"), safeSecurityWorkflow);
     writeFileSync(path.join(root, "pnpm-workspace.yaml"), "autoInstallPeers: false\nminimumReleaseAge: 1440\n");
@@ -150,6 +152,101 @@ test("repository policy requires protected workflows, immutable action pins, pnp
     const missingLocalGate = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
     assert.equal(missingLocalGate.status, "fail");
     assert.ok(missingLocalGate.violations.some((item) => item.includes("local dependency-review gate")));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+
+test("history scanner fixture suppressions are narrowly scoped", () => {
+  const fixture = "postgresql://fixture_user:fixture-password@db.example/fawri_test";
+  assert.equal(
+    isKnownTestFixtureCredentialUrl(
+      fixture,
+      { rule: "credential-url", index: 0, length: fixture.length },
+      "scripts/tests/backup-postgresql.test.mjs",
+    ),
+    true,
+  );
+
+  const productionLike = [
+    "postgresql://prod_owner:",
+    "highEntropyCredentialValue",
+    "@db.internal.company/fawri",
+  ].join("");
+  const [finding] = findSensitiveText(productionLike, {
+    includePrivateData: false,
+    includeAssignments: false,
+  });
+  assert.ok(finding);
+  assert.equal(
+    isKnownTestFixtureCredentialUrl(
+      productionLike,
+      finding,
+      "scripts/tests/production-connectivity.test.mjs",
+    ),
+    false,
+  );
+  assert.equal(
+    isKnownHistoricalScannerSelfTestCredentialUrl(
+      productionLike,
+      finding,
+      "scripts/security-final-audit.test.mjs",
+    ),
+    true,
+  );
+  assert.equal(
+    isKnownHistoricalScannerSelfTestCredentialUrl(
+      productionLike,
+      finding,
+      "scripts/tests/production-connectivity.test.mjs",
+    ),
+    false,
+  );
+});
+
+test("repository policy requires history scan and full checkout", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "fawri-history-policy-"));
+  try {
+    const workflowDir = path.join(root, ".github", "workflows");
+    mkdirSync(workflowDir, { recursive: true });
+    const checkoutSha = "11d5960a326750d5838078e36cf38b85af677262";
+    const protectedNames = [
+      "postgresql-schema.yml",
+      "complete-migration-safety.yml",
+      "complete-schema-candidate.yml",
+      "browser-storage-audit.yml",
+      "merchant-access-security.yml",
+      "merchant-settings.yml",
+      "meta-webhook-pipeline.yml",
+      "order-operations.yml",
+      "postgresql-migration-candidate.yml",
+    ];
+    for (const name of protectedNames) {
+      writeFileSync(path.join(workflowDir, name), "name: existing\n");
+    }
+    writeFileSync(path.join(workflowDir, "quality-gates.yml"),
+      `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n`);
+    writeFileSync(path.join(workflowDir, "security-supply-chain.yml"),
+      `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n      fetch-depth: 0\n  - run: node scripts/security-final-audit.mjs history\njobs:\n  dependency-review:\n    steps:\n      - run: node scripts/security-final-audit.mjs dependency-review "$BASE_SHA"\n      - run: pnpm install --frozen-lockfile --ignore-scripts\n      - run: node scripts/security-final-audit.mjs dependency\n`);
+    writeFileSync(path.join(root, "pnpm-workspace.yaml"), "autoInstallPeers: false\nminimumReleaseAge: 1440\n");
+    writeFileSync(path.join(root, "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n");
+    writeFileSync(
+      path.join(root, "package.json"),
+      JSON.stringify({ scripts: { preinstall: "echo 'Use pnpm instead'" } }),
+    );
+    assert.equal(
+      validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]).status,
+      "pass",
+    );
+
+    const insecure = readFileSync(path.join(workflowDir, "security-supply-chain.yml"), "utf8")
+      .replace(/\n\s*fetch-depth:\s*0/, "")
+      .replace(/\n\s*- run: node scripts\/security-final-audit\.mjs history/, "");
+    writeFileSync(path.join(workflowDir, "security-supply-chain.yml"), insecure);
+    const report = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
+    assert.equal(report.status, "fail");
+    assert.ok(report.violations.some((item) => item.includes("full-history secret scan")));
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
