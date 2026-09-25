@@ -104,3 +104,29 @@ jobs:
 
       - name: Run full repository build with redaction guard
         run: node scripts/ci-run-redacted.mjs --label full-build -- pnpm -r --if-present run build
+
+
+  translation-structure-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install frozen dependencies without lifecycle scripts
+        run: node scripts/ci-run-redacted.mjs --label frozen-install -- pnpm install --frozen-lockfile --ignore-scripts
+
+      - name: Enforce Arabic, Sorani, and English translation structure
+        run: bash scripts/run-repository-translation-audits.sh
