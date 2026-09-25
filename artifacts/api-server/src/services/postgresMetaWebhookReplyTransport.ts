@@ -231,9 +231,26 @@ async function beginDelivery(input: {
   prepared: Extract<PreparedPostgresMetaAutoReply, { action: "send" }>;
   settingsVersion: number;
   now: Date;
-}): Promise<"send" | "sent" | "uncertain"> {
+}): Promise<"send" | "sent" | "uncertain" | "superseded"> {
   const { prepared } = input;
   return withMerchantOperationalTransaction(prepared.merchantId, async (client) => {
+    const conversation = await client.query<{ metadata: Record<string, unknown> | null }>(
+      `SELECT metadata
+         FROM conversations
+        WHERE merchant_id = $1 AND id = $2
+        FOR UPDATE`,
+      [prepared.merchantId, prepared.conversationId],
+    );
+    const latestCustomerMessageId = text(
+      conversation.rows[0]?.metadata?.latest_customer_message_id,
+    );
+    if (
+      !conversation.rows[0] ||
+      latestCustomerMessageId !== prepared.sourceCustomerMessageId
+    ) {
+      return "superseded";
+    }
+
     const current = await client.query<DeliveryRow>(
       `SELECT outcome::text AS outcome, provider_message_id, failure_code,
               attempted_at, finalized_at
@@ -479,6 +496,9 @@ export async function createPostgresMetaWebhookReplyTransport(input: {
           eventId: prepared.eventId,
         });
         return { status: "uncertain", code: "META_GRAPH_DELIVERY_UNCERTAIN" };
+      }
+      if (start === "superseded") {
+        return { status: "blocked", code: "CONVERSATION_CONTEXT_SUPERSEDED" };
       }
 
       state = {
