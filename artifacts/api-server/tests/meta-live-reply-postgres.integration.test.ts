@@ -84,7 +84,13 @@ async function seedMerchant(phone: string, suffix: string): Promise<Merchant> {
   return created;
 }
 
-function webhookBody(pageId: string, senderId: string, mid: string, message: string) {
+function webhookBody(
+  pageId: string,
+  senderId: string,
+  mid: string,
+  message: string,
+  timestamp = Date.now(),
+) {
   return {
     object: "page",
     entry: [
@@ -94,7 +100,7 @@ function webhookBody(pageId: string, senderId: string, mid: string, message: str
           {
             sender: { id: senderId },
             recipient: { id: pageId },
-            timestamp: Date.now(),
+            timestamp,
             message: { mid, text: message },
           },
         ],
@@ -110,6 +116,7 @@ async function enqueueReply(input: {
   eventId: string;
   mid: string;
   message?: string;
+  timestamp?: number;
 }) {
   return jobs.enqueueDurableJobAuthoritative({
     type: "meta.webhook.reply",
@@ -127,6 +134,7 @@ async function enqueueReply(input: {
         input.senderId,
         input.mid,
         input.message || "كم سعر التوصيل؟",
+        input.timestamp,
       ),
     },
   });
@@ -402,6 +410,84 @@ await test("manual takeover suppresses only that conversation before reservation
     [merchantA.account.id, manualConversationId, "mid-live-manual-1"],
   );
   assert.equal(customerMessage.rows[0].count, 1);
+});
+
+await test("a prepared reply is suppressed when a newer customer message supersedes its conversation context", async () => {
+  const timestamp = Date.parse("2026-09-25T00:00:00.000Z");
+  const senderId = "customer-live-race";
+  const queuedA = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId,
+    eventId: "event-live-race-a",
+    mid: "mid-live-race-a",
+    message: "كم سعر التوصيل؟",
+    timestamp,
+  });
+  const preparedA = await intents.preparePostgresMetaAutoReply(queuedA.job);
+  assert.equal(preparedA.action, "send");
+  if (preparedA.action !== "send") return;
+
+  // Pause A after decision/preparation. B arrives with the exact same provider
+  // timestamp; PostgreSQL serialization and server-owned latest-message identity
+  // must still make B supersede A deterministically.
+  const queuedB = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId,
+    eventId: "event-live-race-b",
+    mid: "mid-live-race-b",
+    message: "هل التوصيل غداً؟",
+    timestamp,
+  });
+  const preparedB = await intents.preparePostgresMetaAutoReply(queuedB.job);
+  assert.equal(preparedB.action, "send");
+  if (preparedB.action !== "send") return;
+
+  const latest = await raw(
+    `SELECT c.metadata->>'latest_customer_message_id' AS latest_customer_message_id,
+            m.id AS message_id
+       FROM conversations c
+       JOIN messages m
+         ON m.merchant_id = c.merchant_id
+        AND m.conversation_id = c.id
+        AND m.external_message_id = $3
+      WHERE c.merchant_id = $1
+        AND c.customer_external_id = $2
+      LIMIT 1`,
+    [merchantA.account.id, senderId, "mid-live-race-b"],
+  );
+  assert.equal(
+    latest.rows[0].latest_customer_message_id,
+    latest.rows[0].message_id,
+  );
+
+  let sends = 0;
+  const transportA = await liveTransport.createPostgresMetaWebhookReplyTransport({
+    prepared: preparedA,
+    sendText: async () => {
+      sends += 1;
+      throw new Error("superseded reply A must never reach provider transport");
+    },
+  });
+  const resultA = await workerCore.processMetaReplyJob(queuedA.job, {
+    transport: transportA,
+  });
+
+  assert.equal(resultA.delivery_status, "suppressed");
+  assert.equal(resultA.suppression_code, "CONVERSATION_CONTEXT_SUPERSEDED");
+  assert.equal(sends, 0);
+
+  const ledger = await raw(
+    `SELECT
+       count(*) FILTER (WHERE direction = 'debit')::int AS debits,
+       count(*) FILTER (WHERE direction = 'credit')::int AS credits
+       FROM reply_ledger
+      WHERE merchant_id = $1 AND external_event_id = $2`,
+    [merchantA.account.id, "event-live-race-a"],
+  );
+  assert.equal(ledger.rows[0].debits, 1);
+  assert.equal(ledger.rows[0].credits, 1);
 });
 
 test.after(async () => {
