@@ -13,7 +13,8 @@ export type MerchantReplyReleaseCode =
   | "MERCHANT_APPROVAL_REQUIRED"
   | "MERCHANT_REJECTED"
   | "MERCHANT_SUSPENDED"
-  | "MERCHANT_ACCESS_STATE_UNAVAILABLE";
+  | "MERCHANT_ACCESS_STATE_UNAVAILABLE"
+  | "CONVERSATION_CONTEXT_SUPERSEDED";
 
 function postgresReleaseRestore(reasonCode: MerchantReplyReleaseCode) {
   // PostgreSQL persists reply-ledger reason_code as text. Keep the authoritative
