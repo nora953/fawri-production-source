@@ -6,6 +6,7 @@ import test from "node:test";
 import { findSensitiveText, parseAuditSeverityCounts, redactSensitiveText } from "./security-ci-lib.mjs";
 import {
   evaluateDependencyAudit,
+  isKnownTestFixtureCredentialUrl,
   evaluateDependencyChange,
   validateRepositoryPolicy,
 } from "./security-final-audit.mjs";
@@ -122,7 +123,7 @@ test("repository policy requires protected workflows, immutable action pins, pnp
     for (const name of protectedNames) writeFileSync(path.join(workflowDir, name), "name: existing\n");
     const checkoutSha = "11d5960a326750d5838078e36cf38b85af677262";
     const safeWorkflow = `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n`;
-    const safeSecurityWorkflow = `${safeWorkflow}jobs:\n  dependency-review:\n    steps:\n      - run: node scripts/security-final-audit.mjs dependency-review \"$BASE_SHA\"\n      - run: pnpm install --frozen-lockfile --ignore-scripts\n      - run: node scripts/security-final-audit.mjs dependency\n`;
+    const safeSecurityWorkflow = `permissions:\n  contents: read\nsteps:\n  - uses: actions/checkout@${checkoutSha}\n    with:\n      persist-credentials: false\n      fetch-depth: 0\n  - run: node scripts/security-final-audit.mjs history\njobs:\n  dependency-review:\n    steps:\n      - run: node scripts/security-final-audit.mjs dependency-review \"$BASE_SHA\"\n      - run: pnpm install --frozen-lockfile --ignore-scripts\n      - run: node scripts/security-final-audit.mjs dependency\n`;
     writeFileSync(path.join(workflowDir, "quality-gates.yml"), safeWorkflow);
     writeFileSync(path.join(workflowDir, "security-supply-chain.yml"), safeSecurityWorkflow);
     writeFileSync(path.join(root, "pnpm-workspace.yaml"), "autoInstallPeers: false\nminimumReleaseAge: 1440\n");
@@ -153,4 +154,68 @@ test("repository policy requires protected workflows, immutable action pins, pnp
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+
+test("security workflow requires a full-history secret scan", () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), "fawri-history-policy-"));
+  try {
+    const workflowDir = path.join(root, ".github", "workflows");
+    mkdirSync(workflowDir, { recursive: true });
+    const checkoutSha = "11d5960a326750d5838078e36cf38b85af677262";
+    const content = `permissions:
+  contents: read
+jobs:
+  repository-security:
+    steps:
+      - uses: actions/checkout@${checkoutSha}
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - run: node scripts/security-final-audit.mjs history
+`;
+    writeFileSync(path.join(workflowDir, "security-supply-chain.yml"), content);
+    assert.match(content, /fetch-depth:\s*0/);
+    assert.match(content, /security-final-audit\.mjs history/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+
+test("historical credential URL suppression is limited to obvious test fixtures", () => {
+  const fixture = "postgresql://fixture_user:fixture-password@db.example/fawri_test";
+  const fixtureFinding = { rule: "credential-url", index: 0, length: fixture.length };
+  assert.equal(
+    isKnownTestFixtureCredentialUrl(
+      fixture,
+      fixtureFinding,
+      "scripts/tests/backup-postgresql.test.mjs",
+    ),
+    true,
+  );
+
+  const nonTestPath = "postgresql://fixture_user:fixture-password@db.example/fawri";
+  assert.equal(
+    isKnownTestFixtureCredentialUrl(
+      nonTestPath,
+      { rule: "credential-url", index: 0, length: nonTestPath.length },
+      "scripts/deploy-production.mjs",
+    ),
+    false,
+  );
+
+  const productionLike = [
+    "postgresql://prod_owner:",
+    "highEntropyCredentialValue",
+    "@db.internal.company/fawri",
+  ].join("");
+  assert.equal(
+    isKnownTestFixtureCredentialUrl(
+      productionLike,
+      { rule: "credential-url", index: 0, length: productionLike.length },
+      "scripts/tests/production-connectivity.test.mjs",
+    ),
+    false,
+  );
 });
