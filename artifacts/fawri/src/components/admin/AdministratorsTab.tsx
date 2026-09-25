@@ -20,6 +20,10 @@ import {
 } from "lucide-react";
 
 import { getAdminAuthHeaders } from "@/lib/store";
+import {
+  normalizeInternationalPhoneInput,
+  validateInternationalPhone,
+} from "@/lib/internationalPhone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -184,16 +188,6 @@ function formatDate(value: string, language: SupportedLanguage): string {
   }).format(date);
 }
 
-function normalizePhoneInput(value: string): string {
-  const arabicDigits = "٠١٢٣٤٥٦٧٨٩";
-  const persianDigits = "۰۱۲۳۴۵۶۷۸۹";
-
-  return value
-    .replace(/[٠-٩]/g, (digit) => String(arabicDigits.indexOf(digit)))
-    .replace(/[۰-۹]/g, (digit) => String(persianDigits.indexOf(digit)))
-    .replace(/\D/g, "")
-    .slice(0, 11);
-}
 
 function isValidAdminPassword(value: string): boolean {
   return (
@@ -419,7 +413,7 @@ export default function AdministratorsTab({
     if (isCreating) return;
 
     const ownerName = form.ownerName.trim();
-    const phone = normalizePhoneInput(form.phone);
+    const phone = normalizeInternationalPhoneInput(form.phone);
     const password = form.password;
 
     setFormError("");
@@ -434,7 +428,7 @@ export default function AdministratorsTab({
       return;
     }
 
-    if (!/^07\d{9}$/.test(phone)) {
+    if (!validateInternationalPhone(form.phone)) {
       setFormError(t.phoneInvalid);
       return;
     }
@@ -1032,7 +1026,7 @@ export default function AdministratorsTab({
                 onChange={(event) => {
                   setForm((current) => ({
                     ...current,
-                    phone: normalizePhoneInput(event.target.value),
+                    phone: event.target.value,
                   }));
                   setFormError("");
                 }}
