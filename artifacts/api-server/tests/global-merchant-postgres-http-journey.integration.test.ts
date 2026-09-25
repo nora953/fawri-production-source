@@ -29,7 +29,7 @@ function suffix(): string {
 }
 
 function randomPhone(): string {
-  return `07${String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0")}`;
+  return `+9647${String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0")}`;
 }
 
 async function json(response: Response): Promise<any> {
