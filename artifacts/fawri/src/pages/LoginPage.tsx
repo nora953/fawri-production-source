@@ -16,7 +16,6 @@ import {
   secureMerchantLogout,
 } from '@/lib/authClientCutover';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Label } from '@/components/ui/label';
