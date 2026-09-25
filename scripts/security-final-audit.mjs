@@ -338,6 +338,7 @@ function scanRepository(root) {
     }
     scanned += 1;
     for (const finding of findSensitiveText(text, { includePrivateData: false, includeAssignments: false })) {
+      if (isKnownTestFixtureCredentialUrl(text, finding, file)) continue;
       const line = text.slice(0, finding.index).split("\n").length;
       findings.push({ file, line, rule: finding.rule });
     }
