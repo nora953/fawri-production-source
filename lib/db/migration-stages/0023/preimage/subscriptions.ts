@@ -98,7 +98,7 @@ export const subscriptions = pgTable(
     ),
     versionCheck: check("subscriptions_version_check", sql`${table.version} > 0`),
   }),
-).enableRLS();
+);
 
 export const subscriptionReplyBatches = pgTable(
   "subscription_reply_batches",
@@ -148,7 +148,7 @@ export const subscriptionReplyBatches = pgTable(
       sql`${table.expiresAt} > ${table.purchasedAt}`,
     ),
   }),
-).enableRLS();
+);
 
 export const replyLedger = pgTable(
   "reply_ledger",
@@ -205,7 +205,7 @@ export const replyLedger = pgTable(
       sql`${table.balanceAfter} IS NULL OR ${table.balanceAfter} >= 0`,
     ),
   }),
-).enableRLS();
+);
 
 export type Subscription = typeof subscriptions.$inferSelect;
 export type NewSubscription = typeof subscriptions.$inferInsert;

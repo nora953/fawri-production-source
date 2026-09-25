@@ -120,7 +120,7 @@ export const products = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-).enableRLS();
+);
 
 export const productVariants = pgTable(
   "product_variants",
@@ -221,7 +221,7 @@ export const productVariants = pgTable(
       sql`${table.updatedAt} >= ${table.createdAt}`,
     ),
   }),
-).enableRLS();
+);
 
 export const catalogVariantOptions = pgTable(
   "catalog_variant_options",
@@ -262,7 +262,7 @@ export const catalogVariantOptions = pgTable(
       sql`char_length(${table.normalizedOptionName}) > 0 AND char_length(${table.normalizedOptionValue}) > 0`,
     ),
   }),
-).enableRLS();
+);
 
 export const catalogIdentifiers = pgTable(
   "catalog_identifiers",
@@ -308,7 +308,7 @@ export const catalogIdentifiers = pgTable(
       sql`char_length(${table.normalizedValue}) > 0 AND char_length(${table.displayValue}) > 0`,
     ),
   }),
-).enableRLS();
+);
 
 export const catalogImageReferences = pgTable(
   "catalog_image_references",
@@ -359,7 +359,7 @@ export const catalogImageReferences = pgTable(
       sql`${table.ordinal} >= 0`,
     ),
   }),
-).enableRLS();
+);
 
 export const catalogIdempotencyKeys = pgTable(
   "catalog_idempotency_keys",
@@ -401,7 +401,7 @@ export const catalogIdempotencyKeys = pgTable(
       sql`${table.resultVersion} IS NULL OR ${table.resultVersion} > 0`,
     ),
   }),
-).enableRLS();
+);
 
 export const inventoryMutations = pgTable(
   "inventory_mutations",
@@ -473,7 +473,7 @@ export const inventoryMutations = pgTable(
       sql`char_length(${table.idempotencyKeyHash}) BETWEEN 32 AND 128 AND char_length(${table.requestHash}) BETWEEN 32 AND 128`,
     ),
   }),
-).enableRLS();
+);
 
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
