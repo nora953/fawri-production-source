@@ -119,6 +119,15 @@ export default function OTPPage() {
         <p className="mb-6 text-muted-foreground">{t.otp_subtitle}</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col items-center space-y-6">
+          {signupChallenge?.devCode && (
+            <div className="w-full rounded-xl border bg-muted/40 px-4 py-3 text-center text-sm">
+              <span className="text-muted-foreground">{t.forgot_dev_code}:{' '}</span>
+              <strong dir="ltr" className="font-mono text-base tracking-widest text-foreground">
+                {signupChallenge.devCode}
+              </strong>
+            </div>
+          )}
+
           <InputOTP
             maxLength={6}
             value={value}
@@ -152,6 +161,7 @@ export default function OTPPage() {
                   purpose: 'signup',
                   expiresAt: resentChallenge.expiresAt,
                   retryAfterSeconds: resentChallenge.retryAfterSeconds,
+                  devCode: resentChallenge.devCode,
                 });
 
                 if (!replacement) {

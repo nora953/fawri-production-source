@@ -3,12 +3,56 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { stripTypeScriptTypes } from "node:module";
 
 const fawriRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 async function source(relativePath) {
   return readFile(path.join(fawriRoot, relativePath), "utf8");
 }
+
+test("preview signup test code survives reload and resend replaces or clears it", async () => {
+  const helper = stripTypeScriptTypes(await source("src/lib/authOtpChallenge.ts"));
+  const context = await import(`data:text/javascript;base64,${Buffer.from(helper).toString("base64")}`);
+  const values = new Map();
+  const previousWindow = globalThis.window;
+  globalThis.window = { sessionStorage: {
+    setItem: (key, value) => values.set(key, value),
+    getItem: (key) => values.get(key) ?? null,
+    removeItem: (key) => values.delete(key),
+  } };
+  try {
+    const input = { challengeId: "signup-1", phone: "+9647700000000", purpose: "signup",
+      expiresAt: new Date(Date.now() + 60_000).toISOString(), devCode: "012345" };
+    context.savePendingSignupChallenge(context.createOtpChallengeContext(input));
+    assert.equal(context.readPendingSignupChallenge().devCode, "012345");
+    for (const devCode of ["654321", undefined, "invalid", "12345", "1234567"]) {
+      const replacement = context.createOtpChallengeContext({ ...input, challengeId: "signup-2", devCode });
+      context.savePendingSignupChallenge(replacement);
+      const restored = context.readPendingSignupChallenge();
+      assert.equal(restored.challengeId, "signup-2");
+      assert.equal(restored.devCode, devCode === "654321" ? devCode : undefined);
+      assert.doesNotMatch([...values.values()][0], /012345/);
+    }
+    context.savePendingSignupChallenge(context.createOtpChallengeContext({ ...input, expiresAt: "2000-01-01" }));
+    assert.equal(context.readPendingSignupChallenge(), null);
+    assert.equal(values.size, 0);
+  } finally {
+    if (previousWindow === undefined) delete globalThis.window;
+    else globalThis.window = previousWindow;
+  }
+});
+
+test("signup and resend wire the optional server test code into the labelled OTP UI", async () => {
+  const signup = await source("src/pages/SignupPage.tsx");
+  const otp = await source("src/pages/OTPPage.tsx");
+  assert.match(signup, /devCode:\s*result\.devCode/);
+  assert.match(otp, /devCode:\s*resentChallenge\.devCode/);
+  assert.match(otp, /signupChallenge\?\.devCode && \(/);
+  assert.match(otp, /t\.forgot_dev_code/);
+  assert.match(otp, /\{signupChallenge\.devCode\}/);
+  assert.doesNotMatch(otp, /setValue\([^)]*devCode/);
+});
 
 test("signup challenge reaches OTP verification without a phone-only fallback", async () => {
   const signup = await source("src/pages/SignupPage.tsx");
@@ -63,7 +107,7 @@ test("password recovery retains and confirms the authoritative challenge", async
   assert.match(modal, /recoveryChallengeExpired\(recoveryChallenge\)/);
 });
 
-test("pending signup persistence is scoped and never persists an OTP code", async () => {
+test("pending signup persistence is session scoped and never stores entered OTP values", async () => {
   const helper = await source("src/lib/authOtpChallenge.ts");
   const signup = await source("src/pages/SignupPage.tsx");
   const otp = await source("src/pages/OTPPage.tsx");
@@ -71,7 +115,7 @@ test("pending signup persistence is scoped and never persists an OTP code", asyn
   assert.match(helper, /window\.sessionStorage\.setItem/);
   assert.match(helper, /fawri_signup_otp_challenge_v2/);
   assert.doesNotMatch(helper, /localStorage/);
-  assert.doesNotMatch(helper, /\bcode\b/);
-  assert.doesNotMatch(signup, /devCode/);
+  assert.doesNotMatch(helper, /input\.code|parsed\.code/);
+  assert.match(signup, /devCode:\s*result\.devCode/);
   assert.doesNotMatch(otp, /sessionStorage\.setItem\([^\n]*code/i);
 });

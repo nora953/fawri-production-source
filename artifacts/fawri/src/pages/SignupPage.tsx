@@ -285,6 +285,7 @@ export default function SignupPage() {
         purpose: 'signup',
         expiresAt: result.expires_at,
         retryAfterSeconds: result.retry_after_seconds,
+        devCode: result.devCode,
       });
 
       if (!challenge) {

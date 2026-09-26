@@ -6,6 +6,7 @@ export type OtpChallengeContext = {
   purpose: OtpChallengePurpose;
   expiresAt: string;
   retryAfterSeconds: number;
+  devCode?: string;
 };
 
 const SIGNUP_CHALLENGE_STORAGE_KEY = 'fawri_signup_otp_challenge_v2';
@@ -22,6 +23,7 @@ export function createOtpChallengeContext(input: {
   purpose: OtpChallengePurpose;
   expiresAt?: unknown;
   retryAfterSeconds?: unknown;
+  devCode?: unknown;
 }): OtpChallengeContext | null {
   const challengeId = String(input.challengeId || '').trim();
   const phone = String(input.phone || '').trim();
@@ -29,12 +31,16 @@ export function createOtpChallengeContext(input: {
 
   if (!challengeId || !phone) return null;
 
+  // Only the non-production API may supply this optional test code.
+  const devCode = String(input.devCode || '').trim();
+
   return {
     challengeId,
     phone,
     purpose: input.purpose,
     expiresAt,
     retryAfterSeconds: clampSeconds(input.retryAfterSeconds),
+    ...(/^\d{6}$/.test(devCode) ? { devCode } : {}),
   };
 }
 
@@ -69,6 +75,7 @@ export function readPendingSignupChallenge(): OtpChallengeContext | null {
       purpose: 'signup',
       expiresAt: parsed.expiresAt,
       retryAfterSeconds: parsed.retryAfterSeconds,
+      devCode: parsed.devCode,
     });
 
     if (!challenge || isOtpChallengeExpired(challenge)) {
