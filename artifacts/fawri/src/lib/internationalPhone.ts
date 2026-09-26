@@ -42,6 +42,23 @@ export function normalizeInternationalPhoneInput(
   return prefix + nationalSignificantNumber;
 }
 
+export function limitInternationalPhoneInput(value: string): string {
+  const normalizedInput = asciiDigits(value);
+  const digits = normalizedInput.replace(/\D/g, '');
+
+  if (digits.length <= 15) return normalizedInput;
+
+  let remaining = 15;
+  return Array.from(normalizedInput)
+    .filter(char => {
+      if (!/\d/.test(char)) return true;
+      if (remaining <= 0) return false;
+      remaining -= 1;
+      return true;
+    })
+    .join('');
+}
+
 export function validateInternationalPhone(
   value: string,
   callingCode?: string,
