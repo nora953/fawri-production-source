@@ -49,6 +49,10 @@ export default function SignupPage() {
   const fieldHeaderClass = "flex min-h-5 items-center justify-between gap-3";
   const fieldInputClass = "h-12 rounded-xl";
   const fieldInvalidInputClass = "border-red-500 focus-visible:ring-red-500";
+  const signupSelectClass = `${fieldInputClass} w-full appearance-none border border-input bg-background bg-[length:14px_14px] bg-no-repeat text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring rtl:bg-[position:left_0.65rem_center] rtl:pl-8 rtl:pr-3 rtl:text-right ltr:bg-[position:right_0.65rem_center] ltr:pl-3 ltr:pr-8 ltr:text-left`;
+  const signupSelectChevronStyle = {
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+  };
   const [, setLocation] = useLocation();
   const requestedPlan = getRequestedPlanFromSearch(
     typeof window === 'undefined' ? '' : window.location.search,
@@ -367,7 +371,7 @@ export default function SignupPage() {
                 value={formData.activity_type}
                 onValueChange={(val) => setFormData(prev => ({ ...prev, activity_type: val, custom_activity: '' }))}
               >
-                <SelectTrigger className={fieldInputClass} data-testid="select-activity">
+                <SelectTrigger className={`${signupSelectClass} !h-12 [&>svg]:hidden`} style={signupSelectChevronStyle} data-testid="select-activity">
                   <SelectValue placeholder="-" />
                 </SelectTrigger>
                 <SelectContent>
@@ -401,7 +405,8 @@ export default function SignupPage() {
                 id="currency_code"
                 value={formData.currency_code}
                 onChange={event => setFormData(prev => ({ ...prev, currency_code: event.target.value }))}
-                className={`${fieldInputClass} w-full border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring`}
+                className={signupSelectClass}
+                style={signupSelectChevronStyle}
                 data-testid="select-currency"
               >
                 <option value="">-</option>
