@@ -63,7 +63,7 @@ export default function InternationalPhoneField({
     || MERCHANT_REGION_OPTIONS[0];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2" data-fawri-international-phone="true">
+    <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" data-fawri-international-phone="true">
       <div className="space-y-2">
         <label htmlFor={countryTestId} className="block text-sm font-medium leading-5">
           {countryLabel}
@@ -117,7 +117,11 @@ export default function InternationalPhoneField({
             onBlur={onPhoneBlur}
             placeholder={phonePlaceholder}
             aria-invalid={!!phoneError}
-            className="h-full flex-1 rounded-none border-0 shadow-none focus-visible:ring-0"
+            className={`h-full min-w-0 flex-1 rounded-none border-0 shadow-none focus-visible:ring-0 ${
+              phoneInput.replace(/\\D/g, '').length >= 13
+                ? 'text-xs tracking-tight'
+                : 'text-sm'
+            }`}
             data-testid={phoneTestId}
           />
         </div>
