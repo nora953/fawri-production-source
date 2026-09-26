@@ -306,7 +306,7 @@ export default function LoginPage() {
   return (
     <>
       <div className="flex min-h-[100dvh] items-center justify-center bg-muted/30 p-4" dir={isRTL ? 'rtl' : 'ltr'}>
-        <div className="w-full max-w-md rounded-3xl border bg-card p-8 shadow-xl md:translate-y-3">
+        <div className="w-full max-w-md rounded-3xl border bg-card p-8 shadow-xl">
           <div className="mb-8 flex flex-col items-center text-center">
             <Link href="/" className="mb-4 inline-block text-3xl font-extrabold leading-none tracking-tight text-primary fowri-header-brand-font">
               {commonCopy.brandName}
