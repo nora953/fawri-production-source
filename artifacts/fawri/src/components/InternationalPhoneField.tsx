@@ -21,6 +21,16 @@ type InternationalPhoneFieldProps = {
   phoneTestId?: string;
 };
 
+const LTR_ISOLATE = '\u2066';
+const POP_DIRECTIONAL_ISOLATE = '\u2069';
+
+export function formatCountryOptionLabel(
+  countryName: string,
+  callingCode: string,
+): string {
+  return `${countryName} (${LTR_ISOLATE}${callingCode}${POP_DIRECTIONAL_ISOLATE})`;
+}
+
 function countryDisplayNames(lang: Lang): Intl.DisplayNames | null {
   try {
     return new Intl.DisplayNames([lang], { type: 'region' });
@@ -65,11 +75,18 @@ export default function InternationalPhoneField({
           className="h-12 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring"
           data-testid={countryTestId}
         >
-          {MERCHANT_REGION_OPTIONS.map(option => (
-            <option key={option.countryCode} value={option.countryCode}>
-              {displayNames?.of(option.countryCode) || option.countryCode} ({option.callingCode})
-            </option>
-          ))}
+          {MERCHANT_REGION_OPTIONS.map(option => {
+            const countryName = displayNames?.of(option.countryCode) || option.countryCode;
+            return (
+              <option
+                key={option.countryCode}
+                value={option.countryCode}
+                data-fawri-preserve-digits="true"
+              >
+                {formatCountryOptionLabel(countryName, option.callingCode)}
+              </option>
+            );
+          })}
         </select>
       </div>
 
