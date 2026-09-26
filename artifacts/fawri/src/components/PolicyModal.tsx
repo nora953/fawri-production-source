@@ -46,10 +46,11 @@ export function PolicyModal({
       <DialogContent
         className="fowri-policy-dialog flex max-h-[88vh] w-[calc(100vw-1.5rem)] max-w-3xl flex-col overflow-hidden rounded-[1.75rem] border bg-background p-0 shadow-2xl sm:w-full"
         dir={isRTL ? 'rtl' : 'ltr'}
+        closeButtonClassName={isRTL ? 'left-4 right-auto' : 'left-auto right-4'}
       >
         <DialogHeader className="fowri-policy-modal-header shrink-0 border-b bg-muted/25 px-5 pb-4 pt-5 sm:px-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0">
+          <div className="flex flex-col gap-4">
+            <div className="min-w-0 text-start">
               <DialogTitle className="text-2xl font-extrabold leading-tight text-foreground">
                 {policyTab === 'privacy'
                   ? t.privacy_title
@@ -61,7 +62,7 @@ export function PolicyModal({
               </p>
             </div>
 
-            <div className="inline-flex shrink-0 rounded-full border bg-background p-1 shadow-sm">
+            <div className="inline-flex shrink-0 self-start rounded-full border bg-background p-1 shadow-sm">
               <button
                 type="button"
                 onClick={() => setPolicyTab('privacy')}
@@ -99,14 +100,6 @@ export function PolicyModal({
           </div>
         </div>
 
-        <div className="shrink-0 border-t bg-background px-5 py-4 sm:px-6">
-          <Button
-            onClick={() => onOpenChange(false)}
-            className="h-12 w-full rounded-2xl text-base font-extrabold shadow-sm"
-          >
-            {t.close}
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   );
