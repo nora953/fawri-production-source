@@ -117,7 +117,13 @@ export default function InternationalPhoneField({
             onBlur={onPhoneBlur}
             placeholder={phonePlaceholder}
             aria-invalid={!!phoneError}
-            className="h-full flex-1 rounded-none border-0 shadow-none focus-visible:ring-0"
+            className={`h-full min-w-0 flex-1 rounded-none border-0 shadow-none focus-visible:ring-0 ${
+              phoneInput.replace(/\\D/g, '').length >= 16
+                ? 'text-[11px] tracking-tight'
+                : phoneInput.replace(/\\D/g, '').length >= 13
+                  ? 'text-xs tracking-tight'
+                  : 'text-sm'
+            }`}
             data-testid={phoneTestId}
           />
         </div>
