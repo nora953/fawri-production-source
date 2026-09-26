@@ -157,6 +157,20 @@ export default function SignupPage() {
     return password === confirmPassword ? "" : t.signup_confirm_password_mismatch;
   };
 
+  const isFormReady =
+    !!formData.owner_name.trim() &&
+    !!formData.store_name.trim() &&
+    !!formData.country_code &&
+    validateInternationalPhone(formData.phone, selectedRegion?.callingCode) &&
+    !!formData.currency_code &&
+    !!formData.activity_type &&
+    (!isOther || !!formData.custom_activity.trim()) &&
+    validatePassword(formData.password) &&
+    formData.password === formData.confirm_password &&
+    !!formData.confirm_password &&
+    formData.agree_terms &&
+    formData.confirm_legal;
+
   const getSignupServerErrorMessage = (serverError?: string) => {
     const message = String(serverError || "");
     if (message.includes("مسجل") || message.toLowerCase().includes("already")) {
@@ -500,7 +514,13 @@ export default function SignupPage() {
             </div>
           </div>
 
-          <Button type="submit" className="w-full h-12 rounded-xl text-base font-bold mt-8" disabled={loading} data-testid="button-create-account">
+          <Button
+            type="submit"
+            className="w-full h-12 rounded-xl text-base font-bold mt-8 disabled:opacity-40 disabled:cursor-not-allowed"
+            disabled={loading || !isFormReady}
+            aria-disabled={loading || !isFormReady}
+            data-testid="button-create-account"
+          >
             {loading ? '...' : t.create_account}
           </Button>
 
