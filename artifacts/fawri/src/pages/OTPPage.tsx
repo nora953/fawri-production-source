@@ -122,7 +122,7 @@ export default function OTPPage() {
           {signupChallenge?.devCode && (
             <div className="w-full rounded-xl border bg-muted/40 px-4 py-3 text-center text-sm">
               <span className="text-muted-foreground">{t.forgot_dev_code}:{' '}</span>
-              <strong dir="ltr" className="font-mono text-base tracking-widest text-foreground">
+              <strong dir="ltr" data-fawri-preserve-digits="true" className="inline-block font-mono text-base tracking-widest text-foreground">
                 {signupChallenge.devCode}
               </strong>
             </div>

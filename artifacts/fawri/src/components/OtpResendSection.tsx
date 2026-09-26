@@ -197,7 +197,7 @@ export default function OtpResendSection({
       {retryAfterSeconds > 0 ? (
         <p className="mt-1 text-xs text-muted-foreground">
           {t.otp_resend_wait}{' '}
-          <span dir="ltr" className="font-bold tabular-nums text-foreground">
+          <span dir="ltr" data-fawri-preserve-digits="true" className="inline-block font-bold tabular-nums text-foreground">
             {formatCountdown(retryAfterSeconds)}
           </span>
         </p>

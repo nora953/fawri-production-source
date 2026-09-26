@@ -329,7 +329,7 @@ export default function LoginPage() {
                   <span className="text-muted-foreground">
                     {securityText.previewOtpLabel}:{' '}
                   </span>
-                  <strong dir="ltr" className="font-mono text-base tracking-widest text-foreground">
+                  <strong dir="ltr" data-fawri-preserve-digits="true" className="inline-block font-mono text-base tracking-widest text-foreground">
                     {ownerDeviceChallenge.devCode}
                   </strong>
                 </div>

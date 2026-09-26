@@ -5,6 +5,10 @@ on:
     paths:
       - "artifacts/fawri/src/pages/SignupPage.tsx"
       - "artifacts/fawri/src/pages/OTPPage.tsx"
+      - "artifacts/fawri/src/pages/LoginPage.tsx"
+      - "artifacts/fawri/src/pages/OwnerRecoveryPage.tsx"
+      - "artifacts/fawri/src/components/ui/input-otp.tsx"
+      - "artifacts/fawri/src/lib/i18n.tsx"
       - "artifacts/fawri/src/components/OtpResendSection.tsx"
       - "artifacts/fawri/src/components/ForgotPasswordModal.tsx"
       - "artifacts/fawri/src/lib/authOtpChallenge.ts"
