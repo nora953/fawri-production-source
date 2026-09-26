@@ -371,7 +371,7 @@ export default function SignupPage() {
                 value={formData.activity_type}
                 onValueChange={(val) => setFormData(prev => ({ ...prev, activity_type: val, custom_activity: '' }))}
               >
-                <SelectTrigger className={`${signupSelectClass} [&>svg]:hidden`} style={signupSelectChevronStyle} data-testid="select-activity">
+                <SelectTrigger className={`${signupSelectClass} !h-12 [&>svg]:hidden`} style={signupSelectChevronStyle} data-testid="select-activity">
                   <SelectValue placeholder="-" />
                 </SelectTrigger>
                 <SelectContent>
