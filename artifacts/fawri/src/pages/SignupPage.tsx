@@ -360,6 +360,7 @@ export default function SignupPage() {
                 onPhoneInputChange={handlePhoneChange}
                 onPhoneBlur={handlePhoneBlur}
                 phoneError={phoneInlineError}
+                equalColumns
               />
             </div>
 
@@ -522,7 +523,7 @@ export default function SignupPage() {
 
           <Button
             type="submit"
-            className="w-full h-12 rounded-xl text-base font-bold mt-8 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full md:w-[calc((100%-1.5rem)/2)] h-12 rounded-xl text-base font-bold mt-8 disabled:opacity-40 disabled:cursor-not-allowed"
             disabled={loading || !isFormReady}
             aria-disabled={loading || !isFormReady}
             data-testid="button-create-account"

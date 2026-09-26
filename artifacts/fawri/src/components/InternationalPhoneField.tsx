@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Input } from '@/components/ui/input';
+import { limitInternationalPhoneInput } from '@/lib/internationalPhone';
 import {
   MERCHANT_REGION_BY_COUNTRY,
   MERCHANT_REGION_OPTIONS,
@@ -19,6 +20,7 @@ type InternationalPhoneFieldProps = {
   phoneError?: string;
   countryTestId?: string;
   phoneTestId?: string;
+  equalColumns?: boolean;
 };
 
 const LTR_ISOLATE = '\u2066';
@@ -56,6 +58,7 @@ export default function InternationalPhoneField({
   phoneError,
   countryTestId = 'select-country',
   phoneTestId = 'input-phone',
+  equalColumns = false,
 }: InternationalPhoneFieldProps) {
   const displayNames = useMemo(() => countryDisplayNames(lang), [lang]);
   const selected = MERCHANT_REGION_BY_COUNTRY.get(countryCode)
@@ -63,7 +66,14 @@ export default function InternationalPhoneField({
     || MERCHANT_REGION_OPTIONS[0];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" data-fawri-international-phone="true">
+    <div
+      className={`grid gap-4 ${
+        equalColumns
+          ? 'sm:grid-cols-2'
+          : 'sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]'
+      }`}
+      data-fawri-international-phone="true"
+    >
       <div className="space-y-2">
         <label htmlFor={countryTestId} className="block text-sm font-medium leading-5">
           {countryLabel}
@@ -116,7 +126,11 @@ export default function InternationalPhoneField({
             inputMode="tel"
             autoComplete="tel-national"
             value={phoneInput}
-            onChange={event => onPhoneInputChange(event.target.value)}
+            onChange={event =>
+              onPhoneInputChange(
+                limitInternationalPhoneInput(event.target.value),
+              )
+            }
             onBlur={onPhoneBlur}
             placeholder={phonePlaceholder}
             aria-invalid={!!phoneError}

@@ -25,3 +25,8 @@ test('long national numbers use one readable compact text step without the old 1
   assert.doesNotMatch(source, /length >= 16/);
   assert.doesNotMatch(source, /text-\[11px\]/);
 });
+
+test('signup can request equal country and phone columns without changing login default', () => {
+  assert.match(source, /equalColumns\?: boolean/);
+  assert.match(source, /equalColumns\s*\? 'sm:grid-cols-2'/);
+});
