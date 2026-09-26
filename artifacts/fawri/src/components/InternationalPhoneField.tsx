@@ -63,7 +63,7 @@ export default function InternationalPhoneField({
     || MERCHANT_REGION_OPTIONS[0];
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2" data-fawri-international-phone="true">
+    <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]" data-fawri-international-phone="true">
       <div className="space-y-2">
         <label htmlFor={countryTestId} className="block text-sm font-medium leading-5">
           {countryLabel}
