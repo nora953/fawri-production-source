@@ -15,8 +15,7 @@
     "test:catalog-sorani-product-golden": "node --test ./tests/catalog-sorani-product-golden-reference.test.mjs",
     "test:catalog-sorani-service-golden": "node --test ./tests/catalog-sorani-service-parity.test.mjs",
     "test:catalog-edit-mode-lock": "node --test ./tests/catalog-editor-edit-mode-lock.test.mjs",
-    "test:catalog-golden": "pnpm run test:catalog-arabic-golden && pnpm run test:catalog-english-service-golden && pnpm run test:catalog-sorani-product-golden && pnpm run test:catalog-sorani-service-golden && pnpm run test:catalog-edit-mode-lock",
-    "test:international-phone-ui": "node --test ./tests/international-phone-country-option-contract.test.mjs"
+    "test:catalog-golden": "pnpm run test:catalog-arabic-golden && pnpm run test:catalog-english-service-golden && pnpm run test:catalog-sorani-product-golden && pnpm run test:catalog-sorani-service-golden && pnpm run test:catalog-edit-mode-lock"
   },
   "devDependencies": {
     "@hookform/resolvers": "^3.10.0",
