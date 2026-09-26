@@ -72,8 +72,11 @@ export default function InternationalPhoneField({
           id={countryTestId}
           value={countryCode}
           onChange={event => onCountryChange(event.target.value)}
-          className="h-12 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring"
+          className="h-12 w-full appearance-none rounded-xl border border-input bg-background bg-[length:14px_14px] bg-no-repeat text-sm shadow-sm outline-none focus:ring-2 focus:ring-ring rtl:bg-[position:left_0.65rem_center] rtl:pl-8 rtl:pr-3 rtl:text-right ltr:bg-[position:right_0.65rem_center] ltr:pl-3 ltr:pr-8 ltr:text-left"
           data-testid={countryTestId}
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+          }}
         >
           {MERCHANT_REGION_OPTIONS.map(option => {
             const countryName = displayNames?.of(option.countryCode) || option.countryCode;
