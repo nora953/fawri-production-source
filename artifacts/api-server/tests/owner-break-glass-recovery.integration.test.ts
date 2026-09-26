@@ -20,10 +20,10 @@ assert.equal(
 const PASSWORD_SALT = "owner-break-glass-proof-password-salt";
 const AUTH_SECRET = "owner-break-glass-proof-security-secret-at-least-32-characters";
 const ownerId = "admin-owner-break-glass-proof-000000000001";
-const phone0 = "07977777001";
-const phone1 = "07977777002";
-const phone2 = "07977777003";
-const phone3 = "07977777004";
+const phone0 = "+9647977777001";
+const phone1 = "+9647977777002";
+const phone2 = "+9647977777003";
+const phone3 = "+9647977777004";
 const password0 = "OwnerProof9!";
 const password2 = "OwnerRecovered9!";
 

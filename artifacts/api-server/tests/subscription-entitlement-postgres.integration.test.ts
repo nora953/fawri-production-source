@@ -17,8 +17,8 @@ import {
 
 const merchantId = "merchant-subscription-pg-test";
 const actorId = "admin-subscription-pg-test";
-const merchantPhone = "07700000101";
-const adminPhone = "07700000102";
+const merchantPhone = "+9647700000101";
+const adminPhone = "+9647700000102";
 
 async function seedIdentity(): Promise<void> {
   await pool.query(

@@ -80,7 +80,7 @@ test(
   async (t) => {
     const { pool } = await import("@workspace/db");
     const id = suffix();
-    const phone = `078${String(crypto.randomInt(0, 100_000_000)).padStart(8, "0")}`;
+    const phone = `+9665${String(crypto.randomInt(0, 100_000_000)).padStart(8, "0")}`;
     const password = "GoldenAuth1!";
     const deviceId = `golden-auth-device-${id}`;
     const dataDirectory = path.join(os.tmpdir(), `fawri-golden-auth-${id}`);
@@ -151,6 +151,9 @@ test(
         owner_name: "Golden Auth Owner",
         store_name: "Golden Auth Store",
         activity_type: "retail",
+        country_code: "SA",
+        currency_code: "SAR",
+        timezone: "Asia/Riyadh",
         language: "en",
       }),
     });
@@ -162,7 +165,11 @@ test(
     assert.ok(merchantId, "signup must return the PostgreSQL merchant identity");
 
     const credential = await pool.query(
-      "SELECT password_hash, phone_verified FROM accounts WHERE id = $1 AND kind = 'merchant'",
+      `SELECT a.password_hash, a.phone_verified, a.phone,
+              m.country_code, m.currency_code, m.timezone
+         FROM accounts AS a
+         JOIN merchants AS m ON m.id = a.id AND m.account_id = a.id
+        WHERE a.id = $1 AND a.kind = 'merchant'`,
       [merchantId],
     );
     assert.equal(credential.rows.length, 1);
@@ -173,6 +180,10 @@ test(
       "signup must persist the current scrypt password format",
     );
     assert.equal(credential.rows[0].phone_verified, false);
+    assert.equal(credential.rows[0].phone, phone);
+    assert.equal(credential.rows[0].country_code, "SA");
+    assert.equal(credential.rows[0].currency_code, "SAR");
+    assert.equal(credential.rows[0].timezone, "Asia/Riyadh");
 
     const verified = await jsonRequest(`${baseUrl}/api/auth/verify-otp`, {
       method: "POST",

@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import {
   authAccountRepository,
+  isE164Phone,
   normalizePhone,
   type RequestedPlan,
 } from "../services/authAccountRepository";
@@ -17,6 +18,10 @@ import {
   upsertPendingMerchantAuthoritative,
 } from "../services/postgresMerchantAccountAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
+import {
+  MerchantRegionalError,
+  normalizeMerchantRegionalProfile,
+} from "../services/merchantRegionalRuntime";
 import {
   recordMerchantLoginAttemptAuthoritative,
   verifyMerchantOtpChallengeAuthoritative,
@@ -105,6 +110,21 @@ router.post("/signup", async (req, res) => {
     req.body?.language === "en" || req.body?.language === "ku"
       ? req.body.language
       : "ar";
+  let regional;
+  try {
+    regional = normalizeMerchantRegionalProfile({
+      country_code: req.body?.country_code || "IQ",
+      timezone: req.body?.timezone,
+      currency_code: req.body?.currency_code,
+    });
+  } catch (error) {
+    if (error instanceof MerchantRegionalError) {
+      sendAuthError(res, error.status, error.code, error.message, error.details || {});
+      return;
+    }
+    throw error;
+  }
+
   const requestedPlanInput = req.body?.requested_plan;
   let requestedPlan: RequestedPlan | undefined;
   if (requestedPlanInput !== undefined && requestedPlanInput !== null) {
@@ -124,12 +144,12 @@ router.post("/signup", async (req, res) => {
     requestedPlan = requestedPlanInput;
   }
   const validation = getPasswordValidationError(password);
-  if (!/^07\d{9}$/.test(phone)) {
+  if (!isE164Phone(phone)) {
     sendAuthError(
       res,
       400,
       "INVALID_PHONE",
-      "phone must start with 07 and contain 11 digits",
+      "phone must use E.164 international format",
     );
     return;
   }
@@ -153,6 +173,9 @@ router.post("/signup", async (req, res) => {
       ownerName,
       storeName,
       activityType,
+      countryCode: regional.country_code,
+      timezone: regional.timezone,
+      currencyCode: regional.currency_code,
       language,
       requestedPlan,
     });
@@ -178,7 +201,7 @@ router.post("/otp/resend", async (req, res) => {
   const phone = normalizePhone(req.body?.phone);
   const purpose = String(req.body?.purpose || "") as OtpPurpose;
   if (
-    !/^07\d{9}$/.test(phone) ||
+    !isE164Phone(phone) ||
     !["signup", "password_reset"].includes(purpose)
   ) {
     sendAuthError(
@@ -432,7 +455,7 @@ router.post("/admin/device-otp/verify", async (req, res) => {
 
 router.post("/password-reset/request", async (req, res) => {
   const phone = normalizePhone(req.body?.phone);
-  const account = /^07\d{9}$/.test(phone)
+  const account = isE164Phone(phone)
     ? await findMerchantByPhoneAuthoritative(phone)
     : null;
   if (!account) {

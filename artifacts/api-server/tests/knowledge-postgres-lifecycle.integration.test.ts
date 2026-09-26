@@ -84,8 +84,8 @@ async function tenantCount(table: string, merchantId: string): Promise<number> {
 test("merchant Knowledge lifecycle deletion is PostgreSQL-authoritative and tenant-scoped", async (t) => {
   assert.ok(process.env.DATABASE_URL, "DATABASE_URL is required");
 
-  await seedMerchant(merchantIds[0], "07990000011");
-  await seedMerchant(merchantIds[1], "07990000012");
+  await seedMerchant(merchantIds[0], "+9647990000011");
+  await seedMerchant(merchantIds[1], "+9647990000012");
   await seedKnowledge(merchantIds[0]);
   await seedKnowledge(merchantIds[1]);
 

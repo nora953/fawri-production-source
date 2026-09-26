@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { Router, type NextFunction, type Request, type Response } from "express";
-import { normalizePhone } from "../services/authAccountRepository";
+import { isE164Phone, normalizePhone } from "../services/authAccountRepository";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import {
   OwnerRecoveryError,
@@ -300,8 +300,8 @@ router.post("/owner-recovery/:recoveryId/otp/request", async (req, res) => {
   const newPhone = normalizePhone(req.body?.new_phone);
   const confirmPhone = normalizePhone(req.body?.confirm_new_phone);
   if (
-    !/^07\d{9}$/.test(oldPhone) ||
-    !/^07\d{9}$/.test(newPhone) ||
+    !isE164Phone(oldPhone) ||
+    !isE164Phone(newPhone) ||
     newPhone !== confirmPhone
   ) {
     sendAuthError(

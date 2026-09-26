@@ -73,10 +73,16 @@ function addWarning(report, code, details = {}) {
   report.warnings.push({ code, source: "cross_lane_schema_reconciliation", ...details });
 }
 function normalizePhone(value) {
-  let digits = String(value ?? "").replace(/[^0-9]/g, "");
-  if (digits.startsWith("9647") && digits.length === 12) digits = `0${digits.slice(3)}`;
-  else if (digits.startsWith("7") && digits.length === 10) digits = `0${digits}`;
-  return digits;
+  const raw = String(value ?? "")
+    .normalize("NFKC")
+    .trim()
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
+  if (!raw) return "";
+  if (raw.startsWith("+")) return `+${raw.slice(1).replace(/\D/g, "")}`;
+  const digits = raw.replace(/\D/g, "");
+  if (/^07\d{9}$/.test(digits)) return `+964${digits.slice(1)}`;
+  return digits ? `+${digits}` : "";
 }
 function normalizeKnowledgeText(value) {
   return String(value ?? "")
@@ -161,7 +167,7 @@ function reconcileIdentity(report) {
     account.security_version = positiveInteger(account.security_version, 1);
     account.session_version = positiveInteger(account.session_version, 1);
     account.metadata = { migrated_from: "merchants.json" };
-    if (!/^07\d{9}$/.test(account.phone)) addError(report, "INVALID_ACCOUNT_PHONE", { account_id: account.id });
+    if (!/^\+[1-9]\d{7,14}$/.test(account.phone)) addError(report, "INVALID_ACCOUNT_PHONE", { account_id: account.id });
     if (phoneOwners.has(account.phone)) addError(report, "DUPLICATE_ACCOUNT_PHONE", { phone: account.phone, account_ids: [phoneOwners.get(account.phone), account.id] });
     else phoneOwners.set(account.phone, account.id);
     const hasMerchant = merchantIds.has(String(account.id));

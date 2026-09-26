@@ -159,12 +159,12 @@ test("Auth v2 is atomic under real HTTP concurrency on PostgreSQL 16", async (t)
   const nextPasswordA = "MerchantA2!";
   const merchantA = merchant(
     accountIds[0],
-    "07111111111",
+    "+9647111111111",
     hashPassword(passwordA),
   );
   const merchantB = merchant(
     accountIds[1],
-    "07222222222",
+    "+9647222222222",
     hashPassword(passwordB),
   );
 

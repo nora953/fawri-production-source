@@ -86,10 +86,10 @@ test("secure PostgreSQL admin subscription mutations are visible only to the own
          id, kind, phone, password_hash, state, language,
          phone_verified, phone_verified_at, created_at, updated_at
        ) VALUES
-         ($1, 'admin', '07700000301', 'test-only-hash', 'active', 'en', TRUE, now(), now(), now()),
-         ($2, 'admin', '07700000302', 'test-only-hash', 'active', 'en', TRUE, now(), now(), now()),
-         ($3, 'merchant', '07700000303', 'test-only-hash', 'active', 'en', TRUE, now(), now(), now()),
-         ($4, 'merchant', '07700000304', 'test-only-hash', 'active', 'en', TRUE, now(), now(), now())`,
+         ($1, 'admin', '+9647700000301', 'test-only-hash', 'active', 'en', TRUE, now(), now(), now()),
+         ($2, 'admin', '+9647700000302', 'test-only-hash', 'active', 'en', TRUE, now(), now(), now()),
+         ($3, 'merchant', '+9647700000303', 'test-only-hash', 'active', 'en', TRUE, now(), now(), now()),
+         ($4, 'merchant', '+9647700000304', 'test-only-hash', 'active', 'en', TRUE, now(), now(), now())`,
       [allowedAdminId, deniedAdminId, merchantId, otherMerchantId],
     );
     await pool.query(

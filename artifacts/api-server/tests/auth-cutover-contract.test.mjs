@@ -138,7 +138,7 @@ test(
     const { pool } = await import("@workspace/db");
     const proof = crypto.randomUUID().replace(/-/g, "").slice(0, 12);
     const merchantId = `auth-cutover-business-${proof}`;
-    const phone = `07${String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0")}`;
+    const phone = `+9647${String(crypto.randomInt(0, 1_000_000_000)).padStart(9, "0")}`;
     const password = "BridgePass1!";
     const deviceId = `auth-cutover-proof-device-${proof}`;
     const runtimeDirectory = await mkdtemp(

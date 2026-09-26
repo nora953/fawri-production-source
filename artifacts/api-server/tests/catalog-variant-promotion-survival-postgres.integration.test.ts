@@ -17,7 +17,7 @@ const promotions = await import(
 );
 
 async function createMerchant(suffix: string) {
-  const phone = `077${crypto.randomInt(0, 100_000_000)
+  const phone = `+96477${crypto.randomInt(0, 100_000_000)
     .toString()
     .padStart(8, "0")}`;
   const pending = await accounts.upsertPendingMerchantAuthoritative({

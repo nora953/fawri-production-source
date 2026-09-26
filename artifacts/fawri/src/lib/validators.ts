@@ -1,17 +1,13 @@
-const EASTERN_ARABIC_DIGITS = '٠١٢٣٤٥٦٧٨٩';
-const PERSIAN_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
+import {
+  normalizeInternationalPhoneInput,
+  validateInternationalPhone,
+} from './internationalPhone';
 
 export const normalizePhoneNumber = (phone: string) =>
-  phone
-    .trim()
-    .replace(/[٠-٩]/g, digit => String(EASTERN_ARABIC_DIGITS.indexOf(digit)))
-    .replace(/[۰-۹]/g, digit => String(PERSIAN_DIGITS.indexOf(digit)))
-    .replace(/\s+/g, '');
+  normalizeInternationalPhoneInput(phone);
 
-export const validatePhone = (phone: string) => {
-  const normalizedPhone = normalizePhoneNumber(phone);
-  return /^07\d{9}$/.test(normalizedPhone);
-};
+export const validatePhone = (phone: string) =>
+  validateInternationalPhone(phone);
 
 export const validatePassword = (pass: string) => {
   return (

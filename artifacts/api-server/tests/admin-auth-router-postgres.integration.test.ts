@@ -21,10 +21,10 @@ assert.equal(
 const PASSWORD_SALT = "admin-auth-postgres-proof-password-salt";
 const AUTH_SECRET = "admin-auth-postgres-proof-security-secret-at-least-32-characters";
 const ownerId = "admin-pg-owner-proof";
-const ownerPhone = "07987654321";
+const ownerPhone = "+9647987654321";
 const ownerPassword = "OwnerProof9!";
 const ownerDeviceId = "owner-device-postgres-proof";
-const assistantPhone = "07987654322";
+const assistantPhone = "+9647987654322";
 const assistantPassword = "AssistantProof9!";
 const assistantNextPassword = "AssistantNext9!";
 const assistantDeviceId = "assistant-device-postgres-proof";

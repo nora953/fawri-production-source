@@ -23,7 +23,7 @@ export const OWNER_RECOVERY_COPY: Record<OwnerRecoveryLanguage, Record<string, s
     portalIntro:
       "استخدم هذه الصفحة فقط إذا فقدت هاتف المالك أو لم تعد تستطيع الوصول إلى الرقم المسجل.",
     oldPhone: "رقم هاتف المالك القديم",
-    phonePlaceholder: "07XXXXXXXXX",
+    phonePlaceholder: "+964XXXXXXXXXX",
     localPreviewOtpLabel: "Local preview OTP:",
     newPhone: "رقم الهاتف الجديد",
     confirmNewPhone: "تأكيد رقم الهاتف الجديد",
@@ -77,7 +77,7 @@ export const OWNER_RECOVERY_COPY: Record<OwnerRecoveryLanguage, Record<string, s
     portalIntro:
       "تەنها لە کاتی ونبوونی مۆبایل یان دەست نەگەیشتن بە ژمارەی تۆمارکراو ئەم پەڕەیە بەکاربهێنە.",
     oldPhone: "ژمارەی کۆنی خاوەن",
-    phonePlaceholder: "07XXXXXXXXX",
+    phonePlaceholder: "+964XXXXXXXXXX",
     localPreviewOtpLabel: "Local preview OTP:",
     newPhone: "ژمارەی نوێ",
     confirmNewPhone: "دووبارەکردنەوەی ژمارەی نوێ",
@@ -131,7 +131,7 @@ export const OWNER_RECOVERY_COPY: Record<OwnerRecoveryLanguage, Record<string, s
     portalIntro:
       "Use this page only when the owner phone is lost or access to the registered number is no longer possible.",
     oldPhone: "Old owner phone number",
-    phonePlaceholder: "07XXXXXXXXX",
+    phonePlaceholder: "+964XXXXXXXXXX",
     localPreviewOtpLabel: "Local preview OTP:",
     newPhone: "New phone number",
     confirmNewPhone: "Confirm new phone number",

@@ -73,7 +73,7 @@ export const accounts = pgTable(
     ),
     phoneShapeCheck: check(
       "accounts_phone_shape_check",
-      sql`${table.phone} IS NULL OR ${table.phone} ~ '^\\+[1-9][0-9]{7,14}$'`,
+      sql`${table.phone} IS NULL OR ${table.phone} ~ '^07[0-9]{9}$'`,
     ),
     activePhoneCheck: check(
       "accounts_active_phone_required_check",
