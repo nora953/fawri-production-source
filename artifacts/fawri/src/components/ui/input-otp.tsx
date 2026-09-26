@@ -24,7 +24,7 @@ const InputOTPGroup = React.forwardRef<
   React.ElementRef<"div">,
   React.ComponentPropsWithoutRef<"div">
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("flex items-center justify-center gap-2", className)} {...props} />
+  <div ref={ref} className={cn("flex items-center justify-center gap-2", className)} {...props} dir="ltr" data-fawri-preserve-digits="true" />
 ))
 InputOTPGroup.displayName = "InputOTPGroup"
 

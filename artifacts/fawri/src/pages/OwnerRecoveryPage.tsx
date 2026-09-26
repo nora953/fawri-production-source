@@ -312,8 +312,9 @@ export default function OwnerRecoveryPage({ recoveryId }: { recoveryId: string }
                         className={fieldInputClass}
                       />
                       {devCode && (
-                        <p dir="ltr" className="text-[11px] text-muted-foreground">
-                          {copy.localPreviewOtpLabel} {devCode}
+                        <p className="text-[11px] text-muted-foreground">
+                          {copy.localPreviewOtpLabel}{" "}
+                          <span dir="ltr" data-fawri-preserve-digits="true" className="inline-block">{devCode}</span>
                         </p>
                       )}
                     </div>

@@ -119,3 +119,47 @@ test("pending signup persistence is session scoped and never stores entered OTP 
   assert.match(signup, /devCode:\s*result\.devCode/);
   assert.doesNotMatch(otp, /sessionStorage\.setItem\([^\n]*code/i);
 });
+
+test("OTP technical text stays ASCII through localization and timer updates in every language", async () => {
+  const i18n = await source("src/lib/i18n.tsx");
+  const digits = i18n.slice(i18n.indexOf("const ARABIC_DIGITS"), i18n.indexOf("const translations"));
+  const functions = i18n.slice(i18n.indexOf("function localizeDigitString"), i18n.indexOf("function localizeNodeTree"));
+  const helper = stripTypeScriptTypes(`${digits}\n${functions}\nexport { localizeTextNode };`);
+  const { localizeTextNode } = await import(`data:text/javascript;base64,${Buffer.from(helper).toString("base64")}`);
+  const resend = await source("src/components/OtpResendSection.tsx");
+  const countdownHelper = stripTypeScriptTypes(resend.slice(resend.indexOf("function formatCountdown"), resend.indexOf("function createPhoneStorageId")) + '\nexport { formatCountdown };');
+  const { formatCountdown } = await import(`data:text/javascript;base64,${Buffer.from(countdownHelper).toString("base64")}`);
+  for (const lang of ["ar", "ku", "en"]) {
+    const node = { nodeValue: "", parentElement: { closest: selector => selector === '[data-fawri-preserve-digits="true"]' ? {} : null } };
+    for (const text of ["012345", "461373", "987654", ...[60, 59, 57, 1, 0].map(formatCountdown)]) {
+      node.nodeValue = text;
+      localizeTextNode(node, lang);
+      assert.equal(node.nodeValue, text, `${lang}: technical value ${text}`);
+      assert.match(node.nodeValue, /^[0-9:]+$/);
+    }
+    const label = { nodeValue: "57", parentElement: { closest: () => null } };
+    localizeTextNode(label, lang);
+    assert.equal(label.nodeValue, lang === "en" ? "57" : "٥٧");
+  }
+  assert.equal(formatCountdown(57), "00:57");
+  assert.equal(formatCountdown(60), "01:00");
+});
+
+test("OTP displays and shared slots opt out of digit localization with isolated LTR layout", async () => {
+  for (const [file, expression] of [
+    ["src/pages/OTPPage.tsx", "signupChallenge.devCode"],
+    ["src/pages/LoginPage.tsx", "ownerDeviceChallenge.devCode"],
+    ["src/pages/OwnerRecoveryPage.tsx", "devCode"],
+    ["src/components/OtpResendSection.tsx", "formatCountdown(retryAfterSeconds)"],
+  ]) {
+    const text = await source(file);
+    const element = [...text.matchAll(/<(strong|span)\b([^>]*)>\s*\{([^}]+)\}\s*<\/\1>/g)].find(match => match[3] === expression);
+    assert.ok(element, `${file}: technical display exists`);
+    assert.match(element[2], /dir="ltr"/);
+    assert.match(element[2], /data-fawri-preserve-digits="true"/);
+    assert.match(element[2], /inline-block/);
+  }
+  const slots = await source("src/components/ui/input-otp.tsx");
+  const group = slots.slice(slots.indexOf("const InputOTPGroup"), slots.indexOf('InputOTPGroup.displayName'));
+  assert.match(group, /<div[^>]+dir="ltr"[^>]+data-fawri-preserve-digits="true"/);
+});
