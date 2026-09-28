@@ -212,7 +212,7 @@ export default function ForgotPasswordModal({
       dir={isRTL ? 'rtl' : 'ltr'}
     >
       <div className="w-full max-w-md overflow-hidden rounded-[2rem] border bg-background shadow-2xl">
-        <div className="flex items-start justify-between gap-4 border-b px-5 py-5">
+        <div className={`flex items-start justify-between gap-4 border-b px-5 ${step === 'reset' ? 'py-3' : 'py-5'}`}>
           <div className="flex items-start gap-3">
             <div className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
               {step === 'phone' ? (
@@ -245,7 +245,7 @@ export default function ForgotPasswordModal({
           </button>
         </div>
 
-        <div className="space-y-5 px-5 py-5">
+        <div className={`px-5 ${step === 'reset' ? 'space-y-3 py-3' : 'space-y-5 py-5'}`}>
           {step === 'phone' ? (
             <>
               <div className="space-y-2">
@@ -281,9 +281,13 @@ export default function ForgotPasswordModal({
             </>
           ) : (
             <>
-              <div className="rounded-2xl border bg-muted/30 px-4 py-3 text-sm leading-6 text-muted-foreground">
+              <div className="rounded-2xl border bg-muted/30 px-4 py-2 text-sm leading-6 text-muted-foreground">
                 {t.forgot_code_requested_for}
-                <span dir="ltr" className="mx-1 font-bold text-foreground">
+                <span
+                  dir="ltr"
+                  data-fawri-preserve-digits="true"
+                  className="mx-1 inline-block font-bold tabular-nums text-foreground"
+                >
                   {form.phone}
                 </span>
               </div>
@@ -361,7 +365,7 @@ export default function ForgotPasswordModal({
               <button
                 type="button"
                 onClick={handleChangePhone}
-                className="w-full rounded-xl py-2 text-center text-sm font-semibold text-muted-foreground hover:text-foreground"
+                className="w-full rounded-xl py-1 text-center text-sm font-semibold text-muted-foreground hover:text-foreground"
               >
                 {t.forgot_change_phone}
               </button>
