@@ -70,19 +70,24 @@ test("OTP resend returns a replacement challenge and backend invalidates superse
   assert.match(otp, /if \(Date\.parse\(challenge\.expires_at\) <= now\) return "expired"/);
 });
 
-test("password recovery request and confirmation use the challenge authority", async () => {
+test("password recovery verifies the OTP before password confirmation", async () => {
   const routes = await source("src/routes/auth-public-routes.ts");
 
   assert.match(routes, /router\.post\("\/password-reset\/request"/);
   assert.match(routes, /issueOtp\(req, phone, "password_reset"\)/);
   assert.match(routes, /challenge_id:\s*issued\.challengeId/);
 
-  assert.match(routes, /router\.post\("\/password-reset\/confirm"/);
-  assert.match(routes, /challengeId = String\(req\.body\?\.challenge_id \|\| ""\)/);
+  assert.match(routes, /router\.post\("\/password-reset\/verify"/);
   assert.match(
     routes,
     /verifyMerchantOtpChallengeAuthoritative\(\{\s*challengeId,\s*target:\s*phone,\s*purpose:\s*"password_reset",\s*code,/s,
   );
+  assert.match(routes, /setMerchantPasswordRecoveryProof\(res,/);
+
+  assert.match(routes, /router\.post\("\/password-reset\/confirm"/);
+  assert.match(routes, /merchantPasswordRecoveryProof\(req, res\)/);
+  assert.match(routes, /expectedPasswordVersion:\s*proof\.passwordVersion/);
+  assert.match(routes, /clearMerchantPasswordRecoveryProof\(res\)/);
   assert.match(routes, /RECOVERY_CONFIRMATION_INVALID/);
   assert.match(routes, /reauthentication_required:\s*true/);
 });

@@ -6,7 +6,8 @@ import { PasswordInput } from '@/components/ui/password-input';
 import OtpResendSection from '@/components/OtpResendSection';
 import {
   requestPasswordReset,
-  resetPasswordWithOtp,
+  verifyPasswordResetOtp,
+  confirmPasswordReset,
   type PasswordResetResult,
 } from '@/lib/passwordReset';
 import { toast } from 'sonner';
@@ -23,7 +24,7 @@ type ForgotPasswordModalProps = {
   onClose: () => void;
 };
 
-type Step = 'phone' | 'reset';
+type Step = 'phone' | 'verify' | 'password';
 
 type RecoveryChallenge = {
   challengeId: string;
@@ -164,13 +165,13 @@ export default function ForgotPasswordModal({
       setForm(current => ({ ...current, phone: cleanPhone }));
       setRecoveryChallenge(challenge);
       setRetryAfterSeconds(challenge.retryAfterSeconds);
-      setStep('reset');
+      setStep('verify');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleResetPassword = async () => {
+  const handleVerifyCode = async () => {
     if (isLoading) return;
 
     if (!recoveryChallenge || recoveryChallengeExpired(recoveryChallenge)) {
@@ -182,10 +183,31 @@ export default function ForgotPasswordModal({
     setIsLoading(true);
 
     try {
-      const result = await resetPasswordWithOtp(
+      const result = await verifyPasswordResetOtp(
         recoveryChallenge.challengeId,
         form.phone,
-        form.code,
+        form.code
+      );
+
+      if (!result.ok) {
+        toast.error(getForgotPasswordErrorMessage(result.error, result.code));
+        return;
+      }
+
+      setRetryAfterSeconds(0);
+      setStep('password');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (isLoading) return;
+
+    setIsLoading(true);
+
+    try {
+      const result = await confirmPasswordReset(
         form.newPassword,
         form.confirmPassword
       );
@@ -212,7 +234,7 @@ export default function ForgotPasswordModal({
       dir={isRTL ? 'rtl' : 'ltr'}
     >
       <div className="w-full max-w-md overflow-hidden rounded-[2rem] border bg-background shadow-2xl">
-        <div className={`flex items-start justify-between gap-4 border-b px-5 ${step === 'reset' ? 'py-3' : 'py-5'}`}>
+        <div className={`flex items-start justify-between gap-4 border-b px-5 ${step !== 'phone' ? 'py-3' : 'py-5'}`}>
           <div className="flex items-start gap-3">
             <div className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
               {step === 'phone' ? (
@@ -229,7 +251,9 @@ export default function ForgotPasswordModal({
               <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 {step === 'phone'
                   ? t.forgot_phone_subtitle
-                  : t.forgot_reset_subtitle}
+                  : step === 'verify'
+                    ? t.forgot_verify_subtitle
+                    : t.forgot_password_subtitle}
               </p>
             </div>
           </div>
@@ -245,7 +269,7 @@ export default function ForgotPasswordModal({
           </button>
         </div>
 
-        <div className={`px-5 ${step === 'reset' ? 'space-y-3 py-3' : 'space-y-5 py-5'}`}>
+        <div className={`px-5 ${step !== 'phone' ? 'space-y-3 py-3' : 'space-y-5 py-5'}`}>
           {step === 'phone' ? (
             <>
               <div className="space-y-2">
@@ -279,7 +303,7 @@ export default function ForgotPasswordModal({
                 {isLoading ? t.forgot_sending : t.forgot_send_code}
               </Button>
             </>
-          ) : (
+          ) : step === 'verify' ? (
             <>
               <div className="rounded-2xl border bg-muted/30 px-4 py-2 text-sm leading-6 text-muted-foreground">
                 {t.forgot_code_requested_for}
@@ -302,8 +326,14 @@ export default function ForgotPasswordModal({
                   type="text"
                   inputMode="numeric"
                   dir="ltr"
+                  data-fawri-preserve-digits="true"
                   value={form.code}
-                  onChange={event => updateField('code', event.target.value)}
+                  onChange={event =>
+                    updateField(
+                      'code',
+                      event.target.value.replace(/\D/g, '').slice(0, 6)
+                    )
+                  }
                   className="h-12 rounded-2xl text-base tracking-widest"
                   autoComplete="one-time-code"
                 />
@@ -325,6 +355,25 @@ export default function ForgotPasswordModal({
                 />
               </div>
 
+              <Button
+                type="button"
+                onClick={handleVerifyCode}
+                disabled={isLoading || form.code.length !== 6}
+                className="h-12 w-full rounded-2xl bg-orange-500 text-base font-extrabold text-white hover:bg-orange-600 disabled:opacity-60"
+              >
+                {isLoading ? t.forgot_verifying : t.forgot_verify_code}
+              </Button>
+
+              <button
+                type="button"
+                onClick={handleChangePhone}
+                className="w-full rounded-xl py-1 text-center text-sm font-semibold text-muted-foreground hover:text-foreground"
+              >
+                {t.forgot_change_phone}
+              </button>
+            </>
+          ) : (
+            <>
               <div className="space-y-2">
                 <label htmlFor="new-password" className="block text-sm font-bold">
                   {t.forgot_new_password}
@@ -361,14 +410,6 @@ export default function ForgotPasswordModal({
               >
                 {isLoading ? t.forgot_changing : t.forgot_change_password}
               </Button>
-
-              <button
-                type="button"
-                onClick={handleChangePhone}
-                className="w-full rounded-xl py-1 text-center text-sm font-semibold text-muted-foreground hover:text-foreground"
-              >
-                {t.forgot_change_phone}
-              </button>
             </>
           )}
         </div>

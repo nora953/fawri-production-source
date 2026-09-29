@@ -7,6 +7,11 @@ import {
 } from "../services/authAccountRepository";
 import { authPostgresSessionAuthority } from "../services/authPostgresSessionAuthority";
 import {
+  clearMerchantPasswordRecoveryProof,
+  merchantPasswordRecoveryProof,
+  setMerchantPasswordRecoveryProof,
+} from "../services/merchantPasswordRecoveryProof";
+import {
   authSecurityStore,
   AuthSecurityStoreError,
   type OtpPurpose,
@@ -476,38 +481,13 @@ router.post("/password-reset/request", async (req, res) => {
   }
 });
 
-router.post("/password-reset/confirm", async (req, res) => {
+router.post("/password-reset/verify", async (req, res) => {
   const phone = normalizePhone(req.body?.phone);
   const challengeId = String(req.body?.challenge_id || "");
   const code = String(req.body?.code || "");
-  const next = String(req.body?.new_password || req.body?.newPassword || "");
-  const confirm = String(
-    req.body?.confirm_password || req.body?.confirmPassword || "",
-  );
-  const validation = getPasswordValidationError(next);
-  if (
-    !challengeId ||
-    !/^\d{6}$/.test(code) ||
-    validation ||
-    next !== confirm
-  ) {
-    sendAuthError(
-      res,
-      400,
-      validation?.code || "RECOVERY_CONFIRMATION_INVALID",
-      validation?.message || "recovery confirmation is invalid",
-    );
-    return;
-  }
-  const account = await findMerchantByPhoneAuthoritative(phone);
-  const result = await verifyMerchantOtpChallengeAuthoritative({
-    challengeId,
-    target: phone,
-    purpose: "password_reset",
-    code,
-    ip: requestIp(req),
-  });
-  if (!account || result !== "verified") {
+
+  if (!challengeId || !/^\d{6}$/.test(code)) {
+    clearMerchantPasswordRecoveryProof(res);
     sendAuthError(
       res,
       400,
@@ -516,20 +496,144 @@ router.post("/password-reset/confirm", async (req, res) => {
     );
     return;
   }
-  const passwordHash = hashPassword(next);
-  if (!operationalPostgresAuthorityRequired()) {
-    authAccountRepository.updatePassword(
+
+  const account = await findMerchantByPhoneAuthoritative(phone);
+  const result = await verifyMerchantOtpChallengeAuthoritative({
+    challengeId,
+    target: phone,
+    purpose: "password_reset",
+    code,
+    ip: requestIp(req),
+  });
+
+  if (!account || result !== "verified") {
+    clearMerchantPasswordRecoveryProof(res);
+    sendAuthError(
+      res,
+      400,
+      "RECOVERY_CONFIRMATION_INVALID",
+      "recovery confirmation is invalid",
+    );
+    return;
+  }
+
+  const passwordVersion =
+    await authPostgresSessionAuthority.passwordRecoveryVersion(
       account.account.id,
+    );
+
+  if (passwordVersion === null) {
+    clearMerchantPasswordRecoveryProof(res);
+    sendAuthError(
+      res,
+      503,
+      "AUTH_PASSWORD_RECOVERY_AUTHORITY_UNAVAILABLE",
+      "password recovery authority is unavailable",
+    );
+    return;
+  }
+
+  setMerchantPasswordRecoveryProof(res, {
+    accountId: account.account.id,
+    passwordVersion,
+  });
+
+  res.json({ ok: true });
+});
+
+router.post("/password-reset/confirm", async (req, res) => {
+  const next = String(req.body?.new_password || req.body?.newPassword || "");
+  const confirm = String(
+    req.body?.confirm_password || req.body?.confirmPassword || "",
+  );
+  const validation = getPasswordValidationError(next);
+
+  if (validation || next !== confirm) {
+    sendAuthError(
+      res,
+      400,
+      validation?.code || "RECOVERY_CONFIRMATION_INVALID",
+      validation?.message || "recovery confirmation is invalid",
+    );
+    return;
+  }
+
+  const proof = merchantPasswordRecoveryProof(req, res);
+  if (!proof) {
+    sendAuthError(
+      res,
+      401,
+      "RECOVERY_CONFIRMATION_INVALID",
+      "recovery confirmation is invalid",
+    );
+    return;
+  }
+
+  const passwordHash = hashPassword(next);
+
+  if (!operationalPostgresAuthorityRequired()) {
+    const account = authAccountRepository.findById(
+      proof.accountId,
+      "merchant",
+    );
+    if (
+      !account ||
+      account.account.sessionVersion !== proof.passwordVersion
+    ) {
+      clearMerchantPasswordRecoveryProof(res);
+      sendAuthError(
+        res,
+        400,
+        "RECOVERY_CONFIRMATION_INVALID",
+        "recovery confirmation is invalid",
+      );
+      return;
+    }
+
+    const updated = authAccountRepository.updatePassword(
+      proof.accountId,
       "merchant",
       passwordHash,
     );
+    if (!updated) {
+      clearMerchantPasswordRecoveryProof(res);
+      sendAuthError(
+        res,
+        400,
+        "RECOVERY_CONFIRMATION_INVALID",
+        "recovery confirmation is invalid",
+      );
+      return;
+    }
   }
-  const postgresRevoked = await authPostgresSessionAuthority.commitPasswordChange({
-    accountId: account.account.id,
-    accountKind: "merchant",
-    passwordHash,
-    reason: "password_reset",
-  });
+
+  let postgresRevoked: number | null;
+  try {
+    postgresRevoked =
+      await authPostgresSessionAuthority.commitPasswordChange({
+        accountId: proof.accountId,
+        accountKind: "merchant",
+        passwordHash,
+        reason: "password_reset",
+        expectedPasswordVersion: proof.passwordVersion,
+      });
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "AUTH_POSTGRES_PASSWORD_RECOVERY_PROOF_STALE"
+    ) {
+      clearMerchantPasswordRecoveryProof(res);
+      sendAuthError(
+        res,
+        400,
+        "RECOVERY_CONFIRMATION_INVALID",
+        "recovery confirmation is invalid",
+      );
+      return;
+    }
+    throw error;
+  }
+
   if (operationalPostgresAuthorityRequired() && postgresRevoked === null) {
     sendAuthError(
       res,
@@ -539,13 +643,16 @@ router.post("/password-reset/confirm", async (req, res) => {
     );
     return;
   }
+
   if (postgresRevoked === null) {
     authSecurityStore.revokeAllSessions({
-      accountId: account.account.id,
+      accountId: proof.accountId,
       accountKind: "merchant",
       reason: "password_reset",
     });
   }
+
+  clearMerchantPasswordRecoveryProof(res);
   clearAuthSessionCookie(res, "merchant");
   res.json({ ok: true, reauthentication_required: true });
 });

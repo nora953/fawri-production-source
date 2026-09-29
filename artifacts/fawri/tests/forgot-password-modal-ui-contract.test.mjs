@@ -10,11 +10,11 @@ const source = await readFile(
 test('password reset step stays compact without an internal scrolling modal', () => {
   assert.match(
     source,
-    /step === 'reset' \? 'py-3' : 'py-5'/,
+    /step !== 'phone' \? 'py-3' : 'py-5'/,
   );
   assert.match(
     source,
-    /step === 'reset' \? 'space-y-3 py-3' : 'space-y-5 py-5'/,
+    /step !== 'phone' \? 'space-y-3 py-3' : 'space-y-5 py-5'/,
   );
   assert.doesNotMatch(source, /overflow-y-auto/);
 });
