@@ -103,7 +103,10 @@ export async function getProductionDatabaseRlsReadiness(
          tenant_table.oid IS NOT NULL AS table_exists,
          COALESCE(tenant_table.relrowsecurity, FALSE) AS rls_enabled,
          COALESCE(
-           tenant_table.relowner = (SELECT oid FROM role_state),
+           -- Ownership can be inherited or reached through SET ROLE even
+           -- when the runtime role is not the table's recorded owner.
+           pg_has_role((SELECT oid FROM role_state), tenant_table.relowner, 'USAGE')
+           OR pg_has_role((SELECT oid FROM role_state), tenant_table.relowner, 'SET'),
            FALSE
          ) AS owned_by_current_role
        FROM expected
