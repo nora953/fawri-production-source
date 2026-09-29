@@ -63,12 +63,10 @@ export async function requestPasswordReset(phone: string): Promise<PasswordReset
   }
 }
 
-export async function resetPasswordWithOtp(
+export async function verifyPasswordResetOtp(
   challengeId: string,
   phone: string,
-  code: string,
-  newPassword: string,
-  confirmPassword: string
+  code: string
 ): Promise<PasswordResetResult> {
   const cleanChallengeId = challengeId.trim();
   const cleanPhone = normalizePhoneNumber(phone);
@@ -77,19 +75,35 @@ export async function resetPasswordWithOtp(
   if (!cleanChallengeId) {
     return { ok: false, code: 'RECOVERY_CHALLENGE_MISSING', error: 'تعذر تنفيذ العملية' };
   }
-
-  if (!cleanPhone) {
-    return { ok: false, error: 'اكتب رقم الهاتف' };
+  if (!cleanPhone) return { ok: false, error: 'اكتب رقم الهاتف' };
+  if (!/^\d{6}$/.test(cleanCode)) {
+    return { ok: false, code: 'RECOVERY_CONFIRMATION_INVALID', error: 'اكتب رمز التحقق' };
   }
 
-  if (!cleanCode) {
-    return { ok: false, error: 'اكتب رمز التحقق' };
+  try {
+    const response = await fetch('/api/auth/password-reset/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: cleanPhone,
+        challenge_id: cleanChallengeId,
+        code: cleanCode,
+      }),
+    });
+    return await readApiResult(response);
+  } catch (error) {
+    console.error('Password reset verification failed:', error);
+    return { ok: false, error: 'تعذر الاتصال بالسيرفر' };
   }
+}
 
+export async function confirmPasswordReset(
+  newPassword: string,
+  confirmPassword: string
+): Promise<PasswordResetResult> {
   if (!validatePassword(newPassword)) {
     return { ok: false, error: 'كلمة المرور يجب أن تكون 8 خانات على الأقل، وتحتوي على رقم وحرف إنجليزي كبير، وتستخدم الإنجليزية فقط مع الرموز المسموحة (@ # $ % & ! _ -)' };
   }
-
   if (newPassword !== confirmPassword) {
     return { ok: false, error: 'كلمتا المرور غير متطابقتين' };
   }
@@ -99,14 +113,10 @@ export async function resetPasswordWithOtp(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        phone: cleanPhone,
-        challenge_id: cleanChallengeId,
-        code: cleanCode,
         new_password: newPassword,
         confirm_password: confirmPassword,
       }),
     });
-
     return await readApiResult(response);
   } catch (error) {
     console.error('Password reset confirm failed:', error);

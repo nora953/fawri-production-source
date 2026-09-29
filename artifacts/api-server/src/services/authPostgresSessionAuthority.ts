@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { AccountKind, AdminPermission, AdminRole } from "./authPolicy";
 import { parseSessionToken } from "./authSecurityDataStore";
+import { authAccountRepository } from "./authAccountRepository";
 import { authSecurityStore } from "./authSecurityStore";
 import type {
   AuthSessionRecord,
@@ -58,6 +59,7 @@ type SessionRow = {
 };
 
 type AccountVersionRow = {
+  password_version: number;
   session_version: number;
   security_version: number;
   state: "active" | "suspended" | "closed";
@@ -208,7 +210,7 @@ async function lockAccount(
 ): Promise<AccountVersionRow | null> {
   const rows = await queryRows<AccountVersionRow>(
     client,
-    `SELECT session_version, security_version, state
+    `SELECT password_version, session_version, security_version, state
        FROM accounts
       WHERE id = $1 AND kind = $2
       FOR UPDATE`,
@@ -764,15 +766,41 @@ async function listPostgres(
   });
 }
 
+async function passwordRecoveryVersionPostgres(
+  accountId: string,
+): Promise<number | null> {
+  const pool = await databasePool();
+  const rows = await queryRows<{ password_version: number }>(
+    pool,
+    `SELECT password_version
+       FROM accounts
+      WHERE id = $1 AND kind = 'merchant'
+      LIMIT 1`,
+    [accountId],
+  );
+  const version = rows[0]?.password_version;
+  return Number.isInteger(version) && version >= 0 ? version : null;
+}
+
 async function commitPasswordChangePostgres(input: {
   accountId: string;
   accountKind: AccountKind;
   passwordHash: string;
   reason: "password_changed" | "password_reset";
+  expectedPasswordVersion?: number;
 }): Promise<number> {
   return withTransaction(async (client) => {
     const account = await lockAccount(client, input.accountId, input.accountKind);
     if (!account) throw new Error("AUTH_POSTGRES_ACCOUNT_UNAVAILABLE");
+
+    if (input.reason === "password_reset") {
+      if (
+        !Number.isInteger(input.expectedPasswordVersion) ||
+        input.expectedPasswordVersion !== account.password_version
+      ) {
+        throw new Error("AUTH_POSTGRES_PASSWORD_RECOVERY_PROOF_STALE");
+      }
+    }
 
     const now = new Date();
     const updated = await queryRows<{ id: string }>(
@@ -879,11 +907,22 @@ export const authPostgresSessionAuthority = {
       : authSecurityStore.listActiveSessions(accountId, kind);
   },
 
+  async passwordRecoveryVersion(
+    accountId: string,
+  ): Promise<number | null> {
+    if (postgresRequired("merchant")) {
+      return passwordRecoveryVersionPostgres(accountId);
+    }
+    const account = authAccountRepository.findById(accountId, "merchant");
+    return account ? account.account.sessionVersion : null;
+  },
+
   async commitPasswordChange(input: {
     accountId: string;
     accountKind: AccountKind;
     passwordHash: string;
     reason: "password_changed" | "password_reset";
+    expectedPasswordVersion?: number;
   }): Promise<number | null> {
     if (!postgresRequired(input.accountKind)) return null;
     return commitPasswordChangePostgres(input);
