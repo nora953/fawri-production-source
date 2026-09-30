@@ -35,6 +35,7 @@ import {
 } from "./normalization.js";
 import {
   getPostgresKnowledgeSqlClient,
+  knowledgeSqlForMerchant,
   KnowledgeRuntimeGateError,
   type KnowledgeSqlExecutor,
 } from "./postgresKnowledgeRuntime.js";
@@ -1284,6 +1285,7 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
     const merchantId = boundedText(input.merchantId, 160);
     const normalized = normalizeKnowledgeText(input.customerText);
     if (!merchantId || !normalized) return null;
+    const sql = knowledgeSqlForMerchant(this.sql, merchantId);
 
     const weight = containsAny(normalized, WEIGHT_TERMS);
     const dimensions = containsAny(normalized, DIMENSION_TERMS);
@@ -1310,7 +1312,7 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
 
     let settingsRow: Record<string, unknown> | null = null;
     const merchantSettings = async () => {
-      if (!settingsRow) settingsRow = await settings(this.sql, merchantId);
+      if (!settingsRow) settingsRow = await settings(sql, merchantId);
       return settingsRow;
     };
 
@@ -1325,7 +1327,7 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
 
       if (kind === "weight" || kind === "dimensions") {
         return resolveMeasurementFact({
-          sql: this.sql,
+          sql,
           merchantId,
           customer: normalized,
           language: input.language,
@@ -1337,7 +1339,7 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
 
       if (kind === "price" || kind === "stock") {
         return resolveProductFact({
-          sql: this.sql,
+          sql,
           merchantId,
           customer: normalized,
           language: input.language,
@@ -1349,7 +1351,7 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
 
       if (kind === "order") {
         return resolveOrderFact(
-          this.sql,
+          sql,
           merchantId,
           input.customerText,
           input.language,
@@ -1363,7 +1365,7 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
 
       if (kind === "delivery") {
         return resolveDeliveryFact({
-          sql: this.sql,
+          sql,
           merchantId,
           customerText: input.customerText,
           language: input.language,
