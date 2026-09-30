@@ -147,6 +147,11 @@ jobs:
           pnpm exec tsx --test
           artifacts/api-server/tests/knowledge-tenant-rls.integration.test.mjs
 
+      - name: Prove background subscription reminders under restricted tenant RLS
+        run: >-
+          pnpm exec tsx --test
+          artifacts/api-server/tests/subscription-reminder-rls.integration.test.mjs
+
       - name: Prove Support image authorization before filesystem persistence
         run: >-
           pnpm exec tsx --test
