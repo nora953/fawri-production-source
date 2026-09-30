@@ -113,13 +113,20 @@ export function validateRepositoryPolicy(root, files) {
     if (!existsSync(path.join(workflowDir, workflow))) violations.push(`missing workflow: ${workflow}`);
   }
 
-  for (const workflow of [...PROTECTED_WORKFLOWS, ...FINAL_WORKFLOWS]) {
+  const workflows = existsSync(workflowDir)
+    ? readdirSync(workflowDir, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && /\.ya?ml$/i.test(entry.name))
+      .map((entry) => entry.name).sort()
+    : [];
+  for (const workflow of workflows) {
     const workflowPath = path.join(workflowDir, workflow);
-    if (!existsSync(workflowPath)) continue;
     const content = readFileSync(workflowPath, "utf8");
-    for (const match of content.matchAll(/^\s*(?:-\s*)?uses:\s*([^\s#]+)\s*$/gm)) {
-      const action = match[1];
-      if (!/@[0-9a-f]{40}$/i.test(action)) {
+    for (const match of content.matchAll(/^[\t ]*(?:-[\t ]*)?(?:uses|"uses"|'uses'):[\t ]*([^\r\n]*)/gm)) {
+      const scalar = match[1].match(/^(?:"([^"]+)"|'([^']+)'|([^\s#]+))[\t ]*(?:#.*)?$/);
+      const action = scalar ? (scalar[1] ?? scalar[2] ?? scalar[3]) : match[1];
+      const local = scalar && action.startsWith("./");
+      const pinned = scalar && (/@[0-9a-f]{40}$/i.test(action) || /^docker:\/\/.+@sha256:[0-9a-f]{64}$/i.test(action));
+      if (!local && !pinned) {
         violations.push(`${workflow}: action must be pinned to an immutable SHA: ${action}`);
       }
     }
@@ -202,6 +209,7 @@ export function validateRepositoryPolicy(root, files) {
     status: violations.length === 0 ? "pass" : "fail",
     protected_workflows: PROTECTED_WORKFLOWS.length,
     final_workflows: FINAL_WORKFLOWS.length,
+    scanned_workflows: workflows.length,
     lockfile: "pnpm-lock.yaml",
     minimum_release_age_minutes: minimumReleaseAge,
     violations,

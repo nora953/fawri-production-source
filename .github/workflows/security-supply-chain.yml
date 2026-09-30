@@ -11,6 +11,7 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - ".npmrc"
+      - ".gitignore"
       - ".github/workflows/**"
   workflow_dispatch:
 
