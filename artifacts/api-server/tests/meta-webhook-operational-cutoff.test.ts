@@ -113,7 +113,9 @@ async function readSubscription(directory: string) {
   return database.subscriptions[0];
 }
 
-test("approved -> reserved -> rejected before send suppresses and releases exactly once", async () => {
+test("approved -> reserved -> rejected before send suppresses and releases exactly once", async (t) => {
+  // Exercise rejection after reservation, regardless of the real calendar date.
+  t.mock.timers.enable({ apis: ["Date"], now: new Date("2026-08-30T00:00:00.000Z") });
   const directory = await mkdtemp(path.join(os.tmpdir(), "fawri-meta-operational-cutoff-"));
   const previousDataDir = process.env.FAWRI_DATA_DIR;
   const previousOperational = process.env.FAWRI_OPERATIONAL_POSTGRES_AUTHORITY;
