@@ -134,6 +134,15 @@ test("repository policy requires protected workflows, immutable action pins, pnp
     const report = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
     assert.equal(report.status, "pass");
 
+    const addedWorkflow = path.join(workflowDir, "new-unlisted-workflow.yaml");
+    for (const reference of ["actions/checkout@v4", '"actions/checkout@v4" # mutable', "'actions/checkout@v4'", "example/repository/.github/workflows/test.yml@main", "docker://alpine:latest"]) {
+      writeFileSync(addedWorkflow, `steps:\n  - uses: ${reference}\n`);
+      const addedReport = validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]);
+      assert.ok(addedReport.violations.some((item) => item.includes("new-unlisted-workflow.yaml") && item.includes("immutable SHA")));
+    }
+    writeFileSync(addedWorkflow, `steps:\n  - uses: actions/checkout@${checkoutSha} # pinned\n  - uses: ./local-action\n  - uses: docker://alpine@sha256:${"a".repeat(64)}\njobs:\n  local:\n    uses: ./.github/workflows/local.yml\n  remote:\n    uses: example/repository/.github/workflows/test.yml@${checkoutSha}\n`);
+    assert.equal(validateRepositoryPolicy(root, ["pnpm-lock.yaml", "pnpm-workspace.yaml", "package.json"]).status, "pass");
+
     writeFileSync(
       path.join(workflowDir, "postgresql-schema.yml"),
       "steps:\n  - uses: actions/checkout@v4\n",
