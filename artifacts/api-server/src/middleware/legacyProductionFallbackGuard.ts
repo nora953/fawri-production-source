@@ -23,7 +23,8 @@ export function enforceLegacyAuthProductionCutoverGate(
     return;
   }
 
-  const pathname = String(req.originalUrl || req.path || "").split("?", 1)[0];
+  // Express routes ignore case; normalize only this comparison, not the request.
+  const pathname = String(req.originalUrl || req.path || "").split("?", 1)[0].toLowerCase();
   const legacyAuthPath =
     pathname === "/api/auth" || pathname.startsWith("/api/auth/");
   if (!legacyAuthPath) {

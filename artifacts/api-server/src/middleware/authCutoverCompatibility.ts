@@ -14,7 +14,9 @@ const INTERNAL_CREDENTIAL_TTL_MS = 60_000;
 const DEFAULT_SSE_REVALIDATE_MS = 30_000;
 
 function requestPath(req: Request): string {
-  return String(req.originalUrl || req.path || "").split("?", 1)[0];
+  // Match Express's case-insensitive routing for security comparisons only.
+  // Keep the actual URL and resource identifiers unchanged for handlers.
+  return String(req.originalUrl || req.path || "").split("?", 1)[0].toLowerCase();
 }
 
 function clearLegacyMerchantCookie(req: Request, res: Response): void {

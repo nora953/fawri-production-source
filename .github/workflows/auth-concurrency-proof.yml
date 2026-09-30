@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "artifacts/api-server/src/middleware/authSession.ts"
+      - "artifacts/api-server/src/middleware/authCutoverCompatibility.ts"
+      - "artifacts/api-server/src/middleware/legacyProductionFallbackGuard.ts"
       - "artifacts/api-server/src/routes/auth-*.ts"
       - "artifacts/api-server/src/services/auth*.ts"
       - "artifacts/api-server/tests/auth-*.test.ts"
@@ -81,6 +83,7 @@ jobs:
           ./tests/auth-policy.test.ts
           ./tests/auth-security-store.test.ts
           ./tests/auth-cutover-contract.test.mjs
+          ./tests/auth-cutover-path-case.test.ts
 
       - name: Run Merchant access security suite
         run: |
