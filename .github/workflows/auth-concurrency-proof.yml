@@ -77,6 +77,7 @@ jobs:
           pnpm --filter @workspace/api-server exec tsx --test
           ./tests/auth-account-repository.test.ts
           ./tests/auth-password-service.test.ts
+          ./tests/auth-otp-delivery.test.ts
           ./tests/auth-policy.test.ts
           ./tests/auth-security-store.test.ts
           ./tests/auth-cutover-contract.test.mjs

@@ -1,4 +1,5 @@
 import type { OtpPurpose } from "./authSecurityStore";
+import { productionReleaseGateRequired } from "./productionReleaseReadiness";
 
 export type OtpDeliveryResult =
   | { ok: true }
@@ -8,8 +9,17 @@ function deliveryChannel(): string {
   return String(process.env.OTP_DELIVERY_CHANNEL || "").trim().toLowerCase();
 }
 
+function developmentDeliveryAllowed(): boolean {
+  return (
+    (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test") &&
+    !productionReleaseGateRequired()
+  );
+}
+
 function normalizeRecipient(phone: string): string {
-  const configuredTestNumber = String(process.env.WHATSAPP_TEST_TO || "").replace(/\D/g, "");
+  const configuredTestNumber = developmentDeliveryAllowed()
+    ? String(process.env.WHATSAPP_TEST_TO || "").replace(/\D/g, "")
+    : "";
   return configuredTestNumber || String(phone || "").replace(/\D/g, "");
 }
 
@@ -32,7 +42,7 @@ export async function deliverAuthOtp(
   purpose: OtpPurpose,
 ): Promise<OtpDeliveryResult> {
   if (
-    process.env.NODE_ENV !== "production" &&
+    developmentDeliveryAllowed() &&
     process.env.AUTH_ALLOW_DEV_OTP_BYPASS === "true"
   ) {
     return { ok: true };
