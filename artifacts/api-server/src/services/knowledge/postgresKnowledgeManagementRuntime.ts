@@ -15,6 +15,7 @@ import {
 import { createOpenAiKnowledgeEmbeddingProvider } from "./openAiKnowledgeEmbeddingProvider.js";
 import {
   getPostgresKnowledgeSqlClient,
+  knowledgeSqlForMerchant,
   KnowledgeRuntimeGateError,
   PostgresKnowledgeRuntime,
   type KnowledgeEmbeddingProvider,
@@ -449,7 +450,7 @@ export class PostgresKnowledgeManagementRuntime {
     }
 
     try {
-      const result = await this.sql.query<Record<string, unknown>>(
+      const result = await knowledgeSqlForMerchant(this.sql, merchant).query<Record<string, unknown>>(
         `SELECT ${SAVED_COLUMNS},
                 to_char(
                   updated_at AT TIME ZONE 'UTC',
@@ -529,7 +530,7 @@ export class PostgresKnowledgeManagementRuntime {
     const embedding = active ? await prepareEmbedding(this.embeddings, { kind: "saved_answer", language, question, answer }) : null;
     const id = makeKnowledgeId("saved");
     try {
-      return await this.sql.transaction(async (tx) => {
+      return await knowledgeSqlForMerchant(this.sql, merchant).transaction(async (tx) => {
         const duplicate = await tx.query<Record<string, unknown>>(
           `SELECT ${SAVED_COLUMNS} FROM saved_answers
            WHERE merchant_id = $1 AND language = $2 AND normalized_question = $3 LIMIT 1`,
@@ -562,7 +563,7 @@ export class PostgresKnowledgeManagementRuntime {
       throw new KnowledgeTransitionError("INVALID_SAVED_ANSWER", "saved answer update is invalid");
     }
     let current: SavedAnswerRecord | null;
-    try { current = await currentSaved(this.sql, merchant, id); } catch (error) { rethrowRead(error); }
+    try { current = await currentSaved(knowledgeSqlForMerchant(this.sql, merchant), merchant, id); } catch (error) { rethrowRead(error); }
     if (!current) throw new KnowledgeNotFoundError("saved answer not found for this merchant");
     if (current.version !== input.expectedVersion) throw new KnowledgeConflictError("saved answer version conflict", current);
 
@@ -579,7 +580,7 @@ export class PostgresKnowledgeManagementRuntime {
       kind: "saved_answer", language: next.language, question: next.question, answer: next.answer,
     }) : null;
     try {
-      return await this.sql.transaction(async (tx) => {
+      return await knowledgeSqlForMerchant(this.sql, merchant).transaction(async (tx) => {
         const duplicate = await tx.query<Record<string, unknown>>(
           `SELECT ${SAVED_COLUMNS} FROM saved_answers
            WHERE merchant_id = $1 AND language = $2 AND normalized_question = $3 AND id <> $4 LIMIT 1`,
@@ -612,7 +613,7 @@ export class PostgresKnowledgeManagementRuntime {
       throw new KnowledgeTransitionError("INVALID_SAVED_ANSWER", "saved answer delete is invalid");
     }
     try {
-      return await this.sql.transaction(async (tx) => {
+      return await knowledgeSqlForMerchant(this.sql, merchant).transaction(async (tx) => {
         const result = await tx.query<Record<string, unknown>>(
           `DELETE FROM saved_answers WHERE merchant_id=$1 AND id=$2 AND version=$3 RETURNING ${SAVED_COLUMNS}`,
           [merchant, id, input.expectedVersion],
@@ -695,7 +696,7 @@ export class PostgresKnowledgeManagementRuntime {
     }
 
     try {
-      const result = await this.sql.query<Record<string, unknown>>(
+      const result = await knowledgeSqlForMerchant(this.sql, merchant).query<Record<string, unknown>>(
         `SELECT ${TRAINING_COLUMNS},
                 to_char(
                   updated_at AT TIME ZONE 'UTC',
@@ -804,7 +805,7 @@ export class PostgresKnowledgeManagementRuntime {
     });
 
     try {
-      return await this.sql.transaction(async (tx) => {
+      return await knowledgeSqlForMerchant(this.sql, merchant).transaction(async (tx) => {
         let retiredLearnedAnswerId: string | null = null;
 
         if (input.sourceStage === "semantic_retrieval" && matchedRecordId) {
@@ -961,7 +962,7 @@ export class PostgresKnowledgeManagementRuntime {
       );
     }
     try {
-      return await currentTraining(this.sql, merchant, id);
+      return await currentTraining(knowledgeSqlForMerchant(this.sql, merchant), merchant, id);
     } catch (error) {
       rethrowRead(error);
     }
@@ -988,7 +989,7 @@ export class PostgresKnowledgeManagementRuntime {
       throw new KnowledgeTransitionError("SUGGESTED_REPLY_REQUIRED", "suggested reply is required");
     }
     try {
-      return await this.sql.transaction(async (tx) => {
+      return await knowledgeSqlForMerchant(this.sql, merchant).transaction(async (tx) => {
         const result = await tx.query<Record<string, unknown>>(
           `UPDATE training_requests SET suggested_reply=$4, suggested_reply_source=$5,
              status='pending_review', rejection_reason=NULL, reviewed_at=NULL,
@@ -1019,7 +1020,7 @@ export class PostgresKnowledgeManagementRuntime {
       throw new KnowledgeTransitionError("INVALID_TRAINING_REQUEST", "training approval is invalid");
     }
     let current: TrainingRequestRecord | null;
-    try { current = await currentTraining(this.sql, merchant, id); } catch (error) { rethrowRead(error); }
+    try { current = await currentTraining(knowledgeSqlForMerchant(this.sql, merchant), merchant, id); } catch (error) { rethrowRead(error); }
     if (!current) throw new KnowledgeNotFoundError("training request not found for this merchant");
     if (current.version !== input.expectedVersion) throw new KnowledgeConflictError("training request version conflict", current);
     if (current.status !== "pending_review" && current.status !== "pending_merchant_reply") {
@@ -1030,7 +1031,7 @@ export class PostgresKnowledgeManagementRuntime {
     const newExamples = uniqueNormalizedList([current.customerTextPreview], 20);
     const newKeywords = uniqueNormalizedList([...(input.keywords || []), ...current.customerTextPreview.split(/\s+/)], 24);
     try {
-      return await this.sql.transaction(async (tx) => {
+      return await knowledgeSqlForMerchant(this.sql, merchant).transaction(async (tx) => {
         const requestResult = await tx.query<Record<string, unknown>>(
           `UPDATE training_requests SET suggested_reply=$4, suggested_reply_source='merchant_draft',
              status='approved', rejection_reason=NULL, reviewed_at=NOW(), version=version+1, updated_at=NOW()
@@ -1103,7 +1104,7 @@ export class PostgresKnowledgeManagementRuntime {
     }
 
     try {
-      return await this.sql.transaction(async (tx) => {
+      return await knowledgeSqlForMerchant(this.sql, merchant).transaction(async (tx) => {
         const requestResult = await tx.query<Record<string, unknown>>(
           `UPDATE training_requests
               SET status='rejected',
@@ -1192,7 +1193,7 @@ export class PostgresKnowledgeManagementRuntime {
       throw new KnowledgeTransitionError("INVALID_TRAINING_REQUEST", "training rejection is invalid");
     }
     try {
-      return await this.sql.transaction(async (tx) => {
+      return await knowledgeSqlForMerchant(this.sql, merchant).transaction(async (tx) => {
         const result = await tx.query<Record<string, unknown>>(
           `UPDATE training_requests SET status='rejected', rejection_reason=$4, reviewed_at=NOW(),
              version=version+1, updated_at=NOW()
@@ -1266,7 +1267,7 @@ export class PostgresKnowledgeManagementRuntime {
     }
 
     try {
-      const result = await this.sql.query<Record<string, unknown>>(
+      const result = await knowledgeSqlForMerchant(this.sql, merchant).query<Record<string, unknown>>(
         `SELECT ${LEARNED_COLUMNS},
                 to_char(
                   updated_at AT TIME ZONE 'UTC',
@@ -1356,7 +1357,7 @@ export class PostgresKnowledgeManagementRuntime {
     }
 
     try {
-      const result = await this.sql.query<Record<string, unknown>>(
+      const result = await knowledgeSqlForMerchant(this.sql, merchant).query<Record<string, unknown>>(
         `SELECT id, merchant_id, action, entity_type, entity_id, customer_text_hash,
                 customer_text_length, signal_codes, decision_code, outcome_code, created_at,
                 to_char(

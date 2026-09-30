@@ -39,6 +39,7 @@ export class KnowledgeRuntimeGateError extends Error {
 export type KnowledgeSqlResult<Row> = { rows: Row[] };
 
 export interface KnowledgeSqlExecutor {
+  forMerchant?(merchantId: string): KnowledgeSqlExecutor;
   query<Row extends Record<string, unknown> = Record<string, unknown>>(
     sql: string,
     values?: readonly unknown[],
@@ -46,24 +47,32 @@ export interface KnowledgeSqlExecutor {
 }
 
 export interface KnowledgeSqlClient extends KnowledgeSqlExecutor {
+  forMerchant?(merchantId: string): KnowledgeSqlClient;
   transaction<T>(
     operation: (executor: KnowledgeSqlExecutor) => Promise<T>,
   ): Promise<T>;
 }
 
 class PostgresKnowledgeSqlClient implements KnowledgeSqlClient {
+  constructor(private readonly merchantId?: string) {}
+
+  forMerchant(merchantId: string): KnowledgeSqlClient {
+    return new PostgresKnowledgeSqlClient(merchantId);
+  }
+
   async query<Row extends Record<string, unknown>>(
     sql: string,
     values: readonly unknown[] = [],
   ): Promise<KnowledgeSqlResult<Row>> {
-    const { pool } = await import("@workspace/db");
-    const result = await pool.query(sql, Array.from(values));
-    return { rows: result.rows as Row[] };
+    return this.transaction((tx) => tx.query<Row>(sql, values));
   }
 
   async transaction<T>(
     operation: (executor: KnowledgeSqlExecutor) => Promise<T>,
   ): Promise<T> {
+    if (!this.merchantId) {
+      throw new KnowledgeRuntimeGateError("KNOWLEDGE_MERCHANT_REQUIRED", "merchant is required", 400);
+    }
     const { pool } = await import("@workspace/db");
     const connection = await pool.connect();
     const executor: KnowledgeSqlExecutor = {
@@ -78,6 +87,7 @@ class PostgresKnowledgeSqlClient implements KnowledgeSqlClient {
 
     try {
       await connection.query("BEGIN");
+      await connection.query("SELECT set_config('fawri.tenant_id', $1, true)", [this.merchantId]);
       const result = await operation(executor);
       await connection.query("COMMIT");
       return result;
@@ -92,6 +102,18 @@ class PostgresKnowledgeSqlClient implements KnowledgeSqlClient {
       connection.release();
     }
   }
+}
+
+export function knowledgeSqlForMerchant(sql: KnowledgeSqlClient, merchantId: string): KnowledgeSqlClient;
+export function knowledgeSqlForMerchant(sql: KnowledgeSqlExecutor, merchantId: string): KnowledgeSqlExecutor;
+export function knowledgeSqlForMerchant(sql: KnowledgeSqlExecutor, merchantId: string): KnowledgeSqlExecutor {
+  const normalized = String(merchantId || "").trim();
+  if (!normalized || normalized.length > 200) {
+    throw new KnowledgeRuntimeGateError("KNOWLEDGE_MERCHANT_REQUIRED", "merchant is required", 400);
+  }
+  // Real clients bind an immutable tenant. Transaction executors already retain
+  // their connection-local scope; injected query-only test clients remain usable.
+  return sql.forMerchant ? sql.forMerchant(normalized) : sql;
 }
 
 let sqlClientSingleton: KnowledgeSqlClient | null = null;
@@ -238,7 +260,7 @@ async function loadMerchantSettings(
 
   let result: KnowledgeSqlResult<Record<string, unknown>>;
   try {
-    result = await sqlClient.query(MERCHANT_POLICY_SQL, [requested]);
+    result = await knowledgeSqlForMerchant(sqlClient, requested).query(MERCHANT_POLICY_SQL, [requested]);
   } catch {
     safeError("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
   }
@@ -650,7 +672,7 @@ export class PostgresKnowledgeRuntime {
     if (!normalized) return null;
     let result: KnowledgeSqlResult<Record<string, unknown>>;
     try {
-      result = await this.sqlClient.query(SAVED_ANSWER_SQL, [
+      result = await knowledgeSqlForMerchant(this.sqlClient, params.merchantId).query(SAVED_ANSWER_SQL, [
         params.merchantId,
         normalized,
         params.language,
@@ -669,7 +691,7 @@ export class PostgresKnowledgeRuntime {
   async listApprovedSemanticDocuments(merchantId: string): Promise<SemanticDocument[]> {
     let result: KnowledgeSqlResult<Record<string, unknown>>;
     try {
-      result = await this.sqlClient.query(APPROVED_DOCUMENTS_SQL, [merchantId]);
+      result = await knowledgeSqlForMerchant(this.sqlClient, merchantId).query(APPROVED_DOCUMENTS_SQL, [merchantId]);
     } catch {
       safeError("KNOWLEDGE_DATABASE_UNAVAILABLE", "knowledge database is unavailable");
     }
@@ -708,7 +730,7 @@ export class PostgresKnowledgeRuntime {
 
     let result: KnowledgeSqlResult<Record<string, unknown>>;
     try {
-      result = await this.sqlClient.query(VECTOR_CANDIDATES_SQL, [
+      result = await knowledgeSqlForMerchant(this.sqlClient, params.merchantId).query(VECTOR_CANDIDATES_SQL, [
         params.merchantId,
         this.embeddingProvider.model,
       ]);
@@ -829,7 +851,7 @@ export class PostgresKnowledgeRuntime {
     };
 
     try {
-      await this.sqlClient.transaction(async (tx) => {
+      await knowledgeSqlForMerchant(this.sqlClient, merchantId).transaction(async (tx) => {
         await tx.query(
           `INSERT INTO training_requests
            (id, merchant_id, customer_text_preview, customer_text_hash, customer_text_length,
@@ -921,7 +943,7 @@ export class PostgresKnowledgeRuntime {
     };
 
     try {
-      await this.sqlClient.transaction(async (tx) => {
+      await knowledgeSqlForMerchant(this.sqlClient, merchantId).transaction(async (tx) => {
         await tx.query(
           `INSERT INTO training_requests
            (id, merchant_id, customer_text_preview, customer_text_hash, customer_text_length,
@@ -1017,7 +1039,7 @@ async function insertAudit(
   const decisionCode = boundedText(event.metadata?.reasonCode, 100) || null;
   const outcomeCode = boundedText(event.outcome, 40) || "rejected";
 
-  await executor.query(
+  await knowledgeSqlForMerchant(executor, merchantId).query(
     `INSERT INTO knowledge_audit_events
      (id, merchant_id, action, entity_type, entity_id, actor_account_id,
       customer_text_hash, customer_text_length, signal_codes, decision_code,

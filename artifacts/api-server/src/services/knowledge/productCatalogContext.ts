@@ -1,6 +1,7 @@
 import {
   isAuthoritativeFactQuestion,
   getPostgresKnowledgeSqlClient,
+  knowledgeSqlForMerchant,
   KnowledgeRuntimeGateError,
   type KnowledgeSqlExecutor,
 } from "./postgresKnowledgeRuntime.js";
@@ -332,7 +333,7 @@ export class PostgresMerchantCatalogContextResolver
     let products: Record<string, unknown>[];
     try {
       products = (
-        await this.sql.query<Record<string, unknown>>(PRODUCTS_SQL, [merchantId])
+        await knowledgeSqlForMerchant(this.sql, merchantId).query<Record<string, unknown>>(PRODUCTS_SQL, [merchantId])
       ).rows;
     } catch {
       fail(
@@ -395,13 +396,13 @@ export class PostgresMerchantCatalogContextResolver
     let optionRows: Record<string, unknown>[];
     try {
       variants = (
-        await this.sql.query<Record<string, unknown>>(VARIANTS_SQL, [
+        await knowledgeSqlForMerchant(this.sql, merchantId).query<Record<string, unknown>>(VARIANTS_SQL, [
           merchantId,
           productId,
         ])
       ).rows;
       optionRows = (
-        await this.sql.query<Record<string, unknown>>(OPTIONS_SQL, [
+        await knowledgeSqlForMerchant(this.sql, merchantId).query<Record<string, unknown>>(OPTIONS_SQL, [
           merchantId,
           productId,
         ])

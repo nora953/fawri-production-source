@@ -1,5 +1,6 @@
 import {
   getPostgresKnowledgeSqlClient,
+  knowledgeSqlForMerchant,
   KnowledgeRuntimeGateError,
   type KnowledgeSqlClient,
 } from "./postgresKnowledgeRuntime.js";
@@ -29,7 +30,7 @@ export async function deleteMerchantKnowledgePostgresData(
   const merchantId = normalizeMerchantId(value);
 
   try {
-    return await sql.transaction(async (tx) => {
+    return await knowledgeSqlForMerchant(sql, merchantId).transaction(async (tx) => {
       // Remove vectors first so no stale semantic records survive a partial cleanup.
       await tx.query(
         `DELETE FROM knowledge_embeddings WHERE merchant_id = $1`,
