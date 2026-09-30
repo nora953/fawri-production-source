@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import {
+  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   withMerchantOperationalTransaction,
 } from "./operationalPostgresAuthority";
@@ -7,6 +8,17 @@ import {
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SUBSCRIPTION_EXPIRY_REMINDER_DAYS = 7;
 const ADDON_EXPIRY_REMINDER_DAYS = 10;
+
+export async function refreshSubscriptionNotificationsPostgresForAllMerchants(): Promise<void> {
+  assertRequired();
+  const pool = await operationalDatabasePool();
+  // The merchant directory is visible to the worker. Subscriptions are tenant
+  // protected and must only be read inside the existing scoped refresher.
+  const merchants = await pool.query<{ id: string }>("SELECT id FROM merchants ORDER BY id");
+  for (const merchant of merchants.rows) {
+    await refreshSubscriptionNotificationsPostgres(merchant.id);
+  }
+}
 
 export class MerchantNotificationPostgresError extends Error {
   readonly code: string;

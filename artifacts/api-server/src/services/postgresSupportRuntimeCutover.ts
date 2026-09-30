@@ -3,10 +3,9 @@ import {
   supportLifecycleTimer,
 } from "../routes/authRuntimePart4";
 import {
-  operationalDatabasePool,
   operationalPostgresAuthorityRequired,
 } from "./operationalPostgresAuthority";
-import { refreshSubscriptionNotificationsPostgres } from "./postgresMerchantNotificationAuthority";
+import { refreshSubscriptionNotificationsPostgresForAllMerchants } from "./postgresMerchantNotificationAuthority";
 import {
   refreshSupportLifecyclePostgresCanonical,
   SUPPORT_LIFECYCLE_SWEEP_MS,
@@ -23,13 +22,7 @@ function sweepPostgresSupportRuntime(): Promise<void> {
   running = true;
   const sweep = (async () => {
     await refreshSupportLifecyclePostgresCanonical();
-    const pool = await operationalDatabasePool();
-    const subscriptions = await pool.query<{ merchant_id: string }>(
-      `SELECT merchant_id FROM subscriptions ORDER BY merchant_id`,
-    );
-    for (const row of subscriptions.rows) {
-      await refreshSubscriptionNotificationsPostgres(row.merchant_id);
-    }
+    await refreshSubscriptionNotificationsPostgresForAllMerchants();
   })();
 
   activeSweep = sweep.finally(() => {
