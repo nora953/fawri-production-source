@@ -88,4 +88,68 @@ test("disposable PostgreSQL proves tenant RLS under a restricted non-owner runti
   await assert.doesNotReject(() =>
     assertProductionDatabaseRlsReady(productionEnv(), client),
   );
+
+  const ownerRole = "fawri_rls_owner_probe";
+  const middleRole = "fawri_rls_middle_probe";
+  for (const scenario of [
+    { name: "direct owner", role: ownerRole, grants: [], unsafe: true, rlsActive: false },
+    {
+      name: "inherited owner without SET ROLE",
+      role: probeRole,
+      grants: [`GRANT ${ownerRole} TO ${probeRole} WITH INHERIT TRUE, SET FALSE`],
+      unsafe: true, rlsActive: false,
+    },
+    {
+      name: "indirect inherited owner",
+      role: probeRole,
+      grants: [
+        `GRANT ${ownerRole} TO ${middleRole} WITH INHERIT TRUE, SET FALSE`,
+        `GRANT ${middleRole} TO ${probeRole} WITH INHERIT TRUE, SET FALSE`,
+      ],
+      unsafe: true, rlsActive: false,
+    },
+    {
+      name: "owner reachable only through SET ROLE",
+      role: probeRole,
+      grants: [`GRANT ${ownerRole} TO ${probeRole} WITH INHERIT FALSE, SET TRUE`],
+      unsafe: true, rlsActive: true,
+    },
+    {
+      name: "membership without inheritance or SET ROLE remains restricted",
+      role: probeRole,
+      grants: [`GRANT ${ownerRole} TO ${probeRole} WITH INHERIT FALSE, SET FALSE`],
+      unsafe: false, rlsActive: true,
+    },
+  ]) {
+    await t.test(scenario.name, async () => {
+      await client.query("RESET ROLE");
+      await client.query("BEGIN");
+      try {
+        await client.query(`CREATE ROLE ${ownerRole} NOLOGIN NOSUPERUSER NOBYPASSRLS`);
+        await client.query(`CREATE ROLE ${middleRole} NOLOGIN NOSUPERUSER NOBYPASSRLS`);
+        await client.query(`GRANT USAGE ON SCHEMA public TO ${ownerRole}`);
+        await client.query(`ALTER TABLE public.merchant_channels OWNER TO ${ownerRole}`);
+        for (const grant of scenario.grants) await client.query(grant);
+        await client.query(`SET ROLE ${scenario.role}`);
+        const actualRls = await client.query<{ active: boolean }>(
+          "SELECT row_security_active('public.merchant_channels') AS active",
+        );
+        assert.equal(actualRls.rows[0]?.active, scenario.rlsActive);
+        const ownership = await getProductionDatabaseRlsReadiness(client);
+        assert.deepEqual(ownership.ownedTenantTables, scenario.unsafe ? ["merchant_channels"] : []);
+        if (scenario.unsafe) {
+          await assert.rejects(
+            () => assertProductionDatabaseRlsReady(productionEnv(), client),
+            { code: "PRODUCTION_DATABASE_RUNTIME_TABLE_OWNER_FORBIDDEN" },
+          );
+        } else {
+          await assert.doesNotReject(() => assertProductionDatabaseRlsReady(productionEnv(), client));
+        }
+      } finally {
+        // Roll back ownership and grants together, even when a regression fails.
+        await client.query("RESET ROLE");
+        await client.query("ROLLBACK");
+      }
+    });
+  }
 });
