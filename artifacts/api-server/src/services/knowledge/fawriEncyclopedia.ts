@@ -3,6 +3,7 @@ import {
   isAuthoritativeFactQuestion,
   KnowledgeRuntimeGateError,
   getPostgresKnowledgeSqlClient,
+  knowledgeSqlForMerchant,
   type KnowledgeSqlExecutor,
 } from "./postgresKnowledgeRuntime.js";
 import {
@@ -546,7 +547,7 @@ export class PostgresFawriEncyclopediaResolver
     let rows: Array<{ activity_type?: unknown }>;
     try {
       rows = (
-        await this.sql.query<{ activity_type?: unknown }>(
+        await knowledgeSqlForMerchant(this.sql, merchantId).query<{ activity_type?: unknown }>(
           `SELECT activity_type
              FROM merchants
             WHERE id = $1
@@ -589,7 +590,7 @@ export class PostgresFawriEncyclopediaResolver
     let rows: Array<{ activity_type?: unknown }>;
     try {
       rows = (
-        await this.sql.query<{ activity_type?: unknown }>(
+        await knowledgeSqlForMerchant(this.sql, merchantId).query<{ activity_type?: unknown }>(
           `SELECT activity_type
              FROM merchants
             WHERE id = $1
