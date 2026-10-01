@@ -59,6 +59,19 @@ test("product price fact reads only visible tenant PostgreSQL catalog rows", asy
   assert.deepEqual(sql.queries[0].values, ["merchant-a"]);
 });
 
+test("natural English price questions resolve through live product authority", async () => {
+  const sql = new FakeSql(async (query) => query.includes("FROM products") ? [product()] : []);
+  const resolver = new PostgresOperationalFactResolver(sql);
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "How much is هاتف ألف?",
+    language: "en",
+  });
+  assert.equal(result?.factType, "product_price");
+  assert.equal(result?.recordId, "product-a");
+  assert.match(result?.answerText || "", /250,000/);
+});
+
 test("catalog row from another merchant is rejected even if SQL adapter returns it", async () => {
   const resolver = new PostgresOperationalFactResolver(
     new FakeSql(async () => [product({ merchant_id: "merchant-b" })]),

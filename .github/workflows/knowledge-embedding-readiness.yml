@@ -85,6 +85,10 @@ jobs:
           pnpm exec tsx --test --test-concurrency=1 \
             artifacts/api-server/tests/knowledge-postgres-runtime.test.ts \
             artifacts/api-server/tests/knowledge-postgres-operational-facts.test.ts \
+            artifacts/api-server/tests/knowledge-technical-delivery-intent.test.ts \
+            artifacts/api-server/tests/knowledge-curated-ai-grounding.test.ts \
+            artifacts/api-server/tests/knowledge-fawri-encyclopedia.test.ts \
+            artifacts/api-server/tests/knowledge-product-catalog-grounding.test.ts \
             artifacts/api-server/tests/knowledge-delivery-area-rates.test.ts \
             artifacts/api-server/tests/knowledge-ai-runtime.test.ts \
             artifacts/api-server/tests/knowledge-ai-security.test.ts \
