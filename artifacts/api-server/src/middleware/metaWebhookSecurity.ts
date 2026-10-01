@@ -1,3 +1,4 @@
+import { isMetaWebhookPost } from "./metaWebhookPath";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -187,7 +188,7 @@ export function enforceMetaWebhookSecurity(
   res: Response,
   next: NextFunction,
 ): void {
-  if (req.method !== "POST" || req.path !== "/api/meta/webhook") {
+  if (!isMetaWebhookPost(req)) {
     next();
     return;
   }
