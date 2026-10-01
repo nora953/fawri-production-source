@@ -43,7 +43,7 @@ test("unknown Meta page returns retryable 503 instead of dropping the event", as
       },
     };
     let nextCalled = false;
-    enforceMerchantWebhookOperationalAccess(
+    await enforceMerchantWebhookOperationalAccess(
       req as never,
       res as never,
       () => {

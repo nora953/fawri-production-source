@@ -104,7 +104,7 @@ test("operational facts never become reusable knowledge from a manual reply", as
 test("one-off discounts and exceptions are not generalized from a merchant reply", async () => {
   const fake = runtimeFor(
     pendingRequest({
-      customerTextPreview: "Can you give me a special price?",
+      customerTextPreview: "Can you make an exception for me?",
     }),
   );
   const result = await learnFromMerchantManualReply({
