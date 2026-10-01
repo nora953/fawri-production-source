@@ -7,6 +7,7 @@ import {
 } from "./operationalPostgresAuthority";
 import type { KnowledgeConversationMessage } from "./knowledge/types";
 import { notifyMerchantNewCustomerMessagePostgres } from "./postgresOperationalNotificationAuthority";
+import { notifyMerchantKnowledgeGapPostgres } from "./postgresOperationalNotificationAuthority.js";
 
 export type PreparedPostgresMetaAutoReply =
   | {
@@ -619,6 +620,26 @@ export async function preparePostgresMetaAutoReply(
           WHERE merchant_id = $1 AND id = $2`,
         [parsed.merchantId, inbound.conversationId],
       );
+
+      if (
+        decision.reasonCode === "AUTHORITATIVE_FACT_UNAVAILABLE" &&
+        decision.trainingRequestId
+      ) {
+        try {
+          await notifyMerchantKnowledgeGapPostgres({
+            merchantId: parsed.merchantId,
+            trainingRequestId: decision.trainingRequestId,
+            conversationId: current.id,
+          });
+        } catch {
+          console.error("Meta knowledge gap notification failed", {
+            code: "OPERATIONAL_NOTIFICATION_UNAVAILABLE",
+            merchant_id: parsed.merchantId,
+            conversation_id: current.id,
+            training_request_id: decision.trainingRequestId,
+          });
+        }
+      }
     }
 
     const persisted = await findReplyMessage(client, parsed.merchantId, parsed.eventId);

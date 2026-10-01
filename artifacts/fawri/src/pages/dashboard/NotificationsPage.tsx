@@ -433,30 +433,39 @@ export default function NotificationsPage() {
             if (
               notification.type === 'operational_new_order' ||
               notification.type === 'operational_customer_message' ||
-              notification.type === 'operational_payment_conflict'
+              notification.type === 'operational_payment_conflict' ||
+              notification.type === 'operational_knowledge_gap'
             ) {
               const isOrder = notification.type === 'operational_new_order';
               const isPaymentConflict =
                 notification.type === 'operational_payment_conflict';
-              const title = isPaymentConflict
-                ? operationalText.conflictTitle
-                : isOrder
-                  ? operationalText.orderTitle
-                  : operationalText.messageTitle;
-              const body = isPaymentConflict
-                ? formatNotificationText(operationalText.conflictBody, {
-                    order: notification.order_id,
-                  })
-                : isOrder
-                  ? formatNotificationText(operationalText.orderBody, {
+              const isKnowledgeGap =
+                notification.type === 'operational_knowledge_gap';
+              const title = isKnowledgeGap
+                ? operationalText.knowledgeGapTitle
+                : isPaymentConflict
+                  ? operationalText.conflictTitle
+                  : isOrder
+                    ? operationalText.orderTitle
+                    : operationalText.messageTitle;
+              const body = isKnowledgeGap
+                ? operationalText.knowledgeGapBody
+                : isPaymentConflict
+                  ? formatNotificationText(operationalText.conflictBody, {
                       order: notification.order_id,
                     })
-                  : operationalText.messageBody;
-              const openLabel = isPaymentConflict
-                ? operationalText.conflictOpen
-                : isOrder
-                  ? operationalText.orderOpen
-                  : operationalText.messageOpen;
+                  : isOrder
+                    ? formatNotificationText(operationalText.orderBody, {
+                        order: notification.order_id,
+                      })
+                    : operationalText.messageBody;
+              const openLabel = isKnowledgeGap
+                ? operationalText.knowledgeGapOpen
+                : isPaymentConflict
+                  ? operationalText.conflictOpen
+                  : isOrder
+                    ? operationalText.orderOpen
+                    : operationalText.messageOpen;
               return (
                 <article
                   key={notification.id}

@@ -28,3 +28,29 @@ test("manual reply learning is tied to the latest handoff and refuses ambiguous 
   assert.match(source, /learnFromMerchantManualReply\(/);
   assert.match(source, /SET needs_training = FALSE/);
 });
+
+test("authoritative missing facts trigger only the dedicated scoped merchant notification", () => {
+  const autoReplySource = fs.readFileSync(
+    path.join(services, "postgresMetaAutoReplyIntent.ts"),
+    "utf8",
+  );
+  const notificationSource = fs.readFileSync(
+    path.join(services, "postgresOperationalNotificationAuthority.ts"),
+    "utf8",
+  );
+
+  assert.match(
+    autoReplySource,
+    /decision\.reasonCode === "AUTHORITATIVE_FACT_UNAVAILABLE"[\s\S]*decision\.trainingRequestId[\s\S]*try\s*\{[\s\S]*notifyMerchantKnowledgeGapPostgres\(\{[\s\S]*merchantId:\s*parsed\.merchantId[\s\S]*trainingRequestId:\s*decision\.trainingRequestId[\s\S]*conversationId:\s*current\.id[\s\S]*\}\s*catch\s*\{[\s\S]*Meta knowledge gap notification failed/,
+  );
+
+  assert.match(
+    notificationSource,
+    /type:\s*"operational_knowledge_gap"[\s\S]*sourceEntityType:\s*"training_request"[\s\S]*sourceEntityId:\s*trainingRequestId/,
+  );
+
+  assert.match(
+    notificationSource,
+    /training_request_id:\s*trainingRequestId/,
+  );
+});

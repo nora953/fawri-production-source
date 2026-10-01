@@ -8,6 +8,7 @@ import type {
   MerchantNotification,
   MerchantOperationalNotification,
   MerchantPaymentConflictNotification,
+  MerchantKnowledgeGapNotification,
   MerchantSubscriptionExpiredNotification,
   MerchantSubscriptionExpiryReminderNotification,
   MerchantSubscriptionNotification,
@@ -210,6 +211,15 @@ function isPaymentConflict(record: JsonObject): record is WithoutMerchantId<Merc
   );
 }
 
+function isKnowledgeGap(record: JsonObject): record is WithoutMerchantId<MerchantKnowledgeGapNotification> & JsonObject {
+  return (
+    record.type === "operational_knowledge_gap" &&
+    text(record.training_request_id) &&
+    optionalText(record.conversation_id) &&
+    isSafeMerchantNotificationActionUrl(record.action_url)
+  );
+}
+
 export function isMerchantNotificationRecord(value: unknown): value is MerchantNotificationRecord {
   const record = object(value);
   if (!record || !common(record)) return false;
@@ -225,7 +235,8 @@ export function isMerchantNotificationRecord(value: unknown): value is MerchantN
     isSupportReminder(record) ||
     isNewOrder(record) ||
     isCustomerMessage(record) ||
-    isPaymentConflict(record)
+    isPaymentConflict(record) ||
+    isKnowledgeGap(record)
   );
 }
 

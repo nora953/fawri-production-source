@@ -30,8 +30,13 @@ async function insertOperationalNotification(input: {
   type:
     | "operational_new_order"
     | "operational_customer_message"
-    | "operational_payment_conflict";
-  sourceEntityType: "order" | "conversation_event" | "order_payment_conflict";
+    | "operational_payment_conflict"
+    | "operational_knowledge_gap";
+  sourceEntityType:
+    | "order"
+    | "conversation_event"
+    | "order_payment_conflict"
+    | "training_request";
   sourceEntityId: string;
   titleKey: string;
   bodyKey: string;
@@ -132,6 +137,32 @@ export async function notifyMerchantPaymentConflictPostgres(input: {
       action_url: conversationId
         ? `/dashboard/conversations?conversation=${encodeURIComponent(conversationId)}`
         : `/dashboard/orders?order=${encodeURIComponent(orderId)}`,
+    },
+    createdAt: input.createdAt,
+  });
+}
+
+export async function notifyMerchantKnowledgeGapPostgres(input: {
+  merchantId: string;
+  trainingRequestId: string;
+  conversationId?: string;
+  createdAt?: unknown;
+}) {
+  const trainingRequestId = text(input.trainingRequestId);
+  const conversationId = text(input.conversationId);
+  return insertOperationalNotification({
+    merchantId: input.merchantId,
+    type: "operational_knowledge_gap",
+    sourceEntityType: "training_request",
+    sourceEntityId: trainingRequestId,
+    titleKey: "notifications.knowledge_gap.title",
+    bodyKey: "notifications.knowledge_gap.body",
+    variables: {
+      training_request_id: trainingRequestId,
+      ...(conversationId ? { conversation_id: conversationId } : {}),
+      action_url: conversationId
+        ? `/dashboard/conversations?conversation=${encodeURIComponent(conversationId)}`
+        : "/dashboard/conversations",
     },
     createdAt: input.createdAt,
   });
