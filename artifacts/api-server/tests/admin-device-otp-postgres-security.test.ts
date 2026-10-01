@@ -40,7 +40,7 @@ test("owner device OTP endpoints only accept a pre-existing login-created device
 
 test("owner device OTP issue and revoke stay on the PostgreSQL authority", () => {
   const source = fs.readFileSync(commonPath, "utf8");
-  assert.match(source, /legacyAdminRecovery = purpose === "admin_recovery"/);
+  assert.equal(source.includes("authSecurityStore.issueOtpChallenge"), false);
   assert.match(source, /issueMerchantOtpChallengeAuthoritative\(\{/);
   assert.match(source, /revokeMerchantOtpChallengeAuthoritative\(issued\.challengeId\)/);
   assert.equal(

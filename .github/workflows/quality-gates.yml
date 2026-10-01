@@ -89,6 +89,15 @@ jobs:
           artifacts/api-server/tests/postgres-catalog-update-parameter-contract.test.mjs
           artifacts/api-server/tests/support-status-enum-contract.test.mjs
 
+      - name: Run all API unit tests
+        working-directory: artifacts/api-server
+        env:
+          NODE_ENV: test
+        run: |
+          mapfile -t tests < <(find tests -maxdepth 1 -name '*.test.ts' ! -name '*.integration.test.ts' | sort)
+          test "${#tests[@]}" -gt 0
+          pnpm exec tsx --test --test-concurrency=2 --test-timeout=60000 "${tests[@]}"
+
   full-build:
     runs-on: ubuntu-latest
     timeout-minutes: 25

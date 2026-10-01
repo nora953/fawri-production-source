@@ -91,7 +91,7 @@ test("queue write failure returns 503 without marking event processed", async ()
       nextCalled = true;
     }) as NextFunction;
 
-    enqueueMetaWebhookEvents(request, response, next);
+    await enqueueMetaWebhookEvents(request, response, next);
 
     assert.equal(nextCalled, false);
     assert.equal(state.statusCode, 503);

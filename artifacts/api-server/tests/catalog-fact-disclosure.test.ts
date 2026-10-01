@@ -119,14 +119,14 @@ test("promotion formatting remains currency-code based for future non-IQD catalo
   const answer = catalogPriceAnswer({
     language: "en",
     itemName: "Consultation",
-    unitPriceIqd: 80,
-    baseUnitPriceIqd: 100,
+    unitPriceIqd: 8000,
+    baseUnitPriceIqd: 10000,
     currencyCode: "USD",
     promotionApplied: true,
     commerce: serviceCommerce,
   });
   assert.equal(
     answer,
-    "Consultation is currently 80 USD on offer, instead of 100 USD.",
+    "Consultation is currently 80.00 USD on offer, instead of 100.00 USD.",
   );
 });

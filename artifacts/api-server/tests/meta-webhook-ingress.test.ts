@@ -30,6 +30,7 @@ function request(mid: string) {
     method: "POST",
     path: "/api/meta/webhook",
     headers: {},
+    socket: { remoteAddress: "203.0.113.10" },
     body: {
       object: "page",
       entry: [
@@ -75,7 +76,7 @@ test("webhook ingress acknowledges only after durable enqueue", async () => {
     );
 
     const accepted = response();
-    enqueueMetaWebhookEvents(request("message-1") as never, accepted as never, () => {
+    await enqueueMetaWebhookEvents(request("message-1") as never, accepted as never, () => {
       throw new Error("external ingress should terminate the response");
     });
     assert.equal(accepted.statusCode, 200);
@@ -90,7 +91,7 @@ test("webhook ingress acknowledges only after durable enqueue", async () => {
       JSON.stringify({ token: "other-worker", pid: 999999 }),
     );
     const unavailable = response();
-    enqueueMetaWebhookEvents(request("message-2") as never, unavailable as never, () => {
+    await enqueueMetaWebhookEvents(request("message-2") as never, unavailable as never, () => {
       throw new Error("external ingress should terminate the response");
     });
     assert.equal(unavailable.statusCode, 503);
