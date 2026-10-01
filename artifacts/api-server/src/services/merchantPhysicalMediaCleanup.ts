@@ -403,8 +403,7 @@ export async function reconcilePendingMerchantPhysicalMediaCleanups(
   try {
     names = fs
       .readdirSync(cleanupRoot())
-      .filter((name) => /^[a-f0-9]{64}\.json$/i.test(name))
-      .slice(0, Math.max(1, Math.min(1000, limit)));
+      .filter((name) => /^[a-f0-9]{64}\.json$/i.test(name));
   } catch (error) {
     if ((error as NodeJS.ErrnoException)?.code === "ENOENT") {
       return { inspected: 0, pending: 0 };
@@ -414,9 +413,11 @@ export async function reconcilePendingMerchantPhysicalMediaCleanups(
 
   let pending = 0;
   let inspected = 0;
+  const batchLimit = Math.max(1, Math.min(1000, limit));
   for (const name of names) {
     const manifest = readManifest(path.join(cleanupRoot(), name));
     if (!manifest || manifest.state === "complete") continue;
+    if (inspected >= batchLimit) break;
     inspected += 1;
     const result = await reconcileMerchantPhysicalMediaCleanup(
       manifest.merchant_id,
