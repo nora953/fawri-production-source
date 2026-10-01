@@ -195,6 +195,14 @@ test("Meta webhook verifies signatures and filters duplicate events", async (t) 
   assert.equal(missingSignature.response.status, 401);
   assert.equal(missingSignature.body.code, "META_WEBHOOK_SIGNATURE_REQUIRED");
 
+  for (const webhookPath of ["/api/meta/webhook/", "/API/META/WEBHOOK", "/Api/Meta/Webhook/?source=AbC"]) {
+    const unsigned = await jsonResponse(await fetch(`${baseUrl}${webhookPath}`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: payload,
+    }));
+    assert.equal(unsigned.response.status, 401, webhookPath);
+    assert.equal(unsigned.body.code, "META_WEBHOOK_SIGNATURE_REQUIRED");
+  }
+
   const invalidSignature = await jsonResponse(
     await fetch(`${baseUrl}/api/meta/webhook`, {
       method: "POST",
@@ -208,8 +216,8 @@ test("Meta webhook verifies signatures and filters duplicate events", async (t) 
   assert.equal(invalidSignature.response.status, 401);
   assert.equal(invalidSignature.body.code, "META_WEBHOOK_SIGNATURE_INVALID");
 
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const valid = await fetch(`${baseUrl}/api/meta/webhook`, {
+  for (const webhookPath of ["/api/meta/webhook", "/api/meta/webhook/", "/API/META/WEBHOOK", "/Api/Meta/Webhook/?source=AbC"]) {
+    const valid = await fetch(`${baseUrl}${webhookPath}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

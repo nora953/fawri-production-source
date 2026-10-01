@@ -1,3 +1,4 @@
+import { isMetaWebhookPost } from "./metaWebhookPath";
 import type { NextFunction, Request, Response } from "express";
 import {
   getMetaWebhookEventId,
@@ -47,7 +48,7 @@ export async function enqueueMetaWebhookEvents(
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  if (req.method !== "POST" || req.path !== "/api/meta/webhook") {
+  if (!isMetaWebhookPost(req)) {
     next();
     return;
   }
