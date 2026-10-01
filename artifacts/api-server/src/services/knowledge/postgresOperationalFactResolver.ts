@@ -46,10 +46,9 @@ import type {
   KnowledgeLanguage,
 } from "./types.js";
 
-const DELIVERY_TERMS = ["توصيل", "التوصيل", "شحن", "يوصل", "delivery", "shipping", "گەیاندن", "گواستنەوە"];
+import { hasDeliveryPolicyIntent, hasPriceIntent } from "./operationalIntent.js";
 const PAYMENT_TERMS = ["دفع", "الدفع", "كاش", "نقد", "payment", "pay", "cash", "پارەدان"];
 const BUSINESS_TERMS = ["اسم المتجر", "اسم المحل", "store name", "business name", "ناوی فرۆشگا"];
-const PRICE_TERMS = ["سعر", "السعر", "بكم", "شكد", "price", "cost", "نرخ"];
 const STOCK_TERMS = ["مخزون", "متوفر", "متوفره", "متوفرة", "available", "stock", "in stock", "بەردەست"];
 const WEIGHT_TERMS = ["وزن", "وزنه", "الوزن", "weight", "weigh", "کێش", "كێش"];
 const DIMENSION_TERMS = ["أبعاد", "ابعاد", "الأبعاد", "الطول", "العرض", "الارتفاع", "dimensions", "dimension", "measurements", "size", "ڕەهەند", "درێژی", "پانی", "بەرزی"];
@@ -1290,7 +1289,7 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
     const weight = containsAny(normalized, WEIGHT_TERMS);
     const dimensions = containsAny(normalized, DIMENSION_TERMS);
     const physicalIntent = weight || dimensions;
-    const deliveryIntent = containsAny(normalized, DELIVERY_TERMS);
+    const deliveryIntent = hasDeliveryPolicyIntent(input.customerText);
     const kinds = {
       delivery: deliveryIntent,
       payment: containsAny(normalized, PAYMENT_TERMS),
@@ -1298,7 +1297,7 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
       price:
         !physicalIntent &&
         !deliveryIntent &&
-        containsAny(normalized, PRICE_TERMS),
+        hasPriceIntent(input.customerText),
       stock: containsAny(normalized, STOCK_TERMS),
       weight,
       dimensions,
