@@ -620,6 +620,12 @@ export async function recordVerifiedProviderPaymentEvidenceAuthoritative(
   const eventReceivedAt = receivedAt(input.receivedAt);
 
   const applied = await withMerchantOperationalTransaction(merchantId, async (client) => {
+    // Serialize the absent-event check as well as the insert. An order row lock
+    // alone is too late, and cannot protect event IDs reused across two orders.
+    await client.query(
+      "SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))",
+      [merchantId, JSON.stringify([provider, eventId])],
+    );
     const existing = await findExistingEvent(client, merchantId, provider, eventId);
     if (existing) {
       if (

@@ -871,6 +871,78 @@ test("provider metadata rejects credential and card-secret fields", async () => 
   );
 });
 
+test("concurrent identical provider events are deduplicated without database errors", async () => {
+  const orderId = "order-provider-concurrent";
+  await seedElectronicOrder({
+    id: orderId,
+    conversationId: "conversation-provider-concurrent",
+    customerId: "customer-provider-concurrent",
+    amount: 49_000,
+    paymentMethod: "fastpay",
+  });
+  const evidence = {
+    merchantId: merchant.account.id,
+    orderId,
+    provider: "fastpay",
+    providerEventId: "fastpay-concurrent-event-0001",
+    outcome: "paid" as const,
+    amountIqd: 49_000,
+    currency: "IQD" as const,
+    payloadSha256: hash("fastpay-concurrent-event-0001"),
+    authenticityVerified: true as const,
+  };
+  const blocker = await pool.connect();
+  const stockBefore = await raw("SELECT quantity FROM location_inventory_levels WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3 AND variant_id IS NULL", [merchant.account.id, fulfillmentLocationId, fulfillmentProductId]);
+  let requests: Promise<PromiseSettledResult<Awaited<ReturnType<typeof providerPayments.recordVerifiedProviderPaymentEvidenceAuthoritative>>>[]> | undefined;
+  try {
+    await blocker.query("BEGIN");
+    await blocker.query("SELECT id FROM orders WHERE merchant_id = $1 AND id = $2 FOR UPDATE", [merchant.account.id, orderId]);
+    requests = Promise.allSettled([0, 1].map(() => providerPayments.recordVerifiedProviderPaymentEvidenceAuthoritative(evidence)));
+    // Force overlap using actual PostgreSQL locks rather than timing assumptions.
+    let waiting = 0;
+    for (let attempt = 0; attempt < 100 && waiting < 2; attempt += 1) {
+      const result = await raw(`SELECT count(*)::int AS count FROM pg_stat_activity
+        WHERE datname = current_database() AND state = 'active' AND wait_event_type = 'Lock'
+          AND (query LIKE '%FOR UPDATE%' OR query LIKE '%pg_advisory_xact_lock%')`);
+      waiting = result.rows[0].count;
+      if (waiting < 2) await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.equal(waiting, 2, "both provider calls must overlap before releasing the order lock");
+  } finally {
+    await blocker.query("ROLLBACK");
+    blocker.release();
+  }
+  assert.ok(requests);
+  const results = await requests;
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 2, JSON.stringify(results));
+  const deduplicated = results.map((result) => result.status === "fulfilled" && result.value.deduplicated).sort();
+  assert.deepEqual(deduplicated, [false, true]);
+  const events = await raw("SELECT count(*)::int AS count FROM order_payment_provider_events WHERE merchant_id = $1 AND provider_event_id = $2", [merchant.account.id, evidence.providerEventId]);
+  assert.equal(events.rows[0].count, 1);
+  const stockAfter = await raw("SELECT quantity FROM location_inventory_levels WHERE merchant_id = $1 AND location_id = $2 AND product_id = $3 AND variant_id IS NULL", [merchant.account.id, fulfillmentLocationId, fulfillmentProductId]);
+  assert.equal(Number(stockBefore.rows[0].quantity) - Number(stockAfter.rows[0].quantity), 1);
+});
+
+test("concurrent reuse of a provider event for different orders returns a domain collision", async () => {
+  const orderIds = ["order-event-collision-a", "order-event-collision-b"];
+  for (const id of orderIds) await seedElectronicOrder({ id, conversationId: `conversation-${id}`, customerId: `customer-${id}`, amount: 49_000, paymentMethod: "fastpay" });
+  const results = await Promise.allSettled(orderIds.map((orderId) => providerPayments.recordVerifiedProviderPaymentEvidenceAuthoritative({
+    merchantId: merchant.account.id,
+    orderId,
+    provider: "fastpay",
+    providerEventId: "fastpay-concurrent-collision-0001",
+    outcome: "paid",
+    amountIqd: 49_000,
+    currency: "IQD",
+    payloadSha256: hash("fastpay-concurrent-collision-0001"),
+    authenticityVerified: true,
+  })));
+  assert.equal(results.filter((result) => result.status === "fulfilled").length, 1);
+  const rejected = results.find((result) => result.status === "rejected");
+  assert.ok(rejected && rejected.status === "rejected");
+  assert.equal(rejected.reason.code, "ORDER_PAYMENT_PROVIDER_EVENT_COLLISION");
+});
+
 test.after(async () => {
   await pool.end();
   fs.rmSync(dataDir, { recursive: true, force: true });
