@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import fs from './helpers/contract-source.mjs';
 import test from 'node:test';
 
 const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'utf8');
@@ -28,8 +28,8 @@ test('cashier history keeps connectivity beside identity and navigation at the f
 
 test('cashier reports exposes live connectivity with the POS badge hierarchy', () => {
   assert.match(reports, /const \[online, setOnline\] = useState\(\(\) => navigator\.onLine\)/);
-  assert.match(reports, /window\.addEventListener\('online', updateOnline\)/);
-  assert.match(reports, /window\.addEventListener\('offline', updateOnline\)/);
+  assert.match(reports, /window\.addEventListener\('online', handleConnectivityChange\)/);
+  assert.match(reports, /window\.addEventListener\('offline', handleConnectivityChange\)/);
   assert.match(reports, /online \? labels\.online : labels\.offline/);
   assert.match(reports, /inline-flex h-8 items-center justify-center rounded-\[0\.625rem\]/);
   assert.match(reports, /online: 'متصل'/);
@@ -53,7 +53,7 @@ test('cashier report metric values follow the page direction without losing nume
 });
 
 test('cashier reports groups return and void counts inside their monetary metric', () => {
-  assert.match(reports, /refunds: 'قيمة المرتجعات والإلغاءات'/);
+  assert.match(reports, /refunds: 'قيمة الإرجاعات والإلغاءات'/);
   assert.match(reports, /refunds: 'Returns & voids value'/);
   assert.match(reports, /title=\{labels\.refunds\}[\s\S]*value=\{money\(currency\.refunds_minor\)\}[\s\S]*meta=\{/);
   assert.match(reports, /\{labels\.returns\}: <bdi dir="ltr" className="font-bold text-slate-700">\{currency\.return_count\}<\/bdi>/);

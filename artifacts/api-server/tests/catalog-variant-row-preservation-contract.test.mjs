@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from '../../fawri/tests/helpers/contract-source.mjs';
 import test from 'node:test';
 
 const source = await readFile(
-  new URL('../src/services/postgresCatalogAuthority.ts', import.meta.url),
+  new URL('../src/services/postgresCatalogAuthorityCore.ts', import.meta.url),
   'utf8',
 );
 

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readContractSourceSync as readFileSync } from './helpers/contract-source.mjs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';

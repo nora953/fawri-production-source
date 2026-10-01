@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readContractSource as readFile } from './helpers/contract-source.mjs';
 import test from "node:test";
 
 const store = await readFile(new URL("../src/lib/store.ts", import.meta.url), "utf8");
@@ -107,10 +107,12 @@ test("merchant and administrator browser state stays isolated by tab and role", 
 
   assert.match(
     dashboard,
-    /const lifecycle = await checkMerchantLifecycle\(controller\.signal\);/,
+    /let lifecycle = await checkMerchantLifecycle\(controller\.signal\);/,
     "merchant dashboard access must be revalidated against server authority",
   );
-  assert.match(dashboard, /lifecycle\.reason === 'unauthenticated' \? '\/login' : '\/pending'/);
+  assert.match(dashboard, /lifecycle\.reason === 'unauthenticated'/);
+  assert.match(dashboard, /setLocation\('\/login'\)/);
+  assert.match(dashboard, /setLocation\('\/pending'\)/);
   assert.match(dashboard, /updated\.is_admin === true/);
   assert.match(dashboard, /clearMerchantTabSession\(\);/);
   assert.match(dashboard, /if \(checkingAccess\)/);

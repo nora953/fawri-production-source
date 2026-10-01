@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from '../../fawri/tests/helpers/contract-source.mjs';
 import test from 'node:test';
 
 const apiRoot = new URL('../', import.meta.url);
@@ -140,9 +140,9 @@ test('English cashier management copy matches the Arabic reference meaning', asy
   assert.match(page, /Manage cashier devices, staff, permissions and secure pairing\./);
   assert.match(page, /Discount permission is not granted automatically\./);
   assert.match(page, /Any discount over the limit requires approval from an authorized manager\./);
-  assert.match(page, /branchKey: 'Branch code'/);
-  assert.match(page, /Only one station per branch can have this authority\./);
-  assert.match(page, /While offline, other stations cannot sell tracked inventory, preventing stock conflicts\./);
+  assert.match(page, /location: 'Location'/);
+  assert.match(page, /Only one station per location can have this authority\./);
+  assert.match(page, /While offline, other stations at the same location cannot sell tracked inventory, preventing stock conflicts\./);
   assert.doesNotMatch(page, /Discount authority is sensitive and is never granted automatically by role/);
 });
 
@@ -183,7 +183,7 @@ test('Sorani cashier copy follows the frozen Arabic reference without UI fallbac
 
   assert.match(management, /discountWarning: 'دەسەڵاتی داشکاندن خۆکارانە نادرێت\.[\s\S]*تێپەڕاندنی سنوور پێویستی بە پەسەندی بەڕێوەبەری مۆڵەتپێدراو هەیە\.'/);
   assert.match(management, /offlineAuthority: 'ڕێگەدان بە ئەم وێستگەیە بۆ فرۆشتنی کۆگای بەدواداچووکراو بەبێ ئینتەرنێت'/);
-  assert.match(management, /offlineHint: 'تەنها یەک وێستگە لە هەر لقێک ئەم دەسەڵاتە هەیە\. وێستگەکانی تر لە کاتی پچڕانی ئینتەرنێت/);
+  assert.match(management, /offlineHint: 'تەنها یەک وێستگە لە هەر شوێنێک ئەم دەسەڵاتە هەیە\. لە کاتی پچڕانی ئینتەرنێت، وێستگەکانی تری هەمان شوێن/);
   assert.match(management, /lang === 'ku' \? 'ckb-IQ'/);
   assert.match(management, /lang === 'ku' \? \{ hour12: false \} : undefined/);
   assert.doesNotMatch(management, /دەسەڵاتی داشکاندن هەستیارە و بە ڕۆڵ خۆکارانە نادرێت/);
