@@ -622,7 +622,11 @@ export async function preparePostgresMetaAutoReply(
       );
 
       if (
-        decision.reasonCode === "AUTHORITATIVE_FACT_UNAVAILABLE" &&
+        [
+          "AUTHORITATIVE_FACT_UNAVAILABLE",
+          "NO_TRUSTED_ANSWER",
+          "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",
+        ].includes(decision.reasonCode) &&
         decision.trainingRequestId
       ) {
         try {

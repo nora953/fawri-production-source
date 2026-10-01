@@ -29,7 +29,7 @@ test("manual reply learning is tied to the latest handoff and refuses ambiguous 
   assert.match(source, /SET needs_training = FALSE/);
 });
 
-test("authoritative missing facts trigger only the dedicated scoped merchant notification", () => {
+test("knowledge-gap reasons trigger only the dedicated scoped merchant notification", () => {
   const autoReplySource = fs.readFileSync(
     path.join(services, "postgresMetaAutoReplyIntent.ts"),
     "utf8",
@@ -41,7 +41,12 @@ test("authoritative missing facts trigger only the dedicated scoped merchant not
 
   assert.match(
     autoReplySource,
-    /decision\.reasonCode === "AUTHORITATIVE_FACT_UNAVAILABLE"[\s\S]*decision\.trainingRequestId[\s\S]*try\s*\{[\s\S]*notifyMerchantKnowledgeGapPostgres\(\{[\s\S]*merchantId:\s*parsed\.merchantId[\s\S]*trainingRequestId:\s*decision\.trainingRequestId[\s\S]*conversationId:\s*current\.id[\s\S]*\}\s*catch\s*\{[\s\S]*Meta knowledge gap notification failed/,
+    /\[\s*"AUTHORITATIVE_FACT_UNAVAILABLE",\s*"NO_TRUSTED_ANSWER",\s*"AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",?\s*\]\.includes\(decision\.reasonCode\)[\s\S]*decision\.trainingRequestId[\s\S]*try\s*\{[\s\S]*notifyMerchantKnowledgeGapPostgres\(\{[\s\S]*merchantId:\s*parsed\.merchantId[\s\S]*trainingRequestId:\s*decision\.trainingRequestId[\s\S]*conversationId:\s*current\.id[\s\S]*\}\s*catch\s*\{[\s\S]*Meta knowledge gap notification failed/,
+  );
+
+  assert.doesNotMatch(
+    autoReplySource,
+    /"PROMPT_INJECTION_BLOCKED"[\s\S]{0,300}notifyMerchantKnowledgeGapPostgres/,
   );
 
   assert.match(
