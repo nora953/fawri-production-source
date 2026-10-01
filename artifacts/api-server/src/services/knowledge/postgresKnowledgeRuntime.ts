@@ -23,6 +23,7 @@ import {
 import { customerTextPreview } from "./redaction.js";
 import { classifyWarrantyAuthorityDomain } from "./subscriptionGuaranteeClassification.js";
 import { responseStyleFromMerchantMetadata } from "../merchantResponseStyle.js";
+import { hasDeliveryPolicyIntent, hasPriceIntent } from "./operationalIntent.js";
 
 export class KnowledgeRuntimeGateError extends Error {
   readonly code: string;
@@ -359,16 +360,6 @@ function containsAny(text: string, terms: readonly string[]): boolean {
   return terms.some((term) => text.includes(normalizeKnowledgeText(term)));
 }
 
-const DELIVERY_TERMS = [
-  "توصيل",
-  "التوصيل",
-  "شحن",
-  "يوصل",
-  "delivery",
-  "shipping",
-  "گەیاندن",
-  "گواستنەوە",
-] as const;
 const PAYMENT_TERMS = [
   "دفع",
   "الدفع",
@@ -421,7 +412,7 @@ export class PostgresKnowledgeFactResolver implements KnowledgeFactResolver {
     const normalized = normalizeKnowledgeText(input.customerText);
     if (!normalized) return null;
 
-    const asksDelivery = containsAny(normalized, DELIVERY_TERMS);
+    const asksDelivery = hasDeliveryPolicyIntent(input.customerText);
     const asksPayment = containsAny(normalized, PAYMENT_TERMS);
     const asksBusiness = containsAny(normalized, BUSINESS_TERMS);
     const matchedKinds = [asksDelivery, asksPayment, asksBusiness].filter(Boolean).length;
@@ -1076,14 +1067,9 @@ export function isAuthoritativeFactQuestion(customerText: string): boolean {
     return true;
   }
 
-  return containsAny(normalized, [
-    ...DELIVERY_TERMS,
+  return hasDeliveryPolicyIntent(customerText) || hasPriceIntent(customerText) || containsAny(normalized, [
     ...PAYMENT_TERMS,
     ...BUSINESS_TERMS,
-    "سعر",
-    "السعر",
-    "price",
-    "نرخ",
     "مخزون",
     "متوفر",
     "stock",
