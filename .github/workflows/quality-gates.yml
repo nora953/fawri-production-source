@@ -2,17 +2,6 @@ name: Final quality gates
 
 on:
   pull_request:
-    paths:
-      - "artifacts/**"
-      - "lib/**"
-      - "scripts/**"
-      - "package.json"
-      - "**/package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "tsconfig*.json"
-      - ".github/workflows/quality-gates.yml"
-      - ".github/workflows/security-supply-chain.yml"
   workflow_dispatch:
 
 permissions:
