@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from './helpers/contract-source.mjs';
 
 const cardCss = await readFile(
   new URL('../src/pages/dashboard/productCardCompact.css', import.meta.url),
@@ -34,7 +34,8 @@ test('collapsed merchant product cards use one stable visual skeleton', () => {
   assert.match(pageSource, /image=\{product\.image_refs\[0\]\}/);
 
   // Visual harmonization must not change catalog money or inventory authority.
-  assert.match(pageSource, /formatMerchantMoneyMinor\(product\.price_iqd/);
+  assert.match(pageSource, /catalogEffectivePriceRange\(product\)/);
   assert.match(pageSource, /tracksInventory\(product\) \? product\.stock_quantity/);
-  assert.match(pageSource, /toggleInventoryDetails\(product\.id\)/);
+  assert.match(pageSource, /setDetailsProductId\(product\.id\)/);
+  assert.match(pageSource, /<Dialog open=\{Boolean\(detailsProduct\)\}/);
 });

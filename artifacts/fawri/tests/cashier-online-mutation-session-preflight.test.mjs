@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from './helpers/contract-source.mjs';
 import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
@@ -43,8 +43,8 @@ test('sale commit rechecks the current local operator before binding or local co
   const currentSession = runtime.indexOf('const currentSession = await getCashierOperatorSession()', commitStart);
   const loginRequired = runtime.indexOf('CASHIER_OPERATOR_LOGIN_REQUIRED', currentSession);
   const permission = runtime.indexOf("cashierOperatorCan(currentSession, 'sale.create')", currentSession);
-  const binding = runtime.indexOf("bindCashierOperationToCurrentOperator(input.operation_id, 'sale')", currentSession);
-  const localCommit = runtime.indexOf('base.commitSale(input)', currentSession);
+  const binding = runtime.indexOf("bindCashierOperationToCurrentOperator(effectiveInput.operation_id, 'sale')", currentSession);
+  const localCommit = runtime.indexOf('base.commitSale(effectiveInput)', currentSession);
 
   assert.ok(commitStart >= 0, 'operator sale commit wrapper must exist');
   assert.ok(currentSession > commitStart, 'sale must reread the current local session');

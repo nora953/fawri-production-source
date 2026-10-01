@@ -80,6 +80,15 @@ jobs:
       - name: Run full repository typecheck with redaction guard
         run: node scripts/ci-run-redacted.mjs --label full-typecheck -- pnpm run typecheck
 
+      - name: Validate frontend and authority source contracts
+        run: >-
+          node --test artifacts/fawri/tests/*.test.mjs
+          artifacts/api-server/tests/auth-cutover-contract.test.mjs
+          artifacts/api-server/tests/cashier-discount-policy-management-contract.test.mjs
+          artifacts/api-server/tests/catalog-variant-row-preservation-contract.test.mjs
+          artifacts/api-server/tests/postgres-catalog-update-parameter-contract.test.mjs
+          artifacts/api-server/tests/support-status-enum-contract.test.mjs
+
   full-build:
     runs-on: ubuntu-latest
     timeout-minutes: 25

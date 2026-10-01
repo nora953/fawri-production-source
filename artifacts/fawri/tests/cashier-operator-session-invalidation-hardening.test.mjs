@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from './helpers/contract-source.mjs';
 import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
@@ -18,14 +18,16 @@ test('server-rejected cashier operator sessions are cleared before more local PO
   assert.match(entry, /fawri:cashier-operator-session-invalidated/);
 
   const sessionCatch = entry.indexOf('const sessionRequired = isOperatorSessionRequired(rawCode)');
-  const invalidate = entry.indexOf('invalidateCashierOperatorSession()', sessionCatch);
-  const event = entry.indexOf("fawri:cashier-operator-session-invalidated", invalidate);
+  const invalidate = entry.indexOf('invalidateCashierSessionFromSync()', sessionCatch);
+  const helperStart = entry.indexOf('function invalidateCashierSessionFromSync()');
+  const clear = entry.indexOf('invalidateCashierOperatorSession()', helperStart);
+  const event = entry.indexOf("fawri:cashier-operator-session-invalidated", clear);
   const attention = entry.indexOf("status: 'needs_attention'", sessionCatch);
 
   assert.ok(sessionCatch >= 0, 'autosync must classify server session rejection');
   assert.ok(invalidate > sessionCatch, 'rejected operator session must be cleared locally');
-  assert.ok(event > invalidate, 'gate invalidation must be published after local session clearing');
-  assert.ok(attention > event, 'UI attention state should be published after fail-closed invalidation');
+  assert.ok(helperStart >= 0 && clear > helperStart && event > clear, 'gate invalidation must be published after local session clearing');
+  assert.ok(attention > invalidate, 'UI attention state should be published after fail-closed invalidation');
 });
 
 test('cashier operator gate reacts to server-side session invalidation and returns to authorization flow', async () => {

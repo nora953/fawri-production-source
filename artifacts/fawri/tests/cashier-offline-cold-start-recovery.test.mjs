@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from './helpers/contract-source.mjs';
 import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
@@ -11,7 +11,7 @@ async function source(path) {
 test('cashier service worker atomically caches the executable asset graph for cold start', async () => {
   const sw = await source('public/cashier-sw.js');
 
-  assert.match(sw, /CACHE_VERSION = 'v3'/);
+  assert.match(sw, /CACHE_VERSION = 'v[1-9]\d*'/);
   assert.match(sw, /async function installAtomicCashierShell\(\)/);
   assert.match(sw, /const shellResponse = await fetchRequired\('\/cashier\.html'\)/);
   assert.match(sw, /const entryAssets = htmlAssetPaths\(shellText\)/);

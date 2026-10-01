@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from '../../fawri/tests/helpers/contract-source.mjs';
 import test from 'node:test';
 
-const sourceUrl = new URL('../src/services/postgresCatalogAuthority.ts', import.meta.url);
+const sourceUrl = new URL('../src/services/postgresCatalogAuthorityCore.ts', import.meta.url);
 
 function contiguousRange(max) {
   return Array.from({ length: max }, (_, index) => index + 1);

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from './helpers/contract-source.mjs';
 
 const promotionSource = await readFile(
   new URL('../src/pages/dashboard/CatalogPromotionsPage.tsx', import.meta.url),

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import fs from './helpers/contract-source.mjs';
 import test from 'node:test';
 
 const read = relative => fs.readFileSync(new URL(relative, import.meta.url), 'utf8');

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from './helpers/contract-source.mjs';
 import test from 'node:test';
 
 const fawriRoot = new URL('../', import.meta.url);
@@ -57,7 +57,7 @@ test('merchant dashboard exposes safe station editing including offline inventor
   assert.match(page, /editStation/);
 });
 
-test('online policy refresh preserves operator and shift identity before outbox upload', async () => {
+test('optional online policy refresh preserves identity without blocking pending outbox upload', async () => {
   const policy = await fawriSource('src/lib/cashierOperatorPolicyRefresh.ts');
   const entry = await fawriSource('src/cashierMain.tsx');
 
@@ -75,9 +75,14 @@ test('online policy refresh preserves operator and shift identity before outbox 
   const attemptBody = entry.slice(attemptStart, attemptEnd);
   assert.match(attemptBody, /refreshCashierOperatorPolicyFromCloud/);
   assert.ok(
-    attemptBody.indexOf('refreshCashierOperatorPolicyFromCloud') < attemptBody.indexOf('syncCashierOperatorOutboxToCloud'),
-    'online reconciliation must refresh authoritative station policy before outbox upload',
+    attemptBody.indexOf('refreshCashierOperatorPolicyFromCloud') > attemptBody.indexOf('syncCashierOperatorOutboxToCloud'),
+    'pending operations must upload before optional policy/catalog refresh',
   );
+  const sync = await fawriSource('src/lib/cashierOperatorCloudSync.ts');
+  assert.match(sync, /binding\.merchant_id === session\.context\.merchant_id/);
+  assert.match(sync, /binding\.staff_id === session\.context\.staff_id/);
+  assert.match(sync, /binding\.shift_id === session\.context\.shift_id/);
+  assert.match(sync, /CASHIER_OPERATOR_OPERATION_BINDING_CONFLICT/);
 });
 
 test('server-rejected policy refresh fails closed into the operator authorization flow', async () => {

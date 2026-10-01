@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from './helpers/contract-source.mjs';
 import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
@@ -35,7 +35,7 @@ test('report build rechecks current local operator permissions before server or 
   const allPermission = runtime.indexOf("cashierOperatorCan(currentSession, 'sale.view_all')", sessionRead);
   const profitPermission = runtime.indexOf("cashierOperatorCan(currentSession, 'reports.profit')", sessionRead);
   const server = runtime.indexOf('serverReport(currentSession, options)', sessionRead);
-  const binding = runtime.indexOf('bindingVisible(currentSession, bindings.get(sale.operation_id))', sessionRead);
+  const binding = runtime.indexOf('getCashierSaleOperationBindingsForReport({', sessionRead);
 
   assert.ok(buildStart >= 0, 'operator report build wrapper must exist');
   assert.ok(sessionRead > buildStart, 'report reads must reread the current local session');
@@ -44,5 +44,9 @@ test('report build rechecks current local operator permissions before server or 
   assert.ok(ownPermission > sessionRead && allPermission > sessionRead, 'sale visibility must be checked on the current session');
   assert.ok(profitPermission > sessionRead, 'reports.profit must be recalculated from the current session');
   assert.ok(server > profitPermission, 'server report must use the current session');
-  assert.ok(binding > server, 'offline local filtering must also use the current session');
+  assert.ok(binding > server, 'offline local filtering must follow current session checks');
+  assert.match(runtime.slice(binding), /merchantId: currentSession.context.merchant_id/);
+  assert.match(runtime.slice(binding), /stationId: currentSession.context.station_id/);
+  assert.match(runtime.slice(binding), /staffId: currentSession.context.staff_id/);
+  assert.match(runtime.slice(binding), /operationIds: saleBindings.map/);
 });

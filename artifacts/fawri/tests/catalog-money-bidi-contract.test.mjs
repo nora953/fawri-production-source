@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
+import fs from './helpers/contract-source.mjs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -17,11 +17,12 @@ test('Arabic and Kurdish IQD catalog money keeps amount before canonical dinar l
   assert.ok(moneyUi.includes("const compactArabicIqd = currencyCodeNormalized === 'IQD' && lang !== 'en';"));
 });
 
-test('catalog renders amount and merchant currency as separate fixed-order visual runs', () => {
+test('catalog isolates numeric ranges and currency within the page direction', () => {
   assert.ok(catalogPage.includes("import { formatMerchantNumber, merchantCurrencyLabel } from '@/lib/moneyUi';"));
-  assert.ok(catalogPage.includes('className="inline-flex items-baseline gap-1 whitespace-nowrap" dir="ltr"'));
-  assert.ok(catalogPage.includes('<span dir="ltr">{number}</span>'));
-  assert.ok(catalogPage.includes("<span dir={lang === 'en' ? 'ltr' : 'rtl'}>{currency}</span>"));
+  assert.ok(catalogPage.includes("dir={isRTL ? 'rtl' : 'ltr'}"));
+  const number = catalogPage.indexOf('<bdi dir="ltr" style={{ unicodeBidi: \'isolate-override\' }}>{range}</bdi>');
+  const currency = catalogPage.indexOf('<bdi dir={isRTL ? \'rtl\' : \'ltr\'} style={{ unicodeBidi: \'isolate\' }}>{currency}</bdi>');
+  assert.ok(number >= 0 && currency > number);
 });
 
 test('catalog CSS pins split money to amount first and canonical IQD token second', () => {

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from './helpers/contract-source.mjs';
 import test from 'node:test';
 
 const root = new URL('../', import.meta.url);
@@ -28,9 +28,11 @@ test('manual discount is applied after promotions and preserves separate account
   assert.match(discount, /final_total_minor/);
 });
 
-test('employee discount authority uses the stricter percentage and absolute amount limits', async () => {
+test('employee discount authority applies the configured discount type limit', async () => {
   const client = await source('src/lib/cashierDiscountPolicyClient.ts');
-  assert.match(client, /Math\.min\(total, percentageLimit, amountLimit\)/);
+  assert.match(client, /input\.kind === 'amount'/);
+  assert.match(client, /Math\.min\(total, input\.policy\.max_amount_minor\)/);
+  assert.match(client, /Math\.min\(total, percentageLimit\)/);
   const discount = await source('src/lib/cashierManualDiscount.ts');
   assert.match(discount, /manualDiscount <= employeeLimit/);
 });

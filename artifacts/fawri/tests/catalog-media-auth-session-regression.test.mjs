@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readContractSource as readFile } from './helpers/contract-source.mjs';
 import test from 'node:test';
 
 const imageSource = await readFile(
@@ -55,7 +55,8 @@ test('a lost concurrent rotation race does not clear an already validated browse
   const rotationBlock = authSource.slice(rotationStart, nextCall);
 
   assert.match(rotationBlock, /rotateSession/);
-  assert.match(rotationBlock, /if \(rotated\)/);
+  assert.match(rotationBlock, /if \(!rotated\)/);
+  assert.match(rotationBlock, /401,[\s\S]*"SESSION_INVALID"[\s\S]*return;/);
   assert.match(rotationBlock, /setAuthSessionCookie/);
   assert.doesNotMatch(rotationBlock, /clearAuthSessionCookie/);
   assert.doesNotMatch(rotationBlock, /SESSION_ROTATION_FAILED/);
