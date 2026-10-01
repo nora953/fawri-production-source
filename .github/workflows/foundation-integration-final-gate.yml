@@ -157,6 +157,11 @@ jobs:
           pnpm exec tsx --test
           artifacts/api-server/tests/support-image-write-order-postgres.integration.test.ts
 
+      - name: Prove merchant deletion under restricted tenant RLS
+        run: >-
+          pnpm exec tsx --test
+          artifacts/api-server/tests/merchant-deletion-tenant-rls.integration.test.mjs
+
       - name: Prove read-only catalog and commerce readiness
         run: node lib/db/scripts/catalog-variant-signature-readiness.mjs
 
