@@ -8,6 +8,7 @@ import {
   operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
+  withMerchantOperationalTransaction,
   withOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
@@ -1124,7 +1125,7 @@ export async function completeMerchantDeletionPostgres(input: {
   actorAdminId: string;
 }): Promise<{ ok: true; deletedMerchantId: string; deletionRequest: ManagedDeletionRequest }> {
   requirePostgres();
-  return withOperationalTransaction(async (client) => {
+  return withMerchantOperationalTransaction(input.merchantId, async (client) => {
     const merchant = await selectMerchant(client, input.merchantId, true);
     if (!merchant || merchant.account_state === "closed") {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");

@@ -13,6 +13,7 @@ import {
   operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
+  withMerchantOperationalTransaction,
 } from "./operationalPostgresAuthority";
 import {
   completeMerchantDeletionPostgres,
@@ -168,13 +169,14 @@ async function captureCleanupManifest(input: {
     );
   }
 
-  const pool = await operationalDatabasePool();
-  const [merchantRows, catalogRows, supportRows, ticketRows] = await Promise.all([
-    operationalQueryRows<{
+  const [merchantRows, catalogRows, supportRows, ticketRows] = await withMerchantOperationalTransaction(
+    input.merchantId,
+    async (client) => [
+    await operationalQueryRows<{
       merchant_status: string;
       account_state: string;
     }>(
-      pool,
+      client,
       `SELECT m.status::text AS merchant_status, a.state::text AS account_state
          FROM merchants m
          JOIN accounts a ON a.id = m.account_id AND a.kind = 'merchant'
@@ -182,34 +184,35 @@ async function captureCleanupManifest(input: {
         LIMIT 1`,
       [input.merchantId],
     ),
-    operationalQueryRows<{ storage_key: string }>(
-      pool,
+    await operationalQueryRows<{ storage_key: string }>(
+      client,
       `SELECT storage_key
          FROM catalog_image_references
         WHERE merchant_id = $1 AND storage_key IS NOT NULL
         ORDER BY id`,
       [input.merchantId],
     ),
-    operationalQueryRows<{
+    await operationalQueryRows<{
       storage_provider: string;
       storage_key: string;
     }>(
-      pool,
+      client,
       `SELECT storage_provider, storage_key
          FROM support_attachments
         WHERE merchant_id = $1 AND deleted_at IS NULL
         ORDER BY id`,
       [input.merchantId],
     ),
-    operationalQueryRows<{ id: string }>(
-      pool,
+    await operationalQueryRows<{ id: string }>(
+      client,
       `SELECT id
          FROM support_tickets
         WHERE merchant_id = $1
         ORDER BY id`,
       [input.merchantId],
     ),
-  ]);
+    ] as const,
+  );
 
   const merchant = merchantRows[0];
   if (
