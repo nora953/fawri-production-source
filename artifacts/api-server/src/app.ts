@@ -58,6 +58,7 @@ import { enforceMerchantWebhookOperationalAccess } from "./middleware/merchantWe
 import { enforceManualConversationWebhookAccess } from "./middleware/manualConversationWebhookAccess";
 import { enforceMerchantWebhookSubscriptionAccess } from "./middleware/merchantWebhookSubscriptionAccess";
 import { enqueueMetaWebhookEvents } from "./middleware/metaWebhookQueueIngress";
+import { isMetaWebhookPost } from "./middleware/metaWebhookPath";
 import {
   enforceMetaWebhookSecurity,
   type MetaRawBodyRequest,
@@ -306,7 +307,7 @@ app.use(
 app.use(
   express.json({
     verify(req, _res, buffer) {
-      if (req.originalUrl?.startsWith("/api/meta/webhook")) {
+      if (isMetaWebhookPost(req)) {
         (req as MetaRawBodyRequest).rawBody = Buffer.from(buffer);
       }
     },
