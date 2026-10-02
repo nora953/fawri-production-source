@@ -101,3 +101,51 @@ test("mark-as-read rejects mismatched or unconfirmed mutation results", async ()
     /merchant notification read mutation failed/,
   );
 });
+
+test("canonical notification read accepts a scoped knowledge-gap notification", async () => {
+  const knowledgeGapNotification = {
+    id: "knowledge-gap-1",
+    type: "operational_knowledge_gap",
+    training_request_id: "training-request-1",
+    conversation_id: "conversation-1",
+    action_url: "/dashboard/conversations?conversation=conversation-1",
+    created_at: "2026-08-29T00:00:00.000Z",
+  } as const;
+
+  globalThis.fetch = (async () =>
+    new Response(
+      JSON.stringify({ ok: true, notifications: [knowledgeGapNotification] }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    )) as typeof fetch;
+
+  const notifications = await readMerchantNotificationsAuthority();
+  assert.equal(notifications.length, 1);
+  assert.equal(notifications[0]?.type, "operational_knowledge_gap");
+
+  if (notifications[0]?.type === "operational_knowledge_gap") {
+    assert.equal(notifications[0].training_request_id, "training-request-1");
+    assert.equal(notifications[0].conversation_id, "conversation-1");
+  }
+});
+
+test("knowledge-gap notification rejects a missing training request id", async () => {
+  globalThis.fetch = (async () =>
+    new Response(
+      JSON.stringify({
+        ok: true,
+        notifications: [{
+          id: "knowledge-gap-invalid",
+          type: "operational_knowledge_gap",
+          conversation_id: "conversation-1",
+          action_url: "/dashboard/conversations?conversation=conversation-1",
+          created_at: "2026-08-29T00:00:00.000Z",
+        }],
+      }),
+      { status: 200, headers: { "Content-Type": "application/json" } },
+    )) as typeof fetch;
+
+  await assert.rejects(
+    () => readMerchantNotificationsAuthority(),
+    /merchant notification authority unavailable/,
+  );
+});

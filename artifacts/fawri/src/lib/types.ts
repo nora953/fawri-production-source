@@ -340,10 +340,22 @@ export interface MerchantPaymentConflictNotification {
   read_at?: string;
 }
 
+export interface MerchantKnowledgeGapNotification {
+  id: string;
+  merchant_id: string;
+  type: 'operational_knowledge_gap';
+  training_request_id: string;
+  conversation_id?: string;
+  action_url: string;
+  created_at: string;
+  read_at?: string;
+}
+
 export type MerchantOperationalNotification =
   | MerchantNewOrderNotification
   | MerchantCustomerMessageNotification
-  | MerchantPaymentConflictNotification;
+  | MerchantPaymentConflictNotification
+  | MerchantKnowledgeGapNotification;
 
 export type MerchantNotification =
   | MerchantBalanceNotification

@@ -25,6 +25,40 @@ test("manual reply learning is tied to the latest handoff and refuses ambiguous 
   assert.match(source, /metadata\.training_request_id/);
   assert.match(source, /sender = 'customer'/);
   assert.match(source, /created_at > \$3::timestamptz/);
-  assert.match(source, /learnFromMerchantManualReply\(/);
+  assert.match(
+    source,
+    /dependencies\.learnFromMerchantManualReply\s*\|\|\s*learnFromMerchantManualReply/,
+  );
   assert.match(source, /SET needs_training = FALSE/);
+});
+
+test("knowledge-gap reasons trigger only the dedicated scoped merchant notification", () => {
+  const autoReplySource = fs.readFileSync(
+    path.join(services, "postgresMetaAutoReplyIntent.ts"),
+    "utf8",
+  );
+  const notificationSource = fs.readFileSync(
+    path.join(services, "postgresOperationalNotificationAuthority.ts"),
+    "utf8",
+  );
+
+  assert.match(
+    autoReplySource,
+    /\[\s*"AUTHORITATIVE_FACT_UNAVAILABLE",\s*"NO_TRUSTED_ANSWER",\s*"AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",?\s*\]\.includes\(decision\.reasonCode\)[\s\S]*decision\.trainingRequestId[\s\S]*try\s*\{[\s\S]*notifyMerchantKnowledgeGapPostgres\(\{[\s\S]*merchantId:\s*parsed\.merchantId[\s\S]*trainingRequestId:\s*decision\.trainingRequestId[\s\S]*conversationId:\s*current\.id[\s\S]*\}\s*catch\s*\{[\s\S]*Meta knowledge gap notification failed/,
+  );
+
+  assert.doesNotMatch(
+    autoReplySource,
+    /"PROMPT_INJECTION_BLOCKED"[\s\S]{0,300}notifyMerchantKnowledgeGapPostgres/,
+  );
+
+  assert.match(
+    notificationSource,
+    /type:\s*"operational_knowledge_gap"[\s\S]*sourceEntityType:\s*"training_request"[\s\S]*sourceEntityId:\s*trainingRequestId/,
+  );
+
+  assert.match(
+    notificationSource,
+    /training_request_id:\s*trainingRequestId/,
+  );
 });

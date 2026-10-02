@@ -2,17 +2,6 @@ name: Final security and supply chain
 
 on:
   pull_request:
-    paths:
-      - "artifacts/**"
-      - "lib/**"
-      - "scripts/**"
-      - "package.json"
-      - "**/package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - ".npmrc"
-      - ".gitignore"
-      - ".github/workflows/**"
   workflow_dispatch:
 
 permissions:
