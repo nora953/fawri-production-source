@@ -25,7 +25,10 @@ test("manual reply learning is tied to the latest handoff and refuses ambiguous 
   assert.match(source, /metadata\.training_request_id/);
   assert.match(source, /sender = 'customer'/);
   assert.match(source, /created_at > \$3::timestamptz/);
-  assert.match(source, /learnFromMerchantManualReply\(/);
+  assert.match(
+    source,
+    /dependencies\.learnFromMerchantManualReply\s*\|\|\s*learnFromMerchantManualReply/,
+  );
   assert.match(source, /SET needs_training = FALSE/);
 });
 

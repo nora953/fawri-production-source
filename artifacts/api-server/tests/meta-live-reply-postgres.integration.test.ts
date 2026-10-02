@@ -33,6 +33,15 @@ knowledgeDecision.configureKnowledgeEmbeddingProvider({
 const intents = await import("../src/services/postgresMetaAutoReplyIntent.js");
 const liveTransport = await import("../src/services/postgresMetaWebhookReplyTransport.js");
 const workerCore = await import("../src/services/metaWebhookWorkerCore.js");
+const manualConversations = await import(
+  "../src/services/postgresManualConversationAuthority.js"
+);
+const manualKnowledgeLearning = await import(
+  "../src/services/merchantManualKnowledgeLearning.js"
+);
+const knowledgeManagement = await import(
+  "../src/services/knowledge/postgresKnowledgeManagementRuntime.js"
+);
 
 type Merchant = Awaited<ReturnType<typeof accounts.upsertPendingMerchantAuthoritative>>;
 
@@ -486,6 +495,255 @@ await test("stable knowledge gap hands off and notifies only the owning merchant
   );
 
   assert.equal(leaked.rows[0].count, 0);
+});
+
+
+await test("merchant manual reply learns a stable knowledge gap and later auto-replies without tenant leakage", async () => {
+  const senderId = `customer-live-learning-cycle-${runId}`;
+  const firstEventId = `event-live-learning-cycle-first-${runId}`;
+  const merchantReply = "Yes. Gift wrapping is available on request.";
+
+  const firstQueued = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId,
+    eventId: firstEventId,
+    mid: `mid-live-learning-cycle-first-${runId}`,
+    message: "Do you offer gift wrapping?",
+  });
+
+  const firstPrepared = await intents.preparePostgresMetaAutoReply(firstQueued.job);
+  assert.equal(firstPrepared.action, "send");
+  if (firstPrepared.action !== "send") return;
+
+  const handoffTransport =
+    await liveTransport.createPostgresMetaWebhookReplyTransport({
+      prepared: firstPrepared,
+      sendText: async (input) => ({
+        status: "sent",
+        providerMessageId: `provider-learning-handoff-${runId}`,
+        recipientId: input.recipientId,
+      }),
+    });
+
+  const handoffDelivery = await workerCore.processMetaReplyJob(firstQueued.job, {
+    transport: handoffTransport,
+  });
+  assert.equal(handoffDelivery.delivery_status, "sent");
+
+  const conversation = await raw(
+    `SELECT id, status, assigned_to_human, needs_training
+       FROM conversations
+      WHERE merchant_id = $1
+        AND customer_external_id = $2
+      LIMIT 1`,
+    [merchantA.account.id, senderId],
+  );
+
+  assert.equal(conversation.rows.length, 1);
+  assert.equal(conversation.rows[0].status, "manual");
+  assert.equal(conversation.rows[0].assigned_to_human, true);
+  assert.equal(conversation.rows[0].needs_training, true);
+
+  const handoffMessage = await raw(
+    `SELECT id, status, metadata
+       FROM messages
+      WHERE merchant_id = $1
+        AND conversation_id = $2
+        AND sender = 'fawri'
+        AND external_event_id = $3
+      LIMIT 1`,
+    [
+      merchantA.account.id,
+      conversation.rows[0].id,
+      `reply:${firstEventId}`,
+    ],
+  );
+
+  assert.equal(handoffMessage.rows.length, 1);
+  assert.equal(handoffMessage.rows[0].status, "sent");
+  assert.equal(handoffMessage.rows[0].metadata.reason_code, "NO_TRUSTED_ANSWER");
+  assert.equal(handoffMessage.rows[0].metadata.handoff_after_reply, true);
+
+  const trainingRequestId =
+    handoffMessage.rows[0].metadata.training_request_id;
+  assert.ok(trainingRequestId);
+
+  const idempotencyKey = `learning-cycle-${runId}`;
+  const manualPrepared =
+    await manualConversations.prepareManualReplyAuthoritative({
+      merchantId: merchantA.account.id,
+      conversationId: conversation.rows[0].id,
+      idempotencyKey,
+      messageText: merchantReply,
+    });
+
+  assert.equal(manualPrepared.deduplicated, false);
+  assert.equal(manualPrepared.pageId, pageA);
+  assert.equal(manualPrepared.customerId, senderId);
+  assert.equal(manualPrepared.pageAccessToken, "meta-live-secret-A");
+
+  const learningManagement =
+    new knowledgeManagement.PostgresKnowledgeManagementRuntime({
+      embeddingProvider: {
+        providerId: "meta-live-test-embedding",
+        model: "meta-live-test-embedding-v1",
+        dimensions: 2,
+        async embed() {
+          return [1, 0];
+        },
+      },
+    });
+
+  const merchantMessage =
+    await manualConversations.completeManualReplyAuthoritative(
+      {
+        merchantId: merchantA.account.id,
+        conversationId: conversation.rows[0].id,
+        idempotencyKey,
+        messageText: merchantReply,
+        externalMessageId: `provider-merchant-learning-${runId}`,
+      },
+      {
+        learnFromMerchantManualReply: (input) =>
+          manualKnowledgeLearning.learnFromMerchantManualReply({
+            ...input,
+            runtime: learningManagement,
+          }),
+      },
+    );
+
+  assert.equal(merchantMessage.sender, "merchant");
+  assert.equal(merchantMessage.text, merchantReply);
+
+  const learnedState = await raw(
+    `SELECT c.needs_training,
+            tr.status AS training_status,
+            la.id AS learned_answer_id,
+            la.merchant_id AS learned_merchant_id,
+            la.source,
+            la.approval_status,
+            la.safe_to_auto_reply,
+            la.answer_text,
+            m.metadata AS merchant_message_metadata
+       FROM conversations c
+       JOIN training_requests tr
+         ON tr.merchant_id = c.merchant_id
+        AND tr.id = $3
+       JOIN learned_answers la
+         ON la.merchant_id = tr.merchant_id
+        AND la.training_request_id = tr.id
+       JOIN messages m
+         ON m.merchant_id = c.merchant_id
+        AND m.conversation_id = c.id
+        AND m.id = $4
+      WHERE c.merchant_id = $1
+        AND c.id = $2`,
+    [
+      merchantA.account.id,
+      conversation.rows[0].id,
+      trainingRequestId,
+      merchantMessage.id,
+    ],
+  );
+
+  assert.equal(learnedState.rows.length, 1);
+  assert.equal(learnedState.rows[0].needs_training, false);
+  assert.equal(learnedState.rows[0].training_status, "approved");
+  assert.equal(learnedState.rows[0].learned_merchant_id, merchantA.account.id);
+  assert.equal(learnedState.rows[0].source, "merchant_approved");
+  assert.equal(learnedState.rows[0].approval_status, "approved");
+  assert.equal(learnedState.rows[0].safe_to_auto_reply, true);
+  assert.equal(learnedState.rows[0].answer_text, merchantReply);
+  assert.equal(
+    learnedState.rows[0].merchant_message_metadata.manual_reply_learning,
+    "MANUAL_REPLY_LEARNED",
+  );
+  assert.equal(
+    learnedState.rows[0].merchant_message_metadata.learned_training_request_id,
+    trainingRequestId,
+  );
+  assert.equal(
+    learnedState.rows[0].merchant_message_metadata.learned_answer_id,
+    learnedState.rows[0].learned_answer_id,
+  );
+
+  const secondSenderId = `customer-live-learning-reuse-${runId}`;
+  const secondEventId = `event-live-learning-cycle-reuse-${runId}`;
+  const secondQueued = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId: secondSenderId,
+    eventId: secondEventId,
+    mid: `mid-live-learning-cycle-reuse-${runId}`,
+    message: "Do you provide gift wrapping?",
+  });
+
+  const secondPrepared = await intents.preparePostgresMetaAutoReply(secondQueued.job);
+  assert.equal(secondPrepared.action, "send");
+  if (secondPrepared.action !== "send") return;
+  assert.equal(secondPrepared.messageText, merchantReply);
+
+  const reusedMessage = await raw(
+    `SELECT metadata
+       FROM messages
+      WHERE merchant_id = $1
+        AND external_event_id = $2
+        AND sender = 'fawri'
+      LIMIT 1`,
+    [merchantA.account.id, `reply:${secondEventId}`],
+  );
+
+  assert.equal(reusedMessage.rows.length, 1);
+  assert.equal(reusedMessage.rows[0].metadata.knowledge_stage, "semantic_retrieval");
+  assert.equal(reusedMessage.rows[0].metadata.knowledge_source, "merchant_approved");
+  assert.equal(
+    reusedMessage.rows[0].metadata.matched_record_id,
+    learnedState.rows[0].learned_answer_id,
+  );
+  assert.equal(reusedMessage.rows[0].metadata.handoff_after_reply, false);
+
+  const merchantBEventId = `event-live-learning-cycle-tenant-b-${runId}`;
+  const merchantBQueued = await enqueueReply({
+    merchantId: merchantB.account.id,
+    pageId: pageB,
+    senderId: `customer-live-learning-tenant-b-${runId}`,
+    eventId: merchantBEventId,
+    mid: `mid-live-learning-cycle-tenant-b-${runId}`,
+    message: "Do you provide gift wrapping?",
+  });
+
+  const merchantBPrepared =
+    await intents.preparePostgresMetaAutoReply(merchantBQueued.job);
+  assert.equal(merchantBPrepared.action, "send");
+  if (merchantBPrepared.action !== "send") return;
+  assert.notEqual(merchantBPrepared.messageText, merchantReply);
+
+  const merchantBMessage = await raw(
+    `SELECT metadata
+       FROM messages
+      WHERE merchant_id = $1
+        AND external_event_id = $2
+        AND sender = 'fawri'
+      LIMIT 1`,
+    [merchantB.account.id, `reply:${merchantBEventId}`],
+  );
+
+  assert.equal(merchantBMessage.rows.length, 1);
+  assert.equal(merchantBMessage.rows[0].metadata.reason_code, "NO_TRUSTED_ANSWER");
+  assert.notEqual(
+    merchantBMessage.rows[0].metadata.matched_record_id,
+    learnedState.rows[0].learned_answer_id,
+  );
+
+  const leakedKnowledge = await raw(
+    `SELECT count(*)::int AS count
+       FROM learned_answers
+      WHERE merchant_id = $1
+        AND id = $2`,
+    [merchantB.account.id, learnedState.rows[0].learned_answer_id],
+  );
+  assert.equal(leakedKnowledge.rows[0].count, 0);
 });
 
 

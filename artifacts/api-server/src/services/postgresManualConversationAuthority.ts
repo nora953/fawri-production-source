@@ -511,13 +511,18 @@ export async function prepareManualReplyAuthoritative(input: {
   }
 }
 
-export async function completeManualReplyAuthoritative(input: {
-  merchantId: string;
-  conversationId: string;
-  idempotencyKey: string;
-  messageText: string;
-  externalMessageId?: string;
-}): Promise<RuntimeMessage> {
+export async function completeManualReplyAuthoritative(
+  input: {
+    merchantId: string;
+    conversationId: string;
+    idempotencyKey: string;
+    messageText: string;
+    externalMessageId?: string;
+  },
+  dependencies: {
+    learnFromMerchantManualReply?: typeof learnFromMerchantManualReply;
+  } = {},
+): Promise<RuntimeMessage> {
   if (!operationalPostgresAuthorityRequired()) {
     const { completeManualReply } = await import("./manualConversationRuntime");
     return completeManualReply(input);
@@ -734,7 +739,9 @@ export async function completeManualReplyAuthoritative(input: {
 
   if (completed.trainingRequestId) {
     try {
-      const learning = await learnFromMerchantManualReply({
+      const learning = await (
+        dependencies.learnFromMerchantManualReply || learnFromMerchantManualReply
+      )({
         merchantId,
         trainingRequestId: completed.trainingRequestId,
         merchantReply: messageText,
