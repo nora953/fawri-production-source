@@ -42,6 +42,9 @@ const manualKnowledgeLearning = await import(
 const knowledgeManagement = await import(
   "../src/services/knowledge/postgresKnowledgeManagementRuntime.js"
 );
+const catalog = await import(
+  "../src/services/postgresCatalogAuthority.js"
+);
 
 type Merchant = Awaited<ReturnType<typeof accounts.upsertPendingMerchantAuthoritative>>;
 
@@ -957,6 +960,118 @@ await test("a prepared reply is suppressed when a newer customer message superse
   );
   assert.equal(ledger.rows[0].debits, 1);
   assert.equal(ledger.rows[0].credits, 1);
+});
+
+await test("Meta PostgreSQL conversation memory reloads a sent catalog variant reference for a follow-up", async () => {
+  const productId = `prd-meta-memory-${runId}`;
+  const variantId = `var-meta-memory-blue-${runId}`;
+  const senderId = `customer-meta-memory-${runId}`;
+  const firstEventId = `event-meta-memory-first-${runId}`;
+  const secondEventId = `event-meta-memory-second-${runId}`;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `meta-memory-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Memory Proof Shirt",
+      price_iqd: 25_000,
+      low_stock_threshold: 1,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [
+        {
+          id: variantId,
+          name: "Blue",
+          stock_quantity: 9,
+          options: { Color: "Blue" },
+        },
+      ],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+  assert.equal(created.product.variants[0]?.id, variantId);
+
+  const firstQueued = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId,
+    eventId: firstEventId,
+    mid: `mid-meta-memory-first-${runId}`,
+    message: "How much is the Blue Memory Proof Shirt?",
+  });
+
+  const firstPrepared = await intents.preparePostgresMetaAutoReply(firstQueued.job);
+  assert.equal(firstPrepared.action, "send");
+  if (firstPrepared.action !== "send") return;
+
+  const firstTransport =
+    await liveTransport.createPostgresMetaWebhookReplyTransport({
+      prepared: firstPrepared,
+      sendText: async (input) => ({
+        status: "sent",
+        providerMessageId: `provider-meta-memory-first-${runId}`,
+        recipientId: input.recipientId,
+      }),
+    });
+
+  const firstDelivery = await workerCore.processMetaReplyJob(firstQueued.job, {
+    transport: firstTransport,
+  });
+  assert.equal(firstDelivery.delivery_status, "sent");
+
+  const firstStored = await raw(
+    `SELECT status, metadata
+       FROM messages
+      WHERE merchant_id = $1
+        AND external_event_id = $2
+        AND sender = 'fawri'
+      LIMIT 1`,
+    [merchantA.account.id, `reply:${firstEventId}`],
+  );
+
+  assert.equal(firstStored.rows.length, 1);
+  assert.equal(firstStored.rows[0].status, "sent");
+
+  const firstMatchedRecordId =
+    firstStored.rows[0].metadata.matched_record_id;
+
+  assert.equal(
+    firstMatchedRecordId,
+    `catalog-variant:${productId}:${variantId}`,
+  );
+
+  const secondQueued = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId,
+    eventId: secondEventId,
+    mid: `mid-meta-memory-second-${runId}`,
+    message: "How much is it?",
+  });
+
+  const secondPrepared = await intents.preparePostgresMetaAutoReply(secondQueued.job);
+  assert.equal(secondPrepared.action, "send");
+  if (secondPrepared.action !== "send") return;
+
+  const secondStored = await raw(
+    `SELECT status, metadata
+       FROM messages
+      WHERE merchant_id = $1
+        AND external_event_id = $2
+        AND sender = 'fawri'
+      LIMIT 1`,
+    [merchantA.account.id, `reply:${secondEventId}`],
+  );
+
+  assert.equal(secondStored.rows.length, 1);
+  assert.equal(
+    secondStored.rows[0].metadata.matched_record_id,
+    firstMatchedRecordId,
+  );
+  assert.equal(secondStored.rows[0].metadata.handoff_after_reply, false);
 });
 
 test.after(async () => {
