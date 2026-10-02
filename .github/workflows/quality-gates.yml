@@ -87,6 +87,12 @@ jobs:
           test "${#tests[@]}" -gt 0
           pnpm exec tsx --test --test-concurrency=2 --test-timeout=60000 "${tests[@]}"
 
+      - name: Run all frontend TypeScript unit tests
+        working-directory: artifacts/fawri
+        env:
+          NODE_ENV: test
+        run: pnpm exec tsx --test --test-concurrency=2 --test-timeout=60000 tests/*.test.ts
+
   full-build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
