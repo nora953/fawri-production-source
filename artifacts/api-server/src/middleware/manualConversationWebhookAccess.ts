@@ -14,6 +14,7 @@ import {
 } from "../services/postgresOperationalNotificationAuthority";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
 import { notifyMerchantNewCustomerMessage } from "../routes/auth";
+import { parseMetaInboundMessage } from "../services/metaInboundMessage";
 
 function eventRecord(event: unknown): Record<string, unknown> {
   return event && typeof event === "object" && !Array.isArray(event)
@@ -39,10 +40,16 @@ function customerMessage(event: unknown): {
     return null;
   }
   const messageRecord = message as Record<string, unknown>;
-  const messageText = String(messageRecord.text || "").trim();
-  if (messageRecord.is_echo === true || !messageText) return null;
+  const inbound = parseMetaInboundMessage(messageRecord);
+  if (
+    messageRecord.is_echo === true ||
+    !inbound ||
+    inbound.kind === "unsupported"
+  ) {
+    return null;
+  }
   return {
-    text: messageText,
+    text: inbound.storageText,
     externalMessageId: String(messageRecord.mid || "").trim(),
     createdAt: record.timestamp,
   };

@@ -6,6 +6,7 @@ import {
   type OperationalSqlClient,
 } from "./operationalPostgresAuthority";
 import type { KnowledgeConversationMessage } from "./knowledge/types";
+import { parseMetaInboundMessage } from "./metaInboundMessage";
 import { notifyMerchantNewCustomerMessagePostgres } from "./postgresOperationalNotificationAuthority";
 import { notifyMerchantKnowledgeGapPostgres } from "./postgresOperationalNotificationAuthority.js";
 
@@ -38,7 +39,11 @@ type ParsedMetaJob = {
   pageId: string;
   senderId: string;
   externalMessageId: string;
-  customerText: string;
+  customerText: string | null;
+  storageText: string;
+  contentKind: "text" | "image" | "audio" | "video" | "shared_post";
+  attachmentCount: number;
+  contentIdentityHash: string | null;
   webhookBody: Record<string, unknown>;
   createdAt: string;
 };
@@ -115,7 +120,22 @@ function parseJob(job: DurableJob): ParsedMetaJob {
   const event = eventRecord(messaging[0]);
   const sender = eventRecord(event.sender);
   const message = eventRecord(event.message);
-  const customerText = text(message.text);
+  const inbound = parseMetaInboundMessage(message);
+  const customerText = inbound?.text || null;
+  const storageText = inbound?.storageText || "";
+  const contentKind = inbound?.kind ?? "unsupported";
+  const contentIdentityHash =
+    inbound && inbound.attachments.length > 0
+      ? digest(
+          stableJson(
+            inbound.attachments.map((attachment) => ({
+              type: attachment.type,
+              url: attachment.url,
+              title: attachment.title,
+            })),
+          ),
+        )
+      : null;
   const bodyPageId = text(entry.id);
   const bodySenderId = text(sender.id);
   const bodyMessageId = text(message.mid);
@@ -126,8 +146,11 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     !pageId ||
     !senderId ||
     !externalMessageId ||
-    !customerText ||
-    customerText.length > 2_000 ||
+    !inbound ||
+    contentKind === "unsupported" ||
+    !storageText ||
+    storageText.length > 2_000 ||
+    (customerText !== null && customerText.length > 2_000) ||
     (bodyPageId && bodyPageId !== pageId) ||
     (bodySenderId && bodySenderId !== senderId) ||
     (bodyMessageId && bodyMessageId !== externalMessageId)
@@ -144,6 +167,10 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     senderId,
     externalMessageId,
     customerText,
+    storageText,
+    contentKind,
+    attachmentCount: inbound.attachments.length,
+    contentIdentityHash,
     webhookBody,
     createdAt: eventTimestamp(event.timestamp),
   };
@@ -304,8 +331,13 @@ async function ensureInboundState(
       conversation = reopened.rows[0] || conversation;
     }
 
-    const existingCustomer = await client.query<{ id: string; conversation_id: string; text: string }>(
-      `SELECT id, conversation_id, text
+    const existingCustomer = await client.query<{
+      id: string;
+      conversation_id: string;
+      text: string;
+      metadata: Record<string, unknown> | null;
+    }>(
+      `SELECT id, conversation_id, text, metadata
          FROM messages
         WHERE merchant_id = $1 AND external_message_id = $2
         LIMIT 1`,
@@ -317,9 +349,9 @@ async function ensureInboundState(
         `INSERT INTO messages
           (id, merchant_id, conversation_id, external_message_id,
            external_event_id, sender, text, status, counted_as_auto_reply,
-           created_at)
+           metadata, created_at)
          VALUES ($1, $2, $3, $4, $5, 'customer', $6, 'received', FALSE,
-                 $7::timestamptz)
+                 $7::jsonb, $8::timestamptz)
          ON CONFLICT DO NOTHING
          RETURNING id`,
         [
@@ -328,18 +360,45 @@ async function ensureInboundState(
           conversation.id,
           parsed.externalMessageId,
           parsed.eventId,
-          parsed.customerText,
+          parsed.storageText,
+          JSON.stringify(
+            parsed.contentKind === "text" &&
+              parsed.attachmentCount === 0
+              ? {}
+              : {
+                  media: {
+                    content_kind: parsed.contentKind,
+                    attachment_count: parsed.attachmentCount,
+                    has_attachment: parsed.attachmentCount > 0,
+                    content_identity_hash: parsed.contentIdentityHash,
+                  },
+                },
+          ),
           parsed.createdAt,
         ],
       );
       customerInserted = inserted.rows.length === 1;
-    } else if (
-      existingCustomer.rows[0].conversation_id !== conversation.id ||
-      existingCustomer.rows[0].text !== parsed.customerText
-    ) {
-      throw Object.assign(new Error("Meta message identity collision detected"), {
-        code: "META_MESSAGE_IDENTITY_COLLISION",
-      });
+    } else {
+      const existingMedia =
+        existingCustomer.rows[0].metadata?.media &&
+        typeof existingCustomer.rows[0].metadata.media === "object" &&
+        !Array.isArray(existingCustomer.rows[0].metadata.media)
+          ? (existingCustomer.rows[0].metadata.media as Record<string, unknown>)
+          : null;
+      const existingContentIdentityHash =
+        typeof existingMedia?.content_identity_hash === "string"
+          ? existingMedia.content_identity_hash
+          : null;
+
+      if (
+        existingCustomer.rows[0].conversation_id !== conversation.id ||
+        existingCustomer.rows[0].text !== parsed.storageText ||
+        existingContentIdentityHash !== parsed.contentIdentityHash
+      ) {
+        throw Object.assign(new Error("Meta message identity collision detected"), {
+          code: "META_MESSAGE_IDENTITY_COLLISION",
+        });
+      }
     }
 
     await client.query(
@@ -484,6 +543,29 @@ export async function preparePostgresMetaAutoReply(
         inbound.conversation.status === "manual" || inbound.conversation.assigned_to_human
           ? "CONVERSATION_MANUAL_TAKEOVER"
           : "CONVERSATION_NEEDS_REPLY",
+    };
+  }
+
+  if (
+    parsed.contentKind !== "text" ||
+    !parsed.customerText ||
+    parsed.attachmentCount > 0
+  ) {
+    await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
+      await client.query(
+        `UPDATE conversations
+            SET status = 'needs_reply', assigned_to_human = FALSE,
+                needs_training = FALSE, updated_at = now()
+          WHERE merchant_id = $1 AND id = $2 AND status = 'auto_replying'`,
+        [parsed.merchantId, inbound.conversationId],
+      );
+    });
+    return {
+      action: "suppress",
+      eventId: parsed.eventId,
+      merchantId: parsed.merchantId,
+      conversationId: inbound.conversationId,
+      code: "META_MEDIA_PROCESSING_UNAVAILABLE",
     };
   }
 
