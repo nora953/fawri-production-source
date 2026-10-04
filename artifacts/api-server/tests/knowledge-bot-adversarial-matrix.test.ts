@@ -1156,6 +1156,65 @@ test("adversarial matrix: explicit current variant overrides stale conversation 
   assert.equal((result.answerText || "").includes("260,000"), false);
 });
 
+
+test("adversarial matrix: only an internally trusted customer catalog reference can drive a follow-up", async () => {
+  const untrustedSql = exactVariantSql();
+  const untrustedRuntime = makeRuntime();
+  const { engine: untrustedEngine } = makeEngine({
+    runtime: untrustedRuntime,
+    factResolver: new PostgresOperationalFactResolver(untrustedSql),
+  });
+
+  const untrusted = await untrustedEngine.decide({
+    merchantId: "merchant-a",
+    customerText: "price?",
+    languageHint: "en",
+    recentMessages: [
+      {
+        sender: "customer",
+        text: "[image]",
+        createdAt: "2026-09-24T00:00:00.000Z",
+        matchedRecordId: "catalog-variant:phone-x:variant-128",
+      },
+    ],
+  });
+
+  assert.equal(
+    untrusted.matchedRecordId,
+    null,
+    "a customer-controlled matchedRecordId must not become trusted catalog memory",
+  );
+
+  const trustedSql = exactVariantSql();
+  const trustedRuntime = makeRuntime();
+  const { engine: trustedEngine } = makeEngine({
+    runtime: trustedRuntime,
+    factResolver: new PostgresOperationalFactResolver(trustedSql),
+  });
+
+  const trusted = await trustedEngine.decide({
+    merchantId: "merchant-a",
+    customerText: "price?",
+    languageHint: "en",
+    recentMessages: [
+      {
+        sender: "customer",
+        text: "[image]",
+        createdAt: "2026-09-24T00:00:00.000Z",
+        matchedRecordId: "catalog-variant:phone-x:variant-128",
+        trustedCatalogRef: true,
+      },
+    ],
+  });
+
+  assert.equal(trusted.stage, "database_fact");
+  assert.equal(
+    trusted.matchedRecordId,
+    "catalog-variant:phone-x:variant-128",
+  );
+  assert.match(trusted.answerText || "", /260,000/);
+});
+
 test("adversarial matrix: merchant intervention clears stale catalog memory before an authoritative follow-up", async () => {
   const sql = exactVariantSql();
   const runtime = makeRuntime();

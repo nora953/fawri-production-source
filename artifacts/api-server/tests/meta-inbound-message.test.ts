@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseMetaInboundMessage } from "../src/services/metaInboundMessage";
+import {
+  parseMetaInboundMessage,
+  selectMetaInboundImageUrl,
+} from "../src/services/metaInboundMessage";
 
 test("preserves the existing text message contract", () => {
   const parsed = parseMetaInboundMessage({
@@ -97,4 +100,129 @@ test("unknown attachments fail closed instead of pretending to understand them",
 
 test("empty message has no canonical inbound content", () => {
   assert.equal(parseMetaInboundMessage({ mid: "empty" }), null);
+});
+
+
+test("selects one explicit HTTPS image URL for image processing", () => {
+  const inbound = parseMetaInboundMessage({
+    mid: "image-one",
+    attachments: [
+      {
+        type: "image",
+        payload: {
+          url: "https://cdn.example.test/private-image.jpg",
+        },
+      },
+    ],
+  });
+
+  assert.ok(inbound);
+  assert.equal(
+    selectMetaInboundImageUrl(inbound),
+    "https://cdn.example.test/private-image.jpg",
+  );
+});
+
+test("selects image URL from a caption plus one image attachment", () => {
+  const inbound = parseMetaInboundMessage({
+    mid: "caption-image",
+    text: "هل هذا متوفر؟",
+    attachments: [
+      {
+        type: "image",
+        payload: {
+          url: "https://cdn.example.test/caption-image.jpg",
+        },
+      },
+    ],
+  });
+
+  assert.ok(inbound);
+  assert.equal(inbound.kind, "text");
+  assert.equal(
+    selectMetaInboundImageUrl(inbound),
+    "https://cdn.example.test/caption-image.jpg",
+  );
+});
+
+test("image URL selection fails closed when an image is mixed with another attachment type", () => {
+  const inbound = parseMetaInboundMessage({
+    mid: "mixed-image-audio",
+    attachments: [
+      {
+        type: "image",
+        payload: {
+          url: "https://cdn.example.test/product.jpg",
+        },
+      },
+      {
+        type: "audio",
+        payload: {
+          url: "https://cdn.example.test/question.mp3",
+        },
+      },
+    ],
+  });
+
+  assert.ok(inbound);
+
+  // The image is only part of the customer's message. Processing it alone
+  // would silently discard the meaning carried by the other attachment.
+  assert.equal(selectMetaInboundImageUrl(inbound), null);
+});
+
+
+test("image URL selection fails closed for missing, non-HTTPS, or ambiguous images", () => {
+  const cases = [
+    {
+      attachments: [
+        {
+          type: "image",
+          payload: {},
+        },
+      ],
+    },
+    {
+      attachments: [
+        {
+          type: "image",
+          payload: {
+            url: "http://cdn.example.test/image.jpg",
+          },
+        },
+      ],
+    },
+    {
+      attachments: [
+        {
+          type: "image",
+          payload: {
+            url: "https://cdn.example.test/one.jpg",
+          },
+        },
+        {
+          type: "image",
+          payload: {
+            url: "https://cdn.example.test/two.jpg",
+          },
+        },
+      ],
+    },
+    {
+      attachments: [
+        {
+          type: "audio",
+          payload: {
+            url: "https://cdn.example.test/audio.mp3",
+          },
+        },
+      ],
+    },
+  ];
+
+  for (const message of cases) {
+    const inbound = parseMetaInboundMessage(message);
+    assert.ok(inbound);
+    assert.equal(selectMetaInboundImageUrl(inbound), null);
+  }
 });

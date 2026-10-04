@@ -271,6 +271,11 @@ export type KnowledgeConversationMessage = {
   text: string;
   createdAt: string;
   matchedRecordId?: string;
+  /**
+   * Internal server-derived trust marker for a catalog reference.
+   * Never accept this marker from browser/customer-controlled input.
+   */
+  trustedCatalogRef?: boolean;
   reasonCode?: string;
 };
 

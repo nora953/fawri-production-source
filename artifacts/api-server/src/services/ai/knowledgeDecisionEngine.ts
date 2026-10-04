@@ -320,12 +320,14 @@ function boundedConversationHistory(
       const createdAt = boundedText(message?.createdAt, 80);
       if (!sender || !text || !createdAt) return null;
       const matchedRecordId = boundedText(message?.matchedRecordId, 240);
+      const trustedCatalogRef = message?.trustedCatalogRef === true;
       const reasonCode = boundedText(message?.reasonCode, 100);
       return {
         sender,
         text,
         createdAt,
         ...(matchedRecordId ? { matchedRecordId } : {}),
+        ...(trustedCatalogRef ? { trustedCatalogRef: true } : {}),
         ...(reasonCode ? { reasonCode } : {}),
       };
     })
@@ -372,6 +374,12 @@ function activeCatalogConversationRef(
         clarificationChain = true;
         continue;
       }
+      return null;
+    }
+
+    if (message.sender === "customer" && message.trustedCatalogRef === true) {
+      const directRef = parseCatalogConversationRef(message.matchedRecordId);
+      if (directRef) return directRef;
       return null;
     }
 
