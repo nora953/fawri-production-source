@@ -31,6 +31,9 @@ knowledgeDecision.configureKnowledgeEmbeddingProvider({
 });
 
 const intents = await import("../src/services/postgresMetaAutoReplyIntent.js");
+const imageRuntime = await import(
+  "../src/services/metaImageUnderstandingRuntime.js"
+);
 const liveTransport = await import("../src/services/postgresMetaWebhookReplyTransport.js");
 const workerCore = await import("../src/services/metaWebhookWorkerCore.js");
 const manualConversations = await import(
@@ -301,6 +304,139 @@ await test("image-only Meta reply reaches the PostgreSQL intent as media instead
 });
 
 
+
+await test("configured image understanding receives the transient Meta image URL and persists only trusted derived identity", async () => {
+  const senderId = `customer-live-understood-image-${runId}`;
+  const eventId = `event-live-understood-image-${runId}`;
+  const mid = `mid-live-understood-image-${runId}`;
+  const imageUrl = "https://example.invalid/understood-private-image.jpg";
+  const productId = `prd-live-understood-image-${runId}`;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `live-understood-image-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Trusted Image Proof Product",
+      price_iqd: 25_000,
+      stock_quantity: 5,
+      low_stock_threshold: 1,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  const calls: Array<{ merchantId: string; imageUrl: string }> = [];
+
+  const service = {
+    async understand(input: { merchantId: string; imageUrl: string }) {
+      calls.push(input);
+      return {
+        matchedRecordId: `catalog-product:${productId}`,
+        productId,
+        confidence: 0.98,
+        imageSha256: "a".repeat(64),
+        visionProviderId: "test-vision-provider",
+        visionModel: "test-vision-model",
+      };
+    },
+  };
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService(service);
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0], {
+      merchantId: merchantA.account.id,
+      imageUrl,
+    });
+
+    assert.equal(prepared.action, "suppress");
+
+    const stored = await raw(
+      `SELECT text, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+    assert.equal(stored.rows[0].text, "[image]");
+
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id,
+      `catalog-product:${productId}`,
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.image_sha256,
+      "a".repeat(64),
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_provider_id,
+      "test-vision-provider",
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_model,
+      "test-vision-model",
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.match_confidence,
+      0.98,
+    );
+
+    const serialized = JSON.stringify(stored.rows[0].metadata);
+    assert.equal(serialized.includes(imageUrl), false);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
 await test("Meta text with an image attachment is suppressed until the attachment is processed", async () => {
   const senderId = `customer-live-caption-image-${runId}`;
   const eventId = `event-live-caption-image-${runId}`;
@@ -456,10 +592,247 @@ await test("same Meta message id with different image content is rejected as an 
 });
 
 
-await test("same Meta message id with identical image content is safely redelivered without duplication", async () => {
+await test("forged image runtime result is never persisted as a trusted catalog identity", async () => {
+  const senderId = `customer-media-forged-${runId}`;
+  const eventId = `event-media-forged-${runId}`;
+  const mid = `mid-media-forged-${runId}`;
+  const url = "https://example.invalid/media-forged.jpg";
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      return {
+        matchedRecordId: "forged-record",
+        productId: `forged-product-${runId}`,
+        confidence: 0.99,
+        imageSha256: "f".repeat(64),
+        visionProviderId: "forged-provider",
+        visionModel: "forged-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared =
+      await intents.preparePostgresMetaAutoReply(queued.job);
+
+    assert.equal(prepared.action, "suppress");
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+
+    // Security requirement: a structurally valid but untrusted runtime
+    // implementation must not be able to mint catalog authority.
+    assert.equal(stored.rows[0].metadata?.matched_record_id ?? null, null);
+    assert.equal(stored.rows[0].metadata?.media?.image_sha256 ?? null, null);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+
+await test("authoritative image catalog identity with malformed runtime provenance is not persisted as trusted", async () => {
+  const senderId = `customer-media-malformed-provenance-${runId}`;
+  const eventId = `event-media-malformed-provenance-${runId}`;
+  const mid = `mid-media-malformed-provenance-${runId}`;
+  const url = "https://example.invalid/media-malformed-provenance.jpg";
+  const productId = `prd-media-malformed-provenance-${runId}`;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `media-malformed-provenance-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Malformed Provenance Proof Product",
+      price_iqd: 28_000,
+      stock_quantity: 5,
+      low_stock_threshold: 1,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      return {
+        matchedRecordId: `catalog-product:${productId}`,
+        productId,
+        confidence: 0.99,
+        imageSha256: "not-a-valid-sha256",
+        visionProviderId: "test-malformed-provenance-provider",
+        visionModel: "test-malformed-provenance-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared =
+      await intents.preparePostgresMetaAutoReply(queued.job);
+
+    assert.equal(prepared.action, "suppress");
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+
+    // Security requirement: catalog authority alone is insufficient.
+    // Malformed runtime provenance must never become trusted metadata.
+    assert.equal(stored.rows[0].metadata?.matched_record_id ?? null, null);
+    assert.equal(stored.rows[0].metadata?.media?.image_sha256 ?? null, null);
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_provider_id ?? null,
+      null,
+    );
+    assert.equal(stored.rows[0].metadata?.media?.vision_model ?? null, null);
+    assert.equal(
+      stored.rows[0].metadata?.media?.match_confidence ?? null,
+      null,
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+
+await test("same understood Meta image is redelivered without duplicate storage or duplicate image understanding", async () => {
   const senderId = `customer-media-redelivery-${runId}`;
   const mid = `mid-media-redelivery-${runId}`;
   const url = "https://example.invalid/media-redelivery-same.jpg";
+  const productId = `prd-media-redelivery-${runId}`;
+  let understandCalls = 0;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `media-redelivery-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Image Redelivery Proof Product",
+      price_iqd: 26_000,
+      stock_quantity: 5,
+      low_stock_threshold: 1,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  const service = {
+    async understand(input: { merchantId: string; imageUrl: string }) {
+      understandCalls += 1;
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, url);
+
+      return {
+        matchedRecordId: `catalog-product:${productId}`,
+        productId,
+        confidence: 0.97,
+        imageSha256: "b".repeat(64),
+        visionProviderId: "test-redelivery-vision-provider",
+        visionModel: "test-redelivery-vision-model",
+      };
+    },
+  };
 
   async function enqueueImage(eventId: string) {
     return jobs.enqueueDurableJobAuthoritative({
@@ -501,44 +874,216 @@ await test("same Meta message id with identical image content is safely redelive
     });
   }
 
-  const firstEventId = `event-media-redelivery-a-${runId}`;
-  const secondEventId = `event-media-redelivery-b-${runId}`;
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService(service);
 
-  const first = await enqueueImage(firstEventId);
-  const firstPrepared = await intents.preparePostgresMetaAutoReply(first.job);
+  try {
+    const firstEventId = `event-media-redelivery-a-${runId}`;
+    const secondEventId = `event-media-redelivery-b-${runId}`;
 
-  assert.equal(firstPrepared.action, "suppress");
-  if (firstPrepared.action !== "suppress") return;
-  assert.equal(firstPrepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    const first = await enqueueImage(firstEventId);
+    const firstPrepared = await intents.preparePostgresMetaAutoReply(first.job);
 
-  const second = await enqueueImage(secondEventId);
-  const secondPrepared = await intents.preparePostgresMetaAutoReply(second.job);
+    assert.equal(firstPrepared.action, "suppress");
+    assert.equal(understandCalls, 1);
 
-  assert.equal(secondPrepared.action, "suppress");
-  if (secondPrepared.action !== "suppress") return;
-  assert.equal(secondPrepared.code, "CONVERSATION_NEEDS_REPLY");
+    const second = await enqueueImage(secondEventId);
+    const secondPrepared = await intents.preparePostgresMetaAutoReply(second.job);
 
-  const stored = await raw(
-    `SELECT text, metadata
-       FROM messages
-      WHERE merchant_id = $1
-        AND external_message_id = $2`,
-    [merchantA.account.id, mid],
-  );
+    assert.equal(secondPrepared.action, "suppress");
 
-  assert.equal(stored.rows.length, 1);
-  assert.equal(stored.rows[0].text, "[image]");
-  assert.equal(stored.rows[0].metadata?.media?.content_kind, "image");
-  assert.equal(stored.rows[0].metadata?.media?.attachment_count, 1);
-  assert.equal(
-    typeof stored.rows[0].metadata?.media?.content_identity_hash,
-    "string",
-  );
-  assert.equal(
-    JSON.stringify(stored.rows[0].metadata).includes(url),
-    false,
-  );
+    // RED requirement: the persisted trusted result must be reused.
+    assert.equal(understandCalls, 1);
+
+    const stored = await raw(
+      `SELECT text, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+    assert.equal(stored.rows[0].text, "[image]");
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id,
+      `catalog-product:${productId}`,
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.image_sha256,
+      "b".repeat(64),
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_provider_id,
+      "test-redelivery-vision-provider",
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_model,
+      "test-redelivery-vision-model",
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.match_confidence,
+      0.97,
+    );
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes(url),
+      false,
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
 });
+
+await test("tampered persisted image catalog identity is revalidated instead of trusted on redelivery", async () => {
+  const senderId = `customer-media-tampered-persisted-${runId}`;
+  const mid = `mid-media-tampered-persisted-${runId}`;
+  const url = "https://example.invalid/media-tampered-persisted.jpg";
+  const productId = `prd-media-tampered-persisted-${runId}`;
+  let understandCalls = 0;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `media-tampered-persisted-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Tampered Persisted Image Proof Product",
+      price_iqd: 29_000,
+      stock_quantity: 5,
+      low_stock_threshold: 1,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  const service = {
+    async understand(input: { merchantId: string; imageUrl: string }) {
+      understandCalls += 1;
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, url);
+
+      return {
+        matchedRecordId: `catalog-product:${productId}`,
+        productId,
+        confidence: 0.98,
+        imageSha256: "d".repeat(64),
+        visionProviderId: "test-tampered-persisted-provider",
+        visionModel: "test-tampered-persisted-model",
+      };
+    },
+  };
+
+  async function enqueueImage(eventId: string) {
+    return jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService(service);
+
+  try {
+    const first = await enqueueImage(
+      `event-media-tampered-persisted-a-${runId}`,
+    );
+    const firstPrepared =
+      await intents.preparePostgresMetaAutoReply(first.job);
+
+    assert.equal(firstPrepared.action, "suppress");
+    assert.equal(understandCalls, 1);
+
+    await raw(
+      `UPDATE messages
+          SET metadata =
+            jsonb_set(
+              metadata,
+              '{matched_record_id}',
+              to_jsonb($3::text),
+              true
+            )
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'`,
+      [
+        merchantA.account.id,
+        mid,
+        `catalog-product:forged-persisted-${runId}`,
+      ],
+    );
+
+    const second = await enqueueImage(
+      `event-media-tampered-persisted-b-${runId}`,
+    );
+    const secondPrepared =
+      await intents.preparePostgresMetaAutoReply(second.job);
+
+    assert.equal(secondPrepared.action, "suppress");
+
+    // Security requirement: persisted metadata is evidence, not authority.
+    // A forged catalog reference must force fresh trusted revalidation.
+    assert.equal(understandCalls, 2);
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id,
+      `catalog-product:${productId}`,
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.image_sha256,
+      "d".repeat(64),
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
 
 await test("live PostgreSQL transport sends once and deduplicates provider success", async () => {
   const queued = await enqueueReply({
@@ -1231,6 +1776,117 @@ await test("manual takeover suppresses only that conversation before reservation
   assert.equal(customerMessage.rows[0].count, 1);
 });
 
+await test("manual takeover never sends an inbound image to the image understanding service", async () => {
+  const channel = await raw(
+    "SELECT id FROM merchant_channels WHERE merchant_id = $1 AND page_id = $2",
+    [merchantA.account.id, pageA],
+  );
+
+  const senderId = `customer-live-manual-image-${runId}`;
+  const conversationId = `messenger-${senderId}`;
+  const eventId = `event-live-manual-image-${runId}`;
+  const mid = `mid-live-manual-image-${runId}`;
+  const imageUrl = "https://example.invalid/manual-takeover-image.jpg";
+
+  await raw(
+    `INSERT INTO conversations
+      (id, merchant_id, channel_id, external_conversation_id,
+       customer_external_id, customer_handle, status, assigned_to_human,
+       needs_training)
+     VALUES ($1, $2, $3, $4, $4,
+             $4, 'manual', TRUE, FALSE)`,
+    [
+      conversationId,
+      merchantA.account.id,
+      channel.rows[0].id,
+      senderId,
+    ],
+  );
+
+  let understandCalls = 0;
+  const service = {
+    async understand() {
+      understandCalls += 1;
+      return null;
+    },
+  };
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService(service);
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared =
+      await intents.preparePostgresMetaAutoReply(queued.job);
+
+    assert.deepEqual(prepared, {
+      action: "suppress",
+      eventId,
+      merchantId: merchantA.account.id,
+      conversationId,
+      code: "CONVERSATION_MANUAL_TAKEOVER",
+    });
+
+    assert.equal(
+      understandCalls,
+      0,
+      "manual takeover must prevent external image understanding",
+    );
+
+    const stored = await raw(
+      `SELECT text, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND conversation_id = $2
+          AND external_message_id = $3`,
+      [merchantA.account.id, conversationId, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+    assert.equal(stored.rows[0].text, "[image]");
+    assert.equal(JSON.stringify(stored.rows[0].metadata).includes(imageUrl), false);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
 await test("a prepared reply is suppressed when a newer customer message supersedes its conversation context", async () => {
   const timestamp = Date.parse("2026-09-25T00:00:00.000Z");
   const senderId = `customer-live-race-${runId}`;
@@ -1422,6 +2078,525 @@ await test("Meta PostgreSQL conversation memory reloads a sent catalog variant r
 });
 
 
+
+
+await test("Meta conversation memory reloads a trusted image catalog match for a later text follow-up", async () => {
+  const productId = `prd-meta-image-memory-${runId}`;
+  const senderId = `customer-meta-image-memory-${runId}`;
+  const imageEventId = `event-meta-image-memory-first-${runId}`;
+  const followupEventId = `event-meta-image-memory-second-${runId}`;
+  const imageMid = `mid-meta-image-memory-first-${runId}`;
+  const imageUrl =
+    "https://example.invalid/meta-image-memory-product.jpg";
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `meta-image-memory-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Image Memory Proof Shirt",
+      price_iqd: 31_000,
+      stock_quantity: 7,
+      low_stock_threshold: 1,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  const locationId = `location-meta-image-memory-${runId}`;
+
+  await pool.query(
+    `INSERT INTO merchant_locations (
+       id, merchant_id, name, legacy_branch_key, is_default,
+       operational_status, online_fulfillment_enabled,
+       accept_online_orders_while_closed, merchant_priority,
+       created_at, updated_at
+     ) VALUES (
+       $1,$2,'Image Memory Location','image-memory',
+       TRUE,'open',FALSE,FALSE,0,now(),now()
+     )`,
+    [locationId, merchantA.account.id],
+  );
+
+  await pool.query(
+    `INSERT INTO location_inventory_levels (
+       id, merchant_id, location_id, product_id, variant_id,
+       quantity, low_stock_threshold, version, created_at, updated_at
+     ) VALUES ($1,$2,$3,$4,NULL,7,1,1,now(),now())`,
+    [
+      `location-inventory-meta-image-memory-${runId}`,
+      merchantA.account.id,
+      locationId,
+      productId,
+    ],
+  );
+
+  let understandCalls = 0;
+
+  const service = {
+    async understand(input: { merchantId: string; imageUrl: string }) {
+      understandCalls += 1;
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        matchedRecordId: `catalog-product:${productId}`,
+        productId,
+        confidence: 0.99,
+        imageSha256: "d".repeat(64),
+        visionProviderId: "test-image-memory-provider",
+        visionModel: "test-image-memory-model",
+      };
+    },
+  };
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService(service);
+
+  try {
+    const imageQueued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: imageEventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: imageEventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: imageMid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid: imageMid,
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const imagePrepared =
+      await intents.preparePostgresMetaAutoReply(imageQueued.job);
+
+    assert.equal(imagePrepared.action, "suppress");
+    assert.equal(understandCalls, 1);
+
+    const imageStored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, imageMid],
+    );
+
+    assert.equal(imageStored.rows.length, 1);
+    assert.equal(
+      imageStored.rows[0].metadata?.matched_record_id,
+      `catalog-product:${productId}`,
+    );
+    assert.equal(
+      JSON.stringify(imageStored.rows[0].metadata).includes(imageUrl),
+      false,
+    );
+
+    const followupQueued = await enqueueReply({
+      merchantId: merchantA.account.id,
+      pageId: pageA,
+      senderId,
+      eventId: followupEventId,
+      mid: `mid-meta-image-memory-second-${runId}`,
+      message: "Is this available?",
+    });
+
+    const followupPrepared =
+      await intents.preparePostgresMetaAutoReply(followupQueued.job);
+
+    // RED requirement:
+    // the later text message must be able to use the trusted catalog
+    // identity persisted by the preceding image.
+    assert.equal(followupPrepared.action, "send");
+
+    if (followupPrepared.action !== "send") return;
+
+    assert.equal(understandCalls, 1);
+
+    const followupStored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_event_id = $2
+          AND sender = 'fawri'
+        LIMIT 1`,
+      [merchantA.account.id, `reply:${followupEventId}`],
+    );
+
+    assert.equal(followupStored.rows.length, 1);
+    assert.equal(
+      followupStored.rows[0].metadata?.matched_record_id,
+      `catalog-product:${productId}`,
+    );
+    assert.equal(
+      followupStored.rows[0].metadata?.handoff_after_reply,
+      false,
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+
+await test("trusted image catalog match answers a text question in the same Meta message", async () => {
+  const productId = `prd-meta-image-same-turn-${runId}`;
+  const senderId = `customer-meta-image-same-turn-${runId}`;
+  const eventId = `event-meta-image-same-turn-${runId}`;
+  const mid = `mid-meta-image-same-turn-${runId}`;
+  const imageUrl =
+    "https://example.invalid/meta-image-same-turn-product.jpg";
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `meta-image-same-turn-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Same Turn Image Proof Shirt",
+      price_iqd: 37_000,
+      stock_quantity: 6,
+      low_stock_threshold: 1,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  const defaultLocation = await raw(
+    `SELECT id
+       FROM merchant_locations
+      WHERE merchant_id = $1
+        AND is_default = TRUE
+        AND operational_status = 'open'
+      LIMIT 1`,
+    [merchantA.account.id],
+  );
+  assert.equal(defaultLocation.rows.length, 1);
+  const locationId = String(defaultLocation.rows[0].id);
+
+  await pool.query(
+    `INSERT INTO location_inventory_levels (
+       id, merchant_id, location_id, product_id, variant_id,
+       quantity, low_stock_threshold, version, created_at, updated_at
+     ) VALUES ($1,$2,$3,$4,NULL,6,1,1,now(),now())`,
+    [
+      `location-inventory-meta-image-same-turn-${runId}`,
+      merchantA.account.id,
+      locationId,
+      productId,
+    ],
+  );
+
+  let understandCalls = 0;
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand(input: { merchantId: string; imageUrl: string }) {
+      understandCalls += 1;
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        matchedRecordId: `catalog-product:${productId}`,
+        productId,
+        confidence: 0.99,
+        imageSha256: "e".repeat(64),
+        visionProviderId: "test-image-same-turn-provider",
+        visionModel: "test-image-same-turn-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "Is this available?",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared =
+      await intents.preparePostgresMetaAutoReply(queued.job);
+
+    assert.equal(understandCalls, 1);
+
+    // RED: a trusted image identity must ground the text attached to
+    // this same customer message instead of forcing media suppression.
+    assert.equal(prepared.action, "send");
+
+    if (prepared.action !== "send") return;
+
+    const customer = await raw(
+      `SELECT text, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(customer.rows.length, 1);
+    assert.equal(customer.rows[0].text, "Is this available?");
+    assert.equal(
+      customer.rows[0].metadata?.matched_record_id,
+      `catalog-product:${productId}`,
+    );
+    assert.equal(
+      JSON.stringify(customer.rows[0].metadata).includes(imageUrl),
+      false,
+    );
+
+    const reply = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_event_id = $2
+          AND sender = 'fawri'
+        LIMIT 1`,
+      [merchantA.account.id, `reply:${eventId}`],
+    );
+
+    assert.equal(reply.rows.length, 1);
+    assert.equal(
+      reply.rows[0].metadata?.matched_record_id,
+      `catalog-product:${productId}`,
+    );
+    assert.equal(reply.rows[0].metadata?.handoff_after_reply, false);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+
+await test("failed image understanding can retry the same Meta image and persist a later trusted match", async () => {
+  const senderId = `customer-media-retry-${runId}`;
+  const mid = `mid-media-retry-${runId}`;
+  const url = "https://example.invalid/media-retry-same.jpg";
+  const productId = `prd-media-retry-${runId}`;
+  let understandCalls = 0;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `media-retry-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Image Retry Proof Product",
+      price_iqd: 27_000,
+      stock_quantity: 5,
+      low_stock_threshold: 1,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  const service = {
+    async understand(input: { merchantId: string; imageUrl: string }) {
+      understandCalls += 1;
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, url);
+
+      if (understandCalls === 1) {
+        return null;
+      }
+
+      return {
+        matchedRecordId: `catalog-product:${productId}`,
+        productId,
+        confidence: 0.96,
+        imageSha256: "c".repeat(64),
+        visionProviderId: "test-retry-vision-provider",
+        visionModel: "test-retry-vision-model",
+      };
+    },
+  };
+
+  async function enqueueImage(eventId: string) {
+    return jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService(service);
+
+  try {
+    const first = await enqueueImage(`event-media-retry-a-${runId}`);
+    const firstPrepared =
+      await intents.preparePostgresMetaAutoReply(first.job);
+
+    assert.equal(firstPrepared.action, "suppress");
+    assert.equal(understandCalls, 1);
+
+    const afterFirst = await raw(
+      `SELECT text, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(afterFirst.rows.length, 1);
+    assert.equal(afterFirst.rows[0].text, "[image]");
+    assert.equal(
+      Object.hasOwn(
+        afterFirst.rows[0].metadata ?? {},
+        "matched_record_id",
+      ),
+      false,
+    );
+
+    const second = await enqueueImage(`event-media-retry-b-${runId}`);
+    const secondPrepared =
+      await intents.preparePostgresMetaAutoReply(second.job);
+
+    assert.equal(secondPrepared.action, "suppress");
+
+    // A failed understanding result must not permanently block retry.
+    assert.equal(understandCalls, 2);
+
+    const stored = await raw(
+      `SELECT text, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+    assert.equal(stored.rows[0].text, "[image]");
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id,
+      `catalog-product:${productId}`,
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.image_sha256,
+      "c".repeat(64),
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_provider_id,
+      "test-retry-vision-provider",
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_model,
+      "test-retry-vision-model",
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.match_confidence,
+      0.96,
+    );
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes(url),
+      false,
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+
 await test("live worker suppresses image-only Meta input before entitlement debit", async () => {
   const senderId = `customer-live-worker-image-${runId}`;
   const eventId = `event-live-worker-image-${runId}`;
@@ -1479,7 +2654,19 @@ await test("live worker suppresses image-only Meta input before entitlement debi
   try {
     let settled = false;
 
-    for (let attempt = 0; attempt < 20; attempt += 1) {
+    const jobsBeforeDrain = await jobs.listDurableJobsAuthoritative();
+    const readyMetaJobs = jobsBeforeDrain.filter(
+      (job) =>
+        job.type === "meta.webhook.reply" &&
+        (job.status === "queued" || job.status === "retry") &&
+        new Date(job.available_at).getTime() <= Date.now(),
+    );
+    const drainBudget = Math.min(
+      Math.max(readyMetaJobs.length + 5, 25),
+      500,
+    );
+
+    for (let attempt = 0; attempt < drainBudget; attempt += 1) {
       const processed = await worker.runOnce();
 
       const allJobs = await jobs.listDurableJobsAuthoritative();
@@ -1500,7 +2687,7 @@ await test("live worker suppresses image-only Meta input before entitlement debi
     assert.equal(
       settled,
       true,
-      "media job was not processed by live worker after draining available jobs",
+      `media job was not processed by live worker after draining available jobs; drain budget=${drainBudget}`,
     );
     } finally {
       worker.stop();

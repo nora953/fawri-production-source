@@ -264,12 +264,148 @@ test("no explicit production provider preserves the current non-production behav
     knowledgeEmbeddingProvider: "disabled",
     knowledgeTranslationProvider: "disabled",
     knowledgeAiProvider: "disabled",
+    metaImageProvider: "disabled",
   });
   assert.equal(
     createEnvironmentMetaCredentialKeyProvider().readiness?.().production_eligible,
     false,
   );
   result.runtime.dispose();
+});
+
+
+test("Meta image provider remains disabled unless explicitly selected", async () => {
+  const never = () => {
+    throw new Error("Meta image provider must not be configured");
+  };
+
+  const result = await bootstrapRuntimeAndLoadApplication({
+    env: {
+      OPENAI_API_KEY: "test-openai-key-not-real",
+      FAWRI_OPENAI_MODEL: "test-model",
+    } as NodeJS.ProcessEnv,
+    dependencies: {
+      createOpenAiMetaImage: never,
+      configureMetaImage: never,
+    },
+    loadApplication: async () => "app",
+  });
+
+  assert.equal(result.runtime.selections.metaImageProvider, "disabled");
+  result.runtime.dispose();
+});
+
+test("Meta image OpenAI provider requires explicit selection", async () => {
+  const events: string[] = [];
+  const service = {
+    async understand() {
+      return null;
+    },
+  };
+
+  const result = await bootstrapRuntimeAndLoadApplication({
+    env: {
+      FAWRI_META_IMAGE_PROVIDER: "openai",
+      OPENAI_API_KEY: "test-openai-key-not-real",
+      FAWRI_OPENAI_MODEL: "test-image-model",
+    } as NodeJS.ProcessEnv,
+    dependencies: {
+      createOpenAiMetaImage: (apiKey, model) => {
+        events.push(`create:${apiKey}:${model}`);
+        return service;
+      },
+      configureMetaImage: (configured) => {
+        events.push("configure");
+        assert.equal(configured, service);
+      },
+    },
+    loadApplication: async () => {
+      events.push("app-load");
+      return "app";
+    },
+  });
+
+  assert.equal(result.runtime.selections.metaImageProvider, "openai");
+  assert.deepEqual(events, [
+    "create:test-openai-key-not-real:test-image-model",
+    "configure",
+    "app-load",
+  ]);
+
+  result.runtime.dispose();
+});
+
+
+test("explicit Meta image OpenAI selection with missing configuration fails before application load", async () => {
+  let applicationLoaded = false;
+
+  await assert.rejects(
+    () =>
+      bootstrapRuntimeAndLoadApplication({
+        env: {
+          FAWRI_META_IMAGE_PROVIDER: "openai",
+          OPENAI_API_KEY: "",
+          FAWRI_OPENAI_MODEL: "",
+        } as NodeJS.ProcessEnv,
+        loadApplication: async () => {
+          applicationLoaded = true;
+          return "app";
+        },
+      }),
+    (error: unknown) => {
+      assert.equal(
+        errorCode(error),
+        "META_IMAGE_PROVIDER_CONFIG_INVALID",
+      );
+      return true;
+    },
+  );
+
+  assert.equal(applicationLoaded, false);
+});
+
+
+test("disposing runtime releases configured Meta image service for a later bootstrap", async () => {
+  const service1 = {
+    async understand() {
+      return null;
+    },
+  };
+
+  const service2 = {
+    async understand() {
+      return null;
+    },
+  };
+
+  const first = await bootstrapRuntimeAndLoadApplication({
+    env: {
+      FAWRI_META_IMAGE_PROVIDER: "openai",
+      OPENAI_API_KEY: "test-openai-key-not-real",
+      FAWRI_OPENAI_MODEL: "test-image-model",
+    } as NodeJS.ProcessEnv,
+    dependencies: {
+      createOpenAiMetaImage: () => service1,
+    },
+    loadApplication: async () => "first",
+  });
+
+  first.runtime.dispose();
+
+  const second = await bootstrapRuntimeAndLoadApplication({
+    env: {
+      FAWRI_META_IMAGE_PROVIDER: "openai",
+      OPENAI_API_KEY: "test-openai-key-not-real",
+      FAWRI_OPENAI_MODEL: "test-image-model",
+    } as NodeJS.ProcessEnv,
+    dependencies: {
+      createOpenAiMetaImage: () => service2,
+    },
+    loadApplication: async () => "second",
+  });
+
+  assert.equal(second.application, "second");
+  second.runtime.dispose();
 });
 
 test("openai selection configures the fixed embedding provider before the Knowledge singleton", async () => {

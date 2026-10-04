@@ -32,17 +32,25 @@ import {
   configurePostgresDurableJobCredentialKeyProvider,
 } from "./postgresDurableJobQueue";
 import type { MetaCredentialKeyProvider } from "./metaCredentialVault";
+import {
+  configureMetaImageUnderstandingService,
+  createOpenAiMetaImageUnderstandingService,
+  releaseMetaImageUnderstandingService,
+  type MetaImageUnderstandingRuntimeService,
+} from "./metaImageUnderstandingRuntime";
 
 export type MetaCredentialProviderSelection = "environment" | "aws-kms";
 export type KnowledgeEmbeddingProviderSelection = "disabled" | "openai";
 export type KnowledgeTranslationProviderSelection = "disabled" | "openai";
 export type KnowledgeAiProviderSelection = "disabled" | "openai";
+export type MetaImageProviderSelection = "disabled" | "openai";
 
 export type RuntimeProviderSelections = {
   metaCredentialProvider: MetaCredentialProviderSelection;
   knowledgeEmbeddingProvider: KnowledgeEmbeddingProviderSelection;
   knowledgeTranslationProvider: KnowledgeTranslationProviderSelection;
   knowledgeAiProvider: KnowledgeAiProviderSelection;
+  metaImageProvider: MetaImageProviderSelection;
 };
 
 export type RuntimeProviderHandle = {
@@ -65,6 +73,12 @@ export type RuntimeProviderBootstrapDependencies = {
     model: string | undefined,
   ): AiFallbackProvider;
   configureKnowledgeAi(provider: AiFallbackProvider): void;
+  createOpenAiMetaImage(
+    apiKey: string | undefined,
+    model: string | undefined,
+  ): MetaImageUnderstandingRuntimeService;
+  configureMetaImage(provider: MetaImageUnderstandingRuntimeService): void;
+  releaseMetaImage(provider: MetaImageUnderstandingRuntimeService): boolean;
   configureMetaCredentialProvider(provider: MetaCredentialKeyProvider | null): void;
 };
 
@@ -136,6 +150,18 @@ function readKnowledgeAiProviderSelection(
   );
 }
 
+function readMetaImageProviderSelection(
+  env: NodeJS.ProcessEnv,
+): MetaImageProviderSelection {
+  const selected = text(env.FAWRI_META_IMAGE_PROVIDER).toLowerCase();
+  if (!selected) return "disabled";
+  if (selected === "openai") return "openai";
+  throw fail(
+    "META_IMAGE_PROVIDER_CONFIG_INVALID",
+    "Meta image provider selection is invalid",
+  );
+}
+
 function readKnowledgeTranslationProviderSelection(
   env: NodeJS.ProcessEnv,
 ): KnowledgeTranslationProviderSelection {
@@ -170,6 +196,13 @@ function defaultDependencies(): RuntimeProviderBootstrapDependencies {
     createOpenAiAi: (apiKey, model) =>
       createConstrainedOpenAiProvider({ apiKey, model }),
     configureKnowledgeAi: configureKnowledgeAiProvider,
+    createOpenAiMetaImage: (apiKey, model) =>
+      createOpenAiMetaImageUnderstandingService({
+        apiKey,
+        model,
+      }),
+    configureMetaImage: configureMetaImageUnderstandingService,
+    releaseMetaImage: releaseMetaImageUnderstandingService,
     configureMetaCredentialProvider,
   };
 }
@@ -188,10 +221,12 @@ export async function initializeRuntimeProviders(input: {
     knowledgeEmbeddingProvider: readKnowledgeEmbeddingProviderSelection(env),
     knowledgeTranslationProvider: readKnowledgeTranslationProviderSelection(env),
     knowledgeAiProvider: readKnowledgeAiProviderSelection(env),
+    metaImageProvider: readMetaImageProviderSelection(env),
   };
 
   let awsProvider: AwsKmsMetaCredentialKeyProvider | null = null;
   let metaProviderConfigured = false;
+  let metaImageProvider: MetaImageUnderstandingRuntimeService | null = null;
 
   try {
     if (selections.metaCredentialProvider === "aws-kms") {
@@ -220,11 +255,24 @@ export async function initializeRuntimeProviders(input: {
       dependencies.configureKnowledgeAi(provider);
     }
 
+    if (selections.metaImageProvider === "openai") {
+      const provider = dependencies.createOpenAiMetaImage(
+        env.OPENAI_API_KEY,
+        env.FAWRI_OPENAI_MODEL,
+      );
+      dependencies.configureMetaImage(provider);
+      metaImageProvider = provider;
+    }
+
     if (awsProvider) {
       dependencies.configureMetaCredentialProvider(awsProvider);
       metaProviderConfigured = true;
     }
   } catch (error) {
+    if (metaImageProvider) {
+      dependencies.releaseMetaImage(metaImageProvider);
+      metaImageProvider = null;
+    }
     if (metaProviderConfigured) {
       dependencies.configureMetaCredentialProvider(null);
     }
@@ -238,6 +286,10 @@ export async function initializeRuntimeProviders(input: {
     dispose() {
       if (disposed) return;
       disposed = true;
+      if (metaImageProvider) {
+        dependencies.releaseMetaImage(metaImageProvider);
+        metaImageProvider = null;
+      }
       if (metaProviderConfigured) {
         dependencies.configureMetaCredentialProvider(null);
         metaProviderConfigured = false;
