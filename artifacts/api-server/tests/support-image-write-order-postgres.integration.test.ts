@@ -251,6 +251,21 @@ await test("authorized image persists and orphan reconciliation removes only unr
   fs.writeFileSync(orphanPath, png, { mode: 0o600 });
   assert.equal(fs.existsSync(orphanPath), true);
 
+  // Filesystem timestamps can have finer precision than Date.now(). Set an
+  // explicit age instead of racing a just-written file against a zero-age cutoff.
+  const recentTime = new Date(Date.now() + 60_000);
+  for (const filePath of [livePath, orphanPath]) {
+    fs.utimesSync(filePath, recentTime, recentTime);
+  }
+  const deferred = await supportImages.reconcileOrphanSupportImagesPostgres({ minimumAgeMs: 0 });
+  assert.equal(deferred.inspected, 0);
+  assert.equal(fs.existsSync(orphanPath), true);
+  assert.equal(fs.existsSync(livePath), true);
+
+  const agedTime = new Date(Date.now() - 60_000);
+  for (const filePath of [livePath, orphanPath]) {
+    fs.utimesSync(filePath, agedTime, agedTime);
+  }
   const reconciled = await supportImages.reconcileOrphanSupportImagesPostgres({
     minimumAgeMs: 0,
   });

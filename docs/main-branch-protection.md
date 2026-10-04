@@ -6,6 +6,9 @@ Committing this file does not itself change GitHub settings. Apply it only after
 the unconditional quality and security workflows have merged, then read back
 the effective protection to verify it.
 
+The write payload uses `checks` only. Supplying the deprecated `contexts` field
+alongside `checks` is rejected by the API, even when `contexts` is empty.
+
 The policy requires pull requests, eight successful checks from the verified
 GitHub Actions app (15368), an up-to-date branch, and resolved review conversations.
 It applies to administrators and disallows force pushes and branch deletion.

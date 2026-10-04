@@ -3,6 +3,7 @@ import type { NextFunction, Request, Response } from "express";
 import { getMetaWebhookEventId } from "./metaWebhookSecurity";
 import { readMetaPageMerchantMap } from "../services/metaPageDirectory";
 import { reserveMerchantAutoReplyAuthoritative } from "../services/merchantReplyEntitlementAuthority";
+import { parseMetaInboundMessage } from "../services/metaInboundMessage";
 
 function isReplyEligibleEvent(event: unknown): boolean {
   if (!event || typeof event !== "object" || Array.isArray(event)) return false;
@@ -15,11 +16,14 @@ function isReplyEligibleEvent(event: unknown): boolean {
     record.sender && typeof record.sender === "object"
       ? (record.sender as Record<string, unknown>)
       : null;
+  const inbound = message ? parseMetaInboundMessage(message) : null;
 
   return Boolean(
     message &&
       message.is_echo !== true &&
-      String(message.text || "").trim() &&
+      inbound &&
+      inbound.kind !== "unsupported" &&
+      String(message.mid || "").trim() &&
       sender &&
       String(sender.id || "").trim(),
   );
