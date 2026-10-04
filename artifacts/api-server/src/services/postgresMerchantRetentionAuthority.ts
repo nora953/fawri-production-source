@@ -6,7 +6,7 @@ import {
   operationalDatabasePool,
   operationalPostgresAuthorityRequired,
   operationalQueryRows,
-  withOperationalTransaction,
+  withMerchantOperationalTransaction,
   type OperationalQueryTarget,
 } from "./operationalPostgresAuthority";
 
@@ -127,7 +127,7 @@ export async function refreshMerchantRetentionPostgres(
   const merchantId = String(merchantIdValue || "").trim();
   if (!merchantId) return null;
 
-  return withOperationalTransaction(async (client) => {
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
     const merchant = await selectMerchantForUpdate(client, merchantId);
     if (!merchant || merchant.account_state === "closed") return null;
     const subscription = await selectSubscriptionForUpdate(client, merchantId);

@@ -310,39 +310,58 @@ async function writeAudit(
   );
 }
 
-export async function listManagedMerchantsPostgres(): Promise<ManagedMerchant[]> {
+export async function listManagedMerchantsPostgres(actorAdminId: string): Promise<ManagedMerchant[]> {
   requirePostgres();
-  const pool = await operationalDatabasePool();
-  const rows = await operationalQueryRows<ManagedMerchantRow>(
-    pool,
-    `SELECT m.id, m.owner_name, m.store_name, a.phone,
-            a.state AS account_state, a.phone_verified,
-            m.activity_type, m.status, a.language, a.created_at,
-            m.account_status, m.onboarding_status, m.trial_status,
-            m.signup_source, m.requested_plan, m.approved_at,
-            m.channel_activation_deadline, m.first_channel_connected_at,
-            m.trial_started_at, m.trial_expires_at,
-            m.last_subscription_ended_at, m.warning_stage,
-            m.retention_status, m.eligible_for_deletion_at,
-            m.grace_period_ends_at, m.retention_suspended_at,
-            s.starts_at AS subscription_started_at,
-            s.expires_at AS subscription_expires_at
-       FROM merchants m
-       JOIN accounts a ON a.id = m.account_id AND a.kind = 'merchant'
-       LEFT JOIN subscriptions s ON s.merchant_id = m.id
-      WHERE a.state <> 'closed' AND a.phone_verified = true
-      ORDER BY a.created_at DESC, m.id DESC`,
-  );
-  return rows.map(managedMerchant);
+  return withOperationalTransaction(async (client) => {
+    const actor = await adminSnapshot(client, String(actorAdminId || "").trim());
+    if (!actor) {
+      throw new MerchantManagementError(403, "ADMIN_ACCOUNT_INVALID", "administrator account is unavailable");
+    }
+    // Directory reads span tenants. Use the existing audited-admin RLS predicate
+    // for this transaction rather than bypassing RLS or querying once per tenant.
+    const auditId = `database-admin-${crypto.randomUUID()}`;
+    await client.query(
+      `INSERT INTO database_admin_access_audits
+         (id, admin_account_id, reason_code, request_hash, expires_at)
+       VALUES ($1, $2, 'MERCHANT_DIRECTORY_READ', $3, now() + interval '1 minute')`,
+      [auditId, actor.id, crypto.createHash("sha256").update(auditId).digest("hex")],
+    );
+    await client.query(
+      "SELECT set_config('fawri.admin_account_id', $1, true), set_config('fawri.admin_audit_id', $2, true)",
+      [actor.id, auditId],
+    );
+    const rows = await operationalQueryRows<ManagedMerchantRow>(
+      client,
+      `SELECT m.id, m.owner_name, m.store_name, a.phone,
+              a.state AS account_state, a.phone_verified,
+              m.activity_type, m.status, a.language, a.created_at,
+              m.account_status, m.onboarding_status, m.trial_status,
+              m.signup_source, m.requested_plan, m.approved_at,
+              m.channel_activation_deadline, m.first_channel_connected_at,
+              m.trial_started_at, m.trial_expires_at,
+              m.last_subscription_ended_at, m.warning_stage,
+              m.retention_status, m.eligible_for_deletion_at,
+              m.grace_period_ends_at, m.retention_suspended_at,
+              s.starts_at AS subscription_started_at,
+              s.expires_at AS subscription_expires_at
+         FROM merchants m
+         JOIN accounts a ON a.id = m.account_id AND a.kind = 'merchant'
+         LEFT JOIN subscriptions s ON s.merchant_id = m.id
+        WHERE a.state <> 'closed' AND a.phone_verified = true
+        ORDER BY a.created_at DESC, m.id DESC`,
+    );
+    return rows.map(managedMerchant);
+  });
 }
 
 export async function getManagedMerchantPostgres(
   merchantId: string,
 ): Promise<ManagedMerchant | null> {
   requirePostgres();
-  const pool = await operationalDatabasePool();
-  const row = await selectMerchant(pool, merchantId);
-  return row && row.account_state !== "closed" ? managedMerchant(row) : null;
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    const row = await selectMerchant(client, merchantId);
+    return row && row.account_state !== "closed" ? managedMerchant(row) : null;
+  });
 }
 
 export async function getMerchantAdminNotePostgres(merchantId: string): Promise<string> {
@@ -492,7 +511,7 @@ export async function updateMerchantStatusPostgres(input: {
     throw new MerchantManagementError(400, "STATUS_REASON_REQUIRED", "reason is required for this status");
   }
 
-  const result = await withOperationalTransaction(async (client) => {
+  const result = await withMerchantOperationalTransaction(input.merchantId, async (client) => {
     const merchant = await selectMerchant(client, input.merchantId, true);
     if (!merchant || merchant.account_state === "closed") {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");
@@ -709,7 +728,7 @@ export async function createDeletionRequestPostgres(input: {
   if (input.reason !== "policy_violation" && input.reason !== "retention_expired") {
     throw new MerchantManagementError(400, "DELETION_REASON_INVALID", "invalid deletion reason");
   }
-  return withOperationalTransaction(async (client) => {
+  return withMerchantOperationalTransaction(input.merchantId, async (client) => {
     const merchant = await selectMerchant(client, input.merchantId, true);
     if (!merchant || merchant.account_state === "closed") {
       throw new MerchantManagementError(404, "MERCHANT_NOT_FOUND", "merchant not found");

@@ -165,9 +165,10 @@ const MERCHANT_VIEW_PERMISSIONS: readonly AdminPermission[] = [
 ];
 
 router.get("/merchants", requireSecureAdminSession, async (_req, res) => {
-  if (!requireAnyPermission(res, MERCHANT_VIEW_PERMISSIONS)) return;
+  const context = requireAnyPermission(res, MERCHANT_VIEW_PERMISSIONS);
+  if (!context) return;
   try {
-    res.json({ ok: true, merchants: await listManagedMerchantsPostgres() });
+    res.json({ ok: true, merchants: await listManagedMerchantsPostgres(context.account.id) });
   } catch (error) {
     handleManagementError(res, error);
   }

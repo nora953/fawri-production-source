@@ -141,6 +141,12 @@ test("admin auth router is end-to-end PostgreSQL authoritative", async (t) => {
   let assistantId = "";
   t.after(async () => {
     await new Promise<void>((resolve) => server.close(() => resolve()));
+    // Directory reads now retain an admin-access audit with a restrictive FK.
+    // Remove only this disposable journey's audit rows before its accounts.
+    await pool.query(
+      "DELETE FROM database_admin_access_audits WHERE admin_account_id = $1 OR admin_account_id = $2",
+      [ownerId, assistantId || "missing-assistant"],
+    );
     await pool.query(
       "DELETE FROM accounts WHERE id = $1 OR id = $2 OR phone = ANY($3::text[])",
       [ownerId, assistantId || "missing-assistant", [ownerPhone, assistantPhone]],
