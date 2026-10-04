@@ -44,7 +44,7 @@ test("knowledge-gap reasons trigger only the dedicated scoped merchant notificat
 
   assert.match(
     autoReplySource,
-    /\[\s*"AUTHORITATIVE_FACT_UNAVAILABLE",\s*"NO_TRUSTED_ANSWER",\s*"AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",?\s*\]\.includes\(decision\.reasonCode\)[\s\S]*decision\.trainingRequestId[\s\S]*try\s*\{[\s\S]*notifyMerchantKnowledgeGapPostgres\(\{[\s\S]*merchantId:\s*parsed\.merchantId[\s\S]*trainingRequestId:\s*decision\.trainingRequestId[\s\S]*conversationId:\s*current\.id[\s\S]*\}\s*catch\s*\{[\s\S]*Meta knowledge gap notification failed/,
+    /\[\s*"AUTHORITATIVE_FACT_UNAVAILABLE",\s*"NO_TRUSTED_ANSWER",\s*"AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",?\s*\]\.includes\(decision\.reasonCode\)[\s\S]*decision\.trainingRequestId[\s\S]*try\s*\{[\s\S]*notifyMerchantKnowledgeGapPostgres\(\{[\s\S]*merchantId:\s*parsed\.merchantId[\s\S]*trainingRequestId:\s*decision\.trainingRequestId[\s\S]*conversationId:\s*knowledgeGapConversationId[\s\S]*\}\s*catch\s*\{[\s\S]*Meta knowledge gap notification failed/,
   );
 
   assert.doesNotMatch(

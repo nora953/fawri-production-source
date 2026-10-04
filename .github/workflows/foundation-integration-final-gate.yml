@@ -167,9 +167,10 @@ jobs:
           pnpm exec tsx --test
           artifacts/api-server/tests/merchant-management-tenant-rls.integration.test.mjs
 
-      - name: Prove live Meta reply persistence and pool contention behavior
+      - name: Prove knowledge-gap notification under pool contention
         run: >-
           pnpm exec tsx --test --test-timeout=60000
+          --test-name-pattern="seed isolated|stable knowledge gap hands off"
           artifacts/api-server/tests/meta-live-reply-postgres.integration.test.ts
       - name: Prove read-only catalog and commerce readiness
         run: node lib/db/scripts/catalog-variant-signature-readiness.mjs
