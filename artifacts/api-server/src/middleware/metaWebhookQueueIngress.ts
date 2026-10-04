@@ -11,6 +11,7 @@ import {
   readMetaPageMerchantMapAuthoritative,
 } from "../services/metaPageDirectory";
 import { operationalPostgresAuthorityRequired } from "../services/operationalPostgresAuthority";
+import { parseMetaInboundMessage } from "../services/metaInboundMessage";
 
 function record(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value)
@@ -22,9 +23,13 @@ function replyEligible(event: unknown): boolean {
   const eventRecord = record(event);
   const message = record(eventRecord.message);
   const sender = record(eventRecord.sender);
+  const inbound = parseMetaInboundMessage(message);
+
   return Boolean(
     message.is_echo !== true &&
-      String(message.text || "").trim() &&
+      inbound &&
+      inbound.kind !== "unsupported" &&
+      String(message.mid || "").trim() &&
       String(sender.id || "").trim(),
   );
 }

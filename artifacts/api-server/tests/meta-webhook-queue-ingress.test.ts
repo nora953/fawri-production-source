@@ -115,3 +115,184 @@ test("queue write failure returns 503 without marking event processed", async ()
     await rm(dataDirectory, { recursive: true, force: true });
   }
 });
+
+test("queue preserves supported inbound media for reply processing and fails closed for unsupported attachments", async () => {
+  const dataDirectory = await mkdtemp(
+    path.join(os.tmpdir(), "fawri-meta-media-ingress-"),
+  );
+  const previousDataDirectory = process.env.FAWRI_DATA_DIR;
+  process.env.FAWRI_DATA_DIR = dataDirectory;
+
+  try {
+    await writeFile(
+      path.join(dataDirectory, "fawri-runtime-db.json"),
+      JSON.stringify({
+        productsByMerchant: {},
+        conversationsByMerchant: {},
+        metaPagesByPageId: {
+          "page-media": {
+            merchant_id: "merchant-media",
+            page_id: "page-media",
+          },
+        },
+        ordersByMerchant: {},
+        orderDraftsByConversation: {},
+      }),
+    );
+
+    const { listDurableJobs } = await import(
+      "../src/services/durableJobQueue"
+    );
+
+    async function enqueueMessage(
+      mid: string,
+      message: Record<string, unknown>,
+    ) {
+      const request = {
+        method: "POST",
+        path: "/api/meta/webhook",
+        body: {
+          object: "page",
+          entry: [
+            {
+              id: "page-media",
+              messaging: [
+                {
+                  sender: { id: "customer-media" },
+                  message: { mid, ...message },
+                },
+              ],
+            },
+          ],
+        },
+        headers: {},
+        socket: { remoteAddress: "203.0.113.20" },
+      } as unknown as Request;
+
+      const { response, state } = responseMock();
+      let nextCalled = false;
+
+      await enqueueMetaWebhookEvents(
+        request,
+        response,
+        (() => {
+          nextCalled = true;
+        }) as NextFunction,
+      );
+
+      assert.equal(nextCalled, false);
+      assert.equal(state.statusCode, 200);
+    }
+
+    await enqueueMessage("message-text", { text: "hello" });
+
+    await enqueueMessage("message-image", {
+      attachments: [
+        {
+          type: "image",
+          payload: { url: "https://example.invalid/image.jpg" },
+        },
+      ],
+    });
+
+    await enqueueMessage("message-audio", {
+      attachments: [
+        {
+          type: "audio",
+          payload: { url: "https://example.invalid/audio.m4a" },
+        },
+      ],
+    });
+
+    await enqueueMessage("message-video", {
+      attachments: [
+        {
+          type: "video",
+          payload: { url: "https://example.invalid/video.mp4" },
+        },
+      ],
+    });
+
+    await enqueueMessage("message-share", {
+      attachments: [
+        {
+          type: "share",
+          payload: {
+            url: "https://example.invalid/post",
+            title: "Shared post",
+          },
+        },
+      ],
+    });
+
+    await enqueueMessage("message-file", {
+      attachments: [
+        {
+          type: "file",
+          payload: { url: "https://example.invalid/file.pdf" },
+        },
+      ],
+    });
+
+    await enqueueMessage("message-echo", {
+      is_echo: true,
+      text: "echo",
+    });
+
+    const jobs = listDurableJobs();
+
+    for (const mid of [
+      "message-text",
+      "message-image",
+      "message-audio",
+      "message-video",
+      "message-share",
+    ]) {
+      const job = jobs.find(
+        (candidate) =>
+          candidate.payload?.external_message_id === mid,
+      );
+
+      assert.ok(job, `missing reply job for ${mid}`);
+      assert.equal(job.type, "meta.webhook.reply");
+      assert.equal(job.merchant_id, "merchant-media");
+
+      const webhookBody = job.payload?.webhook_body as
+        | Record<string, unknown>
+        | undefined;
+
+      assert.ok(webhookBody, `missing preserved webhook body for ${mid}`);
+    }
+
+    const nonReplyJobs = jobs.filter(
+      (candidate) => candidate.type === "meta.webhook.event",
+    );
+
+    assert.equal(nonReplyJobs.length, 2);
+    assert.ok(
+      nonReplyJobs.every(
+        (job) => job.payload?.event_kind === "non_reply",
+      ),
+    );
+
+    assert.equal(
+      jobs.some(
+        (job) => job.payload?.external_message_id === "message-file",
+      ),
+      false,
+    );
+    assert.equal(
+      jobs.some(
+        (job) => job.payload?.external_message_id === "message-echo",
+      ),
+      false,
+    );
+  } finally {
+    if (previousDataDirectory === undefined) {
+      delete process.env.FAWRI_DATA_DIR;
+    } else {
+      process.env.FAWRI_DATA_DIR = previousDataDirectory;
+    }
+    await rm(dataDirectory, { recursive: true, force: true });
+  }
+});

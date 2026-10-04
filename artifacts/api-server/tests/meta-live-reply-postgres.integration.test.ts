@@ -207,6 +207,339 @@ await test("seed isolated live Meta merchants and encrypted channels", async () 
   );
 });
 
+await test("image-only Meta reply reaches the PostgreSQL intent as media instead of malformed text", async () => {
+  const senderId = `customer-live-image-${runId}`;
+  const eventId = `event-live-image-${runId}`;
+  const mid = `mid-live-image-${runId}`;
+
+  const queued = await jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply",
+    dedupeKey: eventId,
+    merchantId: merchantA.account.id,
+    maxAttempts: 5,
+    payload: {
+      event_id: eventId,
+      page_id: pageA,
+      merchant_id: merchantA.account.id,
+      external_message_id: mid,
+      sender_id: senderId,
+      webhook_body: {
+        object: "page",
+        entry: [
+          {
+            id: pageA,
+            messaging: [
+              {
+                sender: { id: senderId },
+                recipient: { id: pageA },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  attachments: [
+                    {
+                      type: "image",
+                      payload: {
+                        url: "https://example.invalid/private-image.jpg",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  });
+
+  const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+
+  assert.equal(prepared.action, "suppress");
+  if (prepared.action !== "suppress") return;
+  assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+
+  const stored = await raw(
+    `SELECT m.sender::text AS sender, m.text, m.status::text AS message_status,
+            m.counted_as_auto_reply, m.metadata,
+            c.status::text AS conversation_status,
+            c.needs_training
+       FROM messages m
+       JOIN conversations c
+         ON c.id = m.conversation_id
+        AND c.merchant_id = m.merchant_id
+      WHERE m.merchant_id = $1
+        AND m.external_message_id = $2`,
+    [merchantA.account.id, mid],
+  );
+
+  assert.equal(stored.rows.length, 1);
+  assert.equal(stored.rows[0].sender, "customer");
+  assert.equal(stored.rows[0].text, "[image]");
+  assert.equal(stored.rows[0].message_status, "received");
+  assert.equal(stored.rows[0].counted_as_auto_reply, false);
+  assert.equal(stored.rows[0].metadata?.media?.content_kind, "image");
+  assert.equal(stored.rows[0].metadata?.media?.attachment_count, 1);
+  assert.equal(stored.rows[0].metadata?.media?.has_attachment, true);
+  assert.equal(
+    JSON.stringify(stored.rows[0].metadata).includes(
+      "https://example.invalid/private-image.jpg",
+    ),
+    false,
+  );
+  assert.equal(stored.rows[0].conversation_status, "needs_reply");
+  assert.equal(stored.rows[0].needs_training, false);
+
+  const replies = await raw(
+    `SELECT COUNT(*)::int AS count
+       FROM messages
+      WHERE merchant_id = $1
+        AND external_event_id = $2
+        AND sender = 'fawri'`,
+    [merchantA.account.id, `reply:${eventId}`],
+  );
+  assert.equal(Number(replies.rows[0].count), 0);
+});
+
+
+await test("Meta text with an image attachment is suppressed until the attachment is processed", async () => {
+  const senderId = `customer-live-caption-image-${runId}`;
+  const eventId = `event-live-caption-image-${runId}`;
+  const mid = `mid-live-caption-image-${runId}`;
+
+  const queued = await jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply",
+    dedupeKey: eventId,
+    merchantId: merchantA.account.id,
+    payload: {
+      event_id: eventId,
+      page_id: pageA,
+      merchant_id: merchantA.account.id,
+      external_message_id: mid,
+      sender_id: senderId,
+      webhook_body: {
+        entry: [
+          {
+            id: pageA,
+            messaging: [
+              {
+                sender: { id: senderId },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  text: "Is this available?",
+                  attachments: [
+                    {
+                      type: "image",
+                      payload: {
+                        url: "https://example.invalid/caption-image.jpg",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  });
+
+  const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+
+  assert.equal(prepared.action, "suppress");
+  if (prepared.action !== "suppress") return;
+  assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+
+  const stored = await raw(
+    `SELECT text, metadata
+       FROM messages
+      WHERE merchant_id = $1
+        AND external_message_id = $2`,
+    [merchantA.account.id, mid],
+  );
+
+  assert.equal(stored.rows.length, 1);
+  assert.equal(stored.rows[0].text, "Is this available?");
+  assert.equal(stored.rows[0].metadata.media.content_kind, "text");
+  assert.equal(stored.rows[0].metadata.media.attachment_count, 1);
+  assert.equal(stored.rows[0].metadata.media.has_attachment, true);
+  assert.equal(
+    typeof stored.rows[0].metadata.media.content_identity_hash,
+    "string",
+  );
+});
+
+await test("same Meta message id with different image content is rejected as an identity collision", async () => {
+  const senderId = `customer-media-collision-${runId}`;
+  const mid = `mid-media-collision-${runId}`;
+
+  async function enqueueImage(eventId: string, url: string) {
+    return jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  const firstEventId = `event-media-collision-a-${runId}`;
+  const secondEventId = `event-media-collision-b-${runId}`;
+
+  const first = await enqueueImage(
+    firstEventId,
+    "https://example.invalid/media-collision-a.jpg",
+  );
+  const firstPrepared = await intents.preparePostgresMetaAutoReply(first.job);
+
+  assert.equal(firstPrepared.action, "suppress");
+  if (firstPrepared.action !== "suppress") return;
+  assert.equal(firstPrepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+
+  const second = await enqueueImage(
+    secondEventId,
+    "https://example.invalid/media-collision-b.jpg",
+  );
+
+  await assert.rejects(
+    () => intents.preparePostgresMetaAutoReply(second.job),
+    (error: unknown) => {
+      assert.equal(
+        (error as { code?: string }).code,
+        "META_MESSAGE_IDENTITY_COLLISION",
+      );
+      return true;
+    },
+  );
+
+  const stored = await raw(
+    `SELECT text, metadata
+       FROM messages
+      WHERE merchant_id = $1
+        AND external_message_id = $2`,
+    [merchantA.account.id, mid],
+  );
+
+  assert.equal(stored.rows.length, 1);
+  assert.equal(stored.rows[0].text, "[image]");
+  assert.equal(stored.rows[0].metadata?.media?.content_kind, "image");
+});
+
+
+await test("same Meta message id with identical image content is safely redelivered without duplication", async () => {
+  const senderId = `customer-media-redelivery-${runId}`;
+  const mid = `mid-media-redelivery-${runId}`;
+  const url = "https://example.invalid/media-redelivery-same.jpg";
+
+  async function enqueueImage(eventId: string) {
+    return jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  const firstEventId = `event-media-redelivery-a-${runId}`;
+  const secondEventId = `event-media-redelivery-b-${runId}`;
+
+  const first = await enqueueImage(firstEventId);
+  const firstPrepared = await intents.preparePostgresMetaAutoReply(first.job);
+
+  assert.equal(firstPrepared.action, "suppress");
+  if (firstPrepared.action !== "suppress") return;
+  assert.equal(firstPrepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+
+  const second = await enqueueImage(secondEventId);
+  const secondPrepared = await intents.preparePostgresMetaAutoReply(second.job);
+
+  assert.equal(secondPrepared.action, "suppress");
+  if (secondPrepared.action !== "suppress") return;
+  assert.equal(secondPrepared.code, "CONVERSATION_NEEDS_REPLY");
+
+  const stored = await raw(
+    `SELECT text, metadata
+       FROM messages
+      WHERE merchant_id = $1
+        AND external_message_id = $2`,
+    [merchantA.account.id, mid],
+  );
+
+  assert.equal(stored.rows.length, 1);
+  assert.equal(stored.rows[0].text, "[image]");
+  assert.equal(stored.rows[0].metadata?.media?.content_kind, "image");
+  assert.equal(stored.rows[0].metadata?.media?.attachment_count, 1);
+  assert.equal(
+    typeof stored.rows[0].metadata?.media?.content_identity_hash,
+    "string",
+  );
+  assert.equal(
+    JSON.stringify(stored.rows[0].metadata).includes(url),
+    false,
+  );
+});
+
 await test("live PostgreSQL transport sends once and deduplicates provider success", async () => {
   const queued = await enqueueReply({
     merchantId: merchantA.account.id,
@@ -1072,6 +1405,178 @@ await test("Meta PostgreSQL conversation memory reloads a sent catalog variant r
     firstMatchedRecordId,
   );
   assert.equal(secondStored.rows[0].metadata.handoff_after_reply, false);
+});
+
+
+await test("live worker suppresses image-only Meta input before entitlement debit", async () => {
+  const senderId = `customer-live-worker-image-${runId}`;
+  const eventId = `event-live-worker-image-${runId}`;
+  const mid = `mid-live-worker-image-${runId}`;
+
+  const queued = await jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply",
+    dedupeKey: eventId,
+    merchantId: merchantA.account.id,
+    maxAttempts: 5,
+    priority: 100,
+    payload: {
+      event_id: eventId,
+      page_id: pageA,
+      merchant_id: merchantA.account.id,
+      external_message_id: mid,
+      sender_id: senderId,
+      webhook_body: {
+        object: "page",
+        entry: [
+          {
+            id: pageA,
+            messaging: [
+              {
+                sender: { id: senderId },
+                recipient: { id: pageA },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  attachments: [
+                    {
+                      type: "image",
+                      payload: {
+                        url: "https://example.invalid/private-live-worker-image.jpg",
+                      },
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+        ],
+      },
+    },
+  });
+
+  const previousTransport = process.env.FAWRI_META_REPLY_TRANSPORT;
+  const previousPollInterval = process.env.FAWRI_JOB_POLL_INTERVAL_MS;
+  process.env.FAWRI_META_REPLY_TRANSPORT = "live";
+  process.env.FAWRI_JOB_POLL_INTERVAL_MS = "60000";
+
+  const workerModule = await import("../src/services/metaWebhookWorker.js");
+  const worker = workerModule.startMetaWebhookWorker(3199);
+
+  try {
+    let settled = false;
+
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const processed = await worker.runOnce();
+
+      const allJobs = await jobs.listDurableJobsAuthoritative();
+      const current = allJobs.find((job) => job.id === queued.job.id);
+
+      if (
+        current &&
+        current.status !== "queued" &&
+        current.status !== "processing"
+      ) {
+        settled = true;
+        break;
+      }
+
+      if (!processed) break;
+    }
+
+    assert.equal(
+      settled,
+      true,
+      "media job was not processed by live worker after draining available jobs",
+    );
+    } finally {
+      worker.stop();
+
+      if (previousTransport === undefined) {
+        delete process.env.FAWRI_META_REPLY_TRANSPORT;
+      } else {
+        process.env.FAWRI_META_REPLY_TRANSPORT = previousTransport;
+      }
+
+      if (previousPollInterval === undefined) {
+        delete process.env.FAWRI_JOB_POLL_INTERVAL_MS;
+      } else {
+        process.env.FAWRI_JOB_POLL_INTERVAL_MS = previousPollInterval;
+      }
+    }
+
+  const allJobs = await jobs.listDurableJobsAuthoritative();
+  const settled = allJobs.find((job) => job.id === queued.job.id);
+
+  assert.ok(
+    settled,
+    `media job missing after worker run; queued id=${queued.job.id}`,
+  );
+  assert.equal(
+    settled.status,
+    "completed",
+    `media job settled unexpectedly: ${JSON.stringify({
+      id: settled.id,
+      status: settled.status,
+      attempts: settled.attempts,
+      result: settled.result,
+      last_error_code: settled.last_error_code,
+    })}`,
+  );
+  assert.equal(settled.result?.delivery_status, "suppressed");
+  assert.equal(
+    settled.result?.suppression_code,
+    "META_MEDIA_PROCESSING_UNAVAILABLE",
+  );
+  assert.equal(settled.result?.credit_consumed, false);
+
+  const ledger = await raw(
+    `SELECT count(*)::int AS count
+       FROM reply_ledger
+      WHERE merchant_id = $1
+        AND external_event_id = $2`,
+    [merchantA.account.id, eventId],
+  );
+  assert.equal(ledger.rows[0].count, 0);
+
+  const outbound = await raw(
+    `SELECT count(*)::int AS count
+       FROM outbound_deliveries
+      WHERE merchant_id = $1
+        AND inbound_event_id = $2`,
+    [merchantA.account.id, eventId],
+  );
+  assert.equal(outbound.rows[0].count, 0);
+
+  const replies = await raw(
+    `SELECT count(*)::int AS count
+       FROM messages
+      WHERE merchant_id = $1
+        AND external_event_id = $2
+        AND sender = 'fawri'`,
+    [merchantA.account.id, `reply:${eventId}`],
+  );
+  assert.equal(replies.rows[0].count, 0);
+
+  const customer = await raw(
+    `SELECT m.text, m.status::text AS message_status,
+            m.counted_as_auto_reply,
+            c.status::text AS conversation_status,
+            c.needs_training
+       FROM messages m
+       JOIN conversations c
+         ON c.id = m.conversation_id
+        AND c.merchant_id = m.merchant_id
+      WHERE m.merchant_id = $1
+        AND m.external_message_id = $2`,
+    [merchantA.account.id, mid],
+  );
+
+  assert.equal(customer.rows.length, 1);
+  assert.equal(customer.rows[0].text, "[image]");
+  assert.equal(customer.rows[0].message_status, "received");
+  assert.equal(customer.rows[0].counted_as_auto_reply, false);
+  assert.equal(customer.rows[0].conversation_status, "needs_reply");
+  assert.equal(customer.rows[0].needs_training, false);
 });
 
 test.after(async () => {
