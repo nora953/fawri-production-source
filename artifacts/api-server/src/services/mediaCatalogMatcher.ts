@@ -115,7 +115,7 @@ export class TrustedMediaCatalogMatcher {
     if (validated.length === 0) return null;
 
     const best = validated[0];
-    const second = validated[1];
+    const second = validated.find((candidate) => candidate.matchedRecordId !== best.matchedRecordId);
 
     if (
       second &&
