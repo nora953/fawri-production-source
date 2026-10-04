@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import { CATALOG_PRODUCT_DETAILS_COPY } from '../src/lib/translations/features/catalog/catalogEditorCopy.ts';
 import type { CatalogProduct } from '../src/lib/catalogUiApi.ts';
 import {
   catalogProductFormFromProduct,
@@ -14,6 +15,9 @@ const productsPage = await readFile(
   new URL('../src/pages/dashboard/ProductsPage.tsx', import.meta.url),
   'utf8',
 );
+const workspacePage = await readFile(new URL('../src/pages/dashboard/ProductsWorkspacePage.tsx', import.meta.url), 'utf8');
+const commercePage = await readFile(new URL('../src/pages/dashboard/CommerceCatalogSimplifiedPage.tsx', import.meta.url), 'utf8');
+const detailsEditor = await readFile(new URL('../src/components/catalog/CatalogProductDetailsEditor.tsx', import.meta.url), 'utf8');
 
 const baseProduct: CatalogProduct = {
   id: 'prd-measure',
@@ -126,9 +130,18 @@ test('variant empty measurements express inheritance and complete overrides seri
 });
 
 test('ProductsPage exposes optional localized measurement UI without delivery pricing logic', () => {
-  assert.match(productsPage, /physicalDetails/);
-  assert.match(productsPage, /weightKg/);
-  assert.match(productsPage, /dimensionsCm/);
-  assert.match(productsPage, /variantMeasurementsHint/);
-  assert.doesNotMatch(productsPage, /delivery fee|delivery_fee|governorate pricing|manual quote/i);
+  assert.match(productsPage, /from '\.\/ProductsWorkspacePage'/);
+  assert.match(workspacePage, /from '\.\/CommerceCatalogSimplifiedPage'/);
+  assert.match(commercePage, /<CatalogProductDetailsEditor\s/);
+  assert.match(detailsEditor, /<Measurements labels=\{labels\} form=\{form\} onChange=\{onChange\}/);
+  for (const field of ['weight_kg', 'length_cm', 'width_cm', 'height_cm']) {
+    assert.ok(detailsEditor.includes(`value={form.${field}}`));
+    assert.ok(detailsEditor.includes(`onChange({ ${field}: e.target.value })`));
+  }
+  for (const lang of ['ar', 'ku', 'en'] as const) {
+    for (const key of ['advanced', 'advancedHint', 'weight', 'length', 'width', 'height'] as const) {
+      assert.ok(CATALOG_PRODUCT_DETAILS_COPY[lang][key].trim(), `${lang}.${key}`);
+    }
+  }
+  assert.doesNotMatch(detailsEditor, /delivery fee|delivery_fee|governorate pricing|manual quote/i);
 });
