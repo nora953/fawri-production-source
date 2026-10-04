@@ -176,6 +176,10 @@ jobs:
         run: >-
           pnpm exec tsx --test
           artifacts/api-server/tests/merchant-settings-clock.integration.test.mjs
+      - name: Prove expired queue leases are revalidated before settlement
+        run: >-
+          pnpm exec tsx --test
+          artifacts/api-server/tests/queue-expired-lease-race.integration.test.mjs
       - name: Prove read-only catalog and commerce readiness
         run: node lib/db/scripts/catalog-variant-signature-readiness.mjs
 
