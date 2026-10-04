@@ -952,7 +952,8 @@ export async function preparePostgresMetaAutoReply(
       ? "fallback"
       : "database";
 
-  return withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
+  let knowledgeGapConversationId = "";
+  const prepared = await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
     const currentConversation = await client.query<ConversationRow>(
       `SELECT id, status::text AS status, assigned_to_human, metadata
          FROM conversations
@@ -1045,20 +1046,7 @@ export async function preparePostgresMetaAutoReply(
         ].includes(decision.reasonCode) &&
         decision.trainingRequestId
       ) {
-        try {
-          await notifyMerchantKnowledgeGapPostgres({
-            merchantId: parsed.merchantId,
-            trainingRequestId: decision.trainingRequestId,
-            conversationId: current.id,
-          });
-        } catch {
-          console.error("Meta knowledge gap notification failed", {
-            code: "OPERATIONAL_NOTIFICATION_UNAVAILABLE",
-            merchant_id: parsed.merchantId,
-            conversation_id: current.id,
-            training_request_id: decision.trainingRequestId,
-          });
-        }
+        knowledgeGapConversationId = current.id;
       }
     }
 
@@ -1075,6 +1063,25 @@ export async function preparePostgresMetaAutoReply(
       persisted,
     );
   });
+  // Release the reply transaction's connection before the notification opens
+  // its own transaction. Only notify after the handoff was committed.
+  if (knowledgeGapConversationId && decision.trainingRequestId) {
+    try {
+      await notifyMerchantKnowledgeGapPostgres({
+        merchantId: parsed.merchantId,
+        trainingRequestId: decision.trainingRequestId,
+        conversationId: knowledgeGapConversationId,
+      });
+    } catch {
+      console.error("Meta knowledge gap notification failed", {
+        code: "OPERATIONAL_NOTIFICATION_UNAVAILABLE",
+        merchant_id: parsed.merchantId,
+        conversation_id: knowledgeGapConversationId,
+        training_request_id: decision.trainingRequestId,
+      });
+    }
+  }
+  return prepared;
 }
 
 export async function suppressPreparedPostgresMetaAutoReply(input: {
