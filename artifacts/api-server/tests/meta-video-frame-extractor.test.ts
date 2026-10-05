@@ -7,10 +7,11 @@ import { FfmpegMetaVideoFrameExtractor } from "../src/services/metaVideoFrameExt
 
 const video = { buffer: Buffer.from("video"), mimeType: "video/mp4", sizeBytes: 5, sha256: "a".repeat(64) };
 
-test("default decoder kills a stalled child before cleaning its input", async (t) => {
+test("default decoder kills a stalled child before cleaning its input", { timeout: 2_000 }, async (t) => {
   const originalSpawn = childProcess.spawn;
   let child: ReturnType<typeof childProcess.spawn> | undefined;
   let inputPath = "";
+  t.after(() => { child?.kill("SIGKILL"); });
   t.mock.method(childProcess, "spawn", (command: string, args: string[], options: any) => {
     assert.equal(command, "ffmpeg");
     inputPath = args[args.indexOf("-i") + 1];
