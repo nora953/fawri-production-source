@@ -1452,13 +1452,16 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  const trustedIntentParts = [
+    parsed.customerText,
+    trustedAudioUnderstood ? trustedAudioTranscript : null,
+    trustedVideoUnderstood ? trustedVideoText : null,
+  ].filter((part): part is string => Boolean(part?.trim()));
+
   const effectiveCustomerText =
-    parsed.customerText ||
-    (trustedAudioUnderstood && trustedAudioTranscript
-      ? trustedAudioTranscript
-      : trustedVideoUnderstood && trustedVideoText
-        ? trustedVideoText
-        : null);
+    trustedIntentParts.length > 0
+      ? [...new Set(trustedIntentParts.map((part) => part.trim()))].join("\n")
+      : null;
 
   const atomicMediaUnderstood =
     !mixedMediaRequested ||
