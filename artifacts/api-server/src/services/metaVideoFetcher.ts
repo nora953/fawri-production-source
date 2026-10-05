@@ -110,7 +110,7 @@ export class SecureMetaVideoFetcher {
       if(!ALLOWED.has(mime)){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_MIME_INVALID","Meta video MIME is invalid");}
       const raw=response.headers.get("content-length");
       if(raw!==null){
-        if(!/^\\d+$/.test(raw.trim())){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_FETCH_FAILED","Meta video length invalid");}
+        if(!/^\d+$/.test(raw.trim())){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_FETCH_FAILED","Meta video length invalid");}
         const length=Number(raw);
         if(!Number.isSafeInteger(length)||length<0){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_FETCH_FAILED","Meta video length invalid");}
         if(length>META_VIDEO_MAX_BYTES){await response.body?.cancel().catch(()=>undefined);throw error("META_VIDEO_TOO_LARGE","Meta video too large");}
