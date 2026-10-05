@@ -172,7 +172,10 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     !senderId ||
     !externalMessageId ||
     !inbound ||
-    contentKind === "unsupported" ||
+    (contentKind === "unsupported" ||
+      contentKind === "document" ||
+      contentKind === "location" ||
+      contentKind === "sticker") ||
     !storageText ||
     storageText.length > 2_000 ||
     (customerText !== null && customerText.length > 2_000) ||
