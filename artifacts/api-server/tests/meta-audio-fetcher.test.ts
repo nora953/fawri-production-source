@@ -230,9 +230,7 @@ test("secure audio fetcher bounds a stalled response body stream", async () => {
 
   await assert.rejects(
     fetcher.fetchAudio({ url: "https://cdn.example.test/stalled-body.mp3" }),
-    (error: unknown) => {
-      const candidate = error as { code?: string; name?: string } | null;
-      return candidate?.code === "META_AUDIO_TIMEOUT" || candidate?.name === "AbortError";
-    },
+    (error: unknown) =>
+      (error as { code?: string } | null)?.code === "META_AUDIO_TIMEOUT",
   );
 });
