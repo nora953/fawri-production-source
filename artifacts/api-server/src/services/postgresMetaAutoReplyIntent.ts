@@ -62,6 +62,7 @@ type ParsedMetaJob = {
   imageUrl: string | null;
   audioUrl: string | null;
   videoUrl: string | null;
+  replyToMessageId: string | null;
   webhookBody: Record<string, unknown>;
   createdAt: string;
 };
@@ -203,6 +204,7 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     imageUrl,
     audioUrl,
     videoUrl,
+    replyToMessageId: inbound.replyToMessageId,
     webhookBody,
     createdAt: eventTimestamp(event.timestamp),
   };
@@ -349,6 +351,23 @@ async function ensureInboundState(
       throw Object.assign(new Error("Meta conversation is unavailable"), {
         code: "META_CONVERSATION_UNAVAILABLE",
       });
+    }
+
+    if (parsed.replyToMessageId) {
+      const repliedTo = await client.query<{ id: string }>(
+        `SELECT id
+           FROM messages
+          WHERE merchant_id = $1
+            AND conversation_id = $2
+            AND external_message_id = $3
+          LIMIT 2`,
+        [parsed.merchantId, conversation.id, parsed.replyToMessageId],
+      );
+      if (repliedTo.rows.length !== 1) {
+        throw Object.assign(new Error("Meta replied-to message is unavailable"), {
+          code: "META_REPLY_CONTEXT_UNAVAILABLE",
+        });
+      }
     }
 
     if (conversation.status === "closed") {
