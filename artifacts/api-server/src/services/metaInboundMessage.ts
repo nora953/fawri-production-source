@@ -132,6 +132,17 @@ export function parseMetaInboundMessage(
 }
 
 
+export function isMetaInboundReplyHandled(inbound: MetaInboundMessage | null): boolean {
+  return Boolean(
+    inbound &&
+      (inbound.kind === "text" ||
+        inbound.kind === "image" ||
+        inbound.kind === "audio" ||
+        inbound.kind === "video" ||
+        inbound.kind === "shared_post"),
+  );
+}
+
 export function selectMetaInboundImageUrl(
   inbound: MetaInboundMessage,
 ): string | null {
