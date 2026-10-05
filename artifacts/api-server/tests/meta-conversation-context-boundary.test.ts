@@ -44,3 +44,26 @@ test("historical trusted audio transcript remains customer-authored speech", () 
 
   assert.equal(mapped.text, "هل متوفر؟");
 });
+
+test("quoted historical video stays context instead of becoming current intent", () => {
+  const currentText = "current customer request";
+  const quoted = mapConversationContextRow({
+    sender: "customer",
+    text: "[video]",
+    created_at: "2026-10-06T00:00:02.000Z",
+    metadata: {
+      matched_record_id: "catalog-product:quoted-video-proof",
+      media: {
+        video_sha256: "c".repeat(64),
+        video_vision_provider_id: "test-video-provider",
+        video_vision_model: "test-video-model",
+        video_observation: "historical generated observation",
+      },
+    },
+  });
+
+  assert.equal(currentText, "current customer request");
+  assert.equal(quoted.text, "[video]");
+  assert.notEqual(quoted.text, currentText);
+  assert.notEqual(quoted.text, "historical generated observation");
+});
