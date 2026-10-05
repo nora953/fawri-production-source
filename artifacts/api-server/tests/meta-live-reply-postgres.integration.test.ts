@@ -4813,7 +4813,7 @@ await test("persisted video observation without complete provenance is not trust
 
     const replay = await intents.preparePostgresMetaAutoReply(queued.job);
     assert.equal(replay.action, "suppress");
-    if (replay.action === "suppress") assert.equal(replay.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    if (replay.action === "suppress") assert.equal(replay.code, "CONVERSATION_NEEDS_REPLY");
     assert.equal(videoCalls, 2);
   } finally {
     videoRuntime.resetMetaVideoUnderstandingServiceForTests();
