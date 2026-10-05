@@ -245,6 +245,109 @@ test("duplicate candidates for the same catalog identity do not create false amb
   assert.equal(result?.confidence, 0.99);
 });
 
+test("trusted media catalog matcher keeps similar products as alternatives without claiming an exact match", async () => {
+  const matcher = new TrustedMediaCatalogMatcher({
+    async listCatalogProducts() {
+      return [
+        product({
+          id: "product-similar-black",
+          name: "Similar Black Shirt",
+        }),
+        product({
+          id: "product-similar-blue",
+          name: "Similar Blue Shirt",
+        }),
+      ];
+    },
+  });
+
+  const result = await matcher.resolveAlternatives({
+    merchantId: "merchant-a",
+    candidates: [
+      {
+        productId: "product-similar-black",
+        confidence: 0.82,
+      },
+      {
+        productId: "product-similar-blue",
+        confidence: 0.74,
+      },
+    ],
+  });
+
+  assert.deepEqual(result, [
+    {
+      productId: "product-similar-black",
+      confidence: 0.82,
+    },
+    {
+      productId: "product-similar-blue",
+      confidence: 0.74,
+    },
+  ]);
+
+  assert.equal(
+    result.some((candidate) => "matchedRecordId" in candidate),
+    false,
+  );
+});
+
+test("trusted media catalog alternatives preserve tenant, eligibility, variant ownership, and confidence boundaries", async () => {
+  const matcher = new TrustedMediaCatalogMatcher({
+    async listCatalogProducts() {
+      return [
+        product({
+          id: "eligible-shirt",
+          name: "Eligible Shirt",
+        }),
+        product({
+          id: "blocked-shirt",
+          name: "Blocked Shirt",
+          allow_fawri_reply: false,
+        }),
+        product({
+          id: "other-product",
+          name: "Other Product",
+          variants: [
+            {
+              id: "other-variant",
+              name: "Other Variant",
+              stock_quantity: 4,
+              options: { color: "Blue" },
+              image_refs: [],
+              created_at: "2026-10-02T00:00:00.000Z",
+              updated_at: "2026-10-02T00:00:00.000Z",
+            },
+          ],
+        }),
+      ];
+    },
+  });
+
+  const result = await matcher.resolveAlternatives({
+    merchantId: "merchant-a",
+    candidates: [
+      { productId: "foreign-product", confidence: 0.99 },
+      { productId: "blocked-shirt", confidence: 0.98 },
+      {
+        productId: "eligible-shirt",
+        variantId: "other-variant",
+        confidence: 0.97,
+      },
+      { productId: "eligible-shirt", confidence: 0.59 },
+      { productId: "eligible-shirt", confidence: 0.81 },
+      { productId: "eligible-shirt", confidence: 0.76 },
+    ],
+  });
+
+  assert.deepEqual(result, [
+    {
+      productId: "eligible-shirt",
+      confidence: 0.81,
+    },
+  ]);
+});
+
 test("duplicate top candidates cannot conceal a competing product", async () => {
   const matcher = new TrustedMediaCatalogMatcher({
     listCatalogProducts: async () => [product(), product({ id: "other-shirt" })],

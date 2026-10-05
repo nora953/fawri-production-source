@@ -3,6 +3,8 @@ import test from "node:test";
 import {
   parseMetaInboundMessage,
   selectMetaInboundImageUrl,
+  selectMetaInboundAudioUrl,
+  selectMetaInboundVideoUrl,
 } from "../src/services/metaInboundMessage";
 
 test("preserves the existing text message contract", () => {
@@ -224,5 +226,130 @@ test("image URL selection fails closed for missing, non-HTTPS, or ambiguous imag
     const inbound = parseMetaInboundMessage(message);
     assert.ok(inbound);
     assert.equal(selectMetaInboundImageUrl(inbound), null);
+  }
+});
+
+test("selects exactly one explicit HTTPS audio URL for transcription", () => {
+  const inbound = parseMetaInboundMessage({
+    mid: "audio-one",
+    attachments: [
+      {
+        type: "audio",
+        payload: {
+          url: "https://cdn.example.test/private-question.mp3",
+        },
+      },
+    ],
+  });
+
+  assert.ok(inbound);
+  assert.equal(
+    selectMetaInboundAudioUrl(inbound),
+    "https://cdn.example.test/private-question.mp3",
+  );
+});
+
+test("audio URL selection fails closed for non-HTTPS, mixed, or ambiguous attachments", () => {
+  const cases = [
+    {
+      attachments: [
+        {
+          type: "audio",
+          payload: { url: "http://cdn.example.test/question.mp3" },
+        },
+      ],
+    },
+    {
+      attachments: [
+        {
+          type: "audio",
+          payload: { url: "https://cdn.example.test/question.mp3" },
+        },
+        {
+          type: "image",
+          payload: { url: "https://cdn.example.test/product.jpg" },
+        },
+      ],
+    },
+    {
+      attachments: [
+        {
+          type: "audio",
+          payload: { url: "https://cdn.example.test/one.mp3" },
+        },
+        {
+          type: "audio",
+          payload: { url: "https://cdn.example.test/two.mp3" },
+        },
+      ],
+    },
+  ];
+
+  for (const message of cases) {
+    const inbound = parseMetaInboundMessage(message);
+    assert.ok(inbound);
+    assert.equal(selectMetaInboundAudioUrl(inbound), null);
+  }
+});
+
+test("explicit text wins and is never replaced by an attached audio transcript", () => {
+  const inbound = parseMetaInboundMessage({
+    mid: "text-with-audio",
+    text: "هذا هو سؤالي المكتوب",
+    attachments: [
+      {
+        type: "audio",
+        payload: { url: "https://cdn.example.test/question.mp3" },
+      },
+    ],
+  });
+
+  assert.ok(inbound);
+  assert.equal(inbound.kind, "text");
+  assert.equal(inbound.text, "هذا هو سؤالي المكتوب");
+  assert.equal(selectMetaInboundAudioUrl(inbound), null);
+});
+
+test("selects exactly one explicit HTTPS video URL for bounded analysis", () => {
+  const inbound = parseMetaInboundMessage({
+    mid: "video-one",
+    attachments: [{
+      type: "video",
+      payload: { url: "https://cdn.example.test/product-video.mp4" },
+    }],
+  });
+  assert.ok(inbound);
+  assert.equal(
+    selectMetaInboundVideoUrl(inbound),
+    "https://cdn.example.test/product-video.mp4",
+  );
+});
+
+test("video URL selection fails closed for captions, mixed attachments, HTTP, or ambiguity", () => {
+  const cases = [
+    {
+      text: "caption wins",
+      attachments: [{ type: "video", payload: { url: "https://cdn.example.test/a.mp4" } }],
+    },
+    {
+      attachments: [
+        { type: "video", payload: { url: "https://cdn.example.test/a.mp4" } },
+        { type: "image", payload: { url: "https://cdn.example.test/a.jpg" } },
+      ],
+    },
+    {
+      attachments: [{ type: "video", payload: { url: "http://cdn.example.test/a.mp4" } }],
+    },
+    {
+      attachments: [
+        { type: "video", payload: { url: "https://cdn.example.test/a.mp4" } },
+        { type: "video", payload: { url: "https://cdn.example.test/b.mp4" } },
+      ],
+    },
+  ];
+  for (const message of cases) {
+    const inbound = parseMetaInboundMessage(message);
+    assert.ok(inbound);
+    assert.equal(selectMetaInboundVideoUrl(inbound), null);
   }
 });

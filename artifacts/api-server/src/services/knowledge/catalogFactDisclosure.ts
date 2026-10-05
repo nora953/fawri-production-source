@@ -68,13 +68,23 @@ export function catalogAvailabilityAnswer(params: {
     return `نعم، ${params.requestedQuantity} من ${params.itemName} متوفرة حاليًا.`;
   }
 
+  if (availableQuantity > 0) {
+    if (params.language === "en") {
+      return `No, the requested quantity of ${params.itemName} is not fully available. ${availableQuantity} are currently available.`;
+    }
+    if (params.language === "ku") {
+      return `نەخێر، بڕی داواکراو لە ${params.itemName} بە تەواوی بەردەست نییە. لە ئێستادا ${availableQuantity} دانە بەردەستە.`;
+    }
+    return `لا، الكمية المطلوبة من ${params.itemName} غير متوفرة بالكامل. المتوفر حاليًا ${availableQuantity}.`;
+  }
+
   if (params.language === "en") {
-    return `No, the requested quantity of ${params.itemName} is not currently available.`;
+    return `${params.itemName} is currently out of stock.`;
   }
   if (params.language === "ku") {
-    return `نەخێر، بڕی داواکراو لە ${params.itemName} لە ئێستادا بەردەست نییە.`;
+    return `${params.itemName} لە ئێستادا بەردەست نییە.`;
   }
-  return `لا، الكمية المطلوبة من ${params.itemName} غير متوفرة حاليًا.`;
+  return `${params.itemName} غير متوفر حاليًا.`;
 }
 
 function currencyLabel(language: "ar" | "ku" | "en", currencyCode: string): string {

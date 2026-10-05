@@ -1123,6 +1123,13 @@ async function resolveProductFact(params: {
     };
   }
 
+  const requestedQuantity = commerce.track_inventory
+    ? requestedCatalogQuantity(params.customer)
+    : null;
+  const availableQuantity = commerce.track_inventory
+    ? Math.max(0, quantity)
+    : 0;
+
   return {
     answerText: catalogAvailabilityAnswer({
       language: params.language,
@@ -1135,9 +1142,7 @@ async function resolveProductFact(params: {
           : text(product.status, 40),
       authoritativeQuantity: quantity,
       commerce,
-      requestedQuantity: commerce.track_inventory
-        ? requestedCatalogQuantity(params.customer)
-        : null,
+      requestedQuantity,
     }),
     language: params.language,
     confidence: 1,
@@ -1150,6 +1155,20 @@ async function resolveProductFact(params: {
       productId,
       selectedVariantId,
     ),
+    ...(commerce.item_type === "product"
+      ? {
+          availability: {
+            trackInventory: commerce.track_inventory,
+            availableQuantity,
+            requestedQuantity,
+            fulfillable: commerce.track_inventory
+              ? requestedQuantity
+                ? availableQuantity >= requestedQuantity
+                : availableQuantity > 0
+              : text(product.status, 40) !== "out_of_stock",
+          },
+        }
+      : {}),
   };
 }
 
@@ -1337,14 +1356,21 @@ export class PostgresOperationalFactResolver implements KnowledgeFactResolver {
       }
 
       if (kind === "price" || kind === "stock") {
+        const visualAlternativeStock =
+          kind === "stock" && !input.trustedProductIdHint;
+
         return resolveProductFact({
           sql,
           merchantId,
           customer: normalized,
           language: input.language,
           kind,
-          trustedProductIdHint: input.trustedProductIdHint,
-          trustedVariantIdHint: input.trustedVariantIdHint,
+          trustedProductIdHint: visualAlternativeStock
+            ? input.trustedVisualAlternativeProductId
+            : input.trustedProductIdHint,
+          trustedVariantIdHint: visualAlternativeStock
+            ? input.trustedVisualAlternativeVariantId
+            : input.trustedVariantIdHint,
         });
       }
 

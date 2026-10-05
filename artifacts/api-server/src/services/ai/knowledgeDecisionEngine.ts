@@ -20,6 +20,12 @@ import {
   type KnowledgeEmbeddingProvider,
   type MerchantKnowledgePolicyResolver,
 } from "../knowledge/postgresKnowledgeRuntime.js";
+import {
+  resolveTrustedVisualAlternativeContext,
+  qualifyVisualAlternativeStockAnswer,
+  safeVisualAlternativeCatalogAnswer,
+  visualAlternativeReplyIsQualified,
+} from "../knowledge/visualAlternativePolicy.js";
 import type {
   AiFallbackProvider,
   ApprovedKnowledgeTranslationProvider,
@@ -490,6 +496,7 @@ export type KnowledgeDecisionEngineOptions = {
   allowGeneratedAutoReply?: boolean;
 };
 
+
 export class KnowledgeDecisionEngine {
   readonly engineId = "fawri_knowledge_decision_engine_v1";
   readonly authorityId: string;
@@ -682,6 +689,17 @@ export class KnowledgeDecisionEngine {
     const language = input.languageHint || detectKnowledgeLanguage(customerText);
     const conversationHistory = boundedConversationHistory(input.recentMessages);
     const catalogConversationRef = activeCatalogConversationRef(conversationHistory);
+
+    const visualContext = resolveTrustedVisualAlternativeContext({
+      catalogConversationRef,
+      trustedVisualAlternative: input.trustedVisualAlternative,
+      trustedVisualAlternatives: input.trustedVisualAlternatives,
+    });
+    const normalizedVisualAlternatives = visualContext.alternatives;
+    const primaryVisualAlternative = visualContext.primary;
+    const catalogHintRef = visualContext.catalogHintRef;
+    const usingTrustedVisualAlternative = visualContext.usingTrustedVisualAlternative;
+
     const clarificationContext = activeClarificationContext(conversationHistory);
     const factCustomerText = clarificationFactText(customerText, clarificationContext);
     const usingClarificationContext =
@@ -764,15 +782,60 @@ export class KnowledgeDecisionEngine {
 
     let fact;
     try {
-      fact = await this.factResolver.resolve({
-        merchantId,
-        customerText: factCustomerText,
-        language,
-        conversationId: boundedText(input.conversationId, 160) || undefined,
-        customerExternalId: boundedText(input.customerExternalId, 200) || undefined,
-        trustedProductIdHint: catalogConversationRef?.productId,
-        trustedVariantIdHint: catalogConversationRef?.variantId,
-      });
+      const resolveFact = async (
+        visualAlternative?: {
+          productId: string;
+          variantId?: string;
+          confidence: number;
+        },
+      ) =>
+        this.factResolver.resolve({
+          merchantId,
+          customerText: factCustomerText,
+          language,
+          conversationId: boundedText(input.conversationId, 160) || undefined,
+          customerExternalId: boundedText(input.customerExternalId, 200) || undefined,
+          trustedProductIdHint: catalogConversationRef?.productId,
+          trustedVariantIdHint: catalogConversationRef?.variantId,
+          ...(usingTrustedVisualAlternative && visualAlternative
+            ? {
+                trustedVisualAlternativeProductId:
+                  visualAlternative.productId,
+                trustedVisualAlternativeVariantId:
+                  visualAlternative.variantId,
+              }
+            : {}),
+        });
+
+      fact = await resolveFact(primaryVisualAlternative || undefined);
+
+      // Advance through ranked visual alternatives only when authoritative
+      // structured stock metadata proves the current candidate cannot fulfill
+      // the request. Never infer stock state from customer-facing answer text.
+      // Exact conversation identity bypasses visual-alternative fallback.
+      if (
+        usingTrustedVisualAlternative &&
+        !catalogConversationRef &&
+        fact?.factType === "product_stock" &&
+        fact.availability?.fulfillable === false
+      ) {
+        for (const alternative of normalizedVisualAlternatives.slice(1)) {
+          const alternativeFact = await resolveFact(alternative);
+
+          if (
+            alternativeFact?.factType !== "product_stock" ||
+            !alternativeFact.availability
+          ) {
+            continue;
+          }
+
+          if (alternativeFact.availability.fulfillable) {
+            fact = alternativeFact;
+            break;
+          }
+        }
+
+      }
     } catch (error) {
       const reasonCode =
         error instanceof KnowledgeRuntimeGateError
@@ -1002,10 +1065,15 @@ export class KnowledgeDecisionEngine {
         }
       }
 
+      const databaseFactAnswer =
+        usingTrustedVisualAlternative && fact.factType === "product_stock"
+          ? qualifyVisualAlternativeStockAnswer(fact.answerText, language)
+          : boundedText(fact.answerText, 2_000);
+
       const result: KnowledgeDecisionResult = {
         action: "reply",
         stage: "database_fact",
-        answerText: boundedText(fact.answerText, 2_000),
+        answerText: databaseFactAnswer,
         language: fact.language,
         source: "database_fact",
         confidence: fact.confidence,
@@ -1055,11 +1123,17 @@ export class KnowledgeDecisionEngine {
       return result;
     }
 
-    const savedAnswer = await this.runtime.findApprovedSavedAnswer({
-      merchantId,
-      customerText,
-      language,
-    });
+    // A trusted visual alternative is already server-derived and independently
+    // bound to the current merchant catalog. Generic saved/semantic knowledge
+    // must not intercept the image-reference question before catalog grounding.
+    // This does not make the alternative an exact customer-product identity.
+    const savedAnswer = primaryVisualAlternative
+      ? null
+      : await this.runtime.findApprovedSavedAnswer({
+          merchantId,
+          customerText,
+          language,
+        });
     if (savedAnswer) {
       const translated = await this.translatedApprovedAnswer({
         merchantId,
@@ -1105,7 +1179,9 @@ export class KnowledgeDecisionEngine {
 
     let approvedDocuments: SemanticDocument[] | null = null;
     let semantic: SemanticMatch | null = null;
-    if (this.runtime.retrieveSemanticMatch && !this.useLegacyLexicalSemantic) {
+    if (primaryVisualAlternative) {
+      semantic = null;
+    } else if (this.runtime.retrieveSemanticMatch && !this.useLegacyLexicalSemantic) {
       semantic = await this.runtime.retrieveSemanticMatch({
         merchantId,
         query: customerText,
@@ -1175,8 +1251,8 @@ export class KnowledgeDecisionEngine {
         customerText,
         language,
         limit: 1,
-        trustedProductIdHint: catalogConversationRef?.productId,
-        trustedVariantIdHint: catalogConversationRef?.variantId,
+        trustedProductIdHint: catalogHintRef?.productId,
+        trustedVariantIdHint: catalogHintRef?.variantId,
       });
     } catch (error) {
       const reasonCode =
@@ -1369,9 +1445,14 @@ export class KnowledgeDecisionEngine {
         groundingRecordIds.find((id) => catalogIds.has(id)) || null;
       const policyAllowsGenerated =
         merchantPolicy.allowGeneratedAutoReply === true && this.allowGeneratedAutoReply;
+      const visualAlternativeSemanticsAreSafe =
+        !usingTrustedVisualAlternative ||
+        visualAlternativeReplyIsQualified(aiCandidate.answerText);
+
       const eligibleForGroundedReply =
         policyAllowsGenerated &&
         groundedOnlyInTrustedKnowledge &&
+        visualAlternativeSemanticsAreSafe &&
         aiCandidate.language === language &&
         aiCandidate.risk === "low" &&
         aiCandidate.confidence >= this.minimumAiConfidence;
@@ -1413,40 +1494,78 @@ export class KnowledgeDecisionEngine {
         return result;
       }
 
-      const recorded = await this.runtime.recordGeneratedCandidate({
-        merchantId,
-        customerText,
-        language: aiCandidate.language,
-        intent: "ai_fallback",
-        answerText: aiCandidate.answerText,
-        confidence: aiCandidate.confidence,
-        reason: aiCandidate.reason,
-      });
-      const result: KnowledgeDecisionResult = {
-        action: "handoff",
-        stage: "ai_fallback",
-        answerText: this.handoffText(language, merchantPolicy),
-        language,
-        source: "openai_generated",
-        confidence: aiCandidate.confidence,
-        requiresMerchantApproval: true,
-        trainingRequestId: recorded.trainingRequest.id,
-        matchedRecordId: recorded.learnedAnswer.id,
-        groundingRecordIds,
-        reasonCode: "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",
-        injectionSignals: [],
-        ...(aiCandidate.usage ? { aiUsage: aiCandidate.usage } : {}),
-        ...(aiCandidate.providerId ? { aiProviderId: aiCandidate.providerId } : {}),
-        ...(aiCandidate.model ? { aiModel: aiCandidate.model } : {}),
-        ...(aiCandidate.latencyMs !== undefined
-          ? { aiLatencyMs: aiCandidate.latencyMs }
-          : {}),
-      };
-      await this.recordDecisionAudit({
-        input: { ...input, merchantId, customerText },
-        result,
-      });
-      return result;
+      if (
+        !usingTrustedVisualAlternative ||
+        !groundedOnlyInTrustedKnowledge ||
+        visualAlternativeSemanticsAreSafe
+      ) {
+        const recorded = await this.runtime.recordGeneratedCandidate({
+          merchantId,
+          customerText,
+          language: aiCandidate.language,
+          intent: "ai_fallback",
+          answerText: aiCandidate.answerText,
+          confidence: aiCandidate.confidence,
+          reason: aiCandidate.reason,
+        });
+        const result: KnowledgeDecisionResult = {
+          action: "handoff",
+          stage: "ai_fallback",
+          answerText: this.handoffText(language, merchantPolicy),
+          language,
+          source: "openai_generated",
+          confidence: aiCandidate.confidence,
+          requiresMerchantApproval: true,
+          trainingRequestId: recorded.trainingRequest.id,
+          matchedRecordId: recorded.learnedAnswer.id,
+          groundingRecordIds,
+          reasonCode: "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",
+          injectionSignals: [],
+          ...(aiCandidate.usage ? { aiUsage: aiCandidate.usage } : {}),
+          ...(aiCandidate.providerId ? { aiProviderId: aiCandidate.providerId } : {}),
+          ...(aiCandidate.model ? { aiModel: aiCandidate.model } : {}),
+          ...(aiCandidate.latencyMs !== undefined
+            ? { aiLatencyMs: aiCandidate.latencyMs }
+            : {}),
+        };
+        await this.recordDecisionAudit({
+          input: { ...input, merchantId, customerText },
+          result,
+        });
+        return result;
+      }
+    }
+
+    // Trusted visual alternatives are server-revalidated catalog hints.
+    // Deterministic fallback exposes only the similar product name.
+    if (primaryVisualAlternative && catalogKnowledge.length > 0) {
+      const trustedCatalogAlternative = catalogKnowledge.find(
+        (item) => item.productId === primaryVisualAlternative.productId,
+      );
+      if (trustedCatalogAlternative?.name) {
+        const result: KnowledgeDecisionResult = {
+          action: "reply",
+          stage: "ai_fallback",
+          answerText: safeVisualAlternativeCatalogAnswer(
+            trustedCatalogAlternative.name,
+            language,
+          ),
+          language,
+          source: "merchant_approved",
+          confidence: primaryVisualAlternative.confidence,
+          requiresMerchantApproval: false,
+          trainingRequestId: null,
+          matchedRecordId: trustedCatalogAlternative.id,
+          groundingRecordIds: [trustedCatalogAlternative.id],
+          reasonCode: "TRUSTED_VISUAL_ALTERNATIVE_CATALOG_REPLY",
+          injectionSignals: [],
+        };
+        await this.recordDecisionAudit({
+          input: { ...input, merchantId, customerText },
+          result,
+        });
+        return result;
+      }
     }
 
     const training = await this.runtime.createTrainingRequest({

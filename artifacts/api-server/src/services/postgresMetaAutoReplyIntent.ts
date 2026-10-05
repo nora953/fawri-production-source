@@ -9,10 +9,16 @@ import type { KnowledgeConversationMessage } from "./knowledge/types";
 import {
   parseMetaInboundMessage,
   selectMetaInboundImageUrl,
+  selectMetaInboundAudioUrl,
+  selectMetaInboundVideoUrl,
 } from "./metaInboundMessage";
 import {
   getMetaImageUnderstandingService,
 } from "./metaImageUnderstandingRuntime";
+import {
+  getMetaAudioUnderstandingService,
+} from "./metaAudioUnderstandingRuntime.js";
+import { understandTrustedMetaVideoForReply } from "./metaVideoReplyGrounding.js";
 import { TrustedMediaCatalogMatcher } from "./mediaCatalogMatcher";
 import { notifyMerchantNewCustomerMessagePostgres } from "./postgresOperationalNotificationAuthority";
 import { notifyMerchantKnowledgeGapPostgres } from "./postgresOperationalNotificationAuthority.js";
@@ -54,6 +60,8 @@ type ParsedMetaJob = {
   attachmentCount: number;
   contentIdentityHash: string | null;
   imageUrl: string | null;
+  audioUrl: string | null;
+  videoUrl: string | null;
   webhookBody: Record<string, unknown>;
   createdAt: string;
 };
@@ -137,6 +145,10 @@ function parseJob(job: DurableJob): ParsedMetaJob {
   const imageUrl = inbound
     ? selectMetaInboundImageUrl(inbound)
     : null;
+  const audioUrl = inbound
+    ? selectMetaInboundAudioUrl(inbound)
+    : null;
+  const videoUrl = inbound ? selectMetaInboundVideoUrl(inbound) : null;
   const contentIdentityHash =
     inbound && inbound.attachments.length > 0
       ? digest(
@@ -185,6 +197,8 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     attachmentCount: inbound.attachments.length,
     contentIdentityHash,
     imageUrl,
+    audioUrl,
+    videoUrl,
     webhookBody,
     createdAt: eventTimestamp(event.timestamp),
   };
@@ -500,10 +514,46 @@ async function loadRecentConversationContext(
           ? media.vision_model.trim()
           : "";
       const matchConfidence = media?.match_confidence;
-
-      const trustedCatalogRef =
+      const audioTranscript =
         row.sender === "customer" &&
-        Boolean(matchedRecordId) &&
+        media &&
+        typeof media.audio_transcript === "string" &&
+        media.audio_transcript.trim().length > 0 &&
+        media.audio_transcript.trim().length <= 2_000 &&
+        typeof media.audio_sha256 === "string" &&
+        /^[a-f0-9]{64}$/i.test(media.audio_sha256) &&
+        typeof media.transcription_provider_id === "string" &&
+        media.transcription_provider_id.trim().length > 0 &&
+        typeof media.transcription_model === "string" &&
+        media.transcription_model.trim().length > 0
+          ? media.audio_transcript.trim()
+          : "";
+
+      const videoObservation =
+        row.sender === "customer" &&
+        media &&
+        typeof media.video_observation === "string" &&
+        media.video_observation.trim().length > 0 &&
+        media.video_observation.trim().length <= 2_000 &&
+        typeof media.video_sha256 === "string" &&
+        /^[a-f0-9]{64}$/i.test(media.video_sha256)
+          ? media.video_observation.trim()
+          : "";
+
+      const videoSha256 =
+        media && typeof media.video_sha256 === "string"
+          ? media.video_sha256.trim()
+          : "";
+      const videoVisionProviderId =
+        media && typeof media.video_vision_provider_id === "string"
+          ? media.video_vision_provider_id.trim()
+          : "";
+      const videoVisionModel =
+        media && typeof media.video_vision_model === "string"
+          ? media.video_vision_model.trim()
+          : "";
+
+      const trustedImageCatalogRef =
         /^[a-f0-9]{64}$/i.test(imageSha256) &&
         Boolean(visionProviderId) &&
         Boolean(visionModel) &&
@@ -512,10 +562,20 @@ async function loadRecentConversationContext(
         matchConfidence >= 0 &&
         matchConfidence <= 1;
 
+      const trustedVideoCatalogRef =
+        /^[a-f0-9]{64}$/i.test(videoSha256) &&
+        Boolean(videoVisionProviderId) &&
+        Boolean(videoVisionModel);
+
+      const trustedCatalogRef =
+        row.sender === "customer" &&
+        Boolean(matchedRecordId) &&
+        (trustedImageCatalogRef || trustedVideoCatalogRef);
+
       const createdAt = new Date(row.created_at).toISOString();
       return {
         sender: row.sender,
-        text: text(row.text),
+        text: audioTranscript || videoObservation || text(row.text),
         createdAt,
         ...(matchedRecordId ? { matchedRecordId } : {}),
         ...(trustedCatalogRef ? { trustedCatalogRef: true } : {}),
@@ -594,8 +654,191 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  const trustedVideo = await understandTrustedMetaVideoForReply({
+    merchantId: parsed.merchantId,
+    conversationId: inbound.conversationId,
+    sourceCustomerMessageId: inbound.sourceCustomerMessageId,
+    videoUrl: parsed.videoUrl,
+    contentIdentityHash: parsed.contentIdentityHash,
+  });
+  const trustedVideoText = trustedVideo.text;
+  const trustedVideoUnderstood = trustedVideo.understood;
+  const trustedVideoMatchedRecordId = trustedVideo.matchedRecordId;
+  const trustedVideoAlternatives = trustedVideo.alternatives;
+
+  let trustedAudioTranscript: string | null = null;
+  let trustedAudioUnderstood = false;
+
+  if (parsed.audioUrl) {
+    const persistedAudio =
+      await withMerchantOperationalTransaction(
+        parsed.merchantId,
+        async (client) => {
+          const result = await client.query<{
+            metadata: Record<string, unknown> | null;
+          }>(
+            `SELECT metadata
+               FROM messages
+              WHERE merchant_id = $1
+                AND id = $2
+                AND conversation_id = $3
+                AND sender = 'customer'
+              LIMIT 1`,
+            [
+              parsed.merchantId,
+              inbound.sourceCustomerMessageId,
+              inbound.conversationId,
+            ],
+          );
+          const metadata = result.rows[0]?.metadata;
+          const media =
+            metadata &&
+            typeof metadata === "object" &&
+            !Array.isArray(metadata) &&
+            metadata.media &&
+            typeof metadata.media === "object" &&
+            !Array.isArray(metadata.media)
+              ? metadata.media as Record<string, unknown>
+              : null;
+          if (!media) return null;
+
+          const transcript =
+            typeof media.audio_transcript === "string"
+              ? media.audio_transcript.trim()
+              : "";
+          const audioSha256 =
+            typeof media.audio_sha256 === "string"
+              ? media.audio_sha256.trim()
+              : "";
+          const providerId =
+            typeof media.transcription_provider_id === "string"
+              ? media.transcription_provider_id.trim()
+              : "";
+          const model =
+            typeof media.transcription_model === "string"
+              ? media.transcription_model.trim()
+              : "";
+          const sameContent =
+            typeof media.content_identity_hash === "string" &&
+            media.content_identity_hash === parsed.contentIdentityHash;
+
+          if (
+            !sameContent ||
+            !transcript ||
+            transcript.length > 2_000 ||
+            !/^[a-f0-9]{64}$/i.test(audioSha256) ||
+            !providerId ||
+            providerId.length > 160 ||
+            !model ||
+            model.length > 160
+          ) {
+            return null;
+          }
+          return transcript;
+        },
+      );
+
+    if (persistedAudio) {
+      trustedAudioTranscript = persistedAudio;
+      trustedAudioUnderstood = true;
+    } else {
+      const audioService = getMetaAudioUnderstandingService();
+      if (audioService) {
+        const understood = await audioService.understand({
+          merchantId: parsed.merchantId,
+          audioUrl: parsed.audioUrl,
+        });
+        const transcript = understood?.transcript?.trim() || "";
+        const hasSafeProvenance =
+          transcript.length > 0 &&
+          transcript.length <= 2_000 &&
+          typeof understood?.audioSha256 === "string" &&
+          /^[a-f0-9]{64}$/i.test(understood.audioSha256) &&
+          typeof understood?.transcriptionProviderId === "string" &&
+          understood.transcriptionProviderId.trim().length > 0 &&
+          understood.transcriptionProviderId.length <= 160 &&
+          typeof understood?.transcriptionModel === "string" &&
+          understood.transcriptionModel.trim().length > 0 &&
+          understood.transcriptionModel.length <= 160;
+
+        if (understood && hasSafeProvenance) {
+          await withMerchantOperationalTransaction(
+            parsed.merchantId,
+            async (client) => {
+              const customer = await client.query<{
+                metadata: Record<string, unknown> | null;
+              }>(
+                `SELECT metadata
+                   FROM messages
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3
+                    AND sender = 'customer'
+                  FOR UPDATE`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                ],
+              );
+              const metadata = customer.rows[0]?.metadata;
+              const media =
+                metadata &&
+                typeof metadata === "object" &&
+                !Array.isArray(metadata) &&
+                metadata.media &&
+                typeof metadata.media === "object" &&
+                !Array.isArray(metadata.media)
+                  ? metadata.media as Record<string, unknown>
+                  : null;
+              if (
+                !media ||
+                media.content_identity_hash !== parsed.contentIdentityHash
+              ) {
+                throw Object.assign(
+                  new Error("Meta audio content identity changed"),
+                  { code: "META_MESSAGE_IDENTITY_COLLISION" },
+                );
+              }
+              const nextMetadata = {
+                ...metadata,
+                media: {
+                  ...media,
+                  audio_transcript: transcript,
+                  audio_sha256: understood.audioSha256,
+                  transcription_provider_id: understood.transcriptionProviderId,
+                  transcription_model: understood.transcriptionModel,
+                },
+              };
+              await client.query(
+                `UPDATE messages
+                    SET metadata = $4::jsonb
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                  JSON.stringify(nextMetadata),
+                ],
+              );
+            },
+          );
+          trustedAudioTranscript = transcript;
+          trustedAudioUnderstood = true;
+        }
+      }
+    }
+  }
+
   let trustedImageUnderstood = false;
   let trustedImageMatchedRecordId: string | null = null;
+  let trustedImageAlternatives: Array<{
+    productId: string;
+    variantId?: string;
+    confidence: number;
+  }> = [];
 
   if (parsed.imageUrl) {
     const persistedImageResult =
@@ -665,6 +908,111 @@ export async function preparePostgresMetaAutoReply(
         },
       );
 
+    const persistedImageAlternatives =
+      await withMerchantOperationalTransaction(
+        parsed.merchantId,
+        async (client) => {
+          const result = await client.query<{
+            metadata: Record<string, unknown> | null;
+          }>(
+            `SELECT metadata
+               FROM messages
+              WHERE merchant_id = $1
+                AND id = $2
+                AND conversation_id = $3
+                AND sender = 'customer'
+              LIMIT 1`,
+            [
+              parsed.merchantId,
+              inbound.sourceCustomerMessageId,
+              inbound.conversationId,
+            ],
+          );
+
+          const metadata = result.rows[0]?.metadata;
+          if (
+            !metadata ||
+            typeof metadata !== "object" ||
+            Array.isArray(metadata)
+          ) {
+            return null;
+          }
+
+          const media =
+            metadata.media &&
+            typeof metadata.media === "object" &&
+            !Array.isArray(metadata.media)
+              ? metadata.media as Record<string, unknown>
+              : null;
+
+          if (!media) return null;
+
+          const sameContent =
+            typeof media.content_identity_hash === "string" &&
+            media.content_identity_hash === parsed.contentIdentityHash;
+
+          const hasSafeProvenance =
+            typeof media.image_sha256 === "string" &&
+            /^[a-f0-9]{64}$/i.test(media.image_sha256) &&
+            typeof media.vision_provider_id === "string" &&
+            media.vision_provider_id.trim().length > 0 &&
+            media.vision_provider_id.length <= 160 &&
+            typeof media.vision_model === "string" &&
+            media.vision_model.trim().length > 0 &&
+            media.vision_model.length <= 160;
+
+          if (
+            !sameContent ||
+            !hasSafeProvenance ||
+            !Array.isArray(media.visual_alternatives) ||
+            media.visual_alternatives.length === 0
+          ) {
+            return null;
+          }
+
+          const candidates = [];
+
+          for (const value of media.visual_alternatives) {
+            if (
+              !value ||
+              typeof value !== "object" ||
+              Array.isArray(value)
+            ) {
+              return null;
+            }
+
+            const alternative = value as Record<string, unknown>;
+            const productId =
+              typeof alternative.product_id === "string"
+                ? alternative.product_id.trim()
+                : "";
+            const variantId =
+              typeof alternative.variant_id === "string"
+                ? alternative.variant_id.trim()
+                : "";
+            const confidence = alternative.confidence;
+
+            if (
+              !productId ||
+              typeof confidence !== "number" ||
+              !Number.isFinite(confidence) ||
+              confidence < 0 ||
+              confidence > 1
+            ) {
+              return null;
+            }
+
+            candidates.push({
+              productId,
+              ...(variantId ? { variantId } : {}),
+              confidence,
+            });
+          }
+
+          return candidates;
+        },
+      );
+
     let trustedPersistedImageResult: string | null = null;
 
     if (persistedImageResult) {
@@ -705,15 +1053,186 @@ export async function preparePostgresMetaAutoReply(
     trustedImageUnderstood = Boolean(trustedPersistedImageResult);
     trustedImageMatchedRecordId = trustedPersistedImageResult;
 
-    const imageService = trustedPersistedImageResult
-      ? null
-      : getMetaImageUnderstandingService();
+    if (
+      !trustedPersistedImageResult &&
+      persistedImageAlternatives
+    ) {
+      const revalidatedAlternatives =
+        await trustedMediaCatalogMatcher.resolveAlternatives({
+          merchantId: parsed.merchantId,
+          candidates: persistedImageAlternatives,
+        });
+
+      const persistedIdentities = persistedImageAlternatives
+        .map((alternative) =>
+          `${alternative.productId}:${alternative.variantId ?? ""}:${alternative.confidence}`,
+        )
+        .sort();
+
+      const revalidatedIdentities = revalidatedAlternatives
+        .map((alternative) =>
+          `${alternative.productId}:${alternative.variantId ?? ""}:${alternative.confidence}`,
+        )
+        .sort();
+
+      const alternativesMatch =
+        persistedIdentities.length === revalidatedIdentities.length &&
+        persistedIdentities.every(
+          (identity, index) =>
+            identity === revalidatedIdentities[index],
+        );
+
+      if (alternativesMatch) {
+        trustedImageAlternatives = revalidatedAlternatives;
+        trustedImageUnderstood = true;
+      }
+    }
+
+    const imageService =
+      trustedPersistedImageResult || trustedImageAlternatives.length > 0
+        ? null
+        : getMetaImageUnderstandingService();
 
     if (imageService) {
-      const understood = await imageService.understand({
+      const imageInput = {
         merchantId: parsed.merchantId,
         imageUrl: parsed.imageUrl,
-      });
+      };
+
+      const understoodWithAlternatives =
+        typeof imageService.understandWithAlternatives === "function"
+          ? await imageService.understandWithAlternatives(imageInput)
+          : null;
+
+      const legacyUnderstood =
+        typeof imageService.understandWithAlternatives === "function"
+          ? null
+          : await imageService.understand(imageInput);
+
+      const understood =
+        understoodWithAlternatives?.exactMatch ?? legacyUnderstood ?? null;
+
+      if (
+        understoodWithAlternatives &&
+        !understood &&
+        understoodWithAlternatives.alternatives.length > 0
+      ) {
+        const trustedAlternatives =
+          await trustedMediaCatalogMatcher.resolveAlternatives({
+            merchantId: parsed.merchantId,
+            candidates: understoodWithAlternatives.alternatives,
+          });
+
+        const hasSafeAlternativeProvenance =
+          typeof understoodWithAlternatives.imageSha256 === "string" &&
+          /^[a-f0-9]{64}$/i.test(understoodWithAlternatives.imageSha256) &&
+          typeof understoodWithAlternatives.visionProviderId === "string" &&
+          understoodWithAlternatives.visionProviderId.trim().length > 0 &&
+          understoodWithAlternatives.visionProviderId.length <= 160 &&
+          typeof understoodWithAlternatives.visionModel === "string" &&
+          understoodWithAlternatives.visionModel.trim().length > 0 &&
+          understoodWithAlternatives.visionModel.length <= 160;
+
+        if (hasSafeAlternativeProvenance && trustedAlternatives.length > 0) {
+          trustedImageAlternatives = trustedAlternatives;
+          trustedImageUnderstood = true;
+
+          await withMerchantOperationalTransaction(
+            parsed.merchantId,
+            async (client) => {
+              const customer = await client.query<{
+                id: string;
+                metadata: Record<string, unknown> | null;
+              }>(
+                `SELECT id, metadata
+                   FROM messages
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3
+                    AND sender = 'customer'
+                  LIMIT 1
+                  FOR UPDATE`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                ],
+              );
+
+              const row = customer.rows[0];
+              if (!row) {
+                throw Object.assign(
+                  new Error("Meta customer message is unavailable"),
+                  { code: "META_CUSTOMER_MESSAGE_UNAVAILABLE" },
+                );
+              }
+
+              const metadata =
+                row.metadata &&
+                typeof row.metadata === "object" &&
+                !Array.isArray(row.metadata)
+                  ? row.metadata
+                  : {};
+
+              const media =
+                metadata.media &&
+                typeof metadata.media === "object" &&
+                !Array.isArray(metadata.media)
+                  ? metadata.media as Record<string, unknown>
+                  : {};
+
+              const storedContentIdentityHash =
+                typeof media.content_identity_hash === "string"
+                  ? media.content_identity_hash
+                  : null;
+
+              if (
+                !parsed.contentIdentityHash ||
+                storedContentIdentityHash !== parsed.contentIdentityHash
+              ) {
+                throw Object.assign(
+                  new Error("Meta image content identity changed"),
+                  { code: "META_MESSAGE_IDENTITY_COLLISION" },
+                );
+              }
+
+              const nextMetadata = {
+                ...metadata,
+                media: {
+                  ...media,
+                  image_sha256: understoodWithAlternatives.imageSha256,
+                  vision_provider_id:
+                    understoodWithAlternatives.visionProviderId,
+                  vision_model: understoodWithAlternatives.visionModel,
+                  visual_alternatives: trustedAlternatives.map(
+                    (alternative) => ({
+                      product_id: alternative.productId,
+                      ...(alternative.variantId
+                        ? { variant_id: alternative.variantId }
+                        : {}),
+                      confidence: alternative.confidence,
+                    }),
+                  ),
+                },
+              };
+
+              await client.query(
+                `UPDATE messages
+                    SET metadata = $4::jsonb
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                  JSON.stringify(nextMetadata),
+                ],
+              );
+            },
+          );
+        }
+      }
 
       if (understood) {
         const revalidatedMatch =
@@ -857,17 +1376,30 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  const effectiveCustomerText =
+    trustedAudioUnderstood && trustedAudioTranscript
+      ? trustedAudioTranscript
+      : trustedVideoUnderstood && trustedVideoText
+        ? trustedVideoText
+        : parsed.customerText;
+
   const trustedImageTextMessage =
     parsed.contentKind === "text" &&
     Boolean(parsed.customerText) &&
     parsed.attachmentCount > 0 &&
     trustedImageUnderstood &&
-    Boolean(trustedImageMatchedRecordId);
+    (Boolean(trustedImageMatchedRecordId) ||
+      trustedImageAlternatives.length > 0);
 
   if (
-    parsed.contentKind !== "text" ||
-    !parsed.customerText ||
-    (parsed.attachmentCount > 0 && !trustedImageTextMessage)
+    (parsed.contentKind !== "text" &&
+      !trustedAudioUnderstood &&
+      !trustedVideoUnderstood) ||
+    !effectiveCustomerText ||
+    (parsed.attachmentCount > 0 &&
+      !trustedImageTextMessage &&
+      !trustedAudioUnderstood &&
+      !trustedVideoUnderstood)
   ) {
     if (!trustedImageUnderstood) {
       await withMerchantOperationalTransaction(
@@ -902,9 +1434,19 @@ export async function preparePostgresMetaAutoReply(
   if (trustedImageTextMessage && trustedImageMatchedRecordId) {
     recentMessages.push({
       sender: "customer",
-      text: parsed.customerText,
+      text: parsed.customerText || effectiveCustomerText,
       createdAt: parsed.createdAt,
       matchedRecordId: trustedImageMatchedRecordId,
+      trustedCatalogRef: true,
+    });
+  }
+
+  if (trustedVideoMatchedRecordId) {
+    recentMessages.push({
+      sender: "customer",
+      text: effectiveCustomerText,
+      createdAt: parsed.createdAt,
+      matchedRecordId: trustedVideoMatchedRecordId,
       trustedCatalogRef: true,
     });
   }
@@ -913,11 +1455,24 @@ export async function preparePostgresMetaAutoReply(
   try {
     decision = await getKnowledgeDecisionEngine().decide({
       merchantId: parsed.merchantId,
-      customerText: parsed.customerText,
+      customerText: effectiveCustomerText,
       requestId: parsed.eventId,
       conversationId: inbound.conversationId,
       customerExternalId: parsed.senderId,
       recentMessages,
+      ...((trustedImageAlternatives[0] || trustedVideoAlternatives[0])
+        ? {
+            // Keep the singular field for backward compatibility while the
+            // ranked set enables authoritative stock fallback across similar
+            // current-merchant catalog candidates.
+            trustedVisualAlternative:
+              trustedImageAlternatives[0] || trustedVideoAlternatives[0],
+            trustedVisualAlternatives:
+              trustedImageAlternatives.length > 0
+                ? trustedImageAlternatives
+                : trustedVideoAlternatives,
+          }
+        : {}),
     });
   } catch {
     throw Object.assign(new Error("Knowledge reply decision is unavailable"), {

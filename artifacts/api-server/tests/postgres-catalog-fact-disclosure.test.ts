@@ -126,7 +126,7 @@ test("PostgreSQL stock answer does not expose total inventory", async () => {
   assert.equal(result?.answerText.includes("11"), false);
 });
 
-test("PostgreSQL stock answer uses location inventory and never exposes partial stock", async () => {
+test("PostgreSQL stock answer uses location inventory and discloses available quantity only on shortage", async () => {
   const enough = new PostgresOperationalFactResolver(
     sqlWithProducts(
       [productRow(999)],
@@ -156,9 +156,8 @@ test("PostgreSQL stock answer uses location inventory and never exposes partial 
   });
   assert.equal(
     shortageResult?.answerText,
-    "لا، الكمية المطلوبة من قميص غير متوفرة حاليًا.",
+    "لا، الكمية المطلوبة من قميص غير متوفرة بالكامل. المتوفر حاليًا 2.",
   );
-  assert.equal(shortageResult?.answerText.includes("2"), false);
 });
 
 test("multi-location stock question fails closed without routing context", async () => {
@@ -295,4 +294,132 @@ test("Fawri catalog price disclosure follows the merchant currency scale", async
   });
   assert.equal(result?.factType, "product_price");
   assert.equal(result?.answerText, "قميص is 19.99 USD.");
+});
+
+test("trusted visual alternative identity may resolve stock without becoming exact product identity", async () => {
+  const resolver = new PostgresOperationalFactResolver(
+    sqlWithProducts(
+      [productRow(999)],
+      [],
+      [{ location_id: "location-main", quantity: 8 }],
+    ),
+  );
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "عدكم مثل هذا متوفر؟",
+    language: "ar",
+    trustedVisualAlternativeProductId: "prd-shirt",
+  });
+
+  assert.equal(result?.factType, "product_stock");
+  assert.equal(result?.answerText, "قميص متوفر حاليًا.");
+  assert.equal(result?.answerText.includes("8"), false);
+  assert.equal(result?.contextRecordId, "catalog-product:prd-shirt");
+});
+
+test("trusted visual alternative identity cannot authorize price disclosure", async () => {
+  const resolver = new PostgresOperationalFactResolver(
+    sqlWithProducts([productRow(11)]),
+  );
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "شكد سعر هذا؟",
+    language: "ar",
+    trustedVisualAlternativeProductId: "prd-shirt",
+  });
+
+  assert.equal(result, null);
+});
+
+test("trusted visual alternative stock follows quantity disclosure policy", async () => {
+  const enough = new PostgresOperationalFactResolver(
+    sqlWithProducts(
+      [productRow(999)],
+      [],
+      [{ location_id: "location-main", quantity: 8 }],
+    ),
+  );
+
+  const enoughResult = await enough.resolve({
+    merchantId: "merchant-a",
+    customerText: "اريد 3 قطع مثل هذا هل متوفر",
+    language: "ar",
+    trustedVisualAlternativeProductId: "prd-shirt",
+  });
+
+  assert.equal(
+    enoughResult?.answerText,
+    "نعم، 3 من قميص متوفرة حاليًا.",
+  );
+  assert.equal(enoughResult?.answerText.includes("8"), false);
+
+  const shortage = new PostgresOperationalFactResolver(
+    sqlWithProducts(
+      [productRow(999)],
+      [],
+      [{ location_id: "location-main", quantity: 2 }],
+    ),
+  );
+
+  const shortageResult = await shortage.resolve({
+    merchantId: "merchant-a",
+    customerText: "اريد 3 قطع مثل هذا هل متوفر",
+    language: "ar",
+    trustedVisualAlternativeProductId: "prd-shirt",
+  });
+
+  assert.equal(
+    shortageResult?.answerText,
+    "لا، الكمية المطلوبة من قميص غير متوفرة بالكامل. المتوفر حاليًا 2.",
+  );
+
+  const outOfStock = new PostgresOperationalFactResolver(
+    sqlWithProducts(
+      [productRow(999)],
+      [],
+      [{ location_id: "location-main", quantity: 0 }],
+    ),
+  );
+
+  const outOfStockResult = await outOfStock.resolve({
+    merchantId: "merchant-a",
+    customerText: "اريد 3 قطع مثل هذا هل متوفر",
+    language: "ar",
+    trustedVisualAlternativeProductId: "prd-shirt",
+  });
+
+  assert.equal(
+    outOfStockResult?.answerText,
+    "قميص غير متوفر حاليًا.",
+  );
+  assert.equal(outOfStockResult?.answerText.includes("0"), false);
+});
+
+test("stock fact exposes structured availability metadata for safe alternative fallback", async () => {
+  const resolver = new PostgresOperationalFactResolver(
+    sqlWithProducts(
+      [productRow(2)],
+      [],
+      [{ location_id: "location-main", quantity: 2 }],
+    ),
+  );
+
+  const result = await resolver.resolve({
+    merchantId: "merchant-a",
+    customerText: "أريد 3 قطع، متوفر؟",
+    language: "ar",
+    trustedVisualAlternativeProductId: "prd-shirt",
+  });
+
+  assert.ok(result);
+  assert.equal(result.factType, "product_stock");
+
+  assert.deepEqual(result.availability, {
+    trackInventory: true,
+    availableQuantity: 2,
+    requestedQuantity: 3,
+    fulfillable: false,
+  });
 });
