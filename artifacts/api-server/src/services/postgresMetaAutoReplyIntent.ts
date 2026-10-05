@@ -712,11 +712,18 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  const processingImageUrl =
+    parsed.mediaManifest?.imageUrl ?? parsed.imageUrl;
+  const processingAudioUrl =
+    parsed.mediaManifest?.audioUrl ?? parsed.audioUrl;
+  const processingVideoUrl =
+    parsed.mediaManifest?.videoUrl ?? parsed.videoUrl;
+
   const trustedVideo = await understandTrustedMetaVideoForReply({
     merchantId: parsed.merchantId,
     conversationId: inbound.conversationId,
     sourceCustomerMessageId: inbound.sourceCustomerMessageId,
-    videoUrl: parsed.videoUrl,
+    videoUrl: processingVideoUrl,
     contentIdentityHash: parsed.contentIdentityHash,
   });
   const trustedVideoText = trustedVideo.text;
@@ -727,7 +734,7 @@ export async function preparePostgresMetaAutoReply(
   let trustedAudioTranscript: string | null = null;
   let trustedAudioUnderstood = false;
 
-  if (parsed.audioUrl) {
+  if (processingAudioUrl) {
     const persistedAudio =
       await withMerchantOperationalTransaction(
         parsed.merchantId,
@@ -804,7 +811,7 @@ export async function preparePostgresMetaAutoReply(
       if (audioService) {
         const understood = await audioService.understand({
           merchantId: parsed.merchantId,
-          audioUrl: parsed.audioUrl,
+          audioUrl: processingAudioUrl,
         });
         const transcript = understood?.transcript?.trim() || "";
         const hasSafeProvenance =
@@ -898,7 +905,8 @@ export async function preparePostgresMetaAutoReply(
     confidence: number;
   }> = [];
 
-  if (parsed.imageUrl) {
+  const safeProcessingImageUrl = processingImageUrl;
+  if (safeProcessingImageUrl) {
     const persistedImageResult =
       await withMerchantOperationalTransaction(
         parsed.merchantId,
@@ -1154,7 +1162,7 @@ export async function preparePostgresMetaAutoReply(
     if (imageService) {
       const imageInput = {
         merchantId: parsed.merchantId,
-        imageUrl: parsed.imageUrl,
+        imageUrl: safeProcessingImageUrl,
       };
 
       const understoodWithAlternatives =
@@ -1442,6 +1450,15 @@ export async function preparePostgresMetaAutoReply(
         ? trustedVideoText
         : null);
 
+  const atomicMediaUnderstood =
+    !mixedMediaRequested ||
+    Boolean(
+      parsed.mediaManifest &&
+      (!parsed.mediaManifest.imageUrl || trustedImageUnderstood) &&
+      (!parsed.mediaManifest.audioUrl || trustedAudioUnderstood) &&
+      (!parsed.mediaManifest.videoUrl || trustedVideoUnderstood),
+    );
+
   const trustedImageTextMessage =
     parsed.contentKind === "text" &&
     Boolean(parsed.customerText) &&
@@ -1451,6 +1468,7 @@ export async function preparePostgresMetaAutoReply(
       trustedImageAlternatives.length > 0);
 
   if (
+    !atomicMediaUnderstood ||
     (parsed.contentKind !== "text" &&
       !trustedAudioUnderstood &&
       !trustedVideoUnderstood) ||
