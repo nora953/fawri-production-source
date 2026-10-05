@@ -84,6 +84,31 @@ function forbidden(address: string): boolean {
   return family === 4 ? forbiddenV4(address) : family === 6 ? forbiddenV6(address) : true;
 }
 
+function audioContainerMatches(buffer: Buffer, mimeType: string): boolean {
+  if (buffer.length < 4) return false;
+  if (mimeType === "audio/mpeg") {
+    return buffer.subarray(0, 3).toString("ascii") === "ID3" ||
+      (buffer[0] === 0xff && (buffer[1] & 0xe0) === 0xe0);
+  }
+  if (mimeType === "audio/ogg") {
+    return buffer.subarray(0, 4).toString("ascii") === "OggS";
+  }
+  if (mimeType === "audio/wav" || mimeType === "audio/x-wav") {
+    return buffer.length >= 12 &&
+      buffer.subarray(0, 4).toString("ascii") === "RIFF" &&
+      buffer.subarray(8, 12).toString("ascii") === "WAVE";
+  }
+  if (mimeType === "audio/webm") {
+    return buffer[0] === 0x1a && buffer[1] === 0x45 &&
+      buffer[2] === 0xdf && buffer[3] === 0xa3;
+  }
+  if (["audio/mp4", "audio/m4a", "audio/x-m4a"].includes(mimeType)) {
+    return buffer.length >= 12 &&
+      buffer.subarray(4, 8).toString("ascii") === "ftyp";
+  }
+  return false;
+}
+
 function safeUrl(value: unknown): URL {
   try {
     const parsed = new URL(typeof value === "string" ? value.trim() : "");
@@ -117,7 +142,7 @@ export class SecureMetaAudioFetcher {
               method: "GET",
               path: `${url.pathname}${url.search}`,
               servername: isIP(input.hostname) ? undefined : input.hostname,
-              headers: { host: url.port ? `${input.hostname}:${url.port}` : input.hostname },
+              headers: { host: url.host },
               signal: input.signal,
             }, (response) => {
               const headers = new Headers();
@@ -232,6 +257,9 @@ export class SecureMetaAudioFetcher {
       }
       if (sizeBytes === 0) throw coded("Meta audio content is invalid", "META_AUDIO_CONTENT_INVALID");
       const buffer = Buffer.concat(chunks.map((x) => Buffer.from(x.buffer, x.byteOffset, x.byteLength)), sizeBytes);
+      if (!audioContainerMatches(buffer, mimeType)) {
+        throw coded("Meta audio content is invalid", "META_AUDIO_CONTENT_INVALID");
+      }
       return {
         buffer,
         mimeType,
