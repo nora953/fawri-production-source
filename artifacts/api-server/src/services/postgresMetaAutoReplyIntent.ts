@@ -1380,7 +1380,7 @@ export async function preparePostgresMetaAutoReply(
   if (trustedImageTextMessage && trustedImageMatchedRecordId) {
     recentMessages.push({
       sender: "customer",
-      text: parsed.customerText,
+      text: parsed.customerText || effectiveCustomerText,
       createdAt: parsed.createdAt,
       matchedRecordId: trustedImageMatchedRecordId,
       trustedCatalogRef: true,
