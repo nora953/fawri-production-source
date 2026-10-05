@@ -164,3 +164,25 @@ test("secure audio fetcher pins transport to the address that passed DNS validat
   assert.equal(seen.address, "93.184.216.34");
   assert.equal(seen.family, 4);
 });
+
+test("secure audio fetcher rejects non-audio bytes mislabeled as audio", async () => {
+  const bytes = new TextEncoder().encode("<html>not audio</html>");
+  const fetcher = new SecureMetaAudioFetcher({
+    resolveHost: PUBLIC_TEST_DNS,
+    fetchImpl: async () =>
+      new Response(stream(bytes), {
+        status: 200,
+        headers: {
+          "content-type": "audio/mpeg",
+          "content-length": String(bytes.byteLength),
+        },
+      }),
+  });
+
+  await assert.rejects(
+    fetcher.fetchAudio({ url: "https://cdn.example.test/fake.mp3" }),
+    (error: unknown) =>
+      (error as { code?: string } | null)?.code ===
+      "META_AUDIO_CONTENT_INVALID",
+  );
+});
