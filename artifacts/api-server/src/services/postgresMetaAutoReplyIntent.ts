@@ -626,13 +626,38 @@ export async function preparePostgresMetaAutoReply(
   let trustedVideoUnderstood = false;
 
   if (parsed.videoUrl) {
-    const videoService = getMetaVideoUnderstandingService();
-    if (videoService) {
-      const understood = await videoService.understand({
+    const persistedVideo = await withMerchantOperationalTransaction(
+      parsed.merchantId,
+      async (client) => {
+        const result = await client.query<{ metadata: Record<string, unknown> | null }>(
+          `SELECT metadata FROM messages
+            WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3 AND sender = 'customer'
+            LIMIT 1`,
+          [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId],
+        );
+        const metadata = result.rows[0]?.metadata;
+        const media = metadata && typeof metadata === "object" && !Array.isArray(metadata) &&
+          metadata.media && typeof metadata.media === "object" && !Array.isArray(metadata.media)
+          ? metadata.media as Record<string, unknown> : null;
+        const summary = typeof media?.video_observation === "string" ? media.video_observation.trim() : "";
+        const sha = typeof media?.video_sha256 === "string" ? media.video_sha256.trim() : "";
+        const same = media?.content_identity_hash === parsed.contentIdentityHash;
+        return same && summary && summary.length <= 2_000 && /^[a-f0-9]{64}$/i.test(sha) ? summary : null;
+      },
+    );
+
+    if (persistedVideo) {
+      trustedVideoText = persistedVideo;
+      trustedVideoUnderstood = true;
+    } else {
+      const videoService = getMetaVideoUnderstandingService();
+      const understood = videoService ? await videoService.understand({
         merchantId: parsed.merchantId,
         videoUrl: parsed.videoUrl,
-      });
-      if (understood?.observation && understood.observation.confidence >= 0.5) {
+      }) : null;
+      if (understood?.observation && understood.observation.confidence >= 0.5 &&
+          /^[a-f0-9]{64}$/i.test(understood.videoSha256) &&
+          Number.isInteger(understood.frameCount) && understood.frameCount >= 1 && understood.frameCount <= 6) {
         const observation = understood.observation;
         const parts = [
           observation.productType ? `نوع المنتج الظاهر: ${observation.productType}` : "",
@@ -642,6 +667,33 @@ export async function preparePostgresMetaAutoReply(
         ].filter(Boolean);
         const summary = parts.join(". ").slice(0, 2_000);
         if (summary) {
+          await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
+            const locked = await client.query<{ metadata: Record<string, unknown> | null }>(
+              `SELECT metadata FROM messages
+                WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3 AND sender = 'customer'
+                FOR UPDATE`,
+              [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId],
+            );
+            const metadata = locked.rows[0]?.metadata;
+            const media = metadata && typeof metadata === "object" && !Array.isArray(metadata) &&
+              metadata.media && typeof metadata.media === "object" && !Array.isArray(metadata.media)
+              ? metadata.media as Record<string, unknown> : null;
+            if (!media || media.content_identity_hash !== parsed.contentIdentityHash) {
+              throw Object.assign(new Error("Meta video content identity changed"), { code: "META_MESSAGE_IDENTITY_COLLISION" });
+            }
+            const nextMetadata = { ...metadata, media: { ...media,
+              video_observation: summary,
+              video_sha256: understood.videoSha256,
+              video_frame_count: understood.frameCount,
+              video_vision_provider_id: observation.providerId,
+              video_vision_model: observation.model,
+            }};
+            await client.query(
+              `UPDATE messages SET metadata = $4::jsonb
+                WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3`,
+              [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId, JSON.stringify(nextMetadata)],
+            );
+          });
           trustedVideoText = summary;
           trustedVideoUnderstood = true;
         }
