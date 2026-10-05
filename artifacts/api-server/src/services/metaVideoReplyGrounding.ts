@@ -22,7 +22,10 @@ export async function understandTrustedMetaVideoForReply(input:{
     const media=metadata&&typeof metadata==="object"&&!Array.isArray(metadata)&&metadata.media&&typeof metadata.media==="object"&&!Array.isArray(metadata.media)?metadata.media as Record<string,unknown>:null;
     const summary=typeof media?.video_observation==="string"?media.video_observation.trim():"";
     const sha=typeof media?.video_sha256==="string"?media.video_sha256.trim():"";
-    if(media?.content_identity_hash!==input.contentIdentityHash||!summary||summary.length>2000||!/^[a-f0-9]{64}$/i.test(sha))return null;
+    const providerId=typeof media?.video_vision_provider_id==="string"?media.video_vision_provider_id.trim():"";
+    const model=typeof media?.video_vision_model==="string"?media.video_vision_model.trim():"";
+    const frameCount=Number(media?.video_frame_count);
+    if(media?.content_identity_hash!==input.contentIdentityHash||!summary||summary.length>2000||!/^[a-f0-9]{64}$/i.test(sha)||!providerId||providerId.length>160||!model||model.length>160||!Number.isInteger(frameCount)||frameCount<1||frameCount>6)return null;
     const matchedRecordId=typeof metadata?.matched_record_id==="string"?metadata.matched_record_id.trim():"";
     const alternatives:Array<Alternative>=Array.isArray(media?.video_visual_alternatives)?media.video_visual_alternatives.flatMap(value=>{
       if(!value||typeof value!=="object"||Array.isArray(value))return [];
