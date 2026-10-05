@@ -396,3 +396,25 @@ test("preserves reply-to message id without treating quoted content as trusted t
   assert.equal(parsed.text, "هذا شكد سعره؟");
   assert.equal(parsed.replyToMessageId, "prior-media-message");
 });
+
+
+test("rejects duplicate media attachments and unsupported companions", () => {
+  const duplicateImages = parseMetaInboundMessage({
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.com/a.jpg" } },
+      { type: "image", payload: { url: "https://cdn.example.com/b.jpg" } },
+    ],
+  });
+  assert.ok(duplicateImages);
+  assert.equal(selectMetaInboundImageUrl(duplicateImages), null);
+
+  const imageWithDocument = parseMetaInboundMessage({
+    text: "راجع هذا",
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.com/a.jpg" } },
+      { type: "document", payload: { url: "https://cdn.example.com/a.pdf" } },
+    ],
+  });
+  assert.ok(imageWithDocument);
+  assert.equal(selectMetaInboundImageUrl(imageWithDocument), null);
+});
