@@ -540,9 +540,20 @@ async function loadRecentConversationContext(
           ? media.video_observation.trim()
           : "";
 
-      const trustedCatalogRef =
-        row.sender === "customer" &&
-        Boolean(matchedRecordId) &&
+      const videoSha256 =
+        media && typeof media.video_sha256 === "string"
+          ? media.video_sha256.trim()
+          : "";
+      const videoVisionProviderId =
+        media && typeof media.video_vision_provider_id === "string"
+          ? media.video_vision_provider_id.trim()
+          : "";
+      const videoVisionModel =
+        media && typeof media.video_vision_model === "string"
+          ? media.video_vision_model.trim()
+          : "";
+
+      const trustedImageCatalogRef =
         /^[a-f0-9]{64}$/i.test(imageSha256) &&
         Boolean(visionProviderId) &&
         Boolean(visionModel) &&
@@ -550,6 +561,16 @@ async function loadRecentConversationContext(
         Number.isFinite(matchConfidence) &&
         matchConfidence >= 0 &&
         matchConfidence <= 1;
+
+      const trustedVideoCatalogRef =
+        /^[a-f0-9]{64}$/i.test(videoSha256) &&
+        Boolean(videoVisionProviderId) &&
+        Boolean(videoVisionModel);
+
+      const trustedCatalogRef =
+        row.sender === "customer" &&
+        Boolean(matchedRecordId) &&
+        (trustedImageCatalogRef || trustedVideoCatalogRef);
 
       const createdAt = new Date(row.created_at).toISOString();
       return {
