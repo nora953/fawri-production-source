@@ -44,7 +44,6 @@ function classifyAttachment(type: string): MetaInboundContentKind {
     case "share":
     case "shared_post":
       return "shared_post";
-    case "file":
     case "document":
       return "document";
     case "location":
