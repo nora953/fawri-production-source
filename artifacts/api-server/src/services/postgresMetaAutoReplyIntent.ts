@@ -509,6 +509,20 @@ async function loadRecentConversationContext(
           ? media.vision_model.trim()
           : "";
       const matchConfidence = media?.match_confidence;
+      const audioTranscript =
+        row.sender === "customer" &&
+        media &&
+        typeof media.audio_transcript === "string" &&
+        media.audio_transcript.trim().length > 0 &&
+        media.audio_transcript.trim().length <= 2_000 &&
+        typeof media.audio_sha256 === "string" &&
+        /^[a-f0-9]{64}$/i.test(media.audio_sha256) &&
+        typeof media.transcription_provider_id === "string" &&
+        media.transcription_provider_id.trim().length > 0 &&
+        typeof media.transcription_model === "string" &&
+        media.transcription_model.trim().length > 0
+          ? media.audio_transcript.trim()
+          : "";
 
       const trustedCatalogRef =
         row.sender === "customer" &&
@@ -524,7 +538,7 @@ async function loadRecentConversationContext(
       const createdAt = new Date(row.created_at).toISOString();
       return {
         sender: row.sender,
-        text: text(row.text),
+        text: audioTranscript || text(row.text),
         createdAt,
         ...(matchedRecordId ? { matchedRecordId } : {}),
         ...(trustedCatalogRef ? { trustedCatalogRef: true } : {}),
