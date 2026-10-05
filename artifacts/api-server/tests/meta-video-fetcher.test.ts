@@ -3,6 +3,23 @@ import test from "node:test";
 import { META_VIDEO_MAX_BYTES, SecureMetaVideoFetcher } from "../src/services/metaVideoFetcher.js";
 
 const PUBLIC = async () => [{ address: "93.184.216.34", family: 4 }];
+
+test("video fetcher rejects equivalent private IPv6 DNS forms before transport", async () => {
+  for (const address of [
+    "::ffff:127.0.0.1", "0:0:0:0:0:ffff:7f00:1",
+    "0:0:0:0:0:0:0:1", "0:0:0:0:0:0:0:0",
+    "::ffff:10.0.0.1", "::ffff:169.254.169.254",
+  ]) {
+    let calls = 0;
+    const fetcher = new SecureMetaVideoFetcher({
+      resolveHost: async () => [{ address, family: 6 }],
+      transportImpl: async () => { calls++; return new Response(null, { status: 404 }); },
+    });
+    await assert.rejects(fetcher.fetchVideo({ url: "https://cdn.example.test/v.mp4" }),
+      (e: unknown) => (e as {code?: string})?.code === "META_VIDEO_DESTINATION_FORBIDDEN", address);
+    assert.equal(calls, 0, address);
+  }
+});
 function stream(bytes: Uint8Array) {
   return new ReadableStream<Uint8Array>({ start(c) { c.enqueue(bytes); c.close(); } });
 }
