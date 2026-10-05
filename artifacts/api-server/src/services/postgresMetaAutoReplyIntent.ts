@@ -1460,11 +1460,6 @@ export async function preparePostgresMetaAutoReply(
   );
 
   if (inbound.repliedToInternalMessageId) {
-    const repliedToContext = await loadRecentConversationContext(
-      parsed.merchantId,
-      inbound.conversationId,
-      inbound.sourceCustomerMessageId,
-    );
     const repliedTo = await withMerchantOperationalTransaction(
       parsed.merchantId,
       async (client) => client.query<ConversationContextRow>(
@@ -1479,14 +1474,18 @@ export async function preparePostgresMetaAutoReply(
     );
     const target = repliedTo.rows[0];
     if (target) {
-      const alreadyPresent = repliedToContext.some(
-        (message) => message.createdAt === new Date(target.created_at).toISOString() && message.text === text(target.text),
+      const targetCreatedAt = new Date(target.created_at).toISOString();
+      const alreadyPresent = recentMessages.some(
+        (message) =>
+          message.createdAt === targetCreatedAt &&
+          message.sender === target.sender &&
+          message.text === text(target.text),
       );
       if (!alreadyPresent) {
-        recentMessages.push({
+        recentMessages.unshift({
           sender: target.sender,
           text: text(target.text),
-          createdAt: new Date(target.created_at).toISOString(),
+          createdAt: targetCreatedAt,
         });
       }
     }
