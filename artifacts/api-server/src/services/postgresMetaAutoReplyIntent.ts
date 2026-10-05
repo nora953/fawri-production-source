@@ -554,17 +554,6 @@ function mapConversationContextRow(row: ConversationContextRow): KnowledgeConver
           ? media.audio_transcript.trim()
           : "";
 
-      const videoObservation =
-        row.sender === "customer" &&
-        media &&
-        typeof media.video_observation === "string" &&
-        media.video_observation.trim().length > 0 &&
-        media.video_observation.trim().length <= 2_000 &&
-        typeof media.video_sha256 === "string" &&
-        /^[a-f0-9]{64}$/i.test(media.video_sha256)
-          ? media.video_observation.trim()
-          : "";
-
       const videoSha256 =
         media && typeof media.video_sha256 === "string"
           ? media.video_sha256.trim()
@@ -600,7 +589,9 @@ function mapConversationContextRow(row: ConversationContextRow): KnowledgeConver
       const createdAt = new Date(row.created_at).toISOString();
       return {
         sender: row.sender,
-        text: audioTranscript || videoObservation || text(row.text),
+        // Audio transcripts are customer-authored speech. Video observations are
+        // model-generated visual evidence and must never masquerade as customer text.
+        text: audioTranscript || text(row.text),
         createdAt,
         ...(matchedRecordId ? { matchedRecordId } : {}),
         ...(trustedCatalogRef ? { trustedCatalogRef: true } : {}),
