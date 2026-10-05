@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { mapConversationContextRow } from "../src/services/postgresMetaAutoReplyIntent.js";
+import { decideMetaKnowledgeReply } from "../src/services/metaKnowledgeDecisionBoundary.js";
 
 test("historical trusted video observation never becomes customer-authored text", () => {
   const matchedRecordId = "catalog-product:video-history-proof";
@@ -66,4 +67,28 @@ test("quoted historical video stays context instead of becoming current intent",
   assert.equal(quoted.text, "[video]");
   assert.notEqual(quoted.text, currentText);
   assert.notEqual(quoted.text, "historical generated observation");
+});
+
+
+test("knowledge decision exceptions are normalized to the Meta fail-closed code", async () => {
+  const input = {
+    merchantId: "merchant-decision-failure-proof",
+    customerText: "هل هذا المنتج متوفر؟",
+    requestId: "event-decision-failure-proof",
+    conversationId: "conversation-decision-failure-proof",
+    customerExternalId: "customer-decision-failure-proof",
+    recentMessages: [],
+  };
+
+  await assert.rejects(
+    () => decideMetaKnowledgeReply(input, async () => {
+      throw new Error("simulated decision dependency outage");
+    }),
+    (error: unknown) => {
+      assert.equal((error as { code?: string }).code, "META_REPLY_DECISION_UNAVAILABLE");
+      assert.equal((error as Error).message, "Knowledge reply decision is unavailable");
+      assert.doesNotMatch((error as Error).message, /simulated|dependency|outage/i);
+      return true;
+    },
+  );
 });

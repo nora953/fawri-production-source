@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { DurableJob } from "./durableJobQueue";
-import { getKnowledgeDecisionEngine } from "./ai/knowledgeDecisionEngine";
+import { decideMetaKnowledgeReply } from "./metaKnowledgeDecisionBoundary";
+
 import {
   withMerchantOperationalTransaction,
   type OperationalSqlClient,
@@ -1590,9 +1591,7 @@ export async function preparePostgresMetaAutoReply(
     });
   }
 
-  let decision;
-  try {
-    decision = await getKnowledgeDecisionEngine().decide({
+  const decision = await decideMetaKnowledgeReply({
       merchantId: parsed.merchantId,
       customerText: effectiveCustomerText,
       requestId: parsed.eventId,
@@ -1613,11 +1612,6 @@ export async function preparePostgresMetaAutoReply(
           }
         : {}),
     });
-  } catch {
-    throw Object.assign(new Error("Knowledge reply decision is unavailable"), {
-      code: "META_REPLY_DECISION_UNAVAILABLE",
-    });
-  }
 
   const answerText = text(decision.answerText);
   if (decision.action === "no_answer" || !answerText) {
