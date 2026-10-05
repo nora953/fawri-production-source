@@ -5187,6 +5187,151 @@ await test("media provider exceptions fail closed without crashing the reply pre
   }
 });
 
+await test("mixed media provider failure is atomic when sibling providers succeed", async () => {
+  const failingKinds = ["image", "audio", "video"] as const;
+
+  for (const failingKind of failingKinds) {
+    let imageCalls = 0;
+    let audioCalls = 0;
+    let videoCalls = 0;
+
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+
+    imageRuntime.configureMetaImageUnderstandingService({
+      async understand() {
+        imageCalls += 1;
+        if (failingKind === "image") throw new Error("synthetic mixed image failure");
+        return {
+          matchedRecordId: null,
+          productId: null,
+          confidence: 0.9,
+          imageSha256: "1".repeat(64),
+          visionProviderId: "test-mixed-image-provider",
+          visionModel: "test-mixed-image-model",
+        };
+      },
+      async understandWithAlternatives() {
+        imageCalls += 1;
+        if (failingKind === "image") throw new Error("synthetic mixed image alternatives failure");
+        return {
+          primary: {
+            matchedRecordId: null,
+            productId: null,
+            confidence: 0.9,
+            imageSha256: "1".repeat(64),
+            visionProviderId: "test-mixed-image-provider",
+            visionModel: "test-mixed-image-model",
+          },
+          alternatives: [],
+        };
+      },
+    });
+    audioRuntime.configureMetaAudioUnderstandingService({
+      async understand() {
+        audioCalls += 1;
+        if (failingKind === "audio") throw new Error("synthetic mixed audio failure");
+        return {
+          transcript: "هل هذا متوفر؟",
+          audioSha256: "2".repeat(64),
+          transcriptionProviderId: "test-mixed-audio-provider",
+          transcriptionModel: "test-mixed-audio-model",
+        };
+      },
+    });
+    videoRuntime.configureMetaVideoUnderstandingService({
+      async understand() {
+        videoCalls += 1;
+        if (failingKind === "video") throw new Error("synthetic mixed video failure");
+        return {
+          videoSha256: "3".repeat(64),
+          frameCount: 1,
+          observation: {
+            productType: "shirt",
+            colors: ["black"],
+            attributes: [],
+            description: "black shirt",
+            confidence: 0.9,
+            providerId: "test-mixed-video-provider",
+            model: "test-mixed-video-model",
+          },
+          exactMatch: null,
+          alternatives: [],
+        };
+      },
+    });
+
+    try {
+      const senderId = `customer-live-mixed-provider-error-${failingKind}-${runId}`;
+      const eventId = `event-live-mixed-provider-error-${failingKind}-${runId}`;
+      const mid = `mid-live-mixed-provider-error-${failingKind}-${runId}`;
+      const imageUrl = `https://example.invalid/mixed-provider-error-${failingKind}.jpg`;
+      const audioUrl = `https://example.invalid/mixed-provider-error-${failingKind}.mp3`;
+      const videoUrl = `https://example.invalid/mixed-provider-error-${failingKind}.mp4`;
+
+      const queued = await jobs.enqueueDurableJobAuthoritative({
+        type: "meta.webhook.reply",
+        dedupeKey: eventId,
+        merchantId: merchantA.account.id,
+        maxAttempts: 5,
+        payload: {
+          event_id: eventId,
+          page_id: pageA,
+          merchant_id: merchantA.account.id,
+          external_message_id: mid,
+          sender_id: senderId,
+          webhook_body: {
+            object: "page",
+            entry: [{
+              id: pageA,
+              messaging: [{
+                sender: { id: senderId },
+                recipient: { id: pageA },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  text: "راجع كل المرفقات",
+                  attachments: [
+                    { type: "image", payload: { url: imageUrl } },
+                    { type: "audio", payload: { url: audioUrl } },
+                    { type: "video", payload: { url: videoUrl } },
+                  ],
+                },
+              }],
+            }],
+          },
+        },
+      });
+
+      const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+      assert.equal(prepared.action, "suppress");
+      if (prepared.action !== "suppress") continue;
+      assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+
+      assert.equal(videoCalls, 1);
+      assert.equal(audioCalls, 1);
+      assert.ok(imageCalls >= 1);
+
+      const stored = await raw(
+        `SELECT metadata FROM messages
+          WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'
+          LIMIT 1`,
+        [merchantA.account.id, mid],
+      );
+      assert.equal(stored.rows.length, 1);
+      const serialized = JSON.stringify(stored.rows[0].metadata);
+      assert.equal(serialized.includes(imageUrl), false);
+      assert.equal(serialized.includes(audioUrl), false);
+      assert.equal(serialized.includes(videoUrl), false);
+    } finally {
+      imageRuntime.resetMetaImageUnderstandingServiceForTests();
+      audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+      videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+    }
+  }
+});
+
 await test("mixed media without explicit text remains fail closed", async () => {
   const senderId = `customer-live-mixed-no-text-${runId}`;
   const eventId = `event-live-mixed-no-text-${runId}`;
