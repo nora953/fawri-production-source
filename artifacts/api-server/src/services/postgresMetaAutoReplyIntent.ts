@@ -56,7 +56,7 @@ type ParsedMetaJob = {
   externalMessageId: string;
   customerText: string | null;
   storageText: string;
-  contentKind: "text" | "image" | "audio" | "video" | "shared_post";
+  contentKind: "text" | "image" | "audio" | "video" | "shared_post" | "document" | "location" | "sticker";
   attachmentCount: number;
   contentIdentityHash: string | null;
   imageUrl: string | null;
