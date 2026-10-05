@@ -21,6 +21,7 @@ export type MetaInboundMessage = {
   text: string | null;
   storageText: string;
   attachments: MetaInboundAttachment[];
+  replyToMessageId: string | null;
 };
 
 function record(value: unknown): Record<string, unknown> {
@@ -83,6 +84,8 @@ export function parseMetaInboundMessage(
 ): MetaInboundMessage | null {
   const message = record(value);
   const messageText = cleanText(message.text);
+  const replyTo = record(message.reply_to);
+  const replyToMessageId = cleanText(replyTo.mid) || null;
   const rawAttachments = Array.isArray(message.attachments)
     ? message.attachments
     : [];
@@ -115,6 +118,7 @@ export function parseMetaInboundMessage(
       text: messageText,
       storageText: messageText,
       attachments,
+      replyToMessageId,
     };
   }
 
@@ -128,6 +132,7 @@ export function parseMetaInboundMessage(
     text: null,
     storageText: storageMarker(kind),
     attachments,
+    replyToMessageId,
   };
 }
 
