@@ -237,11 +237,12 @@ function EditableVariantValue({
   );
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <button
       type="button"
       role="switch"
+      aria-label={label}
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? 'bg-orange-500' : 'bg-muted-foreground/30'}`}
@@ -691,7 +692,7 @@ export function CatalogProductDetailsEditor({
             <div className="flex items-center gap-2 text-sm font-bold"><Layers3 className="h-4 w-4" />{labels.multiProduct}</div>
             <p className="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground">{labels.multiProductHint}</p>
           </div>
-          <Toggle checked={multiEnabled} onChange={setMultiEnabled} />
+          <Toggle label={labels.multiProduct} checked={multiEnabled} onChange={setMultiEnabled} />
         </div>
 
         {multiEnabled && (
