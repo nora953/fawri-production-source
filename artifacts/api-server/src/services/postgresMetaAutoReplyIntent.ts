@@ -607,15 +607,164 @@ export async function preparePostgresMetaAutoReply(
   let trustedAudioUnderstood = false;
 
   if (parsed.audioUrl) {
-    const audioService = getMetaAudioUnderstandingService();
-    if (audioService) {
-      const understood = await audioService.understand({
-        merchantId: parsed.merchantId,
-        audioUrl: parsed.audioUrl,
-      });
-      if (understood?.transcript) {
-        trustedAudioTranscript = understood.transcript;
-        trustedAudioUnderstood = true;
+    const persistedAudio =
+      await withMerchantOperationalTransaction(
+        parsed.merchantId,
+        async (client) => {
+          const result = await client.query<{
+            metadata: Record<string, unknown> | null;
+          }>(
+            `SELECT metadata
+               FROM messages
+              WHERE merchant_id = $1
+                AND id = $2
+                AND conversation_id = $3
+                AND sender = 'customer'
+              LIMIT 1`,
+            [
+              parsed.merchantId,
+              inbound.sourceCustomerMessageId,
+              inbound.conversationId,
+            ],
+          );
+          const metadata = result.rows[0]?.metadata;
+          const media =
+            metadata &&
+            typeof metadata === "object" &&
+            !Array.isArray(metadata) &&
+            metadata.media &&
+            typeof metadata.media === "object" &&
+            !Array.isArray(metadata.media)
+              ? metadata.media as Record<string, unknown>
+              : null;
+          if (!media) return null;
+
+          const transcript =
+            typeof media.audio_transcript === "string"
+              ? media.audio_transcript.trim()
+              : "";
+          const audioSha256 =
+            typeof media.audio_sha256 === "string"
+              ? media.audio_sha256.trim()
+              : "";
+          const providerId =
+            typeof media.transcription_provider_id === "string"
+              ? media.transcription_provider_id.trim()
+              : "";
+          const model =
+            typeof media.transcription_model === "string"
+              ? media.transcription_model.trim()
+              : "";
+          const sameContent =
+            typeof media.content_identity_hash === "string" &&
+            media.content_identity_hash === parsed.contentIdentityHash;
+
+          if (
+            !sameContent ||
+            !transcript ||
+            transcript.length > 2_000 ||
+            !/^[a-f0-9]{64}$/i.test(audioSha256) ||
+            !providerId ||
+            providerId.length > 160 ||
+            !model ||
+            model.length > 160
+          ) {
+            return null;
+          }
+          return transcript;
+        },
+      );
+
+    if (persistedAudio) {
+      trustedAudioTranscript = persistedAudio;
+      trustedAudioUnderstood = true;
+    } else {
+      const audioService = getMetaAudioUnderstandingService();
+      if (audioService) {
+        const understood = await audioService.understand({
+          merchantId: parsed.merchantId,
+          audioUrl: parsed.audioUrl,
+        });
+        const transcript = understood?.transcript?.trim() || "";
+        const hasSafeProvenance =
+          transcript.length > 0 &&
+          transcript.length <= 2_000 &&
+          typeof understood?.audioSha256 === "string" &&
+          /^[a-f0-9]{64}$/i.test(understood.audioSha256) &&
+          typeof understood?.transcriptionProviderId === "string" &&
+          understood.transcriptionProviderId.trim().length > 0 &&
+          understood.transcriptionProviderId.length <= 160 &&
+          typeof understood?.transcriptionModel === "string" &&
+          understood.transcriptionModel.trim().length > 0 &&
+          understood.transcriptionModel.length <= 160;
+
+        if (understood && hasSafeProvenance) {
+          await withMerchantOperationalTransaction(
+            parsed.merchantId,
+            async (client) => {
+              const customer = await client.query<{
+                metadata: Record<string, unknown> | null;
+              }>(
+                `SELECT metadata
+                   FROM messages
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3
+                    AND sender = 'customer'
+                  FOR UPDATE`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                ],
+              );
+              const metadata = customer.rows[0]?.metadata;
+              const media =
+                metadata &&
+                typeof metadata === "object" &&
+                !Array.isArray(metadata) &&
+                metadata.media &&
+                typeof metadata.media === "object" &&
+                !Array.isArray(metadata.media)
+                  ? metadata.media as Record<string, unknown>
+                  : null;
+              if (
+                !media ||
+                media.content_identity_hash !== parsed.contentIdentityHash
+              ) {
+                throw Object.assign(
+                  new Error("Meta audio content identity changed"),
+                  { code: "META_MESSAGE_IDENTITY_COLLISION" },
+                );
+              }
+              const nextMetadata = {
+                ...metadata,
+                media: {
+                  ...media,
+                  audio_transcript: transcript,
+                  audio_sha256: understood.audioSha256,
+                  transcription_provider_id: understood.transcriptionProviderId,
+                  transcription_model: understood.transcriptionModel,
+                },
+              };
+              await client.query(
+                `UPDATE messages
+                    SET metadata = $4::jsonb
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                  JSON.stringify(nextMetadata),
+                ],
+              );
+            },
+          );
+          trustedAudioTranscript = transcript;
+          trustedAudioUnderstood = true;
+        }
       }
     }
   }
