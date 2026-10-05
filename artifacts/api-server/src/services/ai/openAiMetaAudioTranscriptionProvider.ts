@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { MetaFetchedAudio } from "../metaAudioFetcher.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
-const MAX_TRANSCRIPT_CHARS = 4_000;
+const MAX_TRANSCRIPT_CHARS = 2_000;
 
 export type MetaAudioTranscript = {
   text: string;
