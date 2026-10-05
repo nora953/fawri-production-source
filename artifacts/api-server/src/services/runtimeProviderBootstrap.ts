@@ -44,6 +44,7 @@ import {
   releaseMetaAudioUnderstandingService,
   type MetaAudioUnderstandingRuntimeService,
 } from "./metaAudioUnderstandingRuntime.js";
+import { configureMetaVideoUnderstandingService, createOpenAiMetaVideoUnderstandingService, releaseMetaVideoUnderstandingService, type MetaVideoUnderstandingRuntimeService } from "./metaVideoUnderstandingRuntime.js";
 
 export type MetaCredentialProviderSelection = "environment" | "aws-kms";
 export type KnowledgeEmbeddingProviderSelection = "disabled" | "openai";
@@ -51,6 +52,7 @@ export type KnowledgeTranslationProviderSelection = "disabled" | "openai";
 export type KnowledgeAiProviderSelection = "disabled" | "openai";
 export type MetaImageProviderSelection = "disabled" | "openai";
 export type MetaAudioProviderSelection = "disabled" | "openai";
+export type MetaVideoProviderSelection = "disabled" | "openai";
 
 export type RuntimeProviderSelections = {
   metaCredentialProvider: MetaCredentialProviderSelection;
@@ -59,6 +61,7 @@ export type RuntimeProviderSelections = {
   knowledgeAiProvider: KnowledgeAiProviderSelection;
   metaImageProvider: MetaImageProviderSelection;
   metaAudioProvider: MetaAudioProviderSelection;
+  metaVideoProvider: MetaVideoProviderSelection;
 };
 
 export type RuntimeProviderHandle = {
@@ -93,6 +96,9 @@ export type RuntimeProviderBootstrapDependencies = {
   ): MetaAudioUnderstandingRuntimeService;
   configureMetaAudio(provider: MetaAudioUnderstandingRuntimeService): void;
   releaseMetaAudio(provider: MetaAudioUnderstandingRuntimeService): boolean;
+  createOpenAiMetaVideo(apiKey: string | undefined, model: string | undefined): MetaVideoUnderstandingRuntimeService;
+  configureMetaVideo(provider: MetaVideoUnderstandingRuntimeService): void;
+  releaseMetaVideo(provider: MetaVideoUnderstandingRuntimeService): boolean;
   configureMetaCredentialProvider(provider: MetaCredentialKeyProvider | null): void;
 };
 
@@ -188,6 +194,13 @@ function readMetaAudioProviderSelection(
   );
 }
 
+function readMetaVideoProviderSelection(env: NodeJS.ProcessEnv): MetaVideoProviderSelection {
+  const selected = text(env.FAWRI_META_VIDEO_PROVIDER).toLowerCase();
+  if (!selected) return "disabled";
+  if (selected === "openai") return "openai";
+  throw fail("META_VIDEO_PROVIDER_CONFIG_INVALID", "Meta video provider selection is invalid");
+}
+
 function readKnowledgeTranslationProviderSelection(
   env: NodeJS.ProcessEnv,
 ): KnowledgeTranslationProviderSelection {
@@ -233,6 +246,9 @@ function defaultDependencies(): RuntimeProviderBootstrapDependencies {
       createOpenAiMetaAudioUnderstandingService({ apiKey, model }),
     configureMetaAudio: configureMetaAudioUnderstandingService,
     releaseMetaAudio: releaseMetaAudioUnderstandingService,
+    createOpenAiMetaVideo: (apiKey, model) => createOpenAiMetaVideoUnderstandingService({ apiKey, model }),
+    configureMetaVideo: configureMetaVideoUnderstandingService,
+    releaseMetaVideo: releaseMetaVideoUnderstandingService,
     configureMetaCredentialProvider,
   };
 }
@@ -253,12 +269,14 @@ export async function initializeRuntimeProviders(input: {
     knowledgeAiProvider: readKnowledgeAiProviderSelection(env),
     metaImageProvider: readMetaImageProviderSelection(env),
     metaAudioProvider: readMetaAudioProviderSelection(env),
+    metaVideoProvider: readMetaVideoProviderSelection(env),
   };
 
   let awsProvider: AwsKmsMetaCredentialKeyProvider | null = null;
   let metaProviderConfigured = false;
   let metaImageProvider: MetaImageUnderstandingRuntimeService | null = null;
   let metaAudioProvider: MetaAudioUnderstandingRuntimeService | null = null;
+  let metaVideoProvider: MetaVideoUnderstandingRuntimeService | null = null;
 
   try {
     if (selections.metaCredentialProvider === "aws-kms") {
@@ -296,6 +314,15 @@ export async function initializeRuntimeProviders(input: {
       metaImageProvider = provider;
     }
 
+    if (selections.metaVideoProvider === "openai") {
+      const provider = dependencies.createOpenAiMetaVideo(
+        env.OPENAI_API_KEY,
+        env.FAWRI_OPENAI_VIDEO_MODEL || env.FAWRI_OPENAI_VISION_MODEL || env.FAWRI_OPENAI_MODEL,
+      );
+      dependencies.configureMetaVideo(provider);
+      metaVideoProvider = provider;
+    }
+
     if (selections.metaAudioProvider === "openai") {
       const provider = dependencies.createOpenAiMetaAudio(
         env.OPENAI_API_KEY,
@@ -310,6 +337,10 @@ export async function initializeRuntimeProviders(input: {
       metaProviderConfigured = true;
     }
   } catch (error) {
+    if (metaVideoProvider) {
+      dependencies.releaseMetaVideo(metaVideoProvider);
+      metaVideoProvider = null;
+    }
     if (metaAudioProvider) {
       dependencies.releaseMetaAudio(metaAudioProvider);
       metaAudioProvider = null;
@@ -331,6 +362,10 @@ export async function initializeRuntimeProviders(input: {
     dispose() {
       if (disposed) return;
       disposed = true;
+      if (metaVideoProvider) {
+        dependencies.releaseMetaVideo(metaVideoProvider);
+        metaVideoProvider = null;
+      }
       if (metaAudioProvider) {
         dependencies.releaseMetaAudio(metaAudioProvider);
         metaAudioProvider = null;

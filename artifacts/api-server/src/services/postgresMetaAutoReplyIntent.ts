@@ -10,6 +10,7 @@ import {
   parseMetaInboundMessage,
   selectMetaInboundImageUrl,
   selectMetaInboundAudioUrl,
+  selectMetaInboundVideoUrl,
 } from "./metaInboundMessage";
 import {
   getMetaImageUnderstandingService,
@@ -17,6 +18,7 @@ import {
 import {
   getMetaAudioUnderstandingService,
 } from "./metaAudioUnderstandingRuntime.js";
+import { getMetaVideoUnderstandingService } from "./metaVideoUnderstandingRuntime.js";
 import { TrustedMediaCatalogMatcher } from "./mediaCatalogMatcher";
 import { notifyMerchantNewCustomerMessagePostgres } from "./postgresOperationalNotificationAuthority";
 import { notifyMerchantKnowledgeGapPostgres } from "./postgresOperationalNotificationAuthority.js";
@@ -59,6 +61,7 @@ type ParsedMetaJob = {
   contentIdentityHash: string | null;
   imageUrl: string | null;
   audioUrl: string | null;
+  videoUrl: string | null;
   webhookBody: Record<string, unknown>;
   createdAt: string;
 };
@@ -145,6 +148,7 @@ function parseJob(job: DurableJob): ParsedMetaJob {
   const audioUrl = inbound
     ? selectMetaInboundAudioUrl(inbound)
     : null;
+  const videoUrl = inbound ? selectMetaInboundVideoUrl(inbound) : null;
   const contentIdentityHash =
     inbound && inbound.attachments.length > 0
       ? digest(
@@ -194,6 +198,7 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     contentIdentityHash,
     imageUrl,
     audioUrl,
+    videoUrl,
     webhookBody,
     createdAt: eventTimestamp(event.timestamp),
   };
@@ -524,6 +529,17 @@ async function loadRecentConversationContext(
           ? media.audio_transcript.trim()
           : "";
 
+      const videoObservation =
+        row.sender === "customer" &&
+        media &&
+        typeof media.video_observation === "string" &&
+        media.video_observation.trim().length > 0 &&
+        media.video_observation.trim().length <= 2_000 &&
+        typeof media.video_sha256 === "string" &&
+        /^[a-f0-9]{64}$/i.test(media.video_sha256)
+          ? media.video_observation.trim()
+          : "";
+
       const trustedCatalogRef =
         row.sender === "customer" &&
         Boolean(matchedRecordId) &&
@@ -538,7 +554,7 @@ async function loadRecentConversationContext(
       const createdAt = new Date(row.created_at).toISOString();
       return {
         sender: row.sender,
-        text: audioTranscript || text(row.text),
+        text: audioTranscript || videoObservation || text(row.text),
         createdAt,
         ...(matchedRecordId ? { matchedRecordId } : {}),
         ...(trustedCatalogRef ? { trustedCatalogRef: true } : {}),
@@ -615,6 +631,85 @@ export async function preparePostgresMetaAutoReply(
       conversationId: inbound.conversationId,
       code: "CONVERSATION_MANUAL_TAKEOVER",
     };
+  }
+
+  let trustedVideoText: string | null = null;
+  let trustedVideoUnderstood = false;
+
+  if (parsed.videoUrl) {
+    const persistedVideo = await withMerchantOperationalTransaction(
+      parsed.merchantId,
+      async (client) => {
+        const result = await client.query<{ metadata: Record<string, unknown> | null }>(
+          `SELECT metadata FROM messages
+            WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3 AND sender = 'customer'
+            LIMIT 1`,
+          [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId],
+        );
+        const metadata = result.rows[0]?.metadata;
+        const media = metadata && typeof metadata === "object" && !Array.isArray(metadata) &&
+          metadata.media && typeof metadata.media === "object" && !Array.isArray(metadata.media)
+          ? metadata.media as Record<string, unknown> : null;
+        const summary = typeof media?.video_observation === "string" ? media.video_observation.trim() : "";
+        const sha = typeof media?.video_sha256 === "string" ? media.video_sha256.trim() : "";
+        const same = media?.content_identity_hash === parsed.contentIdentityHash;
+        return same && summary && summary.length <= 2_000 && /^[a-f0-9]{64}$/i.test(sha) ? summary : null;
+      },
+    );
+
+    if (persistedVideo) {
+      trustedVideoText = persistedVideo;
+      trustedVideoUnderstood = true;
+    } else {
+      const videoService = getMetaVideoUnderstandingService();
+      const understood = videoService ? await videoService.understand({
+        merchantId: parsed.merchantId,
+        videoUrl: parsed.videoUrl,
+      }) : null;
+      if (understood?.observation && understood.observation.confidence >= 0.5 &&
+          /^[a-f0-9]{64}$/i.test(understood.videoSha256) &&
+          Number.isInteger(understood.frameCount) && understood.frameCount >= 1 && understood.frameCount <= 6) {
+        const observation = understood.observation;
+        const parts = [
+          observation.productType ? `نوع المنتج الظاهر: ${observation.productType}` : "",
+          observation.colors.length ? `الألوان الظاهرة: ${observation.colors.join(", ")}` : "",
+          observation.attributes.length ? `الصفات الظاهرة: ${observation.attributes.join(", ")}` : "",
+          observation.description ? `الوصف المرئي: ${observation.description}` : "",
+        ].filter(Boolean);
+        const summary = parts.join(". ").slice(0, 2_000);
+        if (summary) {
+          await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
+            const locked = await client.query<{ metadata: Record<string, unknown> | null }>(
+              `SELECT metadata FROM messages
+                WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3 AND sender = 'customer'
+                FOR UPDATE`,
+              [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId],
+            );
+            const metadata = locked.rows[0]?.metadata;
+            const media = metadata && typeof metadata === "object" && !Array.isArray(metadata) &&
+              metadata.media && typeof metadata.media === "object" && !Array.isArray(metadata.media)
+              ? metadata.media as Record<string, unknown> : null;
+            if (!media || media.content_identity_hash !== parsed.contentIdentityHash) {
+              throw Object.assign(new Error("Meta video content identity changed"), { code: "META_MESSAGE_IDENTITY_COLLISION" });
+            }
+            const nextMetadata = { ...metadata, media: { ...media,
+              video_observation: summary,
+              video_sha256: understood.videoSha256,
+              video_frame_count: understood.frameCount,
+              video_vision_provider_id: observation.providerId,
+              video_vision_model: observation.model,
+            }};
+            await client.query(
+              `UPDATE messages SET metadata = $4::jsonb
+                WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3`,
+              [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId, JSON.stringify(nextMetadata)],
+            );
+          });
+          trustedVideoText = summary;
+          trustedVideoUnderstood = true;
+        }
+      }
+    }
   }
 
   let trustedAudioTranscript: string | null = null;
@@ -1330,7 +1425,9 @@ export async function preparePostgresMetaAutoReply(
   const effectiveCustomerText =
     trustedAudioUnderstood && trustedAudioTranscript
       ? trustedAudioTranscript
-      : parsed.customerText;
+      : trustedVideoUnderstood && trustedVideoText
+        ? trustedVideoText
+        : parsed.customerText;
 
   const trustedImageTextMessage =
     parsed.contentKind === "text" &&
@@ -1341,11 +1438,14 @@ export async function preparePostgresMetaAutoReply(
       trustedImageAlternatives.length > 0);
 
   if (
-    (parsed.contentKind !== "text" && !trustedAudioUnderstood) ||
+    (parsed.contentKind !== "text" &&
+      !trustedAudioUnderstood &&
+      !trustedVideoUnderstood) ||
     !effectiveCustomerText ||
     (parsed.attachmentCount > 0 &&
       !trustedImageTextMessage &&
-      !trustedAudioUnderstood)
+      !trustedAudioUnderstood &&
+      !trustedVideoUnderstood)
   ) {
     if (!trustedImageUnderstood) {
       await withMerchantOperationalTransaction(
