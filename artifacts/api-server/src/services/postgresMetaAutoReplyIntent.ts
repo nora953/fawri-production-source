@@ -417,9 +417,8 @@ async function ensureInboundState(
           parsed.externalMessageId,
           parsed.eventId,
           parsed.storageText,
-          JSON.stringify(
-            parsed.contentKind === "text" &&
-              parsed.attachmentCount === 0
+          JSON.stringify({
+            ...(parsed.contentKind === "text" && parsed.attachmentCount === 0
               ? {}
               : {
                   media: {
@@ -428,8 +427,11 @@ async function ensureInboundState(
                     has_attachment: parsed.attachmentCount > 0,
                     content_identity_hash: parsed.contentIdentityHash,
                   },
-                },
-          ),
+                }),
+            ...(parsed.replyToMessageId
+              ? { reply_to_external_message_id: parsed.replyToMessageId }
+              : {}),
+          }),
           parsed.createdAt,
         ],
       );
@@ -447,11 +449,16 @@ async function ensureInboundState(
         typeof existingMedia?.content_identity_hash === "string"
           ? existingMedia.content_identity_hash
           : null;
+      const existingReplyToMessageId =
+        typeof existingCustomer.rows[0].metadata?.reply_to_external_message_id === "string"
+          ? existingCustomer.rows[0].metadata.reply_to_external_message_id
+          : null;
 
       if (
         existingCustomer.rows[0].conversation_id !== conversation.id ||
         existingCustomer.rows[0].text !== parsed.storageText ||
-        existingContentIdentityHash !== parsed.contentIdentityHash
+        existingContentIdentityHash !== parsed.contentIdentityHash ||
+        existingReplyToMessageId !== parsed.replyToMessageId
       ) {
         throw Object.assign(new Error("Meta message identity collision detected"), {
           code: "META_MESSAGE_IDENTITY_COLLISION",
