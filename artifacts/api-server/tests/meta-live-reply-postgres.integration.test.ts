@@ -4990,6 +4990,99 @@ await test("unsupported inbound attachment kinds are rejected before reply prepa
   }
 });
 
+await test("reply context must resolve uniquely inside the same merchant conversation", async () => {
+  const senderId = `customer-live-reply-context-${runId}`;
+  const missingEventId = `event-live-reply-context-missing-${runId}`;
+  const missingMid = `mid-live-reply-context-missing-${runId}`;
+
+  const missing = await jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply",
+    dedupeKey: missingEventId,
+    merchantId: merchantA.account.id,
+    maxAttempts: 5,
+    payload: {
+      event_id: missingEventId,
+      page_id: pageA,
+      merchant_id: merchantA.account.id,
+      external_message_id: missingMid,
+      sender_id: senderId,
+      webhook_body: {
+        object: "page",
+        entry: [{
+          id: pageA,
+          messaging: [{
+            sender: { id: senderId },
+            recipient: { id: pageA },
+            timestamp: Date.now(),
+            message: {
+              mid: missingMid,
+              text: "هذا المقصود",
+              reply_to: { mid: `missing-reply-target-${runId}` },
+            },
+          }],
+        }],
+      },
+    },
+  });
+
+  await assert.rejects(
+    intents.preparePostgresMetaAutoReply(missing.job),
+    (error: unknown) =>
+      (error as { code?: string } | null)?.code === "META_REPLY_CONTEXT_UNAVAILABLE",
+  );
+
+  const otherSenderId = `customer-live-reply-other-${runId}`;
+  const seedEventId = `event-live-reply-other-${runId}`;
+  const seedMid = `mid-live-reply-other-${runId}`;
+  const seed = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId: otherSenderId,
+    eventId: seedEventId,
+    mid: seedMid,
+    message: "رسالة في محادثة أخرى",
+  });
+  await intents.preparePostgresMetaAutoReply(seed.job);
+
+  const crossEventId = `event-live-reply-cross-conversation-${runId}`;
+  const crossMid = `mid-live-reply-cross-conversation-${runId}`;
+  const crossConversation = await jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply",
+    dedupeKey: crossEventId,
+    merchantId: merchantA.account.id,
+    maxAttempts: 5,
+    payload: {
+      event_id: crossEventId,
+      page_id: pageA,
+      merchant_id: merchantA.account.id,
+      external_message_id: crossMid,
+      sender_id: senderId,
+      webhook_body: {
+        object: "page",
+        entry: [{
+          id: pageA,
+          messaging: [{
+            sender: { id: senderId },
+            recipient: { id: pageA },
+            timestamp: Date.now(),
+            message: {
+              mid: crossMid,
+              text: "اعتمد على الرسالة السابقة",
+              reply_to: { mid: seedMid },
+            },
+          }],
+        }],
+      },
+    },
+  });
+
+  await assert.rejects(
+    intents.preparePostgresMetaAutoReply(crossConversation.job),
+    (error: unknown) =>
+      (error as { code?: string } | null)?.code === "META_REPLY_CONTEXT_UNAVAILABLE",
+  );
+});
+
 await test("unsafe single-media URLs fail closed before any understanding service", async () => {
   const cases = [
     { label: "http-image", attachment: { type: "image", payload: { url: "http://example.invalid/unsafe-single.jpg" } } },
