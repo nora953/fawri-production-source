@@ -182,14 +182,24 @@ export class SecureMetaAudioFetcher {
     try {
       addresses = literalFamily
         ? [{ address: host, family: literalFamily }]
-        : await Promise.race([
-            this.resolveHost(host),
-            new Promise<never>((_, reject) => {
-              controller.signal.addEventListener("abort", () => {
-                reject(coded("Meta audio request timed out", "META_AUDIO_TIMEOUT"));
-              }, { once: true });
-            }),
-          ]);
+        : await (async () => {
+            let onDnsAbort: (() => void) | undefined;
+            try {
+              const timeoutPromise = new Promise<never>((_, reject) => {
+                onDnsAbort = () => {
+                  reject(coded("Meta audio request timed out", "META_AUDIO_TIMEOUT"));
+                };
+                if (controller.signal.aborted) {
+                  onDnsAbort();
+                  return;
+                }
+                controller.signal.addEventListener("abort", onDnsAbort, { once: true });
+              });
+              return await Promise.race([this.resolveHost(host), timeoutPromise]);
+            } finally {
+              if (onDnsAbort) controller.signal.removeEventListener("abort", onDnsAbort);
+            }
+          })();
     } catch (error) {
       clearTimeout(timer);
       if ((error as { code?: unknown })?.code === "META_AUDIO_TIMEOUT" || controller.signal.aborted) {
