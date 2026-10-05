@@ -712,11 +712,18 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  const processingImageUrl =
+    parsed.mediaManifest?.imageUrl ?? parsed.imageUrl;
+  const processingAudioUrl =
+    parsed.mediaManifest?.audioUrl ?? parsed.audioUrl;
+  const processingVideoUrl =
+    parsed.mediaManifest?.videoUrl ?? parsed.videoUrl;
+
   const trustedVideo = await understandTrustedMetaVideoForReply({
     merchantId: parsed.merchantId,
     conversationId: inbound.conversationId,
     sourceCustomerMessageId: inbound.sourceCustomerMessageId,
-    videoUrl: parsed.videoUrl,
+    videoUrl: processingVideoUrl,
     contentIdentityHash: parsed.contentIdentityHash,
   });
   const trustedVideoText = trustedVideo.text;
@@ -727,7 +734,7 @@ export async function preparePostgresMetaAutoReply(
   let trustedAudioTranscript: string | null = null;
   let trustedAudioUnderstood = false;
 
-  if (parsed.audioUrl) {
+  if (processingAudioUrl) {
     const persistedAudio =
       await withMerchantOperationalTransaction(
         parsed.merchantId,
@@ -804,7 +811,7 @@ export async function preparePostgresMetaAutoReply(
       if (audioService) {
         const understood = await audioService.understand({
           merchantId: parsed.merchantId,
-          audioUrl: parsed.audioUrl,
+          audioUrl: processingAudioUrl,
         });
         const transcript = understood?.transcript?.trim() || "";
         const hasSafeProvenance =
@@ -898,7 +905,7 @@ export async function preparePostgresMetaAutoReply(
     confidence: number;
   }> = [];
 
-  if (parsed.imageUrl) {
+  if (processingImageUrl) {
     const persistedImageResult =
       await withMerchantOperationalTransaction(
         parsed.merchantId,
