@@ -147,46 +147,6 @@ export function isMetaInboundReplyHandled(inbound: MetaInboundMessage | null): b
   );
 }
 
-function selectSingleSafeAttachmentUrl(
-  inbound: MetaInboundMessage,
-  type: "image" | "audio" | "video",
-): string | null {
-  if (!inbound || !Array.isArray(inbound.attachments)) return null;
-
-  const candidates = inbound.attachments.filter(
-    (attachment) => attachment.type.toLowerCase() === type,
-  );
-  if (candidates.length !== 1) return null;
-
-  // Mixed attachment batches remain fail-closed until the runtime can
-  // atomically bind every attachment to one trusted decision context.
-  if (inbound.attachments.length !== 1) return null;
-
-  const url = candidates[0].url?.trim();
-  if (!url) return null;
-
-  try {
-    const parsed = new URL(url);
-    if (
-      parsed.protocol !== "https:" ||
-      !parsed.hostname ||
-      parsed.username ||
-      parsed.password
-    ) {
-      return null;
-    }
-    return parsed.href;
-  } catch {
-    return null;
-  }
-}
-
-export type MetaInboundSafeMediaManifest = {
-  imageUrl: string | null;
-  audioUrl: string | null;
-  videoUrl: string | null;
-};
-
 function safeAttachmentUrl(attachment: MetaInboundAttachment): string | null {
   const url = attachment.url?.trim();
   if (!url) return null;
@@ -203,6 +163,25 @@ function safeAttachmentUrl(attachment: MetaInboundAttachment): string | null {
     return null;
   }
 }
+
+function selectSingleSafeAttachmentUrl(
+  inbound: MetaInboundMessage,
+  type: "image" | "audio" | "video",
+): string | null {
+  if (!inbound || !Array.isArray(inbound.attachments)) return null;
+
+  const candidates = inbound.attachments.filter(
+    (attachment) => attachment.type.toLowerCase() === type,
+  );
+  if (candidates.length !== 1 || inbound.attachments.length !== 1) return null;
+  return safeAttachmentUrl(candidates[0]);
+}
+
+export type MetaInboundSafeMediaManifest = {
+  imageUrl: string | null;
+  audioUrl: string | null;
+  videoUrl: string | null;
+};
 
 /**
  * Builds an atomic manifest only when every attachment is a supported media
