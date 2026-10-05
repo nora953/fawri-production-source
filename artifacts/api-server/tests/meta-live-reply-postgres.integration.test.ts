@@ -5044,6 +5044,73 @@ await test("unsafe mixed-media URLs are rejected before any understanding servic
   }
 });
 
+await test("media provider exceptions fail closed without crashing the reply preparation", async () => {
+  const cases = [
+    { label: "image", attachment: { type: "image", payload: { url: "https://example.invalid/provider-error.jpg" } } },
+    { label: "audio", attachment: { type: "audio", payload: { url: "https://example.invalid/provider-error.mp3" } } },
+    { label: "video", attachment: { type: "video", payload: { url: "https://example.invalid/provider-error.mp4" } } },
+  ];
+
+  for (const testCase of cases) {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+    imageRuntime.configureMetaImageUnderstandingService({
+      async understand() { throw new Error("synthetic image provider failure"); },
+    });
+    audioRuntime.configureMetaAudioUnderstandingService({
+      async understand() { throw new Error("synthetic audio provider failure"); },
+    });
+    videoRuntime.configureMetaVideoUnderstandingService({
+      async understand() { throw new Error("synthetic video provider failure"); },
+    });
+
+    try {
+      const senderId = `customer-live-provider-error-${testCase.label}-${runId}`;
+      const eventId = `event-live-provider-error-${testCase.label}-${runId}`;
+      const mid = `mid-live-provider-error-${testCase.label}-${runId}`;
+      const queued = await jobs.enqueueDurableJobAuthoritative({
+        type: "meta.webhook.reply",
+        dedupeKey: eventId,
+        merchantId: merchantA.account.id,
+        maxAttempts: 5,
+        payload: {
+          event_id: eventId,
+          page_id: pageA,
+          merchant_id: merchantA.account.id,
+          external_message_id: mid,
+          sender_id: senderId,
+          webhook_body: {
+            object: "page",
+            entry: [{
+              id: pageA,
+              messaging: [{
+                sender: { id: senderId },
+                recipient: { id: pageA },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  text: "راجع هذا المرفق",
+                  attachments: [testCase.attachment],
+                },
+              }],
+            }],
+          },
+        },
+      });
+
+      const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+      assert.equal(prepared.action, "suppress");
+      if (prepared.action !== "suppress") continue;
+      assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    } finally {
+      imageRuntime.resetMetaImageUnderstandingServiceForTests();
+      audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+      videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+    }
+  }
+});
+
 await test("mixed media without explicit text remains fail closed", async () => {
   const senderId = `customer-live-mixed-no-text-${runId}`;
   const eventId = `event-live-mixed-no-text-${runId}`;
