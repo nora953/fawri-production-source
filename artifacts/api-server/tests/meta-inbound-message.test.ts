@@ -6,6 +6,7 @@ import {
   selectMetaInboundImageUrl,
   selectMetaInboundAudioUrl,
   selectMetaInboundVideoUrl,
+  selectMetaInboundSafeMediaManifest,
 } from "../src/services/metaInboundMessage";
 
 test("preserves the existing text message contract", () => {
@@ -417,4 +418,38 @@ test("rejects duplicate media attachments and unsupported companions", () => {
   });
   assert.ok(imageWithDocument);
   assert.equal(selectMetaInboundImageUrl(imageWithDocument), null);
+});
+
+test("builds one atomic manifest for distinct supported media and rejects partial interpretation", () => {
+  const mixed = parseMetaInboundMessage({
+    text: "هذا المنتج، وهذا سؤالي الصوتي",
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.test/product.jpg" } },
+      { type: "audio", payload: { url: "https://cdn.example.test/question.mp3" } },
+    ],
+  });
+  assert.ok(mixed);
+  assert.deepEqual(selectMetaInboundSafeMediaManifest(mixed), {
+    imageUrl: "https://cdn.example.test/product.jpg",
+    audioUrl: "https://cdn.example.test/question.mp3",
+    videoUrl: null,
+  });
+
+  const duplicate = parseMetaInboundMessage({
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.test/a.jpg" } },
+      { type: "image", payload: { url: "https://cdn.example.test/b.jpg" } },
+    ],
+  });
+  assert.ok(duplicate);
+  assert.equal(selectMetaInboundSafeMediaManifest(duplicate), null);
+
+  const unsupportedCompanion = parseMetaInboundMessage({
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.test/a.jpg" } },
+      { type: "document", payload: { url: "https://cdn.example.test/a.pdf" } },
+    ],
+  });
+  assert.ok(unsupportedCompanion);
+  assert.equal(selectMetaInboundSafeMediaManifest(unsupportedCompanion), null);
 });
