@@ -9,10 +9,14 @@ import type { KnowledgeConversationMessage } from "./knowledge/types";
 import {
   parseMetaInboundMessage,
   selectMetaInboundImageUrl,
+  selectMetaInboundAudioUrl,
 } from "./metaInboundMessage";
 import {
   getMetaImageUnderstandingService,
 } from "./metaImageUnderstandingRuntime";
+import {
+  getMetaAudioUnderstandingService,
+} from "./metaAudioUnderstandingRuntime.js";
 import { TrustedMediaCatalogMatcher } from "./mediaCatalogMatcher";
 import { notifyMerchantNewCustomerMessagePostgres } from "./postgresOperationalNotificationAuthority";
 import { notifyMerchantKnowledgeGapPostgres } from "./postgresOperationalNotificationAuthority.js";
@@ -54,6 +58,7 @@ type ParsedMetaJob = {
   attachmentCount: number;
   contentIdentityHash: string | null;
   imageUrl: string | null;
+  audioUrl: string | null;
   webhookBody: Record<string, unknown>;
   createdAt: string;
 };
@@ -137,6 +142,9 @@ function parseJob(job: DurableJob): ParsedMetaJob {
   const imageUrl = inbound
     ? selectMetaInboundImageUrl(inbound)
     : null;
+  const audioUrl = inbound
+    ? selectMetaInboundAudioUrl(inbound)
+    : null;
   const contentIdentityHash =
     inbound && inbound.attachments.length > 0
       ? digest(
@@ -185,6 +193,7 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     attachmentCount: inbound.attachments.length,
     contentIdentityHash,
     imageUrl,
+    audioUrl,
     webhookBody,
     createdAt: eventTimestamp(event.timestamp),
   };
@@ -500,6 +509,20 @@ async function loadRecentConversationContext(
           ? media.vision_model.trim()
           : "";
       const matchConfidence = media?.match_confidence;
+      const audioTranscript =
+        row.sender === "customer" &&
+        media &&
+        typeof media.audio_transcript === "string" &&
+        media.audio_transcript.trim().length > 0 &&
+        media.audio_transcript.trim().length <= 2_000 &&
+        typeof media.audio_sha256 === "string" &&
+        /^[a-f0-9]{64}$/i.test(media.audio_sha256) &&
+        typeof media.transcription_provider_id === "string" &&
+        media.transcription_provider_id.trim().length > 0 &&
+        typeof media.transcription_model === "string" &&
+        media.transcription_model.trim().length > 0
+          ? media.audio_transcript.trim()
+          : "";
 
       const trustedCatalogRef =
         row.sender === "customer" &&
@@ -515,7 +538,7 @@ async function loadRecentConversationContext(
       const createdAt = new Date(row.created_at).toISOString();
       return {
         sender: row.sender,
-        text: text(row.text),
+        text: audioTranscript || text(row.text),
         createdAt,
         ...(matchedRecordId ? { matchedRecordId } : {}),
         ...(trustedCatalogRef ? { trustedCatalogRef: true } : {}),
@@ -592,6 +615,172 @@ export async function preparePostgresMetaAutoReply(
       conversationId: inbound.conversationId,
       code: "CONVERSATION_MANUAL_TAKEOVER",
     };
+  }
+
+  let trustedAudioTranscript: string | null = null;
+  let trustedAudioUnderstood = false;
+
+  if (parsed.audioUrl) {
+    const persistedAudio =
+      await withMerchantOperationalTransaction(
+        parsed.merchantId,
+        async (client) => {
+          const result = await client.query<{
+            metadata: Record<string, unknown> | null;
+          }>(
+            `SELECT metadata
+               FROM messages
+              WHERE merchant_id = $1
+                AND id = $2
+                AND conversation_id = $3
+                AND sender = 'customer'
+              LIMIT 1`,
+            [
+              parsed.merchantId,
+              inbound.sourceCustomerMessageId,
+              inbound.conversationId,
+            ],
+          );
+          const metadata = result.rows[0]?.metadata;
+          const media =
+            metadata &&
+            typeof metadata === "object" &&
+            !Array.isArray(metadata) &&
+            metadata.media &&
+            typeof metadata.media === "object" &&
+            !Array.isArray(metadata.media)
+              ? metadata.media as Record<string, unknown>
+              : null;
+          if (!media) return null;
+
+          const transcript =
+            typeof media.audio_transcript === "string"
+              ? media.audio_transcript.trim()
+              : "";
+          const audioSha256 =
+            typeof media.audio_sha256 === "string"
+              ? media.audio_sha256.trim()
+              : "";
+          const providerId =
+            typeof media.transcription_provider_id === "string"
+              ? media.transcription_provider_id.trim()
+              : "";
+          const model =
+            typeof media.transcription_model === "string"
+              ? media.transcription_model.trim()
+              : "";
+          const sameContent =
+            typeof media.content_identity_hash === "string" &&
+            media.content_identity_hash === parsed.contentIdentityHash;
+
+          if (
+            !sameContent ||
+            !transcript ||
+            transcript.length > 2_000 ||
+            !/^[a-f0-9]{64}$/i.test(audioSha256) ||
+            !providerId ||
+            providerId.length > 160 ||
+            !model ||
+            model.length > 160
+          ) {
+            return null;
+          }
+          return transcript;
+        },
+      );
+
+    if (persistedAudio) {
+      trustedAudioTranscript = persistedAudio;
+      trustedAudioUnderstood = true;
+    } else {
+      const audioService = getMetaAudioUnderstandingService();
+      if (audioService) {
+        const understood = await audioService.understand({
+          merchantId: parsed.merchantId,
+          audioUrl: parsed.audioUrl,
+        });
+        const transcript = understood?.transcript?.trim() || "";
+        const hasSafeProvenance =
+          transcript.length > 0 &&
+          transcript.length <= 2_000 &&
+          typeof understood?.audioSha256 === "string" &&
+          /^[a-f0-9]{64}$/i.test(understood.audioSha256) &&
+          typeof understood?.transcriptionProviderId === "string" &&
+          understood.transcriptionProviderId.trim().length > 0 &&
+          understood.transcriptionProviderId.length <= 160 &&
+          typeof understood?.transcriptionModel === "string" &&
+          understood.transcriptionModel.trim().length > 0 &&
+          understood.transcriptionModel.length <= 160;
+
+        if (understood && hasSafeProvenance) {
+          await withMerchantOperationalTransaction(
+            parsed.merchantId,
+            async (client) => {
+              const customer = await client.query<{
+                metadata: Record<string, unknown> | null;
+              }>(
+                `SELECT metadata
+                   FROM messages
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3
+                    AND sender = 'customer'
+                  FOR UPDATE`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                ],
+              );
+              const metadata = customer.rows[0]?.metadata;
+              const media =
+                metadata &&
+                typeof metadata === "object" &&
+                !Array.isArray(metadata) &&
+                metadata.media &&
+                typeof metadata.media === "object" &&
+                !Array.isArray(metadata.media)
+                  ? metadata.media as Record<string, unknown>
+                  : null;
+              if (
+                !media ||
+                media.content_identity_hash !== parsed.contentIdentityHash
+              ) {
+                throw Object.assign(
+                  new Error("Meta audio content identity changed"),
+                  { code: "META_MESSAGE_IDENTITY_COLLISION" },
+                );
+              }
+              const nextMetadata = {
+                ...metadata,
+                media: {
+                  ...media,
+                  audio_transcript: transcript,
+                  audio_sha256: understood.audioSha256,
+                  transcription_provider_id: understood.transcriptionProviderId,
+                  transcription_model: understood.transcriptionModel,
+                },
+              };
+              await client.query(
+                `UPDATE messages
+                    SET metadata = $4::jsonb
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                  JSON.stringify(nextMetadata),
+                ],
+              );
+            },
+          );
+          trustedAudioTranscript = transcript;
+          trustedAudioUnderstood = true;
+        }
+      }
+    }
   }
 
   let trustedImageUnderstood = false;
@@ -1138,6 +1327,11 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  const effectiveCustomerText =
+    trustedAudioUnderstood && trustedAudioTranscript
+      ? trustedAudioTranscript
+      : parsed.customerText;
+
   const trustedImageTextMessage =
     parsed.contentKind === "text" &&
     Boolean(parsed.customerText) &&
@@ -1147,9 +1341,11 @@ export async function preparePostgresMetaAutoReply(
       trustedImageAlternatives.length > 0);
 
   if (
-    parsed.contentKind !== "text" ||
-    !parsed.customerText ||
-    (parsed.attachmentCount > 0 && !trustedImageTextMessage)
+    (parsed.contentKind !== "text" && !trustedAudioUnderstood) ||
+    !effectiveCustomerText ||
+    (parsed.attachmentCount > 0 &&
+      !trustedImageTextMessage &&
+      !trustedAudioUnderstood)
   ) {
     if (!trustedImageUnderstood) {
       await withMerchantOperationalTransaction(
@@ -1184,7 +1380,7 @@ export async function preparePostgresMetaAutoReply(
   if (trustedImageTextMessage && trustedImageMatchedRecordId) {
     recentMessages.push({
       sender: "customer",
-      text: parsed.customerText,
+      text: parsed.customerText || effectiveCustomerText,
       createdAt: parsed.createdAt,
       matchedRecordId: trustedImageMatchedRecordId,
       trustedCatalogRef: true,
@@ -1195,7 +1391,7 @@ export async function preparePostgresMetaAutoReply(
   try {
     decision = await getKnowledgeDecisionEngine().decide({
       merchantId: parsed.merchantId,
-      customerText: parsed.customerText,
+      customerText: effectiveCustomerText,
       requestId: parsed.eventId,
       conversationId: inbound.conversationId,
       customerExternalId: parsed.senderId,

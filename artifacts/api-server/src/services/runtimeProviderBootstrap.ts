@@ -38,12 +38,19 @@ import {
   releaseMetaImageUnderstandingService,
   type MetaImageUnderstandingRuntimeService,
 } from "./metaImageUnderstandingRuntime";
+import {
+  configureMetaAudioUnderstandingService,
+  createOpenAiMetaAudioUnderstandingService,
+  releaseMetaAudioUnderstandingService,
+  type MetaAudioUnderstandingRuntimeService,
+} from "./metaAudioUnderstandingRuntime.js";
 
 export type MetaCredentialProviderSelection = "environment" | "aws-kms";
 export type KnowledgeEmbeddingProviderSelection = "disabled" | "openai";
 export type KnowledgeTranslationProviderSelection = "disabled" | "openai";
 export type KnowledgeAiProviderSelection = "disabled" | "openai";
 export type MetaImageProviderSelection = "disabled" | "openai";
+export type MetaAudioProviderSelection = "disabled" | "openai";
 
 export type RuntimeProviderSelections = {
   metaCredentialProvider: MetaCredentialProviderSelection;
@@ -51,6 +58,7 @@ export type RuntimeProviderSelections = {
   knowledgeTranslationProvider: KnowledgeTranslationProviderSelection;
   knowledgeAiProvider: KnowledgeAiProviderSelection;
   metaImageProvider: MetaImageProviderSelection;
+  metaAudioProvider: MetaAudioProviderSelection;
 };
 
 export type RuntimeProviderHandle = {
@@ -79,6 +87,12 @@ export type RuntimeProviderBootstrapDependencies = {
   ): MetaImageUnderstandingRuntimeService;
   configureMetaImage(provider: MetaImageUnderstandingRuntimeService): void;
   releaseMetaImage(provider: MetaImageUnderstandingRuntimeService): boolean;
+  createOpenAiMetaAudio(
+    apiKey: string | undefined,
+    model: string | undefined,
+  ): MetaAudioUnderstandingRuntimeService;
+  configureMetaAudio(provider: MetaAudioUnderstandingRuntimeService): void;
+  releaseMetaAudio(provider: MetaAudioUnderstandingRuntimeService): boolean;
   configureMetaCredentialProvider(provider: MetaCredentialKeyProvider | null): void;
 };
 
@@ -162,6 +176,18 @@ function readMetaImageProviderSelection(
   );
 }
 
+function readMetaAudioProviderSelection(
+  env: NodeJS.ProcessEnv,
+): MetaAudioProviderSelection {
+  const selected = text(env.FAWRI_META_AUDIO_PROVIDER).toLowerCase();
+  if (!selected) return "disabled";
+  if (selected === "openai") return "openai";
+  throw fail(
+    "META_AUDIO_PROVIDER_CONFIG_INVALID",
+    "Meta audio provider selection is invalid",
+  );
+}
+
 function readKnowledgeTranslationProviderSelection(
   env: NodeJS.ProcessEnv,
 ): KnowledgeTranslationProviderSelection {
@@ -203,6 +229,10 @@ function defaultDependencies(): RuntimeProviderBootstrapDependencies {
       }),
     configureMetaImage: configureMetaImageUnderstandingService,
     releaseMetaImage: releaseMetaImageUnderstandingService,
+    createOpenAiMetaAudio: (apiKey, model) =>
+      createOpenAiMetaAudioUnderstandingService({ apiKey, model }),
+    configureMetaAudio: configureMetaAudioUnderstandingService,
+    releaseMetaAudio: releaseMetaAudioUnderstandingService,
     configureMetaCredentialProvider,
   };
 }
@@ -222,11 +252,13 @@ export async function initializeRuntimeProviders(input: {
     knowledgeTranslationProvider: readKnowledgeTranslationProviderSelection(env),
     knowledgeAiProvider: readKnowledgeAiProviderSelection(env),
     metaImageProvider: readMetaImageProviderSelection(env),
+    metaAudioProvider: readMetaAudioProviderSelection(env),
   };
 
   let awsProvider: AwsKmsMetaCredentialKeyProvider | null = null;
   let metaProviderConfigured = false;
   let metaImageProvider: MetaImageUnderstandingRuntimeService | null = null;
+  let metaAudioProvider: MetaAudioUnderstandingRuntimeService | null = null;
 
   try {
     if (selections.metaCredentialProvider === "aws-kms") {
@@ -264,11 +296,24 @@ export async function initializeRuntimeProviders(input: {
       metaImageProvider = provider;
     }
 
+    if (selections.metaAudioProvider === "openai") {
+      const provider = dependencies.createOpenAiMetaAudio(
+        env.OPENAI_API_KEY,
+        env.FAWRI_OPENAI_AUDIO_MODEL || env.FAWRI_OPENAI_MODEL,
+      );
+      dependencies.configureMetaAudio(provider);
+      metaAudioProvider = provider;
+    }
+
     if (awsProvider) {
       dependencies.configureMetaCredentialProvider(awsProvider);
       metaProviderConfigured = true;
     }
   } catch (error) {
+    if (metaAudioProvider) {
+      dependencies.releaseMetaAudio(metaAudioProvider);
+      metaAudioProvider = null;
+    }
     if (metaImageProvider) {
       dependencies.releaseMetaImage(metaImageProvider);
       metaImageProvider = null;
@@ -286,6 +331,10 @@ export async function initializeRuntimeProviders(input: {
     dispose() {
       if (disposed) return;
       disposed = true;
+      if (metaAudioProvider) {
+        dependencies.releaseMetaAudio(metaAudioProvider);
+        metaAudioProvider = null;
+      }
       if (metaImageProvider) {
         dependencies.releaseMetaImage(metaImageProvider);
         metaImageProvider = null;
