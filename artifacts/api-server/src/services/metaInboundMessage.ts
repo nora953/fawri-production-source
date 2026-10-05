@@ -224,7 +224,7 @@ export function selectMetaInboundAudioUrl(
 export function selectMetaInboundVideoUrl(
   inbound: MetaInboundMessage,
 ): string | null {
-  if (!inbound || inbound.kind !== "video" || !Array.isArray(inbound.attachments)) {
+  if (!inbound || !Array.isArray(inbound.attachments)) {
     return null;
   }
   if (inbound.attachments.length !== 1) return null;
