@@ -501,26 +501,7 @@ async function ensureInboundState(
   });
 }
 
-async function loadRecentConversationContext(
-  merchantId: string,
-  conversationIdValue: string,
-  currentCustomerMessageId: string,
-): Promise<KnowledgeConversationMessage[]> {
-  return withMerchantOperationalTransaction(merchantId, async (client) => {
-    const result = await client.query<ConversationContextRow>(
-      `SELECT sender::text AS sender, text, created_at, metadata
-         FROM messages
-        WHERE merchant_id = $1
-          AND conversation_id = $2
-          AND id <> $3
-          AND sender IN ('customer', 'fawri', 'merchant')
-          AND status IN ('received', 'sent')
-        ORDER BY created_at DESC, id DESC
-        LIMIT 8`,
-      [merchantId, conversationIdValue, currentCustomerMessageId],
-    );
-
-    return result.rows.reverse().map((row) => {
+function mapConversationContextRow(row: ConversationContextRow): KnowledgeConversationMessage {
       const metadata =
         row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
           ? row.metadata
@@ -615,7 +596,29 @@ async function loadRecentConversationContext(
         ...(trustedCatalogRef ? { trustedCatalogRef: true } : {}),
         ...(reasonCode ? { reasonCode } : {}),
       };
-    });
+
+}
+
+async function loadRecentConversationContext(
+  merchantId: string,
+  conversationIdValue: string,
+  currentCustomerMessageId: string,
+): Promise<KnowledgeConversationMessage[]> {
+  return withMerchantOperationalTransaction(merchantId, async (client) => {
+    const result = await client.query<ConversationContextRow>(
+      `SELECT sender::text AS sender, text, created_at, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND conversation_id = $2
+          AND id <> $3
+          AND sender IN ('customer', 'fawri', 'merchant')
+          AND status IN ('received', 'sent')
+        ORDER BY created_at DESC, id DESC
+        LIMIT 8`,
+      [merchantId, conversationIdValue, currentCustomerMessageId],
+    );
+
+    return result.rows.reverse().map(mapConversationContextRow);
   });
 }
 
