@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import { request as httpsRequest } from "node:https";
+import { Readable } from "node:stream";
 
 export const META_AUDIO_MAX_BYTES = 25 * 1024 * 1024;
 const DEFAULT_TIMEOUT_MS = 20_000;
@@ -23,8 +25,18 @@ export type MetaFetchedAudio = {
 };
 
 type ResolvedAddress = { address: string; family: number };
+type PinnedRequest = {
+  url: string;
+  hostname: string;
+  address: string;
+  family: number;
+  signal: AbortSignal;
+};
+type PinnedTransport = (input: PinnedRequest) => Promise<Response>;
+
 type Options = {
   fetchImpl?: typeof fetch;
+  transportImpl?: PinnedTransport;
   timeoutMs?: number;
   resolveHost?: (hostname: string) => Promise<ResolvedAddress[]>;
 };
@@ -83,12 +95,50 @@ function safeUrl(value: unknown): URL {
 }
 
 export class SecureMetaAudioFetcher {
-  private readonly fetchImpl: typeof fetch;
+  private readonly transportImpl: PinnedTransport;
   private readonly timeoutMs: number;
   private readonly resolveHost: (hostname: string) => Promise<ResolvedAddress[]>;
 
   constructor(options: Options = {}) {
-    this.fetchImpl = options.fetchImpl || fetch;
+    this.transportImpl = options.transportImpl ||
+      (options.fetchImpl
+        ? async (input) => options.fetchImpl!(input.url, {
+            method: "GET",
+            redirect: "manual",
+            signal: input.signal,
+          })
+        : async (input) => new Promise<Response>((resolve, reject) => {
+            const url = new URL(input.url);
+            const request = httpsRequest({
+              protocol: "https:",
+              hostname: input.address,
+              family: input.family,
+              port: url.port ? Number(url.port) : 443,
+              method: "GET",
+              path: `${url.pathname}${url.search}`,
+              servername: isIP(input.hostname) ? undefined : input.hostname,
+              headers: { host: url.port ? `${input.hostname}:${url.port}` : input.hostname },
+              signal: input.signal,
+            }, (response) => {
+              const headers = new Headers();
+              for (const [name, value] of Object.entries(response.headers)) {
+                if (Array.isArray(value)) for (const entry of value) headers.append(name, entry);
+                else if (value !== undefined) headers.set(name, String(value));
+              }
+              const status = response.statusCode || 500;
+              const body = status === 204 || status === 205 || status === 304
+                ? null
+                : (Readable.toWeb(response) as ReadableStream<Uint8Array>);
+              if (!body) response.resume();
+              resolve(new Response(body, {
+                status,
+                statusText: response.statusMessage || "",
+                headers,
+              }));
+            });
+            request.once("error", reject);
+            request.end();
+          }));
     this.timeoutMs = Number.isFinite(options.timeoutMs) && Number(options.timeoutMs) > 0
       ? Math.min(Number(options.timeoutMs), 60_000) : DEFAULT_TIMEOUT_MS;
     this.resolveHost = options.resolveHost || (async (hostname) =>
@@ -116,15 +166,18 @@ export class SecureMetaAudioFetcher {
       throw coded("Meta audio destination is forbidden", "META_AUDIO_DESTINATION_FORBIDDEN");
     }
 
+    const verified = addresses[0];
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     timer.unref?.();
     try {
       let response: Response;
       try {
-        response = await this.fetchImpl(url.toString(), {
-          method: "GET",
-          redirect: "manual",
+        response = await this.transportImpl({
+          url: url.toString(),
+          hostname: host,
+          address: verified.address,
+          family: verified.family,
           signal: controller.signal,
         });
       } catch {
