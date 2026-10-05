@@ -189,7 +189,12 @@ export function selectMetaInboundImageUrl(
 export function selectMetaInboundAudioUrl(
   inbound: MetaInboundMessage,
 ): string | null {
-  if (!inbound || inbound.kind !== "audio" || !Array.isArray(inbound.attachments)) {
+  if (
+    !inbound ||
+    inbound.kind !== "audio" ||
+    inbound.text !== null ||
+    !Array.isArray(inbound.attachments)
+  ) {
     return null;
   }
   if (inbound.attachments.length !== 1) return null;
