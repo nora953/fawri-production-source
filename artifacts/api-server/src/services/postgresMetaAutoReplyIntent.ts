@@ -809,6 +809,13 @@ export async function preparePostgresMetaAutoReply(
             audioUrl: processingAudioUrl,
           });
         } catch {
+          console.error("Meta audio understanding failed", {
+            code: "META_MEDIA_PROVIDER_UNAVAILABLE",
+            media_kind: "audio",
+            merchant_id: parsed.merchantId,
+            conversation_id: inbound.conversationId,
+            source_message_id: inbound.sourceCustomerMessageId,
+          });
           // Provider/network/transcription failure is not trusted evidence.
           // Fail closed below instead of crashing the durable reply worker.
         }
@@ -1176,6 +1183,13 @@ export async function preparePostgresMetaAutoReply(
             ? null
             : await imageService.understand(imageInput);
       } catch {
+        console.error("Meta image understanding failed", {
+          code: "META_MEDIA_PROVIDER_UNAVAILABLE",
+          media_kind: "image",
+          merchant_id: parsed.merchantId,
+          conversation_id: inbound.conversationId,
+          source_message_id: inbound.sourceCustomerMessageId,
+        });
         // Provider/network/decoder failure is not trusted media evidence.
         // Fail closed below instead of crashing the durable reply worker.
       }
