@@ -74,7 +74,7 @@ test("normalizes a shared post as shared content, not merchant knowledge", () =>
   assert.equal(parsed?.attachments[0]?.title, "Shared post");
 });
 
-test("keeps caption text authoritative as text while retaining attachments", () => {
+test("keeps caption text while preserving the attached media kind", () => {
   const parsed = parseMetaInboundMessage({
     text: "Do you have this?",
     attachments: [
@@ -85,7 +85,7 @@ test("keeps caption text authoritative as text while retaining attachments", () 
     ],
   });
 
-  assert.equal(parsed?.kind, "text");
+  assert.equal(parsed?.kind, "image");
   assert.equal(parsed?.text, "Do you have this?");
   assert.equal(parsed?.storageText, "Do you have this?");
   assert.equal(parsed?.attachments.length, 1);
@@ -156,7 +156,7 @@ test("selects image URL from a caption plus one image attachment", () => {
   });
 
   assert.ok(inbound);
-  assert.equal(inbound.kind, "text");
+  assert.equal(inbound.kind, "image");
   assert.equal(
     selectMetaInboundImageUrl(inbound),
     "https://cdn.example.test/caption-image.jpg",
