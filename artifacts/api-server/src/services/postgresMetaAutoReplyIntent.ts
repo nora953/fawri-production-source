@@ -1449,6 +1449,15 @@ export async function preparePostgresMetaAutoReply(
         ? trustedVideoText
         : null);
 
+  const atomicMediaUnderstood =
+    !mixedMediaRequested ||
+    Boolean(
+      parsed.mediaManifest &&
+      (!parsed.mediaManifest.imageUrl || trustedImageUnderstood) &&
+      (!parsed.mediaManifest.audioUrl || trustedAudioUnderstood) &&
+      (!parsed.mediaManifest.videoUrl || trustedVideoUnderstood),
+    );
+
   const trustedImageTextMessage =
     parsed.contentKind === "text" &&
     Boolean(parsed.customerText) &&
@@ -1458,6 +1467,7 @@ export async function preparePostgresMetaAutoReply(
       trustedImageAlternatives.length > 0);
 
   if (
+    !atomicMediaUnderstood ||
     (parsed.contentKind !== "text" &&
       !trustedAudioUnderstood &&
       !trustedVideoUnderstood) ||
