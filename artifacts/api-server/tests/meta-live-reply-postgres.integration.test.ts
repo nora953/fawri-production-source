@@ -4678,6 +4678,188 @@ await test("text plus trusted audio composes the transcript into the knowledge i
   }
 });
 
+await test("text plus image audio and video fails closed when any attachment is not understood", async () => {
+  const senderId = \`customer-live-all-media-partial-\${runId}\`;
+  const eventId = \`event-live-all-media-partial-\${runId}\`;
+  const mid = \`mid-live-all-media-partial-\${runId}\`;
+  const imageUrl = "https://example.invalid/all-media.jpg";
+  const audioUrl = "https://example.invalid/all-media.mp3";
+  const videoUrl = "https://example.invalid/all-media.mp4";
+  let imageCalls = 0;
+  let audioCalls = 0;
+  let videoCalls = 0;
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      imageCalls += 1;
+      return null;
+    },
+  });
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      audioCalls += 1;
+      return {
+        transcript: "كم سعره؟",
+        audioSha256: "1".repeat(64),
+        transcriptionProviderId: "test-all-media-audio",
+        transcriptionModel: "test-all-media-audio-model",
+      };
+    },
+  });
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() {
+      videoCalls += 1;
+      return {
+        videoSha256: "2".repeat(64),
+        frameCount: 1,
+        observation: {
+          productType: "shirt",
+          colors: ["black"],
+          attributes: [],
+          description: "black shirt",
+          confidence: 0.9,
+          providerId: "test-all-media-video",
+          model: "test-all-media-video-model",
+        },
+        exactMatch: null,
+        alternatives: [],
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                text: "أريد هذا المنتج وهذا سؤالي",
+                attachments: [
+                  { type: "image", payload: { url: imageUrl } },
+                  { type: "audio", payload: { url: audioUrl } },
+                  { type: "video", payload: { url: videoUrl } },
+                ],
+              },
+            }],
+          }],
+        },
+      },
+    });
+
+    const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(prepared.action, "suppress");
+    if (prepared.action !== "suppress") return;
+    assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    assert.equal(imageCalls, 1);
+    assert.equal(audioCalls, 1);
+    assert.equal(videoCalls, 1);
+
+    const stored = await raw(
+      \`SELECT metadata FROM messages
+        WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'
+        LIMIT 1\`,
+      [merchantA.account.id, mid],
+    );
+    assert.equal(stored.rows.length, 1);
+    const serialized = JSON.stringify(stored.rows[0].metadata);
+    assert.equal(serialized.includes(imageUrl), false);
+    assert.equal(serialized.includes(audioUrl), false);
+    assert.equal(serialized.includes(videoUrl), false);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
+await test("duplicate media type is rejected before any partial media understanding", async () => {
+  const senderId = \`customer-live-duplicate-media-\${runId}\`;
+  const eventId = \`event-live-duplicate-media-\${runId}\`;
+  const mid = \`mid-live-duplicate-media-\${runId}\`;
+  let imageCalls = 0;
+  let audioCalls = 0;
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      imageCalls += 1;
+      return null;
+    },
+  });
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      audioCalls += 1;
+      return null;
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                text: "راجع هذه المرفقات",
+                attachments: [
+                  { type: "image", payload: { url: "https://example.invalid/one.jpg" } },
+                  { type: "image", payload: { url: "https://example.invalid/two.jpg" } },
+                  { type: "audio", payload: { url: "https://example.invalid/question.mp3" } },
+                ],
+              },
+            }],
+          }],
+        },
+      },
+    });
+
+    const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(prepared.action, "suppress");
+    if (prepared.action !== "suppress") return;
+    assert.equal(prepared.code, "META_MEDIA_MANIFEST_INVALID");
+    assert.equal(imageCalls, 0);
+    assert.equal(audioCalls, 0);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  }
+});
+
 await test("mixed media without explicit text remains fail closed", async () => {
   const senderId = `customer-live-mixed-no-text-${runId}`;
   const eventId = `event-live-mixed-no-text-${runId}`;
