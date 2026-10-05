@@ -87,3 +87,58 @@ test("secure video fetcher rejects HTTP, private DNS, redirects, oversize, and m
   await assert.rejects(fake.fetchVideo({ url: "https://cdn.example.test/v.mp4" }),
     (e: unknown) => (e as {code?: string})?.code === "META_VIDEO_CONTENT_INVALID");
 });
+
+
+test("secure video fetcher bounds stalled DNS resolution before transport", async () => {
+  let transportCalls = 0;
+  const fetcher = new SecureMetaVideoFetcher({
+    timeoutMs: 20,
+    resolveHost: async () => new Promise(() => {}),
+    transportImpl: async () => {
+      transportCalls += 1;
+      throw new Error("must not execute");
+    },
+  });
+  await assert.rejects(
+    fetcher.fetchVideo({ url: "https://cdn.example.test/stalled-dns.mp4" }),
+    (e: unknown) => (e as { code?: string })?.code === "META_VIDEO_TIMEOUT",
+  );
+  assert.equal(transportCalls, 0);
+});
+
+test("secure video fetcher bounds a stalled response body stream", async () => {
+  const fetcher = new SecureMetaVideoFetcher({
+    timeoutMs: 20,
+    resolveHost: PUBLIC,
+    transportImpl: async (request) => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(mp4());
+          request.signal.addEventListener("abort", () => {
+            controller.error(Object.assign(new Error("aborted"), { name: "AbortError" }));
+          }, { once: true });
+        },
+      });
+      return new Response(body, { status: 200, headers: { "content-type": "video/mp4" } });
+    },
+  });
+  await assert.rejects(
+    fetcher.fetchVideo({ url: "https://cdn.example.test/stalled-body.mp4" }),
+    (e: unknown) => (e as { code?: string })?.code === "META_VIDEO_TIMEOUT",
+  );
+});
+
+test("secure video fetcher rejects an empty video body", async () => {
+  const fetcher = new SecureMetaVideoFetcher({
+    resolveHost: PUBLIC,
+    transportImpl: async () =>
+      new Response(new Uint8Array(), {
+        status: 200,
+        headers: { "content-type": "video/mp4", "content-length": "0" },
+      }),
+  });
+  await assert.rejects(
+    fetcher.fetchVideo({ url: "https://cdn.example.test/empty.mp4" }),
+    (e: unknown) => (e as { code?: string })?.code === "META_VIDEO_CONTENT_INVALID",
+  );
+});

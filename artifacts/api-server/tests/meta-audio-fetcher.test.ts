@@ -234,3 +234,20 @@ test("secure audio fetcher bounds a stalled response body stream", async () => {
       (error as { code?: string } | null)?.code === "META_AUDIO_TIMEOUT",
   );
 });
+
+
+test("secure audio fetcher rejects an empty audio body", async () => {
+  const fetcher = new SecureMetaAudioFetcher({
+    resolveHost: PUBLIC_TEST_DNS,
+    transportImpl: async () =>
+      new Response(new Uint8Array(), {
+        status: 200,
+        headers: { "content-type": "audio/mpeg", "content-length": "0" },
+      }),
+  });
+  await assert.rejects(
+    fetcher.fetchAudio({ url: "https://cdn.example.test/empty.mp3" }),
+    (error: unknown) =>
+      (error as { code?: string } | null)?.code === "META_AUDIO_CONTENT_INVALID",
+  );
+});
