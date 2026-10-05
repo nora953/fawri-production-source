@@ -1482,10 +1482,47 @@ export async function preparePostgresMetaAutoReply(
           message.text === text(target.text),
       );
       if (!alreadyPresent) {
+        const metadata =
+          target.metadata &&
+          typeof target.metadata === "object" &&
+          !Array.isArray(target.metadata)
+            ? target.metadata
+            : {};
+        const media =
+          metadata.media &&
+          typeof metadata.media === "object" &&
+          !Array.isArray(metadata.media)
+            ? metadata.media as Record<string, unknown>
+            : null;
+        const matchedRecordId = text(metadata.matched_record_id);
+        const trustedImageRef =
+          target.sender === "customer" &&
+          Boolean(matchedRecordId) &&
+          typeof media?.image_sha256 === "string" &&
+          /^[a-f0-9]{64}$/i.test(media.image_sha256) &&
+          typeof media?.vision_provider_id === "string" &&
+          media.vision_provider_id.trim().length > 0 &&
+          typeof media?.vision_model === "string" &&
+          media.vision_model.trim().length > 0 &&
+          typeof media?.match_confidence === "number" &&
+          Number.isFinite(media.match_confidence);
+        const trustedVideoRef =
+          target.sender === "customer" &&
+          Boolean(matchedRecordId) &&
+          typeof media?.video_sha256 === "string" &&
+          /^[a-f0-9]{64}$/i.test(media.video_sha256) &&
+          typeof media?.video_vision_provider_id === "string" &&
+          media.video_vision_provider_id.trim().length > 0 &&
+          typeof media?.video_vision_model === "string" &&
+          media.video_vision_model.trim().length > 0;
         recentMessages.unshift({
           sender: target.sender,
           text: text(target.text),
           createdAt: targetCreatedAt,
+          ...(matchedRecordId ? { matchedRecordId } : {}),
+          ...((trustedImageRef || trustedVideoRef)
+            ? { trustedCatalogRef: true }
+            : {}),
         });
       }
     }
