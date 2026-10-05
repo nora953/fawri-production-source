@@ -74,7 +74,7 @@ test("normalizes a shared post as shared content, not merchant knowledge", () =>
   assert.equal(parsed?.attachments[0]?.title, "Shared post");
 });
 
-test("keeps caption text authoritative as text while retaining attachments", () => {
+test("keeps caption text authoritative while retaining its image for safe processing", () => {
   const parsed = parseMetaInboundMessage({
     text: "Do you have this?",
     attachments: [
