@@ -5101,13 +5101,12 @@ await test("same external message id cannot be replayed with a different reply t
   });
   await intents.preparePostgresMetaAutoReply(targetTwo.job);
 
-  const replayEventId = `event-live-reply-replay-${runId}`;
   const replayMid = `mid-live-reply-replay-${runId}`;
-  const makeJob = async (replyToMid: string) => jobs.enqueueDurableJobAuthoritative({
-    type: "meta.webhook.reply", dedupeKey: replayEventId,
+  const makeJob = async (eventId: string, replyToMid: string) => jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply", dedupeKey: eventId,
     merchantId: merchantA.account.id, maxAttempts: 5,
     payload: {
-      event_id: replayEventId, page_id: pageA, merchant_id: merchantA.account.id,
+      event_id: eventId, page_id: pageA, merchant_id: merchantA.account.id,
       external_message_id: replayMid, sender_id: senderId,
       webhook_body: { object: "page", entry: [{ id: pageA, messaging: [{
         sender: { id: senderId }, recipient: { id: pageA }, timestamp: Date.now(),
@@ -5116,9 +5115,9 @@ await test("same external message id cannot be replayed with a different reply t
     },
   });
 
-  const first = await makeJob(targetOneMid);
+  const first = await makeJob(`event-live-reply-replay-first-${runId}`, targetOneMid);
   await intents.preparePostgresMetaAutoReply(first.job);
-  const alteredReplay = await makeJob(targetTwoMid);
+  const alteredReplay = await makeJob(`event-live-reply-replay-altered-${runId}`, targetTwoMid);
   await assert.rejects(
     intents.preparePostgresMetaAutoReply(alteredReplay.job),
     (error: unknown) => (error as { code?: string } | null)?.code === "META_MESSAGE_IDENTITY_COLLISION",
