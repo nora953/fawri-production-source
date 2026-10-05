@@ -187,3 +187,50 @@ test("secure audio fetcher rejects non-audio bytes mislabeled as audio", async (
       "META_AUDIO_CONTENT_INVALID",
   );
 });
+
+
+test("secure audio fetcher bounds stalled DNS resolution and never reaches transport", async () => {
+  let transportCalls = 0;
+  const fetcher = new SecureMetaAudioFetcher({
+    timeoutMs: 20,
+    resolveHost: async () => new Promise(() => {}),
+    transportImpl: async () => {
+      transportCalls += 1;
+      throw new Error("must not execute");
+    },
+  });
+
+  await assert.rejects(
+    fetcher.fetchAudio({ url: "https://cdn.example.test/stalled.mp3" }),
+    (error: unknown) => (error as { code?: string } | null)?.code === "META_AUDIO_TIMEOUT",
+  );
+  assert.equal(transportCalls, 0);
+});
+
+
+test("secure audio fetcher bounds a stalled response body stream", async () => {
+  const fetcher = new SecureMetaAudioFetcher({
+    timeoutMs: 20,
+    resolveHost: PUBLIC_TEST_DNS,
+    transportImpl: async (request) => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("ID3"));
+          request.signal.addEventListener("abort", () => {
+            controller.error(Object.assign(new Error("aborted"), { name: "AbortError" }));
+          }, { once: true });
+        },
+      });
+      return new Response(body, {
+        status: 200,
+        headers: { "content-type": "audio/mpeg" },
+      });
+    },
+  });
+
+  await assert.rejects(
+    fetcher.fetchAudio({ url: "https://cdn.example.test/stalled-body.mp3" }),
+    (error: unknown) =>
+      (error as { code?: string } | null)?.code === "META_AUDIO_TIMEOUT",
+  );
+});
