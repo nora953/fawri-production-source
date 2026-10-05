@@ -3,6 +3,16 @@ import type { MetaFetchedAudio } from "../metaAudioFetcher.js";
 
 const DEFAULT_TIMEOUT_MS = 30_000;
 const MAX_TRANSCRIPT_CHARS = 2_000;
+const ALLOWED_AUDIO_MIME = new Set([
+  "audio/mpeg",
+  "audio/mp4",
+  "audio/m4a",
+  "audio/x-m4a",
+  "audio/ogg",
+  "audio/wav",
+  "audio/x-wav",
+  "audio/webm",
+]);
 
 export type MetaAudioTranscript = {
   text: string;
@@ -20,6 +30,7 @@ type Options = {
 
 function validAudio(audio: MetaFetchedAudio): boolean {
   if (!Buffer.isBuffer(audio.buffer) || audio.buffer.length === 0) return false;
+  if (!ALLOWED_AUDIO_MIME.has(audio.mimeType)) return false;
   if (!Number.isSafeInteger(audio.sizeBytes) || audio.sizeBytes !== audio.buffer.length) return false;
   return createHash("sha256").update(audio.buffer).digest("hex") === audio.sha256;
 }
