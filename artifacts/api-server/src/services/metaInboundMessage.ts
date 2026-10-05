@@ -158,14 +158,9 @@ function selectSingleSafeAttachmentUrl(
   );
   if (candidates.length !== 1) return null;
 
-  const unsupportedCompanion = inbound.attachments.some((attachment) => {
-    const companionType = attachment.type.toLowerCase();
-    return companionType !== type &&
-      companionType !== "image" &&
-      companionType !== "audio" &&
-      companionType !== "video";
-  });
-  if (unsupportedCompanion) return null;
+  // Mixed attachment batches remain fail-closed until the runtime can
+  // atomically bind every attachment to one trusted decision context.
+  if (inbound.attachments.length !== 1) return null;
 
   const url = candidates[0].url?.trim();
   if (!url) return null;
