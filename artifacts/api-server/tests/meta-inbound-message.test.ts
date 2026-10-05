@@ -91,6 +91,23 @@ test("keeps caption text authoritative as text while retaining attachments", () 
   assert.equal(parsed?.attachments.length, 1);
 });
 
+test("classifies document, location, and sticker without inventing meaning", () => {
+  const cases = [
+    { type: "file", kind: "document", marker: "[document]" },
+    { type: "document", kind: "document", marker: "[document]" },
+    { type: "location", kind: "location", marker: "[location]" },
+    { type: "sticker", kind: "sticker", marker: "[sticker]" },
+  ] as const;
+
+  for (const item of cases) {
+    const parsed = parseMetaInboundMessage({
+      attachments: [{ type: item.type, payload: {} }],
+    });
+    assert.equal(parsed?.kind, item.kind);
+    assert.equal(parsed?.storageText, item.marker);
+  }
+});
+
 test("unknown attachments fail closed instead of pretending to understand them", () => {
   const parsed = parseMetaInboundMessage({
     attachments: [{ type: "file", payload: { url: "file-url" } }],
