@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { decideMetaKnowledgeReply, mapConversationContextRow } from "../src/services/postgresMetaAutoReplyIntent.js";
+import { mapConversationContextRow } from "../src/services/postgresMetaAutoReplyIntent.js";
+import { decideMetaKnowledgeReply } from "../src/services/metaKnowledgeDecisionBoundary.js";
 
 test("historical trusted video observation never becomes customer-authored text", () => {
   const matchedRecordId = "catalog-product:video-history-proof";
