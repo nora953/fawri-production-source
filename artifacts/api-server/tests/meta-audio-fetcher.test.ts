@@ -141,3 +141,26 @@ test("secure audio fetcher errors never expose private media URL tokens", async 
     return true;
   });
 });
+
+test("secure audio fetcher pins transport to the address that passed DNS validation", async () => {
+  const bytes = new TextEncoder().encode("ID3-audio-test");
+  let seen: { hostname: string; address: string; family: number } | undefined;
+  const fetcher = new SecureMetaAudioFetcher({
+    resolveHost: PUBLIC_TEST_DNS,
+    transportImpl: async (request) => {
+      seen = request;
+      return new Response(stream(bytes), {
+        status: 200,
+        headers: {
+          "content-type": "audio/mpeg",
+          "content-length": String(bytes.byteLength),
+        },
+      });
+    },
+  });
+
+  await fetcher.fetchAudio({ url: "https://cdn.example.test/private.mp3" });
+  assert.equal(seen.hostname, "cdn.example.test");
+  assert.equal(seen.address, "93.184.216.34");
+  assert.equal(seen.family, 4);
+});
