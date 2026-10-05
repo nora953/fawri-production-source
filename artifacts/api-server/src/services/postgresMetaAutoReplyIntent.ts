@@ -1380,11 +1380,12 @@ export async function preparePostgresMetaAutoReply(
   }
 
   const effectiveCustomerText =
-    trustedAudioUnderstood && trustedAudioTranscript
+    parsed.customerText ||
+    (trustedAudioUnderstood && trustedAudioTranscript
       ? trustedAudioTranscript
       : trustedVideoUnderstood && trustedVideoText
         ? trustedVideoText
-        : parsed.customerText;
+        : null);
 
   const trustedImageTextMessage =
     parsed.contentKind === "text" &&
