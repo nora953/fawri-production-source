@@ -206,3 +206,75 @@ test("OpenAI production factory rejects missing model", async () => {
     },
   );
 });
+
+test("runtime exposes visual alternatives when no exact catalog match exists", async () => {
+  const runtimeModule = await import(
+    "../src/services/metaImageUnderstandingRuntime"
+  );
+
+  const calls: string[] = [];
+
+  const service = runtimeModule.createMetaImageUnderstandingService({
+    fetchImage: async () => ({
+      buffer: Buffer.from("verified-image"),
+      mimeType: "image/jpeg",
+      sizeBytes: 14,
+      sha256: "b".repeat(64),
+    }),
+
+    analyzeImage: async () => ({
+      description: "black athletic shoe with white sole",
+      visibleText: [],
+      productType: "shoe",
+      colors: ["black", "white"],
+      attributes: ["athletic", "white sole"],
+      confidence: 0.96,
+      providerId: "openai_responses_media_vision_v1",
+      model: "test-vision-model",
+    }),
+
+    resolveCandidates: async () => [
+      {
+        productId: "similar-shoe",
+        confidence: 0.82,
+      },
+    ],
+
+    matchCatalog: async () => null,
+
+    resolveAlternatives: async ({ merchantId }) => {
+      calls.push(`alternatives:${merchantId}`);
+      return [
+        {
+          productId: "similar-shoe",
+          confidence: 0.82,
+        },
+      ];
+    },
+  });
+
+  assert.equal(
+    typeof service.understandWithAlternatives,
+    "function",
+  );
+
+  const result = await service.understandWithAlternatives({
+    merchantId: "merchant-1",
+    imageUrl: "https://example.invalid/reference.jpg",
+  });
+
+  assert.deepEqual(calls, ["alternatives:merchant-1"]);
+
+  assert.deepEqual(result, {
+    exactMatch: null,
+    alternatives: [
+      {
+        productId: "similar-shoe",
+        confidence: 0.82,
+      },
+    ],
+    imageSha256: "b".repeat(64),
+    visionProviderId: "openai_responses_media_vision_v1",
+    visionModel: "test-vision-model",
+  });
+});

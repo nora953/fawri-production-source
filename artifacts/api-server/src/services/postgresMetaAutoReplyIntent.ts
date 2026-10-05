@@ -596,6 +596,11 @@ export async function preparePostgresMetaAutoReply(
 
   let trustedImageUnderstood = false;
   let trustedImageMatchedRecordId: string | null = null;
+  let trustedImageAlternatives: Array<{
+    productId: string;
+    variantId?: string;
+    confidence: number;
+  }> = [];
 
   if (parsed.imageUrl) {
     const persistedImageResult =
@@ -665,6 +670,111 @@ export async function preparePostgresMetaAutoReply(
         },
       );
 
+    const persistedImageAlternatives =
+      await withMerchantOperationalTransaction(
+        parsed.merchantId,
+        async (client) => {
+          const result = await client.query<{
+            metadata: Record<string, unknown> | null;
+          }>(
+            `SELECT metadata
+               FROM messages
+              WHERE merchant_id = $1
+                AND id = $2
+                AND conversation_id = $3
+                AND sender = 'customer'
+              LIMIT 1`,
+            [
+              parsed.merchantId,
+              inbound.sourceCustomerMessageId,
+              inbound.conversationId,
+            ],
+          );
+
+          const metadata = result.rows[0]?.metadata;
+          if (
+            !metadata ||
+            typeof metadata !== "object" ||
+            Array.isArray(metadata)
+          ) {
+            return null;
+          }
+
+          const media =
+            metadata.media &&
+            typeof metadata.media === "object" &&
+            !Array.isArray(metadata.media)
+              ? metadata.media as Record<string, unknown>
+              : null;
+
+          if (!media) return null;
+
+          const sameContent =
+            typeof media.content_identity_hash === "string" &&
+            media.content_identity_hash === parsed.contentIdentityHash;
+
+          const hasSafeProvenance =
+            typeof media.image_sha256 === "string" &&
+            /^[a-f0-9]{64}$/i.test(media.image_sha256) &&
+            typeof media.vision_provider_id === "string" &&
+            media.vision_provider_id.trim().length > 0 &&
+            media.vision_provider_id.length <= 160 &&
+            typeof media.vision_model === "string" &&
+            media.vision_model.trim().length > 0 &&
+            media.vision_model.length <= 160;
+
+          if (
+            !sameContent ||
+            !hasSafeProvenance ||
+            !Array.isArray(media.visual_alternatives) ||
+            media.visual_alternatives.length === 0
+          ) {
+            return null;
+          }
+
+          const candidates = [];
+
+          for (const value of media.visual_alternatives) {
+            if (
+              !value ||
+              typeof value !== "object" ||
+              Array.isArray(value)
+            ) {
+              return null;
+            }
+
+            const alternative = value as Record<string, unknown>;
+            const productId =
+              typeof alternative.product_id === "string"
+                ? alternative.product_id.trim()
+                : "";
+            const variantId =
+              typeof alternative.variant_id === "string"
+                ? alternative.variant_id.trim()
+                : "";
+            const confidence = alternative.confidence;
+
+            if (
+              !productId ||
+              typeof confidence !== "number" ||
+              !Number.isFinite(confidence) ||
+              confidence < 0 ||
+              confidence > 1
+            ) {
+              return null;
+            }
+
+            candidates.push({
+              productId,
+              ...(variantId ? { variantId } : {}),
+              confidence,
+            });
+          }
+
+          return candidates;
+        },
+      );
+
     let trustedPersistedImageResult: string | null = null;
 
     if (persistedImageResult) {
@@ -705,15 +815,186 @@ export async function preparePostgresMetaAutoReply(
     trustedImageUnderstood = Boolean(trustedPersistedImageResult);
     trustedImageMatchedRecordId = trustedPersistedImageResult;
 
-    const imageService = trustedPersistedImageResult
-      ? null
-      : getMetaImageUnderstandingService();
+    if (
+      !trustedPersistedImageResult &&
+      persistedImageAlternatives
+    ) {
+      const revalidatedAlternatives =
+        await trustedMediaCatalogMatcher.resolveAlternatives({
+          merchantId: parsed.merchantId,
+          candidates: persistedImageAlternatives,
+        });
+
+      const persistedIdentities = persistedImageAlternatives
+        .map((alternative) =>
+          `${alternative.productId}:${alternative.variantId ?? ""}:${alternative.confidence}`,
+        )
+        .sort();
+
+      const revalidatedIdentities = revalidatedAlternatives
+        .map((alternative) =>
+          `${alternative.productId}:${alternative.variantId ?? ""}:${alternative.confidence}`,
+        )
+        .sort();
+
+      const alternativesMatch =
+        persistedIdentities.length === revalidatedIdentities.length &&
+        persistedIdentities.every(
+          (identity, index) =>
+            identity === revalidatedIdentities[index],
+        );
+
+      if (alternativesMatch) {
+        trustedImageAlternatives = revalidatedAlternatives;
+        trustedImageUnderstood = true;
+      }
+    }
+
+    const imageService =
+      trustedPersistedImageResult || trustedImageAlternatives.length > 0
+        ? null
+        : getMetaImageUnderstandingService();
 
     if (imageService) {
-      const understood = await imageService.understand({
+      const imageInput = {
         merchantId: parsed.merchantId,
         imageUrl: parsed.imageUrl,
-      });
+      };
+
+      const understoodWithAlternatives =
+        typeof imageService.understandWithAlternatives === "function"
+          ? await imageService.understandWithAlternatives(imageInput)
+          : null;
+
+      const legacyUnderstood =
+        typeof imageService.understandWithAlternatives === "function"
+          ? null
+          : await imageService.understand(imageInput);
+
+      const understood =
+        understoodWithAlternatives?.exactMatch ?? legacyUnderstood ?? null;
+
+      if (
+        understoodWithAlternatives &&
+        !understood &&
+        understoodWithAlternatives.alternatives.length > 0
+      ) {
+        const trustedAlternatives =
+          await trustedMediaCatalogMatcher.resolveAlternatives({
+            merchantId: parsed.merchantId,
+            candidates: understoodWithAlternatives.alternatives,
+          });
+
+        const hasSafeAlternativeProvenance =
+          typeof understoodWithAlternatives.imageSha256 === "string" &&
+          /^[a-f0-9]{64}$/i.test(understoodWithAlternatives.imageSha256) &&
+          typeof understoodWithAlternatives.visionProviderId === "string" &&
+          understoodWithAlternatives.visionProviderId.trim().length > 0 &&
+          understoodWithAlternatives.visionProviderId.length <= 160 &&
+          typeof understoodWithAlternatives.visionModel === "string" &&
+          understoodWithAlternatives.visionModel.trim().length > 0 &&
+          understoodWithAlternatives.visionModel.length <= 160;
+
+        if (hasSafeAlternativeProvenance && trustedAlternatives.length > 0) {
+          trustedImageAlternatives = trustedAlternatives;
+          trustedImageUnderstood = true;
+
+          await withMerchantOperationalTransaction(
+            parsed.merchantId,
+            async (client) => {
+              const customer = await client.query<{
+                id: string;
+                metadata: Record<string, unknown> | null;
+              }>(
+                `SELECT id, metadata
+                   FROM messages
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3
+                    AND sender = 'customer'
+                  LIMIT 1
+                  FOR UPDATE`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                ],
+              );
+
+              const row = customer.rows[0];
+              if (!row) {
+                throw Object.assign(
+                  new Error("Meta customer message is unavailable"),
+                  { code: "META_CUSTOMER_MESSAGE_UNAVAILABLE" },
+                );
+              }
+
+              const metadata =
+                row.metadata &&
+                typeof row.metadata === "object" &&
+                !Array.isArray(row.metadata)
+                  ? row.metadata
+                  : {};
+
+              const media =
+                metadata.media &&
+                typeof metadata.media === "object" &&
+                !Array.isArray(metadata.media)
+                  ? metadata.media as Record<string, unknown>
+                  : {};
+
+              const storedContentIdentityHash =
+                typeof media.content_identity_hash === "string"
+                  ? media.content_identity_hash
+                  : null;
+
+              if (
+                !parsed.contentIdentityHash ||
+                storedContentIdentityHash !== parsed.contentIdentityHash
+              ) {
+                throw Object.assign(
+                  new Error("Meta image content identity changed"),
+                  { code: "META_MESSAGE_IDENTITY_COLLISION" },
+                );
+              }
+
+              const nextMetadata = {
+                ...metadata,
+                media: {
+                  ...media,
+                  image_sha256: understoodWithAlternatives.imageSha256,
+                  vision_provider_id:
+                    understoodWithAlternatives.visionProviderId,
+                  vision_model: understoodWithAlternatives.visionModel,
+                  visual_alternatives: trustedAlternatives.map(
+                    (alternative) => ({
+                      product_id: alternative.productId,
+                      ...(alternative.variantId
+                        ? { variant_id: alternative.variantId }
+                        : {}),
+                      confidence: alternative.confidence,
+                    }),
+                  ),
+                },
+              };
+
+              await client.query(
+                `UPDATE messages
+                    SET metadata = $4::jsonb
+                  WHERE merchant_id = $1
+                    AND id = $2
+                    AND conversation_id = $3`,
+                [
+                  parsed.merchantId,
+                  inbound.sourceCustomerMessageId,
+                  inbound.conversationId,
+                  JSON.stringify(nextMetadata),
+                ],
+              );
+            },
+          );
+        }
+      }
 
       if (understood) {
         const revalidatedMatch =
@@ -862,7 +1143,8 @@ export async function preparePostgresMetaAutoReply(
     Boolean(parsed.customerText) &&
     parsed.attachmentCount > 0 &&
     trustedImageUnderstood &&
-    Boolean(trustedImageMatchedRecordId);
+    (Boolean(trustedImageMatchedRecordId) ||
+      trustedImageAlternatives.length > 0);
 
   if (
     parsed.contentKind !== "text" ||
@@ -918,6 +1200,15 @@ export async function preparePostgresMetaAutoReply(
       conversationId: inbound.conversationId,
       customerExternalId: parsed.senderId,
       recentMessages,
+      ...(trustedImageAlternatives[0]
+        ? {
+            // Keep the singular field for backward compatibility while the
+            // ranked set enables authoritative stock fallback across similar
+            // current-merchant catalog candidates.
+            trustedVisualAlternative: trustedImageAlternatives[0],
+            trustedVisualAlternatives: trustedImageAlternatives,
+          }
+        : {}),
     });
   } catch {
     throw Object.assign(new Error("Knowledge reply decision is unavailable"), {

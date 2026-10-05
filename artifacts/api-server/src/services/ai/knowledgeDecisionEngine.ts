@@ -490,6 +490,39 @@ export type KnowledgeDecisionEngineOptions = {
   allowGeneratedAutoReply?: boolean;
 };
 
+
+const VISUAL_ALTERNATIVE_QUALIFICATION_CUES = [
+  /\b(?:similar|alternative|close match|closest option|comparable option)\b/i,
+  /(?:مشابه|مشابهة|شبيه|شبيهة|بديل|بديلة|خيار قريب|أقرب خيار)/i,
+  /(?:هاوشێوە|نزیک|جێگرەوە)/i,
+] as const;
+
+const VISUAL_ALTERNATIVE_EXACT_IDENTITY_CUES = [
+  /\b(?:this|it)\s+(?:is|'s)\s+(?:the\s+)?(?:same|exact)\b/i,
+  /\b(?:same|exact)\s+(?:product|item|model)\b/i,
+  /(?:هذا|هذه|هذي|هو|هي)\s+(?:هو\s+|هي\s+)?(?:نفس|ذات)(?=\s|[،,.؛:!?؟]|$)/i,
+  /(?:نفس|ذات)\s+(?:المنتج|القطعة|الموديل)(?=\s|[،,.؛:!?؟]|$)/i,
+  /(?:ئەمە|ئەوە)\s+(?:هەمان|خودی)(?=\s|[،,.؛:!?؟]|$)/i,
+  /(?:هەمان|خودی)\s+(?:بەرهەم|کاڵا|مۆدێل)(?=\s|[،,.؛:!?؟]|$)/i,
+] as const;
+
+function visualAlternativeReplyIsQualified(answerText: string): boolean {
+  const normalized = boundedText(answerText, 2_000);
+  if (!normalized) return false;
+
+  const hasQualification =
+    VISUAL_ALTERNATIVE_QUALIFICATION_CUES.some((pattern) =>
+      pattern.test(normalized),
+    );
+  const claimsExactIdentity =
+    VISUAL_ALTERNATIVE_EXACT_IDENTITY_CUES.some((pattern) =>
+      pattern.test(normalized),
+    );
+
+  return hasQualification && !claimsExactIdentity;
+}
+
+
 export class KnowledgeDecisionEngine {
   readonly engineId = "fawri_knowledge_decision_engine_v1";
   readonly authorityId: string;
@@ -682,6 +715,92 @@ export class KnowledgeDecisionEngine {
     const language = input.languageHint || detectKnowledgeLanguage(customerText);
     const conversationHistory = boundedConversationHistory(input.recentMessages);
     const catalogConversationRef = activeCatalogConversationRef(conversationHistory);
+
+    const visualAlternativeProductId = boundedText(
+      input.trustedVisualAlternative?.productId,
+      160,
+    );
+    const visualAlternativeVariantId = boundedText(
+      input.trustedVisualAlternative?.variantId,
+      160,
+    );
+    const visualAlternativeConfidence =
+      input.trustedVisualAlternative?.confidence;
+
+    const trustedVisualAlternative =
+      visualAlternativeProductId &&
+      typeof visualAlternativeConfidence === "number" &&
+      Number.isFinite(visualAlternativeConfidence) &&
+      visualAlternativeConfidence >= 0 &&
+      visualAlternativeConfidence <= 1
+        ? {
+            productId: visualAlternativeProductId,
+            ...(visualAlternativeVariantId
+              ? { variantId: visualAlternativeVariantId }
+              : {}),
+            confidence: visualAlternativeConfidence,
+          }
+        : null;
+
+    const normalizedVisualAlternatives: Array<{
+      productId: string;
+      variantId?: string;
+      confidence: number;
+    }> = [];
+    const seenVisualAlternatives = new Set<string>();
+    let rankedVisualAlternativesMalformed = false;
+
+    for (const candidate of input.trustedVisualAlternatives || []) {
+      const productId = boundedText(candidate?.productId, 160);
+      const variantId = boundedText(candidate?.variantId, 160);
+      const confidence = candidate?.confidence;
+
+      if (
+        !productId ||
+        typeof confidence !== "number" ||
+        !Number.isFinite(confidence) ||
+        confidence < 0 ||
+        confidence > 1
+      ) {
+        rankedVisualAlternativesMalformed = true;
+        break;
+      }
+
+      if (normalizedVisualAlternatives.length >= 3) continue;
+
+      const key = `${productId}\u0000${variantId}`;
+      if (seenVisualAlternatives.has(key)) continue;
+      seenVisualAlternatives.add(key);
+
+      normalizedVisualAlternatives.push({
+        productId,
+        ...(variantId ? { variantId } : {}),
+        confidence,
+      });
+    }
+
+    if (rankedVisualAlternativesMalformed) {
+      normalizedVisualAlternatives.length = 0;
+    } else if (
+      normalizedVisualAlternatives.length === 0 &&
+      trustedVisualAlternative
+    ) {
+      normalizedVisualAlternatives.push(trustedVisualAlternative);
+    }
+
+    const primaryVisualAlternative =
+      normalizedVisualAlternatives[0] ||
+      (input.trustedVisualAlternatives === undefined
+        ? trustedVisualAlternative
+        : null);
+
+    // Exact conversation identity always wins. Visual alternatives are only
+    // similar-product catalog hints and must never become exact customer identity.
+    const catalogHintRef =
+      catalogConversationRef || primaryVisualAlternative;
+    const usingTrustedVisualAlternative =
+      Boolean(primaryVisualAlternative && !catalogConversationRef);
+
     const clarificationContext = activeClarificationContext(conversationHistory);
     const factCustomerText = clarificationFactText(customerText, clarificationContext);
     const usingClarificationContext =
@@ -764,15 +883,60 @@ export class KnowledgeDecisionEngine {
 
     let fact;
     try {
-      fact = await this.factResolver.resolve({
-        merchantId,
-        customerText: factCustomerText,
-        language,
-        conversationId: boundedText(input.conversationId, 160) || undefined,
-        customerExternalId: boundedText(input.customerExternalId, 200) || undefined,
-        trustedProductIdHint: catalogConversationRef?.productId,
-        trustedVariantIdHint: catalogConversationRef?.variantId,
-      });
+      const resolveFact = async (
+        visualAlternative?: {
+          productId: string;
+          variantId?: string;
+          confidence: number;
+        },
+      ) =>
+        this.factResolver.resolve({
+          merchantId,
+          customerText: factCustomerText,
+          language,
+          conversationId: boundedText(input.conversationId, 160) || undefined,
+          customerExternalId: boundedText(input.customerExternalId, 200) || undefined,
+          trustedProductIdHint: catalogConversationRef?.productId,
+          trustedVariantIdHint: catalogConversationRef?.variantId,
+          ...(usingTrustedVisualAlternative && visualAlternative
+            ? {
+                trustedVisualAlternativeProductId:
+                  visualAlternative.productId,
+                trustedVisualAlternativeVariantId:
+                  visualAlternative.variantId,
+              }
+            : {}),
+        });
+
+      fact = await resolveFact(primaryVisualAlternative || undefined);
+
+      // Advance through ranked visual alternatives only when authoritative
+      // structured stock metadata proves the current candidate cannot fulfill
+      // the request. Never infer stock state from customer-facing answer text.
+      // Exact conversation identity bypasses visual-alternative fallback.
+      if (
+        usingTrustedVisualAlternative &&
+        !catalogConversationRef &&
+        fact?.factType === "product_stock" &&
+        fact.availability?.fulfillable === false
+      ) {
+        for (const alternative of normalizedVisualAlternatives.slice(1)) {
+          const alternativeFact = await resolveFact(alternative);
+
+          if (
+            alternativeFact?.factType !== "product_stock" ||
+            !alternativeFact.availability
+          ) {
+            continue;
+          }
+
+          if (alternativeFact.availability.fulfillable) {
+            fact = alternativeFact;
+            break;
+          }
+        }
+
+      }
     } catch (error) {
       const reasonCode =
         error instanceof KnowledgeRuntimeGateError
@@ -1002,10 +1166,19 @@ export class KnowledgeDecisionEngine {
         }
       }
 
+      const databaseFactAnswer =
+        usingTrustedVisualAlternative && fact.factType === "product_stock"
+          ? language === "ar"
+            ? `بالنسبة لخيار مشابه للصورة: ${boundedText(fact.answerText, 2_000)}`
+            : language === "ku"
+              ? `بۆ هەڵبژاردەیەکی هاوشێوەی وێنەکە: ${boundedText(fact.answerText, 2_000)}`
+              : `For a similar option to the image: ${boundedText(fact.answerText, 2_000)}`
+          : boundedText(fact.answerText, 2_000);
+
       const result: KnowledgeDecisionResult = {
         action: "reply",
         stage: "database_fact",
-        answerText: boundedText(fact.answerText, 2_000),
+        answerText: databaseFactAnswer,
         language: fact.language,
         source: "database_fact",
         confidence: fact.confidence,
@@ -1055,11 +1228,17 @@ export class KnowledgeDecisionEngine {
       return result;
     }
 
-    const savedAnswer = await this.runtime.findApprovedSavedAnswer({
-      merchantId,
-      customerText,
-      language,
-    });
+    // A trusted visual alternative is already server-derived and independently
+    // bound to the current merchant catalog. Generic saved/semantic knowledge
+    // must not intercept the image-reference question before catalog grounding.
+    // This does not make the alternative an exact customer-product identity.
+    const savedAnswer = primaryVisualAlternative
+      ? null
+      : await this.runtime.findApprovedSavedAnswer({
+          merchantId,
+          customerText,
+          language,
+        });
     if (savedAnswer) {
       const translated = await this.translatedApprovedAnswer({
         merchantId,
@@ -1105,7 +1284,9 @@ export class KnowledgeDecisionEngine {
 
     let approvedDocuments: SemanticDocument[] | null = null;
     let semantic: SemanticMatch | null = null;
-    if (this.runtime.retrieveSemanticMatch && !this.useLegacyLexicalSemantic) {
+    if (primaryVisualAlternative) {
+      semantic = null;
+    } else if (this.runtime.retrieveSemanticMatch && !this.useLegacyLexicalSemantic) {
       semantic = await this.runtime.retrieveSemanticMatch({
         merchantId,
         query: customerText,
@@ -1175,8 +1356,8 @@ export class KnowledgeDecisionEngine {
         customerText,
         language,
         limit: 1,
-        trustedProductIdHint: catalogConversationRef?.productId,
-        trustedVariantIdHint: catalogConversationRef?.variantId,
+        trustedProductIdHint: catalogHintRef?.productId,
+        trustedVariantIdHint: catalogHintRef?.variantId,
       });
     } catch (error) {
       const reasonCode =
@@ -1369,9 +1550,14 @@ export class KnowledgeDecisionEngine {
         groundingRecordIds.find((id) => catalogIds.has(id)) || null;
       const policyAllowsGenerated =
         merchantPolicy.allowGeneratedAutoReply === true && this.allowGeneratedAutoReply;
+      const visualAlternativeSemanticsAreSafe =
+        !usingTrustedVisualAlternative ||
+        visualAlternativeReplyIsQualified(aiCandidate.answerText);
+
       const eligibleForGroundedReply =
         policyAllowsGenerated &&
         groundedOnlyInTrustedKnowledge &&
+        visualAlternativeSemanticsAreSafe &&
         aiCandidate.language === language &&
         aiCandidate.risk === "low" &&
         aiCandidate.confidence >= this.minimumAiConfidence;
@@ -1413,40 +1599,89 @@ export class KnowledgeDecisionEngine {
         return result;
       }
 
-      const recorded = await this.runtime.recordGeneratedCandidate({
-        merchantId,
-        customerText,
-        language: aiCandidate.language,
-        intent: "ai_fallback",
-        answerText: aiCandidate.answerText,
-        confidence: aiCandidate.confidence,
-        reason: aiCandidate.reason,
-      });
-      const result: KnowledgeDecisionResult = {
-        action: "handoff",
-        stage: "ai_fallback",
-        answerText: this.handoffText(language, merchantPolicy),
-        language,
-        source: "openai_generated",
-        confidence: aiCandidate.confidence,
-        requiresMerchantApproval: true,
-        trainingRequestId: recorded.trainingRequest.id,
-        matchedRecordId: recorded.learnedAnswer.id,
-        groundingRecordIds,
-        reasonCode: "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",
-        injectionSignals: [],
-        ...(aiCandidate.usage ? { aiUsage: aiCandidate.usage } : {}),
-        ...(aiCandidate.providerId ? { aiProviderId: aiCandidate.providerId } : {}),
-        ...(aiCandidate.model ? { aiModel: aiCandidate.model } : {}),
-        ...(aiCandidate.latencyMs !== undefined
-          ? { aiLatencyMs: aiCandidate.latencyMs }
-          : {}),
-      };
-      await this.recordDecisionAudit({
-        input: { ...input, merchantId, customerText },
-        result,
-      });
-      return result;
+      if (
+        !usingTrustedVisualAlternative ||
+        !groundedOnlyInTrustedKnowledge ||
+        visualAlternativeSemanticsAreSafe
+      ) {
+        const recorded = await this.runtime.recordGeneratedCandidate({
+          merchantId,
+          customerText,
+          language: aiCandidate.language,
+          intent: "ai_fallback",
+          answerText: aiCandidate.answerText,
+          confidence: aiCandidate.confidence,
+          reason: aiCandidate.reason,
+        });
+        const result: KnowledgeDecisionResult = {
+          action: "handoff",
+          stage: "ai_fallback",
+          answerText: this.handoffText(language, merchantPolicy),
+          language,
+          source: "openai_generated",
+          confidence: aiCandidate.confidence,
+          requiresMerchantApproval: true,
+          trainingRequestId: recorded.trainingRequest.id,
+          matchedRecordId: recorded.learnedAnswer.id,
+          groundingRecordIds,
+          reasonCode: "AI_CANDIDATE_REQUIRES_MERCHANT_APPROVAL",
+          injectionSignals: [],
+          ...(aiCandidate.usage ? { aiUsage: aiCandidate.usage } : {}),
+          ...(aiCandidate.providerId ? { aiProviderId: aiCandidate.providerId } : {}),
+          ...(aiCandidate.model ? { aiModel: aiCandidate.model } : {}),
+          ...(aiCandidate.latencyMs !== undefined
+            ? { aiLatencyMs: aiCandidate.latencyMs }
+            : {}),
+        };
+        await this.recordDecisionAudit({
+          input: { ...input, merchantId, customerText },
+          result,
+        });
+        return result;
+      }
+    }
+
+    // A trusted visual alternative is server-derived and already revalidated
+    // against the current merchant catalog before it reaches this engine.
+    // If AI is unavailable entirely, keep the reply deterministic and limited
+    // to the authoritative catalog product name. Never claim exact identity,
+    // price, stock, ownership, or any fact inferred from the reference image.
+    if (primaryVisualAlternative && catalogKnowledge.length > 0) {
+      const trustedCatalogAlternative = catalogKnowledge.find(
+        (item) => item.productId === primaryVisualAlternative.productId,
+      );
+
+      if (trustedCatalogAlternative) {
+        const productName = boundedText(trustedCatalogAlternative.name, 300);
+        if (productName) {
+          const answerText =
+            language === "ar"
+              ? `عندنا خيار مشابه: ${productName}.`
+              : language === "ku"
+                ? `هەڵبژاردەیەکی هاوشێوەمان هەیە: ${productName}.`
+                : `We have a similar option: ${productName}.`;
+
+          const result: KnowledgeDecisionResult = {
+            action: "reply",
+            stage: "ai_fallback",
+            answerText,
+            language,
+            source: "merchant_approved",
+            confidence: primaryVisualAlternative.confidence,
+            requiresMerchantApproval: false,
+            trainingRequestId: null,
+            matchedRecordId: trustedCatalogAlternative.id,
+            groundingRecordIds: [trustedCatalogAlternative.id],
+            reasonCode: "TRUSTED_VISUAL_ALTERNATIVE_CATALOG_REPLY",
+            injectionSignals: [],
+          };
+          await this.recordDecisionAudit({
+            input: { ...input, merchantId, customerText },
+            result,
+          });
+          return result;
+        }
+      }
     }
 
     const training = await this.runtime.createTrainingRequest({

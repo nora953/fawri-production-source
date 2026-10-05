@@ -346,3 +346,176 @@ test("image understanding does not expose the raw image URL in its result", asyn
   assert.ok(result);
   assert.doesNotMatch(JSON.stringify(result), /private-image|do-not-persist/);
 });
+
+test("image understanding can return trusted visual alternatives without claiming an exact catalog match", async () => {
+  const calls: string[] = [];
+
+  const service = new MetaImageUnderstandingService({
+    fetchImage: async () => {
+      calls.push("fetch");
+      return {
+        buffer: Buffer.from("verified-image"),
+        mimeType: "image/jpeg",
+        sizeBytes: 14,
+        sha256: "alternative-image-sha",
+      };
+    },
+
+    analyzeImage: async () => {
+      calls.push("vision");
+      return {
+        description: "Black athletic shoe with white sole",
+        visibleText: [],
+        productType: "shoe",
+        colors: ["black", "white"],
+        attributes: ["athletic", "white sole"],
+        confidence: 0.96,
+        providerId: "openai_responses_media_vision_v1",
+        model: "vision-test",
+      };
+    },
+
+    resolveCandidates: async () => {
+      calls.push("resolve");
+      return [
+        {
+          productId: "shoe-similar-black",
+          confidence: 0.82,
+        },
+        {
+          productId: "shoe-similar-grey",
+          confidence: 0.73,
+        },
+      ];
+    },
+
+    matchCatalog: async () => {
+      calls.push("match");
+      return null;
+    },
+
+    resolveAlternatives: async () => {
+      calls.push("alternatives");
+      return [
+        {
+          productId: "shoe-similar-black",
+          confidence: 0.82,
+        },
+        {
+          productId: "shoe-similar-grey",
+          confidence: 0.73,
+        },
+      ];
+    },
+  });
+
+  const result = await service.understandWithAlternatives({
+    merchantId: "merchant-a",
+    imageUrl: "https://example.test/reference-shoe.jpg",
+  });
+
+  assert.deepEqual(calls, [
+    "fetch",
+    "vision",
+    "resolve",
+    "match",
+    "alternatives",
+  ]);
+
+  assert.deepEqual(result, {
+    exactMatch: null,
+    alternatives: [
+      {
+        productId: "shoe-similar-black",
+        confidence: 0.82,
+      },
+      {
+        productId: "shoe-similar-grey",
+        confidence: 0.73,
+      },
+    ],
+    imageSha256: "alternative-image-sha",
+    visionProviderId: "openai_responses_media_vision_v1",
+    visionModel: "vision-test",
+  });
+
+  assert.equal(
+    result?.alternatives.some(
+      (alternative) => "matchedRecordId" in alternative,
+    ),
+    false,
+  );
+
+  assert.doesNotMatch(
+    JSON.stringify(result),
+    /reference-shoe\.jpg|example\.test/,
+  );
+});
+
+test("image understanding rejects the entire visual alternative set when any resolved alternative is malformed", async () => {
+  const service = new MetaImageUnderstandingService({
+    fetchImage: async () => ({
+      buffer: Buffer.from("verified-image"),
+      mimeType: "image/jpeg",
+      sizeBytes: 14,
+      sha256: "malformed-alternative-image-sha",
+    }),
+
+    analyzeImage: async () => ({
+      description: "Black athletic shoe",
+      visibleText: [],
+      productType: "shoe",
+      colors: ["black"],
+      attributes: ["athletic"],
+      confidence: 0.95,
+      providerId: "openai_responses_media_vision_v1",
+      model: "vision-test",
+    }),
+
+    resolveCandidates: async () => [
+      {
+        productId: "shoe-valid",
+        confidence: 0.82,
+      },
+    ],
+
+    matchCatalog: async () => null,
+
+    resolveAlternatives: async () => {
+      // Deliberately simulate malformed untrusted runtime data without
+      // weakening the test with an `any` escape hatch.
+      const malformedRuntimeAlternatives: unknown = [
+        {
+          productId: "shoe-valid",
+          confidence: 0.82,
+        },
+        {
+          productId: "",
+          confidence: Number.NaN,
+        },
+      ];
+
+      return malformedRuntimeAlternatives as Array<{
+        productId: string;
+        variantId?: string;
+        confidence: number;
+      }>;
+    },
+  });
+
+  const result = await service.understandWithAlternatives({
+    merchantId: "merchant-a",
+    imageUrl: "https://example.test/reference-shoe-malformed.jpg",
+  });
+
+  assert.ok(result);
+  assert.equal(result.exactMatch, null);
+
+  // Fail closed: one malformed alternative invalidates the complete set.
+  assert.deepEqual(result.alternatives, []);
+
+  assert.equal(
+    JSON.stringify(result).includes("reference-shoe-malformed.jpg"),
+    false,
+  );
+});

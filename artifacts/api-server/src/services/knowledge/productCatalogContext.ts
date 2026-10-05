@@ -451,7 +451,17 @@ export class PostgresMerchantCatalogContextResolver
       ? selectedVariantOptions(selectedVariant, optionRows)
       : undefined;
 
-    if (!category && !description && !sku && options.length === 0) return [];
+    const trustedNameOnlyProduct =
+      Boolean(trustedProductIdHint) &&
+      trustedProductIdHint === productId;
+
+    if (
+      !category &&
+      !description &&
+      !sku &&
+      options.length === 0 &&
+      !trustedNameOnlyProduct
+    ) return [];
 
     const knowledge: MerchantCatalogKnowledge = {
       id: productContextId(productId, variantId || undefined),
