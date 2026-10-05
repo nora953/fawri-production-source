@@ -1452,10 +1452,12 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  // Only actual customer-authored or customer-spoken language belongs in the
+  // customer intent. trustedVideoText is a grounded visual observation produced
+  // by the vision pipeline, not a transcript of words the customer said.
   const trustedIntentParts = [
     parsed.customerText,
     trustedAudioUnderstood ? trustedAudioTranscript : null,
-    trustedVideoUnderstood ? trustedVideoText : null,
   ].filter((part): part is string => Boolean(part?.trim()));
 
   const effectiveCustomerText =
