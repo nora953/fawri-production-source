@@ -347,3 +347,49 @@ test("trusted media catalog alternatives preserve tenant, eligibility, variant o
     },
   ]);
 });
+
+test("duplicate top candidates cannot conceal a competing product", async () => {
+  const matcher = new TrustedMediaCatalogMatcher({
+    listCatalogProducts: async () => [product(), product({ id: "other-shirt" })],
+  });
+  assert.equal(await matcher.resolve({
+    merchantId: "merchant-a",
+    candidates: [
+      { productId: "product-shirt", confidence: 0.99 },
+      { productId: "product-shirt", confidence: 0.98 },
+      { productId: "other-shirt", confidence: 0.97 },
+    ],
+  }), null);
+});
+
+test("duplicate top candidates cannot conceal a competing variant", async () => {
+  const matcher = new TrustedMediaCatalogMatcher({
+    listCatalogProducts: async () => [product({ variants: [
+      { id: "black" }, { id: "white" },
+    ] })],
+  });
+  assert.equal(await matcher.resolve({
+    merchantId: "merchant-a",
+    candidates: [
+      { productId: "product-shirt", variantId: "black", confidence: 0.99 },
+      { productId: "product-shirt", variantId: "black", confidence: 0.98 },
+      { productId: "product-shirt", variantId: "white", confidence: 0.97 },
+    ],
+  }), null);
+});
+
+test("duplicate candidates still allow an unambiguous winner", async () => {
+  const matcher = new TrustedMediaCatalogMatcher({
+    listCatalogProducts: async () => [product(), product({ id: "other-shirt" })],
+  });
+  const result = await matcher.resolve({
+    merchantId: "merchant-a",
+    candidates: [
+      { productId: "product-shirt", confidence: 0.99 },
+      { productId: "product-shirt", confidence: 0.98 },
+      { productId: "other-shirt", confidence: 0.91 },
+    ],
+  });
+  assert.equal(result?.productId, "product-shirt");
+  assert.equal(result?.confidence, 0.99);
+});

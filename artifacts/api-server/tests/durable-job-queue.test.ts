@@ -211,3 +211,26 @@ test("worker reconciles a crashed claim before accepting new work", () =>
       worker.stop();
     }
   }));
+
+test("local reconciliation preserves a lease renewed after its expired snapshot", () =>
+  isolated("fawri-queue-renewed-snapshot", async () => {
+    const started = new Date("2026-01-01T00:00:00Z");
+    const { job } = enqueueDurableJob({ type: "race", dedupeKey: "renewed", payload: {} }, started);
+    claimNextDurableJob("worker", { now: started, visibilityTimeoutMs: 1000 });
+    const expiredAt = new Date(started.getTime() + 1001);
+    assert.equal(listExpiredProcessingJobs(expiredAt).length, 1);
+    heartbeatDurableJob(job.id, "worker", 5000, expiredAt);
+    assert.equal(resolveExpiredDurableJob(job.id, "worker", { action: "retry", code: "OLD_SNAPSHOT" }, expiredAt), null);
+    assert.equal(listDurableJobs()[0].status, "processing");
+  }));
+test("local reconciliation rejects an old attempt even for the same worker ID", () =>
+  isolated("fawri-queue-old-attempt", async () => {
+    const started = new Date("2026-01-01T00:00:00Z");
+    const { job } = enqueueDurableJob({ type: "race", dedupeKey: "reclaimed", payload: {} }, started);
+    const first = claimNextDurableJob("worker", { now: started, visibilityTimeoutMs: 1000 })!;
+    resolveExpiredDurableJob(job.id, "worker", { action: "retry", code: "RETRY" }, new Date(started.getTime() + 1001));
+    const second = claimNextDurableJob("worker", { now: new Date(started.getTime() + 7000), visibilityTimeoutMs: 1000 })!;
+    assert.equal(second.attempts, 2);
+    assert.equal(resolveExpiredDurableJob(job.id, "worker", { action: "complete" }, new Date(started.getTime() + 9000), { expectedAttempts: first.attempts }), null);
+    assert.equal(listDurableJobs()[0].status, "processing");
+  }));

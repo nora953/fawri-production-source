@@ -1288,7 +1288,21 @@ await test("stable knowledge gap hands off and notifies only the owning merchant
     message: "Do you offer gift wrapping?",
   });
 
-  const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+  // Other requests occupy all but one connection. The reply transaction must
+  // not wait for another connection while it holds the remaining one.
+  const heldClients = [];
+  const previousTimeout = pool.options.connectionTimeoutMillis;
+  pool.options.connectionTimeoutMillis = 1500;
+  let prepared;
+  try {
+    for (let index = 1; index < (pool.options.max || 10); index += 1) {
+      heldClients.push(await pool.connect());
+    }
+    prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+  } finally {
+    for (const client of heldClients) client.release();
+    pool.options.connectionTimeoutMillis = previousTimeout;
+  }
   assert.equal(prepared.action, "send");
   if (prepared.action !== "send") return;
 

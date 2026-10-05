@@ -809,7 +809,7 @@ export async function updateMerchantOperationalSettingsAuthoritative(input: {
               payment_instructions = $17,
               inventory_freshness_max_age_minutes = $18,
               inventory_stale_policy = $19,
-              updated_at = $20
+              updated_at = GREATEST(clock_timestamp(), updated_at, created_at)
         WHERE merchant_id = $1 AND version = $2
         RETURNING *`,
       [
@@ -832,7 +832,6 @@ export async function updateMerchantOperationalSettingsAuthoritative(input: {
         updated.payment.instructions,
         updated.inventory.freshness_max_age_minutes,
         updated.inventory.stale_policy,
-        new Date(updated.updated_at),
       ],
     );
     if (result.length !== 1) {
@@ -842,6 +841,8 @@ export async function updateMerchantOperationalSettingsAuthoritative(input: {
         409,
       );
     }
+
+    updated.updated_at = result[0]!.updated_at.toISOString();
 
     await client.query(
       "DELETE FROM merchant_delivery_area_rates WHERE merchant_id = $1",
@@ -860,7 +861,7 @@ export async function updateMerchantOperationalSettingsAuthoritative(input: {
           rate.normalized_area_name,
           rate.fee_iqd,
           rate.enabled,
-          new Date(updated.updated_at),
+          result[0]!.updated_at,
         ],
       );
     }

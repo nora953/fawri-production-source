@@ -530,9 +530,10 @@ async function settleExpired(
     const result = await client.query<JobRow>(
       `${JOB_SELECT}
         WHERE merchant_id = $1 AND id = $2 AND status = 'processing'
-          AND locked_by = $3
+          AND locked_by = $3 AND attempts = $4
+          AND lease_expires_at <= $5::timestamptz
         FOR UPDATE`,
-      [merchantId, job.id, job.locked_by || ""],
+      [merchantId, job.id, job.locked_by || "", job.attempts, now.toISOString()],
     );
     const current = result.rows[0];
     if (!current) return null;

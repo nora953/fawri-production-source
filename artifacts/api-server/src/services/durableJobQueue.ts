@@ -345,12 +345,19 @@ export function resolveExpiredDurableJob(
   expectedWorkerId: string | undefined,
   resolution: ExpiredJobResolution,
   now: Date = new Date(),
+  options: { expectedAttempts?: number; visibilityTimeoutMs?: number } = {},
 ): DurableJob | null {
   return withStoreLock((store) => {
     const job = store.jobs.find((item) => item.id === jobId);
     if (!job || job.status !== "processing") return null;
     if (expectedWorkerId && job.locked_by !== expectedWorkerId) return null;
 
+    if (options.expectedAttempts !== undefined && job.attempts !== options.expectedAttempts) return null;
+    const leaseExpiry = validDate(job.lease_expires_at)?.getTime();
+    const lockedAt = validDate(job.locked_at)?.getTime();
+    const expiry = leaseExpiry ?? (lockedAt === undefined ? undefined :
+      lockedAt + positiveInteger(options.visibilityTimeoutMs, DEFAULT_VISIBILITY_TIMEOUT_MS));
+    if (expiry !== undefined && expiry > now.getTime()) return null;
     job.locked_at = undefined;
     job.locked_by = undefined;
     job.lease_expires_at = undefined;
@@ -620,7 +627,9 @@ export function startDurableJobWorker(options: {
           };
         }
       }
-      const settled = resolveExpiredDurableJob(job.id, job.locked_by, resolution);
+      const settled = resolveExpiredDurableJob(job.id, job.locked_by, resolution, new Date(), {
+        expectedAttempts: job.attempts, visibilityTimeoutMs,
+      });
       if (settled?.status === "dead_letter") await options.onDeadLetter?.(settled);
     }
   };
