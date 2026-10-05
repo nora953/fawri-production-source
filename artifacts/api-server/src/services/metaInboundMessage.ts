@@ -4,6 +4,9 @@ export type MetaInboundContentKind =
   | "audio"
   | "video"
   | "shared_post"
+  | "document"
+  | "location"
+  | "sticker"
   | "unsupported";
 
 export type MetaInboundAttachment = {
@@ -41,6 +44,13 @@ function classifyAttachment(type: string): MetaInboundContentKind {
     case "share":
     case "shared_post":
       return "shared_post";
+    case "file":
+    case "document":
+      return "document";
+    case "location":
+      return "location";
+    case "sticker":
+      return "sticker";
     default:
       return "unsupported";
   }
@@ -56,6 +66,12 @@ function storageMarker(kind: MetaInboundContentKind): string {
       return "[video]";
     case "shared_post":
       return "[shared_post]";
+    case "document":
+      return "[document]";
+    case "location":
+      return "[location]";
+    case "sticker":
+      return "[sticker]";
     case "unsupported":
       return "[unsupported_attachment]";
     case "text":
