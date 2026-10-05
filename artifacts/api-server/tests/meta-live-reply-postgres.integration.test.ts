@@ -4942,6 +4942,54 @@ await test("duplicate media type is rejected before any partial media understand
   }
 });
 
+await test("unsupported inbound attachment kinds are rejected before reply preparation", async () => {
+  const cases = [
+    { label: "shared-post", attachment: { type: "share", payload: { url: "https://example.invalid/post" } } },
+    { label: "document", attachment: { type: "document", payload: { url: "https://example.invalid/file.pdf" } } },
+    { label: "location", attachment: { type: "location", payload: { coordinates: { lat: 33.3, long: 44.4 } } } },
+    { label: "sticker", attachment: { type: "sticker", payload: { sticker_id: 1 } } },
+    { label: "unknown", attachment: { type: "file", payload: { url: "https://example.invalid/file.bin" } } },
+  ];
+
+  for (const testCase of cases) {
+    const senderId = `customer-live-unsupported-${testCase.label}-${runId}`;
+    const eventId = `event-live-unsupported-${testCase.label}-${runId}`;
+    const mid = `mid-live-unsupported-${testCase.label}-${runId}`;
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: { mid, text: "راجع هذا", attachments: [testCase.attachment] },
+            }],
+          }],
+        },
+      },
+    });
+
+    await assert.rejects(
+      intents.preparePostgresMetaAutoReply(queued.job),
+      (error: unknown) =>
+        (error as { code?: string } | null)?.code === "META_JOB_PAYLOAD_INVALID",
+      testCase.label,
+    );
+  }
+});
+
 await test("unsafe single-media URLs fail closed before any understanding service", async () => {
   const cases = [
     { label: "http-image", attachment: { type: "image", payload: { url: "http://example.invalid/unsafe-single.jpg" } } },
