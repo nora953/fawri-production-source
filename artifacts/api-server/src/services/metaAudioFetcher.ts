@@ -263,16 +263,23 @@ export class SecureMetaAudioFetcher {
       const chunks: Uint8Array[] = [];
       let sizeBytes = 0;
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (!value) continue;
-          sizeBytes += value.byteLength;
-          if (sizeBytes > META_AUDIO_MAX_BYTES) {
-            await reader.cancel().catch(() => undefined);
-            throw coded("Meta audio exceeds the allowed size", "META_AUDIO_TOO_LARGE");
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (!value) continue;
+            sizeBytes += value.byteLength;
+            if (sizeBytes > META_AUDIO_MAX_BYTES) {
+              await reader.cancel().catch(() => undefined);
+              throw coded("Meta audio exceeds the allowed size", "META_AUDIO_TOO_LARGE");
+            }
+            chunks.push(value);
           }
-          chunks.push(value);
+        } catch (error) {
+          if (controller.signal.aborted) {
+            throw coded("Meta audio request timed out", "META_AUDIO_TIMEOUT");
+          }
+          throw error;
         }
       } finally {
         reader.releaseLock();
