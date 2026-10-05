@@ -905,7 +905,8 @@ export async function preparePostgresMetaAutoReply(
     confidence: number;
   }> = [];
 
-  if (processingImageUrl) {
+  const safeProcessingImageUrl = processingImageUrl;
+  if (safeProcessingImageUrl) {
     const persistedImageResult =
       await withMerchantOperationalTransaction(
         parsed.merchantId,
