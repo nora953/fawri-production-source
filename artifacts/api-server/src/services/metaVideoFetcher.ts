@@ -28,7 +28,10 @@ function forbidden4(ip: string) {
     (a===198&&(b===18||b===19))||a>=224;
 }
 function forbidden6(ip: string) {
-  const x=ip.toLowerCase().split("%",1)[0];
+  const raw=ip.toLowerCase().split("%",1)[0];
+  let x: string;
+  try { x=new URL(`https://[${raw}]/`).hostname.replace(/^\[|\]$/g, "").toLowerCase(); }
+  catch { return true; }
   if(x==="::"||x==="::1"||x.startsWith("fc")||x.startsWith("fd")||x.startsWith("ff")||
      /^fe[89ab]/.test(x)||/^fe[c-f]/.test(x)) return true;
   const m=x.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
