@@ -2,6 +2,9 @@ import { MetaVideoUnderstandingService, type MetaVideoUnderstandingResult } from
 import { SecureMetaVideoFetcher } from "./metaVideoFetcher.js";
 import { FfmpegMetaVideoFrameExtractor } from "./metaVideoFrameExtractor.js";
 import { OpenAiMediaVisionProvider } from "./ai/openAiMediaVisionProvider.js";
+import { OpenAiMediaCatalogRanker } from "./ai/openAiMediaCatalogRanker.js";
+import { MediaCatalogCandidateResolver } from "./mediaCatalogCandidateResolver.js";
+import { TrustedMediaCatalogMatcher } from "./mediaCatalogMatcher.js";
 
 export interface MetaVideoUnderstandingRuntimeService {
   understand(input:{merchantId:string;videoUrl:string}):Promise<MetaVideoUnderstandingResult|null>;
@@ -14,10 +17,16 @@ export function createOpenAiMetaVideoUnderstandingService(options:{apiKey?:strin
   const fetcher=new SecureMetaVideoFetcher();
   const extractor=new FfmpegMetaVideoFrameExtractor();
   const vision=new OpenAiMediaVisionProvider({apiKey,model});
+  const ranker=new OpenAiMediaCatalogRanker({apiKey,model});
+  const resolver=new MediaCatalogCandidateResolver({rankCandidates:(input)=>ranker.rank(input)});
+  const matcher=new TrustedMediaCatalogMatcher();
   return new MetaVideoUnderstandingService({
     fetchVideo:url=>fetcher.fetchVideo({url}),
     extractFrames:video=>extractor.extract(video),
     analyzeFrame:input=>vision.analyze(input),
+    resolveCandidates:input=>resolver.resolve(input),
+    matchCatalog:input=>matcher.resolve(input),
+    resolveAlternatives:input=>matcher.resolveAlternatives(input),
   });
 }
 export function configureMetaVideoUnderstandingService(service:MetaVideoUnderstandingRuntimeService){

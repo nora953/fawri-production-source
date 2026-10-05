@@ -18,7 +18,7 @@ import {
 import {
   getMetaAudioUnderstandingService,
 } from "./metaAudioUnderstandingRuntime.js";
-import { getMetaVideoUnderstandingService } from "./metaVideoUnderstandingRuntime.js";
+import { understandTrustedMetaVideoForReply } from "./metaVideoReplyGrounding.js";
 import { TrustedMediaCatalogMatcher } from "./mediaCatalogMatcher";
 import { notifyMerchantNewCustomerMessagePostgres } from "./postgresOperationalNotificationAuthority";
 import { notifyMerchantKnowledgeGapPostgres } from "./postgresOperationalNotificationAuthority.js";
@@ -540,9 +540,20 @@ async function loadRecentConversationContext(
           ? media.video_observation.trim()
           : "";
 
-      const trustedCatalogRef =
-        row.sender === "customer" &&
-        Boolean(matchedRecordId) &&
+      const videoSha256 =
+        media && typeof media.video_sha256 === "string"
+          ? media.video_sha256.trim()
+          : "";
+      const videoVisionProviderId =
+        media && typeof media.video_vision_provider_id === "string"
+          ? media.video_vision_provider_id.trim()
+          : "";
+      const videoVisionModel =
+        media && typeof media.video_vision_model === "string"
+          ? media.video_vision_model.trim()
+          : "";
+
+      const trustedImageCatalogRef =
         /^[a-f0-9]{64}$/i.test(imageSha256) &&
         Boolean(visionProviderId) &&
         Boolean(visionModel) &&
@@ -550,6 +561,16 @@ async function loadRecentConversationContext(
         Number.isFinite(matchConfidence) &&
         matchConfidence >= 0 &&
         matchConfidence <= 1;
+
+      const trustedVideoCatalogRef =
+        /^[a-f0-9]{64}$/i.test(videoSha256) &&
+        Boolean(videoVisionProviderId) &&
+        Boolean(videoVisionModel);
+
+      const trustedCatalogRef =
+        row.sender === "customer" &&
+        Boolean(matchedRecordId) &&
+        (trustedImageCatalogRef || trustedVideoCatalogRef);
 
       const createdAt = new Date(row.created_at).toISOString();
       return {
@@ -633,84 +654,17 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
-  let trustedVideoText: string | null = null;
-  let trustedVideoUnderstood = false;
-
-  if (parsed.videoUrl) {
-    const persistedVideo = await withMerchantOperationalTransaction(
-      parsed.merchantId,
-      async (client) => {
-        const result = await client.query<{ metadata: Record<string, unknown> | null }>(
-          `SELECT metadata FROM messages
-            WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3 AND sender = 'customer'
-            LIMIT 1`,
-          [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId],
-        );
-        const metadata = result.rows[0]?.metadata;
-        const media = metadata && typeof metadata === "object" && !Array.isArray(metadata) &&
-          metadata.media && typeof metadata.media === "object" && !Array.isArray(metadata.media)
-          ? metadata.media as Record<string, unknown> : null;
-        const summary = typeof media?.video_observation === "string" ? media.video_observation.trim() : "";
-        const sha = typeof media?.video_sha256 === "string" ? media.video_sha256.trim() : "";
-        const same = media?.content_identity_hash === parsed.contentIdentityHash;
-        return same && summary && summary.length <= 2_000 && /^[a-f0-9]{64}$/i.test(sha) ? summary : null;
-      },
-    );
-
-    if (persistedVideo) {
-      trustedVideoText = persistedVideo;
-      trustedVideoUnderstood = true;
-    } else {
-      const videoService = getMetaVideoUnderstandingService();
-      const understood = videoService ? await videoService.understand({
-        merchantId: parsed.merchantId,
-        videoUrl: parsed.videoUrl,
-      }) : null;
-      if (understood?.observation && understood.observation.confidence >= 0.5 &&
-          /^[a-f0-9]{64}$/i.test(understood.videoSha256) &&
-          Number.isInteger(understood.frameCount) && understood.frameCount >= 1 && understood.frameCount <= 6) {
-        const observation = understood.observation;
-        const parts = [
-          observation.productType ? `نوع المنتج الظاهر: ${observation.productType}` : "",
-          observation.colors.length ? `الألوان الظاهرة: ${observation.colors.join(", ")}` : "",
-          observation.attributes.length ? `الصفات الظاهرة: ${observation.attributes.join(", ")}` : "",
-          observation.description ? `الوصف المرئي: ${observation.description}` : "",
-        ].filter(Boolean);
-        const summary = parts.join(". ").slice(0, 2_000);
-        if (summary) {
-          await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
-            const locked = await client.query<{ metadata: Record<string, unknown> | null }>(
-              `SELECT metadata FROM messages
-                WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3 AND sender = 'customer'
-                FOR UPDATE`,
-              [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId],
-            );
-            const metadata = locked.rows[0]?.metadata;
-            const media = metadata && typeof metadata === "object" && !Array.isArray(metadata) &&
-              metadata.media && typeof metadata.media === "object" && !Array.isArray(metadata.media)
-              ? metadata.media as Record<string, unknown> : null;
-            if (!media || media.content_identity_hash !== parsed.contentIdentityHash) {
-              throw Object.assign(new Error("Meta video content identity changed"), { code: "META_MESSAGE_IDENTITY_COLLISION" });
-            }
-            const nextMetadata = { ...metadata, media: { ...media,
-              video_observation: summary,
-              video_sha256: understood.videoSha256,
-              video_frame_count: understood.frameCount,
-              video_vision_provider_id: observation.providerId,
-              video_vision_model: observation.model,
-            }};
-            await client.query(
-              `UPDATE messages SET metadata = $4::jsonb
-                WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3`,
-              [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId, JSON.stringify(nextMetadata)],
-            );
-          });
-          trustedVideoText = summary;
-          trustedVideoUnderstood = true;
-        }
-      }
-    }
-  }
+  const trustedVideo = await understandTrustedMetaVideoForReply({
+    merchantId: parsed.merchantId,
+    conversationId: inbound.conversationId,
+    sourceCustomerMessageId: inbound.sourceCustomerMessageId,
+    videoUrl: parsed.videoUrl,
+    contentIdentityHash: parsed.contentIdentityHash,
+  });
+  const trustedVideoText = trustedVideo.text;
+  const trustedVideoUnderstood = trustedVideo.understood;
+  const trustedVideoMatchedRecordId = trustedVideo.matchedRecordId;
+  const trustedVideoAlternatives = trustedVideo.alternatives;
 
   let trustedAudioTranscript: string | null = null;
   let trustedAudioUnderstood = false;
@@ -1487,6 +1441,16 @@ export async function preparePostgresMetaAutoReply(
     });
   }
 
+  if (trustedVideoMatchedRecordId) {
+    recentMessages.push({
+      sender: "customer",
+      text: effectiveCustomerText,
+      createdAt: parsed.createdAt,
+      matchedRecordId: trustedVideoMatchedRecordId,
+      trustedCatalogRef: true,
+    });
+  }
+
   let decision;
   try {
     decision = await getKnowledgeDecisionEngine().decide({
@@ -1496,13 +1460,17 @@ export async function preparePostgresMetaAutoReply(
       conversationId: inbound.conversationId,
       customerExternalId: parsed.senderId,
       recentMessages,
-      ...(trustedImageAlternatives[0]
+      ...((trustedImageAlternatives[0] || trustedVideoAlternatives[0])
         ? {
             // Keep the singular field for backward compatibility while the
             // ranked set enables authoritative stock fallback across similar
             // current-merchant catalog candidates.
-            trustedVisualAlternative: trustedImageAlternatives[0],
-            trustedVisualAlternatives: trustedImageAlternatives,
+            trustedVisualAlternative:
+              trustedImageAlternatives[0] || trustedVideoAlternatives[0],
+            trustedVisualAlternatives:
+              trustedImageAlternatives.length > 0
+                ? trustedImageAlternatives
+                : trustedVideoAlternatives,
           }
         : {}),
     });
