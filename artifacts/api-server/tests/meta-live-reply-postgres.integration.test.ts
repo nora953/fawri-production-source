@@ -4610,6 +4610,74 @@ await test("mixed image and audio with explicit text requires every attachment t
   }
 });
 
+await test("text plus trusted audio composes the transcript into the knowledge intent", async () => {
+  const senderId = `customer-live-text-audio-compose-${runId}`;
+  const eventId = `event-live-text-audio-compose-${runId}`;
+  const mid = `mid-live-text-audio-compose-${runId}`;
+  const audioUrl = "https://example.invalid/compose-question.mp3";
+
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      return {
+        transcript: "كم سعره؟",
+        audioSha256: "e".repeat(64),
+        transcriptionProviderId: "test-compose-audio",
+        transcriptionModel: "test-compose-audio-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                text: "عن هذا المنتج",
+                attachments: [
+                  { type: "audio", payload: { url: audioUrl } },
+                ],
+              },
+            }],
+          }],
+        },
+      },
+    });
+
+    const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.notEqual(prepared.action, "suppress");
+
+    const stored = await raw(
+      `SELECT metadata FROM messages
+        WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+    assert.equal(stored.rows.length, 1);
+    assert.equal(stored.rows[0].metadata?.media?.audio_transcript, "كم سعره؟");
+    assert.equal(JSON.stringify(stored.rows[0].metadata).includes(audioUrl), false);
+  } finally {
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  }
+});
+
 await test("mixed media without explicit text remains fail closed", async () => {
   const senderId = `customer-live-mixed-no-text-${runId}`;
   const eventId = `event-live-mixed-no-text-${runId}`;
