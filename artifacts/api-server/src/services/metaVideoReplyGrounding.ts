@@ -49,6 +49,13 @@ export async function understandTrustedMetaVideoForReply(input:{
     try{
       understood=await service.understand({merchantId:input.merchantId,videoUrl:input.videoUrl});
     }catch{
+      console.error("Meta video understanding failed", {
+        code: "META_MEDIA_PROVIDER_UNAVAILABLE",
+        media_kind: "video",
+        merchant_id: input.merchantId,
+        conversation_id: input.conversationId,
+        source_message_id: input.sourceCustomerMessageId,
+      });
       // Provider/network/decoder failure is not trusted visual evidence.
       // Return the empty grounding while preserving integrity/DB errors below.
       return empty();
