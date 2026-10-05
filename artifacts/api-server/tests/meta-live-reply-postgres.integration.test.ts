@@ -4760,6 +4760,66 @@ await test("video visual observation is not flattened into customer-authored int
   }
 });
 
+await test("persisted video observation without complete provenance is not trusted", async () => {
+  const senderId = `customer-live-video-provenance-${runId}`;
+  const eventId = `event-live-video-provenance-${runId}`;
+  const mid = `mid-live-video-provenance-${runId}`;
+  const videoUrl = "https://example.invalid/persisted-provenance.mp4";
+  let videoCalls = 0;
+
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() {
+      videoCalls += 1;
+      return null;
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{ id: pageA, messaging: [{
+            sender: { id: senderId }, recipient: { id: pageA }, timestamp: Date.now(),
+            message: { mid, attachments: [{ type: "video", payload: { url: videoUrl } }] },
+          }] }],
+        },
+      },
+    });
+
+    const first = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(first.action, "suppress");
+    assert.equal(videoCalls, 1);
+
+    await raw(
+      `UPDATE messages
+          SET metadata = jsonb_set(
+            jsonb_set(metadata, '{media,video_observation}', to_jsonb($3::text), true),
+            '{media,video_sha256}', to_jsonb($4::text), true
+          )
+        WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'`,
+      [merchantA.account.id, mid, "وصف مرئي قديم بلا مصدر موثوق", "a".repeat(64)],
+    );
+
+    const replay = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(replay.action, "suppress");
+    if (replay.action === "suppress") assert.equal(replay.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    assert.equal(videoCalls, 2);
+  } finally {
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
 await test("text plus image audio and video fails closed when any attachment is not understood", async () => {
   const senderId = `customer-live-all-media-partial-${runId}`;
   const eventId = `event-live-all-media-partial-${runId}`;
