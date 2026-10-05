@@ -181,6 +181,63 @@ function selectSingleSafeAttachmentUrl(
   }
 }
 
+export type MetaInboundSafeMediaManifest = {
+  imageUrl: string | null;
+  audioUrl: string | null;
+  videoUrl: string | null;
+};
+
+function safeAttachmentUrl(attachment: MetaInboundAttachment): string | null {
+  const url = attachment.url?.trim();
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.protocol !== "https:" ||
+      !parsed.hostname ||
+      parsed.username ||
+      parsed.password
+    ) return null;
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Builds an atomic manifest only when every attachment is a supported media
+ * type, has one bounded HTTPS URL, and no media type is duplicated.
+ * Consumers must process the whole manifest or none of it.
+ */
+export function selectMetaInboundSafeMediaManifest(
+  inbound: MetaInboundMessage,
+): MetaInboundSafeMediaManifest | null {
+  if (!inbound || !Array.isArray(inbound.attachments) || inbound.attachments.length === 0) {
+    return null;
+  }
+
+  const manifest: MetaInboundSafeMediaManifest = {
+    imageUrl: null,
+    audioUrl: null,
+    videoUrl: null,
+  };
+  const seen = new Set<string>();
+
+  for (const attachment of inbound.attachments) {
+    const type = attachment.type.toLowerCase();
+    if (type !== "image" && type !== "audio" && type !== "video") return null;
+    if (seen.has(type)) return null;
+    const url = safeAttachmentUrl(attachment);
+    if (!url) return null;
+    seen.add(type);
+    if (type === "image") manifest.imageUrl = url;
+    if (type === "audio") manifest.audioUrl = url;
+    if (type === "video") manifest.videoUrl = url;
+  }
+
+  return manifest;
+}
+
 export function selectMetaInboundImageUrl(
   inbound: MetaInboundMessage,
 ): string | null {
