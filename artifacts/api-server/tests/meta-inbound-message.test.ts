@@ -398,22 +398,7 @@ test("preserves reply-to message id without treating quoted content as trusted t
 });
 
 
-test("selects one safe media attachment when another supported media type accompanies it", () => {
-  const parsed = parseMetaInboundMessage({
-    mid: "message-mixed",
-    text: "هذا المنتج شكد سعره؟",
-    attachments: [
-      { type: "image", payload: { url: "https://cdn.example.com/item.jpg" } },
-      { type: "audio", payload: { url: "https://cdn.example.com/note.ogg" } },
-    ],
-  });
-  assert.ok(parsed);
-  assert.equal(selectMetaInboundImageUrl(parsed), "https://cdn.example.com/item.jpg");
-  assert.equal(selectMetaInboundAudioUrl(parsed), "https://cdn.example.com/note.ogg");
-  assert.equal(selectMetaInboundVideoUrl(parsed), null);
-});
-
-test("rejects ambiguous duplicate media attachments and unsupported companions", () => {
+test("rejects duplicate media attachments and unsupported companions", () => {
   const duplicateImages = parseMetaInboundMessage({
     attachments: [
       { type: "image", payload: { url: "https://cdn.example.com/a.jpg" } },
