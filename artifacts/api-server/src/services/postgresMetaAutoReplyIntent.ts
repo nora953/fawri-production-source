@@ -173,6 +173,7 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     !externalMessageId ||
     !inbound ||
     (contentKind === "unsupported" ||
+      contentKind === "shared_post" ||
       contentKind === "document" ||
       contentKind === "location" ||
       contentKind === "sticker") ||

@@ -246,7 +246,6 @@ test("queue preserves supported inbound media for reply processing and fails clo
       "message-image",
       "message-audio",
       "message-video",
-      "message-share",
     ]) {
       const job = jobs.find(
         (candidate) =>
@@ -268,13 +267,19 @@ test("queue preserves supported inbound media for reply processing and fails clo
       (candidate) => candidate.type === "meta.webhook.event",
     );
 
-    assert.equal(nonReplyJobs.length, 2);
+    assert.equal(nonReplyJobs.length, 3);
     assert.ok(
       nonReplyJobs.every(
         (job) => job.payload?.event_kind === "non_reply",
       ),
     );
 
+    assert.equal(
+      jobs.some(
+        (job) => job.payload?.external_message_id === "message-share" && job.type === "meta.webhook.reply",
+      ),
+      false,
+    );
     assert.equal(
       jobs.some(
         (job) => job.payload?.external_message_id === "message-file",

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   parseMetaInboundMessage,
+  isMetaInboundReplyHandled,
   selectMetaInboundImageUrl,
   selectMetaInboundAudioUrl,
   selectMetaInboundVideoUrl,
@@ -72,6 +73,7 @@ test("normalizes a shared post as shared content, not merchant knowledge", () =>
   assert.equal(parsed?.kind, "shared_post");
   assert.equal(parsed?.storageText, "[shared_post]");
   assert.equal(parsed?.attachments[0]?.title, "Shared post");
+  assert.equal(isMetaInboundReplyHandled(parsed), false);
 });
 
 test("keeps caption text authoritative while retaining its image for safe processing", () => {
