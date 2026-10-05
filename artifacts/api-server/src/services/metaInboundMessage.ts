@@ -138,8 +138,7 @@ export function isMetaInboundReplyHandled(inbound: MetaInboundMessage | null): b
       (inbound.kind === "text" ||
         inbound.kind === "image" ||
         inbound.kind === "audio" ||
-        inbound.kind === "video" ||
-        inbound.kind === "shared_post"),
+        inbound.kind === "video"),
   );
 }
 
