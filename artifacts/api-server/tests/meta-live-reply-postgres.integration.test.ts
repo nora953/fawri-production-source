@@ -4679,9 +4679,9 @@ await test("text plus trusted audio composes the transcript into the knowledge i
 });
 
 await test("text plus image audio and video fails closed when any attachment is not understood", async () => {
-  const senderId = \`customer-live-all-media-partial-\${runId}\`;
-  const eventId = \`event-live-all-media-partial-\${runId}\`;
-  const mid = \`mid-live-all-media-partial-\${runId}\`;
+  const senderId = `customer-live-all-media-partial-${runId}`;
+  const eventId = `event-live-all-media-partial-${runId}`;
+  const mid = `mid-live-all-media-partial-${runId}`;
   const imageUrl = "https://example.invalid/all-media.jpg";
   const audioUrl = "https://example.invalid/all-media.mp3";
   const videoUrl = "https://example.invalid/all-media.mp4";
@@ -4774,9 +4774,9 @@ await test("text plus image audio and video fails closed when any attachment is 
     assert.equal(videoCalls, 1);
 
     const stored = await raw(
-      \`SELECT metadata FROM messages
+      `SELECT metadata FROM messages
         WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'
-        LIMIT 1\`,
+        LIMIT 1`,
       [merchantA.account.id, mid],
     );
     assert.equal(stored.rows.length, 1);
@@ -4792,9 +4792,9 @@ await test("text plus image audio and video fails closed when any attachment is 
 });
 
 await test("duplicate media type is rejected before any partial media understanding", async () => {
-  const senderId = \`customer-live-duplicate-media-\${runId}\`;
-  const eventId = \`event-live-duplicate-media-\${runId}\`;
-  const mid = \`mid-live-duplicate-media-\${runId}\`;
+  const senderId = `customer-live-duplicate-media-${runId}`;
+  const eventId = `event-live-duplicate-media-${runId}`;
+  const mid = `mid-live-duplicate-media-${runId}`;
   let imageCalls = 0;
   let audioCalls = 0;
 
