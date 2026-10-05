@@ -4942,6 +4942,81 @@ await test("duplicate media type is rejected before any partial media understand
   }
 });
 
+await test("unsafe single-media URLs fail closed before any understanding service", async () => {
+  const cases = [
+    { label: "http-image", attachment: { type: "image", payload: { url: "http://example.invalid/unsafe-single.jpg" } } },
+    { label: "credentialed-audio", attachment: { type: "audio", payload: { url: "https://user:secret@example.invalid/unsafe-single.mp3" } } },
+    { label: "credentialed-video", attachment: { type: "video", payload: { url: "https://user:secret@example.invalid/unsafe-single.mp4" } } },
+  ];
+  let imageCalls = 0;
+  let audioCalls = 0;
+  let videoCalls = 0;
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() { imageCalls += 1; return null; },
+    async understandWithAlternatives() { imageCalls += 1; return null; },
+  });
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() { audioCalls += 1; return null; },
+  });
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() { videoCalls += 1; return null; },
+  });
+
+  try {
+    for (const testCase of cases) {
+      const senderId = `customer-live-unsafe-single-${testCase.label}-${runId}`;
+      const eventId = `event-live-unsafe-single-${testCase.label}-${runId}`;
+      const mid = `mid-live-unsafe-single-${testCase.label}-${runId}`;
+      const queued = await jobs.enqueueDurableJobAuthoritative({
+        type: "meta.webhook.reply",
+        dedupeKey: eventId,
+        merchantId: merchantA.account.id,
+        maxAttempts: 5,
+        payload: {
+          event_id: eventId,
+          page_id: pageA,
+          merchant_id: merchantA.account.id,
+          external_message_id: mid,
+          sender_id: senderId,
+          webhook_body: {
+            object: "page",
+            entry: [{
+              id: pageA,
+              messaging: [{
+                sender: { id: senderId },
+                recipient: { id: pageA },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  text: "راجع هذا المرفق",
+                  attachments: [testCase.attachment],
+                },
+              }],
+            }],
+          },
+        },
+      });
+
+      const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+      assert.equal(prepared.action, "suppress");
+      if (prepared.action !== "suppress") continue;
+      assert.equal(prepared.code, "META_MEDIA_PROCESSING_UNAVAILABLE");
+    }
+
+    assert.equal(imageCalls, 0);
+    assert.equal(audioCalls, 0);
+    assert.equal(videoCalls, 0);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
 await test("unsafe mixed-media URLs are rejected before any understanding service", async () => {
   const cases = [
     {
