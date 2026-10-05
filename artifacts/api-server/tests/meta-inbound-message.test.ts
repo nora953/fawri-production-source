@@ -396,3 +396,40 @@ test("preserves reply-to message id without treating quoted content as trusted t
   assert.equal(parsed.text, "هذا شكد سعره؟");
   assert.equal(parsed.replyToMessageId, "prior-media-message");
 });
+
+
+test("selects one safe media attachment when another supported media type accompanies it", () => {
+  const parsed = parseMetaInboundMessage({
+    mid: "message-mixed",
+    text: "هذا المنتج شكد سعره؟",
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.com/item.jpg" } },
+      { type: "audio", payload: { url: "https://cdn.example.com/note.ogg" } },
+    ],
+  });
+  assert.ok(parsed);
+  assert.equal(selectMetaInboundImageUrl(parsed), "https://cdn.example.com/item.jpg");
+  assert.equal(selectMetaInboundAudioUrl(parsed), "https://cdn.example.com/note.ogg");
+  assert.equal(selectMetaInboundVideoUrl(parsed), null);
+});
+
+test("rejects ambiguous duplicate media attachments and unsupported companions", () => {
+  const duplicateImages = parseMetaInboundMessage({
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.com/a.jpg" } },
+      { type: "image", payload: { url: "https://cdn.example.com/b.jpg" } },
+    ],
+  });
+  assert.ok(duplicateImages);
+  assert.equal(selectMetaInboundImageUrl(duplicateImages), null);
+
+  const imageWithDocument = parseMetaInboundMessage({
+    text: "راجع هذا",
+    attachments: [
+      { type: "image", payload: { url: "https://cdn.example.com/a.jpg" } },
+      { type: "document", payload: { url: "https://cdn.example.com/a.pdf" } },
+    ],
+  });
+  assert.ok(imageWithDocument);
+  assert.equal(selectMetaInboundImageUrl(imageWithDocument), null);
+});
