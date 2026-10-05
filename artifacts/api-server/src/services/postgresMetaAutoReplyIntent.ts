@@ -56,7 +56,7 @@ type ParsedMetaJob = {
   externalMessageId: string;
   customerText: string | null;
   storageText: string;
-  contentKind: "text" | "image" | "audio" | "video" | "shared_post";
+  contentKind: "text" | "image" | "audio" | "video" | "shared_post" | "document" | "location" | "sticker";
   attachmentCount: number;
   contentIdentityHash: string | null;
   imageUrl: string | null;
@@ -172,7 +172,10 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     !senderId ||
     !externalMessageId ||
     !inbound ||
-    contentKind === "unsupported" ||
+    (contentKind === "unsupported" ||
+      contentKind === "document" ||
+      contentKind === "location" ||
+      contentKind === "sticker") ||
     !storageText ||
     storageText.length > 2_000 ||
     (customerText !== null && customerText.length > 2_000) ||
