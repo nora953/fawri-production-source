@@ -1484,80 +1484,15 @@ export async function preparePostgresMetaAutoReply(
     );
     const target = repliedTo.rows[0];
     if (target) {
-      const targetCreatedAt = new Date(target.created_at).toISOString();
+      const mappedTarget = mapConversationContextRow(target);
       const alreadyPresent = recentMessages.some(
         (message) =>
-          message.createdAt === targetCreatedAt &&
-          message.sender === target.sender &&
-          message.text === text(target.text),
+          message.createdAt === mappedTarget.createdAt &&
+          message.sender === mappedTarget.sender &&
+          message.text === mappedTarget.text,
       );
       if (!alreadyPresent) {
-        const metadata =
-          target.metadata &&
-          typeof target.metadata === "object" &&
-          !Array.isArray(target.metadata)
-            ? target.metadata
-            : {};
-        const media =
-          metadata.media &&
-          typeof metadata.media === "object" &&
-          !Array.isArray(metadata.media)
-            ? metadata.media as Record<string, unknown>
-            : null;
-        const matchedRecordId = text(metadata.matched_record_id);
-        const trustedImageRef =
-          target.sender === "customer" &&
-          Boolean(matchedRecordId) &&
-          typeof media?.image_sha256 === "string" &&
-          /^[a-f0-9]{64}$/i.test(media.image_sha256) &&
-          typeof media?.vision_provider_id === "string" &&
-          media.vision_provider_id.trim().length > 0 &&
-          typeof media?.vision_model === "string" &&
-          media.vision_model.trim().length > 0 &&
-          typeof media?.match_confidence === "number" &&
-          Number.isFinite(media.match_confidence) &&
-          media.match_confidence >= 0 &&
-          media.match_confidence <= 1;
-        const trustedVideoRef =
-          target.sender === "customer" &&
-          Boolean(matchedRecordId) &&
-          typeof media?.video_sha256 === "string" &&
-          /^[a-f0-9]{64}$/i.test(media.video_sha256) &&
-          typeof media?.video_vision_provider_id === "string" &&
-          media.video_vision_provider_id.trim().length > 0 &&
-          typeof media?.video_vision_model === "string" &&
-          media.video_vision_model.trim().length > 0;
-        const trustedAudioTranscript =
-          target.sender === "customer" &&
-          typeof media?.audio_transcript === "string" &&
-          media.audio_transcript.trim().length > 0 &&
-          media.audio_transcript.trim().length <= 2_000 &&
-          typeof media?.audio_sha256 === "string" &&
-          /^[a-f0-9]{64}$/i.test(media.audio_sha256) &&
-          typeof media?.transcription_provider_id === "string" &&
-          media.transcription_provider_id.trim().length > 0 &&
-          typeof media?.transcription_model === "string" &&
-          media.transcription_model.trim().length > 0
-            ? media.audio_transcript.trim()
-            : "";
-        const trustedVideoObservation =
-          target.sender === "customer" &&
-          typeof media?.video_observation === "string" &&
-          media.video_observation.trim().length > 0 &&
-          media.video_observation.trim().length <= 2_000 &&
-          typeof media?.video_sha256 === "string" &&
-          /^[a-f0-9]{64}$/i.test(media.video_sha256)
-            ? media.video_observation.trim()
-            : "";
-        recentMessages.unshift({
-          sender: target.sender,
-          text: trustedAudioTranscript || trustedVideoObservation || text(target.text),
-          createdAt: targetCreatedAt,
-          ...(matchedRecordId ? { matchedRecordId } : {}),
-          ...((trustedImageRef || trustedVideoRef)
-            ? { trustedCatalogRef: true }
-            : {}),
-        });
+        recentMessages.unshift(mappedTarget);
       }
     }
   }
