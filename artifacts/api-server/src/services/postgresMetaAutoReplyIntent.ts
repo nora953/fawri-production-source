@@ -11,6 +11,7 @@ import {
   selectMetaInboundImageUrl,
   selectMetaInboundAudioUrl,
   selectMetaInboundVideoUrl,
+  selectMetaInboundSafeMediaManifest,
 } from "./metaInboundMessage";
 import {
   getMetaImageUnderstandingService,
@@ -62,6 +63,11 @@ type ParsedMetaJob = {
   imageUrl: string | null;
   audioUrl: string | null;
   videoUrl: string | null;
+  mediaManifest: {
+    imageUrl: string | null;
+    audioUrl: string | null;
+    videoUrl: string | null;
+  } | null;
   replyToMessageId: string | null;
   webhookBody: Record<string, unknown>;
   createdAt: string;
@@ -150,6 +156,9 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     ? selectMetaInboundAudioUrl(inbound)
     : null;
   const videoUrl = inbound ? selectMetaInboundVideoUrl(inbound) : null;
+  const mediaManifest = inbound
+    ? selectMetaInboundSafeMediaManifest(inbound)
+    : null;
   const contentIdentityHash =
     inbound && inbound.attachments.length > 0
       ? digest(
@@ -204,6 +213,7 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     imageUrl,
     audioUrl,
     videoUrl,
+    mediaManifest,
     replyToMessageId: inbound.replyToMessageId,
     webhookBody,
     createdAt: eventTimestamp(event.timestamp),
