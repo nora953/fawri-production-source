@@ -5057,6 +5057,7 @@ await test("media provider exceptions fail closed without crashing the reply pre
     videoRuntime.resetMetaVideoUnderstandingServiceForTests();
     imageRuntime.configureMetaImageUnderstandingService({
       async understand() { throw new Error("synthetic image provider failure"); },
+      async understandWithAlternatives() { throw new Error("synthetic image alternatives provider failure"); },
     });
     audioRuntime.configureMetaAudioUnderstandingService({
       async understand() { throw new Error("synthetic audio provider failure"); },
