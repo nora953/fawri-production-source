@@ -635,6 +635,12 @@ export async function preparePostgresMetaAutoReply(
 
   let trustedVideoText: string | null = null;
   let trustedVideoUnderstood = false;
+  let trustedVideoMatchedRecordId: string | null = null;
+  let trustedVideoAlternatives: Array<{
+    productId: string;
+    variantId?: string;
+    confidence: number;
+  }> = [];
 
   if (parsed.videoUrl) {
     const persistedVideo = await withMerchantOperationalTransaction(
@@ -653,13 +659,57 @@ export async function preparePostgresMetaAutoReply(
         const summary = typeof media?.video_observation === "string" ? media.video_observation.trim() : "";
         const sha = typeof media?.video_sha256 === "string" ? media.video_sha256.trim() : "";
         const same = media?.content_identity_hash === parsed.contentIdentityHash;
-        return same && summary && summary.length <= 2_000 && /^[a-f0-9]{64}$/i.test(sha) ? summary : null;
+        if (!same || !summary || summary.length > 2_000 || !/^[a-f0-9]{64}$/i.test(sha)) return null;
+        const matchedRecordId =
+          typeof metadata?.matched_record_id === "string"
+            ? metadata.matched_record_id.trim()
+            : "";
+        const alternatives = Array.isArray(media?.video_visual_alternatives)
+          ? media.video_visual_alternatives
+              .map((value) => {
+                if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+                const item = value as Record<string, unknown>;
+                const productId = typeof item.product_id === "string" ? item.product_id.trim() : "";
+                const variantId = typeof item.variant_id === "string" ? item.variant_id.trim() : "";
+                const confidence = Number(item.confidence);
+                if (!productId || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) return null;
+                return { productId, ...(variantId ? { variantId } : {}), confidence };
+              })
+              .filter((value): value is { productId: string; variantId?: string; confidence: number } => value !== null)
+          : [];
+        return { summary, matchedRecordId, alternatives };
       },
     );
 
     if (persistedVideo) {
-      trustedVideoText = persistedVideo;
+      trustedVideoText = persistedVideo.summary;
       trustedVideoUnderstood = true;
+
+      if (persistedVideo.matchedRecordId) {
+        const productMatch = /^catalog-product:([^:]+)$/.exec(persistedVideo.matchedRecordId);
+        const variantMatch = /^catalog-variant:([^:]+):([^:]+)$/.exec(persistedVideo.matchedRecordId);
+        const candidate = productMatch
+          ? { productId: productMatch[1], confidence: 1 }
+          : variantMatch
+            ? { productId: variantMatch[1], variantId: variantMatch[2], confidence: 1 }
+            : null;
+        const revalidated = candidate
+          ? await trustedMediaCatalogMatcher.resolve({
+              merchantId: parsed.merchantId,
+              candidates: [candidate],
+            })
+          : null;
+        if (revalidated?.matchedRecordId === persistedVideo.matchedRecordId) {
+          trustedVideoMatchedRecordId = revalidated.matchedRecordId;
+        }
+      }
+
+      if (!trustedVideoMatchedRecordId && persistedVideo.alternatives.length > 0) {
+        trustedVideoAlternatives = await trustedMediaCatalogMatcher.resolveAlternatives({
+          merchantId: parsed.merchantId,
+          candidates: persistedVideo.alternatives,
+        });
+      }
     } else {
       const videoService = getMetaVideoUnderstandingService();
       const understood = videoService ? await videoService.understand({
@@ -678,6 +728,23 @@ export async function preparePostgresMetaAutoReply(
         ].filter(Boolean);
         const summary = parts.join(". ").slice(0, 2_000);
         if (summary) {
+          const exactMatch = understood.exactMatch
+            ? await trustedMediaCatalogMatcher.resolve({
+                merchantId: parsed.merchantId,
+                candidates: [{
+                  productId: understood.exactMatch.productId,
+                  ...(understood.exactMatch.variantId ? { variantId: understood.exactMatch.variantId } : {}),
+                  confidence: understood.exactMatch.confidence,
+                }],
+              })
+            : null;
+          const alternatives = !exactMatch && understood.alternatives.length > 0
+            ? await trustedMediaCatalogMatcher.resolveAlternatives({
+                merchantId: parsed.merchantId,
+                candidates: understood.alternatives,
+              })
+            : [];
+
           await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
             const locked = await client.query<{ metadata: Record<string, unknown> | null }>(
               `SELECT metadata FROM messages
@@ -692,13 +759,24 @@ export async function preparePostgresMetaAutoReply(
             if (!media || media.content_identity_hash !== parsed.contentIdentityHash) {
               throw Object.assign(new Error("Meta video content identity changed"), { code: "META_MESSAGE_IDENTITY_COLLISION" });
             }
-            const nextMetadata = { ...metadata, media: { ...media,
-              video_observation: summary,
-              video_sha256: understood.videoSha256,
-              video_frame_count: understood.frameCount,
-              video_vision_provider_id: observation.providerId,
-              video_vision_model: observation.model,
-            }};
+            const nextMetadata = {
+              ...metadata,
+              ...(exactMatch ? { matched_record_id: exactMatch.matchedRecordId } : {}),
+              media: { ...media,
+                video_observation: summary,
+                video_sha256: understood.videoSha256,
+                video_frame_count: understood.frameCount,
+                video_vision_provider_id: observation.providerId,
+                video_vision_model: observation.model,
+                ...(alternatives.length > 0 ? {
+                  video_visual_alternatives: alternatives.map((alternative) => ({
+                    product_id: alternative.productId,
+                    ...(alternative.variantId ? { variant_id: alternative.variantId } : {}),
+                    confidence: alternative.confidence,
+                  })),
+                } : {}),
+              },
+            };
             await client.query(
               `UPDATE messages SET metadata = $4::jsonb
                 WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3`,
@@ -707,6 +785,8 @@ export async function preparePostgresMetaAutoReply(
           });
           trustedVideoText = summary;
           trustedVideoUnderstood = true;
+          trustedVideoMatchedRecordId = exactMatch?.matchedRecordId ?? null;
+          trustedVideoAlternatives = alternatives;
         }
       }
     }
@@ -1487,6 +1567,16 @@ export async function preparePostgresMetaAutoReply(
     });
   }
 
+  if (trustedVideoMatchedRecordId) {
+    recentMessages.push({
+      sender: "customer",
+      text: effectiveCustomerText,
+      createdAt: parsed.createdAt,
+      matchedRecordId: trustedVideoMatchedRecordId,
+      trustedCatalogRef: true,
+    });
+  }
+
   let decision;
   try {
     decision = await getKnowledgeDecisionEngine().decide({
@@ -1496,13 +1586,17 @@ export async function preparePostgresMetaAutoReply(
       conversationId: inbound.conversationId,
       customerExternalId: parsed.senderId,
       recentMessages,
-      ...(trustedImageAlternatives[0]
+      ...((trustedImageAlternatives[0] || trustedVideoAlternatives[0])
         ? {
             // Keep the singular field for backward compatibility while the
             // ranked set enables authoritative stock fallback across similar
             // current-merchant catalog candidates.
-            trustedVisualAlternative: trustedImageAlternatives[0],
-            trustedVisualAlternatives: trustedImageAlternatives,
+            trustedVisualAlternative:
+              trustedImageAlternatives[0] || trustedVideoAlternatives[0],
+            trustedVisualAlternatives:
+              trustedImageAlternatives.length > 0
+                ? trustedImageAlternatives
+                : trustedVideoAlternatives,
           }
         : {}),
     });
