@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   parseMetaInboundMessage,
   selectMetaInboundImageUrl,
+  selectMetaInboundAudioUrl,
 } from "../src/services/metaInboundMessage";
 
 test("preserves the existing text message contract", () => {
@@ -224,5 +225,68 @@ test("image URL selection fails closed for missing, non-HTTPS, or ambiguous imag
     const inbound = parseMetaInboundMessage(message);
     assert.ok(inbound);
     assert.equal(selectMetaInboundImageUrl(inbound), null);
+  }
+});
+
+test("selects exactly one explicit HTTPS audio URL for transcription", () => {
+  const inbound = parseMetaInboundMessage({
+    mid: "audio-one",
+    attachments: [
+      {
+        type: "audio",
+        payload: {
+          url: "https://cdn.example.test/private-question.mp3",
+        },
+      },
+    ],
+  });
+
+  assert.ok(inbound);
+  assert.equal(
+    selectMetaInboundAudioUrl(inbound),
+    "https://cdn.example.test/private-question.mp3",
+  );
+});
+
+test("audio URL selection fails closed for non-HTTPS, mixed, or ambiguous attachments", () => {
+  const cases = [
+    {
+      attachments: [
+        {
+          type: "audio",
+          payload: { url: "http://cdn.example.test/question.mp3" },
+        },
+      ],
+    },
+    {
+      attachments: [
+        {
+          type: "audio",
+          payload: { url: "https://cdn.example.test/question.mp3" },
+        },
+        {
+          type: "image",
+          payload: { url: "https://cdn.example.test/product.jpg" },
+        },
+      ],
+    },
+    {
+      attachments: [
+        {
+          type: "audio",
+          payload: { url: "https://cdn.example.test/one.mp3" },
+        },
+        {
+          type: "audio",
+          payload: { url: "https://cdn.example.test/two.mp3" },
+        },
+      ],
+    },
+  ];
+
+  for (const message of cases) {
+    const inbound = parseMetaInboundMessage(message);
+    assert.ok(inbound);
+    assert.equal(selectMetaInboundAudioUrl(inbound), null);
   }
 });
