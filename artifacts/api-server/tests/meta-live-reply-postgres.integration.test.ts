@@ -1281,6 +1281,65 @@ await test("uncertain provider outcome blocks automatic resend", async () => {
   assert.equal(state?.status, "uncertain");
 });
 
+await test("expired Meta reply claims reconcile without risking duplicate delivery", async () => {
+  const senderId = `customer-live-reconcile-${runId}`;
+  const eventId = `event-live-reconcile-${runId}`;
+  const queued = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId,
+    eventId,
+    mid: `mid-live-reconcile-${runId}`,
+  });
+  const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+  assert.equal(prepared.action, "send");
+  if (prepared.action !== "send") return;
+
+  const notStarted = await liveTransport.reconcilePostgresMetaReplyJob(queued.job);
+  assert.equal(notStarted.action, "retry");
+  if (notStarted.action === "retry") assert.equal(notStarted.code, "META_REPLY_NOT_STARTED");
+
+  const transport = await liveTransport.createPostgresMetaWebhookReplyTransport({
+    prepared,
+    sendText: async () => ({
+      status: "sent",
+      providerMessageId: `provider-reconcile-${runId}`,
+    }),
+  });
+  const delivered = await workerCore.processMetaReplyJob(queued.job, { transport });
+  assert.equal(delivered.delivery_status, "sent");
+
+  const recovered = await liveTransport.reconcilePostgresMetaReplyJob(queued.job);
+  assert.equal(recovered.action, "complete");
+  if (recovered.action === "complete") {
+    assert.equal(recovered.result?.delivery_status, "sent");
+    assert.equal(recovered.result?.recovered_after_worker_crash, true);
+  }
+
+  const uncertainEventId = `event-live-reconcile-uncertain-${runId}`;
+  const uncertainQueued = await enqueueReply({
+    merchantId: merchantA.account.id,
+    pageId: pageA,
+    senderId: `customer-live-reconcile-uncertain-${runId}`,
+    eventId: uncertainEventId,
+    mid: `mid-live-reconcile-uncertain-${runId}`,
+  });
+  const uncertainPrepared = await intents.preparePostgresMetaAutoReply(uncertainQueued.job);
+  assert.equal(uncertainPrepared.action, "send");
+  if (uncertainPrepared.action !== "send") return;
+  const uncertainTransport = await liveTransport.createPostgresMetaWebhookReplyTransport({
+    prepared: uncertainPrepared,
+    sendText: async () => ({ status: "uncertain", code: "META_GRAPH_TRANSPORT_UNCERTAIN" }),
+  });
+  await assert.rejects(
+    () => workerCore.processMetaReplyJob(uncertainQueued.job, { transport: uncertainTransport }),
+    (error: unknown) => (error as { code?: string }).code === "META_REPLY_OUTCOME_UNCERTAIN",
+  );
+  const blocked = await liveTransport.reconcilePostgresMetaReplyJob(uncertainQueued.job);
+  assert.equal(blocked.action, "dead_letter");
+  if (blocked.action === "dead_letter") assert.equal(blocked.code, "META_REPLY_OUTCOME_UNCERTAIN");
+});
+
 await test("stable knowledge gap hands off and notifies only the owning merchant", async () => {
   const senderId = `customer-live-knowledge-gap-${runId}`;
   const eventId = `event-live-knowledge-gap-1-${runId}`;
