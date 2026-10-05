@@ -160,6 +160,7 @@ test("secure audio fetcher pins transport to the address that passed DNS validat
   });
 
   await fetcher.fetchAudio({ url: "https://cdn.example.test/private.mp3" });
+  assert.ok(seen);
   assert.equal(seen.hostname, "cdn.example.test");
   assert.equal(seen.address, "93.184.216.34");
   assert.equal(seen.family, 4);
