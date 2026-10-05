@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import type { DurableJob } from "./durableJobQueue";
-import { getKnowledgeDecisionEngine } from "./ai/knowledgeDecisionEngine";
+import { decideMetaKnowledgeReply } from "./metaKnowledgeDecisionBoundary";
 
 import {
   withMerchantOperationalTransaction,
