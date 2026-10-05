@@ -1442,6 +1442,16 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  if (mixedMediaRequested && !parsed.customerText) {
+    return {
+      action: "suppress",
+      eventId: parsed.eventId,
+      merchantId: parsed.merchantId,
+      conversationId: inbound.conversationId,
+      code: "META_MEDIA_PROCESSING_UNAVAILABLE",
+    };
+  }
+
   const effectiveCustomerText =
     parsed.customerText ||
     (trustedAudioUnderstood && trustedAudioTranscript
