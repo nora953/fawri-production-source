@@ -129,11 +129,12 @@ function itemStatusShortLabel(product: CatalogProduct, copy: CommerceCatalogPage
   return copy.available;
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <button
       type="button"
       role="switch"
+      aria-label={label}
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative h-8 w-14 shrink-0 rounded-full transition-colors ${checked ? 'bg-orange-500' : 'bg-zinc-300'}`}
@@ -936,7 +937,7 @@ export default function CommerceCatalogSimplifiedPage() {
                 <p className="text-sm font-bold">{copy.availableForSale}</p>
                 <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">{copy.availableForSaleHint}</p>
               </div>
-              <Toggle checked={form.status !== 'out_of_stock'} onChange={available => patchForm({ status: available ? 'available' : 'out_of_stock' })} />
+              <Toggle label={copy.availableForSale} checked={form.status !== 'out_of_stock'} onChange={available => patchForm({ status: available ? 'available' : 'out_of_stock' })} />
             </div>
           )}
 
