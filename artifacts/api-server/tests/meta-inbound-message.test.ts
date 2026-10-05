@@ -341,12 +341,19 @@ test("selects exactly one explicit HTTPS video URL for bounded analysis", () => 
   );
 });
 
-test("video URL selection fails closed for captions, mixed attachments, HTTP, or ambiguity", () => {
+test("selects one safe captioned video while preserving explicit text authority", () => {
+  const inbound = parseMetaInboundMessage({
+    text: "هل هذا متوفر؟",
+    attachments: [{ type: "video", payload: { url: "https://cdn.example.test/a.mp4" } }],
+  });
+  assert.ok(inbound);
+  assert.equal(inbound.kind, "text");
+  assert.equal(inbound.text, "هل هذا متوفر؟");
+  assert.equal(selectMetaInboundVideoUrl(inbound), "https://cdn.example.test/a.mp4");
+});
+
+test("video URL selection fails closed for mixed attachments, HTTP, or ambiguity", () => {
   const cases = [
-    {
-      text: "caption wins",
-      attachments: [{ type: "video", payload: { url: "https://cdn.example.test/a.mp4" } }],
-    },
     {
       attachments: [
         { type: "video", payload: { url: "https://cdn.example.test/a.mp4" } },
