@@ -187,3 +187,22 @@ test("secure audio fetcher rejects non-audio bytes mislabeled as audio", async (
       "META_AUDIO_CONTENT_INVALID",
   );
 });
+
+
+test("secure audio fetcher bounds stalled DNS resolution and never reaches transport", async () => {
+  let transportCalls = 0;
+  const fetcher = new SecureMetaAudioFetcher({
+    timeoutMs: 20,
+    resolveHost: async () => new Promise(() => {}),
+    transportImpl: async () => {
+      transportCalls += 1;
+      throw new Error("must not execute");
+    },
+  });
+
+  await assert.rejects(
+    fetcher.fetchAudio({ url: "https://cdn.example.test/stalled.mp3" }),
+    (error: unknown) => (error as { code?: string } | null)?.code === "META_AUDIO_TIMEOUT",
+  );
+  assert.equal(transportCalls, 0);
+});
