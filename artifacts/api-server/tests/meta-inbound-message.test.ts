@@ -290,3 +290,21 @@ test("audio URL selection fails closed for non-HTTPS, mixed, or ambiguous attach
     assert.equal(selectMetaInboundAudioUrl(inbound), null);
   }
 });
+
+test("explicit text wins and is never replaced by an attached audio transcript", () => {
+  const inbound = parseMetaInboundMessage({
+    mid: "text-with-audio",
+    text: "هذا هو سؤالي المكتوب",
+    attachments: [
+      {
+        type: "audio",
+        payload: { url: "https://cdn.example.test/question.mp3" },
+      },
+    ],
+  });
+
+  assert.ok(inbound);
+  assert.equal(inbound.kind, "text");
+  assert.equal(inbound.text, "هذا هو سؤالي المكتوب");
+  assert.equal(selectMetaInboundAudioUrl(inbound), null);
+});
