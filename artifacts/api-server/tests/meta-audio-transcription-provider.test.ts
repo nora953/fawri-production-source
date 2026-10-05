@@ -42,6 +42,10 @@ test("transcription provider returns bounded transcript without storing audio", 
   const form = request?.body as FormData;
   assert.equal(form.get("model"), "test-transcribe");
   assert.equal(form.get("response_format"), "json");
+  const file = form.get("file");
+  assert.ok(file instanceof File);
+  assert.equal(file.name, "customer-audio.mp3");
+  assert.equal(file.type, "audio/mpeg");
 });
 
 test("transcription provider fails closed for tampered audio bytes", async () => {
