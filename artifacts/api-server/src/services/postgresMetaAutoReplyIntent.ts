@@ -259,6 +259,7 @@ async function ensureInboundState(
   customerInserted: boolean;
   existingReply: ReplyMessageRow | null;
   sourceCustomerMessageId: string;
+  repliedToInternalMessageId: string | null;
 }> {
   return withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
     const channelResult = await client.query<{ id: string }>(
@@ -353,6 +354,7 @@ async function ensureInboundState(
       });
     }
 
+    let repliedToInternalMessageId: string | null = null;
     if (parsed.replyToMessageId) {
       const repliedTo = await client.query<{ id: string }>(
         `SELECT id
@@ -368,6 +370,7 @@ async function ensureInboundState(
           code: "META_REPLY_CONTEXT_UNAVAILABLE",
         });
       }
+      repliedToInternalMessageId = repliedTo.rows[0].id;
     }
 
     if (conversation.status === "closed") {
@@ -486,6 +489,7 @@ async function ensureInboundState(
       customerInserted,
       existingReply: await findReplyMessage(client, parsed.merchantId, parsed.eventId),
       sourceCustomerMessageId,
+      repliedToInternalMessageId,
     };
   });
 }
@@ -1454,6 +1458,39 @@ export async function preparePostgresMetaAutoReply(
     inbound.conversationId,
     inbound.sourceCustomerMessageId,
   );
+
+  if (inbound.repliedToInternalMessageId) {
+    const repliedToContext = await loadRecentConversationContext(
+      parsed.merchantId,
+      inbound.conversationId,
+      inbound.sourceCustomerMessageId,
+    );
+    const repliedTo = await withMerchantOperationalTransaction(
+      parsed.merchantId,
+      async (client) => client.query<ConversationContextRow>(
+        `SELECT sender::text AS sender, text, created_at, metadata
+           FROM messages
+          WHERE merchant_id = $1 AND conversation_id = $2 AND id = $3
+            AND sender IN ('customer', 'fawri', 'merchant')
+            AND status IN ('received', 'sent')
+          LIMIT 1`,
+        [parsed.merchantId, inbound.conversationId, inbound.repliedToInternalMessageId],
+      ),
+    );
+    const target = repliedTo.rows[0];
+    if (target) {
+      const alreadyPresent = repliedToContext.some(
+        (message) => message.createdAt === new Date(target.created_at).toISOString() && message.text === text(target.text),
+      );
+      if (!alreadyPresent) {
+        recentMessages.push({
+          sender: target.sender,
+          text: text(target.text),
+          createdAt: new Date(target.created_at).toISOString(),
+        });
+      }
+    }
+  }
 
   if (trustedImageTextMessage && trustedImageMatchedRecordId) {
     recentMessages.push({
