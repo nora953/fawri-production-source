@@ -18,7 +18,7 @@ import {
 import {
   getMetaAudioUnderstandingService,
 } from "./metaAudioUnderstandingRuntime.js";
-import { getMetaVideoUnderstandingService } from "./metaVideoUnderstandingRuntime.js";
+import { understandTrustedMetaVideoForReply } from "./metaVideoReplyGrounding.js";
 import { TrustedMediaCatalogMatcher } from "./mediaCatalogMatcher";
 import { notifyMerchantNewCustomerMessagePostgres } from "./postgresOperationalNotificationAuthority";
 import { notifyMerchantKnowledgeGapPostgres } from "./postgresOperationalNotificationAuthority.js";
@@ -654,164 +654,17 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
-  let trustedVideoText: string | null = null;
-  let trustedVideoUnderstood = false;
-  let trustedVideoMatchedRecordId: string | null = null;
-  let trustedVideoAlternatives: Array<{
-    productId: string;
-    variantId?: string;
-    confidence: number;
-  }> = [];
-
-  if (parsed.videoUrl) {
-    const persistedVideo = await withMerchantOperationalTransaction(
-      parsed.merchantId,
-      async (client) => {
-        const result = await client.query<{ metadata: Record<string, unknown> | null }>(
-          `SELECT metadata FROM messages
-            WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3 AND sender = 'customer'
-            LIMIT 1`,
-          [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId],
-        );
-        const metadata = result.rows[0]?.metadata;
-        const media = metadata && typeof metadata === "object" && !Array.isArray(metadata) &&
-          metadata.media && typeof metadata.media === "object" && !Array.isArray(metadata.media)
-          ? metadata.media as Record<string, unknown> : null;
-        const summary = typeof media?.video_observation === "string" ? media.video_observation.trim() : "";
-        const sha = typeof media?.video_sha256 === "string" ? media.video_sha256.trim() : "";
-        const same = media?.content_identity_hash === parsed.contentIdentityHash;
-        if (!same || !summary || summary.length > 2_000 || !/^[a-f0-9]{64}$/i.test(sha)) return null;
-        const matchedRecordId =
-          typeof metadata?.matched_record_id === "string"
-            ? metadata.matched_record_id.trim()
-            : "";
-        const alternatives = Array.isArray(media?.video_visual_alternatives)
-          ? media.video_visual_alternatives
-              .map((value) => {
-                if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-                const item = value as Record<string, unknown>;
-                const productId = typeof item.product_id === "string" ? item.product_id.trim() : "";
-                const variantId = typeof item.variant_id === "string" ? item.variant_id.trim() : "";
-                const confidence = Number(item.confidence);
-                if (!productId || !Number.isFinite(confidence) || confidence < 0 || confidence > 1) return null;
-                return { productId, ...(variantId ? { variantId } : {}), confidence };
-              })
-              .filter((value): value is { productId: string; variantId?: string; confidence: number } => value !== null)
-          : [];
-        return { summary, matchedRecordId, alternatives };
-      },
-    );
-
-    if (persistedVideo) {
-      trustedVideoText = persistedVideo.summary;
-      trustedVideoUnderstood = true;
-
-      if (persistedVideo.matchedRecordId) {
-        const productMatch = /^catalog-product:([^:]+)$/.exec(persistedVideo.matchedRecordId);
-        const variantMatch = /^catalog-variant:([^:]+):([^:]+)$/.exec(persistedVideo.matchedRecordId);
-        const candidate = productMatch
-          ? { productId: productMatch[1], confidence: 1 }
-          : variantMatch
-            ? { productId: variantMatch[1], variantId: variantMatch[2], confidence: 1 }
-            : null;
-        const revalidated = candidate
-          ? await trustedMediaCatalogMatcher.resolve({
-              merchantId: parsed.merchantId,
-              candidates: [candidate],
-            })
-          : null;
-        if (revalidated?.matchedRecordId === persistedVideo.matchedRecordId) {
-          trustedVideoMatchedRecordId = revalidated.matchedRecordId;
-        }
-      }
-
-      if (!trustedVideoMatchedRecordId && persistedVideo.alternatives.length > 0) {
-        trustedVideoAlternatives = await trustedMediaCatalogMatcher.resolveAlternatives({
-          merchantId: parsed.merchantId,
-          candidates: persistedVideo.alternatives,
-        });
-      }
-    } else {
-      const videoService = getMetaVideoUnderstandingService();
-      const understood = videoService ? await videoService.understand({
-        merchantId: parsed.merchantId,
-        videoUrl: parsed.videoUrl,
-      }) : null;
-      if (understood?.observation && understood.observation.confidence >= 0.5 &&
-          /^[a-f0-9]{64}$/i.test(understood.videoSha256) &&
-          Number.isInteger(understood.frameCount) && understood.frameCount >= 1 && understood.frameCount <= 6) {
-        const observation = understood.observation;
-        const parts = [
-          observation.productType ? `نوع المنتج الظاهر: ${observation.productType}` : "",
-          observation.colors.length ? `الألوان الظاهرة: ${observation.colors.join(", ")}` : "",
-          observation.attributes.length ? `الصفات الظاهرة: ${observation.attributes.join(", ")}` : "",
-          observation.description ? `الوصف المرئي: ${observation.description}` : "",
-        ].filter(Boolean);
-        const summary = parts.join(". ").slice(0, 2_000);
-        if (summary) {
-          const exactMatch = understood.exactMatch
-            ? await trustedMediaCatalogMatcher.resolve({
-                merchantId: parsed.merchantId,
-                candidates: [{
-                  productId: understood.exactMatch.productId,
-                  ...(understood.exactMatch.variantId ? { variantId: understood.exactMatch.variantId } : {}),
-                  confidence: understood.exactMatch.confidence,
-                }],
-              })
-            : null;
-          const alternatives = !exactMatch && understood.alternatives.length > 0
-            ? await trustedMediaCatalogMatcher.resolveAlternatives({
-                merchantId: parsed.merchantId,
-                candidates: understood.alternatives,
-              })
-            : [];
-
-          await withMerchantOperationalTransaction(parsed.merchantId, async (client) => {
-            const locked = await client.query<{ metadata: Record<string, unknown> | null }>(
-              `SELECT metadata FROM messages
-                WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3 AND sender = 'customer'
-                FOR UPDATE`,
-              [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId],
-            );
-            const metadata = locked.rows[0]?.metadata;
-            const media = metadata && typeof metadata === "object" && !Array.isArray(metadata) &&
-              metadata.media && typeof metadata.media === "object" && !Array.isArray(metadata.media)
-              ? metadata.media as Record<string, unknown> : null;
-            if (!media || media.content_identity_hash !== parsed.contentIdentityHash) {
-              throw Object.assign(new Error("Meta video content identity changed"), { code: "META_MESSAGE_IDENTITY_COLLISION" });
-            }
-            const nextMetadata = {
-              ...metadata,
-              ...(exactMatch ? { matched_record_id: exactMatch.matchedRecordId } : {}),
-              media: { ...media,
-                video_observation: summary,
-                video_sha256: understood.videoSha256,
-                video_frame_count: understood.frameCount,
-                video_vision_provider_id: observation.providerId,
-                video_vision_model: observation.model,
-                ...(alternatives.length > 0 ? {
-                  video_visual_alternatives: alternatives.map((alternative) => ({
-                    product_id: alternative.productId,
-                    ...(alternative.variantId ? { variant_id: alternative.variantId } : {}),
-                    confidence: alternative.confidence,
-                  })),
-                } : {}),
-              },
-            };
-            await client.query(
-              `UPDATE messages SET metadata = $4::jsonb
-                WHERE merchant_id = $1 AND id = $2 AND conversation_id = $3`,
-              [parsed.merchantId, inbound.sourceCustomerMessageId, inbound.conversationId, JSON.stringify(nextMetadata)],
-            );
-          });
-          trustedVideoText = summary;
-          trustedVideoUnderstood = true;
-          trustedVideoMatchedRecordId = exactMatch?.matchedRecordId ?? null;
-          trustedVideoAlternatives = alternatives;
-        }
-      }
-    }
-  }
+  const trustedVideo = await understandTrustedMetaVideoForReply({
+    merchantId: parsed.merchantId,
+    conversationId: inbound.conversationId,
+    sourceCustomerMessageId: inbound.sourceCustomerMessageId,
+    videoUrl: parsed.videoUrl,
+    contentIdentityHash: parsed.contentIdentityHash,
+  });
+  const trustedVideoText = trustedVideo.text;
+  const trustedVideoUnderstood = trustedVideo.understood;
+  const trustedVideoMatchedRecordId = trustedVideo.matchedRecordId;
+  const trustedVideoAlternatives = trustedVideo.alternatives;
 
   let trustedAudioTranscript: string | null = null;
   let trustedAudioUnderstood = false;
