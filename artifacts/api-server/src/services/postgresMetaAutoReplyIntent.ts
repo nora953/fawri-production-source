@@ -701,6 +701,17 @@ export async function preparePostgresMetaAutoReply(
     };
   }
 
+  const mixedMediaRequested = parsed.attachmentCount > 1;
+  if (mixedMediaRequested && !parsed.mediaManifest) {
+    return {
+      action: "suppress",
+      eventId: parsed.eventId,
+      merchantId: parsed.merchantId,
+      conversationId: inbound.conversationId,
+      code: "META_MEDIA_MANIFEST_INVALID",
+    };
+  }
+
   const trustedVideo = await understandTrustedMetaVideoForReply({
     merchantId: parsed.merchantId,
     conversationId: inbound.conversationId,
