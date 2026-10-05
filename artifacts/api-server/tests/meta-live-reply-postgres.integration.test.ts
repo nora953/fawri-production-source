@@ -5843,3 +5843,51 @@ test.after(async () => {
   await pool.end();
   fs.rmSync(dataDir, { recursive: true, force: true });
 });
+
+await test("missing connected Messenger channel fails closed before conversation creation", async () => {
+  const senderId = `customer-missing-channel-${runId}`;
+  const eventId = `event-missing-channel-${runId}`;
+  const mid = `mid-missing-channel-${runId}`;
+  const missingPage = `page-missing-${runId}`;
+  const queued = await enqueueReply({ merchantId: merchantA.account.id, pageId: missingPage, senderId, eventId, mid });
+
+  await assert.rejects(
+    () => intents.preparePostgresMetaAutoReply(queued.job),
+    (error: unknown) => (error as { code?: string }).code === "META_CHANNEL_UNAVAILABLE",
+  );
+
+  const conversations = await raw(
+    `SELECT COUNT(*)::int AS count FROM conversations WHERE merchant_id = $1 AND customer_external_id = $2`,
+    [merchantA.account.id, senderId],
+  );
+  assert.equal(Number(conversations.rows[0].count), 0);
+});
+
+await test("same provider event id with changed payload fails closed as identity collision", async () => {
+  const senderId = `customer-event-collision-${runId}`;
+  const eventId = `event-collision-${runId}`;
+  const firstMid = `mid-event-collision-a-${runId}`;
+  const secondMid = `mid-event-collision-b-${runId}`;
+  const first = await enqueueReply({ merchantId: merchantA.account.id, pageId: pageA, senderId, eventId, mid: firstMid, message: "first payload" });
+  await intents.preparePostgresMetaAutoReply(first.job);
+
+  const second = await jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply",
+    dedupeKey: `${eventId}-changed`,
+    merchantId: merchantA.account.id,
+    maxAttempts: 5,
+    payload: {
+      event_id: eventId,
+      page_id: pageA,
+      merchant_id: merchantA.account.id,
+      external_message_id: secondMid,
+      sender_id: senderId,
+      webhook_body: webhookBody(pageA, senderId, secondMid, "changed payload"),
+    },
+  });
+
+  await assert.rejects(
+    () => intents.preparePostgresMetaAutoReply(second.job),
+    (error: unknown) => (error as { code?: string }).code === "META_EVENT_IDENTITY_COLLISION",
+  );
+});
