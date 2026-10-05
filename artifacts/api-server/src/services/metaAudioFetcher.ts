@@ -174,12 +174,27 @@ export class SecureMetaAudioFetcher {
     const url = safeUrl(input.url);
     const host = url.hostname.replace(/^\[|\]$/g, "");
     const literalFamily = isIP(host);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    timer.unref?.();
+
     let addresses: ResolvedAddress[];
     try {
       addresses = literalFamily
         ? [{ address: host, family: literalFamily }]
-        : await this.resolveHost(host);
-    } catch {
+        : await Promise.race([
+            this.resolveHost(host),
+            new Promise<never>((_, reject) => {
+              controller.signal.addEventListener("abort", () => {
+                reject(coded("Meta audio request timed out", "META_AUDIO_TIMEOUT"));
+              }, { once: true });
+            }),
+          ]);
+    } catch (error) {
+      clearTimeout(timer);
+      if ((error as { code?: unknown })?.code === "META_AUDIO_TIMEOUT" || controller.signal.aborted) {
+        throw coded("Meta audio request timed out", "META_AUDIO_TIMEOUT");
+      }
       throw coded("Meta audio destination could not be verified", "META_AUDIO_DESTINATION_UNVERIFIED");
     }
     if (!addresses.length || addresses.some((entry) =>
@@ -192,9 +207,6 @@ export class SecureMetaAudioFetcher {
     }
 
     const verified = addresses[0];
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-    timer.unref?.();
     try {
       let response: Response;
       try {
