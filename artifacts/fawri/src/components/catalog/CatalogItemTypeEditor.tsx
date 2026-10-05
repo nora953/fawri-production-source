@@ -14,11 +14,12 @@ import type {
 } from '@/lib/catalogUiApi';
 
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
+function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <button
       type="button"
       role="switch"
+      aria-label={label}
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? 'bg-orange-500' : 'bg-muted-foreground/30'}`}
@@ -47,7 +48,7 @@ function SettingRow({
         <div className="flex items-center gap-2 text-sm font-bold">{icon}{title}</div>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">{hint}</p>
       </div>
-      <Toggle checked={checked} onChange={onChange} />
+      <Toggle label={title} checked={checked} onChange={onChange} />
     </div>
   );
 }
@@ -152,7 +153,7 @@ export function CatalogItemTypeEditor({
         </label>
         <div className="space-y-1 text-sm font-semibold">
           <span className="flex items-center gap-2"><MapPin className="h-4 w-4" />{copy.location}</span>
-          <select value={form.service_location_mode} onChange={event => chooseServiceLocationMode(event.target.value as CatalogServiceLocationMode)} className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
+          <select aria-label={copy.location} value={form.service_location_mode} onChange={event => chooseServiceLocationMode(event.target.value as CatalogServiceLocationMode)} className="h-10 w-full rounded-xl border border-input bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-orange-500/20">
             <option value="merchant">{copy.locationMerchant}</option>
             <option value="customer">{copy.locationCustomer}</option>
             <option value="online">{copy.locationOnline}</option>
@@ -187,7 +188,7 @@ export function CatalogItemTypeEditor({
           <p className="text-sm font-bold">{copy.bookingRequired}</p>
           <p className="mt-1 max-w-xl text-xs leading-5 text-muted-foreground">{copy.bookingRequiredHint}</p>
         </div>
-        <Toggle checked={form.service_booking_required} onChange={service_booking_required => onChange({ service_booking_required })} />
+        <Toggle label={copy.bookingRequired} checked={form.service_booking_required} onChange={service_booking_required => onChange({ service_booking_required })} />
       </div>
     </div>
   ) : null;
