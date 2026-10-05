@@ -251,3 +251,49 @@ test("secure audio fetcher rejects an empty audio body", async () => {
       (error as { code?: string } | null)?.code === "META_AUDIO_CONTENT_INVALID",
   );
 });
+
+
+test("secure audio fetcher clears its timeout after DNS policy rejection", async () => {
+  let aborts = 0;
+  const fetcher = new SecureMetaAudioFetcher({
+    timeoutMs: 20,
+    resolveHost: async () => [{ address: "127.0.0.1", family: 4 }],
+    transportImpl: async (request) => {
+      request.signal.addEventListener("abort", () => { aborts += 1; }, { once: true });
+      throw new Error("must not execute");
+    },
+  });
+
+  await assert.rejects(
+    fetcher.fetchAudio({ url: "https://cdn.example.test/private.mp3" }),
+    (error: unknown) =>
+      (error as { code?: string } | null)?.code === "META_AUDIO_DESTINATION_FORBIDDEN",
+  );
+  await new Promise((resolve) => setTimeout(resolve, 35));
+  assert.equal(aborts, 0);
+});
+
+test("secure audio fetcher cancels response body for unsafe numeric content length", async () => {
+  let cancelled = false;
+  const body = new ReadableStream<Uint8Array>({
+    cancel() { cancelled = true; },
+  });
+  const fetcher = new SecureMetaAudioFetcher({
+    resolveHost: PUBLIC_TEST_DNS,
+    transportImpl: async () =>
+      new Response(body, {
+        status: 200,
+        headers: {
+          "content-type": "audio/mpeg",
+          "content-length": "999999999999999999999999999999999999",
+        },
+      }),
+  });
+
+  await assert.rejects(
+    fetcher.fetchAudio({ url: "https://cdn.example.test/invalid-length.mp3" }),
+    (error: unknown) =>
+      (error as { code?: string } | null)?.code === "META_AUDIO_FETCH_FAILED",
+  );
+  assert.equal(cancelled, true);
+});
