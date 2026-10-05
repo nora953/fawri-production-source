@@ -5083,6 +5083,47 @@ await test("reply context must resolve uniquely inside the same merchant convers
   );
 });
 
+await test("same external message id cannot be replayed with a different reply target", async () => {
+  const senderId = `customer-live-reply-replay-${runId}`;
+  const targetOneEvent = `event-live-reply-target-one-${runId}`;
+  const targetOneMid = `mid-live-reply-target-one-${runId}`;
+  const targetTwoEvent = `event-live-reply-target-two-${runId}`;
+  const targetTwoMid = `mid-live-reply-target-two-${runId}`;
+
+  const targetOne = await enqueueReply({
+    merchantId: merchantA.account.id, pageId: pageA, senderId,
+    eventId: targetOneEvent, mid: targetOneMid, message: "الرسالة الأولى",
+  });
+  await intents.preparePostgresMetaAutoReply(targetOne.job);
+  const targetTwo = await enqueueReply({
+    merchantId: merchantA.account.id, pageId: pageA, senderId,
+    eventId: targetTwoEvent, mid: targetTwoMid, message: "الرسالة الثانية",
+  });
+  await intents.preparePostgresMetaAutoReply(targetTwo.job);
+
+  const replayMid = `mid-live-reply-replay-${runId}`;
+  const makeJob = async (eventId: string, replyToMid: string) => jobs.enqueueDurableJobAuthoritative({
+    type: "meta.webhook.reply", dedupeKey: eventId,
+    merchantId: merchantA.account.id, maxAttempts: 5,
+    payload: {
+      event_id: eventId, page_id: pageA, merchant_id: merchantA.account.id,
+      external_message_id: replayMid, sender_id: senderId,
+      webhook_body: { object: "page", entry: [{ id: pageA, messaging: [{
+        sender: { id: senderId }, recipient: { id: pageA }, timestamp: Date.now(),
+        message: { mid: replayMid, text: "نفس الرسالة", reply_to: { mid: replyToMid } },
+      }] }] },
+    },
+  });
+
+  const first = await makeJob(`event-live-reply-replay-first-${runId}`, targetOneMid);
+  await intents.preparePostgresMetaAutoReply(first.job);
+  const alteredReplay = await makeJob(`event-live-reply-replay-altered-${runId}`, targetTwoMid);
+  await assert.rejects(
+    intents.preparePostgresMetaAutoReply(alteredReplay.job),
+    (error: unknown) => (error as { code?: string } | null)?.code === "META_MESSAGE_IDENTITY_COLLISION",
+  );
+});
+
 await test("unsafe single-media URLs fail closed before any understanding service", async () => {
   const cases = [
     { label: "http-image", attachment: { type: "image", payload: { url: "http://example.invalid/unsafe-single.jpg" } } },
