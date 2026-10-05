@@ -87,7 +87,7 @@ type ReplyMessageRow = {
   metadata: Record<string, unknown> | null;
 };
 
-type ConversationContextRow = {
+export type ConversationContextRow = {
   sender: "customer" | "fawri" | "merchant";
   text: string;
   created_at: Date | string;
@@ -511,7 +511,7 @@ async function ensureInboundState(
   });
 }
 
-function mapConversationContextRow(row: ConversationContextRow): KnowledgeConversationMessage {
+export function mapConversationContextRow(row: ConversationContextRow): KnowledgeConversationMessage {
       const metadata =
         row.metadata && typeof row.metadata === "object" && !Array.isArray(row.metadata)
           ? row.metadata
