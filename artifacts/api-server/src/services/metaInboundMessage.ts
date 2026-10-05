@@ -109,20 +109,9 @@ export function parseMetaInboundMessage(
     })
     .filter((value): value is MetaInboundAttachment => value !== null);
 
-  if (messageText && attachments.length === 0) {
+  if (messageText) {
     return {
       kind: "text",
-      text: messageText,
-      storageText: messageText,
-      attachments,
-    };
-  }
-
-  if (messageText && attachments.length > 0) {
-    const firstAttachment = attachments[0];
-    const kind = classifyAttachment(firstAttachment.type);
-    return {
-      kind,
       text: messageText,
       storageText: messageText,
       attachments,
