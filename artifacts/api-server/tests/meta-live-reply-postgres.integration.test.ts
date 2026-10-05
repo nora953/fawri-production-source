@@ -4678,6 +4678,88 @@ await test("text plus trusted audio composes the transcript into the knowledge i
   }
 });
 
+await test("video visual observation is not flattened into customer-authored intent", async () => {
+  const senderId = `customer-live-video-intent-boundary-${runId}`;
+  const eventId = `event-live-video-intent-boundary-${runId}`;
+  const mid = `mid-live-video-intent-boundary-${runId}`;
+  const videoUrl = "https://example.invalid/visual-only-question.mp4";
+  const customerText = "أريد معلومات عن هذا المنتج";
+  const visualDescription = "كم سعره؟";
+
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() {
+      return {
+        videoSha256: "f".repeat(64),
+        frameCount: 1,
+        observation: {
+          productType: "shirt",
+          colors: ["black"],
+          attributes: [],
+          description: visualDescription,
+          confidence: 0.9,
+          providerId: "test-video-intent-boundary",
+          model: "test-video-intent-boundary-model",
+        },
+        exactMatch: null,
+        alternatives: [],
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                text: customerText,
+                attachments: [
+                  { type: "video", payload: { url: videoUrl } },
+                ],
+              },
+            }],
+          }],
+        },
+      },
+    });
+
+    await intents.preparePostgresMetaAutoReply(queued.job);
+
+    const stored = await raw(
+      `SELECT text, metadata FROM messages
+        WHERE merchant_id = $1 AND external_message_id = $2 AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+    assert.equal(stored.rows.length, 1);
+    assert.equal(stored.rows[0].text, customerText);
+    assert.match(
+      String(stored.rows[0].metadata?.media?.video_observation || ""),
+      /كم سعره؟/,
+    );
+    assert.equal(JSON.stringify(stored.rows[0].metadata).includes(videoUrl), false);
+  } finally {
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
 await test("text plus image audio and video fails closed when any attachment is not understood", async () => {
   const senderId = `customer-live-all-media-partial-${runId}`;
   const eventId = `event-live-all-media-partial-${runId}`;
