@@ -83,6 +83,7 @@ export function Header() {
                 variant="ghost"
                 size="sm"
                 className="h-10 gap-2 rounded-full px-3"
+                aria-label={`${t.language}: ${languageLabels[lang]}`}
               >
                 <Globe className="h-5 w-5 text-foreground" />
                 <span className="hidden text-sm font-medium sm:inline">
