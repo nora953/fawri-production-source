@@ -93,7 +93,6 @@ test("keeps caption text authoritative as text while retaining attachments", () 
 
 test("classifies document, location, and sticker without inventing meaning", () => {
   const cases = [
-    { type: "file", kind: "document", marker: "[document]" },
     { type: "document", kind: "document", marker: "[document]" },
     { type: "location", kind: "location", marker: "[location]" },
     { type: "sticker", kind: "sticker", marker: "[sticker]" },
@@ -110,7 +109,7 @@ test("classifies document, location, and sticker without inventing meaning", () 
 
 test("unknown attachments fail closed instead of pretending to understand them", () => {
   const parsed = parseMetaInboundMessage({
-    attachments: [{ type: "mystery", payload: { url: "mystery-url" } }],
+    attachments: [{ type: "file", payload: { url: "file-url" } }],
   });
 
   assert.equal(parsed?.kind, "unsupported");
