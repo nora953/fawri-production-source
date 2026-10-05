@@ -194,7 +194,7 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     contentIdentityHash,
     imageUrl,
     audioUrl,
-    webhookBody;
+    webhookBody,
     createdAt: eventTimestamp(event.timestamp),
   };
 }
@@ -1180,7 +1180,9 @@ export async function preparePostgresMetaAutoReply(
   if (
     (parsed.contentKind !== "text" && !trustedAudioUnderstood) ||
     !effectiveCustomerText ||
-    (parsed.attachmentCount > 0 && !trustedImageTextMessage)
+    (parsed.attachmentCount > 0 &&
+      !trustedImageTextMessage &&
+      !trustedAudioUnderstood)
   ) {
     if (!trustedImageUnderstood) {
       await withMerchantOperationalTransaction(
