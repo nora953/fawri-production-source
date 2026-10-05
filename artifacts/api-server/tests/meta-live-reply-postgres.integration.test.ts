@@ -4860,6 +4860,108 @@ await test("duplicate media type is rejected before any partial media understand
   }
 });
 
+await test("unsafe mixed-media URLs are rejected before any understanding service", async () => {
+  const cases = [
+    {
+      label: "http-image",
+      attachments: [
+        { type: "image", payload: { url: "http://example.invalid/unsafe.jpg" } },
+        { type: "audio", payload: { url: "https://example.invalid/safe.mp3" } },
+      ],
+    },
+    {
+      label: "credentialed-audio",
+      attachments: [
+        { type: "image", payload: { url: "https://example.invalid/safe.jpg" } },
+        { type: "audio", payload: { url: "https://user:secret@example.invalid/unsafe.mp3" } },
+      ],
+    },
+    {
+      label: "credentialed-video",
+      attachments: [
+        { type: "audio", payload: { url: "https://example.invalid/safe.mp3" } },
+        { type: "video", payload: { url: "https://user:secret@example.invalid/unsafe.mp4" } },
+      ],
+    },
+  ];
+  let imageCalls = 0;
+  let audioCalls = 0;
+  let videoCalls = 0;
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      imageCalls += 1;
+      return null;
+    },
+  });
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      audioCalls += 1;
+      return null;
+    },
+  });
+  videoRuntime.configureMetaVideoUnderstandingService({
+    async understand() {
+      videoCalls += 1;
+      return null;
+    },
+  });
+
+  try {
+    for (const testCase of cases) {
+      const senderId = `customer-live-unsafe-url-${testCase.label}-${runId}`;
+      const eventId = `event-live-unsafe-url-${testCase.label}-${runId}`;
+      const mid = `mid-live-unsafe-url-${testCase.label}-${runId}`;
+
+      const queued = await jobs.enqueueDurableJobAuthoritative({
+        type: "meta.webhook.reply",
+        dedupeKey: eventId,
+        merchantId: merchantA.account.id,
+        maxAttempts: 5,
+        payload: {
+          event_id: eventId,
+          page_id: pageA,
+          merchant_id: merchantA.account.id,
+          external_message_id: mid,
+          sender_id: senderId,
+          webhook_body: {
+            object: "page",
+            entry: [{
+              id: pageA,
+              messaging: [{
+                sender: { id: senderId },
+                recipient: { id: pageA },
+                timestamp: Date.now(),
+                message: {
+                  mid,
+                  text: "راجع هذه المرفقات",
+                  attachments: testCase.attachments,
+                },
+              }],
+            }],
+          },
+        },
+      });
+
+      const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+      assert.equal(prepared.action, "suppress");
+      if (prepared.action !== "suppress") continue;
+      assert.equal(prepared.code, "META_MEDIA_MANIFEST_INVALID");
+    }
+
+    assert.equal(imageCalls, 0);
+    assert.equal(audioCalls, 0);
+    assert.equal(videoCalls, 0);
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+    videoRuntime.resetMetaVideoUnderstandingServiceForTests();
+  }
+});
+
 await test("mixed media without explicit text remains fail closed", async () => {
   const senderId = `customer-live-mixed-no-text-${runId}`;
   const eventId = `event-live-mixed-no-text-${runId}`;
