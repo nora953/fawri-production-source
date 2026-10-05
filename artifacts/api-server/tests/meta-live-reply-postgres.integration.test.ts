@@ -34,6 +34,9 @@ const intents = await import("../src/services/postgresMetaAutoReplyIntent.js");
 const imageRuntime = await import(
   "../src/services/metaImageUnderstandingRuntime.js"
 );
+const audioRuntime = await import(
+  "../src/services/metaAudioUnderstandingRuntime.js"
+);
 const liveTransport = await import("../src/services/postgresMetaWebhookReplyTransport.js");
 const workerCore = await import("../src/services/metaWebhookWorkerCore.js");
 const manualConversations = await import(
@@ -4514,6 +4517,184 @@ await test("ranked visual alternatives fall back to a fulfillable merchant produ
     );
   } finally {
     imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+
+await test("audio-only Meta reply persists trusted transcript, hides media URL, and reuses transcription on same message", async () => {
+  const senderId = `customer-live-audio-${runId}`;
+  const firstEventId = `event-live-audio-first-${runId}`;
+  const secondEventId = `event-live-audio-second-${runId}`;
+  const mid = `mid-live-audio-${runId}`;
+  const audioUrl =
+    "https://example.invalid/private-customer-audio.mp3?token=must-not-persist";
+  let understandCalls = 0;
+
+  const service = {
+    async understand() {
+      understandCalls += 1;
+      return {
+        transcript: "كم سعر التوصيل؟",
+        audioSha256: "a".repeat(64),
+        transcriptionProviderId: "test-audio-transcription",
+        transcriptionModel: "test-audio-model",
+      };
+    },
+  };
+
+  const enqueueAudio = (eventId: string) =>
+    jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    attachments: [
+                      {
+                        type: "audio",
+                        payload: { url: audioUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  audioRuntime.configureMetaAudioUnderstandingService(service);
+
+  try {
+    const firstQueued = await enqueueAudio(firstEventId);
+    const firstPrepared =
+      await intents.preparePostgresMetaAutoReply(firstQueued.job);
+
+    assert.equal(firstPrepared.action, "send");
+    if (firstPrepared.action !== "send") return;
+    assert.match(firstPrepared.messageText, /5[,.]?000|٥/);
+    assert.equal(understandCalls, 1);
+
+    const stored = await raw(
+      `SELECT text, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+    assert.equal(stored.rows.length, 1);
+    assert.equal(stored.rows[0].text, "[audio]");
+    assert.equal(
+      stored.rows[0].metadata?.media?.audio_transcript,
+      "كم سعر التوصيل؟",
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.audio_sha256,
+      "a".repeat(64),
+    );
+    assert.equal(JSON.stringify(stored.rows[0].metadata).includes(audioUrl), false);
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes("must-not-persist"),
+      false,
+    );
+
+    const secondQueued = await enqueueAudio(secondEventId);
+    const secondPrepared =
+      await intents.preparePostgresMetaAutoReply(secondQueued.job);
+    assert.equal(secondPrepared.action, "send");
+    assert.equal(understandCalls, 1, "persisted transcript must avoid retranscription");
+  } finally {
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  }
+});
+
+await test("manual takeover never sends inbound audio to transcription", async () => {
+  const channel = await raw(
+    "SELECT id FROM merchant_channels WHERE merchant_id = $1 AND page_id = $2",
+    [merchantA.account.id, pageA],
+  );
+  const senderId = `customer-live-manual-audio-${runId}`;
+  const conversationId = `messenger-${senderId}`;
+  const eventId = `event-live-manual-audio-${runId}`;
+  const mid = `mid-live-manual-audio-${runId}`;
+
+  await raw(
+    `INSERT INTO conversations
+      (id, merchant_id, channel_id, external_conversation_id,
+       customer_external_id, customer_handle, status, assigned_to_human,
+       needs_training)
+     VALUES ($1, $2, $3, $4, $4, $4, 'manual', TRUE, FALSE)`,
+    [conversationId, merchantA.account.id, channel.rows[0].id, senderId],
+  );
+
+  let calls = 0;
+  audioRuntime.resetMetaAudioUnderstandingServiceForTests();
+  audioRuntime.configureMetaAudioUnderstandingService({
+    async understand() {
+      calls += 1;
+      return null;
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [{
+            id: pageA,
+            messaging: [{
+              sender: { id: senderId },
+              recipient: { id: pageA },
+              timestamp: Date.now(),
+              message: {
+                mid,
+                attachments: [{
+                  type: "audio",
+                  payload: { url: "https://example.invalid/manual.mp3" },
+                }],
+              },
+            }],
+          }],
+        },
+      },
+    });
+    const prepared = await intents.preparePostgresMetaAutoReply(queued.job);
+    assert.equal(prepared.action, "suppress");
+    assert.equal(prepared.code, "CONVERSATION_MANUAL_TAKEOVER");
+    assert.equal(calls, 0);
+  } finally {
+    audioRuntime.resetMetaAudioUnderstandingServiceForTests();
   }
 });
 
