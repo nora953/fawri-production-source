@@ -10,6 +10,7 @@ import {
   parseMetaInboundMessage,
   selectMetaInboundImageUrl,
   selectMetaInboundAudioUrl,
+  selectMetaInboundVideoUrl,
 } from "./metaInboundMessage";
 import {
   getMetaImageUnderstandingService,
@@ -17,6 +18,7 @@ import {
 import {
   getMetaAudioUnderstandingService,
 } from "./metaAudioUnderstandingRuntime.js";
+import { getMetaVideoUnderstandingService } from "./metaVideoUnderstandingRuntime.js";
 import { TrustedMediaCatalogMatcher } from "./mediaCatalogMatcher";
 import { notifyMerchantNewCustomerMessagePostgres } from "./postgresOperationalNotificationAuthority";
 import { notifyMerchantKnowledgeGapPostgres } from "./postgresOperationalNotificationAuthority.js";
@@ -59,6 +61,7 @@ type ParsedMetaJob = {
   contentIdentityHash: string | null;
   imageUrl: string | null;
   audioUrl: string | null;
+  videoUrl: string | null;
   webhookBody: Record<string, unknown>;
   createdAt: string;
 };
@@ -145,6 +148,7 @@ function parseJob(job: DurableJob): ParsedMetaJob {
   const audioUrl = inbound
     ? selectMetaInboundAudioUrl(inbound)
     : null;
+  const videoUrl = inbound ? selectMetaInboundVideoUrl(inbound) : null;
   const contentIdentityHash =
     inbound && inbound.attachments.length > 0
       ? digest(
@@ -194,6 +198,7 @@ function parseJob(job: DurableJob): ParsedMetaJob {
     contentIdentityHash,
     imageUrl,
     audioUrl,
+    videoUrl,
     webhookBody,
     createdAt: eventTimestamp(event.timestamp),
   };
@@ -615,6 +620,33 @@ export async function preparePostgresMetaAutoReply(
       conversationId: inbound.conversationId,
       code: "CONVERSATION_MANUAL_TAKEOVER",
     };
+  }
+
+  let trustedVideoText: string | null = null;
+  let trustedVideoUnderstood = false;
+
+  if (parsed.videoUrl) {
+    const videoService = getMetaVideoUnderstandingService();
+    if (videoService) {
+      const understood = await videoService.understand({
+        merchantId: parsed.merchantId,
+        videoUrl: parsed.videoUrl,
+      });
+      if (understood?.observation && understood.observation.confidence >= 0.5) {
+        const observation = understood.observation;
+        const parts = [
+          observation.productType ? `نوع المنتج الظاهر: ${observation.productType}` : "",
+          observation.colors.length ? `الألوان الظاهرة: ${observation.colors.join(", ")}` : "",
+          observation.attributes.length ? `الصفات الظاهرة: ${observation.attributes.join(", ")}` : "",
+          observation.description ? `الوصف المرئي: ${observation.description}` : "",
+        ].filter(Boolean);
+        const summary = parts.join(". ").slice(0, 2_000);
+        if (summary) {
+          trustedVideoText = summary;
+          trustedVideoUnderstood = true;
+        }
+      }
+    }
   }
 
   let trustedAudioTranscript: string | null = null;
@@ -1330,7 +1362,9 @@ export async function preparePostgresMetaAutoReply(
   const effectiveCustomerText =
     trustedAudioUnderstood && trustedAudioTranscript
       ? trustedAudioTranscript
-      : parsed.customerText;
+      : trustedVideoUnderstood && trustedVideoText
+        ? trustedVideoText
+        : parsed.customerText;
 
   const trustedImageTextMessage =
     parsed.contentKind === "text" &&
@@ -1341,11 +1375,14 @@ export async function preparePostgresMetaAutoReply(
       trustedImageAlternatives.length > 0);
 
   if (
-    (parsed.contentKind !== "text" && !trustedAudioUnderstood) ||
+    (parsed.contentKind !== "text" &&
+      !trustedAudioUnderstood &&
+      !trustedVideoUnderstood) ||
     !effectiveCustomerText ||
     (parsed.attachmentCount > 0 &&
       !trustedImageTextMessage &&
-      !trustedAudioUnderstood)
+      !trustedAudioUnderstood &&
+      !trustedVideoUnderstood)
   ) {
     if (!trustedImageUnderstood) {
       await withMerchantOperationalTransaction(
