@@ -46,8 +46,8 @@ test("requested quantity disclosure is limited to what the customer asked for", 
   assert.equal(answer.includes("11"), false);
 });
 
-test("shortage answers fulfillment without revealing partial stock", () => {
-  const answer = catalogAvailabilityAnswer({
+test("shortage reveals only the authoritative quantity available toward the request", () => {
+  const ar = catalogAvailabilityAnswer({
     language: "ar",
     itemName: "قميص",
     status: "available",
@@ -55,8 +55,36 @@ test("shortage answers fulfillment without revealing partial stock", () => {
     commerce: productCommerce,
     requestedQuantity: 3,
   });
-  assert.equal(answer, "لا، الكمية المطلوبة من قميص غير متوفرة حاليًا.");
-  assert.equal(answer.includes("2"), false);
+  assert.equal(
+    ar,
+    "لا، الكمية المطلوبة من قميص غير متوفرة بالكامل. المتوفر حاليًا 2.",
+  );
+
+  const en = catalogAvailabilityAnswer({
+    language: "en",
+    itemName: "Shirt",
+    status: "available",
+    authoritativeQuantity: 2,
+    commerce: productCommerce,
+    requestedQuantity: 3,
+  });
+  assert.equal(
+    en,
+    "No, the requested quantity of Shirt is not fully available. 2 are currently available.",
+  );
+
+  const ku = catalogAvailabilityAnswer({
+    language: "ku",
+    itemName: "کراس",
+    status: "available",
+    authoritativeQuantity: 2,
+    commerce: productCommerce,
+    requestedQuantity: 3,
+  });
+  assert.equal(
+    ku,
+    "نەخێر، بڕی داواکراو لە کراس بە تەواوی بەردەست نییە. لە ئێستادا 2 دانە بەردەستە.",
+  );
 });
 
 test("model numbers are not mistaken for requested quantities", () => {

@@ -2780,6 +2780,1743 @@ await test("live worker suppresses image-only Meta input before entitlement debi
   assert.equal(customer.rows[0].needs_training, false);
 });
 
+await test("trusted visual alternative is kept separate from exact matched_record_id", async () => {
+  const productId = `prd-meta-visual-alt-${runId}`;
+  const senderId = `customer-meta-visual-alt-${runId}`;
+  const eventId = `event-meta-visual-alt-${runId}`;
+  const mid = `mid-meta-visual-alt-${runId}`;
+  const imageUrl =
+    "https://example.invalid/foreign-store-reference-product.jpg";
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `meta-visual-alt-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Black Athletic Shoe Alternative",
+      price_iqd: 49_000,
+      stock_quantity: 8,
+      low_stock_threshold: 2,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      return null;
+    },
+
+    async understandWithAlternatives(input: {
+      merchantId: string;
+      imageUrl: string;
+    }) {
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        exactMatch: null,
+        alternatives: [
+          {
+            productId,
+            confidence: 0.82,
+          },
+        ],
+        imageSha256: "a".repeat(64),
+        visionProviderId: "test-visual-alternative-provider",
+        visionModel: "test-visual-alternative-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "عدكم مثل هذا؟",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared =
+      await intents.preparePostgresMetaAutoReply(queued.job);
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+
+    // A visual alternative is never allowed to impersonate an exact match.
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id ?? null,
+      null,
+    );
+
+    assert.deepEqual(
+      stored.rows[0].metadata?.media?.visual_alternatives,
+      [
+        {
+          product_id: productId,
+          confidence: 0.82,
+        },
+      ],
+    );
+
+    assert.equal(
+      stored.rows[0].metadata?.media?.image_sha256,
+      "a".repeat(64),
+    );
+
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_provider_id,
+      "test-visual-alternative-provider",
+    );
+
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_model,
+      "test-visual-alternative-model",
+    );
+
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes(imageUrl),
+      false,
+    );
+
+    const outgoing = await raw(
+      `SELECT text, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND conversation_id = $2
+          AND sender = 'fawri'
+        ORDER BY created_at DESC
+        LIMIT 1`,
+      [merchantA.account.id, prepared.conversationId],
+    );
+
+    // A trusted visual alternative should enter the sales/reply path,
+    // while the inbound reference image remains non-exact.
+    assert.equal(prepared.action, "send");
+    assert.equal(outgoing.rows.length, 1);
+    assert.equal(outgoing.rows[0].text, prepared.messageText);
+    assert.equal(
+      outgoing.rows[0].metadata?.matched_record_id,
+      `catalog-product:${productId}`,
+    );
+    assert.equal(
+      outgoing.rows[0].metadata?.reason_code,
+      "TRUSTED_VISUAL_ALTERNATIVE_CATALOG_REPLY",
+    );
+    assert.equal(
+      outgoing.rows[0].metadata?.handoff_after_reply,
+      false,
+    );
+
+    // The inbound reference image remains non-exact. Only Fawri's
+    // outgoing similar-product reply establishes the catalog reference.
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id ?? null,
+      null,
+    );
+
+    // The reply must describe the merchant product as similar/close,
+    // never as the exact product shown in the reference image.
+    assert.match(
+      prepared.messageText,
+      /مشابه|قريب|مثل/i,
+    );
+
+    // Sufficient stock may be described as available, but the exact
+    // inventory count must not be exposed unnecessarily.
+    assert.doesNotMatch(
+      prepared.messageText,
+      /(^|\\D)8(\\D|$)/,
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+
+await test("visual alternative from another merchant is rejected before persistence", async () => {
+  const foreignProductId = `prd-meta-visual-alt-foreign-${runId}`;
+  const senderId = `customer-meta-visual-alt-foreign-${runId}`;
+  const eventId = `event-meta-visual-alt-foreign-${runId}`;
+  const mid = `mid-meta-visual-alt-foreign-${runId}`;
+  const imageUrl =
+    "https://example.invalid/foreign-store-cross-tenant-reference.jpg";
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantB.account.id,
+    idempotencyKey: `meta-visual-alt-foreign-create-${runId}`,
+    input: {
+      id: foreignProductId,
+      name: "Foreign Merchant Shoe",
+      price_iqd: 88_000,
+      stock_quantity: 9,
+      low_stock_threshold: 2,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.product.id, foreignProductId);
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      return null;
+    },
+
+    async understandWithAlternatives(input: {
+      merchantId: string;
+      imageUrl: string;
+    }) {
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        exactMatch: null,
+        alternatives: [
+          {
+            productId: foreignProductId,
+            confidence: 0.95,
+          },
+        ],
+        imageSha256: "b".repeat(64),
+        visionProviderId: "test-cross-tenant-alternative-provider",
+        visionModel: "test-cross-tenant-alternative-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "عدكم شي مشابه لهذا؟",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared =
+      await intents.preparePostgresMetaAutoReply(queued.job);
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+
+    const metadata = stored.rows[0].metadata;
+
+    assert.equal(metadata?.matched_record_id ?? null, null);
+    assert.equal(
+      metadata?.media?.visual_alternatives ?? null,
+      null,
+    );
+
+    assert.equal(
+      JSON.stringify(metadata).includes(foreignProductId),
+      false,
+    );
+
+    assert.equal(
+      JSON.stringify(metadata).includes(imageUrl),
+      false,
+    );
+
+    assert.equal(prepared.action, "suppress");
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+
+await test("visual alternative with allow_fawri_reply false is rejected before persistence", async () => {
+  const blockedProductId = `prd-meta-visual-alt-blocked-${runId}`;
+  const senderId = `customer-meta-visual-alt-blocked-${runId}`;
+  const eventId = `event-meta-visual-alt-blocked-${runId}`;
+  const mid = `mid-meta-visual-alt-blocked-${runId}`;
+  const imageUrl =
+    "https://example.invalid/blocked-catalog-reference.jpg";
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `meta-visual-alt-blocked-create-${runId}`,
+    input: {
+      id: blockedProductId,
+      name: "Blocked Visual Alternative",
+      price_iqd: 61_000,
+      stock_quantity: 7,
+      low_stock_threshold: 2,
+      status: "available",
+      allow_fawri_reply: false,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.product.id, blockedProductId);
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      return null;
+    },
+
+    async understandWithAlternatives(input: {
+      merchantId: string;
+      imageUrl: string;
+    }) {
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        exactMatch: null,
+        alternatives: [
+          {
+            productId: blockedProductId,
+            confidence: 0.99,
+          },
+        ],
+        imageSha256: "c".repeat(64),
+        visionProviderId: "test-blocked-alternative-provider",
+        visionModel: "test-blocked-alternative-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "عندكم شي قريب من هذا؟",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared =
+      await intents.preparePostgresMetaAutoReply(queued.job);
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+
+    const metadata = stored.rows[0].metadata;
+
+    assert.equal(metadata?.matched_record_id ?? null, null);
+    assert.equal(
+      metadata?.media?.visual_alternatives ?? null,
+      null,
+    );
+
+    assert.equal(
+      JSON.stringify(metadata).includes(blockedProductId),
+      false,
+    );
+
+    assert.equal(
+      JSON.stringify(metadata).includes(imageUrl),
+      false,
+    );
+
+    assert.equal(prepared.action, "suppress");
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+
+await test("visual alternative with a variant owned by another product is rejected before persistence", async () => {
+  const productAId = `prd-meta-visual-alt-variant-a-${runId}`;
+  const productBId = `prd-meta-visual-alt-variant-b-${runId}`;
+  const variantAId = `var-meta-visual-alt-variant-a-${runId}`;
+  const variantBId = `var-meta-visual-alt-variant-b-${runId}`;
+  const senderId = `customer-meta-visual-alt-variant-mismatch-${runId}`;
+  const eventId = `event-meta-visual-alt-variant-mismatch-${runId}`;
+  const mid = `mid-meta-visual-alt-variant-mismatch-${runId}`;
+  const imageUrl =
+    "https://example.invalid/variant-ownership-reference.jpg";
+
+  const productA = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `meta-visual-alt-variant-a-create-${runId}`,
+    input: {
+      id: productAId,
+      name: "Visual Alternative Product A",
+      price_iqd: 52_000,
+      low_stock_threshold: 2,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [
+        {
+          id: variantAId,
+          name: "Black",
+          stock_quantity: 6,
+          options: { Color: "Black" },
+        },
+      ],
+    },
+  });
+
+  const productB = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `meta-visual-alt-variant-b-create-${runId}`,
+    input: {
+      id: productBId,
+      name: "Visual Alternative Product B",
+      price_iqd: 55_000,
+      low_stock_threshold: 2,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [
+        {
+          id: variantBId,
+          name: "White",
+          stock_quantity: 5,
+          options: { Color: "White" },
+        },
+      ],
+    },
+  });
+
+  assert.equal(productA.product.id, productAId);
+  assert.equal(productA.product.variants[0]?.id, variantAId);
+  assert.equal(productB.product.id, productBId);
+  assert.equal(productB.product.variants[0]?.id, variantBId);
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      return null;
+    },
+
+    async understandWithAlternatives(input: {
+      merchantId: string;
+      imageUrl: string;
+    }) {
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        exactMatch: null,
+        alternatives: [
+          {
+            productId: productAId,
+            variantId: variantBId,
+            confidence: 0.98,
+          },
+        ],
+        imageSha256: "d".repeat(64),
+        visionProviderId: "test-variant-ownership-alternative-provider",
+        visionModel: "test-variant-ownership-alternative-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "عندكم نفس هذا اللون أو شي قريب؟",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared =
+      await intents.preparePostgresMetaAutoReply(queued.job);
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+
+    const metadata = stored.rows[0].metadata;
+
+    assert.equal(metadata?.matched_record_id ?? null, null);
+    assert.equal(
+      metadata?.media?.visual_alternatives ?? null,
+      null,
+    );
+
+    assert.equal(
+      JSON.stringify(metadata).includes(variantBId),
+      false,
+    );
+
+    assert.equal(
+      JSON.stringify(metadata).includes(imageUrl),
+      false,
+    );
+
+    assert.equal(prepared.action, "suppress");
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+await test("failed visual alternative understanding can retry the same Meta image and persist a later trusted alternative", async () => {
+  const senderId = `customer-visual-alt-retry-${runId}`;
+  const mid = `mid-visual-alt-retry-${runId}`;
+  const imageUrl =
+    "https://example.invalid/visual-alt-retry-same.jpg";
+  const productId = `prd-visual-alt-retry-${runId}`;
+  let understandCalls = 0;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `visual-alt-retry-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Visual Alternative Retry Proof Product",
+      price_iqd: 41_000,
+      stock_quantity: 7,
+      low_stock_threshold: 2,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      throw new Error("legacy image understanding must not be called");
+    },
+
+    async understandWithAlternatives(input: {
+      merchantId: string;
+      imageUrl: string;
+    }) {
+      understandCalls += 1;
+
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      if (understandCalls === 1) {
+        return null;
+      }
+
+      return {
+        exactMatch: null,
+        alternatives: [
+          {
+            productId,
+            confidence: 0.95,
+          },
+        ],
+        imageSha256: "a".repeat(64),
+        visionProviderId: "test-visual-alt-retry-provider",
+        visionModel: "test-visual-alt-retry-model",
+      };
+    },
+  });
+
+  async function enqueueImage(eventId: string) {
+    return jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "عندكم شي مشابه لهذا؟",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  try {
+    const first = await enqueueImage(
+      `event-visual-alt-retry-a-${runId}`,
+    );
+
+    const firstPrepared =
+      await intents.preparePostgresMetaAutoReply(first.job);
+
+    assert.equal(firstPrepared.action, "suppress");
+    assert.equal(understandCalls, 1);
+
+    const afterFirst = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(afterFirst.rows.length, 1);
+    assert.equal(
+      afterFirst.rows[0].metadata?.matched_record_id ?? null,
+      null,
+    );
+    assert.equal(
+      afterFirst.rows[0].metadata?.media?.visual_alternatives ?? null,
+      null,
+    );
+
+    const second = await enqueueImage(
+      `event-visual-alt-retry-b-${runId}`,
+    );
+
+    const secondPrepared =
+      await intents.preparePostgresMetaAutoReply(second.job);
+
+    assert.equal(secondPrepared.action, "suppress");
+
+    // A failed visual-alternative result must remain retryable.
+    assert.equal(understandCalls, 2);
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id ?? null,
+      null,
+    );
+    assert.deepEqual(
+      stored.rows[0].metadata?.media?.visual_alternatives,
+      [
+        {
+          product_id: productId,
+          confidence: 0.95,
+        },
+      ],
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.image_sha256,
+      "a".repeat(64),
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_provider_id,
+      "test-visual-alt-retry-provider",
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_model,
+      "test-visual-alt-retry-model",
+    );
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes(imageUrl),
+      false,
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+await test("same trusted visual alternatives are reused on redelivery without duplicate image understanding", async () => {
+  const senderId = `customer-visual-alt-redelivery-${runId}`;
+  const mid = `mid-visual-alt-redelivery-${runId}`;
+  const imageUrl =
+    "https://example.invalid/visual-alt-redelivery-reference.jpg";
+  const productId = `prd-visual-alt-redelivery-${runId}`;
+  let understandCalls = 0;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `visual-alt-redelivery-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Visual Alternative Redelivery Product",
+      price_iqd: 61_000,
+      stock_quantity: 7,
+      low_stock_threshold: 2,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      throw new Error("legacy image understanding must not be called");
+    },
+
+    async understandWithAlternatives(input: {
+      merchantId: string;
+      imageUrl: string;
+    }) {
+      understandCalls += 1;
+
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        exactMatch: null,
+        alternatives: [
+          {
+            productId,
+            confidence: 0.96,
+          },
+        ],
+        imageSha256: "e".repeat(64),
+        visionProviderId: "test-visual-alt-redelivery-provider",
+        visionModel: "test-visual-alt-redelivery-model",
+      };
+    },
+  });
+
+  async function enqueueImage(eventId: string) {
+    return jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "عندكم شي مشابه لهذا؟",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  try {
+    const first = await enqueueImage(
+      `event-visual-alt-redelivery-a-${runId}`,
+    );
+
+    const firstPrepared =
+      await intents.preparePostgresMetaAutoReply(first.job);
+
+    assert.equal(firstPrepared.action, "send");
+    assert.equal(understandCalls, 1);
+
+    const firstStored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(firstStored.rows.length, 1);
+    assert.equal(
+      firstStored.rows[0].metadata?.matched_record_id ?? null,
+      null,
+    );
+    assert.deepEqual(
+      firstStored.rows[0].metadata?.media?.visual_alternatives,
+      [
+        {
+          product_id: productId,
+          confidence: 0.96,
+        },
+      ],
+    );
+
+    const second = await enqueueImage(
+      `event-visual-alt-redelivery-b-${runId}`,
+    );
+
+    const secondPrepared =
+      await intents.preparePostgresMetaAutoReply(second.job);
+
+    assert.equal(secondPrepared.action, "send");
+
+    // RED requirement:
+    // trusted persisted alternatives for identical content must be
+    // authoritatively revalidated and reused without another Vision call.
+    assert.equal(understandCalls, 1);
+
+    const stored = await raw(
+      `SELECT text, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+    assert.equal(stored.rows[0].text, "عندكم شي مشابه لهذا؟");
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id ?? null,
+      null,
+    );
+    assert.deepEqual(
+      stored.rows[0].metadata?.media?.visual_alternatives,
+      [
+        {
+          product_id: productId,
+          confidence: 0.96,
+        },
+      ],
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.image_sha256,
+      "e".repeat(64),
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_provider_id,
+      "test-visual-alt-redelivery-provider",
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.vision_model,
+      "test-visual-alt-redelivery-model",
+    );
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes(imageUrl),
+      false,
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+await test("persisted visual alternatives with any malformed entry force fresh image understanding", async () => {
+  const senderId = `customer-visual-alt-malformed-extra-${runId}`;
+  const mid = `mid-visual-alt-malformed-extra-${runId}`;
+  const imageUrl =
+    "https://example.invalid/visual-alt-malformed-extra.jpg";
+  const productId = `prd-visual-alt-malformed-extra-${runId}`;
+  let understandCalls = 0;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `visual-alt-malformed-extra-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Malformed Extra Visual Alternative Proof Product",
+      price_iqd: 52_000,
+      stock_quantity: 9,
+      low_stock_threshold: 2,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      throw new Error("legacy image understanding must not be called");
+    },
+
+    async understandWithAlternatives(input: {
+      merchantId: string;
+      imageUrl: string;
+    }) {
+      understandCalls += 1;
+
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        exactMatch: null,
+        alternatives: [
+          {
+            productId,
+            confidence: 0.94,
+          },
+        ],
+        imageSha256: "b".repeat(64),
+        visionProviderId: "test-malformed-extra-provider",
+        visionModel: "test-malformed-extra-model",
+      };
+    },
+  });
+
+  async function enqueueImage(eventId: string) {
+    return jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "عندكم شي مشابه لهذا؟",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  try {
+    const first = await enqueueImage(
+      `event-visual-alt-malformed-extra-a-${runId}`,
+    );
+
+    const firstPrepared =
+      await intents.preparePostgresMetaAutoReply(first.job);
+
+    assert.equal(firstPrepared.action, "send");
+    assert.equal(understandCalls, 1);
+
+    await raw(
+      `UPDATE messages
+          SET metadata =
+            jsonb_set(
+              metadata,
+              '{media,visual_alternatives}',
+              (metadata->'media'->'visual_alternatives')
+                || $3::jsonb,
+              true
+            )
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'`,
+      [
+        merchantA.account.id,
+        mid,
+        JSON.stringify([
+          {
+            product_id: "",
+            confidence: "not-a-number",
+          },
+        ]),
+      ],
+    );
+
+    const second = await enqueueImage(
+      `event-visual-alt-malformed-extra-b-${runId}`,
+    );
+
+    const secondPrepared =
+      await intents.preparePostgresMetaAutoReply(second.job);
+
+    assert.equal(secondPrepared.action, "send");
+
+    // Fail closed: one malformed persisted entry invalidates the whole set.
+    // It must never be silently dropped while the remaining entries are reused.
+    assert.equal(understandCalls, 2);
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id ?? null,
+      null,
+    );
+    assert.deepEqual(
+      stored.rows[0].metadata?.media?.visual_alternatives,
+      [
+        {
+          product_id: productId,
+          confidence: 0.94,
+        },
+      ],
+    );
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes(
+        "not-a-number",
+      ),
+      false,
+    );
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes(imageUrl),
+      false,
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+await test("tampered persisted visual alternative is revalidated instead of trusted on redelivery", async () => {
+  const senderId = `customer-visual-alt-tampered-${runId}`;
+  const mid = `mid-visual-alt-tampered-${runId}`;
+  const imageUrl =
+    "https://example.invalid/visual-alt-tampered-reference.jpg";
+  const productId = `prd-visual-alt-tampered-${runId}`;
+  let understandCalls = 0;
+
+  const created = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `visual-alt-tampered-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Visual Alternative Tampering Proof Product",
+      price_iqd: 63_000,
+      stock_quantity: 8,
+      low_stock_threshold: 2,
+      status: "available",
+      allow_fawri_reply: true,
+      variants: [],
+    },
+  });
+
+  assert.equal(created.replayed, false);
+  assert.equal(created.product.id, productId);
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      throw new Error("legacy image understanding must not be called");
+    },
+
+    async understandWithAlternatives(input: {
+      merchantId: string;
+      imageUrl: string;
+    }) {
+      understandCalls += 1;
+
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        exactMatch: null,
+        alternatives: [
+          {
+            productId,
+            confidence: 0.96,
+          },
+        ],
+        imageSha256: "f".repeat(64),
+        visionProviderId: "test-visual-alt-tampered-provider",
+        visionModel: "test-visual-alt-tampered-model",
+      };
+    },
+  });
+
+  async function enqueueImage(eventId: string) {
+    return jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "عندكم شي مشابه؟",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  try {
+    const first = await enqueueImage(
+      `event-visual-alt-tampered-a-${runId}`,
+    );
+
+    const firstPrepared =
+      await intents.preparePostgresMetaAutoReply(first.job);
+
+    assert.equal(firstPrepared.action, "send");
+    assert.equal(understandCalls, 1);
+
+    await raw(
+      `UPDATE messages
+          SET metadata =
+            jsonb_set(
+              metadata,
+              '{media,visual_alternatives}',
+              $3::jsonb,
+              true
+            )
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'`,
+      [
+        merchantA.account.id,
+        mid,
+        JSON.stringify([
+          {
+            product_id: `forged-visual-alt-${runId}`,
+            confidence: 0.96,
+          },
+        ]),
+      ],
+    );
+
+    const second = await enqueueImage(
+      `event-visual-alt-tampered-b-${runId}`,
+    );
+
+    const secondPrepared =
+      await intents.preparePostgresMetaAutoReply(second.job);
+
+    assert.equal(secondPrepared.action, "send");
+
+    // Security requirement:
+    // persisted visual alternatives are evidence, never catalog authority.
+    // Tampering must fail authoritative revalidation and force fresh Vision.
+    assert.equal(understandCalls, 2);
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id ?? null,
+      null,
+    );
+    assert.deepEqual(
+      stored.rows[0].metadata?.media?.visual_alternatives,
+      [
+        {
+          product_id: productId,
+          confidence: 0.96,
+        },
+      ],
+    );
+    assert.equal(
+      stored.rows[0].metadata?.media?.image_sha256,
+      "f".repeat(64),
+    );
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes(
+        `forged-visual-alt-${runId}`,
+      ),
+      false,
+    );
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes(imageUrl),
+      false,
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+await test("visual alternative with malformed image provenance is rejected before persistence", async () => {
+  const productId = `prd-meta-visual-alt-bad-provenance-${runId}`;
+  const senderId = `customer-meta-visual-alt-bad-provenance-${runId}`;
+  const eventId = `event-meta-visual-alt-bad-provenance-${runId}`;
+  const mid = `mid-meta-visual-alt-bad-provenance-${runId}`;
+  const imageUrl =
+    "https://example.invalid/bad-provenance-reference.jpg";
+
+  const product = await catalog.createCatalogProductAuthoritative({
+    merchantId: merchantA.account.id,
+    idempotencyKey: `meta-visual-alt-bad-provenance-create-${runId}`,
+    input: {
+      id: productId,
+      name: "Visual Alternative Bad Provenance Product",
+      price_iqd: 58_000,
+      low_stock_threshold: 2,
+      status: "available",
+      allow_fawri_reply: true,
+    },
+  });
+
+  assert.equal(product.product.id, productId);
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      return null;
+    },
+
+    async understandWithAlternatives(input: {
+      merchantId: string;
+      imageUrl: string;
+    }) {
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        exactMatch: null,
+        alternatives: [
+          {
+            productId,
+            confidence: 0.97,
+          },
+        ],
+        imageSha256: "not-a-valid-sha256",
+        visionProviderId: "test-bad-provenance-alternative-provider",
+        visionModel: "test-bad-provenance-alternative-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "عندكم شي مشابه لهذا؟",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared =
+      await intents.preparePostgresMetaAutoReply(queued.job);
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+
+    const metadata = stored.rows[0].metadata;
+
+    assert.equal(metadata?.matched_record_id ?? null, null);
+    assert.equal(
+      metadata?.media?.visual_alternatives ?? null,
+      null,
+    );
+    assert.equal(
+      JSON.stringify(metadata).includes(productId),
+      false,
+    );
+    assert.equal(
+      JSON.stringify(metadata).includes(imageUrl),
+      false,
+    );
+
+    assert.equal(prepared.action, "suppress");
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
+await test("ranked visual alternatives fall back to a fulfillable merchant product without exposing total stock", async () => {
+  const firstProductId = `prd-meta-visual-stock-first-${runId}`;
+  const secondProductId = `prd-meta-visual-stock-second-${runId}`;
+  const senderId = `customer-meta-visual-stock-${runId}`;
+  const eventId = `event-meta-visual-stock-${runId}`;
+  const mid = `mid-meta-visual-stock-${runId}`;
+  const imageUrl =
+    "https://example.invalid/foreign-store-ranked-stock-reference.jpg";
+
+  for (const [productId, name, stock] of [
+    [firstProductId, "First Similar Black Shoe", 2],
+    [secondProductId, "Second Similar Black Shoe", 8],
+  ] as const) {
+    const created = await catalog.createCatalogProductAuthoritative({
+      merchantId: merchantA.account.id,
+      idempotencyKey: `meta-visual-stock-create-${productId}`,
+      input: {
+        id: productId,
+        name,
+        price_iqd: 49_000,
+        stock_quantity: stock,
+        low_stock_threshold: 1,
+        status: "available",
+        allow_fawri_reply: true,
+        variants: [],
+      },
+    });
+
+    assert.equal(created.replayed, false);
+    assert.equal(created.product.id, productId);
+  }
+
+  const defaultLocation = await raw(
+    `SELECT id
+       FROM merchant_locations
+      WHERE merchant_id = $1
+        AND is_default = TRUE
+        AND operational_status = 'open'
+      LIMIT 1`,
+    [merchantA.account.id],
+  );
+
+  assert.equal(defaultLocation.rows.length, 1);
+  const locationId = String(defaultLocation.rows[0].id);
+
+  for (const [productId, quantity, suffix] of [
+    [firstProductId, 2, "first"],
+    [secondProductId, 8, "second"],
+  ] as const) {
+    await pool.query(
+      `INSERT INTO location_inventory_levels (
+         id, merchant_id, location_id, product_id, variant_id,
+         quantity, low_stock_threshold, version, created_at, updated_at
+       ) VALUES ($1,$2,$3,$4,NULL,$5,1,1,now(),now())`,
+      [
+        `location-inventory-meta-visual-stock-${suffix}-${runId}`,
+        merchantA.account.id,
+        locationId,
+        productId,
+        quantity,
+      ],
+    );
+  }
+
+  imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  imageRuntime.configureMetaImageUnderstandingService({
+    async understand() {
+      return null;
+    },
+
+    async understandWithAlternatives(input: {
+      merchantId: string;
+      imageUrl: string;
+    }) {
+      assert.equal(input.merchantId, merchantA.account.id);
+      assert.equal(input.imageUrl, imageUrl);
+
+      return {
+        exactMatch: null,
+        alternatives: [
+          {
+            productId: firstProductId,
+            confidence: 0.91,
+          },
+          {
+            productId: secondProductId,
+            confidence: 0.84,
+          },
+        ],
+        imageSha256: "f".repeat(64),
+        visionProviderId: "test-ranked-visual-stock-provider",
+        visionModel: "test-ranked-visual-stock-model",
+      };
+    },
+  });
+
+  try {
+    const queued = await jobs.enqueueDurableJobAuthoritative({
+      type: "meta.webhook.reply",
+      dedupeKey: eventId,
+      merchantId: merchantA.account.id,
+      maxAttempts: 5,
+      payload: {
+        event_id: eventId,
+        page_id: pageA,
+        merchant_id: merchantA.account.id,
+        external_message_id: mid,
+        sender_id: senderId,
+        webhook_body: {
+          object: "page",
+          entry: [
+            {
+              id: pageA,
+              messaging: [
+                {
+                  sender: { id: senderId },
+                  recipient: { id: pageA },
+                  timestamp: Date.now(),
+                  message: {
+                    mid,
+                    text: "أريد 3 من مثل هذا، متوفر؟",
+                    attachments: [
+                      {
+                        type: "image",
+                        payload: { url: imageUrl },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+
+    const prepared =
+      await intents.preparePostgresMetaAutoReply(queued.job);
+
+    assert.equal(prepared.action, "send");
+
+    const stored = await raw(
+      `SELECT metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND external_message_id = $2
+          AND sender = 'customer'
+        LIMIT 1`,
+      [merchantA.account.id, mid],
+    );
+
+    assert.equal(stored.rows.length, 1);
+
+    // A foreign/reference image remains non-exact even though ranked
+    // current-merchant alternatives were derived from it.
+    assert.equal(
+      stored.rows[0].metadata?.matched_record_id ?? null,
+      null,
+    );
+
+    assert.deepEqual(
+      stored.rows[0].metadata?.media?.visual_alternatives,
+      [
+        {
+          product_id: firstProductId,
+          confidence: 0.91,
+        },
+        {
+          product_id: secondProductId,
+          confidence: 0.84,
+        },
+      ],
+    );
+
+    const outgoing = await raw(
+      `SELECT text, metadata
+         FROM messages
+        WHERE merchant_id = $1
+          AND conversation_id = $2
+          AND sender = 'fawri'
+        ORDER BY created_at DESC
+        LIMIT 1`,
+      [merchantA.account.id, prepared.conversationId],
+    );
+
+    assert.equal(outgoing.rows.length, 1);
+    assert.equal(outgoing.rows[0].text, prepared.messageText);
+
+    // The first ranked candidate has only 2, so the authoritative stock
+    // capability must advance to the second candidate, which can fulfill 3.
+    assert.equal(
+      outgoing.rows[0].metadata?.matched_record_id,
+      `catalog-product:${secondProductId}`,
+    );
+
+    // Similar-product semantics must remain explicit.
+    assert.match(prepared.messageText, /مشابه|قريب|مثل/i);
+
+    // The requested quantity may be confirmed, but the merchant's total
+    // inventory (8) must not be disclosed.
+    assert.match(prepared.messageText, /3/);
+    assert.doesNotMatch(prepared.messageText, /8/);
+
+    assert.equal(
+      JSON.stringify(stored.rows[0].metadata).includes(imageUrl),
+      false,
+    );
+  } finally {
+    imageRuntime.resetMetaImageUnderstandingServiceForTests();
+  }
+});
+
 test.after(async () => {
   await pool.end();
   fs.rmSync(dataDir, { recursive: true, force: true });

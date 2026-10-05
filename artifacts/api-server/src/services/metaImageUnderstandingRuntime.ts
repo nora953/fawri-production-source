@@ -2,6 +2,7 @@ import {
   MetaImageUnderstandingService,
   type MetaImageUnderstandingDependencies,
   type MetaImageUnderstandingResult,
+  type MetaImageUnderstandingWithAlternativesResult,
 } from "./metaImageUnderstandingService.js";
 import {
   OpenAiMediaVisionProvider,
@@ -24,6 +25,11 @@ export interface MetaImageUnderstandingRuntimeService {
     merchantId: string;
     imageUrl: string;
   }): Promise<MetaImageUnderstandingResult | null>;
+
+  understandWithAlternatives(input: {
+    merchantId: string;
+    imageUrl: string;
+  }): Promise<MetaImageUnderstandingWithAlternativesResult | null>;
 }
 
 let configuredService: MetaImageUnderstandingRuntimeService | null = null;
@@ -75,6 +81,7 @@ export function createOpenAiMetaImageUnderstandingService(
     analyzeImage: (input) => vision.analyze(input),
     resolveCandidates: (input) => resolver.resolve(input),
     matchCatalog: (input) => matcher.resolve(input),
+    resolveAlternatives: (input) => matcher.resolveAlternatives(input),
   });
 }
 

@@ -162,6 +162,16 @@ export type DatabaseFactResult = {
   recordId?: string;
   /** Stable internal catalog conversation reference, separate from operational audit IDs. */
   contextRecordId?: string;
+  /**
+   * Internal structured stock authority for server-side selection logic.
+   * This metadata is not customer-facing and must not weaken stock disclosure policy.
+   */
+  availability?: {
+    trackInventory: boolean;
+    availableQuantity: number;
+    requestedQuantity: number | null;
+    fulfillable: boolean;
+  };
 };
 
 export type KnowledgeFactResolverInput = {
@@ -176,6 +186,13 @@ export type KnowledgeFactResolverInput = {
   trustedProductIdHint?: string;
   /** Trusted conversation-derived variant identity; never take from browser input. */
   trustedVariantIdHint?: string;
+  /**
+   * Server-derived visual-alternative identity.
+   * This is reference-only evidence and must never be treated as exact image identity.
+   * It may be used only by explicitly safe operational capabilities.
+   */
+  trustedVisualAlternativeProductId?: string;
+  trustedVisualAlternativeVariantId?: string;
 };
 
 export interface KnowledgeFactResolver {
@@ -374,6 +391,26 @@ export type KnowledgeDecisionInput = {
   customerExternalId?: string;
   /** Bounded prior delivered/received messages loaded by the server messaging pipeline. */
   recentMessages?: KnowledgeConversationMessage[];
+  /**
+   * Trusted server-derived merchant-catalog alternative for a visual reference.
+   * This is similar-product context, never proof that the customer's image is
+   * the exact merchant product. Never accept it from customer-controlled input.
+   */
+  trustedVisualAlternative?: {
+    productId: string;
+    variantId?: string;
+    confidence: number;
+  };
+  /**
+   * Ranked server-derived merchant-catalog alternatives for a visual reference.
+   * Order is authoritative ranking order. Maximum three candidates are consumed.
+   * These remain similar-product references and never become exact image identity.
+   */
+  trustedVisualAlternatives?: Array<{
+    productId: string;
+    variantId?: string;
+    confidence: number;
+  }>;
 };
 
 export type KnowledgeDecisionResult = {
