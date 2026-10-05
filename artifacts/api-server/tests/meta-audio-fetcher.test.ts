@@ -56,7 +56,7 @@ test("secure audio fetcher rejects non-HTTPS before network access", async () =>
 
   await assert.rejects(
     fetcher.fetchAudio({ url: "http://127.0.0.1/private.mp3" }),
-    (error: any) => error?.code === "META_AUDIO_URL_INVALID",
+    (error: unknown) => (error as { code?: string } | null)?.code === "META_AUDIO_URL_INVALID",
   );
   assert.equal(calls, 0);
 });
@@ -73,7 +73,7 @@ test("secure audio fetcher rejects redirects and private DNS destinations", asyn
 
   await assert.rejects(
     redirectFetcher.fetchAudio({ url: "https://cdn.example.test/audio.mp3" }),
-    (error: any) => error?.code === "META_AUDIO_REDIRECT_REJECTED",
+    (error: unknown) => (error as { code?: string } | null)?.code === "META_AUDIO_REDIRECT_REJECTED",
   );
 
   let calls = 0;
@@ -87,7 +87,7 @@ test("secure audio fetcher rejects redirects and private DNS destinations", asyn
 
   await assert.rejects(
     privateFetcher.fetchAudio({ url: "https://cdn.example.test/audio.mp3" }),
-    (error: any) => error?.code === "META_AUDIO_DESTINATION_FORBIDDEN",
+    (error: unknown) => (error as { code?: string } | null)?.code === "META_AUDIO_DESTINATION_FORBIDDEN",
   );
   assert.equal(calls, 0);
 });
@@ -104,7 +104,7 @@ test("secure audio fetcher rejects unsupported MIME and oversized declarations",
 
   await assert.rejects(
     unsupported.fetchAudio({ url: "https://cdn.example.test/audio.mp3" }),
-    (error: any) => error?.code === "META_AUDIO_MIME_INVALID",
+    (error: unknown) => (error as { code?: string } | null)?.code === "META_AUDIO_MIME_INVALID",
   );
 
   const oversized = new SecureMetaAudioFetcher({
@@ -121,7 +121,7 @@ test("secure audio fetcher rejects unsupported MIME and oversized declarations",
 
   await assert.rejects(
     oversized.fetchAudio({ url: "https://cdn.example.test/audio.mp3" }),
-    (error: any) => error?.code === "META_AUDIO_TOO_LARGE",
+    (error: unknown) => (error as { code?: string } | null)?.code === "META_AUDIO_TOO_LARGE",
   );
 });
 
@@ -135,9 +135,9 @@ test("secure audio fetcher errors never expose private media URL tokens", async 
     },
   });
 
-  await assert.rejects(fetcher.fetchAudio({ url: privateUrl }), (error: any) => {
-    assert.equal(error?.code, "META_AUDIO_FETCH_FAILED");
-    assert.doesNotMatch(String(error?.message), /super-secret-value|private\.mp3/);
+  await assert.rejects(fetcher.fetchAudio({ url: privateUrl }), (error: unknown) => {
+    assert.equal((error as { code?: string } | null)?.code, "META_AUDIO_FETCH_FAILED");
+    assert.doesNotMatch(String((error as { message?: string } | null)?.message), /super-secret-value|private\.mp3/);
     return true;
   });
 });
