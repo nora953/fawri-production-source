@@ -191,8 +191,6 @@ export function selectMetaInboundAudioUrl(
 ): string | null {
   if (
     !inbound ||
-    inbound.kind !== "audio" ||
-    inbound.text !== null ||
     !Array.isArray(inbound.attachments)
   ) {
     return null;
