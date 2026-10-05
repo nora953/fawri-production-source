@@ -9,8 +9,9 @@ import type { MetaFetchedVideo } from "./metaVideoUnderstandingService.js";
 const MAX_FRAMES = 6;
 const MAX_FRAME_BYTES = 8 * 1024 * 1024;
 
-type RunInput = { inputPath: string; outputPattern: string };
+type RunInput = { inputPath: string; outputPattern: string; signal: AbortSignal };
 type Options = {
+  timeoutMs?: number;
   runFfmpeg?: (input: RunInput) => Promise<Buffer[]>;
   onCleanup?: () => void;
 };
@@ -20,7 +21,7 @@ function jpeg(buffer: Buffer) {
     buffer[buffer.length - 2] === 0xff && buffer[buffer.length - 1] === 0xd9;
 }
 
-async function defaultRun({ inputPath, outputPattern }: RunInput): Promise<Buffer[]> {
+async function defaultRun({ inputPath, outputPattern, signal }: RunInput): Promise<Buffer[]> {
   await new Promise<void>((resolve, reject) => {
     const child = spawn("ffmpeg", [
       "-hide_banner", "-loglevel", "error", "-nostdin",
@@ -29,11 +30,14 @@ async function defaultRun({ inputPath, outputPattern }: RunInput): Promise<Buffe
       "-frames:v", String(MAX_FRAMES),
       "-q:v", "3",
       outputPattern,
-    ], { stdio: ["ignore", "ignore", "pipe"] });
+    ], { stdio: ["ignore", "ignore", "pipe"], signal, killSignal: "SIGKILL" });
     let stderr = "";
     child.stderr.on("data", chunk => { stderr += String(chunk).slice(0, 1000); });
-    child.once("error", reject);
-    child.once("exit", code => code === 0 ? resolve() : reject(new Error(`ffmpeg failed: ${code}: ${stderr.slice(0,200)}`)));
+    child.once("error", error => {
+      // On cancellation, wait until the process closes before deleting its files.
+      if (!signal.aborted) reject(error);
+    });
+    child.once("close", code => code === 0 && !signal.aborted ? resolve() : reject(new Error(`ffmpeg failed: ${code}: ${stderr.slice(0,200)}`)));
   });
   const dir = outputPattern.slice(0, outputPattern.lastIndexOf("/"));
   const names = (await readdir(dir)).filter(x => /^frame-\d+\.jpg$/.test(x)).sort();
@@ -43,18 +47,28 @@ async function defaultRun({ inputPath, outputPattern }: RunInput): Promise<Buffe
 export class FfmpegMetaVideoFrameExtractor {
   private readonly runFfmpeg: (input: RunInput) => Promise<Buffer[]>;
   private readonly onCleanup?: () => void;
-  constructor(options: Options = {}) { this.runFfmpeg = options.runFfmpeg || defaultRun; this.onCleanup = options.onCleanup; }
+  private readonly timeoutMs: number;
+  constructor(options: Options = {}) {
+    this.runFfmpeg = options.runFfmpeg || defaultRun;
+    this.onCleanup = options.onCleanup;
+    this.timeoutMs = Number.isFinite(options.timeoutMs) && Number(options.timeoutMs) > 0
+      ? Math.min(Number(options.timeoutMs), 60_000) : 30_000;
+  }
 
   async extract(video: MetaFetchedVideo): Promise<MetaFetchedImage[]> {
     if (!Buffer.isBuffer(video.buffer) || video.buffer.length !== video.sizeBytes ||
         !/^[a-f0-9]{64}$/i.test(video.sha256)) return [];
     const dir = await mkdtemp(join(tmpdir(), "fawri-meta-video-"));
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       const ext = video.mimeType === "video/webm" ? "webm" : "mp4";
       const inputPath = join(dir, `input-${randomUUID()}.${ext}`);
       const outputPattern = join(dir, "frame-%02d.jpg");
       await writeFile(inputPath, video.buffer, { flag: "wx", mode: 0o600 });
-      const buffers = await this.runFfmpeg({ inputPath, outputPattern });
+      timer = setTimeout(() => controller.abort(), this.timeoutMs);
+      const buffers = await this.runFfmpeg({ inputPath, outputPattern, signal: controller.signal });
+      if (controller.signal.aborted) return [];
       if (!Array.isArray(buffers) || buffers.length < 1 || buffers.length > MAX_FRAMES) return [];
       const result: MetaFetchedImage[] = [];
       for (const buffer of buffers) {
@@ -66,6 +80,7 @@ export class FfmpegMetaVideoFrameExtractor {
     } catch {
       return [];
     } finally {
+      clearTimeout(timer);
       await rm(dir, { recursive: true, force: true }).catch(() => undefined);
       this.onCleanup?.();
     }
