@@ -187,6 +187,9 @@ function parseJob(job: DurableJob): ParsedMetaJob {
       contentKind === "document" ||
       contentKind === "location" ||
       contentKind === "sticker") ||
+    inbound.attachments.some((attachment) =>
+      !["image", "audio", "video"].includes(attachment.type.toLowerCase()),
+    ) ||
     !storageText ||
     storageText.length > 2_000 ||
     (customerText !== null && customerText.length > 2_000) ||
