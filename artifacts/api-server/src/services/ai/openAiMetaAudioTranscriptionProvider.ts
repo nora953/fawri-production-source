@@ -28,6 +28,16 @@ type Options = {
   fetchImpl?: typeof fetch;
 };
 
+function audioFileName(mimeType: string): string {
+  if (mimeType === "audio/mpeg") return "customer-audio.mp3";
+  if (["audio/mp4", "audio/m4a", "audio/x-m4a"].includes(mimeType)) {
+    return "customer-audio.m4a";
+  }
+  if (mimeType === "audio/ogg") return "customer-audio.ogg";
+  if (mimeType === "audio/webm") return "customer-audio.webm";
+  return "customer-audio.wav";
+}
+
 function validAudio(audio: MetaFetchedAudio): boolean {
   if (!Buffer.isBuffer(audio.buffer) || audio.buffer.length === 0) return false;
   if (!ALLOWED_AUDIO_MIME.has(audio.mimeType)) return false;
@@ -69,7 +79,7 @@ export class OpenAiMetaAudioTranscriptionProvider {
     form.set(
       "file",
       new Blob([new Uint8Array(input.audio.buffer)], { type: input.audio.mimeType }),
-      "customer-audio",
+      audioFileName(input.audio.mimeType),
     );
 
     const controller = new AbortController();
