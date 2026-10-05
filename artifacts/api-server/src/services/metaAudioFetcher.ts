@@ -207,17 +207,17 @@ export class SecureMetaAudioFetcher {
       }
       throw coded("Meta audio destination could not be verified", "META_AUDIO_DESTINATION_UNVERIFIED");
     }
-    if (!addresses.length || addresses.some((entry) =>
-      (entry.family !== 4 && entry.family !== 6) ||
-      isIP(entry.address) !== entry.family)) {
-      throw coded("Meta audio destination could not be verified", "META_AUDIO_DESTINATION_UNVERIFIED");
-    }
-    if (addresses.some((entry) => forbidden(entry.address))) {
-      throw coded("Meta audio destination is forbidden", "META_AUDIO_DESTINATION_FORBIDDEN");
-    }
-
-    const verified = addresses[0];
     try {
+      if (!addresses.length || addresses.some((entry) =>
+        (entry.family !== 4 && entry.family !== 6) ||
+        isIP(entry.address) !== entry.family)) {
+        throw coded("Meta audio destination could not be verified", "META_AUDIO_DESTINATION_UNVERIFIED");
+      }
+      if (addresses.some((entry) => forbidden(entry.address))) {
+        throw coded("Meta audio destination is forbidden", "META_AUDIO_DESTINATION_FORBIDDEN");
+      }
+
+      const verified = addresses[0];
       let response: Response;
       try {
         response = await this.transportImpl({
@@ -252,7 +252,10 @@ export class SecureMetaAudioFetcher {
           throw coded("Meta audio content length is invalid", "META_AUDIO_FETCH_FAILED");
         }
         const length = Number(rawLength);
-        if (!Number.isSafeInteger(length) || length < 0) throw coded("Meta audio content length is invalid", "META_AUDIO_FETCH_FAILED");
+        if (!Number.isSafeInteger(length) || length < 0) {
+          await response.body?.cancel().catch(() => undefined);
+          throw coded("Meta audio content length is invalid", "META_AUDIO_FETCH_FAILED");
+        }
         if (length > META_AUDIO_MAX_BYTES) {
           await response.body?.cancel().catch(() => undefined);
           throw coded("Meta audio exceeds the allowed size", "META_AUDIO_TOO_LARGE");
