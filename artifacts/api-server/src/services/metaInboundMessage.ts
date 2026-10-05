@@ -159,3 +159,31 @@ export function selectMetaInboundImageUrl(
     return null;
   }
 }
+
+export function selectMetaInboundAudioUrl(
+  inbound: MetaInboundMessage,
+): string | null {
+  if (!inbound || !Array.isArray(inbound.attachments)) return null;
+  if (inbound.attachments.length !== 1) return null;
+
+  const audio = inbound.attachments[0];
+  if (audio?.type.toLowerCase() !== "audio") return null;
+
+  const url = audio.url?.trim();
+  if (!url) return null;
+
+  try {
+    const parsed = new URL(url);
+    if (
+      parsed.protocol !== "https:" ||
+      !parsed.hostname ||
+      parsed.username ||
+      parsed.password
+    ) {
+      return null;
+    }
+    return parsed.href;
+  } catch {
+    return null;
+  }
+}
