@@ -40,7 +40,17 @@ export async function understandTrustedMetaVideoForReply(input:{
     const alternatives=!matchedRecordId&&persisted.alternatives.length?await matcher.resolveAlternatives({merchantId:input.merchantId,candidates:persisted.alternatives}):[];
     return {text:persisted.summary,understood:true,matchedRecordId,alternatives};
   }
-  const service=getMetaVideoUnderstandingService(),understood=service?await service.understand({merchantId:input.merchantId,videoUrl:input.videoUrl}):null;
+  const service=getMetaVideoUnderstandingService();
+  let understood=null;
+  if(service){
+    try{
+      understood=await service.understand({merchantId:input.merchantId,videoUrl:input.videoUrl});
+    }catch{
+      // Provider/network/decoder failure is not trusted visual evidence.
+      // Return the empty grounding while preserving integrity/DB errors below.
+      return empty();
+    }
+  }
   if(!understood?.observation||understood.observation.confidence<0.5||!/^[a-f0-9]{64}$/i.test(understood.videoSha256)||!Number.isInteger(understood.frameCount)||understood.frameCount<1||understood.frameCount>6)return empty();
   const observation=understood.observation;
   const summary=[

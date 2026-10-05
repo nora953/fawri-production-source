@@ -809,10 +809,16 @@ export async function preparePostgresMetaAutoReply(
     } else {
       const audioService = getMetaAudioUnderstandingService();
       if (audioService) {
-        const understood = await audioService.understand({
-          merchantId: parsed.merchantId,
-          audioUrl: processingAudioUrl,
-        });
+        let understood = null;
+        try {
+          understood = await audioService.understand({
+            merchantId: parsed.merchantId,
+            audioUrl: processingAudioUrl,
+          });
+        } catch {
+          // Provider/network/transcription failure is not trusted evidence.
+          // Fail closed below instead of crashing the durable reply worker.
+        }
         const transcript = understood?.transcript?.trim() || "";
         const hasSafeProvenance =
           transcript.length > 0 &&
@@ -1165,15 +1171,21 @@ export async function preparePostgresMetaAutoReply(
         imageUrl: safeProcessingImageUrl,
       };
 
-      const understoodWithAlternatives =
-        typeof imageService.understandWithAlternatives === "function"
-          ? await imageService.understandWithAlternatives(imageInput)
-          : null;
-
-      const legacyUnderstood =
-        typeof imageService.understandWithAlternatives === "function"
-          ? null
-          : await imageService.understand(imageInput);
+      let understoodWithAlternatives = null;
+      let legacyUnderstood = null;
+      try {
+        understoodWithAlternatives =
+          typeof imageService.understandWithAlternatives === "function"
+            ? await imageService.understandWithAlternatives(imageInput)
+            : null;
+        legacyUnderstood =
+          typeof imageService.understandWithAlternatives === "function"
+            ? null
+            : await imageService.understand(imageInput);
+      } catch {
+        // Provider/network/decoder failure is not trusted media evidence.
+        // Fail closed below instead of crashing the durable reply worker.
+      }
 
       const understood =
         understoodWithAlternatives?.exactMatch ?? legacyUnderstood ?? null;
