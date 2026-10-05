@@ -19,6 +19,7 @@ test("preserves the existing text message contract", () => {
     text: "hello",
     storageText: "hello",
     attachments: [],
+    replyToMessageId: null,
   });
 });
 
@@ -380,4 +381,18 @@ test("video URL selection fails closed for mixed attachments, HTTP, or ambiguity
     assert.ok(inbound);
     assert.equal(selectMetaInboundVideoUrl(inbound), null);
   }
+});
+
+
+test("preserves reply-to message id without treating quoted content as trusted text", () => {
+  const parsed = parseMetaInboundMessage({
+    mid: "message-reply",
+    text: "هذا شكد سعره؟",
+    reply_to: { mid: "prior-media-message" },
+  });
+
+  assert.ok(parsed);
+  assert.equal(parsed.kind, "text");
+  assert.equal(parsed.text, "هذا شكد سعره؟");
+  assert.equal(parsed.replyToMessageId, "prior-media-message");
 });
