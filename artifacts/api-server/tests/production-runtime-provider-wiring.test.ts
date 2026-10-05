@@ -266,6 +266,7 @@ test("no explicit production provider preserves the current non-production behav
     knowledgeAiProvider: "disabled",
     metaImageProvider: "disabled",
     metaAudioProvider: "disabled",
+    metaVideoProvider: "disabled",
   });
   assert.equal(
     createEnvironmentMetaCredentialKeyProvider().readiness?.().production_eligible,
@@ -274,6 +275,33 @@ test("no explicit production provider preserves the current non-production behav
   result.runtime.dispose();
 });
 
+
+test("Meta video provider remains disabled unless explicitly selected", async () => {
+  const never = () => { throw new Error("video must stay disabled"); };
+  const result = await bootstrapRuntimeAndLoadApplication({
+    env: { OPENAI_API_KEY: "x", FAWRI_OPENAI_VIDEO_MODEL: "vision" } as NodeJS.ProcessEnv,
+    dependencies: { createOpenAiMetaVideo: never, configureMetaVideo: never },
+    loadApplication: async () => "app",
+  });
+  assert.equal(result.runtime.selections.metaVideoProvider, "disabled");
+  result.runtime.dispose();
+});
+
+test("Meta video provider requires explicit selection and releases on dispose", async () => {
+  const events:string[]=[]; const service={async understand(){return null;}};
+  const result=await bootstrapRuntimeAndLoadApplication({
+    env:{FAWRI_META_VIDEO_PROVIDER:"openai",OPENAI_API_KEY:"key",FAWRI_OPENAI_VIDEO_MODEL:"video-model"} as NodeJS.ProcessEnv,
+    dependencies:{
+      createOpenAiMetaVideo:(key,model)=>{events.push(`create:${key}:${model}`);return service;},
+      configureMetaVideo:()=>{events.push("configure");},
+      releaseMetaVideo:()=>{events.push("release");return true;},
+    },
+    loadApplication:async()=>{events.push("app-load");return "app";},
+  });
+  assert.equal(result.runtime.selections.metaVideoProvider,"openai");
+  assert.deepEqual(events,["create:key:video-model","configure","app-load"]);
+  result.runtime.dispose(); assert.equal(events.at(-1),"release");
+});
 
 test("Meta audio provider remains disabled unless explicitly selected", async () => {
   const never = () => {
