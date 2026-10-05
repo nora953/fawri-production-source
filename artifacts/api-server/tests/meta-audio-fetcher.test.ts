@@ -206,3 +206,33 @@ test("secure audio fetcher bounds stalled DNS resolution and never reaches trans
   );
   assert.equal(transportCalls, 0);
 });
+
+
+test("secure audio fetcher bounds a stalled response body stream", async () => {
+  const fetcher = new SecureMetaAudioFetcher({
+    timeoutMs: 20,
+    resolveHost: PUBLIC_TEST_DNS,
+    transportImpl: async (request) => {
+      const body = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("ID3"));
+          request.signal.addEventListener("abort", () => {
+            controller.error(Object.assign(new Error("aborted"), { name: "AbortError" }));
+          }, { once: true });
+        },
+      });
+      return new Response(body, {
+        status: 200,
+        headers: { "content-type": "audio/mpeg" },
+      });
+    },
+  });
+
+  await assert.rejects(
+    fetcher.fetchAudio({ url: "https://cdn.example.test/stalled-body.mp3" }),
+    (error: unknown) => {
+      const candidate = error as { code?: string; name?: string } | null;
+      return candidate?.code === "META_AUDIO_TIMEOUT" || candidate?.name === "AbortError";
+    },
+  );
+});
