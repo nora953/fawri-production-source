@@ -5839,11 +5839,6 @@ await test("manual takeover never sends inbound audio to transcription", async (
   }
 });
 
-test.after(async () => {
-  await pool.end();
-  fs.rmSync(dataDir, { recursive: true, force: true });
-});
-
 await test("missing connected Messenger channel fails closed before conversation creation", async () => {
   const senderId = `customer-missing-channel-${runId}`;
   const eventId = `event-missing-channel-${runId}`;
@@ -5890,4 +5885,10 @@ await test("same provider event id with changed payload fails closed as identity
     () => intents.preparePostgresMetaAutoReply(second.job),
     (error: unknown) => (error as { code?: string }).code === "META_EVENT_IDENTITY_COLLISION",
   );
+});
+
+
+test.after(async () => {
+  await pool.end();
+  fs.rmSync(dataDir, { recursive: true, force: true });
 });
