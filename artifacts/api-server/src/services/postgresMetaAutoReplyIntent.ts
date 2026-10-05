@@ -1162,7 +1162,7 @@ export async function preparePostgresMetaAutoReply(
     if (imageService) {
       const imageInput = {
         merchantId: parsed.merchantId,
-        imageUrl: parsed.imageUrl,
+        imageUrl: safeProcessingImageUrl,
       };
 
       const understoodWithAlternatives =
