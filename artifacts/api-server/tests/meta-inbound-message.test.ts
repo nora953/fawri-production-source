@@ -110,7 +110,7 @@ test("classifies document, location, and sticker without inventing meaning", () 
 
 test("unknown attachments fail closed instead of pretending to understand them", () => {
   const parsed = parseMetaInboundMessage({
-    attachments: [{ type: "file", payload: { url: "file-url" } }],
+    attachments: [{ type: "mystery", payload: { url: "mystery-url" } }],
   });
 
   assert.equal(parsed?.kind, "unsupported");
