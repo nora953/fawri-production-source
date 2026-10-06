@@ -1,4 +1,7 @@
-import { evaluateCashierHistoricalOperationAuthorityInTransaction } from "./cashierHistoricalOperationAuthority";
+import {
+  evaluateCashierHistoricalOperationAuthorityInTransaction,
+  recordCashierOperationTimelineInTransaction,
+} from "./cashierHistoricalOperationAuthority";
 import crypto from "node:crypto";
 import { catalogCommerceFromMetadata } from "./catalogCommerceMetadata";
 import {
@@ -1266,6 +1269,19 @@ export async function syncCashierSaleAuthoritative(params: {
         historicalAuthority.reason,
         403,
       );
+    }
+    const timeline = await recordCashierOperationTimelineInTransaction({
+      target: client,
+      merchantId,
+      deviceId: bundle.deviceId,
+      deviceSequence: bundle.deviceSequence,
+      operationId: bundle.operationId,
+      operationKind: "sale",
+      occurredAt: bundle.sale.occurred_at,
+      authority: historicalAuthority,
+    });
+    if (!timeline.allowed) {
+      throw new CashierSyncError(timeline.code, timeline.reason, 409);
     }
     const locationId = await requireCashierStationLocation(client, {
       merchantId,
