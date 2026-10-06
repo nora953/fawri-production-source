@@ -165,6 +165,8 @@ export default function CashierCheckoutModal({
   onSubmit,
 }: Props) {
   const cashInputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
   const cashTouchedRef = useRef(false);
   const previousExactTotalRef = useRef<number | null>(null);
   const extra = CASHIER_POS_ENHANCEMENT_COPY[lang];
@@ -191,9 +193,42 @@ export default function CashierCheckoutModal({
 
   useEffect(() => {
     if (!open) return;
+    restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    return () => {
+      restoreFocusRef.current?.focus();
+      restoreFocusRef.current = null;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const handleKeyboard = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         if (!committing && !overrideApprovalLoading) onClose();
+        return;
+      }
+      if (event.key === 'Tab') {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        const focusable = Array.from(
+          dialog.querySelectorAll<HTMLElement>(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        ).filter(element => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true');
+        if (focusable.length === 0) {
+          event.preventDefault();
+          dialog.focus();
+          return;
+        }
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
         return;
       }
       if (
@@ -247,7 +282,9 @@ export default function CashierCheckoutModal({
       dir={dir}
     >
       <section
+        ref={dialogRef}
         role="dialog"
+        tabIndex={-1}
         aria-modal="true"
         aria-labelledby="cashier-checkout-title"
         className="flex max-h-[94dvh] w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
@@ -418,6 +455,8 @@ export default function CashierCheckoutModal({
                 placeholder={labels.cashReceivedPlaceholder}
                 className="h-14 w-full rounded-xl border border-slate-300 bg-white px-4 text-end text-2xl font-black outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
                 dir="ltr"
+                aria-invalid={insufficient}
+                aria-describedby={insufficient ? "cashier-cash-insufficient" : undefined}
               />
 
               <div className={`mt-3 rounded-xl border px-4 py-3 ${
@@ -443,7 +482,7 @@ export default function CashierCheckoutModal({
               </div>
 
               {insufficient ? (
-                <p className="mt-2 text-sm font-bold text-red-600">{labels.cashInsufficient}</p>
+                <p id="cashier-cash-insufficient" role="alert" className="mt-2 text-sm font-bold text-red-600">{labels.cashInsufficient}</p>
               ) : null}
             </div>
           ) : (
