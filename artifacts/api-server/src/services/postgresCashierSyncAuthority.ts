@@ -1,3 +1,4 @@
+import { assertCashierDeviceLicensedInTransaction } from "./cashierEntitlementAuthority";
 import crypto from "node:crypto";
 import { catalogCommerceFromMetadata } from "./catalogCommerceMetadata";
 import {
@@ -1252,6 +1253,12 @@ export async function syncCashierSaleAuthoritative(params: {
       "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
       [`cashier-device:${merchantId}:${bundle.deviceId}`],
     );
+    await assertCashierDeviceLicensedInTransaction({
+      target: client,
+      merchantId,
+      deviceId: bundle.deviceId,
+      allowGrace: true,
+    });
     const locationId = await requireCashierDeviceLocation(client, {
       merchantId,
       deviceId: bundle.deviceId,
