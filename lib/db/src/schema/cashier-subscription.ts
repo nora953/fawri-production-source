@@ -194,6 +194,52 @@ export const cashierBillingOrders = pgTable(
   }),
 ).enableRLS();
 
+export const cashierBillingEvents = pgTable(
+  "cashier_billing_events",
+  {
+    id: text("id").primaryKey(),
+    merchantId: text("merchant_id")
+      .notNull()
+      .references(() => merchants.id, { onDelete: "cascade" }),
+    orderId: text("order_id").notNull(),
+    provider: text("provider").notNull(),
+    providerEventId: text("provider_event_id").notNull(),
+    eventType: text("event_type").notNull(),
+    payloadHash: text("payload_hash").notNull(),
+    status: text("status").notNull().default("received"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    appliedAt: timestamp("applied_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    orderTenantForeignKey: foreignKey({
+      name: "cashier_billing_events_order_merchant_fk",
+      columns: [table.orderId, table.merchantId],
+      foreignColumns: [cashierBillingOrders.id, cashierBillingOrders.merchantId],
+    }).onDelete("cascade"),
+    providerEventUnique: uniqueIndex("cashier_billing_events_provider_event_unique").on(
+      table.provider,
+      table.providerEventId,
+    ),
+    merchantCreatedIndex: index("cashier_billing_events_merchant_created_idx").on(
+      table.merchantId,
+      table.createdAt,
+    ),
+    eventCheck: check(
+      "cashier_billing_events_event_check",
+      sql`${table.eventType} IN ('payment_succeeded','payment_failed','payment_cancelled')`,
+    ),
+    statusCheck: check(
+      "cashier_billing_events_status_check",
+      sql`${table.status} IN ('received','applied','rejected')`,
+    ),
+    payloadHashCheck: check(
+      "cashier_billing_events_payload_hash_check",
+      sql`char_length(${table.payloadHash}) BETWEEN 32 AND 128`,
+    ),
+  }),
+).enableRLS();
+
 export const cashierEntitlementApplications = pgTable(
   "cashier_entitlement_applications",
   {
@@ -289,4 +335,5 @@ export const cashierEntitlementAuditEvents = pgTable(
 export type MerchantCashierSubscription = typeof merchantCashierSubscriptions.$inferSelect;
 export type CashierStationSeatAssignment = typeof cashierStationSeatAssignments.$inferSelect;
 export type CashierBillingOrder = typeof cashierBillingOrders.$inferSelect;
+export type CashierBillingEvent = typeof cashierBillingEvents.$inferSelect;
 export type CashierEntitlementApplication = typeof cashierEntitlementApplications.$inferSelect;
