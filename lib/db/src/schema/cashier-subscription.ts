@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   check,
   foreignKey,
   index,
@@ -335,8 +336,67 @@ export const cashierEntitlementAuditEvents = pgTable(
   }),
 ).enableRLS();
 
+export const cashierDeviceOperationTimeline = pgTable(
+  "cashier_device_operation_timeline",
+  {
+    id: text("id").primaryKey(),
+    merchantId: text("merchant_id")
+      .notNull()
+      .references(() => merchants.id, { onDelete: "cascade" }),
+    subscriptionId: text("subscription_id").notNull(),
+    billingOrderId: text("billing_order_id").notNull(),
+    stationId: text("station_id").notNull(),
+    deviceId: text("device_id").notNull(),
+    deviceSequence: bigint("device_sequence", { mode: "number" }).notNull(),
+    operationId: text("operation_id").notNull(),
+    operationKind: text("operation_kind").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    subscriptionTenantForeignKey: foreignKey({
+      name: "cashier_device_operation_timeline_subscription_merchant_fk",
+      columns: [table.subscriptionId, table.merchantId],
+      foreignColumns: [merchantCashierSubscriptions.id, merchantCashierSubscriptions.merchantId],
+    }).onDelete("restrict"),
+    billingOrderTenantForeignKey: foreignKey({
+      name: "cashier_device_operation_timeline_billing_order_merchant_fk",
+      columns: [table.billingOrderId, table.merchantId],
+      foreignColumns: [cashierBillingOrders.id, cashierBillingOrders.merchantId],
+    }).onDelete("restrict"),
+    stationTenantForeignKey: foreignKey({
+      name: "cashier_device_operation_timeline_station_merchant_fk",
+      columns: [table.stationId, table.merchantId],
+      foreignColumns: [merchantCashierStations.id, merchantCashierStations.merchantId],
+    }).onDelete("restrict"),
+    deviceSequenceUnique: uniqueIndex("cashier_device_operation_timeline_device_sequence_unique").on(
+      table.merchantId,
+      table.deviceId,
+      table.deviceSequence,
+    ),
+    operationUnique: uniqueIndex("cashier_device_operation_timeline_operation_unique").on(
+      table.merchantId,
+      table.operationId,
+    ),
+    deviceOccurredIndex: index("cashier_device_operation_timeline_device_occurred_idx").on(
+      table.merchantId,
+      table.deviceId,
+      table.occurredAt,
+    ),
+    sequenceCheck: check(
+      "cashier_device_operation_timeline_sequence_check",
+      sql`${table.deviceSequence} > 0`,
+    ),
+    operationKindCheck: check(
+      "cashier_device_operation_timeline_operation_kind_check",
+      sql`${table.operationKind} IN ('sale','return','void')`,
+    ),
+  }),
+).enableRLS();
+
 export type MerchantCashierSubscription = typeof merchantCashierSubscriptions.$inferSelect;
 export type CashierStationSeatAssignment = typeof cashierStationSeatAssignments.$inferSelect;
 export type CashierBillingOrder = typeof cashierBillingOrders.$inferSelect;
 export type CashierBillingEvent = typeof cashierBillingEvents.$inferSelect;
+export type CashierDeviceOperationTimeline = typeof cashierDeviceOperationTimeline.$inferSelect;
 export type CashierEntitlementApplication = typeof cashierEntitlementApplications.$inferSelect;
