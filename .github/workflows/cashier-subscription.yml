@@ -17,6 +17,13 @@ on:
       - "lib/db/src/schema/cashier-subscription.ts"
       - "lib/db/drizzle/0027_cashier_subscription_licensing.sql"
       - "artifacts/api-server/tests/cashier-subscription-policy.test.ts"
+      - "artifacts/api-server/tests/cashier-subscription-postgres.integration.test.ts"
+      - "artifacts/fawri/src/components/CashierSubscriptionPanel.tsx"
+      - "artifacts/fawri/src/components/admin/AdminCashierSubscriptionControls.tsx"
+      - "artifacts/fawri/src/pages/dashboard/SubscriptionPage.tsx"
+      - "artifacts/fawri/src/pages/dashboard/CashierManagementPage.tsx"
+      - "artifacts/fawri/src/pages/admin/AdminPageDialogs.tsx"
+      - "artifacts/fawri/src/lib/translations/features/pages/dashboard/CashierManagementPage.ts"
       - ".github/workflows/cashier-subscription.yml"
   push:
     branches:
@@ -35,6 +42,22 @@ jobs:
   cashier-subscription:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fawri_ci
+          POSTGRES_PASSWORD: fawri_ci
+          POSTGRES_DB: fawri_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fawri_ci -d fawri_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://fawri_ci:fawri_ci@127.0.0.1:5432/fawri_ci
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -48,3 +71,5 @@ jobs:
       - run: pnpm --filter @workspace/api-server run typecheck
       - run: pnpm --filter @workspace/fawri run typecheck
       - run: pnpm --filter @workspace/api-server run test:cashier-subscription
+      - run: pnpm --filter @workspace/db run push-force
+      - run: pnpm --filter @workspace/api-server exec tsx --test ./tests/cashier-subscription-postgres.integration.test.ts
